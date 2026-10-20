@@ -95,6 +95,7 @@ The exceptions are:
 ### Tests
 
 - If a change adds a behavior or a diagnostic, add a fixture under `tests/fixtures/<stage>/`.
+- If a change alters a CLI command's arguments, exit codes or written files, add a test to `tests/cli.rs`.
 - If a fixture imports a module, put the module in a subdirectory: each top-level fixture file is an entry.
 - Give fixtures fake data only.
 - Create or update snapshots with `INSTA_UPDATE=always`.

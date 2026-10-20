@@ -1,0 +1,9 @@
+---
+source: tests/cli.rs
+expression: check.assert_exit_code(1).stderr()
+---
+error[L0201]: cannot find `greeting` in this scope
+ --> unbound.rslisp:2:12
+  |
+2 |   (println greeting))
+  |            ^^^^^^^^ not found in this scope
