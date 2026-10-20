@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/raw_macro.rslisp
+---
+(def square (fn (x) (x x)))

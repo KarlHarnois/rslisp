@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/hidden_definition.rslisp
+---
+error[L0201]: cannot find `hidden` in this scope
+ --> expand/hidden_definition.rslisp:9:25
+  |
+9 | (def read-hidden (fn () hidden))
+  |                         ^^^^^^ not found in this scope

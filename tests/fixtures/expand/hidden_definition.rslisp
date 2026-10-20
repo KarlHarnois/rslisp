@@ -1,0 +1,9 @@
+(use code list)
+
+(def define-hidden
+  (macro (form)
+    (list (quote def) (quote hidden) 1)))
+
+(define-hidden)
+
+(def read-hidden (fn () hidden))

@@ -1,0 +1,8 @@
+(use code list nth drop prepend)
+
+(def my-defn
+  (macro (form)
+    (list (quote def) (nth form 1)
+          (prepend (quote fn) (drop 2 form)))))
+
+(my-defn square (x) (x x))

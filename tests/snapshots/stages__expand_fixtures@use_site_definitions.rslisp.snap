@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/use_site_definitions.rslisp
+---
+(def answer 42)
+(def read-answer (fn () answer))

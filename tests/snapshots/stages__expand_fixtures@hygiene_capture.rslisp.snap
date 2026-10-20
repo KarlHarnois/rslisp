@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/hygiene_capture.rslisp
+---
+(def check (fn (tmp if_2) (do (let tmp_2 0) (if tmp_2 tmp_2 tmp))))

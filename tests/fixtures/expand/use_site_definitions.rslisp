@@ -1,0 +1,9 @@
+(use code list nth)
+
+(def define-constant
+  (macro (form)
+    (list (quote def) (nth form 1) (nth form 2))))
+
+(define-constant answer 42)
+
+(def read-answer (fn () answer))

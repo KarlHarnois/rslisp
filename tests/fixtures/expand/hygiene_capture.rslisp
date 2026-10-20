@@ -1,0 +1,11 @@
+(use code list nth)
+
+(def my-or
+  (macro (form)
+    (list (quote do)
+          (list (quote let) (quote tmp) (nth form 1))
+          (list (quote if) (quote tmp) (quote tmp) (nth form 2)))))
+
+(def check
+  (fn (tmp if)
+    (my-or 0 tmp)))
