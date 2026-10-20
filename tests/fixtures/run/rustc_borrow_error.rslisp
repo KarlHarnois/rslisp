@@ -1,0 +1,8 @@
+(defstruct person (name string) (age i64))
+
+(defn dangling-name ()
+  (let someone (make-person (to-string "Grace") 85))
+  (person-name someone))
+
+(defn main ()
+  (println (dangling-name)))

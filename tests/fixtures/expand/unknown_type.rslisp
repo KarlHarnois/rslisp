@@ -1,0 +1,2 @@
+(type measure (fn (strng) i64))
+(def measure (fn (text) 1))

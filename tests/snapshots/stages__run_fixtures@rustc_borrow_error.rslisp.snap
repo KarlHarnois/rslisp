@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/rustc_borrow_error.rslisp
+---
+error[E0515]: cannot return value referencing local variable `someone`
+ --> run/rustc_borrow_error.rslisp:5:3
+  |
+5 |   (person-name someone))
+  |   ^^^^^^^^^^^^^^^^^^^^^ returns a value referencing data owned by the current function
+  |
+  = note: reported by rustc while compiling the generated Rust

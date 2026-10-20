@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/unknown_type.rslisp
+---
+error[L0201]: cannot find type `strng` in this scope
+ --> expand/unknown_type.rslisp:1:20
+  |
+1 | (type measure (fn (strng) i64))
+  |                    ^^^^^ not found in this scope
+  |
+help: a name with a similar spelling exists
+  |
+1 | (type measure (fn (string) i64))
+  |                       +
