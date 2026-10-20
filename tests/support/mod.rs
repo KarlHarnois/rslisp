@@ -8,6 +8,7 @@ use rslisp::diagnostic::{DiagnosticRenderer, Diagnostics};
 use rslisp::emit::{EmittedCrate, RustEmitter};
 use rslisp::expand::Expander;
 use rslisp::modules::ModuleSources;
+use rslisp::ownership::OwnershipChecker;
 use rslisp::reader::Reader;
 use rslisp::source::{SourceId, SourceMap, Span};
 use rslisp::types::{TypeChecker, TypeDisplay, TypedProgram};
@@ -47,7 +48,7 @@ impl Fixture {
     }
 
     pub fn check_report(mut self) -> String {
-        match self.expand().and_then(TypeChecker::check) {
+        match self.checked() {
             Ok(program) => Self::signatures(&program),
             Err(diagnostics) => self.render(&diagnostics),
         }
@@ -87,8 +88,14 @@ impl Fixture {
     }
 
     fn emit(&mut self) -> Result<EmittedCrate, Diagnostics> {
-        let program = self.expand().and_then(TypeChecker::check)?;
+        let program = self.checked()?;
         RustEmitter::emit(&program, self.entry_span())
+    }
+
+    fn checked(&mut self) -> Result<TypedProgram, Diagnostics> {
+        let mut program = self.expand().and_then(TypeChecker::check)?;
+        OwnershipChecker::check(&mut program)?;
+        Ok(program)
     }
 
     fn entry_span(&self) -> Span {

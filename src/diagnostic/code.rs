@@ -47,6 +47,10 @@ impl DiagnosticCode {
     pub const COMPILE_TIME_ONLY: Self = Self(Cow::Borrowed("L0412"));
     pub const MISPLACED_WHERE: Self = Self(Cow::Borrowed("L0413"));
 
+    pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
+    pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));
+    pub const NEEDS_OWNERSHIP: Self = Self(Cow::Borrowed("L0503"));
+
     pub const MISSING_MAIN: Self = Self(Cow::Borrowed("L0601"));
     pub const NAME_COLLISION: Self = Self(Cow::Borrowed("L0602"));
     pub const BAD_TEMPLATE: Self = Self(Cow::Borrowed("L0603"));

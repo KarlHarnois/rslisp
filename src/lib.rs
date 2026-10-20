@@ -7,6 +7,7 @@ pub mod expand;
 pub mod interpret;
 pub mod language;
 pub mod modules;
+pub mod ownership;
 pub mod reader;
 pub mod scope;
 pub mod source;
