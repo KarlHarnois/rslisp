@@ -45,6 +45,12 @@ impl DiagnosticCode {
     pub const COMPILE_TIME_ONLY: Self = Self("L0412");
     pub const MISPLACED_WHERE: Self = Self("L0413");
 
+    pub const MISSING_MAIN: Self = Self("L0601");
+    pub const NAME_COLLISION: Self = Self("L0602");
+    pub const BAD_TEMPLATE: Self = Self("L0603");
+    pub const RUST_COMPILER_MISSING: Self = Self("L0604");
+    pub const RUST_ERROR: Self = Self("L0605");
+
     pub fn as_str(self) -> &'static str {
         self.0
     }

@@ -7,8 +7,8 @@
         add sub mul div rem neg lt le gt ge eq ne
         + - * / < <= > >= = !=)
 
-(rust-trait number "rt::Number" i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
-(rust-trait signed "rt::Signed" i8 i16 i32 i64 i128 isize f32 f64)
+(rust-trait number "crate::rt::Number" i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
+(rust-trait signed "crate::rt::Signed" i8 i16 i32 i64 i128 isize f32 f64)
 (rust-trait partial-eq "PartialEq"
   bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
 (rust-trait partial-ord "PartialOrd"
