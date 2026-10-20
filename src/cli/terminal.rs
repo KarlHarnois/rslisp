@@ -3,7 +3,10 @@ use std::io::IsTerminal;
 use std::path::Path;
 
 use super::exit_status::ExitStatus;
+use crate::core::ModulePath;
 use crate::diagnostic::{DiagnosticRenderer, Diagnostics};
+use crate::expand::{Expander, Program};
+use crate::modules::ModuleSources;
 use crate::source::{SourceId, SourceMap};
 
 pub struct Terminal {
@@ -24,8 +27,13 @@ impl Terminal {
         }
     }
 
-    pub fn sources(&self) -> &SourceMap {
-        &self.sources
+    pub fn expand(&mut self, path: &Path) -> Result<Program, ExitStatus> {
+        let entry = self.load(path)?;
+        let module_sources = ModuleSources::new(Self::directory_of(path));
+        let module_path = ModulePath::new(Self::module_name(path));
+        Expander::new(&mut self.sources, module_sources)
+            .expand(module_path, entry)
+            .map_err(|diagnostics| self.report(&diagnostics))
     }
 
     pub fn report(&self, diagnostics: &Diagnostics) -> ExitStatus {
@@ -45,6 +53,16 @@ impl Terminal {
         } else {
             DiagnosticRenderer::plain(&self.sources)
         }
+    }
+
+    fn directory_of(path: &Path) -> std::path::PathBuf {
+        path.parent().map(Path::to_path_buf).unwrap_or_default()
+    }
+
+    fn module_name(path: &Path) -> String {
+        path.file_stem()
+            .map(|stem| stem.to_string_lossy().into_owned())
+            .unwrap_or_default()
     }
 
     fn report_unreadable(path: &Path, error: &std::io::Error) -> ExitStatus {

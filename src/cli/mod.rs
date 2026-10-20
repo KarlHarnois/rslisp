@@ -1,5 +1,6 @@
 mod check;
 mod exit_status;
+mod expand;
 mod terminal;
 
 use std::path::PathBuf;
@@ -10,6 +11,7 @@ use clap::{Parser, Subcommand};
 use crate::language::Language;
 use check::CheckCommand;
 use exit_status::ExitStatus;
+use expand::ExpandCommand;
 
 #[derive(Parser)]
 #[command(name = Language::NAME, version, about = "Compile Lisp source files to Rust")]
@@ -54,6 +56,7 @@ impl Command {
     fn execute(self) -> ExitStatus {
         match self {
             Command::Check { file } => CheckCommand::new(file).run(),
+            Command::Expand { file } => ExpandCommand::new(file).run(),
             unimplemented => unimplemented.report_unimplemented(),
         }
     }

@@ -3,6 +3,7 @@ mod builtin;
 mod expr;
 mod kernel;
 mod module;
+mod printer;
 mod types;
 
 pub use binding::{BindingArena, BindingId, BindingInfo, BindingKind, Namespace};
@@ -12,4 +13,5 @@ pub use expr::{
 };
 pub use kernel::{KernelForm, KernelType, PrimitiveType};
 pub use module::{CoreModule, Item, ItemKind, ModuleId, ModulePath};
+pub use printer::CorePrinter;
 pub use types::{TypeBinder, TypeExpr, TypeExprKind};
