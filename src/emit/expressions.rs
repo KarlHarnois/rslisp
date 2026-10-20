@@ -236,8 +236,9 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn template_problem(&mut self, error: TemplateError, span: Span) -> Code {
         let message = match error {
-            TemplateError::UnclosedPlaceholder => {
-                "a `{` starts a placeholder that never closes".to_string()
+            TemplateError::MalformedPlaceholder => {
+                "a placeholder is `{` followed by an argument number and `}`, and `{{` is a literal brace"
+                    .to_string()
             }
             TemplateError::MissingArgument(index) => {
                 format!("`{{{index}}}` has no matching argument")

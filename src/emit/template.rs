@@ -2,7 +2,7 @@ use super::fragment::{Code, Fragment, Precedence};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TemplateError {
-    UnclosedPlaceholder,
+    MalformedPlaceholder,
     MissingArgument(usize),
 }
 
@@ -36,13 +36,7 @@ impl Template {
                     literal.push(character);
                 }
                 ('{', _) => {
-                    let digits: String = characters
-                        .by_ref()
-                        .take_while(|next| *next != '}')
-                        .collect();
-                    let index = digits
-                        .parse()
-                        .map_err(|_| TemplateError::UnclosedPlaceholder)?;
+                    let index = Self::placeholder_index(&mut characters)?;
                     pieces.push(Piece::Literal(std::mem::take(&mut literal)));
                     pieces.push(Piece::Placeholder(index));
                 }
@@ -55,6 +49,21 @@ impl Template {
             pieces,
             text: text.to_string(),
         })
+    }
+
+    fn placeholder_index(
+        characters: &mut impl Iterator<Item = char>,
+    ) -> Result<usize, TemplateError> {
+        let mut digits = String::new();
+        for next in characters {
+            if next == '}' {
+                return digits
+                    .parse()
+                    .map_err(|_| TemplateError::MalformedPlaceholder);
+            }
+            digits.push(next);
+        }
+        Err(TemplateError::MalformedPlaceholder)
     }
 
     pub fn is_path(&self) -> bool {
@@ -238,6 +247,22 @@ mod tests {
             .unwrap();
         assert_eq!(code.precedence, Precedence::Block);
         assert!(code.text().contains("let template_argument_0 = next();"));
+    }
+
+    #[test]
+    fn reports_an_unclosed_placeholder() {
+        assert_eq!(
+            Template::parse("{0").err(),
+            Some(TemplateError::MalformedPlaceholder)
+        );
+    }
+
+    #[test]
+    fn reports_a_placeholder_without_a_number() {
+        assert_eq!(
+            Template::parse("{name}").err(),
+            Some(TemplateError::MalformedPlaceholder)
+        );
     }
 
     #[test]
