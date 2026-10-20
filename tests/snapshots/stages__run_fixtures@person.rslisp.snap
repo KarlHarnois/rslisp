@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/person.rslisp
+---
+Ada
+Ada
+Ada is 36
+Ada is 36

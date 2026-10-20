@@ -1,0 +1,11 @@
+(defstruct person (name string) (age i64))
+
+(defn label (someone) (str (person-name someone)))
+(defn forward (someone) (label someone))
+(defn keep (value) value)
+(defn store (name) (make-person name 3))
+(defn first-name (someone) (person-name someone))
+(defn print-then-keep (someone) (println (person-name someone)) (keep someone))
+(defn add-one (n) (+ n 1))
+(type explicit (fn ((ref person)) i64))
+(defn explicit (someone) (person-age someone))

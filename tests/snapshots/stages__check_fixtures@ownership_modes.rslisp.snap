@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/ownership_modes.rslisp
+---
+(type make-person (fn (string i64) person))
+(type person-name (fn ((ref person)) (ref string)))
+(type person-age (fn ((ref person)) i64))
+(type label (fn ((ref person)) string))
+(type forward (fn ((ref person)) string))
+(type keep (where (a) (fn (a) a)))
+(type store (fn (string) person))
+(type first-name (fn ((ref person)) (ref string)))
+(type print-then-keep (fn (person) person))
+(type add-one (fn (i64) i64))
+(type explicit (fn ((ref person)) i64))

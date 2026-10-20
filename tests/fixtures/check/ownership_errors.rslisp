@@ -1,0 +1,16 @@
+(defstruct person (name string) (age i64))
+
+(defn store (name) (make-person name 3))
+
+(defn twice (name)
+  (store name)
+  (store name))
+
+(defn steal (someone) (store (person-name someone)))
+
+(defn pick-name (first second)
+  (if true (person-name first) (person-name second)))
+
+(defn branches (flag name)
+  (if flag (store name) (store name))
+  (store name))

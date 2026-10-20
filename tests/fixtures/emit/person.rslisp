@@ -1,0 +1,16 @@
+(defstruct person (name string) (age i64))
+
+(defn introduce (someone)
+  (str (person-name someone) " is " (person-age someone)))
+
+(defn rename (someone new-name)
+  (make-person new-name (person-age someone)))
+
+(defn main ()
+  (let ada (make-person (to-string "Ada") 36))
+  (println (person-name ada))
+  (println (person-name ada))
+  (println (introduce ada))
+  (let copy (clone (person-name ada)))
+  (let renamed (rename ada copy))
+  (println (introduce renamed)))
