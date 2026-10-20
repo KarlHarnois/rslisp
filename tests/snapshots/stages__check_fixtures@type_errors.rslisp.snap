@@ -1,0 +1,76 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/type_errors.rslisp
+---
+error[L0401]: mismatched types
+ --> check/type_errors.rslisp:1:34
+  |
+1 | (defn branches (flag) (if flag 1 "one"))
+  |                                - ^^^^^ expected an integer, found `(ref str)`
+  |                                |
+  |                                the first branch is an integer
+  |
+  = note: both branches of `if` must have the same type
+
+error[L0401]: mismatched types
+ --> check/type_errors.rslisp:2:28
+  |
+2 | (defn test-not-bool () (if 1 2 3))
+  |                            ^ expected `bool`, found an integer
+  |
+  = note: the test of `if` must be a `bool`
+
+error[L0402]: this function takes 1 argument but 2 were given
+ --> check/type_errors.rslisp:3:19
+  |
+3 | (defn too-many () (not true false))
+  |                   ^^^^^^^^^^^^^^^^ expected 1 argument
+
+error[L0403]: expected a function, found an integer
+ --> check/type_errors.rslisp:4:24
+  |
+4 | (defn calls-number () (5 1))
+  |                        ^ this is called but is not a function
+
+error[L0404]: `(ref str)` does not implement `number`
+ --> check/type_errors.rslisp:5:23
+  |
+5 | (defn adds-text () (+ "a" "b"))
+  |                       ^^^ this needs `number`
+  |
+  = note: `number` is implemented for: i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+
+error[L0408]: `point` has no field `z`
+ --> check/type_errors.rslisp:7:46
+  |
+7 | (defn unknown-field (p) (field (the point p) z))
+  |                                              ^ unknown field
+
+error[L0409]: missing fields `y` in `point`
+ --> check/type_errors.rslisp:8:25
+  |
+8 | (defn missing-fields () (new point (x 1)))
+  |                         ^^^^^^^^^^^^^^^^^ every field needs a value
+
+error[L0401]: mismatched types
+  --> check/type_errors.rslisp:10:21
+   |
+10 | (defn keeps (value) 1)
+   |                     ^ expected `a`, found an integer
+   |
+   = note: `a` is a type parameter, so this code must work for every type `a` stands for
+
+error[L0406]: the literal `300` does not fit in `u8`
+  --> check/type_errors.rslisp:12:22
+   |
+12 | (def too-big (the u8 300))
+   |                      ^^^ out of range for `u8`
+
+error[L0404]: `u8` does not implement `signed`
+  --> check/type_errors.rslisp:13:33
+   |
+13 | (defn negative-unsigned () (neg (the u8 1)))
+   |                                 ^^^^^^^^^^ this needs `signed`
+   |
+   = note: `signed` is implemented for: i8, i16, i32, i64, i128, isize, f32, f64

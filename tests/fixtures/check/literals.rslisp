@@ -1,0 +1,6 @@
+(def answer 42)
+(def ratio 0.5)
+(defn increment (x) (+ x 1))
+(defn halve (x) (* x 0.5))
+(def mixed (+ 1 2.5))
+(defn compare (left right) (< left right 10))

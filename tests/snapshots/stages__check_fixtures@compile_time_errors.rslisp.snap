@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/compile_time_errors.rslisp
+---
+error[L0412]: `first` only exists at compile time
+ --> check/compile_time_errors.rslisp:2:25
+  |
+2 | (def helper (fn (form) (first form)))
+  |                         ^^^^^ used in code that runs in the program
+  |
+  = note: definitions that use the `code` module or `quote` can only be used by macros
+
+error[L0412]: quoted code only exists at compile time
+ --> check/compile_time_errors.rslisp:4:17
+  |
+4 | (defn quotes () (quote (a b)))
+  |                 ^^^^^^^^^^^^^ used in code that runs in the program
+  |
+  = help: use `quote` inside macros, or write a string if you want text

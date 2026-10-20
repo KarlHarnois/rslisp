@@ -7,6 +7,7 @@ use rslisp::expand::Expander;
 use rslisp::modules::ModuleSources;
 use rslisp::reader::Reader;
 use rslisp::source::{SourceId, SourceMap};
+use rslisp::types::{TypeChecker, TypeDisplay, TypedProgram};
 
 pub struct Fixture {
     sources: SourceMap,
@@ -36,12 +37,36 @@ impl Fixture {
     }
 
     pub fn expand_report(mut self) -> String {
-        let module_sources = ModuleSources::new(self.directory(), self.display_directory());
-        let module_path = ModulePath::new(self.module_name());
-        match Expander::new(&mut self.sources, module_sources).expand(module_path, self.entry) {
+        match self.expand() {
             Ok(program) => CorePrinter::new(&program.bindings).module(program.entry_module()),
             Err(diagnostics) => self.render(&diagnostics),
         }
+    }
+
+    pub fn check_report(mut self) -> String {
+        match self.expand().and_then(TypeChecker::check) {
+            Ok(program) => Self::signatures(&program),
+            Err(diagnostics) => self.render(&diagnostics),
+        }
+    }
+
+    fn expand(&mut self) -> Result<rslisp::expand::Program, Diagnostics> {
+        let module_sources = ModuleSources::new(self.directory(), self.display_directory());
+        let module_path = ModulePath::new(self.module_name());
+        Expander::new(&mut self.sources, module_sources).expand(module_path, self.entry)
+    }
+
+    fn signatures(program: &TypedProgram) -> String {
+        let display = TypeDisplay::new(&program.bindings, &program.generics);
+        program
+            .entry_module()
+            .definitions
+            .iter()
+            .map(|definition| {
+                let name = program.bindings.get(definition.binding).name();
+                format!("(type {name} {})\n", display.scheme(&definition.scheme))
+            })
+            .collect()
     }
 
     fn render(&self, diagnostics: &Diagnostics) -> String {

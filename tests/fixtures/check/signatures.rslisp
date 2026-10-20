@@ -1,0 +1,14 @@
+(type add (fn (i64 i64) i64))
+(defn add (x y) (+ x y))
+
+(type pick (where (a) (fn (bool a a) a)))
+(defn pick (choose-first first second) (if choose-first first second))
+
+(type scale (fn (f64 _) _))
+(defn scale (factor value) (* factor value))
+
+(type double (where ((n number)) (fn (n) n)))
+(defn double (value) (+ value value))
+
+(defn port () (let (number u16) 8080) number)
+(defn small () (the u8 200))

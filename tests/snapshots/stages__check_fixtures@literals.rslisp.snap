@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/literals.rslisp
+---
+(type answer i64)
+(type ratio f64)
+(type increment (fn (i64) i64))
+(type halve (fn (f64) f64))
+(type mixed f64)
+(type compare (fn (i64 i64) bool))

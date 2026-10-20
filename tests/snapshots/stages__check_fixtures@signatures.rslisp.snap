@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/signatures.rslisp
+---
+(type add (fn (i64 i64) i64))
+(type pick (where (a) (fn (bool a a) a)))
+(type scale (fn (f64 f64) f64))
+(type double (where ((n number)) (fn (n) n)))
+(type port (fn () u16))
+(type small (fn () u8))

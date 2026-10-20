@@ -1,0 +1,5 @@
+(use code first)
+(def helper (fn (form) (first form)))
+(defn uses-helper () (helper 1))
+(defn quotes () (quote (a b)))
+(defn main () (uses-helper) (quotes))
