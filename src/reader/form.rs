@@ -61,6 +61,10 @@ impl Form {
         self.update_scopes(&|scopes| scopes.remove(scope));
     }
 
+    pub fn retain_scopes(&mut self, keep: &dyn Fn(Scope) -> bool) {
+        self.update_scopes(&|scopes| scopes.retain(keep));
+    }
+
     pub fn relocate_outside(&mut self, region: Span) {
         if !region.contains(self.span) {
             self.span = region;

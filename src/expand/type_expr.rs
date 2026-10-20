@@ -114,7 +114,7 @@ impl Expander<'_> {
         if items.len() != Self::WHERE_PARTS {
             return Err(malformed());
         }
-        let scope = self.scopes.fresh();
+        let scope = self.fresh_local_scope();
         let mut binders = items[1].as_list().ok_or_else(malformed)?.to_vec();
         let mut body = items[2].clone();
         binders

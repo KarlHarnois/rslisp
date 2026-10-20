@@ -37,7 +37,7 @@ impl Expander<'_> {
         params: &Form,
         body: &[Form],
     ) -> Result<Lambda, Diagnostic> {
-        let scope = self.scopes.fresh();
+        let scope = self.fresh_local_scope();
         let mut params = shape.list(params)?.to_vec();
         let mut body = body.to_vec();
         params
@@ -112,7 +112,7 @@ impl Expander<'_> {
             }
             KernelForm::Do => ExprKind::Block(self.lower_body(&shape.items()[1..])?),
             KernelForm::If => self.lower_if(&shape)?,
-            KernelForm::Quote => ExprKind::Quote(shape.exactly(2)?[1].clone()),
+            KernelForm::Quote => ExprKind::Quote(self.quoted(&shape.exactly(2)?[1])),
             KernelForm::New => self.lower_new(&shape)?,
             KernelForm::Field => self.lower_field_access(&shape)?,
             KernelForm::Rust => self.lower_rust(&shape)?,
@@ -154,7 +154,7 @@ impl Expander<'_> {
     ) -> Result<BodyItem, Diagnostic> {
         let items = Shape::new(KernelForm::Let, form).exactly(3)?;
         let value = self.lower_expr(&items[2])?;
-        let scope = self.scopes.fresh();
+        let scope = self.fresh_local_scope();
         let mut binder = items[1].clone();
         binder.add_scope(scope);
         rest_of_body

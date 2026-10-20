@@ -32,6 +32,10 @@ impl ScopeSet {
         }
     }
 
+    pub fn retain(&mut self, keep: impl Fn(Scope) -> bool) {
+        self.sorted.retain(|scope| keep(*scope));
+    }
+
     pub fn flip(&mut self, scope: Scope) {
         match self.sorted.binary_search(&scope) {
             Ok(position) => {

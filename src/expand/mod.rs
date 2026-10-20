@@ -11,12 +11,13 @@ mod shape;
 mod similar_name;
 mod type_expr;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::core::{BindingArena, CoreModule, ModuleId, ModulePath};
 use crate::diagnostic::Diagnostics;
 use crate::modules::{ModuleRegistry, ModuleSources};
-use crate::scope::{BindingTable, Phase, ScopeAllocator};
+use crate::reader::Form;
+use crate::scope::{BindingTable, Phase, Scope, ScopeAllocator};
 use crate::source::{SourceId, SourceMap};
 use globals::GlobalTable;
 use macro_call::MacroTable;
@@ -40,6 +41,7 @@ pub struct Expander<'s> {
     sources: &'s mut SourceMap,
     module_sources: ModuleSources,
     scopes: ScopeAllocator,
+    local_scopes: HashSet<Scope>,
     table: BindingTable,
     bindings: BindingArena,
     modules: ModuleRegistry,
@@ -58,6 +60,7 @@ impl<'s> Expander<'s> {
             sources,
             module_sources,
             scopes: ScopeAllocator::default(),
+            local_scopes: HashSet::new(),
             table: BindingTable::default(),
             bindings: BindingArena::default(),
             modules: ModuleRegistry::default(),
@@ -79,6 +82,18 @@ impl<'s> Expander<'s> {
             bindings: self.bindings,
         };
         self.diagnostics.into_result(program)
+    }
+
+    fn fresh_local_scope(&mut self) -> Scope {
+        let scope = self.scopes.fresh();
+        self.local_scopes.insert(scope);
+        scope
+    }
+
+    fn quoted(&self, datum: &Form) -> Form {
+        let mut quoted = datum.clone();
+        quoted.retain_scopes(&|scope| !self.local_scopes.contains(&scope));
+        quoted
     }
 
     fn take_modules(&mut self) -> Vec<CoreModule> {
