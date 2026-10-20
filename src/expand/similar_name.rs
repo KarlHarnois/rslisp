@@ -6,12 +6,14 @@ impl SimilarName {
     const LENGTH_PER_ALLOWED_EDIT: usize = 3;
 
     pub fn closest(target: &str, candidates: &[Rc<str>]) -> Option<Rc<str>> {
-        let allowed_edits = (target.chars().count() / Self::LENGTH_PER_ALLOWED_EDIT).max(1);
+        let length = target.chars().count();
+        let allowed_edits = (length / Self::LENGTH_PER_ALLOWED_EDIT).max(1);
+        let shares_a_character = |distance: usize| distance < length;
         candidates
             .iter()
             .filter(|candidate| candidate.as_ref() != target)
             .map(|candidate| (Self::edit_distance(target, candidate), candidate))
-            .filter(|(distance, _)| *distance <= allowed_edits)
+            .filter(|(distance, _)| *distance <= allowed_edits && shares_a_character(*distance))
             .min_by(|(left_distance, left), (right_distance, right)| {
                 left_distance.cmp(right_distance).then(left.cmp(right))
             })
@@ -81,6 +83,12 @@ mod tests {
             SimilarName::closest("widht", &candidates).as_deref(),
             Some("width")
         );
+    }
+
+    #[test]
+    fn suggests_nothing_for_a_name_sharing_no_character() {
+        let candidates = names(&["x", "y"]);
+        assert_eq!(SimilarName::closest("*", &candidates), None);
     }
 
     #[test]
