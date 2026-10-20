@@ -1,4 +1,4 @@
 /target
-/.devenv
-/.direnv
 /result
+/result-*
+/.direnv
