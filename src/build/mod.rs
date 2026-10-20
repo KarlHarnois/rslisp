@@ -40,6 +40,7 @@ impl RustCompiler {
         let source = self
             .write_source(emitted)
             .map_err(|error| Self::environment("write the generated Rust", &error))?;
+        Self::create_output_directory(output)?;
         let mut command = Command::new(Self::RUSTC);
         command
             .args([
@@ -74,6 +75,15 @@ impl RustCompiler {
         let source = self.directory.join(Self::SOURCE_FILE);
         fs::write(&source, &emitted.code)?;
         Ok(source)
+    }
+
+    fn create_output_directory(output: &Path) -> Result<(), BuildError> {
+        let Some(directory) = output.parent() else {
+            return Ok(());
+        };
+        fs::create_dir_all(directory).map_err(|error| {
+            Self::environment(&format!("create `{}`", directory.display()), &error)
+        })
     }
 
     fn environment(action: &str, error: &io::Error) -> BuildError {
