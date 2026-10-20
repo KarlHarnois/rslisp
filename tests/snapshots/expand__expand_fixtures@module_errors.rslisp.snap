@@ -1,0 +1,36 @@
+---
+source: tests/expand.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/module_errors.rslisp
+---
+error[L0204]: cannot find module `geometry`
+ --> expand/module_errors.rslisp:1:6
+  |
+1 | (use geometry point)
+  |      ^^^^^^^^ no module with this path
+  |
+  = help: a module path names a file relative to the entry file, without its extension
+
+error[L0205]: module `code` does not export `lenght`
+ --> expand/module_errors.rslisp:2:17
+  |
+2 | (use code first lenght)
+  |                 ^^^^^^ not exported
+  |
+help: an export with a similar name exists
+  |
+2 - (use code first lenght)
+2 + (use code first length)
+  |
+
+error[L0201]: cannot find `missing-name` in this scope
+ --> expand/module_errors.rslisp:3:9
+  |
+3 | (export missing-name)
+  |         ^^^^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `launch` in this scope
+ --> expand/module_errors.rslisp:4:2
+  |
+4 | (launch 3)
+  |  ^^^^^^ not found in this scope

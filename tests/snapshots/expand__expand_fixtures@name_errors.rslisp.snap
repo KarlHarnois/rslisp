@@ -1,0 +1,75 @@
+---
+source: tests/expand.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/name_errors.rslisp
+---
+error[L0201]: cannot find `widht` in this scope
+ --> expand/name_errors.rslisp:2:25
+  |
+2 | (def area (fn (height) (widht height)))
+  |                         ^^^^^ not found in this scope
+  |
+help: a name with a similar spelling exists
+  |
+2 - (def area (fn (height) (widht height)))
+2 + (def area (fn (height) (width height)))
+  |
+
+error[L0209]: `()` is not an expression
+ --> expand/name_errors.rslisp:3:14
+  |
+3 | (def nothing ())
+  |              ^^ an empty list has nothing to call
+  |
+help: the unit value is written `(do)`
+  |
+3 | (def nothing (do))
+  |               ++
+
+error[L0208]: `def` can only appear at module level
+ --> expand/name_errors.rslisp:4:20
+  |
+4 | (def nested (fn () (def inner 1)))
+  |                    ^^^^^^^^^^^^^ not allowed inside an expression
+  |
+  = help: use `let` to bind a name inside a body
+
+error[L0208]: `let` can only appear directly in a body
+ --> expand/name_errors.rslisp:5:12
+  |
+5 | (def loose (let x 1))
+  |            ^^^^^^^^^ not allowed here
+  |
+  = help: wrap the `let` and the code that uses it in `(do ...)`
+
+error[L0210]: malformed `if`
+ --> expand/name_errors.rslisp:6:14
+  |
+6 | (def mistake (if width))
+  |              ^^^^^^^^^^ this does not fit the shape of `if`
+  |
+  = help: write it as `(if test then else)`
+
+error[L0203]: `twice` is defined more than once
+ --> expand/name_errors.rslisp:8:6
+  |
+7 | (def twice 1)
+  |      ----- first defined here
+8 | (def twice 2)
+  |      ^^^^^ defined again here
+
+error[L0201]: cannot find `'origin` in this scope
+ --> expand/name_errors.rslisp:9:13
+  |
+9 | (def quoted 'origin)
+  |             ^^^^^^^ not found in this scope
+  |
+  = help: there is no quote shorthand; write `(quote origin)`
+
+error[L0211]: `if` is a form, not a value
+  --> expand/name_errors.rslisp:10:17
+   |
+10 | (def form-value if)
+   |                 ^^ used as a value here
+   |
+   = help: write it as `(if test then else)`

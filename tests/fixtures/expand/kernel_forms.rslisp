@@ -1,0 +1,17 @@
+(export area origin)
+
+(struct point (x f64) (y f64))
+
+(def origin (new point (x 0) (y 0)))
+
+(type area (fn (f64 f64) f64))
+(def area
+  (fn (width height)
+    (let doubled (do width))
+    (if doubled height (field origin x))))
+
+(type identity (where ((item)) (fn (item) item)))
+(def identity (fn ((value i64)) value))
+
+(def code-sample (quote (a b c)))
+(def to-text (rust "{0}.to_string()" (fn ((ref str)) string)))

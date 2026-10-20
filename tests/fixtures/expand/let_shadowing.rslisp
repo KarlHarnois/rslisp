@@ -1,0 +1,6 @@
+(def total 10)
+(def shadow
+  (fn (total)
+    (let total (do total))
+    (let total (do total))
+    total))

@@ -1,0 +1,7 @@
+---
+source: tests/expand.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/let_shadowing.rslisp
+---
+(def total 10)
+(def shadow (fn (total_2) (let total_3 (do total_2)) (let total_4 (do total_3)) total_4))
