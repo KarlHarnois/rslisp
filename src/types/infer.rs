@@ -208,6 +208,7 @@ impl TypeChecker {
             binding: param.binding,
             ty,
             span: param.span,
+            annotated: param.annotation.is_some(),
         })
     }
 
@@ -251,6 +252,7 @@ impl TypeChecker {
                     binding: binder.binding,
                     ty,
                     span: binder.span,
+                    annotated: binder.annotation.is_some(),
                 };
                 Ok((TypedBodyItem::Let(binder, value), Type::unit()))
             }
@@ -309,7 +311,10 @@ impl TypeChecker {
 
     fn pass_argument(&mut self, parameter: &Type, value: &TypedExpr) -> Result<Borrow, Diagnostic> {
         let argument = self.unifier.shallow(&value.ty);
-        let is_owned_value = !argument.is_reference() && !matches!(argument, Type::Var(_));
+        let is_owned_value = match &argument {
+            Type::Var(var) => self.unifier.literal_kind(*var).is_some(),
+            other => !other.is_reference(),
+        };
         match self.unifier.shallow(parameter) {
             Type::Ref(inner) if is_owned_value => self
                 .expect(&inner, &argument, value.span, MismatchContext::Plain)

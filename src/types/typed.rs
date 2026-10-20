@@ -48,6 +48,7 @@ pub struct TypedBinder {
     pub binding: BindingId,
     pub ty: Type,
     pub span: Span,
+    pub annotated: bool,
 }
 
 #[derive(Clone, Debug)]
