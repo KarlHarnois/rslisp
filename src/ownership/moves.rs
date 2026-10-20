@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use super::definitions::LocalDefinitions;
 use super::problems::OwnershipProblems;
 use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostic;
@@ -19,6 +20,7 @@ pub struct MoveChecker<'a> {
     copy: CopyRules<'a>,
     bindings: &'a BindingArena,
     moved: HashMap<BindingId, Span>,
+    copy_functions: HashSet<BindingId>,
     reported: HashSet<BindingId>,
     diagnostics: Vec<Diagnostic>,
 }
@@ -29,6 +31,7 @@ impl<'a> MoveChecker<'a> {
             copy,
             bindings,
             moved: HashMap::new(),
+            copy_functions: HashSet::new(),
             reported: HashSet::new(),
             diagnostics: Vec::new(),
         }
@@ -49,8 +52,42 @@ impl<'a> MoveChecker<'a> {
                 .for_each(|(_, value)| self.expr(value, Usage::Move)),
             TypedExprKind::Block(block) => self.block(block, usage),
             TypedExprKind::If(test, then, otherwise) => self.branches(test, then, otherwise, usage),
-            TypedExprKind::Fn(lambda) => self.block(&lambda.body, Usage::Move),
+            TypedExprKind::Fn(lambda) => {
+                self.closure(lambda);
+            }
             TypedExprKind::Literal(_) | TypedExprKind::Global(_) | TypedExprKind::Rust(_) => {}
+        }
+    }
+
+    fn closure(&mut self, lambda: &TypedLambda) -> bool {
+        let own_bindings = LocalDefinitions::of(lambda);
+        let moved_before: HashSet<BindingId> = self.moved.keys().copied().collect();
+        self.block(&lambda.body, Usage::Move);
+        let moves_a_capture = self
+            .moved
+            .keys()
+            .any(|binding| !moved_before.contains(binding) && !own_bindings.contains(binding));
+        !moves_a_capture
+    }
+
+    fn bind(&mut self, binding: BindingId, value: &TypedExpr) {
+        let is_copy_function = match &value.kind {
+            TypedExprKind::Fn(lambda) => self.closure(lambda),
+            TypedExprKind::Global(_) | TypedExprKind::Rust(_) => {
+                matches!(value.ty, Type::Function(..))
+            }
+            TypedExprKind::Local(other) => {
+                let is_copy = self.copy_functions.contains(other);
+                self.expr(value, Usage::Move);
+                is_copy
+            }
+            _ => {
+                self.expr(value, Usage::Move);
+                false
+            }
+        };
+        if is_copy_function {
+            self.copy_functions.insert(binding);
         }
     }
 
@@ -90,7 +127,7 @@ impl<'a> MoveChecker<'a> {
         let last = block.items.len().checked_sub(1);
         for (position, item) in block.items.iter().enumerate() {
             match item {
-                TypedBodyItem::Let(_, value) => self.expr(value, Usage::Move),
+                TypedBodyItem::Let(binder, value) => self.bind(binder.binding, value),
                 TypedBodyItem::Expr(expr) if Some(position) == last => self.expr(expr, usage),
                 TypedBodyItem::Expr(expr) => self.expr(expr, Usage::Move),
             }
@@ -101,12 +138,18 @@ impl<'a> MoveChecker<'a> {
         if let Some(moved_at) = self.moved.get(&binding).copied() {
             if self.reported.insert(binding) {
                 let name = self.bindings.get(binding).name();
-                self.diagnostics
-                    .push(OwnershipProblems::use_after_move(name, span, moved_at));
+                let diagnostic = OwnershipProblems::use_after_move(name, span, moved_at);
+                let diagnostic = if matches!(ty, Type::Function(..)) {
+                    OwnershipProblems::closure_move_help(diagnostic)
+                } else {
+                    OwnershipProblems::clone_suggestion(diagnostic, name, moved_at)
+                };
+                self.diagnostics.push(diagnostic);
             }
             return;
         }
-        if usage == Usage::Move && !self.copy.is_copy(ty) {
+        let is_copy = self.copy.is_copy(ty) || self.copy_functions.contains(&binding);
+        if usage == Usage::Move && !is_copy {
             self.moved.insert(binding, span);
         }
     }

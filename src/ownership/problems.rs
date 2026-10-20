@@ -11,10 +11,17 @@ impl OwnershipProblems {
             Label::new(used, "value used here after it moved"),
         )
         .with_label(Label::new(moved, "value moved here"))
-        .with_suggestion(
+    }
+
+    pub fn clone_suggestion(diagnostic: Diagnostic, name: &str, moved: Span) -> Diagnostic {
+        diagnostic.with_suggestion(
             "clone the value if both places need it",
             Suggestion::new(moved, format!("(clone {name})")),
         )
+    }
+
+    pub fn closure_move_help(diagnostic: Diagnostic) -> Diagnostic {
+        diagnostic.with_help("this closure moves a captured value, so it can only be used once")
     }
 
     pub fn ambiguous_borrow(function: &str, span: Span) -> Diagnostic {

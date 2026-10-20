@@ -1,4 +1,5 @@
 mod checks;
+mod definitions;
 mod functions;
 mod modes;
 mod moves;
