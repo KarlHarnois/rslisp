@@ -1,7 +1,7 @@
 use super::mangle::NameMangler;
 use super::plan::EmitPlan;
 use crate::core::{BindingId, ModuleId, PrimitiveType};
-use crate::types::{GenericParam, Type, TypedProgram};
+use crate::types::{GenericId, GenericParam, Type, TypedProgram};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum TypePosition {
@@ -17,6 +17,8 @@ pub struct RustTypes<'a> {
 }
 
 impl<'a> RustTypes<'a> {
+    const MAYBE_UNSIZED: &'static str = "?Sized";
+
     pub fn new(program: &'a TypedProgram, plan: &'a EmitPlan<'a>, module: ModuleId) -> Self {
         Self {
             program,
@@ -49,13 +51,13 @@ impl<'a> RustTypes<'a> {
         }
     }
 
-    pub fn generics(&self, params: &[GenericParam]) -> String {
+    pub fn generics(&self, params: &[GenericParam], signature: &Type) -> String {
         if params.is_empty() {
             return String::new();
         }
         let declared: Vec<String> = params
             .iter()
-            .map(|param| self.generic_declaration(param))
+            .map(|param| self.generic_declaration(param, signature))
             .collect();
         format!("<{}>", declared.join(", "))
     }
@@ -68,9 +70,9 @@ impl<'a> RustTypes<'a> {
         NameMangler::type_name(&param.name)
     }
 
-    fn generic_declaration(&self, param: &GenericParam) -> String {
+    fn generic_declaration(&self, param: &GenericParam, signature: &Type) -> String {
         let name = Self::generic_name(param);
-        let bounds: Vec<String> = param
+        let mut bounds: Vec<String> = param
             .bounds
             .iter()
             .filter_map(|bound| {
@@ -80,10 +82,31 @@ impl<'a> RustTypes<'a> {
                     .map(|rust_trait| rust_trait.path.to_string())
             })
             .collect();
+        if Self::only_behind_references(signature, param.id, false) {
+            bounds.push(Self::MAYBE_UNSIZED.to_string());
+        }
         if bounds.is_empty() {
             name
         } else {
             format!("{name}: {}", bounds.join(" + "))
+        }
+    }
+
+    fn only_behind_references(
+        signature: &Type,
+        generic: GenericId,
+        behind_reference: bool,
+    ) -> bool {
+        match signature {
+            Type::Generic(found) if *found == generic => behind_reference,
+            Type::Ref(inner) | Type::Mut(inner) => {
+                Self::only_behind_references(inner, generic, true)
+            }
+            Type::Function(parameters, result) => parameters
+                .iter()
+                .chain(std::iter::once(result.as_ref()))
+                .all(|part| Self::only_behind_references(part, generic, false)),
+            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) | Type::Struct(_) => true,
         }
     }
 

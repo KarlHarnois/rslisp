@@ -150,7 +150,7 @@ impl<'a> ItemEmitter<'a> {
             }
             _ => String::new(),
         };
-        let generics = types.generics(&definition.scheme.params);
+        let generics = types.generics(&definition.scheme.params, &definition.scheme.body);
         let header = format!(
             "{}fn {}{generics}({}){result} {{",
             info.visibility.keyword(),
