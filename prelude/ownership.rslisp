@@ -1,0 +1,5 @@
+(export clone ref mut)
+
+(def clone (rust "{0}.clone()" (where (a) (fn ((ref a)) a))))
+(def ref (rust "{0}" (where (a) (fn ((ref a)) (ref a)))))
+(def mut (rust "{0}" (where (a) (fn ((mut a)) (mut a)))))

@@ -4,7 +4,7 @@
           number-lt number-le number-gt number-ge value-eq bool-not)
 
 (export number signed partial-eq partial-ord
-        add sub mul div rem neg lt le gt ge eq ne
+        add sub mul div rem neg sqrt lt le gt ge eq ne
         + - * / < <= > >= = !=)
 
 (rust-trait number "crate::rt::Number" i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
@@ -20,6 +20,7 @@
 (def div (rust "{0} / {1}" (where ((n number)) (fn (n n) n)) number-div))
 (def rem (rust "{0} % {1}" (where ((n number)) (fn (n n) n)) number-rem))
 (def neg (rust "-{0}" (where ((n number signed)) (fn (n) n)) (fn (value) (number-sub 0 value))))
+(def sqrt (rust "{0}.sqrt()" (fn (f64) f64)))
 
 (def lt (rust "{0} < {1}" (where ((a partial-ord)) (fn (a a) bool)) number-lt))
 (def le (rust "{0} <= {1}" (where ((a partial-ord)) (fn (a a) bool)) number-le))

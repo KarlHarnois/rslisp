@@ -2,10 +2,11 @@
 (use prelude/logic true false not when unless and or cond)
 (use prelude/syntax defn the)
 (use prelude/number number signed partial-eq partial-ord
-                    add sub mul div rem neg lt le gt ge eq ne
+                    add sub mul div rem neg sqrt lt le gt ge eq ne
                     + - * / < <= > >= = !=)
 (use prelude/text display to-string print println str char)
 (use prelude/struct defstruct)
+(use prelude/ownership clone ref mut)
 
 (export fn def let do if type struct new field quote macro rust rust-trait use export
         ref mut where _
@@ -15,7 +16,8 @@
         true false not when unless and or cond
         defn the
         number signed partial-eq partial-ord
-        add sub mul div rem neg lt le gt ge eq ne
+        add sub mul div rem neg sqrt lt le gt ge eq ne
         + - * / < <= > >= = !=
         display to-string print println str char
-        defstruct)
+        defstruct
+        clone)
