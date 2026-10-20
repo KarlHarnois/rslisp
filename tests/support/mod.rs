@@ -49,7 +49,10 @@ impl Fixture {
     }
 
     fn directory(&self) -> PathBuf {
-        self.path.parent().expect("fixtures live in a directory").to_path_buf()
+        self.path
+            .parent()
+            .expect("fixtures live in a directory")
+            .to_path_buf()
     }
 
     fn module_name(&self) -> String {

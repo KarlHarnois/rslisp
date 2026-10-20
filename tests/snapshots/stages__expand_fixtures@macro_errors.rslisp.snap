@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/macro_errors.rslisp
+---
+error[L0301]: no rule of `only-two` matches this form
+ --> expand/macro_errors.rslisp:7:21
+  |
+7 | (def no-rule (fn () (only-two 1 2 3)))
+  |                     ^^^^^^^^^^^^^^^^ here
+
+error[L0301]: this use of `needs-name` does not match `(name value)`
+ --> expand/macro_errors.rslisp:8:1
+  |
+8 | (needs-name)
+  | ^^^^^^^^^^^^ here
+
+error[L0304]: `when` is a macro, not a value
+ --> expand/macro_errors.rslisp:9:22
+  |
+9 | (def as-value (fn () when))
+  |                      ^^^^ used as a value here
+  |
+  = help: a macro can only be called; pass a function instead

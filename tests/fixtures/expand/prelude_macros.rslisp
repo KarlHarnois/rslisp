@@ -1,0 +1,12 @@
+(defn some-function (x) (x x))
+
+(defn branches (ready? fallback)
+  (when ready? (fallback))
+  (unless ready? (fallback))
+  (and ready? fallback ready?)
+  (cond (ready? 1)
+        (fallback 2)
+        (else 3)))
+
+(defn shadowing (result if)
+  (or result if))

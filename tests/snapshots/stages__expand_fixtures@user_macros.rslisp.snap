@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/user_macros.rslisp
+---
+(def apply-twice (fn (f x) (f (f x))))
+(def call-it (fn () (apply-twice 3)))
+(def run-all (fn () (do (apply-twice 1) (apply-twice 2))))
+(def flipped (fn (f_2) (f_2 2 1)))
+(def listed (fn () (list (quote a) (quote b) (quote c))))

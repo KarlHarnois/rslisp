@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/prelude_macros.rslisp
+---
+(def some-function (fn (x) (x x)))
+(def branches (fn (ready? fallback) (if ready? (do (fallback)) (do)) (if ready? (do) (do (fallback))) (if ready? (if fallback ready? false) false) (if ready? (do 1) (if fallback (do 2) (do 3)))))
+(def shadowing (fn (result if_2) (do (let result_2 result) (if result_2 result_2 if_2))))

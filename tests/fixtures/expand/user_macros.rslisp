@@ -1,0 +1,20 @@
+(use code list)
+
+(defrule swap-args
+  ((function first-argument second-argument) (function second-argument first-argument)))
+
+(defrule quoted-list
+  ((items ...) (list (quote items) ...)))
+
+(defmacro define-caller (name function argument)
+  (template (def (unquote name) (fn () ((unquote function) (unquote argument))))))
+
+(defmacro define-sequence (name steps ...)
+  (template (def (unquote name) (fn () (do (splice steps))))))
+
+(def apply-twice (fn (f x) (f (f x))))
+
+(define-caller call-it apply-twice 3)
+(define-sequence run-all (apply-twice 1) (apply-twice 2))
+(def flipped (fn (f) (swap-args f 1 2)))
+(def listed (fn () (quoted-list a b c)))

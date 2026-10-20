@@ -1,0 +1,9 @@
+(defrule only-two
+  ((left right) (left right)))
+
+(defmacro needs-name (name value)
+  (template (def (unquote name) (unquote value))))
+
+(def no-rule (fn () (only-two 1 2 3)))
+(needs-name)
+(def as-value (fn () when))
