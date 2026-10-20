@@ -5,7 +5,7 @@ use super::Expander;
 use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
-use crate::core::{BindingId, BindingKind, KernelForm, Lambda, Namespace};
+use crate::core::{BindingId, BindingKind, Expr, KernelForm, Lambda, Namespace};
 use crate::diagnostic::{Diagnostic, Label};
 use crate::interpret::{Closure, Env, Interpreter, Value};
 use crate::reader::Form;
@@ -39,10 +39,22 @@ impl Expander<'_> {
         mut context: Option<&mut DefinitionContext>,
     ) -> Result<Form, Diagnostic> {
         let mut form = form;
+        let mut expansions = 0;
         while let Some(binding) = self.macro_head(&form) {
+            if expansions == Self::MAX_EXPANSION_DEPTH {
+                return Err(ExpandProblems::expansion_too_deep(form.span()));
+            }
             form = self.apply_macro(binding, form, context.as_deref_mut())?;
+            expansions += 1;
         }
         Ok(form)
+    }
+
+    pub(super) fn lower_expansion(&mut self, expanded: &Form) -> Result<Expr, Diagnostic> {
+        self.expansion_depth += 1;
+        let lowered = self.lower_expr(expanded);
+        self.expansion_depth -= 1;
+        lowered
     }
 
     pub(super) fn macro_head(&self, form: &Form) -> Option<BindingId> {

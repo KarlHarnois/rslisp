@@ -85,7 +85,7 @@ impl Expander<'_> {
         }
         if let Some(binding) = self.macro_head(form) {
             let expanded = self.apply_macro(binding, form.clone(), None)?;
-            return self.lower_expr(&expanded);
+            return self.lower_expansion(&expanded);
         }
         let callee = self.lower_expr(head)?;
         let arguments = items[1..]
