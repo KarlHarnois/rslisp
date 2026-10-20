@@ -11,12 +11,12 @@ The syntax has few rules, and the compiler infers types and ownership. Most feat
 
 ## Set up
 
-The project uses a [Nix](https://nixos.org/download/) flake with [devenv](https://devenv.sh/).
+The project uses a [Nix](https://nixos.org/download/) flake.
 
 1. Enter the development shell:
 
    ```sh
-   nix develop --no-pure-eval
+   nix develop
    ```
 
    If you use [direnv](https://direnv.net/), run `direnv allow` once instead. The shell then loads when you enter the directory.
@@ -35,6 +35,8 @@ The project uses a [Nix](https://nixos.org/download/) flake with [devenv](https:
 
    The binary is `result/bin/rslisp`.
 
+Run `nix fmt` to format the Nix files, and `nix flake check` to run every check that CI runs.
+
 ## Use
 
 Run `rslisp --help` to list the commands. Each command takes a source file:
@@ -46,4 +48,4 @@ rslisp emit examples/geometry/main.rslisp
 
 ## Contribute
 
-Follow [docs/diagnostics.md](docs/diagnostics.md) when you add or change a compiler error.
+Read [AGENTS.md](AGENTS.md) before you change the code. It holds the rules for this repository and lists the commands a change must pass. Follow [docs/diagnostics.md](docs/diagnostics.md) when you add or change a compiler error.
