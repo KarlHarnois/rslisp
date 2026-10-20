@@ -1,4 +1,6 @@
+mod check;
 mod exit_status;
+mod terminal;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -6,6 +8,7 @@ use std::process::ExitCode;
 use clap::{Parser, Subcommand};
 
 use crate::language::Language;
+use check::CheckCommand;
 use exit_status::ExitStatus;
 
 #[derive(Parser)]
@@ -49,6 +52,13 @@ impl Cli {
 
 impl Command {
     fn execute(self) -> ExitStatus {
+        match self {
+            Command::Check { file } => CheckCommand::new(file).run(),
+            unimplemented => unimplemented.report_unimplemented(),
+        }
+    }
+
+    fn report_unimplemented(&self) -> ExitStatus {
         eprintln!("error: `{}` is not implemented yet", self.name());
         ExitStatus::UsageError
     }
