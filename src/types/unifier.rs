@@ -223,6 +223,7 @@ impl Unifier {
     fn check_literal(&self, literal: LiteralKind, value: &Type) -> Result<(), UnifyError> {
         match value {
             Type::Primitive(primitive) if literal.accepts(*primitive) => Ok(()),
+            Type::Generic(_) => Ok(()),
             _ => Err(UnifyError::NotNumeric),
         }
     }

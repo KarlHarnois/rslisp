@@ -119,6 +119,44 @@ impl TypeProblems {
         )
     }
 
+    pub fn literal_of_any_type(literal: &str, parameter: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::LITERAL_TYPE_PARAMETER,
+            format!("`{literal}` cannot have type `{parameter}`"),
+            Label::new(span, format!("this literal has type `{parameter}`")),
+        )
+        .with_note(format!(
+            "`{parameter}` has no trait, so it can be any type, including `string`"
+        ))
+        .with_help(format!(
+            "give `{parameter}` a numeric trait in the signature, such as `({parameter} number)`"
+        ))
+    }
+
+    pub fn literal_misfit(
+        literal: &str,
+        parameter: &str,
+        misfit: &str,
+        admissible: &[String],
+        span: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::LITERAL_TYPE_PARAMETER,
+            format!("`{literal}` does not fit every type `{parameter}` can be"),
+            Label::new(
+                span,
+                format!("`{parameter}` can be `{misfit}`, which cannot hold this value"),
+            ),
+        )
+        .with_note(format!(
+            "`{parameter}` can be any of: {}",
+            admissible.join(", ")
+        ))
+        .with_help(format!(
+            "narrow `{parameter}` with a trait whose types all hold this value"
+        ))
+    }
+
     pub fn cannot_infer(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::CANNOT_INFER,

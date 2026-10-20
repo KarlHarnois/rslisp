@@ -93,6 +93,7 @@ pub struct TypedProgram {
     pub structs: StructTable,
     pub traits: TraitTable,
     pub generics: HashMap<GenericId, GenericParam>,
+    pub implied_bounds: HashMap<GenericId, Vec<BindingId>>,
 }
 
 impl TypedProgram {

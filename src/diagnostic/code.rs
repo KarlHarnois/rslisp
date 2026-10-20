@@ -46,6 +46,7 @@ impl DiagnosticCode {
     pub const INFINITE_TYPE: Self = Self(Cow::Borrowed("L0411"));
     pub const COMPILE_TIME_ONLY: Self = Self(Cow::Borrowed("L0412"));
     pub const MISPLACED_WHERE: Self = Self(Cow::Borrowed("L0413"));
+    pub const LITERAL_TYPE_PARAMETER: Self = Self(Cow::Borrowed("L0414"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));

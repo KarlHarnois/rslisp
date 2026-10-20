@@ -28,6 +28,7 @@ pub struct TypeChecker {
     pub(super) diagnostics: Diagnostics,
     signatures: HashMap<BindingId, (TypeExpr, Span)>,
     monomorphic: Vec<Type>,
+    implied_bounds: HashMap<GenericId, Vec<BindingId>>,
 }
 
 struct Definition<'p> {
@@ -54,6 +55,7 @@ impl TypeChecker {
             diagnostics: Diagnostics::default(),
             signatures: HashMap::new(),
             monomorphic: Vec::new(),
+            implied_bounds: HashMap::new(),
         }
     }
 
@@ -147,6 +149,21 @@ impl TypeChecker {
                 _ => None,
             })
             .collect()
+    }
+
+    pub(super) fn admissible_types(&self, generic: GenericId) -> Option<Vec<Type>> {
+        let bounds = &self.generics.get(&generic)?.bounds;
+        let (first, others) = bounds.split_first()?;
+        let mut admissible = self.traits.get(*first)?.implementors.clone();
+        for bound in others {
+            let implementors = self
+                .traits
+                .get(*bound)
+                .map(|rust_trait| rust_trait.implementors.as_slice())
+                .unwrap_or_default();
+            admissible.retain(|candidate| implementors.contains(candidate));
+        }
+        Some(admissible)
     }
 
     pub(super) fn copy_rules(&self) -> super::copy::CopyRules<'_> {
@@ -450,12 +467,29 @@ impl TypeChecker {
     }
 
     fn check_generic_bound(&mut self, generic: GenericId, bound: BindingId, span: Span) {
-        if !self.unifier.generic_bounds(generic).contains(&bound) {
-            let generic_name = self.display().show(&Type::Generic(generic));
-            let diagnostic =
-                TypeProblems::missing_bound(self.bindings.get(bound).name(), &generic_name, span);
-            self.diagnostics.push(diagnostic);
+        if self.unifier.generic_bounds(generic).contains(&bound) {
+            return;
         }
+        if self.implies(generic, bound) {
+            let implied = self.implied_bounds.entry(generic).or_default();
+            if !implied.contains(&bound) {
+                implied.push(bound);
+            }
+            return;
+        }
+        let generic_name = self.display().show(&Type::Generic(generic));
+        let diagnostic =
+            TypeProblems::missing_bound(self.bindings.get(bound).name(), &generic_name, span);
+        self.diagnostics.push(diagnostic);
+    }
+
+    fn implies(&self, generic: GenericId, bound: BindingId) -> bool {
+        self.admissible_types(generic).is_some_and(|types| {
+            !types.is_empty()
+                && types
+                    .iter()
+                    .all(|candidate| self.traits.is_implemented(bound, candidate))
+        })
     }
 
     fn check_implemented(&mut self, bound: BindingId, implementor: &Type, span: Span) {
@@ -555,6 +589,7 @@ impl TypeChecker {
             structs: self.structs,
             traits: self.traits,
             generics: self.generics,
+            implied_bounds: self.implied_bounds,
         };
         self.diagnostics.into_result(program)
     }

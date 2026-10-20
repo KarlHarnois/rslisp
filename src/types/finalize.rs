@@ -2,12 +2,13 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use super::checker::TypeChecker;
+use super::literal_fit::LiteralFit;
 use super::problems::TypeProblems;
-use super::ty::{Type, TypeVar};
+use super::ty::{GenericId, Type, TypeVar};
 use super::typed::{TypedBlock, TypedBodyItem, TypedDefinition, TypedExpr, TypedExprKind};
 use super::unifier::LiteralKind;
 use crate::core::{Literal, PrimitiveType};
-use crate::reader::{Number, NumberValue};
+use crate::reader::Number;
 use crate::source::Span;
 
 pub struct Finalizer<'c> {
@@ -109,34 +110,44 @@ impl<'c> Finalizer<'c> {
     }
 
     fn check_range(&mut self, number: &Number, ty: &Type, span: Span) {
-        let (NumberValue::Integer(value), Type::Primitive(primitive)) = (number.value(), ty) else {
-            return;
-        };
-        let out_of_range = IntegerRange::of(*primitive)
-            .is_some_and(|(minimum, maximum)| *value < minimum || *value > maximum);
-        if out_of_range {
-            let diagnostic = TypeProblems::out_of_range(number.text(), primitive.name(), span);
-            self.checker.diagnostics.push(diagnostic);
+        match ty {
+            Type::Generic(generic) => self.check_generic_literal(number, *generic, span),
+            Type::Primitive(primitive) if !LiteralFit::fits(number.value(), ty) => {
+                let diagnostic = TypeProblems::out_of_range(number.text(), primitive.name(), span);
+                self.checker.diagnostics.push(diagnostic);
+            }
+            _ => {}
         }
     }
-}
 
-struct IntegerRange;
-
-impl IntegerRange {
-    fn of(primitive: PrimitiveType) -> Option<(i128, i128)> {
-        Some(match primitive {
-            PrimitiveType::I8 => (i8::MIN.into(), i8::MAX.into()),
-            PrimitiveType::I16 => (i16::MIN.into(), i16::MAX.into()),
-            PrimitiveType::I32 => (i32::MIN.into(), i32::MAX.into()),
-            PrimitiveType::I64 | PrimitiveType::Isize => (i64::MIN.into(), i64::MAX.into()),
-            PrimitiveType::I128 => (i128::MIN, i128::MAX),
-            PrimitiveType::U8 => (0, u8::MAX.into()),
-            PrimitiveType::U16 => (0, u16::MAX.into()),
-            PrimitiveType::U32 => (0, u32::MAX.into()),
-            PrimitiveType::U64 | PrimitiveType::Usize => (0, u64::MAX.into()),
-            PrimitiveType::U128 => (0, i128::MAX),
-            _ => return None,
-        })
+    fn check_generic_literal(&mut self, number: &Number, generic: GenericId, span: Span) {
+        let display = self.checker.display();
+        let parameter = display.show(&Type::Generic(generic));
+        let diagnostic = match self.checker.admissible_types(generic) {
+            None => Some(TypeProblems::literal_of_any_type(
+                number.text(),
+                &parameter,
+                span,
+            )),
+            Some(types) => types
+                .iter()
+                .find(|candidate| !LiteralFit::fits(number.value(), candidate))
+                .map(|misfit| {
+                    let names: Vec<String> = types
+                        .iter()
+                        .map(|candidate| display.show(candidate))
+                        .collect();
+                    TypeProblems::literal_misfit(
+                        number.text(),
+                        &parameter,
+                        &display.show(misfit),
+                        &names,
+                        span,
+                    )
+                }),
+        };
+        if let Some(diagnostic) = diagnostic {
+            self.checker.diagnostics.push(diagnostic);
+        }
     }
 }

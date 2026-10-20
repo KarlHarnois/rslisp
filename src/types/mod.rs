@@ -4,6 +4,7 @@ mod display;
 mod finalize;
 mod graph;
 mod infer;
+mod literal_fit;
 mod lowering;
 mod problems;
 mod structs;
