@@ -1,0 +1,12 @@
+---
+source: tests/read.rs
+expression: "Fixture::load(path).read_report()"
+input_file: tests/fixtures/read/unclosed_list.rslisp
+---
+error[L0101]: this list is never closed
+ --> read/unclosed_list.rslisp:1:1
+  |
+1 | (defn greet (name)
+  | ^ this `(` has no matching `)`
+  |
+  = help: add a `)` where the list ends

@@ -1,0 +1,4 @@
+; symbols, numbers and strings
+point make-point admin? + ... ->string
+42 -7 +3 1_000 2.5 -0.25 1e9 6.02E23 7e-3
+"hello" "tab\there" "quote \" inside" "snow \u{2603}" ""

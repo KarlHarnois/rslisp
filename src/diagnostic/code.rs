@@ -8,6 +8,7 @@ impl DiagnosticCode {
     pub const UNKNOWN_ESCAPE: Self = Self("L0104");
     pub const MALFORMED_NUMBER: Self = Self("L0105");
     pub const RESERVED_CHARACTER: Self = Self("L0106");
+    pub const NUMBER_TOO_LARGE: Self = Self("L0107");
 
     pub fn as_str(self) -> &'static str {
         self.0

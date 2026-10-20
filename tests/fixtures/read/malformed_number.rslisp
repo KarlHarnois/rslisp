@@ -1,0 +1,2 @@
+(def total (+ 1+ 2))
+(def version 1.2.3)

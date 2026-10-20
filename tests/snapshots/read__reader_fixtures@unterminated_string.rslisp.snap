@@ -1,0 +1,12 @@
+---
+source: tests/read.rs
+expression: "Fixture::load(path).read_report()"
+input_file: tests/fixtures/read/unterminated_string.rslisp
+---
+error[L0103]: this string is never closed
+ --> read/unterminated_string.rslisp:1:12
+  |
+1 | (def title "unfinished
+  |            ^ this `"` has no closing `"`
+  |
+  = help: add a `"` where the string ends

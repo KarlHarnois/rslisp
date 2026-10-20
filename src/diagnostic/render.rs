@@ -1,6 +1,6 @@
 use annotate_snippets::{AnnotationKind, Group, Level, Patch, Renderer, Snippet};
 
-use super::{Diagnostic, Help, Label, Severity, Suggestion};
+use super::{Diagnostic, Diagnostics, Help, Label, Severity, Suggestion};
 use crate::source::{SourceId, SourceMap};
 
 pub struct DiagnosticRenderer<'a> {
@@ -21,6 +21,14 @@ impl<'a> DiagnosticRenderer<'a> {
             sources,
             renderer: Renderer::styled(),
         }
+    }
+
+    pub fn render_all(&self, diagnostics: &Diagnostics) -> String {
+        let rendered: Vec<String> = diagnostics
+            .iter()
+            .map(|diagnostic| self.render(diagnostic))
+            .collect();
+        rendered.join("\n\n")
     }
 
     pub fn render(&self, diagnostic: &Diagnostic) -> String {

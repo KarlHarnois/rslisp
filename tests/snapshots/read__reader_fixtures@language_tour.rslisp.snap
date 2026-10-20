@@ -1,0 +1,15 @@
+---
+source: tests/read.rs
+expression: "Fixture::load(path).read_report()"
+input_file: tests/fixtures/read/language_tour.rslisp
+---
+(fn (x y) (+ x y))
+(def some-function (fn (x) (* x x)))
+(defn some-function (x) (* x x))
+(use geometry make-point point-x)
+(export make-point point-x)
+(defstruct point (x f64) (y f64))
+(make-point 1 2)
+(str "hello" " " "world")
+(def admin? true)
+()

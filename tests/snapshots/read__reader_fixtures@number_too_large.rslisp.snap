@@ -1,0 +1,10 @@
+---
+source: tests/read.rs
+expression: "Fixture::load(path).read_report()"
+input_file: tests/fixtures/read/number_too_large.rslisp
+---
+error[L0107]: the number `999999999999999999999999999999999999999999` is too large
+ --> read/number_too_large.rslisp:1:11
+  |
+1 | (def huge 999999999999999999999999999999999999999999)
+  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit in 128 bits

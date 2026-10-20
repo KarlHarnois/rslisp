@@ -1,0 +1,12 @@
+---
+source: tests/read.rs
+expression: "Fixture::load(path).read_report()"
+input_file: tests/fixtures/read/unknown_escape.rslisp
+---
+error[L0104]: unknown escape in string
+ --> read/unknown_escape.rslisp:1:20
+  |
+1 | (def path "C:\\temp\q")
+  |                    ^^ unknown escape
+  |
+  = help: the escapes are `\n`, `\r`, `\t`, `\0`, `\\`, `\"`, `\'` and `\u{...}`

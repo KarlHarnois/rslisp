@@ -1,0 +1,16 @@
+---
+source: tests/read.rs
+expression: "Fixture::load(path).read_report()"
+input_file: tests/fixtures/read/unmatched_close.rslisp
+---
+error[L0102]: unexpected `)`
+ --> read/unmatched_close.rslisp:1:14
+  |
+1 | (def count 3))
+  |              ^ this `)` has no matching `(`
+  |
+help: remove the extra `)`
+  |
+1 - (def count 3))
+1 + (def count 3)
+  |
