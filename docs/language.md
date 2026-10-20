@@ -115,14 +115,17 @@ Inference is Hindley-Milner with trait bounds. Top-level functions generalize to
 
 ## Ownership
 
-Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&mut T`.
+Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&mut T`. Type inference ignores ownership except where it is written, and a separate pass decides how each parameter is passed.
 
-- **Inference.** A parameter without a written mode gets the cheapest mode its body needs: copy for Copy types, then ref, then mut, then own.
-- **Signatures.** A type written without `ref` or `mut` means owned, as in Rust.
-- **Call sites.** An argument is borrowed automatically when the parameter is a reference.
-- **Fields.** Reading a field through a borrowed value borrows it. The result is a copy for a Copy field and a reference otherwise.
-- **No hidden copies.** Copying heap data is always written `(clone x)`.
-- **Checks.** The compiler reports use after move. Lifetime and aliasing errors come from rustc and are mapped back to the source.
+- **Modes.** A parameter without a written type gets the cheapest mode its uses need: copy for Copy types, then ref, then mut, then own. A use through a call follows the called function's mode, and the modes are recomputed until nothing changes.
+- **Written types.** A type written without `ref` or `mut`, in a `type` signature or a binder annotation, means owned, as in Rust.
+- **Call sites.** An argument is borrowed automatically when the parameter is a reference. A method-style template such as `"{0}.clone()"` borrows its receiver the way Rust's method calls do.
+- **Fields.** Reading a Copy field copies it. Reading any other field borrows it: `(field person name)` has type `(ref string)`.
+- **No hidden copies.** Copying heap data is always written `(clone x)`. `(ref x)` and `(mut x)` force a borrow.
+- **Moves.** The compiler reports a use after move, points at the move, and suggests `(clone x)`. A move in either branch of an `if` counts.
+- **Borrowed results.** A function may return a borrow when it has one borrowed parameter, or none for a string literal. With more than one, it reports an error, because lifetimes cannot be written yet.
+- **Closures.** A function-typed parameter is `impl Fn`. A closure returned from a function is a `move` closure.
+- **rustc.** Any lifetime or aliasing error that slips past these checks comes from rustc, mapped back to the source and the user's names.
 
 ## Macros
 
@@ -198,7 +201,7 @@ Field names are not hygienic. They are looked up through the struct type.
 `rust` binds a name to a piece of Rust:
 
 ```lisp
-(rust-trait number "rt::Number" i8 i16 i32 i64 u8 u16 u32 u64 f32 f64)
+(rust-trait number "crate::rt::Number" i8 i16 i32 i64 u8 u16 u32 u64 f32 f64)
 (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n)) number-add))
 (def true (rust "true" bool bool-true))
 ```
@@ -210,6 +213,8 @@ Field names are not hygienic. They are looked up through the struct type.
 | Parentheses | A non-atomic argument is parenthesized unless its placeholder is the whole template or sits between `(` or `,` and `,` or `)`. |
 | Evaluation order | A repeated or out-of-order placeholder binds its arguments to temporaries first. |
 | Values | A function template used as a value becomes a closure. A bare path is used as the path. |
+| Runtime | `prelude/runtime.rs` is emitted as `mod rt` when a bound names `crate::rt::`. |
+| Unsized | A type parameter used only behind a reference is declared `?Sized`, so `str` can fill it. |
 
 ## Names in Rust
 
@@ -232,4 +237,4 @@ Field names are not hygienic. They are looked up through the struct type.
 | 4. Modules | done |
 | 5. Types | done |
 | 6. Emit and build | done |
-| 7. Ownership | planned |
+| 7. Ownership | done |

@@ -41,6 +41,7 @@ Run `rslisp --help` to list the commands. Each command takes a source file:
 
 ```sh
 rslisp run examples/hello.rslisp
+rslisp emit examples/geometry/main.rslisp
 ```
 
 ## Contribute
