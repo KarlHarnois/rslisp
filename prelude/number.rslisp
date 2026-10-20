@@ -3,12 +3,13 @@
 (use code number-add number-sub number-mul number-div number-rem
           number-lt number-le number-gt number-ge value-eq bool-not)
 
-(export number signed partial-eq partial-ord
+(export number signed float partial-eq partial-ord
         add sub mul div rem neg sqrt lt le gt ge eq ne
         + - * / < <= > >= = !=)
 
 (rust-trait number "crate::rt::Number" i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
 (rust-trait signed "crate::rt::Signed" i8 i16 i32 i64 i128 isize f32 f64)
+(rust-trait float "crate::rt::Float" f32 f64)
 (rust-trait partial-eq "PartialEq"
   bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
 (rust-trait partial-ord "PartialOrd"
