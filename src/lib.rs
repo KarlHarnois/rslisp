@@ -8,3 +8,4 @@ pub mod modules;
 pub mod reader;
 pub mod scope;
 pub mod source;
+pub mod types;

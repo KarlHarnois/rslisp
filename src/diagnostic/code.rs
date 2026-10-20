@@ -31,6 +31,20 @@ impl DiagnosticCode {
     pub const NO_COMPILE_TIME_TWIN: Self = Self("L0306");
     pub const COMPILE_TIME_CYCLE: Self = Self("L0307");
 
+    pub const MISMATCHED_TYPES: Self = Self("L0401");
+    pub const WRONG_ARGUMENT_COUNT: Self = Self("L0402");
+    pub const NOT_A_FUNCTION: Self = Self("L0403");
+    pub const MISSING_TRAIT: Self = Self("L0404");
+    pub const NOT_A_NUMBER: Self = Self("L0405");
+    pub const LITERAL_OUT_OF_RANGE: Self = Self("L0406");
+    pub const CANNOT_INFER: Self = Self("L0407");
+    pub const UNKNOWN_FIELD: Self = Self("L0408");
+    pub const MISSING_FIELDS: Self = Self("L0409");
+    pub const NO_FIELDS: Self = Self("L0410");
+    pub const INFINITE_TYPE: Self = Self("L0411");
+    pub const COMPILE_TIME_ONLY: Self = Self("L0412");
+    pub const MISPLACED_WHERE: Self = Self("L0413");
+
     pub fn as_str(self) -> &'static str {
         self.0
     }

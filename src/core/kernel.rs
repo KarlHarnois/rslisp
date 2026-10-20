@@ -135,6 +135,28 @@ impl PrimitiveType {
         PrimitiveType::F64,
     ];
 
+    pub fn is_integer(self) -> bool {
+        matches!(
+            self,
+            PrimitiveType::I8
+                | PrimitiveType::I16
+                | PrimitiveType::I32
+                | PrimitiveType::I64
+                | PrimitiveType::I128
+                | PrimitiveType::Isize
+                | PrimitiveType::U8
+                | PrimitiveType::U16
+                | PrimitiveType::U32
+                | PrimitiveType::U64
+                | PrimitiveType::U128
+                | PrimitiveType::Usize
+        )
+    }
+
+    pub fn is_float(self) -> bool {
+        matches!(self, PrimitiveType::F32 | PrimitiveType::F64)
+    }
+
     pub fn name(self) -> &'static str {
         match self {
             PrimitiveType::Bool => "bool",
