@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use super::expressions::ExpressionEmitter;
 use super::fragment::{Code, Fragment};
+use super::literal_generics::LiteralGenerics;
 use super::locals::LocalNames;
 use super::mangle::NameMangler;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
@@ -150,7 +151,12 @@ impl<'a> ItemEmitter<'a> {
             }
             _ => String::new(),
         };
-        let generics = types.generics(&definition.scheme.params, &definition.scheme.body);
+        let literal_generics = LiteralGenerics::of(&definition.value);
+        let generics = types.generics(
+            &definition.scheme.params,
+            &definition.scheme.body,
+            &literal_generics,
+        );
         let header = format!(
             "{}fn {}{generics}({}){result} {{",
             info.visibility.keyword(),

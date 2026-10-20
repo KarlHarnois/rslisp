@@ -1,6 +1,7 @@
 mod expressions;
 mod fragment;
 mod items;
+mod literal_generics;
 mod locals;
 mod mangle;
 mod plan;

@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::mangle::NameMangler;
 use super::plan::EmitPlan;
 use crate::core::{BindingId, ModuleId, PrimitiveType};
@@ -18,6 +20,23 @@ pub struct RustTypes<'a> {
 
 impl<'a> RustTypes<'a> {
     const MAYBE_UNSIZED: &'static str = "?Sized";
+    const NUMBER_TRAIT: &'static str = "crate::rt::Number";
+    const RUNTIME_SUPERTRAITS: [(&'static str, &'static [&'static str]); 3] = [
+        ("crate::rt::Number", &["PartialOrd", "PartialEq"]),
+        (
+            "crate::rt::Signed",
+            &["crate::rt::Number", "PartialOrd", "PartialEq"],
+        ),
+        (
+            "crate::rt::Float",
+            &[
+                "crate::rt::Signed",
+                "crate::rt::Number",
+                "PartialOrd",
+                "PartialEq",
+            ],
+        ),
+    ];
 
     pub fn new(program: &'a TypedProgram, plan: &'a EmitPlan<'a>, module: ModuleId) -> Self {
         Self {
@@ -51,13 +70,20 @@ impl<'a> RustTypes<'a> {
         }
     }
 
-    pub fn generics(&self, params: &[GenericParam], signature: &Type) -> String {
+    pub fn generics(
+        &self,
+        params: &[GenericParam],
+        signature: &Type,
+        literal_generics: &HashSet<GenericId>,
+    ) -> String {
         if params.is_empty() {
             return String::new();
         }
         let declared: Vec<String> = params
             .iter()
-            .map(|param| self.generic_declaration(param, signature))
+            .map(|param| {
+                self.generic_declaration(param, signature, literal_generics.contains(&param.id))
+            })
             .collect();
         format!("<{}>", declared.join(", "))
     }
@@ -70,18 +96,29 @@ impl<'a> RustTypes<'a> {
         NameMangler::type_name(&param.name)
     }
 
-    fn generic_declaration(&self, param: &GenericParam, signature: &Type) -> String {
+    fn generic_declaration(
+        &self,
+        param: &GenericParam,
+        signature: &Type,
+        converts_literals: bool,
+    ) -> String {
         let name = Self::generic_name(param);
-        let mut bounds: Vec<String> = param
-            .bounds
-            .iter()
-            .filter_map(|bound| {
-                self.program
-                    .traits
-                    .get(*bound)
-                    .map(|rust_trait| rust_trait.path.to_string())
-            })
-            .collect();
+        let declared = self.trait_paths(&param.bounds);
+        let mut bounds = declared.clone();
+        let implied = self
+            .program
+            .implied_bounds
+            .get(&param.id)
+            .map(|implied| self.trait_paths(implied))
+            .unwrap_or_default();
+        for path in implied {
+            if !Self::is_covered(&path, &bounds) {
+                bounds.push(path);
+            }
+        }
+        if converts_literals && !Self::is_covered(Self::NUMBER_TRAIT, &bounds) {
+            bounds.push(Self::NUMBER_TRAIT.to_string());
+        }
         if Self::only_behind_references(signature, param.id, false) {
             bounds.push(Self::MAYBE_UNSIZED.to_string());
         }
@@ -90,6 +127,31 @@ impl<'a> RustTypes<'a> {
         } else {
             format!("{name}: {}", bounds.join(" + "))
         }
+    }
+
+    fn trait_paths(&self, bounds: &[BindingId]) -> Vec<String> {
+        bounds
+            .iter()
+            .filter_map(|bound| {
+                self.program
+                    .traits
+                    .get(*bound)
+                    .map(|rust_trait| rust_trait.path.to_string())
+            })
+            .collect()
+    }
+
+    fn is_covered(path: &str, bounds: &[String]) -> bool {
+        bounds
+            .iter()
+            .any(|bound| bound == path || Self::supertraits(bound).contains(&path))
+    }
+
+    fn supertraits(path: &str) -> &'static [&'static str] {
+        Self::RUNTIME_SUPERTRAITS
+            .iter()
+            .find(|(runtime_trait, _)| *runtime_trait == path)
+            .map_or(&[], |(_, supertraits)| *supertraits)
     }
 
     fn only_behind_references(

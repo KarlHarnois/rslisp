@@ -9,7 +9,7 @@ use super::template::{Template, TemplateError};
 use super::types::{RustTypes, TypePosition};
 use crate::core::{BindingId, FieldLabel, Literal, ModuleId, PrimitiveType, RustTemplate};
 use crate::diagnostic::Diagnostic;
-use crate::reader::NumberValue;
+use crate::reader::{Number, NumberValue};
 use crate::source::Span;
 use crate::types::{
     Borrow, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedExpr, TypedExprKind,
@@ -28,6 +28,8 @@ impl<'a> ExpressionEmitter<'a> {
     const ETA_PARAMETER: &'static str = "argument_";
     const I64_SUFFIX: &'static str = "_i64";
     const RECEIVER: &'static str = "{0}.";
+    const INTEGER_CONVERSION: &'static str = "from_literal";
+    const FLOAT_CONVERSION: &'static str = "from_float_literal";
 
     pub fn new(
         program: &'a TypedProgram,
@@ -95,7 +97,7 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn expr_in(&mut self, expr: &TypedExpr, unpinned: bool) -> Code {
         match &expr.kind {
-            TypedExprKind::Literal(literal) => Self::literal(literal, &expr.ty, unpinned),
+            TypedExprKind::Literal(literal) => self.literal(literal, &expr.ty, unpinned),
             TypedExprKind::Local(binding) => {
                 Code::atom(self.locals.get(*binding).unwrap_or("_").to_string())
             }
@@ -149,10 +151,11 @@ impl<'a> ExpressionEmitter<'a> {
         matches!(bound, Type::Primitive(primitive) if primitive.is_integer() && *primitive != PrimitiveType::I32)
     }
 
-    fn literal(literal: &Literal, ty: &Type, unpinned: bool) -> Code {
-        match literal {
-            Literal::String(text) => Code::atom(format!("{text:?}")),
-            Literal::Number(number) => {
+    fn literal(&self, literal: &Literal, ty: &Type, unpinned: bool) -> Code {
+        match (literal, ty) {
+            (Literal::String(text), _) => Code::atom(format!("{text:?}")),
+            (Literal::Number(number), Type::Generic(_)) => self.converted_literal(number, ty),
+            (Literal::Number(number), _) => {
                 let text = number.text().trim_start_matches('+').to_string();
                 let text = match (number.value(), ty) {
                     (NumberValue::Integer(_), Type::Primitive(primitive))
@@ -173,6 +176,16 @@ impl<'a> ExpressionEmitter<'a> {
                 Code::with(text, precedence)
             }
         }
+    }
+
+    fn converted_literal(&self, number: &Number, ty: &Type) -> Code {
+        let conversion = match number.value() {
+            NumberValue::Integer(_) => Self::INTEGER_CONVERSION,
+            NumberValue::Float(_) => Self::FLOAT_CONVERSION,
+        };
+        let parameter = self.types().show(ty, TypePosition::Value);
+        let text = number.text().trim_start_matches('+');
+        Code::atom(format!("{parameter}::{conversion}({text})"))
     }
 
     fn global(&mut self, binding: BindingId, ty: &Type, span: Span) -> Code {
