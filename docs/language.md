@@ -110,6 +110,7 @@ Inference is Hindley-Milner with trait bounds. Top-level functions generalize to
 - A float literal can become `f32` or `f64`.
 - Every literal is checked against the range of its type.
 - A literal whose type is still open after inference defaults to `i64` or `f64`, and the emitted literal carries a suffix (`3_i64`).
+- A literal never makes a function generic: `(defn increment (x) (+ x 1))` has type `(fn (i64) i64)`. A literal cannot have a type parameter's type, because Rust cannot turn `1` into an arbitrary `T`.
 - A string literal has type `(ref str)`.
 
 ## Ownership
@@ -229,6 +230,6 @@ Field names are not hygienic. They are looked up through the struct type.
 | 2. Reader and diagnostics | done |
 | 3. Expander, hygiene and interpreter | done |
 | 4. Modules | done |
-| 5. Types | planned |
+| 5. Types | done |
 | 6. Emit and build | planned |
 | 7. Ownership | planned |
