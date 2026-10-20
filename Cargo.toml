@@ -5,4 +5,8 @@ edition = "2024"
 description = "A minimal Lisp that compiles to Rust (placeholder name)"
 
 [dependencies]
+annotate-snippets = "0.12"
 clap = { version = "4.6", features = ["derive"] }
+
+[dev-dependencies]
+insta = { version = "1", features = ["glob"] }

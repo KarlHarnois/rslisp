@@ -1,0 +1,44 @@
+use super::Diagnostic;
+
+#[derive(Clone, Debug, Default)]
+pub struct Diagnostics {
+    items: Vec<Diagnostic>,
+}
+
+impl Diagnostics {
+    pub fn push(&mut self, diagnostic: Diagnostic) {
+        self.items.push(diagnostic);
+    }
+
+    pub fn extend(&mut self, other: Diagnostics) {
+        self.items.extend(other.items);
+    }
+
+    pub fn has_errors(&self) -> bool {
+        self.items.iter().any(Diagnostic::is_error)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.items.is_empty()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Diagnostic> {
+        self.items.iter()
+    }
+
+    pub fn into_result<T>(self, value: T) -> Result<T, Diagnostics> {
+        if self.has_errors() {
+            Err(self)
+        } else {
+            Ok(value)
+        }
+    }
+}
+
+impl From<Diagnostic> for Diagnostics {
+    fn from(diagnostic: Diagnostic) -> Self {
+        Self {
+            items: vec![diagnostic],
+        }
+    }
+}
