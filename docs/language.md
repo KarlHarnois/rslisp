@@ -104,13 +104,26 @@ Type variables are bound only by `where`. An unknown type name is an unbound-nam
 
 Inference is Hindley-Milner with trait bounds. Top-level functions generalize to Rust generics. Local `let` bindings stay monomorphic, because Rust closures cannot be generic.
 
+A type parameter satisfies a trait when its `where` names the trait, or when every type its traits allow implements the trait. `(n float)` therefore satisfies `number` and `display`. The emitted Rust names any such bound that the runtime traits' supertraits do not already give.
+
 ### Literals
 
 - An integer literal can become any number type, so `(make-point 1 2)` emits `make_point(1.0, 2.0)`.
 - A float literal can become `f32` or `f64`.
 - Every literal is checked against the range of its type.
 - A literal whose type is still open after inference defaults to `i64` or `f64`, and the emitted literal carries a suffix (`3_i64`).
-- A literal never makes a function generic: `(defn increment (x) (+ x 1))` has type `(fn (i64) i64)`. A literal cannot have a type parameter's type, because Rust cannot turn `1` into an arbitrary `T`.
+- Without a signature, a literal never makes a function generic: `(defn increment (x) (+ x 1))` has type `(fn (i64) i64)`.
+- A signature's type parameter opts in. A literal can take the parameter's type if it fits every type the parameter's traits allow, which are the implementors those traits share:
+
+  ```lisp
+  (type increment (where ((n number)) (fn (n) n)))
+  (defn increment (x) (+ x 1))        ; emits x + N::from_literal(1)
+
+  (type halve (where ((n float)) (fn (n) n)))
+  (defn halve (x) (* x 0.5))          ; emits x * N::from_float_literal(0.5)
+  ```
+
+  `(+ x 300)` with `(n number)` is an error, because `n` can be `u8`. `(* x 0.5)` with `(n number)` is an error, because `n` can be an integer type. A literal whose parameter has no trait is an error, because the parameter can be any type. The conversion is exact for every allowed type, so Rust folds it into a constant.
 - A string literal has type `(ref str)`.
 
 ## Ownership
