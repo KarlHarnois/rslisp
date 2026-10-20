@@ -1,0 +1,6 @@
+(use prelude/macros defrule)
+
+(export defn)
+
+(defrule defn
+  ((name params body ...) (def name (fn params body ...))))

@@ -1,0 +1,29 @@
+(use prelude/macros defrule)
+(use code bool-true bool-false bool-not)
+
+(export true false not when unless and or cond)
+
+(def true (rust "true" bool bool-true))
+(def false (rust "false" bool bool-false))
+(def not (rust "!{0}" (fn (bool) bool) bool-not))
+
+(defrule when
+  ((test body ...) (if test (do body ...) (do))))
+
+(defrule unless
+  ((test body ...) (if test (do) (do body ...))))
+
+(defrule and
+  (() true)
+  ((value) value)
+  ((value next more ...) (if value (and next more ...) false)))
+
+(defrule or
+  (() false)
+  ((value) value)
+  ((value next more ...) (do (let result value) (if result result (or next more ...)))))
+
+(defrule cond
+  ((((quote else) body ...)) (do body ...))
+  (((test body ...)) (if test (do body ...) (do)))
+  (((test body ...) clause more ...) (if test (do body ...) (cond clause more ...))))

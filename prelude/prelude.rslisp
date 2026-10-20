@@ -1,7 +1,11 @@
 (use prelude/macros defmacro defrule template)
+(use prelude/logic true false not when unless and or cond)
+(use prelude/syntax defn)
 
 (export fn def let do if type struct new field quote macro rust rust-trait use export
         ref mut where _
         bool char str string unit
         i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
-        defmacro defrule template)
+        defmacro defrule template
+        true false not when unless and or cond
+        defn)
