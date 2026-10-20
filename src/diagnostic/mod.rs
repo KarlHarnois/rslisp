@@ -85,8 +85,8 @@ impl Diagnostic {
         self.report.severity
     }
 
-    pub fn code(&self) -> DiagnosticCode {
-        self.report.code
+    pub fn code(&self) -> &DiagnosticCode {
+        &self.report.code
     }
 
     pub fn title(&self) -> &str {
