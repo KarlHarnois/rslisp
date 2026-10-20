@@ -213,7 +213,7 @@ impl TypeProblems {
                 format!("cannot tell which struct's `{field}` this is"),
             ),
         )
-        .with_help("annotate the value with its struct type, as in `(fn ((shape point)) ...)`")
+        .with_help("name the struct in a signature, as in `(fn ((ref point)) _)`")
     }
 
     pub fn compile_time_only(name: &str, span: Span) -> Diagnostic {
