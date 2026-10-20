@@ -13,7 +13,9 @@ pub struct CorePrinter<'a> {
 
 impl<'a> CorePrinter<'a> {
     pub fn new(bindings: &'a BindingArena) -> Self {
-        let kernel_names = KernelForm::ALL.iter().map(|form| (form.name().to_string(), 1));
+        let kernel_names = KernelForm::ALL
+            .iter()
+            .map(|form| (form.name().to_string(), 1));
         Self {
             bindings,
             assigned: HashMap::new(),
