@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::{
     Binder, BindingArena, BindingId, Block, BodyItem, CoreModule, Expr, ExprKind, Item, ItemKind,
-    Literal, RustTemplate, TypeBinder, TypeExpr, TypeExprKind,
+    KernelForm, Literal, RustTemplate, TypeBinder, TypeExpr, TypeExprKind,
 };
 
 pub struct CorePrinter<'a> {
@@ -13,10 +13,11 @@ pub struct CorePrinter<'a> {
 
 impl<'a> CorePrinter<'a> {
     pub fn new(bindings: &'a BindingArena) -> Self {
+        let kernel_names = KernelForm::ALL.iter().map(|form| (form.name().to_string(), 1));
         Self {
             bindings,
             assigned: HashMap::new(),
-            uses_of_name: HashMap::new(),
+            uses_of_name: kernel_names.collect(),
         }
     }
 
