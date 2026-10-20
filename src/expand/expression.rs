@@ -12,11 +12,16 @@ use crate::core::{
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
 use crate::source::Span;
+use crate::stack::DeepRecursion;
 
 impl Expander<'_> {
     const RUST_FORM_WITH_TWIN: usize = 4;
 
     pub(super) fn lower_expr(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
+        DeepRecursion::guard(|| self.lower_form(form))
+    }
+
+    fn lower_form(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
         let span = form.span();
         let kind = match form.kind() {
             FormKind::Symbol(symbol) => self.lower_reference(symbol, span)?,

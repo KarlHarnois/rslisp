@@ -11,4 +11,5 @@ pub mod ownership;
 pub mod reader;
 pub mod scope;
 pub mod source;
+pub mod stack;
 pub mod types;

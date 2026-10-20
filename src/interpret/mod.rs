@@ -13,6 +13,7 @@ use crate::core::{BindingId, Block, BodyItem, Expr, ExprKind, Literal, RustTempl
 use crate::diagnostic::{Diagnostic, DiagnosticCode, Label};
 use crate::reader::{Form, FormKind, Symbol};
 use crate::source::Span;
+use crate::stack::DeepRecursion;
 
 pub trait CompileTimeHost {
     fn global_value(&mut self, binding: BindingId, span: Span) -> Result<Value, Diagnostic>;
@@ -52,6 +53,10 @@ impl<'h> Interpreter<'h> {
     }
 
     pub fn eval(&mut self, expr: &Expr, env: &Env) -> Result<Value, Diagnostic> {
+        DeepRecursion::guard(|| self.eval_kind(expr, env))
+    }
+
+    fn eval_kind(&mut self, expr: &Expr, env: &Env) -> Result<Value, Diagnostic> {
         let span = expr.span();
         match expr.kind() {
             ExprKind::Literal(literal) => Ok(Self::literal(literal, span)),
