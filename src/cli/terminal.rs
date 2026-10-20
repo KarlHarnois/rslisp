@@ -8,6 +8,7 @@ use crate::diagnostic::{DiagnosticRenderer, Diagnostics};
 use crate::expand::{Expander, Program};
 use crate::modules::ModuleSources;
 use crate::source::{SourceId, SourceMap};
+use crate::types::{TypeChecker, TypedProgram};
 
 pub struct Terminal {
     sources: SourceMap,
@@ -25,6 +26,11 @@ impl Terminal {
             Ok(text) => Ok(self.sources.add(path.display().to_string(), text)),
             Err(error) => Err(Self::report_unreadable(path, &error)),
         }
+    }
+
+    pub fn check(&mut self, path: &Path) -> Result<TypedProgram, ExitStatus> {
+        let program = self.expand(path)?;
+        TypeChecker::check(program).map_err(|diagnostics| self.report(&diagnostics))
     }
 
     pub fn expand(&mut self, path: &Path) -> Result<Program, ExitStatus> {

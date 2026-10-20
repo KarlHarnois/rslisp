@@ -13,7 +13,7 @@ impl CheckCommand {
     }
 
     pub fn run(self) -> ExitStatus {
-        match Terminal::new().expand(&self.file) {
+        match Terminal::new().check(&self.file) {
             Ok(_) => ExitStatus::Success,
             Err(status) => status,
         }
