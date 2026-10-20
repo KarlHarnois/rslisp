@@ -1,4 +1,5 @@
 mod check;
+mod emit;
 mod exit_status;
 mod expand;
 mod terminal;
@@ -10,6 +11,7 @@ use clap::{Parser, Subcommand};
 
 use crate::language::Language;
 use check::CheckCommand;
+use emit::EmitCommand;
 use exit_status::ExitStatus;
 use expand::ExpandCommand;
 
@@ -57,6 +59,7 @@ impl Command {
         match self {
             Command::Check { file } => CheckCommand::new(file).run(),
             Command::Expand { file } => ExpandCommand::new(file).run(),
+            Command::Emit { file } => EmitCommand::new(file).run(),
             unimplemented => unimplemented.report_unimplemented(),
         }
     }

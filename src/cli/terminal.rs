@@ -5,8 +5,10 @@ use std::path::Path;
 use super::exit_status::ExitStatus;
 use crate::core::ModulePath;
 use crate::diagnostic::{DiagnosticRenderer, Diagnostics};
+use crate::emit::{EmittedCrate, RustEmitter};
 use crate::expand::{Expander, Program};
 use crate::modules::ModuleSources;
+use crate::source::Span;
 use crate::source::{SourceId, SourceMap};
 use crate::types::{TypeChecker, TypedProgram};
 
@@ -26,6 +28,12 @@ impl Terminal {
             Ok(text) => Ok(self.sources.add(path.display().to_string(), text)),
             Err(error) => Err(Self::report_unreadable(path, &error)),
         }
+    }
+
+    pub fn emit(&mut self, path: &Path) -> Result<EmittedCrate, ExitStatus> {
+        let program = self.check(path)?;
+        let entry = Span::new(SourceId::new(0), 0..0);
+        RustEmitter::emit(&program, entry).map_err(|diagnostics| self.report(&diagnostics))
     }
 
     pub fn check(&mut self, path: &Path) -> Result<TypedProgram, ExitStatus> {
