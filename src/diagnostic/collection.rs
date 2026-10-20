@@ -26,6 +26,15 @@ impl Diagnostics {
         self.items.iter()
     }
 
+    pub fn in_source_order(&self) -> Vec<&Diagnostic> {
+        let mut ordered: Vec<&Diagnostic> = self.items.iter().collect();
+        ordered.sort_by_key(|diagnostic| {
+            let span = diagnostic.primary().span();
+            (span.source().index(), span.range().start)
+        });
+        ordered
+    }
+
     pub fn into_result<T>(self, value: T) -> Result<T, Diagnostics> {
         if self.has_errors() {
             Err(self)

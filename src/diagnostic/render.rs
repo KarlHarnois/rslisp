@@ -25,7 +25,8 @@ impl<'a> DiagnosticRenderer<'a> {
 
     pub fn render_all(&self, diagnostics: &Diagnostics) -> String {
         let rendered: Vec<String> = diagnostics
-            .iter()
+            .in_source_order()
+            .into_iter()
             .map(|diagnostic| self.render(diagnostic))
             .collect();
         rendered.join("\n\n")
