@@ -1,0 +1,244 @@
+(use code first rest list prepend concat length empty? nth take drop
+          symbol? list? symbol-name string same-binding? fail
+          value-eq number-add number-sub number-lt bool-false)
+
+(export defrule defmacro template)
+
+(def map-list
+  (fn (function items)
+    (if (empty? items)
+        (list)
+        (prepend (function (first items)) (map-list function (rest items))))))
+
+(def map-count
+  (fn (count function)
+    (map-from 0 count function)))
+
+(def map-from
+  (fn (index count function)
+    (if (number-lt index count)
+        (prepend (function index) (map-from (number-add index 1) count function))
+        (list))))
+
+(def concat-all
+  (fn (lists)
+    (if (empty? lists)
+        (list)
+        (concat (first lists) (concat-all (rest lists))))))
+
+(def headed-by?
+  (fn (form name)
+    (if (list? form)
+        (if (empty? form)
+            bool-false
+            (if (symbol? (first form)) (same-binding? (first form) name) bool-false))
+        bool-false)))
+
+(def ellipsis?
+  (fn (form)
+    (if (symbol? form) (same-binding? form (quote ...)) bool-false)))
+
+(def literal-pattern?
+  (fn (pattern)
+    (if (headed-by? pattern (quote quote)) (value-eq (length pattern) 2) bool-false)))
+
+(def followed-by-ellipsis?
+  (fn (forms)
+    (if (number-lt 1 (length forms)) (ellipsis? (nth forms 1)) bool-false)))
+
+(def entry-kind?
+  (fn (entry kind)
+    (if (list? entry) (value-eq (symbol-name (first entry)) kind) bool-false)))
+
+(def lookup
+  (fn (variable bindings)
+    (if (empty? bindings)
+        bool-false
+        (if (value-eq (symbol-name (nth (first bindings) 1)) (symbol-name variable))
+            (first bindings)
+            (lookup variable (rest bindings))))))
+
+(def entry-value
+  (fn (entry)
+    (if (entry-kind? entry "one")
+        (nth entry 2)
+        (map-list entry-value (nth entry 2)))))
+
+(def binding-value
+  (fn (bindings variable)
+    (entry-value (lookup variable bindings))))
+
+(def pattern-variables
+  (fn (pattern)
+    (if (literal-pattern? pattern)
+        (list)
+        (if (symbol? pattern)
+            (if (ellipsis? pattern) (list) (list pattern))
+            (if (list? pattern) (concat-all (map-list pattern-variables pattern)) (list))))))
+
+(def template-variables
+  (fn (template)
+    (if (symbol? template)
+        (if (ellipsis? template) (list) (list template))
+        (if (list? template) (concat-all (map-list template-variables template)) (list)))))
+
+(def join-matches
+  (fn (left right)
+    (if (list? left) (if (list? right) (concat left right) bool-false) bool-false)))
+
+(def prepend-match
+  (fn (match others)
+    (if (list? match) (if (list? others) (prepend match others) bool-false) bool-false)))
+
+(def match-pattern
+  (fn (pattern input)
+    (if (literal-pattern? pattern)
+        (if (symbol? input) (if (same-binding? input (nth pattern 1)) (list) bool-false) bool-false)
+        (if (symbol? pattern)
+            (list (list (quote one) pattern input))
+            (if (list? pattern)
+                (if (list? input) (match-list pattern input) bool-false)
+                (if (value-eq pattern input) (list) bool-false))))))
+
+(def match-list
+  (fn (patterns inputs)
+    (if (empty? patterns)
+        (if (empty? inputs) (list) bool-false)
+        (if (followed-by-ellipsis? patterns)
+            (match-ellipsis (first patterns) (drop 2 patterns) inputs)
+            (if (empty? inputs)
+                bool-false
+                (join-matches (match-pattern (first patterns) (first inputs))
+                              (match-list (rest patterns) (rest inputs))))))))
+
+(def match-ellipsis
+  (fn (repeated tail inputs)
+    (let repeat-count (number-sub (length inputs) (length tail)))
+    (if (number-lt repeat-count 0)
+        bool-false
+        (join-matches (match-repeated repeated (take repeat-count inputs))
+                      (match-list tail (drop repeat-count inputs))))))
+
+(def match-repeated
+  (fn (repeated inputs)
+    (let matches (match-each repeated inputs))
+    (if (list? matches)
+        (map-list (fn (variable)
+                    (list (quote many) variable
+                          (map-list (fn (bindings) (lookup variable bindings)) matches)))
+                  (pattern-variables repeated))
+        bool-false)))
+
+(def match-each
+  (fn (pattern inputs)
+    (if (empty? inputs)
+        (list)
+        (prepend-match (match-pattern pattern (first inputs))
+                       (match-each pattern (rest inputs))))))
+
+(def fill-template
+  (fn (template bindings)
+    (if (symbol? template)
+        (fill-symbol template bindings)
+        (if (list? template) (fill-list template bindings) template))))
+
+(def fill-symbol
+  (fn (template bindings)
+    (let entry (lookup template bindings))
+    (if (entry-kind? entry "one")
+        (nth entry 2)
+        (if (entry-kind? entry "many")
+            (fail "this pattern variable needs `...` after it" template)
+            template))))
+
+(def fill-list
+  (fn (templates bindings)
+    (if (empty? templates)
+        (list)
+        (if (followed-by-ellipsis? templates)
+            (concat (fill-repeated (first templates) bindings)
+                    (fill-list (drop 2 templates) bindings))
+            (prepend (fill-template (first templates) bindings)
+                     (fill-list (rest templates) bindings))))))
+
+(def fill-repeated
+  (fn (template bindings)
+    (let variables (repeated-variables (template-variables template) bindings))
+    (if (empty? variables)
+        (fail "nothing before this `...` repeats" template)
+        (map-count (length (nth (lookup (first variables) bindings) 2))
+                   (fn (index) (fill-template template (iteration-bindings variables bindings index)))))))
+
+(def repeated-variables
+  (fn (candidates bindings)
+    (if (empty? candidates)
+        (list)
+        (if (entry-kind? (lookup (first candidates) bindings) "many")
+            (prepend (first candidates) (repeated-variables (rest candidates) bindings))
+            (repeated-variables (rest candidates) bindings)))))
+
+(def iteration-bindings
+  (fn (variables bindings index)
+    (concat (map-list (fn (variable) (nth (nth (lookup variable bindings) 2) index)) variables)
+            bindings)))
+
+(def expand-rules
+  (fn (clauses form)
+    (if (empty? clauses)
+        (fail (string "no rule of `" (first form) "` matches this form") form)
+        (expand-clause (first clauses) (rest clauses) form))))
+
+(def expand-clause
+  (fn (clause others form)
+    (let bindings (match-list (first clause) (rest form)))
+    (if (list? bindings)
+        (fill-template (nth clause 1) bindings)
+        (expand-rules others form))))
+
+(def defrule
+  (macro (form)
+    (list (quote def) (nth form 1)
+          (list (quote macro) (list (quote rule-form))
+                (list (quote expand-rules) (list (quote quote) (drop 2 form)) (quote rule-form))))))
+
+(def build-template
+  (fn (template)
+    (if (headed-by? template (quote unquote))
+        (nth template 1)
+        (if (list? template)
+            (prepend (quote concat) (map-list build-template-element template))
+            (list (quote quote) template)))))
+
+(def build-template-element
+  (fn (element)
+    (if (headed-by? element (quote splice))
+        (nth element 1)
+        (list (quote list) (build-template element)))))
+
+(def template
+  (macro (form)
+    (build-template (nth form 1))))
+
+(def match-or-fail
+  (fn (pattern form)
+    (let bindings (match-list pattern (rest form)))
+    (if (list? bindings)
+        bindings
+        (fail (string "this use of `" (first form) "` does not match `" pattern "`") form))))
+
+(def pattern-lets
+  (fn (pattern)
+    (map-list (fn (variable)
+                (list (quote let) variable
+                      (list (quote binding-value) (quote macro-bindings) (list (quote quote) variable))))
+              (pattern-variables pattern))))
+
+(def defmacro
+  (macro (form)
+    (let pattern (nth form 2))
+    (list (quote def) (nth form 1)
+          (concat (list (quote macro) (list (quote macro-form))
+                        (list (quote let) (quote macro-bindings)
+                              (list (quote match-or-fail) (list (quote quote) pattern) (quote macro-form))))
+                  (pattern-lets pattern)
+                  (drop 3 form)))))
