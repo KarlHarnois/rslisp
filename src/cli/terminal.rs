@@ -29,7 +29,8 @@ impl Terminal {
 
     pub fn expand(&mut self, path: &Path) -> Result<Program, ExitStatus> {
         let entry = self.load(path)?;
-        let module_sources = ModuleSources::new(Self::directory_of(path));
+        let directory = Self::directory_of(path);
+        let module_sources = ModuleSources::new(directory.clone(), directory);
         let module_path = ModulePath::new(Self::module_name(path));
         Expander::new(&mut self.sources, module_sources)
             .expand(module_path, entry)

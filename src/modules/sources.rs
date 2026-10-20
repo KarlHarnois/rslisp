@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::PathBuf;
 
 use crate::core::ModulePath;
@@ -16,6 +17,7 @@ pub enum ModuleSource {
 
 pub struct ModuleSources {
     root: PathBuf,
+    display_root: PathBuf,
 }
 
 impl ModuleSources {
@@ -36,8 +38,8 @@ impl ModuleSources {
         ),
     ];
 
-    pub fn new(root: PathBuf) -> Self {
-        Self { root }
+    pub fn new(root: PathBuf, display_root: PathBuf) -> Self {
+        Self { root, display_root }
     }
 
     pub fn is_prelude(path: &ModulePath) -> bool {
@@ -45,11 +47,9 @@ impl ModuleSources {
     }
 
     pub fn find(&self, path: &ModulePath) -> Option<ModuleSource> {
-        self.builtin(path).or_else(|| self.prelude_file(path))
-    }
-
-    pub fn root(&self) -> &PathBuf {
-        &self.root
+        self.builtin(path)
+            .or_else(|| self.prelude_file(path))
+            .or_else(|| self.user_file(path))
     }
 
     fn builtin(&self, path: &ModulePath) -> Option<ModuleSource> {
@@ -64,9 +64,22 @@ impl ModuleSources {
         Self::PRELUDE_FILES
             .iter()
             .find(|(module, _)| *module == path.as_str())
-            .map(|(module, text)| ModuleSource::Text {
-                name: format!("{module}.{}", Language::EXTENSION),
+            .map(|(_, text)| ModuleSource::Text {
+                name: Self::file_name(path),
                 text: (*text).to_string(),
             })
+    }
+
+    fn user_file(&self, path: &ModulePath) -> Option<ModuleSource> {
+        let file_name = Self::file_name(path);
+        let text = fs::read_to_string(self.root.join(&file_name)).ok()?;
+        Some(ModuleSource::Text {
+            name: self.display_root.join(&file_name).display().to_string(),
+            text,
+        })
+    }
+
+    fn file_name(path: &ModulePath) -> String {
+        format!("{path}.{}", Language::EXTENSION)
     }
 }

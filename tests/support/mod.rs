@@ -36,7 +36,7 @@ impl Fixture {
     }
 
     pub fn expand_report(mut self) -> String {
-        let module_sources = ModuleSources::new(self.directory());
+        let module_sources = ModuleSources::new(self.directory(), self.display_directory());
         let module_path = ModulePath::new(self.module_name());
         match Expander::new(&mut self.sources, module_sources).expand(module_path, self.entry) {
             Ok(program) => CorePrinter::new(&program.bindings).module(program.entry_module()),
@@ -53,6 +53,10 @@ impl Fixture {
             .parent()
             .expect("fixtures live in a directory")
             .to_path_buf()
+    }
+
+    fn display_directory(&self) -> PathBuf {
+        PathBuf::from(Self::display_name(&self.directory()))
     }
 
     fn module_name(&self) -> String {
