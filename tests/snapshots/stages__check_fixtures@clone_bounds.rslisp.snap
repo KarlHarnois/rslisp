@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/clone_bounds.rslisp
+---
+(type duplicate (where ((a clone)) (fn ((ref a)) a)))
+(type duplicate-text (fn (string) string))

@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/reused_closures.rslisp
+---
+15
+15
+hello, Ada
+hello, Ada
+Ada
+Ada
+7

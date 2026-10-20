@@ -47,3 +47,13 @@ help: clone the value if both places need it
 15 -   (if flag (store name) (store name))
 15 +   (if flag (store (clone name)) (store name))
    |
+
+error[L0501]: use of moved value `take`
+  --> check/ownership_errors.rslisp:23:15
+   |
+22 |   (apply-once take)
+   |               ---- value moved here
+23 |   (apply-once take))
+   |               ^^^^ value used here after it moved
+   |
+   = help: this closure moves a captured value, so it can only be used once
