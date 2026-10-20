@@ -1,0 +1,4 @@
+(def made (fn () (new number (x 1))))
+
+(type sized (fn (number) i64))
+(def sized (fn (n) 1))

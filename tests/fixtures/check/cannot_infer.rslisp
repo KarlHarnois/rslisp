@@ -1,0 +1,3 @@
+(defn unused ()
+  (let ignored (fn (y) y))
+  1)

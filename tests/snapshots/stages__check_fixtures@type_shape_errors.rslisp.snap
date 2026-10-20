@@ -1,0 +1,40 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/type_shape_errors.rslisp
+---
+error[L0407]: type annotations needed
+ --> check/type_shape_errors.rslisp:4:35
+  |
+4 | (defn read-x (thing) (field thing x))
+  |                                   ^ cannot tell which struct's `x` this is
+  |
+  = help: name the struct in a signature, as in `(fn ((ref point)) _)`
+
+error[L0410]: `bool` has no fields
+ --> check/type_shape_errors.rslisp:6:34
+  |
+6 | (defn field-of-boolean () (field true x))
+  |                                  ^^^^ only structs have fields
+
+error[L0411]: this value's type would contain itself
+ --> check/type_shape_errors.rslisp:8:25
+  |
+8 | (defn self-apply (f) (f f))
+  |                         ^ here
+  |
+  = help: a function cannot be called with itself as its own argument type
+
+error[L0413]: `where` must wrap a whole signature
+  --> check/type_shape_errors.rslisp:10:25
+   |
+10 | (type nested-where (fn ((where (a) a)) i64))
+   |                         ^^^^^^^^^^^^^ not allowed inside another type
+
+error[L0413]: this type takes no type arguments
+  --> check/type_shape_errors.rslisp:13:27
+   |
+13 | (type with-arguments (fn ((point i64)) i64))
+   |                           ^^^^^^^^^^^ type arguments given here
+   |
+   = note: structs with type parameters are not supported yet

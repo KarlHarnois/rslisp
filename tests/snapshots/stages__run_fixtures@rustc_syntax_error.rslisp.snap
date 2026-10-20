@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/rustc_syntax_error.rslisp
+---
+error[L0604]: leading `+` is not supported
+ --> run/rustc_syntax_error.rslisp:4:12
+  |
+4 |   (println (doubled-sign 1)))
+  |            ^^^^^^^^^^^^^^^^ unexpected `+`
+  |
+  = note: reported by rustc while compiling the generated Rust
+  = help: try removing the `+`

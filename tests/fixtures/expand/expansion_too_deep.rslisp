@@ -1,0 +1,4 @@
+(defrule forever
+  ((value) (forever value)))
+
+(def loops (fn () (forever 1)))

@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/ambiguous_name.rslisp
+---
+error[L0202]: `shared` is ambiguous
+  --> expand/ambiguous_name.rslisp:15:1
+   |
+14 | (make-definer define-second shared)
+   | ----------------------------------- one candidate is defined here
+15 | (define-second)
+   | ^^^^^^^^^^^^^^^
+   | |
+   | this name could refer to more than one binding
+   | one candidate is defined here

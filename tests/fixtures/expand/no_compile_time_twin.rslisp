@@ -1,0 +1,9 @@
+(use code list)
+
+(def needs-rust (macro (form) (to-string 1) (list)))
+
+(needs-rust)
+
+(def inline-rust (macro (form) (rust "1" i64) (list)))
+
+(inline-rust)

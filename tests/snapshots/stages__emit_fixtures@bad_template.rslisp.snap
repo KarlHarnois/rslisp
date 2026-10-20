@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/bad_template.rslisp
+---
+error[L0603]: invalid Rust template: `{1}` has no matching argument
+ --> emit/bad_template.rslisp:5:12
+  |
+5 |   (println (broken 1))
+  |            ^^^^^^^^^^ in this template
+
+error[L0603]: invalid Rust template: a placeholder is `{` followed by an argument number and `}`, and `{{` is a literal brace
+ --> emit/bad_template.rslisp:6:12
+  |
+6 |   (println (unclosed 2)))
+  |            ^^^^^^^^^^^^ in this template

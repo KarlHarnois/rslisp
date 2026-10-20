@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/cannot_infer.rslisp
+---
+error[L0407]: type annotations needed
+ --> check/cannot_infer.rslisp:2:16
+  |
+2 |   (let ignored (fn (y) y))
+  |                ^^^^^^^^^^ cannot infer the type of this value
+  |
+  = help: annotate the binding, as in `(let (name i64) value)`, or add a `type` signature

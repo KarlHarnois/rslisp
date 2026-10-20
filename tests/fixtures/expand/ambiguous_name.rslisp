@@ -1,0 +1,15 @@
+(use code list nth)
+
+(def make-definer
+  (macro (form)
+    (list (quote do)
+          (list (quote def) (quote shared) 1)
+          (list (quote def) (nth form 1)
+                (list (quote macro) (list (quote inner-form))
+                      (list (quote list) (list (quote quote) (quote do))
+                            (list (quote list) (list (quote quote) (quote def)) (list (quote quote) (nth form 2)) 2)
+                            (list (quote list) (list (quote quote) (quote def)) (list (quote quote) (quote reader))
+                                  (list (quote quote) (quote shared)))))))))
+
+(make-definer define-second shared)
+(define-second)

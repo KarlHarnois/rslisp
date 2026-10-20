@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/missing_main.rslisp
+---
+error[L0601]: the entry file has no `main` function
+ --> emit/missing_main.rslisp:1:1
+  |
+1 | (defn helper () 1)
+  | ^ a program starts at `main`
+  |
+  = help: add `(defn main () ...)` to the file you build

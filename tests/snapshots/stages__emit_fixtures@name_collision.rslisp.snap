@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/name_collision.rslisp
+---
+error[L0602]: `admin?` and `is-admin` both become `is_admin` in Rust
+ --> emit/name_collision.rslisp:2:7
+  |
+1 | (defn admin? () true)
+  |       ------ this also becomes `is_admin`
+2 | (defn is-admin () false)
+  |       ^^^^^^^^ this becomes `is_admin`
+  |
+  = help: rename one of them

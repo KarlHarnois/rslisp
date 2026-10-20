@@ -1,0 +1,6 @@
+(defn admin? () true)
+(defn is-admin () false)
+
+(defn main ()
+  (println (admin?))
+  (println (is-admin)))

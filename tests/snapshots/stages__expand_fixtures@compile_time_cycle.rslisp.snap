@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/compile_time_cycle.rslisp
+---
+error[L0307]: `ping` depends on itself at compile time
+ --> expand/compile_time_cycle.rslisp:2:11
+  |
+2 | (def pong ping)
+  |           ^^^^ needed here while it is still being computed
+...
+6 | (uses-ping)
+  | ----------- in this macro call
