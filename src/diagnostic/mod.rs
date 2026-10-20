@@ -16,6 +16,11 @@ pub enum Severity {
 
 #[derive(Clone, Debug)]
 pub struct Diagnostic {
+    report: Box<Report>,
+}
+
+#[derive(Clone, Debug)]
+struct Report {
     severity: Severity,
     code: DiagnosticCode,
     title: String,
@@ -36,66 +41,69 @@ impl Diagnostic {
 
     fn new(severity: Severity, code: DiagnosticCode, title: String, primary: Label) -> Self {
         Self {
-            severity,
-            code,
-            title,
-            primary,
-            secondary: Vec::new(),
-            notes: Vec::new(),
-            helps: Vec::new(),
+            report: Box::new(Report {
+                severity,
+                code,
+                title,
+                primary,
+                secondary: Vec::new(),
+                notes: Vec::new(),
+                helps: Vec::new(),
+            }),
         }
     }
 
     pub fn with_label(mut self, label: Label) -> Self {
-        self.secondary.push(label);
+        self.report.secondary.push(label);
         self
     }
 
     pub fn with_note(mut self, note: impl Into<String>) -> Self {
-        self.notes.push(note.into());
+        self.report.notes.push(note.into());
         self
     }
 
     pub fn with_help(mut self, help: impl Into<String>) -> Self {
-        self.helps.push(Help::new(help.into()));
+        self.report.helps.push(Help::new(help.into()));
         self
     }
 
     pub fn with_suggestion(mut self, help: impl Into<String>, suggestion: Suggestion) -> Self {
-        self.helps
+        self.report
+            .helps
             .push(Help::new(help.into()).with_suggestion(suggestion));
         self
     }
 
     pub fn is_error(&self) -> bool {
-        self.severity == Severity::Error
+        self.report.severity == Severity::Error
     }
 
     pub fn severity(&self) -> Severity {
-        self.severity
+        self.report.severity
     }
 
     pub fn code(&self) -> DiagnosticCode {
-        self.code
+        self.report.code
     }
 
     pub fn title(&self) -> &str {
-        &self.title
+        &self.report.title
     }
 
     pub fn labels(&self) -> impl Iterator<Item = &Label> {
-        std::iter::once(&self.primary).chain(&self.secondary)
+        std::iter::once(&self.report.primary).chain(&self.report.secondary)
     }
 
     pub fn primary(&self) -> &Label {
-        &self.primary
+        &self.report.primary
     }
 
     pub fn notes(&self) -> &[String] {
-        &self.notes
+        &self.report.notes
     }
 
     pub fn helps(&self) -> &[Help] {
-        &self.helps
+        &self.report.helps
     }
 }
