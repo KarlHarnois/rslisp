@@ -1,8 +1,9 @@
 use std::fs;
 use std::io::IsTerminal;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use super::exit_status::ExitStatus;
+use crate::build::{BuildError, RustCompiler};
 use crate::core::ModulePath;
 use crate::diagnostic::{DiagnosticRenderer, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
@@ -12,11 +13,18 @@ use crate::source::Span;
 use crate::source::{SourceId, SourceMap};
 use crate::types::{TypeChecker, TypedProgram};
 
+pub struct BuildOptions {
+    pub release: bool,
+    pub output: Option<PathBuf>,
+}
+
 pub struct Terminal {
     sources: SourceMap,
 }
 
 impl Terminal {
+    const BUILD_DIRECTORY: &str = "target/rslisp";
+
     pub fn new() -> Self {
         Self {
             sources: SourceMap::default(),
@@ -30,10 +38,30 @@ impl Terminal {
         }
     }
 
+    pub fn build(&mut self, path: &Path, options: &BuildOptions) -> Result<PathBuf, ExitStatus> {
+        let emitted = self.emit(path)?;
+        let crate_name = Self::crate_name(path);
+        let directory = PathBuf::from(Self::BUILD_DIRECTORY).join(&crate_name);
+        let output = options
+            .output
+            .clone()
+            .unwrap_or_else(|| directory.join(&crate_name));
+        RustCompiler::new(directory)
+            .compile(
+                &emitted,
+                &crate_name,
+                &output,
+                options.release,
+                Self::entry_span(),
+            )
+            .map(|()| output)
+            .map_err(|error| self.report_build(error))
+    }
+
     pub fn emit(&mut self, path: &Path) -> Result<EmittedCrate, ExitStatus> {
         let program = self.check(path)?;
-        let entry = Span::new(SourceId::new(0), 0..0);
-        RustEmitter::emit(&program, entry).map_err(|diagnostics| self.report(&diagnostics))
+        RustEmitter::emit(&program, Self::entry_span())
+            .map_err(|diagnostics| self.report(&diagnostics))
     }
 
     pub fn check(&mut self, path: &Path) -> Result<TypedProgram, ExitStatus> {
@@ -68,6 +96,24 @@ impl Terminal {
         } else {
             DiagnosticRenderer::plain(&self.sources)
         }
+    }
+
+    fn report_build(&self, error: BuildError) -> ExitStatus {
+        match error {
+            BuildError::Program(diagnostics) => self.report(&diagnostics),
+            BuildError::Environment(message) => {
+                eprintln!("error: {message}");
+                ExitStatus::UsageError
+            }
+        }
+    }
+
+    fn entry_span() -> Span {
+        Span::new(SourceId::new(0), 0..0)
+    }
+
+    fn crate_name(path: &Path) -> String {
+        Self::module_name(path).replace(|character: char| !character.is_ascii_alphanumeric(), "_")
     }
 
     fn directory_of(path: &Path) -> std::path::PathBuf {

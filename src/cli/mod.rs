@@ -1,7 +1,9 @@
+mod build;
 mod check;
 mod emit;
 mod exit_status;
 mod expand;
+mod run;
 mod terminal;
 
 use std::path::PathBuf;
@@ -10,10 +12,13 @@ use std::process::ExitCode;
 use clap::{Parser, Subcommand};
 
 use crate::language::Language;
+use build::BuildCommand;
 use check::CheckCommand;
 use emit::EmitCommand;
 use exit_status::ExitStatus;
 use expand::ExpandCommand;
+use run::RunCommand;
+use terminal::BuildOptions;
 
 #[derive(Parser)]
 #[command(name = Language::NAME, version, about = "Compile Lisp source files to Rust")]
@@ -60,22 +65,24 @@ impl Command {
             Command::Check { file } => CheckCommand::new(file).run(),
             Command::Expand { file } => ExpandCommand::new(file).run(),
             Command::Emit { file } => EmitCommand::new(file).run(),
-            unimplemented => unimplemented.report_unimplemented(),
-        }
-    }
-
-    fn report_unimplemented(&self) -> ExitStatus {
-        eprintln!("error: `{}` is not implemented yet", self.name());
-        ExitStatus::UsageError
-    }
-
-    fn name(&self) -> &'static str {
-        match self {
-            Command::Check { .. } => "check",
-            Command::Expand { .. } => "expand",
-            Command::Emit { .. } => "emit",
-            Command::Build { .. } => "build",
-            Command::Run { .. } => "run",
+            Command::Build {
+                file,
+                release,
+                output,
+            } => BuildCommand::new(file, BuildOptions { release, output }).run(),
+            Command::Run {
+                file,
+                release,
+                args,
+            } => RunCommand::new(
+                file,
+                BuildOptions {
+                    release,
+                    output: None,
+                },
+                args,
+            )
+            .run(),
         }
     }
 }
