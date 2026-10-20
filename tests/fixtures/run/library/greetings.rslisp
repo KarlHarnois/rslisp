@@ -1,0 +1,6 @@
+(export greet)
+
+(def exclamation "!")
+
+(defn greet (name)
+  (str "hello, " name exclamation))

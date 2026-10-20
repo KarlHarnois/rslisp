@@ -1,0 +1,54 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/user_examples.rslisp
+---
+const IS_ADMIN: bool = true;
+
+fn some_function<A: crate::rt::Number>(x: A) -> A {
+    x * x
+}
+
+fn square<A: crate::rt::Number>(x: A) -> A {
+    x * x
+}
+
+fn describe(n: i64) -> &'static str {
+    if n < 0 {
+        "negative"
+    } else if n == 0 {
+        "zero"
+    } else {
+        "positive"
+    }
+}
+
+fn main() {
+    println!("{}", &IS_ADMIN);
+    println!("{}", &some_function(7));
+    println!("{}", &square(2.5));
+    println!("{}", &(|x: i64, y: i64| x + y)(2, 3));
+    println!("{}", describe(-2));
+    println!("{}", describe(0));
+    if IS_ADMIN {
+        println!("{}", "welcome")
+    }
+}
+
+mod rt {
+    use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
+
+    pub trait Number:
+        Copy + PartialOrd + Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Div<Output = Self> + Rem<Output = Self>
+    {
+    }
+
+    impl<T> Number for T where
+        T: Copy + PartialOrd + Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T> + Rem<Output = T>
+    {
+    }
+
+    pub trait Signed: Number + Neg<Output = Self> {}
+
+    impl<T> Signed for T where T: Number + Neg<Output = T> {}
+}

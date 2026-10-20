@@ -1,0 +1,54 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/arithmetic.rslisp
+---
+#[derive(Clone)]
+struct Point {
+    x: f64,
+    y: f64,
+}
+
+fn make_point(x: f64, y: f64) -> Point {
+    Point { x, y }
+}
+
+fn point_x(instance: &Point) -> f64 {
+    instance.x
+}
+
+fn point_y(instance: &Point) -> f64 {
+    instance.y
+}
+
+fn distance_squared(a: &Point, b: &Point) -> f64 {
+    let dx = point_x(a) - point_x(b);
+    let dy = point_y(a) - point_y(b);
+    (dx * dx) + (dy * dy)
+}
+
+fn main() {
+    println!("{}", &(((1_i64 + 2_i64) + 3) + 4));
+    println!("{}", &((2_i64 * 3_i64) * 4));
+    println!("{}", &-10_i64);
+    println!("{}", &(17_i64 % 5_i64));
+    println!("{}", &({
+        let left: i64 = 1;
+        let middle: i64 = 2;
+        if left < middle {
+            middle < 3
+        } else {
+            false
+        }
+    }));
+    println!("{}", &({
+        let left_2: i64 = 3;
+        let middle_2: i64 = 2;
+        if left_2 < middle_2 {
+            middle_2 < 1
+        } else {
+            false
+        }
+    }));
+    println!("{}", &distance_squared(&make_point(0.0, 0.0), &make_point(3.0, 4.0)))
+}

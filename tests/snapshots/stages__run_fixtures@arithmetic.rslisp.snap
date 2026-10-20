@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/arithmetic.rslisp
+---
+10
+24
+-10
+2
+true
+false
+25

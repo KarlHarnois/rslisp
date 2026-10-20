@@ -1,0 +1,4 @@
+(use library/greetings greet)
+
+(defn main ()
+  (println (greet "reader")))

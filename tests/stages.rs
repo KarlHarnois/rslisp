@@ -22,3 +22,17 @@ fn check_fixtures() {
         insta::assert_snapshot!(Fixture::load(path).check_report());
     });
 }
+
+#[test]
+fn emit_fixtures() {
+    insta::glob!("fixtures/emit/*.rslisp", |path| {
+        insta::assert_snapshot!(Fixture::load(path).emit_report());
+    });
+}
+
+#[test]
+fn run_fixtures() {
+    insta::glob!("fixtures/run/*.rslisp", |path| {
+        insta::assert_snapshot!(Fixture::load(path).run_report());
+    });
+}

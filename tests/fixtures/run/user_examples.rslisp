@@ -1,0 +1,17 @@
+(def admin? true)
+(def some-function (fn (x) (* x x)))
+(defn square (x) (* x x))
+
+(defn describe (n)
+  (cond ((< n 0) "negative")
+        ((= n 0) "zero")
+        (else "positive")))
+
+(defn main ()
+  (println admin?)
+  (println (some-function 7))
+  (println (square 2.5))
+  (println ((fn (x y) (+ x y)) 2 3))
+  (println (describe -2))
+  (println (describe 0))
+  (when admin? (println "welcome")))

@@ -1,0 +1,6 @@
+(defstruct pair (left f64) (right f64))
+
+(defn main ()
+  (let first-pair (make-pair 1 2))
+  (let moved first-pair)
+  (println (pair-left first-pair)))

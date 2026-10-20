@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/rustc_error.rslisp
+---
+error[E0382]: borrow of moved value: `first-pair`
+ --> run/rustc_error.rslisp:6:23
+  |
+6 |   (println (pair-left first-pair)))
+  |                       ^^^^^^^^^^ value borrowed here after move
+  |
+  = note: reported by rustc while compiling the generated Rust
+  = help: consider cloning the value if the performance cost is acceptable

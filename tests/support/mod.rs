@@ -1,12 +1,15 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
+use rslisp::build::{BuildError, RustCompiler};
 use rslisp::core::{CorePrinter, ModulePath};
 use rslisp::diagnostic::{DiagnosticRenderer, Diagnostics};
+use rslisp::emit::{EmittedCrate, RustEmitter};
 use rslisp::expand::Expander;
 use rslisp::modules::ModuleSources;
 use rslisp::reader::Reader;
-use rslisp::source::{SourceId, SourceMap};
+use rslisp::source::{SourceId, SourceMap, Span};
 use rslisp::types::{TypeChecker, TypeDisplay, TypedProgram};
 
 pub struct Fixture {
@@ -48,6 +51,55 @@ impl Fixture {
             Ok(program) => Self::signatures(&program),
             Err(diagnostics) => self.render(&diagnostics),
         }
+    }
+
+    pub fn emit_report(mut self) -> String {
+        match self.emit() {
+            Ok(emitted) => emitted.code,
+            Err(diagnostics) => self.render(&diagnostics),
+        }
+    }
+
+    pub fn run_report(mut self) -> String {
+        let emitted = match self.emit() {
+            Ok(emitted) => emitted,
+            Err(diagnostics) => return self.render(&diagnostics),
+        };
+        let directory = std::env::temp_dir().join(format!(
+            "rslisp-run-{}-{}",
+            std::process::id(),
+            self.module_name()
+        ));
+        let binary = directory.join(self.module_name());
+        match RustCompiler::new(directory).compile(
+            &emitted,
+            "fixture",
+            &binary,
+            false,
+            self.entry_span(),
+        ) {
+            Ok(()) => Self::stdout_of(&binary),
+            Err(BuildError::Program(diagnostics)) => self.render(&diagnostics),
+            Err(BuildError::Environment(message)) => {
+                panic!("the build environment failed: {message}")
+            }
+        }
+    }
+
+    fn emit(&mut self) -> Result<EmittedCrate, Diagnostics> {
+        let program = self.expand().and_then(TypeChecker::check)?;
+        RustEmitter::emit(&program, self.entry_span())
+    }
+
+    fn entry_span(&self) -> Span {
+        Span::new(self.entry, 0..0)
+    }
+
+    fn stdout_of(binary: &Path) -> String {
+        let output = Command::new(binary)
+            .output()
+            .expect("the compiled fixture runs");
+        String::from_utf8(output.stdout).expect("fixtures print text")
     }
 
     fn expand(&mut self) -> Result<rslisp::expand::Program, Diagnostics> {
