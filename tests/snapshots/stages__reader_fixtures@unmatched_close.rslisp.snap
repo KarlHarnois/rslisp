@@ -1,5 +1,5 @@
 ---
-source: tests/read.rs
+source: tests/stages.rs
 expression: "Fixture::load(path).read_report()"
 input_file: tests/fixtures/read/unmatched_close.rslisp
 ---

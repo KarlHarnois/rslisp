@@ -1,5 +1,5 @@
 ---
-source: tests/expand.rs
+source: tests/stages.rs
 expression: "Fixture::load(path).expand_report()"
 input_file: tests/fixtures/expand/module_errors.rslisp
 ---
