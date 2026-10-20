@@ -1,0 +1,73 @@
+use std::rc::Rc;
+
+use crate::core::{BindingId, Builtin, Lambda};
+use crate::reader::{Form, FormKind};
+
+#[derive(Clone, Debug)]
+pub enum Value {
+    Form(Form),
+    Bool(bool),
+    Unit,
+    Closure(Rc<Closure>),
+    Builtin(Builtin),
+}
+
+impl Value {
+    pub fn describe(&self) -> &'static str {
+        match self {
+            Value::Form(form) => match form.kind() {
+                FormKind::Symbol(_) => "a symbol",
+                FormKind::String(_) => "a string",
+                FormKind::Number(_) => "a number",
+                FormKind::List(_) => "a list",
+            },
+            Value::Bool(_) => "a boolean",
+            Value::Unit => "unit",
+            Value::Closure(_) | Value::Builtin(_) => "a function",
+        }
+    }
+
+    pub fn as_form(&self) -> Option<&Form> {
+        match self {
+            Value::Form(form) => Some(form),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Closure {
+    pub lambda: Rc<Lambda>,
+    pub env: Env,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct Env(Option<Rc<Frame>>);
+
+#[derive(Debug)]
+struct Frame {
+    binding: BindingId,
+    value: Value,
+    parent: Env,
+}
+
+impl Env {
+    pub fn bind(&self, binding: BindingId, value: Value) -> Env {
+        Env(Some(Rc::new(Frame {
+            binding,
+            value,
+            parent: self.clone(),
+        })))
+    }
+
+    pub fn lookup(&self, binding: BindingId) -> Option<&Value> {
+        let mut current = self.0.as_deref();
+        while let Some(frame) = current {
+            if frame.binding == binding {
+                return Some(&frame.value);
+            }
+            current = frame.parent.0.as_deref();
+        }
+        None
+    }
+}
