@@ -10,7 +10,7 @@ use super::typed::{TypedDefinition, TypedExpr, TypedExprKind};
 use super::unifier::{LiteralKind, Unifier};
 use crate::core::{
     BindingArena, BindingId, CoreModule, Expr, ExprKind, ItemKind, ModuleId, PrimitiveType,
-    TypeExpr,
+    StructDerives, TypeExpr,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
@@ -73,6 +73,16 @@ impl TypeChecker {
             };
             if let Err(diagnostic) = collected {
                 self.diagnostics.push(diagnostic);
+            }
+        }
+        self.register_derived_traits(modules);
+    }
+
+    fn register_derived_traits(&mut self, modules: &[CoreModule]) {
+        for item in modules.iter().flat_map(|module| &module.items) {
+            if let ItemKind::Struct(binding, _) = item.kind {
+                self.traits
+                    .add_implementor_to_paths(&StructDerives::TRAITS, Type::Struct(binding));
             }
         }
     }

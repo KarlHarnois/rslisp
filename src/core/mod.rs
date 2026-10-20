@@ -11,7 +11,7 @@ pub use builtin::Builtin;
 pub use expr::{
     Binder, Block, BodyItem, Expr, ExprKind, FieldLabel, Lambda, Literal, RustTemplate,
 };
-pub use kernel::{KernelForm, KernelType, PrimitiveType};
+pub use kernel::{KernelForm, KernelType, PrimitiveType, StructDerives};
 pub use module::{CoreModule, Item, ItemKind, ModuleId, ModulePath};
 pub use printer::CorePrinter;
 pub use types::{TypeBinder, TypeExpr, TypeExprKind};

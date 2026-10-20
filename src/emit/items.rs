@@ -6,7 +6,7 @@ use super::locals::LocalNames;
 use super::mangle::NameMangler;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
 use super::types::{RustTypes, TypePosition};
-use crate::core::{BindingId, ModuleId};
+use crate::core::{BindingId, ModuleId, StructDerives};
 use crate::diagnostic::Diagnostic;
 use crate::types::{Type, TypedDefinition, TypedExprKind, TypedProgram};
 
@@ -222,7 +222,7 @@ impl<'a> ItemEmitter<'a> {
             )));
         }
         vec![
-            Fragment::Text("#[derive(Clone)]".to_string()),
+            Fragment::Text(StructDerives::attribute()),
             Fragment::Newline,
             Fragment::Text(format!("{visibility}struct {} {{", info.name)),
             Fragment::Indented(fields),

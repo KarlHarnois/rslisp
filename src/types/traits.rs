@@ -25,6 +25,14 @@ impl TraitTable {
             .is_some_and(|rust_trait| rust_trait.implementors.contains(implementor))
     }
 
+    pub fn add_implementor_to_paths(&mut self, paths: &[&str], implementor: Type) {
+        for rust_trait in self.traits.values_mut() {
+            if paths.contains(&rust_trait.path.as_ref()) {
+                rust_trait.implementors.push(implementor.clone());
+            }
+        }
+    }
+
     pub fn get(&self, binding: BindingId) -> Option<&RustTrait> {
         self.traits.get(&binding)
     }

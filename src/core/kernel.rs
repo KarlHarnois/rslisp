@@ -226,3 +226,13 @@ impl KernelType {
         }
     }
 }
+
+pub struct StructDerives;
+
+impl StructDerives {
+    pub const TRAITS: [&'static str; 1] = ["Clone"];
+
+    pub fn attribute() -> String {
+        format!("#[derive({})]", Self::TRAITS.join(", "))
+    }
+}
