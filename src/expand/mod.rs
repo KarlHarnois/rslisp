@@ -8,7 +8,6 @@ mod module_loading;
 mod names;
 mod problems;
 mod shape;
-mod similar_name;
 mod type_expr;
 
 use std::collections::{HashMap, HashSet};

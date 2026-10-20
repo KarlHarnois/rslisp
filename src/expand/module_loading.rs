@@ -4,11 +4,11 @@ use super::Expander;
 use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
-use super::similar_name::SimilarName;
 use crate::core::{
     BindingInfo, BindingKind, Builtin, KernelForm, KernelType, ModuleId, ModulePath, Namespace,
 };
 use crate::diagnostic::Diagnostic;
+use crate::diagnostic::SimilarName;
 use crate::modules::{BuiltinModule, ModuleSource, ModuleSources};
 use crate::reader::{Form, Reader, Symbol};
 use crate::scope::{Phase, ScopeSet};

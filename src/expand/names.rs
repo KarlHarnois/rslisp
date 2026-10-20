@@ -1,9 +1,9 @@
 use super::Expander;
 use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
-use super::similar_name::SimilarName;
 use crate::core::{BindingId, BindingInfo, BindingKind, Namespace};
 use crate::diagnostic::Diagnostic;
+use crate::diagnostic::SimilarName;
 use crate::reader::{Form, Symbol};
 use crate::scope::{Phase, Resolution};
 use crate::source::Span;

@@ -2,11 +2,13 @@ mod code;
 mod collection;
 mod label;
 mod render;
+mod similar_name;
 
 pub use code::DiagnosticCode;
 pub use collection::Diagnostics;
 pub use label::{Help, Label, Suggestion};
 pub use render::DiagnosticRenderer;
+pub use similar_name::SimilarName;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Severity {
