@@ -1,6 +1,6 @@
 use super::Expander;
 use super::problems::ExpandProblems;
-use crate::core::{BindingId, BindingKind, Namespace};
+use crate::core::{BindingId, BindingKind, ExprKind, Namespace};
 use crate::diagnostic::Diagnostic;
 use crate::interpret::{BuiltinCall, CompileTimeHost, Value};
 use crate::reader::Symbol;
@@ -14,7 +14,7 @@ impl CompileTimeHost for Expander<'_> {
             BindingKind::CodeBuiltin(builtin) => {
                 Ok(BuiltinCall::constant(builtin).unwrap_or(Value::Builtin(builtin)))
             }
-            BindingKind::Global(_) => self.evaluate_global(binding, span),
+            BindingKind::Global(_) => self.compile_time_global(binding, &name, span),
             BindingKind::Macro => Err(ExpandProblems::macro_as_value(&name, span)),
             _ => Err(ExpandProblems::not_at_compile_time(&name, span)),
         }
@@ -30,5 +30,26 @@ impl CompileTimeHost for Expander<'_> {
             (Resolution::Unbound, Resolution::Unbound) => left.name() == right.name(),
             _ => false,
         }
+    }
+}
+
+impl Expander<'_> {
+    fn compile_time_global(
+        &mut self,
+        binding: BindingId,
+        name: &str,
+        span: Span,
+    ) -> Result<Value, Diagnostic> {
+        let lowered = self.lowered_global(binding, span)?;
+        if let ExprKind::Rust(template) = lowered.kind()
+            && template.twin.is_none()
+        {
+            return Err(ExpandProblems::no_compile_time_version(
+                name,
+                span,
+                lowered.span(),
+            ));
+        }
+        self.evaluate_global(binding, span)
     }
 }

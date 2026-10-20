@@ -243,6 +243,19 @@ impl ExpandProblems {
         )
     }
 
+    pub fn no_compile_time_version(name: &str, used: Span, defined: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::NO_COMPILE_TIME_TWIN,
+            format!("`{name}` has no compile-time version"),
+            Label::new(used, "used by macro code here"),
+        )
+        .with_label(Label::new(
+            defined,
+            format!("`{name}` is Rust code with no twin from the `code` module"),
+        ))
+        .with_help("use a `code` built-in in macro code, or give the `rust` form a twin")
+    }
+
     pub fn not_at_compile_time(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::COMPILE_TIME_ERROR,
