@@ -270,6 +270,7 @@ impl<'a> ExpressionEmitter<'a> {
             value
         };
         Code::joined(vec![Code::atom(prefix), value], Precedence::Prefix)
+            .spanned(argument.value.span)
     }
 
     fn separated(arguments: Vec<Code>) -> Vec<Code> {
