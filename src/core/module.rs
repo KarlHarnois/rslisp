@@ -1,0 +1,59 @@
+use std::fmt;
+use std::rc::Rc;
+
+use super::{BindingId, Expr, FieldLabel, TypeExpr};
+use crate::source::Span;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct ModuleId(u32);
+
+impl ModuleId {
+    pub fn new(index: usize) -> Self {
+        Self(u32::try_from(index).expect("fewer than 2^32 modules"))
+    }
+
+    pub fn index(self) -> usize {
+        self.0 as usize
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct ModulePath(Rc<str>);
+
+impl ModulePath {
+    pub fn new(path: impl Into<Rc<str>>) -> Self {
+        Self(path.into())
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for ModulePath {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.0)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Item {
+    pub kind: ItemKind,
+    pub span: Span,
+}
+
+#[derive(Clone, Debug)]
+pub enum ItemKind {
+    Def(BindingId, Expr),
+    Signature(BindingId, TypeExpr),
+    Struct(BindingId, Vec<(FieldLabel, TypeExpr)>),
+    RustTrait(BindingId, Rc<str>, Vec<TypeExpr>),
+}
+
+#[derive(Clone, Debug)]
+pub struct CoreModule {
+    pub id: ModuleId,
+    pub path: ModulePath,
+    pub items: Vec<Item>,
+    pub exports: Vec<BindingId>,
+}
