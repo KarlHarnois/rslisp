@@ -38,7 +38,10 @@ impl Span {
     }
 
     pub fn to(self, last: Span) -> Span {
-        Span { end: last.end, ..self }
+        Span {
+            end: last.end,
+            ..self
+        }
     }
 
     fn offset(position: usize) -> u32 {

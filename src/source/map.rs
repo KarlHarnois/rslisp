@@ -8,7 +8,8 @@ pub struct SourceMap {
 impl SourceMap {
     pub fn add(&mut self, name: impl Into<String>, text: impl Into<String>) -> SourceId {
         let id = SourceId::new(self.files.len());
-        self.files.push(SourceFile::new(id, name.into(), text.into()));
+        self.files
+            .push(SourceFile::new(id, name.into(), text.into()));
         id
     }
 
