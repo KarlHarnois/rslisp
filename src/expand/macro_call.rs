@@ -1,0 +1,161 @@
+use std::collections::HashMap;
+use std::rc::Rc;
+
+use super::Expander;
+use super::context::DefinitionContext;
+use super::problems::ExpandProblems;
+use super::shape::Shape;
+use crate::core::{BindingId, BindingKind, KernelForm, Lambda, Namespace};
+use crate::diagnostic::{Diagnostic, Label};
+use crate::interpret::{Closure, Env, Interpreter, Value};
+use crate::reader::Form;
+use crate::scope::{Phase, Scope};
+use crate::source::Span;
+
+enum MacroState {
+    Pending(Form),
+    Ready(Rc<Closure>),
+    Failed,
+}
+
+#[derive(Default)]
+pub struct MacroTable {
+    states: HashMap<BindingId, MacroState>,
+}
+
+impl MacroTable {
+    pub fn add_pending(&mut self, binding: BindingId, definition: Form) {
+        self.states.insert(binding, MacroState::Pending(definition));
+    }
+}
+
+impl Expander<'_> {
+    const MAX_EXPANSION_DEPTH: usize = 256;
+    const MACRO_PARAMETERS: usize = 1;
+
+    pub(super) fn expand_head(
+        &mut self,
+        form: Form,
+        mut context: Option<&mut DefinitionContext>,
+    ) -> Result<Form, Diagnostic> {
+        let mut form = form;
+        while let Some(binding) = self.macro_head(&form) {
+            form = self.apply_macro(binding, form, context.as_deref_mut())?;
+        }
+        Ok(form)
+    }
+
+    pub(super) fn macro_head(&self, form: &Form) -> Option<BindingId> {
+        let head = form.as_list()?.first()?.as_symbol()?;
+        let binding = self.try_resolve(head, Namespace::Value)?;
+        (self.kind(binding) == BindingKind::Macro).then_some(binding)
+    }
+
+    pub(super) fn apply_macro(
+        &mut self,
+        binding: BindingId,
+        form: Form,
+        context: Option<&mut DefinitionContext>,
+    ) -> Result<Form, Diagnostic> {
+        let call_site = form.span();
+        if self.expansion_depth >= Self::MAX_EXPANSION_DEPTH {
+            return Err(ExpandProblems::expansion_too_deep(call_site));
+        }
+        let closure = self.macro_closure(binding, call_site)?;
+        let (input, introduction) = self.prepare_input(form, context);
+        self.expansion_depth += 1;
+        let result = Interpreter::new(self, call_site).call(
+            &Value::Closure(closure),
+            vec![Value::Form(input)],
+            call_site,
+        );
+        self.expansion_depth -= 1;
+        let output = result.map_err(|diagnostic| Self::point_at_call(diagnostic, call_site))?;
+        Self::finish_output(output, introduction, call_site)
+    }
+
+    fn prepare_input(
+        &mut self,
+        mut form: Form,
+        context: Option<&mut DefinitionContext>,
+    ) -> (Form, Scope) {
+        let introduction = self.scopes.fresh();
+        form.flip_scope(introduction);
+        if let Some(context) = context {
+            let use_site = self.scopes.fresh();
+            form.add_scope(use_site);
+            context.record_use_site(use_site);
+        }
+        (form, introduction)
+    }
+
+    fn finish_output(
+        output: Value,
+        introduction: Scope,
+        call_site: Span,
+    ) -> Result<Form, Diagnostic> {
+        let Value::Form(mut form) = output else {
+            return Err(ExpandProblems::macro_result(output.describe(), call_site));
+        };
+        form.flip_scope(introduction);
+        form.relocate_outside(call_site);
+        Ok(form)
+    }
+
+    fn point_at_call(diagnostic: Diagnostic, call_site: Span) -> Diagnostic {
+        if call_site.contains(diagnostic.primary().span()) {
+            diagnostic
+        } else {
+            diagnostic.with_label(Label::new(call_site, "in this macro call"))
+        }
+    }
+
+    fn macro_closure(&mut self, binding: BindingId, span: Span) -> Result<Rc<Closure>, Diagnostic> {
+        let name = self.bindings.get(binding).name().to_string();
+        match self.macros.states.remove(&binding) {
+            Some(MacroState::Ready(closure)) => {
+                self.macros
+                    .states
+                    .insert(binding, MacroState::Ready(Rc::clone(&closure)));
+                Ok(closure)
+            }
+            Some(MacroState::Pending(definition)) => self.compile_macro(binding, &definition),
+            Some(MacroState::Failed) => {
+                self.macros.states.insert(binding, MacroState::Failed);
+                Err(ExpandProblems::broken_definition(&name, span))
+            }
+            None => Err(ExpandProblems::compile_time_cycle(&name, span)),
+        }
+    }
+
+    fn compile_macro(
+        &mut self,
+        binding: BindingId,
+        definition: &Form,
+    ) -> Result<Rc<Closure>, Diagnostic> {
+        let compiled = self.lower_macro_lambda(definition).map(|lambda| {
+            Rc::new(Closure {
+                lambda: Rc::new(lambda),
+                env: Env::default(),
+            })
+        });
+        let state = match &compiled {
+            Ok(closure) => MacroState::Ready(Rc::clone(closure)),
+            Err(_) => MacroState::Failed,
+        };
+        self.macros.states.insert(binding, state);
+        compiled
+    }
+
+    fn lower_macro_lambda(&mut self, definition: &Form) -> Result<Lambda, Diagnostic> {
+        let shape = Shape::new(KernelForm::Macro, definition);
+        let items = shape.at_least(2)?;
+        if shape.list(&items[1])?.len() != Self::MACRO_PARAMETERS {
+            return Err(shape.malformed(&items[1]));
+        }
+        let outer_phase = std::mem::replace(&mut self.phase, Phase::CompileTime);
+        let lambda = self.lower_lambda(&shape, &items[1], &items[2..]);
+        self.phase = outer_phase;
+        lambda
+    }
+}

@@ -183,6 +183,16 @@ impl KernelType {
         .chain(PrimitiveType::ALL.into_iter().map(KernelType::Primitive))
     }
 
+    pub fn shape(self) -> &'static str {
+        match self {
+            KernelType::Function => "(fn (argument ...) result)",
+            KernelType::Ref => "(ref type)",
+            KernelType::Mut => "(mut type)",
+            KernelType::Where => "(where (variable (variable trait ...) ...) type)",
+            KernelType::Hole | KernelType::Primitive(_) => self.name(),
+        }
+    }
+
     pub fn name(self) -> &'static str {
         match self {
             KernelType::Function => "fn",

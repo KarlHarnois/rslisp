@@ -1,6 +1,7 @@
 pub mod cli;
 pub mod core;
 pub mod diagnostic;
+pub mod expand;
 pub mod interpret;
 pub mod language;
 pub mod modules;

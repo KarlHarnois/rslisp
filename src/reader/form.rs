@@ -61,6 +61,17 @@ impl Form {
         self.update_scopes(&|scopes| scopes.remove(scope));
     }
 
+    pub fn relocate_outside(&mut self, region: Span) {
+        if !region.contains(self.span) {
+            self.span = region;
+        }
+        if let FormKind::List(items) = &mut self.kind {
+            items
+                .iter_mut()
+                .for_each(|item| item.relocate_outside(region));
+        }
+    }
+
     fn update_scopes(&mut self, update: &dyn Fn(&mut ScopeSet)) {
         match &mut self.kind {
             FormKind::Symbol(symbol) => update(symbol.scopes_mut()),

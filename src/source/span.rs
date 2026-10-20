@@ -37,6 +37,10 @@ impl Span {
         self.start as usize..self.end as usize
     }
 
+    pub fn contains(self, inner: Span) -> bool {
+        self.source == inner.source && self.start <= inner.start && inner.end <= self.end
+    }
+
     pub fn to(self, last: Span) -> Span {
         Span {
             end: last.end,
