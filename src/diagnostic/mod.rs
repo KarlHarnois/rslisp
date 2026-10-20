@@ -1,11 +1,13 @@
 mod code;
 mod collection;
+mod counted;
 mod label;
 mod render;
 mod similar_name;
 
 pub use code::DiagnosticCode;
 pub use collection::Diagnostics;
+pub use counted::Counted;
 pub use label::{Help, Label, Suggestion};
 pub use render::DiagnosticRenderer;
 pub use similar_name::SimilarName;

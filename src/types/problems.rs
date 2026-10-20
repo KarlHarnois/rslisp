@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::diagnostic::{Diagnostic, DiagnosticCode, Label, Suggestion};
+use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
 
 #[derive(Clone, Copy)]
@@ -63,15 +63,14 @@ impl TypeProblems {
     }
 
     pub fn wrong_argument_count(expected: usize, found: usize, span: Span) -> Diagnostic {
-        let arguments = if expected == 1 {
-            "argument"
-        } else {
-            "arguments"
-        };
+        let expected = Counted::noun(expected, "argument");
         Diagnostic::error(
             DiagnosticCode::WRONG_ARGUMENT_COUNT,
-            format!("this function takes {expected} {arguments} but {found} were given"),
-            Label::new(span, format!("expected {expected} {arguments}")),
+            format!(
+                "this function takes {expected} but {found} {} given",
+                Counted::was_or_were(found)
+            ),
+            Label::new(span, format!("expected {expected}")),
         )
     }
 

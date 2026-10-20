@@ -1,5 +1,5 @@
 use super::Value;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, Label};
+use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label};
 use crate::source::Span;
 
 pub struct InterpretProblems;
@@ -30,8 +30,12 @@ impl InterpretProblems {
     ) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::COMPILE_TIME_ERROR,
-            format!("`{function}` takes {expected} arguments but {found} were given"),
-            Label::new(span, format!("{found} arguments given")),
+            format!(
+                "`{function}` takes {} but {found} {} given",
+                Counted::noun(expected, "argument"),
+                Counted::was_or_were(found)
+            ),
+            Label::new(span, format!("{} given", Counted::noun(found, "argument"))),
         )
     }
 
