@@ -121,10 +121,10 @@ Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&
 - **Written types.** A type written without `ref` or `mut`, in a `type` signature or a binder annotation, means owned, as in Rust.
 - **Call sites.** An argument is borrowed automatically when the parameter is a reference. A method-style template such as `"{0}.clone()"` borrows its receiver the way Rust's method calls do.
 - **Fields.** Reading a Copy field copies it. Reading any other field borrows it: `(field person name)` has type `(ref string)`.
-- **No hidden copies.** Copying heap data is always written `(clone x)`. `(ref x)` and `(mut x)` force a borrow.
+- **No hidden copies.** Copying heap data is always written `(clone x)`, which needs the `clone` trait. Every struct implements it, because `struct` derives `Clone`. `(ref x)` and `(mut x)` force a borrow.
 - **Moves.** The compiler reports a use after move, points at the move, and suggests `(clone x)`. A move in either branch of an `if` counts.
 - **Borrowed results.** A function may return a borrow when it has one borrowed parameter, or none for a string literal. With more than one, it reports an error, because lifetimes cannot be written yet.
-- **Closures.** A function-typed parameter is `impl Fn`. A closure returned from a function is a `move` closure.
+- **Closures.** A function-typed parameter is `impl Fn`. A closure returned from a function is a `move` closure. A closure that only borrows or copies its captures is Copy and can be passed more than once. One that moves a capture can be used once.
 - **rustc.** Any lifetime or aliasing error that slips past these checks comes from rustc, mapped back to the source and the user's names.
 
 ## Macros
