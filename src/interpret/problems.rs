@@ -5,6 +5,9 @@ use crate::source::Span;
 pub struct InterpretProblems;
 
 impl InterpretProblems {
+    pub const MISSING_TWIN_HELP: &'static str =
+        "use a `code` built-in in macro code, or give the `rust` form a twin";
+
     pub fn wrong_argument(
         function: &str,
         position: usize,
@@ -80,6 +83,15 @@ impl InterpretProblems {
             format!("{what} only exist at runtime"),
             Label::new(span, "used at compile time here"),
         )
+    }
+
+    pub fn no_compile_time_version(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::NO_COMPILE_TIME_TWIN,
+            "this Rust code has no compile-time version",
+            Label::new(span, "used by macro code here"),
+        )
+        .with_help(Self::MISSING_TWIN_HELP)
     }
 
     pub fn too_deep(span: Span) -> Diagnostic {

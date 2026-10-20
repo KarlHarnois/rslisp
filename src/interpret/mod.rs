@@ -10,7 +10,7 @@ pub use value::{Closure, Env, Value};
 use std::rc::Rc;
 
 use crate::core::{BindingId, Block, BodyItem, Expr, ExprKind, Literal, RustTemplate};
-use crate::diagnostic::{Diagnostic, DiagnosticCode, Label};
+use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
 use crate::source::Span;
 use crate::stack::DeepRecursion;
@@ -166,14 +166,7 @@ impl<'h> Interpreter<'h> {
     ) -> Result<Value, Diagnostic> {
         match &template.twin {
             Some(twin) => self.eval(twin, env),
-            None => Err(Diagnostic::error(
-                DiagnosticCode::NO_COMPILE_TIME_TWIN,
-                "this Rust code has no compile-time version",
-                Label::new(span, "used at compile time here"),
-            )
-            .with_help(
-                "give the `rust` form a twin from the `code` module, or avoid it in macro code",
-            )),
+            None => Err(InterpretProblems::no_compile_time_version(span)),
         }
     }
 

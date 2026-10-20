@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use crate::core::{KernelForm, KernelType, ModulePath, Namespace};
 use crate::diagnostic::{Diagnostic, DiagnosticCode, Label, Suggestion};
+use crate::interpret::InterpretProblems;
 use crate::source::Span;
 
 pub struct ExpandProblems;
@@ -253,7 +254,7 @@ impl ExpandProblems {
             defined,
             format!("`{name}` is Rust code with no twin from the `code` module"),
         ))
-        .with_help("use a `code` built-in in macro code, or give the `rust` form a twin")
+        .with_help(InterpretProblems::MISSING_TWIN_HELP)
     }
 
     pub fn not_at_compile_time(name: &str, span: Span) -> Diagnostic {
