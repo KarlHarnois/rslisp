@@ -2,7 +2,7 @@
           symbol? list? symbol-name string same-binding? fail
           value-eq number-add number-sub number-lt bool-false)
 
-(export defrule defmacro template)
+(export defrule defmacro template map-list)
 
 (def map-list
   (fn (function items)

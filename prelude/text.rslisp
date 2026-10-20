@@ -1,0 +1,49 @@
+(use prelude/macros defmacro map-list)
+(use code list prepend length string symbol number-add number-sub number-lt)
+
+(export display to-string print println str char)
+
+(rust-trait display "std::fmt::Display"
+  bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
+
+(def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
+(def print (rust "print!(\"{{}}\", {0})" (where ((a display)) (fn ((ref a)) unit))))
+(def println (rust "println!(\"{{}}\", {0})" (where ((a display)) (fn ((ref a)) unit))))
+
+(def repeat-text
+  (fn (text count)
+    (if (number-lt 0 count)
+        (string text (repeat-text text (number-sub count 1)))
+        "")))
+
+(def placeholders
+  (fn (index count)
+    (if (number-lt index count)
+        (string ", {" index "}" (placeholders (number-add index 1) count))
+        "")))
+
+(def part-types
+  (fn (index count)
+    (if (number-lt index count)
+        (prepend (symbol (quote part-type) "part-type-" index) (part-types (number-add index 1) count))
+        (list))))
+
+(def format-template
+  (fn (count)
+    (string "format!(\"" (repeat-text "{{}}" count) "\"" (placeholders 0 count) ")")))
+
+(def format-type
+  (fn (count)
+    (let variables (part-types 0 count))
+    (list (quote where)
+          (map-list (fn (variable) (list variable (quote display))) variables)
+          (list (quote fn)
+                (map-list (fn (variable) (list (quote ref) variable)) variables)
+                (quote string)))))
+
+(defmacro str (parts ...)
+  (let count (length parts))
+  (prepend (list (quote rust) (format-template count) (format-type count)) parts))
+
+(defmacro char (text)
+  (list (quote rust) (string "'" text "'") (quote char)))

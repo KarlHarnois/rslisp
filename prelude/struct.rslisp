@@ -1,0 +1,23 @@
+(use prelude/macros defmacro template map-list)
+(use prelude/syntax defn)
+(use code first list symbol symbol-name)
+
+(export defstruct)
+
+(def field-initializer
+  (fn (field)
+    (list (first field) (first field))))
+
+(def accessor
+  (fn (name field)
+    (let accessor-name (symbol name (symbol-name name) "-" (first field)))
+    (template
+      (do (type (unquote accessor-name) (fn ((ref (unquote name))) _))
+          (defn (unquote accessor-name) (instance) (field instance (unquote (first field))))))))
+
+(defmacro defstruct (name fields ...)
+  (template
+    (do (struct (unquote name) (splice fields))
+        (defn (unquote (symbol name "make-" name)) (unquote (map-list first fields))
+          (new (unquote name) (splice (map-list field-initializer fields))))
+        (splice (map-list (fn (field) (accessor name field)) fields)))))

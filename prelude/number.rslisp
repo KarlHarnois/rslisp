@@ -1,0 +1,72 @@
+(use prelude/macros defrule)
+(use prelude/logic and)
+(use code number-add number-sub number-mul number-div number-rem
+          number-lt number-le number-gt number-ge value-eq bool-not)
+
+(export number signed partial-eq partial-ord
+        add sub mul div rem neg lt le gt ge eq ne
+        + - * / < <= > >= = !=)
+
+(rust-trait number "rt::Number" i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
+(rust-trait signed "rt::Signed" i8 i16 i32 i64 i128 isize f32 f64)
+(rust-trait partial-eq "PartialEq"
+  bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
+(rust-trait partial-ord "PartialOrd"
+  char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
+
+(def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n)) number-add))
+(def sub (rust "{0} - {1}" (where ((n number)) (fn (n n) n)) number-sub))
+(def mul (rust "{0} * {1}" (where ((n number)) (fn (n n) n)) number-mul))
+(def div (rust "{0} / {1}" (where ((n number)) (fn (n n) n)) number-div))
+(def rem (rust "{0} % {1}" (where ((n number)) (fn (n n) n)) number-rem))
+(def neg (rust "-{0}" (where ((n number signed)) (fn (n) n)) (fn (value) (number-sub 0 value))))
+
+(def lt (rust "{0} < {1}" (where ((a partial-ord)) (fn (a a) bool)) number-lt))
+(def le (rust "{0} <= {1}" (where ((a partial-ord)) (fn (a a) bool)) number-le))
+(def gt (rust "{0} > {1}" (where ((a partial-ord)) (fn (a a) bool)) number-gt))
+(def ge (rust "{0} >= {1}" (where ((a partial-ord)) (fn (a a) bool)) number-ge))
+(def eq (rust "{0} == {1}" (where ((a partial-eq)) (fn (a a) bool)) value-eq))
+(def ne (rust "{0} != {1}" (where ((a partial-eq)) (fn (a a) bool))
+          (fn (left right) (bool-not (value-eq left right)))))
+
+(defrule +
+  ((a) a)
+  ((a b) (add a b))
+  ((a b c more ...) (+ (add a b) c more ...)))
+
+(defrule -
+  ((a) (neg a))
+  ((a b) (sub a b))
+  ((a b c more ...) (- (sub a b) c more ...)))
+
+(defrule *
+  ((a) a)
+  ((a b) (mul a b))
+  ((a b c more ...) (* (mul a b) c more ...)))
+
+(defrule /
+  ((a b) (div a b))
+  ((a b c more ...) (/ (div a b) c more ...)))
+
+(defrule <
+  ((a b) (lt a b))
+  ((a b c more ...) (do (let left a) (let middle b) (and (lt left middle) (< middle c more ...)))))
+
+(defrule <=
+  ((a b) (le a b))
+  ((a b c more ...) (do (let left a) (let middle b) (and (le left middle) (<= middle c more ...)))))
+
+(defrule >
+  ((a b) (gt a b))
+  ((a b c more ...) (do (let left a) (let middle b) (and (gt left middle) (> middle c more ...)))))
+
+(defrule >=
+  ((a b) (ge a b))
+  ((a b c more ...) (do (let left a) (let middle b) (and (ge left middle) (>= middle c more ...)))))
+
+(defrule =
+  ((a b) (eq a b))
+  ((a b c more ...) (do (let left a) (let middle b) (and (eq left middle) (= middle c more ...)))))
+
+(defrule !=
+  ((a b) (ne a b)))

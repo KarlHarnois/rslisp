@@ -25,7 +25,7 @@ impl ModuleSources {
     pub const CODE: &str = "code";
     pub const PRELUDE: &str = "prelude";
     const PRELUDE_DIRECTORY: &str = "prelude/";
-    const PRELUDE_FILES: [(&str, &str); 4] = [
+    const PRELUDE_FILES: [(&str, &str); 7] = [
         ("prelude", include_str!("../../prelude/prelude.rslisp")),
         (
             "prelude/macros",
@@ -35,6 +35,15 @@ impl ModuleSources {
         (
             "prelude/syntax",
             include_str!("../../prelude/syntax.rslisp"),
+        ),
+        (
+            "prelude/number",
+            include_str!("../../prelude/number.rslisp"),
+        ),
+        ("prelude/text", include_str!("../../prelude/text.rslisp")),
+        (
+            "prelude/struct",
+            include_str!("../../prelude/struct.rslisp"),
         ),
     ];
 
