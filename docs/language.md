@@ -144,7 +144,20 @@ The prelude builds three tools on top of `macro`:
 | `template` | `(template (def (unquote name) (splice body)))` |
 | `defrule` | `(defrule unless ((test body ...) (if test (do) (do body ...))))` |
 
-A `defrule` clause is a pattern and a template. In a pattern, `name ...` matches zero or more forms.
+A `defrule` clause is a pattern and a template. In a pattern, `name ...` matches zero or more forms, at any depth, and `(quote name)` matches the symbol `name` itself. A `defmacro` parameter list is a pattern in the same language.
+
+### The `code` module
+
+The compiler provides the `code` module for macro bodies. Code that uses it exists only at compile time.
+
+| Built-ins | Purpose |
+|---|---|
+| `first rest list prepend concat length empty? nth take drop` | Build and take apart lists of forms. |
+| `symbol? list? string? number?` | Test what kind of form a value is. |
+| `symbol-name`, `(symbol context part...)`, `(string part...)` | Read and build names and strings. |
+| `(same-binding? left right)` | Test whether two symbols refer to the same binding. |
+| `(fail "message" form)` | Stop expansion with an error at `form`. |
+| `number-add number-sub number-mul number-div number-rem number-lt number-le number-gt number-ge value-eq bool-not bool-true bool-false` | Compile-time twins of the prelude's Rust interop. |
 
 ### Hygiene
 
@@ -155,6 +168,7 @@ Macros are hygienic. The expander uses sets of scopes:
 - Each macro call adds a fresh introduction scope to its input and flips it on its output, so only the symbols the macro introduced carry it.
 - A macro call in a definition context also adds a use-site scope to its input. Binders that a definition introduces lose their use-site scopes.
 - A reference resolves to the binding with the same name and namespace whose scope set is the largest subset of the reference's scopes.
+- `quote` removes the scopes of enclosing `fn`, `let` and `where` forms from its datum. Quoted names in different helper functions can then refer to each other, and a macro's local variables never leak into the code it returns.
 
 Hygiene gives three guarantees:
 
@@ -212,8 +226,8 @@ Field names are not hygienic. They are looked up through the struct type.
 | Milestone | Status |
 |---|---|
 | 1. Scaffold | done |
-| 2. Reader and diagnostics | planned |
-| 3. Expander, hygiene and interpreter | planned |
+| 2. Reader and diagnostics | done |
+| 3. Expander, hygiene and interpreter | done |
 | 4. Modules | planned |
 | 5. Types | planned |
 | 6. Emit and build | planned |
