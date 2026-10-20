@@ -228,7 +228,7 @@ Field names are not hygienic. They are looked up through the struct type.
 | 1. Scaffold | done |
 | 2. Reader and diagnostics | done |
 | 3. Expander, hygiene and interpreter | done |
-| 4. Modules | planned |
+| 4. Modules | done |
 | 5. Types | planned |
 | 6. Emit and build | planned |
 | 7. Ownership | planned |
