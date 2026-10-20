@@ -1,6 +1,7 @@
 use std::fmt;
 use std::rc::Rc;
 
+use crate::scope::{Scope, ScopeSet};
 use crate::source::Span;
 
 #[derive(Clone, Debug)]
@@ -43,6 +44,30 @@ impl Form {
             _ => None,
         }
     }
+
+    pub fn with_span(self, span: Span) -> Self {
+        Self { span, ..self }
+    }
+
+    pub fn add_scope(&mut self, scope: Scope) {
+        self.update_scopes(&|scopes| scopes.add(scope));
+    }
+
+    pub fn flip_scope(&mut self, scope: Scope) {
+        self.update_scopes(&|scopes| scopes.flip(scope));
+    }
+
+    pub fn remove_scope(&mut self, scope: Scope) {
+        self.update_scopes(&|scopes| scopes.remove(scope));
+    }
+
+    fn update_scopes(&mut self, update: &dyn Fn(&mut ScopeSet)) {
+        match &mut self.kind {
+            FormKind::Symbol(symbol) => update(symbol.scopes_mut()),
+            FormKind::List(items) => items.iter_mut().for_each(|item| item.update_scopes(update)),
+            FormKind::String(_) | FormKind::Number(_) => {}
+        }
+    }
 }
 
 impl fmt::Display for Form {
@@ -66,15 +91,35 @@ impl Form {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Symbol {
     name: Rc<str>,
+    scopes: ScopeSet,
 }
 
 impl Symbol {
     pub fn new(name: impl Into<Rc<str>>) -> Self {
-        Self { name: name.into() }
+        Self::with_scopes(name, ScopeSet::default())
+    }
+
+    pub fn with_scopes(name: impl Into<Rc<str>>, scopes: ScopeSet) -> Self {
+        Self {
+            name: name.into(),
+            scopes,
+        }
     }
 
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    pub fn shared_name(&self) -> Rc<str> {
+        Rc::clone(&self.name)
+    }
+
+    pub fn scopes(&self) -> &ScopeSet {
+        &self.scopes
+    }
+
+    pub fn scopes_mut(&mut self) -> &mut ScopeSet {
+        &mut self.scopes
     }
 }
 
