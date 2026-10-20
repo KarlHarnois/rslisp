@@ -231,5 +231,5 @@ Field names are not hygienic. They are looked up through the struct type.
 | 3. Expander, hygiene and interpreter | done |
 | 4. Modules | done |
 | 5. Types | done |
-| 6. Emit and build | planned |
+| 6. Emit and build | done |
 | 7. Ownership | planned |
