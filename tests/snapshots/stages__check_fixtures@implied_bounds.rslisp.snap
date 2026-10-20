@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/implied_bounds.rslisp
+---
+error[L0404]: `n` might not implement `number`
+ --> check/implied_bounds.rslisp:8:27
+  |
+8 | (defn square-shown (x) (* x x))
+  |                           ^ this needs `number`
+  |
+  = help: add the trait to the signature's `where`: `(n number)`

@@ -1,0 +1,10 @@
+(type increment (where ((n number)) (fn (n) n)))
+(defn increment (x) (+ x 1))
+
+(type halve (where ((n float)) (fn (n) n)))
+(defn halve (x) (* x 0.5))
+
+(type nudge (where ((n signed)) (fn (n) n)))
+(defn nudge (x) (- x -100))
+
+(defn plain-increment (x) (+ x 1))

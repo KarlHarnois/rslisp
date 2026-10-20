@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/generic_literals.rslisp
+---
+42
+2.5
+255
+2.5
+1.5
+half is 4.5

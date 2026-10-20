@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/generic_literals.rslisp
+---
+(type increment (where ((n number)) (fn (n) n)))
+(type halve (where ((n float)) (fn (n) n)))
+(type nudge (where ((n signed)) (fn (n) n)))
+(type plain-increment (fn (i64) i64))

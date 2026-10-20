@@ -1,0 +1,40 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/generic_literal_errors.rslisp
+---
+error[L0414]: `1` cannot have type `a`
+ --> check/generic_literal_errors.rslisp:2:16
+  |
+2 | (defn pick (x) 1)
+  |                ^ this literal has type `a`
+  |
+  = note: `a` has no trait, so it can be any type, including `string`
+  = help: give `a` a numeric trait in the signature, such as `(a number)`
+
+error[L0414]: `300` does not fit every type `n` can be
+ --> check/generic_literal_errors.rslisp:5:21
+  |
+5 | (defn bump (x) (+ x 300))
+  |                     ^^^ `n` can be `i8`, which cannot hold this value
+  |
+  = note: `n` can be any of: i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+  = help: narrow `n` with a trait whose types all hold this value
+
+error[L0414]: `0.5` does not fit every type `n` can be
+ --> check/generic_literal_errors.rslisp:8:21
+  |
+8 | (defn half (x) (* x 0.5))
+  |                     ^^^ `n` can be `i8`, which cannot hold this value
+  |
+  = note: `n` can be any of: i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+  = help: narrow `n` with a trait whose types all hold this value
+
+error[L0414]: `10` does not fit every type `a` can be
+  --> check/generic_literal_errors.rslisp:11:26
+   |
+11 | (defn below-ten (x) (< x 10))
+   |                          ^^ `a` can be `char`, which cannot hold this value
+   |
+   = note: `a` can be any of: char, str, string, (ref str), i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+   = help: narrow `a` with a trait whose types all hold this value

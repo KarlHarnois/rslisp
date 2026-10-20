@@ -53,13 +53,14 @@ error[L0409]: missing fields `y` in `point`
 8 | (defn missing-fields () (new point (x 1)))
   |                         ^^^^^^^^^^^^^^^^^ every field needs a value
 
-error[L0401]: mismatched types
+error[L0414]: `1` cannot have type `a`
   --> check/type_errors.rslisp:10:21
    |
 10 | (defn keeps (value) 1)
-   |                     ^ expected `a`, found an integer
+   |                     ^ this literal has type `a`
    |
-   = note: `a` is a type parameter, so this code must work for every type `a` stands for
+   = note: `a` has no trait, so it can be any type, including `string`
+   = help: give `a` a numeric trait in the signature, such as `(a number)`
 
 error[L0406]: the literal `300` does not fit in `u8`
   --> check/type_errors.rslisp:12:22

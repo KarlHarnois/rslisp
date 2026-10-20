@@ -1,0 +1,71 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/generic_literals.rslisp
+---
+fn increment<N: crate::rt::Number>(x: N) -> N {
+    x + N::from_literal(1)
+}
+
+fn halve<N: crate::rt::Float>(x: N) -> N {
+    x * N::from_float_literal(0.5)
+}
+
+fn describe_half<N: crate::rt::Float + std::fmt::Display>(x: N) -> String {
+    format!("{}{}", "half is ", &halve(x))
+}
+
+fn main() {
+    println!("{}", &increment(41));
+    println!("{}", &increment(1.5));
+    println!("{}", &increment({
+        let result: u8 = 254;
+        result
+    }));
+    println!("{}", &halve(5.0));
+    println!("{}", &halve({
+        let result_2: f32 = 3.0;
+        result_2
+    }));
+    println!("{}", &describe_half(9.0))
+}
+
+mod rt {
+    use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
+
+    pub trait Number:
+        Copy + PartialOrd + Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Div<Output = Self> + Rem<Output = Self>
+    {
+        fn from_literal(value: i128) -> Self;
+
+        fn from_float_literal(value: f64) -> Self;
+    }
+
+    pub trait Signed: Number + Neg<Output = Self> {}
+
+    pub trait Float: Signed {}
+
+    macro_rules! numbers {
+        ($($number:ty),*) => {
+            $(
+                impl Number for $number {
+                    fn from_literal(value: i128) -> Self {
+                        value as Self
+                    }
+
+                    fn from_float_literal(value: f64) -> Self {
+                        value as Self
+                    }
+                }
+            )*
+        };
+    }
+
+    numbers!(i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64);
+
+    impl<T> Signed for T where T: Number + Neg<Output = T> {}
+
+    impl Float for f32 {}
+
+    impl Float for f64 {}
+}

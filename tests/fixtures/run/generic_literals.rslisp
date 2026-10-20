@@ -1,0 +1,16 @@
+(type increment (where ((n number)) (fn (n) n)))
+(defn increment (x) (+ x 1))
+
+(type halve (where ((n float)) (fn (n) n)))
+(defn halve (x) (* x 0.5))
+
+(type describe-half (where ((n float)) (fn (n) string)))
+(defn describe-half (x) (str "half is " (halve x)))
+
+(defn main ()
+  (println (increment 41))
+  (println (increment 1.5))
+  (println (increment (the u8 254)))
+  (println (halve 5.0))
+  (println (halve (the f32 3)))
+  (println (describe-half 9.0)))

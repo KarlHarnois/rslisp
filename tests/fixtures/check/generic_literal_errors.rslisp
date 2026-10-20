@@ -1,0 +1,11 @@
+(type pick (where (a) (fn (a) a)))
+(defn pick (x) 1)
+
+(type bump (where ((n number)) (fn (n) n)))
+(defn bump (x) (+ x 300))
+
+(type half (where ((n number)) (fn (n) n)))
+(defn half (x) (* x 0.5))
+
+(type below-ten (where ((a partial-ord)) (fn (a) bool)))
+(defn below-ten (x) (< x 10))
