@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/import_cycle.rslisp
+---
+error[L0206]: importing `cycle/first` creates a cycle
+ --> expand/cycle/second.rslisp:1:6
+  |
+1 | (use cycle/first first-value)
+  |      ^^^^^^^^^^^ this import closes the cycle
+  |
+  = note: the modules import each other: import_cycle -> cycle/first -> cycle/second -> cycle/first
+  = help: move the shared definitions into a module that both can import

@@ -1,0 +1,2 @@
+(use geometry/shapes checked make-sqare)
+(use geometry/missing anything)

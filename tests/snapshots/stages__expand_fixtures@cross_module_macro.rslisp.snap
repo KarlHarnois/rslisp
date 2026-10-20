@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/cross_module_macro.rslisp
+---
+(def call-twice (fn (value) value))
+(def quadruple (fn (function value_2) (call-twice_2 function value_2)))

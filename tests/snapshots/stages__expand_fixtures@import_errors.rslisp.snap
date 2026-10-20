@@ -1,0 +1,31 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/import_errors.rslisp
+---
+error[L0205]: module `geometry/shapes` does not export `checked`
+ --> expand/import_errors.rslisp:1:22
+  |
+1 | (use geometry/shapes checked make-sqare)
+  |                      ^^^^^^^ not exported
+  |
+  = help: add `checked` to the `export` list of `geometry/shapes`
+
+error[L0205]: module `geometry/shapes` does not export `make-sqare`
+ --> expand/import_errors.rslisp:1:30
+  |
+1 | (use geometry/shapes checked make-sqare)
+  |                              ^^^^^^^^^^ not exported
+  |
+help: an export with a similar name exists
+  |
+1 | (use geometry/shapes checked make-square)
+  |                                     +
+
+error[L0204]: cannot find module `geometry/missing`
+ --> expand/import_errors.rslisp:2:6
+  |
+2 | (use geometry/missing anything)
+  |      ^^^^^^^^^^^^^^^^ no module with this path
+  |
+  = help: a module path names a file relative to the entry file, without its extension

@@ -1,0 +1,5 @@
+(use geometry/shapes make-square square-side square)
+
+(type unit-square (fn () square))
+(def unit-square (fn () (make-square 1)))
+(def side-of-unit (fn () (square-side (unit-square))))

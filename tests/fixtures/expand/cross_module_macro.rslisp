@@ -1,0 +1,4 @@
+(use tools/doubling double-call)
+
+(def call-twice (fn (value) value))
+(def quadruple (fn (function value) (double-call function value)))

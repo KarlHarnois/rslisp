@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/prelude_shadowing.rslisp
+---
+(def not (fn (value) value))
+(def checks (fn (flag) (when (not flag))))

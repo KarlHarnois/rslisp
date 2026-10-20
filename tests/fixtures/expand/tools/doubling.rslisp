@@ -1,0 +1,6 @@
+(export double-call)
+
+(def call-twice (fn (function value) (function (function value))))
+
+(defrule double-call
+  ((function value) (call-twice function value)))
