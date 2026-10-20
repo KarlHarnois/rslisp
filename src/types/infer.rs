@@ -204,11 +204,13 @@ impl TypeChecker {
             (None, None) => self.unifier.fresh(),
         };
         self.locals.insert(param.binding, ty.clone());
+        let written_by_signature = expected
+            .is_some_and(|expected| !matches!(self.unifier.shallow(expected), Type::Var(_)));
         Ok(TypedBinder {
             binding: param.binding,
             ty,
             span: param.span,
-            annotated: param.annotation.is_some(),
+            annotated: param.annotation.is_some() || written_by_signature,
         })
     }
 
@@ -311,21 +313,39 @@ impl TypeChecker {
 
     fn pass_argument(&mut self, parameter: &Type, value: &TypedExpr) -> Result<Borrow, Diagnostic> {
         let argument = self.unifier.shallow(&value.ty);
-        let is_owned_value = match &argument {
-            Type::Var(var) => self.unifier.literal_kind(*var).is_some(),
-            other => !other.is_reference(),
-        };
-        match self.unifier.shallow(parameter) {
-            Type::Ref(inner) if is_owned_value => self
-                .expect(&inner, &argument, value.span, MismatchContext::Plain)
-                .map(|()| Borrow::Shared),
-            Type::Mut(inner) if is_owned_value => self
-                .expect(&inner, &argument, value.span, MismatchContext::Plain)
-                .map(|()| Borrow::Mutable),
-            _ => self
-                .expect(parameter, &value.ty, value.span, MismatchContext::Plain)
-                .map(|()| Borrow::None),
+        let parameter = self.unifier.shallow(parameter);
+        match (&parameter, &argument) {
+            (Type::Ref(inner), found) if !found.is_reference() => {
+                self.pass(inner, found, value.span, Borrow::Shared)
+            }
+            (Type::Mut(inner), found) if !found.is_reference() => {
+                self.pass(inner, found, value.span, Borrow::Mutable)
+            }
+            (expected, Type::Ref(inner)) if Self::is_known_value(expected) => {
+                let borrow = if self.copy_rules().is_copy(inner) {
+                    Borrow::Deref
+                } else {
+                    Borrow::Passthrough
+                };
+                self.pass(expected, inner, value.span, borrow)
+            }
+            (expected, found) => self.pass(expected, found, value.span, Borrow::None),
         }
+    }
+
+    fn pass(
+        &mut self,
+        expected: &Type,
+        found: &Type,
+        span: Span,
+        borrow: Borrow,
+    ) -> Result<Borrow, Diagnostic> {
+        self.expect(expected, found, span, MismatchContext::Plain)
+            .map(|()| borrow)
+    }
+
+    fn is_known_value(parameter: &Type) -> bool {
+        matches!(parameter, Type::Struct(_) | Type::Primitive(_))
     }
 
     fn infer_if(
@@ -445,6 +465,11 @@ impl TypeChecker {
                 label.span,
                 SimilarName::closest(&label.name, &names),
             ));
+        };
+        let ty = if self.copy_rules().is_copy(&ty) {
+            ty
+        } else {
+            Type::Ref(Box::new(ty))
         };
         Ok(TypedExpr {
             kind: TypedExprKind::Field(Box::new(value), label.clone()),

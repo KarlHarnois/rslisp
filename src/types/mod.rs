@@ -1,4 +1,5 @@
 mod checker;
+mod copy;
 mod display;
 mod finalize;
 mod graph;
@@ -12,6 +13,7 @@ mod typed;
 mod unifier;
 
 pub use checker::TypeChecker;
+pub use copy::CopyRules;
 pub use display::TypeDisplay;
 pub use structs::{StructDefinition, StructTable};
 pub use traits::{RustTrait, TraitTable};

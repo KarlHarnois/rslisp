@@ -27,6 +27,7 @@ pub struct ExpressionEmitter<'a> {
 impl<'a> ExpressionEmitter<'a> {
     const ETA_PARAMETER: &'static str = "argument_";
     const I64_SUFFIX: &'static str = "_i64";
+    const RECEIVER: &'static str = "{0}.";
 
     pub fn new(
         program: &'a TypedProgram,
@@ -53,6 +54,28 @@ impl<'a> ExpressionEmitter<'a> {
             self.program.bindings.get(param.binding).name(),
         );
         format!("{name}: {}", self.types().show(&param.ty, position))
+    }
+
+    pub fn function_body(&mut self, block: &TypedBlock) -> Vec<Fragment> {
+        let Some((TypedBodyItem::Expr(tail), leading)) = block.items.split_last() else {
+            return self.statements(block);
+        };
+        let TypedExprKind::Fn(lambda) = &tail.kind else {
+            return self.statements(block);
+        };
+        let mut fragments = self.statements(&TypedBlock {
+            items: leading.to_vec(),
+        });
+        fragments.push(Fragment::Newline);
+        fragments.extend(
+            Code::joined(
+                vec![Code::atom("move "), self.closure(lambda)],
+                Precedence::Operator,
+            )
+            .spanned(tail.span)
+            .fragments,
+        );
+        fragments
     }
 
     pub fn statements(&mut self, block: &TypedBlock) -> Vec<Fragment> {
@@ -82,7 +105,7 @@ impl<'a> ExpressionEmitter<'a> {
             TypedExprKind::Block(block) => self.block(block),
             TypedExprKind::If(test, then, otherwise) => self.conditional(test, then, otherwise),
             TypedExprKind::New(binding, fields) => self.construction(*binding, fields),
-            TypedExprKind::Field(value, label) => self.field_access(value, label),
+            TypedExprKind::Field(value, label) => self.field_access(value, label, &expr.ty),
             TypedExprKind::Rust(template) => self.rust_value(template, &expr.ty, expr.span),
         }
     }
@@ -218,9 +241,15 @@ impl<'a> ExpressionEmitter<'a> {
             && arguments
                 .iter()
                 .all(|argument| matches!(argument.value.kind, TypedExprKind::Literal(_)));
+        let has_receiver = template
+            .as_ref()
+            .is_some_and(|template| template.template.starts_with(Self::RECEIVER));
         let arguments: Vec<Code> = arguments
             .iter()
-            .map(|argument| self.argument(argument, unpinned))
+            .enumerate()
+            .map(|(position, argument)| {
+                self.argument(argument, unpinned, has_receiver && position == 0)
+            })
             .collect();
         if let Some(template) = template {
             return match Template::parse(&template.template) {
@@ -255,14 +284,17 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn argument(&mut self, argument: &TypedArgument, unpinned: bool) -> Code {
+    fn argument(&mut self, argument: &TypedArgument, unpinned: bool, is_receiver: bool) -> Code {
         let value = self
             .expr_in(&argument.value, unpinned)
             .spanned(argument.value.span);
+        let already_borrowed = argument.value.ty.is_reference();
         let prefix = match argument.borrow {
-            Borrow::None => return value,
+            Borrow::None | Borrow::Passthrough => return value,
+            Borrow::Shared | Borrow::Mutable if already_borrowed || is_receiver => return value,
             Borrow::Shared => "&",
             Borrow::Mutable => "&mut ",
+            Borrow::Deref => "*",
         };
         let value = if matches!(value.precedence, Precedence::Operator | Precedence::Block) {
             value.parenthesized()
@@ -374,19 +406,43 @@ impl<'a> ExpressionEmitter<'a> {
         Code::joined(parts, Precedence::Atom)
     }
 
-    fn field_access(&mut self, value: &TypedExpr, label: &FieldLabel) -> Code {
+    fn field_access(&mut self, value: &TypedExpr, label: &FieldLabel, result: &Type) -> Code {
+        let borrows_field = result.is_reference()
+            && !self
+                .declared_field_type(value, label)
+                .is_some_and(|declared| declared.is_reference());
         let value = self.expr(value);
         let value = if value.is_atomic() {
             value
         } else {
             value.parenthesized()
         };
-        Code::joined(
+        let access = Code::joined(
             vec![
                 value,
                 Code::atom(format!(".{}", NameMangler::value(&label.name))),
             ],
             Precedence::Atom,
-        )
+        );
+        if borrows_field {
+            Code::joined(vec![Code::atom("&"), access], Precedence::Prefix)
+        } else {
+            access
+        }
+    }
+
+    fn declared_field_type(&self, value: &TypedExpr, label: &FieldLabel) -> Option<Type> {
+        let mut owner = &value.ty;
+        while let Type::Ref(inner) | Type::Mut(inner) = owner {
+            owner = inner;
+        }
+        let Type::Struct(binding) = owner else {
+            return None;
+        };
+        self.program
+            .structs
+            .get(*binding)?
+            .field(&label.name)
+            .cloned()
     }
 }

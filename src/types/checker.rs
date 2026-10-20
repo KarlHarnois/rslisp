@@ -139,6 +139,10 @@ impl TypeChecker {
             .collect()
     }
 
+    pub(super) fn copy_rules(&self) -> super::copy::CopyRules<'_> {
+        super::copy::CopyRules::new(&self.traits, &self.generics)
+    }
+
     pub(super) fn display(&self) -> TypeDisplay<'_> {
         TypeDisplay::new(&self.bindings, &self.generics)
     }

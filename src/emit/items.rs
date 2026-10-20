@@ -157,7 +157,7 @@ impl<'a> ItemEmitter<'a> {
             info.name,
             params.join(", ")
         );
-        let body = emitter.statements(&lambda.body);
+        let body = emitter.function_body(&lambda.body);
         self.absorb(emitter);
         vec![Fragment::Spanned(
             definition.span,
