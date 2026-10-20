@@ -29,6 +29,9 @@ impl Fixture {
 
     fn display_name(path: &Path) -> String {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join(Self::FIXTURE_ROOT);
-        path.strip_prefix(root).unwrap_or(path).display().to_string()
+        path.strip_prefix(root)
+            .unwrap_or(path)
+            .display()
+            .to_string()
     }
 }
