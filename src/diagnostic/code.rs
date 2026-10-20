@@ -37,7 +37,6 @@ impl DiagnosticCode {
     pub const WRONG_ARGUMENT_COUNT: Self = Self(Cow::Borrowed("L0402"));
     pub const NOT_A_FUNCTION: Self = Self(Cow::Borrowed("L0403"));
     pub const MISSING_TRAIT: Self = Self(Cow::Borrowed("L0404"));
-    pub const NOT_A_NUMBER: Self = Self(Cow::Borrowed("L0405"));
     pub const LITERAL_OUT_OF_RANGE: Self = Self(Cow::Borrowed("L0406"));
     pub const CANNOT_INFER: Self = Self(Cow::Borrowed("L0407"));
     pub const UNKNOWN_FIELD: Self = Self(Cow::Borrowed("L0408"));
