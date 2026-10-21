@@ -12,6 +12,7 @@ mod traits;
 mod ty;
 mod typed;
 mod unifier;
+mod walk;
 
 pub use checker::TypeChecker;
 pub use copy::CopyRules;
@@ -20,6 +21,6 @@ pub use structs::{StructDefinition, StructTable};
 pub use traits::{RustTrait, TraitTable};
 pub use ty::{GenericId, GenericParam, Scheme, Type, TypeVar};
 pub use typed::{
-    Borrow, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedDefinition, TypedExpr,
-    TypedExprKind, TypedLambda, TypedModule, TypedProgram,
+    Borrow, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedDefinition,
+    TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedModule, TypedProgram, TypedStructExpr,
 };

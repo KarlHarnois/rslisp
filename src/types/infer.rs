@@ -5,8 +5,8 @@ use super::checker::TypeChecker;
 use super::problems::{MismatchContext, TypeProblems};
 use super::ty::Type;
 use super::typed::{
-    Borrow, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedExpr, TypedExprKind,
-    TypedLambda,
+    Borrow, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
+    TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
 };
 use super::unifier::{LiteralKind, UnifyError};
 use crate::core::{
@@ -39,7 +39,7 @@ impl TypeChecker {
     fn infer_leaf(&mut self, leaf: &Leaf, span: Span) -> Result<TypedExpr, Diagnostic> {
         let inferred = match leaf {
             Leaf::Literal(literal) => Ok((
-                TypedExprKind::Literal(literal.clone()),
+                TypedExprKind::Leaf(TypedLeaf::Literal(literal.clone())),
                 self.literal_type(literal),
             )),
             Leaf::Var(binding) => self.infer_variable(*binding, span),
@@ -54,7 +54,7 @@ impl TypeChecker {
             Control::Block(block) => {
                 let inferred = self
                     .infer_block(block)
-                    .map(|(block, ty)| (TypedExprKind::Block(block), ty));
+                    .map(|(block, ty)| (TypedExprKind::Control(TypedControl::Block(block)), ty));
                 Self::typed(inferred, span)
             }
             Control::If(test, then, otherwise) => self.infer_if(test, then, otherwise, span),
@@ -147,15 +147,17 @@ impl TypeChecker {
     ) -> Result<(TypedExprKind, Type), Diagnostic> {
         let name = self.bindings.get(binding).name().to_string();
         match self.bindings.get(binding).kind() {
-            BindingKind::Local => {
-                Ok((TypedExprKind::Local(binding), self.locals[&binding].clone()))
-            }
+            BindingKind::Local => Ok((
+                TypedExprKind::Leaf(TypedLeaf::Local(binding)),
+                self.locals[&binding].clone(),
+            )),
             BindingKind::Global(_) if self.compile_time_only.contains(&binding) => {
                 Err(TypeProblems::compile_time_only(&name, span))
             }
-            BindingKind::Global(_) => {
-                Ok((TypedExprKind::Global(binding), self.global_type(binding)))
-            }
+            BindingKind::Global(_) => Ok((
+                TypedExprKind::Leaf(TypedLeaf::Global(binding)),
+                self.global_type(binding),
+            )),
             _ => Err(TypeProblems::compile_time_only(&name, span)),
         }
     }
@@ -399,7 +401,11 @@ impl TypeChecker {
         )?;
         let ty = then.ty.clone();
         Ok(TypedExpr {
-            kind: TypedExprKind::If(Box::new(test), Box::new(then), Box::new(otherwise)),
+            kind: TypedExprKind::Control(TypedControl::If(
+                Box::new(test),
+                Box::new(then),
+                Box::new(otherwise),
+            )),
             ty,
             span,
         })
@@ -414,7 +420,7 @@ impl TypeChecker {
 
     fn result_span(expr: &TypedExpr) -> Span {
         match &expr.kind {
-            TypedExprKind::Block(block) => match block.items.last() {
+            TypedExprKind::Control(TypedControl::Block(block)) => match block.items.last() {
                 Some(TypedBodyItem::Expr(last)) => Self::result_span(last),
                 _ => expr.span,
             },
@@ -459,7 +465,7 @@ impl TypeChecker {
             return Err(TypeProblems::missing_fields(&struct_name, &missing, span));
         }
         Ok((
-            TypedExprKind::New(binding, typed_fields),
+            TypedExprKind::Struct(TypedStructExpr::New(binding, typed_fields)),
             Type::Struct(binding),
         ))
     }
@@ -503,7 +509,7 @@ impl TypeChecker {
             Type::Ref(Box::new(ty))
         };
         Ok(TypedExpr {
-            kind: TypedExprKind::Field(Box::new(value), label.clone()),
+            kind: TypedExprKind::Struct(TypedStructExpr::Field(Box::new(value), label.clone())),
             ty,
             span,
         })
@@ -549,6 +555,6 @@ impl TypeChecker {
     ) -> Result<(TypedExprKind, Type), Diagnostic> {
         let scheme = self.lower_scheme(&template.type_expr)?;
         let ty = self.instantiate(&scheme);
-        Ok((TypedExprKind::Rust(template.clone()), ty))
+        Ok((TypedExprKind::Leaf(TypedLeaf::Rust(template.clone())), ty))
     }
 }

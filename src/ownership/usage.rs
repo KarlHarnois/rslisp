@@ -2,7 +2,10 @@ use std::collections::{HashMap, HashSet};
 
 use super::functions::{FunctionTable, ParamMode};
 use crate::core::BindingId;
-use crate::types::{Borrow, TypedArgument, TypedBlock, TypedBodyItem, TypedExpr, TypedExprKind};
+use crate::types::{
+    Borrow, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind,
+    TypedLeaf, TypedStructExpr,
+};
 
 pub struct UsageCollector<'a> {
     functions: &'a FunctionTable,
@@ -32,20 +35,32 @@ impl<'a> UsageCollector<'a> {
 
     fn expr(&mut self, expr: &TypedExpr, context: ParamMode) {
         match &expr.kind {
-            TypedExprKind::Local(binding) => self.require(*binding, context),
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.require(*binding, context),
+            TypedExprKind::Leaf(_) => {}
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
-            TypedExprKind::Field(value, _) => self.expr(value, ParamMode::Ref),
-            TypedExprKind::New(_, fields) => fields
+            TypedExprKind::Struct(structure) => self.structure(structure),
+            TypedExprKind::Control(control) => self.control(control, context),
+            TypedExprKind::Fn(lambda) => self.block(&lambda.body, ParamMode::Own),
+        }
+    }
+
+    fn structure(&mut self, structure: &TypedStructExpr) {
+        match structure {
+            TypedStructExpr::Field(value, _) => self.expr(value, ParamMode::Ref),
+            TypedStructExpr::New(_, fields) => fields
                 .iter()
                 .for_each(|(_, value)| self.expr(value, ParamMode::Own)),
-            TypedExprKind::Block(block) => self.block(block, context),
-            TypedExprKind::If(test, then, otherwise) => {
+        }
+    }
+
+    fn control(&mut self, control: &TypedControl, context: ParamMode) {
+        match control {
+            TypedControl::Block(block) => self.block(block, context),
+            TypedControl::If(test, then, otherwise) => {
                 self.expr(test, ParamMode::Copy);
                 self.expr(then, context);
                 self.expr(otherwise, context);
             }
-            TypedExprKind::Fn(lambda) => self.block(&lambda.body, ParamMode::Own),
-            TypedExprKind::Literal(_) | TypedExprKind::Global(_) | TypedExprKind::Rust(_) => {}
         }
     }
 
@@ -64,7 +79,7 @@ impl<'a> UsageCollector<'a> {
         let callee_modes = self.callee_modes(callee);
         if !matches!(
             callee.kind,
-            TypedExprKind::Global(_) | TypedExprKind::Rust(_)
+            TypedExprKind::Leaf(TypedLeaf::Global(_)) | TypedExprKind::Leaf(TypedLeaf::Rust(_))
         ) {
             self.expr(callee, ParamMode::Ref);
         }
@@ -82,7 +97,7 @@ impl<'a> UsageCollector<'a> {
     }
 
     fn callee_modes(&self, callee: &TypedExpr) -> Vec<ParamMode> {
-        let TypedExprKind::Global(binding) = callee.kind else {
+        let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = callee.kind else {
             return Vec::new();
         };
         self.functions

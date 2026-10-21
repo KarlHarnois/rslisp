@@ -6,7 +6,7 @@ use super::problems::{MismatchContext, TypeProblems};
 use super::structs::{StructDefinition, StructTable};
 use super::traits::{RustTrait, TraitTable};
 use super::ty::{GenericId, GenericParam, Scheme, Type, TypeVar};
-use super::typed::{TypedDefinition, TypedExpr, TypedExprKind};
+use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::{LiteralKind, Unifier};
 use crate::core::{
     BindingArena, BindingId, CoreModule, Expr, ExprKind, ItemKind, Leaf, ModuleId, PrimitiveType,
@@ -273,7 +273,7 @@ impl TypeChecker {
         };
         let scheme = self.schemes.get(&member.binding)?.clone();
         let value = TypedExpr {
-            kind: TypedExprKind::Rust(template.clone()),
+            kind: TypedExprKind::Leaf(TypedLeaf::Rust(template.clone())),
             ty: scheme.body.clone(),
             span: member.value.span(),
         };

@@ -18,16 +18,31 @@ pub struct TypedExpr {
 
 #[derive(Clone, Debug)]
 pub enum TypedExprKind {
+    Leaf(TypedLeaf),
+    Fn(Rc<TypedLambda>),
+    Call(Box<TypedExpr>, Vec<TypedArgument>),
+    Control(TypedControl),
+    Struct(TypedStructExpr),
+}
+
+#[derive(Clone, Debug)]
+pub enum TypedLeaf {
     Literal(Literal),
     Local(BindingId),
     Global(BindingId),
-    Fn(Rc<TypedLambda>),
-    Call(Box<TypedExpr>, Vec<TypedArgument>),
+    Rust(Rc<RustTemplate>),
+}
+
+#[derive(Clone, Debug)]
+pub enum TypedControl {
     Block(TypedBlock),
     If(Box<TypedExpr>, Box<TypedExpr>, Box<TypedExpr>),
+}
+
+#[derive(Clone, Debug)]
+pub enum TypedStructExpr {
     New(BindingId, Vec<(FieldLabel, TypedExpr)>),
     Field(Box<TypedExpr>, FieldLabel),
-    Rust(Rc<RustTemplate>),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

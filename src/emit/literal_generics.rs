@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::core::Literal;
-use crate::types::{GenericId, Type, TypedBlock, TypedBodyItem, TypedExpr, TypedExprKind};
+use crate::types::{GenericId, Type, TypedExpr, TypedExprKind, TypedLeaf};
 
 #[derive(Default)]
 pub struct LiteralGenerics {
@@ -16,33 +16,11 @@ impl LiteralGenerics {
     }
 
     fn expr(&mut self, expr: &TypedExpr) {
-        match &expr.kind {
-            TypedExprKind::Literal(Literal::Number(_)) => self.note(&expr.ty),
-            TypedExprKind::Fn(lambda) => self.block(&lambda.body),
-            TypedExprKind::Call(callee, arguments) => {
-                self.expr(callee);
-                arguments
-                    .iter()
-                    .for_each(|argument| self.expr(&argument.value));
-            }
-            TypedExprKind::Block(block) => self.block(block),
-            TypedExprKind::If(test, then, otherwise) => [test, then, otherwise]
-                .into_iter()
-                .for_each(|part| self.expr(part)),
-            TypedExprKind::New(_, fields) => fields.iter().for_each(|(_, value)| self.expr(value)),
-            TypedExprKind::Field(value, _) => self.expr(value),
-            TypedExprKind::Literal(Literal::String(_))
-            | TypedExprKind::Local(_)
-            | TypedExprKind::Global(_)
-            | TypedExprKind::Rust(_) => {}
+        if let TypedExprKind::Leaf(TypedLeaf::Literal(Literal::Number(_))) = &expr.kind {
+            self.note(&expr.ty);
         }
-    }
-
-    fn block(&mut self, block: &TypedBlock) {
-        for item in &block.items {
-            match item {
-                TypedBodyItem::Let(_, value) | TypedBodyItem::Expr(value) => self.expr(value),
-            }
+        for child in expr.children() {
+            self.expr(child);
         }
     }
 

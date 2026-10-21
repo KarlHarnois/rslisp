@@ -7,7 +7,7 @@ use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
 use crate::types::{
-    Type, TypedBlock, TypedBodyItem, TypedDefinition, TypedExpr, TypedExprKind, TypedProgram,
+    Type, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -176,8 +176,10 @@ impl<'p> EmitPlan<'p> {
         let Some((definition, module)) = self.definitions.get(&binding).copied() else {
             return;
         };
-        if matches!(definition.value.kind, TypedExprKind::Rust(_))
-            || self.reached.contains(&binding)
+        if matches!(
+            definition.value.kind,
+            TypedExprKind::Leaf(TypedLeaf::Rust(_))
+        ) || self.reached.contains(&binding)
         {
             return;
         }
@@ -189,44 +191,17 @@ impl<'p> EmitPlan<'p> {
     fn visit_expr(&mut self, expr: &TypedExpr, module: ModuleId) {
         self.visit_type(&expr.ty, module);
         match &expr.kind {
-            TypedExprKind::Global(binding) => self.reference(*binding, module),
-            TypedExprKind::Fn(lambda) => {
-                lambda
-                    .params
-                    .iter()
-                    .for_each(|param| self.visit_type(&param.ty, module));
-                self.visit_block(&lambda.body, module);
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => self.reference(*binding, module),
+            TypedExprKind::Struct(TypedStructExpr::New(binding, _)) => {
+                self.visit_type(&Type::Struct(*binding), module)
             }
-            TypedExprKind::Call(callee, arguments) => {
-                self.visit_expr(callee, module);
-                arguments
-                    .iter()
-                    .for_each(|argument| self.visit_expr(&argument.value, module));
-            }
-            TypedExprKind::Block(block) => self.visit_block(block, module),
-            TypedExprKind::If(test, then, otherwise) => [test, then, otherwise]
-                .into_iter()
-                .for_each(|part| self.visit_expr(part, module)),
-            TypedExprKind::New(binding, fields) => {
-                self.visit_type(&Type::Struct(*binding), module);
-                fields
-                    .iter()
-                    .for_each(|(_, value)| self.visit_expr(value, module));
-            }
-            TypedExprKind::Field(value, _) => self.visit_expr(value, module),
-            TypedExprKind::Literal(_) | TypedExprKind::Local(_) | TypedExprKind::Rust(_) => {}
+            _ => {}
         }
-    }
-
-    fn visit_block(&mut self, block: &TypedBlock, module: ModuleId) {
-        for item in &block.items {
-            match item {
-                TypedBodyItem::Let(binder, value) => {
-                    self.visit_type(&binder.ty, module);
-                    self.visit_expr(value, module);
-                }
-                TypedBodyItem::Expr(expr) => self.visit_expr(expr, module),
-            }
+        for binder in expr.binders() {
+            self.visit_type(&binder.ty, module);
+        }
+        for child in expr.children() {
+            self.visit_expr(child, module);
         }
     }
 
@@ -329,23 +304,24 @@ impl<'p> EmitPlan<'p> {
 
     fn is_const_evaluable(&self, expr: &TypedExpr) -> bool {
         match &expr.kind {
-            TypedExprKind::Literal(_) => true,
-            TypedExprKind::Global(binding) => {
-                self.definition(*binding)
-                    .is_some_and(|definition| match &definition.value.kind {
-                        TypedExprKind::Rust(template) => {
-                            Self::is_operator_template(&template.template)
-                        }
-                        _ => self.is_const_evaluable(&definition.value),
-                    })
-            }
+            TypedExprKind::Leaf(TypedLeaf::Literal(_)) => true,
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => self
+                .definition(*binding)
+                .is_some_and(|definition| match &definition.value.kind {
+                    TypedExprKind::Leaf(TypedLeaf::Rust(template)) => {
+                        Self::is_operator_template(&template.template)
+                    }
+                    _ => self.is_const_evaluable(&definition.value),
+                }),
             TypedExprKind::Call(callee, arguments) => {
                 self.is_const_evaluable(callee)
                     && arguments
                         .iter()
                         .all(|argument| self.is_const_evaluable(&argument.value))
             }
-            TypedExprKind::Rust(template) => Self::is_operator_template(&template.template),
+            TypedExprKind::Leaf(TypedLeaf::Rust(template)) => {
+                Self::is_operator_template(&template.template)
+            }
             _ => false,
         }
     }

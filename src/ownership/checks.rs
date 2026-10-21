@@ -4,8 +4,7 @@ use super::problems::OwnershipProblems;
 use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostic;
 use crate::types::{
-    Borrow, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedDefinition, TypedExpr,
-    TypedExprKind,
+    Borrow, Type, TypedArgument, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf,
 };
 
 pub struct BorrowedResults;
@@ -48,27 +47,17 @@ impl<'a> OwnershipNeeds<'a> {
     }
 
     fn expr(&mut self, expr: &TypedExpr) {
-        match &expr.kind {
-            TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
-            TypedExprKind::Fn(lambda) => self.block(&lambda.body),
-            TypedExprKind::Block(block) => self.block(block),
-            TypedExprKind::If(test, then, otherwise) => [test, then, otherwise]
-                .into_iter()
-                .for_each(|part| self.expr(part)),
-            TypedExprKind::New(_, fields) => fields.iter().for_each(|(_, value)| self.expr(value)),
-            TypedExprKind::Field(value, _) => self.expr(value),
-            TypedExprKind::Literal(_)
-            | TypedExprKind::Local(_)
-            | TypedExprKind::Global(_)
-            | TypedExprKind::Rust(_) => {}
+        if let TypedExprKind::Call(callee, arguments) = &expr.kind {
+            self.check_arguments(callee, arguments);
+        }
+        for child in expr.children() {
+            self.expr(child);
         }
     }
 
-    fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) {
-        self.expr(callee);
+    fn check_arguments(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) {
         let parameters = self.parameters(callee);
         for (position, argument) in arguments.iter().enumerate() {
-            self.expr(&argument.value);
             let owns = parameters
                 .get(position)
                 .is_some_and(|parameter| !parameter.is_reference());
@@ -80,7 +69,7 @@ impl<'a> OwnershipNeeds<'a> {
     }
 
     fn parameters(&self, callee: &TypedExpr) -> Vec<Type> {
-        if let TypedExprKind::Global(function) = callee.kind
+        if let TypedExprKind::Leaf(TypedLeaf::Global(function)) = callee.kind
             && let Some(parameters) = self.function_params.get(&function)
         {
             return parameters.clone();
@@ -88,14 +77,6 @@ impl<'a> OwnershipNeeds<'a> {
         match &callee.ty {
             Type::Function(parameters, _) => parameters.clone(),
             _ => Vec::new(),
-        }
-    }
-
-    fn block(&mut self, block: &TypedBlock) {
-        for item in &block.items {
-            match item {
-                TypedBodyItem::Let(_, value) | TypedBodyItem::Expr(value) => self.expr(value),
-            }
         }
     }
 }

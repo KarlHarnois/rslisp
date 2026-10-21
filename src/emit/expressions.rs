@@ -12,8 +12,8 @@ use crate::diagnostic::Diagnostic;
 use crate::reader::{Number, NumberValue};
 use crate::source::Span;
 use crate::types::{
-    Borrow, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedExpr, TypedExprKind,
-    TypedLambda, TypedProgram,
+    Borrow, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
+    TypedExprKind, TypedLambda, TypedLeaf, TypedProgram, TypedStructExpr,
 };
 
 pub struct ExpressionEmitter<'a> {
@@ -97,18 +97,30 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn expr_in(&mut self, expr: &TypedExpr, unpinned: bool) -> Code {
         match &expr.kind {
-            TypedExprKind::Literal(literal) => self.literal(literal, &expr.ty, unpinned),
-            TypedExprKind::Local(binding) => {
+            TypedExprKind::Leaf(TypedLeaf::Literal(literal)) => {
+                self.literal(literal, &expr.ty, unpinned)
+            }
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => {
                 Code::atom(self.locals.get(*binding).unwrap_or("_").to_string())
             }
-            TypedExprKind::Global(binding) => self.global(*binding, &expr.ty, expr.span),
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
+                self.global(*binding, &expr.ty, expr.span)
+            }
             TypedExprKind::Fn(lambda) => self.closure(lambda),
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments, expr.span),
-            TypedExprKind::Block(block) => self.block(block),
-            TypedExprKind::If(test, then, otherwise) => self.conditional(test, then, otherwise),
-            TypedExprKind::New(binding, fields) => self.construction(*binding, fields),
-            TypedExprKind::Field(value, label) => self.field_access(value, label, &expr.ty),
-            TypedExprKind::Rust(template) => self.rust_value(template, &expr.ty, expr.span),
+            TypedExprKind::Control(TypedControl::Block(block)) => self.block(block),
+            TypedExprKind::Control(TypedControl::If(test, then, otherwise)) => {
+                self.conditional(test, then, otherwise)
+            }
+            TypedExprKind::Struct(TypedStructExpr::New(binding, fields)) => {
+                self.construction(*binding, fields)
+            }
+            TypedExprKind::Struct(TypedStructExpr::Field(value, label)) => {
+                self.field_access(value, label, &expr.ty)
+            }
+            TypedExprKind::Leaf(TypedLeaf::Rust(template)) => {
+                self.rust_value(template, &expr.ty, expr.span)
+            }
         }
     }
 
@@ -189,7 +201,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn global(&mut self, binding: BindingId, ty: &Type, span: Span) -> Code {
-        if let Some(TypedExprKind::Rust(template)) = self
+        if let Some(TypedExprKind::Leaf(TypedLeaf::Rust(template))) = self
             .plan
             .definition(binding)
             .map(|definition| &definition.value.kind)
@@ -252,9 +264,12 @@ impl<'a> ExpressionEmitter<'a> {
     fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument], span: Span) -> Code {
         let template = self.called_template(callee);
         let unpinned = template.is_some()
-            && arguments
-                .iter()
-                .all(|argument| matches!(argument.value.kind, TypedExprKind::Literal(_)));
+            && arguments.iter().all(|argument| {
+                matches!(
+                    argument.value.kind,
+                    TypedExprKind::Leaf(TypedLeaf::Literal(_))
+                )
+            });
         let has_receiver = template
             .as_ref()
             .is_some_and(|template| template.template.starts_with(Self::RECEIVER));
@@ -285,13 +300,13 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn called_template(&self, callee: &TypedExpr) -> Option<Rc<RustTemplate>> {
         match &callee.kind {
-            TypedExprKind::Rust(template) => Some(template.clone()),
-            TypedExprKind::Global(binding) => match self
+            TypedExprKind::Leaf(TypedLeaf::Rust(template)) => Some(template.clone()),
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => match self
                 .plan
                 .definition(*binding)
                 .map(|definition| &definition.value.kind)
             {
-                Some(TypedExprKind::Rust(template)) => Some(template.clone()),
+                Some(TypedExprKind::Leaf(TypedLeaf::Rust(template))) => Some(template.clone()),
                 _ => None,
             },
             _ => None,
@@ -365,7 +380,9 @@ impl<'a> ExpressionEmitter<'a> {
         fragments.push(Fragment::Indented(self.branch(then)));
         fragments.push(Fragment::Newline);
         fragments.push(Fragment::Text("}".to_string()));
-        if let TypedExprKind::If(next_test, next_then, next_otherwise) = &otherwise.kind {
+        if let TypedExprKind::Control(TypedControl::If(next_test, next_then, next_otherwise)) =
+            &otherwise.kind
+        {
             fragments.push(Fragment::Text(" else ".to_string()));
             fragments.extend(
                 self.conditional(next_test, next_then, next_otherwise)
@@ -385,7 +402,7 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn branch(&mut self, branch: &TypedExpr) -> Vec<Fragment> {
         match &branch.kind {
-            TypedExprKind::Block(block) => self.statements(block),
+            TypedExprKind::Control(TypedControl::Block(block)) => self.statements(block),
             _ => {
                 let mut fragments = vec![Fragment::Newline];
                 fragments.extend(self.expr(branch).fragments);
@@ -395,7 +412,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn is_empty_block(expr: &TypedExpr) -> bool {
-        matches!(&expr.kind, TypedExprKind::Block(block) if block.items.is_empty())
+        matches!(&expr.kind, TypedExprKind::Control(TypedControl::Block(block)) if block.items.is_empty())
     }
 
     fn construction(&mut self, binding: BindingId, fields: &[(FieldLabel, TypedExpr)]) -> Code {

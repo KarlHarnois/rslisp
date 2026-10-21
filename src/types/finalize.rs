@@ -1,11 +1,10 @@
 use std::collections::HashSet;
-use std::rc::Rc;
 
 use super::checker::TypeChecker;
 use super::literal_fit::LiteralFit;
 use super::problems::TypeProblems;
 use super::ty::{GenericId, Type, TypeVar};
-use super::typed::{TypedBlock, TypedBodyItem, TypedDefinition, TypedExpr, TypedExprKind};
+use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::LiteralKind;
 use crate::core::{Literal, PrimitiveType};
 use crate::reader::Number;
@@ -34,48 +33,14 @@ impl<'c> Finalizer<'c> {
 
     fn expr(&mut self, expr: &mut TypedExpr) {
         self.finalize_type(&mut expr.ty, expr.span);
-        match &mut expr.kind {
-            TypedExprKind::Literal(Literal::Number(number)) => {
-                self.check_range(number, &expr.ty.clone(), expr.span)
-            }
-            TypedExprKind::Fn(lambda) => {
-                let lambda = Rc::make_mut(lambda);
-                lambda
-                    .params
-                    .iter_mut()
-                    .for_each(|param| self.finalize_type(&mut param.ty, param.span));
-                self.block(&mut lambda.body);
-            }
-            TypedExprKind::Call(callee, arguments) => {
-                self.expr(callee);
-                arguments
-                    .iter_mut()
-                    .for_each(|argument| self.expr(&mut argument.value));
-            }
-            TypedExprKind::Block(block) => self.block(block),
-            TypedExprKind::If(test, then, otherwise) => [test, then, otherwise]
-                .into_iter()
-                .for_each(|part| self.expr(part)),
-            TypedExprKind::New(_, fields) => {
-                fields.iter_mut().for_each(|(_, value)| self.expr(value))
-            }
-            TypedExprKind::Field(value, _) => self.expr(value),
-            TypedExprKind::Literal(Literal::String(_))
-            | TypedExprKind::Local(_)
-            | TypedExprKind::Global(_)
-            | TypedExprKind::Rust(_) => {}
+        if let TypedExprKind::Leaf(TypedLeaf::Literal(Literal::Number(number))) = &expr.kind {
+            self.check_range(number, &expr.ty.clone(), expr.span);
         }
-    }
-
-    fn block(&mut self, block: &mut TypedBlock) {
-        for item in &mut block.items {
-            match item {
-                TypedBodyItem::Let(binder, value) => {
-                    self.expr(value);
-                    self.finalize_type(&mut binder.ty, binder.span);
-                }
-                TypedBodyItem::Expr(expr) => self.expr(expr),
-            }
+        for child in expr.children_mut() {
+            self.expr(child);
+        }
+        for binder in expr.binders_mut() {
+            self.finalize_type(&mut binder.ty, binder.span);
         }
     }
 

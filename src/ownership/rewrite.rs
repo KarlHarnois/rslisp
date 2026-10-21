@@ -4,8 +4,7 @@ use std::rc::Rc;
 use super::functions::{FunctionTable, ParamMode};
 use crate::core::BindingId;
 use crate::types::{
-    Borrow, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedDefinition, TypedExpr,
-    TypedExprKind, TypedProgram,
+    Borrow, Type, TypedArgument, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram,
 };
 
 pub struct ModeRewrite {
@@ -67,40 +66,37 @@ impl ModeRewrite {
     }
 
     fn expr(&self, expr: &mut TypedExpr) {
-        match &mut expr.kind {
-            TypedExprKind::Local(binding) => {
-                if let Some(rewritten) = self.param_types.get(binding) {
-                    expr.ty = rewritten.clone();
-                }
-            }
-            TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
-            TypedExprKind::Fn(lambda) => {
-                let lambda = Rc::make_mut(lambda);
-                for param in &mut lambda.params {
-                    if let Some(rewritten) = self.param_types.get(&param.binding) {
-                        param.ty = rewritten.clone();
-                    }
-                }
-                self.block(&mut lambda.body);
-            }
-            TypedExprKind::Block(block) => self.block(block),
-            TypedExprKind::If(test, then, otherwise) => [test, then, otherwise]
-                .into_iter()
-                .for_each(|part| self.expr(part)),
-            TypedExprKind::New(_, fields) => {
-                fields.iter_mut().for_each(|(_, value)| self.expr(value))
-            }
-            TypedExprKind::Field(value, _) => self.expr(value),
-            TypedExprKind::Literal(_) | TypedExprKind::Global(_) | TypedExprKind::Rust(_) => {}
+        self.rewrite_local(expr);
+        self.rewrite_params(expr);
+        for child in expr.children_mut() {
+            self.expr(child);
+        }
+        if let TypedExprKind::Call(callee, arguments) = &mut expr.kind {
+            self.borrow_arguments(callee, arguments);
         }
     }
 
-    fn call(&self, callee: &mut TypedExpr, arguments: &mut [TypedArgument]) {
-        self.expr(callee);
-        arguments
-            .iter_mut()
-            .for_each(|argument| self.expr(&mut argument.value));
-        let TypedExprKind::Global(function) = callee.kind else {
+    fn rewrite_local(&self, expr: &mut TypedExpr) {
+        if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &expr.kind
+            && let Some(rewritten) = self.param_types.get(binding)
+        {
+            expr.ty = rewritten.clone();
+        }
+    }
+
+    fn rewrite_params(&self, expr: &mut TypedExpr) {
+        let TypedExprKind::Fn(lambda) = &mut expr.kind else {
+            return;
+        };
+        for param in &mut Rc::make_mut(lambda).params {
+            if let Some(rewritten) = self.param_types.get(&param.binding) {
+                param.ty = rewritten.clone();
+            }
+        }
+    }
+
+    fn borrow_arguments(&self, callee: &TypedExpr, arguments: &mut [TypedArgument]) {
+        let TypedExprKind::Leaf(TypedLeaf::Global(function)) = callee.kind else {
             return;
         };
         let Some(params) = self.function_params.get(&function) else {
@@ -122,13 +118,5 @@ impl ModeRewrite {
             Type::Mut(_) => Borrow::Mutable,
             _ => Borrow::None,
         };
-    }
-
-    fn block(&self, block: &mut TypedBlock) {
-        for item in &mut block.items {
-            match item {
-                TypedBodyItem::Let(_, value) | TypedBodyItem::Expr(value) => self.expr(value),
-            }
-        }
     }
 }

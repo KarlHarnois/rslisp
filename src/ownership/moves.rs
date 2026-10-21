@@ -6,8 +6,8 @@ use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Borrow, CopyRules, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedExpr, TypedExprKind,
-    TypedLambda,
+    Borrow, CopyRules, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
+    TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -44,18 +44,32 @@ impl<'a> MoveChecker<'a> {
 
     fn expr(&mut self, expr: &TypedExpr, usage: Usage) {
         match &expr.kind {
-            TypedExprKind::Local(binding) => self.local(*binding, &expr.ty, expr.span, usage),
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => {
+                self.local(*binding, &expr.ty, expr.span, usage)
+            }
+            TypedExprKind::Leaf(_) => {}
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
-            TypedExprKind::Field(value, _) => self.expr(value, Usage::Borrow),
-            TypedExprKind::New(_, fields) => fields
-                .iter()
-                .for_each(|(_, value)| self.expr(value, Usage::Move)),
-            TypedExprKind::Block(block) => self.block(block, usage),
-            TypedExprKind::If(test, then, otherwise) => self.branches(test, then, otherwise, usage),
+            TypedExprKind::Struct(structure) => self.structure(structure),
+            TypedExprKind::Control(control) => self.control(control, usage),
             TypedExprKind::Fn(lambda) => {
                 self.closure(lambda);
             }
-            TypedExprKind::Literal(_) | TypedExprKind::Global(_) | TypedExprKind::Rust(_) => {}
+        }
+    }
+
+    fn structure(&mut self, structure: &TypedStructExpr) {
+        match structure {
+            TypedStructExpr::Field(value, _) => self.expr(value, Usage::Borrow),
+            TypedStructExpr::New(_, fields) => fields
+                .iter()
+                .for_each(|(_, value)| self.expr(value, Usage::Move)),
+        }
+    }
+
+    fn control(&mut self, control: &TypedControl, usage: Usage) {
+        match control {
+            TypedControl::Block(block) => self.block(block, usage),
+            TypedControl::If(test, then, otherwise) => self.branches(test, then, otherwise, usage),
         }
     }
 
@@ -73,10 +87,10 @@ impl<'a> MoveChecker<'a> {
     fn bind(&mut self, binding: BindingId, value: &TypedExpr) {
         let is_copy_function = match &value.kind {
             TypedExprKind::Fn(lambda) => self.closure(lambda),
-            TypedExprKind::Global(_) | TypedExprKind::Rust(_) => {
+            TypedExprKind::Leaf(TypedLeaf::Global(_)) | TypedExprKind::Leaf(TypedLeaf::Rust(_)) => {
                 matches!(value.ty, Type::Function(..))
             }
-            TypedExprKind::Local(other) => {
+            TypedExprKind::Leaf(TypedLeaf::Local(other)) => {
                 let is_copy = self.copy_functions.contains(other);
                 self.expr(value, Usage::Move);
                 is_copy
@@ -94,7 +108,7 @@ impl<'a> MoveChecker<'a> {
     fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) {
         if !matches!(
             callee.kind,
-            TypedExprKind::Global(_) | TypedExprKind::Rust(_)
+            TypedExprKind::Leaf(TypedLeaf::Global(_)) | TypedExprKind::Leaf(TypedLeaf::Rust(_))
         ) {
             self.expr(callee, Usage::Borrow);
         }
