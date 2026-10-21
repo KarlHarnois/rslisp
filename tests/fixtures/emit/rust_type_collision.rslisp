@@ -1,0 +1,8 @@
+(rust-type boxed (where (item) "Box<{0}>"))
+(def box-new (rust "Box::new({0})" (where (a) (fn (a) (boxed a)))))
+
+(struct box (value i64))
+
+(defn main ()
+  (let wrapped (box-new (new box (value 1))))
+  (do))

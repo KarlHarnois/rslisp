@@ -23,6 +23,7 @@ pub enum BindingKind {
     Local,
     Struct(ModuleId),
     Trait(ModuleId),
+    RustType(ModuleId),
     TypeVariable,
 }
 

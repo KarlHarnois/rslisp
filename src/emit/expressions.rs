@@ -169,7 +169,7 @@ impl<'a> ExpressionEmitter<'a> {
             binder.binding,
             self.program.bindings.get(binder.binding).name(),
         );
-        let annotation = if binder.annotated || Self::needs_annotation(&binder.ty) {
+        let annotation = if binder.annotated || self.needs_annotation(&binder.ty) {
             format!(": {}", self.types().show(&binder.ty, TypePosition::Value))
         } else {
             String::new()
@@ -195,12 +195,17 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn needs_annotation(bound: &Type) -> bool {
+    fn needs_annotation(&self, bound: &Type) -> bool {
         match bound {
             Type::Primitive(primitive) => {
                 primitive.is_integer() && *primitive != PrimitiveType::I32
             }
-            Type::Named(_, arguments) => arguments.iter().any(Self::needs_annotation),
+            Type::Named(binding, arguments) => {
+                !self.types().is_opaque(*binding)
+                    && arguments
+                        .iter()
+                        .any(|argument| self.needs_annotation(argument))
+            }
             _ => false,
         }
     }

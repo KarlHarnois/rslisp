@@ -1,0 +1,6 @@
+(rust-type shifted (where (item) "Box<{1}>"))
+(rust-type ignored (where (key value) "Vec<{0}>"))
+(rust-type broken "Vec<{0")
+(rust-type plain "Vec<{0}>")
+(rust-type spare (where (item) "Vec<{0}>" "extra"))
+(rust-type missing-template)

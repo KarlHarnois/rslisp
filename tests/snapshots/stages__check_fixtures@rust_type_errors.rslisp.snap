@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/rust_type_errors.rslisp
+---
+error[L0417]: the type parameter `item` cannot require traits here
+ --> check/rust_type_errors.rslisp:2:31
+  |
+2 | (rust-type sorted-set (where ((item partial-ord)) "std::collections::BTreeSet<{0}>"))
+  |                               ^^^^^^^^^^^^^^^^^^ traits given here
+  |
+  = help: write `item` alone, and require the traits in the `where` of each function that needs them
+
+error[L0415]: `boxed` takes 1 type argument but 2 were given
+ --> check/rust_type_errors.rslisp:6:25
+  |
+6 | (type unwrap-twice (fn ((boxed i64 i64)) i64))
+  |                         ^^^^^^^^^^^^^^^ expected 1 type argument
+
+error[L0410]: `(boxed _)` has no fields
+ --> check/rust_type_errors.rslisp:9:25
+  |
+9 | (defn content () (field (box-new 1) content))
+  |                         ^^^^^^^^^^^ only structs have fields

@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/rust_type_collision.rslisp
+---
+error[L0602]: `boxed` and `box` both become `Box` in Rust
+ --> emit/rust_type_collision.rslisp:4:9
+  |
+1 | (rust-type boxed (where (item) "Box<{0}>"))
+  |            ----- this also becomes `Box`
+...
+4 | (struct box (value i64))
+  |         ^^^ this becomes `Box`
+  |
+  = help: rename one of them

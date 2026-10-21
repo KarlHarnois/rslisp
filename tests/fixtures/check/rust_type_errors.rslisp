@@ -1,0 +1,9 @@
+(rust-type boxed (where (item) "Box<{0}>"))
+(rust-type sorted-set (where ((item partial-ord)) "std::collections::BTreeSet<{0}>"))
+
+(def box-new (rust "Box::new({0})" (where (a) (fn (a) (boxed a)))))
+
+(type unwrap-twice (fn ((boxed i64 i64)) i64))
+(defn unwrap-twice (value) 1)
+
+(defn content () (field (box-new 1) content))

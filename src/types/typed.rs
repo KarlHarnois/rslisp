@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
 use super::traits::TraitTable;
 use super::ty::{GenericId, GenericParam, Scheme, Type};
@@ -106,6 +107,7 @@ pub struct TypedProgram {
     pub entry: ModuleId,
     pub bindings: BindingArena,
     pub structs: StructTable,
+    pub rust_types: RustTypeTable,
     pub traits: TraitTable,
     pub generics: HashMap<GenericId, GenericParam>,
     pub implied_bounds: HashMap<GenericId, Vec<BindingId>>,

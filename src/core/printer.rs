@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use super::{
     Binder, BindingArena, BindingId, Block, BodyItem, Control, CoreModule, Expr, ExprKind,
-    FieldLabel, Item, ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal, RustTemplate,
-    StructExpr, TypeBinder, TypeExpr, TypeExprKind,
+    FieldLabel, Item, ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal, ParsedTemplate,
+    RustTemplate, StructExpr, TypeBinder, TypeExpr, TypeExprKind,
 };
 
 pub struct CorePrinter<'a> {
@@ -50,6 +50,9 @@ impl<'a> CorePrinter<'a> {
                 self.type_expr(type_expr)
             ),
             ItemKind::Struct(binding, params, fields) => self.struct_item(*binding, params, fields),
+            ItemKind::RustType(binding, params, template) => {
+                self.rust_type_item(*binding, params, template)
+            }
             ItemKind::RustTrait(binding, path, implementors) => {
                 let mut parts = vec![self.name(*binding), format!("{path:?}")];
                 parts.extend(
@@ -211,6 +214,23 @@ impl<'a> CorePrinter<'a> {
             parts.push(Self::where_list(params, fields));
         }
         Self::list("struct", parts)
+    }
+
+    fn rust_type_item(
+        &mut self,
+        binding: BindingId,
+        params: &[TypeBinder],
+        template: &ParsedTemplate,
+    ) -> String {
+        let mut parts = vec![self.name(binding)];
+        let params = self.type_binders(params);
+        let template = format!("{:?}", template.text());
+        if params.is_empty() {
+            parts.push(template);
+        } else {
+            parts.push(Self::where_list(params, vec![template]));
+        }
+        Self::list("rust-type", parts)
     }
 
     fn where_type(&mut self, binders: &[TypeBinder], inner: &TypeExpr) -> String {

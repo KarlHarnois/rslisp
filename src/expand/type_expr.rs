@@ -35,7 +35,7 @@ impl Expander<'_> {
             BindingKind::KernelType(constructor) => {
                 Err(ExpandProblems::malformed_type(constructor, span))
             }
-            BindingKind::Struct(_) | BindingKind::TypeVariable => {
+            BindingKind::Struct(_) | BindingKind::RustType(_) | BindingKind::TypeVariable => {
                 Ok(TypeExprKind::Named(binding, Vec::new()))
             }
             _ => Err(ExpandProblems::wrong_namespace(
@@ -58,7 +58,9 @@ impl Expander<'_> {
                 self.lower_reference_type(kind, form, items)
             }
             BindingKind::KernelType(KernelType::Where) => self.lower_where(form, items),
-            BindingKind::Struct(_) => self.lower_struct_application(binding, items),
+            BindingKind::Struct(_) | BindingKind::RustType(_) => {
+                self.lower_named_application(binding, items)
+            }
             _ => Err(ExpandProblems::wrong_namespace(
                 &head.to_string(),
                 "a type constructor",
@@ -82,7 +84,7 @@ impl Expander<'_> {
         Ok((head, binding))
     }
 
-    fn lower_struct_application(
+    fn lower_named_application(
         &mut self,
         binding: BindingId,
         items: &[Form],

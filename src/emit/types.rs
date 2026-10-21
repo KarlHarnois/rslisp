@@ -2,8 +2,8 @@ use std::collections::HashSet;
 
 use super::mangle::NameMangler;
 use super::plan::EmitPlan;
-use crate::core::{BindingId, ModuleId, PrimitiveType};
-use crate::types::{GenericId, GenericParam, Type, TypedProgram};
+use crate::core::{BindingId, ModuleId, Piece, PrimitiveType};
+use crate::types::{GenericId, GenericParam, RustType, Type, TypedProgram};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum TypePosition {
@@ -20,6 +20,7 @@ pub struct RustTypes<'a> {
 
 impl<'a> RustTypes<'a> {
     const MAYBE_UNSIZED: &'static str = "?Sized";
+    const INFERRED: &'static str = "_";
     const NUMBER_TRAIT: &'static str = "crate::rt::Number";
     const RUNTIME_SUPERTRAITS: [(&'static str, &'static [&'static str]); 3] = [
         ("crate::rt::Number", &["Copy", "PartialOrd", "PartialEq"]),
@@ -181,15 +182,43 @@ impl<'a> RustTypes<'a> {
     }
 
     fn named(&self, binding: BindingId, arguments: &[Type], position: TypePosition) -> String {
-        let path = self.struct_path(binding);
-        if arguments.is_empty() {
-            return path;
-        }
         let arguments: Vec<String> = arguments
             .iter()
             .map(|argument| self.show(argument, Self::inner(position)))
             .collect();
+        match self.program.rust_types.get(binding) {
+            Some(rust_type) => Self::rust_type(rust_type, &arguments, position),
+            None => Self::applied(self.struct_path(binding), &arguments),
+        }
+    }
+
+    fn rust_type(rust_type: &RustType, arguments: &[String], position: TypePosition) -> String {
+        if rust_type.is_opaque() && position == TypePosition::Value {
+            return Self::INFERRED.to_string();
+        }
+        rust_type
+            .template
+            .pieces()
+            .iter()
+            .map(|piece| match piece {
+                Piece::Literal(text) => text.as_str(),
+                Piece::Placeholder(index) => arguments[*index].as_str(),
+            })
+            .collect()
+    }
+
+    fn applied(path: String, arguments: &[String]) -> String {
+        if arguments.is_empty() {
+            return path;
+        }
         format!("{path}<{}>", arguments.join(", "))
+    }
+
+    pub fn is_opaque(&self, binding: BindingId) -> bool {
+        self.program
+            .rust_types
+            .get(binding)
+            .is_some_and(RustType::is_opaque)
     }
 
     fn function(&self, parameters: &[Type], result: &Type, position: TypePosition) -> String {

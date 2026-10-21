@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::core::{KernelForm, KernelType, ModulePath, Namespace};
-use crate::diagnostic::{Diagnostic, DiagnosticCode, Label, Suggestion};
+use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::interpret::InterpretProblems;
 use crate::source::Span;
 
@@ -9,6 +9,45 @@ pub struct ExpandProblems;
 
 impl ExpandProblems {
     const QUOTE_SHORTHAND: char = '\'';
+
+    pub fn malformed_type_template(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::BAD_TYPE_TEMPLATE,
+            "this type template has a malformed placeholder",
+            Label::new(span, "a placeholder is `{`, a number and `}`"),
+        )
+        .with_help("write a literal brace as `{{` or `}}`")
+    }
+
+    pub fn placeholder_without_parameter(
+        index: usize,
+        parameters: usize,
+        span: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::BAD_TYPE_TEMPLATE,
+            format!("`{{{index}}}` names no type parameter"),
+            Label::new(
+                span,
+                format!(
+                    "this type has {}",
+                    Counted::noun(parameters, "type parameter")
+                ),
+            ),
+        )
+        .with_help("declare the type parameters in a `where`, as in `(where (item) \"Vec<{0}>\")`")
+    }
+
+    pub fn unused_type_placeholder(index: usize, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::BAD_TYPE_TEMPLATE,
+            "the template never uses this type parameter",
+            Label::new(span, format!("its placeholder is `{{{index}}}`")),
+        )
+        .with_help(format!(
+            "use `{{{index}}}` in the template, or remove the parameter"
+        ))
+    }
 
     pub fn unbound(
         name: &str,

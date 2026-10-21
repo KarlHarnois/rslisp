@@ -1,0 +1,52 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/rust_type_errors.rslisp
+---
+error[L0213]: `{1}` names no type parameter
+ --> expand/rust_type_errors.rslisp:1:34
+  |
+1 | (rust-type shifted (where (item) "Box<{1}>"))
+  |                                  ^^^^^^^^^^ this type has 1 type parameter
+  |
+  = help: declare the type parameters in a `where`, as in `(where (item) "Vec<{0}>")`
+
+error[L0213]: the template never uses this type parameter
+ --> expand/rust_type_errors.rslisp:2:32
+  |
+2 | (rust-type ignored (where (key value) "Vec<{0}>"))
+  |                                ^^^^^ its placeholder is `{1}`
+  |
+  = help: use `{1}` in the template, or remove the parameter
+
+error[L0213]: this type template has a malformed placeholder
+ --> expand/rust_type_errors.rslisp:3:19
+  |
+3 | (rust-type broken "Vec<{0")
+  |                   ^^^^^^^^ a placeholder is `{`, a number and `}`
+  |
+  = help: write a literal brace as `{{` or `}}`
+
+error[L0213]: `{0}` names no type parameter
+ --> expand/rust_type_errors.rslisp:4:18
+  |
+4 | (rust-type plain "Vec<{0}>")
+  |                  ^^^^^^^^^^ this type has 0 type parameters
+  |
+  = help: declare the type parameters in a `where`, as in `(where (item) "Vec<{0}>")`
+
+error[L0210]: malformed `rust-type`
+ --> expand/rust_type_errors.rslisp:5:18
+  |
+5 | (rust-type spare (where (item) "Vec<{0}>" "extra"))
+  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `rust-type`
+  |
+  = help: write it as `(rust-type name "template")`
+
+error[L0210]: malformed `rust-type`
+ --> expand/rust_type_errors.rslisp:6:1
+  |
+6 | (rust-type missing-template)
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `rust-type`
+  |
+  = help: write it as `(rust-type name "template")`

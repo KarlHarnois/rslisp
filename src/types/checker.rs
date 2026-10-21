@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use super::display::TypeDisplay;
 use super::graph::DependencyGraph;
 use super::problems::{MismatchContext, TypeProblems};
+use super::rust_types::{RustType, RustTypeTable};
 use super::selection::Selection;
 use super::structs::{StructDefinition, StructTable};
 use super::traits::{RustTrait, TraitTable};
@@ -10,8 +11,8 @@ use super::ty::{GenericId, GenericParam, Scheme, Type, TypeVar};
 use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
-    BindingArena, BindingId, CoreModule, Expr, ExprKind, ItemKind, Leaf, ModuleId, PrimitiveType,
-    StructDerives, TypeBinder, TypeExpr,
+    BindingArena, BindingId, CoreModule, Expr, ExprKind, ItemKind, Leaf, ModuleId, ParsedTemplate,
+    PrimitiveType, StructDerives, TypeBinder, TypeExpr,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
@@ -32,6 +33,7 @@ pub struct TypeChecker {
     pub(super) bindings: BindingArena,
     pub(super) unifier: Unifier,
     pub(super) structs: StructTable,
+    pub(super) rust_types: RustTypeTable,
     pub(super) traits: TraitTable,
     pub(super) generics: HashMap<GenericId, GenericParam>,
     pub(super) schemes: HashMap<BindingId, Scheme>,
@@ -60,6 +62,7 @@ impl TypeChecker {
             bindings,
             unifier: Unifier::default(),
             structs: StructTable::default(),
+            rust_types: RustTypeTable::default(),
             traits: TraitTable::default(),
             generics: HashMap::new(),
             schemes: HashMap::new(),
@@ -84,6 +87,9 @@ impl TypeChecker {
                 ItemKind::RustTrait(binding, path, implementors) => {
                     self.collect_trait(*binding, path, implementors)
                 }
+                ItemKind::RustType(binding, binders, template) => {
+                    self.collect_rust_type(*binding, binders, template)
+                }
                 ItemKind::Signature(binding, signature) => {
                     self.signatures
                         .insert(*binding, (signature.clone(), item.span));
@@ -100,7 +106,9 @@ impl TypeChecker {
 
     fn record_type_arities(&mut self, modules: &[CoreModule]) {
         for item in modules.iter().flat_map(|module| &module.items) {
-            if let ItemKind::Struct(binding, params, _) = &item.kind {
+            if let ItemKind::Struct(binding, params, _) | ItemKind::RustType(binding, params, _) =
+                &item.kind
+            {
                 self.type_arities.insert(*binding, params.len());
             }
         }
@@ -570,18 +578,41 @@ impl TypeChecker {
         Ok(scheme)
     }
 
+    fn collect_rust_type(
+        &mut self,
+        binding: BindingId,
+        binders: &[TypeBinder],
+        template: &std::rc::Rc<ParsedTemplate>,
+    ) -> Result<(), Diagnostic> {
+        self.reject_bounds(binders)?;
+        self.rust_types.add(
+            binding,
+            RustType {
+                template: template.clone(),
+            },
+        );
+        Ok(())
+    }
+
     fn struct_params(&mut self, binders: &[TypeBinder]) -> Result<Vec<GenericParam>, Diagnostic> {
-        binders
+        self.reject_bounds(binders)?;
+        Ok(binders
             .iter()
             .map(|binder| {
                 let name = self.bindings.get(binder.variable).name().to_string();
-                if binder.bounds.is_empty() {
-                    Ok(self.new_generic(&name, Vec::new()))
-                } else {
-                    Err(TypeProblems::bounded_type_parameter(&name, binder.span))
-                }
+                self.new_generic(&name, Vec::new())
             })
-            .collect()
+            .collect())
+    }
+
+    fn reject_bounds(&self, binders: &[TypeBinder]) -> Result<(), Diagnostic> {
+        match binders.iter().find(|binder| !binder.bounds.is_empty()) {
+            Some(binder) => Err(TypeProblems::bounded_type_parameter(
+                self.bindings.get(binder.variable).name(),
+                binder.span,
+            )),
+            None => Ok(()),
+        }
     }
 
     fn check_parameters_used(
@@ -728,7 +759,7 @@ impl TypeChecker {
             match item.kind {
                 ItemKind::Def(binding, _) => typed.definitions.extend(definitions.remove(&binding)),
                 ItemKind::Struct(binding, ..) => typed.structs.push(binding),
-                ItemKind::Signature(..) | ItemKind::RustTrait(..) => {}
+                ItemKind::Signature(..) | ItemKind::RustTrait(..) | ItemKind::RustType(..) => {}
             }
         }
         typed
@@ -744,6 +775,7 @@ impl TypeChecker {
             entry,
             bindings: self.bindings,
             structs: self.structs,
+            rust_types: self.rust_types,
             traits: self.traits,
             generics: self.generics,
             implied_bounds: self.implied_bounds,

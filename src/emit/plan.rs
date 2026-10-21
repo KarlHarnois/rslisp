@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::mangle::NameMangler;
 use super::problems::EmitProblems;
@@ -48,6 +48,7 @@ pub struct EmitPlan<'p> {
     reached: Vec<BindingId>,
     crate_visible: HashSet<BindingId>,
     items: HashMap<BindingId, ItemInfo>,
+    used_rust_types: BTreeSet<BindingId>,
 }
 
 impl<'p> EmitPlan<'p> {
@@ -79,6 +80,7 @@ impl<'p> EmitPlan<'p> {
             reached: Vec::new(),
             crate_visible: HashSet::new(),
             items: HashMap::new(),
+            used_rust_types: BTreeSet::new(),
         };
         plan.visit_definition(main);
         plan.assign_items()?;
@@ -205,7 +207,7 @@ impl<'p> EmitPlan<'p> {
                 arguments
                     .iter()
                     .for_each(|argument| self.visit_type(argument, module));
-                self.reach_struct(*binding, module);
+                self.reach_named(*binding, module);
             }
             Type::Function(parameters, result) => {
                 parameters
@@ -215,6 +217,14 @@ impl<'p> EmitPlan<'p> {
             }
             Type::Ref(inner) | Type::Mut(inner) => self.visit_type(inner, module),
             Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => {}
+        }
+    }
+
+    fn reach_named(&mut self, binding: BindingId, from: ModuleId) {
+        if self.program.rust_types.get(binding).is_some() {
+            self.used_rust_types.insert(binding);
+        } else {
+            self.reach_struct(binding, from);
         }
     }
 
@@ -263,8 +273,12 @@ impl<'p> EmitPlan<'p> {
         for binding in self.reached.clone() {
             let info = self.item_info(binding);
             let key = (info.module, info.name.clone());
-            match taken.get(&key) {
-                Some(other) => diagnostics.push(self.collision(&info.name, *other, binding)),
+            match taken
+                .get(&key)
+                .copied()
+                .or_else(|| self.shadowed_rust_type(&info))
+            {
+                Some(other) => diagnostics.push(self.collision(&info.name, other, binding)),
                 None => {
                     taken.insert(key, binding);
                     self.items.insert(binding, info);
@@ -272,6 +286,18 @@ impl<'p> EmitPlan<'p> {
             }
         }
         diagnostics.into_result(())
+    }
+
+    fn shadowed_rust_type(&self, info: &ItemInfo) -> Option<BindingId> {
+        let is_struct = info.kind == ItemKind::Struct;
+        self.used_rust_types.iter().copied().find(|binding| {
+            is_struct
+                && self
+                    .program
+                    .rust_types
+                    .get(*binding)
+                    .is_some_and(|rust_type| rust_type.leading_name() == info.name)
+        })
     }
 
     fn item_info(&self, binding: BindingId) -> ItemInfo {

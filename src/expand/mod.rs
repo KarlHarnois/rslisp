@@ -8,6 +8,7 @@ mod module_body;
 mod module_loading;
 mod names;
 mod problems;
+mod rust_type;
 mod shape;
 mod type_expr;
 mod type_parameters;

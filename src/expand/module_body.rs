@@ -22,6 +22,7 @@ enum PendingItem {
     Signature(Form),
     Struct(BindingId, Form),
     RustTrait(BindingId, Form),
+    RustType(BindingId, Form),
     Export(Form),
 }
 
@@ -96,6 +97,7 @@ impl Expander<'_> {
             DefinitionForm::Type => Ok(Some(PendingItem::Signature(form))),
             DefinitionForm::Struct => self.register_struct(module, form, context),
             DefinitionForm::RustTrait => self.register_rust_trait(module, form, context),
+            DefinitionForm::RustType => self.register_rust_type(module, form, context),
             DefinitionForm::Use => self.import(&form, context).map(|()| None),
             DefinitionForm::Export => Ok(Some(PendingItem::Export(form))),
         }
@@ -129,6 +131,21 @@ impl Expander<'_> {
             context,
         )?;
         Ok(Some(PendingItem::RustTrait(binding, form)))
+    }
+
+    fn register_rust_type(
+        &mut self,
+        module: ModuleId,
+        form: Form,
+        context: &mut DefinitionContext,
+    ) -> Result<Option<PendingItem>, Diagnostic> {
+        let binding = self.register_type_name(
+            &form,
+            KernelForm::Definition(DefinitionForm::RustType),
+            BindingKind::RustType(module),
+            context,
+        )?;
+        Ok(Some(PendingItem::RustType(binding, form)))
     }
 
     fn definition_head(&self, form: &Form) -> Result<KernelForm, Diagnostic> {
@@ -202,6 +219,7 @@ impl Expander<'_> {
             PendingItem::Signature(form) => self.lower_signature(module, &form, core),
             PendingItem::Struct(binding, form) => self.lower_struct(binding, &form, core),
             PendingItem::RustTrait(binding, form) => self.lower_rust_trait(binding, &form, core),
+            PendingItem::RustType(binding, form) => self.lower_rust_type(binding, &form, core),
             PendingItem::Export(form) => {
                 self.lower_exports(module, &form, core);
                 Ok(())

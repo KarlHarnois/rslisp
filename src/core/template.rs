@@ -1,12 +1,13 @@
 #[derive(Debug, PartialEq, Eq)]
 pub struct MalformedPlaceholder;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Piece {
     Literal(String),
     Placeholder(usize),
 }
 
+#[derive(Clone, Debug)]
 pub struct ParsedTemplate {
     pieces: Vec<Piece>,
     text: String,

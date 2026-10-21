@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/rust_types.rslisp
+---
+fn total(values: impl Iterator<Item = i64>) -> i64 {
+    values.sum::<i64>()
+}
+
+fn main() {
+    let boxed_seven: Box<i64> = Box::new(7_i64);
+    println!("{}", &*boxed_seven);
+    let summed = |values: _| total(values);
+    println!("{}", &summed((1_i64..4)))
+}

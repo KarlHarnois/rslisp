@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/rust_types.rslisp
+---
+(rust-type boxed (where (item) "Box<{0}>"))
+(rust-type duration "std::time::Duration")
+(def box-new (rust "Box::new({0})" (where (a) (fn (a) (boxed a)))))

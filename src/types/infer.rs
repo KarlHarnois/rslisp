@@ -605,7 +605,9 @@ impl TypeChecker {
             owner = self.unifier.shallow(&inner);
         }
         match owner {
-            Type::Named(binding, arguments) => Ok((binding, arguments)),
+            Type::Named(binding, arguments) if self.structs.get(binding).is_some() => {
+                Ok((binding, arguments))
+            }
             Type::Var(_) => self.unique_owner(&owner, label),
             other => Err(TypeProblems::no_fields(
                 &self.display().show(&other),

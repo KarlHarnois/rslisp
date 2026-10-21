@@ -1,0 +1,14 @@
+(rust-type boxed (where (item) "Box<{0}>"))
+(def box-new (rust "Box::new({0})" (where (a) (fn (a) (boxed a)))))
+(def unbox (rust "*{0}" (where (a) (fn ((boxed a)) a))))
+
+(rust-type numbers "impl Iterator<Item = i64>")
+(def one-to-three (rust "(1_i64..4)" numbers))
+(def sum-of (rust "{0}.sum::<i64>()" (fn (numbers) i64)))
+(defn total (values) (sum-of values))
+
+(defn main ()
+  (let boxed-seven (box-new 7))
+  (println (unbox boxed-seven))
+  (let summed (fn (values) (total values)))
+  (println (summed one-to-three)))

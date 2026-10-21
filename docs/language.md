@@ -59,6 +59,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `macro` | `(def name (macro (form) body...))` | none | form: binder. body: expressions. |
 | `rust` | `(rust "template" type)` | the inlined template | type: type. |
 | `rust-trait` | `(rust-trait name "Path" type...)` | trait bound | name: type binder. types: types, or `(where (param...) type)`. |
+| `rust-type` | `(rust-type name "template")` or `(rust-type name (where (param...) "template"))` | the filled template | name: type binder. params: type binders. |
 | `use` | `(use module name...)` | path | module: module path. names: binders. |
 | `export` | `(export name...)` | `pub` | names: references in every namespace. |
 
@@ -70,7 +71,7 @@ In expression positions, the kernel provides the constants `true` and `false`. T
 
 A module body is expanded in two passes:
 
-1. Each top-level form is expanded in order until its head is a definition form: `def`, `type`, `struct`, `rust-trait`, `use`, `export` or `do`. The names it defines are registered. A `def` whose value is a `macro` is evaluated right away.
+1. Each top-level form is expanded in order until its head is a definition form: `def`, `type`, `struct`, `rust-trait`, `rust-type`, `use`, `export` or `do`. The names it defines are registered. A `def` whose value is a `macro` is evaluated right away.
 2. `def` values, types and `export` lists are expanded.
 
 Values and types are therefore order-independent, like Rust items. A macro must appear above its first top-level use.
@@ -93,9 +94,9 @@ Type syntax mirrors value syntax:
 | `(where ((n number)) (fn (n) n))` | `fn<N: Number>(N) -> N` |
 | `_` | inferred |
 
-Type variables are bound only by `where`. A `where` binds them over what its form holds: a type in a signature, or the fields of a struct. An unknown type name is an unbound-name error that suggests the closest name.
+Type variables are bound only by `where`. A `where` binds them over what its form holds: a signature's type, a struct's fields or a Rust type's template. An unknown type name is an unbound-name error that suggests the closest name.
 
-Each type parameter of a struct must appear in a field. It takes no traits, because Rust would demand a struct's traits at every use. A function that needs a trait names it in its own `where`. A type takes exactly as many arguments as it has parameters.
+Each type parameter of a struct must appear in a field. Each parameter of a Rust type must appear in its template. A type parameter takes no traits, because Rust would demand a type's traits at every use. A function that needs a trait names it in its own `where`. A type takes exactly as many arguments as it has parameters.
 
 ```lisp
 (struct pair (where (a b) (first a) (second b)))
@@ -234,13 +235,22 @@ Field names are not hygienic. They are looked up through the struct type.
 (def not (rust "!{0}" (fn (bool) bool)))
 ```
 
+`rust-type` binds a type name to a Rust type. `{0}` in the template is the first `where` parameter, as `{0}` in a `rust` template is the first argument:
+
+```lisp
+(rust-type boxed (where (item) "Box<{0}>"))
+(def box-new (rust "Box::new({0})" (where (a) (fn (a) (boxed a)))))
+```
+
+`rust-type` is a kernel form: only `struct` creates a type, and it cannot name a type that Rust defines. A template that starts with `impl ` is opaque. A closure parameter or a `let` writes an opaque type as `_`. A `const`, a `static` or a function-type parameter cannot hold one, and rustc reports it. A struct whose Rust name equals the first name in a used Rust type's template is a name collision.
+
 A `rust-trait` implementor can take type parameters from a `where`. `(where ((a shown)) (ref a))` implements the trait for a reference to any type that implements it. A type parameter alone cannot be an implementor, because it would match every type.
 
 | Template rule | Effect |
 |---|---|
 | Placeholders | `{0}`, `{1}` and so on take the call's arguments. `{{` and `}}` are literal braces. |
 | Inlining | A `def` of a `rust` form emits nothing. Each use inlines the template. |
-| Parentheses | A non-atomic argument is parenthesized unless its placeholder is the whole template or sits between `(` or `,` and `,` or `)`. |
+| Parentheses | A non-atomic argument is parenthesized unless its placeholder is the whole template or sits between `(` or `,` and `,` or `)`. A prefixed argument such as `*x` is parenthesized only before `.`, `[`, `(` or `?`. |
 | Evaluation order | A repeated or out-of-order placeholder binds its arguments to temporaries first. |
 | Values | A function template used as a value becomes a closure. A bare path is used as the path. |
 | Runtime | `prelude/runtime.rs` is emitted as `mod rt` when a bound names `crate::rt::`. |
