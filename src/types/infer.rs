@@ -265,33 +265,37 @@ impl TypeChecker {
                 let ty = typed.ty.clone();
                 Ok((TypedBodyItem::Expr(typed), ty))
             }
-            BodyItem::Let(binder, value) => {
-                let value = self.infer(value)?;
-                let ty = match &binder.annotation {
-                    Some(annotation) => {
-                        let annotated = self.lower_type(annotation, &HashMap::new())?;
-                        self.expect(
-                            &annotated,
-                            &value.ty,
-                            value.span,
-                            MismatchContext::Annotation {
-                                annotation: annotation.span(),
-                            },
-                        )?;
-                        annotated
-                    }
-                    None => value.ty.clone(),
-                };
-                self.locals.insert(binder.binding, ty.clone());
-                let binder = TypedBinder {
-                    binding: binder.binding,
-                    ty,
-                    span: binder.span,
-                    annotated: binder.annotation.is_some(),
-                };
-                Ok((TypedBodyItem::Let(binder, value), Type::unit()))
-            }
+            BodyItem::Let(binder, value) => self.infer_let(binder, value),
         }
+    }
+
+    fn infer_let(
+        &mut self,
+        binder: &Binder,
+        value: &Expr,
+    ) -> Result<(TypedBodyItem, Type), Diagnostic> {
+        let value = self.infer(value)?;
+        let ty = self.binder_type(binder, &value)?;
+        self.locals.insert(binder.binding, ty.clone());
+        let binder = TypedBinder {
+            binding: binder.binding,
+            ty,
+            span: binder.span,
+            annotated: binder.annotation.is_some(),
+        };
+        Ok((TypedBodyItem::Let(binder, value), Type::unit()))
+    }
+
+    fn binder_type(&mut self, binder: &Binder, value: &TypedExpr) -> Result<Type, Diagnostic> {
+        let Some(annotation) = &binder.annotation else {
+            return Ok(value.ty.clone());
+        };
+        let annotated = self.lower_type(annotation, &HashMap::new())?;
+        let context = MismatchContext::Annotation {
+            annotation: annotation.span(),
+        };
+        self.expect(&annotated, &value.ty, value.span, context)?;
+        Ok(annotated)
     }
 
     fn infer_call(

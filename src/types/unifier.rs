@@ -136,9 +136,8 @@ impl Unifier {
 
     pub fn unify(&mut self, expected: &Type, found: &Type, span: Span) -> Result<(), UnifyError> {
         match (self.shallow(expected), self.shallow(found)) {
-            (Type::Var(left), Type::Var(right)) if left == right => Ok(()),
             (Type::Var(left), Type::Var(right)) => {
-                self.merge_vars(left, right);
+                self.unify_vars(left, right);
                 Ok(())
             }
             (Type::Var(var), other) | (other, Type::Var(var)) => {
@@ -159,6 +158,12 @@ impl Unifier {
             }
             (left, right) if left == right => Ok(()),
             _ => Err(UnifyError::Mismatch),
+        }
+    }
+
+    fn unify_vars(&mut self, left: TypeVar, right: TypeVar) {
+        if left != right {
+            self.merge_vars(left, right);
         }
     }
 

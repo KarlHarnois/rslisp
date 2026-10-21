@@ -144,21 +144,9 @@ impl Template {
     }
 
     fn has_top_level_space(text: &str) -> bool {
-        let mut depth = 0usize;
-        let mut in_string = false;
-        let mut previous = ' ';
-        for character in text.chars() {
-            match character {
-                '"' if previous != '\\' => in_string = !in_string,
-                _ if in_string => {}
-                opener if Self::OPENERS.contains(&opener) => depth += 1,
-                closer if Self::CLOSERS.contains(&closer) => depth = depth.saturating_sub(1),
-                space if space.is_whitespace() && depth == 0 => return true,
-                _ => {}
-            }
-            previous = character;
-        }
-        false
+        let mut scanner = NestingScanner::default();
+        text.chars()
+            .any(|character| scanner.is_top_level_space(character))
     }
 
     fn placeholders(&self) -> impl Iterator<Item = usize> + '_ {
@@ -195,6 +183,43 @@ impl Template {
                 Fragment::Text("}".to_string()),
             ],
             precedence: Precedence::Block,
+        }
+    }
+}
+
+#[derive(Default)]
+struct NestingScanner {
+    depth: usize,
+    in_string: bool,
+    escaped: bool,
+}
+
+impl NestingScanner {
+    const QUOTE: char = '"';
+    const ESCAPE: char = '\\';
+
+    fn is_top_level_space(&mut self, character: char) -> bool {
+        let found = character.is_whitespace() && self.depth == 0 && !self.in_string;
+        self.advance(character);
+        found
+    }
+
+    fn advance(&mut self, character: char) {
+        if character == Self::QUOTE && !self.escaped {
+            self.in_string = !self.in_string;
+        } else if !self.in_string {
+            self.depth = self.depth_after(character);
+        }
+        self.escaped = character == Self::ESCAPE;
+    }
+
+    fn depth_after(&self, character: char) -> usize {
+        if Template::OPENERS.contains(&character) {
+            self.depth + 1
+        } else if Template::CLOSERS.contains(&character) {
+            self.depth.saturating_sub(1)
+        } else {
+            self.depth
         }
     }
 }

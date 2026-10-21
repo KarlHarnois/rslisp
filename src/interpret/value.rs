@@ -15,15 +15,19 @@ pub enum Value {
 impl Value {
     pub fn describe(&self) -> &'static str {
         match self {
-            Value::Form(form) => match form.kind() {
-                FormKind::Symbol(_) => "a symbol",
-                FormKind::String(_) => "a string",
-                FormKind::Number(_) => "a number",
-                FormKind::List(_) => "a list",
-            },
+            Value::Form(form) => Self::describe_form(form),
             Value::Bool(_) => "a boolean",
             Value::Unit => "unit",
             Value::Closure(_) | Value::Builtin(_) => "a function",
+        }
+    }
+
+    fn describe_form(form: &Form) -> &'static str {
+        match form.kind() {
+            FormKind::Symbol(_) => "a symbol",
+            FormKind::String(_) => "a string",
+            FormKind::Number(_) => "a number",
+            FormKind::List(_) => "a list",
         }
     }
 

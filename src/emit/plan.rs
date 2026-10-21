@@ -304,25 +304,25 @@ impl<'p> EmitPlan<'p> {
 
     fn is_const_evaluable(&self, expr: &TypedExpr) -> bool {
         match &expr.kind {
-            TypedExprKind::Leaf(TypedLeaf::Literal(_)) => true,
-            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => self
-                .definition(*binding)
-                .is_some_and(|definition| match &definition.value.kind {
-                    TypedExprKind::Leaf(TypedLeaf::Rust(template)) => {
-                        Self::is_operator_template(&template.template)
-                    }
-                    _ => self.is_const_evaluable(&definition.value),
-                }),
+            TypedExprKind::Leaf(leaf) => self.is_const_leaf(leaf),
             TypedExprKind::Call(callee, arguments) => {
                 self.is_const_evaluable(callee)
                     && arguments
                         .iter()
                         .all(|argument| self.is_const_evaluable(&argument.value))
             }
-            TypedExprKind::Leaf(TypedLeaf::Rust(template)) => {
-                Self::is_operator_template(&template.template)
-            }
             _ => false,
+        }
+    }
+
+    fn is_const_leaf(&self, leaf: &TypedLeaf) -> bool {
+        match leaf {
+            TypedLeaf::Literal(_) => true,
+            TypedLeaf::Global(binding) => self
+                .definition(*binding)
+                .is_some_and(|definition| self.is_const_evaluable(&definition.value)),
+            TypedLeaf::Rust(template) => Self::is_operator_template(&template.template),
+            TypedLeaf::Local(_) => false,
         }
     }
 

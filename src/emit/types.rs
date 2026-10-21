@@ -57,17 +57,21 @@ impl<'a> RustTypes<'a> {
             Type::Primitive(primitive) => Self::primitive(*primitive).to_string(),
             Type::Struct(binding) => self.struct_path(*binding),
             Type::Function(parameters, result) => self.function(parameters, result, position),
-            Type::Ref(inner) => format!(
-                "&{}{}",
-                Self::lifetime(position),
-                self.show(inner, Self::inner(position))
-            ),
-            Type::Mut(inner) => format!(
-                "&{}mut {}",
-                Self::lifetime(position),
-                self.show(inner, Self::inner(position))
-            ),
+            Type::Ref(inner) | Type::Mut(inner) => self.reference(shown, inner, position),
         }
+    }
+
+    fn reference(&self, reference: &Type, inner: &Type, position: TypePosition) -> String {
+        let mutability = if matches!(reference, Type::Mut(_)) {
+            "mut "
+        } else {
+            ""
+        };
+        format!(
+            "&{}{mutability}{}",
+            Self::lifetime(position),
+            self.show(inner, Self::inner(position))
+        )
     }
 
     pub fn generics(

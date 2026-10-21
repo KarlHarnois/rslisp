@@ -24,15 +24,26 @@ impl<'a> TypeDisplay<'a> {
                 .map_or_else(|| Self::UNKNOWN.to_string(), |param| param.name.to_string()),
             Type::Primitive(primitive) => primitive.name().to_string(),
             Type::Struct(binding) => self.bindings.get(*binding).name().to_string(),
-            Type::Function(parameters, result) => {
-                let parameters: Vec<String> = parameters
-                    .iter()
-                    .map(|parameter| self.show(parameter))
-                    .collect();
-                format!("(fn ({}) {})", parameters.join(" "), self.show(result))
+            Type::Function(parameters, result) => self.function(parameters, result),
+            Type::Ref(inner) | Type::Mut(inner) => {
+                format!("({} {})", Self::reference_keyword(shown), self.show(inner))
             }
-            Type::Ref(inner) => format!("(ref {})", self.show(inner)),
-            Type::Mut(inner) => format!("(mut {})", self.show(inner)),
+        }
+    }
+
+    fn function(&self, parameters: &[Type], result: &Type) -> String {
+        let parameters: Vec<String> = parameters
+            .iter()
+            .map(|parameter| self.show(parameter))
+            .collect();
+        format!("(fn ({}) {})", parameters.join(" "), self.show(result))
+    }
+
+    fn reference_keyword(reference: &Type) -> &'static str {
+        if matches!(reference, Type::Mut(_)) {
+            "mut"
+        } else {
+            "ref"
         }
     }
 
