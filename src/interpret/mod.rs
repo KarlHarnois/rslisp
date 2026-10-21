@@ -111,8 +111,7 @@ impl<'h> Interpreter<'h> {
     ) -> Result<Value, Diagnostic> {
         let params = &closure.lambda.params;
         if params.len() != arguments.len() {
-            return Err(InterpretProblems::wrong_argument_count(
-                "this function",
+            return Err(InterpretProblems::closure_argument_count(
                 params.len(),
                 arguments.len(),
                 span,

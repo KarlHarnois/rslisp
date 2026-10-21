@@ -25,16 +25,24 @@ impl InterpretProblems {
         )
     }
 
-    pub fn wrong_argument_count(
-        function: &str,
+    pub fn builtin_argument_count(
+        builtin: &str,
         expected: usize,
         found: usize,
         span: Span,
     ) -> Diagnostic {
+        Self::argument_count(&format!("`{builtin}`"), expected, found, span)
+    }
+
+    pub fn closure_argument_count(expected: usize, found: usize, span: Span) -> Diagnostic {
+        Self::argument_count("this function", expected, found, span)
+    }
+
+    fn argument_count(callee: &str, expected: usize, found: usize, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::COMPILE_TIME_ERROR,
             format!(
-                "`{function}` takes {} but {found} {} given",
+                "{callee} takes {} but {found} {} given",
                 Counted::noun(expected, "argument"),
                 Counted::was_or_were(found)
             ),

@@ -35,7 +35,7 @@ impl Arguments {
         if self.values.len() == expected {
             Ok(())
         } else {
-            Err(InterpretProblems::wrong_argument_count(
+            Err(InterpretProblems::builtin_argument_count(
                 self.function,
                 expected,
                 self.values.len(),
