@@ -5,11 +5,12 @@ use super::fragment::{Code, Fragment};
 use super::literal_generics::LiteralGenerics;
 use super::locals::LocalNames;
 use super::mangle::NameMangler;
+use super::mutable_locals::MutableLocals;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
 use super::types::{RustTypes, TypePosition};
 use crate::core::{BindingId, ModuleId, StructDerives};
 use crate::diagnostic::Diagnostic;
-use crate::types::{Type, TypedDefinition, TypedExprKind, TypedProgram};
+use crate::types::{Type, TypedDefinition, TypedExpr, TypedExprKind, TypedProgram};
 
 #[derive(Default)]
 struct ModuleTree {
@@ -133,7 +134,7 @@ impl<'a> ItemEmitter<'a> {
         let TypedExprKind::Fn(lambda) = &definition.value.kind else {
             return Vec::new();
         };
-        let mut emitter = self.expressions(info.module);
+        let mut emitter = self.expressions(info.module, &definition.value);
         let types = emitter.types();
         let params: Vec<String> = lambda
             .params
@@ -182,7 +183,7 @@ impl<'a> ItemEmitter<'a> {
         info: &ItemInfo,
         is_lazy: bool,
     ) -> Vec<Fragment> {
-        let mut emitter = self.expressions(info.module);
+        let mut emitter = self.expressions(info.module, &definition.value);
         let value_type = emitter
             .types()
             .show(&definition.scheme.body, TypePosition::Value);
@@ -237,7 +238,7 @@ impl<'a> ItemEmitter<'a> {
         ]
     }
 
-    fn expressions(&self, module: ModuleId) -> ExpressionEmitter<'a> {
+    fn expressions(&self, module: ModuleId, value: &TypedExpr) -> ExpressionEmitter<'a> {
         let reserved = self
             .plan
             .items_of(module)
@@ -250,6 +251,7 @@ impl<'a> ItemEmitter<'a> {
             module,
             LocalNames::new(reserved.collect::<Vec<String>>()),
         )
+        .with_mutable_locals(MutableLocals::of(value))
     }
 
     fn absorb(&mut self, emitter: ExpressionEmitter) {

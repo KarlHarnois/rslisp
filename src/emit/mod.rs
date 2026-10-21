@@ -4,6 +4,7 @@ mod items;
 mod literal_generics;
 mod locals;
 mod mangle;
+mod mutable_locals;
 mod plan;
 mod problems;
 mod template;

@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use super::fragment::{Code, Fragment, Precedence};
@@ -34,6 +35,7 @@ pub struct ExpressionEmitter<'a> {
     module: ModuleId,
     pub locals: LocalNames,
     pub problems: Vec<Diagnostic>,
+    mutable_locals: HashSet<BindingId>,
 }
 
 impl<'a> ExpressionEmitter<'a> {
@@ -54,7 +56,13 @@ impl<'a> ExpressionEmitter<'a> {
             module,
             locals,
             problems: Vec::new(),
+            mutable_locals: HashSet::new(),
         }
+    }
+
+    pub fn with_mutable_locals(mut self, mutable_locals: HashSet<BindingId>) -> Self {
+        self.mutable_locals = mutable_locals;
+        self
     }
 
     pub fn types(&self) -> RustTypes<'a> {
@@ -168,12 +176,23 @@ impl<'a> ExpressionEmitter<'a> {
         };
         Code::joined(
             vec![
-                Code::atom(format!("let {name}{annotation} = ")),
+                Code::atom(format!(
+                    "{} {name}{annotation} = ",
+                    self.declaration(binder)
+                )),
                 value,
                 Code::atom(";"),
             ],
             Precedence::Block,
         )
+    }
+
+    fn declaration(&self, binder: &TypedBinder) -> &'static str {
+        if self.mutable_locals.contains(&binder.binding) {
+            "let mut"
+        } else {
+            "let"
+        }
     }
 
     fn needs_annotation(bound: &Type) -> bool {
