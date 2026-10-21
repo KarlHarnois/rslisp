@@ -9,8 +9,9 @@ mod terminal;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
+use crate::build::BuildProfile;
 use crate::language::Language;
 use build::BuildCommand;
 use check::CheckCommand;
@@ -38,19 +39,25 @@ enum Command {
     #[command(about = "Compile a program to a native binary")]
     Build {
         file: PathBuf,
-        #[arg(long)]
-        release: bool,
+        #[command(flatten)]
+        release: ReleaseFlag,
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
     #[command(about = "Build a program and run it")]
     Run {
         file: PathBuf,
-        #[arg(long)]
-        release: bool,
+        #[command(flatten)]
+        release: ReleaseFlag,
         #[arg(last = true)]
         args: Vec<String>,
     },
+}
+
+#[derive(Args)]
+struct ReleaseFlag {
+    #[arg(long)]
+    release: bool,
 }
 
 impl Cli {
@@ -69,7 +76,14 @@ impl Command {
                 file,
                 release,
                 output,
-            } => BuildCommand::new(file, BuildOptions { release, output }).run(),
+            } => BuildCommand::new(
+                file,
+                BuildOptions {
+                    profile: release.profile(),
+                    output,
+                },
+            )
+            .run(),
             Command::Run {
                 file,
                 release,
@@ -77,12 +91,22 @@ impl Command {
             } => RunCommand::new(
                 file,
                 BuildOptions {
-                    release,
+                    profile: release.profile(),
                     output: None,
                 },
                 args,
             )
             .run(),
+        }
+    }
+}
+
+impl ReleaseFlag {
+    fn profile(&self) -> BuildProfile {
+        if self.release {
+            BuildProfile::Release
+        } else {
+            BuildProfile::Debug
         }
     }
 }

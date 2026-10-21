@@ -3,7 +3,7 @@ use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 
 use super::exit_status::ExitStatus;
-use crate::build::{BuildError, RustCompiler};
+use crate::build::{BuildError, BuildProfile, RustCompiler};
 use crate::core::ModulePath;
 use crate::diagnostic::{DiagnosticRenderer, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
@@ -15,7 +15,7 @@ use crate::source::{SourceId, SourceMap};
 use crate::types::{TypeChecker, TypedProgram};
 
 pub struct BuildOptions {
-    pub release: bool,
+    pub profile: BuildProfile,
     pub output: Option<PathBuf>,
 }
 
@@ -47,14 +47,8 @@ impl Terminal {
             .output
             .clone()
             .unwrap_or_else(|| directory.join(&crate_name));
-        RustCompiler::new(directory)
-            .compile(
-                &emitted,
-                &crate_name,
-                &output,
-                options.release,
-                Self::entry_span(),
-            )
+        RustCompiler::new(directory, options.profile)
+            .compile(&emitted, &crate_name, &output, Self::entry_span())
             .map(|()| output)
             .map_err(|error| self.report_build(error))
     }

@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use rslisp::build::{BuildError, RustCompiler};
+use rslisp::build::{BuildError, BuildProfile, RustCompiler};
 use rslisp::core::{CorePrinter, ModulePath};
 use rslisp::diagnostic::{DiagnosticRenderer, Diagnostics};
 use rslisp::emit::{EmittedCrate, RustEmitter};
@@ -72,11 +72,10 @@ impl Fixture {
             self.module_name()
         ));
         let binary = directory.join(self.module_name());
-        match RustCompiler::new(directory).compile(
+        match RustCompiler::new(directory, BuildProfile::Debug).compile(
             &emitted,
             "fixture",
             &binary,
-            false,
             self.entry_span(),
         ) {
             Ok(()) => Self::stdout_of(&binary),

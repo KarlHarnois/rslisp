@@ -1,3 +1,4 @@
+mod profile;
 mod rustc_errors;
 
 use std::fs;
@@ -8,6 +9,7 @@ use std::process::Command;
 use crate::diagnostic::Diagnostics;
 use crate::emit::EmittedCrate;
 use crate::source::Span;
+pub use profile::BuildProfile;
 use rustc_errors::RustcDiagnosticMapper;
 
 pub enum BuildError {
@@ -17,16 +19,16 @@ pub enum BuildError {
 
 pub struct RustCompiler {
     directory: PathBuf,
+    profile: BuildProfile,
 }
 
 impl RustCompiler {
     const RUSTC: &str = "rustc";
     const SOURCE_FILE: &str = "main.rs";
     const EDITION: &str = "2024";
-    const OPTIMIZE: &str = "opt-level=3";
 
-    pub fn new(directory: PathBuf) -> Self {
-        Self { directory }
+    pub fn new(directory: PathBuf, profile: BuildProfile) -> Self {
+        Self { directory, profile }
     }
 
     pub fn compile(
@@ -34,13 +36,26 @@ impl RustCompiler {
         emitted: &EmittedCrate,
         crate_name: &str,
         output: &Path,
-        release: bool,
         entry: Span,
     ) -> Result<(), BuildError> {
         let source = self
             .write_source(emitted)
             .map_err(|error| Self::environment("write the generated Rust", &error))?;
         Self::create_output_directory(output)?;
+        let result = self
+            .rustc_command(crate_name, output, &source)
+            .output()
+            .map_err(|error| Self::environment("run rustc", &error))?;
+        if result.status.success() {
+            return Ok(());
+        }
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        Err(BuildError::Program(
+            RustcDiagnosticMapper::new(emitted, entry).map(&stderr),
+        ))
+    }
+
+    fn rustc_command(&self, crate_name: &str, output: &Path, source: &Path) -> Command {
         let mut command = Command::new(Self::RUSTC);
         command
             .args([
@@ -54,20 +69,9 @@ impl RustCompiler {
             ])
             .arg("-o")
             .arg(output)
-            .arg(&source);
-        if release {
-            command.args(["-C", Self::OPTIMIZE]);
-        }
-        let result = command
-            .output()
-            .map_err(|error| Self::environment("run rustc", &error))?;
-        if result.status.success() {
-            return Ok(());
-        }
-        let stderr = String::from_utf8_lossy(&result.stderr);
-        Err(BuildError::Program(
-            RustcDiagnosticMapper::new(emitted, entry).map(&stderr),
-        ))
+            .arg(source)
+            .args(self.profile.rustc_arguments());
+        command
     }
 
     fn write_source(&self, emitted: &EmittedCrate) -> io::Result<PathBuf> {
