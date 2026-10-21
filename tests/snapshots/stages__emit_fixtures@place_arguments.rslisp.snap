@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/place_arguments.rslisp
+---
+#[derive(Clone)]
+struct Person {
+    name: String,
+    age: i64,
+}
+
+fn make_person(name: String, age: i64) -> Person {
+    Person { name, age }
+}
+
+static ORIGIN: std::sync::LazyLock<Vec<i64>> = std::sync::LazyLock::new(|| vec![1_i64, 2_i64]);
+
+fn main() {
+    let ada = make_person("Ada".to_string(), 36);
+    println!("{}", ada.name);
+    println!("{}", ada.name.clone());
+    println!("{}", ada.age);
+    println!("{}", ORIGIN.len())
+}

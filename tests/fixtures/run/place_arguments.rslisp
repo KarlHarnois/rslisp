@@ -1,0 +1,10 @@
+(defstruct person (name string) (age i64))
+
+(def origin (vec 1 2))
+
+(defn main ()
+  (let ada (make-person (to-string "Ada") 36))
+  (println (field ada name))
+  (println (clone (field ada name)))
+  (println (field ada age))
+  (println (len origin)))

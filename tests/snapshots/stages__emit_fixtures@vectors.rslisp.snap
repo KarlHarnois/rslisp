@@ -10,7 +10,7 @@ fn main() {
     scores.push(10);
     scores.push(20);
     println!("{}", scores.len());
-    println!("{}", (*PRIMES).len());
+    println!("{}", PRIMES.len());
     scores.iter().copied().for_each(|score: i64| println!("{}", score));
-    (*PRIMES).iter().for_each(|prime: &i64| println!("{}", prime))
+    PRIMES.iter().for_each(|prime: &i64| println!("{}", prime))
 }

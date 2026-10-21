@@ -419,12 +419,36 @@ impl<'a> ExpressionEmitter<'a> {
         role: ArgumentRole,
     ) -> Code {
         let value = self
-            .expr_in(&argument.value, context)
+            .argument_value(&argument.value, context, role)
             .spanned(argument.value.span);
         match Self::borrow_prefix(argument, role) {
             Some(prefix) => Self::prefixed(&prefix, value).spanned(argument.value.span),
             None => value,
         }
+    }
+
+    fn argument_value(
+        &mut self,
+        value: &TypedExpr,
+        context: TypeContext,
+        role: ArgumentRole,
+    ) -> Code {
+        match (&value.kind, role) {
+            (_, ArgumentRole::Ordinary) => self.expr_in(value, context),
+            (TypedExprKind::Struct(TypedStructExpr::Field(owner, label)), _) => {
+                self.field_place(owner, label)
+            }
+            (TypedExprKind::Leaf(TypedLeaf::Global(binding)), ArgumentRole::Receiver)
+                if self.is_static(*binding) =>
+            {
+                Code::atom(self.plan.path_to(*binding, self.module))
+            }
+            _ => self.expr_in(value, context),
+        }
+    }
+
+    fn is_static(&self, binding: BindingId) -> bool {
+        self.plan.item(binding).map(|item| item.kind) == Some(ItemKind::Static)
     }
 
     fn borrow_prefix(argument: &TypedArgument, role: ArgumentRole) -> Option<String> {
@@ -558,24 +582,28 @@ impl<'a> ExpressionEmitter<'a> {
             && !self
                 .declared_field_type(value, label)
                 .is_some_and(|declared| declared.is_reference());
+        let access = self.field_place(value, label);
+        if borrows_field {
+            Code::joined(vec![Code::atom("&"), access], Precedence::Prefix)
+        } else {
+            access
+        }
+    }
+
+    fn field_place(&mut self, value: &TypedExpr, label: &FieldLabel) -> Code {
         let value = self.expr(value);
         let value = if value.is_atomic() {
             value
         } else {
             value.parenthesized()
         };
-        let access = Code::joined(
+        Code::joined(
             vec![
                 value,
                 Code::atom(format!(".{}", NameMangler::value(&label.name))),
             ],
             Precedence::Atom,
-        );
-        if borrows_field {
-            Code::joined(vec![Code::atom("&"), access], Precedence::Prefix)
-        } else {
-            access
-        }
+        )
     }
 
     fn declared_field_type(&self, value: &TypedExpr, label: &FieldLabel) -> Option<Type> {
