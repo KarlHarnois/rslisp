@@ -10,7 +10,7 @@ use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
     BindingArena, BindingId, CoreModule, Expr, ExprKind, ItemKind, Leaf, ModuleId, PrimitiveType,
-    StructDerives, TypeExpr,
+    StructDerives, TypeBinder, TypeExpr,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
@@ -32,6 +32,7 @@ pub struct TypeChecker {
     pub(super) locals: HashMap<BindingId, Type>,
     pub(super) compile_time_only: HashSet<BindingId>,
     pub(super) diagnostics: Diagnostics,
+    pub(super) type_arities: HashMap<BindingId, usize>,
     signatures: HashMap<BindingId, (TypeExpr, Span)>,
     monomorphic: Vec<Type>,
     implied_bounds: HashMap<GenericId, Vec<BindingId>>,
@@ -59,6 +60,7 @@ impl TypeChecker {
             locals: HashMap::new(),
             compile_time_only: HashSet::new(),
             diagnostics: Diagnostics::default(),
+            type_arities: HashMap::new(),
             signatures: HashMap::new(),
             monomorphic: Vec::new(),
             implied_bounds: HashMap::new(),
@@ -66,9 +68,12 @@ impl TypeChecker {
     }
 
     pub(super) fn collect_declarations(&mut self, modules: &[CoreModule]) {
+        self.record_type_arities(modules);
         for item in modules.iter().flat_map(|module| &module.items) {
             let collected = match &item.kind {
-                ItemKind::Struct(binding, fields) => self.collect_struct(*binding, fields),
+                ItemKind::Struct(binding, params, fields) => {
+                    self.collect_struct(*binding, params, fields)
+                }
                 ItemKind::RustTrait(binding, path, implementors) => {
                     self.collect_trait(*binding, path, implementors)
                 }
@@ -86,11 +91,23 @@ impl TypeChecker {
         self.register_derived_traits(modules);
     }
 
+    fn record_type_arities(&mut self, modules: &[CoreModule]) {
+        for item in modules.iter().flat_map(|module| &module.items) {
+            if let ItemKind::Struct(binding, params, _) = &item.kind {
+                self.type_arities.insert(*binding, params.len());
+            }
+        }
+    }
+
     fn register_derived_traits(&mut self, modules: &[CoreModule]) {
         for item in modules.iter().flat_map(|module| &module.items) {
-            if let ItemKind::Struct(binding, _) = item.kind {
-                self.traits
-                    .add_implementor_to_paths(&StructDerives::TRAITS, Type::Struct(binding));
+            if let ItemKind::Struct(binding, params, _) = &item.kind
+                && params.is_empty()
+            {
+                self.traits.add_implementor_to_paths(
+                    &StructDerives::TRAITS,
+                    Type::Named(*binding, Vec::new()),
+                );
             }
         }
     }
@@ -424,6 +441,9 @@ impl TypeChecker {
                     .for_each(|parameter| Self::collect_vars(parameter, vars));
                 Self::collect_vars(result, vars);
             }
+            Type::Named(_, arguments) => arguments
+                .iter()
+                .for_each(|argument| Self::collect_vars(argument, vars)),
             Type::Ref(inner) | Type::Mut(inner) => Self::collect_vars(inner, vars),
             _ => {}
         }
@@ -448,18 +468,61 @@ impl TypeChecker {
     fn collect_struct(
         &mut self,
         binding: BindingId,
+        binders: &[TypeBinder],
         fields: &[(crate::core::FieldLabel, TypeExpr)],
     ) -> Result<(), Diagnostic> {
+        let params = self.struct_params(binders)?;
+        let scope: HashMap<BindingId, GenericId> = binders
+            .iter()
+            .zip(&params)
+            .map(|(binder, param)| (binder.variable, param.id))
+            .collect();
         let mut lowered = Vec::new();
         for (label, field_type) in fields {
-            lowered.push((
-                label.name.clone(),
-                self.lower_type(field_type, &HashMap::new())?,
-            ));
+            lowered.push((label.name.clone(), self.lower_type(field_type, &scope)?));
         }
-        self.structs
-            .add(binding, StructDefinition { fields: lowered });
+        Self::check_parameters_used(binders, &params, &lowered)?;
+        self.structs.add(
+            binding,
+            StructDefinition {
+                params,
+                fields: lowered,
+            },
+        );
         Ok(())
+    }
+
+    fn struct_params(&mut self, binders: &[TypeBinder]) -> Result<Vec<GenericParam>, Diagnostic> {
+        binders
+            .iter()
+            .map(|binder| {
+                let name = self.bindings.get(binder.variable).name().to_string();
+                if binder.bounds.is_empty() {
+                    Ok(self.new_generic(&name, Vec::new()))
+                } else {
+                    Err(TypeProblems::bounded_type_parameter(&name, binder.span))
+                }
+            })
+            .collect()
+    }
+
+    fn check_parameters_used(
+        binders: &[TypeBinder],
+        params: &[GenericParam],
+        fields: &[(std::rc::Rc<str>, Type)],
+    ) -> Result<(), Diagnostic> {
+        let unused = binders.iter().zip(params).find(|(_, param)| {
+            !fields
+                .iter()
+                .any(|(_, field_type)| field_type.mentions(param.id))
+        });
+        match unused {
+            Some((binder, param)) => Err(TypeProblems::unused_type_parameter(
+                &param.name,
+                binder.span,
+            )),
+            None => Ok(()),
+        }
     }
 
     fn collect_trait(
@@ -586,7 +649,7 @@ impl TypeChecker {
         for item in module.items {
             match item.kind {
                 ItemKind::Def(binding, _) => typed.definitions.extend(definitions.remove(&binding)),
-                ItemKind::Struct(binding, _) => typed.structs.push(binding),
+                ItemKind::Struct(binding, ..) => typed.structs.push(binding),
                 ItemKind::Signature(..) | ItemKind::RustTrait(..) => {}
             }
         }

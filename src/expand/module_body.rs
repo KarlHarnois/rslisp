@@ -4,6 +4,7 @@ use super::Expander;
 use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
+use super::type_parameters::Parameterized;
 use crate::core::{
     BindingId, BindingKind, CoreModule, DefinitionForm, ExpressionForm, FieldLabel, Item, ItemKind,
     KernelForm, ModuleId, Namespace, TypeExpr,
@@ -263,12 +264,23 @@ impl Expander<'_> {
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
         let shape = Shape::new(KernelForm::Definition(DefinitionForm::Struct), form);
-        let fields = shape.at_least(2)?[2..]
+        let body = &shape.at_least(2)?[2..];
+        let parameterized = match self.parameterized_body(body) {
+            Some(where_items) => {
+                self.lower_parameters(where_items, || shape.malformed(&body[0]))?
+            }
+            None => Parameterized {
+                binders: Vec::new(),
+                body: body.to_vec(),
+            },
+        };
+        let fields = parameterized
+            .body
             .iter()
             .map(|field| self.lower_field_declaration(&shape, field))
             .collect::<Result<Vec<(FieldLabel, TypeExpr)>, Diagnostic>>()?;
         core.items.push(Item {
-            kind: ItemKind::Struct(binding, fields),
+            kind: ItemKind::Struct(binding, parameterized.binders, fields),
             span: form.span(),
         });
         Ok(())

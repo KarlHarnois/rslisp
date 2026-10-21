@@ -1,0 +1,5 @@
+(struct pair (where (a b) (first a) (second b)))
+
+(defstruct crate (where (item) (content item) (count i64)))
+
+(struct query (where string))

@@ -110,17 +110,19 @@ impl Unifier {
 
     pub fn resolve(&self, value: &Type) -> Type {
         match self.shallow(value) {
+            Type::Named(binding, arguments) => Type::Named(binding, self.resolve_all(&arguments)),
             Type::Function(parameters, result) => Type::Function(
-                parameters
-                    .iter()
-                    .map(|parameter| self.resolve(parameter))
-                    .collect(),
+                self.resolve_all(&parameters),
                 Box::new(self.resolve(&result)),
             ),
             Type::Ref(inner) => Type::Ref(Box::new(self.resolve(&inner))),
             Type::Mut(inner) => Type::Mut(Box::new(self.resolve(&inner))),
             other => other,
         }
+    }
+
+    fn resolve_all(&self, values: &[Type]) -> Vec<Type> {
+        values.iter().map(|value| self.resolve(value)).collect()
     }
 
     pub fn shallow(&self, value: &Type) -> Type {
@@ -156,9 +158,35 @@ impl Unifier {
             (Type::Ref(left), Type::Ref(right)) | (Type::Mut(left), Type::Mut(right)) => {
                 self.unify(&left, &right, span)
             }
-            (left, right) if left == right => Ok(()),
+            (left, right) => self.unify_rigid(&left, &right, span),
+        }
+    }
+
+    fn unify_rigid(&mut self, left: &Type, right: &Type, span: Span) -> Result<(), UnifyError> {
+        match (left, right) {
+            (Type::Named(left, left_arguments), Type::Named(right, right_arguments))
+                if left == right =>
+            {
+                self.unify_pairwise(left_arguments, right_arguments, span)
+            }
+            _ if left == right => Ok(()),
             _ => Err(UnifyError::Mismatch),
         }
+    }
+
+    fn unify_pairwise(
+        &mut self,
+        left: &[Type],
+        right: &[Type],
+        span: Span,
+    ) -> Result<(), UnifyError> {
+        if left.len() != right.len() {
+            return Err(UnifyError::Mismatch);
+        }
+        for (left_part, right_part) in left.iter().zip(right) {
+            self.unify(left_part, right_part, span)?;
+        }
+        Ok(())
     }
 
     fn unify_vars(&mut self, left: TypeVar, right: TypeVar) {
@@ -175,12 +203,7 @@ impl Unifier {
         right_result: &Type,
         span: Span,
     ) -> Result<(), UnifyError> {
-        if left.len() != right.len() {
-            return Err(UnifyError::Mismatch);
-        }
-        for (left_parameter, right_parameter) in left.iter().zip(right) {
-            self.unify(left_parameter, right_parameter, span)?;
-        }
+        self.unify_pairwise(left, right, span)?;
         self.unify(left_result, right_result, span)
     }
 

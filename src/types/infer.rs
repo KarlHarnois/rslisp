@@ -383,7 +383,7 @@ impl TypeChecker {
     }
 
     fn is_known_value(parameter: &Type) -> bool {
-        matches!(parameter, Type::Struct(_) | Type::Primitive(_))
+        matches!(parameter, Type::Named(..) | Type::Primitive(_))
     }
 
     fn infer_if(
@@ -440,10 +440,11 @@ impl TypeChecker {
         span: Span,
     ) -> Result<(TypedExprKind, Type), Diagnostic> {
         let struct_name = self.bindings.get(binding).name().to_string();
+        let arguments = self.fresh_arguments(binding);
         let declared: Vec<(Rc<str>, Type)> = self
             .structs
             .get(binding)
-            .map(|definition| definition.fields.clone())
+            .map(|definition| definition.instantiated_fields(&arguments))
             .unwrap_or_default();
         let mut typed_fields = Vec::new();
         for (label, value) in fields {
@@ -471,8 +472,13 @@ impl TypeChecker {
         }
         Ok((
             TypedExprKind::Struct(TypedStructExpr::New(binding, typed_fields)),
-            Type::Struct(binding),
+            Type::Named(binding, arguments),
         ))
+    }
+
+    fn fresh_arguments(&mut self, binding: BindingId) -> Vec<Type> {
+        let count = self.type_arities.get(&binding).copied().unwrap_or_default();
+        (0..count).map(|_| self.unifier.fresh()).collect()
     }
 
     fn infer_field(
@@ -482,12 +488,11 @@ impl TypeChecker {
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
         let value = self.infer(value)?;
-        let owner = self.field_owner(&value, label)?;
+        let (owner, arguments) = self.field_owner(&value, label)?;
         let declared = self
             .structs
             .get(owner)
-            .and_then(|definition| definition.field(&label.name))
-            .cloned();
+            .and_then(|definition| definition.instantiated_field(&label.name, &arguments));
         let Some(ty) = declared else {
             let struct_name = self.bindings.get(owner).name().to_string();
             let names: Vec<Rc<str>> = self
@@ -524,13 +529,13 @@ impl TypeChecker {
         &mut self,
         value: &TypedExpr,
         label: &FieldLabel,
-    ) -> Result<BindingId, Diagnostic> {
+    ) -> Result<(BindingId, Vec<Type>), Diagnostic> {
         let mut owner = self.unifier.shallow(&value.ty);
         while let Type::Ref(inner) | Type::Mut(inner) = owner {
             owner = self.unifier.shallow(&inner);
         }
         match owner {
-            Type::Struct(binding) => Ok(binding),
+            Type::Named(binding, arguments) => Ok((binding, arguments)),
             Type::Var(_) => self.unique_owner(&owner, label),
             other => Err(TypeProblems::no_fields(
                 &self.display().show(&other),
@@ -539,16 +544,17 @@ impl TypeChecker {
         }
     }
 
-    fn unique_owner(&mut self, owner: &Type, label: &FieldLabel) -> Result<BindingId, Diagnostic> {
+    fn unique_owner(
+        &mut self,
+        owner: &Type,
+        label: &FieldLabel,
+    ) -> Result<(BindingId, Vec<Type>), Diagnostic> {
         match self.structs.with_field(&label.name).as_slice() {
             [binding] => {
-                self.expect(
-                    &Type::Struct(*binding),
-                    owner,
-                    label.span,
-                    MismatchContext::Plain,
-                )?;
-                Ok(*binding)
+                let arguments = self.fresh_arguments(*binding);
+                let expected = Type::Named(*binding, arguments.clone());
+                self.expect(&expected, owner, label.span, MismatchContext::Plain)?;
+                Ok((*binding, arguments))
             }
             _ => Err(TypeProblems::ambiguous_field(&label.name, label.span)),
         }

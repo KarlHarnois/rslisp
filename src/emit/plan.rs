@@ -6,9 +6,7 @@ use super::template::Template;
 use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
-use crate::types::{
-    Type, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram, TypedStructExpr,
-};
+use crate::types::{Type, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ItemKind {
@@ -190,12 +188,8 @@ impl<'p> EmitPlan<'p> {
 
     fn visit_expr(&mut self, expr: &TypedExpr, module: ModuleId) {
         self.visit_type(&expr.ty, module);
-        match &expr.kind {
-            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => self.reference(*binding, module),
-            TypedExprKind::Struct(TypedStructExpr::New(binding, _)) => {
-                self.visit_type(&Type::Struct(*binding), module)
-            }
-            _ => {}
+        if let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = &expr.kind {
+            self.reference(*binding, module);
         }
         for binder in expr.binders() {
             self.visit_type(&binder.ty, module);
@@ -207,7 +201,12 @@ impl<'p> EmitPlan<'p> {
 
     fn visit_type(&mut self, visited: &Type, module: ModuleId) {
         match visited {
-            Type::Struct(binding) => self.reach_struct(*binding, module),
+            Type::Named(binding, arguments) => {
+                arguments
+                    .iter()
+                    .for_each(|argument| self.visit_type(argument, module));
+                self.reach_struct(*binding, module);
+            }
             Type::Function(parameters, result) => {
                 parameters
                     .iter()

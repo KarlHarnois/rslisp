@@ -16,9 +16,9 @@ impl BorrowedResults {
         };
         let borrowed_parameters = parameters
             .iter()
-            .filter(|parameter| parameter.is_reference())
+            .filter(|parameter| parameter.holds_reference())
             .count();
-        let is_ambiguous = result.is_reference() && borrowed_parameters > 1;
+        let is_ambiguous = result.holds_reference() && borrowed_parameters > 1;
         is_ambiguous.then(|| {
             OwnershipProblems::ambiguous_borrow(
                 bindings.get(definition.binding).name(),

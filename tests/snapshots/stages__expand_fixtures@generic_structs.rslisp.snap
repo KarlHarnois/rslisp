@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/generic_structs.rslisp
+---
+(struct pair (where (a b) (first a) (second b)))
+(struct crate (where (item) (content item) (count i64)))
+(def make-crate (fn (content count) (new crate (content content) (count count))))
+(type crate-content (where (item_2) (fn ((ref (crate item_2))) _)))
+(def crate-content (fn (instance) (field instance content)))
+(type crate-count (where (item_3) (fn ((ref (crate item_3))) _)))
+(def crate-count (fn (instance_2) (field instance_2 count)))
+(struct query (where string))

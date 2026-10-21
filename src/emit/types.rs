@@ -55,7 +55,7 @@ impl<'a> RustTypes<'a> {
                 .get(generic)
                 .map_or_else(|| "_".to_string(), Self::generic_name),
             Type::Primitive(primitive) => Self::primitive(*primitive).to_string(),
-            Type::Struct(binding) => self.struct_path(*binding),
+            Type::Named(binding, arguments) => self.named(*binding, arguments, position),
             Type::Function(parameters, result) => self.function(parameters, result, position),
             Type::Ref(inner) | Type::Mut(inner) => self.reference(shown, inner, position),
         }
@@ -168,12 +168,27 @@ impl<'a> RustTypes<'a> {
             Type::Ref(inner) | Type::Mut(inner) => {
                 Self::only_behind_references(inner, generic, true)
             }
+            Type::Named(_, parts) => parts
+                .iter()
+                .all(|part| Self::only_behind_references(part, generic, false)),
             Type::Function(parameters, result) => parameters
                 .iter()
                 .chain(std::iter::once(result.as_ref()))
                 .all(|part| Self::only_behind_references(part, generic, false)),
-            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) | Type::Struct(_) => true,
+            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => true,
         }
+    }
+
+    fn named(&self, binding: BindingId, arguments: &[Type], position: TypePosition) -> String {
+        let path = self.struct_path(binding);
+        if arguments.is_empty() {
+            return path;
+        }
+        let arguments: Vec<String> = arguments
+            .iter()
+            .map(|argument| self.show(argument, Self::inner(position)))
+            .collect();
+        format!("{path}<{}>", arguments.join(", "))
     }
 
     fn function(&self, parameters: &[Type], result: &Type, position: TypePosition) -> String {
@@ -207,7 +222,7 @@ impl<'a> RustTypes<'a> {
         }
     }
 
-    fn struct_path(&self, binding: BindingId) -> String {
+    pub fn struct_path(&self, binding: BindingId) -> String {
         match self.plan.item(binding) {
             Some(_) => self.plan.path_to(binding, self.module),
             None => NameMangler::type_name(self.program.bindings.get(binding).name()),

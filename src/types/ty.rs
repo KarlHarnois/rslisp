@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::core::{BindingId, PrimitiveType};
@@ -29,7 +30,7 @@ pub enum Type {
     Var(TypeVar),
     Generic(GenericId),
     Primitive(PrimitiveType),
-    Struct(BindingId),
+    Named(BindingId, Vec<Type>),
     Function(Vec<Type>, Box<Type>),
     Ref(Box<Type>),
     Mut(Box<Type>),
@@ -60,15 +61,52 @@ impl Type {
         self.any_part(&|part| matches!(part, Type::Var(_)))
     }
 
+    pub fn mentions(&self, generic: GenericId) -> bool {
+        self.any_part(&|part| *part == Type::Generic(generic))
+    }
+
+    pub fn holds_reference(&self) -> bool {
+        self.any_part(&Type::is_reference)
+    }
+
+    pub fn substitute(&self, replacements: &HashMap<GenericId, Type>) -> Type {
+        match self {
+            Type::Generic(generic) => replacements
+                .get(generic)
+                .cloned()
+                .unwrap_or_else(|| self.clone()),
+            Type::Named(binding, arguments) => {
+                Type::Named(*binding, Self::substitute_all(arguments, replacements))
+            }
+            Type::Function(parameters, result) => Type::Function(
+                Self::substitute_all(parameters, replacements),
+                Box::new(result.substitute(replacements)),
+            ),
+            Type::Ref(inner) => Type::Ref(Box::new(inner.substitute(replacements))),
+            Type::Mut(inner) => Type::Mut(Box::new(inner.substitute(replacements))),
+            Type::Var(_) | Type::Primitive(_) => self.clone(),
+        }
+    }
+
+    fn substitute_all(types: &[Type], replacements: &HashMap<GenericId, Type>) -> Vec<Type> {
+        types
+            .iter()
+            .map(|part| part.substitute(replacements))
+            .collect()
+    }
+
     fn any_part(&self, test: &dyn Fn(&Type) -> bool) -> bool {
         test(self)
             || match self {
+                Type::Named(_, arguments) => {
+                    arguments.iter().any(|argument| argument.any_part(test))
+                }
                 Type::Function(parameters, result) => {
                     parameters.iter().any(|parameter| parameter.any_part(test))
                         || result.any_part(test)
                 }
                 Type::Ref(inner) | Type::Mut(inner) => inner.any_part(test),
-                Type::Var(_) | Type::Generic(_) | Type::Primitive(_) | Type::Struct(_) => false,
+                Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => false,
             }
     }
 }

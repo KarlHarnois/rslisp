@@ -52,7 +52,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `do` | `(do form...)` | block | forms: expressions. At module level: definitions. |
 | `if` | `(if test then else)` | `if`/`else` | all: expressions. |
 | `type` | `(type name type)` | signature | name: reference to a `def`. type: type. |
-| `struct` | `(struct name (field type)...)` | `struct` | name: type binder. fields: field labels with types. |
+| `struct` | `(struct name (field type)...)` or `(struct name (where (param...) (field type)...))` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
 | `new` | `(new name (field value)...)` | struct literal | name: type. fields: field labels with expressions. |
 | `field` | `(field value name)` | `value.name` | value: expression. name: field label. |
 | `quote` | `(quote form)` | none | form: data. |
@@ -89,10 +89,18 @@ Type syntax mirrors value syntax:
 | `(fn (i64 i64) i64)` | `fn(i64, i64) -> i64` |
 | `(ref str)` | `&str` |
 | `(mut point)` | `&mut Point` |
+| `(pair i64 string)` | `Pair<i64, String>` |
 | `(where ((n number)) (fn (n) n))` | `fn<N: Number>(N) -> N` |
 | `_` | inferred |
 
-Type variables are bound only by `where`. An unknown type name is an unbound-name error that suggests the closest name.
+Type variables are bound only by `where`. A `where` binds them over what its form holds: a type in a signature, or the fields of a struct. An unknown type name is an unbound-name error that suggests the closest name.
+
+Each type parameter of a struct must appear in a field. It takes no traits, because Rust would demand a struct's traits at every use. A function that needs a trait names it in its own `where`. A type takes exactly as many arguments as it has parameters.
+
+```lisp
+(struct pair (where (a b) (first a) (second b)))
+(type swap (where ((a clone) (b clone)) (fn ((ref (pair a b))) (pair b a))))
+```
 
 ```lisp
 (type add (fn (i64 i64) i64))
@@ -136,7 +144,7 @@ Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&
 - **Written types.** A type written without `ref` or `mut`, in a `type` signature or a binder annotation, means owned, as in Rust.
 - **Call sites.** An argument is borrowed automatically when the parameter is a reference. A method-style template such as `"{0}.clone()"` borrows its receiver the way Rust's method calls do.
 - **Fields.** Reading a Copy field copies it. Reading any other field borrows it: `(field person name)` has type `(ref string)`.
-- **No hidden copies.** Copying heap data is always written `(clone x)`, which needs the `clone` trait. Every struct implements it, because `struct` derives `Clone`. `(ref x)` and `(mut x)` force a borrow.
+- **No hidden copies.** Copying heap data is always written `(clone x)`, which needs the `clone` trait. Every struct without type parameters implements it, because `struct` derives `Clone`. `(ref x)` and `(mut x)` force a borrow.
 - **Moves.** The compiler reports a use after move, points at the move, and suggests `(clone x)`. A move in either branch of an `if` counts.
 - **Borrowed results.** A function may return a borrow when it has one borrowed parameter, or none for a string literal. With more than one, it reports an error, because lifetimes cannot be written yet.
 - **Closures.** A function-typed parameter is `impl Fn`. A closure returned from a function is a `move` closure. A closure that only borrows or copies its captures is Copy and can be passed more than once. One that moves a capture can be used once.

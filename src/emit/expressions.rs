@@ -196,7 +196,13 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn needs_annotation(bound: &Type) -> bool {
-        matches!(bound, Type::Primitive(primitive) if primitive.is_integer() && *primitive != PrimitiveType::I32)
+        match bound {
+            Type::Primitive(primitive) => {
+                primitive.is_integer() && *primitive != PrimitiveType::I32
+            }
+            Type::Named(_, arguments) => arguments.iter().any(Self::needs_annotation),
+            _ => false,
+        }
     }
 
     fn literal(&self, literal: &Literal, ty: &Type, context: TypeContext) -> Code {
@@ -500,9 +506,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn construction(&mut self, binding: BindingId, fields: &[(FieldLabel, TypedExpr)]) -> Code {
-        let path = self
-            .types()
-            .show(&Type::Struct(binding), TypePosition::Value);
+        let path = self.types().struct_path(binding);
         let mut parts = vec![Code::atom(format!("{path} {{ "))];
         for (position, (label, value)) in fields.iter().enumerate() {
             if position > 0 {
@@ -551,13 +555,12 @@ impl<'a> ExpressionEmitter<'a> {
         while let Type::Ref(inner) | Type::Mut(inner) = owner {
             owner = inner;
         }
-        let Type::Struct(binding) = owner else {
+        let Type::Named(binding, arguments) = owner else {
             return None;
         };
         self.program
             .structs
             .get(*binding)?
-            .field(&label.name)
-            .cloned()
+            .instantiated_field(&label.name, arguments)
     }
 }

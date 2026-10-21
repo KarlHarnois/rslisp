@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use super::{
-    Binder, BindingArena, BindingId, Block, BodyItem, Control, CoreModule, Expr, ExprKind, Item,
-    ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal, RustTemplate, StructExpr,
-    TypeBinder, TypeExpr, TypeExprKind,
+    Binder, BindingArena, BindingId, Block, BodyItem, Control, CoreModule, Expr, ExprKind,
+    FieldLabel, Item, ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal, RustTemplate,
+    StructExpr, TypeBinder, TypeExpr, TypeExprKind,
 };
 
 pub struct CorePrinter<'a> {
@@ -49,13 +49,7 @@ impl<'a> CorePrinter<'a> {
                 self.name(*binding),
                 self.type_expr(type_expr)
             ),
-            ItemKind::Struct(binding, fields) => {
-                let mut parts = vec![self.name(*binding)];
-                parts.extend(fields.iter().map(|(label, field_type)| {
-                    format!("({} {})", label.name, self.type_expr(field_type))
-                }));
-                Self::list("struct", parts)
-            }
+            ItemKind::Struct(binding, params, fields) => self.struct_item(*binding, params, fields),
             ItemKind::RustTrait(binding, path, implementors) => {
                 let mut parts = vec![self.name(*binding), format!("{path:?}")];
                 parts.extend(
@@ -199,15 +193,43 @@ impl<'a> CorePrinter<'a> {
         )
     }
 
+    fn struct_item(
+        &mut self,
+        binding: BindingId,
+        params: &[TypeBinder],
+        fields: &[(FieldLabel, TypeExpr)],
+    ) -> String {
+        let mut parts = vec![self.name(binding)];
+        let params = self.type_binders(params);
+        let fields: Vec<String> = fields
+            .iter()
+            .map(|(label, field_type)| format!("({} {})", label.name, self.type_expr(field_type)))
+            .collect();
+        if params.is_empty() {
+            parts.extend(fields);
+        } else {
+            parts.push(Self::where_list(params, fields));
+        }
+        Self::list("struct", parts)
+    }
+
     fn where_type(&mut self, binders: &[TypeBinder], inner: &TypeExpr) -> String {
-        let binders: Vec<String> = binders
+        let binders = self.type_binders(binders);
+        let inner = self.type_expr(inner);
+        Self::where_list(binders, vec![inner])
+    }
+
+    fn type_binders(&mut self, binders: &[TypeBinder]) -> Vec<String> {
+        binders
             .iter()
             .map(|binder| self.type_binder(binder))
-            .collect();
-        Self::list(
-            "where",
-            vec![format!("({})", binders.join(" ")), self.type_expr(inner)],
-        )
+            .collect()
+    }
+
+    fn where_list(binders: Vec<String>, body: Vec<String>) -> String {
+        let mut parts = vec![format!("({})", binders.join(" "))];
+        parts.extend(body);
+        Self::list("where", parts)
     }
 
     fn type_binder(&mut self, binder: &TypeBinder) -> String {

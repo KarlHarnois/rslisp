@@ -10,7 +10,7 @@ use super::plan::{EmitPlan, ItemInfo, ItemKind};
 use super::types::{RustTypes, TypePosition};
 use crate::core::{BindingId, ModuleId, StructDerives};
 use crate::diagnostic::Diagnostic;
-use crate::types::{Type, TypedDefinition, TypedExpr, TypedExprKind, TypedProgram};
+use crate::types::{GenericParam, Type, TypedDefinition, TypedExpr, TypedExprKind, TypedProgram};
 
 #[derive(Default)]
 struct ModuleTree {
@@ -143,7 +143,7 @@ impl<'a> ItemEmitter<'a> {
             .collect();
         let result = match &definition.value.ty {
             Type::Function(parameters, result) if !RustTypes::is_unit(result) => {
-                let position = if parameters.iter().any(Type::is_reference) {
+                let position = if parameters.iter().any(Type::holds_reference) {
                     TypePosition::Signature
                 } else {
                     TypePosition::StaticResult
@@ -213,29 +213,37 @@ impl<'a> ItemEmitter<'a> {
     fn structure(&mut self, binding: BindingId, info: &ItemInfo) -> Vec<Fragment> {
         let types = RustTypes::new(self.program, self.plan, info.module);
         let visibility = info.visibility.keyword();
-        let mut fields = Vec::new();
-        for (name, field_type) in self
+        let definition = self
             .program
             .structs
             .get(binding)
-            .map(|definition| definition.fields.clone())
-            .unwrap_or_default()
-        {
+            .expect("a reached struct has a definition");
+        let mut fields = Vec::new();
+        for (name, field_type) in &definition.fields {
             fields.push(Fragment::Newline);
             fields.push(Fragment::Text(format!(
                 "{visibility}{}: {},",
-                NameMangler::value(&name),
-                types.show(&field_type, TypePosition::Value)
+                NameMangler::value(name),
+                types.show(field_type, TypePosition::Value)
             )));
         }
+        let params = Self::struct_params(&definition.params);
         vec![
             Fragment::Text(StructDerives::attribute()),
             Fragment::Newline,
-            Fragment::Text(format!("{visibility}struct {} {{", info.name)),
+            Fragment::Text(format!("{visibility}struct {}{params} {{", info.name)),
             Fragment::Indented(fields),
             Fragment::Newline,
             Fragment::Text("}".to_string()),
         ]
+    }
+
+    fn struct_params(params: &[GenericParam]) -> String {
+        if params.is_empty() {
+            return String::new();
+        }
+        let names: Vec<String> = params.iter().map(RustTypes::generic_name).collect();
+        format!("<{}>", names.join(", "))
     }
 
     fn expressions(&self, module: ModuleId, value: &TypedExpr) -> ExpressionEmitter<'a> {

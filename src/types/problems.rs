@@ -234,13 +234,41 @@ impl TypeProblems {
         .with_help("use `quote` inside macros, or write a string if you want text")
     }
 
-    pub fn no_type_arguments(span: Span) -> Diagnostic {
+    pub fn wrong_type_argument_count(
+        name: &str,
+        expected: usize,
+        found: usize,
+        span: Span,
+    ) -> Diagnostic {
+        let expected = Counted::noun(expected, "type argument");
         Diagnostic::error(
-            DiagnosticCode::MISPLACED_WHERE,
-            "this type takes no type arguments",
-            Label::new(span, "type arguments given here"),
+            DiagnosticCode::WRONG_TYPE_ARGUMENT_COUNT,
+            format!(
+                "`{name}` takes {expected} but {found} {} given",
+                Counted::was_or_were(found)
+            ),
+            Label::new(span, format!("expected {expected}")),
         )
-        .with_note("structs with type parameters are not supported yet")
+    }
+
+    pub fn unused_type_parameter(name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::UNUSED_TYPE_PARAMETER,
+            format!("no field uses the type parameter `{name}`"),
+            Label::new(span, "declared here"),
+        )
+        .with_help(format!("use `{name}` in a field's type, or remove it"))
+    }
+
+    pub fn bounded_type_parameter(name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::BOUNDED_TYPE_PARAMETER,
+            format!("the type parameter `{name}` cannot require traits here"),
+            Label::new(span, "traits given here"),
+        )
+        .with_help(format!(
+            "write `{name}` alone, and require the traits in the `where` of each function that needs them"
+        ))
     }
 
     pub fn misplaced_where(span: Span) -> Diagnostic {

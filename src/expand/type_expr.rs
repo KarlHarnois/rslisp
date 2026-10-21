@@ -133,24 +133,14 @@ impl Expander<'_> {
         if items.len() != Self::WHERE_PARTS {
             return Err(malformed());
         }
-        let scope = self.fresh_local_scope();
-        let mut binders = items[1].as_list().ok_or_else(malformed)?.to_vec();
-        let mut body = items[2].clone();
-        binders
-            .iter_mut()
-            .for_each(|binder| binder.add_scope(scope));
-        body.add_scope(scope);
-        let binders = binders
-            .iter()
-            .map(|binder| self.lower_type_binder(binder))
-            .collect::<Result<Vec<TypeBinder>, Diagnostic>>()?;
+        let parameterized = self.lower_parameters(items, malformed)?;
         Ok(TypeExprKind::Where(
-            binders,
-            Box::new(self.lower_type(&body)?),
+            parameterized.binders,
+            Box::new(self.lower_type(&parameterized.body[0])?),
         ))
     }
 
-    fn lower_type_binder(&mut self, binder: &Form) -> Result<TypeBinder, Diagnostic> {
+    pub(super) fn lower_type_binder(&mut self, binder: &Form) -> Result<TypeBinder, Diagnostic> {
         let (name, bounds) = match binder.as_list() {
             Some([name, bounds @ ..]) => (name, bounds),
             _ => (binder, &[][..]),

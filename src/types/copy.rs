@@ -21,7 +21,7 @@ impl<'a> CopyRules<'a> {
             }
             Type::Ref(_) => true,
             Type::Generic(generic) => self.generic_is_copy(*generic),
-            Type::Mut(_) | Type::Struct(_) | Type::Function(..) | Type::Var(_) => false,
+            Type::Mut(_) | Type::Named(..) | Type::Function(..) | Type::Var(_) => false,
         }
     }
 

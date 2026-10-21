@@ -1,7 +1,7 @@
 use std::fmt;
 use std::rc::Rc;
 
-use super::{BindingId, Expr, FieldLabel, TypeExpr};
+use super::{BindingId, Expr, FieldLabel, TypeBinder, TypeExpr};
 use crate::source::Span;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -46,7 +46,7 @@ pub struct Item {
 pub enum ItemKind {
     Def(BindingId, Expr),
     Signature(BindingId, TypeExpr),
-    Struct(BindingId, Vec<(FieldLabel, TypeExpr)>),
+    Struct(BindingId, Vec<TypeBinder>, Vec<(FieldLabel, TypeExpr)>),
     RustTrait(BindingId, Rc<str>, Vec<TypeExpr>),
 }
 

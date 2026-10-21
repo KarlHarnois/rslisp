@@ -80,7 +80,7 @@ impl TypeChecker {
             .iter()
             .map(|param| (param.id, self.unifier.fresh_bounded(param.bounds.clone())))
             .collect();
-        Self::substitute(&scheme.body, &replacements)
+        scheme.body.substitute(&replacements)
     }
 
     fn lower_named(
@@ -90,34 +90,35 @@ impl TypeChecker {
         span: Span,
         scope: &HashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
-        if !arguments.is_empty() {
-            return Err(TypeProblems::no_type_arguments(span));
-        }
+        self.check_type_argument_count(binding, arguments.len(), span)?;
+        let arguments = arguments
+            .iter()
+            .map(|argument| self.lower_type(argument, scope))
+            .collect::<Result<Vec<Type>, Diagnostic>>()?;
         Ok(
             match (self.bindings.get(binding).kind(), scope.get(&binding)) {
                 (BindingKind::TypeVariable, Some(generic)) => Type::Generic(*generic),
                 (BindingKind::TypeVariable, None) => self.unifier.fresh(),
-                _ => Type::Struct(binding),
+                _ => Type::Named(binding, arguments),
             },
         )
     }
 
-    fn substitute(body: &Type, replacements: &HashMap<GenericId, Type>) -> Type {
-        match body {
-            Type::Generic(generic) => replacements
-                .get(generic)
-                .cloned()
-                .unwrap_or_else(|| body.clone()),
-            Type::Function(parameters, result) => Type::Function(
-                parameters
-                    .iter()
-                    .map(|parameter| Self::substitute(parameter, replacements))
-                    .collect(),
-                Box::new(Self::substitute(result, replacements)),
-            ),
-            Type::Ref(inner) => Type::Ref(Box::new(Self::substitute(inner, replacements))),
-            Type::Mut(inner) => Type::Mut(Box::new(Self::substitute(inner, replacements))),
-            Type::Var(_) | Type::Primitive(_) | Type::Struct(_) => body.clone(),
+    fn check_type_argument_count(
+        &self,
+        binding: BindingId,
+        found: usize,
+        span: Span,
+    ) -> Result<(), Diagnostic> {
+        let expected = self.type_arities.get(&binding).copied().unwrap_or_default();
+        if found == expected {
+            return Ok(());
         }
+        Err(TypeProblems::wrong_type_argument_count(
+            self.bindings.get(binding).name(),
+            expected,
+            found,
+            span,
+        ))
     }
 }

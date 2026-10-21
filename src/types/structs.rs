@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use super::ty::Type;
+use super::ty::{GenericId, GenericParam, Type};
 use crate::core::BindingId;
 
 pub struct StructDefinition {
+    pub params: Vec<GenericParam>,
     pub fields: Vec<(Rc<str>, Type)>,
 }
 
@@ -14,6 +15,28 @@ impl StructDefinition {
             .iter()
             .find(|(field, _)| field.as_ref() == name)
             .map(|(_, field_type)| field_type)
+    }
+
+    pub fn instantiated_field(&self, name: &str, arguments: &[Type]) -> Option<Type> {
+        let replacements = self.replacements(arguments);
+        self.field(name)
+            .map(|field_type| field_type.substitute(&replacements))
+    }
+
+    pub fn instantiated_fields(&self, arguments: &[Type]) -> Vec<(Rc<str>, Type)> {
+        let replacements = self.replacements(arguments);
+        self.fields
+            .iter()
+            .map(|(name, field_type)| (name.clone(), field_type.substitute(&replacements)))
+            .collect()
+    }
+
+    fn replacements(&self, arguments: &[Type]) -> HashMap<GenericId, Type> {
+        self.params
+            .iter()
+            .map(|param| param.id)
+            .zip(arguments.iter().cloned())
+            .collect()
     }
 }
 

@@ -10,6 +10,7 @@ mod names;
 mod problems;
 mod shape;
 mod type_expr;
+mod type_parameters;
 
 use std::collections::{HashMap, HashSet};
 

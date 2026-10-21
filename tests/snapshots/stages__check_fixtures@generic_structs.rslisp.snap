@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/generic_structs.rslisp
+---
+(type make-pair (where (a b) (fn (a b) (pair a b))))
+(type pair-first (where (a b) (fn ((ref (pair a b))) (ref a))))
+(type pair-second (where (a b) (fn ((ref (pair a b))) (ref b))))
+(type origin (pair i64 f64))
+(type first-of (where (a b) (fn ((ref (pair a b))) (ref a))))
+(type swap (where ((a clone) (b clone)) (fn ((ref (pair a b))) (pair b a))))
+(type main (fn () unit))

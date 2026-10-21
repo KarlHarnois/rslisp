@@ -46,6 +46,9 @@ impl DiagnosticCode {
     pub const COMPILE_TIME_ONLY: Self = Self(Cow::Borrowed("L0412"));
     pub const MISPLACED_WHERE: Self = Self(Cow::Borrowed("L0413"));
     pub const LITERAL_TYPE_PARAMETER: Self = Self(Cow::Borrowed("L0414"));
+    pub const WRONG_TYPE_ARGUMENT_COUNT: Self = Self(Cow::Borrowed("L0415"));
+    pub const UNUSED_TYPE_PARAMETER: Self = Self(Cow::Borrowed("L0416"));
+    pub const BOUNDED_TYPE_PARAMETER: Self = Self(Cow::Borrowed("L0417"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));

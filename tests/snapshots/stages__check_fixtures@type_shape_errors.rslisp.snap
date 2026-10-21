@@ -31,10 +31,8 @@ error[L0413]: `where` must wrap a whole signature
 10 | (type nested-where (fn ((where (a) a)) i64))
    |                         ^^^^^^^^^^^^^ not allowed inside another type
 
-error[L0413]: this type takes no type arguments
+error[L0415]: `point` takes 0 type arguments but 1 was given
   --> check/type_shape_errors.rslisp:13:27
    |
 13 | (type with-arguments (fn ((point i64)) i64))
-   |                           ^^^^^^^^^^^ type arguments given here
-   |
-   = note: structs with type parameters are not supported yet
+   |                           ^^^^^^^^^^^ expected 0 type arguments
