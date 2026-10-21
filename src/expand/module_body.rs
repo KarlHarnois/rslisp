@@ -5,8 +5,8 @@ use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{
-    BindingId, BindingKind, CoreModule, FieldLabel, Item, ItemKind, KernelForm, ModuleId,
-    Namespace, TypeExpr,
+    BindingId, BindingKind, CoreModule, DefinitionForm, ExpressionForm, FieldLabel, Item, ItemKind,
+    KernelForm, ModuleId, Namespace, TypeExpr,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::Form;
@@ -71,34 +71,62 @@ impl Expander<'_> {
     ) -> Result<Option<PendingItem>, Diagnostic> {
         let form = self.expand_head(form, Some(context))?;
         match self.definition_head(&form)? {
-            KernelForm::Def => self.register_def(module, &form, context),
-            KernelForm::Type => Ok(Some(PendingItem::Signature(form))),
-            KernelForm::Struct => {
-                let binding = self.register_type_name(
-                    &form,
-                    KernelForm::Struct,
-                    BindingKind::Struct(module),
-                    context,
-                )?;
-                Ok(Some(PendingItem::Struct(binding, form)))
+            KernelForm::Definition(definition) => {
+                self.register_definition(definition, module, form, context)
             }
-            KernelForm::RustTrait => {
-                let binding = self.register_type_name(
-                    &form,
-                    KernelForm::RustTrait,
-                    BindingKind::Trait(module),
-                    context,
-                )?;
-                Ok(Some(PendingItem::RustTrait(binding, form)))
-            }
-            KernelForm::Use => self.import(&form, context).map(|()| None),
-            KernelForm::Export => Ok(Some(PendingItem::Export(form))),
-            KernelForm::Do => {
+            KernelForm::Expression(ExpressionForm::Do) => {
                 Self::splice(&form, queue);
                 Ok(None)
             }
             _ => Err(ExpandProblems::not_a_definition(form.span())),
         }
+    }
+
+    fn register_definition(
+        &mut self,
+        definition: DefinitionForm,
+        module: ModuleId,
+        form: Form,
+        context: &mut DefinitionContext,
+    ) -> Result<Option<PendingItem>, Diagnostic> {
+        match definition {
+            DefinitionForm::Def => self.register_def(module, &form, context),
+            DefinitionForm::Type => Ok(Some(PendingItem::Signature(form))),
+            DefinitionForm::Struct => self.register_struct(module, form, context),
+            DefinitionForm::RustTrait => self.register_rust_trait(module, form, context),
+            DefinitionForm::Use => self.import(&form, context).map(|()| None),
+            DefinitionForm::Export => Ok(Some(PendingItem::Export(form))),
+        }
+    }
+
+    fn register_struct(
+        &mut self,
+        module: ModuleId,
+        form: Form,
+        context: &mut DefinitionContext,
+    ) -> Result<Option<PendingItem>, Diagnostic> {
+        let binding = self.register_type_name(
+            &form,
+            KernelForm::Definition(DefinitionForm::Struct),
+            BindingKind::Struct(module),
+            context,
+        )?;
+        Ok(Some(PendingItem::Struct(binding, form)))
+    }
+
+    fn register_rust_trait(
+        &mut self,
+        module: ModuleId,
+        form: Form,
+        context: &mut DefinitionContext,
+    ) -> Result<Option<PendingItem>, Diagnostic> {
+        let binding = self.register_type_name(
+            &form,
+            KernelForm::Definition(DefinitionForm::RustTrait),
+            BindingKind::Trait(module),
+            context,
+        )?;
+        Ok(Some(PendingItem::RustTrait(binding, form)))
     }
 
     fn definition_head(&self, form: &Form) -> Result<KernelForm, Diagnostic> {
@@ -127,7 +155,7 @@ impl Expander<'_> {
         form: &Form,
         context: &DefinitionContext,
     ) -> Result<Option<PendingItem>, Diagnostic> {
-        let items = Shape::new(KernelForm::Def, form).exactly(3)?;
+        let items = Shape::new(KernelForm::Definition(DefinitionForm::Def), form).exactly(3)?;
         let (name, annotation) = Self::split_binder(&items[1]);
         let value = &items[2];
         if self.is_kernel_form(value, KernelForm::Macro) {
@@ -210,7 +238,7 @@ impl Expander<'_> {
         form: &Form,
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
-        let shape = Shape::new(KernelForm::Type, form);
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Type), form);
         let items = shape.exactly(3)?;
         let binding = self.resolve(shape.symbol(&items[1])?, Namespace::Value, items[1].span())?;
         if self.kind(binding) != BindingKind::Global(module) {
@@ -233,7 +261,7 @@ impl Expander<'_> {
         form: &Form,
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
-        let shape = Shape::new(KernelForm::Struct, form);
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Struct), form);
         let fields = shape.at_least(2)?[2..]
             .iter()
             .map(|field| self.lower_field_declaration(&shape, field))
@@ -265,7 +293,7 @@ impl Expander<'_> {
         form: &Form,
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
-        let shape = Shape::new(KernelForm::RustTrait, form);
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::RustTrait), form);
         let items = shape.at_least(3)?;
         let path = shape.string(&items[2])?.into();
         let implementors = items[3..]
@@ -280,7 +308,7 @@ impl Expander<'_> {
     }
 
     fn lower_exports(&mut self, module: ModuleId, form: &Form, core: &mut CoreModule) {
-        let shape = Shape::new(KernelForm::Export, form);
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Export), form);
         for name in shape.items().iter().skip(1) {
             if let Err(diagnostic) = self.export_name(module, &shape, name, core) {
                 self.diagnostics.push(diagnostic);

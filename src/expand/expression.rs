@@ -6,8 +6,8 @@ use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{
-    Binder, BindingKind, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, KernelForm, Lambda,
-    Leaf, Literal, Namespace, RustTemplate, StructExpr,
+    Binder, BindingKind, Block, BodyItem, Control, Expr, ExprKind, ExpressionForm, FieldLabel,
+    KernelForm, Lambda, Leaf, Literal, Namespace, RustTemplate, StructExpr,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -108,37 +108,48 @@ impl Expander<'_> {
     }
 
     fn lower_kernel(&mut self, kernel: KernelForm, form: &Form) -> Result<Expr, Diagnostic> {
-        let shape = Shape::new(kernel, form);
         let span = form.span();
         let kind = match kernel {
-            KernelForm::Fn => {
-                let items = shape.at_least(2)?;
-                ExprKind::Fn(Rc::new(self.lower_lambda(
-                    &shape,
-                    &items[1],
-                    &items[2..],
-                )?))
+            KernelForm::Expression(expression) => {
+                self.lower_expression_form(expression, &Shape::new(kernel, form))
             }
-            KernelForm::Do => {
-                ExprKind::Control(Control::Block(self.lower_body(&shape.items()[1..])?))
-            }
-            KernelForm::If => self.lower_if(&shape)?,
-            KernelForm::Quote => ExprKind::Leaf(Leaf::Quote(self.quoted(&shape.exactly(2)?[1]))),
-            KernelForm::New => self.lower_new(&shape)?,
-            KernelForm::Field => self.lower_field_access(&shape)?,
-            KernelForm::Rust => self.lower_rust(&shape)?,
-            KernelForm::Let => return Err(ExpandProblems::let_outside_body(span)),
-            KernelForm::Macro => return Err(ExpandProblems::macro_outside_def(span)),
-            KernelForm::Def
-            | KernelForm::Type
-            | KernelForm::Struct
-            | KernelForm::RustTrait
-            | KernelForm::Use
-            | KernelForm::Export => {
-                return Err(ExpandProblems::module_level_only(kernel, span));
-            }
+            KernelForm::Let => Err(ExpandProblems::let_outside_body(span)),
+            KernelForm::Macro => Err(ExpandProblems::macro_outside_def(span)),
+            KernelForm::Definition(_) => Err(ExpandProblems::module_level_only(kernel, span)),
         };
-        Ok(Expr::new(kind, span))
+        kind.map(|kind| Expr::new(kind, span))
+    }
+
+    fn lower_expression_form(
+        &mut self,
+        expression: ExpressionForm,
+        shape: &Shape,
+    ) -> Result<ExprKind, Diagnostic> {
+        match expression {
+            ExpressionForm::Fn => self.lower_fn(shape),
+            ExpressionForm::Do => self.lower_do(shape),
+            ExpressionForm::If => self.lower_if(shape),
+            ExpressionForm::Quote => self.lower_quote(shape),
+            ExpressionForm::New => self.lower_new(shape),
+            ExpressionForm::Field => self.lower_field_access(shape),
+            ExpressionForm::Rust => self.lower_rust(shape),
+        }
+    }
+
+    fn lower_fn(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let items = shape.at_least(2)?;
+        let lambda = self.lower_lambda(shape, &items[1], &items[2..])?;
+        Ok(ExprKind::Fn(Rc::new(lambda)))
+    }
+
+    fn lower_do(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let body = self.lower_body(&shape.items()[1..])?;
+        Ok(ExprKind::Control(Control::Block(body)))
+    }
+
+    fn lower_quote(&self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let quoted = self.quoted(&shape.exactly(2)?[1]);
+        Ok(ExprKind::Leaf(Leaf::Quote(quoted)))
     }
 
     fn lower_body(&mut self, forms: &[Form]) -> Result<Block, Diagnostic> {

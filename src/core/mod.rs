@@ -12,7 +12,9 @@ pub use expr::{
     Binder, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, Lambda, Leaf, Literal,
     RustTemplate, StructExpr,
 };
-pub use kernel::{KernelForm, KernelType, PrimitiveType, StructDerives};
+pub use kernel::{
+    DefinitionForm, ExpressionForm, KernelForm, KernelType, PrimitiveType, StructDerives,
+};
 pub use module::{CoreModule, Item, ItemKind, ModuleId, ModulePath};
 pub use printer::CorePrinter;
 pub use types::{TypeBinder, TypeExpr, TypeExprKind};

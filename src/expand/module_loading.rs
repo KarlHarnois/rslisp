@@ -5,7 +5,8 @@ use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{
-    BindingInfo, BindingKind, Builtin, KernelForm, KernelType, ModuleId, ModulePath, Namespace,
+    BindingInfo, BindingKind, Builtin, DefinitionForm, KernelForm, KernelType, ModuleId,
+    ModulePath, Namespace,
 };
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
@@ -59,7 +60,7 @@ impl Expander<'_> {
         form: &Form,
         context: &DefinitionContext,
     ) -> Result<(), Diagnostic> {
-        let shape = Shape::new(KernelForm::Use, form);
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Use), form);
         let items = shape.at_least(2)?;
         let path = ModulePath::new(shape.symbol(&items[1])?.name());
         let target = self.load_module(&path, items[1].span())?;
