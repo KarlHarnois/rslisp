@@ -12,6 +12,6 @@ fn checked_half(n: i64) -> Result<i64, &'static str> {
 }
 
 fn main() {
-    println!("{}", &checked_half(10).is_ok());
-    println!("{}", &checked_half(7).is_err())
+    println!("{}", checked_half(10).is_ok());
+    println!("{}", checked_half(7).is_err())
 }

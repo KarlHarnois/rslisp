@@ -40,11 +40,11 @@ fn ends_with_let() {
 }
 
 fn main() {
-    println!("{}", &apply_to_four(|argument_0| argument_0.sqrt()));
-    println!("{}", &apply_to_four(f64::sqrt));
-    println!("{}", &*ROOT_OF_TWO);
-    println!("{}", &THREE);
-    println!("{}", &chosen_count(true));
-    println!("{}", &doubler()(2));
+    println!("{}", apply_to_four(|argument_0| argument_0.sqrt()));
+    println!("{}", apply_to_four(f64::sqrt));
+    println!("{}", *ROOT_OF_TWO);
+    println!("{}", THREE);
+    println!("{}", chosen_count(true));
+    println!("{}", doubler()(2));
     ends_with_let()
 }

@@ -30,6 +30,10 @@ impl Template {
         self.parsed.is_path()
     }
 
+    pub fn borrows(&self, argument: usize) -> bool {
+        self.parsed.borrows(argument)
+    }
+
     pub fn inline(&self, arguments: Vec<Code>) -> Result<Code, TemplateError> {
         if let Some(missing) = self
             .parsed
@@ -38,7 +42,7 @@ impl Template {
         {
             return Err(TemplateError::MissingArgument(missing));
         }
-        if let [Piece::Placeholder(index)] = self.parsed.pieces() {
+        if let [Piece::Placeholder { index, .. }] = self.parsed.pieces() {
             return Ok(arguments[*index].clone());
         }
         if self.needs_temporaries(&arguments) {
@@ -52,7 +56,7 @@ impl Template {
         for (position, piece) in self.parsed.pieces().iter().enumerate() {
             match piece {
                 Piece::Literal(literal) => fragments.push(Fragment::Text(literal.clone())),
-                Piece::Placeholder(index) => fragments.extend(
+                Piece::Placeholder { index, .. } => fragments.extend(
                     self.argument_in_place(&arguments[*index], position)
                         .fragments,
                 ),
@@ -97,7 +101,7 @@ impl Template {
     fn literal_at(&self, position: usize) -> Option<&str> {
         match self.parsed.pieces().get(position)? {
             Piece::Literal(literal) => Some(literal),
-            Piece::Placeholder(_) => None,
+            Piece::Placeholder { .. } => None,
         }
     }
 

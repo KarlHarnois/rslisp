@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/format_arguments.rslisp
+---
+fn main() {
+    let name = "Ada".to_string();
+    println!("{}", name);
+    println!("{}", format!("{}{}", "hello ", name));
+    print!("{}", 1_i64);
+    println!("{}", "")
+}

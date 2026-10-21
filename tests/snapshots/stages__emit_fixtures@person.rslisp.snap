@@ -22,7 +22,7 @@ fn person_age(instance: &Person) -> i64 {
 }
 
 fn introduce(someone: &Person) -> String {
-    format!("{}{}{}", person_name(someone), " is ", &person_age(someone))
+    format!("{}{}{}", person_name(someone), " is ", person_age(someone))
 }
 
 fn rename(someone: &Person, new_name: String) -> Person {
@@ -33,8 +33,8 @@ fn main() {
     let ada = make_person("Ada".to_string(), 36);
     println!("{}", person_name(&ada));
     println!("{}", person_name(&ada));
-    println!("{}", &introduce(&ada));
+    println!("{}", introduce(&ada));
     let copy = person_name(&ada).clone();
     let renamed = rename(&ada, copy);
-    println!("{}", &introduce(&renamed))
+    println!("{}", introduce(&renamed))
 }

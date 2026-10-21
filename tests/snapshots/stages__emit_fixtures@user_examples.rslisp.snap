@@ -24,10 +24,10 @@ fn describe(n: i64) -> &'static str {
 }
 
 fn main() {
-    println!("{}", &IS_ADMIN);
-    println!("{}", &some_function(7));
-    println!("{}", &square(2.5));
-    println!("{}", &(|x: i64, y: i64| x + y)(2, 3));
+    println!("{}", IS_ADMIN);
+    println!("{}", some_function(7));
+    println!("{}", square(2.5));
+    println!("{}", (|x: i64, y: i64| x + y)(2, 3));
     println!("{}", describe(-2));
     println!("{}", describe(0));
     if IS_ADMIN {

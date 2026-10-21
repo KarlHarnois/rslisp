@@ -206,7 +206,7 @@ impl<'a> RustTypes<'a> {
             .iter()
             .map(|piece| match piece {
                 Piece::Literal(text) => text.as_str(),
-                Piece::Placeholder(index) => arguments[*index].as_str(),
+                Piece::Placeholder { index, .. } => arguments[*index].as_str(),
             })
             .collect()
     }

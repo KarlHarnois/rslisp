@@ -12,22 +12,22 @@ fn halve<N: crate::rt::Float>(x: N) -> N {
 }
 
 fn describe_half<N: crate::rt::Float + std::fmt::Display>(x: N) -> String {
-    format!("{}{}", "half is ", &halve(x))
+    format!("{}{}", "half is ", halve(x))
 }
 
 fn main() {
-    println!("{}", &increment(41));
-    println!("{}", &increment(1.5));
-    println!("{}", &increment({
+    println!("{}", increment(41));
+    println!("{}", increment(1.5));
+    println!("{}", increment({
         let result: u8 = 254;
         result
     }));
-    println!("{}", &halve(5.0));
-    println!("{}", &halve({
+    println!("{}", halve(5.0));
+    println!("{}", halve({
         let result: f32 = 3.0;
         result
     }));
-    println!("{}", &describe_half(9.0))
+    println!("{}", describe_half(9.0))
 }
 
 mod rt {

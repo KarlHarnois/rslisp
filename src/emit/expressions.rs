@@ -26,7 +26,18 @@ enum TypeContext {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum ArgumentRole {
     Receiver,
+    Borrowed,
     Ordinary,
+}
+
+impl ArgumentRole {
+    fn borrows_by_itself(self, borrow: Borrow) -> bool {
+        matches!(
+            (self, borrow),
+            (ArgumentRole::Receiver, Borrow::Shared | Borrow::Mutable)
+                | (ArgumentRole::Borrowed, Borrow::Shared)
+        )
+    }
 }
 
 pub struct ExpressionEmitter<'a> {
@@ -321,27 +332,13 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument], span: Span) -> Code {
-        let template = self.called_template(callee);
-        let context = Self::argument_context(template.as_deref(), arguments);
-        let first_role = Self::first_argument_role(template.as_deref());
+        if let Some(template) = self.called_template(callee) {
+            return self.template_call(&template, arguments, span);
+        }
         let arguments: Vec<Code> = arguments
             .iter()
-            .enumerate()
-            .map(|(position, argument)| {
-                let role = if position == 0 {
-                    first_role
-                } else {
-                    ArgumentRole::Ordinary
-                };
-                self.argument(argument, context, role)
-            })
+            .map(|argument| self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary))
             .collect();
-        if let Some(template) = template {
-            return match Template::parse(&template.template) {
-                Ok(parsed) => self.inline(&parsed, arguments, span),
-                Err(error) => self.template_problem(error, span),
-            };
-        }
         let callee = self.expr(callee);
         let callee = if callee.is_atomic() {
             callee
@@ -369,26 +366,47 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn argument_context(
-        template: Option<&RustTemplate>,
+    fn template_call(
+        &mut self,
+        template: &RustTemplate,
         arguments: &[TypedArgument],
-    ) -> TypeContext {
+        span: Span,
+    ) -> Code {
+        let parsed = match Template::parse(&template.template) {
+            Ok(parsed) => parsed,
+            Err(error) => return self.template_problem(error, span),
+        };
+        let context = Self::argument_context(arguments);
+        let arguments: Vec<Code> = arguments
+            .iter()
+            .enumerate()
+            .map(|(position, argument)| {
+                let role = Self::argument_role(template, &parsed, position);
+                self.argument(argument, context, role)
+            })
+            .collect();
+        self.inline(&parsed, arguments, span)
+    }
+
+    fn argument_context(arguments: &[TypedArgument]) -> TypeContext {
         let all_literals = arguments.iter().all(|argument| {
             matches!(
                 argument.value.kind,
                 TypedExprKind::Leaf(TypedLeaf::Literal(_))
             )
         });
-        if template.is_some() && all_literals {
+        if all_literals {
             TypeContext::Unknown
         } else {
             TypeContext::Known
         }
     }
 
-    fn first_argument_role(template: Option<&RustTemplate>) -> ArgumentRole {
-        if template.is_some_and(|template| template.template.starts_with(Self::RECEIVER)) {
+    fn argument_role(template: &RustTemplate, parsed: &Template, position: usize) -> ArgumentRole {
+        if position == 0 && template.template.starts_with(Self::RECEIVER) {
             ArgumentRole::Receiver
+        } else if parsed.borrows(position) {
+            ArgumentRole::Borrowed
         } else {
             ArgumentRole::Ordinary
         }
@@ -410,7 +428,8 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn borrow_prefix(argument: &TypedArgument, role: ArgumentRole) -> Option<String> {
-        let borrowed_already = argument.value.ty.is_reference() || role == ArgumentRole::Receiver;
+        let borrowed_already =
+            argument.value.ty.is_reference() || role.borrows_by_itself(argument.borrow);
         match argument.borrow {
             Borrow::None | Borrow::Passthrough => None,
             Borrow::Shared | Borrow::Mutable if borrowed_already => None,

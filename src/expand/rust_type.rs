@@ -33,14 +33,24 @@ impl Expander<'_> {
         let [template_form] = parameterized.body.as_slice() else {
             return Err(shape.malformed(&body[0]));
         };
-        let template = ParsedTemplate::parse(shape.string(template_form)?)
-            .map_err(|_| ExpandProblems::malformed_type_template(template_form.span()))?;
+        let template = Self::type_template(&shape, template_form)?;
         Self::check_type_placeholders(&template, &parameterized.binders, template_form)?;
         core.items.push(Item {
             kind: ItemKind::RustType(binding, parameterized.binders, Rc::new(template)),
             span: form.span(),
         });
         Ok(())
+    }
+
+    fn type_template(shape: &Shape, template_form: &Form) -> Result<ParsedTemplate, Diagnostic> {
+        let template = ParsedTemplate::parse(shape.string(template_form)?)
+            .map_err(|_| ExpandProblems::malformed_type_template(template_form.span()))?;
+        if template.borrows_any() {
+            return Err(ExpandProblems::borrowed_type_placeholder(
+                template_form.span(),
+            ));
+        }
+        Ok(template)
     }
 
     fn check_type_placeholders(

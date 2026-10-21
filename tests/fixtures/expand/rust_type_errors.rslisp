@@ -4,3 +4,4 @@
 (rust-type plain "Vec<{0}>")
 (rust-type spare (where (item) "Vec<{0}>" "extra"))
 (rust-type missing-template)
+(rust-type borrowing (where (item) "Vec<{&0}>"))

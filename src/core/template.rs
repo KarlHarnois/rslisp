@@ -4,7 +4,7 @@ pub struct MalformedPlaceholder;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Piece {
     Literal(String),
-    Placeholder(usize),
+    Placeholder { index: usize, borrowed: bool },
 }
 
 #[derive(Clone, Debug)]
@@ -14,6 +14,8 @@ pub struct ParsedTemplate {
 }
 
 impl ParsedTemplate {
+    const BORROW: char = '&';
+
     pub fn parse(text: &str) -> Result<Self, MalformedPlaceholder> {
         let mut pieces = Vec::new();
         let mut literal = String::new();
@@ -25,9 +27,9 @@ impl ParsedTemplate {
                     literal.push(character);
                 }
                 ('{', _) => {
-                    let index = Self::placeholder_index(&mut characters)?;
+                    let placeholder = Self::placeholder(&mut characters)?;
                     pieces.push(Piece::Literal(std::mem::take(&mut literal)));
-                    pieces.push(Piece::Placeholder(index));
+                    pieces.push(placeholder);
                 }
                 _ => literal.push(character),
             }
@@ -38,6 +40,14 @@ impl ParsedTemplate {
             pieces,
             text: text.to_string(),
         })
+    }
+
+    fn placeholder(
+        characters: &mut std::iter::Peekable<std::str::Chars>,
+    ) -> Result<Piece, MalformedPlaceholder> {
+        let borrowed = characters.next_if_eq(&Self::BORROW).is_some();
+        let index = Self::placeholder_index(characters)?;
+        Ok(Piece::Placeholder { index, borrowed })
     }
 
     fn placeholder_index(
@@ -63,9 +73,27 @@ impl ParsedTemplate {
 
     pub fn placeholders(&self) -> impl Iterator<Item = usize> + '_ {
         self.pieces.iter().filter_map(|piece| match piece {
-            Piece::Placeholder(index) => Some(*index),
+            Piece::Placeholder { index, .. } => Some(*index),
             Piece::Literal(_) => None,
         })
+    }
+
+    pub fn borrows(&self, argument: usize) -> bool {
+        let uses: Vec<bool> = self
+            .pieces
+            .iter()
+            .filter_map(|piece| match piece {
+                Piece::Placeholder { index, borrowed } if *index == argument => Some(*borrowed),
+                _ => None,
+            })
+            .collect();
+        !uses.is_empty() && uses.iter().all(|borrowed| *borrowed)
+    }
+
+    pub fn borrows_any(&self) -> bool {
+        self.pieces
+            .iter()
+            .any(|piece| matches!(piece, Piece::Placeholder { borrowed: true, .. }))
     }
 
     pub fn is_path(&self) -> bool {
@@ -89,9 +117,34 @@ mod tests {
             parsed.pieces(),
             [
                 Piece::Literal("Vec<".to_string()),
-                Piece::Placeholder(0),
+                Piece::Placeholder {
+                    index: 0,
+                    borrowed: false
+                },
                 Piece::Literal(">".to_string())
             ]
+        );
+    }
+
+    #[test]
+    fn marks_a_placeholder_that_rust_borrows() {
+        let parsed = ParsedTemplate::parse("println!(\"{{}}\", {&0})").expect("a valid template");
+        assert!(parsed.borrows(0));
+        assert!(parsed.borrows_any());
+    }
+
+    #[test]
+    fn borrows_only_when_every_use_is_marked() {
+        let parsed = ParsedTemplate::parse("{0} + {&0}").expect("a valid template");
+        assert!(!parsed.borrows(0));
+        assert!(!parsed.borrows(1));
+    }
+
+    #[test]
+    fn reports_a_borrowed_placeholder_without_a_number() {
+        assert_eq!(
+            ParsedTemplate::parse("{&x}").err(),
+            Some(MalformedPlaceholder)
         );
     }
 

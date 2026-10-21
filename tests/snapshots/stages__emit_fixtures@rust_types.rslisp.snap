@@ -9,7 +9,7 @@ fn total(values: impl Iterator<Item = i64>) -> i64 {
 
 fn main() {
     let boxed_seven: Box<i64> = Box::new(7_i64);
-    println!("{}", &*boxed_seven);
+    println!("{}", *boxed_seven);
     let summed = |values: _| total(values);
-    println!("{}", &summed((1_i64..4)))
+    println!("{}", summed((1_i64..4)))
 }

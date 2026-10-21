@@ -50,3 +50,11 @@ error[L0210]: malformed `rust-type`
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `rust-type`
   |
   = help: write it as `(rust-type name "template")`
+
+error[L0213]: a type template cannot borrow a placeholder
+ --> expand/rust_type_errors.rslisp:7:36
+  |
+7 | (rust-type borrowing (where (item) "Vec<{&0}>"))
+  |                                    ^^^^^^^^^^^ `{&...}` only makes sense for a value
+  |
+  = help: write the placeholder as `{0}`

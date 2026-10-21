@@ -163,7 +163,7 @@ Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&
 - **Modes.** A parameter without a written type gets the cheapest mode its uses need: copy for Copy types, then ref, then mut, then own. A use through a call follows the called function's mode, and the modes are recomputed until nothing changes.
 - **Copy types.** A Copy type implements the prelude's `copy` trait, whose Rust path is `Copy`. A type parameter is Copy when its `where` names `copy`. The parameter is also Copy when one of its traits allows only Copy types.
 - **Written types.** A type written without `ref` or `mut`, in a `type` signature or a binder annotation, means owned, as in Rust.
-- **Call sites.** An argument is borrowed automatically when the parameter is a reference. A method-style template such as `"{0}.clone()"` borrows its receiver the way Rust's method calls do.
+- **Call sites.** An argument is borrowed automatically when the parameter is a reference. A method-style template such as `"{0}.clone()"` borrows its receiver the way Rust's method calls do. A `{&0}` argument is written without `&`, because Rust borrows it.
 - **Dereferences.** A borrowed Copy argument is dereferenced when the parameter's type is a type variable whose traits the reference lacks. `(> x 2)` with `x : (ref i64)` emits `*x > 2`. A `fn` passed as an argument takes its parameter types from the parameter's function type, so its body sees them.
 - **Fields.** Reading a Copy field copies it. Reading any other field borrows it: `(field person name)` has type `(ref string)`.
 - **No hidden copies.** Copying heap data is always written `(clone x)`, which needs the `clone` trait. Every struct implements it when its type arguments do, because `struct` derives `Clone`. `(ref x)` and `(mut x)` force a borrow.
@@ -267,7 +267,7 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 
 | Template rule | Effect |
 |---|---|
-| Placeholders | `{0}`, `{1}` and so on take the call's arguments. `{{` and `}}` are literal braces. |
+| Placeholders | `{0}`, `{1}` and so on take the call's arguments. `{&0}` takes an argument that Rust borrows by itself, as a format macro does, so no `&` is written before it. `{{` and `}}` are literal braces. |
 | Inlining | A `def` of a `rust` form emits nothing. Each use inlines the template. |
 | Parentheses | A non-atomic argument is parenthesized unless its placeholder is the whole template or sits between `(` or `,` and `,` or `)`. A prefixed argument such as `*x` is parenthesized only before `.`, `[`, `(` or `?`. |
 | Evaluation order | A repeated or out-of-order placeholder binds its arguments to temporaries first. |

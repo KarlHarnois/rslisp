@@ -19,6 +19,15 @@ impl ExpandProblems {
         .with_help("write a literal brace as `{{` or `}}`")
     }
 
+    pub fn borrowed_type_placeholder(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::BAD_TYPE_TEMPLATE,
+            "a type template cannot borrow a placeholder",
+            Label::new(span, "`{&...}` only makes sense for a value"),
+        )
+        .with_help("write the placeholder as `{0}`")
+    }
+
     pub fn placeholder_without_parameter(
         index: usize,
         parameters: usize,

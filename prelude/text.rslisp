@@ -7,8 +7,8 @@
   bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
 
 (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
-(def print (rust "print!(\"{{}}\", {0})" (where ((a display)) (fn ((ref a)) unit))))
-(def println (rust "println!(\"{{}}\", {0})" (where ((a display)) (fn ((ref a)) unit))))
+(def print (rust "print!(\"{{}}\", {&0})" (where ((a display)) (fn ((ref a)) unit))))
+(def println (rust "println!(\"{{}}\", {&0})" (where ((a display)) (fn ((ref a)) unit))))
 
 (def repeat-text
   (fn (text count)
@@ -19,7 +19,7 @@
 (def placeholders
   (fn (index count)
     (if (number-lt index count)
-        (string ", {" index "}" (placeholders (number-add index 1) count))
+        (string ", {&" index "}" (placeholders (number-add index 1) count))
         "")))
 
 (def part-types

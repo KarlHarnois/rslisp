@@ -9,8 +9,8 @@ fn main() {
     let mut scores: Vec<i64> = Vec::new();
     scores.push(10);
     scores.push(20);
-    println!("{}", &scores.len());
-    println!("{}", &(*PRIMES).len());
-    scores.iter().copied().for_each(|score: i64| println!("{}", &score));
+    println!("{}", scores.len());
+    println!("{}", (*PRIMES).len());
+    scores.iter().copied().for_each(|score: i64| println!("{}", score));
     (*PRIMES).iter().for_each(|prime: &i64| println!("{}", prime))
 }

@@ -1,0 +1,6 @@
+(defn main ()
+  (let name (to-string "Ada"))
+  (println name)
+  (println (str "hello " name))
+  (print 1)
+  (println ""))
