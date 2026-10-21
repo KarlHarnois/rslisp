@@ -1,0 +1,6 @@
+(type twice (where ((a copy)) (fn (a (fn (a a) a)) a)))
+(defn twice (value combine) (combine value value))
+
+(defn main ()
+  (println (twice 4 (fn (left right) (+ left right))))
+  (println (twice true (fn (left right) (and left right)))))

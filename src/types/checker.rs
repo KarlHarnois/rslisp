@@ -646,18 +646,9 @@ impl TypeChecker {
                 !types.is_empty()
                     && types
                         .iter()
-                        .all(|candidate| self.satisfies(bound, candidate))
+                        .all(|candidate| self.traits.satisfies(bound, candidate, &|_, _| false))
             }
             Admissible::Unbounded | Admissible::Open(_) => false,
-        }
-    }
-
-    fn satisfies(&self, bound: BindingId, candidate: &Type) -> bool {
-        match self.traits.select(bound, candidate) {
-            Selection::Implemented(requirements) => requirements
-                .iter()
-                .all(|requirement| self.satisfies(requirement.bound, &requirement.implementor)),
-            Selection::Undecided | Selection::Missing => false,
         }
     }
 

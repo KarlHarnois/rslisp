@@ -6,7 +6,7 @@
                     + - * / < <= > >= = !=)
 (use prelude/text display to-string print println str char)
 (use prelude/struct defstruct)
-(use prelude/ownership clone ref mut)
+(use prelude/ownership clone copy ref mut)
 
 (export fn def let do if type struct new field quote macro rust rust-trait use export
         ref mut where _
@@ -20,4 +20,4 @@
         + - * / < <= > >= = !=
         display to-string print println str char
         defstruct
-        clone)
+        clone copy)

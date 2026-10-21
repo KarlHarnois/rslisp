@@ -141,6 +141,7 @@ A type parameter satisfies a trait when its `where` names the trait, or when eve
 Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&mut T`. Type inference ignores ownership except where it is written, and a separate pass decides how each parameter is passed.
 
 - **Modes.** A parameter without a written type gets the cheapest mode its uses need: copy for Copy types, then ref, then mut, then own. A use through a call follows the called function's mode, and the modes are recomputed until nothing changes.
+- **Copy types.** A Copy type is an implementor of the prelude's `copy` trait, whose Rust path is `Copy`. A type parameter is Copy when its `where` names `copy`, or when every type one of its traits allows is Copy.
 - **Written types.** A type written without `ref` or `mut`, in a `type` signature or a binder annotation, means owned, as in Rust.
 - **Call sites.** An argument is borrowed automatically when the parameter is a reference. A method-style template such as `"{0}.clone()"` borrows its receiver the way Rust's method calls do.
 - **Fields.** Reading a Copy field copies it. Reading any other field borrows it: `(field person name)` has type `(ref string)`.

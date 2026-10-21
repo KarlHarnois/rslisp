@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/copy_bounds.rslisp
+---
+fn twice<A: Copy>(value: A, combine: impl Fn(A, A) -> A) -> A {
+    combine(value, value)
+}
+
+fn main() {
+    println!("{}", &twice(4, |left: i64, right: i64| left + right));
+    println!("{}", &twice(true, |left_2: bool, right_2: bool| if left_2 {
+        right_2
+    } else {
+        false
+    }))
+}

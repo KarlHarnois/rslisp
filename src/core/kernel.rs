@@ -352,6 +352,12 @@ impl KernelConstants {
     pub const BOOLEANS: [(&'static str, bool); 2] = [("true", true), ("false", false)];
 }
 
+pub struct CopyTrait;
+
+impl CopyTrait {
+    pub const PATH: &'static str = "Copy";
+}
+
 pub struct StructDerives;
 
 impl StructDerives {

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use super::selection::{ImplementorMatch, Selection};
-use super::ty::{Scheme, Type};
+use super::ty::{GenericId, Scheme, Type};
 use crate::core::BindingId;
 
 pub struct RustTrait {
@@ -35,6 +35,27 @@ impl TraitTable {
             .iter()
             .map(|known| ImplementorMatch::select(known, implementor))
             .fold(Selection::Missing, Selection::best)
+    }
+
+    pub fn satisfies(
+        &self,
+        binding: BindingId,
+        candidate: &Type,
+        generic_satisfies: &dyn Fn(GenericId, BindingId) -> bool,
+    ) -> bool {
+        if let Type::Generic(generic) = candidate {
+            return generic_satisfies(*generic, binding);
+        }
+        match self.select(binding, candidate) {
+            Selection::Implemented(requirements) => requirements.iter().all(|requirement| {
+                self.satisfies(
+                    requirement.bound,
+                    &requirement.implementor,
+                    generic_satisfies,
+                )
+            }),
+            Selection::Undecided | Selection::Missing => false,
+        }
     }
 
     pub fn with_paths(&self, paths: &[&str]) -> Vec<BindingId> {

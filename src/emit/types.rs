@@ -22,16 +22,17 @@ impl<'a> RustTypes<'a> {
     const MAYBE_UNSIZED: &'static str = "?Sized";
     const NUMBER_TRAIT: &'static str = "crate::rt::Number";
     const RUNTIME_SUPERTRAITS: [(&'static str, &'static [&'static str]); 3] = [
-        ("crate::rt::Number", &["PartialOrd", "PartialEq"]),
+        ("crate::rt::Number", &["Copy", "PartialOrd", "PartialEq"]),
         (
             "crate::rt::Signed",
-            &["crate::rt::Number", "PartialOrd", "PartialEq"],
+            &["crate::rt::Number", "Copy", "PartialOrd", "PartialEq"],
         ),
         (
             "crate::rt::Float",
             &[
                 "crate::rt::Signed",
                 "crate::rt::Number",
+                "Copy",
                 "PartialOrd",
                 "PartialEq",
             ],
