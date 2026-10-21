@@ -1,0 +1,38 @@
+(use macro_library/macros -> ->> assert-eq dotimes case defenum defrecord if-some)
+
+(defenum color red green blue)
+(defrecord point (x i64) (y i64))
+(defrecord pet (name string) (legs u32))
+
+(defn double (n) (* n 2))
+
+(defn describe-number (n)
+  (case n
+    (0 "zero")
+    (1 "one")
+    (else "many")))
+
+(defn describe-greeting (word)
+  (case word
+    ("hello" "english")
+    ("bonjour" "french")
+    (else "unknown")))
+
+(defn main ()
+  (println (-> 3 double (+ 1) (* 10)))
+  (println (->> 3 double (- 100)))
+  (assert-eq 70 (-> 3 double (+ 1) (* 10)))
+  (assert-eq 5 (+ 2 2))
+  (dotimes (step 3) (println step))
+  (println (describe-number 1))
+  (println (describe-greeting "bonjour"))
+  (println (red? green))
+  (println (blue? blue))
+  (println color-count)
+  (let origin (make-point 0 0))
+  (println (point-equal? origin (make-point 0 0)))
+  (println (point->string origin))
+  (let rex (make-pet (to-string "Rex") 4))
+  (println (pet-equal? rex (make-pet (to-string "Rex") 3)))
+  (println (pet->string rex))
+  (if-some (found (some 42)) (println found) (println "nothing")))

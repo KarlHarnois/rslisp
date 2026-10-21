@@ -1,0 +1,20 @@
+(use puzzles/support/text lines parse-integer)
+(use puzzles/support/sequence deref windows at count)
+
+(export solve-sonar)
+
+(def sonar-report "143\n147\n150\n149\n160\n171\n168\n175\n190\n188")
+
+(defn solve-sonar ()
+  (let depths (parse-depths sonar-report))
+  (println (str "sonar increases: " (count-increases depths)))
+  (println (str "sonar window increases: " (count-increases (window-sums depths)))))
+
+(defn parse-depths (report)
+  (collect (map (lines report) (fn (line) (parse-integer line)))))
+
+(defn count-increases (readings)
+  (count (filter (windows readings 2) (fn (pair) (< (at (deref pair) 0) (at (deref pair) 1))))))
+
+(defn window-sums (readings)
+  (collect (map (windows readings 3) (fn (window) (+ (at window 0) (at window 1) (at window 2))))))

@@ -1,0 +1,46 @@
+(use calculator/support item-at parse-integer as-str)
+(use calculator/lexer token token-text)
+
+(export evaluate)
+
+(defstruct parsed (value i64) (next usize))
+
+(defn evaluate (tokens)
+  (parsed-value (parse-expression tokens 0)))
+
+(type parse-expression (fn ((ref (vec token)) usize) parsed))
+(defn parse-expression (tokens position)
+  (parse-sums tokens (parse-term tokens position)))
+
+(defn parse-sums (tokens left)
+  (let next (parsed-next left))
+  (cond ((at-symbol? tokens next "+") (parse-sums tokens (combine left (parse-term tokens (+ next 1)) add)))
+        ((at-symbol? tokens next "-") (parse-sums tokens (combine left (parse-term tokens (+ next 1)) sub)))
+        (else left)))
+
+(defn parse-term (tokens position)
+  (parse-products tokens (parse-factor tokens position)))
+
+(defn parse-products (tokens left)
+  (let next (parsed-next left))
+  (cond ((at-symbol? tokens next "*") (parse-products tokens (combine left (parse-factor tokens (+ next 1)) mul)))
+        ((at-symbol? tokens next "/") (parse-products tokens (combine left (parse-factor tokens (+ next 1)) div)))
+        (else left)))
+
+(defn parse-factor (tokens position)
+  (if (at-symbol? tokens position "(")
+      (skip-close-paren (parse-expression tokens (+ position 1)))
+      (make-parsed (number-at tokens position) (+ position 1))))
+
+(defn skip-close-paren (inner)
+  (make-parsed (parsed-value inner) (+ (parsed-next inner) 1)))
+
+(defn combine (left right operator)
+  (make-parsed (operator (parsed-value left) (parsed-value right)) (parsed-next right)))
+
+(defn at-symbol? (tokens position text)
+  (and (< position (len tokens))
+       (= (as-str (token-text (item-at tokens position))) text)))
+
+(defn number-at (tokens position)
+  (unwrap-or (parse-integer (as-str (token-text (item-at tokens position)))) 0))

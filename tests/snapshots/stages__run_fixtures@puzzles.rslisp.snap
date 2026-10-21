@@ -1,0 +1,26 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/puzzles.rslisp
+---
+sonar increases: 6
+sonar window increases: 7
+largest group: 4200
+top three groups: 10150
+Ada (research): 91
+Bram (sales): 78
+Cleo (research): 85
+Dev (sales): 93
+Esme (support): 70
+Finn (support): 88
+research top scorer: Ada
+sales top scorer: Dev
+support top scorer: Finn
+Cleo present: true
+first two equal: false
+Esme
+Bram
+Cleo
+Finn
+Ada
+Dev
