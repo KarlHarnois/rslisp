@@ -1,0 +1,50 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/value_forms.rslisp
+---
+#[derive(Clone)]
+struct Counter {
+    count: i64,
+}
+
+fn apply_to_four<A>(f: impl Fn(f64) -> A) -> A {
+    f(4.0)
+}
+
+static ROOT_OF_TWO: std::sync::LazyLock<f64> = std::sync::LazyLock::new(|| 2.0_f64.sqrt());
+
+const THREE: i64 = 1_i64 + 2_i64;
+
+fn fresh_counter() -> Counter {
+    Counter { count: 1 }
+}
+
+fn chosen_count(flag: bool) -> i64 {
+    (if flag {
+        fresh_counter()
+    } else {
+        fresh_counter()
+    }).count
+}
+
+fn doubler() -> impl Fn(i64) -> i64 {
+    move |value: i64| {
+        let doubled: i64 = value * 2;
+        doubled
+    }
+}
+
+fn ends_with_let() {
+    let unused: i64 = 1;
+}
+
+fn main() {
+    println!("{}", &apply_to_four(|argument_0| argument_0.sqrt()));
+    println!("{}", &apply_to_four(f64::sqrt));
+    println!("{}", &*ROOT_OF_TWO);
+    println!("{}", &THREE);
+    println!("{}", &chosen_count(true));
+    println!("{}", &doubler()(2));
+    ends_with_let()
+}

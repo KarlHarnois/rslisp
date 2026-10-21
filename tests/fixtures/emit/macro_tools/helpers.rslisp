@@ -1,0 +1,5 @@
+(export shout)
+
+(defn exclaim (text) (str text "!"))
+
+(defrule shout ((text) (exclaim text)))

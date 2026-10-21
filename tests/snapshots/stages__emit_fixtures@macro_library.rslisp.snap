@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/macro_library.rslisp
+---
+fn main() {
+    println!("{}", &crate::macro_tools::helpers::exclaim("hello"))
+}
+
+mod macro_tools {
+
+
+    pub(crate) mod helpers {
+        pub(crate) fn exclaim<A: std::fmt::Display + ?Sized>(text: &A) -> String {
+            format!("{}{}", text, "!")
+        }
+    }
+}

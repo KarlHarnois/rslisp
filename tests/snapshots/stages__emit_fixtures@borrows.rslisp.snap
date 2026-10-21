@@ -1,0 +1,39 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/borrows.rslisp
+---
+#[derive(Clone)]
+struct Counter {
+    count: i64,
+}
+
+fn reset(target: &mut Counter) {
+    {
+    }
+}
+
+fn takes_number(number: i64) -> i64 {
+    number
+}
+
+fn pass_borrowed(number: &i64) -> i64 {
+    takes_number(*number)
+}
+
+fn call_twice(action: impl Fn()) {
+    action();
+    action()
+}
+
+fn main() {
+    let mut target = Counter { count: 1 };
+    reset(&mut target);
+    let five: i64 = 5;
+    println!("{}", &pass_borrowed(&five));
+    let pick: fn(i64) -> i64 = takes_number;
+    let nothing: () = {
+    };
+    call_twice(|| println!("{}", &pick(1)));
+    nothing
+}

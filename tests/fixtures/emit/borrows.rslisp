@@ -1,0 +1,29 @@
+(struct counter (count i64))
+
+(type reset (fn ((mut counter)) unit))
+(defn reset (target) (do))
+
+(type takes-number (fn (i64) i64))
+(defn takes-number (number) number)
+
+(type pass-borrowed (fn ((ref i64)) i64))
+(defn pass-borrowed (number) (takes-number number))
+
+(rust-trait small "Small" i8 i16)
+(type grow (where ((t small)) (fn (t) t)))
+(defn grow (value) 1)
+
+(type call-twice (fn ((fn () unit)) unit))
+(defn call-twice (action)
+  (action)
+  (action))
+
+(defn main ()
+  (let target (new counter (count 1)))
+  (reset target)
+  (let five 5)
+  (println (pass-borrowed (ref five)))
+  (let (pick (fn (i64) i64)) takes-number)
+  (let (nothing unit) (do))
+  (call-twice (fn () (println (pick 1))))
+  nothing)

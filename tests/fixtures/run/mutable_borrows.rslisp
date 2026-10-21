@@ -1,0 +1,11 @@
+(struct counter (count i64))
+
+(type show-count (fn ((mut counter)) unit))
+(defn show-count (target) (println (field target count)))
+
+(def root-of-four (sqrt 4.0))
+
+(defn main ()
+  (let target (new counter (count 7)))
+  (show-count target)
+  (println root-of-four))

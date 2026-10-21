@@ -1,0 +1,28 @@
+(struct counter (count i64))
+
+(def apply-to-four (fn (f) (f 4.0)))
+
+(def root-of-two (sqrt 2.0))
+
+(def three (+ 1 2))
+
+(defn fresh-counter () (new counter (count 1)))
+
+(defn chosen-count (flag)
+  (field (if flag (fresh-counter) (fresh-counter)) count))
+
+(defn doubler ()
+  (fn (value)
+    (let doubled (* value 2))
+    doubled))
+
+(defn ends-with-let () (let unused 1))
+
+(defn main ()
+  (println (apply-to-four sqrt))
+  (println (apply-to-four (rust "f64::sqrt" (fn (f64) f64))))
+  (println root-of-two)
+  (println three)
+  (println (chosen-count true))
+  (println ((doubler) 2))
+  (ends-with-let))

@@ -1,0 +1,3 @@
+(use macro_tools/helpers shout)
+
+(defn main () (println (shout "hello")))
