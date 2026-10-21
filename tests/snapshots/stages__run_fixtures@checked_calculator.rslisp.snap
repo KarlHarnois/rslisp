@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/checked_calculator.rslisp
+---
+12 + 3 * (4 - 1) = 21
+12 + -> error: expected a number at token 2
+(1 + 2 -> error: expected `)` at token 4
+4 / (2 - 2) -> error: division by zero
+7 % 2 -> error: unknown character `%` at position 2

@@ -1,0 +1,111 @@
+(use code first rest list prepend concat length empty? nth symbol symbol-name string number-add
+          symbol? same-binding? value-eq)
+(use prelude/macros map-list)
+
+(export -> ->> assert-eq dotimes case defenum defrecord if-some)
+
+(defrule ->
+  ((value) value)
+  ((value (head arguments ...) more ...) (-> (head value arguments ...) more ...))
+  ((value head more ...) (-> (head value) more ...)))
+
+(defrule ->>
+  ((value) value)
+  ((value (head arguments ...) more ...) (->> (head arguments ... value) more ...))
+  ((value head more ...) (->> (head value) more ...)))
+
+(defmacro assert-eq (expected actual)
+  (template
+    (do (let expected-value (unquote expected))
+        (let actual-value (unquote actual))
+        (unless (= expected-value actual-value)
+          (println (str "assertion failed: " (unquote (string expected)) " = " (unquote (string actual))))
+          (println (str "  expected: " expected-value))
+          (println (str "  actual:   " actual-value))))))
+
+(defrule dotimes
+  (((index count) body ...) (for-each (range 0 count) (fn (index) body ...))))
+
+(defmacro case (value clauses ...)
+  (let subject (quote case-value))
+  (template
+    (do (let (unquote subject) (unquote value))
+        (cond (splice (map-list (fn (clause) (case-clause subject clause)) clauses))))))
+
+(def case-clause
+  (fn (subject clause)
+    (if (else-clause? clause)
+        clause
+        (template ((= (unquote subject) (unquote (first clause))) (splice (rest clause)))))))
+
+(def else-clause?
+  (fn (clause)
+    (and (symbol? (first clause)) (same-binding? (first clause) (quote else)))))
+
+(defmacro defenum (name variants ...)
+  (let count-name (symbol name (symbol-name name) "-count"))
+  (template
+    (do (def (unquote count-name) (unquote (length variants)))
+        (splice (enum-definitions variants 0)))))
+
+(def enum-definitions
+  (fn (variants index)
+    (if (empty? variants)
+        (list)
+        (concat (variant-definitions (first variants) index)
+                (enum-definitions (rest variants) (number-add index 1))))))
+
+(def variant-definitions
+  (fn (variant index)
+    (let predicate (symbol variant (symbol-name variant) "?"))
+    (list (template (def (unquote variant) (unquote index)))
+          (template (defn (unquote predicate) (value) (= value (unquote variant)))))))
+
+(defmacro defrecord (name fields ...)
+  (let left (quote left))
+  (let right (quote right))
+  (let record (quote record))
+  (template
+    (do (defstruct (unquote name) (splice fields))
+        (defn (unquote (symbol name (symbol-name name) "-equal?")) ((unquote left) (unquote right))
+          (and (splice (map-list (fn (field) (field-equality name field left right)) fields))))
+        (defn (unquote (symbol name (symbol-name name) "->string")) ((unquote record))
+          (str (unquote (string "(" name))
+               (splice (field-texts name fields record))
+               ")")))))
+
+(def accessor
+  (fn (name field)
+    (symbol name (symbol-name name) "-" (first field))))
+
+(def field-equality
+  (fn (name field left right)
+    (let read (accessor name field))
+    (template ((unquote (equality-for field)) ((unquote read) (unquote left)) ((unquote read) (unquote right))))))
+
+(def equality-for
+  (fn (field)
+    (if (text-field? field) (quote text=) (quote =))))
+
+(def text-field?
+  (fn (field)
+    (let field-type (nth field 1))
+    (and (symbol? field-type) (value-eq (symbol-name field-type) "string"))))
+
+(def field-texts
+  (fn (name fields record)
+    (if (empty? fields)
+        (list)
+        (concat (list (string " " (first (first fields)) "=")
+                      (list (accessor name (first fields)) record))
+                (field-texts name (rest fields) record)))))
+
+(defrule if-some
+  (((name option) then else)
+   (do (let option-value option)
+       (if (some? option-value)
+           (do (let name (unwrap option-value)) then)
+           else))))
+
+(def unwrap (rust "{0}.unwrap()" (where (a) (fn ((option a)) a))))
+(def text= (rust "{0} == {1}" (fn ((ref string) (ref string)) bool)))

@@ -1,0 +1,67 @@
+(use calculator/support item-at parse-integer as-str and-then map-ok)
+(use calculator/lexer token token-kind token-text)
+
+(export evaluate)
+
+(defstruct parsed (value i64) (next usize))
+
+(defn evaluate (tokens)
+  (and-then (parse-expression tokens 0) (fn (result) (expect-end tokens result))))
+
+(defn expect-end (tokens result)
+  (if (= (parsed-next result) (len tokens))
+      (ok (parsed-value result))
+      (err (str "unexpected token at " (parsed-next result)))))
+
+(type parse-expression (fn ((ref (vec token)) usize) (result parsed string)))
+(defn parse-expression (tokens position)
+  (and-then (parse-term tokens position) (fn (left) (parse-sums tokens left))))
+
+(defn parse-sums (tokens left)
+  (let next (parsed-next left))
+  (cond ((at-symbol? tokens next "+")
+         (and-then (parse-term tokens (+ next 1)) (fn (right) (parse-sums tokens (combine left right add)))))
+        ((at-symbol? tokens next "-")
+         (and-then (parse-term tokens (+ next 1)) (fn (right) (parse-sums tokens (combine left right sub)))))
+        (else (ok left))))
+
+(defn parse-term (tokens position)
+  (and-then (parse-factor tokens position) (fn (left) (parse-products tokens left))))
+
+(defn parse-products (tokens left)
+  (let next (parsed-next left))
+  (cond ((at-symbol? tokens next "*")
+         (and-then (parse-factor tokens (+ next 1)) (fn (right) (parse-products tokens (combine left right mul)))))
+        ((at-symbol? tokens next "/")
+         (and-then (parse-factor tokens (+ next 1)) (fn (right) (divide tokens left right))))
+        (else (ok left))))
+
+(defn divide (tokens left right)
+  (if (= (parsed-value right) 0)
+      (err (to-string "division by zero"))
+      (parse-products tokens (combine left right div))))
+
+(defn parse-factor (tokens position)
+  (cond ((at-symbol? tokens position "(")
+         (and-then (parse-expression tokens (+ position 1)) (fn (inner) (expect-close tokens inner))))
+        ((at-kind? tokens position "number") (ok (make-parsed (number-at tokens position) (+ position 1))))
+        (else (err (str "expected a number at token " position)))))
+
+(defn expect-close (tokens inner)
+  (if (at-symbol? tokens (parsed-next inner) ")")
+      (ok (make-parsed (parsed-value inner) (+ (parsed-next inner) 1)))
+      (err (str "expected `)` at token " (parsed-next inner)))))
+
+(defn combine (left right operator)
+  (make-parsed (operator (parsed-value left) (parsed-value right)) (parsed-next right)))
+
+(defn at-symbol? (tokens position text)
+  (and (< position (len tokens))
+       (= (as-str (token-text (item-at tokens position))) text)))
+
+(defn at-kind? (tokens position kind)
+  (and (< position (len tokens))
+       (= (as-str (token-kind (item-at tokens position))) kind)))
+
+(defn number-at (tokens position)
+  (unwrap-or (parse-integer (as-str (token-text (item-at tokens position)))) 0))

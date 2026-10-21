@@ -1,0 +1,8 @@
+(export pop element-at unwrap success-value failure-value to-index)
+
+(def pop (rust "{0}.pop()" (where (a) (fn ((mut (vec a))) (option a)))))
+(def element-at (rust "{0}.get({1})" (where (a) (fn ((ref (vec a)) usize) (option (ref a))))))
+(def unwrap (rust "{0}.unwrap()" (where (a) (fn ((option a)) a))))
+(def success-value (rust "{0}.unwrap()" (where (a b) (fn ((result a b)) a))))
+(def failure-value (rust "{0}.unwrap_err()" (where (a b) (fn ((result a b)) b))))
+(def to-index (rust "{0} as usize" (fn (i64) usize)))

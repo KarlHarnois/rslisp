@@ -1,0 +1,13 @@
+(export chars char-at slice-text item-at parse-integer as-str either and-then map-ok)
+
+(def chars (rust "{0}.chars()" (fn ((ref str)) (iterator char))))
+(def char-at (rust "{0}[{1}]" (where ((a copy)) (fn ((ref (vec a)) usize) a))))
+(def item-at (rust "&{0}[{1}]" (where (a) (fn ((ref (vec a)) usize) (ref a)))))
+(def slice-text (rust "{0}[{1}..{2}].iter().collect::<String>()" (fn ((ref (vec char)) usize usize) string)))
+(def as-str (rust "{0}.as_str()" (fn ((ref string)) (ref str))))
+(def parse-integer (rust "{0}.parse::<i64>().ok()" (fn ((ref str)) (option i64))))
+(def either
+  (rust "match {0} {{ Ok(value) => {1}(value), Err(error) => {2}(error) }}"
+        (where (a b c) (fn ((result a b) (fn (a) c) (fn (b) c)) c))))
+(def and-then (rust "{0}.and_then({1})" (where (a b e) (fn ((result a e) (fn (a) (result b e))) (result b e)))))
+(def map-ok (rust "{0}.map({1})" (where (a b e) (fn ((result a e) (fn (a) b)) (result b e)))))

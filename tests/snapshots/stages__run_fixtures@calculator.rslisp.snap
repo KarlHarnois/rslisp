@@ -1,0 +1,28 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/calculator.rslisp
+---
+number 12
+symbol +
+number 3
+symbol *
+symbol (
+number 4
+symbol -
+number 1
+symbol )
+= 21
+number 2
+symbol *
+symbol (
+number 3
+symbol +
+number 4
+symbol )
+symbol -
+number 10
+symbol /
+number 5
+= 12
+error: unknown character `%` at position 2

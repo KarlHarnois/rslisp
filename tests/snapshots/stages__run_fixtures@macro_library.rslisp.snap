@@ -1,0 +1,23 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/macro_library.rslisp
+---
+70
+94
+assertion failed: 5 = (+ 2 2)
+  expected: 5
+  actual:   4
+0
+1
+2
+one
+french
+false
+true
+3
+true
+(point x=0 y=0)
+false
+(pet name=Rex legs=4)
+42

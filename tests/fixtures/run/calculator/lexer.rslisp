@@ -1,0 +1,42 @@
+(use calculator/support chars char-at slice-text)
+
+(export token token-kind token-text tokenize)
+
+(defstruct token (kind string) (text string))
+
+(type tokenize (fn ((ref str)) (result (vec token) string)))
+(defn tokenize (source)
+  (scan (collect (chars source)) 0 (vec)))
+
+(type scan (fn ((ref (vec char)) usize (vec token)) (result (vec token) string)))
+(defn scan (characters position tokens)
+  (if (>= position (len characters))
+      (ok tokens)
+      (scan-character characters position tokens (char-at characters position))))
+
+(defn scan-character (characters position tokens c)
+  (cond ((whitespace? c) (scan characters (+ position 1) tokens))
+        ((symbol-character? c)
+         (scan characters (+ position 1) (append tokens (make-token (to-string "symbol") (to-string c)))))
+        ((digit? c) (scan-number characters position tokens))
+        (else (err (str "unknown character `" c "` at position " position)))))
+
+(defn scan-number (characters start tokens)
+  (let end (digits-end characters start))
+  (scan characters end (append tokens (make-token (to-string "number") (slice-text characters start end)))))
+
+(defn digits-end (characters position)
+  (if (and (< position (len characters)) (digit? (char-at characters position)))
+      (digits-end characters (+ position 1))
+      position))
+
+(defn append (items item)
+  (let growing items)
+  (push growing item)
+  growing)
+
+(defn digit? (c) (<= (char "0") c (char "9")))
+(defn whitespace? (c) (= c (char " ")))
+(defn symbol-character? (c)
+  (or (= c (char "+")) (= c (char "-")) (= c (char "*")) (= c (char "/"))
+      (= c (char "(")) (= c (char ")"))))

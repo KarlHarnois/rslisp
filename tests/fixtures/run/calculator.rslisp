@@ -1,0 +1,17 @@
+(use calculator/lexer tokenize token-kind token-text)
+(use calculator/parser evaluate)
+(use calculator/support either)
+
+(defn main ()
+  (calculate "12 + 3 * (4 - 1)")
+  (calculate "2 * (3 + 4) - 10 / 5")
+  (calculate "7 % 2"))
+
+(defn calculate (source)
+  (either (tokenize source)
+          (fn (tokens) (report tokens))
+          (fn (message) (println (str "error: " message)))))
+
+(defn report (tokens)
+  (for-each (iter tokens) (fn (t) (println (str (token-kind t) " " (token-text t)))))
+  (println (str "= " (evaluate tokens))))

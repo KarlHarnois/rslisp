@@ -1,0 +1,8 @@
+(use puzzles/sonar solve-sonar)
+(use puzzles/rations solve-rations)
+(use puzzles/roster solve-roster)
+
+(defn main ()
+  (solve-sonar)
+  (solve-rations)
+  (solve-roster))

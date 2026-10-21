@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/stack_machine.rslisp
+---
+5
+4
+3
+2
+1
+countdown: 0
+factorial: 3628800
+underflowing failed: stack underflow

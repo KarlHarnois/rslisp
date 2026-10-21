@@ -1,0 +1,25 @@
+(use puzzles/support/text lines split parse-integer)
+(use puzzles/support/sequence sum maximum take sort-descending)
+
+(export solve-rations)
+
+(def packing-list "1200\n800\n\n3100\n\n450\n900\n1500\n\n2000\n2200\n\n700")
+(def podium-size 3)
+
+(defn solve-rations ()
+  (let totals (group-totals packing-list))
+  (println (str "largest group: " (largest-total totals)))
+  (println (str "top three groups: " (podium-total totals))))
+
+(defn group-totals (packing)
+  (collect (map (split packing "\n\n") (fn (group) (group-total group)))))
+
+(defn group-total (group)
+  (sum (map (lines group) parse-integer)))
+
+(defn largest-total (totals)
+  (unwrap-or (maximum (values totals)) 0))
+
+(defn podium-total (totals)
+  (sort-descending totals)
+  (sum (take (values totals) podium-size)))

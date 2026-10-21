@@ -1,0 +1,49 @@
+(use puzzles/support/text lines split as-str parse-score)
+(use puzzles/support/sequence deref expect element item-at any sort sort-by-key dedup max-by-key)
+
+(export solve-roster)
+
+(defstruct employee (name string) (dept string) (score u32))
+
+(def roster "Ada,research,91\nBram,sales,78\nCleo,research,85\nDev,sales,93\nEsme,support,70\nFinn,support,88")
+
+(defn solve-roster ()
+  (let people (parse-roster roster))
+  (for-each (iter people) (fn (person) (println (describe person))))
+  (for-each (values (departments people)) (fn (dept) (print-top-scorer people dept)))
+  (println (str "Cleo present: " (present? people "Cleo")))
+  (println (str "first two equal: " (same-employee? (element people 0) (element people 1))))
+  (sort-by-key people employee-score)
+  (for-each (iter people) (fn (person) (println (employee-name person)))))
+
+(defn parse-roster (text)
+  (collect (map (lines text) (fn (line) (parse-employee line)))))
+
+(defn parse-employee (line)
+  (let fields (collect (split line ",")))
+  (make-employee (to-string (item-at fields 0)) (to-string (item-at fields 1)) (parse-score (item-at fields 2))))
+
+(defn describe (person)
+  (str (employee-name person) " (" (employee-dept person) "): " (employee-score person)))
+
+(defn departments (people)
+  (let names (collect (map (iter people) (fn (person) (as-str (employee-dept person))))))
+  (sort names)
+  (dedup names)
+  names)
+
+(defn print-top-scorer (people dept)
+  (let best (max-by-key (filter (iter people) (fn (person) (in-dept? (deref person) dept)))
+                        (fn (person) (employee-score (deref person)))))
+  (println (str dept " top scorer: " (employee-name (expect best "every department has a member")))))
+
+(defn in-dept? (person dept)
+  (= (as-str (employee-dept person)) dept))
+
+(defn present? (people name)
+  (any (iter people) (fn (person) (= (as-str (employee-name person)) name))))
+
+(defn same-employee? (left right)
+  (and (= (as-str (employee-name left)) (as-str (employee-name right)))
+       (= (as-str (employee-dept left)) (as-str (employee-dept right)))
+       (= (employee-score left) (employee-score right))))
