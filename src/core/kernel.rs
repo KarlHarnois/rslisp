@@ -17,63 +17,108 @@ pub enum KernelForm {
     Export,
 }
 
+struct KernelFormRow {
+    form: KernelForm,
+    name: &'static str,
+    shape: &'static str,
+}
+
 impl KernelForm {
-    pub const ALL: [KernelForm; 15] = [
-        KernelForm::Fn,
-        KernelForm::Def,
-        KernelForm::Let,
-        KernelForm::Do,
-        KernelForm::If,
-        KernelForm::Type,
-        KernelForm::Struct,
-        KernelForm::New,
-        KernelForm::Field,
-        KernelForm::Quote,
-        KernelForm::Macro,
-        KernelForm::Rust,
-        KernelForm::RustTrait,
-        KernelForm::Use,
-        KernelForm::Export,
+    const ROWS: [KernelFormRow; 15] = [
+        KernelFormRow {
+            form: KernelForm::Fn,
+            name: "fn",
+            shape: "(fn (param ...) body ...)",
+        },
+        KernelFormRow {
+            form: KernelForm::Def,
+            name: "def",
+            shape: "(def name value)",
+        },
+        KernelFormRow {
+            form: KernelForm::Let,
+            name: "let",
+            shape: "(let name value)",
+        },
+        KernelFormRow {
+            form: KernelForm::Do,
+            name: "do",
+            shape: "(do form ...)",
+        },
+        KernelFormRow {
+            form: KernelForm::If,
+            name: "if",
+            shape: "(if test then else)",
+        },
+        KernelFormRow {
+            form: KernelForm::Type,
+            name: "type",
+            shape: "(type name type)",
+        },
+        KernelFormRow {
+            form: KernelForm::Struct,
+            name: "struct",
+            shape: "(struct name (field type) ...)",
+        },
+        KernelFormRow {
+            form: KernelForm::New,
+            name: "new",
+            shape: "(new name (field value) ...)",
+        },
+        KernelFormRow {
+            form: KernelForm::Field,
+            name: "field",
+            shape: "(field value name)",
+        },
+        KernelFormRow {
+            form: KernelForm::Quote,
+            name: "quote",
+            shape: "(quote form)",
+        },
+        KernelFormRow {
+            form: KernelForm::Macro,
+            name: "macro",
+            shape: "(def name (macro (form) body ...))",
+        },
+        KernelFormRow {
+            form: KernelForm::Rust,
+            name: "rust",
+            shape: "(rust \"template\" type twin)",
+        },
+        KernelFormRow {
+            form: KernelForm::RustTrait,
+            name: "rust-trait",
+            shape: "(rust-trait name \"Path\" type ...)",
+        },
+        KernelFormRow {
+            form: KernelForm::Use,
+            name: "use",
+            shape: "(use module name ...)",
+        },
+        KernelFormRow {
+            form: KernelForm::Export,
+            name: "export",
+            shape: "(export name ...)",
+        },
     ];
 
+    pub fn all() -> impl Iterator<Item = KernelForm> {
+        Self::ROWS.iter().map(|row| row.form)
+    }
+
     pub fn name(self) -> &'static str {
-        match self {
-            KernelForm::Fn => "fn",
-            KernelForm::Def => "def",
-            KernelForm::Let => "let",
-            KernelForm::Do => "do",
-            KernelForm::If => "if",
-            KernelForm::Type => "type",
-            KernelForm::Struct => "struct",
-            KernelForm::New => "new",
-            KernelForm::Field => "field",
-            KernelForm::Quote => "quote",
-            KernelForm::Macro => "macro",
-            KernelForm::Rust => "rust",
-            KernelForm::RustTrait => "rust-trait",
-            KernelForm::Use => "use",
-            KernelForm::Export => "export",
-        }
+        self.row().name
     }
 
     pub fn shape(self) -> &'static str {
-        match self {
-            KernelForm::Fn => "(fn (param ...) body ...)",
-            KernelForm::Def => "(def name value)",
-            KernelForm::Let => "(let name value)",
-            KernelForm::Do => "(do form ...)",
-            KernelForm::If => "(if test then else)",
-            KernelForm::Type => "(type name type)",
-            KernelForm::Struct => "(struct name (field type) ...)",
-            KernelForm::New => "(new name (field value) ...)",
-            KernelForm::Field => "(field value name)",
-            KernelForm::Quote => "(quote form)",
-            KernelForm::Macro => "(def name (macro (form) body ...))",
-            KernelForm::Rust => "(rust \"template\" type twin)",
-            KernelForm::RustTrait => "(rust-trait name \"Path\" type ...)",
-            KernelForm::Use => "(use module name ...)",
-            KernelForm::Export => "(export name ...)",
-        }
+        self.row().shape
+    }
+
+    fn row(self) -> &'static KernelFormRow {
+        Self::ROWS
+            .iter()
+            .find(|row| row.form == self)
+            .expect("every kernel form has a row in the kernel form table")
     }
 }
 
@@ -100,73 +145,136 @@ pub enum PrimitiveType {
     F64,
 }
 
+struct PrimitiveRow {
+    primitive: PrimitiveType,
+    name: &'static str,
+    integer_range: Option<(i128, i128)>,
+}
+
 impl PrimitiveType {
-    pub const ALL: [PrimitiveType; 19] = [
-        PrimitiveType::Bool,
-        PrimitiveType::Char,
-        PrimitiveType::Str,
-        PrimitiveType::String,
-        PrimitiveType::Unit,
-        PrimitiveType::I8,
-        PrimitiveType::I16,
-        PrimitiveType::I32,
-        PrimitiveType::I64,
-        PrimitiveType::I128,
-        PrimitiveType::Isize,
-        PrimitiveType::U8,
-        PrimitiveType::U16,
-        PrimitiveType::U32,
-        PrimitiveType::U64,
-        PrimitiveType::U128,
-        PrimitiveType::Usize,
-        PrimitiveType::F32,
-        PrimitiveType::F64,
+    const ROWS: [PrimitiveRow; 19] = [
+        PrimitiveRow {
+            primitive: PrimitiveType::Bool,
+            name: "bool",
+            integer_range: None,
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::Char,
+            name: "char",
+            integer_range: None,
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::Str,
+            name: "str",
+            integer_range: None,
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::String,
+            name: "string",
+            integer_range: None,
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::Unit,
+            name: "unit",
+            integer_range: None,
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::I8,
+            name: "i8",
+            integer_range: Some((i8::MIN as i128, i8::MAX as i128)),
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::I16,
+            name: "i16",
+            integer_range: Some((i16::MIN as i128, i16::MAX as i128)),
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::I32,
+            name: "i32",
+            integer_range: Some((i32::MIN as i128, i32::MAX as i128)),
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::I64,
+            name: "i64",
+            integer_range: Some((i64::MIN as i128, i64::MAX as i128)),
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::I128,
+            name: "i128",
+            integer_range: Some((i128::MIN, i128::MAX)),
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::Isize,
+            name: "isize",
+            integer_range: Some((i64::MIN as i128, i64::MAX as i128)),
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::U8,
+            name: "u8",
+            integer_range: Some((0, u8::MAX as i128)),
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::U16,
+            name: "u16",
+            integer_range: Some((0, u16::MAX as i128)),
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::U32,
+            name: "u32",
+            integer_range: Some((0, u32::MAX as i128)),
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::U64,
+            name: "u64",
+            integer_range: Some((0, u64::MAX as i128)),
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::U128,
+            name: "u128",
+            integer_range: Some((0, i128::MAX)),
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::Usize,
+            name: "usize",
+            integer_range: Some((0, u64::MAX as i128)),
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::F32,
+            name: "f32",
+            integer_range: None,
+        },
+        PrimitiveRow {
+            primitive: PrimitiveType::F64,
+            name: "f64",
+            integer_range: None,
+        },
     ];
 
+    pub fn all() -> impl Iterator<Item = PrimitiveType> {
+        Self::ROWS.iter().map(|row| row.primitive)
+    }
+
+    pub fn name(self) -> &'static str {
+        self.row().name
+    }
+
+    pub fn integer_range(self) -> Option<(i128, i128)> {
+        self.row().integer_range
+    }
+
     pub fn is_integer(self) -> bool {
-        matches!(
-            self,
-            PrimitiveType::I8
-                | PrimitiveType::I16
-                | PrimitiveType::I32
-                | PrimitiveType::I64
-                | PrimitiveType::I128
-                | PrimitiveType::Isize
-                | PrimitiveType::U8
-                | PrimitiveType::U16
-                | PrimitiveType::U32
-                | PrimitiveType::U64
-                | PrimitiveType::U128
-                | PrimitiveType::Usize
-        )
+        self.integer_range().is_some()
     }
 
     pub fn is_float(self) -> bool {
         matches!(self, PrimitiveType::F32 | PrimitiveType::F64)
     }
 
-    pub fn name(self) -> &'static str {
-        match self {
-            PrimitiveType::Bool => "bool",
-            PrimitiveType::Char => "char",
-            PrimitiveType::Str => "str",
-            PrimitiveType::String => "string",
-            PrimitiveType::Unit => "unit",
-            PrimitiveType::I8 => "i8",
-            PrimitiveType::I16 => "i16",
-            PrimitiveType::I32 => "i32",
-            PrimitiveType::I64 => "i64",
-            PrimitiveType::I128 => "i128",
-            PrimitiveType::Isize => "isize",
-            PrimitiveType::U8 => "u8",
-            PrimitiveType::U16 => "u16",
-            PrimitiveType::U32 => "u32",
-            PrimitiveType::U64 => "u64",
-            PrimitiveType::U128 => "u128",
-            PrimitiveType::Usize => "usize",
-            PrimitiveType::F32 => "f32",
-            PrimitiveType::F64 => "f64",
-        }
+    fn row(self) -> &'static PrimitiveRow {
+        Self::ROWS
+            .iter()
+            .find(|row| row.primitive == self)
+            .expect("every primitive type has a row in the primitive table")
     }
 }
 
@@ -190,7 +298,7 @@ impl KernelType {
             KernelType::Hole,
         ]
         .into_iter()
-        .chain(PrimitiveType::ALL.into_iter().map(KernelType::Primitive))
+        .chain(PrimitiveType::all().map(KernelType::Primitive))
     }
 
     pub fn shape(self) -> &'static str {

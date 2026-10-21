@@ -179,8 +179,7 @@ impl Expander<'_> {
 
     fn builtin_exports(builtin: BuiltinModule) -> Vec<(&'static str, Namespace, BindingKind)> {
         match builtin {
-            BuiltinModule::Kernel => KernelForm::ALL
-                .into_iter()
+            BuiltinModule::Kernel => KernelForm::all()
                 .map(|form| (form.name(), Namespace::Value, BindingKind::KernelForm(form)))
                 .chain(KernelType::all().map(|kernel_type| {
                     (
