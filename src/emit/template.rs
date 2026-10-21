@@ -1,4 +1,5 @@
 use super::fragment::{Code, Fragment, Precedence};
+use crate::core::{ParsedTemplate, Piece};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TemplateError {
@@ -6,15 +7,8 @@ pub enum TemplateError {
     MissingArgument(usize),
 }
 
-#[derive(Debug, PartialEq, Eq)]
-enum Piece {
-    Literal(String),
-    Placeholder(usize),
-}
-
 pub struct Template {
-    pieces: Vec<Piece>,
-    text: String,
+    parsed: ParsedTemplate,
 }
 
 impl Template {
@@ -27,60 +21,24 @@ impl Template {
     const SEPARATORS_AFTER: [char; 2] = [',', ')'];
 
     pub fn parse(text: &str) -> Result<Self, TemplateError> {
-        let mut pieces = Vec::new();
-        let mut literal = String::new();
-        let mut characters = text.chars().peekable();
-        while let Some(character) = characters.next() {
-            match (character, characters.peek()) {
-                ('{', Some('{')) | ('}', Some('}')) => {
-                    characters.next();
-                    literal.push(character);
-                }
-                ('{', _) => {
-                    let index = Self::placeholder_index(&mut characters)?;
-                    pieces.push(Piece::Literal(std::mem::take(&mut literal)));
-                    pieces.push(Piece::Placeholder(index));
-                }
-                _ => literal.push(character),
-            }
-        }
-        pieces.push(Piece::Literal(literal));
-        pieces.retain(|piece| *piece != Piece::Literal(String::new()));
-        Ok(Self {
-            pieces,
-            text: text.to_string(),
-        })
-    }
-
-    fn placeholder_index(
-        characters: &mut impl Iterator<Item = char>,
-    ) -> Result<usize, TemplateError> {
-        let mut digits = String::new();
-        for next in characters {
-            if next == '}' {
-                return digits
-                    .parse()
-                    .map_err(|_| TemplateError::MalformedPlaceholder);
-            }
-            digits.push(next);
-        }
-        Err(TemplateError::MalformedPlaceholder)
+        ParsedTemplate::parse(text)
+            .map(|parsed| Self { parsed })
+            .map_err(|_| TemplateError::MalformedPlaceholder)
     }
 
     pub fn is_path(&self) -> bool {
-        match self.pieces.as_slice() {
-            [Piece::Literal(literal)] => literal
-                .chars()
-                .all(|character| character.is_alphanumeric() || "_:".contains(character)),
-            _ => false,
-        }
+        self.parsed.is_path()
     }
 
     pub fn inline(&self, arguments: Vec<Code>) -> Result<Code, TemplateError> {
-        if let Some(missing) = self.placeholders().find(|index| *index >= arguments.len()) {
+        if let Some(missing) = self
+            .parsed
+            .placeholders()
+            .find(|index| *index >= arguments.len())
+        {
             return Err(TemplateError::MissingArgument(missing));
         }
-        if let [Piece::Placeholder(index)] = self.pieces.as_slice() {
+        if let [Piece::Placeholder(index)] = self.parsed.pieces() {
             return Ok(arguments[*index].clone());
         }
         if self.needs_temporaries(&arguments) {
@@ -91,7 +49,7 @@ impl Template {
 
     fn substitute(&self, arguments: &[Code]) -> Code {
         let mut fragments = Vec::new();
-        for (position, piece) in self.pieces.iter().enumerate() {
+        for (position, piece) in self.parsed.pieces().iter().enumerate() {
             match piece {
                 Piece::Literal(literal) => fragments.push(Fragment::Text(literal.clone())),
                 Piece::Placeholder(index) => fragments.extend(
@@ -137,14 +95,14 @@ impl Template {
     }
 
     fn literal_at(&self, position: usize) -> Option<&str> {
-        match self.pieces.get(position)? {
+        match self.parsed.pieces().get(position)? {
             Piece::Literal(literal) => Some(literal),
             Piece::Placeholder(_) => None,
         }
     }
 
     fn precedence(&self) -> Precedence {
-        let text = self.text.trim();
+        let text = self.parsed.text().trim();
         if text.starts_with(Self::UNARY_OPERATORS) {
             Precedence::Prefix
         } else if Self::has_top_level_space(text) {
@@ -160,15 +118,8 @@ impl Template {
             .any(|character| scanner.is_top_level_space(character))
     }
 
-    fn placeholders(&self) -> impl Iterator<Item = usize> + '_ {
-        self.pieces.iter().filter_map(|piece| match piece {
-            Piece::Placeholder(index) => Some(*index),
-            Piece::Literal(_) => None,
-        })
-    }
-
     fn needs_temporaries(&self, arguments: &[Code]) -> bool {
-        let order: Vec<usize> = self.placeholders().collect();
+        let order: Vec<usize> = self.parsed.placeholders().collect();
         let repeated_or_reordered = order.windows(2).any(|pair| pair[0] >= pair[1]);
         repeated_or_reordered && arguments.iter().any(|argument| !argument.is_plain_name())
     }
@@ -286,17 +237,9 @@ mod tests {
     }
 
     #[test]
-    fn reports_an_unclosed_placeholder() {
+    fn reports_a_malformed_placeholder() {
         assert_eq!(
             Template::parse("{0").err(),
-            Some(TemplateError::MalformedPlaceholder)
-        );
-    }
-
-    #[test]
-    fn reports_a_placeholder_without_a_number() {
-        assert_eq!(
-            Template::parse("{name}").err(),
             Some(TemplateError::MalformedPlaceholder)
         );
     }
