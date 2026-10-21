@@ -256,3 +256,32 @@ Field names are not hygienic. They are looked up through the struct type.
 | 5. Types | done |
 | 6. Emit and build | done |
 | 7. Ownership | done |
+| 8. Generic types | planned |
+| 9. Enums and `match` | planned |
+| 10. User-defined traits | planned |
+| 11. Written lifetimes | planned |
+
+### 8. Generic types
+
+Types take type arguments, so the prelude can wrap Rust's standard library.
+
+- Struct types carry type arguments, and inference unifies them.
+- A struct can declare type parameters.
+- A kernel form binds a type that Rust defines, as `rust-trait` binds a trait.
+- A trait implementation can cover a generic type under a bound, as Rust implements `Clone` for `Vec<T>` when `T: Clone`.
+- An applied type is Copy only when Rust makes it Copy: `(option i64)` is Copy and `(vec i64)` is not.
+- The prelude provides `vec`, `option`, `result` and ranges. A fold over a range repeats work without recursion, so a long count cannot overflow the stack.
+
+The milestone is done when a fixture program sums a million numbers and builds, filters and prints a vector.
+
+### 9. Enums and `match`
+
+The language gains sum types and a `match` over their variants. The milestone follows generic types, because `option` and `result` are generic.
+
+### 10. User-defined traits
+
+A program defines traits and implements them. `rust-trait` binds only traits that Rust defines.
+
+### 11. Written lifetimes
+
+A type can name a lifetime. A function can then return a borrow when it takes more than one borrowed parameter.
