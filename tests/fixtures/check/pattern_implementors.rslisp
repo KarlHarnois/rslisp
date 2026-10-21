@@ -1,0 +1,13 @@
+(rust-trait shown "std::fmt::Display" i64 string (where ((a shown)) (ref a)))
+
+(def describe (rust "{0}.to_string()" (where ((a shown)) (fn ((ref a)) string))))
+
+(type twice-borrowed (fn ((ref (ref i64))) string))
+(defn twice-borrowed (number) (describe number))
+
+(defstruct pair (where (a b) (first a) (second b)))
+
+(def origin (make-pair 1 (to-string "one")))
+(def copied (clone origin))
+
+(defn main () (println (pair-first copied)))

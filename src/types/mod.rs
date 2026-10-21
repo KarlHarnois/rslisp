@@ -7,6 +7,7 @@ mod infer;
 mod literal_fit;
 mod lowering;
 mod problems;
+mod selection;
 mod structs;
 mod traits;
 mod ty;

@@ -95,19 +95,29 @@ impl Type {
             .collect()
     }
 
+    pub fn parts(&self) -> Vec<&Type> {
+        match self {
+            Type::Named(_, arguments) => arguments.iter().collect(),
+            Type::Function(parameters, result) => parameters
+                .iter()
+                .chain(std::iter::once(result.as_ref()))
+                .collect(),
+            Type::Ref(inner) | Type::Mut(inner) => vec![inner],
+            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => Vec::new(),
+        }
+    }
+
+    pub fn shares_head_with(&self, other: &Type) -> bool {
+        let same_constructor = match (self, other) {
+            (Type::Named(left, _), Type::Named(right, _)) => left == right,
+            (Type::Var(_) | Type::Generic(_) | Type::Primitive(_), _) => self == other,
+            _ => std::mem::discriminant(self) == std::mem::discriminant(other),
+        };
+        same_constructor && self.parts().len() == other.parts().len()
+    }
+
     fn any_part(&self, test: &dyn Fn(&Type) -> bool) -> bool {
-        test(self)
-            || match self {
-                Type::Named(_, arguments) => {
-                    arguments.iter().any(|argument| argument.any_part(test))
-                }
-                Type::Function(parameters, result) => {
-                    parameters.iter().any(|parameter| parameter.any_part(test))
-                        || result.any_part(test)
-                }
-                Type::Ref(inner) | Type::Mut(inner) => inner.any_part(test),
-                Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => false,
-            }
+        test(self) || self.parts().into_iter().any(|part| part.any_part(test))
     }
 }
 

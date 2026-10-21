@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use super::checker::TypeChecker;
+use super::checker::{Admissible, TypeChecker};
 use super::literal_fit::LiteralFit;
 use super::problems::TypeProblems;
 use super::ty::{GenericId, Type, TypeVar};
@@ -89,12 +89,12 @@ impl<'c> Finalizer<'c> {
         let display = self.checker.display();
         let parameter = display.show(&Type::Generic(generic));
         let diagnostic = match self.checker.admissible_types(generic) {
-            None => Some(TypeProblems::literal_of_any_type(
+            Admissible::Unbounded => Some(TypeProblems::literal_of_any_type(
                 number.text(),
                 &parameter,
                 span,
             )),
-            Some(types) => types
+            Admissible::Open(types) | Admissible::Closed(types) => types
                 .iter()
                 .find(|candidate| !LiteralFit::fits(number.value(), candidate))
                 .map(|misfit| {

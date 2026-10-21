@@ -251,6 +251,15 @@ impl TypeProblems {
         )
     }
 
+    pub fn bare_implementor(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::BARE_IMPLEMENTOR,
+            "a type parameter alone cannot implement a trait",
+            Label::new(span, "this would match every type"),
+        )
+        .with_help("wrap the parameter in a type, as in `(where ((a clone)) (ref a))`")
+    }
+
     pub fn unused_type_parameter(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::UNUSED_TYPE_PARAMETER,

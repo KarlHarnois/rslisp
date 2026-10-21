@@ -30,10 +30,9 @@ impl<'a> CopyRules<'a> {
             param.bounds.iter().any(|bound| {
                 self.traits.get(*bound).is_some_and(|rust_trait| {
                     !rust_trait.implementors.is_empty()
-                        && rust_trait
-                            .implementors
-                            .iter()
-                            .all(|implementor| self.is_copy(implementor))
+                        && rust_trait.implementors.iter().all(|implementor| {
+                            implementor.params.is_empty() && self.is_copy(&implementor.body)
+                        })
                 })
             })
         })

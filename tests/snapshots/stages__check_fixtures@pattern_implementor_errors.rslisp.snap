@@ -1,0 +1,53 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/pattern_implementor_errors.rslisp
+---
+error[L0404]: `str` does not implement `shown`
+ --> check/pattern_implementor_errors.rslisp:6:38
+  |
+6 | (defn borrowed-text (text) (describe text))
+  |                                      ^^^^ this needs `shown`
+  |
+  = note: `shown` is implemented for: i64, (where ((a shown)) (ref a))
+
+error[L0404]: `unit` does not implement `clone`
+ --> check/pattern_implementor_errors.rslisp:9:29
+  |
+9 | (defn clone-units () (clone (make-pair (do) 1)))
+  |                             ^^^^^^^^^^^^^^^^^^ this needs `clone`
+  |
+  = note: `clone` is implemented for: bool, char, string, (ref str), i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where ((a clone) (b clone)) (pair a b))
+
+error[L0414]: `1` does not fit every type `n` can be
+  --> check/pattern_implementor_errors.rslisp:12:19
+   |
+12 | (defn one (value) 1)
+   |                   ^ `n` can be `(ref a)`, which cannot hold this value
+   |
+   = note: `n` can be any of: i64, (ref a)
+   = help: narrow `n` with a trait whose types all hold this value
+
+error[L0404]: `n` might not implement `partial-eq`
+  --> check/pattern_implementor_errors.rslisp:15:29
+   |
+15 | (defn same? (left right) (= left right))
+   |                             ^^^^ this needs `partial-eq`
+   |
+   = help: add the trait to the signature's `where`: `(n partial-eq)`
+
+error[L0418]: a type parameter alone cannot implement a trait
+  --> check/pattern_implementor_errors.rslisp:17:37
+   |
+17 | (rust-trait everything "Everything" (where (a) a))
+   |                                     ^^^^^^^^^^^^^ this would match every type
+   |
+   = help: wrap the parameter in a type, as in `(where ((a clone)) (ref a))`
+
+error[L0404]: `(ref a)` does not implement `labeled`
+  --> check/pattern_implementor_errors.rslisp:21:33
+   |
+21 | (defn label-of (text) (to-label (ref text)))
+   |                                 ^^^^^^^^^^ this needs `labeled`
+   |
+   = note: `labeled` is implemented for: (ref str)

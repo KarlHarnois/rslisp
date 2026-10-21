@@ -1,12 +1,21 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use super::ty::Type;
+use super::selection::{ImplementorMatch, Selection};
+use super::ty::{Scheme, Type};
 use crate::core::BindingId;
 
 pub struct RustTrait {
     pub path: Rc<str>,
-    pub implementors: Vec<Type>,
+    pub implementors: Vec<Scheme>,
+}
+
+impl RustTrait {
+    pub fn is_open(&self) -> bool {
+        self.implementors
+            .iter()
+            .any(|implementor| !implementor.params.is_empty())
+    }
 }
 
 #[derive(Default)]
@@ -19,17 +28,29 @@ impl TraitTable {
         self.traits.insert(binding, rust_trait);
     }
 
-    pub fn is_implemented(&self, binding: BindingId, implementor: &Type) -> bool {
+    pub fn select(&self, binding: BindingId, implementor: &Type) -> Selection {
         self.traits
             .get(&binding)
-            .is_some_and(|rust_trait| rust_trait.implementors.contains(implementor))
+            .map_or(&[][..], |rust_trait| rust_trait.implementors.as_slice())
+            .iter()
+            .map(|known| ImplementorMatch::select(known, implementor))
+            .fold(Selection::Missing, Selection::best)
     }
 
-    pub fn add_implementor_to_paths(&mut self, paths: &[&str], implementor: Type) {
-        for rust_trait in self.traits.values_mut() {
-            if paths.contains(&rust_trait.path.as_ref()) {
-                rust_trait.implementors.push(implementor.clone());
-            }
+    pub fn with_paths(&self, paths: &[&str]) -> Vec<BindingId> {
+        let mut found: Vec<BindingId> = self
+            .traits
+            .iter()
+            .filter(|(_, rust_trait)| paths.contains(&rust_trait.path.as_ref()))
+            .map(|(binding, _)| *binding)
+            .collect();
+        found.sort();
+        found
+    }
+
+    pub fn add_implementor(&mut self, binding: BindingId, implementor: Scheme) {
+        if let Some(rust_trait) = self.traits.get_mut(&binding) {
+            rust_trait.implementors.push(implementor);
         }
     }
 

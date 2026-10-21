@@ -58,7 +58,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `quote` | `(quote form)` | none | form: data. |
 | `macro` | `(def name (macro (form) body...))` | none | form: binder. body: expressions. |
 | `rust` | `(rust "template" type)` | the inlined template | type: type. |
-| `rust-trait` | `(rust-trait name "Path" type...)` | trait bound | name: type binder. types: types. |
+| `rust-trait` | `(rust-trait name "Path" type...)` | trait bound | name: type binder. types: types, or `(where (param...) type)`. |
 | `use` | `(use module name...)` | path | module: module path. names: binders. |
 | `export` | `(export name...)` | `pub` | names: references in every namespace. |
 
@@ -144,7 +144,7 @@ Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&
 - **Written types.** A type written without `ref` or `mut`, in a `type` signature or a binder annotation, means owned, as in Rust.
 - **Call sites.** An argument is borrowed automatically when the parameter is a reference. A method-style template such as `"{0}.clone()"` borrows its receiver the way Rust's method calls do.
 - **Fields.** Reading a Copy field copies it. Reading any other field borrows it: `(field person name)` has type `(ref string)`.
-- **No hidden copies.** Copying heap data is always written `(clone x)`, which needs the `clone` trait. Every struct without type parameters implements it, because `struct` derives `Clone`. `(ref x)` and `(mut x)` force a borrow.
+- **No hidden copies.** Copying heap data is always written `(clone x)`, which needs the `clone` trait. Every struct implements it when its type arguments do, because `struct` derives `Clone`. `(ref x)` and `(mut x)` force a borrow.
 - **Moves.** The compiler reports a use after move, points at the move, and suggests `(clone x)`. A move in either branch of an `if` counts.
 - **Borrowed results.** A function may return a borrow when it has one borrowed parameter, or none for a string literal. With more than one, it reports an error, because lifetimes cannot be written yet.
 - **Closures.** A function-typed parameter is `impl Fn`. A closure returned from a function is a `move` closure. A closure that only borrows or copies its captures is Copy and can be passed more than once. One that moves a capture can be used once.
@@ -231,6 +231,8 @@ Field names are not hygienic. They are looked up through the struct type.
 (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
 (def not (rust "!{0}" (fn (bool) bool)))
 ```
+
+A `rust-trait` implementor can take type parameters from a `where`. `(where ((a shown)) (ref a))` implements the trait for a reference to any type that implements it. A type parameter alone cannot be an implementor, because it would match every type.
 
 | Template rule | Effect |
 |---|---|

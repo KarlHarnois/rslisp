@@ -1,0 +1,21 @@
+(rust-trait shown "std::fmt::Display" i64 (where ((a shown)) (ref a)))
+
+(def describe (rust "{0}.to_string()" (where ((a shown)) (fn ((ref a)) string))))
+
+(type borrowed-text (fn ((ref (ref str))) string))
+(defn borrowed-text (text) (describe text))
+
+(defstruct pair (where (a b) (first a) (second b)))
+(defn clone-units () (clone (make-pair (do) 1)))
+
+(type one (where ((n shown)) (fn (n) n)))
+(defn one (value) 1)
+
+(type same? (where ((n shown)) (fn (n n) bool)))
+(defn same? (left right) (= left right))
+
+(rust-trait everything "Everything" (where (a) a))
+
+(rust-trait labeled "std::fmt::Display" (ref str))
+(def to-label (rust "{0}.to_string()" (where ((a labeled)) (fn (a) string))))
+(defn label-of (text) (to-label (ref text)))

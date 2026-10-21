@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use super::display::TypeDisplay;
 use super::graph::DependencyGraph;
 use super::problems::{MismatchContext, TypeProblems};
+use super::selection::Selection;
 use super::structs::{StructDefinition, StructTable};
 use super::traits::{RustTrait, TraitTable};
 use super::ty::{GenericId, GenericParam, Scheme, Type, TypeVar};
@@ -14,6 +15,12 @@ use crate::core::{
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
+
+pub(super) enum Admissible {
+    Unbounded,
+    Open(Vec<Type>),
+    Closed(Vec<Type>),
+}
 
 #[derive(Clone, Copy)]
 pub(super) enum ObligationPass {
@@ -100,15 +107,35 @@ impl TypeChecker {
     }
 
     fn register_derived_traits(&mut self, modules: &[CoreModule]) {
-        for item in modules.iter().flat_map(|module| &module.items) {
-            if let ItemKind::Struct(binding, params, _) = &item.kind
-                && params.is_empty()
-            {
-                self.traits.add_implementor_to_paths(
-                    &StructDerives::TRAITS,
-                    Type::Named(*binding, Vec::new()),
-                );
+        let structs: Vec<(BindingId, usize)> = modules
+            .iter()
+            .flat_map(|module| &module.items)
+            .filter_map(|item| match &item.kind {
+                ItemKind::Struct(binding, params, _) => Some((*binding, params.len())),
+                _ => None,
+            })
+            .collect();
+        for derived in self.traits.with_paths(&StructDerives::TRAITS) {
+            for (binding, arity) in &structs {
+                let implementor = self.derived_implementor(*binding, *arity, derived);
+                self.traits.add_implementor(derived, implementor);
             }
+        }
+    }
+
+    fn derived_implementor(
+        &mut self,
+        binding: BindingId,
+        arity: usize,
+        derived: BindingId,
+    ) -> Scheme {
+        let params: Vec<GenericParam> = (0..arity)
+            .map(|position| self.new_generic(&Self::parameter_name(position), vec![derived]))
+            .collect();
+        let arguments = params.iter().map(|param| Type::Generic(param.id)).collect();
+        Scheme {
+            params,
+            body: Type::Named(binding, arguments),
         }
     }
 
@@ -174,19 +201,39 @@ impl TypeChecker {
             .collect()
     }
 
-    pub(super) fn admissible_types(&self, generic: GenericId) -> Option<Vec<Type>> {
-        let bounds = &self.generics.get(&generic)?.bounds;
-        let (first, others) = bounds.split_first()?;
-        let mut admissible = self.traits.get(*first)?.implementors.clone();
-        for bound in others {
-            let implementors = self
-                .traits
-                .get(*bound)
-                .map(|rust_trait| rust_trait.implementors.as_slice())
-                .unwrap_or_default();
-            admissible.retain(|candidate| implementors.contains(candidate));
+    pub(super) fn admissible_types(&self, generic: GenericId) -> Admissible {
+        let traits: Vec<&RustTrait> = self
+            .generics
+            .get(&generic)
+            .map(|param| {
+                param
+                    .bounds
+                    .iter()
+                    .filter_map(|bound| self.traits.get(*bound))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let Some((first, others)) = traits.split_first() else {
+            return Admissible::Unbounded;
+        };
+        let mut admissible: Vec<Type> = first
+            .implementors
+            .iter()
+            .map(|implementor| implementor.body.clone())
+            .collect();
+        for rust_trait in others {
+            admissible.retain(|candidate| {
+                rust_trait
+                    .implementors
+                    .iter()
+                    .any(|implementor| implementor.body == *candidate)
+            });
         }
-        Some(admissible)
+        if traits.iter().any(|rust_trait| rust_trait.is_open()) {
+            Admissible::Open(admissible)
+        } else {
+            Admissible::Closed(admissible)
+        }
     }
 
     pub(super) fn copy_rules(&self) -> super::copy::CopyRules<'_> {
@@ -222,8 +269,31 @@ impl TypeChecker {
             Type::Generic(generic) => {
                 self.check_generic_bound(generic, obligation.bound, obligation.span)
             }
-            _ if implementor.has_vars() => self.leave_unresolved(obligation, pass),
-            _ => self.check_implemented(obligation.bound, &implementor, obligation.span),
+            _ => self.select_implementor(obligation, &implementor, pass),
+        }
+    }
+
+    fn select_implementor(
+        &mut self,
+        obligation: Obligation,
+        implementor: &Type,
+        pass: ObligationPass,
+    ) {
+        match self.traits.select(obligation.bound, implementor) {
+            Selection::Implemented(requirements) => {
+                for requirement in requirements {
+                    let required = Obligation {
+                        bound: requirement.bound,
+                        implementor: requirement.implementor,
+                        span: obligation.span,
+                    };
+                    self.discharge(required, pass);
+                }
+            }
+            Selection::Missing if !implementor.has_vars() => {
+                self.report_missing_trait(obligation.bound, implementor, obligation.span)
+            }
+            Selection::Undecided | Selection::Missing => self.leave_unresolved(obligation, pass),
         }
     }
 
@@ -492,6 +562,14 @@ impl TypeChecker {
         Ok(())
     }
 
+    fn lower_implementor(&mut self, implementor: &TypeExpr) -> Result<Scheme, Diagnostic> {
+        let scheme = self.lower_scheme(implementor)?;
+        if matches!(scheme.body, Type::Generic(_)) {
+            return Err(TypeProblems::bare_implementor(implementor.span()));
+        }
+        Ok(scheme)
+    }
+
     fn struct_params(&mut self, binders: &[TypeBinder]) -> Result<Vec<GenericParam>, Diagnostic> {
         binders
             .iter()
@@ -533,8 +611,8 @@ impl TypeChecker {
     ) -> Result<(), Diagnostic> {
         let implementors = implementors
             .iter()
-            .map(|implementor| self.lower_type(implementor, &HashMap::new()))
-            .collect::<Result<Vec<Type>, Diagnostic>>()?;
+            .map(|implementor| self.lower_implementor(implementor))
+            .collect::<Result<Vec<Scheme>, Diagnostic>>()?;
         self.traits.add(
             binding,
             RustTrait {
@@ -563,18 +641,27 @@ impl TypeChecker {
     }
 
     fn implies(&self, generic: GenericId, bound: BindingId) -> bool {
-        self.admissible_types(generic).is_some_and(|types| {
-            !types.is_empty()
-                && types
-                    .iter()
-                    .all(|candidate| self.traits.is_implemented(bound, candidate))
-        })
+        match self.admissible_types(generic) {
+            Admissible::Closed(types) => {
+                !types.is_empty()
+                    && types
+                        .iter()
+                        .all(|candidate| self.satisfies(bound, candidate))
+            }
+            Admissible::Unbounded | Admissible::Open(_) => false,
+        }
     }
 
-    fn check_implemented(&mut self, bound: BindingId, implementor: &Type, span: Span) {
-        if self.traits.is_implemented(bound, implementor) {
-            return;
+    fn satisfies(&self, bound: BindingId, candidate: &Type) -> bool {
+        match self.traits.select(bound, candidate) {
+            Selection::Implemented(requirements) => requirements
+                .iter()
+                .all(|requirement| self.satisfies(requirement.bound, &requirement.implementor)),
+            Selection::Undecided | Selection::Missing => false,
         }
+    }
+
+    fn report_missing_trait(&mut self, bound: BindingId, implementor: &Type, span: Span) {
         let display = self.display();
         let implementors = self
             .traits
@@ -583,7 +670,7 @@ impl TypeChecker {
                 rust_trait
                     .implementors
                     .iter()
-                    .map(|known| display.show(known))
+                    .map(|known| display.scheme(known))
                     .collect()
             })
             .unwrap_or_default();
