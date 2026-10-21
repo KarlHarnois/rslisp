@@ -147,7 +147,7 @@ mod tests {
         }
 
         fn define(&mut self, name: &str, scopes: &[Scope], phase: Phase) -> BindingId {
-            let info = BindingInfo::new(name.into(), Namespace::Value, BindingKind::Local, None);
+            let info = BindingInfo::new(name.into(), BindingKind::Local, None);
             let binding = self.bindings.add(info);
             let symbol = Self::symbol(name, scopes);
             self.table
@@ -211,7 +211,7 @@ mod tests {
         let mut world = World::new();
         let module = world.scope();
         let first = world.define("x", &[module], Phase::Runtime);
-        let info = BindingInfo::new("x".into(), Namespace::Value, BindingKind::Local, None);
+        let info = BindingInfo::new("x".into(), BindingKind::Local, None);
         let second = world.bindings.add(info);
         let duplicate = world.table.bind(
             &World::symbol("x", &[module]),

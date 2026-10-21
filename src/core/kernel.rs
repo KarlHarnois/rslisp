@@ -75,18 +75,6 @@ impl KernelForm {
             KernelForm::Export => "(export name ...)",
         }
     }
-
-    pub fn is_definition(self) -> bool {
-        matches!(
-            self,
-            KernelForm::Def
-                | KernelForm::Type
-                | KernelForm::Struct
-                | KernelForm::RustTrait
-                | KernelForm::Use
-                | KernelForm::Export
-        )
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

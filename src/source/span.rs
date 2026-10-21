@@ -41,13 +41,6 @@ impl Span {
         self.source == inner.source && self.start <= inner.start && inner.end <= self.end
     }
 
-    pub fn to(self, last: Span) -> Span {
-        Span {
-            end: last.end,
-            ..self
-        }
-    }
-
     fn offset(position: usize) -> u32 {
         u32::try_from(position).expect("source files are smaller than 4 GiB")
     }

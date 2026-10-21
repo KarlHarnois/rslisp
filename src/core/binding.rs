@@ -28,27 +28,17 @@ pub enum BindingKind {
 #[derive(Clone, Debug)]
 pub struct BindingInfo {
     name: Rc<str>,
-    namespace: Namespace,
     kind: BindingKind,
     span: Option<Span>,
 }
 
 impl BindingInfo {
-    pub fn new(name: Rc<str>, namespace: Namespace, kind: BindingKind, span: Option<Span>) -> Self {
-        Self {
-            name,
-            namespace,
-            kind,
-            span,
-        }
+    pub fn new(name: Rc<str>, kind: BindingKind, span: Option<Span>) -> Self {
+        Self { name, kind, span }
     }
 
     pub fn name(&self) -> &str {
         &self.name
-    }
-
-    pub fn namespace(&self) -> Namespace {
-        self.namespace
     }
 
     pub fn kind(&self) -> BindingKind {
@@ -74,9 +64,5 @@ impl BindingArena {
 
     pub fn get(&self, id: BindingId) -> &BindingInfo {
         &self.infos[id.0 as usize]
-    }
-
-    pub fn set_kind(&mut self, id: BindingId, kind: BindingKind) {
-        self.infos[id.0 as usize].kind = kind;
     }
 }

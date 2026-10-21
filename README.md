@@ -1,6 +1,6 @@
 # rslisp
 
-![line coverage](https://img.shields.io/badge/line%20coverage-93%25-brightgreen)
+![line coverage](https://img.shields.io/badge/line%20coverage-94%25-brightgreen)
 
 rslisp is a small Lisp that compiles to Rust. The name `rslisp` and the `.rslisp` extension are placeholders until the language has a name.
 

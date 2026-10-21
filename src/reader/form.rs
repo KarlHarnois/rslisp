@@ -45,10 +45,6 @@ impl Form {
         }
     }
 
-    pub fn with_span(self, span: Span) -> Self {
-        Self { span, ..self }
-    }
-
     pub fn add_scope(&mut self, scope: Scope) {
         self.update_scopes(&|scopes| scopes.add(scope));
     }

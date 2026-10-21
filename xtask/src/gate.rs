@@ -20,7 +20,7 @@ struct Measurement {
 }
 
 impl QualityGate {
-    const MINIMUM_LINE_COVERAGE: f64 = 93.0;
+    const MINIMUM_LINE_COVERAGE: f64 = 94.0;
     const MAXIMUM_CRAP: f64 = 195.0;
     const README: &str = "README.md";
 

@@ -13,7 +13,6 @@ enum LoadStatus {
 pub struct ModuleRecord {
     path: ModulePath,
     base_scope: Scope,
-    module_scope: Scope,
     exports: HashMap<(Rc<str>, Namespace), BindingId>,
     status: LoadStatus,
 }
@@ -25,10 +24,6 @@ impl ModuleRecord {
 
     pub fn base_scope(&self) -> Scope {
         self.base_scope
-    }
-
-    pub fn module_scope(&self) -> Scope {
-        self.module_scope
     }
 
     pub fn export(&mut self, name: Rc<str>, namespace: Namespace, binding: BindingId) {
@@ -57,18 +52,12 @@ pub struct ModuleRegistry {
 }
 
 impl ModuleRegistry {
-    pub fn register(
-        &mut self,
-        path: ModulePath,
-        base_scope: Scope,
-        module_scope: Scope,
-    ) -> ModuleId {
+    pub fn register(&mut self, path: ModulePath, base_scope: Scope) -> ModuleId {
         let id = ModuleId::new(self.records.len());
         self.by_path.insert(path.clone(), id);
         self.records.push(ModuleRecord {
             path,
             base_scope,
-            module_scope,
             exports: HashMap::new(),
             status: LoadStatus::Loading,
         });

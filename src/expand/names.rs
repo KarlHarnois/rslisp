@@ -89,7 +89,7 @@ impl Expander<'_> {
         let symbol = binder
             .as_symbol()
             .ok_or_else(|| ExpandProblems::wrong_namespace(&binder.to_string(), "a name", span))?;
-        let info = BindingInfo::new(symbol.shared_name(), namespace, kind, Some(span));
+        let info = BindingInfo::new(symbol.shared_name(), kind, Some(span));
         let binding = self.bindings.add(info);
         self.table
             .bind(symbol, namespace, binding, phase)

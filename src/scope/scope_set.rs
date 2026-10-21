@@ -53,12 +53,8 @@ impl ScopeSet {
         self.sorted.iter().all(|scope| other.contains(*scope))
     }
 
-    pub fn len(&self) -> usize {
+    pub(super) fn len(&self) -> usize {
         self.sorted.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.sorted.is_empty()
     }
 }
 
