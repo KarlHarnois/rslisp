@@ -12,12 +12,6 @@ pub use label::{Help, Label, Suggestion};
 pub use render::DiagnosticRenderer;
 pub use similar_name::SimilarName;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Severity {
-    Error,
-    Warning,
-}
-
 #[derive(Clone, Debug)]
 pub struct Diagnostic {
     report: Box<Report>,
@@ -25,7 +19,6 @@ pub struct Diagnostic {
 
 #[derive(Clone, Debug)]
 struct Report {
-    severity: Severity,
     code: DiagnosticCode,
     title: String,
     primary: Label,
@@ -36,19 +29,10 @@ struct Report {
 
 impl Diagnostic {
     pub fn error(code: DiagnosticCode, title: impl Into<String>, primary: Label) -> Self {
-        Self::new(Severity::Error, code, title.into(), primary)
-    }
-
-    pub fn warning(code: DiagnosticCode, title: impl Into<String>, primary: Label) -> Self {
-        Self::new(Severity::Warning, code, title.into(), primary)
-    }
-
-    fn new(severity: Severity, code: DiagnosticCode, title: String, primary: Label) -> Self {
         Self {
             report: Box::new(Report {
-                severity,
                 code,
-                title,
+                title: title.into(),
                 primary,
                 secondary: Vec::new(),
                 notes: Vec::new(),
@@ -77,14 +61,6 @@ impl Diagnostic {
             .helps
             .push(Help::new(help.into()).with_suggestion(suggestion));
         self
-    }
-
-    pub fn is_error(&self) -> bool {
-        self.report.severity == Severity::Error
-    }
-
-    pub fn severity(&self) -> Severity {
-        self.report.severity
     }
 
     pub fn code(&self) -> &DiagnosticCode {

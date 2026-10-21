@@ -1,6 +1,6 @@
 use annotate_snippets::{AnnotationKind, Group, Level, Patch, Renderer, Snippet};
 
-use super::{Diagnostic, Diagnostics, Help, Label, Severity, Suggestion};
+use super::{Diagnostic, Diagnostics, Help, Label, Suggestion};
 use crate::source::{SourceId, SourceMap};
 
 pub struct DiagnosticRenderer<'a> {
@@ -44,7 +44,7 @@ impl<'a> DiagnosticRenderer<'a> {
     }
 
     fn main_group<'d>(&'d self, diagnostic: &'d Diagnostic) -> Group<'d> {
-        let title = Self::level(diagnostic.severity())
+        let title = Level::ERROR
             .primary_title(diagnostic.title())
             .id(diagnostic.code().as_str());
         let snippets = self
@@ -119,12 +119,5 @@ impl<'a> DiagnosticRenderer<'a> {
     fn snippet<'d, T: Clone>(&'d self, source: SourceId) -> Snippet<'d, T> {
         let file = self.sources.file(source);
         Snippet::source(file.text()).path(file.name())
-    }
-
-    fn level(severity: Severity) -> Level<'static> {
-        match severity {
-            Severity::Error => Level::ERROR,
-            Severity::Warning => Level::WARNING,
-        }
     }
 }

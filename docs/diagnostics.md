@@ -1,6 +1,6 @@
 # Writing diagnostics
 
-This guide covers every error and warning the compiler prints. A diagnostic uses rustc's layout and the tone of Elm's error messages.
+This guide covers every error the compiler prints. A diagnostic uses rustc's layout and the tone of Elm's error messages.
 
 ## Layout
 
@@ -8,7 +8,7 @@ This guide covers every error and warning the compiler prints. A diagnostic uses
 
 | Part | Content | Required |
 |---|---|---|
-| Header | `error[L0001]: title` or `warning[L0001]: title` | yes |
+| Header | `error[L0001]: title` | yes |
 | Location | `--> path:line:column` | yes |
 | Primary label | A caret under the exact form at fault, with a short message | yes |
 | Secondary labels | Other forms that explain the error, such as the earlier definition of a duplicate name | no |

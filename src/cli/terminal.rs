@@ -78,14 +78,11 @@ impl Terminal {
     }
 
     pub fn report(&self, diagnostics: &Diagnostics) -> ExitStatus {
-        if !diagnostics.is_empty() {
-            eprintln!("{}", self.renderer().render_all(diagnostics));
+        if !diagnostics.has_errors() {
+            return ExitStatus::Success;
         }
-        if diagnostics.has_errors() {
-            ExitStatus::ProgramErrors
-        } else {
-            ExitStatus::Success
-        }
+        eprintln!("{}", self.renderer().render_all(diagnostics));
+        ExitStatus::ProgramErrors
     }
 
     fn renderer(&self) -> DiagnosticRenderer<'_> {

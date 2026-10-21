@@ -41,7 +41,7 @@ impl<'a> RustcDiagnosticMapper<'a> {
                 diagnostics.push(diagnostic);
             }
         }
-        if diagnostics.is_empty() {
+        if !diagnostics.has_errors() {
             diagnostics.push(self.unexplained(stderr));
         }
         diagnostics

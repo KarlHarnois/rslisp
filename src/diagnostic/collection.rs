@@ -15,15 +15,7 @@ impl Diagnostics {
     }
 
     pub fn has_errors(&self) -> bool {
-        self.items.iter().any(Diagnostic::is_error)
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.items.is_empty()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &Diagnostic> {
-        self.items.iter()
+        !self.items.is_empty()
     }
 
     pub fn in_source_order(&self) -> Vec<&Diagnostic> {
