@@ -6,8 +6,8 @@ use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{
-    Binder, BindingKind, Block, BodyItem, Expr, ExprKind, FieldLabel, KernelForm, Lambda, Literal,
-    Namespace, RustTemplate,
+    Binder, BindingKind, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, KernelForm, Lambda,
+    Leaf, Literal, Namespace, RustTemplate, StructExpr,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -25,8 +25,12 @@ impl Expander<'_> {
         let span = form.span();
         let kind = match form.kind() {
             FormKind::Symbol(symbol) => self.lower_reference(symbol, span)?,
-            FormKind::String(text) => ExprKind::Literal(Literal::String(Rc::clone(text))),
-            FormKind::Number(number) => ExprKind::Literal(Literal::Number(number.clone())),
+            FormKind::String(text) => {
+                ExprKind::Leaf(Leaf::Literal(Literal::String(Rc::clone(text))))
+            }
+            FormKind::Number(number) => {
+                ExprKind::Leaf(Leaf::Literal(Literal::Number(number.clone())))
+            }
             FormKind::List(items) => return self.lower_list(form, items),
         };
         Ok(Expr::new(kind, span))
@@ -77,7 +81,7 @@ impl Expander<'_> {
         match self.kind(binding) {
             BindingKind::KernelForm(kernel) => Err(ExpandProblems::form_as_value(kernel, span)),
             BindingKind::Macro => Err(ExpandProblems::macro_as_value(symbol.name(), span)),
-            _ => Ok(ExprKind::Var(binding)),
+            _ => Ok(ExprKind::Leaf(Leaf::Var(binding))),
         }
     }
 
@@ -115,9 +119,11 @@ impl Expander<'_> {
                     &items[2..],
                 )?))
             }
-            KernelForm::Do => ExprKind::Block(self.lower_body(&shape.items()[1..])?),
+            KernelForm::Do => {
+                ExprKind::Control(Control::Block(self.lower_body(&shape.items()[1..])?))
+            }
             KernelForm::If => self.lower_if(&shape)?,
-            KernelForm::Quote => ExprKind::Quote(self.quoted(&shape.exactly(2)?[1])),
+            KernelForm::Quote => ExprKind::Leaf(Leaf::Quote(self.quoted(&shape.exactly(2)?[1]))),
             KernelForm::New => self.lower_new(&shape)?,
             KernelForm::Field => self.lower_field_access(&shape)?,
             KernelForm::Rust => self.lower_rust(&shape)?,
@@ -193,11 +199,11 @@ impl Expander<'_> {
         let test = self.lower_expr(&items[1])?;
         let then = self.lower_expr(&items[2])?;
         let otherwise = self.lower_expr(&items[3])?;
-        Ok(ExprKind::If(
+        Ok(ExprKind::Control(Control::If(
             Box::new(test),
             Box::new(then),
             Box::new(otherwise),
-        ))
+        )))
     }
 
     fn lower_new(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
@@ -215,7 +221,7 @@ impl Expander<'_> {
             .iter()
             .map(|field| self.lower_field_value(shape, field))
             .collect::<Result<Vec<_>, Diagnostic>>()?;
-        Ok(ExprKind::New(binding, fields))
+        Ok(ExprKind::Struct(StructExpr::New(binding, fields)))
     }
 
     fn lower_field_value(
@@ -232,10 +238,10 @@ impl Expander<'_> {
     fn lower_field_access(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
         let items = shape.exactly(3)?;
         let value = self.lower_expr(&items[1])?;
-        Ok(ExprKind::Field(
+        Ok(ExprKind::Struct(StructExpr::Field(
             Box::new(value),
             self.field_label(shape, &items[2])?,
-        ))
+        )))
     }
 
     fn lower_rust(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
@@ -246,10 +252,10 @@ impl Expander<'_> {
         let template = shape.string(&items[1])?.into();
         let type_expr = self.lower_type(&items[2])?;
         let twin = items.get(3).map(|twin| self.lower_expr(twin)).transpose()?;
-        Ok(ExprKind::Rust(Rc::new(RustTemplate {
+        Ok(ExprKind::Leaf(Leaf::Rust(Rc::new(RustTemplate {
             template,
             type_expr,
             twin,
-        })))
+        }))))
     }
 }

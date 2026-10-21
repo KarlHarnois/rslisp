@@ -12,16 +12,31 @@ pub struct Expr {
 
 #[derive(Clone, Debug)]
 pub enum ExprKind {
-    Literal(Literal),
-    Var(BindingId),
+    Leaf(Leaf),
     Fn(Rc<Lambda>),
     Call(Box<Expr>, Vec<Expr>),
-    Block(Block),
-    If(Box<Expr>, Box<Expr>, Box<Expr>),
-    New(BindingId, Vec<(FieldLabel, Expr)>),
-    Field(Box<Expr>, FieldLabel),
+    Control(Control),
+    Struct(StructExpr),
+}
+
+#[derive(Clone, Debug)]
+pub enum Leaf {
+    Literal(Literal),
+    Var(BindingId),
     Quote(Form),
     Rust(Rc<RustTemplate>),
+}
+
+#[derive(Clone, Debug)]
+pub enum Control {
+    Block(Block),
+    If(Box<Expr>, Box<Expr>, Box<Expr>),
+}
+
+#[derive(Clone, Debug)]
+pub enum StructExpr {
+    New(BindingId, Vec<(FieldLabel, Expr)>),
+    Field(Box<Expr>, FieldLabel),
 }
 
 #[derive(Clone, Debug)]
@@ -78,5 +93,49 @@ impl Expr {
 
     pub fn span(&self) -> Span {
         self.span
+    }
+
+    pub fn children(&self) -> Vec<&Expr> {
+        match &self.kind {
+            ExprKind::Leaf(_) => Vec::new(),
+            ExprKind::Fn(lambda) => lambda.body.expressions().collect(),
+            ExprKind::Call(callee, arguments) => {
+                std::iter::once(callee.as_ref()).chain(arguments).collect()
+            }
+            ExprKind::Control(control) => control.children(),
+            ExprKind::Struct(structure) => structure.children(),
+        }
+    }
+}
+
+impl Control {
+    fn children(&self) -> Vec<&Expr> {
+        match self {
+            Control::Block(block) => block.expressions().collect(),
+            Control::If(test, then, otherwise) => vec![test, then, otherwise],
+        }
+    }
+}
+
+impl StructExpr {
+    fn children(&self) -> Vec<&Expr> {
+        match self {
+            StructExpr::New(_, fields) => fields.iter().map(|(_, value)| value).collect(),
+            StructExpr::Field(value, _) => vec![value],
+        }
+    }
+}
+
+impl Block {
+    pub fn expressions(&self) -> impl Iterator<Item = &Expr> {
+        self.items.iter().map(BodyItem::expr)
+    }
+}
+
+impl BodyItem {
+    pub fn expr(&self) -> &Expr {
+        match self {
+            BodyItem::Let(_, value) | BodyItem::Expr(value) => value,
+        }
     }
 }

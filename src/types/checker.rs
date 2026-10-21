@@ -9,7 +9,7 @@ use super::ty::{GenericId, GenericParam, Scheme, Type, TypeVar};
 use super::typed::{TypedDefinition, TypedExpr, TypedExprKind};
 use super::unifier::{LiteralKind, Unifier};
 use crate::core::{
-    BindingArena, BindingId, CoreModule, Expr, ExprKind, ItemKind, ModuleId, PrimitiveType,
+    BindingArena, BindingId, CoreModule, Expr, ExprKind, ItemKind, Leaf, ModuleId, PrimitiveType,
     StructDerives, TypeExpr,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
@@ -253,7 +253,7 @@ impl TypeChecker {
     }
 
     fn assign_rust_scheme(&mut self, member: &Definition) -> bool {
-        let ExprKind::Rust(template) = member.value.kind() else {
+        let ExprKind::Leaf(Leaf::Rust(template)) = member.value.kind() else {
             return false;
         };
         let scheme = match self.lower_scheme(&template.type_expr) {
@@ -268,7 +268,7 @@ impl TypeChecker {
     }
 
     fn rust_definition(&self, member: &Definition) -> Option<(BindingId, TypedDefinition)> {
-        let ExprKind::Rust(template) = member.value.kind() else {
+        let ExprKind::Leaf(Leaf::Rust(template)) = member.value.kind() else {
             return None;
         };
         let scheme = self.schemes.get(&member.binding)?.clone();

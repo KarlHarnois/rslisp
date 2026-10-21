@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
 use super::{
-    Binder, BindingArena, BindingId, Block, BodyItem, CoreModule, Expr, ExprKind, Item, ItemKind,
-    KernelForm, Literal, RustTemplate, TypeBinder, TypeExpr, TypeExprKind,
+    Binder, BindingArena, BindingId, Block, BodyItem, Control, CoreModule, Expr, ExprKind, Item,
+    ItemKind, KernelForm, Lambda, Leaf, Literal, RustTemplate, StructExpr, TypeBinder, TypeExpr,
+    TypeExprKind,
 };
 
 pub struct CorePrinter<'a> {
@@ -66,30 +67,54 @@ impl<'a> CorePrinter<'a> {
 
     fn expr(&mut self, expr: &Expr) -> String {
         match expr.kind() {
-            ExprKind::Literal(Literal::Number(number)) => number.text().to_string(),
-            ExprKind::Literal(Literal::String(text)) => format!("{text:?}"),
-            ExprKind::Var(binding) => self.name(*binding),
-            ExprKind::Fn(lambda) => {
-                let params: Vec<String> = lambda
-                    .params
-                    .iter()
-                    .map(|param| self.binder(param))
-                    .collect();
-                let mut parts = vec![format!("({})", params.join(" "))];
-                parts.extend(self.block_items(&lambda.body));
-                Self::list("fn", parts)
-            }
-            ExprKind::Call(callee, arguments) => {
-                let mut parts = vec![self.expr(callee)];
-                parts.extend(arguments.iter().map(|argument| self.expr(argument)));
-                format!("({})", parts.join(" "))
-            }
-            ExprKind::Block(block) => Self::list("do", self.block_items(block)),
-            ExprKind::If(test, then, otherwise) => Self::list(
+            ExprKind::Leaf(leaf) => self.leaf(leaf),
+            ExprKind::Fn(lambda) => self.lambda(lambda),
+            ExprKind::Call(callee, arguments) => self.call(callee, arguments),
+            ExprKind::Control(control) => self.control(control),
+            ExprKind::Struct(structure) => self.structure(structure),
+        }
+    }
+
+    fn leaf(&mut self, leaf: &Leaf) -> String {
+        match leaf {
+            Leaf::Literal(Literal::Number(number)) => number.text().to_string(),
+            Leaf::Literal(Literal::String(text)) => format!("{text:?}"),
+            Leaf::Var(binding) => self.name(*binding),
+            Leaf::Quote(form) => Self::list("quote", vec![form.to_string()]),
+            Leaf::Rust(template) => self.rust(template),
+        }
+    }
+
+    fn lambda(&mut self, lambda: &Lambda) -> String {
+        let params: Vec<String> = lambda
+            .params
+            .iter()
+            .map(|param| self.binder(param))
+            .collect();
+        let mut parts = vec![format!("({})", params.join(" "))];
+        parts.extend(self.block_items(&lambda.body));
+        Self::list("fn", parts)
+    }
+
+    fn call(&mut self, callee: &Expr, arguments: &[Expr]) -> String {
+        let mut parts = vec![self.expr(callee)];
+        parts.extend(arguments.iter().map(|argument| self.expr(argument)));
+        format!("({})", parts.join(" "))
+    }
+
+    fn control(&mut self, control: &Control) -> String {
+        match control {
+            Control::Block(block) => Self::list("do", self.block_items(block)),
+            Control::If(test, then, otherwise) => Self::list(
                 "if",
                 vec![self.expr(test), self.expr(then), self.expr(otherwise)],
             ),
-            ExprKind::New(binding, fields) => {
+        }
+    }
+
+    fn structure(&mut self, structure: &StructExpr) -> String {
+        match structure {
+            StructExpr::New(binding, fields) => {
                 let mut parts = vec![self.name(*binding)];
                 parts.extend(
                     fields
@@ -98,11 +123,9 @@ impl<'a> CorePrinter<'a> {
                 );
                 Self::list("new", parts)
             }
-            ExprKind::Field(value, label) => {
+            StructExpr::Field(value, label) => {
                 Self::list("field", vec![self.expr(value), label.name.to_string()])
             }
-            ExprKind::Quote(form) => Self::list("quote", vec![form.to_string()]),
-            ExprKind::Rust(template) => self.rust(template),
         }
     }
 

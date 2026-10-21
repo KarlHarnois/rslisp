@@ -9,7 +9,9 @@ pub use value::{Closure, Env, Value};
 
 use std::rc::Rc;
 
-use crate::core::{BindingId, Block, BodyItem, Expr, ExprKind, Literal, RustTemplate};
+use crate::core::{
+    BindingId, Block, BodyItem, Control, Expr, ExprKind, Leaf, Literal, RustTemplate,
+};
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
 use crate::source::Span;
@@ -59,20 +61,30 @@ impl<'h> Interpreter<'h> {
     fn eval_kind(&mut self, expr: &Expr, env: &Env) -> Result<Value, Diagnostic> {
         let span = expr.span();
         match expr.kind() {
-            ExprKind::Literal(literal) => Ok(Self::literal(literal, span)),
-            ExprKind::Var(binding) => self.variable(*binding, env, span),
+            ExprKind::Leaf(leaf) => self.eval_leaf(leaf, env, span),
             ExprKind::Fn(lambda) => Ok(Value::Closure(Rc::new(Closure {
                 lambda: Rc::clone(lambda),
                 env: env.clone(),
             }))),
             ExprKind::Call(callee, arguments) => self.eval_call(callee, arguments, env, span),
-            ExprKind::Block(block) => self.eval_block(block, env),
-            ExprKind::If(test, then, otherwise) => self.eval_if(test, then, otherwise, env),
-            ExprKind::Quote(form) => Ok(Value::Form(form.clone())),
-            ExprKind::Rust(template) => self.eval_rust(template, env, span),
-            ExprKind::New(..) | ExprKind::Field(..) => {
-                Err(InterpretProblems::runtime_only("structs", span))
-            }
+            ExprKind::Control(control) => self.eval_control(control, env),
+            ExprKind::Struct(_) => Err(InterpretProblems::runtime_only("structs", span)),
+        }
+    }
+
+    fn eval_leaf(&mut self, leaf: &Leaf, env: &Env, span: Span) -> Result<Value, Diagnostic> {
+        match leaf {
+            Leaf::Literal(literal) => Ok(Self::literal(literal, span)),
+            Leaf::Var(binding) => self.variable(*binding, env, span),
+            Leaf::Quote(form) => Ok(Value::Form(form.clone())),
+            Leaf::Rust(template) => self.eval_rust(template, env, span),
+        }
+    }
+
+    fn eval_control(&mut self, control: &Control, env: &Env) -> Result<Value, Diagnostic> {
+        match control {
+            Control::Block(block) => self.eval_block(block, env),
+            Control::If(test, then, otherwise) => self.eval_if(test, then, otherwise, env),
         }
     }
 

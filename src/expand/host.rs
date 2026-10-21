@@ -1,6 +1,6 @@
 use super::Expander;
 use super::problems::ExpandProblems;
-use crate::core::{BindingId, BindingKind, ExprKind, Namespace};
+use crate::core::{BindingId, BindingKind, ExprKind, Leaf, Namespace};
 use crate::diagnostic::Diagnostic;
 use crate::interpret::{BuiltinCall, CompileTimeHost, Value};
 use crate::reader::Symbol;
@@ -41,7 +41,7 @@ impl Expander<'_> {
         span: Span,
     ) -> Result<Value, Diagnostic> {
         let lowered = self.lowered_global(binding, span)?;
-        if let ExprKind::Rust(template) = lowered.kind()
+        if let ExprKind::Leaf(Leaf::Rust(template)) = lowered.kind()
             && template.twin.is_none()
         {
             return Err(ExpandProblems::no_compile_time_version(

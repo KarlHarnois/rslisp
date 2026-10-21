@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::core::{BindingArena, BindingId, BindingKind, BodyItem, Expr, ExprKind};
+use crate::core::{BindingArena, BindingId, BindingKind, Expr, ExprKind, Leaf};
 
 pub struct DependencyGraph {
     edges: HashMap<BindingId, Vec<BindingId>>,
@@ -80,32 +80,12 @@ struct References {
 impl References {
     fn collect(&mut self, expr: &Expr, bindings: &BindingArena) {
         match expr.kind() {
-            ExprKind::Var(binding) => self.note_reference(*binding, bindings),
-            ExprKind::Quote(_) => self.uses_compile_time_code = true,
-            ExprKind::Fn(lambda) => self.collect_items(&lambda.body.items, bindings),
-            ExprKind::Block(block) => self.collect_items(&block.items, bindings),
-            ExprKind::Call(callee, arguments) => {
-                self.collect(callee, bindings);
-                arguments
-                    .iter()
-                    .for_each(|argument| self.collect(argument, bindings));
-            }
-            ExprKind::If(test, then, otherwise) => [test, then, otherwise]
-                .into_iter()
-                .for_each(|part| self.collect(part, bindings)),
-            ExprKind::New(_, fields) => fields
-                .iter()
-                .for_each(|(_, value)| self.collect(value, bindings)),
-            ExprKind::Field(value, _) => self.collect(value, bindings),
-            ExprKind::Literal(_) | ExprKind::Rust(_) => {}
+            ExprKind::Leaf(Leaf::Var(binding)) => self.note_reference(*binding, bindings),
+            ExprKind::Leaf(Leaf::Quote(_)) => self.uses_compile_time_code = true,
+            _ => {}
         }
-    }
-
-    fn collect_items(&mut self, items: &[BodyItem], bindings: &BindingArena) {
-        for item in items {
-            match item {
-                BodyItem::Let(_, value) | BodyItem::Expr(value) => self.collect(value, bindings),
-            }
+        for child in expr.children() {
+            self.collect(child, bindings);
         }
     }
 

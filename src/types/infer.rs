@@ -10,8 +10,8 @@ use super::typed::{
 };
 use super::unifier::{LiteralKind, UnifyError};
 use crate::core::{
-    Binder, BindingId, BindingKind, Block, BodyItem, Expr, ExprKind, FieldLabel, Lambda, Literal,
-    RustTemplate,
+    Binder, BindingId, BindingKind, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, Lambda,
+    Leaf, Literal, RustTemplate, StructExpr,
 };
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
@@ -27,27 +27,58 @@ struct ExpectedFunction<'a> {
 impl TypeChecker {
     pub(super) fn infer(&mut self, expr: &Expr) -> Result<TypedExpr, Diagnostic> {
         let span = expr.span();
-        let (kind, ty) = match expr.kind() {
-            ExprKind::Literal(literal) => (
+        match expr.kind() {
+            ExprKind::Leaf(leaf) => self.infer_leaf(leaf, span),
+            ExprKind::Fn(lambda) => Self::typed(self.infer_lambda(lambda, span, None), span),
+            ExprKind::Call(callee, arguments) => self.infer_call(callee, arguments, span),
+            ExprKind::Control(control) => self.infer_control(control, span),
+            ExprKind::Struct(structure) => self.infer_struct(structure, span),
+        }
+    }
+
+    fn infer_leaf(&mut self, leaf: &Leaf, span: Span) -> Result<TypedExpr, Diagnostic> {
+        let inferred = match leaf {
+            Leaf::Literal(literal) => Ok((
                 TypedExprKind::Literal(literal.clone()),
                 self.literal_type(literal),
-            ),
-            ExprKind::Var(binding) => self.infer_variable(*binding, span)?,
-            ExprKind::Fn(lambda) => self.infer_lambda(lambda, span, None)?,
-            ExprKind::Call(callee, arguments) => return self.infer_call(callee, arguments, span),
-            ExprKind::Block(block) => {
-                let (block, ty) = self.infer_block(block)?;
-                (TypedExprKind::Block(block), ty)
-            }
-            ExprKind::If(test, then, otherwise) => {
-                return self.infer_if(test, then, otherwise, span);
-            }
-            ExprKind::New(binding, fields) => self.infer_new(*binding, fields, span)?,
-            ExprKind::Field(value, label) => return self.infer_field(value, label, span),
-            ExprKind::Quote(_) => return Err(TypeProblems::quote_at_runtime(span)),
-            ExprKind::Rust(template) => self.infer_inline_rust(template)?,
+            )),
+            Leaf::Var(binding) => self.infer_variable(*binding, span),
+            Leaf::Quote(_) => Err(TypeProblems::quote_at_runtime(span)),
+            Leaf::Rust(template) => self.infer_inline_rust(template),
         };
-        Ok(TypedExpr { kind, ty, span })
+        Self::typed(inferred, span)
+    }
+
+    fn infer_control(&mut self, control: &Control, span: Span) -> Result<TypedExpr, Diagnostic> {
+        match control {
+            Control::Block(block) => {
+                let inferred = self
+                    .infer_block(block)
+                    .map(|(block, ty)| (TypedExprKind::Block(block), ty));
+                Self::typed(inferred, span)
+            }
+            Control::If(test, then, otherwise) => self.infer_if(test, then, otherwise, span),
+        }
+    }
+
+    fn infer_struct(
+        &mut self,
+        structure: &StructExpr,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        match structure {
+            StructExpr::New(binding, fields) => {
+                Self::typed(self.infer_new(*binding, fields, span), span)
+            }
+            StructExpr::Field(value, label) => self.infer_field(value, label, span),
+        }
+    }
+
+    fn typed(
+        inferred: Result<(TypedExprKind, Type), Diagnostic>,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        inferred.map(|(kind, ty)| TypedExpr { kind, ty, span })
     }
 
     pub(super) fn expect(

@@ -9,7 +9,8 @@ mod types;
 pub use binding::{BindingArena, BindingId, BindingInfo, BindingKind, Namespace};
 pub use builtin::Builtin;
 pub use expr::{
-    Binder, Block, BodyItem, Expr, ExprKind, FieldLabel, Lambda, Literal, RustTemplate,
+    Binder, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, Lambda, Leaf, Literal,
+    RustTemplate, StructExpr,
 };
 pub use kernel::{KernelForm, KernelType, PrimitiveType, StructDerives};
 pub use module::{CoreModule, Item, ItemKind, ModuleId, ModulePath};
