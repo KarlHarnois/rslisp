@@ -10,6 +10,6 @@ fn is_even(n: i64) -> bool {
 fn main() {
     println!("{}", &(1_i64..1000001_i64).fold(0, |total: i64, n: i64| total + n));
     let numbers: Vec<i64> = (1_i64..11_i64).collect::<Vec<_>>();
-    let evens: Vec<i64> = numbers.iter().copied().filter(|n_2: &i64| is_even(*n_2)).collect::<Vec<_>>();
-    evens.iter().copied().for_each(|n_3: i64| println!("{}", &n_3))
+    let evens: Vec<i64> = numbers.iter().copied().filter(|n: &i64| is_even(*n)).collect::<Vec<_>>();
+    evens.iter().copied().for_each(|n: i64| println!("{}", &n))
 }

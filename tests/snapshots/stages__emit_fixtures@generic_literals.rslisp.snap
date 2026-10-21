@@ -24,8 +24,8 @@ fn main() {
     }));
     println!("{}", &halve(5.0));
     println!("{}", &halve({
-        let result_2: f32 = 3.0;
-        result_2
+        let result: f32 = 3.0;
+        result
     }));
     println!("{}", &describe_half(9.0))
 }

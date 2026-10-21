@@ -42,10 +42,10 @@ fn main() {
         }
     }));
     println!("{}", &({
-        let left_2: i64 = 3;
-        let middle_2: i64 = 2;
-        if left_2 < middle_2 {
-            middle_2 < 1
+        let left: i64 = 3;
+        let middle: i64 = 2;
+        if left < middle {
+            middle < 1
         } else {
             false
         }

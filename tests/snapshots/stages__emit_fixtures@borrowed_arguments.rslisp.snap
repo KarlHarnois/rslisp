@@ -34,5 +34,5 @@ fn main() {
     println!("{}", &root(&16.0_f64));
     println!("{}", keep_borrowed(&three));
     println!("{}", &Some(5).filter(|n: &i64| *n > 2).is_some());
-    println!("{}", &Some(4).filter(|n_2: &i64| is_even(*n_2)).is_some())
+    println!("{}", &Some(4).filter(|n: &i64| is_even(*n)).is_some())
 }

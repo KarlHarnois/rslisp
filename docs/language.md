@@ -285,6 +285,7 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 | constant `admin?` | `IS_ADMIN` |
 | other punctuation | spelled out, so `+` becomes `plus` |
 | a Rust keyword | a raw identifier, so `type` becomes `r#type` |
+| a local whose name a binding still in scope uses | numbered, so `n` becomes `n_2` |
 
 ## Status
 

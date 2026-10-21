@@ -6,6 +6,7 @@ use crate::core::BindingId;
 pub struct LocalNames {
     used: HashSet<String>,
     assigned: HashMap<BindingId, String>,
+    scopes: Vec<Vec<String>>,
 }
 
 impl LocalNames {
@@ -15,6 +16,17 @@ impl LocalNames {
         Self {
             used: reserved.into_iter().collect(),
             assigned: HashMap::new(),
+            scopes: Vec::new(),
+        }
+    }
+
+    pub fn enter(&mut self) {
+        self.scopes.push(Vec::new());
+    }
+
+    pub fn leave(&mut self) {
+        for name in self.scopes.pop().unwrap_or_default() {
+            self.used.remove(&name);
         }
     }
 
@@ -27,6 +39,9 @@ impl LocalNames {
             suffix += 1;
         }
         self.used.insert(candidate.clone());
+        if let Some(scope) = self.scopes.last_mut() {
+            scope.push(candidate.clone());
+        }
         self.assigned.insert(binding, candidate.clone());
         candidate
     }

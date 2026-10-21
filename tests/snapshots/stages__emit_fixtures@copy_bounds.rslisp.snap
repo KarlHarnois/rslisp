@@ -9,8 +9,8 @@ fn twice<A: Copy>(value: A, combine: impl Fn(A, A) -> A) -> A {
 
 fn main() {
     println!("{}", &twice(4, |left: i64, right: i64| left + right));
-    println!("{}", &twice(true, |left_2: bool, right_2: bool| if left_2 {
-        right_2
+    println!("{}", &twice(true, |left: bool, right: bool| if left {
+        right
     } else {
         false
     }))

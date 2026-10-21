@@ -441,6 +441,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn closure(&mut self, lambda: &TypedLambda) -> Code {
+        self.locals.enter();
         let params: Vec<String> = lambda
             .params
             .iter()
@@ -451,11 +452,14 @@ impl<'a> ExpressionEmitter<'a> {
             [TypedBodyItem::Expr(only)] => self.expr(only),
             _ => self.block(&lambda.body),
         };
+        self.locals.leave();
         Code::joined(vec![head, body], Precedence::Operator)
     }
 
     fn block(&mut self, block: &TypedBlock) -> Code {
+        self.locals.enter();
         let statements = self.statements(block);
+        self.locals.leave();
         Code {
             fragments: vec![
                 Fragment::Text("{".to_string()),

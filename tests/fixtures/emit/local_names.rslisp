@@ -1,0 +1,7 @@
+(defn main ()
+  (println ((fn (n) (+ n 1)) 1))
+  (println ((fn (n) (* n 2)) 2))
+  (let n 5)
+  (println ((fn (n) (- n 1)) n))
+  (println (< 1 2 3))
+  (println (< 3 2 1)))
