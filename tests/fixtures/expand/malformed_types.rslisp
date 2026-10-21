@@ -1,0 +1,23 @@
+(type text-type "text")
+(def text-type 1)
+
+(type bare-ref ref)
+(def bare-ref 1)
+
+(type trait-constructor (fn ((number i64)) i64))
+(def trait-constructor (fn (x) x))
+
+(type short-fn (fn i64))
+(def short-fn 1)
+
+(type empty-ref (fn ((ref)) i64))
+(def empty-ref (fn (x) 1))
+
+(type short-where (where (t)))
+(def short-where 1)
+
+(type string-bound (where ((t "trait")) (fn (t) t)))
+(def string-bound (fn (x) x))
+
+(type primitive-bound (where ((t i64)) (fn (t) t)))
+(def primitive-bound (fn (x) x))

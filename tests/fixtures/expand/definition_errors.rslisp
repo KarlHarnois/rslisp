@@ -1,0 +1,9 @@
+(if true 1 2)
+
+(struct)
+
+(rust-trait)
+
+(type println (fn (str) unit))
+
+(struct pair first)

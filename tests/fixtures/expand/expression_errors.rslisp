@@ -1,0 +1,11 @@
+(struct pair (left i64))
+
+(def macro-as-expression (fn () (macro (form) form)))
+
+(def bare-field (fn () (new pair left)))
+
+(def extra-twin (rust "1" i64 add 2))
+
+(def empty-fn (fn))
+
+(def numbered-template (rust 5 i64))

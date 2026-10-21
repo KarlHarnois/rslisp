@@ -1,0 +1,3 @@
+(use unreadable/unclosed shape)
+
+(def main (fn () shape))

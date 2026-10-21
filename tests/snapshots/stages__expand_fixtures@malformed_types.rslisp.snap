@@ -1,0 +1,62 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/malformed_types.rslisp
+---
+error[L0212]: expected a type
+ --> expand/malformed_types.rslisp:1:17
+  |
+1 | (type text-type "text")
+  |                 ^^^^^^ this is not a type
+  |
+  = help: a type is a name such as `i64`, or a form such as `(fn (i64) i64)` or `(ref str)`
+
+error[L0210]: malformed `ref` type
+ --> expand/malformed_types.rslisp:4:16
+  |
+4 | (type bare-ref ref)
+  |                ^^^ this does not fit the shape of the type
+  |
+  = help: write it as `(ref type)`
+
+error[L0212]: expected a type constructor, found `number`
+ --> expand/malformed_types.rslisp:7:31
+  |
+7 | (type trait-constructor (fn ((number i64)) i64))
+  |                               ^^^^^^ not a type constructor
+
+error[L0210]: malformed `fn` type
+  --> expand/malformed_types.rslisp:10:16
+   |
+10 | (type short-fn (fn i64))
+   |                ^^^^^^^^ this does not fit the shape of the type
+   |
+   = help: write it as `(fn (argument ...) result)`
+
+error[L0210]: malformed `ref` type
+  --> expand/malformed_types.rslisp:13:22
+   |
+13 | (type empty-ref (fn ((ref)) i64))
+   |                      ^^^^^ this does not fit the shape of the type
+   |
+   = help: write it as `(ref type)`
+
+error[L0210]: malformed `where` type
+  --> expand/malformed_types.rslisp:16:19
+   |
+16 | (type short-where (where (t)))
+   |                   ^^^^^^^^^^^ this does not fit the shape of the type
+   |
+   = help: write it as `(where (variable (variable trait ...) ...) type)`
+
+error[L0212]: expected a trait, found `"trait"`
+  --> expand/malformed_types.rslisp:19:31
+   |
+19 | (type string-bound (where ((t "trait")) (fn (t) t)))
+   |                               ^^^^^^^ not a trait
+
+error[L0212]: expected a trait, found `i64`
+  --> expand/malformed_types.rslisp:22:34
+   |
+22 | (type primitive-bound (where ((t i64)) (fn (t) t)))
+   |                                  ^^^ not a trait

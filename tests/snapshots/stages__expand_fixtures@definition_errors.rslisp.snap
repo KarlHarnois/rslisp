@@ -1,0 +1,44 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/definition_errors.rslisp
+---
+error[L0207]: expected a definition at module level
+ --> expand/definition_errors.rslisp:1:1
+  |
+1 | (if true 1 2)
+  | ^^^^^^^^^^^^^ this is not a definition
+  |
+  = help: put expressions inside a function, such as `(defn main () ...)`
+
+error[L0210]: malformed `struct`
+ --> expand/definition_errors.rslisp:3:1
+  |
+3 | (struct)
+  | ^^^^^^^^ this does not fit the shape of `struct`
+  |
+  = help: write it as `(struct name (field type) ...)`
+
+error[L0210]: malformed `rust-trait`
+ --> expand/definition_errors.rslisp:5:1
+  |
+5 | (rust-trait)
+  | ^^^^^^^^^^^^ this does not fit the shape of `rust-trait`
+  |
+  = help: write it as `(rust-trait name "Path" type ...)`
+
+error[L0212]: `println` cannot have a type signature here
+ --> expand/definition_errors.rslisp:7:7
+  |
+7 | (type println (fn (str) unit))
+  |       ^^^^^^^ not a definition of this module
+  |
+  = help: a `type` signature must sit in the module whose `def` it describes
+
+error[L0210]: malformed `struct`
+ --> expand/definition_errors.rslisp:9:14
+  |
+9 | (struct pair first)
+  |              ^^^^^ this does not fit the shape of `struct`
+  |
+  = help: write it as `(struct name (field type) ...)`

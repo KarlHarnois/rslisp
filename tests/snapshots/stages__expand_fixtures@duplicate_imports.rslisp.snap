@@ -1,0 +1,21 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/duplicate_imports.rslisp
+---
+error[L0203]: `first` is defined more than once
+ --> expand/duplicate_imports.rslisp:3:6
+  |
+3 | (def first 1)
+  |      ^^^^^ defined again here
+  |
+  = note: `first` is already defined by the prelude or an import
+
+error[L0203]: `rest` is defined more than once
+ --> expand/duplicate_imports.rslisp:7:11
+  |
+5 | (def rest 2)
+  |      ---- first defined here
+6 |
+7 | (use code rest)
+  |           ^^^^ defined again here

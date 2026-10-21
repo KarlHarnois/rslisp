@@ -1,0 +1,44 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/expression_errors.rslisp
+---
+error[L0210]: `macro` must be the value of a module-level `def`
+ --> expand/expression_errors.rslisp:3:33
+  |
+3 | (def macro-as-expression (fn () (macro (form) form)))
+  |                                 ^^^^^^^^^^^^^^^^^^^ not allowed here
+  |
+  = help: write `(def name (macro (form) body ...))`
+
+error[L0210]: malformed `new`
+ --> expand/expression_errors.rslisp:5:34
+  |
+5 | (def bare-field (fn () (new pair left)))
+  |                                  ^^^^ this does not fit the shape of `new`
+  |
+  = help: write it as `(new name (field value) ...)`
+
+error[L0210]: malformed `rust`
+ --> expand/expression_errors.rslisp:7:35
+  |
+7 | (def extra-twin (rust "1" i64 add 2))
+  |                                   ^ this does not fit the shape of `rust`
+  |
+  = help: write it as `(rust "template" type twin)`
+
+error[L0210]: malformed `fn`
+ --> expand/expression_errors.rslisp:9:15
+  |
+9 | (def empty-fn (fn))
+  |               ^^^^ this does not fit the shape of `fn`
+  |
+  = help: write it as `(fn (param ...) body ...)`
+
+error[L0210]: malformed `rust`
+  --> expand/expression_errors.rslisp:11:30
+   |
+11 | (def numbered-template (rust 5 i64))
+   |                              ^ this does not fit the shape of `rust`
+   |
+   = help: write it as `(rust "template" type twin)`

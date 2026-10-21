@@ -1,0 +1,15 @@
+(use code list)
+
+(def unbound-helper (fn () missing-name))
+
+(def calls-unbound-helper (macro (form) (unbound-helper) (list)))
+
+(calls-unbound-helper)
+
+(calls-unbound-helper)
+
+(def cyclic-helper (fn () (needs-cyclic-helper)))
+
+(def needs-cyclic-helper (macro (form) (cyclic-helper) (list)))
+
+(needs-cyclic-helper)

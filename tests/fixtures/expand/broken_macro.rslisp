@@ -1,0 +1,9 @@
+(def unparameterized (macro form form))
+
+(unparameterized)
+
+(unparameterized)
+
+(def self-expanding (macro (form) (self-expanding)))
+
+(self-expanding)

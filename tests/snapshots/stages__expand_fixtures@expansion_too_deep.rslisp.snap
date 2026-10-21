@@ -10,3 +10,11 @@ error[L0305]: macro expansion did not finish
   |                   ^^^^^^^^^^^ expanding this form keeps producing more macro calls
   |
   = help: check that every recursive macro has a case that stops
+
+error[L0305]: macro expansion did not finish
+ --> expand/expansion_too_deep.rslisp:6:36
+  |
+6 | (def loops-in-argument (fn () (+ 1 (forever 1))))
+  |                                    ^^^^^^^^^^^ expanding this form keeps producing more macro calls
+  |
+  = help: check that every recursive macro has a case that stops

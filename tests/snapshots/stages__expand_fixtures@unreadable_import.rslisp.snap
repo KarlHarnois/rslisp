@@ -1,0 +1,34 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/unreadable_import.rslisp
+---
+error[L0205]: module `unreadable/unclosed` does not export `shape`
+ --> expand/unreadable_import.rslisp:1:26
+  |
+1 | (use unreadable/unclosed shape)
+  |                          ^^^^^ not exported
+  |
+  = help: add `shape` to the `export` list of `unreadable/unclosed`
+
+error[L0201]: cannot find `shape` in this scope
+ --> expand/unreadable_import.rslisp:3:18
+  |
+3 | (def main (fn () shape))
+  |                  ^^^^^ not found in this scope
+
+error[L0101]: this list is never closed
+ --> expand/unreadable/unclosed.rslisp:3:1
+  |
+3 | (def shape (fn ()
+  | ^ this `(` has no matching `)`
+  |
+  = help: add a `)` where the list ends
+
+error[L0101]: this list is never closed
+ --> expand/unreadable/unclosed.rslisp:3:12
+  |
+3 | (def shape (fn ()
+  |            ^ this `(` has no matching `)`
+  |
+  = help: add a `)` where the list ends

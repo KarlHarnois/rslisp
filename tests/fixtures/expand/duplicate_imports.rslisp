@@ -1,0 +1,7 @@
+(use code first)
+
+(def first 1)
+
+(def rest 2)
+
+(use code rest)
