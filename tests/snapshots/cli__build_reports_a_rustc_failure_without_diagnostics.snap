@@ -1,0 +1,11 @@
+---
+source: tests/cli.rs
+expression: build.assert_exit_code(1).stderr()
+---
+error[L0604]: rustc could not compile the generated program
+ --> greeting.rslisp:1:1
+  |
+1 | (defn main ()
+  | ^ while compiling this program
+  |
+  = note: rustc crashed before reporting anything

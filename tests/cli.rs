@@ -1,4 +1,5 @@
 use std::fs;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -8,6 +9,9 @@ const ECHO: &str = "(def first-argument (rust \"std::env::args().nth(1).unwrap_o
 const EXIT_THREE: &str =
     "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n\n(defn main ()\n  (exit 3))\n";
 const RUSTC_SYNTAX_ERROR: &str = "(def doubled-sign (rust \"{0} + + 1\" (fn (i64) i64)))\n\n(defn main ()\n  (println (doubled-sign 1)))\n";
+const CRASHING_RUSTC: &str =
+    "#!/bin/sh\necho 'rustc crashed before reporting anything' >&2\nexit 101\n";
+const SILENT_RUSTC: &str = "#!/bin/sh\nexit 0\n";
 
 struct Sandbox {
     directory: PathBuf,
@@ -23,26 +27,43 @@ impl Sandbox {
         Self { directory }
     }
 
+    const EXECUTABLE: u32 = 0o755;
+
     fn with_file(self, name: &str, source: &str) -> Self {
-        fs::write(self.directory.join(name), source).expect("the sandbox accepts files");
+        let path = self.directory.join(name);
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).expect("the sandbox accepts directories");
+        }
+        fs::write(path, source).expect("the sandbox accepts files");
         self
     }
 
+    fn with_executable(self, name: &str, script: &str) -> Self {
+        let sandbox = self.with_file(name, script);
+        let permissions = fs::Permissions::from_mode(Self::EXECUTABLE);
+        fs::set_permissions(sandbox.directory.join(name), permissions)
+            .expect("the sandbox marks files executable");
+        sandbox
+    }
+
     fn compiler(&self, arguments: &[&str]) -> Outcome {
-        self.execute(Path::new(Self::COMPILER), arguments)
+        Outcome::of(&mut self.command(Path::new(Self::COMPILER), arguments))
+    }
+
+    fn compiler_with_path(&self, path_directory: &str, arguments: &[&str]) -> Outcome {
+        let mut command = self.command(Path::new(Self::COMPILER), arguments);
+        command.env("PATH", self.directory.join(path_directory));
+        Outcome::of(&mut command)
     }
 
     fn built_program(&self, relative_path: &str) -> Outcome {
-        self.execute(&self.directory.join(relative_path), &[])
+        Outcome::of(&mut self.command(&self.directory.join(relative_path), &[]))
     }
 
-    fn execute(&self, program: &Path, arguments: &[&str]) -> Outcome {
-        let output = Command::new(program)
-            .args(arguments)
-            .current_dir(&self.directory)
-            .output()
-            .unwrap_or_else(|error| panic!("cannot start `{}`: {error}", program.display()));
-        Outcome { output }
+    fn command(&self, program: &Path, arguments: &[&str]) -> Command {
+        let mut command = Command::new(program);
+        command.args(arguments).current_dir(&self.directory);
+        command
     }
 }
 
@@ -57,6 +78,13 @@ struct Outcome {
 }
 
 impl Outcome {
+    fn of(command: &mut Command) -> Self {
+        let output = command
+            .output()
+            .unwrap_or_else(|error| panic!("cannot start {command:?}: {error}"));
+        Self { output }
+    }
+
     fn assert_exit_code(&self, expected: i32) -> &Self {
         assert_eq!(
             self.output.status.code(),
@@ -195,4 +223,62 @@ fn run_exits_with_the_program_exit_code() {
     sandbox
         .compiler(&["run", "exit.rslisp"])
         .assert_exit_code(3);
+}
+
+#[test]
+fn every_command_reports_program_errors() {
+    let sandbox = Sandbox::new("program_errors").with_file("unbound.rslisp", UNBOUND_NAME);
+    for command in ["expand", "emit", "build", "run"] {
+        sandbox
+            .compiler(&[command, "unbound.rslisp"])
+            .assert_exit_code(1);
+    }
+}
+
+#[test]
+fn build_without_rustc_is_a_usage_error() {
+    let sandbox = Sandbox::new("build_without_rustc").with_file("greeting.rslisp", GREETING);
+    let build = sandbox.compiler_with_path("no-tools", &["build", "greeting.rslisp"]);
+    assert!(
+        build
+            .assert_exit_code(2)
+            .stderr()
+            .starts_with("error: cannot run rustc")
+    );
+}
+
+#[test]
+fn build_cannot_write_under_a_file() {
+    let sandbox = Sandbox::new("build_under_file")
+        .with_file("greeting.rslisp", GREETING)
+        .with_file("blocker", "");
+    let build = sandbox.compiler(&["build", "greeting.rslisp", "-o", "blocker/program"]);
+    assert!(
+        build
+            .assert_exit_code(2)
+            .stderr()
+            .starts_with("error: cannot create `blocker`")
+    );
+}
+
+#[test]
+fn build_reports_a_rustc_failure_without_diagnostics() {
+    let sandbox = Sandbox::new("build_rustc_crash")
+        .with_file("greeting.rslisp", GREETING)
+        .with_executable("tools/rustc", CRASHING_RUSTC);
+    let build = sandbox.compiler_with_path("tools", &["build", "greeting.rslisp"]);
+    insta::assert_snapshot!(build.assert_exit_code(1).stderr());
+}
+
+#[test]
+fn run_reports_a_program_that_cannot_start() {
+    let sandbox = Sandbox::new("run_missing_program")
+        .with_file("greeting.rslisp", GREETING)
+        .with_executable("tools/rustc", SILENT_RUSTC);
+    let run = sandbox.compiler_with_path("tools", &["run", "greeting.rslisp"]);
+    assert!(
+        run.assert_exit_code(2)
+            .stderr()
+            .starts_with("error: cannot run `target/rslisp/greeting/greeting`")
+    );
 }

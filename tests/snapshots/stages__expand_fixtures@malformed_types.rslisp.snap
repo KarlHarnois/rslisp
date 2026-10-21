@@ -60,3 +60,11 @@ error[L0212]: expected a trait, found `i64`
    |
 22 | (type primitive-bound (where ((t i64)) (fn (t) t)))
    |                                  ^^^ not a trait
+
+error[L0210]: malformed `mut` type
+  --> expand/malformed_types.rslisp:25:22
+   |
+25 | (type empty-mut (fn ((mut)) i64))
+   |                      ^^^^^ this does not fit the shape of the type
+   |
+   = help: write it as `(mut type)`

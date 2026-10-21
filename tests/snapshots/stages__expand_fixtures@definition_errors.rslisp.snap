@@ -42,3 +42,11 @@ error[L0210]: malformed `struct`
   |              ^^^^^ this does not fit the shape of `struct`
   |
   = help: write it as `(struct name (field type) ...)`
+
+error[L0210]: malformed `struct`
+  --> expand/definition_errors.rslisp:11:16
+   |
+11 | (struct single (first))
+   |                ^^^^^^^ this does not fit the shape of `struct`
+   |
+   = help: write it as `(struct name (field type) ...)`

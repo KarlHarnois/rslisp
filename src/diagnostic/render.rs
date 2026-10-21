@@ -121,3 +121,28 @@ impl<'a> DiagnosticRenderer<'a> {
         Snippet::source(file.text()).path(file.name())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::DiagnosticRenderer;
+    use crate::diagnostic::{Diagnostic, DiagnosticCode, Diagnostics, Label};
+    use crate::source::{SourceMap, Span};
+
+    const ESCAPE: char = '\u{1b}';
+
+    #[test]
+    fn styled_rendering_colors_the_report() {
+        let mut sources = SourceMap::default();
+        let source = sources.add("sample.rslisp", "(def total)");
+        let mut diagnostics = Diagnostics::default();
+        diagnostics.push(Diagnostic::error(
+            DiagnosticCode::MALFORMED_FORM,
+            "malformed `def`",
+            Label::new(Span::new(source, 0..11), "this does not fit"),
+        ));
+        let styled = DiagnosticRenderer::styled(&sources).render_all(&diagnostics);
+        let plain = DiagnosticRenderer::plain(&sources).render_all(&diagnostics);
+        assert!(styled.contains(ESCAPE));
+        assert!(!plain.contains(ESCAPE));
+    }
+}

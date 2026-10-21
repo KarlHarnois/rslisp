@@ -21,3 +21,6 @@
 
 (type primitive-bound (where ((t i64)) (fn (t) t)))
 (def primitive-bound (fn (x) x))
+
+(type empty-mut (fn ((mut)) i64))
+(def empty-mut (fn (x) 1))

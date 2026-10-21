@@ -7,3 +7,5 @@
 (type println (fn (str) unit))
 
 (struct pair first)
+
+(struct single (first))
