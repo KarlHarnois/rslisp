@@ -7,13 +7,19 @@ use super::structs::{StructDefinition, StructTable};
 use super::traits::{RustTrait, TraitTable};
 use super::ty::{GenericId, GenericParam, Scheme, Type, TypeVar};
 use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
-use super::unifier::{LiteralKind, Unifier};
+use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
     BindingArena, BindingId, CoreModule, Expr, ExprKind, ItemKind, Leaf, ModuleId, PrimitiveType,
     StructDerives, TypeExpr,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
+
+#[derive(Clone, Copy)]
+pub(super) enum ObligationPass {
+    Deferring,
+    Final,
+}
 
 pub struct TypeChecker {
     pub(super) bindings: BindingArena,
@@ -186,20 +192,30 @@ impl TypeChecker {
         param
     }
 
-    pub(super) fn discharge_obligations(&mut self, final_pass: bool) {
+    pub(super) fn discharge_obligations(&mut self, pass: ObligationPass) {
         for obligation in self.unifier.take_obligations() {
-            let implementor = self.unifier.resolve(&obligation.implementor);
-            match implementor {
-                Type::Var(var) => self.unifier.add_bound(var, obligation.bound),
-                Type::Generic(generic) => {
-                    self.check_generic_bound(generic, obligation.bound, obligation.span)
-                }
-                _ if implementor.has_vars() && !final_pass => self.unifier.defer(obligation),
-                _ if implementor.has_vars() => self
-                    .diagnostics
-                    .push(TypeProblems::cannot_infer(obligation.span)),
-                _ => self.check_implemented(obligation.bound, &implementor, obligation.span),
+            self.discharge(obligation, pass);
+        }
+    }
+
+    fn discharge(&mut self, obligation: Obligation, pass: ObligationPass) {
+        let implementor = self.unifier.resolve(&obligation.implementor);
+        match implementor {
+            Type::Var(var) => self.unifier.add_bound(var, obligation.bound),
+            Type::Generic(generic) => {
+                self.check_generic_bound(generic, obligation.bound, obligation.span)
             }
+            _ if implementor.has_vars() => self.leave_unresolved(obligation, pass),
+            _ => self.check_implemented(obligation.bound, &implementor, obligation.span),
+        }
+    }
+
+    fn leave_unresolved(&mut self, obligation: Obligation, pass: ObligationPass) {
+        match pass {
+            ObligationPass::Deferring => self.unifier.defer(obligation),
+            ObligationPass::Final => self
+                .diagnostics
+                .push(TypeProblems::cannot_infer(obligation.span)),
         }
     }
 
@@ -224,7 +240,7 @@ impl TypeChecker {
                 }
             }
         }
-        self.discharge_obligations(false);
+        self.discharge_obligations(ObligationPass::Deferring);
         let mut results = Vec::new();
         for (binding, value) in typed {
             let scheme = self.finish_scheme(binding, &value, signatures.get(&binding));
@@ -351,7 +367,7 @@ impl TypeChecker {
                 params.push(param);
             }
         }
-        self.discharge_obligations(false);
+        self.discharge_obligations(ObligationPass::Deferring);
         Scheme {
             params,
             body: self.unifier.resolve(inferred),
@@ -537,7 +553,7 @@ impl TypeChecker {
                 finalizer.definition(definition);
             }
         }
-        checker.discharge_obligations(true);
+        checker.discharge_obligations(ObligationPass::Final);
         let typed_modules = modules
             .into_iter()
             .map(|module| Self::typed_module(module, &mut definitions))
