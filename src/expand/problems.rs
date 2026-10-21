@@ -257,6 +257,14 @@ impl ExpandProblems {
         .with_help(InterpretProblems::MISSING_TWIN_HELP)
     }
 
+    pub fn broken_macro(name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::COMPILE_TIME_ERROR,
+            format!("the macro `{name}` has errors, so this call cannot expand"),
+            Label::new(span, "this call needs the macro"),
+        )
+    }
+
     pub fn not_at_compile_time(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::COMPILE_TIME_ERROR,

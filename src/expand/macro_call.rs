@@ -134,7 +134,7 @@ impl Expander<'_> {
             Some(MacroState::Pending(definition)) => self.compile_macro(binding, &definition),
             Some(MacroState::Failed) => {
                 self.macros.states.insert(binding, MacroState::Failed);
-                Err(ExpandProblems::broken_definition(&name, span))
+                Err(ExpandProblems::broken_macro(&name, span))
             }
             None => Err(ExpandProblems::compile_time_cycle(&name, span)),
         }
