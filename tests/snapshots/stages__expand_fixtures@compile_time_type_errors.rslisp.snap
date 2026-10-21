@@ -60,8 +60,8 @@ error[L0303]: `bool-not` expects a boolean as argument 1, found a number
 error[L0303]: a boolean cannot be called
   --> expand/compile_time_type_errors.rslisp:9:30
    |
- 9 | (def call-true (macro (form) (bool-true)))
-   |                              ^^^^^^^^^^^ called here
+ 9 | (def call-true (macro (form) (true)))
+   |                              ^^^^^^ called here
 ...
 19 | (call-true)
    | ----------- in this macro call

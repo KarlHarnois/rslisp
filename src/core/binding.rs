@@ -16,6 +16,7 @@ pub enum Namespace {
 pub enum BindingKind {
     KernelForm(KernelForm),
     KernelType(KernelType),
+    Boolean(bool),
     CodeBuiltin(Builtin),
     Macro,
     Global(ModuleId),

@@ -4,7 +4,7 @@ expression: "Fixture::load(path).expand_report()"
 input_file: tests/fixtures/expand/macro_result.rslisp
 ---
 error[L0302]: this macro returned a boolean instead of code
- --> expand/macro_result.rslisp:5:1
+ --> expand/macro_result.rslisp:3:1
   |
-5 | (returns-boolean)
+3 | (returns-boolean)
   | ^^^^^^^^^^^^^^^^^ in this macro call

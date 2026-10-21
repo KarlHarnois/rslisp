@@ -1,5 +1,3 @@
-(use code bool-true)
-
-(def returns-boolean (macro (form) bool-true))
+(def returns-boolean (macro (form) true))
 
 (returns-boolean)

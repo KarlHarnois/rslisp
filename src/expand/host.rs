@@ -2,7 +2,7 @@ use super::Expander;
 use super::problems::ExpandProblems;
 use crate::core::{BindingId, BindingKind, ExprKind, Leaf, Namespace};
 use crate::diagnostic::Diagnostic;
-use crate::interpret::{BuiltinCall, CompileTimeHost, Value};
+use crate::interpret::{CompileTimeHost, Value};
 use crate::reader::Symbol;
 use crate::scope::{Phase, Resolution};
 use crate::source::Span;
@@ -11,9 +11,7 @@ impl CompileTimeHost for Expander<'_> {
     fn global_value(&mut self, binding: BindingId, span: Span) -> Result<Value, Diagnostic> {
         let name = self.bindings.get(binding).name().to_string();
         match self.kind(binding) {
-            BindingKind::CodeBuiltin(builtin) => {
-                Ok(BuiltinCall::constant(builtin).unwrap_or(Value::Builtin(builtin)))
-            }
+            BindingKind::CodeBuiltin(builtin) => Ok(Value::Builtin(builtin)),
             BindingKind::Global(_) => self.compile_time_global(binding, &name, span),
             _ => Err(ExpandProblems::not_at_compile_time(&name, span)),
         }

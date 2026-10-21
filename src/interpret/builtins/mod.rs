@@ -5,7 +5,6 @@ mod text;
 use std::cmp::Ordering;
 
 use super::arguments::Arguments;
-use super::problems::InterpretProblems;
 use super::{CompileTimeHost, Value};
 use crate::core::Builtin;
 use crate::diagnostic::Diagnostic;
@@ -105,32 +104,17 @@ impl BuiltinCall {
         }
     }
 
-    pub fn constant(builtin: Builtin) -> Option<Value> {
-        match builtin {
-            Builtin::BoolTrue => Some(Value::Bool(true)),
-            Builtin::BoolFalse => Some(Value::Bool(false)),
-            _ => None,
-        }
-    }
-
     pub fn run(self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
         let operations = Operations::new(&self.arguments, self.call_site);
-        match Self::implementation(self.builtin) {
-            Some(implementation) => implementation(&operations, host),
-            None => Err(self.not_callable()),
-        }
+        Self::implementation(self.builtin)(&operations, host)
     }
 
-    fn implementation(builtin: Builtin) -> Option<Implementation> {
+    fn implementation(builtin: Builtin) -> Implementation {
         Self::IMPLEMENTATIONS
             .iter()
             .find(|(implemented, _)| *implemented == builtin)
             .map(|(_, implementation)| *implementation)
-    }
-
-    fn not_callable(&self) -> Diagnostic {
-        let value = Self::constant(self.builtin).unwrap_or(Value::Builtin(self.builtin));
-        InterpretProblems::not_callable(&value, self.arguments.span())
+            .expect("every builtin has a row in the implementation table")
     }
 }
 

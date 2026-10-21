@@ -64,6 +64,8 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 
 In type positions, the kernel provides `fn`, `ref`, `mut`, `where`, `_`, and the primitive types `bool char str string unit i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64`.
 
+In expression positions, the kernel provides the constants `true` and `false`. They are kernel constants, not prelude definitions. Macro code and program code then see the same booleans, so `if`, `and` and `or` work in both.
+
 ### Module bodies
 
 A module body is expanded in two passes:
@@ -174,7 +176,7 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 | `symbol-name`, `(symbol context part...)`, `(string part...)` | Read and build names and strings. |
 | `(same-binding? left right)` | Test whether two symbols refer to the same binding. |
 | `(fail "message" form)` | Stop expansion with an error at `form`. |
-| `number-add number-sub number-mul number-div number-rem number-lt number-le number-gt number-ge value-eq bool-not bool-true bool-false` | Compile-time twins of the prelude's Rust interop. |
+| `number-add number-sub number-mul number-div number-rem number-lt number-le number-gt number-ge value-eq bool-not` | Compile-time twins of the prelude's Rust interop. |
 
 ### Hygiene
 
@@ -216,7 +218,7 @@ Field names are not hygienic. They are looked up through the struct type.
 ```lisp
 (rust-trait number "crate::rt::Number" i8 i16 i32 i64 u8 u16 u32 u64 f32 f64)
 (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n)) number-add))
-(def true (rust "true" bool bool-true))
+(def not (rust "!{0}" (fn (bool) bool) bool-not))
 ```
 
 | Template rule | Effect |

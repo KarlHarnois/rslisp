@@ -5,8 +5,8 @@ use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{
-    BindingInfo, BindingKind, Builtin, DefinitionForm, KernelForm, KernelType, ModuleId,
-    ModulePath, Namespace,
+    BindingInfo, BindingKind, Builtin, DefinitionForm, KernelConstants, KernelForm, KernelType,
+    ModuleId, ModulePath, Namespace,
 };
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
@@ -189,6 +189,10 @@ impl Expander<'_> {
                         BindingKind::KernelType(kernel_type),
                     )
                 }))
+                .chain(
+                    KernelConstants::BOOLEANS
+                        .map(|(name, value)| (name, Namespace::Value, BindingKind::Boolean(value))),
+                )
                 .collect(),
             BuiltinModule::Code => Builtin::all()
                 .map(|builtin| {

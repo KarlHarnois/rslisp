@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use super::{
     Binder, BindingArena, BindingId, Block, BodyItem, Control, CoreModule, Expr, ExprKind, Item,
-    ItemKind, KernelForm, Lambda, Leaf, Literal, RustTemplate, StructExpr, TypeBinder, TypeExpr,
-    TypeExprKind,
+    ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal, RustTemplate, StructExpr,
+    TypeBinder, TypeExpr, TypeExprKind,
 };
 
 pub struct CorePrinter<'a> {
@@ -14,7 +14,10 @@ pub struct CorePrinter<'a> {
 
 impl<'a> CorePrinter<'a> {
     pub fn new(bindings: &'a BindingArena) -> Self {
-        let kernel_names = KernelForm::all().map(|form| (form.name().to_string(), 1));
+        let kernel_names = KernelForm::all()
+            .map(KernelForm::name)
+            .chain(KernelConstants::BOOLEANS.map(|(name, _)| name))
+            .map(|name| (name.to_string(), 1));
         Self {
             bindings,
             assigned: HashMap::new(),
@@ -79,6 +82,7 @@ impl<'a> CorePrinter<'a> {
         match leaf {
             Leaf::Literal(Literal::Number(number)) => number.text().to_string(),
             Leaf::Literal(Literal::String(text)) => format!("{text:?}"),
+            Leaf::Literal(Literal::Bool(value)) => value.to_string(),
             Leaf::Var(binding) => self.name(*binding),
             Leaf::Quote(form) => Self::list("quote", vec![form.to_string()]),
             Leaf::Rust(template) => self.rust(template),

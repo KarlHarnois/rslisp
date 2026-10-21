@@ -81,6 +81,7 @@ impl Expander<'_> {
         match self.kind(binding) {
             BindingKind::KernelForm(kernel) => Err(ExpandProblems::form_as_value(kernel, span)),
             BindingKind::Macro => Err(ExpandProblems::macro_as_value(symbol.name(), span)),
+            BindingKind::Boolean(value) => Ok(ExprKind::Leaf(Leaf::Literal(Literal::Bool(value)))),
             _ => Ok(ExprKind::Leaf(Leaf::Var(binding))),
         }
     }

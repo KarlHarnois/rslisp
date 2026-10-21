@@ -182,10 +182,14 @@ impl<'h> Interpreter<'h> {
     }
 
     fn literal(literal: &Literal, span: Span) -> Value {
-        let kind = match literal {
-            Literal::Number(number) => FormKind::Number(number.clone()),
-            Literal::String(text) => FormKind::String(Rc::clone(text)),
-        };
-        Value::Form(Form::new(kind, span))
+        match literal {
+            Literal::Number(number) => {
+                Value::Form(Form::new(FormKind::Number(number.clone()), span))
+            }
+            Literal::String(text) => {
+                Value::Form(Form::new(FormKind::String(Rc::clone(text)), span))
+            }
+            Literal::Bool(value) => Value::Bool(*value),
+        }
     }
 }

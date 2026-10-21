@@ -202,6 +202,7 @@ impl<'a> ExpressionEmitter<'a> {
     fn literal(&self, literal: &Literal, ty: &Type, context: TypeContext) -> Code {
         match (literal, ty) {
             (Literal::String(text), _) => Code::atom(format!("{text:?}")),
+            (Literal::Bool(value), _) => Code::atom(value.to_string()),
             (Literal::Number(number), Type::Generic(_)) => self.converted_literal(number, ty),
             (Literal::Number(number), _) => Self::number(number, ty, context),
         }

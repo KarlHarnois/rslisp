@@ -346,6 +346,12 @@ impl KernelType {
     }
 }
 
+pub struct KernelConstants;
+
+impl KernelConstants {
+    pub const BOOLEANS: [(&'static str, bool); 2] = [("true", true), ("false", false)];
+}
+
 pub struct StructDerives;
 
 impl StructDerives {

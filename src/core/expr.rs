@@ -43,6 +43,7 @@ pub enum StructExpr {
 pub enum Literal {
     Number(Number),
     String(Rc<str>),
+    Bool(bool),
 }
 
 #[derive(Clone, Debug)]

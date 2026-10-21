@@ -1,10 +1,8 @@
 (use prelude/macros defrule)
-(use code bool-true bool-false bool-not)
+(use code bool-not)
 
-(export true false not when unless and or cond)
+(export not when unless and or cond)
 
-(def true (rust "true" bool bool-true))
-(def false (rust "false" bool bool-false))
 (def not (rust "!{0}" (fn (bool) bool) bool-not))
 
 (defrule when

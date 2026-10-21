@@ -11,7 +11,7 @@ use super::typed::{
 use super::unifier::{LiteralKind, UnifyError};
 use crate::core::{
     Binder, BindingId, BindingKind, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, Lambda,
-    Leaf, Literal, RustTemplate, StructExpr,
+    Leaf, Literal, PrimitiveType, RustTemplate, StructExpr,
 };
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
@@ -133,6 +133,7 @@ impl TypeChecker {
     fn literal_type(&mut self, literal: &Literal) -> Type {
         match literal {
             Literal::String(_) => Type::str_ref(),
+            Literal::Bool(_) => Type::Primitive(PrimitiveType::Bool),
             Literal::Number(number) => match number.value() {
                 NumberValue::Integer(_) => self.unifier.fresh_literal(LiteralKind::Integer),
                 NumberValue::Float(_) => self.unifier.fresh_literal(LiteralKind::Float),

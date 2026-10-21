@@ -1,6 +1,6 @@
 (use code first rest list prepend concat length empty? nth take drop
           symbol? list? symbol-name string same-binding? fail
-          value-eq number-add number-sub number-lt bool-false)
+          value-eq number-add number-sub number-lt)
 
 (export defrule defmacro template map-list)
 
@@ -30,30 +30,30 @@
   (fn (form name)
     (if (list? form)
         (if (empty? form)
-            bool-false
-            (if (symbol? (first form)) (same-binding? (first form) name) bool-false))
-        bool-false)))
+            false
+            (if (symbol? (first form)) (same-binding? (first form) name) false))
+        false)))
 
 (def ellipsis?
   (fn (form)
-    (if (symbol? form) (same-binding? form (quote ...)) bool-false)))
+    (if (symbol? form) (same-binding? form (quote ...)) false)))
 
 (def literal-pattern?
   (fn (pattern)
-    (if (headed-by? pattern (quote quote)) (value-eq (length pattern) 2) bool-false)))
+    (if (headed-by? pattern (quote quote)) (value-eq (length pattern) 2) false)))
 
 (def followed-by-ellipsis?
   (fn (forms)
-    (if (number-lt 1 (length forms)) (ellipsis? (nth forms 1)) bool-false)))
+    (if (number-lt 1 (length forms)) (ellipsis? (nth forms 1)) false)))
 
 (def entry-kind?
   (fn (entry kind)
-    (if (list? entry) (value-eq (symbol-name (first entry)) kind) bool-false)))
+    (if (list? entry) (value-eq (symbol-name (first entry)) kind) false)))
 
 (def lookup
   (fn (variable bindings)
     (if (empty? bindings)
-        bool-false
+        false
         (if (value-eq (symbol-name (nth (first bindings) 1)) (symbol-name variable))
             (first bindings)
             (lookup variable (rest bindings))))))
@@ -84,30 +84,30 @@
 
 (def join-matches
   (fn (left right)
-    (if (list? left) (if (list? right) (concat left right) bool-false) bool-false)))
+    (if (list? left) (if (list? right) (concat left right) false) false)))
 
 (def prepend-match
   (fn (match others)
-    (if (list? match) (if (list? others) (prepend match others) bool-false) bool-false)))
+    (if (list? match) (if (list? others) (prepend match others) false) false)))
 
 (def match-pattern
   (fn (pattern input)
     (if (literal-pattern? pattern)
-        (if (symbol? input) (if (same-binding? input (nth pattern 1)) (list) bool-false) bool-false)
+        (if (symbol? input) (if (same-binding? input (nth pattern 1)) (list) false) false)
         (if (symbol? pattern)
             (list (list (quote one) pattern input))
             (if (list? pattern)
-                (if (list? input) (match-list pattern input) bool-false)
-                (if (value-eq pattern input) (list) bool-false))))))
+                (if (list? input) (match-list pattern input) false)
+                (if (value-eq pattern input) (list) false))))))
 
 (def match-list
   (fn (patterns inputs)
     (if (empty? patterns)
-        (if (empty? inputs) (list) bool-false)
+        (if (empty? inputs) (list) false)
         (if (followed-by-ellipsis? patterns)
             (match-ellipsis (first patterns) (drop 2 patterns) inputs)
             (if (empty? inputs)
-                bool-false
+                false
                 (join-matches (match-pattern (first patterns) (first inputs))
                               (match-list (rest patterns) (rest inputs))))))))
 
@@ -115,7 +115,7 @@
   (fn (repeated tail inputs)
     (let repeat-count (number-sub (length inputs) (length tail)))
     (if (number-lt repeat-count 0)
-        bool-false
+        false
         (join-matches (match-repeated repeated (take repeat-count inputs))
                       (match-list tail (drop repeat-count inputs))))))
 
@@ -127,7 +127,7 @@
                     (list (quote many) variable
                           (map-list (fn (bindings) (lookup variable bindings)) matches)))
                   (pattern-variables repeated))
-        bool-false)))
+        false)))
 
 (def match-each
   (fn (pattern inputs)

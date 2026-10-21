@@ -1,5 +1,5 @@
 (use prelude/macros defmacro defrule template)
-(use prelude/logic true false not when unless and or cond)
+(use prelude/logic not when unless and or cond)
 (use prelude/syntax defn the)
 (use prelude/number number signed float partial-eq partial-ord
                     add sub mul div rem neg sqrt lt le gt ge eq ne

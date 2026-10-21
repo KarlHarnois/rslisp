@@ -30,12 +30,10 @@ pub enum Builtin {
     NumberGe,
     ValueEq,
     BoolNot,
-    BoolTrue,
-    BoolFalse,
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 32] = [
+    const NAMES: [(Builtin, &'static str); 30] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -66,8 +64,6 @@ impl Builtin {
         (Builtin::NumberGe, "number-ge"),
         (Builtin::ValueEq, "value-eq"),
         (Builtin::BoolNot, "bool-not"),
-        (Builtin::BoolTrue, "bool-true"),
-        (Builtin::BoolFalse, "bool-false"),
     ];
 
     pub fn all() -> impl Iterator<Item = Builtin> {
