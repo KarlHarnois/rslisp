@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/collections.rslisp
+---
+500000500000
+2
+4
+6
+8
+10

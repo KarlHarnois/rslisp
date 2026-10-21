@@ -1,0 +1,7 @@
+(defn even? (n) (= (rem n 2) 0))
+
+(defn main ()
+  (println (fold (range 1 1000001) 0 (fn (total n) (+ total n))))
+  (let numbers (collect (range 1 11)))
+  (let evens (collect (filter (values numbers) (fn (n) (even? n)))))
+  (for-each (values evens) (fn (n) (println n))))
