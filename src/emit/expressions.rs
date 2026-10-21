@@ -16,6 +16,18 @@ use crate::types::{
     TypedExprKind, TypedLambda, TypedLeaf, TypedProgram, TypedStructExpr,
 };
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum TypeContext {
+    Known,
+    Unknown,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ArgumentRole {
+    Receiver,
+    Ordinary,
+}
+
 pub struct ExpressionEmitter<'a> {
     program: &'a TypedProgram,
     plan: &'a EmitPlan<'a>,
@@ -92,35 +104,41 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     pub fn expr(&mut self, expr: &TypedExpr) -> Code {
-        self.expr_in(expr, false).spanned(expr.span)
+        self.expr_in(expr, TypeContext::Known).spanned(expr.span)
     }
 
-    fn expr_in(&mut self, expr: &TypedExpr, unpinned: bool) -> Code {
+    fn expr_in(&mut self, expr: &TypedExpr, context: TypeContext) -> Code {
         match &expr.kind {
-            TypedExprKind::Leaf(TypedLeaf::Literal(literal)) => {
-                self.literal(literal, &expr.ty, unpinned)
-            }
-            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => {
-                Code::atom(self.locals.get(*binding).unwrap_or("_").to_string())
-            }
-            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
-                self.global(*binding, &expr.ty, expr.span)
-            }
+            TypedExprKind::Leaf(leaf) => self.leaf(leaf, expr, context),
             TypedExprKind::Fn(lambda) => self.closure(lambda),
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments, expr.span),
-            TypedExprKind::Control(TypedControl::Block(block)) => self.block(block),
-            TypedExprKind::Control(TypedControl::If(test, then, otherwise)) => {
-                self.conditional(test, then, otherwise)
+            TypedExprKind::Control(control) => self.control(control),
+            TypedExprKind::Struct(structure) => self.structure(structure, &expr.ty),
+        }
+    }
+
+    fn leaf(&mut self, leaf: &TypedLeaf, expr: &TypedExpr, context: TypeContext) -> Code {
+        match leaf {
+            TypedLeaf::Literal(literal) => self.literal(literal, &expr.ty, context),
+            TypedLeaf::Local(binding) => {
+                Code::atom(self.locals.get(*binding).unwrap_or("_").to_string())
             }
-            TypedExprKind::Struct(TypedStructExpr::New(binding, fields)) => {
-                self.construction(*binding, fields)
-            }
-            TypedExprKind::Struct(TypedStructExpr::Field(value, label)) => {
-                self.field_access(value, label, &expr.ty)
-            }
-            TypedExprKind::Leaf(TypedLeaf::Rust(template)) => {
-                self.rust_value(template, &expr.ty, expr.span)
-            }
+            TypedLeaf::Global(binding) => self.global(*binding, &expr.ty, expr.span),
+            TypedLeaf::Rust(template) => self.rust_value(template, &expr.ty, expr.span),
+        }
+    }
+
+    fn control(&mut self, control: &TypedControl) -> Code {
+        match control {
+            TypedControl::Block(block) => self.block(block),
+            TypedControl::If(test, then, otherwise) => self.conditional(test, then, otherwise),
+        }
+    }
+
+    fn structure(&mut self, structure: &TypedStructExpr, ty: &Type) -> Code {
+        match structure {
+            TypedStructExpr::New(binding, fields) => self.construction(*binding, fields),
+            TypedStructExpr::Field(value, label) => self.field_access(value, label, ty),
         }
     }
 
@@ -163,30 +181,36 @@ impl<'a> ExpressionEmitter<'a> {
         matches!(bound, Type::Primitive(primitive) if primitive.is_integer() && *primitive != PrimitiveType::I32)
     }
 
-    fn literal(&self, literal: &Literal, ty: &Type, unpinned: bool) -> Code {
+    fn literal(&self, literal: &Literal, ty: &Type, context: TypeContext) -> Code {
         match (literal, ty) {
             (Literal::String(text), _) => Code::atom(format!("{text:?}")),
             (Literal::Number(number), Type::Generic(_)) => self.converted_literal(number, ty),
-            (Literal::Number(number), _) => {
-                let text = number.text().trim_start_matches('+').to_string();
-                let text = match (number.value(), ty) {
-                    (NumberValue::Integer(_), Type::Primitive(primitive))
-                        if primitive.is_float() =>
-                    {
-                        format!("{text}.0")
-                    }
-                    (NumberValue::Integer(_), Type::Primitive(PrimitiveType::I64)) if unpinned => {
-                        format!("{text}{}", Self::I64_SUFFIX)
-                    }
-                    _ => text,
-                };
-                let precedence = if text.starts_with('-') {
-                    Precedence::Prefix
-                } else {
-                    Precedence::Atom
-                };
-                Code::with(text, precedence)
+            (Literal::Number(number), _) => Self::number(number, ty, context),
+        }
+    }
+
+    fn number(number: &Number, ty: &Type, context: TypeContext) -> Code {
+        let text = Self::number_text(number, ty, context);
+        let precedence = if text.starts_with('-') {
+            Precedence::Prefix
+        } else {
+            Precedence::Atom
+        };
+        Code::with(text, precedence)
+    }
+
+    fn number_text(number: &Number, ty: &Type, context: TypeContext) -> String {
+        let text = number.text().trim_start_matches('+').to_string();
+        match (number.value(), ty) {
+            (NumberValue::Integer(_), Type::Primitive(primitive)) if primitive.is_float() => {
+                format!("{text}.0")
             }
+            (NumberValue::Integer(_), Type::Primitive(PrimitiveType::I64))
+                if context == TypeContext::Unknown =>
+            {
+                format!("{text}{}", Self::I64_SUFFIX)
+            }
+            _ => text,
         }
     }
 
@@ -263,21 +287,18 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument], span: Span) -> Code {
         let template = self.called_template(callee);
-        let unpinned = template.is_some()
-            && arguments.iter().all(|argument| {
-                matches!(
-                    argument.value.kind,
-                    TypedExprKind::Leaf(TypedLeaf::Literal(_))
-                )
-            });
-        let has_receiver = template
-            .as_ref()
-            .is_some_and(|template| template.template.starts_with(Self::RECEIVER));
+        let context = Self::argument_context(template.as_deref(), arguments);
+        let first_role = Self::first_argument_role(template.as_deref());
         let arguments: Vec<Code> = arguments
             .iter()
             .enumerate()
             .map(|(position, argument)| {
-                self.argument(argument, unpinned, has_receiver && position == 0)
+                let role = if position == 0 {
+                    first_role
+                } else {
+                    ArgumentRole::Ordinary
+                };
+                self.argument(argument, context, role)
             })
             .collect();
         if let Some(template) = template {
@@ -313,25 +334,64 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn argument(&mut self, argument: &TypedArgument, unpinned: bool, is_receiver: bool) -> Code {
+    fn argument_context(
+        template: Option<&RustTemplate>,
+        arguments: &[TypedArgument],
+    ) -> TypeContext {
+        let all_literals = arguments.iter().all(|argument| {
+            matches!(
+                argument.value.kind,
+                TypedExprKind::Leaf(TypedLeaf::Literal(_))
+            )
+        });
+        if template.is_some() && all_literals {
+            TypeContext::Unknown
+        } else {
+            TypeContext::Known
+        }
+    }
+
+    fn first_argument_role(template: Option<&RustTemplate>) -> ArgumentRole {
+        if template.is_some_and(|template| template.template.starts_with(Self::RECEIVER)) {
+            ArgumentRole::Receiver
+        } else {
+            ArgumentRole::Ordinary
+        }
+    }
+
+    fn argument(
+        &mut self,
+        argument: &TypedArgument,
+        context: TypeContext,
+        role: ArgumentRole,
+    ) -> Code {
         let value = self
-            .expr_in(&argument.value, unpinned)
+            .expr_in(&argument.value, context)
             .spanned(argument.value.span);
-        let already_borrowed = argument.value.ty.is_reference();
-        let prefix = match argument.borrow {
-            Borrow::None | Borrow::Passthrough => return value,
-            Borrow::Shared | Borrow::Mutable if already_borrowed || is_receiver => return value,
-            Borrow::Shared => "&",
-            Borrow::Mutable => "&mut ",
-            Borrow::Deref => "*",
-        };
+        match Self::borrow_prefix(argument, role) {
+            Some(prefix) => Self::prefixed(prefix, value).spanned(argument.value.span),
+            None => value,
+        }
+    }
+
+    fn borrow_prefix(argument: &TypedArgument, role: ArgumentRole) -> Option<&'static str> {
+        let borrowed_already = argument.value.ty.is_reference() || role == ArgumentRole::Receiver;
+        match argument.borrow {
+            Borrow::None | Borrow::Passthrough => None,
+            Borrow::Shared | Borrow::Mutable if borrowed_already => None,
+            Borrow::Shared => Some("&"),
+            Borrow::Mutable => Some("&mut "),
+            Borrow::Deref => Some("*"),
+        }
+    }
+
+    fn prefixed(prefix: &str, value: Code) -> Code {
         let value = if matches!(value.precedence, Precedence::Operator | Precedence::Block) {
             value.parenthesized()
         } else {
             value
         };
         Code::joined(vec![Code::atom(prefix), value], Precedence::Prefix)
-            .spanned(argument.value.span)
     }
 
     fn separated(arguments: Vec<Code>) -> Vec<Code> {
