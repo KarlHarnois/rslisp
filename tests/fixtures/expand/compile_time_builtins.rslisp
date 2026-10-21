@@ -1,0 +1,27 @@
+(use code list string? number? bool-not number-add number-mul number-rem number-le number-gt
+  number-ge value-eq)
+
+(def yes-or-no (fn (test) (if test (quote yes) (quote no))))
+
+(def facts
+  (macro (form)
+    (list (quote quote)
+          (list (yes-or-no (string? "text"))
+                (yes-or-no (number? 4))
+                (yes-or-no (bool-not true))
+                (number-mul 6 7)
+                (number-rem 7 4)
+                (number-add 1.5 2)
+                (yes-or-no (number-le 1.5 2))
+                (yes-or-no (number-gt 2 3))
+                (yes-or-no (number-ge 3 3))
+                (yes-or-no (value-eq true true))
+                (yes-or-no (value-eq (do) (do)))
+                (yes-or-no (value-eq true (quote yes)))
+                (yes-or-no (value-eq (quote a) (quote a)))
+                (yes-or-no (value-eq (quote (a b)) (quote (a b))))
+                (yes-or-no (value-eq (quote a) 1))
+                ((fn (x) (do x)) 5)
+                (+ 1 2)))))
+
+(def answers (fn () (facts)))

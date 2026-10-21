@@ -1,0 +1,85 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/compile_time_type_errors.rslisp
+---
+error[L0303]: `first` expects code as argument 1, found unit
+  --> expand/compile_time_type_errors.rslisp:3:34
+   |
+ 3 | (def first-of-unit (macro (form) (first (do))))
+   |                                  ^^^^^^^^^^^^ unit given here
+...
+13 | (first-of-unit)
+   | --------------- in this macro call
+
+error[L0303]: `first` expects code as argument 1, found a function
+  --> expand/compile_time_type_errors.rslisp:4:38
+   |
+ 4 | (def first-of-function (macro (form) (first first)))
+   |                                      ^^^^^^^^^^^^^ a function given here
+...
+14 | (first-of-function)
+   | ------------------- in this macro call
+
+error[L0303]: `first` expects a list as argument 1, found a symbol
+  --> expand/compile_time_type_errors.rslisp:5:36
+   |
+ 5 | (def first-of-symbol (macro (form) (first (quote name))))
+   |                                    ^^^^^^^^^^^^^^^^^^^^ a symbol given here
+...
+15 | (first-of-symbol)
+   | ----------------- in this macro call
+
+error[L0303]: `number-add` expects a number as argument 1, found a list
+  --> expand/compile_time_type_errors.rslisp:6:31
+   |
+ 6 | (def add-a-list (macro (form) (number-add (list) 1)))
+   |                               ^^^^^^^^^^^^^^^^^^^^^ a list given here
+...
+16 | (add-a-list)
+   | ------------ in this macro call
+
+error[L0303]: `nth` expects an integer as argument 2, found a number
+  --> expand/compile_time_type_errors.rslisp:7:38
+   |
+ 7 | (def nth-at-a-fraction (macro (form) (nth form 1.5)))
+   |                                      ^^^^^^^^^^^^^^ a number given here
+...
+17 | (nth-at-a-fraction)
+   | ------------------- in this macro call
+
+error[L0303]: `bool-not` expects a boolean as argument 1, found a number
+  --> expand/compile_time_type_errors.rslisp:8:36
+   |
+ 8 | (def negate-a-number (macro (form) (bool-not 1)))
+   |                                    ^^^^^^^^^^^^ a number given here
+...
+18 | (negate-a-number)
+   | ----------------- in this macro call
+
+error[L0303]: a boolean cannot be called
+  --> expand/compile_time_type_errors.rslisp:9:30
+   |
+ 9 | (def call-true (macro (form) (bool-true)))
+   |                              ^^^^^^^^^^^ called here
+...
+19 | (call-true)
+   | ----------- in this macro call
+
+error[L0303]: `fail` expects a string as argument 1, found a number
+  --> expand/compile_time_type_errors.rslisp:10:39
+   |
+10 | (def fail-with-a-number (macro (form) (fail 5 form)))
+   |                                       ^^^^^^^^^^^^^ a number given here
+...
+20 | (fail-with-a-number)
+   | -------------------- in this macro call
+
+error[L0303]: this function takes 1 argument but 0 were given
+  --> expand/compile_time_type_errors.rslisp:11:38
+   |
+11 | (def call-with-too-few (macro (form) ((fn (x) x))))
+   |                                      ^^^^^^^^^^^^ 0 arguments given
+...
+21 | (call-with-too-few)
+   | ------------------- in this macro call
