@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/mut_parameter_passed_twice.rslisp
+---
+error[L0501]: use of moved value `stack`
+ --> check/mut_parameter_passed_twice.rslisp:4:12
+  |
+3 |   (add-one stack)
+  |            ----- value moved here
+4 |   (add-one stack))
+  |            ^^^^^ value used here after it moved
+  |
+help: clone the value if both places need it
+  |
+3 -   (add-one stack)
+3 +   (add-one (clone stack))
+  |

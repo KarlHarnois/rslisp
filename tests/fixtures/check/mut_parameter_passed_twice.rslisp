@@ -1,0 +1,8 @@
+(defn add-one (stack) (push stack 1))
+(defn add-two (stack)
+  (add-one stack)
+  (add-one stack))
+(defn main ()
+  (let xs (vec))
+  (add-two xs)
+  (println (len xs)))

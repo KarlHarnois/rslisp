@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/mutual_recursion_modes.rslisp
+---
+error[L0501]: use of moved value `items`
+  --> check/mutual_recursion_modes.rslisp:10:17
+   |
+ 9 |   (println (count-down items 3))
+   |                        ----- value moved here
+10 |   (println (len items)))
+   |                 ^^^^^ value used here after it moved
+   |
+help: clone the value if both places need it
+   |
+ 9 -   (println (count-down items 3))
+ 9 +   (println (count-down (clone items) 3))
+   |

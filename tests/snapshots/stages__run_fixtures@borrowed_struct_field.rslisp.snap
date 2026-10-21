@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/borrowed_struct_field.rslisp
+---
+error[E0106]: missing lifetime specifier
+ --> run/borrowed_struct_field.rslisp:1:1
+  |
+1 | (defstruct instruction (opcode (ref str)) (argument i64))
+  | ^ expected named lifetime parameter
+  |
+  = note: reported by rustc while compiling the generated Rust
+  = help: consider introducing a named lifetime parameter

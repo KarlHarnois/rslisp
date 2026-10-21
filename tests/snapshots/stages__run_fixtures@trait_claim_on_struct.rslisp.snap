@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/trait_claim_on_struct.rslisp
+---
+error[E0369]: binary operation `==` cannot be applied to type `&employee`
+ --> run/trait_claim_on_struct.rslisp:7:12
+  |
+7 |   (println (same-record? first-hire second-hire)))
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+  |
+  = note: an implementation of `PartialEq` might be missing for `employee`
+  = note: reported by rustc while compiling the generated Rust
+  = help: consider annotating `employee` with `#[derive(PartialEq)]`

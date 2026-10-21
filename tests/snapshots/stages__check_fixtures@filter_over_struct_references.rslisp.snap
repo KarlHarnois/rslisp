@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/filter_over_struct_references.rslisp
+---
+error[L0401]: mismatched types
+ --> check/filter_over_struct_references.rslisp:4:58
+  |
+4 |   (collect (filter (iter people) (fn (p) (>= (person-age p) 18)))))
+  |                                                          ^ expected `(ref person)`, found `(ref (ref _))`
