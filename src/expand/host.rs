@@ -15,7 +15,6 @@ impl CompileTimeHost for Expander<'_> {
                 Ok(BuiltinCall::constant(builtin).unwrap_or(Value::Builtin(builtin)))
             }
             BindingKind::Global(_) => self.compile_time_global(binding, &name, span),
-            BindingKind::Macro => Err(ExpandProblems::macro_as_value(&name, span)),
             _ => Err(ExpandProblems::not_at_compile_time(&name, span)),
         }
     }
