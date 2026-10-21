@@ -299,9 +299,75 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 | 6. Emit and build | done |
 | 7. Ownership | done |
 | 8. Generic types | done |
+| 8.1 References at call sites | planned |
+| 8.2 Struct traits | planned |
+| 8.3 Macro code | planned |
+| 8.4 Loops | planned |
 | 9. Enums and `match` | planned |
 | 10. User-defined traits | planned |
 | 11. Written lifetimes | planned |
+
+Milestones 8.1, 8.2 and 8.4 share one rule. Unless the program writes ownership, traits and loops, the compiler infers them. A written form is taken exactly as written.
+
+### 8.1 References at call sites
+
+A value meets an expected type in four places:
+
+- an argument
+- a return value
+- an annotation
+- a function passed as a value
+
+At each of them, the compiler adds one borrow, removes borrows, or copies a Copy value out of a borrow. It never clones. It decides each adjustment after inference, when every type is known.
+
+- The rule applies to the outer reference only. `(vec (ref person))` never becomes `(vec person)`.
+- In a generic slot, a borrowed Copy value of 16 bytes or less is copied. A larger value stays borrowed. Parameter modes use the same limit.
+- A written `ref`, `mut` or `deref` turns the rule off for that value. The compiler reports a mismatch as written.
+- A `mut` borrow always takes the original place, never a copy or a temporary.
+- If a function passed as a value needs an adjustment of its parameters, the compiler wraps it in a closure.
+- If a body copies a generic parameter, the compiler infers the parameter's `copy` bound.
+- If the name of a function that changes an argument does not end with `!`, the compiler warns. The emitted Rust drops the `!`.
+- The prelude gains `deref`, which copies a Copy value out of a borrow.
+- A command prints each function's inferred signature, so that a `type` form can pin it.
+
+Rust adjusts a receiver's references automatically, but rslisp has no receivers, so the rule covers every call. A Copy value of 16 bytes or less travels in registers, so copying it costs no more than borrowing it.
+
+### 8.2 Struct traits
+
+Every struct implements each of `clone`, `debug`, `partial-eq`, `eq` and `hash` that all its field types implement. If a struct's fields are all Copy and the program never changes the struct in place, the struct is `copy`. The program changes a struct in place when a `mut` parameter receives it or one of its fields changes.
+
+- `(derive name trait...)` lists a struct's traits exactly and turns inference off for that struct.
+- A written list can add `partial-ord`, `ord` or `default`, drop an inferred trait, or pin the set.
+- A listed trait brings the traits Rust requires of it. `ord` brings `partial-ord`, `eq` and `partial-eq`.
+- If a field blocks a listed trait, the `derive` form is an error.
+- The compiler reports a missing trait at its use and names the field or `derive` form that blocks it.
+- `prn` and `pr-str` print a value's data form. `println` keeps printing user-facing text.
+- The signature command also prints each struct's inferred `derive` form.
+- `derive` is a kernel form, because the prelude cannot add attributes to an emitted struct.
+
+Python, Clojure and Kotlin give records equality and printing by default. An order or a default picks a meaning, so the program writes it. A struct that the program changes is never copied, so a change cannot land on a copy.
+
+### 8.3 Macro code
+
+Macro code and program code keep separate names. `+`, `=` and `map` belong to the program. Macro code computes with the `code` module.
+
+- `defrule` becomes the documented default for macros. `defmacro` stays for macros that compute.
+- The prelude exports its list helpers, such as `map-list`, for macro code.
+- L0306 names the `code` function that replaces a program function, such as `number-add` for `+`.
+
+One implementation per name keeps the compiler small. Compile-time twins of the prelude's Rust templates would disagree with Rust on integer width, overflow, division by zero and floats. Most macros need no computation when written with `defrule`.
+
+### 8.4 Loops
+
+A call to the enclosing function in tail position compiles to a Rust `loop`.
+
+- A written `(recur argument...)` compiles to the same loop.
+- `recur` is an error outside tail position.
+- `recur` targets the nearest `fn`, so the prelude defines Clojure's `loop` as a `defrule`.
+- Mutual recursion stays recursion.
+- `recur` is a kernel form, because the prelude cannot make a function jump back to its start.
+
+Rust has no guaranteed tail calls. Without this milestone, recursion is the only way to loop, and a deep loop overflows the stack.
 
 ### 9. Enums and `match`
 
