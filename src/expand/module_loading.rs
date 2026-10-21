@@ -190,8 +190,7 @@ impl Expander<'_> {
                     )
                 }))
                 .collect(),
-            BuiltinModule::Code => Builtin::ALL
-                .into_iter()
+            BuiltinModule::Code => Builtin::all()
                 .map(|builtin| {
                     (
                         builtin.name(),

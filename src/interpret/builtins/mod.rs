@@ -2,6 +2,8 @@ mod lists;
 mod numbers;
 mod text;
 
+use std::cmp::Ordering;
+
 use super::arguments::Arguments;
 use super::problems::InterpretProblems;
 use super::{CompileTimeHost, Value};
@@ -20,6 +22,81 @@ pub struct BuiltinCall {
 }
 
 impl BuiltinCall {
+    const IMPLEMENTATIONS: [(Builtin, Implementation); 30] = [
+        (Builtin::First, |operations, _| operations.lists.first()),
+        (Builtin::Rest, |operations, _| operations.lists.rest()),
+        (Builtin::List, |operations, _| operations.lists.list()),
+        (Builtin::Prepend, |operations, _| operations.lists.prepend()),
+        (Builtin::Concat, |operations, _| operations.lists.concat()),
+        (Builtin::Length, |operations, _| operations.lists.length()),
+        (Builtin::IsEmpty, |operations, _| {
+            operations.lists.is_empty()
+        }),
+        (Builtin::Nth, |operations, _| operations.lists.nth()),
+        (Builtin::Take, |operations, _| operations.lists.take()),
+        (Builtin::Drop, |operations, _| operations.lists.drop()),
+        (Builtin::IsSymbol, |operations, _| {
+            operations
+                .text
+                .is_kind(|kind| matches!(kind, FormKind::Symbol(_)))
+        }),
+        (Builtin::IsList, |operations, _| {
+            operations
+                .text
+                .is_kind(|kind| matches!(kind, FormKind::List(_)))
+        }),
+        (Builtin::IsString, |operations, _| {
+            operations
+                .text
+                .is_kind(|kind| matches!(kind, FormKind::String(_)))
+        }),
+        (Builtin::IsNumber, |operations, _| {
+            operations
+                .text
+                .is_kind(|kind| matches!(kind, FormKind::Number(_)))
+        }),
+        (Builtin::SymbolName, |operations, _| {
+            operations.text.symbol_name()
+        }),
+        (Builtin::MakeSymbol, |operations, _| {
+            operations.text.make_symbol()
+        }),
+        (Builtin::MakeString, |operations, _| {
+            operations.text.make_string()
+        }),
+        (Builtin::SameBinding, |operations, host| {
+            operations.text.same_binding(host)
+        }),
+        (Builtin::Fail, |operations, _| operations.text.fail()),
+        (Builtin::ValueEq, |operations, _| operations.text.value_eq()),
+        (Builtin::BoolNot, |operations, _| operations.text.not()),
+        (Builtin::NumberAdd, |operations, _| operations.numbers.add()),
+        (Builtin::NumberSub, |operations, _| {
+            operations.numbers.subtract()
+        }),
+        (Builtin::NumberMul, |operations, _| {
+            operations.numbers.multiply()
+        }),
+        (Builtin::NumberDiv, |operations, _| {
+            operations.numbers.divide()
+        }),
+        (Builtin::NumberRem, |operations, _| {
+            operations.numbers.remainder()
+        }),
+        (Builtin::NumberLt, |operations, _| {
+            operations.numbers.compare(Ordering::is_lt)
+        }),
+        (Builtin::NumberLe, |operations, _| {
+            operations.numbers.compare(Ordering::is_le)
+        }),
+        (Builtin::NumberGt, |operations, _| {
+            operations.numbers.compare(Ordering::is_gt)
+        }),
+        (Builtin::NumberGe, |operations, _| {
+            operations.numbers.compare(Ordering::is_ge)
+        }),
+    ];
+
     pub fn new(builtin: Builtin, values: Vec<Value>, span: Span, call_site: Span) -> Self {
         Self {
             builtin,
@@ -37,47 +114,41 @@ impl BuiltinCall {
     }
 
     pub fn run(self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
-        let lists = ListOperations::new(&self.arguments, self.call_site);
-        let numbers = NumberOperations::new(&self.arguments, self.call_site);
-        let text = TextOperations::new(&self.arguments, self.call_site);
-        match self.builtin {
-            Builtin::First => lists.first(),
-            Builtin::Rest => lists.rest(),
-            Builtin::List => lists.list(),
-            Builtin::Prepend => lists.prepend(),
-            Builtin::Concat => lists.concat(),
-            Builtin::Length => lists.length(),
-            Builtin::IsEmpty => lists.is_empty(),
-            Builtin::Nth => lists.nth(),
-            Builtin::Take => lists.take(),
-            Builtin::Drop => lists.drop(),
-            Builtin::IsSymbol => text.is_kind(|kind| matches!(kind, FormKind::Symbol(_))),
-            Builtin::IsList => text.is_kind(|kind| matches!(kind, FormKind::List(_))),
-            Builtin::IsString => text.is_kind(|kind| matches!(kind, FormKind::String(_))),
-            Builtin::IsNumber => text.is_kind(|kind| matches!(kind, FormKind::Number(_))),
-            Builtin::SymbolName => text.symbol_name(),
-            Builtin::MakeSymbol => text.make_symbol(),
-            Builtin::MakeString => text.make_string(),
-            Builtin::SameBinding => text.same_binding(host),
-            Builtin::Fail => text.fail(),
-            Builtin::ValueEq => text.value_eq(),
-            Builtin::BoolNot => text.not(),
-            Builtin::NumberAdd => numbers.add(),
-            Builtin::NumberSub => numbers.subtract(),
-            Builtin::NumberMul => numbers.multiply(),
-            Builtin::NumberDiv => numbers.divide(),
-            Builtin::NumberRem => numbers.remainder(),
-            Builtin::NumberLt => numbers.compare(|order| order.is_lt()),
-            Builtin::NumberLe => numbers.compare(|order| order.is_le()),
-            Builtin::NumberGt => numbers.compare(|order| order.is_gt()),
-            Builtin::NumberGe => numbers.compare(|order| order.is_ge()),
-            Builtin::BoolTrue | Builtin::BoolFalse => {
-                let constant = Value::Bool(self.builtin == Builtin::BoolTrue);
-                Err(InterpretProblems::not_callable(
-                    &constant,
-                    self.arguments.span(),
-                ))
-            }
+        let operations = Operations::new(&self.arguments, self.call_site);
+        match Self::implementation(self.builtin) {
+            Some(implementation) => implementation(&operations, host),
+            None => Err(self.not_callable()),
+        }
+    }
+
+    fn implementation(builtin: Builtin) -> Option<Implementation> {
+        Self::IMPLEMENTATIONS
+            .iter()
+            .find(|(implemented, _)| *implemented == builtin)
+            .map(|(_, implementation)| *implementation)
+    }
+
+    fn not_callable(&self) -> Diagnostic {
+        let value = Self::constant(self.builtin).unwrap_or(Value::Builtin(self.builtin));
+        InterpretProblems::not_callable(&value, self.arguments.span())
+    }
+}
+
+type Implementation =
+    for<'a> fn(&Operations<'a>, &mut dyn CompileTimeHost) -> Result<Value, Diagnostic>;
+
+struct Operations<'a> {
+    lists: ListOperations<'a>,
+    numbers: NumberOperations<'a>,
+    text: TextOperations<'a>,
+}
+
+impl<'a> Operations<'a> {
+    fn new(arguments: &'a Arguments, call_site: Span) -> Self {
+        Self {
+            lists: ListOperations::new(arguments, call_site),
+            numbers: NumberOperations::new(arguments, call_site),
+            text: TextOperations::new(arguments, call_site),
         }
     }
 }
