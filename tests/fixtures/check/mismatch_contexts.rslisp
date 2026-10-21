@@ -1,0 +1,27 @@
+(struct counter (count i64))
+
+(type answer (fn () i64))
+(defn answer () "forty-two")
+
+(defn annotated ()
+  (let (total i64) "text")
+  total)
+
+(defn new-with-text () (new counter (count "many")))
+
+(defn misspelled-field () (new counter (cuont 1)))
+
+(defn float-as-text ()
+  (let (label str) 1.5)
+  label)
+
+(defn text-as-counter ()
+  (let (box counter) "text")
+  box)
+
+(defn wrong-arity ()
+  (let (pick (fn (i64) i64)) (fn (left right) left))
+  pick)
+
+(type ends-with-let (fn () i64))
+(defn ends-with-let () (let unused 1))

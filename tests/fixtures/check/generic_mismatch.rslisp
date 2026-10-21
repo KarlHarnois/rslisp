@@ -1,0 +1,2 @@
+(type same (where (t) (fn (t) t)))
+(defn same (value) "text")

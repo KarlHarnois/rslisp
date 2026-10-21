@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/recursion.rslisp
+---
+error[L0401]: mismatched types
+ --> check/recursion.rslisp:5:22
+  |
+5 | (defn broken () (+ 1 "one"))
+  |                      ^^^^^ expected an integer, found `(ref str)`

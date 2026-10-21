@@ -610,3 +610,14 @@ impl TypeChecker {
         self.diagnostics.into_result(program)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::TypeChecker;
+
+    #[test]
+    fn parameters_past_the_alphabet_are_numbered() {
+        assert_eq!(TypeChecker::parameter_name(0), "a");
+        assert_eq!(TypeChecker::parameter_name(26), "t26");
+    }
+}

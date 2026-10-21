@@ -1,0 +1,25 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/declaration_errors.rslisp
+---
+error[L0413]: `where` must wrap a whole signature
+ --> check/declaration_errors.rslisp:1:35
+  |
+1 | (def where-in-rust (rust "x" (fn ((where (t) t)) i64)))
+  |                                   ^^^^^^^^^^^^^ not allowed inside another type
+
+error[L0413]: `where` must wrap a whole signature
+ --> check/declaration_errors.rslisp:3:23
+  |
+3 | (struct holder (value (where (t) t)))
+  |                       ^^^^^^^^^^^^^ not allowed inside another type
+
+error[L0414]: `1` does not fit every type `t` can be
+ --> check/declaration_errors.rslisp:7:18
+  |
+7 | (defn unit-of () 1)
+  |                  ^ `t` can be `holder`, which cannot hold this value
+  |
+  = note: `t` can be any of: holder
+  = help: narrow `t` with a trait whose types all hold this value

@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/runtime_errors_of_compile_time_code.rslisp
+---
+error[L0412]: `first` only exists at compile time
+ --> check/runtime_errors_of_compile_time_code.rslisp:3:26
+  |
+3 | (defn head-of-number () (first 1))
+  |                          ^^^^^ used in code that runs in the program
+  |
+  = note: definitions that use the `code` module or `quote` can only be used by macros
+
+error[L0407]: type annotations needed
+ --> check/runtime_errors_of_compile_time_code.rslisp:5:36
+  |
+5 | (defn print-a-function () (println (fn (value) value)))
+  |                                    ^^^^^^^^^^^^^^^^^^ cannot infer the type of this value
+  |
+  = help: annotate the binding, as in `(let (name i64) value)`, or add a `type` signature

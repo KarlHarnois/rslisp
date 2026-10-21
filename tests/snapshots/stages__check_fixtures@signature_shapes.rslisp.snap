@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/signature_shapes.rslisp
+---
+(type bump (fn ((mut counter)) unit))
+(type touch (where (t) (fn ((mut t)) unit)))
+(type touch-counter (where (a) (fn ((mut a)) unit)))
+(type count-of (fn ((ref counter)) i64))
+(type takes-number (fn (i64) i64))
+(type pass-borrowed (fn ((ref i64)) i64))
+(type both (where ((t number display)) (fn (t) t)))
+(type describe (where ((a display)) (fn ((ref a)) string)))

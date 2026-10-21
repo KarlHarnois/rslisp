@@ -1,0 +1,7 @@
+(defn even? (number) (if (= number 0) true (odd? (- number 1))))
+
+(defn odd? (number) (if (= number 0) false (even? (- number 1))))
+
+(defn broken () (+ 1 "one"))
+
+(defn uses-broken () (broken))

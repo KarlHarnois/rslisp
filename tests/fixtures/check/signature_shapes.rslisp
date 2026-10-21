@@ -1,0 +1,22 @@
+(struct counter (count i64))
+
+(type bump (fn ((mut counter)) unit))
+(defn bump (target) (do))
+
+(type touch (where (t) (fn ((mut t)) unit)))
+(defn touch (value) (do))
+
+(defn touch-counter (target) (touch target))
+
+(defn count-of (target) (field target count))
+
+(type takes-number (fn (i64) i64))
+(defn takes-number (number) number)
+
+(type pass-borrowed (fn ((ref i64)) i64))
+(defn pass-borrowed (number) (takes-number number))
+
+(type both (where ((t number display)) (fn (t) t)))
+(defn both (value) (+ value 1))
+
+(defn describe (value) (to-string value))
