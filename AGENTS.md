@@ -89,7 +89,7 @@ The exceptions are:
 - A stage depends only on earlier stages. NEVER make a stage depend on a later one.
 - A stage reports problems as `Diagnostic` values. NEVER print from a stage.
 - Only `src/cli/` prints.
-- Only `src/cli/`, `src/build/` and `ModuleSources` touch the file system or run processes.
+- Only `src/cli/`, `src/build/`, `ModuleSources` and `xtask/` touch the file system or run processes.
 - Write every diagnostic's wording in the stage's problems type, such as `ExpandProblems` or `TypeProblems`.
 
 ### Tests
@@ -100,6 +100,8 @@ The exceptions are:
 - Give fixtures fake data only.
 - Create or update snapshots with `INSTA_UPDATE=always`.
 - NEVER commit a snapshot that you have not read.
+- NEVER lower `MINIMUM_LINE_COVERAGE` or raise `MAXIMUM_CRAP` in `xtask/src/gate.rs` without the project owner's approval.
+- NEVER hide code from `cargo xtask coverage`, such as by moving branches into a macro: the gate cannot see inside a macro.
 
 ### `nix develop`
 
@@ -118,9 +120,9 @@ The exceptions are:
 ## Commands
 
 ```sh
-nix develop -c cargo fmt --check
-nix develop -c cargo clippy --all-targets -- -D warnings
-nix develop -c cargo test
+nix develop -c cargo fmt --all --check
+nix develop -c cargo clippy --workspace --all-targets -- -D warnings
+nix develop -c cargo xtask coverage
 nix build .#
 nix flake check
 ```

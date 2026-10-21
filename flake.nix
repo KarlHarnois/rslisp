@@ -21,11 +21,39 @@
         pkgs.clippy
         pkgs.rustfmt
         pkgs.cargo-insta
+        pkgs.cargo-llvm-cov
         pkgs.git
         pkgs.nixfmt
       ];
 
       crateVersion = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package.version;
+
+      coverageTools = pkgs: {
+        LLVM_COV = "${pkgs.rustc.llvmPackages.llvm}/bin/llvm-cov";
+        LLVM_PROFDATA = "${pkgs.rustc.llvmPackages.llvm}/bin/llvm-profdata";
+      };
+
+      qualityGate =
+        pkgs:
+        pkgs.rustPlatform.buildRustPackage (
+          {
+            pname = "rslisp-quality-gate";
+            version = crateVersion;
+            src = self;
+            cargoLock.lockFile = ./Cargo.lock;
+            nativeBuildInputs = [ pkgs.cargo-llvm-cov ];
+            buildPhase = ''
+              runHook preBuild
+              cargo xtask coverage
+              runHook postBuild
+            '';
+            doCheck = false;
+            installPhase = ''
+              touch $out
+            '';
+          }
+          // coverageTools pkgs
+        );
 
       agentDocs =
         pkgs:
@@ -81,7 +109,7 @@
           src = self;
           cargoLock.lockFile = ./Cargo.lock;
           nativeBuildInputs = [ pkgs.makeWrapper ];
-          doCheck = true;
+          doCheck = false;
           postInstall = ''
             wrapProgram $out/bin/rslisp --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.rustc ]}
           '';
@@ -94,15 +122,19 @@
       });
 
       devShells = forEachSystem (pkgs: {
-        default = pkgs.mkShell {
-          packages = developmentPackages pkgs ++ [ pkgs.rust-analyzer ];
-        };
+        default = pkgs.mkShell (
+          {
+            packages = developmentPackages pkgs ++ [ pkgs.rust-analyzer ];
+          }
+          // coverageTools pkgs
+        );
       });
 
       formatter = forEachSystem (pkgs: pkgs.nixfmt-tree);
 
       checks = nixpkgs.lib.genAttrs supportedSystems (system: {
         default = self.packages.${system}.default;
+        quality-gate = qualityGate nixpkgs.legacyPackages.${system};
         agent-docs = agentDocs nixpkgs.legacyPackages.${system};
         dev-shell-tools = devShellTools nixpkgs.legacyPackages.${system} self.devShells.${system}.default;
       });

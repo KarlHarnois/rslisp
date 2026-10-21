@@ -39,11 +39,11 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-${{ hashFiles('flake.lock') }}-
       - name: Format
-        run: nix develop -c cargo fmt --check
+        run: nix develop -c cargo fmt --all --check
       - name: Lint
-        run: nix develop -c cargo clippy --all-targets -- -D warnings
-      - name: Test
-        run: nix develop -c cargo test
+        run: nix develop -c cargo clippy --workspace --all-targets -- -D warnings
+      - name: Test with the coverage and CRAP gate
+        run: nix develop -c cargo xtask coverage
       - name: Check agent docs
         run: nix build --no-link ".#checks.$(nix eval --impure --raw --expr builtins.currentSystem).agent-docs"
       - name: Build

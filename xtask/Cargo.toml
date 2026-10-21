@@ -1,0 +1,10 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+clap = { version = "4.6", features = ["derive"] }
+proc-macro2 = { version = "1", features = ["span-locations"] }
+syn = { version = "3", default-features = false, features = ["full", "parsing", "visit"] }

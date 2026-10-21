@@ -1,0 +1,46 @@
+mod badge;
+mod checks;
+mod complexity;
+mod coverage;
+mod crap;
+mod failure;
+mod functions;
+mod gate;
+mod instrumented_tests;
+mod lcov;
+
+use std::path::Path;
+use std::process::ExitCode;
+
+use clap::{Parser, Subcommand};
+
+use gate::QualityGate;
+
+#[derive(Parser)]
+#[command(about = "Development tasks for this repository")]
+struct Tasks {
+    #[command(subcommand)]
+    task: Task,
+}
+
+#[derive(Subcommand)]
+enum Task {
+    #[command(
+        about = "Run the tests with coverage, then check the coverage floor, the CRAP limit and the README badge"
+    )]
+    Coverage,
+}
+
+impl Task {
+    fn run(self) -> ExitCode {
+        let manifest_directory = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let workspace_root = manifest_directory.parent().unwrap_or(manifest_directory);
+        match self {
+            Task::Coverage => QualityGate::new(workspace_root).run(),
+        }
+    }
+}
+
+fn main() -> ExitCode {
+    Tasks::parse().task.run()
+}

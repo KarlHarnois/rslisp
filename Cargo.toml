@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2024"
 description = "A minimal Lisp that compiles to Rust (placeholder name)"
 
+[workspace]
+members = ["xtask"]
+
 [dependencies]
 annotate-snippets = "0.12"
 clap = { version = "4.6", features = ["derive"] }

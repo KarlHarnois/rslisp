@@ -1,5 +1,7 @@
 # rslisp
 
+![line coverage](https://img.shields.io/badge/line%20coverage-93%25-brightgreen)
+
 rslisp is a small Lisp that compiles to Rust. The name `rslisp` and the `.rslisp` extension are placeholders until the language has a name.
 
 The syntax has few rules, and the compiler infers types and ownership. Most features live in a prelude written in the language itself. The generated Rust has no hidden clones or allocations. [docs/language.md](docs/language.md) describes the language.
@@ -21,11 +23,13 @@ The project uses a [Nix](https://nixos.org/download/) flake.
 
    If you use [direnv](https://direnv.net/), run `direnv allow` once instead. The shell then loads when you enter the directory.
 
-2. Run the tests:
+2. Run the tests with the coverage and CRAP checks:
 
    ```sh
-   cargo test
+   cargo xtask coverage
    ```
+
+   `cargo test` runs the tests alone.
 
 3. Build the compiler:
 
