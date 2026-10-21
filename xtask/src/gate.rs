@@ -21,7 +21,7 @@ struct Measurement {
 
 impl QualityGate {
     const MINIMUM_LINE_COVERAGE: f64 = 99.0;
-    const MAXIMUM_CRAP: f64 = 42.0;
+    const MAXIMUM_CRAP: f64 = 8.0;
     const README: &str = "README.md";
 
     pub fn new(root: &Path) -> Self {
