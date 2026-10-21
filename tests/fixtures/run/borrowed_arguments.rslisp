@@ -10,6 +10,8 @@
 (type root (fn ((ref f64)) f64))
 (defn root (x) (sqrt x))
 
+(defn even? (n) (= (rem n 2) 0))
+
 (type keep (where ((a copy)) (fn (a) a)))
 (defn keep (value) value)
 
@@ -22,4 +24,5 @@
   (println (deep-big? (borrow-twice 1)))
   (println (root (ref 16.0)))
   (println (keep-borrowed (ref three)))
-  (println (passes? 5 (fn (n) (> n 2)))))
+  (println (passes? 5 (fn (n) (> n 2))))
+  (println (passes? 4 (fn (n) (even? n)))))

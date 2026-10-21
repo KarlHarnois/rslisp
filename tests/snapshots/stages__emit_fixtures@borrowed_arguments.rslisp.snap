@@ -15,6 +15,10 @@ fn root(x: &f64) -> f64 {
     (*x).sqrt()
 }
 
+fn is_even(n: i64) -> bool {
+    (n % 2) == 0
+}
+
 fn keep<A: Copy>(value: A) -> A {
     value
 }
@@ -29,5 +33,6 @@ fn main() {
     println!("{}", &is_deep_big(&&1_i64));
     println!("{}", &root(&16.0_f64));
     println!("{}", keep_borrowed(&three));
-    println!("{}", &Some(5).filter(|n: &i64| *n > 2).is_some())
+    println!("{}", &Some(5).filter(|n: &i64| *n > 2).is_some());
+    println!("{}", &Some(4).filter(|n_2: &i64| is_even(*n_2)).is_some())
 }

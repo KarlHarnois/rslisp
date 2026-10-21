@@ -384,8 +384,8 @@ impl TypeChecker {
                 self.pass(inner, found, value.span, Borrow::Mutable)
             }
             (expected, Type::Ref(inner)) if Self::is_known_value(expected) => {
-                let borrow = self.borrow_of_referent(inner);
-                self.pass(expected, inner, value.span, borrow)
+                self.expect(expected, inner, value.span, MismatchContext::Plain)?;
+                Ok(self.borrow_of_referent(inner))
             }
             (Type::Var(var), Type::Ref(_)) => self.pass_to_variable(*var, &argument, value.span),
             (expected, found) => self.pass(expected, found, value.span, Borrow::None),
@@ -393,7 +393,7 @@ impl TypeChecker {
     }
 
     fn borrow_of_referent(&self, referent: &Type) -> Borrow {
-        if self.copy_rules().is_copy(referent) {
+        if self.copy_rules().is_copy(&self.unifier.resolve(referent)) {
             Borrow::Deref(1)
         } else {
             Borrow::Passthrough
