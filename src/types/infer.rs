@@ -4,6 +4,7 @@ use std::rc::Rc;
 use super::checker::TypeChecker;
 use super::problems::{MismatchContext, TypeProblems};
 use super::ty::Type;
+use super::ty::TypeVar;
 use super::typed::{
     Borrow, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
     TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
@@ -316,7 +317,7 @@ impl TypeChecker {
         }
         let mut typed_arguments = Vec::new();
         for (parameter, argument) in parameters.iter().zip(arguments) {
-            let value = self.infer(argument)?;
+            let value = self.infer_argument(parameter, argument)?;
             let borrow = self.pass_argument(parameter, &value)?;
             typed_arguments.push(TypedArgument { value, borrow });
         }
@@ -325,6 +326,29 @@ impl TypeChecker {
             ty: result,
             span,
         })
+    }
+
+    fn infer_argument(
+        &mut self,
+        parameter: &Type,
+        argument: &Expr,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let span = argument.span();
+        let ExprKind::Fn(lambda) = argument.kind() else {
+            return self.infer(argument);
+        };
+        match self.unifier.shallow(parameter) {
+            Type::Function(parameters, result) if parameters.len() == lambda.params.len() => {
+                let expectation = ExpectedFunction {
+                    parameters: &parameters,
+                    result: &result,
+                    context: MismatchContext::Plain,
+                };
+                let (kind, ty) = self.infer_lambda(lambda, span, Some(expectation))?;
+                Ok(TypedExpr { kind, ty, span })
+            }
+            _ => self.infer(argument),
+        }
     }
 
     fn function_shape(
@@ -350,7 +374,7 @@ impl TypeChecker {
     }
 
     fn pass_argument(&mut self, parameter: &Type, value: &TypedExpr) -> Result<Borrow, Diagnostic> {
-        let argument = self.unifier.shallow(&value.ty);
+        let argument = self.unifier.resolve(&value.ty);
         let parameter = self.unifier.shallow(parameter);
         match (&parameter, &argument) {
             (Type::Ref(inner), found) if !found.is_reference() => {
@@ -360,14 +384,60 @@ impl TypeChecker {
                 self.pass(inner, found, value.span, Borrow::Mutable)
             }
             (expected, Type::Ref(inner)) if Self::is_known_value(expected) => {
-                let borrow = if self.copy_rules().is_copy(inner) {
-                    Borrow::Deref
-                } else {
-                    Borrow::Passthrough
-                };
+                let borrow = self.borrow_of_referent(inner);
                 self.pass(expected, inner, value.span, borrow)
             }
+            (Type::Var(var), Type::Ref(_)) => self.pass_to_variable(*var, &argument, value.span),
             (expected, found) => self.pass(expected, found, value.span, Borrow::None),
+        }
+    }
+
+    fn borrow_of_referent(&self, referent: &Type) -> Borrow {
+        if self.copy_rules().is_copy(referent) {
+            Borrow::Deref(1)
+        } else {
+            Borrow::Passthrough
+        }
+    }
+
+    fn pass_to_variable(
+        &mut self,
+        var: TypeVar,
+        argument: &Type,
+        span: Span,
+    ) -> Result<Borrow, Diagnostic> {
+        let mut levels = 0;
+        let mut passed = argument;
+        while let Type::Ref(referent) = passed
+            && self.dereferences(var, passed, referent)
+        {
+            levels += 1;
+            passed = referent;
+        }
+        let borrow = if levels == 0 {
+            Borrow::None
+        } else {
+            Borrow::Deref(levels)
+        };
+        self.pass(&Type::Var(var), &passed.clone(), span, borrow)
+    }
+
+    fn dereferences(&self, var: TypeVar, reference: &Type, referent: &Type) -> bool {
+        let fails_traits = self.unifier.literal_kind(var).is_some()
+            || self.unifier.bounds(var).iter().any(|bound| {
+                !self
+                    .traits
+                    .satisfies(*bound, reference, &|generic, required| {
+                        self.unifier.generic_bounds(generic).contains(&required)
+                    })
+            });
+        fails_traits && self.holds_copy_value(referent)
+    }
+
+    fn holds_copy_value(&self, referent: &Type) -> bool {
+        match referent {
+            Type::Var(var) => self.unifier.literal_kind(*var).is_some(),
+            _ => self.copy_rules().is_copy(referent),
         }
     }
 

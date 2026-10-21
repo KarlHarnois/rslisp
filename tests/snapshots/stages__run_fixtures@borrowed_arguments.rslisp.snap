@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/borrowed_arguments.rslisp
+---
+true
+false
+4
+3
+true

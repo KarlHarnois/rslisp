@@ -1,0 +1,25 @@
+(def passes? (rust "Some({0}).filter({1}).is_some()" (where (a) (fn (a (fn ((ref a)) bool)) bool))))
+(def borrow-twice (rust "&&{0}" (where (a) (fn (a) (ref (ref a))))))
+
+(type big? (fn ((ref i64)) bool))
+(defn big? (x) (> x 2))
+
+(type deep-big? (fn ((ref (ref i64))) bool))
+(defn deep-big? (x) (> x 2))
+
+(type root (fn ((ref f64)) f64))
+(defn root (x) (sqrt x))
+
+(type keep (where ((a copy)) (fn (a) a)))
+(defn keep (value) value)
+
+(type keep-borrowed (fn ((ref i64)) (ref i64)))
+(defn keep-borrowed (x) (keep x))
+
+(defn main ()
+  (let three 3)
+  (println (big? (ref three)))
+  (println (deep-big? (borrow-twice 1)))
+  (println (root (ref 16.0)))
+  (println (keep-borrowed (ref three)))
+  (println (passes? 5 (fn (n) (> n 2)))))

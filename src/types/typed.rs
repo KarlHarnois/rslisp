@@ -51,7 +51,7 @@ pub enum Borrow {
     Shared,
     Mutable,
     Passthrough,
-    Deref,
+    Deref(usize),
 }
 
 #[derive(Clone, Debug)]

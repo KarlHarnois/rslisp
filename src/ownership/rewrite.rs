@@ -108,7 +108,7 @@ impl ModeRewrite {
     }
 
     fn borrow_for(argument: &mut TypedArgument, param: &Type) {
-        if matches!(argument.borrow, Borrow::Passthrough | Borrow::Deref)
+        if matches!(argument.borrow, Borrow::Passthrough | Borrow::Deref(_))
             || argument.value.ty.is_reference()
         {
             return;

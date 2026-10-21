@@ -20,6 +20,7 @@ pub struct Template {
 impl Template {
     const TEMPORARY_PREFIX: &str = "template_argument_";
     const UNARY_OPERATORS: [char; 4] = ['-', '!', '*', '&'];
+    const POSTFIX_OPERATORS: [char; 4] = ['.', '[', '(', '?'];
     const OPENERS: [char; 3] = ['(', '[', '{'];
     const CLOSERS: [char; 3] = [')', ']', '}'];
     const SEPARATORS_BEFORE: [char; 2] = ['(', ','];
@@ -106,11 +107,21 @@ impl Template {
     }
 
     fn argument_in_place(&self, argument: &Code, position: usize) -> Code {
-        if argument.is_atomic() || self.is_isolated(position) {
+        if argument.is_atomic()
+            || self.is_isolated(position)
+            || self.holds_prefix(argument, position)
+        {
             argument.clone()
         } else {
             argument.clone().parenthesized()
         }
+    }
+
+    fn holds_prefix(&self, argument: &Code, position: usize) -> bool {
+        let followed_by_postfix = self
+            .literal_at(position + 1)
+            .is_some_and(|text| text.starts_with(Self::POSTFIX_OPERATORS));
+        argument.precedence == Precedence::Prefix && !followed_by_postfix
     }
 
     fn is_isolated(&self, position: usize) -> bool {

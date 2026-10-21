@@ -399,19 +399,19 @@ impl<'a> ExpressionEmitter<'a> {
             .expr_in(&argument.value, context)
             .spanned(argument.value.span);
         match Self::borrow_prefix(argument, role) {
-            Some(prefix) => Self::prefixed(prefix, value).spanned(argument.value.span),
+            Some(prefix) => Self::prefixed(&prefix, value).spanned(argument.value.span),
             None => value,
         }
     }
 
-    fn borrow_prefix(argument: &TypedArgument, role: ArgumentRole) -> Option<&'static str> {
+    fn borrow_prefix(argument: &TypedArgument, role: ArgumentRole) -> Option<String> {
         let borrowed_already = argument.value.ty.is_reference() || role == ArgumentRole::Receiver;
         match argument.borrow {
             Borrow::None | Borrow::Passthrough => None,
             Borrow::Shared | Borrow::Mutable if borrowed_already => None,
-            Borrow::Shared => Some("&"),
-            Borrow::Mutable => Some("&mut "),
-            Borrow::Deref => Some("*"),
+            Borrow::Shared => Some("&".to_string()),
+            Borrow::Mutable => Some("&mut ".to_string()),
+            Borrow::Deref(levels) => Some("*".repeat(levels)),
         }
     }
 

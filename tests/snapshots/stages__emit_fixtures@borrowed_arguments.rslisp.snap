@@ -1,0 +1,33 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/borrowed_arguments.rslisp
+---
+fn is_big(x: &i64) -> bool {
+    *x > 2
+}
+
+fn is_deep_big(x: &&i64) -> bool {
+    **x > 2
+}
+
+fn root(x: &f64) -> f64 {
+    (*x).sqrt()
+}
+
+fn keep<A: Copy>(value: A) -> A {
+    value
+}
+
+fn keep_borrowed(x: &i64) -> &i64 {
+    keep(x)
+}
+
+fn main() {
+    let three: i64 = 3;
+    println!("{}", &is_big(&three));
+    println!("{}", &is_deep_big(&&1_i64));
+    println!("{}", &root(&16.0_f64));
+    println!("{}", keep_borrowed(&three));
+    println!("{}", &Some(5).filter(|n: &i64| *n > 2).is_some())
+}
