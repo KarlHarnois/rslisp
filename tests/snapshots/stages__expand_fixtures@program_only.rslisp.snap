@@ -8,9 +8,6 @@ error[L0306]: `to-string` belongs to the program, so macro code cannot run it
   |
 3 | (def needs-rust (macro (form) (to-string 1) (list)))
   |                                ^^^^^^^^^ macro code runs this
-4 |
-5 | (needs-rust)
-  | ------------ in this macro call
   |
  ::: prelude/text.rslisp:9:16
   |
@@ -24,9 +21,6 @@ error[L0306]: this Rust code belongs to the program, so macro code cannot run it
   |
 7 | (def inline-rust (macro (form) (rust "1" i64) (list)))
   |                                ^^^^^^^^^^^^^^ macro code runs this
-8 |
-9 | (inline-rust)
-  | ------------- in this macro call
   |
   = help: to compute this in the program, return it as code from the macro, for example with `template`
 
@@ -35,13 +29,58 @@ error[L0306]: `add` belongs to the program, so macro code cannot run it
    |
 11 | (def needs-addition (macro (form) (+ 1 2) (list)))
    |                                   ^^^^^^^ macro code runs this
-12 |
-13 | (needs-addition)
-   | ---------------- in this macro call
    |
   ::: prelude/number.rslisp:16:10
    |
 16 | (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
    |          ---------------------------------------------------- `add` is Rust code that runs in the program
+   |
+   = help: to compute this in the program, return it as code from the macro, for example with `template`
+
+error[L0306]: `to-string` belongs to the program, so macro code cannot run it
+  --> expand/program_only.rslisp:15:58
+   |
+15 | (def in-untaken-branch (macro (form) (if true (quote 1) (to-string 1))))
+   |                                                          ^^^^^^^^^ macro code runs this
+   |
+  ::: prelude/text.rslisp:9:16
+   |
+ 9 | (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
+   |                -------------------------------------------------------------------- `to-string` is Rust code that runs in the program
+   |
+   = help: to compute this in the program, return it as code from the macro, for example with `template`
+
+error[L0306]: `mul` belongs to the program, so macro code cannot run it
+  --> expand/program_only.rslisp:19:25
+   |
+19 | (def double (fn (value) (* value 2)))
+   |                         ^^^^^^^^^^^ macro code runs this
+20 |
+21 | (def through-a-helper (macro (form) (double 2) (list)))
+   |                                      ------ macro code reaches it through this
+   |
+  ::: prelude/number.rslisp:18:10
+   |
+18 | (def mul (rust "{0} * {1}" (where ((n number)) (fn (n n) n))))
+   |          ---------------------------------------------------- `mul` is Rust code that runs in the program
+   |
+   = help: to compute this in the program, return it as code from the macro, for example with `template`
+
+error[L0303]: `double` has errors, so macro code cannot use it
+  --> expand/program_only.rslisp:25:43
+   |
+25 | (def also-through-a-helper (macro (form) (double 3) (list)))
+   |                                           ^^^^^^ used by macro code here
+
+error[L0306]: `print` belongs to the program, so macro code cannot run it
+  --> expand/program_only.rslisp:29:34
+   |
+29 | (def never-called (macro (form) (print "unused")))
+   |                                  ^^^^^ macro code runs this
+   |
+  ::: prelude/text.rslisp:10:12
+   |
+10 | (def print (rust "print!(\"{{}}\", {0})" (where ((a display)) (fn ((ref a)) unit))))
+   |            ------------------------------------------------------------------------ `print` is Rust code that runs in the program
    |
    = help: to compute this in the program, return it as code from the macro, for example with `template`

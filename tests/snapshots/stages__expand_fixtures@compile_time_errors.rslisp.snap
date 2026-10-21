@@ -40,13 +40,10 @@ error[L0303]: a string cannot be called
    | --------------- in this macro call
 
 error[L0303]: structs only exist at runtime
-  --> expand/compile_time_errors.rslisp:7:33
-   |
- 7 | (def read-a-field (macro (form) (field form name)))
-   |                                 ^^^^^^^^^^^^^^^^^ used at compile time here
-...
-14 | (read-a-field)
-   | -------------- in this macro call
+ --> expand/compile_time_errors.rslisp:7:33
+  |
+7 | (def read-a-field (macro (form) (field form name)))
+  |                                 ^^^^^^^^^^^^^^^^^ used at compile time here
 
 error[L0303]: `first` takes 1 argument but 2 were given
   --> expand/compile_time_errors.rslisp:8:39

@@ -38,6 +38,7 @@ impl Expander<'_> {
                 self.diagnostics.push(diagnostic);
             }
         }
+        self.compile_pending_macros();
         self.order.push(module);
         self.expanded.insert(module, core);
     }

@@ -11,3 +11,19 @@
 (def needs-addition (macro (form) (+ 1 2) (list)))
 
 (needs-addition)
+
+(def in-untaken-branch (macro (form) (if true (quote 1) (to-string 1))))
+
+(def untaken-value (fn () (in-untaken-branch)))
+
+(def double (fn (value) (* value 2)))
+
+(def through-a-helper (macro (form) (double 2) (list)))
+
+(through-a-helper)
+
+(def also-through-a-helper (macro (form) (double 3) (list)))
+
+(also-through-a-helper)
+
+(def never-called (macro (form) (print "unused")))

@@ -27,6 +27,19 @@ impl MacroTable {
     pub fn add_pending(&mut self, binding: BindingId, definition: Form) {
         self.states.insert(binding, MacroState::Pending(definition));
     }
+
+    fn pending(&self) -> Vec<(BindingId, Form)> {
+        let mut pending: Vec<(BindingId, Form)> = self
+            .states
+            .iter()
+            .filter_map(|(binding, state)| match state {
+                MacroState::Pending(definition) => Some((*binding, definition.clone())),
+                _ => None,
+            })
+            .collect();
+        pending.sort_by_key(|(binding, _)| *binding);
+        pending
+    }
 }
 
 impl Expander<'_> {
@@ -140,16 +153,25 @@ impl Expander<'_> {
         }
     }
 
+    pub(super) fn compile_pending_macros(&mut self) {
+        for (binding, definition) in self.macros.pending() {
+            if let Err(diagnostic) = self.compile_macro(binding, &definition) {
+                self.diagnostics.push(diagnostic);
+            }
+        }
+    }
+
     fn compile_macro(
         &mut self,
         binding: BindingId,
         definition: &Form,
     ) -> Result<Rc<Closure>, Diagnostic> {
-        let compiled = self.lower_macro_lambda(definition).map(|lambda| {
-            Rc::new(Closure {
+        let compiled = self.lower_macro_lambda(definition).and_then(|lambda| {
+            self.check_compile_time(&lambda)?;
+            Ok(Rc::new(Closure {
                 lambda: Rc::new(lambda),
                 env: Env::default(),
-            })
+            }))
         });
         let state = match &compiled {
             Ok(closure) => MacroState::Ready(Rc::clone(closure)),

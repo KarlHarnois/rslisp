@@ -8,27 +8,21 @@ error[L0201]: cannot find `missing-name` in this scope
   |
 3 | (def unbound-helper (fn () missing-name))
   |                            ^^^^^^^^^^^^ not found in this scope
-...
-7 | (calls-unbound-helper)
-  | ---------------------- in this macro call
+
+error[L0303]: the macro `calls-unbound-helper` has errors, so this call cannot expand
+ --> expand/broken_helper.rslisp:9:1
+  |
+9 | (calls-unbound-helper)
+  | ^^^^^^^^^^^^^^^^^^^^^^ this call needs the macro
 
 error[L0303]: `unbound-helper` has errors, so macro code cannot use it
- --> expand/broken_helper.rslisp:5:42
-  |
-5 | (def calls-unbound-helper (macro (form) (unbound-helper) (list)))
-  |                                          ^^^^^^^^^^^^^^ used by macro code here
-...
-9 | (calls-unbound-helper)
-  | ---------------------- in this macro call
-
-error[L0307]: `cyclic-helper` depends on itself at compile time
-  --> expand/broken_helper.rslisp:13:41
+  --> expand/broken_helper.rslisp:11:47
    |
-11 | (def cyclic-helper (fn () (needs-cyclic-helper)))
-   |                           --------------------- in this macro call
-12 |
-13 | (def needs-cyclic-helper (macro (form) (cyclic-helper) (list)))
-   |                                         ^^^^^^^^^^^^^ needed here while it is still being computed
-14 |
-15 | (needs-cyclic-helper)
-   | --------------------- in this macro call
+11 | (def also-calls-unbound-helper (macro (form) (unbound-helper) (list)))
+   |                                               ^^^^^^^^^^^^^^ used by macro code here
+
+error[L0307]: `needs-cyclic-helper` depends on itself at compile time
+  --> expand/broken_helper.rslisp:15:27
+   |
+15 | (def cyclic-helper (fn () (needs-cyclic-helper)))
+   |                           ^^^^^^^^^^^^^^^^^^^^^ needed here while it is still being computed

@@ -155,6 +155,8 @@ A macro is a function from form to form that runs at compile time:
 
 Macro bodies run in the compiler's interpreter. They use the kernel forms, the built-in `code` module, and functions that use only those. A `rust` definition belongs to the program, so macro code cannot run `+`, `<` or any other Rust template. To compute in the program, a macro returns the code, as in `(template (+ (unquote x) 1))`.
 
+The compiler checks every macro body and the functions it reaches, even a macro nothing calls. A mistake is reported where the macro is defined, even in a branch that never runs.
+
 The prelude builds three tools on top of `macro`:
 
 | Tool | Example |

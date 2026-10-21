@@ -22,11 +22,27 @@ pub struct GlobalTable {
     states: HashMap<BindingId, GlobalState>,
     values: HashMap<BindingId, Value>,
     evaluating: HashSet<BindingId>,
+    compile_time_checks: HashMap<BindingId, CompileTimeCheck>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum CompileTimeCheck {
+    InProgress,
+    Passed,
+    Failed,
 }
 
 impl GlobalTable {
     pub fn add_pending(&mut self, binding: BindingId, value: Form) {
         self.states.insert(binding, GlobalState::Pending(value));
+    }
+
+    pub fn compile_time_check(&self, binding: BindingId) -> Option<CompileTimeCheck> {
+        self.compile_time_checks.get(&binding).copied()
+    }
+
+    pub fn record_compile_time_check(&mut self, binding: BindingId, check: CompileTimeCheck) {
+        self.compile_time_checks.insert(binding, check);
     }
 
     pub fn has_failed(&self, binding: BindingId) -> bool {

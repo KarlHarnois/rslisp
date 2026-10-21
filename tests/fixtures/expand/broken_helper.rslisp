@@ -8,6 +8,10 @@
 
 (calls-unbound-helper)
 
+(def also-calls-unbound-helper (macro (form) (unbound-helper) (list)))
+
+(also-calls-unbound-helper)
+
 (def cyclic-helper (fn () (needs-cyclic-helper)))
 
 (def needs-cyclic-helper (macro (form) (cyclic-helper) (list)))
