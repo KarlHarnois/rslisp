@@ -1,0 +1,7 @@
+(def lines (rust "{0}.lines()" (fn ((ref str)) (iterator (ref str)))))
+(def size (rust "{0}.len()" (fn ((ref str)) usize)))
+
+(defn line-size (line) (size line))
+
+(defn main ()
+  (println (len (collect (map (lines "ab\nc") line-size)))))

@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/generic_mutual_recursion.rslisp
+---
+error[E0425]: cannot find type `A` in this scope
+ --> run/generic_mutual_recursion.rslisp:3:1
+  |
+3 | / (defn pong (items count)
+4 | |   (ping items count))
+  | |_____________________^ not found in this scope
+  |
+  = note: reported by rustc while compiling the generated Rust
+  = help: you might be missing a type parameter

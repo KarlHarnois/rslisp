@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/function_value_taking_reference.rslisp
+---
+error[L0401]: mismatched types
+ --> check/function_value_taking_reference.rslisp:7:47
+  |
+7 |   (println (len (collect (map (lines "ab\nc") line-size)))))
+  |                                               ^^^^^^^^^ expected `(fn ((ref str)) _)`, found `(fn (str) usize)`

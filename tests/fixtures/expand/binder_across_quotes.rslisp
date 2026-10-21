@@ -1,0 +1,15 @@
+(use code nth)
+
+(def pick-separate-quotes
+  (macro (form)
+    (let reference (quote picked))
+    (template (do (let picked (unquote (nth form 1))) (unquote reference)))))
+
+(def pick-passed
+  (macro (form)
+    (let name (quote picked))
+    (template (do (let (unquote name) (unquote (nth form 1))) (unquote (echo name))))))
+
+(def echo (fn (name) name))
+
+(defn main () (println (pick-separate-quotes 2)))

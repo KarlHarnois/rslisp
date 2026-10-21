@@ -1,0 +1,5 @@
+(defn ping (items count)
+  (if (>= count (len items)) 0 (pong items (+ count 1))))
+(defn pong (items count)
+  (ping items count))
+(defn main () (println (ping (vec 1 2 3) 0)))

@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/string_field_equality.rslisp
+---
+error[L0404]: `(ref string)` does not implement `partial-eq`
+ --> check/string_field_equality.rslisp:3:19
+  |
+3 | (defn ana? (p) (= (person-name p) "Ana"))
+  |                   ^^^^^^^^^^^^^^^ this needs `partial-eq`
+  |
+  = note: `partial-eq` is implemented for: bool, char, str, string, (ref str), i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where ((a partial-eq)) (vec a)), (where ((a partial-eq)) (option a)), (where ((a partial-eq) (b partial-eq)) (result a b))
+
+error[L0401]: mismatched types
+ --> check/string_field_equality.rslisp:3:35
+  |
+3 | (defn ana? (p) (= (person-name p) "Ana"))
+  |                                   ^^^^^ expected `(ref string)`, found `(ref str)`

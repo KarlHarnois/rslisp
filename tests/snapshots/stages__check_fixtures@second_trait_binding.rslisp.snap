@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/second_trait_binding.rslisp
+---
+error[L0404]: `point` does not implement `partial-eq`
+ --> check/second_trait_binding.rslisp:4:15
+  |
+4 |   (println (= (make-point 1 2) (make-point 1 2))))
+  |               ^^^^^^^^^^^^^^^^ this needs `partial-eq`
+  |
+  = note: `partial-eq` is implemented for: bool, char, str, string, (ref str), i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where ((a partial-eq)) (vec a)), (where ((a partial-eq)) (option a)), (where ((a partial-eq) (b partial-eq)) (result a b))

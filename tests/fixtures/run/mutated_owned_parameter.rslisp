@@ -1,0 +1,6 @@
+(defn append-one (items)
+  (push items 1)
+  items)
+
+(defn main ()
+  (println (len (append-one (vec 0)))))
