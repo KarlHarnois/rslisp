@@ -38,7 +38,6 @@ pub struct ExpressionEmitter<'a> {
 
 impl<'a> ExpressionEmitter<'a> {
     const ETA_PARAMETER: &'static str = "argument_";
-    const I64_SUFFIX: &'static str = "_i64";
     const RECEIVER: &'static str = "{0}.";
     const INTEGER_CONVERSION: &'static str = "from_literal";
     const FLOAT_CONVERSION: &'static str = "from_float_literal";
@@ -200,17 +199,22 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn number_text(number: &Number, ty: &Type, context: TypeContext) -> String {
-        let text = number.text().trim_start_matches('+').to_string();
+        let digits = Self::number_digits(number, ty);
+        match (ty, context) {
+            (Type::Primitive(primitive), TypeContext::Unknown) => {
+                format!("{digits}_{}", primitive.name())
+            }
+            _ => digits,
+        }
+    }
+
+    fn number_digits(number: &Number, ty: &Type) -> String {
+        let digits = number.text().trim_start_matches('+').to_string();
         match (number.value(), ty) {
             (NumberValue::Integer(_), Type::Primitive(primitive)) if primitive.is_float() => {
-                format!("{text}.0")
+                format!("{digits}.0")
             }
-            (NumberValue::Integer(_), Type::Primitive(PrimitiveType::I64))
-                if context == TypeContext::Unknown =>
-            {
-                format!("{text}{}", Self::I64_SUFFIX)
-            }
-            _ => text,
+            _ => digits,
         }
     }
 
