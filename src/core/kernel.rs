@@ -291,19 +291,33 @@ impl PrimitiveType {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KernelType {
     Function,
-    Ref,
-    Mut,
+    Reference(ReferenceKind),
     Where,
     Hole,
     Primitive(PrimitiveType),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReferenceKind {
+    Shared,
+    Mutable,
+}
+
+impl ReferenceKind {
+    pub fn keyword(self) -> &'static str {
+        match self {
+            ReferenceKind::Shared => "ref",
+            ReferenceKind::Mutable => "mut",
+        }
+    }
 }
 
 impl KernelType {
     pub fn all() -> impl Iterator<Item = KernelType> {
         [
             KernelType::Function,
-            KernelType::Ref,
-            KernelType::Mut,
+            KernelType::Reference(ReferenceKind::Shared),
+            KernelType::Reference(ReferenceKind::Mutable),
             KernelType::Where,
             KernelType::Hole,
         ]
@@ -314,8 +328,8 @@ impl KernelType {
     pub fn shape(self) -> &'static str {
         match self {
             KernelType::Function => "(fn (argument ...) result)",
-            KernelType::Ref => "(ref type)",
-            KernelType::Mut => "(mut type)",
+            KernelType::Reference(ReferenceKind::Shared) => "(ref type)",
+            KernelType::Reference(ReferenceKind::Mutable) => "(mut type)",
             KernelType::Where => "(where (variable (variable trait ...) ...) type)",
             KernelType::Hole | KernelType::Primitive(_) => self.name(),
         }
@@ -324,8 +338,7 @@ impl KernelType {
     pub fn name(self) -> &'static str {
         match self {
             KernelType::Function => "fn",
-            KernelType::Ref => "ref",
-            KernelType::Mut => "mut",
+            KernelType::Reference(kind) => kind.keyword(),
             KernelType::Where => "where",
             KernelType::Hole => "_",
             KernelType::Primitive(primitive) => primitive.name(),

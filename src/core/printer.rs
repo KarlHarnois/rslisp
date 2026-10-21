@@ -162,39 +162,49 @@ impl<'a> CorePrinter<'a> {
     fn type_expr(&mut self, type_expr: &TypeExpr) -> String {
         match type_expr.kind() {
             TypeExprKind::Primitive(primitive) => primitive.name().to_string(),
-            TypeExprKind::Named(binding) => self.name(*binding),
-            TypeExprKind::Apply(binding, arguments) => {
-                let mut parts = vec![self.name(*binding)];
-                parts.extend(arguments.iter().map(|argument| self.type_expr(argument)));
-                format!("({})", parts.join(" "))
+            TypeExprKind::Named(binding, arguments) => self.named_type(*binding, arguments),
+            TypeExprKind::Function(parameters, result) => self.function_type(parameters, result),
+            TypeExprKind::Reference(kind, inner) => {
+                Self::list(kind.keyword(), vec![self.type_expr(inner)])
             }
-            TypeExprKind::Function(parameters, result) => {
-                let parameters: Vec<String> = parameters
-                    .iter()
-                    .map(|parameter| self.type_expr(parameter))
-                    .collect();
-                Self::list(
-                    "fn",
-                    vec![
-                        format!("({})", parameters.join(" ")),
-                        self.type_expr(result),
-                    ],
-                )
-            }
-            TypeExprKind::Ref(inner) => Self::list("ref", vec![self.type_expr(inner)]),
-            TypeExprKind::Mut(inner) => Self::list("mut", vec![self.type_expr(inner)]),
             TypeExprKind::Hole => "_".to_string(),
-            TypeExprKind::Where(binders, inner) => {
-                let binders: Vec<String> = binders
-                    .iter()
-                    .map(|binder| self.type_binder(binder))
-                    .collect();
-                Self::list(
-                    "where",
-                    vec![format!("({})", binders.join(" ")), self.type_expr(inner)],
-                )
-            }
+            TypeExprKind::Where(binders, inner) => self.where_type(binders, inner),
         }
+    }
+
+    fn named_type(&mut self, binding: BindingId, arguments: &[TypeExpr]) -> String {
+        let name = self.name(binding);
+        if arguments.is_empty() {
+            return name;
+        }
+        let mut parts = vec![name];
+        parts.extend(arguments.iter().map(|argument| self.type_expr(argument)));
+        format!("({})", parts.join(" "))
+    }
+
+    fn function_type(&mut self, parameters: &[TypeExpr], result: &TypeExpr) -> String {
+        let parameters: Vec<String> = parameters
+            .iter()
+            .map(|parameter| self.type_expr(parameter))
+            .collect();
+        Self::list(
+            "fn",
+            vec![
+                format!("({})", parameters.join(" ")),
+                self.type_expr(result),
+            ],
+        )
+    }
+
+    fn where_type(&mut self, binders: &[TypeBinder], inner: &TypeExpr) -> String {
+        let binders: Vec<String> = binders
+            .iter()
+            .map(|binder| self.type_binder(binder))
+            .collect();
+        Self::list(
+            "where",
+            vec![format!("({})", binders.join(" ")), self.type_expr(inner)],
+        )
     }
 
     fn type_binder(&mut self, binder: &TypeBinder) -> String {

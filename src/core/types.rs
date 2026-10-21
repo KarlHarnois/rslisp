@@ -1,4 +1,4 @@
-use super::{BindingId, PrimitiveType};
+use super::{BindingId, PrimitiveType, ReferenceKind};
 use crate::source::Span;
 
 #[derive(Clone, Debug)]
@@ -10,11 +10,9 @@ pub struct TypeExpr {
 #[derive(Clone, Debug)]
 pub enum TypeExprKind {
     Primitive(PrimitiveType),
-    Named(BindingId),
-    Apply(BindingId, Vec<TypeExpr>),
+    Named(BindingId, Vec<TypeExpr>),
     Function(Vec<TypeExpr>, Box<TypeExpr>),
-    Ref(Box<TypeExpr>),
-    Mut(Box<TypeExpr>),
+    Reference(ReferenceKind, Box<TypeExpr>),
     Hole,
     Where(Vec<TypeBinder>, Box<TypeExpr>),
 }

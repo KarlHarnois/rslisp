@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use super::checker::TypeChecker;
 use super::problems::TypeProblems;
 use super::ty::{GenericId, Scheme, Type};
-use crate::core::{BindingId, BindingKind, TypeExpr, TypeExprKind};
+use crate::core::{BindingId, BindingKind, ReferenceKind, TypeExpr, TypeExprKind};
 use crate::diagnostic::Diagnostic;
+use crate::source::Span;
 
 impl TypeChecker {
     pub(super) fn lower_scheme(&mut self, type_expr: &TypeExpr) -> Result<Scheme, Diagnostic> {
@@ -32,23 +33,44 @@ impl TypeChecker {
         type_expr: &TypeExpr,
         scope: &HashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
-        Ok(match type_expr.kind() {
-            TypeExprKind::Primitive(primitive) => Type::Primitive(*primitive),
-            TypeExprKind::Named(binding) => self.lower_named(*binding, scope),
-            TypeExprKind::Apply(..) => {
-                return Err(TypeProblems::no_type_arguments(type_expr.span()));
+        match type_expr.kind() {
+            TypeExprKind::Primitive(primitive) => Ok(Type::Primitive(*primitive)),
+            TypeExprKind::Named(binding, arguments) => {
+                self.lower_named(*binding, arguments, type_expr.span(), scope)
             }
-            TypeExprKind::Function(parameters, result) => Type::Function(
-                parameters
-                    .iter()
-                    .map(|parameter| self.lower_type(parameter, scope))
-                    .collect::<Result<Vec<Type>, Diagnostic>>()?,
-                Box::new(self.lower_type(result, scope)?),
-            ),
-            TypeExprKind::Ref(inner) => Type::Ref(Box::new(self.lower_type(inner, scope)?)),
-            TypeExprKind::Mut(inner) => Type::Mut(Box::new(self.lower_type(inner, scope)?)),
-            TypeExprKind::Hole => self.unifier.fresh(),
-            TypeExprKind::Where(..) => return Err(TypeProblems::misplaced_where(type_expr.span())),
+            TypeExprKind::Function(parameters, result) => {
+                self.lower_function(parameters, result, scope)
+            }
+            TypeExprKind::Reference(kind, inner) => self.lower_reference(*kind, inner, scope),
+            TypeExprKind::Hole => Ok(self.unifier.fresh()),
+            TypeExprKind::Where(..) => Err(TypeProblems::misplaced_where(type_expr.span())),
+        }
+    }
+
+    fn lower_function(
+        &mut self,
+        parameters: &[TypeExpr],
+        result: &TypeExpr,
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<Type, Diagnostic> {
+        let parameters = parameters
+            .iter()
+            .map(|parameter| self.lower_type(parameter, scope))
+            .collect::<Result<Vec<Type>, Diagnostic>>()?;
+        let result = self.lower_type(result, scope)?;
+        Ok(Type::Function(parameters, Box::new(result)))
+    }
+
+    fn lower_reference(
+        &mut self,
+        kind: ReferenceKind,
+        inner: &TypeExpr,
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<Type, Diagnostic> {
+        let inner = Box::new(self.lower_type(inner, scope)?);
+        Ok(match kind {
+            ReferenceKind::Shared => Type::Ref(inner),
+            ReferenceKind::Mutable => Type::Mut(inner),
         })
     }
 
@@ -61,12 +83,23 @@ impl TypeChecker {
         Self::substitute(&scheme.body, &replacements)
     }
 
-    fn lower_named(&mut self, binding: BindingId, scope: &HashMap<BindingId, GenericId>) -> Type {
-        match (self.bindings.get(binding).kind(), scope.get(&binding)) {
-            (BindingKind::TypeVariable, Some(generic)) => Type::Generic(*generic),
-            (BindingKind::TypeVariable, None) => self.unifier.fresh(),
-            _ => Type::Struct(binding),
+    fn lower_named(
+        &mut self,
+        binding: BindingId,
+        arguments: &[TypeExpr],
+        span: Span,
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<Type, Diagnostic> {
+        if !arguments.is_empty() {
+            return Err(TypeProblems::no_type_arguments(span));
         }
+        Ok(
+            match (self.bindings.get(binding).kind(), scope.get(&binding)) {
+                (BindingKind::TypeVariable, Some(generic)) => Type::Generic(*generic),
+                (BindingKind::TypeVariable, None) => self.unifier.fresh(),
+                _ => Type::Struct(binding),
+            },
+        )
     }
 
     fn substitute(body: &Type, replacements: &HashMap<GenericId, Type>) -> Type {

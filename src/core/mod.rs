@@ -13,7 +13,8 @@ pub use expr::{
     RustTemplate, StructExpr,
 };
 pub use kernel::{
-    DefinitionForm, ExpressionForm, KernelForm, KernelType, PrimitiveType, StructDerives,
+    DefinitionForm, ExpressionForm, KernelForm, KernelType, PrimitiveType, ReferenceKind,
+    StructDerives,
 };
 pub use module::{CoreModule, Item, ItemKind, ModuleId, ModulePath};
 pub use printer::CorePrinter;

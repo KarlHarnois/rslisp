@@ -1,7 +1,8 @@
 use super::Expander;
 use super::problems::ExpandProblems;
 use crate::core::{
-    BindingId, BindingKind, KernelType, Namespace, TypeBinder, TypeExpr, TypeExprKind,
+    BindingId, BindingKind, KernelType, Namespace, ReferenceKind, TypeBinder, TypeExpr,
+    TypeExprKind,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -34,7 +35,9 @@ impl Expander<'_> {
             BindingKind::KernelType(constructor) => {
                 Err(ExpandProblems::malformed_type(constructor, span))
             }
-            BindingKind::Struct(_) | BindingKind::TypeVariable => Ok(TypeExprKind::Named(binding)),
+            BindingKind::Struct(_) | BindingKind::TypeVariable => {
+                Ok(TypeExprKind::Named(binding, Vec::new()))
+            }
             _ => Err(ExpandProblems::wrong_namespace(
                 symbol.name(),
                 "a type",
@@ -48,6 +51,27 @@ impl Expander<'_> {
         form: &Form,
         items: &[Form],
     ) -> Result<TypeExprKind, Diagnostic> {
+        let (head, binding) = self.type_constructor(form, items)?;
+        match self.kind(binding) {
+            BindingKind::KernelType(KernelType::Function) => self.lower_function_type(form, items),
+            BindingKind::KernelType(KernelType::Reference(kind)) => {
+                self.lower_reference_type(kind, form, items)
+            }
+            BindingKind::KernelType(KernelType::Where) => self.lower_where(form, items),
+            BindingKind::Struct(_) => self.lower_struct_application(binding, items),
+            _ => Err(ExpandProblems::wrong_namespace(
+                &head.to_string(),
+                "a type constructor",
+                head.span(),
+            )),
+        }
+    }
+
+    fn type_constructor<'f>(
+        &self,
+        form: &Form,
+        items: &'f [Form],
+    ) -> Result<(&'f Form, BindingId), Diagnostic> {
         let head = items
             .first()
             .ok_or_else(|| ExpandProblems::not_a_type(form.span()))?;
@@ -55,28 +79,19 @@ impl Expander<'_> {
             .as_symbol()
             .ok_or_else(|| ExpandProblems::not_a_type(head.span()))?;
         let binding = self.resolve(symbol, Namespace::Type, head.span())?;
-        match self.kind(binding) {
-            BindingKind::KernelType(KernelType::Function) => self.lower_function_type(form, items),
-            BindingKind::KernelType(KernelType::Ref) => Ok(TypeExprKind::Ref(Box::new(
-                self.lower_wrapped(KernelType::Ref, form, items)?,
-            ))),
-            BindingKind::KernelType(KernelType::Mut) => Ok(TypeExprKind::Mut(Box::new(
-                self.lower_wrapped(KernelType::Mut, form, items)?,
-            ))),
-            BindingKind::KernelType(KernelType::Where) => self.lower_where(form, items),
-            BindingKind::Struct(_) => {
-                let arguments = items[1..]
-                    .iter()
-                    .map(|argument| self.lower_type(argument))
-                    .collect::<Result<Vec<TypeExpr>, Diagnostic>>()?;
-                Ok(TypeExprKind::Apply(binding, arguments))
-            }
-            _ => Err(ExpandProblems::wrong_namespace(
-                symbol.name(),
-                "a type constructor",
-                head.span(),
-            )),
-        }
+        Ok((head, binding))
+    }
+
+    fn lower_struct_application(
+        &mut self,
+        binding: BindingId,
+        items: &[Form],
+    ) -> Result<TypeExprKind, Diagnostic> {
+        let arguments = items[1..]
+            .iter()
+            .map(|argument| self.lower_type(argument))
+            .collect::<Result<Vec<TypeExpr>, Diagnostic>>()?;
+        Ok(TypeExprKind::Named(binding, arguments))
     }
 
     fn lower_function_type(
@@ -97,16 +112,20 @@ impl Expander<'_> {
         Ok(TypeExprKind::Function(parameters, Box::new(result)))
     }
 
-    fn lower_wrapped(
+    fn lower_reference_type(
         &mut self,
-        constructor: KernelType,
+        kind: ReferenceKind,
         form: &Form,
         items: &[Form],
-    ) -> Result<TypeExpr, Diagnostic> {
+    ) -> Result<TypeExprKind, Diagnostic> {
         if items.len() != Self::WRAPPER_TYPE_PARTS {
-            return Err(ExpandProblems::malformed_type(constructor, form.span()));
+            return Err(ExpandProblems::malformed_type(
+                KernelType::Reference(kind),
+                form.span(),
+            ));
         }
-        self.lower_type(&items[1])
+        let inner = self.lower_type(&items[1])?;
+        Ok(TypeExprKind::Reference(kind, Box::new(inner)))
     }
 
     fn lower_where(&mut self, form: &Form, items: &[Form]) -> Result<TypeExprKind, Diagnostic> {
