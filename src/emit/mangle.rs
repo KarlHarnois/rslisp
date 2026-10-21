@@ -1,6 +1,29 @@
 pub struct NameMangler;
 
 impl NameMangler {
+    const PUNCTUATION: [(char, &'static str); 20] = [
+        ('-', "_"),
+        ('+', "plus"),
+        ('*', "star"),
+        ('/', "slash"),
+        ('<', "lt"),
+        ('>', "gt"),
+        ('=', "eq"),
+        ('!', "bang"),
+        ('?', "query"),
+        ('%', "percent"),
+        ('&', "and"),
+        ('|', "or"),
+        ('^', "caret"),
+        ('~', "tilde"),
+        ('.', "dot"),
+        (':', "colon"),
+        ('@', "at"),
+        ('$', "dollar"),
+        ('#', "hash"),
+        ('\'', "prime"),
+    ];
+
     const PREDICATE_SUFFIX: char = '?';
     const PREDICATE_PREFIX: &str = "is_";
     const ARROW: &str = "->";
@@ -65,29 +88,10 @@ impl NameMangler {
     }
 
     fn spelling(character: char) -> Option<&'static str> {
-        Some(match character {
-            '-' => "_",
-            '+' => "plus",
-            '*' => "star",
-            '/' => "slash",
-            '<' => "lt",
-            '>' => "gt",
-            '=' => "eq",
-            '!' => "bang",
-            '?' => "query",
-            '%' => "percent",
-            '&' => "and",
-            '|' => "or",
-            '^' => "caret",
-            '~' => "tilde",
-            '.' => "dot",
-            ':' => "colon",
-            '@' => "at",
-            '$' => "dollar",
-            '#' => "hash",
-            '\'' => "prime",
-            _ => return None,
-        })
+        Self::PUNCTUATION
+            .iter()
+            .find(|(punctuation, _)| *punctuation == character)
+            .map(|(_, word)| *word)
     }
 
     fn valid_start(name: String) -> String {
