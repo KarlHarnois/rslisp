@@ -21,9 +21,6 @@ pub enum Builtin {
     Fail,
     NumberAdd,
     NumberSub,
-    NumberMul,
-    NumberDiv,
-    NumberRem,
     NumberLt,
     NumberLe,
     NumberGt,
@@ -33,7 +30,7 @@ pub enum Builtin {
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 30] = [
+    const NAMES: [(Builtin, &'static str); 27] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -55,9 +52,6 @@ impl Builtin {
         (Builtin::Fail, "fail"),
         (Builtin::NumberAdd, "number-add"),
         (Builtin::NumberSub, "number-sub"),
-        (Builtin::NumberMul, "number-mul"),
-        (Builtin::NumberDiv, "number-div"),
-        (Builtin::NumberRem, "number-rem"),
         (Builtin::NumberLt, "number-lt"),
         (Builtin::NumberLe, "number-le"),
         (Builtin::NumberGt, "number-gt"),

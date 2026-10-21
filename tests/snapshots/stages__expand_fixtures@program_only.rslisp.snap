@@ -1,0 +1,47 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/program_only.rslisp
+---
+error[L0306]: `to-string` belongs to the program, so macro code cannot run it
+ --> expand/program_only.rslisp:3:32
+  |
+3 | (def needs-rust (macro (form) (to-string 1) (list)))
+  |                                ^^^^^^^^^ macro code runs this
+4 |
+5 | (needs-rust)
+  | ------------ in this macro call
+  |
+ ::: prelude/text.rslisp:9:16
+  |
+9 | (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
+  |                -------------------------------------------------------------------- `to-string` is Rust code that runs in the program
+  |
+  = help: to compute this in the program, return it as code from the macro, for example with `template`
+
+error[L0306]: this Rust code belongs to the program, so macro code cannot run it
+ --> expand/program_only.rslisp:7:32
+  |
+7 | (def inline-rust (macro (form) (rust "1" i64) (list)))
+  |                                ^^^^^^^^^^^^^^ macro code runs this
+8 |
+9 | (inline-rust)
+  | ------------- in this macro call
+  |
+  = help: to compute this in the program, return it as code from the macro, for example with `template`
+
+error[L0306]: `add` belongs to the program, so macro code cannot run it
+  --> expand/program_only.rslisp:11:35
+   |
+11 | (def needs-addition (macro (form) (+ 1 2) (list)))
+   |                                   ^^^^^^^ macro code runs this
+12 |
+13 | (needs-addition)
+   | ---------------- in this macro call
+   |
+  ::: prelude/number.rslisp:16:10
+   |
+16 | (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
+   |          ---------------------------------------------------- `add` is Rust code that runs in the program
+   |
+   = help: to compute this in the program, return it as code from the macro, for example with `template`

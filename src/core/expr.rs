@@ -80,7 +80,6 @@ pub enum BodyItem {
 pub struct RustTemplate {
     pub template: Rc<str>,
     pub type_expr: TypeExpr,
-    pub twin: Option<Expr>,
 }
 
 impl Expr {

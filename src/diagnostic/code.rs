@@ -30,7 +30,7 @@ impl DiagnosticCode {
     pub const COMPILE_TIME_ERROR: Self = Self(Cow::Borrowed("L0303"));
     pub const MACRO_AS_VALUE: Self = Self(Cow::Borrowed("L0304"));
     pub const EXPANSION_TOO_DEEP: Self = Self(Cow::Borrowed("L0305"));
-    pub const NO_COMPILE_TIME_TWIN: Self = Self(Cow::Borrowed("L0306"));
+    pub const PROGRAM_ONLY: Self = Self(Cow::Borrowed("L0306"));
     pub const COMPILE_TIME_CYCLE: Self = Self(Cow::Borrowed("L0307"));
 
     pub const MISMATCHED_TYPES: Self = Self(Cow::Borrowed("L0401"));

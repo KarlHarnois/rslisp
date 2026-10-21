@@ -57,7 +57,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `field` | `(field value name)` | `value.name` | value: expression. name: field label. |
 | `quote` | `(quote form)` | none | form: data. |
 | `macro` | `(def name (macro (form) body...))` | none | form: binder. body: expressions. |
-| `rust` | `(rust "template" type twin)` | the inlined template | type: type. twin: optional expression. |
+| `rust` | `(rust "template" type)` | the inlined template | type: type. |
 | `rust-trait` | `(rust-trait name "Path" type...)` | trait bound | name: type binder. types: types. |
 | `use` | `(use module name...)` | path | module: module path. names: binders. |
 | `export` | `(export name...)` | `pub` | names: references in every namespace. |
@@ -153,7 +153,7 @@ A macro is a function from form to form that runs at compile time:
           (prepend (quote fn) (drop 2 form)))))
 ```
 
-Macro bodies run in the compiler's interpreter. They use the kernel forms, the built-in `code` module and any function whose definition has already been expanded. A `rust` definition can name a compile-time twin from `code`, so `+`, `<` and `true` work in macro bodies as they do at runtime.
+Macro bodies run in the compiler's interpreter. They use the kernel forms, the built-in `code` module, and functions that use only those. A `rust` definition belongs to the program, so macro code cannot run `+`, `<` or any other Rust template. To compute in the program, a macro returns the code, as in `(template (+ (unquote x) 1))`.
 
 The prelude builds three tools on top of `macro`:
 
@@ -176,7 +176,8 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 | `symbol-name`, `(symbol context part...)`, `(string part...)` | Read and build names and strings. |
 | `(same-binding? left right)` | Test whether two symbols refer to the same binding. |
 | `(fail "message" form)` | Stop expansion with an error at `form`. |
-| `number-add number-sub number-mul number-div number-rem number-lt number-le number-gt number-ge value-eq bool-not` | Compile-time twins of the prelude's Rust interop. |
+| `number-add number-sub number-lt number-le number-gt number-ge` | Count and compare positions in code. They take integers. |
+| `value-eq bool-not` | Compare forms and negate booleans. |
 
 ### Hygiene
 
@@ -217,8 +218,8 @@ Field names are not hygienic. They are looked up through the struct type.
 
 ```lisp
 (rust-trait number "crate::rt::Number" i8 i16 i32 i64 u8 u16 u32 u64 f32 f64)
-(def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n)) number-add))
-(def not (rust "!{0}" (fn (bool) bool) bool-not))
+(def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
+(def not (rust "!{0}" (fn (bool) bool)))
 ```
 
 | Template rule | Effect |

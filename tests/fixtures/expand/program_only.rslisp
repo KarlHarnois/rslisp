@@ -7,3 +7,7 @@
 (def inline-rust (macro (form) (rust "1" i64) (list)))
 
 (inline-rust)
+
+(def needs-addition (macro (form) (+ 1 2) (list)))
+
+(needs-addition)

@@ -20,12 +20,12 @@ error[L0210]: malformed `new`
   = help: write it as `(new name (field value) ...)`
 
 error[L0210]: malformed `rust`
- --> expand/expression_errors.rslisp:7:35
+ --> expand/expression_errors.rslisp:7:17
   |
 7 | (def extra-twin (rust "1" i64 add 2))
-  |                                   ^ this does not fit the shape of `rust`
+  |                 ^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `rust`
   |
-  = help: write it as `(rust "template" type twin)`
+  = help: write it as `(rust "template" type)`
 
 error[L0210]: malformed `fn`
  --> expand/expression_errors.rslisp:9:15
@@ -41,4 +41,4 @@ error[L0210]: malformed `rust`
 11 | (def numbered-template (rust 5 i64))
    |                              ^ this does not fit the shape of `rust`
    |
-   = help: write it as `(rust "template" type twin)`
+   = help: write it as `(rust "template" type)`

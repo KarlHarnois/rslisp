@@ -21,7 +21,7 @@ pub struct BuiltinCall {
 }
 
 impl BuiltinCall {
-    const IMPLEMENTATIONS: [(Builtin, Implementation); 30] = [
+    const IMPLEMENTATIONS: [(Builtin, Implementation); 27] = [
         (Builtin::First, |operations, _| operations.lists.first()),
         (Builtin::Rest, |operations, _| operations.lists.rest()),
         (Builtin::List, |operations, _| operations.lists.list()),
@@ -72,15 +72,6 @@ impl BuiltinCall {
         (Builtin::NumberAdd, |operations, _| operations.numbers.add()),
         (Builtin::NumberSub, |operations, _| {
             operations.numbers.subtract()
-        }),
-        (Builtin::NumberMul, |operations, _| {
-            operations.numbers.multiply()
-        }),
-        (Builtin::NumberDiv, |operations, _| {
-            operations.numbers.divide()
-        }),
-        (Builtin::NumberRem, |operations, _| {
-            operations.numbers.remainder()
         }),
         (Builtin::NumberLt, |operations, _| {
             operations.numbers.compare(Ordering::is_lt)

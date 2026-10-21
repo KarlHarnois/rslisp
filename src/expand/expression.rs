@@ -15,8 +15,6 @@ use crate::source::Span;
 use crate::stack::DeepRecursion;
 
 impl Expander<'_> {
-    const RUST_FORM_WITH_TWIN: usize = 4;
-
     pub(super) fn lower_expr(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
         DeepRecursion::guard(|| self.lower_form(form))
     }
@@ -257,17 +255,12 @@ impl Expander<'_> {
     }
 
     fn lower_rust(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
-        let items = shape.at_least(3)?;
-        if items.len() > Self::RUST_FORM_WITH_TWIN {
-            return Err(shape.malformed(&items[Self::RUST_FORM_WITH_TWIN]));
-        }
+        let items = shape.exactly(3)?;
         let template = shape.string(&items[1])?.into();
         let type_expr = self.lower_type(&items[2])?;
-        let twin = items.get(3).map(|twin| self.lower_expr(twin)).transpose()?;
         Ok(ExprKind::Leaf(Leaf::Rust(Rc::new(RustTemplate {
             template,
             type_expr,
-            twin,
         }))))
     }
 }

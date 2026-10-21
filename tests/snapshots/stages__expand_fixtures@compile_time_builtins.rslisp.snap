@@ -4,4 +4,4 @@ expression: "Fixture::load(path).expand_report()"
 input_file: tests/fixtures/expand/compile_time_builtins.rslisp
 ---
 (def yes-or-no (fn (test) (if test (quote yes) (quote no))))
-(def answers (fn () (quote (yes yes no 42 3 3.5 yes no yes yes yes no yes yes no 5 3))))
+(def answers (fn () (quote (yes yes no 42 3 yes yes no yes yes yes no yes yes no yes 5))))

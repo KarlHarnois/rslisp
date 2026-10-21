@@ -134,11 +134,10 @@ impl<'a> CorePrinter<'a> {
     }
 
     fn rust(&mut self, template: &RustTemplate) -> String {
-        let mut parts = vec![
+        let parts = vec![
             format!("{:?}", template.template),
             self.type_expr(&template.type_expr),
         ];
-        parts.extend(template.twin.iter().map(|twin| self.expr(twin)));
         Self::list("rust", parts)
     }
 

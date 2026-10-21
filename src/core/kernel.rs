@@ -93,7 +93,7 @@ impl KernelForm {
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Rust),
             name: "rust",
-            shape: "(rust \"template\" type twin)",
+            shape: "(rust \"template\" type)",
         },
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::RustTrait),

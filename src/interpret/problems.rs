@@ -5,8 +5,7 @@ use crate::source::Span;
 pub struct InterpretProblems;
 
 impl InterpretProblems {
-    pub const MISSING_TWIN_HELP: &'static str =
-        "use a `code` built-in in macro code, or give the `rust` form a twin";
+    pub const RETURN_AS_CODE_HELP: &'static str = "to compute this in the program, return it as code from the macro, for example with `template`";
 
     pub fn wrong_argument(
         function: &str,
@@ -80,7 +79,7 @@ impl InterpretProblems {
     pub fn arithmetic_failed(function: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::COMPILE_TIME_ERROR,
-            format!("`{function}` overflowed or divided by zero"),
+            format!("`{function}` overflowed"),
             Label::new(span, "in this call"),
         )
     }
@@ -93,13 +92,13 @@ impl InterpretProblems {
         )
     }
 
-    pub fn no_compile_time_version(span: Span) -> Diagnostic {
+    pub fn program_only(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::NO_COMPILE_TIME_TWIN,
-            "this Rust code has no compile-time version",
-            Label::new(span, "used by macro code here"),
+            DiagnosticCode::PROGRAM_ONLY,
+            "this Rust code belongs to the program, so macro code cannot run it",
+            Label::new(span, "macro code runs this"),
         )
-        .with_help(Self::MISSING_TWIN_HELP)
+        .with_help(Self::RETURN_AS_CODE_HELP)
     }
 
     pub fn too_deep(span: Span) -> Diagnostic {

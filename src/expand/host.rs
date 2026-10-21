@@ -38,14 +38,8 @@ impl Expander<'_> {
         span: Span,
     ) -> Result<Value, Diagnostic> {
         let lowered = self.lowered_global(binding, span)?;
-        if let ExprKind::Leaf(Leaf::Rust(template)) = lowered.kind()
-            && template.twin.is_none()
-        {
-            return Err(ExpandProblems::no_compile_time_version(
-                name,
-                span,
-                lowered.span(),
-            ));
+        if let ExprKind::Leaf(Leaf::Rust(_)) = lowered.kind() {
+            return Err(ExpandProblems::program_only(name, span, lowered.span()));
         }
         self.evaluate_global(binding, span)
     }

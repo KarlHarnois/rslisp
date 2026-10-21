@@ -1,10 +1,9 @@
-(use code first nth number-div)
+(use code first nth)
 
 (def first-of-number (macro (form) (first 1)))
 (def past-the-end (macro (form) (nth form 5)))
 (def number-test (macro (form) (if 1 form form)))
 (def call-a-string (macro (form) ("text" form)))
-(def divide-by-zero (macro (form) (number-div 1 0)))
 (def read-a-field (macro (form) (field form name)))
 (def too-many-arguments (macro (form) (first form form)))
 
@@ -12,6 +11,5 @@
 (past-the-end)
 (number-test)
 (call-a-string)
-(divide-by-zero)
 (read-a-field)
 (too-many-arguments)

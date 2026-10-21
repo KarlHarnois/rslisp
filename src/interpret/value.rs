@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::core::{BindingId, Builtin, Lambda};
-use crate::reader::{Form, FormKind};
+use crate::reader::{Form, FormKind, NumberValue};
 
 #[derive(Clone, Debug)]
 pub enum Value {
@@ -26,7 +26,10 @@ impl Value {
         match form.kind() {
             FormKind::Symbol(_) => "a symbol",
             FormKind::String(_) => "a string",
-            FormKind::Number(_) => "a number",
+            FormKind::Number(number) => match number.value() {
+                NumberValue::Integer(_) => "an integer",
+                NumberValue::Float(_) => "a float",
+            },
             FormKind::List(_) => "a list",
         }
     }

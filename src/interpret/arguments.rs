@@ -73,20 +73,18 @@ impl Arguments {
         }
     }
 
-    pub fn number(&self, index: usize) -> Result<&NumberValue, Diagnostic> {
+    pub fn integer(&self, index: usize) -> Result<i128, Diagnostic> {
         match self.form(index)?.kind() {
-            FormKind::Number(number) => Ok(number.value()),
-            _ => Err(self.wrong(index, "a number")),
+            FormKind::Number(number) => match number.value() {
+                NumberValue::Integer(value) => Ok(*value),
+                NumberValue::Float(_) => Err(self.wrong(index, "an integer")),
+            },
+            _ => Err(self.wrong(index, "an integer")),
         }
     }
 
     pub fn index(&self, index: usize) -> Result<usize, Diagnostic> {
-        match self.number(index)? {
-            NumberValue::Integer(value) => {
-                usize::try_from(*value).map_err(|_| self.wrong(index, "a count"))
-            }
-            NumberValue::Float(_) => Err(self.wrong(index, "an integer")),
-        }
+        usize::try_from(self.integer(index)?).map_err(|_| self.wrong(index, "a count"))
     }
 
     pub fn boolean(&self, index: usize) -> Result<bool, Diagnostic> {

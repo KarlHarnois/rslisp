@@ -9,9 +9,7 @@ pub use value::{Closure, Env, Value};
 
 use std::rc::Rc;
 
-use crate::core::{
-    BindingId, Block, BodyItem, Control, Expr, ExprKind, Leaf, Literal, RustTemplate,
-};
+use crate::core::{BindingId, Block, BodyItem, Control, Expr, ExprKind, Leaf, Literal};
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
 use crate::source::Span;
@@ -77,7 +75,7 @@ impl<'h> Interpreter<'h> {
             Leaf::Literal(literal) => Ok(Self::literal(literal, span)),
             Leaf::Var(binding) => self.variable(*binding, env, span),
             Leaf::Quote(form) => Ok(Value::Form(form.clone())),
-            Leaf::Rust(template) => self.eval_rust(template, env, span),
+            Leaf::Rust(_) => Err(InterpretProblems::program_only(span)),
         }
     }
 
@@ -166,18 +164,6 @@ impl<'h> Interpreter<'h> {
         match env.lookup(binding) {
             Some(value) => Ok(value.clone()),
             None => self.host.global_value(binding, span),
-        }
-    }
-
-    fn eval_rust(
-        &mut self,
-        template: &RustTemplate,
-        env: &Env,
-        span: Span,
-    ) -> Result<Value, Diagnostic> {
-        match &template.twin {
-            Some(twin) => self.eval(twin, env),
-            None => Err(InterpretProblems::no_compile_time_version(span)),
         }
     }
 
