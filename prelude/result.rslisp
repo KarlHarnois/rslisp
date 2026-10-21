@@ -1,0 +1,8 @@
+(use prelude/types result)
+
+(export ok err ok? err?)
+
+(def ok (rust "Ok({0})" (where (a b) (fn (a) (result a b)))))
+(def err (rust "Err({0})" (where (a b) (fn (b) (result a b)))))
+(def ok? (rust "{0}.is_ok()" (where (a b) (fn ((ref (result a b))) bool))))
+(def err? (rust "{0}.is_err()" (where (a b) (fn ((ref (result a b))) bool))))

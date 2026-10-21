@@ -137,6 +137,25 @@ A type parameter satisfies a trait when its `where` names the trait, or when eve
   `(+ x 300)` with `(n number)` is an error, because `n` can be `u8`. `(* x 0.5)` with `(n number)` is an error, because `n` can be an integer type. A literal whose parameter has no trait is an error, because the parameter can be any type. The conversion is exact for every allowed type, so Rust folds it into a constant.
 - A string literal has type `(ref str)`.
 
+### Standard types
+
+The prelude binds four Rust types and the functions that use them:
+
+| Type | Rust | Functions |
+|---|---|---|
+| `(vec a)` | `Vec<A>` | `vec push len iter values collect` |
+| `(option a)` | `Option<A>` | `some none some? none? unwrap-or` |
+| `(result a b)` | `Result<A, B>` | `ok err ok? err?` |
+| `(iterator a)` | `impl Iterator<Item = A>` | `range map filter fold for-each` |
+
+An iterator is lazy, as in Rust, so `(fold (range 1 1000001) 0 (fn (total n) (+ total n)))` repeats work without recursion. `(vec 1 2 3)` emits `vec![1, 2, 3]`, and `(vec)` emits `Vec::new()`.
+
+- `iter` yields `(ref a)`. `values` yields copies, so its elements must be `copy`.
+- `filter` passes each element to its test as a reference, as Rust does.
+- `range` takes an `integer`, a prelude trait of the integer types.
+- An `iterator` cannot be a struct field.
+- A function generic over `integer` cannot call `range`, because Rust's `Range` is an iterator only for concrete integer types. rustc reports the error.
+
 ## Ownership
 
 Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&mut T`. Type inference ignores ownership except where it is written, and a separate pass decides how each parameter is passed.

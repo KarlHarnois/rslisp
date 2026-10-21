@@ -1,0 +1,6 @@
+(export vec option result iterator)
+
+(rust-type vec (where (item) "Vec<{0}>"))
+(rust-type option (where (value) "Option<{0}>"))
+(rust-type result (where (value error) "Result<{0}, {1}>"))
+(rust-type iterator (where (item) "impl Iterator<Item = {0}>"))

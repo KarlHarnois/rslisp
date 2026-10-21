@@ -105,17 +105,17 @@ impl Template {
         let text = self.parsed.text().trim();
         if text.starts_with(Self::UNARY_OPERATORS) {
             Precedence::Prefix
-        } else if Self::has_top_level_space(text) {
+        } else if Self::has_top_level_operator(text) {
             Precedence::Operator
         } else {
             Precedence::Atom
         }
     }
 
-    fn has_top_level_space(text: &str) -> bool {
+    fn has_top_level_operator(text: &str) -> bool {
         let mut scanner = NestingScanner::default();
         text.chars()
-            .any(|character| scanner.is_top_level_space(character))
+            .any(|character| scanner.is_top_level_operator(character))
     }
 
     fn needs_temporaries(&self, arguments: &[Code]) -> bool {
@@ -154,16 +154,20 @@ struct NestingScanner {
     depth: usize,
     in_string: bool,
     escaped: bool,
+    previous: Option<char>,
 }
 
 impl NestingScanner {
     const QUOTE: char = '"';
     const ESCAPE: char = '\\';
+    const RANGE_DOT: char = '.';
 
-    fn is_top_level_space(&mut self, character: char) -> bool {
-        let found = character.is_whitespace() && self.depth == 0 && !self.in_string;
+    fn is_top_level_operator(&mut self, character: char) -> bool {
+        let at_top_level = self.depth == 0 && !self.in_string;
+        let closes_range = character == Self::RANGE_DOT && self.previous == Some(Self::RANGE_DOT);
+        let separates = character.is_whitespace() || closes_range;
         self.advance(character);
-        found
+        at_top_level && separates
     }
 
     fn advance(&mut self, character: char) {
@@ -173,6 +177,7 @@ impl NestingScanner {
             self.depth = self.depth_after(character);
         }
         self.escaped = character == Self::ESCAPE;
+        self.previous = Some(character);
     }
 
     fn depth_after(&self, character: char) -> usize {

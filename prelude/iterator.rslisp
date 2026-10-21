@@ -1,0 +1,10 @@
+(use prelude/types iterator)
+(use prelude/number integer)
+
+(export range map filter fold for-each)
+
+(def range (rust "{0}..{1}" (where ((n integer)) (fn (n n) (iterator n)))))
+(def map (rust "{0}.map({1})" (where (a b) (fn ((iterator a) (fn (a) b)) (iterator b)))))
+(def filter (rust "{0}.filter({1})" (where (a) (fn ((iterator a) (fn ((ref a)) bool)) (iterator a)))))
+(def fold (rust "{0}.fold({1}, {2})" (where (a b) (fn ((iterator a) b (fn (b a) b)) b))))
+(def for-each (rust "{0}.for_each({1})" (where (a) (fn ((iterator a) (fn (a) unit)) unit))))

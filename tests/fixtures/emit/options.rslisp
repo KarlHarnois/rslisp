@@ -1,0 +1,7 @@
+(defn main ()
+  (let found (some 3))
+  (let missing (the (option i64) none))
+  (println (some? found))
+  (println (none? missing))
+  (println (unwrap-or found 0))
+  (println (unwrap-or missing 7)))

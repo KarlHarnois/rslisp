@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/options.rslisp
+---
+fn main() {
+    let found: Option<i64> = Some(3_i64);
+    let missing: Option<i64> = {
+        let result: Option<i64> = None;
+        result
+    };
+    println!("{}", &found.is_some());
+    println!("{}", &missing.is_none());
+    println!("{}", &found.unwrap_or(0));
+    println!("{}", &missing.unwrap_or(7))
+}

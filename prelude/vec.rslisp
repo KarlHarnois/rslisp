@@ -1,0 +1,38 @@
+(use prelude/macros defmacro)
+(use prelude/types vec iterator)
+(use prelude/ownership copy)
+(use code list prepend length empty? string number-add number-sub number-lt)
+
+(export vec push len iter values collect)
+
+(def element-placeholders
+  (fn (index count)
+    (if (number-lt index count)
+        (string (if (number-lt 0 index) ", " "") "{" index "}"
+                (element-placeholders (number-add index 1) count))
+        "")))
+
+(def repeated-item
+  (fn (count)
+    (if (number-lt 0 count)
+        (prepend (quote item) (repeated-item (number-sub count 1)))
+        (list))))
+
+(def elements-type
+  (fn (count)
+    (list (quote where) (list (quote item))
+          (list (quote fn) (repeated-item count) (list (quote vec) (quote item))))))
+
+(defmacro vec (elements ...)
+  (let count (length elements))
+  (if (empty? elements)
+      (list (quote rust) "Vec::new()" (quote (where (item) (vec item))))
+      (prepend (list (quote rust) (string "vec![" (element-placeholders 0 count) "]")
+                     (elements-type count))
+               elements)))
+
+(def push (rust "{0}.push({1})" (where (a) (fn ((mut (vec a)) a) unit))))
+(def len (rust "{0}.len()" (where (a) (fn ((ref (vec a))) usize))))
+(def iter (rust "{0}.iter()" (where (a) (fn ((ref (vec a))) (iterator (ref a))))))
+(def values (rust "{0}.iter().copied()" (where ((a copy)) (fn ((ref (vec a))) (iterator a)))))
+(def collect (rust "{0}.collect::<Vec<_>>()" (where (a) (fn ((iterator a)) (vec a)))))

@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/iterators.rslisp
+---
+fn main() {
+    println!("{}", &(1_i64..6_i64).fold(0, |total: i64, n: i64| total + n));
+    let doubled: Vec<i64> = (1_i64..4_i64).map(|n_2: i64| n_2 * 2).collect::<Vec<_>>();
+    doubled.iter().copied().for_each(|n_3: i64| println!("{}", &n_3));
+    let small: Vec<i64> = doubled.iter().copied().filter(|n_4: &i64| *n_4 < 5).collect::<Vec<_>>();
+    println!("{}", &small.len())
+}

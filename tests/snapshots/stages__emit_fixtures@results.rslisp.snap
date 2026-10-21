@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/results.rslisp
+---
+fn checked_half(n: i64) -> Result<i64, &'static str> {
+    if (n % 2) == 0 {
+        Ok(n / 2)
+    } else {
+        Err("odd")
+    }
+}
+
+fn main() {
+    println!("{}", &checked_half(10).is_ok());
+    println!("{}", &checked_half(7).is_err())
+}

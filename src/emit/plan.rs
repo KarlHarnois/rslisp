@@ -54,7 +54,7 @@ pub struct EmitPlan<'p> {
 impl<'p> EmitPlan<'p> {
     const MAIN: &'static str = "main";
     const MODULE_SEPARATOR: char = '/';
-    const MACRO_CALL: &'static str = "!(";
+    const MACRO_CALLS: [&'static str; 3] = ["!(", "![", "!{"];
 
     pub fn build(program: &'p TypedProgram, entry_span: Span) -> Result<Self, Diagnostics> {
         let main = Self::find_main(program)
@@ -353,7 +353,8 @@ impl<'p> EmitPlan<'p> {
 
     fn is_operator_template(text: &str) -> bool {
         let is_plain_value = text.chars().all(char::is_alphanumeric);
-        let calls_something = text.contains(Self::MACRO_CALL) || text.contains(['.', '(']);
+        let calls_something =
+            Self::MACRO_CALLS.iter().any(|call| text.contains(call)) || text.contains(['.', '(']);
         Template::parse(text).is_ok() && (is_plain_value || !calls_something)
     }
 

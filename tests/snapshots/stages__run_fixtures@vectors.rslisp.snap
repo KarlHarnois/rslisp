@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/vectors.rslisp
+---
+2
+4
+10
+20
+2
+3
+5
+7

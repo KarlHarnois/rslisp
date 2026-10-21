@@ -12,6 +12,8 @@ pub trait Signed: Number + Neg<Output = Self> {}
 
 pub trait Float: Signed {}
 
+pub trait Integer: Number {}
+
 macro_rules! numbers {
     ($($number:ty),*) => {
         $(
@@ -35,3 +37,13 @@ impl<T> Signed for T where T: Number + Neg<Output = T> {}
 impl Float for f32 {}
 
 impl Float for f64 {}
+
+macro_rules! integers {
+    ($($integer:ty),*) => {
+        $(
+            impl Integer for $integer {}
+        )*
+    };
+}
+
+integers!(i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize);

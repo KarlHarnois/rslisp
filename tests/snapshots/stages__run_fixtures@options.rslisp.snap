@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/options.rslisp
+---
+true
+true
+3
+7

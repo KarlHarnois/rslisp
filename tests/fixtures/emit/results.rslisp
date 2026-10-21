@@ -1,0 +1,6 @@
+(defn checked-half (n)
+  (if (= (rem n 2) 0) (ok (/ n 2)) (err "odd")))
+
+(defn main ()
+  (println (ok? (checked-half 10)))
+  (println (err? (checked-half 7))))

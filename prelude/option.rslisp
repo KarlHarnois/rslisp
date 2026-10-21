@@ -1,0 +1,9 @@
+(use prelude/types option)
+
+(export some none some? none? unwrap-or)
+
+(def some (rust "Some({0})" (where (a) (fn (a) (option a)))))
+(def none (rust "None" (where (a) (option a))))
+(def some? (rust "{0}.is_some()" (where (a) (fn ((ref (option a))) bool))))
+(def none? (rust "{0}.is_none()" (where (a) (fn ((ref (option a))) bool))))
+(def unwrap-or (rust "{0}.unwrap_or({1})" (where (a) (fn ((option a) a) a))))

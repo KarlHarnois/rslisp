@@ -1,0 +1,6 @@
+(defn main ()
+  (println (fold (range 1 6) 0 (fn (total n) (+ total n))))
+  (let doubled (collect (map (range 1 4) (fn (n) (* n 2)))))
+  (for-each (values doubled) (fn (n) (println n)))
+  (let small (collect (filter (values doubled) (fn (n) (< n 5)))))
+  (println (len small)))
