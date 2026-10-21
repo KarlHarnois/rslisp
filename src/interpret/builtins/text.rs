@@ -12,6 +12,7 @@ pub struct TextOperations<'a> {
 
 impl<'a> TextOperations<'a> {
     const FAIL_ARGUMENTS: usize = 2;
+    const FAIL_WITH_HELP_ARGUMENTS: usize = 3;
 
     pub fn new(arguments: &'a Arguments, call_site: Span) -> Self {
         Self {
@@ -58,10 +59,18 @@ impl<'a> TextOperations<'a> {
     }
 
     pub fn fail(&self) -> Result<Value, Diagnostic> {
-        self.arguments.expect_count(Self::FAIL_ARGUMENTS)?;
+        let help = self.fail_help()?;
         let message = self.arguments.string(0)?.to_string();
         let culprit = self.arguments.form(1)?;
-        Err(InterpretProblems::failed(message, culprit.span()))
+        Err(InterpretProblems::failed(message, culprit.span(), help))
+    }
+
+    fn fail_help(&self) -> Result<Option<String>, Diagnostic> {
+        if self.arguments.values().len() == Self::FAIL_WITH_HELP_ARGUMENTS {
+            return Ok(Some(self.arguments.string(2)?.to_string()));
+        }
+        self.arguments.expect_count(Self::FAIL_ARGUMENTS)?;
+        Ok(None)
     }
 
     pub fn value_eq(&self) -> Result<Value, Diagnostic> {

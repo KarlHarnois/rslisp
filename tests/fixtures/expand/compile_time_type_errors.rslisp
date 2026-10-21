@@ -10,6 +10,7 @@
 (def negate-a-number (macro (form) (bool-not 1)))
 (def call-true (macro (form) (true)))
 (def fail-with-a-number (macro (form) (fail 5 form)))
+(def fail-with-a-numbered-help (macro (form) (fail "bad call" form 5)))
 (def call-with-too-few (macro (form) ((fn (x) x))))
 
 (first-of-unit)
@@ -22,4 +23,5 @@
 (negate-a-number)
 (call-true)
 (fail-with-a-number)
+(fail-with-a-numbered-help)
 (call-with-too-few)

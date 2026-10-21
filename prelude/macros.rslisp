@@ -184,16 +184,31 @@
 
 (def expand-rules
   (fn (clauses form)
-    (if (empty? clauses)
-        (fail (string "no rule of `" (first form) "` matches this form") form)
-        (expand-clause (first clauses) (rest clauses) form))))
+    (try-rules clauses clauses form)))
 
-(def expand-clause
-  (fn (clause others form)
+(def try-rules
+  (fn (remaining clauses form)
+    (if (empty? remaining)
+        (fail (string "no rule of `" (first form) "` matches this form") form
+              (string "write it as " (rule-shapes (first form) clauses)))
+        (try-clause (first remaining) (rest remaining) clauses form))))
+
+(def try-clause
+  (fn (clause others clauses form)
     (let bindings (match-list (first clause) (rest form)))
     (if (list? bindings)
         (fill-template (nth clause 1) bindings)
-        (expand-rules others form))))
+        (try-rules others clauses form))))
+
+(def rule-shapes
+  (fn (name clauses)
+    (join-shapes (map-list (fn (clause) (prepend name (first clause))) clauses))))
+
+(def join-shapes
+  (fn (shapes)
+    (if (empty? (rest shapes))
+        (string "`" (first shapes) "`")
+        (string "`" (first shapes) "`, or " (join-shapes (rest shapes))))))
 
 (def defrule
   (macro (form)
@@ -224,7 +239,8 @@
     (let bindings (match-list pattern (rest form)))
     (if (list? bindings)
         bindings
-        (fail (string "this use of `" (first form) "` does not match `" pattern "`") form))))
+        (fail (string "this use of `" (first form) "` does not match its shape") form
+              (string "write it as `" (prepend (first form) pattern) "`")))))
 
 (def pattern-lets
   (fn (pattern)

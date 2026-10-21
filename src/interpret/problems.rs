@@ -109,11 +109,15 @@ impl InterpretProblems {
         )
     }
 
-    pub fn failed(message: String, span: Span) -> Diagnostic {
-        Diagnostic::error(
+    pub fn failed(message: String, span: Span, help: Option<String>) -> Diagnostic {
+        let diagnostic = Diagnostic::error(
             DiagnosticCode::MACRO_FAILED,
             message,
             Label::new(span, "here"),
-        )
+        );
+        match help {
+            Some(help) => diagnostic.with_help(help),
+            None => diagnostic,
+        }
     }
 }

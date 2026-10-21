@@ -8,12 +8,16 @@ error[L0301]: no rule of `only-two` matches this form
   |
 7 | (def no-rule (fn () (only-two 1 2 3)))
   |                     ^^^^^^^^^^^^^^^^ here
+  |
+  = help: write it as `(only-two left right)`
 
-error[L0301]: this use of `needs-name` does not match `(name value)`
+error[L0301]: this use of `needs-name` does not match its shape
  --> expand/macro_errors.rslisp:8:1
   |
 8 | (needs-name)
   | ^^^^^^^^^^^^ here
+  |
+  = help: write it as `(needs-name name value)`
 
 error[L0304]: `when` is a macro, not a value
  --> expand/macro_errors.rslisp:9:22
@@ -22,3 +26,11 @@ error[L0304]: `when` is a macro, not a value
   |                      ^^^^ used as a value here
   |
   = help: a macro can only be called; pass a function instead
+
+error[L0301]: no rule of `+` matches this form
+  --> expand/macro_errors.rslisp:11:25
+   |
+11 | (def no-operands (fn () (+)))
+   |                         ^^^ here
+   |
+   = help: write it as `(+ a)`, or `(+ a b)`, or `(+ a b c more ...)`

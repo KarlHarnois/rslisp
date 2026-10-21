@@ -177,7 +177,7 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 | `symbol? list? string? number?` | Test what kind of form a value is. |
 | `symbol-name`, `(symbol context part...)`, `(string part...)` | Read and build names and strings. |
 | `(same-binding? left right)` | Test whether two symbols refer to the same binding. |
-| `(fail "message" form)` | Stop expansion with an error at `form`. |
+| `(fail "message" form)`, `(fail "message" form "help")` | Stop expansion with an error at `form`, and an optional help line that says how to fix the call. |
 | `number-add number-sub number-lt number-le number-gt number-ge` | Count and compare positions in code. They take integers. |
 | `value-eq bool-not` | Compare forms and negate booleans. |
 
