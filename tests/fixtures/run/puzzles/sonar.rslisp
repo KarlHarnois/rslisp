@@ -1,5 +1,4 @@
-(use puzzles/support/text lines parse-integer)
-(use puzzles/support/sequence deref windows at count)
+(use puzzles/support/text parse-integer)
 
 (export solve-sonar)
 

@@ -1,12 +1,11 @@
 (use stack_machine/machine run)
 (use stack_machine/programs countdown factorial underflowing)
-(use stack_machine/collections success-value failure-value)
 
 (type report (fn ((ref str) (result i64 string)) unit))
 (defn report (name outcome)
   (if (ok? outcome)
-      (println (str name ": " (success-value outcome)))
-      (println (str name " failed: " (failure-value outcome)))))
+      (println (str name ": " (unwrap-ok outcome)))
+      (println (str name " failed: " (unwrap-err outcome)))))
 
 (defn main ()
   (report "countdown" (run (countdown)))

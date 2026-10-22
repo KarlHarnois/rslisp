@@ -1,4 +1,4 @@
-(use calculator/support item-at parse-integer as-str and-then map-ok)
+(use calculator/support item-at)
 (use calculator/lexer token token-kind token-text)
 
 (export evaluate)
@@ -6,7 +6,7 @@
 (defstruct parsed (value i64) (next usize))
 
 (defn evaluate (tokens)
-  (and-then (parse-expression tokens 0) (fn (result) (expect-end tokens result))))
+  (then-ok (parse-expression tokens 0) (fn (result) (expect-end tokens result))))
 
 (defn expect-end (tokens result)
   (if (= (parsed-next result) (len tokens))
@@ -15,25 +15,25 @@
 
 (type parse-expression (fn ((ref (vec token)) usize) (result parsed string)))
 (defn parse-expression (tokens position)
-  (and-then (parse-term tokens position) (fn (left) (parse-sums tokens left))))
+  (then-ok (parse-term tokens position) (fn (left) (parse-sums tokens left))))
 
 (defn parse-sums (tokens left)
   (let next (parsed-next left))
   (cond ((at-symbol? tokens next "+")
-         (and-then (parse-term tokens (+ next 1)) (fn (right) (parse-sums tokens (combine left right add)))))
+         (then-ok (parse-term tokens (+ next 1)) (fn (right) (parse-sums tokens (combine left right add)))))
         ((at-symbol? tokens next "-")
-         (and-then (parse-term tokens (+ next 1)) (fn (right) (parse-sums tokens (combine left right sub)))))
+         (then-ok (parse-term tokens (+ next 1)) (fn (right) (parse-sums tokens (combine left right sub)))))
         (else (ok left))))
 
 (defn parse-term (tokens position)
-  (and-then (parse-factor tokens position) (fn (left) (parse-products tokens left))))
+  (then-ok (parse-factor tokens position) (fn (left) (parse-products tokens left))))
 
 (defn parse-products (tokens left)
   (let next (parsed-next left))
   (cond ((at-symbol? tokens next "*")
-         (and-then (parse-factor tokens (+ next 1)) (fn (right) (parse-products tokens (combine left right mul)))))
+         (then-ok (parse-factor tokens (+ next 1)) (fn (right) (parse-products tokens (combine left right mul)))))
         ((at-symbol? tokens next "/")
-         (and-then (parse-factor tokens (+ next 1)) (fn (right) (divide tokens left right))))
+         (then-ok (parse-factor tokens (+ next 1)) (fn (right) (divide tokens left right))))
         (else (ok left))))
 
 (defn divide (tokens left right)
@@ -43,7 +43,7 @@
 
 (defn parse-factor (tokens position)
   (cond ((at-symbol? tokens position "(")
-         (and-then (parse-expression tokens (+ position 1)) (fn (inner) (expect-close tokens inner))))
+         (then-ok (parse-expression tokens (+ position 1)) (fn (inner) (expect-close tokens inner))))
         ((at-kind? tokens position "number") (ok (make-parsed (number-at tokens position) (+ position 1))))
         (else (err (str "expected a number at token " position)))))
 
@@ -64,4 +64,5 @@
        (= (as-str (token-kind (item-at tokens position))) kind)))
 
 (defn number-at (tokens position)
-  (unwrap-or (parse-integer (as-str (token-text (item-at tokens position)))) 0))
+  (let (parsed (result i64 _)) (parse (as-str (token-text (item-at tokens position)))))
+  (if (ok? parsed) (unwrap-ok parsed) 0))

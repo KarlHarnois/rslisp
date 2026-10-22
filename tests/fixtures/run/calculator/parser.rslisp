@@ -1,4 +1,4 @@
-(use calculator/support item-at parse-integer as-str)
+(use calculator/support item-at)
 (use calculator/lexer token token-text)
 
 (export evaluate)
@@ -43,4 +43,5 @@
        (= (as-str (token-text (item-at tokens position))) text)))
 
 (defn number-at (tokens position)
-  (unwrap-or (parse-integer (as-str (token-text (item-at tokens position)))) 0))
+  (let (parsed (result i64 _)) (parse (as-str (token-text (item-at tokens position)))))
+  (if (ok? parsed) (unwrap-ok parsed) 0))

@@ -1,7 +1,7 @@
 (use stack_machine/instruction instruction-opcode instruction-argument
      push-code add-code sub-code mul-code dup-code swap-code over-code
      jump-code jump-if-zero-code print-code halt-code)
-(use stack_machine/collections pop element-at unwrap to-index)
+(use stack_machine/collections to-index)
 
 (export run)
 
@@ -16,7 +16,7 @@
 
 (defn execute (program counter given-stack)
   (let stack given-stack)
-  (let instruction (unwrap (element-at program counter)))
+  (let instruction (unwrap (get program counter)))
   (let opcode (instruction-opcode instruction))
   (let argument (instruction-argument instruction))
   (let next (+ counter 1))
@@ -37,8 +37,8 @@
 
 (defn combine (program next given-stack operation)
   (let stack given-stack)
-  (let right (pop stack))
-  (let left (pop stack))
+  (let right (pop! stack))
+  (let left (pop! stack))
   (if (and (some? left) (some? right))
       (do (push stack (operation (unwrap left) (unwrap right)))
           (step program next stack))
@@ -46,8 +46,8 @@
 
 (defn swap (program next given-stack)
   (let stack given-stack)
-  (let right (pop stack))
-  (let left (pop stack))
+  (let right (pop! stack))
+  (let left (pop! stack))
   (if (and (some? left) (some? right))
       (do (push stack (unwrap right))
           (push stack (unwrap left))
@@ -56,8 +56,8 @@
 
 (defn over (program next given-stack)
   (let stack given-stack)
-  (let right (pop stack))
-  (let left (pop stack))
+  (let right (pop! stack))
+  (let left (pop! stack))
   (if (and (some? left) (some? right))
       (do (let (below i64) (unwrap left))
           (push stack below)
@@ -68,7 +68,7 @@
 
 (defn duplicate (program next given-stack)
   (let stack given-stack)
-  (let top (pop stack))
+  (let top (pop! stack))
   (if (some? top)
       (do (let (value i64) (unwrap top))
           (push stack value)
@@ -78,18 +78,18 @@
 
 (defn jump-if-zero (program target next given-stack)
   (let stack given-stack)
-  (let top (pop stack))
+  (let top (pop! stack))
   (if (some? top)
       (step program (if (= (unwrap top) 0) target next) stack)
       (underflow)))
 
 (defn print-top (program next given-stack)
   (let stack given-stack)
-  (let top (pop stack))
+  (let top (pop! stack))
   (if (some? top)
       (do (println (unwrap top)) (step program next stack))
       (underflow)))
 
 (defn pop-result (stack)
-  (let top (pop stack))
+  (let top (pop! stack))
   (if (some? top) (ok (unwrap top)) (underflow)))

@@ -1,6 +1,5 @@
 (use calculator/lexer tokenize)
 (use calculator/checked_parser evaluate)
-(use calculator/support either and-then)
 
 (defn main ()
   (calculate "12 + 3 * (4 - 1)")
@@ -10,6 +9,7 @@
   (calculate "7 % 2"))
 
 (defn calculate (source)
-  (either (and-then (tokenize source) (fn (tokens) (evaluate (ref tokens))))
-          (fn (value) (println (str source " = " value)))
-          (fn (message) (println (str source " -> error: " message)))))
+  (let outcome (then-ok (tokenize source) (fn (tokens) (evaluate (ref tokens)))))
+  (if (ok? outcome)
+      (println (str source " = " (unwrap-ok outcome)))
+      (println (str source " -> error: " (unwrap-err outcome)))))
