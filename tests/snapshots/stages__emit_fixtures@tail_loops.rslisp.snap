@@ -32,7 +32,7 @@ fn fill(items: &mut Vec<i64>, mut n: i64) {
             return;
         } else {
             items.push(n);
-            n = n - 1;
+            n -= 1;
             continue;
         }
     }
