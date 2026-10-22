@@ -85,7 +85,15 @@ impl<'a> ExpressionEmitter<'a> {
             param.binding,
             self.program.bindings.get(param.binding).name(),
         );
-        format!("{name}: {}", self.types().show(&param.ty, position))
+        let mutable = if self.mutable_locals.contains(&param.binding) && !param.ty.is_reference() {
+            "mut "
+        } else {
+            ""
+        };
+        format!(
+            "{mutable}{name}: {}",
+            self.types().show(&param.ty, position)
+        )
     }
 
     pub fn function_body(&mut self, block: &TypedBlock) -> Vec<Fragment> {

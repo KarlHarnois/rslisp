@@ -3,11 +3,4 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/mutated_owned_parameter.rslisp
 ---
-error[E0596]: cannot borrow `items` as mutable, as it is not declared as mutable
- --> run/mutated_owned_parameter.rslisp:2:9
-  |
-2 |   (push items 1)
-  |         ^^^^^ cannot borrow as mutable
-  |
-  = note: reported by rustc while compiling the generated Rust
-  = help: consider changing this to be mutable
+2
