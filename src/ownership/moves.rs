@@ -2,13 +2,12 @@ use std::collections::{HashMap, HashSet};
 
 use super::definitions::LocalDefinitions;
 use super::problems::OwnershipProblems;
-use super::templates::TemplateBorrows;
 use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Borrow, CopyRules, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
-    TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
+    Borrow, CopyRules, TemplateBorrows, Type, TypedArgument, TypedBlock, TypedBodyItem,
+    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]

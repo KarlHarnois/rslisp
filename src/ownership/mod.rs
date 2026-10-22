@@ -6,7 +6,6 @@ mod moves;
 mod names;
 mod problems;
 mod rewrite;
-mod templates;
 mod usage;
 
 use crate::diagnostic::Diagnostics;
@@ -17,7 +16,6 @@ use modes::ModeInference;
 use moves::MoveChecker;
 use names::ChangingFunctionNames;
 use rewrite::ModeRewrite;
-use templates::TemplateBorrows;
 
 pub struct OwnershipChecker;
 
@@ -31,7 +29,6 @@ impl OwnershipChecker {
         .run();
         let rewrite = ModeRewrite::new(&functions, &modes);
         rewrite.apply(program);
-        let template_borrows = TemplateBorrows::collect(program);
         let mut diagnostics = Diagnostics::default();
         for definition in program
             .modules
@@ -42,7 +39,7 @@ impl OwnershipChecker {
                 let checker = MoveChecker::new(
                     CopyRules::new(&program.traits, &program.generics),
                     &program.bindings,
-                    &template_borrows,
+                    &program.template_borrows,
                 );
                 checker
                     .check(lambda)

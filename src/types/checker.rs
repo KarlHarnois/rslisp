@@ -8,6 +8,7 @@ use super::problems::{MismatchContext, TypeProblems};
 use super::rust_types::{RustType, RustTypeTable};
 use super::selection::Selection;
 use super::structs::{StructDefinition, StructTable};
+use super::templates::TemplateBorrows;
 use super::traits::{RustTrait, TraitTable};
 use super::ty::{GenericId, GenericParam, Scheme, Type, TypeVar};
 use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
@@ -49,6 +50,7 @@ pub struct TypeChecker {
     implied_bounds: HashMap<GenericId, Vec<BindingId>>,
     pub(super) field_accessors: HashMap<BindingId, Rc<str>>,
     pub(super) pending_borrows: Vec<PendingBorrow>,
+    pub(super) template_borrows: TemplateBorrows,
 }
 
 struct Definition<'p> {
@@ -82,6 +84,7 @@ impl TypeChecker {
             implied_bounds: HashMap::new(),
             field_accessors: HashMap::new(),
             pending_borrows: Vec::new(),
+            template_borrows: TemplateBorrows::default(),
         }
     }
 
@@ -430,6 +433,8 @@ impl TypeChecker {
         let ExprKind::Leaf(Leaf::Rust(template)) = member.value.kind() else {
             return false;
         };
+        self.template_borrows
+            .register(member.binding, &template.template);
         let scheme = match self.lower_scheme(&template.type_expr) {
             Ok(scheme) => scheme,
             Err(diagnostic) => {
@@ -978,6 +983,7 @@ impl TypeChecker {
             traits: self.traits,
             generics: self.generics,
             implied_bounds: self.implied_bounds,
+            template_borrows: self.template_borrows,
             warnings: Diagnostics::default(),
         };
         self.diagnostics.into_result(program)
