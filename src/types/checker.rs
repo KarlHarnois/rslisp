@@ -46,6 +46,7 @@ pub struct TypeChecker {
     pub(super) locals: HashMap<BindingId, Type>,
     pub(super) compile_time_only: HashSet<BindingId>,
     pub(super) diagnostics: Diagnostics,
+    missing_annotations: Diagnostics,
     pub(super) type_arities: HashMap<BindingId, usize>,
     trait_arguments: HashSet<BindingId>,
     signatures: HashMap<BindingId, (TypeExpr, Span)>,
@@ -86,6 +87,7 @@ impl TypeChecker {
             locals: HashMap::new(),
             compile_time_only: HashSet::new(),
             diagnostics: Diagnostics::default(),
+            missing_annotations: Diagnostics::default(),
             type_arities: HashMap::new(),
             trait_arguments: HashSet::new(),
             signatures: HashMap::new(),
@@ -346,6 +348,17 @@ impl TypeChecker {
         TypeDisplay::new(&self.bindings, &self.generics)
     }
 
+    pub(super) fn defer_missing_annotation(&mut self, diagnostic: Diagnostic) {
+        self.missing_annotations.push(diagnostic);
+    }
+
+    fn resolve_missing_annotations(&mut self) {
+        if !self.diagnostics.has_errors() {
+            self.diagnostics
+                .extend(std::mem::take(&mut self.missing_annotations));
+        }
+    }
+
     pub(super) fn macro_name(&self, span: Span) -> Option<Rc<str>> {
         self.macro_origins.get(&span).cloned()
     }
@@ -423,9 +436,9 @@ impl TypeChecker {
     fn leave_unresolved(&mut self, obligation: Obligation, pass: ObligationPass) {
         match pass {
             ObligationPass::Deferring => self.unifier.defer(obligation),
-            ObligationPass::Final => self
-                .diagnostics
-                .push(TypeProblems::cannot_infer(obligation.span)),
+            ObligationPass::Final => {
+                self.defer_missing_annotation(TypeProblems::cannot_infer(obligation.span))
+            }
         }
     }
 
@@ -1221,6 +1234,7 @@ impl TypeChecker {
             }
         }
         checker.discharge_obligations(ObligationPass::Final);
+        checker.resolve_missing_annotations();
         let typed_modules = program
             .modules
             .iter()

@@ -1,0 +1,2 @@
+(defn print-a-function () (println (fn (value) value)))
+(defn too-big () (the u8 300))

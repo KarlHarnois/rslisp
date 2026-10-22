@@ -58,8 +58,7 @@ impl<'c> Finalizer<'c> {
             None => {
                 if self.reported.insert(var) && !self.earlier_errors {
                     self.checker
-                        .diagnostics
-                        .push(TypeProblems::cannot_infer(span));
+                        .defer_missing_annotation(TypeProblems::cannot_infer(span));
                 }
                 return;
             }
