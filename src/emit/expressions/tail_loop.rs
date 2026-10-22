@@ -111,18 +111,9 @@ impl TailLoop {
 impl ExpressionEmitter<'_> {
     const COMPOUND_OPERATORS: [&'static str; 5] = ["+", "-", "*", "/", "%"];
 
-    pub(super) fn loop_body(&mut self, block: &TypedBlock) -> Vec<Fragment> {
-        self.loop_with_exit(block, LoopExit::Return)
-    }
-
-    pub(super) fn loop_expression_body(&mut self, block: &TypedBlock) -> Vec<Fragment> {
-        self.loop_with_exit(block, LoopExit::Break)
-    }
-
-    fn loop_with_exit(&mut self, block: &TypedBlock, exit: LoopExit) -> Vec<Fragment> {
+    pub(super) fn loop_expression(&mut self, block: &TypedBlock, exit: LoopExit) -> Vec<Fragment> {
         let previous = std::mem::replace(&mut self.loop_exit, exit);
         let fragments = vec![
-            Fragment::Newline,
             Fragment::Text("loop {".to_string()),
             Fragment::Indented(self.loop_block(block)),
             Fragment::Newline,
