@@ -17,7 +17,6 @@ use crate::core::{
     ParsedTemplate, PrimitiveType, StructDerives, StructExpr, TypeBinder, TypeExpr, TypeExprKind,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
-use crate::modules::ModuleSources;
 use crate::source::Span;
 
 pub(super) enum Admissible {
@@ -179,150 +178,6 @@ impl TypeChecker {
             {
                 self.type_arities.insert(*binding, params.len());
             }
-        }
-    }
-
-    fn register_derived_traits(&mut self, modules: &[CoreModule]) {
-        let structs = Self::struct_arities(modules);
-        let derived = Self::inferred_traits(modules);
-        let mut candidates = self.add_inferred_implementors(&structs, &derived);
-        self.remove_blocked_derives(&mut candidates);
-        self.record_derives(candidates, &derived);
-    }
-
-    fn struct_arities(modules: &[CoreModule]) -> Vec<(BindingId, usize)> {
-        modules
-            .iter()
-            .flat_map(|module| &module.items)
-            .filter_map(|item| match &item.kind {
-                ItemKind::Struct(binding, params, _) => Some((*binding, params.len())),
-                _ => None,
-            })
-            .collect()
-    }
-
-    fn inferred_traits(modules: &[CoreModule]) -> Vec<(BindingId, &'static str)> {
-        let prelude_traits: Vec<(BindingId, &str)> = modules
-            .iter()
-            .filter(|module| ModuleSources::is_prelude(&module.path))
-            .flat_map(|module| &module.items)
-            .filter_map(|item| match &item.kind {
-                ItemKind::RustTrait(binding, path, _) => Some((*binding, path.as_ref())),
-                _ => None,
-            })
-            .collect();
-        StructDerives::INFERRED
-            .iter()
-            .flat_map(|derived| {
-                prelude_traits
-                    .iter()
-                    .filter(move |(_, path)| StructDerives::derive_name(path) == *derived)
-                    .map(move |(binding, _)| (*binding, *derived))
-            })
-            .collect()
-    }
-
-    fn add_inferred_implementors(
-        &mut self,
-        structs: &[(BindingId, usize)],
-        derived: &[(BindingId, &'static str)],
-    ) -> Vec<(BindingId, BindingId)> {
-        let mut candidates = Vec::new();
-        for (trait_binding, _) in derived {
-            for (struct_binding, arity) in structs {
-                let implementor = self.derived_implementor(*struct_binding, *arity, *trait_binding);
-                self.traits.add_implementor(*trait_binding, implementor);
-                candidates.push((*struct_binding, *trait_binding));
-            }
-        }
-        candidates
-    }
-
-    fn remove_blocked_derives(&mut self, candidates: &mut Vec<(BindingId, BindingId)>) {
-        loop {
-            let blocked = self.blocked_derives(candidates);
-            if blocked.is_empty() {
-                break;
-            }
-            for (struct_binding, trait_binding, field, ty) in blocked {
-                self.traits
-                    .remove_struct_implementor(trait_binding, struct_binding);
-                candidates.retain(|candidate| *candidate != (struct_binding, trait_binding));
-                if let Some(definition) = self.structs.get_mut(struct_binding) {
-                    definition.blocked.push((trait_binding, field, ty));
-                }
-            }
-        }
-    }
-
-    fn blocked_derives(
-        &self,
-        candidates: &[(BindingId, BindingId)],
-    ) -> Vec<(BindingId, BindingId, Rc<str>, Type)> {
-        candidates
-            .iter()
-            .filter_map(|(struct_binding, trait_binding)| {
-                self.blocking_field(*struct_binding, *trait_binding)
-                    .map(|(field, ty)| (*struct_binding, *trait_binding, field, ty))
-            })
-            .collect()
-    }
-
-    fn record_derives(
-        &mut self,
-        candidates: Vec<(BindingId, BindingId)>,
-        derived: &[(BindingId, &'static str)],
-    ) {
-        for (struct_binding, trait_binding) in candidates {
-            let path = Self::derive_path(derived, trait_binding);
-            if let (Some(path), Some(definition)) = (path, self.structs.get_mut(struct_binding)) {
-                definition.derives.push(path);
-            }
-        }
-    }
-
-    fn derive_path(
-        derived: &[(BindingId, &'static str)],
-        trait_binding: BindingId,
-    ) -> Option<&'static str> {
-        derived
-            .iter()
-            .find(|(binding, _)| *binding == trait_binding)
-            .map(|(_, path)| *path)
-    }
-
-    fn blocking_field(
-        &self,
-        struct_binding: BindingId,
-        trait_binding: BindingId,
-    ) -> Option<(Rc<str>, Type)> {
-        let definition = self.structs.get(struct_binding)?;
-        let params: Vec<GenericId> = definition.params.iter().map(|param| param.id).collect();
-        definition
-            .fields
-            .iter()
-            .find(|(_, ty)| {
-                !matches!(ty, Type::Function(..))
-                    && !self
-                        .traits
-                        .satisfies(trait_binding, ty, &|generic, _| params.contains(&generic))
-            })
-            .map(|(name, ty)| (name.clone(), ty.clone()))
-    }
-
-    fn derived_implementor(
-        &mut self,
-        binding: BindingId,
-        arity: usize,
-        derived: BindingId,
-    ) -> Scheme {
-        let params: Vec<GenericParam> = (0..arity)
-            .map(|position| self.new_generic(&Self::parameter_name(position), vec![derived]))
-            .collect();
-        let arguments = params.iter().map(|param| Type::Generic(param.id)).collect();
-        Scheme {
-            params,
-            body: Type::Named(binding, arguments),
         }
     }
 
@@ -806,7 +661,7 @@ impl TypeChecker {
         }
     }
 
-    fn parameter_name(position: usize) -> String {
+    pub(super) fn parameter_name(position: usize) -> String {
         let letters: Vec<char> = Self::PARAMETER_NAMES.chars().collect();
         match letters.get(position) {
             Some(letter) => letter.to_string(),
@@ -835,6 +690,7 @@ impl TypeChecker {
                 fields: lowered,
                 derives: Vec::new(),
                 blocked: Vec::new(),
+                written_derive: None,
             },
         );
         borrowed.map_or(Ok(()), |span| {

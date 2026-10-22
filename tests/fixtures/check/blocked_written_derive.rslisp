@@ -1,0 +1,4 @@
+(defstruct point (x f64) (y f64))
+(derive point eq)
+
+(defn main () (do))

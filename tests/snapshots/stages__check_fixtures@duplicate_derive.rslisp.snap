@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/duplicate_derive.rslisp
+---
+error[L0424]: `ticket` has a second `derive`
+ --> check/duplicate_derive.rslisp:3:1
+  |
+2 | (derive ticket clone)
+  | --------------------- first `derive`
+3 | (derive ticket debug)
+  | ^^^^^^^^^^^^^^^^^^^^^ second `derive`
+  |
+  = help: merge the two trait lists into one `derive`

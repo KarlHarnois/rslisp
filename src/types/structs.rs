@@ -3,12 +3,14 @@ use std::rc::Rc;
 
 use super::ty::{GenericId, GenericParam, Type};
 use crate::core::BindingId;
+use crate::source::Span;
 
 pub struct StructDefinition {
     pub params: Vec<GenericParam>,
     pub fields: Vec<(Rc<str>, Type)>,
     pub derives: Vec<&'static str>,
     pub blocked: Vec<(BindingId, Rc<str>, Type)>,
+    pub written_derive: Option<Span>,
 }
 
 impl StructDefinition {

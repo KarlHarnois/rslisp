@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/written_derive.rslisp
+---
+Ticket { id: 1, seat: 4 }
+Ticket { id: 1, seat: 4 }
+true
+vip
