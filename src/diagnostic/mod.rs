@@ -17,8 +17,15 @@ pub struct Diagnostic {
     report: Box<Report>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Severity {
+    Error,
+    Warning,
+}
+
 #[derive(Clone, Debug)]
 struct Report {
+    severity: Severity,
     code: DiagnosticCode,
     title: String,
     primary: Label,
@@ -29,8 +36,22 @@ struct Report {
 
 impl Diagnostic {
     pub fn error(code: DiagnosticCode, title: impl Into<String>, primary: Label) -> Self {
+        Self::new(Severity::Error, code, title, primary)
+    }
+
+    pub fn warning(code: DiagnosticCode, title: impl Into<String>, primary: Label) -> Self {
+        Self::new(Severity::Warning, code, title, primary)
+    }
+
+    fn new(
+        severity: Severity,
+        code: DiagnosticCode,
+        title: impl Into<String>,
+        primary: Label,
+    ) -> Self {
         Self {
             report: Box::new(Report {
+                severity,
                 code,
                 title: title.into(),
                 primary,
@@ -39,6 +60,10 @@ impl Diagnostic {
                 helps: Vec::new(),
             }),
         }
+    }
+
+    pub fn is_error(&self) -> bool {
+        self.report.severity == Severity::Error
     }
 
     pub fn with_label(mut self, label: Label) -> Self {
