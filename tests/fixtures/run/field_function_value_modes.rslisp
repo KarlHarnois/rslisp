@@ -1,0 +1,7 @@
+(rust-type mark "std::cell::Cell<i64>")
+(struct person (name string) (age u32))
+(struct handler (callback (fn (person) bool)) (tag mark))
+(defn adult? (p) (>= (field p age) 18))
+(defn main ()
+  (let handler (new handler (callback adult?) (tag (rust "std::cell::Cell::new(0)" mark))))
+  (println "wrapped"))

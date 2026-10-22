@@ -1,0 +1,4 @@
+(type takes-shared (fn ((fn ((ref (vec i64))) unit)) unit))
+(defn takes-shared (f) (do))
+(defn change! (items) (push! items 1))
+(defn main () (takes-shared change!))

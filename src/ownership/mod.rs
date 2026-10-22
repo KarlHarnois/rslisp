@@ -9,6 +9,7 @@ mod names;
 mod problems;
 mod rewrite;
 mod usage;
+mod values;
 
 use std::collections::HashMap;
 
@@ -22,6 +23,7 @@ use moves::MoveChecker;
 use names::ChangingFunctionNames;
 use problems::OwnershipProblems;
 use rewrite::ModeRewrite;
+use values::FunctionValueModes;
 
 pub use changes::InPlaceChanges;
 
@@ -50,6 +52,9 @@ impl OwnershipChecker {
         );
         let rewrite = ModeRewrite::new(&functions, &modes);
         rewrite.apply(program);
+        FunctionValueModes::apply(program, rewrite.function_params())
+            .into_iter()
+            .for_each(|diagnostic| diagnostics.push(diagnostic));
         let mut inferred_copies = InferredCopies::default();
         for definition in program
             .modules

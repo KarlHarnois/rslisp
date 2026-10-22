@@ -34,3 +34,4 @@ pub use typed::{
     TypedDefinition, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedModule, TypedProgram,
     TypedStructExpr,
 };
+pub use wrapper::{FunctionValueWrapper, PreparedFunctionValue};
