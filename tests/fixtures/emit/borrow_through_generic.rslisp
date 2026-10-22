@@ -1,0 +1,6 @@
+(defn size-of (text) (len text))
+
+(defn main ()
+  (let word (to-string "hello"))
+  (println (size-of (as-str word)))
+  (println (size-of word)))
