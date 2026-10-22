@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/prelude_vectors.rslisp
+---
+1
+2
+3
+3
+2
+1
+true
+2
+3
+1

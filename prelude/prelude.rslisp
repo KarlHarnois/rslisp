@@ -1,18 +1,19 @@
 (use prelude/macros defmacro defrule template)
 (use prelude/logic not when unless and or cond)
 (use prelude/syntax defn the)
-(use prelude/types vec option result iterator)
-(use prelude/vec vec push len iter values collect)
+(use prelude/types vec option result iterator slice)
+(use prelude/vec vec push len iter values collect
+               get pop! sort! sort-by-key! windows at dedup!)
 (use prelude/iterator range map filter fold for-each)
 (use prelude/option some none some? none? unwrap-or)
 (use prelude/result ok err ok? err?)
 (use prelude/number number signed float integer partial-eq partial-ord
                     add sub mul div rem neg sqrt lt le gt ge eq ne
-                    + - * / < <= > >= = !=)
+                    + - * / < <= > >= = != ord)
 (use prelude/text display to-string print println str char
                   chars lines split trim as-str parse parse-error from-str slice-text)
 (use prelude/struct defstruct)
-(use prelude/ownership clone copy ref mut)
+(use prelude/ownership clone copy ref mut deref)
 
 (export fn def let do if type struct new field quote macro rust rust-trait rust-type use export
         ref mut where _
@@ -21,14 +22,15 @@
         defmacro defrule template
         true false not when unless and or cond
         defn the
-        number signed float integer partial-eq partial-ord
+        number signed float integer partial-eq partial-ord ord
         add sub mul div rem neg sqrt lt le gt ge eq ne
         + - * / < <= > >= = !=
         display to-string print println str char
         chars lines split trim as-str parse parse-error from-str slice-text
         defstruct
-        clone copy
-        vec option result iterator push len iter values collect
+        clone copy deref
+        vec option result iterator slice push len iter values collect
+        get pop! sort! sort-by-key! windows at dedup!
         range map filter fold for-each
         some none some? none? unwrap-or
         ok err ok? err?)

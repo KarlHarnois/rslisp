@@ -4,7 +4,7 @@
 
 (export number signed float integer partial-eq partial-ord
         add sub mul div rem neg sqrt lt le gt ge eq ne
-        + - * / < <= > >= = !=)
+        + - * / < <= > >= = != ord)
 
 (rust-trait number "crate::rt::Number" i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
 (rust-trait signed "crate::rt::Signed" i8 i16 i32 i64 i128 isize f32 f64)
@@ -74,3 +74,6 @@
 
 (defrule !=
   ((a b) (ne a b)))
+
+(rust-trait ord "Ord"
+  char string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize)
