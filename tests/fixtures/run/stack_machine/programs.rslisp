@@ -1,6 +1,6 @@
 (use stack_machine/instruction push-op add-op sub-op mul-op dup-op swap-op over-op jump-op jump-if-zero-op print-op halt-op)
 
-(export countdown factorial underflowing)
+(export countdown factorial underflowing million-steps)
 
 (defn countdown ()
   (vec (push-op 5)
@@ -30,4 +30,16 @@
 (defn underflowing ()
   (vec (push-op 1)
        (add-op)
+       (halt-op)))
+
+(defn million-steps ()
+  (vec (push-op 7)
+       (push-op 8)
+       (sub-op)
+       (push-op 199999)
+       (dup-op)
+       (jump-if-zero-op 9)
+       (push-op 1)
+       (sub-op)
+       (jump-op 4)
        (halt-op)))
