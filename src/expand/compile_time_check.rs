@@ -25,10 +25,17 @@ impl Expander<'_> {
     fn check_node(&mut self, expr: &Expr, through: Option<Span>) -> Result<(), Diagnostic> {
         match expr.kind() {
             ExprKind::Leaf(Leaf::Var(binding)) => self.check_global(*binding, expr.span(), through),
-            ExprKind::Leaf(Leaf::Rust(_)) => Err(Self::routed(
-                InterpretProblems::program_only(expr.span()),
-                through,
-            )),
+            ExprKind::Leaf(Leaf::Rust(_)) => {
+                let problem = match self.macro_origins.get(&expr.span()) {
+                    Some(origin) => ExpandProblems::macro_program_only(
+                        &origin.name,
+                        expr.span(),
+                        origin.defined,
+                    ),
+                    None => InterpretProblems::program_only(expr.span()),
+                };
+                Err(Self::routed(problem, through))
+            }
             ExprKind::Struct(_) => Err(Self::routed(
                 InterpretProblems::runtime_only("structs", expr.span()),
                 through,

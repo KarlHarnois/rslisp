@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/macro_program_only.rslisp
+---
+error[L0306]: `build-code` belongs to the program, so macro code cannot run it
+ --> expand/macro_program_only.rslisp:7:36
+  |
+3 | (def build-code
+  |      ---------- `build-code` expands to Rust code that runs in the program
+...
+7 | (def through-builder (macro (form) (build-code form)))
+  |                                    ^^^^^^^^^^^^^^^^^ macro code runs this
+  |
+  = help: to compute this in the program, return it as code from the macro, for example with `template`
