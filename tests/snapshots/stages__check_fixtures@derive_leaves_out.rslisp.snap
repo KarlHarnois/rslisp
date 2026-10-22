@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/derive_leaves_out.rslisp
+---
+error[L0404]: `ticket` does not implement `clone`
+ --> check/derive_leaves_out.rslisp:6:15
+  |
+2 | (derive ticket debug)
+  | --------------------- this `derive` leaves out `clone`
+...
+6 |   (prn (clone early)))
+  |               ^^^^^ this needs `clone`
+  |
+  = note: `clone` is implemented for: bool, char, string, (ref str), i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where ((a clone)) (vec a)), (where ((a clone)) (option a)), (where ((a clone) (b clone)) (result a b))
+  = help: add `clone` to the struct's `derive`

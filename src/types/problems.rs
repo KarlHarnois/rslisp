@@ -366,6 +366,14 @@ impl TypeProblems {
         .with_help("merge the two trait lists into one `derive`")
     }
 
+    pub fn derive_leaves_out(span: Span, trait_name: &str) -> Label {
+        Label::new(span, format!("this `derive` leaves out `{trait_name}`"))
+    }
+
+    pub fn add_to_derive_help(trait_name: &str) -> String {
+        format!("add `{trait_name}` to the struct's `derive`")
+    }
+
     pub fn misplaced_where(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MISPLACED_WHERE,
