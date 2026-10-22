@@ -143,10 +143,13 @@ impl<'a> RustTypes<'a> {
         bounds
             .iter()
             .filter_map(|bound| {
-                self.program
-                    .traits
-                    .get(bound.binding)
-                    .map(|rust_trait| rust_trait.path.to_string())
+                let path = self.program.traits.get(bound.binding)?.path.to_string();
+                Some(match &bound.argument {
+                    Some(argument) => {
+                        format!("{path}<{}>", self.show(argument, TypePosition::Value))
+                    }
+                    None => path,
+                })
             })
             .collect()
     }

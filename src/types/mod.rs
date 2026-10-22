@@ -25,7 +25,7 @@ pub use display::TypeDisplay;
 pub use rust_types::{RustType, RustTypeTable};
 pub use structs::{StructDefinition, StructTable};
 pub use templates::TemplateBorrows;
-pub use traits::{RustTrait, TraitTable};
+pub use traits::{Implementor, RustTrait, TraitTable};
 pub use ty::{Bound, GenericId, GenericParam, Scheme, Type, TypeVar};
 pub use typed::{
     Borrow, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedDefinition,

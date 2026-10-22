@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/trait_arguments.rslisp
+---
+(rust-trait comparable "PartialEq" i64 (with i64 i64) (where ((a (comparable b)) b) (with (ref a) (ref b))))
+(def compare-with (rust "{&0} == {&1}" (where ((a_2 (comparable b_2)) b_2) (fn (a_2 b_2) bool))))

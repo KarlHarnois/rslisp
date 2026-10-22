@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::ty::{GenericId, GenericParam, Scheme, Type};
+use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
 use crate::core::{BindingArena, BindingId};
 
 pub struct TypeDisplay<'a> {
@@ -75,11 +75,15 @@ impl<'a> TypeDisplay<'a> {
         if param.bounds.is_empty() {
             return param.name.to_string();
         }
-        let bounds: Vec<&str> = param
-            .bounds
-            .iter()
-            .map(|bound| self.bindings.get(bound.binding).name())
-            .collect();
+        let bounds: Vec<String> = param.bounds.iter().map(|bound| self.bound(bound)).collect();
         format!("({} {})", param.name, bounds.join(" "))
+    }
+
+    fn bound(&self, bound: &Bound) -> String {
+        let name = self.bindings.get(bound.binding).name();
+        match &bound.argument {
+            Some(argument) => format!("({name} {})", self.show(argument)),
+            None => name.to_string(),
+        }
     }
 }

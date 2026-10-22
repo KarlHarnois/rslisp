@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/misplaced_with.rslisp
+---
+error[L0426]: `with` is only allowed in a `rust-trait`
+ --> check/misplaced_with.rslisp:2:27
+  |
+2 | (type bad (where (a) (fn ((with a i64)) unit)))
+  |                           ^^^^^^^^^^^^ not allowed here
+  |
+  = help: write `(with type type)` as an entry of `rust-trait`

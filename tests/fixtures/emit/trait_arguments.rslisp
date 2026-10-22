@@ -1,0 +1,11 @@
+(rust-trait comparable "PartialEq"
+  i64
+  (with i64 i64))
+
+(def equal-with (rust "{&0} == {&1}" (where ((a (comparable b)) b) (fn (a b) bool))))
+
+(type differ? (where ((a (comparable b)) b) (fn (a b) bool)))
+(defn differ? (a b) (not (equal-with a b)))
+
+(defn main ()
+  (println (differ? 1 2)))

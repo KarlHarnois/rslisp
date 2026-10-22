@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/trait_argument_arity.rslisp
+---
+error[L0425]: `display` takes no second type
+ --> check/trait_argument_arity.rslisp:2:31
+  |
+2 | (type bad (where ((a (display b)) b) (fn (a b) unit)))
+  |                               ^ this gives it a second type
+  |
+  = help: write `display` alone, without a second type

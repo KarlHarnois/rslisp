@@ -9,7 +9,7 @@ use super::rust_types::{RustType, RustTypeTable};
 use super::selection::Selection;
 use super::structs::{StructDefinition, StructTable};
 use super::templates::TemplateBorrows;
-use super::traits::{RustTrait, TraitTable};
+use super::traits::{Implementor, RustTrait, TraitTable};
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type, TypeVar};
 use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::{LiteralKind, Obligation, Unifier};
@@ -45,6 +45,7 @@ pub struct TypeChecker {
     pub(super) compile_time_only: HashSet<BindingId>,
     pub(super) diagnostics: Diagnostics,
     pub(super) type_arities: HashMap<BindingId, usize>,
+    trait_arguments: HashSet<BindingId>,
     signatures: HashMap<BindingId, (TypeExpr, Span)>,
     monomorphic: Vec<Type>,
     implied_bounds: HashMap<GenericId, Vec<Bound>>,
@@ -79,6 +80,7 @@ impl TypeChecker {
             compile_time_only: HashSet::new(),
             diagnostics: Diagnostics::default(),
             type_arities: HashMap::new(),
+            trait_arguments: HashSet::new(),
             signatures: HashMap::new(),
             monomorphic: Vec::new(),
             implied_bounds: HashMap::new(),
@@ -90,6 +92,7 @@ impl TypeChecker {
 
     pub(super) fn collect_declarations(&mut self, modules: &[CoreModule]) {
         self.record_type_arities(modules);
+        self.record_trait_arguments(modules);
         for item in modules.iter().flat_map(|module| &module.items) {
             if let Err(diagnostic) = self.collect_item(item) {
                 self.diagnostics.push(diagnostic);
@@ -123,12 +126,36 @@ impl TypeChecker {
         }
     }
 
+    fn record_trait_arguments(&mut self, modules: &[CoreModule]) {
+        for item in modules.iter().flat_map(|module| &module.items) {
+            let ItemKind::RustTrait(binding, _, implementors) = &item.kind else {
+                continue;
+            };
+            if implementors.iter().any(Self::entry_uses_with) {
+                self.trait_arguments.insert(*binding);
+            }
+        }
+    }
+
+    fn entry_uses_with(entry: &TypeExpr) -> bool {
+        match entry.kind() {
+            TypeExprKind::With(..) => true,
+            TypeExprKind::Where(_, inner) => Self::entry_uses_with(inner),
+            _ => false,
+        }
+    }
+
+    pub(super) fn trait_takes_argument(&self, binding: BindingId) -> bool {
+        self.trait_arguments.contains(&binding)
+    }
+
     fn check_trait_claims(&mut self, modules: &[CoreModule]) {
         for item in modules.iter().flat_map(|module| &module.items) {
             let ItemKind::RustTrait(trait_binding, path, implementors) = &item.kind else {
                 continue;
             };
             for implementor in implementors {
+                let implementor = Self::implemented_type(implementor);
                 let TypeExprKind::Named(binding, _) = implementor.kind() else {
                     continue;
                 };
@@ -150,6 +177,14 @@ impl TypeChecker {
                     implementor.span(),
                 ));
             }
+        }
+    }
+
+    fn implemented_type(implementor: &TypeExpr) -> &TypeExpr {
+        match implementor.kind() {
+            TypeExprKind::With(body, _) => body,
+            TypeExprKind::Where(_, inner) => Self::implemented_type(inner),
+            _ => implementor,
         }
     }
 
@@ -264,14 +299,14 @@ impl TypeChecker {
         let mut admissible: Vec<Type> = first
             .implementors
             .iter()
-            .map(|implementor| implementor.body.clone())
+            .map(|implementor| implementor.scheme.body.clone())
             .collect();
         for rust_trait in others {
             admissible.retain(|candidate| {
                 rust_trait
                     .implementors
                     .iter()
-                    .any(|implementor| implementor.body == *candidate)
+                    .any(|implementor| implementor.scheme.body == *candidate)
             });
         }
         if traits.iter().any(|rust_trait| rust_trait.is_open()) {
@@ -308,37 +343,54 @@ impl TypeChecker {
     }
 
     fn discharge(&mut self, obligation: Obligation, pass: ObligationPass) {
+        let bound = self.resolve_bound(&obligation.bound);
         let implementor = self.unifier.resolve(&obligation.implementor);
         match implementor {
-            Type::Var(var) => self.unifier.add_bound(var, obligation.bound),
-            Type::Generic(generic) => {
-                self.check_generic_bound(generic, obligation.bound, obligation.span)
-            }
-            _ => self.select_implementor(obligation, &implementor, pass),
+            Type::Var(var) => self.unifier.add_bound(var, bound),
+            Type::Generic(generic) => self.check_generic_bound(generic, bound, obligation.span),
+            _ => self.select_implementor(bound, &implementor, obligation.span, pass),
+        }
+    }
+
+    fn resolve_bound(&self, bound: &Bound) -> Bound {
+        Bound {
+            binding: bound.binding,
+            argument: bound
+                .argument
+                .as_ref()
+                .map(|argument| self.unifier.resolve(argument)),
         }
     }
 
     fn select_implementor(
         &mut self,
-        obligation: Obligation,
+        bound: Bound,
         implementor: &Type,
+        span: Span,
         pass: ObligationPass,
     ) {
-        match self.traits.select(obligation.bound.binding, implementor) {
+        match self.traits.select(&bound, implementor) {
             Selection::Implemented(requirements) => {
                 for requirement in requirements {
                     let required = Obligation {
-                        bound: Bound::plain(requirement.bound),
+                        bound: requirement.bound,
                         implementor: requirement.implementor,
-                        span: obligation.span,
+                        span,
                     };
                     self.discharge(required, pass);
                 }
             }
             Selection::Missing if !implementor.has_vars() => {
-                self.report_missing_trait(obligation.bound.binding, implementor, obligation.span)
+                self.report_missing_trait(&bound, implementor, span)
             }
-            Selection::Undecided | Selection::Missing => self.leave_unresolved(obligation, pass),
+            Selection::Undecided | Selection::Missing => self.leave_unresolved(
+                Obligation {
+                    bound,
+                    implementor: implementor.clone(),
+                    span,
+                },
+                pass,
+            ),
         }
     }
 
@@ -720,14 +772,6 @@ impl TypeChecker {
         Ok((lowered, borrowed))
     }
 
-    fn lower_implementor(&mut self, implementor: &TypeExpr) -> Result<Scheme, Diagnostic> {
-        let scheme = self.lower_scheme(implementor)?;
-        if matches!(scheme.body, Type::Generic(_)) {
-            return Err(TypeProblems::bare_implementor(implementor.span()));
-        }
-        Ok(scheme)
-    }
-
     fn collect_rust_type(
         &mut self,
         binding: BindingId,
@@ -793,7 +837,7 @@ impl TypeChecker {
         let implementors = implementors
             .iter()
             .map(|implementor| self.lower_implementor(implementor))
-            .collect::<Result<Vec<Scheme>, Diagnostic>>()?;
+            .collect::<Result<Vec<Implementor>, Diagnostic>>()?;
         self.traits.add(
             binding,
             RustTrait {
@@ -831,30 +875,29 @@ impl TypeChecker {
         match self.admissible_types(generic) {
             Admissible::Closed(types) => {
                 !types.is_empty()
-                    && types.iter().all(|candidate| {
-                        self.traits
-                            .satisfies(bound.binding, candidate, &|_, _| false)
-                    })
+                    && types
+                        .iter()
+                        .all(|candidate| self.traits.satisfies(bound, candidate, &|_, _| false))
             }
             Admissible::Unbounded | Admissible::Open(_) => false,
         }
     }
 
-    fn report_missing_trait(&mut self, bound: BindingId, implementor: &Type, span: Span) {
+    fn report_missing_trait(&mut self, bound: &Bound, implementor: &Type, span: Span) {
         let display = self.display();
         let implementors = self
             .traits
-            .get(bound)
+            .get(bound.binding)
             .map(|rust_trait| {
                 rust_trait
                     .implementors
                     .iter()
-                    .map(|known| display.scheme(known))
+                    .map(|known| Self::show_implementor(&display, known))
                     .collect()
             })
             .unwrap_or_default();
         let mut diagnostic = TypeProblems::missing_trait(
-            self.bindings.get(bound).name(),
+            self.bindings.get(bound.binding).name(),
             &display.show(implementor),
             span,
             implementors,
@@ -862,14 +905,14 @@ impl TypeChecker {
         if let Type::Named(struct_binding, _) = implementor
             && let Some(definition) = self.structs.get(*struct_binding)
         {
-            diagnostic = self.with_written_derive(diagnostic, definition, bound);
+            diagnostic = self.with_written_derive(diagnostic, definition, bound.binding);
             if let Some((_, field, field_type)) = definition
                 .blocked
                 .iter()
-                .find(|(trait_binding, _, _)| *trait_binding == bound)
+                .find(|(trait_binding, _, _)| *trait_binding == bound.binding)
             {
                 let struct_name = self.bindings.get(*struct_binding).name().to_string();
-                let trait_name = self.bindings.get(bound).name().to_string();
+                let trait_name = self.bindings.get(bound.binding).name().to_string();
                 diagnostic = diagnostic.with_note(TypeProblems::blocked_derive_note(
                     &struct_name,
                     &trait_name,
@@ -879,13 +922,21 @@ impl TypeChecker {
             }
             if self
                 .traits
-                .get(bound)
+                .get(bound.binding)
                 .is_some_and(|rust_trait| rust_trait.path.as_ref() == "std::fmt::Display")
             {
                 diagnostic = diagnostic.with_help(TypeProblems::print_struct_help());
             }
         }
         self.diagnostics.push(diagnostic);
+    }
+
+    fn show_implementor(display: &TypeDisplay<'_>, implementor: &Implementor) -> String {
+        let body = display.scheme(&implementor.scheme);
+        match &implementor.argument {
+            Some(argument) => format!("(with {body} {})", display.show(argument)),
+            None => body,
+        }
     }
 
     fn with_written_derive(

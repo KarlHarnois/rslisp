@@ -32,9 +32,14 @@ impl Expander<'_> {
             .iter_mut()
             .chain(body.iter_mut())
             .for_each(|form| form.add_scope(scope));
+        let variables = binders
+            .iter()
+            .map(|binder| self.define_binder_variable(binder))
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
         let binders = binders
             .iter()
-            .map(|binder| self.lower_type_binder(binder))
+            .zip(variables)
+            .map(|(binder, variable)| self.lower_type_binder(binder, variable))
             .collect::<Result<Vec<TypeBinder>, Diagnostic>>()?;
         Ok(Parameterized { binders, body })
     }

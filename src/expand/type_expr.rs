@@ -12,6 +12,7 @@ impl Expander<'_> {
     const FUNCTION_TYPE_PARTS: usize = 3;
     const WRAPPER_TYPE_PARTS: usize = 2;
     const WHERE_PARTS: usize = 3;
+    const WITH_PARTS: usize = 3;
 
     pub(super) fn lower_type(&mut self, form: &Form) -> Result<TypeExpr, Diagnostic> {
         let span = form.span();
@@ -58,6 +59,7 @@ impl Expander<'_> {
                 self.lower_reference_type(kind, form, items)
             }
             BindingKind::KernelType(KernelType::Where) => self.lower_where(form, items),
+            BindingKind::KernelType(KernelType::With) => self.lower_with_type(form, items),
             BindingKind::Struct(_) | BindingKind::RustType(_) => {
                 self.lower_named_application(binding, items)
             }
@@ -142,16 +144,45 @@ impl Expander<'_> {
         ))
     }
 
-    pub(super) fn lower_type_binder(&mut self, binder: &Form) -> Result<TypeBinder, Diagnostic> {
-        let (name, bounds) = match binder.as_list() {
-            Some([name, bounds @ ..]) => (name, bounds),
-            _ => (binder, &[][..]),
+    fn lower_with_type(&mut self, form: &Form, items: &[Form]) -> Result<TypeExprKind, Diagnostic> {
+        if items.len() != Self::WITH_PARTS {
+            return Err(ExpandProblems::malformed_type(
+                KernelType::With,
+                form.span(),
+            ));
+        }
+        let implementor = self.lower_type(&items[1])?;
+        let argument = self.lower_type(&items[2])?;
+        Ok(TypeExprKind::With(
+            Box::new(implementor),
+            Box::new(argument),
+        ))
+    }
+
+    pub(super) fn define_binder_variable(
+        &mut self,
+        binder: &Form,
+    ) -> Result<BindingId, Diagnostic> {
+        let name = match binder.as_list() {
+            Some([name, ..]) => name,
+            _ => binder,
+        };
+        self.define_local(name, Namespace::Type, BindingKind::TypeVariable, None)
+    }
+
+    pub(super) fn lower_type_binder(
+        &mut self,
+        binder: &Form,
+        variable: BindingId,
+    ) -> Result<TypeBinder, Diagnostic> {
+        let bounds = match binder.as_list() {
+            Some([_, bounds @ ..]) => bounds,
+            _ => &[][..],
         };
         let bounds = bounds
             .iter()
             .map(|bound| self.lower_bound(bound))
             .collect::<Result<Vec<TypeBound>, Diagnostic>>()?;
-        let variable = self.define_local(name, Namespace::Type, BindingKind::TypeVariable, None)?;
         Ok(TypeBinder {
             variable,
             bounds,
@@ -159,21 +190,25 @@ impl Expander<'_> {
         })
     }
 
-    fn lower_bound(&self, bound: &Form) -> Result<TypeBound, Diagnostic> {
-        let symbol = bound.as_symbol().ok_or_else(|| {
+    fn lower_bound(&mut self, bound: &Form) -> Result<TypeBound, Diagnostic> {
+        let (name, argument) = match bound.as_list() {
+            Some([name, argument]) => (name, Some(argument)),
+            _ => (bound, None),
+        };
+        let symbol = name.as_symbol().ok_or_else(|| {
             ExpandProblems::wrong_namespace(&bound.to_string(), "a trait", bound.span())
         })?;
         let binding = self.resolve(symbol, Namespace::Type, bound.span())?;
-        match self.kind(binding) {
-            BindingKind::Trait(_) => Ok(TypeBound {
-                binding,
-                argument: None,
-            }),
-            _ => Err(ExpandProblems::wrong_namespace(
+        if !matches!(self.kind(binding), BindingKind::Trait(_)) {
+            return Err(ExpandProblems::wrong_namespace(
                 symbol.name(),
                 "a trait",
                 bound.span(),
-            )),
+            ));
         }
+        let argument = argument
+            .map(|argument| self.lower_type(argument))
+            .transpose()?;
+        Ok(TypeBound { binding, argument })
     }
 }

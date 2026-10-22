@@ -1,0 +1,2 @@
+(defn bad (a b) (do))
+(type bad (where ((a (partial-eq c)) b) (fn (a b) bool)))

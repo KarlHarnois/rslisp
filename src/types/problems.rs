@@ -374,6 +374,24 @@ impl TypeProblems {
         format!("add `{trait_name}` to the struct's `derive`")
     }
 
+    pub fn trait_takes_no_argument(trait_name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::TRAIT_NO_SECOND_TYPE,
+            format!("`{trait_name}` takes no second type"),
+            Label::new(span, "this gives it a second type"),
+        )
+        .with_help(format!("write `{trait_name}` alone, without a second type"))
+    }
+
+    pub fn misplaced_with(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MISPLACED_WITH,
+            "`with` is only allowed in a `rust-trait`",
+            Label::new(span, "not allowed here"),
+        )
+        .with_help("write `(with type type)` as an entry of `rust-trait`")
+    }
+
     pub fn misplaced_where(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MISPLACED_WHERE,
