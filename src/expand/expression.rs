@@ -4,10 +4,12 @@ use std::rc::Rc;
 use super::Expander;
 use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
+use super::recur_check::RecurCheck;
 use super::shape::Shape;
 use crate::core::{
-    Binder, BindingKind, Block, BodyItem, Control, Expr, ExprKind, ExpressionForm, FieldLabel,
-    KernelForm, Lambda, Leaf, Literal, Namespace, RustTemplate, StructExpr,
+    Binder, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind, ExpressionForm,
+    FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, Namespace, RustTemplate, StructExpr,
+    StructForm,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -56,6 +58,7 @@ impl Expander<'_> {
             .map(|param| self.lower_binder(param, None))
             .collect::<Result<Vec<Binder>, Diagnostic>>()?;
         let body = self.lower_body(&body)?;
+        RecurCheck::inside(params.len()).block(&body)?;
         Ok(Lambda { params, body })
     }
 
@@ -126,12 +129,39 @@ impl Expander<'_> {
     ) -> Result<ExprKind, Diagnostic> {
         match expression {
             ExpressionForm::Fn => self.lower_fn(shape),
-            ExpressionForm::Do => self.lower_do(shape),
-            ExpressionForm::If => self.lower_if(shape),
-            ExpressionForm::Quote => self.lower_quote(shape),
-            ExpressionForm::New => self.lower_new(shape),
-            ExpressionForm::Field => self.lower_field_access(shape),
-            ExpressionForm::Rust => self.lower_rust(shape),
+            ExpressionForm::Recur => self.lower_recur(shape),
+            ExpressionForm::Leaf(form) => self.lower_leaf_form(form, shape),
+            ExpressionForm::Control(form) => self.lower_control_form(form, shape),
+            ExpressionForm::Struct(form) => self.lower_struct_form(form, shape),
+        }
+    }
+
+    fn lower_leaf_form(&mut self, form: LeafForm, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        match form {
+            LeafForm::Quote => self.lower_quote(shape),
+            LeafForm::Rust => self.lower_rust(shape),
+        }
+    }
+
+    fn lower_control_form(
+        &mut self,
+        form: ControlForm,
+        shape: &Shape,
+    ) -> Result<ExprKind, Diagnostic> {
+        match form {
+            ControlForm::Do => self.lower_do(shape),
+            ControlForm::If => self.lower_if(shape),
+        }
+    }
+
+    fn lower_struct_form(
+        &mut self,
+        form: StructForm,
+        shape: &Shape,
+    ) -> Result<ExprKind, Diagnostic> {
+        match form {
+            StructForm::New => self.lower_new(shape),
+            StructForm::Field => self.lower_field_access(shape),
         }
     }
 
@@ -262,5 +292,13 @@ impl Expander<'_> {
             template,
             type_expr,
         }))))
+    }
+
+    fn lower_recur(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let arguments = shape.items()[1..]
+            .iter()
+            .map(|argument| self.lower_expr(argument))
+            .collect::<Result<Vec<Expr>, Diagnostic>>()?;
+        Ok(ExprKind::Recur(arguments))
     }
 }

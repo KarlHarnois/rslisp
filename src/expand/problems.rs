@@ -241,6 +241,42 @@ impl ExpandProblems {
         )
     }
 
+    pub fn recur_outside_tail(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::RECUR_OUTSIDE_TAIL,
+            "`recur` is not in tail position",
+            Label::new(span, "this `recur` is not the last thing the function does"),
+        )
+        .with_help("make `recur` the last form of the function, or call the function by name")
+    }
+
+    pub fn recur_argument_count(expected: usize, found: usize, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::RECUR_ARGUMENT_COUNT,
+            format!(
+                "`recur` passes {}, but its function takes {expected}",
+                Counted::noun(found, "argument")
+            ),
+            Label::new(span, format!("passes {}", Counted::noun(found, "argument"))),
+        )
+        .with_help(format!(
+            "write `recur` with {}, one for each parameter of the function",
+            Counted::noun(expected, "argument")
+        ))
+    }
+
+    pub fn recur_outside_fn(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::RECUR_OUTSIDE_FN,
+            "`recur` is not inside a function",
+            Label::new(
+                span,
+                "there is no function here for `recur` to jump back to",
+            ),
+        )
+        .with_help("write `recur` inside a `fn` body")
+    }
+
     pub fn macro_result(found: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MACRO_RESULT_NOT_FORM,

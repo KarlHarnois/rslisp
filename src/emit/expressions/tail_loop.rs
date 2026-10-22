@@ -9,13 +9,21 @@ use crate::types::{
 };
 
 pub struct TailLoop {
-    function: BindingId,
+    function: Option<BindingId>,
     params: Vec<BindingId>,
     reassigned: HashSet<BindingId>,
 }
 
 impl TailLoop {
     pub fn of(function: BindingId, lambda: &TypedLambda) -> Option<Self> {
+        Self::prepare(Some(function), lambda)
+    }
+
+    pub fn of_closure(lambda: &TypedLambda) -> Option<Self> {
+        Self::prepare(None, lambda)
+    }
+
+    fn prepare(function: Option<BindingId>, lambda: &TypedLambda) -> Option<Self> {
         let params: Vec<BindingId> = lambda.params.iter().map(|param| param.binding).collect();
         let mut calls = Vec::new();
         Self::collect_block(function, &lambda.body, &mut calls);
@@ -43,8 +51,16 @@ impl TailLoop {
         self.reassigned.contains(&param)
     }
 
+    pub fn recurrence<'e>(&self, expr: &'e TypedExpr) -> Option<&'e [TypedArgument]> {
+        match &expr.kind {
+            TypedExprKind::Recur(arguments) => Some(arguments),
+            TypedExprKind::Call(callee, arguments) if self.calls(callee) => Some(arguments),
+            _ => None,
+        }
+    }
+
     fn collect_block<'e>(
-        function: BindingId,
+        function: Option<BindingId>,
         block: &'e TypedBlock,
         calls: &mut Vec<&'e [TypedArgument]>,
     ) {
@@ -53,9 +69,16 @@ impl TailLoop {
         }
     }
 
-    fn collect<'e>(function: BindingId, expr: &'e TypedExpr, calls: &mut Vec<&'e [TypedArgument]>) {
+    fn collect<'e>(
+        function: Option<BindingId>,
+        expr: &'e TypedExpr,
+        calls: &mut Vec<&'e [TypedArgument]>,
+    ) {
         match &expr.kind {
-            TypedExprKind::Call(callee, arguments) if Self::calls(function, callee) => {
+            TypedExprKind::Recur(arguments) => {
+                calls.push(arguments);
+            }
+            TypedExprKind::Call(callee, arguments) if Self::calls_global(function, callee) => {
                 calls.push(arguments);
             }
             TypedExprKind::Control(TypedControl::If(_, then, otherwise)) => {
@@ -69,7 +92,14 @@ impl TailLoop {
         }
     }
 
-    fn calls(function: BindingId, callee: &TypedExpr) -> bool {
+    fn calls(&self, callee: &TypedExpr) -> bool {
+        Self::calls_global(self.function, callee)
+    }
+
+    fn calls_global(function: Option<BindingId>, callee: &TypedExpr) -> bool {
+        let Some(function) = function else {
+            return false;
+        };
         matches!(callee.kind, TypedExprKind::Leaf(TypedLeaf::Global(binding)) if binding == function)
     }
 
@@ -113,10 +143,14 @@ impl ExpressionEmitter<'_> {
     }
 
     fn loop_tail(&mut self, tail: &TypedExpr) -> Vec<Fragment> {
+        if let Some(arguments) = self
+            .tail_loop
+            .as_ref()
+            .and_then(|tail_loop| tail_loop.recurrence(tail))
+        {
+            return self.next_iteration(arguments);
+        }
         match &tail.kind {
-            TypedExprKind::Call(callee, arguments) if self.calls_itself(callee) => {
-                self.next_iteration(arguments)
-            }
             TypedExprKind::Control(TypedControl::If(test, then, otherwise)) => {
                 self.loop_conditional(test, then, otherwise)
             }
@@ -168,12 +202,6 @@ impl ExpressionEmitter<'_> {
             fragments.push(Fragment::Text(";".to_string()));
         }
         fragments
-    }
-
-    fn calls_itself(&self, callee: &TypedExpr) -> bool {
-        self.tail_loop
-            .as_ref()
-            .is_some_and(|tail_loop| TailLoop::calls(tail_loop.function, callee))
     }
 
     fn next_iteration(&mut self, arguments: &[TypedArgument]) -> Vec<Fragment> {

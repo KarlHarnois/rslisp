@@ -4,13 +4,14 @@ use super::functions::{FunctionTable, ParamMode};
 use crate::core::BindingId;
 use crate::types::{
     Borrow, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind,
-    TypedLeaf, TypedStructExpr,
+    TypedLambda, TypedLeaf, TypedStructExpr,
 };
 
 pub struct UsageCollector<'a> {
     functions: &'a FunctionTable,
     modes: &'a HashMap<BindingId, ParamMode>,
     tracked: HashSet<BindingId>,
+    self_modes: Vec<ParamMode>,
     required: HashMap<BindingId, ParamMode>,
 }
 
@@ -19,11 +20,13 @@ impl<'a> UsageCollector<'a> {
         functions: &'a FunctionTable,
         modes: &'a HashMap<BindingId, ParamMode>,
         tracked: HashSet<BindingId>,
+        self_modes: Vec<ParamMode>,
     ) -> Self {
         Self {
             functions,
             modes,
             tracked,
+            self_modes,
             required: HashMap::new(),
         }
     }
@@ -38,10 +41,17 @@ impl<'a> UsageCollector<'a> {
             TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.require(*binding, context),
             TypedExprKind::Leaf(_) => {}
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
+            TypedExprKind::Recur(arguments) => self.recur(arguments),
             TypedExprKind::Struct(structure) => self.structure(structure),
             TypedExprKind::Control(control) => self.control(control, context),
-            TypedExprKind::Fn(lambda) => self.block(&lambda.body, ParamMode::Own),
+            TypedExprKind::Fn(lambda) => self.closure_body(lambda),
         }
+    }
+
+    fn closure_body(&mut self, lambda: &TypedLambda) {
+        let outer = std::mem::take(&mut self.self_modes);
+        self.block(&lambda.body, ParamMode::Own);
+        self.self_modes = outer;
     }
 
     fn structure(&mut self, structure: &TypedStructExpr) {
@@ -83,13 +93,22 @@ impl<'a> UsageCollector<'a> {
         ) {
             self.expr(callee, ParamMode::Ref);
         }
+        self.arguments(arguments, &callee_modes);
+    }
+
+    fn recur(&mut self, arguments: &[TypedArgument]) {
+        let modes = self.self_modes.clone();
+        self.arguments(arguments, &modes);
+    }
+
+    fn arguments(&mut self, arguments: &[TypedArgument], modes: &[ParamMode]) {
         for (position, argument) in arguments.iter().enumerate() {
             let context = match argument.borrow {
                 Borrow::Shared | Borrow::Passthrough | Borrow::Deref(_) | Borrow::Collapse(_) => {
                     ParamMode::Ref
                 }
                 Borrow::Mutable | Borrow::Reborrow => ParamMode::Mut,
-                Borrow::None => callee_modes
+                Borrow::None => modes
                     .get(position)
                     .copied()
                     .map_or(ParamMode::Own, Self::argument_context),

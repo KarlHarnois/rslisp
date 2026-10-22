@@ -59,6 +59,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `quote` | `(quote form)` | none | form: data. |
 | `macro` | `(def name (macro (form) body...))` | none | form: binder. body: expressions. |
 | `rust` | `(rust "template" type)` | the inlined template | type: type. |
+| `recur` | `(recur argument...)` | `loop` | arguments: expressions. |
 | `rust-trait` | `(rust-trait name "Path" type...)` | trait bound | name: type binder. types: types, `(with type type)`, or `(where (param...) type)`. |
 | `rust-type` | `(rust-type name "template")` or `(rust-type name (where (param...) "template"))` | the filled template | name: type binder. params: type binders. |
 | `use` | `(use module name...)` | path | module: module path. names: binders. |
@@ -389,6 +390,7 @@ A call to the enclosing function in tail position already compiles to a Rust `lo
 
 - A written `(recur argument...)` compiles to the same loop.
 - `recur` is an error outside tail position.
+- The number of arguments to `recur` must equal the number of parameters of the target.
 - `recur` targets the nearest `fn`, so the prelude defines Clojure's `loop` as a `defrule`.
 - Mutual recursion stays recursion.
 - `recur` is a kernel form, because the prelude cannot make a function jump back to its start.

@@ -55,6 +55,7 @@ impl<'a> MoveChecker<'a> {
             }
             TypedExprKind::Leaf(_) => {}
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
+            TypedExprKind::Recur(arguments) => self.recur(arguments),
             TypedExprKind::Struct(structure) => self.structure(structure),
             TypedExprKind::Control(control) => self.control(control, usage),
             TypedExprKind::Fn(lambda) => {
@@ -132,6 +133,18 @@ impl<'a> MoveChecker<'a> {
         !self.template_borrows.borrows(callee, position)
             && argument.borrow == Borrow::None
             && !matches!(argument.value.ty, Type::Ref(_))
+    }
+
+    fn recur(&mut self, arguments: &[TypedArgument]) {
+        for argument in arguments {
+            let usage =
+                if argument.borrow == Borrow::None && !matches!(argument.value.ty, Type::Ref(_)) {
+                    Usage::Move
+                } else {
+                    Usage::Borrow
+                };
+            self.expr(&argument.value, usage);
+        }
     }
 
     fn branches(

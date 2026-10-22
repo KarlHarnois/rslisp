@@ -30,6 +30,12 @@ struct ExpectedFunction<'a> {
     written: bool,
 }
 
+#[derive(Clone)]
+pub(super) struct RecurTarget {
+    parameters: Vec<Type>,
+    result: Type,
+}
+
 impl TypeChecker {
     pub(super) fn infer(&mut self, expr: &Expr) -> Result<TypedExpr, Diagnostic> {
         let span = expr.span();
@@ -37,6 +43,7 @@ impl TypeChecker {
             ExprKind::Leaf(leaf) => self.infer_leaf(leaf, span),
             ExprKind::Fn(lambda) => Self::typed(self.infer_lambda(lambda, span, None), span),
             ExprKind::Call(callee, arguments) => self.infer_call(callee, arguments, span),
+            ExprKind::Recur(arguments) => self.infer_recur(arguments, span),
             ExprKind::Control(control) => self.infer_control(control, span),
             ExprKind::Struct(structure) => self.infer_struct(structure, span),
         }
@@ -224,11 +231,23 @@ impl TypeChecker {
             });
             params.push(self.bind_parameter(param, expected_parameter)?);
         }
-        let (body, result) = self.infer_block(&lambda.body)?;
-        if let Some(expected) = &expected {
-            let result_span = Self::block_result_span(&body).unwrap_or(span);
-            self.expect(expected.result, &result, result_span, expected.context)?;
-        }
+        let result = match &expected {
+            Some(expected) => expected.result.clone(),
+            None => self.unifier.fresh(),
+        };
+        let target = RecurTarget {
+            parameters: params.iter().map(|param| param.ty.clone()).collect(),
+            result: result.clone(),
+        };
+        let previous = self.recur_target.replace(target);
+        let inferred = self.infer_block(&lambda.body);
+        self.recur_target = previous;
+        let (body, found) = inferred?;
+        let result_span = Self::block_result_span(&body).unwrap_or(span);
+        let context = expected
+            .as_ref()
+            .map_or(MismatchContext::Plain, |expected| expected.context);
+        self.expect(&result, &found, result_span, context)?;
         let parameter_types = params.iter().map(|param| param.ty.clone()).collect();
         let function = Type::Function(parameter_types, Box::new(result));
         Ok((
@@ -327,10 +346,25 @@ impl TypeChecker {
         }
         let shared = SharedVariables::of(&parameters, &self.unifier);
         let mut typed_arguments = self.infer_arguments(&parameters, arguments, &shared)?;
-        self.pass_shared_arguments(&callee, &shared, &mut typed_arguments)?;
+        self.pass_shared_arguments(Some(&callee), &shared, &mut typed_arguments)?;
         Ok(TypedExpr {
             kind: TypedExprKind::Call(Box::new(callee), typed_arguments),
             ty: result,
+            span,
+        })
+    }
+
+    fn infer_recur(&mut self, arguments: &[Expr], span: Span) -> Result<TypedExpr, Diagnostic> {
+        let target = self
+            .recur_target
+            .clone()
+            .expect("expansion checks that `recur` is inside a function");
+        let shared = SharedVariables::of(&target.parameters, &self.unifier);
+        let mut typed_arguments = self.infer_arguments(&target.parameters, arguments, &shared)?;
+        self.pass_shared_arguments(None, &shared, &mut typed_arguments)?;
+        Ok(TypedExpr {
+            kind: TypedExprKind::Recur(typed_arguments),
+            ty: target.result,
             span,
         })
     }

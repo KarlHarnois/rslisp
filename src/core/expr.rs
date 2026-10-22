@@ -15,6 +15,7 @@ pub enum ExprKind {
     Leaf(Leaf),
     Fn(Rc<Lambda>),
     Call(Box<Expr>, Vec<Expr>),
+    Recur(Vec<Expr>),
     Control(Control),
     Struct(StructExpr),
 }
@@ -102,6 +103,7 @@ impl Expr {
             ExprKind::Call(callee, arguments) => {
                 std::iter::once(callee.as_ref()).chain(arguments).collect()
             }
+            ExprKind::Recur(arguments) => arguments.iter().collect(),
             ExprKind::Control(control) => control.children(),
             ExprKind::Struct(structure) => structure.children(),
         }

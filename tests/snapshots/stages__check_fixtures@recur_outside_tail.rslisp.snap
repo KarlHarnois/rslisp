@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/recur_outside_tail.rslisp
+---
+error[L0214]: `recur` is not in tail position
+ --> check/recur_outside_tail.rslisp:1:20
+  |
+1 | (defn bad (n) (+ 1 (recur (- n 1))))
+  |                    ^^^^^^^^^^^^^^^ this `recur` is not the last thing the function does
+  |
+  = help: make `recur` the last form of the function, or call the function by name

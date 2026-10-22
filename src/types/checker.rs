@@ -52,6 +52,7 @@ pub struct TypeChecker {
     pub(super) field_accessors: HashMap<BindingId, Rc<str>>,
     pub(super) pending_borrows: Vec<PendingBorrow>,
     pub(super) template_borrows: TemplateBorrows,
+    pub(super) recur_target: Option<super::infer::RecurTarget>,
 }
 
 struct Definition<'p> {
@@ -87,6 +88,7 @@ impl TypeChecker {
             field_accessors: HashMap::new(),
             pending_borrows: Vec::new(),
             template_borrows: TemplateBorrows::default(),
+            recur_target: None,
         }
     }
 

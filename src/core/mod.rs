@@ -14,8 +14,8 @@ pub use expr::{
     RustTemplate, StructExpr,
 };
 pub use kernel::{
-    CopyTrait, DefinitionForm, ExpressionForm, KernelConstants, KernelForm, KernelType,
-    PrimitiveType, ReferenceKind, StructDerives,
+    ControlForm, CopyTrait, DefinitionForm, ExpressionForm, KernelConstants, KernelForm,
+    KernelType, LeafForm, PrimitiveType, ReferenceKind, StructDerives, StructForm,
 };
 pub use module::{CoreModule, Item, ItemKind, ModuleId, ModulePath};
 pub use printer::CorePrinter;

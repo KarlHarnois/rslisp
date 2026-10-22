@@ -45,8 +45,13 @@ impl<'a> ModeInference<'a> {
                 .filter(|slot| slot.inferable && !slot.ty.is_unsized())
                 .map(|slot| slot.binding)
                 .collect();
-            let required =
-                UsageCollector::new(self.functions, modes, tracked).collect(&function.lambda.body);
+            let self_modes = function
+                .params
+                .iter()
+                .map(|slot| modes[&slot.binding])
+                .collect();
+            let required = UsageCollector::new(self.functions, modes, tracked, self_modes)
+                .collect(&function.lambda.body);
             for (binding, needed) in required {
                 let current = modes[&binding];
                 if needed > current {

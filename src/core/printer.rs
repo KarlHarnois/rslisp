@@ -79,6 +79,13 @@ impl<'a> CorePrinter<'a> {
             ExprKind::Leaf(leaf) => self.leaf(leaf),
             ExprKind::Fn(lambda) => self.lambda(lambda),
             ExprKind::Call(callee, arguments) => self.call(callee, arguments),
+            ExprKind::Recur(arguments) => Self::list(
+                "recur",
+                arguments
+                    .iter()
+                    .map(|argument| self.expr(argument))
+                    .collect(),
+            ),
             ExprKind::Control(control) => self.control(control),
             ExprKind::Struct(structure) => self.structure(structure),
         }

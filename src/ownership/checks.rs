@@ -41,22 +41,45 @@ impl<'a> OwnershipNeeds<'a> {
         }
     }
 
-    pub fn check(mut self, value: &TypedExpr) -> Vec<Diagnostic> {
-        self.expr(value);
+    pub fn check(mut self, binding: BindingId, value: &TypedExpr) -> Vec<Diagnostic> {
+        let current = self.function_params.get(&binding).cloned();
+        match &value.kind {
+            TypedExprKind::Fn(_) => value
+                .children()
+                .into_iter()
+                .for_each(|child| self.value(child, current.as_deref())),
+            _ => self.value(value, current.as_deref()),
+        }
         self.diagnostics
     }
 
-    fn expr(&mut self, expr: &TypedExpr) {
-        if let TypedExprKind::Call(callee, arguments) = &expr.kind {
-            self.check_arguments(callee, arguments);
+    fn value(&mut self, expr: &TypedExpr, current: Option<&[Type]>) {
+        match &expr.kind {
+            TypedExprKind::Call(callee, arguments) => self.check_arguments(callee, arguments),
+            TypedExprKind::Recur(arguments) => self.check_recur(arguments, current),
+            _ => {}
         }
+        let child_current = match expr.kind {
+            TypedExprKind::Fn(_) => None,
+            _ => current,
+        };
         for child in expr.children() {
-            self.expr(child);
+            self.value(child, child_current);
         }
     }
 
     fn check_arguments(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) {
         let parameters = self.parameters(callee);
+        self.check_with_parameters(arguments, &parameters);
+    }
+
+    fn check_recur(&mut self, arguments: &[TypedArgument], parameters: Option<&[Type]>) {
+        if let Some(parameters) = parameters {
+            self.check_with_parameters(arguments, parameters);
+        }
+    }
+
+    fn check_with_parameters(&mut self, arguments: &[TypedArgument], parameters: &[Type]) {
         for (position, argument) in arguments.iter().enumerate() {
             let owns = parameters
                 .get(position)

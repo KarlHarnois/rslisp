@@ -16,7 +16,7 @@ impl MutableLocals {
     }
 
     fn expr(&mut self, expr: &TypedExpr) {
-        if let TypedExprKind::Call(_, arguments) = &expr.kind {
+        if let TypedExprKind::Call(_, arguments) | TypedExprKind::Recur(arguments) = &expr.kind {
             self.bindings
                 .extend(arguments.iter().filter_map(Self::mutably_borrowed_local));
         }

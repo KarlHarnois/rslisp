@@ -52,11 +52,21 @@ impl ModeRewrite {
     }
 
     fn definition(&self, definition: &mut TypedDefinition) {
-        if let Some(params) = self.function_params.get(&definition.binding) {
+        let params = self.function_params.get(&definition.binding).cloned();
+        if let Some(params) = &params {
             Self::replace_parameters(&mut definition.value.ty, params);
             Self::replace_parameters(&mut definition.scheme.body, params);
         }
-        self.expr(&mut definition.value);
+        match &mut definition.value.kind {
+            TypedExprKind::Fn(_) => {
+                self.rewrite_params(&mut definition.value);
+                let current = params.as_deref();
+                for child in definition.value.children_mut() {
+                    self.expr(child, current);
+                }
+            }
+            _ => self.expr(&mut definition.value, None),
+        }
     }
 
     fn replace_parameters(function: &mut Type, params: &[Type]) {
@@ -65,14 +75,20 @@ impl ModeRewrite {
         }
     }
 
-    fn expr(&self, expr: &mut TypedExpr) {
+    fn expr(&self, expr: &mut TypedExpr, current: Option<&[Type]>) {
         self.rewrite_local(expr);
         self.rewrite_params(expr);
+        let child_current = match expr.kind {
+            TypedExprKind::Fn(_) => None,
+            _ => current,
+        };
         for child in expr.children_mut() {
-            self.expr(child);
+            self.expr(child, child_current);
         }
-        if let TypedExprKind::Call(callee, arguments) = &mut expr.kind {
-            self.borrow_arguments(callee, arguments);
+        match &mut expr.kind {
+            TypedExprKind::Call(callee, arguments) => self.borrow_arguments(callee, arguments),
+            TypedExprKind::Recur(arguments) => self.borrow_recur(arguments, current),
+            _ => {}
         }
     }
 
@@ -100,6 +116,15 @@ impl ModeRewrite {
             return;
         };
         let Some(params) = self.function_params.get(&function) else {
+            return;
+        };
+        for (argument, param) in arguments.iter_mut().zip(params) {
+            Self::borrow_for(argument, param);
+        }
+    }
+
+    fn borrow_recur(&self, arguments: &mut [TypedArgument], params: Option<&[Type]>) {
+        let Some(params) = params else {
             return;
         };
         for (argument, param) in arguments.iter_mut().zip(params) {

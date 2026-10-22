@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/recur_outside_fn.rslisp
+---
+error[L0216]: `recur` is not inside a function
+ --> check/recur_outside_fn.rslisp:1:12
+  |
+1 | (def stray (recur 1))
+  |            ^^^^^^^^^ there is no function here for `recur` to jump back to
+  |
+  = help: write `recur` inside a `fn` body
