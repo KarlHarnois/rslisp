@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/program_only_replacement.rslisp
+---
+error[L0306]: `add` belongs to the program, so macro code cannot run it
+  --> expand/program_only_replacement.rslisp:4:10
+   |
+ 4 |   (let n (+ (length forms) 1))
+   |          ^^^^^^^^^^^^^^^^^^^^ macro code runs this
+   |
+  ::: prelude/number.rslisp:21:10
+   |
+21 | (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
+   |          ---------------------------------------------------- `add` is Rust code that runs in the program
+   |
+   = help: to compute this in the program, return it as code from the macro, for example with `template`
+   = help: in macro code, use `number-add` from `code` instead

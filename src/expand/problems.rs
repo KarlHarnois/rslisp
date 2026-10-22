@@ -9,6 +9,17 @@ pub struct ExpandProblems;
 
 impl ExpandProblems {
     const QUOTE_SHORTHAND: char = '\'';
+    const CODE_REPLACEMENTS: [(&'static str, &'static str, &'static str); 9] = [
+        ("add", "number-add", "code"),
+        ("sub", "number-sub", "code"),
+        ("lt", "number-lt", "code"),
+        ("le", "number-le", "code"),
+        ("gt", "number-gt", "code"),
+        ("ge", "number-ge", "code"),
+        ("eq", "value-eq", "code"),
+        ("not", "bool-not", "code"),
+        ("map", "map-list", "prelude/macros"),
+    ];
 
     pub fn malformed_type_template(span: Span) -> Diagnostic {
         Diagnostic::error(
@@ -293,7 +304,7 @@ impl ExpandProblems {
     }
 
     pub fn program_only(name: &str, used: Span, defined: Span) -> Diagnostic {
-        Diagnostic::error(
+        let diagnostic = Diagnostic::error(
             DiagnosticCode::PROGRAM_ONLY,
             format!("`{name}` belongs to the program, so macro code cannot run it"),
             Label::new(used, "macro code runs this"),
@@ -302,7 +313,20 @@ impl ExpandProblems {
             defined,
             format!("`{name}` is Rust code that runs in the program"),
         ))
-        .with_help(InterpretProblems::RETURN_AS_CODE_HELP)
+        .with_help(InterpretProblems::RETURN_AS_CODE_HELP);
+        match Self::code_replacement(name) {
+            Some((replacement, module)) => diagnostic.with_help(format!(
+                "in macro code, use `{replacement}` from `{module}` instead"
+            )),
+            None => diagnostic,
+        }
+    }
+
+    fn code_replacement(name: &str) -> Option<(&'static str, &'static str)> {
+        Self::CODE_REPLACEMENTS
+            .iter()
+            .find(|(program, _, _)| *program == name)
+            .map(|(_, replacement, module)| (*replacement, *module))
     }
 
     pub fn broken_macro(name: &str, span: Span) -> Diagnostic {
