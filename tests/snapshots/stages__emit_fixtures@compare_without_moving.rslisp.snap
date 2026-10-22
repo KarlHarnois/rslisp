@@ -1,0 +1,31 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/compare_without_moving.rslisp
+---
+fn bigger<A: PartialOrd>(a: A, b: A) -> A {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+fn same<A: PartialEq>(a: A, b: A) -> A {
+    if a == b {
+        a
+    } else {
+        b
+    }
+}
+
+fn main() {
+    println!("{}", bigger(3, 7));
+    println!("{}", bigger("pear".to_string(), "apple".to_string()));
+    println!("{}", same(4, 4));
+    let name = "Ana".to_string();
+    let other = "Bo".to_string();
+    println!("{}", name == other);
+    println!("{}", name);
+    println!("{}", other)
+}

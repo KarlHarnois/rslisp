@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use super::definitions::LocalDefinitions;
 use super::problems::OwnershipProblems;
+use super::templates::TemplateBorrows;
 use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
@@ -19,6 +20,7 @@ enum Usage {
 pub struct MoveChecker<'a> {
     copy: CopyRules<'a>,
     bindings: &'a BindingArena,
+    template_borrows: &'a TemplateBorrows,
     moved: HashMap<BindingId, Span>,
     copy_functions: HashSet<BindingId>,
     reported: HashSet<BindingId>,
@@ -26,10 +28,15 @@ pub struct MoveChecker<'a> {
 }
 
 impl<'a> MoveChecker<'a> {
-    pub fn new(copy: CopyRules<'a>, bindings: &'a BindingArena) -> Self {
+    pub fn new(
+        copy: CopyRules<'a>,
+        bindings: &'a BindingArena,
+        template_borrows: &'a TemplateBorrows,
+    ) -> Self {
         Self {
             copy,
             bindings,
+            template_borrows,
             moved: HashMap::new(),
             copy_functions: HashSet::new(),
             reported: HashSet::new(),
@@ -112,12 +119,20 @@ impl<'a> MoveChecker<'a> {
         ) {
             self.expr(callee, Usage::Borrow);
         }
-        for argument in arguments {
-            let moves =
-                argument.borrow == Borrow::None && !matches!(argument.value.ty, Type::Ref(_));
-            let usage = if moves { Usage::Move } else { Usage::Borrow };
+        for (position, argument) in arguments.iter().enumerate() {
+            let usage = if self.moves(callee, position, argument) {
+                Usage::Move
+            } else {
+                Usage::Borrow
+            };
             self.expr(&argument.value, usage);
         }
+    }
+
+    fn moves(&self, callee: &TypedExpr, position: usize, argument: &TypedArgument) -> bool {
+        !self.template_borrows.borrows(callee, position)
+            && argument.borrow == Borrow::None
+            && !matches!(argument.value.ty, Type::Ref(_))
     }
 
     fn branches(
