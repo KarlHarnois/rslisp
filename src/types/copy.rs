@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use super::size::TypeSizes;
+use super::structs::StructTable;
 use super::traits::TraitTable;
 use super::ty::{Bound, GenericId, GenericParam, Type};
 use crate::core::{BindingId, CopyTrait};
@@ -7,14 +9,20 @@ use crate::core::{BindingId, CopyTrait};
 pub struct CopyRules<'a> {
     traits: &'a TraitTable,
     generics: &'a HashMap<GenericId, GenericParam>,
+    sizes: TypeSizes<'a>,
     copy_traits: Vec<BindingId>,
 }
 
 impl<'a> CopyRules<'a> {
-    pub fn new(traits: &'a TraitTable, generics: &'a HashMap<GenericId, GenericParam>) -> Self {
+    pub fn new(
+        traits: &'a TraitTable,
+        generics: &'a HashMap<GenericId, GenericParam>,
+        structs: &'a StructTable,
+    ) -> Self {
         Self {
             traits,
             generics,
+            sizes: TypeSizes::new(structs),
             copy_traits: traits.with_paths(&[CopyTrait::PATH]),
         }
     }
@@ -26,6 +34,10 @@ impl<'a> CopyRules<'a> {
                     self.generic_is_copy(generic)
                 })
         })
+    }
+
+    pub fn is_small_copy(&self, value: &Type) -> bool {
+        self.is_copy(value) && self.sizes.is_small(value)
     }
 
     fn generic_is_copy(&self, generic: GenericId) -> bool {

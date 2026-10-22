@@ -309,7 +309,10 @@ impl TypeChecker {
     fn copies_out(&self, group: &SharedGroup, referent: &Type) -> bool {
         match referent {
             Type::Var(literal) => self.unifier.literal_kind(*literal).is_some(),
-            _ => self.copy_rules().is_copy(referent) && !self.group_fails_bounds(group, referent),
+            _ => {
+                self.copy_rules().is_small_copy(referent)
+                    && !self.group_fails_bounds(group, referent)
+            }
         }
     }
 

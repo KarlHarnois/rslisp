@@ -24,7 +24,7 @@ impl OwnershipChecker {
         let functions = FunctionTable::collect(program);
         let modes = ModeInference::new(
             &functions,
-            CopyRules::new(&program.traits, &program.generics),
+            CopyRules::new(&program.traits, &program.generics, &program.structs),
         )
         .run();
         let rewrite = ModeRewrite::new(&functions, &modes);
@@ -37,7 +37,7 @@ impl OwnershipChecker {
         {
             if let TypedExprKind::Fn(lambda) = &definition.value.kind {
                 let checker = MoveChecker::new(
-                    CopyRules::new(&program.traits, &program.generics),
+                    CopyRules::new(&program.traits, &program.generics, &program.structs),
                     &program.bindings,
                     &program.template_borrows,
                 );
