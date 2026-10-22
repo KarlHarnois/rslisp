@@ -94,12 +94,12 @@ impl<'a> ExpressionEmitter<'a> {
             param.binding,
             self.program.bindings.get(param.binding).name(),
         );
-        let mutable = if (self.mutable_locals.contains(&param.binding)
-            || self
-                .tail_loop
-                .as_ref()
-                .is_some_and(|tail_loop| tail_loop.reassigns(param.binding)))
-            && !param.ty.is_reference()
+        let reassigned = self
+            .tail_loop
+            .as_ref()
+            .is_some_and(|tail_loop| tail_loop.reassigns(param.binding));
+        let mutable = if reassigned
+            || (self.mutable_locals.contains(&param.binding) && !param.ty.is_reference())
         {
             "mut "
         } else {
