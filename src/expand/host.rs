@@ -18,14 +18,22 @@ impl CompileTimeHost for Expander<'_> {
     }
 
     fn same_binding(&self, left: &Symbol, right: &Symbol) -> bool {
-        let left_resolution = self.table.resolve(left, Namespace::Value, Phase::Runtime);
-        let right_resolution = self.table.resolve(right, Namespace::Value, Phase::Runtime);
-        match (left_resolution, right_resolution) {
-            (Resolution::Bound(left_binding), Resolution::Bound(right_binding)) => {
-                left_binding == right_binding
-            }
-            (Resolution::Unbound, Resolution::Unbound) => left.name() == right.name(),
-            _ => false,
-        }
+        let pairs: Vec<(Resolution, Resolution)> = [Namespace::Value, Namespace::Type]
+            .into_iter()
+            .map(|namespace| {
+                (
+                    self.table.resolve(left, namespace, Phase::Runtime),
+                    self.table.resolve(right, namespace, Phase::Runtime),
+                )
+            })
+            .collect();
+        let bound_together = pairs.iter().any(|pair| {
+            matches!(pair, (Resolution::Bound(left_binding), Resolution::Bound(right_binding))
+                if left_binding == right_binding)
+        });
+        let unbound_everywhere = pairs
+            .iter()
+            .all(|pair| matches!(pair, (Resolution::Unbound, Resolution::Unbound)));
+        bound_together || (unbound_everywhere && left.name() == right.name())
     }
 }
