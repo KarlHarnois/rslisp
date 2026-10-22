@@ -1,16 +1,23 @@
 (use prelude/macros defmacro map-list)
 (use code list prepend length string symbol number-add number-sub number-lt)
+(use prelude/types vec option result iterator)
 
-(export display to-string print println str char chars lines split trim as-str parse parse-error from-str)
+(export display debug to-string print println prn pr-str str char chars lines split trim as-str parse parse-error from-str)
 
 (rust-trait display "std::fmt::Display"
   bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
 
+(rust-trait debug "std::fmt::Debug"
+  bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
+  (where ((a debug)) (vec a))
+  (where ((a debug)) (option a))
+  (where ((a debug) (b debug)) (result a b)))
+
 (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
 (def print (rust "print!(\"{{}}\", {&0})" (where ((a display)) (fn ((ref a)) unit))))
 (def println (rust "println!(\"{{}}\", {&0})" (where ((a display)) (fn ((ref a)) unit))))
-
-(use prelude/types result iterator)
+(def prn (rust "println!(\"{{:?}}\", {&0})" (where ((a debug)) (fn ((ref a)) unit))))
+(def pr-str (rust "format!(\"{{:?}}\", {&0})" (where ((a debug)) (fn ((ref a)) string))))
 
 (rust-trait from-str "std::str::FromStr"
   bool char string i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)

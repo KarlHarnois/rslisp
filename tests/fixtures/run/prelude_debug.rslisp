@@ -1,0 +1,4 @@
+(defn main ()
+  (prn "text")
+  (prn (vec 1 2))
+  (println (pr-str (some 3))))
