@@ -1,0 +1,5 @@
+(defstruct point (x f64) (y f64))
+
+(rust-trait point-eq "Eq" point)
+
+(defn main () (do))

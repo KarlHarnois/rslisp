@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/person.rslisp
 ---
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct Person {
     name: String,
     age: i64,

@@ -3,10 +3,10 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/trait_claim_on_struct.rslisp
 ---
-error[L0421]: `employee` does not derive `record-eq`
- --> run/trait_claim_on_struct.rslisp:1:35
+error[L0404]: `employee` does not implement `record-eq`
+ --> run/trait_claim_on_struct.rslisp:7:26
   |
-1 | (rust-trait record-eq "PartialEq" employee)
-  |                                   ^^^^^^^^ this struct does not derive `record-eq`
+7 |   (println (same-record? first-hire second-hire)))
+  |                          ^^^^^^^^^^ this needs `record-eq`
   |
-  = help: remove `employee` from this `rust-trait`, or list a type that Rust implements `record-eq` for
+  = note: `record-eq` is implemented for:
