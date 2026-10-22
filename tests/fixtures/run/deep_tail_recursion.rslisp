@@ -1,0 +1,5 @@
+(defn count-down (n total)
+  (if (= n 0) total (count-down (- n 1) (+ total 1))))
+
+(defn main ()
+  (println (count-down 1000000 0)))

@@ -17,6 +17,9 @@ use crate::types::{
     TypedExprKind, TypedLambda, TypedLeaf, TypedProgram, TypedStructExpr,
 };
 
+mod tail_loop;
+use tail_loop::TailLoop;
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum TypeContext {
     Known,
@@ -47,6 +50,7 @@ pub struct ExpressionEmitter<'a> {
     pub locals: LocalNames,
     pub problems: Vec<Diagnostic>,
     mutable_locals: HashSet<BindingId>,
+    tail_loop: Option<TailLoop>,
 }
 
 impl<'a> ExpressionEmitter<'a> {
@@ -68,7 +72,12 @@ impl<'a> ExpressionEmitter<'a> {
             locals,
             problems: Vec::new(),
             mutable_locals: HashSet::new(),
+            tail_loop: None,
         }
+    }
+
+    pub fn prepare_tail_loop(&mut self, function: BindingId, lambda: &TypedLambda) {
+        self.tail_loop = TailLoop::of(function, lambda);
     }
 
     pub fn with_mutable_locals(mut self, mutable_locals: HashSet<BindingId>) -> Self {
@@ -85,7 +94,13 @@ impl<'a> ExpressionEmitter<'a> {
             param.binding,
             self.program.bindings.get(param.binding).name(),
         );
-        let mutable = if self.mutable_locals.contains(&param.binding) && !param.ty.is_reference() {
+        let mutable = if (self.mutable_locals.contains(&param.binding)
+            || self
+                .tail_loop
+                .as_ref()
+                .is_some_and(|tail_loop| tail_loop.reassigns(param.binding)))
+            && !param.ty.is_reference()
+        {
             "mut "
         } else {
             ""
@@ -97,6 +112,9 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     pub fn function_body(&mut self, block: &TypedBlock) -> Vec<Fragment> {
+        if self.tail_loop.is_some() {
+            return self.loop_body(block);
+        }
         let Some((TypedBodyItem::Expr(tail), leading)) = block.items.split_last() else {
             return self.statements(block);
         };

@@ -1,0 +1,46 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/tail_loops.rslisp
+---
+fn factorial(mut n: i64, mut total: i64) -> i64 {
+    loop {
+        if n == 0 {
+            return total;
+        } else {
+            (n, total) = (n - 1, total * n);
+            continue;
+        }
+    }
+}
+
+fn drain<A>(items: &mut Vec<A>) {
+    loop {
+        if items.len() == 0 {
+            return;
+        } else {
+            items.pop();
+            continue;
+        }
+    }
+}
+
+fn fill(items: &mut Vec<i64>, mut n: i64) {
+    loop {
+        if n == 0 {
+            println!("{}", "done");
+            return;
+        } else {
+            items.push(n);
+            n = n - 1;
+            continue;
+        }
+    }
+}
+
+fn main() {
+    let mut items: Vec<i64> = vec![1_i64, 2_i64, 3_i64];
+    drain(&mut items);
+    fill(&mut items, 2);
+    println!("{}", factorial(10, 1))
+}

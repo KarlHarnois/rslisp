@@ -1,0 +1,14 @@
+(defn factorial (n total)
+  (if (= n 0) total (factorial (- n 1) (* total n))))
+
+(defn drain! (items)
+  (if (= (len items) 0) (do) (do (pop! items) (drain! items))))
+
+(defn fill! (items n)
+  (if (= n 0) (println "done") (do (push! items n) (fill! items (- n 1)))))
+
+(defn main ()
+  (let items (vec 1 2 3))
+  (drain! items)
+  (fill! items 2)
+  (println (factorial 10 1)))
