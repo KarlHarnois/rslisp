@@ -108,6 +108,7 @@ impl Expander<'_> {
         form.flip_scope(introduction);
         if let Some(context) = context {
             let use_site = self.scopes.fresh();
+            self.use_site_scopes.insert(use_site);
             form.add_scope(use_site);
             context.record_use_site(use_site);
         }

@@ -221,7 +221,7 @@ Macros are hygienic. The expander uses sets of scopes:
 - Each macro call adds a fresh introduction scope to its input and flips it on its output, so only the symbols the macro introduced carry it.
 - A macro call in a definition context also adds a use-site scope to its input. Binders that a definition introduces lose their use-site scopes.
 - A reference resolves to the binding with the same name and namespace whose scope set is the largest subset of the reference's scopes.
-- `quote` removes the scopes of enclosing `fn`, `let` and `where` forms from its datum. Quoted names in different helper functions can then refer to each other, and a macro's local variables never leak into the code it returns.
+- `quote` removes the scopes of enclosing `fn`, `let` and `where` forms and of definition-context macro calls from its datum. Quoted names in different helper functions can then refer to each other, and a macro's local variables never leak into the code it returns.
 
 Hygiene gives three guarantees:
 

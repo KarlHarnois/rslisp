@@ -44,6 +44,7 @@ pub struct Expander<'s> {
     module_sources: ModuleSources,
     scopes: ScopeAllocator,
     local_scopes: HashSet<Scope>,
+    use_site_scopes: HashSet<Scope>,
     table: BindingTable,
     bindings: BindingArena,
     modules: ModuleRegistry,
@@ -63,6 +64,7 @@ impl<'s> Expander<'s> {
             module_sources,
             scopes: ScopeAllocator::default(),
             local_scopes: HashSet::new(),
+            use_site_scopes: HashSet::new(),
             table: BindingTable::default(),
             bindings: BindingArena::default(),
             modules: ModuleRegistry::default(),
@@ -94,7 +96,9 @@ impl<'s> Expander<'s> {
 
     fn quoted(&self, datum: &Form) -> Form {
         let mut quoted = datum.clone();
-        quoted.retain_scopes(&|scope| !self.local_scopes.contains(&scope));
+        quoted.retain_scopes(&|scope| {
+            !self.local_scopes.contains(&scope) && !self.use_site_scopes.contains(&scope)
+        });
         quoted
     }
 
