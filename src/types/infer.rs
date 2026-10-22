@@ -516,8 +516,8 @@ impl TypeChecker {
         }
         let mut wrapped =
             FunctionValueWrapper::new(&mut self.bindings).prepare(&expected, value, Some(binding));
-        for (found_param, argument) in found.iter().zip(&mut wrapped.arguments) {
-            argument.borrow = self.pass_argument(found_param, &argument.value)?;
+        for argument in &mut wrapped.arguments {
+            argument.borrow = Borrow::None;
         }
         for param in &wrapped.params {
             self.locals.insert(param.binding, param.ty.clone());
