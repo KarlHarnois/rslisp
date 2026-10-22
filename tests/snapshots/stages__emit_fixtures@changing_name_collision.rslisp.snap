@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/changing_name_collision.rslisp
+---
+error[L0602]: `reset!` and `reset` both become `reset` in Rust
+ --> emit/changing_name_collision.rslisp:1:7
+  |
+1 | (defn reset (items) (len items))
+  |       ^^^^^ this becomes `reset`
+2 | (defn reset! (items) (push items 0))
+  |       ------ this also becomes `reset`
+  |
+  = help: rename one of them
