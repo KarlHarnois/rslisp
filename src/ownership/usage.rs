@@ -93,6 +93,9 @@ impl<'a> UsageCollector<'a> {
                     .get(position)
                     .copied()
                     .map_or(ParamMode::Own, Self::argument_context),
+                Borrow::Pending(_) => {
+                    unreachable!("the type checker decides every pending borrow")
+                }
             };
             self.expr(&argument.value, context);
         }

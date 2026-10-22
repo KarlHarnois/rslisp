@@ -29,12 +29,12 @@ impl<'a> CopyRules<'a> {
     fn generic_is_copy(&self, generic: GenericId) -> bool {
         self.generics.get(&generic).is_some_and(|param| {
             param.bounds.iter().any(|bound| {
-                self.copy_traits.contains(bound) || self.only_copy_implementors(*bound)
+                self.copy_traits.contains(bound) || self.bound_allows_only_copy(*bound)
             })
         })
     }
 
-    fn only_copy_implementors(&self, bound: BindingId) -> bool {
+    pub fn bound_allows_only_copy(&self, bound: BindingId) -> bool {
         self.traits.get(bound).is_some_and(|rust_trait| {
             !rust_trait.implementors.is_empty()
                 && rust_trait.implementors.iter().all(|implementor| {

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use super::checker::TypeChecker;
+use super::pending::{DecidedBorrows, PendingBorrow};
 use super::problems::{MismatchContext, TypeProblems};
 use super::ty::Type;
 use super::ty::TypeVar;
@@ -396,8 +397,63 @@ impl TypeChecker {
                 }
                 self.pass(inner, found, value.span, Borrow::Mutable)
             }
+            (Type::Var(var), Type::Ref(_)) if self.referent_unknown(&argument) => {
+                Ok(self.defer_borrow(*var, &argument, value.span))
+            }
             _ => self.pass_types(&parameter, &argument, value.span),
         }
+    }
+
+    fn defer_borrow(&mut self, var: TypeVar, argument: &Type, span: Span) -> Borrow {
+        self.pending_borrows.push(PendingBorrow {
+            var,
+            argument: argument.clone(),
+            span,
+        });
+        Borrow::Pending(self.pending_borrows.len() - 1)
+    }
+
+    fn referent_unknown(&self, argument: &Type) -> bool {
+        matches!(
+            Self::innermost_referent(argument),
+            Type::Var(var) if self.unifier.literal_kind(*var).is_none()
+        )
+    }
+
+    pub(super) fn decide_pending_borrows(&mut self) -> DecidedBorrows {
+        let pending = std::mem::take(&mut self.pending_borrows);
+        let mut decided = HashMap::new();
+        for (id, pending) in pending.iter().enumerate() {
+            let borrow = self.decide_borrow(pending).unwrap_or_else(|diagnostic| {
+                self.diagnostics.push(diagnostic);
+                Borrow::None
+            });
+            decided.insert(id, borrow);
+        }
+        DecidedBorrows::new(decided)
+    }
+
+    fn decide_borrow(&mut self, pending: &PendingBorrow) -> Result<Borrow, Diagnostic> {
+        let argument = self.unifier.resolve(&pending.argument);
+        let parameter = self.unifier.shallow(&Type::Var(pending.var));
+        if let Type::Var(var) = parameter
+            && self.referent_unknown(&argument)
+            && self.needs_value(var)
+        {
+            let levels = Self::reference_depth(&argument);
+            let referent = Self::innermost_referent(&argument).clone();
+            return self.pass(&parameter, &referent, pending.span, Borrow::Deref(levels));
+        }
+        self.pass_types(&parameter, &argument, pending.span)
+    }
+
+    fn needs_value(&self, var: TypeVar) -> bool {
+        self.unifier.literal_kind(var).is_some()
+            || self
+                .unifier
+                .bounds(var)
+                .iter()
+                .any(|bound| self.copy_rules().bound_allows_only_copy(*bound))
     }
 
     fn pass_types(

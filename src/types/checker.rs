@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 use super::display::TypeDisplay;
 use super::graph::DependencyGraph;
+use super::pending::PendingBorrow;
 use super::problems::{MismatchContext, TypeProblems};
 use super::rust_types::{RustType, RustTypeTable};
 use super::selection::Selection;
@@ -47,6 +48,7 @@ pub struct TypeChecker {
     monomorphic: Vec<Type>,
     implied_bounds: HashMap<GenericId, Vec<BindingId>>,
     pub(super) field_accessors: HashMap<BindingId, Rc<str>>,
+    pub(super) pending_borrows: Vec<PendingBorrow>,
 }
 
 struct Definition<'p> {
@@ -79,6 +81,7 @@ impl TypeChecker {
             monomorphic: Vec::new(),
             implied_bounds: HashMap::new(),
             field_accessors: HashMap::new(),
+            pending_borrows: Vec::new(),
         }
     }
 
@@ -390,6 +393,10 @@ impl TypeChecker {
                     self.schemes.insert(member.binding, failed);
                 }
             }
+        }
+        let decided = self.decide_pending_borrows();
+        for (_, value) in &mut typed {
+            decided.patch(value);
         }
         self.discharge_obligations(ObligationPass::Deferring);
         let generics: Vec<(BindingId, &TypedExpr)> = typed
