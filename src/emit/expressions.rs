@@ -159,11 +159,29 @@ impl<'a> ExpressionEmitter<'a> {
         let last = block.items.len().checked_sub(1);
         let mut fragments = Vec::new();
         for (position, item) in block.items.iter().enumerate() {
-            fragments.push(Fragment::Newline);
             let is_tail = Some(position) == last;
+            if is_tail
+                && let TypedBodyItem::Expr(expr) = item
+                && let Some(contents) = self.tail_block_contents(expr)
+            {
+                fragments.extend(contents);
+                continue;
+            }
+            fragments.push(Fragment::Newline);
             fragments.extend(self.statement(item, is_tail).fragments);
         }
         fragments
+    }
+
+    fn tail_block_contents(&mut self, expr: &TypedExpr) -> Option<Vec<Fragment>> {
+        match &expr.kind {
+            TypedExprKind::Control(TypedControl::Block(block)) => Some(self.block_contents(block)),
+            TypedExprKind::Call(callee, arguments) => match &callee.kind {
+                TypedExprKind::Fn(lambda) => Some(self.inline_call_contents(lambda, arguments)),
+                _ => None,
+            },
+            _ => None,
+        }
     }
 
     pub fn expr(&mut self, expr: &TypedExpr) -> Code {
@@ -625,6 +643,23 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn inline_call(&mut self, lambda: &TypedLambda, arguments: &[TypedArgument]) -> Code {
+        let fragments = self.inline_call_contents(lambda, arguments);
+        Code {
+            fragments: vec![
+                Fragment::Text("{".to_string()),
+                Fragment::Indented(fragments),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ],
+            precedence: Precedence::Block,
+        }
+    }
+
+    fn inline_call_contents(
+        &mut self,
+        lambda: &TypedLambda,
+        arguments: &[TypedArgument],
+    ) -> Vec<Fragment> {
         let previous = std::mem::replace(&mut self.tail_loop, TailLoop::of_closure(lambda));
         self.locals.enter();
         let mut fragments = Vec::new();
@@ -644,21 +679,11 @@ impl<'a> ExpressionEmitter<'a> {
         }
         self.locals.leave();
         self.tail_loop = previous;
-        Code {
-            fragments: vec![
-                Fragment::Text("{".to_string()),
-                Fragment::Indented(fragments),
-                Fragment::Newline,
-                Fragment::Text("}".to_string()),
-            ],
-            precedence: Precedence::Block,
-        }
+        fragments
     }
 
     fn block(&mut self, block: &TypedBlock) -> Code {
-        self.locals.enter();
-        let statements = self.statements(block);
-        self.locals.leave();
+        let statements = self.block_contents(block);
         Code {
             fragments: vec![
                 Fragment::Text("{".to_string()),
@@ -668,6 +693,13 @@ impl<'a> ExpressionEmitter<'a> {
             ],
             precedence: Precedence::Block,
         }
+    }
+
+    fn block_contents(&mut self, block: &TypedBlock) -> Vec<Fragment> {
+        self.locals.enter();
+        let statements = self.statements(block);
+        self.locals.leave();
+        statements
     }
 
     fn conditional(&mut self, test: &TypedExpr, then: &TypedExpr, otherwise: &TypedExpr) -> Code {
@@ -754,14 +786,12 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn branch(&mut self, branch: &TypedExpr) -> Vec<Fragment> {
-        match &branch.kind {
-            TypedExprKind::Control(TypedControl::Block(block)) => self.statements(block),
-            _ => {
-                let mut fragments = vec![Fragment::Newline];
-                fragments.extend(self.expr(branch).fragments);
-                fragments
-            }
+        if let Some(contents) = self.tail_block_contents(branch) {
+            return contents;
         }
+        let mut fragments = vec![Fragment::Newline];
+        fragments.extend(self.expr(branch).fragments);
+        fragments
     }
 
     fn is_empty_block(expr: &TypedExpr) -> bool {

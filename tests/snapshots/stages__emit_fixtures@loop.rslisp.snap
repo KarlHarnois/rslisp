@@ -4,25 +4,21 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/loop.rslisp
 ---
 fn sum_to(limit: i64) -> i64 {
-    {
-        let mut i: i64 = 0;
-        let mut total: i64 = 0;
-        loop {
-            if i > limit {
-                break total;
-            } else {
-                (i, total) = (i + 1, total + i);
-                continue;
-            }
+    let mut i: i64 = 0;
+    let mut total: i64 = 0;
+    loop {
+        if i > limit {
+            break total;
+        } else {
+            (i, total) = (i + 1, total + i);
+            continue;
         }
     }
 }
 
 fn once(n: i64) -> i64 {
-    {
-        let k: i64 = n;
-        k + 1
-    }
+    let k: i64 = n;
+    k + 1
 }
 
 fn main() {

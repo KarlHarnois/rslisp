@@ -9,8 +9,6 @@ struct Counter {
 }
 
 fn reset(target: &mut Counter) {
-    {
-    }
 }
 
 fn takes_number(number: i64) -> i64 {
