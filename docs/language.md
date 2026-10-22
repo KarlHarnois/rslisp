@@ -148,7 +148,7 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 | `(option a)` | `Option<A>` | `some none some? none? unwrap-or unwrap expect map-some then-some` |
 | `(result a b)` | `Result<A, B>` | `ok err ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok` |
 | `(iterator a)` | `impl Iterator<Item = A>` | `range map filter fold for-each sum count max min max-by-key any all find take take-while` |
-| `str`, `string` | `&str`, `String` | `to-string display str char print println chars lines split trim as-str parse parse-error from-str slice-text` |
+| `str`, `string` | `&str`, `String` | `to-string display str char print println chars lines split trim as-str parse parse-error from-str` |
 
 `len` takes any `sequence`, a trait backed by `Sequence` in the runtime and implemented for `String`, `str`, `(vec a)` and `(slice a)`. `sort!`, `sort-by-key!`, `max`, `min` and `max-by-key` take the `ord` trait, which lists the same implementors as `partial-ord`, except `f32` and `f64`. `parse` takes a `from-str` target and returns `(result target (parse-error target))`.
 
