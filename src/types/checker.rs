@@ -17,6 +17,7 @@ use crate::core::{
     ParsedTemplate, PrimitiveType, StructDerives, StructExpr, TypeBinder, TypeExpr, TypeExprKind,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
+use crate::modules::ModuleSources;
 use crate::source::Span;
 
 pub(super) enum Admissible {
@@ -131,7 +132,7 @@ impl TypeChecker {
                 if definition
                     .derives
                     .iter()
-                    .any(|derived| *derived == path.as_ref())
+                    .any(|derived| *derived == StructDerives::derive_name(path))
                 {
                     continue;
                 }
@@ -179,7 +180,7 @@ impl TypeChecker {
 
     fn register_derived_traits(&mut self, modules: &[CoreModule]) {
         let structs = Self::struct_arities(modules);
-        let derived = self.inferred_traits();
+        let derived = Self::inferred_traits(modules);
         let mut candidates = self.add_inferred_implementors(&structs, &derived);
         self.remove_blocked_derives(&mut candidates);
         self.record_derives(candidates, &derived);
@@ -196,14 +197,23 @@ impl TypeChecker {
             .collect()
     }
 
-    fn inferred_traits(&self) -> Vec<(BindingId, &'static str)> {
+    fn inferred_traits(modules: &[CoreModule]) -> Vec<(BindingId, &'static str)> {
+        let prelude_traits: Vec<(BindingId, &str)> = modules
+            .iter()
+            .filter(|module| ModuleSources::is_prelude(&module.path))
+            .flat_map(|module| &module.items)
+            .filter_map(|item| match &item.kind {
+                ItemKind::RustTrait(binding, path, _) => Some((*binding, path.as_ref())),
+                _ => None,
+            })
+            .collect();
         StructDerives::INFERRED
             .iter()
-            .flat_map(|path| {
-                self.traits
-                    .with_paths(&[*path])
-                    .into_iter()
-                    .map(move |binding| (binding, *path))
+            .flat_map(|derived| {
+                prelude_traits
+                    .iter()
+                    .filter(move |(_, path)| StructDerives::derive_name(path) == *derived)
+                    .map(move |(binding, _)| (*binding, *derived))
             })
             .collect()
     }

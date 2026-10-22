@@ -368,4 +368,8 @@ pub struct StructDerives;
 
 impl StructDerives {
     pub const INFERRED: [&'static str; 5] = ["Clone", "Debug", "PartialEq", "Eq", "Hash"];
+
+    pub fn derive_name(path: &str) -> &str {
+        path.rsplit("::").next().unwrap_or(path)
+    }
 }
