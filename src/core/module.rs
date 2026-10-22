@@ -47,6 +47,7 @@ pub enum ItemKind {
     Def(BindingId, Expr),
     Signature(BindingId, TypeExpr),
     Struct(BindingId, Vec<TypeBinder>, Vec<(FieldLabel, TypeExpr)>),
+    Derive(BindingId, Vec<(BindingId, Span)>),
     RustTrait(BindingId, Rc<str>, Vec<TypeExpr>),
     RustType(BindingId, Vec<TypeBinder>, Rc<ParsedTemplate>),
 }

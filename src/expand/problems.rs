@@ -295,6 +295,24 @@ impl ExpandProblems {
         .with_help("a `type` signature must sit in the module whose `def` it describes")
     }
 
+    pub fn derive_target(name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::WRONG_NAMESPACE,
+            format!("`{name}` cannot have a `derive` here"),
+            Label::new(span, "not a struct of this module"),
+        )
+        .with_help("a `derive` must sit in the module whose `struct` it describes")
+    }
+
+    pub fn derive_trait(name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::WRONG_NAMESPACE,
+            format!("`{name}` is not a trait"),
+            Label::new(span, "a `derive` lists traits"),
+        )
+        .with_help("list traits such as `clone`, `debug` or `ord`")
+    }
+
     pub fn broken_definition(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::COMPILE_TIME_ERROR,

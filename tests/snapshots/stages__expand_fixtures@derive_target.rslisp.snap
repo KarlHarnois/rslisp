@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/derive_target.rslisp
+---
+error[L0212]: `string` cannot have a `derive` here
+ --> expand/derive_target.rslisp:1:9
+  |
+1 | (derive string clone)
+  |         ^^^^^^ not a struct of this module
+  |
+  = help: a `derive` must sit in the module whose `struct` it describes

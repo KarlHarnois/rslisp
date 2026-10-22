@@ -1,0 +1,4 @@
+(defstruct ticket (id u32) (seat u32))
+(derive ticket copy ord)
+
+(defn main () (do))

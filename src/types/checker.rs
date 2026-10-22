@@ -13,7 +13,7 @@ use super::ty::{GenericId, GenericParam, Scheme, Type, TypeVar};
 use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
-    BindingArena, BindingId, BodyItem, CoreModule, Expr, ExprKind, ItemKind, Leaf, ModuleId,
+    BindingArena, BindingId, BodyItem, CoreModule, Expr, ExprKind, Item, ItemKind, Leaf, ModuleId,
     ParsedTemplate, PrimitiveType, StructDerives, StructExpr, TypeBinder, TypeExpr, TypeExprKind,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
@@ -89,32 +89,36 @@ impl TypeChecker {
     pub(super) fn collect_declarations(&mut self, modules: &[CoreModule]) {
         self.record_type_arities(modules);
         for item in modules.iter().flat_map(|module| &module.items) {
-            let collected = match &item.kind {
-                ItemKind::Struct(binding, params, fields) => {
-                    self.collect_struct(*binding, params, fields)
-                }
-                ItemKind::RustTrait(binding, path, implementors) => {
-                    self.collect_trait(*binding, path, implementors)
-                }
-                ItemKind::RustType(binding, binders, template) => {
-                    self.collect_rust_type(*binding, binders, template)
-                }
-                ItemKind::Signature(binding, signature) => {
-                    self.signatures
-                        .insert(*binding, (signature.clone(), item.span));
-                    Ok(())
-                }
-                ItemKind::Def(binding, value) => {
-                    self.record_field_accessor(*binding, value);
-                    Ok(())
-                }
-            };
-            if let Err(diagnostic) = collected {
+            if let Err(diagnostic) = self.collect_item(item) {
                 self.diagnostics.push(diagnostic);
             }
         }
         self.register_derived_traits(modules);
         self.check_trait_claims(modules);
+    }
+
+    fn collect_item(&mut self, item: &Item) -> Result<(), Diagnostic> {
+        match &item.kind {
+            ItemKind::Struct(binding, params, fields) => {
+                self.collect_struct(*binding, params, fields)
+            }
+            ItemKind::RustTrait(binding, path, implementors) => {
+                self.collect_trait(*binding, path, implementors)
+            }
+            ItemKind::RustType(binding, binders, template) => {
+                self.collect_rust_type(*binding, binders, template)
+            }
+            ItemKind::Signature(binding, signature) => {
+                self.signatures
+                    .insert(*binding, (signature.clone(), item.span));
+                Ok(())
+            }
+            ItemKind::Derive(..) => Ok(()),
+            ItemKind::Def(binding, value) => {
+                self.record_field_accessor(*binding, value);
+                Ok(())
+            }
+        }
     }
 
     fn check_trait_claims(&mut self, modules: &[CoreModule]) {
@@ -1069,7 +1073,10 @@ impl TypeChecker {
             match item.kind {
                 ItemKind::Def(binding, _) => typed.definitions.extend(definitions.remove(&binding)),
                 ItemKind::Struct(binding, ..) => typed.structs.push(binding),
-                ItemKind::Signature(..) | ItemKind::RustTrait(..) | ItemKind::RustType(..) => {}
+                ItemKind::Signature(..)
+                | ItemKind::RustTrait(..)
+                | ItemKind::RustType(..)
+                | ItemKind::Derive(..) => {}
             }
         }
         typed
