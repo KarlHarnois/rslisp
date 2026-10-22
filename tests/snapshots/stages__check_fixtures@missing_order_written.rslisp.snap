@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/missing_order_written.rslisp
+---
+error[L0404]: `score` does not implement `ord`
+ --> check/missing_order_written.rslisp:6:10
+  |
+2 | (derive score debug)
+  | -------------------- this `derive` leaves out `ord`
+...
+6 |   (sort! scores)
+  |          ^^^^^^ this needs `ord`
+  |
+  = help: add `(derive score debug ord)` to compare fields in this order: `points`, then `name`
+  = help: to sort by one field instead, use `sort-by-key!` with the accessor `score-points`
