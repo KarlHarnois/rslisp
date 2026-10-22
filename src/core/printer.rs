@@ -50,6 +50,15 @@ impl<'a> CorePrinter<'a> {
                 self.type_expr(type_expr)
             ),
             ItemKind::Struct(binding, params, fields) => self.struct_item(*binding, params, fields),
+            ItemKind::Derive(binding, traits) => {
+                let mut parts = vec![self.name(*binding)];
+                parts.extend(
+                    traits
+                        .iter()
+                        .map(|(trait_binding, _)| self.name(*trait_binding)),
+                );
+                Self::list("derive", parts)
+            }
             ItemKind::RustType(binding, params, template) => {
                 self.rust_type_item(*binding, params, template)
             }

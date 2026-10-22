@@ -20,6 +20,7 @@ enum PendingItem {
         span: Span,
     },
     Signature(Form),
+    Derive(Form),
     Struct(BindingId, Form),
     RustTrait(BindingId, Form),
     RustType(BindingId, Form),
@@ -96,10 +97,25 @@ impl Expander<'_> {
             DefinitionForm::Def => self.register_def(module, &form, context),
             DefinitionForm::Type => Ok(Some(PendingItem::Signature(form))),
             DefinitionForm::Struct => self.register_struct(module, form, context),
+            DefinitionForm::Derive => Ok(Some(PendingItem::Derive(form))),
             DefinitionForm::RustTrait => self.register_rust_trait(module, form, context),
             DefinitionForm::RustType => self.register_rust_type(module, form, context),
+            DefinitionForm::Use | DefinitionForm::Export => {
+                self.register_module_definition(definition, form, context)
+            }
+        }
+    }
+
+    fn register_module_definition(
+        &mut self,
+        definition: DefinitionForm,
+        form: Form,
+        context: &mut DefinitionContext,
+    ) -> Result<Option<PendingItem>, Diagnostic> {
+        match definition {
             DefinitionForm::Use => self.import(&form, context).map(|()| None),
             DefinitionForm::Export => Ok(Some(PendingItem::Export(form))),
+            _ => unreachable!("only `use` and `export` reach this helper"),
         }
     }
 
@@ -217,6 +233,7 @@ impl Expander<'_> {
                 span,
             } => self.lower_def(binding, annotation, span, core),
             PendingItem::Signature(form) => self.lower_signature(module, &form, core),
+            PendingItem::Derive(form) => self.lower_derive(module, &form, core),
             PendingItem::Struct(binding, form) => self.lower_struct(binding, &form, core),
             PendingItem::RustTrait(binding, form) => self.lower_rust_trait(binding, &form, core),
             PendingItem::RustType(binding, form) => self.lower_rust_type(binding, &form, core),
@@ -302,6 +319,47 @@ impl Expander<'_> {
             span: form.span(),
         });
         Ok(())
+    }
+
+    fn lower_derive(
+        &mut self,
+        module: ModuleId,
+        form: &Form,
+        core: &mut CoreModule,
+    ) -> Result<(), Diagnostic> {
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Derive), form);
+        let items = shape.at_least(2)?;
+        let binding = self.resolve(shape.symbol(&items[1])?, Namespace::Type, items[1].span())?;
+        if self.kind(binding) != BindingKind::Struct(module) {
+            return Err(ExpandProblems::derive_target(
+                self.bindings.get(binding).name(),
+                items[1].span(),
+            ));
+        }
+        let traits = items[2..]
+            .iter()
+            .map(|item| self.derived_trait(&shape, item))
+            .collect::<Result<Vec<(BindingId, Span)>, Diagnostic>>()?;
+        core.items.push(Item {
+            kind: ItemKind::Derive(binding, traits),
+            span: form.span(),
+        });
+        Ok(())
+    }
+
+    fn derived_trait(
+        &mut self,
+        shape: &Shape,
+        item: &Form,
+    ) -> Result<(BindingId, Span), Diagnostic> {
+        let binding = self.resolve(shape.symbol(item)?, Namespace::Type, item.span())?;
+        if !matches!(self.kind(binding), BindingKind::Trait(_)) {
+            return Err(ExpandProblems::derive_trait(
+                self.bindings.get(binding).name(),
+                item.span(),
+            ));
+        }
+        Ok((binding, item.span()))
     }
 
     fn lower_field_declaration(
