@@ -16,7 +16,7 @@ fn root(x: &f64) -> f64 {
 }
 
 fn is_even(n: i64) -> bool {
-    (n % 2) == 0
+    n % 2 == 0
 }
 
 fn keep<A: Copy>(value: A) -> A {

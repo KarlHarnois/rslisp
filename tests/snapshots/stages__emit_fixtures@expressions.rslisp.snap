@@ -43,7 +43,7 @@ fn sum_to(limit: i64) -> i64 {
 }
 
 fn total<A: crate::rt::Number>(a: A, b: A, c: A) -> A {
-    (a + b) + c
+    a + b + c
 }
 
 fn counterto_text(c: &Counter) -> String {
