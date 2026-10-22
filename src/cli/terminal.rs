@@ -64,6 +64,7 @@ impl Terminal {
         let mut typed =
             TypeChecker::check(program).map_err(|diagnostics| self.report(&diagnostics))?;
         OwnershipChecker::check(&mut typed).map_err(|diagnostics| self.report(&diagnostics))?;
+        self.print_warnings(&typed.warnings);
         Ok(typed)
     }
 
@@ -75,6 +76,13 @@ impl Terminal {
         Expander::new(&mut self.sources, module_sources)
             .expand(module_path, entry)
             .map_err(|diagnostics| self.report(&diagnostics))
+    }
+
+    fn print_warnings(&self, warnings: &Diagnostics) {
+        if warnings.is_empty() {
+            return;
+        }
+        eprintln!("{}", self.renderer().render_all(warnings));
     }
 
     pub fn report(&self, diagnostics: &Diagnostics) -> ExitStatus {

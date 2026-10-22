@@ -3,6 +3,30 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/signature_shapes.rslisp
 ---
+warning[L0504]: `bump` changes an argument, so its name should end with `!`
+ --> check/signature_shapes.rslisp:4:1
+  |
+4 | (defn bump (target) (do))
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^ this function changes an argument
+  |
+  = help: rename it `bump!`
+
+warning[L0504]: `touch` changes an argument, so its name should end with `!`
+ --> check/signature_shapes.rslisp:7:1
+  |
+7 | (defn touch (value) (do))
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^ this function changes an argument
+  |
+  = help: rename it `touch!`
+
+warning[L0504]: `touch-counter` changes an argument, so its name should end with `!`
+ --> check/signature_shapes.rslisp:9:1
+  |
+9 | (defn touch-counter (target) (touch target))
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this function changes an argument
+  |
+  = help: rename it `touch-counter!`
+
 (type bump (fn ((mut counter)) unit))
 (type touch (where (t) (fn ((mut t)) unit)))
 (type touch-counter (where (a) (fn ((mut a)) unit)))

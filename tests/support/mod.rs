@@ -49,7 +49,12 @@ impl Fixture {
 
     pub fn check_report(mut self) -> String {
         match self.checked() {
-            Ok(program) => Self::signatures(&program),
+            Ok(program) if program.warnings.is_empty() => Self::signatures(&program),
+            Ok(program) => format!(
+                "{}\n\n{}",
+                self.render(&program.warnings),
+                Self::signatures(&program)
+            ),
             Err(diagnostics) => self.render(&diagnostics),
         }
     }

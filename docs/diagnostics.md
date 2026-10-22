@@ -8,12 +8,14 @@ This guide covers every error the compiler prints. A diagnostic uses rustc's lay
 
 | Part | Content | Required |
 |---|---|---|
-| Header | `error[L0001]: title` | yes |
+| Header | `error[L0001]: title`, or `warning[L0001]: title` for a warning | yes |
 | Location | `--> path:line:column` | yes |
 | Primary label | A caret under the exact form at fault, with a short message | yes |
 | Secondary labels | Other forms that explain the error, such as the earlier definition of a duplicate name | no |
 | Notes | `note:` lines that state facts the reader needs | no |
 | Help | `help:` lines that state a fix | yes, if a fix exists |
+
+A warning does not stop the build: the compiler prints it and continues.
 
 ```text
 error[L0201]: cannot find `pointx` in this scope

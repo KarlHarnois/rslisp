@@ -43,4 +43,13 @@ impl OwnershipProblems {
         )
         .with_help("pass a copy with `(clone ...)`")
     }
+
+    pub fn missing_bang(name: &str, span: Span) -> Diagnostic {
+        Diagnostic::warning(
+            DiagnosticCode::MISSING_BANG,
+            format!("`{name}` changes an argument, so its name should end with `!`"),
+            Label::new(span, "this function changes an argument"),
+        )
+        .with_help(format!("rename it `{name}!`"))
+    }
 }

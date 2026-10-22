@@ -3,6 +3,7 @@ mod definitions;
 mod functions;
 mod modes;
 mod moves;
+mod names;
 mod problems;
 mod rewrite;
 mod usage;
@@ -13,6 +14,7 @@ use checks::{BorrowedResults, OwnershipNeeds};
 use functions::FunctionTable;
 use modes::ModeInference;
 use moves::MoveChecker;
+use names::ChangingFunctionNames;
 use rewrite::ModeRewrite;
 
 pub struct OwnershipChecker;
@@ -50,6 +52,12 @@ impl OwnershipChecker {
             needs
                 .into_iter()
                 .for_each(|diagnostic| diagnostics.push(diagnostic));
+        }
+        let warnings = ChangingFunctionNames::check(program);
+        if diagnostics.has_errors() {
+            diagnostics.extend(warnings);
+        } else {
+            program.warnings.extend(warnings);
         }
         diagnostics.into_result(())
     }
