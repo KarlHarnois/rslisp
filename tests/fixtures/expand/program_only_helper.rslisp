@@ -1,0 +1,4 @@
+(defn say-unused ()
+  (print "unused"))
+
+(def never-called (macro (form) (say-unused)))

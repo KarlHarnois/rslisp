@@ -12,7 +12,7 @@ fn halve<N: crate::rt::Float>(x: N) -> N {
 }
 
 fn describe_half<N: crate::rt::Float + std::fmt::Display>(x: N) -> String {
-    format!("{}{}", "half is ", halve(x))
+    format!("half is {}", halve(x))
 }
 
 fn main() {

@@ -1,0 +1,7 @@
+(defn main ()
+  (println "braces {done} quote \" slash \\ newline
+tab	 here")
+  (let text (str "plain {text} quote \" slash \\"))
+  (println text)
+  (print "no newline")
+  (println ""))

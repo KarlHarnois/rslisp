@@ -1,0 +1,11 @@
+(defstruct point (x i64) (y i64))
+
+(defn main ()
+  (let n 3)
+  (let p (make-point 1 2))
+  (println "hello")
+  (println "total: " n)
+  (println (str "n=" n))
+  (println (pr-str p))
+  (print "50% {done}" "\n")
+  (println (str "x=" n ", y=" n)))

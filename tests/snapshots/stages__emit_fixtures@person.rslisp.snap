@@ -22,7 +22,7 @@ fn person_age(instance: &Person) -> i64 {
 }
 
 fn introduce(someone: &Person) -> String {
-    format!("{}{}{}", person_name(someone), " is ", person_age(someone))
+    format!("{} is {}", person_name(someone), person_age(someone))
 }
 
 fn rename(someone: &Person, new_name: String) -> Person {

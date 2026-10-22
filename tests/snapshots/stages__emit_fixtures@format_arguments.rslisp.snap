@@ -6,7 +6,7 @@ input_file: tests/fixtures/emit/format_arguments.rslisp
 fn main() {
     let name = "Ada".to_string();
     println!("{}", name);
-    println!("{}", format!("{}{}", "hello ", name));
+    println!("hello {}", name);
     print!("{}", 1_i64);
-    println!("{}", "")
+    println!()
 }

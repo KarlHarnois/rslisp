@@ -4,4 +4,4 @@ expression: "Fixture::load(path).expand_report()"
 input_file: tests/fixtures/expand/binder_across_quotes.rslisp
 ---
 (def echo (fn (name) name))
-(def main (fn () (println (do (let picked 2) picked))))
+(def main (fn () ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0 display)) (fn ((ref part-type-0)) unit))) (do (let picked 2) picked))))

@@ -12,7 +12,7 @@ mod macro_tools {
 
     pub(crate) mod helpers {
         pub(crate) fn exclaim<A: std::fmt::Display + ?Sized>(text: &A) -> String {
-            format!("{}{}", text, "!")
+            format!("{}!", text)
         }
     }
 }

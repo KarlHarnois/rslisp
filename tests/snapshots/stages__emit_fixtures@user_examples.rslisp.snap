@@ -31,7 +31,7 @@ fn main() {
     println!("{}", describe(-2));
     println!("{}", describe(0));
     if IS_ADMIN {
-        println!("{}", "welcome")
+        println!("welcome")
     }
 }
 

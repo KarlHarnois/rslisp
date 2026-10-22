@@ -161,7 +161,7 @@ fn expand_prints_kernel_forms() {
     let expand = sandbox.compiler(&["expand", "greeting.rslisp"]);
     assert_eq!(
         expand.assert_exit_code(0).stdout(),
-        "(def main (fn () (println \"hello from the sandbox\")))\n"
+        "(def main (fn () ((rust \"println!(\\\"hello from the sandbox\\\")\" (where () (fn () unit))))))\n"
     );
 }
 
