@@ -396,12 +396,56 @@ impl TypeChecker {
                 }
                 self.pass(inner, found, value.span, Borrow::Mutable)
             }
+            _ => self.pass_types(&parameter, &argument, value.span),
+        }
+    }
+
+    fn pass_types(
+        &mut self,
+        parameter: &Type,
+        argument: &Type,
+        span: Span,
+    ) -> Result<Borrow, Diagnostic> {
+        match (parameter, argument) {
             (expected, Type::Ref(inner)) if Self::is_known_value(expected) => {
-                self.expect(expected, inner, value.span, MismatchContext::Plain)?;
+                self.expect(expected, inner, span, MismatchContext::Plain)?;
                 Ok(self.borrow_of_referent(inner))
             }
-            (Type::Var(var), Type::Ref(_)) => self.pass_to_variable(*var, &argument, value.span),
-            (expected, found) => self.pass(expected, found, value.span, Borrow::None),
+            (Type::Ref(_), Type::Ref(_)) if self.collapses(parameter, argument) => {
+                let parameter = self.unifier.resolve(parameter);
+                let extra = Self::reference_depth(argument) - Self::reference_depth(&parameter);
+                let stripped = Self::without_references(argument, extra);
+                self.pass(&parameter, &stripped, span, Borrow::Collapse(extra))
+            }
+            (Type::Var(var), Type::Ref(_)) => self.pass_to_variable(*var, argument, span),
+            (expected, found) => self.pass(expected, found, span, Borrow::None),
+        }
+    }
+
+    fn collapses(&self, parameter: &Type, argument: &Type) -> bool {
+        let parameter = self.unifier.resolve(parameter);
+        Self::reference_depth(argument) > Self::reference_depth(&parameter)
+            && !matches!(Self::innermost_referent(&parameter), Type::Var(_))
+    }
+
+    fn reference_depth(value: &Type) -> usize {
+        match value {
+            Type::Ref(inner) => 1 + Self::reference_depth(inner),
+            _ => 0,
+        }
+    }
+
+    fn innermost_referent(value: &Type) -> &Type {
+        match value {
+            Type::Ref(inner) => Self::innermost_referent(inner),
+            _ => value,
+        }
+    }
+
+    fn without_references(value: &Type, levels: usize) -> Type {
+        match value {
+            Type::Ref(inner) if levels > 0 => Self::without_references(inner, levels - 1),
+            _ => value.clone(),
         }
     }
 

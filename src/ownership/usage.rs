@@ -85,7 +85,9 @@ impl<'a> UsageCollector<'a> {
         }
         for (position, argument) in arguments.iter().enumerate() {
             let context = match argument.borrow {
-                Borrow::Shared | Borrow::Passthrough | Borrow::Deref(_) => ParamMode::Ref,
+                Borrow::Shared | Borrow::Passthrough | Borrow::Deref(_) | Borrow::Collapse(_) => {
+                    ParamMode::Ref
+                }
                 Borrow::Mutable => ParamMode::Mut,
                 Borrow::None => callee_modes
                     .get(position)
