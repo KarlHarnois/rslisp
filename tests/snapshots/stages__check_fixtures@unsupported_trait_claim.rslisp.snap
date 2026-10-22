@@ -3,6 +3,15 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/unsupported_trait_claim.rslisp
 ---
+warning[L0217]: `point-eq` binds a Rust path that `eq` already binds
+ --> check/unsupported_trait_claim.rslisp:3:13
+  |
+3 | (rust-trait point-eq "Eq" point)
+  |             ^^^^^^^^ this also binds `Eq`
+  |
+  = note: two traits that bind one Rust path can disagree about its implementors
+  = help: use `eq`, or give `point-eq` a different Rust path
+
 error[L0421]: `point` does not derive `point-eq`
  --> check/unsupported_trait_claim.rslisp:3:27
   |

@@ -26,8 +26,12 @@ struct Entry {
 
 impl Entry {
     fn is_visible_from(&self, symbol: &Symbol, phase: Phase) -> bool {
+        self.is_visible_from_scopes(symbol.scopes(), phase)
+    }
+
+    fn is_visible_from_scopes(&self, scopes: &ScopeSet, phase: Phase) -> bool {
         let phase_matches = phase == Phase::CompileTime || self.phase == Phase::Runtime;
-        phase_matches && self.scopes.is_subset_of(symbol.scopes())
+        phase_matches && self.scopes.is_subset_of(scopes)
     }
 }
 
@@ -98,6 +102,21 @@ impl BindingTable {
                     .any(|entry| entry.is_visible_from(symbol, phase))
             })
             .map(|((name, _), _)| Rc::clone(name))
+            .collect()
+    }
+
+    pub fn visible_bindings(
+        &self,
+        scopes: &ScopeSet,
+        namespace: Namespace,
+        phase: Phase,
+    ) -> Vec<BindingId> {
+        self.entries
+            .iter()
+            .filter(|((_, entry_namespace), _)| *entry_namespace == namespace)
+            .flat_map(|(_, entries)| entries)
+            .filter(|entry| entry.is_visible_from_scopes(scopes, phase))
+            .map(|entry| entry.binding)
             .collect()
     }
 

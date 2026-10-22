@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/second_trait_path.rslisp
+---
+warning[L0217]: `shows` binds a Rust path that `display` already binds
+ --> check/second_trait_path.rslisp:1:13
+  |
+1 | (rust-trait shows "std::fmt::Display" i64)
+  |             ^^^^^ this also binds `std::fmt::Display`
+  |
+  = note: two traits that bind one Rust path can disagree about its implementors
+  = help: use `display`, or give `shows` a different Rust path
+
+(type main (fn () unit))

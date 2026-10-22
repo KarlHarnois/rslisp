@@ -412,6 +412,26 @@ impl ExpandProblems {
         )
     }
 
+    pub fn second_trait_path(name: &str, existing: &str, path: &str, span: Span) -> Diagnostic {
+        let title = if name == existing {
+            format!("`{name}` binds `{path}` again")
+        } else {
+            format!("`{name}` binds a Rust path that `{existing}` already binds")
+        };
+        let help = if name == existing {
+            format!("remove the second `{name}`, or give it a different Rust path")
+        } else {
+            format!("use `{existing}`, or give `{name}` a different Rust path")
+        };
+        Diagnostic::warning(
+            DiagnosticCode::SECOND_TRAIT_PATH,
+            title,
+            Label::new(span, format!("this also binds `{path}`")),
+        )
+        .with_note("two traits that bind one Rust path can disagree about its implementors")
+        .with_help(help)
+    }
+
     fn describe(namespace: Namespace) -> &'static str {
         match namespace {
             Namespace::Value => "",

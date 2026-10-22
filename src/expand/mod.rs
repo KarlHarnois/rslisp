@@ -15,6 +15,7 @@ mod type_expr;
 mod type_parameters;
 
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
 use crate::core::{BindingArena, CoreModule, ModuleId, ModulePath};
 use crate::diagnostic::Diagnostics;
@@ -29,6 +30,7 @@ pub struct Program {
     pub modules: Vec<CoreModule>,
     pub entry: ModuleId,
     pub bindings: BindingArena,
+    pub warnings: Diagnostics,
 }
 
 impl Program {
@@ -51,10 +53,12 @@ pub struct Expander<'s> {
     modules: ModuleRegistry,
     macros: MacroTable,
     macro_origins: HashMap<Span, MacroOrigin>,
+    trait_paths: HashMap<crate::core::BindingId, Rc<str>>,
     globals: GlobalTable,
     expanded: HashMap<ModuleId, CoreModule>,
     order: Vec<ModuleId>,
     diagnostics: Diagnostics,
+    warnings: Diagnostics,
     phase: Phase,
     expansion_depth: usize,
 }
@@ -72,10 +76,12 @@ impl<'s> Expander<'s> {
             modules: ModuleRegistry::default(),
             macros: MacroTable::default(),
             macro_origins: HashMap::new(),
+            trait_paths: HashMap::new(),
             globals: GlobalTable::default(),
             expanded: HashMap::new(),
             order: Vec::new(),
             diagnostics: Diagnostics::default(),
+            warnings: Diagnostics::default(),
             phase: Phase::Runtime,
             expansion_depth: 0,
         }
@@ -87,6 +93,7 @@ impl<'s> Expander<'s> {
             modules: self.take_modules(),
             entry,
             bindings: self.bindings,
+            warnings: self.warnings,
         };
         self.diagnostics.into_result(program)
     }

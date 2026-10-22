@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::rc::Rc;
 
 use super::Expander;
 use super::context::DefinitionContext;
@@ -384,16 +385,45 @@ impl Expander<'_> {
     ) -> Result<(), Diagnostic> {
         let shape = Shape::new(KernelForm::Definition(DefinitionForm::RustTrait), form);
         let items = shape.at_least(3)?;
-        let path = shape.string(&items[2])?.into();
+        let path: Rc<str> = shape.string(&items[2])?.into();
+        self.warn_second_trait_path(binding, &items[1], &path);
         let implementors = items[3..]
             .iter()
             .map(|item| self.lower_type(item))
             .collect::<Result<Vec<TypeExpr>, Diagnostic>>()?;
+        self.trait_paths.insert(binding, path.clone());
         core.items.push(Item {
             kind: ItemKind::RustTrait(binding, path, implementors),
             span: form.span(),
         });
         Ok(())
+    }
+
+    fn warn_second_trait_path(&mut self, binding: BindingId, name: &Form, path: &str) {
+        let Some(symbol) = name.as_symbol() else {
+            return;
+        };
+        let mut visible = self
+            .table
+            .visible_bindings(symbol.scopes(), Namespace::Type, self.phase);
+        visible.sort();
+        let existing = visible.into_iter().find(|existing| {
+            *existing != binding
+                && matches!(self.kind(*existing), BindingKind::Trait(_))
+                && self
+                    .trait_paths
+                    .get(existing)
+                    .is_some_and(|known| known.as_ref() == path)
+        });
+        let Some(existing) = existing else {
+            return;
+        };
+        let span = name.span();
+        let name = self.bindings.get(binding).name().to_string();
+        let existing = self.bindings.get(existing).name().to_string();
+        self.warnings.push(ExpandProblems::second_trait_path(
+            &name, &existing, path, span,
+        ));
     }
 
     fn lower_exports(&mut self, module: ModuleId, form: &Form, core: &mut CoreModule) {
