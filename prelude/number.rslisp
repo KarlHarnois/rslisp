@@ -12,6 +12,7 @@
 (rust-trait integer "crate::rt::Integer" i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize)
 (rust-trait partial-eq "PartialEq"
   bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
+  (where ((a partial-eq)) (ref a))
   (where ((a partial-eq)) (vec a))
   (where ((a partial-eq)) (option a))
   (where ((a partial-eq) (b partial-eq)) (result a b)))
@@ -26,7 +27,8 @@
   (where ((a hash)) (option a))
   (where ((a hash) (b hash)) (result a b)))
 (rust-trait partial-ord "PartialOrd"
-  char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
+  char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
+  (where ((a partial-ord)) (ref a)))
 
 (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
 (def sub (rust "{0} - {1}" (where ((n number)) (fn (n n) n))))
