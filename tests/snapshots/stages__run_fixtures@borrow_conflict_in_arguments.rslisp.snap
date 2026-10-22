@@ -3,10 +3,4 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/borrow_conflict_in_arguments.rslisp
 ---
-error[E0502]: cannot borrow `items` as immutable because it is also borrowed as mutable
- --> run/borrow_conflict_in_arguments.rslisp:4:24
-  |
-4 |   (add-item items (len items))
-  |                        ^^^^^ immutable borrow occurs here
-  |
-  = note: reported by rustc while compiling the generated Rust
+2

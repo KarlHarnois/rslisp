@@ -343,10 +343,17 @@ impl<'a> ExpressionEmitter<'a> {
         if let Some(template) = self.called_template(callee) {
             return self.template_call(&template, arguments, span);
         }
-        let arguments: Vec<Code> = arguments
+        if Self::has_mutable_borrow(arguments) && Self::has_other_arguments(arguments) {
+            return self.call_with_temporaries(callee, arguments);
+        }
+        let arguments = arguments
             .iter()
             .map(|argument| self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary))
             .collect();
+        self.call_code(callee, arguments)
+    }
+
+    fn call_code(&mut self, callee: &TypedExpr, arguments: Vec<Code>) -> Code {
         let callee = self.expr(callee);
         let callee = if callee.is_atomic() {
             callee
@@ -357,6 +364,50 @@ impl<'a> ExpressionEmitter<'a> {
         parts.extend(Self::separated(arguments));
         parts.push(Code::atom(")"));
         Code::joined(parts, Precedence::Atom)
+    }
+
+    fn call_with_temporaries(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) -> Code {
+        self.locals.enter();
+        let mut statements = Vec::new();
+        let mut codes = Vec::new();
+        for (position, argument) in arguments.iter().enumerate() {
+            if argument.borrow == Borrow::Mutable {
+                codes.push(self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary));
+                continue;
+            }
+            let temporary = self.locals.temporary(&format!("call_argument_{position}"));
+            let value = self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary);
+            statements.push(Fragment::Newline);
+            statements.push(Fragment::Text(format!("let {temporary} = ")));
+            statements.extend(value.fragments);
+            statements.push(Fragment::Text(";".to_string()));
+            codes.push(Code::atom(temporary));
+        }
+        let call = self.call_code(callee, codes);
+        self.locals.leave();
+        statements.push(Fragment::Newline);
+        statements.extend(call.fragments);
+        Code {
+            fragments: vec![
+                Fragment::Text("{".to_string()),
+                Fragment::Indented(statements),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ],
+            precedence: Precedence::Block,
+        }
+    }
+
+    fn has_mutable_borrow(arguments: &[TypedArgument]) -> bool {
+        arguments
+            .iter()
+            .any(|argument| argument.borrow == Borrow::Mutable)
+    }
+
+    fn has_other_arguments(arguments: &[TypedArgument]) -> bool {
+        arguments
+            .iter()
+            .any(|argument| argument.borrow != Borrow::Mutable)
     }
 
     fn called_template(&self, callee: &TypedExpr) -> Option<Rc<RustTemplate>> {

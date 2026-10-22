@@ -46,6 +46,20 @@ impl LocalNames {
         candidate
     }
 
+    pub fn temporary(&mut self, base: &str) -> String {
+        let mut candidate = base.to_string();
+        let mut suffix = Self::FIRST_SUFFIX;
+        while self.used.contains(&candidate) {
+            candidate = format!("{base}_{suffix}");
+            suffix += 1;
+        }
+        self.used.insert(candidate.clone());
+        if let Some(scope) = self.scopes.last_mut() {
+            scope.push(candidate.clone());
+        }
+        candidate
+    }
+
     pub fn get(&self, binding: BindingId) -> Option<&str> {
         self.assigned.get(&binding).map(String::as_str)
     }
