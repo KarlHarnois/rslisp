@@ -36,6 +36,7 @@ error[L0306]: `add` belongs to the program, so macro code cannot run it
    |          ---------------------------------------------------- `add` is Rust code that runs in the program
    |
    = help: to compute this in the program, return it as code from the macro, for example with `template`
+   = help: in macro code, use `number-add` from `code` instead
 
 error[L0306]: `to-string` belongs to the program, so macro code cannot run it
   --> expand/program_only.rslisp:15:58
