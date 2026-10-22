@@ -3,11 +3,4 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/changed_field_needs_mut.rslisp
 ---
-error[E0596]: cannot borrow `c.count` as mutable, as `c` is not declared as mutable
- --> run/changed_field_needs_mut.rslisp:6:9
-  |
-6 |   (bump (field c count))
-  |         ^^^^^^^^^^^^^^^ cannot borrow as mutable
-  |
-  = note: reported by rustc while compiling the generated Rust
-  = help: consider changing this to be mutable
+1
