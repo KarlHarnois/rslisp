@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/compare_owned_with_borrowed.rslisp
+---
+true
+true
+false

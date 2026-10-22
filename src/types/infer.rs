@@ -1,3 +1,5 @@
+mod shared_variables;
+
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -19,6 +21,7 @@ use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
 use crate::reader::NumberValue;
 use crate::source::Span;
+use shared_variables::SharedVariables;
 
 struct ExpectedFunction<'a> {
     parameters: &'a [Type],
@@ -322,17 +325,33 @@ impl TypeChecker {
                 span,
             ));
         }
-        let mut typed_arguments = Vec::new();
-        for (parameter, argument) in parameters.iter().zip(arguments) {
-            let value = self.infer_argument(parameter, argument)?;
-            let borrow = self.pass_argument(parameter, &value)?;
-            typed_arguments.push(TypedArgument { value, borrow });
-        }
+        let shared = SharedVariables::of(&parameters, &self.unifier);
+        let mut typed_arguments = self.infer_arguments(&parameters, arguments, &shared)?;
+        self.pass_shared_arguments(&callee, &shared, &mut typed_arguments)?;
         Ok(TypedExpr {
             kind: TypedExprKind::Call(Box::new(callee), typed_arguments),
             ty: result,
             span,
         })
+    }
+
+    fn infer_arguments(
+        &mut self,
+        parameters: &[Type],
+        arguments: &[Expr],
+        shared: &SharedVariables,
+    ) -> Result<Vec<TypedArgument>, Diagnostic> {
+        let mut typed_arguments = Vec::new();
+        for (position, (parameter, argument)) in parameters.iter().zip(arguments).enumerate() {
+            let value = self.infer_argument(parameter, argument)?;
+            let borrow = if shared.contains(position) {
+                Borrow::None
+            } else {
+                self.pass_argument(parameter, &value)?
+            };
+            typed_arguments.push(TypedArgument { value, borrow });
+        }
+        Ok(typed_arguments)
     }
 
     fn infer_argument(

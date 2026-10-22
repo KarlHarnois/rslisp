@@ -7,4 +7,4 @@ error[L0401]: mismatched types
  --> check/recursion.rslisp:5:22
   |
 5 | (defn broken () (+ 1 "one"))
-  |                      ^^^^^ expected an integer, found `(ref str)`
+  |                      ^^^^^ expected an integer, found `str`
