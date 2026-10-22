@@ -18,7 +18,7 @@ pub enum BindingKind {
     KernelType(KernelType),
     Boolean(bool),
     CodeBuiltin(Builtin),
-    Macro,
+    Macro(ModuleId),
     Global(ModuleId),
     Local,
     Struct(ModuleId),

@@ -1,0 +1,5 @@
+(use internal_helper_suggestion/helpers make-thing)
+
+(defn main () (println (make-thing 1)))
+
+(defn misspelled () (println (make-thng 1)))
