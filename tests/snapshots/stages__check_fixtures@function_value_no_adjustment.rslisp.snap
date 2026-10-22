@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/function_value_no_adjustment.rslisp
+---
+error[L0507]: mismatched function type
+ --> check/function_value_no_adjustment.rslisp:4:29
+  |
+4 | (defn main () (takes-shared change!))
+  |                             ^^^^^^^ expected `(fn ((ref (vec i64))) unit)`, found `(fn ((mut (vec i64))) unit)`
+  |
+  = note: no adjustment makes parameter 1 match
+  = help: change the parameter's ownership in a `type` signature, or pass a function that matches

@@ -107,6 +107,23 @@ impl OwnershipProblems {
         .with_help("pass a copy with `(clone ...)`")
     }
 
+    pub fn function_value_mismatch(
+        expected: &str,
+        found: &str,
+        span: Span,
+        parameter: usize,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::FUNCTION_VALUE_MISMATCH,
+            "mismatched function type",
+            Label::new(span, format!("expected `{expected}`, found `{found}`")),
+        )
+        .with_note(format!("no adjustment makes parameter {parameter} match"))
+        .with_help(
+            "change the parameter's ownership in a `type` signature, or pass a function that matches",
+        )
+    }
+
     pub fn missing_bang(name: &str, span: Span) -> Diagnostic {
         Diagnostic::warning(
             DiagnosticCode::MISSING_BANG,

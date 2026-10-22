@@ -1,0 +1,29 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/field_function_value_modes.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Person {
+    name: String,
+    age: u32,
+}
+
+struct Handler {
+    callback: fn(Person) -> bool,
+    tag: std::cell::Cell<i64>,
+}
+
+fn is_adult(p: &Person) -> bool {
+    p.age >= 18
+}
+
+fn keep<A>(value: A) -> A {
+    value
+}
+
+fn main() {
+    let handler = Handler { callback: |argument: Person| is_adult(&argument), tag: std::cell::Cell::new(0) };
+    keep(&handler.callback);
+    keep(&handler.tag);
+}
