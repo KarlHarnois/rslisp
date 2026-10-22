@@ -169,6 +169,7 @@ Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&
 - **No hidden copies.** Copying heap data is always written `(clone x)`, which needs the `clone` trait. Every struct implements it when its type arguments do, because `struct` derives `Clone`. `(ref x)` and `(mut x)` force a borrow.
 - **Moves.** The compiler reports a use after move, points at the move, and suggests `(clone x)`. A move in either branch of an `if` counts.
 - **Mut borrows.** A `mut` argument must be a place: a local or a field. A copy, such as a call's result, is an error, because changing the copy changes nothing.
+- **Call order.** A call that mutably borrows a variable evaluates its other arguments first. A borrow has no side effect, so the observable order stays the same.
 - **Borrowed results.** A function may return a borrow when it has one borrowed parameter, or none for a string literal. With more than one, it reports an error, because lifetimes cannot be written yet.
 - **Closures.** A function-typed parameter is `impl Fn`. A closure returned from a function is a `move` closure. A closure that only borrows or copies its captures is Copy and can be passed more than once. One that moves a capture can be used once.
 - **rustc.** Any lifetime or aliasing error that slips past these checks comes from rustc, mapped back to the source and the user's names.
