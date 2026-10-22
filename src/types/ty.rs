@@ -69,6 +69,14 @@ impl Type {
         self.any_part(&Type::is_reference)
     }
 
+    pub fn stores_reference(&self) -> bool {
+        match self {
+            Type::Ref(_) | Type::Mut(_) => true,
+            Type::Function(..) => false,
+            _ => self.parts().into_iter().any(Type::stores_reference),
+        }
+    }
+
     pub fn substitute(&self, replacements: &HashMap<GenericId, Type>) -> Type {
         match self {
             Type::Generic(generic) => replacements

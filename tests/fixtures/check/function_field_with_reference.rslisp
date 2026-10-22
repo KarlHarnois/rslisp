@@ -1,0 +1,4 @@
+(struct handler (callback (fn ((ref str)) bool)))
+
+(defn main ()
+  (println 1))

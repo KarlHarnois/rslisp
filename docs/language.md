@@ -96,7 +96,7 @@ Type syntax mirrors value syntax:
 
 Type variables are bound only by `where`. A `where` binds them over what its form holds: a signature's type, a struct's fields or a Rust type's template. An unknown type name is an unbound-name error that suggests the closest name.
 
-A struct field cannot hold a borrow, because Rust needs a lifetime that the program cannot write yet. Each type parameter of a struct must appear in a field. Each parameter of a Rust type must appear in its template. A type parameter takes no traits, because Rust would demand a type's traits at every use. A function that needs a trait names it in its own `where`. A type takes exactly as many arguments as it has parameters.
+A struct field cannot hold a borrow outside a function type, because Rust needs a lifetime that the program cannot write yet. Each type parameter of a struct must appear in a field. Each parameter of a Rust type must appear in its template. A type parameter takes no traits, because Rust would demand a type's traits at every use. A function that needs a trait names it in its own `where`. A type takes exactly as many arguments as it has parameters.
 
 ```lisp
 (struct pair (where (a b) (first a) (second b)))
