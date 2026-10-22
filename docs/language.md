@@ -59,12 +59,12 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `quote` | `(quote form)` | none | form: data. |
 | `macro` | `(def name (macro (form) body...))` | none | form: binder. body: expressions. |
 | `rust` | `(rust "template" type)` | the inlined template | type: type. |
-| `rust-trait` | `(rust-trait name "Path" type...)` | trait bound | name: type binder. types: types, or `(where (param...) type)`. |
+| `rust-trait` | `(rust-trait name "Path" type...)` | trait bound | name: type binder. types: types, `(with type type)`, or `(where (param...) type)`. |
 | `rust-type` | `(rust-type name "template")` or `(rust-type name (where (param...) "template"))` | the filled template | name: type binder. params: type binders. |
 | `use` | `(use module name...)` | path | module: module path. names: binders. |
 | `export` | `(export name...)` | `pub` | names: references in every namespace. |
 
-In type positions, the kernel provides `fn`, `ref`, `mut`, `where`, `_`, and the primitive types `bool char str string unit i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64`.
+In type positions, the kernel provides `fn`, `ref`, `mut`, `where`, `with`, `_`, and the primitive types `bool char str string unit i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64`.
 
 In expression positions, the kernel provides the constants `true` and `false`. They are kernel constants, not prelude definitions. Macro code and program code then see the same booleans, so `if`, `and` and `or` work in both.
 
@@ -98,6 +98,8 @@ Type syntax mirrors value syntax:
 | `_` | inferred |
 
 Type variables are bound only by `where`. A `where` binds them over what its form holds: a signature's type, a struct's fields or a Rust type's template. An unknown type name is an unbound-name error that suggests the closest name.
+
+A bound names the trait and, optionally, its second type: `(a (partial-eq b))` is Rust's `A: PartialEq<B>`. The second type must be a type the program knows or a binder of the same `where`, as in `(where ((a (partial-eq b)) b) (fn (a b) bool))`. A plain bound keeps Rust's default: `(a partial-eq)` is `A: PartialEq<A>`. A trait takes a second type exactly when one of its `rust-trait` entries uses `with`.
 
 A struct field cannot hold a borrow outside a function type, because Rust needs a lifetime that the program cannot write yet. Each type parameter of a struct must appear in a field. Each parameter of a Rust type must appear in its template. A type parameter takes no traits, because Rust would demand a type's traits at every use. A function that needs a trait names it in its own `where`. A type takes exactly as many arguments as it has parameters.
 
@@ -296,7 +298,7 @@ Field names are not hygienic. They are looked up through the struct type.
 
 `rust-type` is a kernel form: only `struct` creates a type, and it cannot name a type that Rust defines. A template that starts with `impl ` is opaque. A closure parameter or a `let` writes an opaque type as `_`. A `const`, a `static` or a function-type parameter cannot hold one, and rustc reports it. A struct whose Rust name equals the first name in a used Rust type's template is a name collision.
 
-A `rust-trait` implementor can take type parameters from a `where`. `(where ((a shown)) (ref a))` implements the trait for a reference to any type that implements it. A type parameter alone cannot be an implementor, because it would match every type. A struct can appear in a `rust-trait` only for a trait its emitted `derive` lists.
+A `rust-trait` implementor can take type parameters from a `where`. `(where ((a shown)) (ref a))` implements the trait for a reference to any type that implements it. An entry `(with type type)` gives the trait's second type: `(with string str)` means `String: PartialEq<str>`. A type parameter alone cannot be an implementor, because it would match every type. A struct can appear in a `rust-trait` only for a trait its emitted `derive` lists.
 
 | Template rule | Effect |
 |---|---|

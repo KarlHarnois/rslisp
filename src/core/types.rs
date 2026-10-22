@@ -15,6 +15,7 @@ pub enum TypeExprKind {
     Reference(ReferenceKind, Box<TypeExpr>),
     Hole,
     Where(Vec<TypeBinder>, Box<TypeExpr>),
+    With(Box<TypeExpr>, Box<TypeExpr>),
 }
 
 #[derive(Clone, Debug)]

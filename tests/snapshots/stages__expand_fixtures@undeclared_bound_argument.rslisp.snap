@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/undeclared_bound_argument.rslisp
+---
+error[L0201]: cannot find type `c` in this scope
+ --> expand/undeclared_bound_argument.rslisp:2:34
+  |
+2 | (type bad (where ((a (partial-eq c)) b) (fn (a b) bool)))
+  |                                  ^ not found in this scope

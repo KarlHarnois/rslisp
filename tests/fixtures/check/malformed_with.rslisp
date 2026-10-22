@@ -1,0 +1,5 @@
+(defn worse (x) x)
+(type worse (where (a) (fn (with) unit)))
+
+(defn broken (x) x)
+(type broken (where (a) (fn ((with a)) unit)))

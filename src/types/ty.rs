@@ -146,6 +146,16 @@ impl Bound {
             argument: None,
         }
     }
+
+    pub fn substituted(&self, replacements: &HashMap<GenericId, Type>) -> Self {
+        Self {
+            binding: self.binding,
+            argument: self
+                .argument
+                .as_ref()
+                .map(|argument| argument.substitute(replacements)),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

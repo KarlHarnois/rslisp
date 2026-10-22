@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
-use super::ty::{GenericId, Scheme, Type};
-use crate::core::BindingId;
-
+use super::traits::Implementor;
+use super::ty::{Bound, GenericId, Type};
 pub struct Requirement {
-    pub bound: BindingId,
+    pub bound: Bound,
     pub implementor: Type,
 }
 
@@ -26,19 +25,26 @@ impl Selection {
 }
 
 pub struct ImplementorMatch<'s> {
-    implementor: &'s Scheme,
+    implementor: &'s Implementor,
     bindings: HashMap<GenericId, Type>,
     undecided: bool,
 }
 
 impl<'s> ImplementorMatch<'s> {
-    pub fn select(implementor: &'s Scheme, target: &Type) -> Selection {
+    pub fn select(implementor: &'s Implementor, bound: &Bound, target: &Type) -> Selection {
         let mut matcher = Self {
             implementor,
             bindings: HashMap::new(),
             undecided: false,
         };
-        if !matcher.matches(&implementor.body, target) {
+        let pattern_argument = implementor
+            .argument
+            .as_ref()
+            .unwrap_or(&implementor.scheme.body);
+        let target_argument = bound.argument.as_ref().unwrap_or(target);
+        if !matcher.matches(&implementor.scheme.body, target)
+            || !matcher.matches(pattern_argument, target_argument)
+        {
             return Selection::Missing;
         }
         if matcher.undecided {
@@ -74,6 +80,7 @@ impl<'s> ImplementorMatch<'s> {
 
     fn is_parameter(&self, generic: GenericId) -> bool {
         self.implementor
+            .scheme
             .params
             .iter()
             .any(|param| param.id == generic)
@@ -89,12 +96,13 @@ impl<'s> ImplementorMatch<'s> {
 
     fn requirements(&self) -> Vec<Requirement> {
         self.implementor
+            .scheme
             .params
             .iter()
             .filter_map(|param| Some((param, self.bindings.get(&param.id)?)))
             .flat_map(|(param, implementor)| {
                 param.bounds.iter().map(|bound| Requirement {
-                    bound: bound.binding,
+                    bound: bound.substituted(&self.bindings),
                     implementor: implementor.clone(),
                 })
             })

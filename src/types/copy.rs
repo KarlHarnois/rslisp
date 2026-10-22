@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::traits::TraitTable;
-use super::ty::{GenericId, GenericParam, Type};
+use super::ty::{Bound, GenericId, GenericParam, Type};
 use crate::core::{BindingId, CopyTrait};
 
 pub struct CopyRules<'a> {
@@ -22,7 +22,9 @@ impl<'a> CopyRules<'a> {
     pub fn is_copy(&self, value: &Type) -> bool {
         self.copy_traits.iter().any(|copy| {
             self.traits
-                .satisfies(*copy, value, &|generic, _| self.generic_is_copy(generic))
+                .satisfies(&Bound::plain(*copy), value, &|generic, _| {
+                    self.generic_is_copy(generic)
+                })
         })
     }
 
@@ -41,7 +43,7 @@ impl<'a> CopyRules<'a> {
                 rust_trait
                     .implementors
                     .iter()
-                    .all(|implementor| !implementor.body.is_reference())
+                    .all(|implementor| !implementor.scheme.body.is_reference())
             })
     }
 
@@ -49,7 +51,7 @@ impl<'a> CopyRules<'a> {
         self.traits.get(bound).is_some_and(|rust_trait| {
             !rust_trait.implementors.is_empty()
                 && rust_trait.implementors.iter().all(|implementor| {
-                    implementor.params.is_empty() && self.is_copy(&implementor.body)
+                    implementor.scheme.params.is_empty() && self.is_copy(&implementor.scheme.body)
                 })
         })
     }

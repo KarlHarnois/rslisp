@@ -305,6 +305,7 @@ pub enum KernelType {
     Function,
     Reference(ReferenceKind),
     Where,
+    With,
     Hole,
     Primitive(PrimitiveType),
 }
@@ -331,6 +332,7 @@ impl KernelType {
             KernelType::Reference(ReferenceKind::Shared),
             KernelType::Reference(ReferenceKind::Mutable),
             KernelType::Where,
+            KernelType::With,
             KernelType::Hole,
         ]
         .into_iter()
@@ -343,6 +345,7 @@ impl KernelType {
             KernelType::Reference(ReferenceKind::Shared) => "(ref type)",
             KernelType::Reference(ReferenceKind::Mutable) => "(mut type)",
             KernelType::Where => "(where (variable (variable trait ...) ...) type)",
+            KernelType::With => "(with type type)",
             KernelType::Hole | KernelType::Primitive(_) => self.name(),
         }
     }
@@ -352,6 +355,7 @@ impl KernelType {
             KernelType::Function => "fn",
             KernelType::Reference(kind) => kind.keyword(),
             KernelType::Where => "where",
+            KernelType::With => "with",
             KernelType::Hole => "_",
             KernelType::Primitive(primitive) => primitive.name(),
         }

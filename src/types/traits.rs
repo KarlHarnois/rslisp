@@ -2,19 +2,24 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use super::selection::{ImplementorMatch, Selection};
-use super::ty::{GenericId, Scheme, Type};
+use super::ty::{Bound, GenericId, Scheme, Type};
 use crate::core::BindingId;
+
+pub struct Implementor {
+    pub scheme: Scheme,
+    pub argument: Option<Type>,
+}
 
 pub struct RustTrait {
     pub path: Rc<str>,
-    pub implementors: Vec<Scheme>,
+    pub implementors: Vec<Implementor>,
 }
 
 impl RustTrait {
     pub fn is_open(&self) -> bool {
         self.implementors
             .iter()
-            .any(|implementor| !implementor.params.is_empty())
+            .any(|implementor| !implementor.scheme.params.is_empty())
     }
 }
 
@@ -28,28 +33,28 @@ impl TraitTable {
         self.traits.insert(binding, rust_trait);
     }
 
-    pub fn select(&self, binding: BindingId, implementor: &Type) -> Selection {
+    pub fn select(&self, bound: &Bound, implementor: &Type) -> Selection {
         self.traits
-            .get(&binding)
+            .get(&bound.binding)
             .map_or(&[][..], |rust_trait| rust_trait.implementors.as_slice())
             .iter()
-            .map(|known| ImplementorMatch::select(known, implementor))
+            .map(|known| ImplementorMatch::select(known, bound, implementor))
             .fold(Selection::Missing, Selection::best)
     }
 
     pub fn satisfies(
         &self,
-        binding: BindingId,
+        bound: &Bound,
         candidate: &Type,
-        generic_satisfies: &dyn Fn(GenericId, BindingId) -> bool,
+        generic_satisfies: &dyn Fn(GenericId, &Bound) -> bool,
     ) -> bool {
         if let Type::Generic(generic) = candidate {
-            return generic_satisfies(*generic, binding);
+            return generic_satisfies(*generic, bound);
         }
-        match self.select(binding, candidate) {
+        match self.select(bound, candidate) {
             Selection::Implemented(requirements) => requirements.iter().all(|requirement| {
                 self.satisfies(
-                    requirement.bound,
+                    &requirement.bound,
                     &requirement.implementor,
                     generic_satisfies,
                 )
@@ -69,7 +74,7 @@ impl TraitTable {
         found
     }
 
-    pub fn add_implementor(&mut self, binding: BindingId, implementor: Scheme) {
+    pub fn add_implementor(&mut self, binding: BindingId, implementor: Implementor) {
         if let Some(rust_trait) = self.traits.get_mut(&binding) {
             rust_trait.implementors.push(implementor);
         }
@@ -78,7 +83,7 @@ impl TraitTable {
     pub fn remove_struct_implementor(&mut self, binding: BindingId, struct_binding: BindingId) {
         if let Some(rust_trait) = self.traits.get_mut(&binding) {
             rust_trait.implementors.retain(|implementor| {
-                !matches!(implementor.body, Type::Named(named, _) if named == struct_binding)
+                !matches!(implementor.scheme.body, Type::Named(named, _) if named == struct_binding)
             });
         }
     }

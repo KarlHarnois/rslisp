@@ -66,10 +66,6 @@ impl Unifier {
         self.fresh_with(Some(kind), Vec::new())
     }
 
-    pub fn fresh_bounded(&mut self, bounds: Vec<Bound>) -> Type {
-        self.fresh_with(None, bounds)
-    }
-
     pub fn register_generic(&mut self, generic: GenericId, bounds: Vec<Bound>) {
         self.generic_bounds.insert(generic, bounds);
     }
@@ -87,6 +83,10 @@ impl Unifier {
 
     pub fn bounds(&self, var: TypeVar) -> &[Bound] {
         &self.vars[var.index()].bounds
+    }
+
+    pub fn set_bounds(&mut self, var: TypeVar, bounds: Vec<Bound>) {
+        self.vars[var.index()].bounds = bounds;
     }
 
     pub fn add_bound(&mut self, var: TypeVar, bound: Bound) {

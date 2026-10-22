@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/trait_arguments.rslisp
+---
+fn is_differ<A: PartialEq<B>, B>(a: A, b: B) -> bool {
+    !(a == b)
+}
+
+fn main() {
+    println!("{}", is_differ(1, 2))
+}

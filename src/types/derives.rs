@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 use super::checker::TypeChecker;
 use super::problems::TypeProblems;
+use super::traits::Implementor;
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
 use crate::core::{BindingId, CoreModule, ItemKind, StructDerives};
 use crate::modules::ModuleSources;
@@ -272,7 +273,9 @@ impl TypeChecker {
                 !matches!(ty, Type::Function(..))
                     && !self
                         .traits
-                        .satisfies(trait_binding, ty, &|generic, _| params.contains(&generic))
+                        .satisfies(&Bound::plain(trait_binding), ty, &|generic, _| {
+                            params.contains(&generic)
+                        })
             })
             .map(|(name, ty)| (name.clone(), ty.clone()))
     }
@@ -282,16 +285,19 @@ impl TypeChecker {
         binding: BindingId,
         arity: usize,
         derived: BindingId,
-    ) -> Scheme {
+    ) -> Implementor {
         let params: Vec<GenericParam> = (0..arity)
             .map(|position| {
                 self.new_generic(&Self::parameter_name(position), vec![Bound::plain(derived)])
             })
             .collect();
         let arguments = params.iter().map(|param| Type::Generic(param.id)).collect();
-        Scheme {
-            params,
-            body: Type::Named(binding, arguments),
+        Implementor {
+            scheme: Scheme {
+                params,
+                body: Type::Named(binding, arguments),
+            },
+            argument: None,
         }
     }
 }

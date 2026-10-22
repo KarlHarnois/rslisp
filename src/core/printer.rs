@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::{
     Binder, BindingArena, BindingId, Block, BodyItem, Control, CoreModule, Expr, ExprKind,
     FieldLabel, Item, ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal, ParsedTemplate,
-    RustTemplate, StructExpr, TypeBinder, TypeExpr, TypeExprKind,
+    RustTemplate, StructExpr, TypeBinder, TypeBound, TypeExpr, TypeExprKind,
 };
 
 pub struct CorePrinter<'a> {
@@ -178,6 +178,10 @@ impl<'a> CorePrinter<'a> {
             }
             TypeExprKind::Hole => "_".to_string(),
             TypeExprKind::Where(binders, inner) => self.where_type(binders, inner),
+            TypeExprKind::With(implementor, argument) => Self::list(
+                "with",
+                vec![self.type_expr(implementor), self.type_expr(argument)],
+            ),
         }
     }
 
@@ -269,9 +273,17 @@ impl<'a> CorePrinter<'a> {
         let bounds: Vec<String> = binder
             .bounds
             .iter()
-            .map(|bound| self.name(bound.binding))
+            .map(|bound| self.bound(bound))
             .collect();
         format!("({variable} {})", bounds.join(" "))
+    }
+
+    fn bound(&mut self, bound: &TypeBound) -> String {
+        let name = self.name(bound.binding);
+        match &bound.argument {
+            Some(argument) => format!("({name} {})", self.type_expr(argument)),
+            None => name,
+        }
     }
 
     fn name(&mut self, binding: BindingId) -> String {

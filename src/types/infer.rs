@@ -679,14 +679,9 @@ impl TypeChecker {
 
     fn fails_bounds(&self, var: TypeVar, value: &Type) -> bool {
         self.unifier.bounds(var).iter().any(|bound| {
-            !self
-                .traits
-                .satisfies(bound.binding, value, &|generic, required| {
-                    self.unifier
-                        .generic_bounds(generic)
-                        .iter()
-                        .any(|declared| declared.binding == required)
-                })
+            !self.traits.satisfies(bound, value, &|generic, required| {
+                self.unifier.generic_bounds(generic).contains(required)
+            })
         })
     }
 
