@@ -135,6 +135,7 @@ impl<'a> ItemEmitter<'a> {
             return Vec::new();
         };
         let mut emitter = self.expressions(info.module, &definition.value);
+        emitter.prepare_tail_loop(definition.binding, lambda);
         let types = emitter.types();
         let params: Vec<String> = lambda
             .params
