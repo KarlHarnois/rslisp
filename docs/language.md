@@ -139,14 +139,18 @@ A type parameter satisfies a trait when its `where` names the trait, or when eve
 
 ### Standard types
 
-The prelude binds four Rust types and the functions that use them:
+The prelude binds these Rust types, the traits that abstract them, and the functions that use them:
 
 | Type | Rust | Functions |
 |---|---|---|
-| `(vec a)` | `Vec<A>` | `vec push len iter values collect` |
-| `(option a)` | `Option<A>` | `some none some? none? unwrap-or` |
-| `(result a b)` | `Result<A, B>` | `ok err ok? err?` |
-| `(iterator a)` | `impl Iterator<Item = A>` | `range map filter fold for-each` |
+| `(vec a)` | `Vec<A>` | `vec push len iter values collect get pop! sort! sort-by-key! windows at dedup!` |
+| `(slice a)` | `[A]` | `windows at` |
+| `(option a)` | `Option<A>` | `some none some? none? unwrap-or unwrap expect map-some then-some` |
+| `(result a b)` | `Result<A, B>` | `ok err ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok` |
+| `(iterator a)` | `impl Iterator<Item = A>` | `range map filter fold for-each sum count max min max-by-key any all find take take-while` |
+| `str`, `string` | `&str`, `String` | `to-string display str char print println chars lines split trim as-str parse parse-error from-str slice-text` |
+
+`len` takes any `sequence`, a trait backed by `Sequence` in the runtime and implemented for `String`, `str`, `(vec a)` and `(slice a)`. `sort!`, `sort-by-key!`, `max`, `min` and `max-by-key` take the `ord` trait, which lists the same implementors as `partial-ord`, except `f32` and `f64`. `parse` takes a `from-str` target and returns `(result target (parse-error target))`.
 
 An iterator is lazy, as in Rust, so `(fold (range 1 1000001) 0 (fn (total n) (+ total n)))` repeats work without recursion. `(vec 1 2 3)` emits `vec![1, 2, 3]`, and `(vec)` emits `Vec::new()`.
 
@@ -188,6 +192,8 @@ A macro is a function from form to form that runs at compile time:
 Macro bodies run in the compiler's interpreter. They use the kernel forms, the built-in `code` module, and functions that use only those. A `rust` definition belongs to the program, so macro code cannot run `+`, `<` or any other Rust template. To compute in the program, a macro returns the code, as in `(template (+ (unquote x) 1))`.
 
 The compiler checks every macro body and the functions it reaches, even a macro nothing calls. A mistake is reported where the macro is defined, even in a branch that never runs.
+
+The prelude also provides `defn` for a function definition, `the` for a typed value, and `->` and `->>` for threading a value through calls. `defn` expands to `def` and `fn`; `->` passes the value as the first argument of each call, and `->>` as the last.
 
 The prelude builds three tools on top of `macro`:
 
