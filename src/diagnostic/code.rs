@@ -68,6 +68,7 @@ impl DiagnosticCode {
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));
     pub const NEEDS_OWNERSHIP: Self = Self(Cow::Borrowed("L0503"));
     pub const MISSING_BANG: Self = Self(Cow::Borrowed("L0504"));
+    pub const MISSING_COPY_BOUND: Self = Self(Cow::Borrowed("L0505"));
 
     pub const MISSING_MAIN: Self = Self(Cow::Borrowed("L0601"));
     pub const NAME_COLLISION: Self = Self(Cow::Borrowed("L0602"));

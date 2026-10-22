@@ -6,8 +6,9 @@ use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Borrow, CopyRules, InferredCopies, TemplateBorrows, Type, TypedArgument, TypedBlock,
-    TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
+    Borrow, CopyRules, GenericId, GenericParam, InferredCopies, TemplateBorrows, Type,
+    TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda,
+    TypedLeaf, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -25,9 +26,11 @@ pub struct MoveChecker<'a> {
     copy: CopyRules<'a>,
     bindings: &'a BindingArena,
     template_borrows: &'a TemplateBorrows,
+    generics: &'a HashMap<GenericId, GenericParam>,
     moved: HashMap<BindingId, Span>,
     copy_functions: HashSet<BindingId>,
     reported: HashSet<BindingId>,
+    parameters: HashSet<BindingId>,
     unwritten_parameters: HashSet<BindingId>,
     inferred_copies: InferredCopies,
     diagnostics: Vec<Diagnostic>,
@@ -38,14 +41,17 @@ impl<'a> MoveChecker<'a> {
         copy: CopyRules<'a>,
         bindings: &'a BindingArena,
         template_borrows: &'a TemplateBorrows,
+        generics: &'a HashMap<GenericId, GenericParam>,
     ) -> Self {
         Self {
             copy,
             bindings,
             template_borrows,
+            generics,
             moved: HashMap::new(),
             copy_functions: HashSet::new(),
             reported: HashSet::new(),
+            parameters: HashSet::new(),
             unwritten_parameters: HashSet::new(),
             inferred_copies: InferredCopies::default(),
             diagnostics: Vec::new(),
@@ -53,6 +59,7 @@ impl<'a> MoveChecker<'a> {
     }
 
     pub fn check(mut self, lambda: &TypedLambda) -> MoveReport {
+        self.parameters = lambda.params.iter().map(|param| param.binding).collect();
         self.unwritten_parameters = lambda
             .params
             .iter()
@@ -202,14 +209,34 @@ impl<'a> MoveChecker<'a> {
         if self.records_inferred_copy(binding, ty) || !self.reported.insert(binding) {
             return;
         }
-        let name = self.bindings.get(binding).name();
-        let diagnostic = OwnershipProblems::use_after_move(name, span, moved_at);
-        let diagnostic = if matches!(ty, Type::Function(..)) {
-            OwnershipProblems::closure_move_help(diagnostic)
-        } else {
-            OwnershipProblems::clone_suggestion(diagnostic, name, moved_at)
-        };
+        let diagnostic = self.use_after_move_diagnostic(binding, ty, span, moved_at);
         self.diagnostics.push(diagnostic);
+    }
+
+    fn use_after_move_diagnostic(
+        &self,
+        binding: BindingId,
+        ty: &Type,
+        span: Span,
+        moved_at: Span,
+    ) -> Diagnostic {
+        let name = self.bindings.get(binding).name();
+        if matches!(ty, Type::Function(..)) {
+            return OwnershipProblems::closure_move_help(OwnershipProblems::use_after_move(
+                name, span, moved_at,
+            ));
+        }
+        if let Type::Generic(generic) = ty
+            && self.parameters.contains(&binding)
+            && let Some(parameter) = self.generics.get(generic)
+        {
+            return OwnershipProblems::missing_copy_bound(name, &parameter.name, span, moved_at);
+        }
+        OwnershipProblems::clone_suggestion(
+            OwnershipProblems::use_after_move(name, span, moved_at),
+            name,
+            moved_at,
+        )
     }
 
     fn record_use(&mut self, binding: BindingId, ty: &Type, span: Span, usage: Usage) {

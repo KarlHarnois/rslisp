@@ -44,6 +44,7 @@ impl OwnershipChecker {
                     CopyRules::new(&program.traits, &program.generics, &program.structs),
                     &program.bindings,
                     &program.template_borrows,
+                    &program.generics,
                 );
                 let report = checker.check(lambda);
                 inferred_copies.extend(report.inferred_copies);

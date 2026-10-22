@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/written_copy_bound.rslisp
+---
+error[L0505]: use of moved value `x`
+ --> check/written_copy_bound.rslisp:2:24
+  |
+2 | (defn twice (x) (vec x x))
+  |                      - ^ value used here after it moved
+  |                      |
+  |                      value moved here
+  |
+  = note: the signature writes `a` without `copy`, and a written signature is exact
+  = help: add a `copy` bound to the signature: `(a copy)`
