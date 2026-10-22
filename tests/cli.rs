@@ -12,6 +12,8 @@ const RUSTC_SYNTAX_ERROR: &str = "(def doubled-sign (rust \"{0} + + 1\" (fn (i64
 const CRASHING_RUSTC: &str =
     "#!/bin/sh\necho 'rustc crashed before reporting anything' >&2\nexit 101\n";
 const SILENT_RUSTC: &str = "#!/bin/sh\nexit 0\n";
+const BOUND_MODULE: &str = "(export person)\n\n(defstruct person (name string))\n";
+const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::ops::Add\" i64 (with i64 person))\n\n(type matches (where ((a (same person))) (fn (a) bool)))\n(defn matches (x) true)\n\n(defn main () (println (matches 1)))\n";
 
 struct Sandbox {
     directory: PathBuf,
@@ -146,6 +148,17 @@ fn signatures_prints_each_function() {
     let sandbox = Sandbox::new("signatures").with_file("greeting.rslisp", GREETING);
     let signatures = sandbox.compiler(&["signatures", "greeting.rslisp"]);
     insta::assert_snapshot!(signatures.assert_exit_code(0).stdout());
+}
+
+#[test]
+fn emit_qualifies_a_struct_named_in_a_bound() {
+    let sandbox = Sandbox::new("bound_import")
+        .with_file("bound.rslisp", BOUND_ENTRY)
+        .with_file("other/person.rslisp", BOUND_MODULE);
+    let emitted = sandbox.compiler(&["emit", "bound.rslisp"]);
+    let stdout = emitted.assert_exit_code(0).stdout();
+    assert!(stdout.contains("std::ops::Add<crate::other::person::Person>"));
+    assert!(stdout.contains("struct Person"));
 }
 
 #[test]

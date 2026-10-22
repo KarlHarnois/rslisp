@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/bound_second_type.rslisp
+---
+(type matches (where ((a (same person))) (fn (a) bool)))
+(type main (fn () unit))
