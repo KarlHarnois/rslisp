@@ -1,0 +1,4 @@
+(defstruct ticket (id u32))
+(derive ticket display)
+
+(defn main () (do))

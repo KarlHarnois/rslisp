@@ -327,6 +327,45 @@ impl TypeProblems {
         ))
     }
 
+    pub fn not_derivable(trait_name: &str, derivable: &[String], span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::NOT_DERIVABLE,
+            format!("`{trait_name}` cannot be derived"),
+            Label::new(span, "not a derivable trait"),
+        )
+        .with_help(format!("a `derive` lists any of: {}", derivable.join(", ")))
+    }
+
+    pub fn blocked_derive(
+        struct_name: &str,
+        trait_name: &str,
+        field: &str,
+        field_type: &str,
+        span: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::BLOCKED_DERIVE,
+            format!("`{struct_name}` cannot derive `{trait_name}`"),
+            Label::new(
+                span,
+                format!("field `{field}` is `{field_type}`, which is not `{trait_name}`"),
+            ),
+        )
+        .with_help(format!(
+            "change the type of field `{field}`, or leave this trait out of the `derive`"
+        ))
+    }
+
+    pub fn duplicate_derive(struct_name: &str, span: Span, first: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::DUPLICATE_DERIVE,
+            format!("`{struct_name}` has a second `derive`"),
+            Label::new(span, "second `derive`"),
+        )
+        .with_label(Label::new(first, "first `derive`"))
+        .with_help("merge the two trait lists into one `derive`")
+    }
+
     pub fn misplaced_where(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MISPLACED_WHERE,

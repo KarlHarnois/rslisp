@@ -54,6 +54,9 @@ impl DiagnosticCode {
     pub const MUT_BORROW_OF_COPY: Self = Self(Cow::Borrowed("L0419"));
     pub const BORROWED_STRUCT_FIELD: Self = Self(Cow::Borrowed("L0420"));
     pub const TRAIT_CLAIM_ON_STRUCT: Self = Self(Cow::Borrowed("L0421"));
+    pub const NOT_DERIVABLE: Self = Self(Cow::Borrowed("L0422"));
+    pub const BLOCKED_DERIVE: Self = Self(Cow::Borrowed("L0423"));
+    pub const DUPLICATE_DERIVE: Self = Self(Cow::Borrowed("L0424"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));

@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/not_derivable.rslisp
+---
+error[L0422]: `display` cannot be derived
+ --> check/not_derivable.rslisp:2:16
+  |
+2 | (derive ticket display)
+  |                ^^^^^^^ not a derivable trait
+  |
+  = help: a `derive` lists any of: clone, copy, debug, partial-eq, eq, partial-ord, ord, hash

@@ -1,0 +1,5 @@
+(defstruct ticket (id u32))
+(derive ticket clone)
+(derive ticket debug)
+
+(defn main () (do))

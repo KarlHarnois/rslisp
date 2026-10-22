@@ -374,8 +374,32 @@ pub struct StructDerives;
 
 impl StructDerives {
     pub const INFERRED: [&'static str; 5] = ["Clone", "Debug", "PartialEq", "Eq", "Hash"];
+    pub const DERIVABLE: [&'static str; 8] = [
+        "Clone",
+        "Copy",
+        "Debug",
+        "PartialEq",
+        "Eq",
+        "PartialOrd",
+        "Ord",
+        "Hash",
+    ];
+    const REQUIRED: [(&'static str, &'static str); 5] = [
+        ("Copy", "Clone"),
+        ("Eq", "PartialEq"),
+        ("PartialOrd", "PartialEq"),
+        ("Ord", "Eq"),
+        ("Ord", "PartialOrd"),
+    ];
 
     pub fn derive_name(path: &str) -> &str {
         path.rsplit("::").next().unwrap_or(path)
+    }
+
+    pub fn brings(listed: &str, derived: &str) -> bool {
+        listed == derived
+            || Self::REQUIRED
+                .iter()
+                .any(|(requirer, required)| *requirer == listed && Self::brings(required, derived))
     }
 }

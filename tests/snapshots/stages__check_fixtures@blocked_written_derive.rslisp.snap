@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/blocked_written_derive.rslisp
+---
+error[L0423]: `point` cannot derive `eq`
+ --> check/blocked_written_derive.rslisp:2:15
+  |
+2 | (derive point eq)
+  |               ^^ field `x` is `f64`, which is not `eq`
+  |
+  = help: change the type of field `x`, or leave this trait out of the `derive`
