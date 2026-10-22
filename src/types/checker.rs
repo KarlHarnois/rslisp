@@ -57,6 +57,7 @@ pub struct TypeChecker {
     pub(super) recur_target: Option<super::infer::RecurTarget>,
     pub(super) changed_structs: HashSet<BindingId>,
     pub(super) inferred_copies: InferredCopies,
+    macro_origins: HashMap<Span, Rc<str>>,
     copy_trait: Option<BindingId>,
 }
 
@@ -96,6 +97,7 @@ impl TypeChecker {
             recur_target: None,
             changed_structs: HashSet::new(),
             inferred_copies: InferredCopies::default(),
+            macro_origins: HashMap::new(),
             copy_trait: None,
         }
     }
@@ -342,6 +344,10 @@ impl TypeChecker {
 
     pub(super) fn display(&self) -> TypeDisplay<'_> {
         TypeDisplay::new(&self.bindings, &self.generics)
+    }
+
+    pub(super) fn macro_name(&self, span: Span) -> Option<Rc<str>> {
+        self.macro_origins.get(&span).cloned()
     }
 
     pub(super) fn new_generic(&mut self, name: &str, bounds: Vec<Bound>) -> GenericParam {
@@ -1200,6 +1206,11 @@ impl TypeChecker {
         let mut checker = Self::new(program.bindings.clone());
         checker.changed_structs = changed_structs.clone();
         checker.inferred_copies = inferred_copies.clone();
+        checker.macro_origins = program
+            .macro_origins
+            .iter()
+            .map(|(span, origin)| (*span, Rc::clone(&origin.name)))
+            .collect();
         checker.collect_declarations(&program.modules);
         let mut definitions = checker.check_definitions(&program.modules, program.entry);
         let order = Self::definition_order(&program.modules);

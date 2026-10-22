@@ -94,7 +94,7 @@ impl Expander<'_> {
         let origin = self.macro_origin(binding, call_site);
         self.record_introduced_names(&form, &origin);
         form.relocate_outside(call_site);
-        self.macro_origins.insert(call_site, origin);
+        self.macro_origins.entry(call_site).or_insert(origin);
         Ok(form)
     }
 

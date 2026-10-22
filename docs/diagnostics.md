@@ -42,7 +42,7 @@ help: a function with a similar name exists
 
 **If a name does not resolve, suggest the closest name.** Rank candidates by edit distance. If no candidate is within a third of the name's length, leave out the suggestion.
 
-**If the error is inside macro output, name the expansion.** Add `note: in this expansion of` followed by the macro name, with a label on the user's macro call.
+**If the error is inside macro output, name the expansion.** Add `note: in this expansion of` followed by the macro name, with a label on the user's macro call. When a macro expands to an `if`, a note about the `if`'s test or branches names the user's macro instead of `if`.
 
 **Never blame the reader.** Describe the code, not the person.
 

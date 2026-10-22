@@ -1,0 +1,8 @@
+(defn sign (n)
+  (cond ((> n 0) 1) ((< n 0) "negative") (else 0)))
+
+(defrule choose
+  ((test left right) (if test left right)))
+
+(defn pick (flag)
+  (choose flag 1 "one"))

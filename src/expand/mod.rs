@@ -25,12 +25,14 @@ use crate::reader::Form;
 use crate::scope::{BindingTable, Phase, Scope, ScopeAllocator};
 use crate::source::{SourceId, SourceMap, Span};
 use globals::GlobalTable;
-use macro_call::{MacroOrigin, MacroTable};
+pub use macro_call::MacroOrigin;
+use macro_call::MacroTable;
 
 pub struct Program {
     pub modules: Vec<CoreModule>,
     pub entry: ModuleId,
     pub bindings: BindingArena,
+    pub macro_origins: HashMap<Span, MacroOrigin>,
     pub warnings: Diagnostics,
 }
 
@@ -103,6 +105,7 @@ impl<'s> Expander<'s> {
             modules: self.take_modules(),
             entry,
             bindings: self.bindings,
+            macro_origins: self.macro_origins,
             warnings: self.warnings,
         };
         self.diagnostics.into_result(program)

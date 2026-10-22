@@ -199,7 +199,7 @@ impl TypeChecker {
                 let expectation = ExpectedFunction {
                     parameters: &parameters,
                     result: &result,
-                    context,
+                    context: context.clone(),
                     written: matches!(context, MismatchContext::Signature { .. }),
                 };
                 let (kind, ty) = self.infer_lambda(lambda, expr.span(), Some(expectation))?;
@@ -246,7 +246,7 @@ impl TypeChecker {
         let result_span = Self::block_result_span(&body).unwrap_or(span);
         let context = expected
             .as_ref()
-            .map_or(MismatchContext::Plain, |expected| expected.context);
+            .map_or(MismatchContext::Plain, |expected| expected.context.clone());
         self.expect(&result, &found, result_span, context)?;
         let parameter_types = params.iter().map(|param| param.ty.clone()).collect();
         let function = Type::Function(parameter_types, Box::new(result));
@@ -755,7 +755,15 @@ impl TypeChecker {
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
         let test = self.infer(test)?;
-        self.expect(&Type::bool(), &test.ty, test.span, MismatchContext::IfTest)?;
+        let expanded_from = self.macro_name(span);
+        self.expect(
+            &Type::bool(),
+            &test.ty,
+            test.span,
+            MismatchContext::IfTest {
+                expanded_from: expanded_from.clone(),
+            },
+        )?;
         let then = self.infer(then)?;
         let otherwise = self.infer(otherwise)?;
         let first = Self::result_span(&then);
@@ -763,7 +771,10 @@ impl TypeChecker {
             &then.ty,
             &otherwise.ty,
             Self::result_span(&otherwise),
-            MismatchContext::IfBranch { first },
+            MismatchContext::IfBranch {
+                first,
+                expanded_from,
+            },
         )?;
         let ty = then.ty.clone();
         Ok(TypedExpr {
