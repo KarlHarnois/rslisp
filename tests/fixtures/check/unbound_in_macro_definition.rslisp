@@ -1,0 +1,3 @@
+(defmacro call-missing (x) (template (missing-helper (unquote x))))
+
+(defn main () (println (call-missing 1)))
