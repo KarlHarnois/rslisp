@@ -699,7 +699,7 @@ impl TypeChecker {
         let mut borrowed = None;
         for (label, field_type) in fields {
             let lowered_type = self.lower_type(field_type, scope)?;
-            if lowered_type.holds_reference() && borrowed.is_none() {
+            if lowered_type.stores_reference() && borrowed.is_none() {
                 borrowed = Some(field_type.span());
             }
             lowered.push((label.name.clone(), lowered_type));
