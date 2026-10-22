@@ -78,7 +78,7 @@ impl<'a> TypeDisplay<'a> {
         let bounds: Vec<&str> = param
             .bounds
             .iter()
-            .map(|bound| self.bindings.get(*bound).name())
+            .map(|bound| self.bindings.get(bound.binding).name())
             .collect();
         format!("({} {})", param.name, bounds.join(" "))
     }

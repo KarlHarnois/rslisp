@@ -10,7 +10,7 @@ use super::selection::Selection;
 use super::structs::{StructDefinition, StructTable};
 use super::templates::TemplateBorrows;
 use super::traits::{RustTrait, TraitTable};
-use super::ty::{GenericId, GenericParam, Scheme, Type, TypeVar};
+use super::ty::{Bound, GenericId, GenericParam, Scheme, Type, TypeVar};
 use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
@@ -47,7 +47,7 @@ pub struct TypeChecker {
     pub(super) type_arities: HashMap<BindingId, usize>,
     signatures: HashMap<BindingId, (TypeExpr, Span)>,
     monomorphic: Vec<Type>,
-    implied_bounds: HashMap<GenericId, Vec<BindingId>>,
+    implied_bounds: HashMap<GenericId, Vec<Bound>>,
     pub(super) field_accessors: HashMap<BindingId, Rc<str>>,
     pub(super) pending_borrows: Vec<PendingBorrow>,
     pub(super) template_borrows: TemplateBorrows,
@@ -254,7 +254,7 @@ impl TypeChecker {
                 param
                     .bounds
                     .iter()
-                    .filter_map(|bound| self.traits.get(*bound))
+                    .filter_map(|bound| self.traits.get(bound.binding))
                     .collect()
             })
             .unwrap_or_default();
@@ -289,7 +289,7 @@ impl TypeChecker {
         TypeDisplay::new(&self.bindings, &self.generics)
     }
 
-    pub(super) fn new_generic(&mut self, name: &str, bounds: Vec<BindingId>) -> GenericParam {
+    pub(super) fn new_generic(&mut self, name: &str, bounds: Vec<Bound>) -> GenericParam {
         let id = GenericId::new(self.generics.len());
         let param = GenericParam {
             id,
@@ -324,11 +324,11 @@ impl TypeChecker {
         implementor: &Type,
         pass: ObligationPass,
     ) {
-        match self.traits.select(obligation.bound, implementor) {
+        match self.traits.select(obligation.bound.binding, implementor) {
             Selection::Implemented(requirements) => {
                 for requirement in requirements {
                     let required = Obligation {
-                        bound: requirement.bound,
+                        bound: Bound::plain(requirement.bound),
                         implementor: requirement.implementor,
                         span: obligation.span,
                     };
@@ -336,7 +336,7 @@ impl TypeChecker {
                 }
             }
             Selection::Missing if !implementor.has_vars() => {
-                self.report_missing_trait(obligation.bound, implementor, obligation.span)
+                self.report_missing_trait(obligation.bound.binding, implementor, obligation.span)
             }
             Selection::Undecided | Selection::Missing => self.leave_unresolved(obligation, pass),
         }
@@ -804,11 +804,11 @@ impl TypeChecker {
         Ok(())
     }
 
-    fn check_generic_bound(&mut self, generic: GenericId, bound: BindingId, span: Span) {
+    fn check_generic_bound(&mut self, generic: GenericId, bound: Bound, span: Span) {
         if self.unifier.generic_bounds(generic).contains(&bound) {
             return;
         }
-        if self.implies(generic, bound) {
+        if self.implies(generic, &bound) {
             let implied = self.implied_bounds.entry(generic).or_default();
             if !implied.contains(&bound) {
                 implied.push(bound);
@@ -816,18 +816,25 @@ impl TypeChecker {
             return;
         }
         let generic_name = self.display().show(&Type::Generic(generic));
-        let diagnostic =
-            TypeProblems::missing_bound(self.bindings.get(bound).name(), &generic_name, span);
+        let diagnostic = TypeProblems::missing_bound(
+            self.bindings.get(bound.binding).name(),
+            &generic_name,
+            span,
+        );
         self.diagnostics.push(diagnostic);
     }
 
-    fn implies(&self, generic: GenericId, bound: BindingId) -> bool {
+    fn implies(&self, generic: GenericId, bound: &Bound) -> bool {
+        if bound.argument.is_some() {
+            return false;
+        }
         match self.admissible_types(generic) {
             Admissible::Closed(types) => {
                 !types.is_empty()
-                    && types
-                        .iter()
-                        .all(|candidate| self.traits.satisfies(bound, candidate, &|_, _| false))
+                    && types.iter().all(|candidate| {
+                        self.traits
+                            .satisfies(bound.binding, candidate, &|_, _| false)
+                    })
             }
             Admissible::Unbounded | Admissible::Open(_) => false,
         }

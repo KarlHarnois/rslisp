@@ -544,11 +544,10 @@ impl TypeChecker {
 
     fn needs_value(&self, var: TypeVar) -> bool {
         self.unifier.literal_kind(var).is_some()
-            || self
-                .unifier
-                .bounds(var)
-                .iter()
-                .any(|bound| self.copy_rules().bound_allows_only_copy_values(*bound))
+            || self.unifier.bounds(var).iter().any(|bound| {
+                self.copy_rules()
+                    .bound_allows_only_copy_values(bound.binding)
+            })
     }
 
     fn pass_types(
@@ -680,9 +679,14 @@ impl TypeChecker {
 
     fn fails_bounds(&self, var: TypeVar, value: &Type) -> bool {
         self.unifier.bounds(var).iter().any(|bound| {
-            !self.traits.satisfies(*bound, value, &|generic, required| {
-                self.unifier.generic_bounds(generic).contains(&required)
-            })
+            !self
+                .traits
+                .satisfies(bound.binding, value, &|generic, required| {
+                    self.unifier
+                        .generic_bounds(generic)
+                        .iter()
+                        .any(|declared| declared.binding == required)
+                })
         })
     }
 

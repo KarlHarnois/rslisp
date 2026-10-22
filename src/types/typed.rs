@@ -6,7 +6,7 @@ use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
 use super::templates::TemplateBorrows;
 use super::traits::TraitTable;
-use super::ty::{GenericId, GenericParam, Scheme, Type};
+use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
 use crate::core::{
     BindingArena, BindingId, FieldLabel, Literal, ModuleId, ModulePath, RustTemplate,
 };
@@ -138,7 +138,7 @@ pub struct TypedProgram {
     pub rust_types: RustTypeTable,
     pub traits: TraitTable,
     pub generics: HashMap<GenericId, GenericParam>,
-    pub implied_bounds: HashMap<GenericId, Vec<BindingId>>,
+    pub implied_bounds: HashMap<GenericId, Vec<Bound>>,
     pub template_borrows: TemplateBorrows,
     pub warnings: Diagnostics,
 }
