@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/prelude_length.rslisp
+---
+3
+4
+3
+2
+2
