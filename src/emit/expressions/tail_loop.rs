@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use super::{ArgumentRole, ExpressionEmitter, TypeContext};
+use super::{ArgumentRole, ExpressionEmitter, LoopExit, TypeContext};
 use crate::core::BindingId;
 use crate::emit::fragment::Fragment;
 use crate::types::{
@@ -112,20 +112,31 @@ impl ExpressionEmitter<'_> {
     const COMPOUND_OPERATORS: [&'static str; 5] = ["+", "-", "*", "/", "%"];
 
     pub(super) fn loop_body(&mut self, block: &TypedBlock) -> Vec<Fragment> {
-        vec![
+        self.loop_with_exit(block, LoopExit::Return)
+    }
+
+    pub(super) fn loop_expression_body(&mut self, block: &TypedBlock) -> Vec<Fragment> {
+        self.loop_with_exit(block, LoopExit::Break)
+    }
+
+    fn loop_with_exit(&mut self, block: &TypedBlock, exit: LoopExit) -> Vec<Fragment> {
+        let previous = std::mem::replace(&mut self.loop_exit, exit);
+        let fragments = vec![
             Fragment::Newline,
             Fragment::Text("loop {".to_string()),
             Fragment::Indented(self.loop_block(block)),
             Fragment::Newline,
             Fragment::Text("}".to_string()),
-        ]
+        ];
+        self.loop_exit = previous;
+        fragments
     }
 
     fn loop_block(&mut self, block: &TypedBlock) -> Vec<Fragment> {
         let Some((TypedBodyItem::Expr(tail), leading)) = block.items.split_last() else {
             let mut fragments = self.leading_statements(&block.items);
             fragments.push(Fragment::Newline);
-            fragments.push(Fragment::Text("return;".to_string()));
+            fragments.push(Fragment::Text(format!("{};", self.loop_exit.keyword())));
             return fragments;
         };
         let mut fragments = self.leading_statements(leading);
@@ -195,9 +206,9 @@ impl ExpressionEmitter<'_> {
             fragments.extend(value.fragments);
             fragments.push(Fragment::Text(";".to_string()));
             fragments.push(Fragment::Newline);
-            fragments.push(Fragment::Text("return;".to_string()));
+            fragments.push(Fragment::Text(format!("{};", self.loop_exit.keyword())));
         } else {
-            fragments.push(Fragment::Text("return ".to_string()));
+            fragments.push(Fragment::Text(format!("{} ", self.loop_exit.keyword())));
             fragments.extend(value.fragments);
             fragments.push(Fragment::Text(";".to_string()));
         }
