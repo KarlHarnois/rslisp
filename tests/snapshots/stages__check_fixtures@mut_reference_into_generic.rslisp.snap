@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/mut_reference_into_generic.rslisp
+---
+error[L0501]: use of moved value `stack`
+ --> check/mut_reference_into_generic.rslisp:7:10
+  |
+6 |   (keep stack)
+  |         ----- value moved here
+7 |   (push! stack 1))
+  |          ^^^^^ value used here after it moved
+  |
+help: clone the value if both places need it
+  |
+6 -   (keep stack)
+6 +   (keep (clone stack))
+  |

@@ -88,7 +88,7 @@ impl<'a> UsageCollector<'a> {
                 Borrow::Shared | Borrow::Passthrough | Borrow::Deref(_) | Borrow::Collapse(_) => {
                     ParamMode::Ref
                 }
-                Borrow::Mutable => ParamMode::Mut,
+                Borrow::Mutable | Borrow::Reborrow => ParamMode::Mut,
                 Borrow::None => callee_modes
                     .get(position)
                     .copied()

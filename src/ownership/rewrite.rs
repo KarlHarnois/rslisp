@@ -108,15 +108,29 @@ impl ModeRewrite {
     }
 
     fn borrow_for(argument: &mut TypedArgument, param: &Type) {
-        if matches!(argument.borrow, Borrow::Passthrough | Borrow::Deref(_))
-            || argument.value.ty.is_reference()
+        if argument.borrow == Borrow::None
+            && matches!(argument.value.ty, Type::Mut(_))
+            && matches!(param, Type::Mut(_))
         {
+            argument.borrow = Borrow::Reborrow;
             return;
         }
-        argument.borrow = match param {
+        if Self::already_borrowed(argument) {
+            return;
+        }
+        argument.borrow = Self::borrow_mode(param);
+    }
+
+    fn already_borrowed(argument: &TypedArgument) -> bool {
+        matches!(argument.borrow, Borrow::Passthrough | Borrow::Deref(_))
+            || argument.value.ty.is_reference()
+    }
+
+    fn borrow_mode(param: &Type) -> Borrow {
+        match param {
             Type::Ref(_) => Borrow::Shared,
             Type::Mut(_) => Borrow::Mutable,
             _ => Borrow::None,
-        };
+        }
     }
 }

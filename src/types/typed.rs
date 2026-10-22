@@ -76,6 +76,7 @@ pub enum Borrow {
     Shared,
     Mutable,
     Passthrough,
+    Reborrow,
     Deref(usize),
     Collapse(usize),
     Pending(usize),
