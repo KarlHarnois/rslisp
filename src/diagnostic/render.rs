@@ -44,7 +44,12 @@ impl<'a> DiagnosticRenderer<'a> {
     }
 
     fn main_group<'d>(&'d self, diagnostic: &'d Diagnostic) -> Group<'d> {
-        let title = Level::ERROR
+        let level = if diagnostic.is_error() {
+            Level::ERROR
+        } else {
+            Level::WARNING
+        };
+        let title = level
             .primary_title(diagnostic.title())
             .id(diagnostic.code().as_str());
         let snippets = self
