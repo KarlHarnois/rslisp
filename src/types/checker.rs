@@ -520,31 +520,50 @@ impl TypeChecker {
     }
 
     fn generalize_component(&mut self, members: &[(BindingId, &TypedExpr)], start: usize) {
-        let excluded = self.monomorphic_vars();
-        let mut vars: Vec<TypeVar> = Vec::new();
-        for (binding, value) in members {
-            let generalizes = !self.signatures.contains_key(binding)
-                && matches!(value.kind, TypedExprKind::Fn(_));
-            if !generalizes {
-                continue;
-            }
-            for var in self.free_vars(&self.component[binding]) {
-                if !excluded.contains(&var) && !vars.contains(&var) {
-                    vars.push(var);
-                }
-            }
-        }
+        let vars = self.component_vars(members);
         let span = members.first().map_or_else(
             || Span::new(crate::source::SourceId::new(0), 0..0),
             |(_, value)| value.span,
         );
+        self.generalize_vars(vars, start, span);
+        self.discharge_obligations(ObligationPass::Deferring);
+    }
+
+    fn component_vars(&self, members: &[(BindingId, &TypedExpr)]) -> Vec<TypeVar> {
+        let excluded = self.monomorphic_vars();
+        let mut vars = Vec::new();
+        for (binding, value) in members {
+            if self.generalizes(binding, value) {
+                self.add_free_vars(binding, &excluded, &mut vars);
+            }
+        }
+        vars
+    }
+
+    fn generalizes(&self, binding: &BindingId, value: &TypedExpr) -> bool {
+        !self.signatures.contains_key(binding) && matches!(value.kind, TypedExprKind::Fn(_))
+    }
+
+    fn add_free_vars(
+        &self,
+        binding: &BindingId,
+        excluded: &HashSet<TypeVar>,
+        vars: &mut Vec<TypeVar>,
+    ) {
+        for var in self.free_vars(&self.component[binding]) {
+            if !excluded.contains(&var) && !vars.contains(&var) {
+                vars.push(var);
+            }
+        }
+    }
+
+    fn generalize_vars(&mut self, vars: Vec<TypeVar>, start: usize, span: Span) {
         let mut position = start;
         for var in vars {
             if self.generalize_var(var, position, span).is_some() {
                 position += 1;
             }
         }
-        self.discharge_obligations(ObligationPass::Deferring);
     }
 
     fn mentioned_generics(&self, inferred: &Type) -> Vec<GenericParam> {
@@ -655,15 +674,7 @@ impl TypeChecker {
             .zip(&params)
             .map(|(binder, param)| (binder.variable, param.id))
             .collect();
-        let mut lowered = Vec::new();
-        let mut borrowed = None;
-        for (label, field_type) in fields {
-            let lowered_type = self.lower_type(field_type, &scope)?;
-            if lowered_type.holds_reference() && borrowed.is_none() {
-                borrowed = Some(field_type.span());
-            }
-            lowered.push((label.name.clone(), lowered_type));
-        }
+        let (lowered, borrowed) = self.lower_fields(fields, &scope)?;
         Self::check_parameters_used(binders, &params, &lowered)?;
         self.structs.add(
             binding,
@@ -672,10 +683,26 @@ impl TypeChecker {
                 fields: lowered,
             },
         );
-        match borrowed {
-            Some(span) => Err(TypeProblems::borrowed_struct_field(span)),
-            None => Ok(()),
+        borrowed.map_or(Ok(()), |span| {
+            Err(TypeProblems::borrowed_struct_field(span))
+        })
+    }
+
+    fn lower_fields(
+        &mut self,
+        fields: &[(crate::core::FieldLabel, TypeExpr)],
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<(Vec<(std::rc::Rc<str>, Type)>, Option<Span>), Diagnostic> {
+        let mut lowered = Vec::new();
+        let mut borrowed = None;
+        for (label, field_type) in fields {
+            let lowered_type = self.lower_type(field_type, scope)?;
+            if lowered_type.holds_reference() && borrowed.is_none() {
+                borrowed = Some(field_type.span());
+            }
+            lowered.push((label.name.clone(), lowered_type));
         }
+        Ok((lowered, borrowed))
     }
 
     fn lower_implementor(&mut self, implementor: &TypeExpr) -> Result<Scheme, Diagnostic> {
