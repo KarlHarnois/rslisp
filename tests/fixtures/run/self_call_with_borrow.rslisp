@@ -1,0 +1,5 @@
+(defn strip (text n)
+  (if (= n 0) text (strip (trim text) (- n 1))))
+
+(defn main ()
+  (println (strip "  hi  " 1)))

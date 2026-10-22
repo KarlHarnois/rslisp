@@ -605,8 +605,8 @@ impl TypeChecker {
 
     fn prepare_member(&mut self, member: &Definition) -> Option<(BindingId, Scheme)> {
         let Some((signature, _)) = self.signatures.get(&member.binding).cloned() else {
-            let fresh = self.unifier.fresh();
-            self.component.insert(member.binding, fresh);
+            let shape = self.unwritten_shape(member.value);
+            self.component.insert(member.binding, shape);
             return None;
         };
         match self.lower_scheme(&signature) {
@@ -621,6 +621,14 @@ impl TypeChecker {
                 None
             }
         }
+    }
+
+    fn unwritten_shape(&mut self, value: &Expr) -> Type {
+        let ExprKind::Fn(lambda) = value.kind() else {
+            return self.unifier.fresh();
+        };
+        let parameters = lambda.params.iter().map(|_| self.unifier.fresh()).collect();
+        Type::Function(parameters, Box::new(self.unifier.fresh()))
     }
 
     fn infer_member(&mut self, member: &Definition) -> Result<TypedExpr, Diagnostic> {

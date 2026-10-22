@@ -1,0 +1,19 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/self_call_with_borrow.rslisp
+---
+fn strip(mut text: &str, mut n: i64) -> &str {
+    loop {
+        if n == 0 {
+            return text;
+        } else {
+            (text, n) = (text.trim(), n - 1);
+            continue;
+        }
+    }
+}
+
+fn main() {
+    println!("{}", strip("  hi  ", 1))
+}
