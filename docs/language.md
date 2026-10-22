@@ -339,7 +339,7 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 | 8.1 References at call sites | planned |
 | 8.2 Struct traits | planned |
 | 8.3 Macro code | done |
-| 8.4 Loops | planned |
+| 8.4 Loops | done |
 | 9. Enums and `match` | planned |
 | 10. User-defined traits | planned |
 | 11. Written lifetimes | planned |
@@ -396,6 +396,27 @@ A call to the enclosing function in tail position already compiles to a Rust `lo
 - `recur` is a kernel form, because the prelude cannot make a function jump back to its start.
 
 Rust has no guaranteed tail calls. Without this milestone, recursion is the only way to loop, and a deep loop overflows the stack.
+
+`loop` binds names to values, then repeats its body with `recur`. It emits as a Rust block and an inline `loop`:
+
+```lisp
+(loop ((index 0))
+  (if (< index 10) (recur (+ index 1)) index))
+```
+
+```rust
+{
+    let mut index: i64 = 0;
+    loop {
+        if index < 10 {
+            index += 1;
+            continue;
+        } else {
+            break index;
+        }
+    }
+}
+```
 
 ### 9. Enums and `match`
 

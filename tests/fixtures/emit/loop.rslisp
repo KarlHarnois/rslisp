@@ -1,0 +1,17 @@
+(defn sum-to (limit)
+  (loop ((i 0) (total 0))
+    (if (> i limit) total (recur (+ i 1) (+ total i)))))
+
+(defn once (n) (loop ((k n)) (+ k 1)))
+
+(defn main ()
+  (println (sum-to 10))
+  (for-each (range 1 4)
+    (fn (n)
+      (println (loop ((k n) (power 1))
+                     (if (= k 0) power (recur (- k 1) (* power 2)))))))
+  (loop ((i 0))
+        (if (< i 3)
+            (do (println i) (recur (+ i 1)))
+            (do)))
+  (println (once 3)))
