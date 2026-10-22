@@ -11,6 +11,7 @@ mod pending;
 mod problems;
 mod rust_types;
 mod selection;
+mod size;
 mod structs;
 mod templates;
 mod traits;

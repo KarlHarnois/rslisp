@@ -666,7 +666,10 @@ impl TypeChecker {
     }
 
     fn borrow_of_referent(&self, referent: &Type, levels: usize) -> Borrow {
-        if self.copy_rules().is_copy(&self.unifier.resolve(referent)) {
+        if self
+            .copy_rules()
+            .is_small_copy(&self.unifier.resolve(referent))
+        {
             Borrow::Deref(levels)
         } else {
             Borrow::Passthrough
@@ -722,7 +725,7 @@ impl TypeChecker {
     fn holds_copy_value(&self, referent: &Type) -> bool {
         match referent {
             Type::Var(var) => self.unifier.literal_kind(*var).is_some(),
-            _ => self.copy_rules().is_copy(referent),
+            _ => self.copy_rules().is_small_copy(referent),
         }
     }
 
@@ -868,7 +871,7 @@ impl TypeChecker {
                 SimilarName::closest(&label.name, &names),
             ));
         };
-        let ty = if self.copy_rules().is_copy(&ty) {
+        let ty = if self.copy_rules().is_small_copy(&ty) {
             ty
         } else {
             Type::Ref(Box::new(ty))

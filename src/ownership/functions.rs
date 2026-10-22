@@ -30,7 +30,7 @@ pub struct FunctionTable {
 
 impl FunctionTable {
     pub fn collect(program: &TypedProgram) -> Self {
-        let copy = CopyRules::new(&program.traits, &program.generics);
+        let copy = CopyRules::new(&program.traits, &program.generics, &program.structs);
         let functions = program
             .modules
             .iter()
@@ -54,7 +54,8 @@ impl FunctionTable {
     pub fn fixed_mode(slot: &ParamSlot, copy: &CopyRules) -> ParamMode {
         match &slot.ty {
             Type::Mut(_) => ParamMode::Mut,
-            written if copy.is_copy(written) => ParamMode::Copy,
+            written if copy.is_small_copy(written) => ParamMode::Copy,
+            written if copy.is_copy(written) => ParamMode::Ref,
             _ => ParamMode::Own,
         }
     }
