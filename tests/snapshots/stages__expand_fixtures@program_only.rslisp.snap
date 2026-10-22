@@ -30,9 +30,9 @@ error[L0306]: `add` belongs to the program, so macro code cannot run it
 11 | (def needs-addition (macro (form) (+ 1 2) (list)))
    |                                   ^^^^^^^ macro code runs this
    |
-  ::: prelude/number.rslisp:33:10
+  ::: prelude/number.rslisp:37:10
    |
-33 | (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
+37 | (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
    |          ---------------------------------------------------- `add` is Rust code that runs in the program
    |
    = help: to compute this in the program, return it as code from the macro, for example with `template`
@@ -60,9 +60,9 @@ error[L0306]: `mul` belongs to the program, so macro code cannot run it
 21 | (def through-a-helper (macro (form) (double 2) (list)))
    |                                      ------ macro code reaches it through this
    |
-  ::: prelude/number.rslisp:35:10
+  ::: prelude/number.rslisp:39:10
    |
-35 | (def mul (rust "{0} * {1}" (where ((n number)) (fn (n n) n))))
+39 | (def mul (rust "{0} * {1}" (where ((n number)) (fn (n n) n))))
    |          ---------------------------------------------------- `mul` is Rust code that runs in the program
    |
    = help: to compute this in the program, return it as code from the macro, for example with `template`

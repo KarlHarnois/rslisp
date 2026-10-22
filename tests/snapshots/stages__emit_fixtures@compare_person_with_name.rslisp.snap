@@ -1,0 +1,23 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/compare_person_with_name.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Person {
+    name: String,
+}
+
+fn make_person(name: String) -> Person {
+    Person { name }
+}
+
+fn person_name(instance: &Person) -> &String {
+    &instance.name
+}
+
+fn main() {
+    let p = make_person("Ana".to_string());
+    let name = "Ana".to_string();
+    println!("{}", *person_name(&p) == name)
+}

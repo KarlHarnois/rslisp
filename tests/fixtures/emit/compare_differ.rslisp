@@ -1,0 +1,6 @@
+(type differ? (where ((a (partial-eq b)) b) (fn (a b) bool)))
+(defn differ? (a b) (!= a b))
+
+(defn main ()
+  (let command (to-string "quit"))
+  (println (differ? command "quit")))

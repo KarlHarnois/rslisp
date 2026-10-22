@@ -1,0 +1,6 @@
+(type both-equal? (fn ((ref i64) (ref i64)) bool))
+(defn both-equal? (x y) (= x y))
+
+(defn main ()
+  (let three 3)
+  (println (both-equal? (ref three) (ref three))))

@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/compare_incompatible.rslisp
+---
+error[L0401]: mismatched types
+ --> check/compare_incompatible.rslisp:2:17
+  |
+2 |   (println (= 1 "one")))
+  |                 ^^^^^ expected an integer, found `str`

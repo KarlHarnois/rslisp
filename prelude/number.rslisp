@@ -12,7 +12,11 @@
 (rust-trait integer "crate::rt::Integer" i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize)
 (rust-trait partial-eq "PartialEq"
   bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
-  (where ((a partial-eq)) (ref a))
+  (with string str)
+  (with str string)
+  (with string (ref str))
+  (with (ref str) string)
+  (where ((a (partial-eq b)) b) (with (ref a) (ref b)))
   (where ((a partial-eq)) (vec a))
   (where ((a partial-eq)) (option a))
   (where ((a partial-eq) (b partial-eq)) (result a b)))
@@ -42,8 +46,8 @@
 (def le (rust "{&0} <= {&1}" (where ((a partial-ord)) (fn (a a) bool))))
 (def gt (rust "{&0} > {&1}" (where ((a partial-ord)) (fn (a a) bool))))
 (def ge (rust "{&0} >= {&1}" (where ((a partial-ord)) (fn (a a) bool))))
-(def eq (rust "{&0} == {&1}" (where ((a partial-eq)) (fn (a a) bool))))
-(def ne (rust "{&0} != {&1}" (where ((a partial-eq)) (fn (a a) bool))))
+(def eq (rust "{&0} == {&1}" (where ((a (partial-eq b)) b) (fn (a b) bool))))
+(def ne (rust "{&0} != {&1}" (where ((a (partial-eq b)) b) (fn (a b) bool))))
 
 (defrule +
   ((a) a)
