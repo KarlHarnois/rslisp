@@ -21,7 +21,7 @@ mod unifier;
 mod walk;
 
 pub use checker::TypeChecker;
-pub use copy::CopyRules;
+pub use copy::{CopyRules, InferredCopies};
 pub use display::TypeDisplay;
 pub use rust_types::{RustType, RustTypeTable};
 pub use structs::{StructDefinition, StructTable};

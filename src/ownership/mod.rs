@@ -10,7 +10,7 @@ mod rewrite;
 mod usage;
 
 use crate::diagnostic::Diagnostics;
-use crate::types::{CopyRules, TypedExprKind, TypedProgram};
+use crate::types::{CopyRules, InferredCopies, TypedExprKind, TypedProgram};
 use checks::{BorrowedResults, OwnershipNeeds};
 use functions::FunctionTable;
 use modes::ModeInference;
@@ -23,7 +23,7 @@ pub use changes::InPlaceChanges;
 pub struct OwnershipChecker;
 
 impl OwnershipChecker {
-    pub fn check(program: &mut TypedProgram) -> Result<(), Diagnostics> {
+    pub fn check(program: &mut TypedProgram) -> Result<InferredCopies, Diagnostics> {
         let functions = FunctionTable::collect(program);
         let modes = ModeInference::new(
             &functions,
@@ -33,6 +33,7 @@ impl OwnershipChecker {
         let rewrite = ModeRewrite::new(&functions, &modes);
         rewrite.apply(program);
         let mut diagnostics = Diagnostics::default();
+        let mut inferred_copies = InferredCopies::default();
         for definition in program
             .modules
             .iter()
@@ -44,8 +45,10 @@ impl OwnershipChecker {
                     &program.bindings,
                     &program.template_borrows,
                 );
-                checker
-                    .check(lambda)
+                let report = checker.check(lambda);
+                inferred_copies.extend(report.inferred_copies);
+                report
+                    .diagnostics
                     .into_iter()
                     .for_each(|diagnostic| diagnostics.push(diagnostic));
                 BorrowedResults::check(definition, &program.bindings)
@@ -64,6 +67,6 @@ impl OwnershipChecker {
         } else {
             program.warnings.extend(warnings);
         }
-        diagnostics.into_result(())
+        diagnostics.into_result(inferred_copies)
     }
 }

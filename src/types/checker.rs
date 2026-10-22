@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
+use super::copy::InferredCopies;
 use super::display::TypeDisplay;
 use super::graph::DependencyGraph;
 use super::pending::PendingBorrow;
@@ -14,8 +15,9 @@ use super::ty::{Bound, GenericId, GenericParam, Scheme, Type, TypeVar};
 use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
-    BindingArena, BindingId, BodyItem, CoreModule, Expr, ExprKind, Item, ItemKind, Leaf, ModuleId,
-    ParsedTemplate, PrimitiveType, StructDerives, StructExpr, TypeBinder, TypeExpr, TypeExprKind,
+    BindingArena, BindingId, BodyItem, CopyTrait, CoreModule, Expr, ExprKind, Item, ItemKind, Leaf,
+    ModuleId, ParsedTemplate, PrimitiveType, StructDerives, StructExpr, TypeBinder, TypeExpr,
+    TypeExprKind,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
@@ -54,6 +56,8 @@ pub struct TypeChecker {
     pub(super) template_borrows: TemplateBorrows,
     pub(super) recur_target: Option<super::infer::RecurTarget>,
     pub(super) changed_structs: HashSet<BindingId>,
+    pub(super) inferred_copies: InferredCopies,
+    copy_trait: Option<BindingId>,
 }
 
 struct Definition<'p> {
@@ -91,6 +95,8 @@ impl TypeChecker {
             template_borrows: TemplateBorrows::default(),
             recur_target: None,
             changed_structs: HashSet::new(),
+            inferred_copies: InferredCopies::default(),
+            copy_trait: None,
         }
     }
 
@@ -104,6 +110,7 @@ impl TypeChecker {
         }
         self.register_derived_traits(modules);
         self.check_trait_claims(modules);
+        self.copy_trait = self.traits.with_paths(&[CopyTrait::PATH]).first().copied();
     }
 
     fn collect_item(&mut self, item: &Item) -> Result<(), Diagnostic> {
@@ -322,6 +329,15 @@ impl TypeChecker {
 
     pub(super) fn copy_rules(&self) -> super::copy::CopyRules<'_> {
         super::copy::CopyRules::new(&self.traits, &self.generics, &self.structs)
+    }
+
+    pub(super) fn require_copy(&mut self, value: &Type) {
+        let Type::Var(var) = self.unifier.shallow(value) else {
+            return;
+        };
+        if let Some(copy) = self.copy_trait {
+            self.unifier.add_bound(var, Bound::plain(copy));
+        }
     }
 
     pub(super) fn display(&self) -> TypeDisplay<'_> {
@@ -1179,9 +1195,11 @@ impl TypeChecker {
     pub fn check(
         program: &crate::expand::Program,
         changed_structs: &HashSet<BindingId>,
+        inferred_copies: &InferredCopies,
     ) -> Result<super::typed::TypedProgram, Diagnostics> {
         let mut checker = Self::new(program.bindings.clone());
         checker.changed_structs = changed_structs.clone();
+        checker.inferred_copies = inferred_copies.clone();
         checker.collect_declarations(&program.modules);
         let mut definitions = checker.check_definitions(&program.modules, program.entry);
         let order = Self::definition_order(&program.modules);

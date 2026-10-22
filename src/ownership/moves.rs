@@ -6,14 +6,19 @@ use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Borrow, CopyRules, TemplateBorrows, Type, TypedArgument, TypedBlock, TypedBodyItem,
-    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
+    Borrow, CopyRules, InferredCopies, TemplateBorrows, Type, TypedArgument, TypedBlock,
+    TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Usage {
     Move,
     Borrow,
+}
+
+pub struct MoveReport {
+    pub diagnostics: Vec<Diagnostic>,
+    pub inferred_copies: InferredCopies,
 }
 
 pub struct MoveChecker<'a> {
@@ -23,6 +28,8 @@ pub struct MoveChecker<'a> {
     moved: HashMap<BindingId, Span>,
     copy_functions: HashSet<BindingId>,
     reported: HashSet<BindingId>,
+    unwritten_parameters: HashSet<BindingId>,
+    inferred_copies: InferredCopies,
     diagnostics: Vec<Diagnostic>,
 }
 
@@ -39,13 +46,24 @@ impl<'a> MoveChecker<'a> {
             moved: HashMap::new(),
             copy_functions: HashSet::new(),
             reported: HashSet::new(),
+            unwritten_parameters: HashSet::new(),
+            inferred_copies: InferredCopies::default(),
             diagnostics: Vec::new(),
         }
     }
 
-    pub fn check(mut self, lambda: &TypedLambda) -> Vec<Diagnostic> {
+    pub fn check(mut self, lambda: &TypedLambda) -> MoveReport {
+        self.unwritten_parameters = lambda
+            .params
+            .iter()
+            .filter(|param| !param.annotated)
+            .map(|param| param.binding)
+            .collect();
         self.block(&lambda.body, Usage::Move);
-        self.diagnostics
+        MoveReport {
+            diagnostics: self.diagnostics,
+            inferred_copies: self.inferred_copies,
+        }
     }
 
     fn expr(&mut self, expr: &TypedExpr, usage: Usage) {
@@ -174,22 +192,39 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn local(&mut self, binding: BindingId, ty: &Type, span: Span, usage: Usage) {
-        if let Some(moved_at) = self.moved.get(&binding).copied() {
-            if self.reported.insert(binding) {
-                let name = self.bindings.get(binding).name();
-                let diagnostic = OwnershipProblems::use_after_move(name, span, moved_at);
-                let diagnostic = if matches!(ty, Type::Function(..)) {
-                    OwnershipProblems::closure_move_help(diagnostic)
-                } else {
-                    OwnershipProblems::clone_suggestion(diagnostic, name, moved_at)
-                };
-                self.diagnostics.push(diagnostic);
-            }
+        match self.moved.get(&binding).copied() {
+            Some(moved_at) => self.use_after_move(binding, ty, span, moved_at),
+            None => self.record_use(binding, ty, span, usage),
+        }
+    }
+
+    fn use_after_move(&mut self, binding: BindingId, ty: &Type, span: Span, moved_at: Span) {
+        if self.records_inferred_copy(binding, ty) || !self.reported.insert(binding) {
             return;
         }
+        let name = self.bindings.get(binding).name();
+        let diagnostic = OwnershipProblems::use_after_move(name, span, moved_at);
+        let diagnostic = if matches!(ty, Type::Function(..)) {
+            OwnershipProblems::closure_move_help(diagnostic)
+        } else {
+            OwnershipProblems::clone_suggestion(diagnostic, name, moved_at)
+        };
+        self.diagnostics.push(diagnostic);
+    }
+
+    fn record_use(&mut self, binding: BindingId, ty: &Type, span: Span, usage: Usage) {
         let is_copy = self.copy.is_copy(ty) || self.copy_functions.contains(&binding);
         if usage == Usage::Move && !is_copy {
             self.moved.insert(binding, span);
         }
+    }
+
+    fn records_inferred_copy(&mut self, binding: BindingId, ty: &Type) -> bool {
+        let copies_parameter =
+            self.unwritten_parameters.contains(&binding) && matches!(ty, Type::Generic(_));
+        if copies_parameter {
+            self.inferred_copies.insert(binding);
+        }
+        copies_parameter
     }
 }

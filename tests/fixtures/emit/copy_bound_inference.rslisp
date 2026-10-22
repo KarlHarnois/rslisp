@@ -1,0 +1,17 @@
+(type twice-pinned (where ((a copy)) (fn (a) (vec a))))
+(defn twice-pinned (x) (vec x x))
+
+(defn twice (x) (vec x x))
+
+(defn wrap (x) (vec x))
+
+(defn show-twice (x) (println x) (println x))
+
+(defn bigger (a b) (if (> a b) a b))
+
+(defn main ()
+  (println (len (twice 3)))
+  (println (len (twice-pinned 3)))
+  (println (len (wrap 3)))
+  (show-twice 3)
+  (println (bigger 1 2)))

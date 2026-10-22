@@ -1,10 +1,33 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use super::size::TypeSizes;
 use super::structs::StructTable;
 use super::traits::TraitTable;
 use super::ty::{Bound, GenericId, GenericParam, Type};
 use crate::core::{BindingId, CopyTrait};
+
+#[derive(Clone, Default)]
+pub struct InferredCopies {
+    parameters: HashSet<BindingId>,
+}
+
+impl InferredCopies {
+    pub fn insert(&mut self, binding: BindingId) {
+        self.parameters.insert(binding);
+    }
+
+    pub fn extend(&mut self, other: InferredCopies) {
+        self.parameters.extend(other.parameters);
+    }
+
+    pub fn contains(&self, binding: BindingId) -> bool {
+        self.parameters.contains(&binding)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.parameters.is_empty()
+    }
+}
 
 pub struct CopyRules<'a> {
     traits: &'a TraitTable,
