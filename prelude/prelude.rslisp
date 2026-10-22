@@ -9,7 +9,8 @@
 (use prelude/number number signed float integer partial-eq partial-ord
                     add sub mul div rem neg sqrt lt le gt ge eq ne
                     + - * / < <= > >= = !=)
-(use prelude/text display to-string print println str char)
+(use prelude/text display to-string print println str char
+                  chars lines split trim as-str parse parse-error from-str slice-text)
 (use prelude/struct defstruct)
 (use prelude/ownership clone copy ref mut)
 
@@ -24,6 +25,7 @@
         add sub mul div rem neg sqrt lt le gt ge eq ne
         + - * / < <= > >= = !=
         display to-string print println str char
+        chars lines split trim as-str parse parse-error from-str slice-text
         defstruct
         clone copy
         vec option result iterator push len iter values collect
