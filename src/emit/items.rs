@@ -7,6 +7,7 @@ use super::locals::LocalNames;
 use super::mangle::NameMangler;
 use super::mutable_locals::MutableLocals;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
+use super::runtime::RuntimeModule;
 use super::types::{RustTypes, TypePosition};
 use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::Diagnostic;
@@ -60,8 +61,6 @@ pub struct ItemEmitter<'a> {
 }
 
 impl<'a> ItemEmitter<'a> {
-    const RUNTIME: &'static str = include_str!("../../prelude/runtime.rs");
-    const RUNTIME_PATH: &'static str = "crate::rt::";
     const RUNTIME_MODULE: &'static str = "rt";
 
     pub fn new(program: &'a TypedProgram, plan: &'a EmitPlan<'a>) -> Self {
@@ -88,9 +87,9 @@ impl<'a> ItemEmitter<'a> {
             fragments.extend([Fragment::Newline, Fragment::Newline]);
             fragments.extend(child.fragments(name, "mod"));
         }
-        if Code::text_of(&fragments).contains(Self::RUNTIME_PATH) {
+        if let Some(runtime) = RuntimeModule::of(&Code::text_of(&fragments)) {
             fragments.extend([Fragment::Newline, Fragment::Newline]);
-            fragments.extend(Self::runtime());
+            fragments.extend(Self::runtime(&runtime.source()));
         }
         fragments.push(Fragment::Newline);
         fragments
@@ -280,10 +279,10 @@ impl<'a> ItemEmitter<'a> {
         self.problems.extend(emitter.problems);
     }
 
-    fn runtime() -> Vec<Fragment> {
+    fn runtime(source: &str) -> Vec<Fragment> {
         let mut lines = vec![Fragment::Text(format!("mod {} {{", Self::RUNTIME_MODULE))];
         let mut inner = Vec::new();
-        for line in Self::RUNTIME.lines() {
+        for line in source.lines() {
             inner.push(Fragment::Newline);
             if !line.is_empty() {
                 inner.push(Fragment::Text(line.to_string()));

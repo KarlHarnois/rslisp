@@ -301,7 +301,7 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 | Parentheses | A non-atomic argument is parenthesized unless its placeholder is the whole template or sits between `(` or `,` and `,` or `)`. A prefixed argument such as `*x` is parenthesized only before `.`, `[`, `(` or `?`. |
 | Evaluation order | A repeated or out-of-order placeholder binds its arguments to temporaries first. |
 | Values | A function template used as a value becomes a closure. A bare path is used as the path. |
-| Runtime | `prelude/runtime.rs` is emitted as `mod rt` when a bound names `crate::rt::`. |
+| Runtime | `prelude/runtime/` holds the parts of `mod rt`. A program carries only the parts its code names, and its `Number` trait carries only the literal conversions it calls. |
 | Unsized | A type parameter used only behind a reference is declared `?Sized`, so `str` can fill it. |
 
 ## Names in Rust

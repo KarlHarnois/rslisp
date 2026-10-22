@@ -32,8 +32,7 @@ impl<'a> EmittedLints<'a> {
         "clippy::unnecessary_literal_unwrap",
         "clippy::vec_init_then_push",
     ];
-    const UNFIXED: [&'static str; 6] = [
-        "dead_code",
+    const UNFIXED: [&'static str; 5] = [
         "unused_parens",
         "clippy::assign_op_pattern",
         "clippy::double_parens",

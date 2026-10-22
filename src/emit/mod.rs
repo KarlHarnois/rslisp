@@ -7,6 +7,7 @@ mod mangle;
 mod mutable_locals;
 mod plan;
 mod problems;
+mod runtime;
 mod template;
 mod types;
 mod writer;
