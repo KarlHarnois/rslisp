@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/prelude_text.rslisp
+---
+trim me
+abc
+one
+two
+a
+b
+c
+as-str
+bcd
+true
+true
