@@ -12,6 +12,7 @@ mod problems;
 mod rust_types;
 mod selection;
 mod structs;
+mod templates;
 mod traits;
 mod ty;
 mod typed;
@@ -23,6 +24,7 @@ pub use copy::CopyRules;
 pub use display::TypeDisplay;
 pub use rust_types::{RustType, RustTypeTable};
 pub use structs::{StructDefinition, StructTable};
+pub use templates::TemplateBorrows;
 pub use traits::{RustTrait, TraitTable};
 pub use ty::{GenericId, GenericParam, Scheme, Type, TypeVar};
 pub use typed::{

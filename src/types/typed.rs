@@ -4,6 +4,7 @@ use std::rc::Rc;
 use super::display::TypeDisplay;
 use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
+use super::templates::TemplateBorrows;
 use super::traits::TraitTable;
 use super::ty::{GenericId, GenericParam, Scheme, Type};
 use crate::core::{
@@ -138,6 +139,7 @@ pub struct TypedProgram {
     pub traits: TraitTable,
     pub generics: HashMap<GenericId, GenericParam>,
     pub implied_bounds: HashMap<GenericId, Vec<BindingId>>,
+    pub template_borrows: TemplateBorrows,
     pub warnings: Diagnostics,
 }
 
