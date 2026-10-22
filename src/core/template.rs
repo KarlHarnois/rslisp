@@ -96,6 +96,40 @@ impl ParsedTemplate {
             .any(|piece| matches!(piece, Piece::Placeholder { borrowed: true, .. }))
     }
 
+    pub fn dereferences(&self, argument: usize) -> bool {
+        let mut found = false;
+        for (position, piece) in self.pieces.iter().enumerate() {
+            if !matches!(piece, Piece::Placeholder { index, .. } if *index == argument) {
+                continue;
+            }
+            found = true;
+            let dereferenced = position
+                .checked_sub(1)
+                .and_then(|previous| match &self.pieces[previous] {
+                    Piece::Literal(literal) => Some(Self::unary_deref(literal)),
+                    Piece::Placeholder { .. } => None,
+                })
+                .unwrap_or(false);
+            if !dereferenced {
+                return false;
+            }
+        }
+        found
+    }
+
+    fn unary_deref(literal: &str) -> bool {
+        let Some(remainder) = literal.strip_suffix('*') else {
+            return false;
+        };
+        remainder
+            .chars()
+            .rev()
+            .find(|character| !character.is_whitespace())
+            .is_none_or(|character| {
+                !character.is_alphanumeric() && character != '_' && !")]}".contains(character)
+            })
+    }
+
     pub fn is_path(&self) -> bool {
         match self.pieces.as_slice() {
             [Piece::Literal(literal)] => literal

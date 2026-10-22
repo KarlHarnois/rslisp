@@ -33,7 +33,19 @@ impl Template {
         self.parsed.borrows(argument)
     }
 
+    pub fn dereferences(&self, argument: usize) -> bool {
+        self.parsed.dereferences(argument)
+    }
+
     pub fn inline(&self, arguments: Vec<Code>) -> Result<Code, TemplateError> {
+        self.inline_with_places(arguments, &[])
+    }
+
+    pub fn inline_with_places(
+        &self,
+        arguments: Vec<Code>,
+        places: &[bool],
+    ) -> Result<Code, TemplateError> {
         if let Some(missing) = self
             .parsed
             .placeholders()
@@ -44,15 +56,16 @@ impl Template {
         if let [Piece::Placeholder { index, .. }] = self.parsed.pieces() {
             return Ok(arguments[*index].clone());
         }
-        if self.needs_temporaries(&arguments) {
+        if !places.iter().any(|place| *place) && self.needs_temporaries(&arguments) {
             return Ok(self.inline_with_temporaries(arguments));
         }
-        Ok(self.substitute(&arguments))
+        Ok(self.substitute(&arguments, places))
     }
 
-    fn substitute(&self, arguments: &[Code]) -> Code {
+    fn substitute(&self, arguments: &[Code], places: &[bool]) -> Code {
+        let pieces = self.pieces_without_deref(places);
         let mut fragments = Vec::new();
-        for (position, piece) in self.parsed.pieces().iter().enumerate() {
+        for (position, piece) in pieces.iter().enumerate() {
             match piece {
                 Piece::Literal(literal) => fragments.push(Fragment::Text(literal.clone())),
                 Piece::Placeholder { index, .. } => fragments.extend(
@@ -65,6 +78,26 @@ impl Template {
             fragments,
             precedence: self.precedence(),
         }
+    }
+
+    fn pieces_without_deref(&self, places: &[bool]) -> Vec<Piece> {
+        let mut pieces = self.parsed.pieces().to_vec();
+        for position in 0..pieces.len() {
+            let Piece::Placeholder { index, .. } = &pieces[position] else {
+                continue;
+            };
+            if !places.get(*index).copied().unwrap_or(false) {
+                continue;
+            }
+            if let Some(Piece::Literal(literal)) = position
+                .checked_sub(1)
+                .and_then(|previous| pieces.get_mut(previous))
+                && literal.ends_with('*')
+            {
+                literal.pop();
+            }
+        }
+        pieces
     }
 
     fn argument_in_place(&self, argument: &Code, position: usize) -> Code {
@@ -193,7 +226,7 @@ impl Template {
             replaced.push(Code::atom(temporary));
         }
         statements.push(Fragment::Newline);
-        statements.extend(self.substitute(&replaced).fragments);
+        statements.extend(self.substitute(&replaced, &[]).fragments);
         Code {
             fragments: vec![
                 Fragment::Text("{".to_string()),

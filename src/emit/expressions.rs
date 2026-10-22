@@ -31,6 +31,7 @@ enum TypeContext {
 enum ArgumentRole {
     Receiver,
     Borrowed,
+    MutPlace,
     Ordinary,
 }
 
@@ -383,6 +384,19 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
+    fn inline_with_places(
+        &mut self,
+        template: &Template,
+        arguments: Vec<Code>,
+        places: &[bool],
+        span: Span,
+    ) -> Code {
+        match template.inline_with_places(arguments, places) {
+            Ok(code) => code,
+            Err(error) => self.template_problem(error, span),
+        }
+    }
+
     fn template_problem(&mut self, error: TemplateError, span: Span) -> Code {
         let message = match error {
             TemplateError::MalformedPlaceholder => {
@@ -506,15 +520,21 @@ impl<'a> ExpressionEmitter<'a> {
             Err(error) => return self.template_problem(error, span),
         };
         let context = Self::argument_context(arguments);
-        let arguments: Vec<Code> = arguments
+        let roles: Vec<ArgumentRole> = arguments
             .iter()
             .enumerate()
-            .map(|(position, argument)| {
-                let role = Self::argument_role(template, &parsed, position);
-                self.argument(argument, context, role)
-            })
+            .map(|(position, argument)| Self::argument_role(template, &parsed, position, argument))
             .collect();
-        self.inline(&parsed, arguments, span)
+        let places: Vec<bool> = roles
+            .iter()
+            .map(|role| *role == ArgumentRole::MutPlace)
+            .collect();
+        let arguments: Vec<Code> = arguments
+            .iter()
+            .zip(&roles)
+            .map(|(argument, role)| self.argument(argument, context, *role))
+            .collect();
+        self.inline_with_places(&parsed, arguments, &places, span)
     }
 
     fn argument_context(arguments: &[TypedArgument]) -> TypeContext {
@@ -531,14 +551,28 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn argument_role(template: &RustTemplate, parsed: &Template, position: usize) -> ArgumentRole {
+    fn argument_role(
+        template: &RustTemplate,
+        parsed: &Template,
+        position: usize,
+        argument: &TypedArgument,
+    ) -> ArgumentRole {
         if position == 0 && template.template.starts_with(Self::RECEIVER) {
             ArgumentRole::Receiver
+        } else if Self::is_mut_place(parsed, position, argument) {
+            ArgumentRole::MutPlace
         } else if parsed.borrows(position) {
             ArgumentRole::Borrowed
         } else {
             ArgumentRole::Ordinary
         }
+    }
+
+    fn is_mut_place(parsed: &Template, position: usize, argument: &TypedArgument) -> bool {
+        parsed.dereferences(position)
+            && argument.borrow == Borrow::Mutable
+            && !argument.value.ty.is_reference()
+            && argument.value.place_root().is_some()
     }
 
     fn argument(
@@ -550,7 +584,11 @@ impl<'a> ExpressionEmitter<'a> {
         let value = self
             .argument_value(&argument.value, context, role)
             .spanned(argument.value.span);
-        match Self::borrow_prefix(argument, role) {
+        let prefix = match role {
+            ArgumentRole::MutPlace => None,
+            _ => Self::borrow_prefix(argument, role),
+        };
+        match prefix {
             Some(prefix) => Self::prefixed(&prefix, value).spanned(argument.value.span),
             None => value,
         }

@@ -1,0 +1,14 @@
+(def bump! (rust "*{0} += 1" (fn ((mut i64)) unit)))
+(defstruct counter (count i64))
+
+(defn bump-field! (c) (bump! (field c count)))
+(defn bump-reference! ((t (mut i64))) (bump! t))
+
+(defn main ()
+  (let c (make-counter 0))
+  (bump-field! c)
+  (let n 1)
+  (let r (mut n))
+  (bump-reference! r)
+  (println (counter-count c))
+  (println n))
