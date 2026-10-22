@@ -18,9 +18,11 @@ enum MacroState {
     Failed,
 }
 
+#[derive(Clone)]
 pub struct MacroOrigin {
     pub name: Rc<str>,
     pub defined: Span,
+    pub call_site: Span,
 }
 
 #[derive(Default)]
@@ -101,20 +103,19 @@ impl Expander<'_> {
         );
         self.expansion_depth -= 1;
         let output = result.map_err(|diagnostic| Self::point_at_call(diagnostic, call_site))?;
-        let output = Self::finish_output(output, introduction, call_site)?;
-        self.record_macro_origin(binding, call_site);
+        let origin = self.macro_origin(binding, call_site);
+        let output = self.finish_output(output, introduction, &origin)?;
+        self.macro_origins.insert(call_site, origin);
         Ok(output)
     }
 
-    fn record_macro_origin(&mut self, binding: BindingId, call_site: Span) {
+    fn macro_origin(&self, binding: BindingId, call_site: Span) -> MacroOrigin {
         let info = self.bindings.get(binding);
-        self.macro_origins.insert(
+        MacroOrigin {
+            name: Rc::from(info.name()),
+            defined: info.span().unwrap_or(call_site),
             call_site,
-            MacroOrigin {
-                name: Rc::from(info.name()),
-                defined: info.span().unwrap_or(call_site),
-            },
-        );
+        }
     }
 
     fn prepare_input(
@@ -134,16 +135,42 @@ impl Expander<'_> {
     }
 
     fn finish_output(
+        &mut self,
         output: Value,
         introduction: Scope,
-        call_site: Span,
+        origin: &MacroOrigin,
     ) -> Result<Form, Diagnostic> {
         let Value::Form(mut form) = output else {
-            return Err(ExpandProblems::macro_result(output.describe(), call_site));
+            return Err(ExpandProblems::macro_result(
+                output.describe(),
+                origin.call_site,
+            ));
         };
         form.flip_scope(introduction);
-        form.relocate_outside(call_site);
+        self.record_introduced_names(&form, origin);
+        form.relocate_outside(origin.call_site);
         Ok(form)
+    }
+
+    pub(super) fn introduced_name(&self, call_site: Span, name: &str) -> Option<Span> {
+        self.introduced_names
+            .get(&(call_site, name.to_string()))
+            .copied()
+    }
+
+    fn record_introduced_names(&mut self, form: &Form, origin: &MacroOrigin) {
+        if let Some(symbol) = form.as_symbol()
+            && !origin.call_site.contains(form.span())
+        {
+            self.introduced_names
+                .entry((origin.call_site, symbol.name().to_string()))
+                .or_insert(form.span());
+        }
+        if let Some(items) = form.as_list() {
+            for item in items {
+                self.record_introduced_names(item, origin);
+            }
+        }
     }
 
     fn point_at_call(diagnostic: Diagnostic, call_site: Span) -> Diagnostic {

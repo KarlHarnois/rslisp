@@ -3,12 +3,6 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/internal_helper_suggestion.rslisp
 ---
-error[L0201]: cannot find `internal-helpr` in this scope
- --> check/internal_helper_suggestion.rslisp:3:24
-  |
-3 | (defn main () (println (make-thing 1)))
-  |                        ^^^^^^^^^^^^^^ not found in this scope
-
 error[L0201]: cannot find `make-thng` in this scope
  --> check/internal_helper_suggestion.rslisp:5:31
   |
@@ -19,3 +13,16 @@ help: a name with a similar spelling exists
   |
 5 | (defn misspelled () (println (make-thing 1)))
   |                                      +
+
+error[L0201]: cannot find `internal-helpr` in this scope
+ --> check/internal_helper_suggestion/helpers.rslisp:6:14
+  |
+6 |   (template (internal-helpr (unquote x))))
+  |              ^^^^^^^^^^^^^^ not found in this scope
+  |
+ ::: check/internal_helper_suggestion.rslisp:3:24
+  |
+3 | (defn main () (println (make-thing 1)))
+  |                        -------------- in this macro call
+  |
+  = note: in this expansion of `make-thing`

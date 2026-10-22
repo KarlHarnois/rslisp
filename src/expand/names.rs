@@ -2,8 +2,8 @@ use super::Expander;
 use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use crate::core::{BindingId, BindingInfo, BindingKind, ModuleId, Namespace};
-use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
+use crate::diagnostic::{Diagnostic, Label};
 use crate::reader::{Form, Symbol};
 use crate::scope::{Phase, Resolution};
 use crate::source::Span;
@@ -108,7 +108,15 @@ impl Expander<'_> {
             .map(|(name, _)| name)
             .collect();
         let similar = SimilarName::closest(symbol.name(), &candidates);
-        ExpandProblems::unbound(symbol.name(), namespace, span, similar)
+        let definition = self.introduced_name(span, symbol.name());
+        let primary = definition.unwrap_or(span);
+        let diagnostic = ExpandProblems::unbound(symbol.name(), namespace, primary, similar);
+        match (definition, self.macro_origins.get(&span)) {
+            (Some(_), Some(origin)) => diagnostic
+                .with_note(format!("in this expansion of `{}`", origin.name))
+                .with_label(Label::new(span, "in this macro call")),
+            _ => diagnostic,
+        }
     }
 
     fn is_public(&self, name: &str, namespace: Namespace, binding: BindingId) -> bool {

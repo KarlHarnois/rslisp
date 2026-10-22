@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/unbound_in_macro_definition.rslisp
+---
+error[L0201]: cannot find `missing-helper` in this scope
+ --> check/unbound_in_macro_definition.rslisp:1:39
+  |
+1 | (defmacro call-missing (x) (template (missing-helper (unquote x))))
+  |                                       ^^^^^^^^^^^^^^ not found in this scope
+2 |
+3 | (defn main () (println (call-missing 1)))
+  |                        ---------------- in this macro call
+  |
+  = note: in this expansion of `call-missing`
