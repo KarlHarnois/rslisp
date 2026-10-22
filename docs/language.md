@@ -290,6 +290,7 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 | `make-point` | `make_point` |
 | type `point` | `Point` |
 | `admin?` | `is_admin` |
+| `add-item!` | `add_item` |
 | constant `admin?` | `IS_ADMIN` |
 | other punctuation | spelled out, so `+` becomes `plus` |
 | a Rust keyword | a raw identifier, so `type` becomes `r#type` |

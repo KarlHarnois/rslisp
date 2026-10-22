@@ -25,6 +25,7 @@ impl NameMangler {
     ];
 
     const PREDICATE_SUFFIX: char = '?';
+    const CHANGE_SUFFIX: char = '!';
     const PREDICATE_PREFIX: &str = "is_";
     const ARROW: &str = "->";
     const ARROW_SPELLING: &str = "to_";
@@ -37,7 +38,14 @@ impl NameMangler {
     const NON_RAW_KEYWORDS: [&str; 4] = ["self", "Self", "super", "crate"];
 
     pub fn value(name: &str) -> String {
-        Self::guard_keyword(Self::snake(name))
+        Self::guard_keyword(Self::snake(Self::without_change_suffix(name)))
+    }
+
+    fn without_change_suffix(name: &str) -> &str {
+        match name.strip_suffix(Self::CHANGE_SUFFIX) {
+            Some(body) if !body.is_empty() => body,
+            _ => name,
+        }
     }
 
     pub fn constant(name: &str) -> String {
@@ -145,7 +153,8 @@ mod tests {
     fn punctuation_is_spelled_out() {
         assert_eq!(NameMangler::value("+"), "plus");
         assert_eq!(NameMangler::value("->string"), "to_string");
-        assert_eq!(NameMangler::value("set!"), "set_bang");
+        assert_eq!(NameMangler::value("set!"), "set");
+        assert_eq!(NameMangler::value("set!x"), "set_bang_x");
     }
 
     #[test]

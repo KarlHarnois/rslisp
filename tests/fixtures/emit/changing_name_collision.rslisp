@@ -1,0 +1,7 @@
+(defn reset (items) (len items))
+(defn reset! (items) (push items 0))
+
+(defn main ()
+  (let items (vec 1))
+  (reset! items)
+  (println (reset items)))

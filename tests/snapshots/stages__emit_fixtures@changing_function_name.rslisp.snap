@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/changing_function_name.rslisp
+---
+fn add_item<A>(items: &mut Vec<A>, n: A) {
+    items.push(n)
+}
+
+fn main() {
+    let mut items: Vec<i64> = vec![1_i64];
+    add_item(&mut items, 2);
+    println!("{}", items.len())
+}

@@ -1,0 +1,6 @@
+(defn add-item! (items n) (push items n))
+
+(defn main ()
+  (let items (vec 1))
+  (add-item! items 2)
+  (println (len items)))
