@@ -79,6 +79,8 @@ impl TailLoop {
 }
 
 impl ExpressionEmitter<'_> {
+    const COMPOUND_OPERATORS: [&'static str; 5] = ["+", "-", "*", "/", "%"];
+
     pub(super) fn loop_body(&mut self, block: &TypedBlock) -> Vec<Fragment> {
         vec![
             Fragment::Newline,
@@ -180,37 +182,92 @@ impl ExpressionEmitter<'_> {
             .as_ref()
             .map(|tail_loop| tail_loop.params.clone())
             .unwrap_or_default();
-        let mut names = Vec::new();
-        let mut values = Vec::new();
-        for (param, argument) in params.into_iter().zip(arguments) {
-            if TailLoop::passes_through(param, argument) {
-                continue;
-            }
-            names.push(self.locals.get(param).unwrap_or("_").to_string());
-            values.push(self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary));
-        }
-        let mut fragments = Vec::new();
-        if !names.is_empty() {
-            let (open, close) = if names.len() == 1 {
-                ("", "")
-            } else {
-                ("(", ")")
-            };
-            fragments.push(Fragment::Newline);
-            fragments.push(Fragment::Text(format!(
-                "{open}{}{close} = {open}",
-                names.join(", ")
-            )));
-            for (position, value) in values.into_iter().enumerate() {
-                if position > 0 {
-                    fragments.push(Fragment::Text(", ".to_string()));
-                }
-                fragments.extend(value.fragments);
-            }
-            fragments.push(Fragment::Text(format!("{close};")));
-        }
+        let changed: Vec<(BindingId, &TypedArgument)> = params
+            .into_iter()
+            .zip(arguments)
+            .filter(|(param, argument)| !TailLoop::passes_through(*param, argument))
+            .collect();
+        let mut fragments = match changed.as_slice() {
+            [] => Vec::new(),
+            [(param, argument)] => self.single_assignment(*param, argument),
+            _ => self.tuple_assignment(&changed),
+        };
         fragments.push(Fragment::Newline);
         fragments.push(Fragment::Text("continue;".to_string()));
         fragments
+    }
+
+    fn single_assignment(&mut self, param: BindingId, argument: &TypedArgument) -> Vec<Fragment> {
+        let name = self.parameter_name(param);
+        let (operator, value) = match self.compound_operand(param, argument) {
+            Some((operator, operand)) => (format!("{operator}="), operand),
+            None => ("=".to_string(), argument),
+        };
+        let mut fragments = vec![
+            Fragment::Newline,
+            Fragment::Text(format!("{name} {operator} ")),
+        ];
+        fragments.extend(
+            self.argument(value, TypeContext::Known, ArgumentRole::Ordinary)
+                .fragments,
+        );
+        fragments.push(Fragment::Text(";".to_string()));
+        fragments
+    }
+
+    fn tuple_assignment(&mut self, changed: &[(BindingId, &TypedArgument)]) -> Vec<Fragment> {
+        let names: Vec<String> = changed
+            .iter()
+            .map(|(param, _)| self.parameter_name(*param))
+            .collect();
+        let mut fragments = vec![
+            Fragment::Newline,
+            Fragment::Text(format!("({}) = (", names.join(", "))),
+        ];
+        for (position, (_, argument)) in changed.iter().enumerate() {
+            if position > 0 {
+                fragments.push(Fragment::Text(", ".to_string()));
+            }
+            fragments.extend(
+                self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary)
+                    .fragments,
+            );
+        }
+        fragments.push(Fragment::Text(");".to_string()));
+        fragments
+    }
+
+    fn parameter_name(&self, param: BindingId) -> String {
+        self.locals.get(param).unwrap_or("_").to_string()
+    }
+
+    fn compound_operand<'e>(
+        &self,
+        param: BindingId,
+        argument: &'e TypedArgument,
+    ) -> Option<(&'static str, &'e TypedArgument)> {
+        let TypedExprKind::Call(callee, operands) = &argument.value.kind else {
+            return None;
+        };
+        let [target, operand] = operands.as_slice() else {
+            return None;
+        };
+        let operator = self.compound_operator(callee)?;
+        matches!(target.value.kind, TypedExprKind::Leaf(TypedLeaf::Local(local)) if local == param)
+            .then_some((operator, operand))
+    }
+
+    fn compound_operator(&self, callee: &TypedExpr) -> Option<&'static str> {
+        let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = callee.kind else {
+            return None;
+        };
+        let TypedExprKind::Leaf(TypedLeaf::Rust(template)) =
+            &self.plan.definition(binding)?.value.kind
+        else {
+            return None;
+        };
+        Self::COMPOUND_OPERATORS
+            .into_iter()
+            .find(|operator| *template.template == *format!("{{0}} {operator} {{1}}"))
     }
 }

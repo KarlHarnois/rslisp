@@ -1,0 +1,20 @@
+(def plus-twice (rust "{0} + {1} + {1}" (fn (i64 i64) i64)))
+
+(defn half (x) (/ x 2))
+(type bigger (fn (i64 i64) i64))
+(defn bigger (a b) (if (> a b) a b))
+
+(defn shrink (n) (if (< n 1) n (shrink (- n 1))))
+(defn flip (n) (if (> n 10) n (flip (- 20 n))))
+(defn settle (n) (if (< n 100) n (settle 99)))
+(defn halve (n) (if (< n 2) n (halve (half n))))
+(defn cap (n) (if (> n 5) n (cap (bigger n 6))))
+(defn grow (n) (if (> n 50) n (grow (plus-twice n 1))))
+
+(defn main ()
+  (println (shrink 3))
+  (println (flip 5))
+  (println (settle 500))
+  (println (halve 40))
+  (println (cap 1))
+  (println (grow 1)))
