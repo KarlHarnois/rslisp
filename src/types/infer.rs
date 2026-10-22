@@ -635,6 +635,12 @@ impl TypeChecker {
             levels += 1;
             passed = referent;
         }
+        if levels == 0
+            && let Type::Ref(referent) = argument
+            && self.passes_through(var, argument, referent)
+        {
+            return self.pass(&Type::Var(var), referent, span, Borrow::Passthrough);
+        }
         let borrow = if levels == 0 {
             Borrow::None
         } else {
@@ -644,15 +650,21 @@ impl TypeChecker {
     }
 
     fn dereferences(&self, var: TypeVar, reference: &Type, referent: &Type) -> bool {
-        let fails_traits = self.unifier.literal_kind(var).is_some()
-            || self.unifier.bounds(var).iter().any(|bound| {
-                !self
-                    .traits
-                    .satisfies(*bound, reference, &|generic, required| {
-                        self.unifier.generic_bounds(generic).contains(&required)
-                    })
-            });
+        let fails_traits =
+            self.unifier.literal_kind(var).is_some() || self.fails_bounds(var, reference);
         fails_traits && self.holds_copy_value(referent)
+    }
+
+    fn passes_through(&self, var: TypeVar, reference: &Type, referent: &Type) -> bool {
+        self.fails_bounds(var, reference) && !self.fails_bounds(var, referent)
+    }
+
+    fn fails_bounds(&self, var: TypeVar, value: &Type) -> bool {
+        self.unifier.bounds(var).iter().any(|bound| {
+            !self.traits.satisfies(*bound, value, &|generic, required| {
+                self.unifier.generic_bounds(generic).contains(&required)
+            })
+        })
     }
 
     fn holds_copy_value(&self, referent: &Type) -> bool {
