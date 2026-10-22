@@ -1,6 +1,6 @@
 (use prelude/types vec option result)
 
-(export clone copy ref mut)
+(export clone copy ref mut deref)
 
 (rust-trait clone "Clone"
   bool char string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
@@ -17,3 +17,4 @@
 (def clone (rust "{0}.clone()" (where ((a clone)) (fn ((ref a)) a))))
 (def ref (rust "{0}" (where (a) (fn ((ref a)) (ref a)))))
 (def mut (rust "{0}" (where (a) (fn ((mut a)) (mut a)))))
+(def deref (rust "*{0}" (where ((a copy)) (fn ((ref a)) a))))
