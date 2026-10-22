@@ -23,8 +23,10 @@ impl<'a> EmittedLints<'a> {
     const WORK_DIRECTORY: &'static str = "target/emitted-lints";
     const CLIPPY: &'static str = "clippy-driver";
     const EDITION: &'static str = "2024";
-    const PROGRAM_CHOICES: [&'static str; 7] = [
+    const PROGRAM_CHOICES: [&'static str; 9] = [
+        "unused_parens",
         "unused_variables",
+        "clippy::double_parens",
         "clippy::if_same_then_else",
         "clippy::len_zero",
         "clippy::redundant_closure_call",
@@ -32,12 +34,7 @@ impl<'a> EmittedLints<'a> {
         "clippy::unnecessary_literal_unwrap",
         "clippy::vec_init_then_push",
     ];
-    const UNFIXED: [&'static str; 4] = [
-        "unused_parens",
-        "clippy::double_parens",
-        "clippy::format_in_format_args",
-        "clippy::print_literal",
-    ];
+    const UNFIXED: [&'static str; 2] = ["clippy::format_in_format_args", "clippy::print_literal"];
 
     pub fn new(root: &'a Path) -> Self {
         Self { root }
