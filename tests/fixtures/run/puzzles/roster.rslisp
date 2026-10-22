@@ -20,9 +20,9 @@
 
 (defn parse-employee (line)
   (let fields (collect (split line ",")))
-  (make-employee (to-string (deref (unwrap (get fields 0))))
-                 (to-string (deref (unwrap (get fields 1))))
-                 (parse-score (deref (unwrap (get fields 2))))))
+  (make-employee (to-string (unwrap (get fields 0)))
+                 (to-string (unwrap (get fields 1)))
+                 (parse-score (unwrap (get fields 2)))))
 
 (defn describe (person)
   (str (employee-name person) " (" (employee-dept person) "): " (employee-score person)))
@@ -35,7 +35,7 @@
 
 (defn print-top-scorer (people dept)
   (let best (max-by-key (filter (iter people) (fn (person) (in-dept? (deref person) dept)))
-                        (fn (person) (employee-score (deref person)))))
+                        (fn (person) (employee-score person))))
   (println (str dept " top scorer: " (employee-name (expect best "every department has a member")))))
 
 (defn in-dept? (person dept)
