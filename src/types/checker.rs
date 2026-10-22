@@ -55,6 +55,8 @@ struct Definition<'p> {
     span: Span,
 }
 
+type LoweredFields = Vec<(Rc<str>, Type)>;
+
 impl TypeChecker {
     const PARAMETER_NAMES: &str = "abcdefghijklmnopqrstuvwxyz";
     pub const MAIN: &str = "main";
@@ -692,7 +694,7 @@ impl TypeChecker {
         &mut self,
         fields: &[(crate::core::FieldLabel, TypeExpr)],
         scope: &HashMap<BindingId, GenericId>,
-    ) -> Result<(Vec<(std::rc::Rc<str>, Type)>, Option<Span>), Diagnostic> {
+    ) -> Result<(LoweredFields, Option<Span>), Diagnostic> {
         let mut lowered = Vec::new();
         let mut borrowed = None;
         for (label, field_type) in fields {
