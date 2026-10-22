@@ -1,9 +1,13 @@
 (use prelude/macros defrule)
 
-(export defn the -> ->>)
+(export defn the -> ->> loop)
 
 (defrule defn
   ((name params body ...) (def name (fn params body ...))))
+
+(defrule loop
+  ((((name value) ...) body ...)
+   ((fn (name ...) body ...) value ...)))
 
 (defrule the
   ((type-expression value) (do (let (result type-expression) value) result)))

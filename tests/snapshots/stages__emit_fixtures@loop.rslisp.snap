@@ -1,0 +1,55 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/loop.rslisp
+---
+fn sum_to(limit: i64) -> i64 {
+    {
+        let mut i: i64 = 0;
+        let mut total: i64 = 0;
+        loop {
+            if i > limit {
+                break total;
+            } else {
+                (i, total) = (i + 1, total + i);
+                continue;
+            }
+        }
+    }
+}
+
+fn once(n: i64) -> i64 {
+    {
+        let k: i64 = n;
+        k + 1
+    }
+}
+
+fn main() {
+    println!("{}", sum_to(10));
+    (1_i64..4_i64).for_each(|n: i64| println!("{}", {
+        let mut k: i64 = n;
+        let mut power: i64 = 1;
+        loop {
+            if k == 0 {
+                break power;
+            } else {
+                (k, power) = (k - 1, power * 2);
+                continue;
+            }
+        }
+    }));
+    {
+        let mut i: i64 = 0;
+        loop {
+            if i < 3 {
+                println!("{}", i);
+                i += 1;
+                continue;
+            } else {
+                break;
+            }
+        }
+    }
+    println!("{}", once(3))
+}
