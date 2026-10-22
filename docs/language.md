@@ -193,7 +193,7 @@ Macro bodies run in the compiler's interpreter. They use the kernel forms, the b
 
 The compiler checks every macro body and the functions it reaches, even a macro nothing calls. A mistake is reported where the macro is defined, even in a branch that never runs.
 
-The prelude also provides `defn` for a function definition, `the` for a typed value, and `->` and `->>` for threading a value through calls. `defn` expands to `def` and `fn`; `->` passes the value as the first argument of each call, and `->>` as the last.
+The prelude also provides `defn` for a function definition, `the` for a typed value, and `->` and `->>` for threading a value through calls. `defn` expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
 
 The prelude builds three tools on top of `macro`:
 
