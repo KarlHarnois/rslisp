@@ -2,7 +2,7 @@
 (use prelude/logic and)
 (use prelude/types vec option result)
 
-(export number signed float integer partial-eq partial-ord
+(export number signed float integer partial-eq hash partial-ord
         add sub mul div rem neg sqrt lt le gt ge eq ne
         + - * / < <= > >= = != ord)
 
@@ -15,6 +15,16 @@
   (where ((a partial-eq)) (vec a))
   (where ((a partial-eq)) (option a))
   (where ((a partial-eq) (b partial-eq)) (result a b)))
+(rust-trait eq "Eq"
+  bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize
+  (where ((a eq)) (vec a))
+  (where ((a eq)) (option a))
+  (where ((a eq) (b eq)) (result a b)))
+(rust-trait hash "std::hash::Hash"
+  bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize
+  (where ((a hash)) (vec a))
+  (where ((a hash)) (option a))
+  (where ((a hash) (b hash)) (result a b)))
 (rust-trait partial-ord "PartialOrd"
   char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
 
