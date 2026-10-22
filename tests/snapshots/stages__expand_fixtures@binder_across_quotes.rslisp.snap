@@ -3,8 +3,5 @@ source: tests/stages.rs
 expression: "Fixture::load(path).expand_report()"
 input_file: tests/fixtures/expand/binder_across_quotes.rslisp
 ---
-error[L0201]: cannot find `picked` in this scope
-  --> expand/binder_across_quotes.rslisp:15:24
-   |
-15 | (defn main () (println (pick-separate-quotes 2)))
-   |                        ^^^^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+(def echo (fn (name) name))
+(def main (fn () (println (do (let picked 2) picked))))
