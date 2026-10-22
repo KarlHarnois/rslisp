@@ -62,12 +62,7 @@ impl TraitTable {
         let mut found: Vec<BindingId> = self
             .traits
             .iter()
-            .filter(|(_, rust_trait)| {
-                paths.iter().any(|path| {
-                    rust_trait.path.as_ref() == *path
-                        || rust_trait.path.rsplit("::").next() == Some(*path)
-                })
-            })
+            .filter(|(_, rust_trait)| paths.contains(&rust_trait.path.as_ref()))
             .map(|(binding, _)| *binding)
             .collect();
         found.sort();

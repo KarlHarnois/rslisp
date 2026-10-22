@@ -3,11 +3,4 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/trait_claim_on_struct.rslisp
 ---
-error[L0404]: `employee` does not implement `record-eq`
- --> run/trait_claim_on_struct.rslisp:7:26
-  |
-7 |   (println (same-record? first-hire second-hire)))
-  |                          ^^^^^^^^^^ this needs `record-eq`
-  |
-  = note: `record-eq` is implemented for: 
-  = note: `employee` cannot derive `record-eq`: field `name` is `string`
+false
