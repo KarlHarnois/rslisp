@@ -4,28 +4,34 @@ use crate::core::{BindingId, StructDerives};
 use crate::diagnostic::Diagnostics;
 use crate::expand::Program;
 use crate::ownership::{InPlaceChanges, OwnershipChecker};
-use crate::types::{TypeChecker, TypedProgram};
+use crate::types::{InferredCopies, TypeChecker, TypedProgram};
 
 pub struct ProgramChecker;
 
+struct CheckedProgram {
+    program: TypedProgram,
+    inferred_copies: InferredCopies,
+}
+
 impl ProgramChecker {
     pub fn check(program: &Program) -> Result<TypedProgram, Diagnostics> {
-        let typed = Self::checked(program, &HashSet::new())?;
-        let blocked = Self::inferred_copy_changed(&typed);
-        if blocked.is_empty() {
-            return Ok(typed);
+        let first = Self::checked(program, &HashSet::new(), &InferredCopies::default())?;
+        let blocked = Self::inferred_copy_changed(&first.program);
+        if blocked.is_empty() && first.inferred_copies.is_empty() {
+            return Ok(first.program);
         }
-        Self::checked(program, &blocked)
+        Self::checked(program, &blocked, &first.inferred_copies).map(|checked| checked.program)
     }
 
     fn checked(
         program: &Program,
         changed_structs: &HashSet<BindingId>,
-    ) -> Result<TypedProgram, Diagnostics> {
-        match Self::typed_and_owned(program, changed_structs) {
-            Ok(mut typed) => {
-                typed.warnings.extend(program.warnings.clone());
-                Ok(typed)
+        inferred_copies: &InferredCopies,
+    ) -> Result<CheckedProgram, Diagnostics> {
+        match Self::typed_and_owned(program, changed_structs, inferred_copies) {
+            Ok(mut checked) => {
+                checked.program.warnings.extend(program.warnings.clone());
+                Ok(checked)
             }
             Err(mut diagnostics) => {
                 diagnostics.extend(program.warnings.clone());
@@ -37,10 +43,14 @@ impl ProgramChecker {
     fn typed_and_owned(
         program: &Program,
         changed_structs: &HashSet<BindingId>,
-    ) -> Result<TypedProgram, Diagnostics> {
-        let mut typed = TypeChecker::check(program, changed_structs)?;
-        OwnershipChecker::check(&mut typed)?;
-        Ok(typed)
+        inferred_copies: &InferredCopies,
+    ) -> Result<CheckedProgram, Diagnostics> {
+        let mut program = TypeChecker::check(program, changed_structs, inferred_copies)?;
+        let inferred_copies = OwnershipChecker::check(&mut program)?;
+        Ok(CheckedProgram {
+            program,
+            inferred_copies,
+        })
     }
 
     fn inferred_copy_changed(typed: &TypedProgram) -> HashSet<BindingId> {

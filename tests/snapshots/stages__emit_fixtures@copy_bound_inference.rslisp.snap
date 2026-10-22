@@ -1,0 +1,37 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/copy_bound_inference.rslisp
+---
+fn twice_pinned<A: Copy>(x: A) -> Vec<A> {
+    vec![x, x]
+}
+
+fn twice<A: Copy>(x: A) -> Vec<A> {
+    vec![x, x]
+}
+
+fn wrap<A>(x: A) -> Vec<A> {
+    vec![x]
+}
+
+fn show_twice<A: std::fmt::Display + ?Sized>(x: &A) {
+    println!("{}", x);
+    println!("{}", x)
+}
+
+fn bigger<A: PartialOrd>(a: A, b: A) -> A {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+fn main() {
+    println!("{}", twice(3).len());
+    println!("{}", twice_pinned(3).len());
+    println!("{}", wrap(3).len());
+    show_twice(&3);
+    println!("{}", bigger(1, 2))
+}

@@ -267,6 +267,9 @@ impl TypeChecker {
             (None, None) => self.unifier.fresh(),
         };
         self.locals.insert(param.binding, ty.clone());
+        if self.inferred_copies.contains(param.binding) {
+            self.require_copy(&ty);
+        }
         let written_by_signature = expected.is_some_and(|(expected, written)| {
             written && !matches!(self.unifier.shallow(expected), Type::Var(_))
         });

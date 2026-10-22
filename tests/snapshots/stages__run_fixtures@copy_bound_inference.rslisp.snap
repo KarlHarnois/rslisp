@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/copy_bound_inference.rslisp
+---
+2
+2
+1
+3
+3
+2
