@@ -1,0 +1,22 @@
+(defrule dotimes
+  (((index count) body ...) (for-each (range 0 count) (fn (index) body ...))))
+
+(defrule case
+  ((value clause ...) (do (let subject value) (case-clauses subject clause ...))))
+
+(defrule case-clauses
+  ((subject ((quote else) body ...)) (do body ...))
+  ((subject (match body ...)) (if (= subject match) (do body ...) (do)))
+  ((subject (match body ...) clause more ...)
+   (if (= subject match) (do body ...) (case-clauses subject clause more ...))))
+
+(defn describe (n)
+  (case n
+    (0 "zero")
+    (1 "one")
+    (else "many")))
+
+(defn main ()
+  (dotimes (i 3) (println (describe i)))
+  (let subject 7)
+  (println (case 1 (1 subject) (else 0))))
