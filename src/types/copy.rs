@@ -34,7 +34,17 @@ impl<'a> CopyRules<'a> {
         })
     }
 
-    pub fn bound_allows_only_copy(&self, bound: BindingId) -> bool {
+    pub fn bound_allows_only_copy_values(&self, bound: BindingId) -> bool {
+        self.bound_allows_only_copy(bound)
+            && self.traits.get(bound).is_some_and(|rust_trait| {
+                rust_trait
+                    .implementors
+                    .iter()
+                    .all(|implementor| !implementor.body.is_reference())
+            })
+    }
+
+    fn bound_allows_only_copy(&self, bound: BindingId) -> bool {
         self.traits.get(bound).is_some_and(|rust_trait| {
             !rust_trait.implementors.is_empty()
                 && rust_trait.implementors.iter().all(|implementor| {
