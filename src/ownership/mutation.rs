@@ -54,6 +54,14 @@ impl ChangedValues {
             TypedExprKind::Recur(arguments) => self.arguments(arguments, enclosing, true),
             TypedExprKind::Control(control) => self.control(control, enclosing),
             TypedExprKind::Struct(structure) => self.structure(structure, enclosing),
+            TypedExprKind::Borrow(..) | TypedExprKind::Deref(_) => self.written(expr, enclosing),
+            TypedExprKind::Fn(lambda) => self.block(&lambda.body, enclosing),
+            TypedExprKind::Leaf(_) => {}
+        }
+    }
+
+    fn written(&mut self, expr: &TypedExpr, enclosing: BindingId) {
+        match &expr.kind {
             TypedExprKind::Borrow(ReferenceKind::Mutable, value) => {
                 if let Some(place) = value.place_root() {
                     let root = self.root(place);
@@ -64,8 +72,7 @@ impl ChangedValues {
             TypedExprKind::Borrow(ReferenceKind::Shared, value) | TypedExprKind::Deref(value) => {
                 self.expr(value, enclosing);
             }
-            TypedExprKind::Fn(lambda) => self.block(&lambda.body, enclosing),
-            TypedExprKind::Leaf(_) => {}
+            _ => unreachable!("the caller matches a written form"),
         }
     }
 

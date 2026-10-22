@@ -1,0 +1,58 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/written_borrows.rslisp
+---
+fn peek(x: &i64) -> i64 {
+    *x
+}
+
+fn plus_one(r: &i64) -> i64 {
+    *r + 1
+}
+
+fn vec_size(names: &Vec<String>) -> usize {
+    names.capacity()
+}
+
+fn show(s: &String) {
+    println!("{}", s)
+}
+
+fn relay(s: &String) {
+    show(s)
+}
+
+fn relay_mut(x: &mut i64) {
+    *x += 1
+}
+
+const VALUE: i64 = 3;
+
+fn pair_up<A>(a: A, b: A) -> A {
+    a
+}
+
+fn main() {
+    let n: i64 = 4;
+    println!("{}", peek(&n));
+    let mut n_2: i64 = 4;
+    n_2 += 1;
+    println!("{}", n_2);
+    let n_3: i64 = 4;
+    println!("{}", plus_one(&n_3));
+    let p: i64 = 4;
+    let r = pair_up(&p, &p);
+    println!("{}", r);
+    let names = vec!["ana".to_string()];
+    println!("{}", vec_size(&names));
+    relay(&"bo".to_string());
+    let mut v: i64 = 5;
+    relay_mut(&mut v);
+    println!("{}", v);
+    let mut q: i64 = 4;
+    let m: &mut i64 = &mut q;
+    let deref_value: i64 = *m;
+    println!("{}", deref_value);
+    println!("{}", VALUE)
+}

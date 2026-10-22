@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use super::functions::{FunctionTable, ParamMode};
-use crate::core::BindingId;
+use crate::core::{BindingId, ReferenceKind};
 use crate::types::{
     Borrow, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind,
     TypedLambda, TypedLeaf, TypedStructExpr,
@@ -56,7 +56,10 @@ impl<'a> UsageCollector<'a> {
 
     fn written(&mut self, expr: &TypedExpr) {
         match &expr.kind {
-            TypedExprKind::Borrow(_, value) => self.expr(value, ParamMode::Own),
+            TypedExprKind::Borrow(ReferenceKind::Shared, value) => self.expr(value, ParamMode::Ref),
+            TypedExprKind::Borrow(ReferenceKind::Mutable, value) => {
+                self.expr(value, ParamMode::Mut)
+            }
             TypedExprKind::Deref(value) => self.expr(value, ParamMode::Ref),
             _ => unreachable!("the caller matches a written form"),
         }

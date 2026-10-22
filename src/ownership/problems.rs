@@ -1,3 +1,5 @@
+use super::functions::ParamMode;
+use crate::core::ReferenceKind;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
 
@@ -47,6 +49,38 @@ impl OwnershipProblems {
             .with_help(format!(
                 "add a `copy` bound to the signature: `({parameter} copy)`"
             ))
+    }
+
+    pub fn written_mode_mismatch(
+        parameter: &str,
+        kind: ReferenceKind,
+        mode: ParamMode,
+        span: Span,
+    ) -> Diagnostic {
+        let taken = match mode {
+            ParamMode::Copy | ParamMode::Own => "a copy",
+            ParamMode::Ref => "a reference",
+            ParamMode::Mut => "a mutable reference",
+        };
+        let (title, passed, help) = match kind {
+            ReferenceKind::Shared => (
+                format!("`{parameter}` is taken as {taken}, so this borrow cannot pass"),
+                "this passes a borrow",
+                "pass the value without `ref`, or write the parameter's type",
+            ),
+            ReferenceKind::Mutable => (
+                format!("`{parameter}` is taken as {taken}, so this mutable borrow cannot pass"),
+                "this passes a mutable borrow",
+                "pass the value without `mut`, or write the parameter's type",
+            ),
+        };
+        Diagnostic::error(
+            DiagnosticCode::WRITTEN_MODE_MISMATCH,
+            title,
+            Label::new(span, passed),
+        )
+        .with_note("the callee's body decides whether the parameter takes a borrow")
+        .with_help(help)
     }
 
     pub fn closure_move_help(diagnostic: Diagnostic) -> Diagnostic {

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::core::BindingId;
+use crate::core::{BindingId, ReferenceKind};
 use crate::types::{CopyRules, Type, TypedExprKind, TypedLambda, TypedProgram};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -10,6 +10,15 @@ pub enum ParamMode {
     Ref,
     Mut,
     Own,
+}
+
+impl ParamMode {
+    pub fn accepts(self, kind: ReferenceKind) -> bool {
+        matches!(
+            (kind, self),
+            (ReferenceKind::Shared, ParamMode::Ref) | (ReferenceKind::Mutable, ParamMode::Mut)
+        )
+    }
 }
 
 pub struct ParamSlot {
@@ -67,8 +76,8 @@ impl FunctionTable {
                 binding: param.binding,
                 ty: param.ty.clone(),
                 inferable: !param.annotated
-                    && !copy.is_small_copy(&param.ty)
-                    && !matches!(param.ty, Type::Function(..) | Type::Mut(_)),
+                    && !matches!(param.ty, Type::Function(..) | Type::Mut(_))
+                    && (!copy.is_small_copy(&param.ty) || lambda.body.writes_local(param.binding)),
             })
             .collect();
         FunctionInfo {

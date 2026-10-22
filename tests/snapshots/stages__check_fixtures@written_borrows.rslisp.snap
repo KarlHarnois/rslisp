@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/written_borrows.rslisp
+---
+error[L0401]: mismatched types
+ --> check/written_borrows.rslisp:9:12
+  |
+9 |   (add-one (ref n)))
+  |            ^^^^^^^ expected `i64`, found `(ref _)`
+
+error[L0401]: mismatched types
+  --> check/written_borrows.rslisp:13:9
+   |
+13 |   (peek (deref (ref n))))
+   |         ^^^^^^^^^^^^^^^ expected `(ref i64)`, found an integer

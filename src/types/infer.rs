@@ -9,8 +9,8 @@ use super::problems::{MismatchContext, TypeProblems};
 use super::ty::Type;
 use super::ty::TypeVar;
 use super::typed::{
-    Borrow, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
-    TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
+    Borrow, PendingModeCheck, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl,
+    TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
 };
 use super::unifier::{LiteralKind, UnifyError};
 use crate::core::{
@@ -100,12 +100,16 @@ impl TypeChecker {
         let value = self.infer(value)?;
         let referent = self.unifier.fresh();
         self.require_copy(&referent);
-        self.expect(
-            &Type::Ref(Box::new(referent.clone())),
-            &value.ty,
-            value.span,
-            MismatchContext::Plain,
-        )?;
+        if let Type::Mut(inner) = self.unifier.resolve(&value.ty) {
+            self.expect(&referent, &inner, value.span, MismatchContext::Plain)?;
+        } else {
+            self.expect(
+                &Type::Ref(Box::new(referent.clone())),
+                &value.ty,
+                value.span,
+                MismatchContext::Plain,
+            )?;
+        }
         Ok(TypedExpr {
             kind: TypedExprKind::Deref(Box::new(value)),
             ty: referent,
@@ -416,7 +420,8 @@ impl TypeChecker {
             ));
         }
         let shared = SharedVariables::of(&parameters, &self.unifier);
-        let mut typed_arguments = self.infer_arguments(&parameters, arguments, &shared)?;
+        let mut typed_arguments =
+            self.infer_arguments(Some(&callee), &parameters, arguments, &shared)?;
         self.pass_shared_arguments(Some(&callee), &shared, &mut typed_arguments)?;
         Ok(TypedExpr {
             kind: TypedExprKind::Call(Box::new(callee), typed_arguments),
@@ -431,7 +436,8 @@ impl TypeChecker {
             .clone()
             .expect("expansion checks that `recur` is inside a function");
         let shared = SharedVariables::of(&target.parameters, &self.unifier);
-        let mut typed_arguments = self.infer_arguments(&target.parameters, arguments, &shared)?;
+        let mut typed_arguments =
+            self.infer_arguments(None, &target.parameters, arguments, &shared)?;
         self.pass_shared_arguments(None, &shared, &mut typed_arguments)?;
         Ok(TypedExpr {
             kind: TypedExprKind::Recur(typed_arguments),
@@ -442,6 +448,7 @@ impl TypeChecker {
 
     fn infer_arguments(
         &mut self,
+        callee: Option<&TypedExpr>,
         parameters: &[Type],
         arguments: &[Expr],
         shared: &SharedVariables,
@@ -452,7 +459,7 @@ impl TypeChecker {
             let borrow = if shared.contains(position) {
                 Borrow::None
             } else {
-                self.pass_argument(parameter, &value)?
+                self.pass_call_argument(callee, position, parameter, &value)?
             };
             typed_arguments.push(TypedArgument { value, borrow });
         }
@@ -581,8 +588,47 @@ impl TypeChecker {
         }
     }
 
+    fn pass_call_argument(
+        &mut self,
+        callee: Option<&TypedExpr>,
+        position: usize,
+        parameter: &Type,
+        value: &TypedExpr,
+    ) -> Result<Borrow, Diagnostic> {
+        let call = match callee.map(|callee| &callee.kind) {
+            Some(TypedExprKind::Leaf(TypedLeaf::Global(binding))) => *binding,
+            _ => return self.pass_argument(parameter, value),
+        };
+        if let TypedExprKind::Borrow(kind, _) = &value.kind
+            && !self.parameter_is_written(call, position)
+            && !self.unifier.shallow(parameter).is_reference()
+            && let Type::Ref(referent) | Type::Mut(referent) = &value.ty
+        {
+            self.pass(parameter, referent, value.span, Borrow::None)?;
+            self.pending_mode_checks.push(PendingModeCheck {
+                callee: call,
+                position,
+                kind: *kind,
+                span: value.span,
+            });
+            return Ok(Borrow::None);
+        }
+        self.pass_argument(parameter, value)
+    }
+
+    fn parameter_is_written(&self, callee: BindingId, position: usize) -> bool {
+        self.written_parameters
+            .get(&callee)
+            .and_then(|written| written.get(position))
+            .copied()
+            .unwrap_or(true)
+    }
+
     fn pass_argument(&mut self, parameter: &Type, value: &TypedExpr) -> Result<Borrow, Diagnostic> {
         let argument = self.unifier.resolve(&value.ty);
+        if value.is_written_form() {
+            return self.pass(parameter, &argument, value.span, Borrow::None);
+        }
         let parameter = self.unifier.shallow(parameter);
         match (&parameter, &argument) {
             (Type::Ref(inner), found) if !found.is_reference() => {
@@ -1015,10 +1061,13 @@ impl TypeChecker {
 #[cfg(test)]
 mod tests {
     use super::TypeChecker;
-    use crate::core::{BindingArena, Expr, ExprKind, FieldLabel, Leaf, Literal, PrimitiveType};
+    use crate::core::{
+        BindingArena, BindingInfo, BindingKind, Expr, ExprKind, FieldLabel, Leaf, Literal,
+        ModuleId, PrimitiveType,
+    };
     use crate::source::{SourceId, Span};
-    use crate::types::Type;
     use crate::types::typed::{TypedExpr, TypedExprKind, TypedLeaf, TypedStructExpr};
+    use crate::types::{Type, TypeVar};
 
     struct PlaceTypeFixture {
         checker: TypeChecker,
@@ -1047,6 +1096,30 @@ mod tests {
             }
         }
 
+        fn global_without_a_scheme(&mut self) -> Type {
+            let binding = self.checker.bindings.add(BindingInfo::new(
+                "missing".into(),
+                BindingKind::Global(ModuleId::new(0)),
+                None,
+            ));
+            self.checker.global_type(binding)
+        }
+
+        fn rejects_a_compile_time_only_global(&mut self) -> bool {
+            let binding = self.checker.bindings.add(BindingInfo::new(
+                "hidden".into(),
+                BindingKind::Global(ModuleId::new(0)),
+                None,
+            ));
+            self.checker.compile_time_only.insert(binding);
+            self.checker.infer_variable(binding, self.span).is_err()
+        }
+
+        fn describe_unknown(&mut self) -> String {
+            let _ = self.checker.unifier.fresh();
+            self.checker.describe(&Type::Var(TypeVar::new(0)))
+        }
+
         fn owner(&self) -> TypedExpr {
             TypedExpr {
                 kind: TypedExprKind::Leaf(TypedLeaf::Literal(Literal::Bool(false))),
@@ -1054,6 +1127,24 @@ mod tests {
                 span: self.span,
             }
         }
+    }
+
+    #[test]
+    fn a_global_without_a_scheme_gets_a_fresh_type() {
+        let mut fixture = PlaceTypeFixture::new();
+        assert!(matches!(fixture.global_without_a_scheme(), Type::Var(_)));
+    }
+
+    #[test]
+    fn a_compile_time_only_global_is_rejected() {
+        let mut fixture = PlaceTypeFixture::new();
+        assert!(fixture.rejects_a_compile_time_only_global());
+    }
+
+    #[test]
+    fn an_unknown_type_is_described_as_an_underscore() {
+        let mut fixture = PlaceTypeFixture::new();
+        assert_eq!(fixture.describe_unknown(), "`_`");
     }
 
     #[test]

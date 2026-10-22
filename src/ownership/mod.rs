@@ -10,13 +10,17 @@ mod problems;
 mod rewrite;
 mod usage;
 
+use std::collections::HashMap;
+
+use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostics;
-use crate::types::{CopyRules, InferredCopies, TypedExprKind, TypedProgram};
+use crate::types::{CopyRules, InferredCopies, PendingModeCheck, TypedExprKind, TypedProgram};
 use checks::{BorrowedResults, OwnershipNeeds};
-use functions::FunctionTable;
+use functions::{FunctionTable, ParamMode};
 use modes::ModeInference;
 use moves::MoveChecker;
 use names::ChangingFunctionNames;
+use problems::OwnershipProblems;
 use rewrite::ModeRewrite;
 
 pub use changes::InPlaceChanges;
@@ -31,9 +35,21 @@ impl OwnershipChecker {
             CopyRules::new(&program.traits, &program.generics, &program.structs),
         )
         .run();
+        program.borrowed_parameters = modes
+            .iter()
+            .filter(|(_, mode)| matches!(mode, ParamMode::Ref | ParamMode::Mut))
+            .map(|(binding, _)| *binding)
+            .collect();
+        let mut diagnostics = Diagnostics::default();
+        Self::check_written_modes(
+            &program.pending_mode_checks,
+            &functions,
+            &modes,
+            &program.bindings,
+            &mut diagnostics,
+        );
         let rewrite = ModeRewrite::new(&functions, &modes);
         rewrite.apply(program);
-        let mut diagnostics = Diagnostics::default();
         let mut inferred_copies = InferredCopies::default();
         for definition in program
             .modules
@@ -71,5 +87,32 @@ impl OwnershipChecker {
             program.warnings.extend(warnings);
         }
         diagnostics.into_result(inferred_copies)
+    }
+
+    fn check_written_modes(
+        checks: &[PendingModeCheck],
+        functions: &FunctionTable,
+        modes: &HashMap<BindingId, ParamMode>,
+        bindings: &BindingArena,
+        diagnostics: &mut Diagnostics,
+    ) {
+        for check in checks {
+            let Some(info) = functions.get(check.callee) else {
+                continue;
+            };
+            let Some(slot) = info.params.get(check.position) else {
+                continue;
+            };
+            let mode = modes.get(&slot.binding).copied().unwrap_or(ParamMode::Own);
+            if mode.accepts(check.kind) {
+                continue;
+            }
+            diagnostics.push(OwnershipProblems::written_mode_mismatch(
+                bindings.get(slot.binding).name(),
+                check.kind,
+                mode,
+                check.span,
+            ));
+        }
     }
 }

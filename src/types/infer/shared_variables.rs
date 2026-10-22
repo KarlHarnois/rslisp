@@ -142,6 +142,13 @@ impl TypeChecker {
         arguments: &mut [TypedArgument],
     ) -> Result<(), Diagnostic> {
         for group in shared.groups() {
+            if group
+                .positions()
+                .any(|position| arguments[position].value.is_written_form())
+            {
+                self.pass_each(callee, group, arguments)?;
+                continue;
+            }
             if group.is_linked() && self.try_as_written(group, arguments)? {
                 continue;
             }
@@ -150,7 +157,7 @@ impl TypeChecker {
                     .positions()
                     .all(|position| self.template_borrows.borrows(callee, position))
             });
-            self.pass_group(group, borrowed_by_rust, arguments)?;
+            self.pass_group(callee, group, borrowed_by_rust, arguments)?;
         }
         Ok(())
     }
@@ -215,6 +222,7 @@ impl TypeChecker {
 
     fn pass_group(
         &mut self,
+        callee: Option<&TypedExpr>,
         group: &SharedGroup,
         borrowed_by_rust: bool,
         arguments: &mut [TypedArgument],
@@ -228,7 +236,7 @@ impl TypeChecker {
             .iter()
             .any(|argument| self.referent_unknown(argument))
         {
-            return self.pass_each(group, arguments);
+            return self.pass_each(callee, group, arguments);
         }
         let referent = self.unify_referents(&positions, &resolved, arguments)?;
         let depths: Vec<usize> = resolved.iter().map(Self::reference_depth).collect();
@@ -251,6 +259,7 @@ impl TypeChecker {
 
     fn pass_each(
         &mut self,
+        callee: Option<&TypedExpr>,
         group: &SharedGroup,
         arguments: &mut [TypedArgument],
     ) -> Result<(), Diagnostic> {
@@ -267,7 +276,12 @@ impl TypeChecker {
             )?;
         }
         for position in group.positions() {
-            let borrow = self.pass_argument(&Type::Var(root), &arguments[position].value)?;
+            let borrow = self.pass_call_argument(
+                callee,
+                position,
+                &Type::Var(root),
+                &arguments[position].value,
+            )?;
             arguments[position].borrow = borrow;
         }
         Ok(())

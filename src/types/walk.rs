@@ -1,8 +1,10 @@
 use std::rc::Rc;
 
+use crate::core::BindingId;
+
 use super::typed::{
     TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda,
-    TypedStructExpr,
+    TypedLeaf, TypedStructExpr,
 };
 
 impl TypedExpr {
@@ -37,6 +39,17 @@ impl TypedExpr {
             TypedExprKind::Control(control) => control.children_mut(),
             TypedExprKind::Struct(structure) => structure.children_mut(),
         }
+    }
+
+    pub fn writes_local(&self, binding: BindingId) -> bool {
+        if let TypedExprKind::Borrow(_, value) = &self.kind
+            && matches!(value.kind, TypedExprKind::Leaf(TypedLeaf::Local(local)) if local == binding)
+        {
+            return true;
+        }
+        self.children()
+            .into_iter()
+            .any(|child| child.writes_local(binding))
     }
 
     pub fn binders(&self) -> Vec<&TypedBinder> {
@@ -106,6 +119,10 @@ impl TypedLambda {
 impl TypedBlock {
     pub fn expressions(&self) -> impl Iterator<Item = &TypedExpr> {
         self.items.iter().map(TypedBodyItem::expr)
+    }
+
+    pub fn writes_local(&self, binding: BindingId) -> bool {
+        self.expressions().any(|expr| expr.writes_local(binding))
     }
 
     fn expressions_mut(&mut self) -> impl Iterator<Item = &mut TypedExpr> {

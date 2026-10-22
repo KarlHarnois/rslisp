@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/written_borrows.rslisp
+---
+4
+5
+5
+4
+1
+bo
+6
+4
+3

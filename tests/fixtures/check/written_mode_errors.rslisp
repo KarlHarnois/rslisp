@@ -1,0 +1,11 @@
+(def vec-capacity (rust "{0}.capacity()" (fn ((ref (vec string))) usize)))
+
+(defn vec-size (names) (vec-capacity names))
+
+(defn bump! (x) (do (mut x)))
+
+(defn main ()
+  (let names (vec (to-string "ana")))
+  (vec-size (mut names))
+  (let n 4)
+  (bump! (ref n)))
