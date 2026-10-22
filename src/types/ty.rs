@@ -81,6 +81,32 @@ impl Type {
         }
     }
 
+    pub fn substitute_vars(&self, replacements: &HashMap<TypeVar, Type>) -> Type {
+        match self {
+            Type::Var(var) => replacements
+                .get(var)
+                .cloned()
+                .unwrap_or_else(|| self.clone()),
+            Type::Named(binding, arguments) => Type::Named(
+                *binding,
+                arguments
+                    .iter()
+                    .map(|argument| argument.substitute_vars(replacements))
+                    .collect(),
+            ),
+            Type::Function(parameters, result) => Type::Function(
+                parameters
+                    .iter()
+                    .map(|parameter| parameter.substitute_vars(replacements))
+                    .collect(),
+                Box::new(result.substitute_vars(replacements)),
+            ),
+            Type::Ref(inner) => Type::Ref(Box::new(inner.substitute_vars(replacements))),
+            Type::Mut(inner) => Type::Mut(Box::new(inner.substitute_vars(replacements))),
+            Type::Generic(_) | Type::Primitive(_) => self.clone(),
+        }
+    }
+
     pub fn substitute(&self, replacements: &HashMap<GenericId, Type>) -> Type {
         match self {
             Type::Generic(generic) => replacements
@@ -156,6 +182,16 @@ impl Bound {
                 .map(|argument| argument.substitute(replacements)),
         }
     }
+
+    pub fn substituted_vars(&self, replacements: &HashMap<TypeVar, Type>) -> Self {
+        Self {
+            binding: self.binding,
+            argument: self
+                .argument
+                .as_ref()
+                .map(|argument| argument.substitute_vars(replacements)),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -177,5 +213,91 @@ impl Scheme {
             params: Vec::new(),
             body,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::{BindingArena, BindingInfo, BindingKind};
+
+    struct Substitution {
+        replacements: HashMap<TypeVar, Type>,
+        variable: TypeVar,
+        replacement: Type,
+        binding: BindingId,
+    }
+
+    impl Substitution {
+        fn new() -> Self {
+            let variable = TypeVar::new(0);
+            let replacement = Type::Primitive(PrimitiveType::I64);
+            let mut bindings = BindingArena::default();
+            let binding = bindings.add(BindingInfo::new(
+                "item".into(),
+                BindingKind::TypeVariable,
+                None,
+            ));
+            Self {
+                replacements: HashMap::from([(variable, replacement.clone())]),
+                variable,
+                replacement,
+                binding,
+            }
+        }
+
+        fn variable(&self) -> Type {
+            Type::Var(self.variable)
+        }
+
+        fn named(&self) -> Type {
+            Type::Named(self.binding, vec![self.variable()])
+        }
+
+        fn substitute(&self, value: &Type) -> Type {
+            value.substitute_vars(&self.replacements)
+        }
+    }
+
+    #[test]
+    fn substitution_reaches_every_part_of_a_type() {
+        let fixture = Substitution::new();
+        let variable = fixture.variable();
+        let replacement = fixture.replacement.clone();
+        assert_eq!(
+            fixture.substitute(&Type::Function(
+                vec![variable.clone()],
+                Box::new(variable.clone())
+            )),
+            Type::Function(vec![replacement.clone()], Box::new(replacement.clone()))
+        );
+        assert_eq!(
+            fixture.substitute(&Type::Ref(Box::new(variable.clone()))),
+            Type::Ref(Box::new(replacement.clone()))
+        );
+        assert_eq!(
+            fixture.substitute(&Type::Mut(Box::new(variable.clone()))),
+            Type::Mut(Box::new(replacement.clone()))
+        );
+        assert_eq!(
+            fixture.substitute(&fixture.named()),
+            Type::Named(fixture.binding, vec![replacement])
+        );
+    }
+
+    #[test]
+    fn substitution_leaves_other_types_alone() {
+        let fixture = Substitution::new();
+        let other = TypeVar::new(1);
+        assert_eq!(fixture.substitute(&fixture.variable()), fixture.replacement);
+        assert_eq!(fixture.substitute(&Type::Var(other)), Type::Var(other));
+        assert_eq!(
+            fixture.substitute(&Type::Generic(GenericId::new(0))),
+            Type::Generic(GenericId::new(0))
+        );
+        assert_eq!(
+            fixture.substitute(&Type::Primitive(PrimitiveType::Bool)),
+            Type::Primitive(PrimitiveType::Bool)
+        );
     }
 }

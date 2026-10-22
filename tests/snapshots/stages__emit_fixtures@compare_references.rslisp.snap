@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/compare_references.rslisp
+---
+fn is_both_equal(x: &i64, y: &i64) -> bool {
+    x == y
+}
+
+fn main() {
+    let three: i64 = 3;
+    println!("{}", is_both_equal(&three, &three))
+}

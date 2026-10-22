@@ -622,12 +622,64 @@ impl TypeChecker {
     }
 
     fn generalize_vars(&mut self, vars: Vec<TypeVar>, start: usize, span: Span) {
+        self.link_bounded_vars(&vars, span);
         let mut position = start;
         for var in vars {
             if self.generalize_var(var, position, span).is_some() {
                 position += 1;
             }
         }
+    }
+
+    fn link_bounded_vars(&mut self, vars: &[TypeVar], span: Span) {
+        while self.link_round(vars, span) {}
+    }
+
+    fn link_round(&mut self, vars: &[TypeVar], span: Span) -> bool {
+        let mut linked = false;
+        for var in vars {
+            if self.is_unbound(*var) {
+                linked |= self.link_var(*var, vars, span);
+            }
+        }
+        linked
+    }
+
+    fn link_var(&mut self, var: TypeVar, vars: &[TypeVar], span: Span) -> bool {
+        let mut linked = false;
+        for other in self.linked_vars(var, vars) {
+            if self.is_unbound(var)
+                && self.is_unbound(other)
+                && self
+                    .unifier
+                    .unify(&Type::Var(var), &Type::Var(other), span)
+                    .is_ok()
+            {
+                linked = true;
+            }
+        }
+        linked
+    }
+
+    fn linked_vars(&self, var: TypeVar, vars: &[TypeVar]) -> Vec<TypeVar> {
+        self.unifier
+            .bounds(var)
+            .iter()
+            .filter_map(|bound| {
+                let argument = bound
+                    .argument
+                    .as_ref()
+                    .map(|argument| self.unifier.shallow(argument));
+                match argument {
+                    Some(Type::Var(other)) if other != var && vars.contains(&other) => Some(other),
+                    _ => None,
+                }
+            })
+            .collect()
+    }
+
+    fn is_unbound(&self, var: TypeVar) -> bool {
+        matches!(self.unifier.shallow(&Type::Var(var)), Type::Var(current) if current == var)
     }
 
     fn mentioned_generics(&self, inferred: &Type) -> Vec<GenericParam> {
@@ -658,6 +710,9 @@ impl TypeChecker {
         position: usize,
         span: Span,
     ) -> Option<GenericParam> {
+        if !self.is_unbound(var) {
+            return None;
+        }
         let default = match self.unifier.literal_kind(var) {
             Some(LiteralKind::Float) => Some(PrimitiveType::F64),
             Some(LiteralKind::Integer) => Some(PrimitiveType::I64),
@@ -674,10 +729,26 @@ impl TypeChecker {
             return None;
         }
         let name = Self::parameter_name(position);
-        let bounds = self.unifier.bounds(var).to_vec();
+        let bounds = self.self_plain_bounds(var);
         let param = self.new_generic(&name, bounds);
         self.unifier.bind(var, Type::Generic(param.id));
         Some(param)
+    }
+
+    fn self_plain_bounds(&self, var: TypeVar) -> Vec<Bound> {
+        let mut bounds = Vec::new();
+        for bound in self.unifier.bounds(var) {
+            let bound = match &bound.argument {
+                Some(argument) if self.unifier.shallow(argument) == Type::Var(var) => {
+                    Bound::plain(bound.binding)
+                }
+                _ => bound.clone(),
+            };
+            if !bounds.contains(&bound) {
+                bounds.push(bound);
+            }
+        }
+        bounds
     }
 
     fn monomorphic_vars(&self) -> HashSet<TypeVar> {
@@ -1051,10 +1122,66 @@ impl TypeChecker {
 #[cfg(test)]
 mod tests {
     use super::TypeChecker;
+    use crate::core::{BindingArena, BindingId, BindingInfo, BindingKind};
+    use crate::source::{SourceId, Span};
+    use crate::types::{Bound, Type, TypeVar};
+
+    struct LinkingFixture {
+        checker: TypeChecker,
+        span: Span,
+    }
+
+    impl LinkingFixture {
+        fn new() -> Self {
+            Self {
+                checker: TypeChecker::new(BindingArena::default()),
+                span: Span::new(SourceId::new(0), 0..0),
+            }
+        }
+
+        fn fresh(&mut self) -> TypeVar {
+            match self.checker.unifier.fresh() {
+                Type::Var(var) => var,
+                other => panic!("a fresh type is a variable, found {other:?}"),
+            }
+        }
+
+        fn bound_trait(&mut self) -> BindingId {
+            self.checker.bindings.add(BindingInfo::new(
+                "trait".into(),
+                BindingKind::TypeVariable,
+                None,
+            ))
+        }
+
+        fn link(&mut self, var: TypeVar, other: TypeVar) -> bool {
+            let binding = self.bound_trait();
+            self.checker.unifier.add_bound(
+                var,
+                Bound {
+                    binding,
+                    argument: Some(Type::Var(other)),
+                },
+            );
+            self.checker.link_var(var, &[var, other], self.span)
+        }
+    }
 
     #[test]
     fn parameters_past_the_alphabet_are_numbered() {
         assert_eq!(TypeChecker::parameter_name(0), "a");
         assert_eq!(TypeChecker::parameter_name(26), "t26");
+    }
+
+    #[test]
+    fn a_two_type_bound_links_its_variables() {
+        let mut fixture = LinkingFixture::new();
+        let var = fixture.fresh();
+        let other = fixture.fresh();
+        assert!(fixture.link(var, other));
+        assert_eq!(
+            fixture.checker.unifier.shallow(&Type::Var(var)),
+            Type::Var(other)
+        );
     }
 }

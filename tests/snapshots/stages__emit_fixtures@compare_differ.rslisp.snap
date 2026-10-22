@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/compare_differ.rslisp
+---
+fn is_differ<A: PartialEq<B>, B>(a: A, b: B) -> bool {
+    a != b
+}
+
+fn main() {
+    let command = "quit".to_string();
+    println!("{}", is_differ(command, "quit"))
+}

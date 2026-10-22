@@ -1,0 +1,4 @@
+(defn same? (a b) (= a b))
+
+(defn main ()
+  (println (same? 1 2)))

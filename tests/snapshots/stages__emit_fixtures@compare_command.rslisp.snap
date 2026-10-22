@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/compare_command.rslisp
+---
+fn main() {
+    let command = "quit".to_string();
+    println!("{}", command == "quit")
+}

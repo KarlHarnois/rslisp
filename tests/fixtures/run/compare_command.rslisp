@@ -1,0 +1,3 @@
+(defn main ()
+  (let command (to-string "quit"))
+  (println (= command "quit")))

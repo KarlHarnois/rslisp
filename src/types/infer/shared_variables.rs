@@ -1,11 +1,76 @@
+use std::collections::HashMap;
+
 use crate::diagnostic::Diagnostic;
 use crate::types::checker::TypeChecker;
 use crate::types::problems::MismatchContext;
 use crate::types::unifier::Unifier;
-use crate::types::{Borrow, Type, TypeVar, TypedArgument, TypedExpr};
+use crate::types::{Borrow, Bound, Type, TypeVar, TypedArgument, TypedExpr};
 
 pub(super) struct SharedVariables {
-    variables: Vec<Option<TypeVar>>,
+    groups: Vec<SharedGroup>,
+}
+
+struct SharedGroup {
+    root: TypeVar,
+    members: Vec<SharedMember>,
+}
+
+struct SharedMember {
+    var: TypeVar,
+    positions: Vec<usize>,
+}
+
+impl SharedGroup {
+    fn is_linked(&self) -> bool {
+        self.members.len() > 1
+    }
+
+    fn positions(&self) -> impl Iterator<Item = usize> + '_ {
+        self.members
+            .iter()
+            .flat_map(|member| member.positions.iter().copied())
+    }
+
+    fn contains(&self, position: usize) -> bool {
+        self.members
+            .iter()
+            .any(|member| member.positions.contains(&position))
+    }
+
+    fn add_position(&mut self, var: TypeVar, position: usize) {
+        match self.members.iter_mut().find(|member| member.var == var) {
+            Some(member) => member.positions.push(position),
+            None => self.members.push(SharedMember {
+                var,
+                positions: vec![position],
+            }),
+        }
+    }
+}
+
+#[derive(Default)]
+struct VariableLinks {
+    parents: HashMap<TypeVar, TypeVar>,
+}
+
+impl VariableLinks {
+    fn link(&mut self, left: TypeVar, right: TypeVar) {
+        let left = self.find(left);
+        let right = self.find(right);
+        if left != right {
+            self.parents.insert(left, right);
+        }
+    }
+
+    fn find(&mut self, var: TypeVar) -> TypeVar {
+        let parent = *self.parents.entry(var).or_insert(var);
+        if parent == var {
+            return var;
+        }
+        let root = self.find(parent);
+        self.parents.insert(var, root);
+        root
+    }
 }
 
 impl SharedVariables {
@@ -17,32 +82,55 @@ impl SharedVariables {
                 _ => None,
             })
             .collect();
-        let variables = whole
-            .iter()
-            .map(|variable| {
-                variable
-                    .filter(|var| whole.iter().filter(|other| **other == Some(*var)).count() > 1)
-            })
-            .collect();
-        Self { variables }
+        let mut links = Self::links(&whole, unifier);
+        let mut groups: Vec<SharedGroup> = Vec::new();
+        for (position, whole) in whole.iter().enumerate() {
+            let Some(var) = whole else {
+                continue;
+            };
+            let root = links.find(*var);
+            let group = Self::group_of(&mut groups, root);
+            group.add_position(*var, position);
+        }
+        groups.retain(|group| group.positions().count() > 1);
+        Self { groups }
+    }
+
+    fn links(whole: &[Option<TypeVar>], unifier: &Unifier) -> VariableLinks {
+        let mut links = VariableLinks::default();
+        for var in whole.iter().flatten() {
+            for bound in unifier.bounds(*var) {
+                let argument = bound
+                    .argument
+                    .as_ref()
+                    .map(|argument| unifier.shallow(argument));
+                if let Some(Type::Var(linked)) = argument {
+                    links.link(*var, linked);
+                }
+            }
+        }
+        links
+    }
+
+    fn group_of(groups: &mut Vec<SharedGroup>, root: TypeVar) -> &mut SharedGroup {
+        match groups.iter().position(|group| group.root == root) {
+            Some(position) => &mut groups[position],
+            None => {
+                groups.push(SharedGroup {
+                    root,
+                    members: Vec::new(),
+                });
+                groups.last_mut().expect("the group was just added")
+            }
+        }
     }
 
     pub(super) fn contains(&self, position: usize) -> bool {
-        self.variables[position].is_some()
+        self.groups.iter().any(|group| group.contains(position))
     }
 
-    fn groups(&self) -> Vec<(TypeVar, Vec<usize>)> {
-        let mut groups: Vec<(TypeVar, Vec<usize>)> = Vec::new();
-        for (position, variable) in self.variables.iter().enumerate() {
-            let Some(var) = variable else {
-                continue;
-            };
-            match groups.iter_mut().find(|(group, _)| group == var) {
-                Some((_, positions)) => positions.push(position),
-                None => groups.push((*var, vec![position])),
-            }
-        }
-        groups
+    fn groups(&self) -> &[SharedGroup] {
+        &self.groups
     }
 }
 
@@ -53,22 +141,83 @@ impl TypeChecker {
         shared: &SharedVariables,
         arguments: &mut [TypedArgument],
     ) -> Result<(), Diagnostic> {
-        for (var, positions) in shared.groups() {
-            let borrowed_by_rust = positions
-                .iter()
-                .all(|position| self.template_borrows.borrows(callee, *position));
-            self.pass_group(var, &positions, borrowed_by_rust, arguments)?;
+        for group in shared.groups() {
+            if group.is_linked() && self.try_as_written(group, arguments)? {
+                continue;
+            }
+            let borrowed_by_rust = group
+                .positions()
+                .all(|position| self.template_borrows.borrows(callee, position));
+            self.pass_group(group, borrowed_by_rust, arguments)?;
         }
         Ok(())
     }
 
+    fn try_as_written(
+        &mut self,
+        group: &SharedGroup,
+        arguments: &mut [TypedArgument],
+    ) -> Result<bool, Diagnostic> {
+        let Some(assignment) = self.written_assignment(group, arguments) else {
+            return Ok(false);
+        };
+        if assignment
+            .values()
+            .any(|argument| self.referent_unknown(argument))
+            || !self.group_bounds_hold(group, &assignment)
+        {
+            return Ok(false);
+        }
+        for member in &group.members {
+            let span = arguments[member.positions[0]].value.span;
+            let found = assignment[&member.var].clone();
+            self.expect(&Type::Var(member.var), &found, span, MismatchContext::Plain)?;
+            for position in &member.positions {
+                arguments[*position].borrow = Borrow::None;
+            }
+        }
+        Ok(true)
+    }
+
+    fn written_assignment(
+        &self,
+        group: &SharedGroup,
+        arguments: &[TypedArgument],
+    ) -> Option<HashMap<TypeVar, Type>> {
+        let mut assignment = HashMap::new();
+        for member in &group.members {
+            let first = self
+                .unifier
+                .resolve(&arguments[member.positions[0]].value.ty);
+            let agrees = member
+                .positions
+                .iter()
+                .all(|position| self.unifier.resolve(&arguments[*position].value.ty) == first);
+            if !agrees {
+                return None;
+            }
+            assignment.insert(member.var, first);
+        }
+        Some(assignment)
+    }
+
+    fn group_bounds_hold(&self, group: &SharedGroup, assignment: &HashMap<TypeVar, Type>) -> bool {
+        group.members.iter().all(|member| {
+            let implementor = &assignment[&member.var];
+            self.unifier
+                .bounds(member.var)
+                .iter()
+                .all(|bound| self.bound_holds(bound, implementor, assignment))
+        })
+    }
+
     fn pass_group(
         &mut self,
-        var: TypeVar,
-        positions: &[usize],
+        group: &SharedGroup,
         borrowed_by_rust: bool,
         arguments: &mut [TypedArgument],
     ) -> Result<(), Diagnostic> {
+        let positions: Vec<usize> = group.positions().collect();
         let resolved: Vec<Type> = positions
             .iter()
             .map(|position| self.unifier.resolve(&arguments[*position].value.ty))
@@ -77,14 +226,21 @@ impl TypeChecker {
             .iter()
             .any(|argument| self.referent_unknown(argument))
         {
-            return self.pass_each(var, positions, arguments);
+            return self.pass_each(group, arguments);
         }
-        let referent = self.unify_referents(positions, &resolved, arguments)?;
+        let referent = self.unify_referents(&positions, &resolved, arguments)?;
         let depths: Vec<usize> = resolved.iter().map(Self::reference_depth).collect();
-        let target = self.target_depth(var, &referent, &depths, borrowed_by_rust);
+        let target = self.target_depth(group, &referent, &depths, borrowed_by_rust);
         let span = arguments[positions[0]].value.span;
         let chosen = Self::with_references(referent, target);
-        self.expect(&Type::Var(var), &chosen, span, MismatchContext::Plain)?;
+        for member in &group.members {
+            self.expect(
+                &Type::Var(member.var),
+                &chosen,
+                span,
+                MismatchContext::Plain,
+            )?;
+        }
         for (position, depth) in positions.iter().zip(depths) {
             arguments[*position].borrow = Self::borrow_for_depth(depth, target);
         }
@@ -93,13 +249,24 @@ impl TypeChecker {
 
     fn pass_each(
         &mut self,
-        var: TypeVar,
-        positions: &[usize],
+        group: &SharedGroup,
         arguments: &mut [TypedArgument],
     ) -> Result<(), Diagnostic> {
-        for position in positions {
-            let borrow = self.pass_argument(&Type::Var(var), &arguments[*position].value)?;
-            arguments[*position].borrow = borrow;
+        let root = group.root;
+        let span = arguments[group.positions().next().expect("a group has a position")]
+            .value
+            .span;
+        for member in &group.members {
+            self.expect(
+                &Type::Var(root),
+                &Type::Var(member.var),
+                span,
+                MismatchContext::Plain,
+            )?;
+        }
+        for position in group.positions() {
+            let borrow = self.pass_argument(&Type::Var(root), &arguments[position].value)?;
+            arguments[position].borrow = borrow;
         }
         Ok(())
     }
@@ -121,12 +288,12 @@ impl TypeChecker {
 
     fn target_depth(
         &self,
-        var: TypeVar,
+        group: &SharedGroup,
         referent: &Type,
         depths: &[usize],
         borrowed_by_rust: bool,
     ) -> usize {
-        if self.copies_out(var, referent) {
+        if self.copies_out(group, referent) {
             0
         } else if depths.windows(2).all(|pair| pair[0] == pair[1]) {
             depths[0]
@@ -137,11 +304,38 @@ impl TypeChecker {
         }
     }
 
-    fn copies_out(&self, var: TypeVar, referent: &Type) -> bool {
+    fn copies_out(&self, group: &SharedGroup, referent: &Type) -> bool {
         match referent {
             Type::Var(literal) => self.unifier.literal_kind(*literal).is_some(),
-            _ => self.copy_rules().is_copy(referent) && !self.fails_bounds(var, referent),
+            _ => self.copy_rules().is_copy(referent) && !self.group_fails_bounds(group, referent),
         }
+    }
+
+    fn group_fails_bounds(&self, group: &SharedGroup, referent: &Type) -> bool {
+        let assignment: HashMap<TypeVar, Type> = group
+            .members
+            .iter()
+            .map(|member| (member.var, referent.clone()))
+            .collect();
+        group.members.iter().any(|member| {
+            self.unifier
+                .bounds(member.var)
+                .iter()
+                .any(|bound| !self.bound_holds(bound, referent, &assignment))
+        })
+    }
+
+    fn bound_holds(
+        &self,
+        bound: &Bound,
+        implementor: &Type,
+        assignment: &HashMap<TypeVar, Type>,
+    ) -> bool {
+        let bound = bound.substituted_vars(assignment);
+        self.traits
+            .satisfies(&bound, implementor, &|generic, required| {
+                self.unifier.generic_bounds(generic).contains(required)
+            })
     }
 
     fn with_references(referent: Type, depth: usize) -> Type {
