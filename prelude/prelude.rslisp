@@ -4,7 +4,8 @@
 (use prelude/types vec option result iterator slice)
 (use prelude/vec vec push len iter values collect
                get pop! sort! sort-by-key! windows at dedup!)
-(use prelude/iterator range map filter fold for-each)
+(use prelude/iterator range map filter fold for-each
+                      sum count max min max-by-key any all find take take-while)
 (use prelude/option some none some? none? unwrap-or)
 (use prelude/result ok err ok? err?)
 (use prelude/number number signed float integer partial-eq partial-ord
@@ -32,5 +33,6 @@
         vec option result iterator slice push len iter values collect
         get pop! sort! sort-by-key! windows at dedup!
         range map filter fold for-each
+        sum count max min max-by-key any all find take take-while
         some none some? none? unwrap-or
         ok err ok? err?)
