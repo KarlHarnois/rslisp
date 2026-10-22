@@ -9,4 +9,5 @@ error[L0404]: `employee` does not implement `record-eq`
 7 |   (println (same-record? first-hire second-hire)))
   |                          ^^^^^^^^^^ this needs `record-eq`
   |
-  = note: `record-eq` is implemented for:
+  = note: `record-eq` is implemented for: 
+  = note: `employee` cannot derive `record-eq`: field `name` is `string`

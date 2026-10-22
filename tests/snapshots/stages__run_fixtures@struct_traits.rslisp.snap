@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/struct_traits.rslisp
+---
+Point { x: 0.0, y: 0.0 }
+true
+Person { name: "Ada", age: 36 }
+Person { name: "Bo", age: 7 }

@@ -99,6 +99,19 @@ impl TypeProblems {
         ))
     }
 
+    pub fn blocked_derive_note(
+        struct_name: &str,
+        trait_name: &str,
+        field: &str,
+        field_type: &str,
+    ) -> String {
+        format!("`{struct_name}` cannot derive `{trait_name}`: field `{field}` is `{field_type}`")
+    }
+
+    pub fn print_struct_help() -> &'static str {
+        "print a struct's data form with `prn`"
+    }
+
     pub fn missing_bound(trait_name: &str, generic: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MISSING_TRAIT,

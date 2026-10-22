@@ -950,12 +950,37 @@ impl TypeChecker {
                     .collect()
             })
             .unwrap_or_default();
-        let diagnostic = TypeProblems::missing_trait(
+        let mut diagnostic = TypeProblems::missing_trait(
             self.bindings.get(bound).name(),
             &display.show(implementor),
             span,
             implementors,
         );
+        if let Type::Named(struct_binding, _) = implementor
+            && let Some(definition) = self.structs.get(*struct_binding)
+        {
+            if let Some((_, field, field_type)) = definition
+                .blocked
+                .iter()
+                .find(|(trait_binding, _, _)| *trait_binding == bound)
+            {
+                let struct_name = self.bindings.get(*struct_binding).name().to_string();
+                let trait_name = self.bindings.get(bound).name().to_string();
+                diagnostic = diagnostic.with_note(TypeProblems::blocked_derive_note(
+                    &struct_name,
+                    &trait_name,
+                    field,
+                    &display.show(field_type),
+                ));
+            }
+            if self
+                .traits
+                .get(bound)
+                .is_some_and(|rust_trait| rust_trait.path.as_ref() == "std::fmt::Display")
+            {
+                diagnostic = diagnostic.with_help(TypeProblems::print_struct_help());
+            }
+        }
         self.diagnostics.push(diagnostic);
     }
 }

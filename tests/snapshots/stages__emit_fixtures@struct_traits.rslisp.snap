@@ -1,0 +1,32 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/struct_traits.rslisp
+---
+#[derive(Clone, Debug, PartialEq)]
+struct Point {
+    x: f64,
+    y: f64,
+}
+
+fn make_point(x: f64, y: f64) -> Point {
+    Point { x, y }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Person {
+    name: String,
+    age: u32,
+}
+
+fn make_person(name: String, age: u32) -> Person {
+    Person { name, age }
+}
+
+fn main() {
+    let origin = make_point(0.0, 0.0);
+    println!("{:?}", origin);
+    println!("{}", origin == make_point(0.0, 0.0));
+    println!("{:?}", make_person("Ada".to_string(), 36));
+    println!("{}", format!("{:?}", make_person("Bo".to_string(), 7)))
+}
