@@ -343,8 +343,8 @@ impl<'a> ExpressionEmitter<'a> {
         if let Some(template) = self.called_template(callee) {
             return self.template_call(&template, arguments, span);
         }
-        if Self::has_mutable_borrow(arguments) && Self::has_other_arguments(arguments) {
-            return self.call_with_temporaries(callee, arguments);
+        if let Some(last) = Self::last_conflicting_argument(arguments) {
+            return self.call_with_temporaries(callee, arguments, last);
         }
         let arguments = arguments
             .iter()
@@ -366,12 +366,18 @@ impl<'a> ExpressionEmitter<'a> {
         Code::joined(parts, Precedence::Atom)
     }
 
-    fn call_with_temporaries(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) -> Code {
+    fn call_with_temporaries(
+        &mut self,
+        callee: &TypedExpr,
+        arguments: &[TypedArgument],
+        last: usize,
+    ) -> Code {
         self.locals.enter();
         let mut statements = Vec::new();
         let mut codes = Vec::new();
         for (position, argument) in arguments.iter().enumerate() {
-            if argument.borrow == Borrow::Mutable {
+            let moves = argument.borrow != Borrow::Mutable && position <= last;
+            if !moves {
                 codes.push(self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary));
                 continue;
             }
@@ -398,16 +404,18 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn has_mutable_borrow(arguments: &[TypedArgument]) -> bool {
-        arguments
+    fn last_conflicting_argument(arguments: &[TypedArgument]) -> Option<usize> {
+        let borrowed: Vec<BindingId> = arguments
             .iter()
-            .any(|argument| argument.borrow == Borrow::Mutable)
-    }
-
-    fn has_other_arguments(arguments: &[TypedArgument]) -> bool {
-        arguments
-            .iter()
-            .any(|argument| argument.borrow != Borrow::Mutable)
+            .filter(|argument| argument.borrow == Borrow::Mutable)
+            .filter_map(|argument| argument.value.place_root())
+            .collect();
+        arguments.iter().rposition(|argument| {
+            argument.borrow != Borrow::Mutable
+                && borrowed
+                    .iter()
+                    .any(|binding| argument.value.mentions_local(*binding))
+        })
     }
 
     fn called_template(&self, callee: &TypedExpr) -> Option<Rc<RustTemplate>> {

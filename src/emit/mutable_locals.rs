@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::core::BindingId;
-use crate::types::{Borrow, TypedArgument, TypedExpr, TypedExprKind, TypedLeaf, TypedStructExpr};
+use crate::types::{Borrow, TypedArgument, TypedExpr, TypedExprKind};
 
 #[derive(Default)]
 pub struct MutableLocals {
@@ -29,14 +29,6 @@ impl MutableLocals {
         if argument.borrow != Borrow::Mutable {
             return None;
         }
-        Self::place_local(&argument.value)
-    }
-
-    fn place_local(value: &TypedExpr) -> Option<BindingId> {
-        match &value.kind {
-            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => Some(*binding),
-            TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => Self::place_local(owner),
-            _ => None,
-        }
+        argument.value.place_root()
     }
 }
