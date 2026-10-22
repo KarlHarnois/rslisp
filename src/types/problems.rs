@@ -303,6 +303,17 @@ impl TypeProblems {
         .with_help("store an owned value, such as `string`, instead of a borrow")
     }
 
+    pub fn trait_claim_on_struct(struct_name: &str, trait_name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::TRAIT_CLAIM_ON_STRUCT,
+            format!("`{struct_name}` does not derive `{trait_name}`"),
+            Label::new(span, format!("this struct does not derive `{trait_name}`")),
+        )
+        .with_help(format!(
+            "remove `{struct_name}` from this `rust-trait`, or list a type that Rust implements `{trait_name}` for"
+        ))
+    }
+
     pub fn misplaced_where(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MISPLACED_WHERE,

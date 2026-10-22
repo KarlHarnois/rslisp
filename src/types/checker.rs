@@ -13,7 +13,7 @@ use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
     BindingArena, BindingId, BodyItem, CoreModule, Expr, ExprKind, ItemKind, Leaf, ModuleId,
-    ParsedTemplate, PrimitiveType, StructDerives, StructExpr, TypeBinder, TypeExpr,
+    ParsedTemplate, PrimitiveType, StructDerives, StructExpr, TypeBinder, TypeExpr, TypeExprKind,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
@@ -108,6 +108,33 @@ impl TypeChecker {
             }
         }
         self.register_derived_traits(modules);
+        self.check_trait_claims(modules);
+    }
+
+    fn check_trait_claims(&mut self, modules: &[CoreModule]) {
+        for item in modules.iter().flat_map(|module| &module.items) {
+            let ItemKind::RustTrait(trait_binding, path, implementors) = &item.kind else {
+                continue;
+            };
+            if StructDerives::TRAITS.contains(&path.as_ref()) {
+                continue;
+            }
+            for implementor in implementors {
+                let TypeExprKind::Named(binding, _) = implementor.kind() else {
+                    continue;
+                };
+                if self.structs.get(*binding).is_none() {
+                    continue;
+                }
+                let struct_name = self.bindings.get(*binding).name().to_string();
+                let trait_name = self.bindings.get(*trait_binding).name().to_string();
+                self.diagnostics.push(TypeProblems::trait_claim_on_struct(
+                    &struct_name,
+                    &trait_name,
+                    implementor.span(),
+                ));
+            }
+        }
     }
 
     fn record_field_accessor(&mut self, binding: BindingId, value: &Expr) {
