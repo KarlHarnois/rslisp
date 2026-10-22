@@ -34,7 +34,7 @@
   names)
 
 (defn print-top-scorer (people dept)
-  (let best (max-by-key (filter (iter people) (fn (person) (in-dept? (deref person) dept)))
+  (let best (max-by-key (filter (iter people) (fn (person) (in-dept? person dept)))
                         (fn (person) (employee-score person))))
   (println (str dept " top scorer: " (employee-name (expect best "every department has a member")))))
 

@@ -463,9 +463,11 @@ impl TypeChecker {
         span: Span,
     ) -> Result<Borrow, Diagnostic> {
         match (parameter, argument) {
-            (expected, Type::Ref(inner)) if Self::is_known_value(expected) => {
-                self.expect(expected, inner, span, MismatchContext::Plain)?;
-                Ok(self.borrow_of_referent(inner))
+            (expected, Type::Ref(_)) if Self::is_known_value(expected) => {
+                let levels = Self::reference_depth(argument);
+                let referent = Self::innermost_referent(argument).clone();
+                self.expect(expected, &referent, span, MismatchContext::Plain)?;
+                Ok(self.borrow_of_referent(&referent, levels))
             }
             (Type::Ref(_), Type::Ref(_)) if self.collapses(parameter, argument) => {
                 let parameter = self.unifier.resolve(parameter);
@@ -534,9 +536,9 @@ impl TypeChecker {
         }
     }
 
-    fn borrow_of_referent(&self, referent: &Type) -> Borrow {
+    fn borrow_of_referent(&self, referent: &Type, levels: usize) -> Borrow {
         if self.copy_rules().is_copy(&self.unifier.resolve(referent)) {
-            Borrow::Deref(1)
+            Borrow::Deref(levels)
         } else {
             Borrow::Passthrough
         }
