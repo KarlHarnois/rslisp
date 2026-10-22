@@ -80,6 +80,8 @@ Values and types are therefore order-independent, like Rust items. A macro must 
 
 A body is the sequence of forms in `fn`, `macro` and `do`. A `let` binds its name for the rest of the enclosing body. The value of a body is the value of its last form, or unit if the body is empty or ends with a `let`.
 
+A function that calls itself in tail position compiles to a Rust loop. The call reassigns the parameters that change, then starts the next iteration. A call to itself anywhere else stays recursive.
+
 ## Types
 
 Type syntax mirrors value syntax:
@@ -374,7 +376,7 @@ Python, Clojure and Kotlin give records equality and printing by default. An ord
 
 ### 8.4 Loops
 
-A call to the enclosing function in tail position compiles to a Rust `loop`.
+A call to the enclosing function in tail position already compiles to a Rust `loop`, as the Bodies section says.
 
 - A written `(recur argument...)` compiles to the same loop.
 - `recur` is an error outside tail position.
