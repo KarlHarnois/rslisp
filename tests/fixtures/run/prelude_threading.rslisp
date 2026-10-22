@@ -1,0 +1,5 @@
+(defn double (n) (* n 2))
+
+(defn main ()
+  (println (-> 3 double (+ 1) (* 10)))
+  (println (->> 3 double (- 100))))
