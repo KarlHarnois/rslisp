@@ -743,10 +743,18 @@ impl TypeChecker {
         let mut bounds = Vec::new();
         for bound in self.unifier.bounds(var) {
             let bound = match &bound.argument {
-                Some(argument) if self.unifier.shallow(argument) == Type::Var(var) => {
-                    Bound::plain(bound.binding)
+                Some(argument) => {
+                    let argument = self.unifier.resolve(argument);
+                    if argument == Type::Var(var) {
+                        Bound::plain(bound.binding)
+                    } else {
+                        Bound {
+                            binding: bound.binding,
+                            argument: Some(argument),
+                        }
+                    }
                 }
-                _ => bound.clone(),
+                None => bound.clone(),
             };
             if !bounds.contains(&bound) {
                 bounds.push(bound);

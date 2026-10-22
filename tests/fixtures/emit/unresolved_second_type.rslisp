@@ -1,0 +1,5 @@
+(def compare (rust "{0} == {1}" (where ((a (partial-eq b)) b) (fn ((ref a) (ref b)) bool))))
+
+(defn compare-with-name (x) (compare x (to-string "Ana")))
+
+(defn main () (println (compare-with-name (to-string "Bo"))))
