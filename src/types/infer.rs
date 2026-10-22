@@ -13,9 +13,10 @@ use super::typed::{
     TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
 };
 use super::unifier::{LiteralKind, UnifyError};
+use super::wrapper::FunctionValueWrapper;
 use crate::core::{
-    Binder, BindingId, BindingInfo, BindingKind, Block, BodyItem, Control, Expr, ExprKind,
-    FieldLabel, Lambda, Leaf, Literal, PrimitiveType, ReferenceKind, RustTemplate, StructExpr,
+    Binder, BindingId, BindingKind, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, Lambda,
+    Leaf, Literal, PrimitiveType, ReferenceKind, RustTemplate, StructExpr,
 };
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
@@ -323,7 +324,11 @@ impl TypeChecker {
         let parameter_types = params.iter().map(|param| param.ty.clone()).collect();
         let function = Type::Function(parameter_types, Box::new(result));
         Ok((
-            TypedExprKind::Fn(Rc::new(TypedLambda { params, body })),
+            TypedExprKind::Fn(Rc::new(TypedLambda {
+                params,
+                body,
+                wraps: None,
+            })),
             function,
         ))
     }
@@ -496,9 +501,10 @@ impl TypeChecker {
         parameter: &Type,
         value: TypedExpr,
     ) -> Result<TypedExpr, Diagnostic> {
-        let TypedExprKind::Leaf(TypedLeaf::Global(_)) = value.kind else {
+        let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = &value.kind else {
             return Ok(value);
         };
+        let binding = *binding;
         let (Type::Function(expected, expected_result), Type::Function(found, found_result)) = (
             self.unifier.resolve(parameter),
             self.unifier.resolve(&value.ty),
@@ -508,55 +514,21 @@ impl TypeChecker {
         if expected.len() != found.len() || !Self::needs_wrapper(&expected, &found) {
             return Ok(value);
         }
-        let span = value.span;
-        let mut params = Vec::new();
-        let mut arguments = Vec::new();
-        for (expected_param, found_param) in expected.iter().zip(&found) {
-            let binding = self.bindings.add(BindingInfo::new(
-                "argument".into(),
-                BindingKind::Local,
-                None,
-            ));
-            self.locals.insert(binding, expected_param.clone());
-            let local = TypedExpr {
-                kind: TypedExprKind::Leaf(TypedLeaf::Local(binding)),
-                ty: expected_param.clone(),
-                span,
-            };
-            let borrow = self.pass_argument(found_param, &local)?;
-            params.push(TypedBinder {
-                binding,
-                ty: expected_param.clone(),
-                span,
-                annotated: false,
-            });
-            arguments.push(TypedArgument {
-                value: local,
-                borrow,
-            });
+        let mut wrapped =
+            FunctionValueWrapper::new(&mut self.bindings).prepare(&expected, value, Some(binding));
+        for (found_param, argument) in found.iter().zip(&mut wrapped.arguments) {
+            argument.borrow = self.pass_argument(found_param, &argument.value)?;
+        }
+        for param in &wrapped.params {
+            self.locals.insert(param.binding, param.ty.clone());
         }
         self.expect(
             expected_result.as_ref(),
             found_result.as_ref(),
-            span,
+            wrapped.span(),
             MismatchContext::Plain,
         )?;
-        let call = TypedExpr {
-            kind: TypedExprKind::Call(Box::new(value), arguments),
-            ty: found_result.as_ref().clone(),
-            span,
-        };
-        let lambda = TypedLambda {
-            params,
-            body: TypedBlock {
-                items: vec![TypedBodyItem::Expr(call)],
-            },
-        };
-        Ok(TypedExpr {
-            kind: TypedExprKind::Fn(Rc::new(lambda)),
-            ty: Type::Function(expected, expected_result),
-            span,
-        })
+        Ok(wrapped.finish(&expected_result, &found_result))
     }
 
     fn needs_wrapper(expected: &[Type], found: &[Type]) -> bool {

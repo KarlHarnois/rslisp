@@ -111,6 +111,7 @@ pub struct TypedBinder {
 pub struct TypedLambda {
     pub params: Vec<TypedBinder>,
     pub body: TypedBlock,
+    pub wraps: Option<BindingId>,
 }
 
 #[derive(Clone, Debug, Default)]
