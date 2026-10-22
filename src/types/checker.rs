@@ -396,12 +396,14 @@ impl TypeChecker {
             .iter()
             .map(|(binding, value)| (*binding, value))
             .collect();
-        let signature_count = signatures
-            .values()
-            .map(|signature| signature.params.len())
-            .max()
-            .unwrap_or_default();
-        self.generalize_component(&generics, signature_count);
+        if !generics.is_empty() {
+            let signature_count = signatures
+                .values()
+                .map(|signature| signature.params.len())
+                .max()
+                .unwrap_or_default();
+            self.generalize_component(&generics, signature_count);
+        }
         let mut results = Vec::new();
         for (binding, value) in typed {
             let scheme = self.finish_scheme(binding, &value, signatures.get(&binding));
@@ -523,10 +525,10 @@ impl TypeChecker {
 
     fn generalize_component(&mut self, members: &[(BindingId, &TypedExpr)], start: usize) {
         let vars = self.component_vars(members);
-        let span = members.first().map_or_else(
-            || Span::new(crate::source::SourceId::new(0), 0..0),
-            |(_, value)| value.span,
-        );
+        let span = members
+            .first()
+            .map(|(_, value)| value.span)
+            .expect("a recursive group has at least one member");
         self.generalize_vars(vars, start, span);
         self.discharge_obligations(ObligationPass::Deferring);
     }
