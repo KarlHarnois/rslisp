@@ -91,3 +91,60 @@ impl<'a> CopyRules<'a> {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use super::CopyRules;
+    use crate::core::{BindingArena, BindingInfo, BindingKind, ModuleId, PrimitiveType};
+    use crate::types::Type;
+    use crate::types::structs::StructTable;
+    use crate::types::traits::{Implementor, RustTrait, TraitTable};
+    use crate::types::ty::Scheme;
+
+    struct CopyTraitFixture {
+        traits: TraitTable,
+        structs: StructTable,
+        generics: HashMap<crate::types::GenericId, crate::types::GenericParam>,
+        bound: crate::core::BindingId,
+    }
+
+    impl CopyTraitFixture {
+        fn new() -> Self {
+            let mut bindings = BindingArena::default();
+            let bound = bindings.add(BindingInfo::new(
+                "copy".into(),
+                BindingKind::Trait(ModuleId::new(0)),
+                None,
+            ));
+            let mut traits = TraitTable::default();
+            traits.add(
+                bound,
+                RustTrait {
+                    path: "Copy".into(),
+                    implementors: vec![Implementor {
+                        scheme: Scheme::monomorphic(Type::Primitive(PrimitiveType::I64)),
+                        argument: None,
+                    }],
+                },
+            );
+            Self {
+                traits,
+                structs: StructTable::default(),
+                generics: HashMap::new(),
+                bound,
+            }
+        }
+
+        fn rules(&self) -> CopyRules<'_> {
+            CopyRules::new(&self.traits, &self.generics, &self.structs)
+        }
+    }
+
+    #[test]
+    fn a_trait_whose_implementors_are_copy_allows_only_copy_values() {
+        let fixture = CopyTraitFixture::new();
+        assert!(fixture.rules().bound_allows_only_copy_values(fixture.bound));
+    }
+}

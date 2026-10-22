@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use super::display::TypeDisplay;
@@ -23,6 +23,13 @@ pub struct TypedExpr {
 impl TypedExpr {
     pub fn is_place(&self) -> bool {
         self.place_root().is_some()
+    }
+
+    pub fn is_written_form(&self) -> bool {
+        matches!(
+            self.kind,
+            TypedExprKind::Borrow(..) | TypedExprKind::Deref(_)
+        )
     }
 
     pub fn place_root(&self) -> Option<BindingId> {
@@ -118,6 +125,14 @@ pub enum TypedBodyItem {
 }
 
 #[derive(Clone, Debug)]
+pub struct PendingModeCheck {
+    pub callee: BindingId,
+    pub position: usize,
+    pub kind: ReferenceKind,
+    pub span: Span,
+}
+
+#[derive(Clone, Debug)]
 pub struct TypedDefinition {
     pub binding: BindingId,
     pub scheme: Scheme,
@@ -143,6 +158,8 @@ pub struct TypedProgram {
     pub generics: HashMap<GenericId, GenericParam>,
     pub implied_bounds: HashMap<GenericId, Vec<Bound>>,
     pub template_borrows: TemplateBorrows,
+    pub pending_mode_checks: Vec<PendingModeCheck>,
+    pub borrowed_parameters: HashSet<BindingId>,
     pub warnings: Diagnostics,
 }
 

@@ -2,18 +2,19 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use super::functions::{FunctionTable, ParamMode};
-use crate::core::BindingId;
+use crate::core::{BindingId, ReferenceKind};
 use crate::types::{
     Borrow, Type, TypedArgument, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram,
 };
 
-pub struct ModeRewrite {
+pub struct ModeRewrite<'a> {
     param_types: HashMap<BindingId, Type>,
     function_params: HashMap<BindingId, Vec<Type>>,
+    modes: &'a HashMap<BindingId, ParamMode>,
 }
 
-impl ModeRewrite {
-    pub fn new(functions: &FunctionTable, modes: &HashMap<BindingId, ParamMode>) -> Self {
+impl<'a> ModeRewrite<'a> {
+    pub fn new(functions: &FunctionTable, modes: &'a HashMap<BindingId, ParamMode>) -> Self {
         let mut param_types = HashMap::new();
         let mut function_params = HashMap::new();
         for (function, info) in functions.iter() {
@@ -34,6 +35,7 @@ impl ModeRewrite {
         Self {
             param_types,
             function_params,
+            modes,
         }
     }
 
@@ -85,10 +87,31 @@ impl ModeRewrite {
         for child in expr.children_mut() {
             self.expr(child, child_current);
         }
+        self.rewrite_written(expr);
         match &mut expr.kind {
             TypedExprKind::Call(callee, arguments) => self.borrow_arguments(callee, arguments),
             TypedExprKind::Recur(arguments) => self.borrow_recur(arguments, current),
             _ => {}
+        }
+    }
+
+    fn rewrite_written(&self, expr: &mut TypedExpr) {
+        let rewritten = match &expr.kind {
+            TypedExprKind::Borrow(kind, value) => {
+                let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &value.kind else {
+                    return;
+                };
+                let matching = matches!(
+                    (kind, self.modes.get(binding), &value.ty),
+                    (ReferenceKind::Shared, Some(ParamMode::Ref), Type::Ref(_))
+                        | (ReferenceKind::Mutable, Some(ParamMode::Mut), Type::Mut(_))
+                );
+                matching.then(|| value.ty.clone())
+            }
+            _ => None,
+        };
+        if let Some(ty) = rewritten {
+            expr.ty = ty;
         }
     }
 

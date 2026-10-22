@@ -12,7 +12,7 @@ use super::structs::{StructDefinition, StructTable};
 use super::templates::TemplateBorrows;
 use super::traits::{Implementor, RustTrait, TraitTable};
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type, TypeVar};
-use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
+use super::typed::{PendingModeCheck, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
     BindingArena, BindingId, BodyItem, CopyTrait, CoreModule, Expr, ExprKind, Item, ItemKind, Leaf,
@@ -60,6 +60,8 @@ pub struct TypeChecker {
     pub(super) inferred_copies: InferredCopies,
     macro_origins: HashMap<Span, Rc<str>>,
     copy_trait: Option<BindingId>,
+    pub(super) written_parameters: HashMap<BindingId, Vec<bool>>,
+    pub(super) pending_mode_checks: Vec<PendingModeCheck>,
 }
 
 struct Definition<'p> {
@@ -101,6 +103,8 @@ impl TypeChecker {
             inferred_copies: InferredCopies::default(),
             macro_origins: HashMap::new(),
             copy_trait: None,
+            written_parameters: HashMap::new(),
+            pending_mode_checks: Vec::new(),
         }
     }
 
@@ -115,6 +119,40 @@ impl TypeChecker {
         self.register_derived_traits(modules);
         self.check_trait_claims(modules);
         self.copy_trait = self.traits.with_paths(&[CopyTrait::PATH]).first().copied();
+        self.record_written_parameters(modules);
+    }
+
+    fn record_written_parameters(&mut self, modules: &[CoreModule]) {
+        for item in modules.iter().flat_map(|module| &module.items) {
+            let ItemKind::Def(binding, value) = &item.kind else {
+                continue;
+            };
+            let ExprKind::Fn(lambda) = value.kind() else {
+                continue;
+            };
+            let signature = self.signatures.get(binding).map(|(signature, _)| signature);
+            let written = lambda
+                .params
+                .iter()
+                .enumerate()
+                .map(|(position, param)| {
+                    param.annotation.is_some()
+                        || signature.is_some_and(|signature| {
+                            Self::signature_parameter_is_written(signature, position)
+                        })
+                })
+                .collect();
+            self.written_parameters.insert(*binding, written);
+        }
+    }
+
+    fn signature_parameter_is_written(signature: &TypeExpr, position: usize) -> bool {
+        match signature.kind() {
+            TypeExprKind::Function(parameters, _) => parameters
+                .get(position)
+                .is_none_or(|parameter| !matches!(parameter.kind(), TypeExprKind::Hole)),
+            _ => true,
+        }
     }
 
     fn collect_item(&mut self, item: &Item) -> Result<(), Diagnostic> {
@@ -1293,6 +1331,8 @@ impl TypeChecker {
             generics: self.generics,
             implied_bounds: self.implied_bounds,
             template_borrows: self.template_borrows,
+            pending_mode_checks: self.pending_mode_checks,
+            borrowed_parameters: HashSet::new(),
             warnings: Diagnostics::default(),
         };
         self.diagnostics.into_result(program)

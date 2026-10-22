@@ -233,12 +233,30 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn borrow(&mut self, kind: ReferenceKind, value: &TypedExpr) -> Code {
+        if Self::passes_through_reference(self.program, kind, value) {
+            return self.expr_in(value, TypeContext::Known);
+        }
         let place = self.place(value, TypeContext::Unknown);
         let prefix = match kind {
             ReferenceKind::Shared => "&",
             ReferenceKind::Mutable => "&mut ",
         };
         Self::prefixed(prefix, place)
+    }
+
+    fn passes_through_reference(
+        program: &TypedProgram,
+        kind: ReferenceKind,
+        value: &TypedExpr,
+    ) -> bool {
+        let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &value.kind else {
+            return false;
+        };
+        program.borrowed_parameters.contains(binding)
+            && matches!(
+                (kind, &value.ty),
+                (ReferenceKind::Shared, Type::Ref(_)) | (ReferenceKind::Mutable, Type::Mut(_))
+            )
     }
 
     fn deref(&mut self, value: &TypedExpr) -> Code {
@@ -600,9 +618,18 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn is_mut_place(parsed: &Template, position: usize, argument: &TypedArgument) -> bool {
         parsed.dereferences(position)
-            && argument.borrow == Borrow::Mutable
-            && !argument.value.ty.is_reference()
-            && argument.value.place_root().is_some()
+            && (Self::written_mut_place(&argument.value)
+                || (argument.borrow == Borrow::Mutable
+                    && !argument.value.ty.is_reference()
+                    && argument.value.place_root().is_some()))
+    }
+
+    fn written_mut_place(value: &TypedExpr) -> bool {
+        matches!(
+            &value.kind,
+            TypedExprKind::Borrow(ReferenceKind::Mutable, place)
+                if place.is_place() && !place.ty.is_reference()
+        )
     }
 
     fn argument(
@@ -634,6 +661,9 @@ impl<'a> ExpressionEmitter<'a> {
             (_, ArgumentRole::Ordinary) => self.expr_in(value, context),
             (TypedExprKind::Struct(TypedStructExpr::Field(owner, label)), _) => {
                 self.field_place(owner, label)
+            }
+            (TypedExprKind::Borrow(ReferenceKind::Mutable, place), ArgumentRole::MutPlace) => {
+                self.place(place, TypeContext::Known)
             }
             (TypedExprKind::Leaf(TypedLeaf::Global(binding)), ArgumentRole::Receiver)
                 if self.is_static(*binding) =>

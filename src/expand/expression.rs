@@ -9,8 +9,7 @@ use super::shape::Shape;
 use crate::core::{
     Binder, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind, ExpressionForm,
     FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, Namespace, ParsedTemplate,
-    ReferenceKind,
-    RustTemplate, StructExpr, StructForm,
+    ReferenceKind, RustTemplate, StructExpr, StructForm,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};

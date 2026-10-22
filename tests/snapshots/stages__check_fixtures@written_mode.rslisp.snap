@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/written_mode.rslisp
+---
+error[L0506]: `x` is taken as a copy, so this borrow cannot pass
+ --> check/written_mode.rslisp:5:12
+  |
+5 |   (add-one (ref n)))
+  |            ^^^^^^^ this passes a borrow
+  |
+  = note: the callee's body decides whether the parameter takes a borrow
+  = help: pass the value without `ref`, or write the parameter's type
