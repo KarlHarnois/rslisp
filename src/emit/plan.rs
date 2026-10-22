@@ -6,7 +6,9 @@ use super::template::Template;
 use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
-use crate::types::{Type, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
+use crate::types::{
+    GenericParam, Type, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ItemKind {
@@ -185,7 +187,29 @@ impl<'p> EmitPlan<'p> {
         }
         self.reached.push(binding);
         self.visit_type(&definition.scheme.body, module);
+        self.visit_params(&definition.scheme.params, module);
         self.visit_expr(&definition.value, module);
+    }
+
+    fn visit_params(&mut self, params: &[GenericParam], module: ModuleId) {
+        for param in params {
+            let mut arguments: Vec<Type> = param
+                .bounds
+                .iter()
+                .filter_map(|bound| bound.argument.clone())
+                .collect();
+            arguments.extend(
+                self.program
+                    .implied_bounds
+                    .get(&param.id)
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|bound| bound.argument.clone()),
+            );
+            for argument in &arguments {
+                self.visit_type(argument, module);
+            }
+        }
     }
 
     fn visit_expr(&mut self, expr: &TypedExpr, module: ModuleId) {

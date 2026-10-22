@@ -1,0 +1,8 @@
+(use bound_second_type/person person)
+
+(rust-trait same "std::ops::Add" i64 (with i64 person))
+
+(type matches (where ((a (same person))) (fn (a) bool)))
+(defn matches (x) true)
+
+(defn main () (println (matches 1)))
