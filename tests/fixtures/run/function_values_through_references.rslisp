@@ -1,0 +1,7 @@
+(defstruct person (name string) (age u32))
+
+(defn adult? (p) (>= (person-age p) 18))
+
+(defn main ()
+  (let people (vec (make-person (to-string "Ana") 30) (make-person (to-string "Ben") 12)))
+  (println (count (filter (iter people) adult?))))

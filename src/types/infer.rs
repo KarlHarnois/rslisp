@@ -12,8 +12,8 @@ use super::typed::{
 };
 use super::unifier::{LiteralKind, UnifyError};
 use crate::core::{
-    Binder, BindingId, BindingKind, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, Lambda,
-    Leaf, Literal, PrimitiveType, RustTemplate, StructExpr,
+    Binder, BindingId, BindingInfo, BindingKind, Block, BodyItem, Control, Expr, ExprKind,
+    FieldLabel, Lambda, Leaf, Literal, PrimitiveType, RustTemplate, StructExpr,
 };
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
@@ -342,7 +342,8 @@ impl TypeChecker {
     ) -> Result<TypedExpr, Diagnostic> {
         let span = argument.span();
         let ExprKind::Fn(lambda) = argument.kind() else {
-            return self.infer(argument);
+            let value = self.infer(argument)?;
+            return self.wrap_function_value(parameter, value);
         };
         match self.unifier.shallow(parameter) {
             Type::Function(parameters, result) if parameters.len() == lambda.params.len() => {
@@ -357,6 +358,81 @@ impl TypeChecker {
             }
             _ => self.infer(argument),
         }
+    }
+
+    fn wrap_function_value(
+        &mut self,
+        parameter: &Type,
+        value: TypedExpr,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let TypedExprKind::Leaf(TypedLeaf::Global(_)) = value.kind else {
+            return Ok(value);
+        };
+        let (Type::Function(expected, expected_result), Type::Function(found, found_result)) = (
+            self.unifier.resolve(parameter),
+            self.unifier.resolve(&value.ty),
+        ) else {
+            return Ok(value);
+        };
+        if expected.len() != found.len() || !Self::needs_wrapper(&expected, &found) {
+            return Ok(value);
+        }
+        let span = value.span;
+        let mut params = Vec::new();
+        let mut arguments = Vec::new();
+        for (expected_param, found_param) in expected.iter().zip(&found) {
+            let binding = self.bindings.add(BindingInfo::new(
+                "argument".into(),
+                BindingKind::Local,
+                None,
+            ));
+            self.locals.insert(binding, expected_param.clone());
+            let local = TypedExpr {
+                kind: TypedExprKind::Leaf(TypedLeaf::Local(binding)),
+                ty: expected_param.clone(),
+                span,
+            };
+            let borrow = self.pass_argument(found_param, &local)?;
+            params.push(TypedBinder {
+                binding,
+                ty: expected_param.clone(),
+                span,
+                annotated: false,
+            });
+            arguments.push(TypedArgument {
+                value: local,
+                borrow,
+            });
+        }
+        self.expect(
+            expected_result.as_ref(),
+            found_result.as_ref(),
+            span,
+            MismatchContext::Plain,
+        )?;
+        let call = TypedExpr {
+            kind: TypedExprKind::Call(Box::new(value), arguments),
+            ty: found_result.as_ref().clone(),
+            span,
+        };
+        let lambda = TypedLambda {
+            params,
+            body: TypedBlock {
+                items: vec![TypedBodyItem::Expr(call)],
+            },
+        };
+        Ok(TypedExpr {
+            kind: TypedExprKind::Fn(Rc::new(lambda)),
+            ty: Type::Function(expected, expected_result),
+            span,
+        })
+    }
+
+    fn needs_wrapper(expected: &[Type], found: &[Type]) -> bool {
+        expected
+            .iter()
+            .zip(found)
+            .any(|(expected, found)| expected.is_reference() && !found.is_reference())
     }
 
     fn function_shape(
