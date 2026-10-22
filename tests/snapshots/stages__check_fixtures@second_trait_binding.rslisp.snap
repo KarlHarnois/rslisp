@@ -3,6 +3,14 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/second_trait_binding.rslisp
 ---
+error[L0421]: `point` does not derive `partial-eq`
+ --> check/second_trait_binding.rslisp:2:36
+  |
+2 | (rust-trait partial-eq "PartialEq" point)
+  |                                    ^^^^^ this struct does not derive `partial-eq`
+  |
+  = help: remove `point` from this `rust-trait`, or list a type that Rust implements `partial-eq` for
+
 error[L0404]: `point` does not implement `partial-eq`
  --> check/second_trait_binding.rslisp:4:15
   |
