@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::checker::TypeChecker;
 use super::problems::TypeProblems;
-use super::ty::{GenericId, Scheme, Type};
+use super::ty::{Bound, GenericId, Scheme, Type};
 use crate::core::{BindingId, BindingKind, ReferenceKind, TypeExpr, TypeExprKind};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
@@ -18,7 +18,12 @@ impl TypeChecker {
         let mut params = Vec::new();
         for binder in binders {
             let name = self.bindings.get(binder.variable).name().to_string();
-            let param = self.new_generic(&name, binder.bounds.clone());
+            let bounds = binder
+                .bounds
+                .iter()
+                .map(|bound| Bound::plain(bound.binding))
+                .collect();
+            let param = self.new_generic(&name, bounds);
             scope.insert(binder.variable, param.id);
             params.push(param);
         }

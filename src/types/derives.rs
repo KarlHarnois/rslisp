@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use super::checker::TypeChecker;
 use super::problems::TypeProblems;
-use super::ty::{GenericId, GenericParam, Scheme, Type};
+use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
 use crate::core::{BindingId, CoreModule, ItemKind, StructDerives};
 use crate::modules::ModuleSources;
 use crate::source::Span;
@@ -284,7 +284,9 @@ impl TypeChecker {
         derived: BindingId,
     ) -> Scheme {
         let params: Vec<GenericParam> = (0..arity)
-            .map(|position| self.new_generic(&Self::parameter_name(position), vec![derived]))
+            .map(|position| {
+                self.new_generic(&Self::parameter_name(position), vec![Bound::plain(derived)])
+            })
             .collect();
         let arguments = params.iter().map(|param| Type::Generic(param.id)).collect();
         Scheme {

@@ -1,7 +1,7 @@
 use super::Expander;
 use super::problems::ExpandProblems;
 use crate::core::{
-    BindingId, BindingKind, KernelType, Namespace, ReferenceKind, TypeBinder, TypeExpr,
+    BindingId, BindingKind, KernelType, Namespace, ReferenceKind, TypeBinder, TypeBound, TypeExpr,
     TypeExprKind,
 };
 use crate::diagnostic::Diagnostic;
@@ -150,7 +150,7 @@ impl Expander<'_> {
         let bounds = bounds
             .iter()
             .map(|bound| self.lower_bound(bound))
-            .collect::<Result<Vec<BindingId>, Diagnostic>>()?;
+            .collect::<Result<Vec<TypeBound>, Diagnostic>>()?;
         let variable = self.define_local(name, Namespace::Type, BindingKind::TypeVariable, None)?;
         Ok(TypeBinder {
             variable,
@@ -159,13 +159,16 @@ impl Expander<'_> {
         })
     }
 
-    fn lower_bound(&self, bound: &Form) -> Result<BindingId, Diagnostic> {
+    fn lower_bound(&self, bound: &Form) -> Result<TypeBound, Diagnostic> {
         let symbol = bound.as_symbol().ok_or_else(|| {
             ExpandProblems::wrong_namespace(&bound.to_string(), "a trait", bound.span())
         })?;
         let binding = self.resolve(symbol, Namespace::Type, bound.span())?;
         match self.kind(binding) {
-            BindingKind::Trait(_) => Ok(binding),
+            BindingKind::Trait(_) => Ok(TypeBound {
+                binding,
+                argument: None,
+            }),
             _ => Err(ExpandProblems::wrong_namespace(
                 symbol.name(),
                 "a trait",

@@ -20,8 +20,14 @@ pub enum TypeExprKind {
 #[derive(Clone, Debug)]
 pub struct TypeBinder {
     pub variable: BindingId,
-    pub bounds: Vec<BindingId>,
+    pub bounds: Vec<TypeBound>,
     pub span: Span,
+}
+
+#[derive(Clone, Debug)]
+pub struct TypeBound {
+    pub binding: BindingId,
+    pub argument: Option<TypeExpr>,
 }
 
 impl TypeExpr {

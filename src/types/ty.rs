@@ -133,11 +133,26 @@ impl Type {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct Bound {
+    pub binding: BindingId,
+    pub argument: Option<Type>,
+}
+
+impl Bound {
+    pub fn plain(binding: BindingId) -> Self {
+        Self {
+            binding,
+            argument: None,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct GenericParam {
     pub id: GenericId,
     pub name: Rc<str>,
-    pub bounds: Vec<BindingId>,
+    pub bounds: Vec<Bound>,
 }
 
 #[derive(Clone, Debug)]

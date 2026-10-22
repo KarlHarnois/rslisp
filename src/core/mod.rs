@@ -20,4 +20,4 @@ pub use kernel::{
 pub use module::{CoreModule, Item, ItemKind, ModuleId, ModulePath};
 pub use printer::CorePrinter;
 pub use template::{MalformedPlaceholder, ParsedTemplate, Piece};
-pub use types::{TypeBinder, TypeExpr, TypeExprKind};
+pub use types::{TypeBinder, TypeBound, TypeExpr, TypeExprKind};

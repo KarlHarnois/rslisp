@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use super::ty::{GenericId, Type, TypeVar};
-use crate::core::{BindingId, PrimitiveType};
+use super::ty::{Bound, GenericId, Type, TypeVar};
+use crate::core::PrimitiveType;
 use crate::source::Span;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -38,7 +38,7 @@ pub enum UnifyError {
 }
 
 pub struct Obligation {
-    pub bound: BindingId,
+    pub bound: Bound,
     pub implementor: Type,
     pub span: Span,
 }
@@ -47,14 +47,14 @@ pub struct Obligation {
 struct VarState {
     binding: Option<Type>,
     literal: Option<LiteralKind>,
-    bounds: Vec<BindingId>,
+    bounds: Vec<Bound>,
 }
 
 #[derive(Default)]
 pub struct Unifier {
     vars: Vec<VarState>,
     obligations: Vec<Obligation>,
-    generic_bounds: HashMap<GenericId, Vec<BindingId>>,
+    generic_bounds: HashMap<GenericId, Vec<Bound>>,
 }
 
 impl Unifier {
@@ -66,15 +66,15 @@ impl Unifier {
         self.fresh_with(Some(kind), Vec::new())
     }
 
-    pub fn fresh_bounded(&mut self, bounds: Vec<BindingId>) -> Type {
+    pub fn fresh_bounded(&mut self, bounds: Vec<Bound>) -> Type {
         self.fresh_with(None, bounds)
     }
 
-    pub fn register_generic(&mut self, generic: GenericId, bounds: Vec<BindingId>) {
+    pub fn register_generic(&mut self, generic: GenericId, bounds: Vec<Bound>) {
         self.generic_bounds.insert(generic, bounds);
     }
 
-    pub fn generic_bounds(&self, generic: GenericId) -> &[BindingId] {
+    pub fn generic_bounds(&self, generic: GenericId) -> &[Bound] {
         self.generic_bounds
             .get(&generic)
             .map(Vec::as_slice)
@@ -85,11 +85,11 @@ impl Unifier {
         self.vars[var.index()].literal
     }
 
-    pub fn bounds(&self, var: TypeVar) -> &[BindingId] {
+    pub fn bounds(&self, var: TypeVar) -> &[Bound] {
         &self.vars[var.index()].bounds
     }
 
-    pub fn add_bound(&mut self, var: TypeVar, bound: BindingId) {
+    pub fn add_bound(&mut self, var: TypeVar, bound: Bound) {
         let bounds = &mut self.vars[var.index()].bounds;
         if !bounds.contains(&bound) {
             bounds.push(bound);
@@ -207,7 +207,7 @@ impl Unifier {
         self.unify(left_result, right_result, span)
     }
 
-    fn fresh_with(&mut self, literal: Option<LiteralKind>, bounds: Vec<BindingId>) -> Type {
+    fn fresh_with(&mut self, literal: Option<LiteralKind>, bounds: Vec<Bound>) -> Type {
         let var = TypeVar::new(self.vars.len());
         self.vars.push(VarState {
             binding: None,

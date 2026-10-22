@@ -94,7 +94,7 @@ impl<'s> ImplementorMatch<'s> {
             .filter_map(|param| Some((param, self.bindings.get(&param.id)?)))
             .flat_map(|(param, implementor)| {
                 param.bounds.iter().map(|bound| Requirement {
-                    bound: *bound,
+                    bound: bound.binding,
                     implementor: implementor.clone(),
                 })
             })

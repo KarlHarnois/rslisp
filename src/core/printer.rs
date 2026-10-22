@@ -269,7 +269,7 @@ impl<'a> CorePrinter<'a> {
         let bounds: Vec<String> = binder
             .bounds
             .iter()
-            .map(|bound| self.name(*bound))
+            .map(|bound| self.name(bound.binding))
             .collect();
         format!("({variable} {})", bounds.join(" "))
     }

@@ -29,7 +29,8 @@ impl<'a> CopyRules<'a> {
     fn generic_is_copy(&self, generic: GenericId) -> bool {
         self.generics.get(&generic).is_some_and(|param| {
             param.bounds.iter().any(|bound| {
-                self.copy_traits.contains(bound) || self.bound_allows_only_copy(*bound)
+                self.copy_traits.contains(&bound.binding)
+                    || self.bound_allows_only_copy(bound.binding)
             })
         })
     }

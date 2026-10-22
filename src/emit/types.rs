@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use super::mangle::NameMangler;
 use super::plan::EmitPlan;
 use crate::core::{BindingId, ModuleId, Piece, PrimitiveType};
-use crate::types::{GenericId, GenericParam, RustType, Type, TypedProgram};
+use crate::types::{Bound, GenericId, GenericParam, RustType, Type, TypedProgram};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum TypePosition {
@@ -139,13 +139,13 @@ impl<'a> RustTypes<'a> {
         }
     }
 
-    fn trait_paths(&self, bounds: &[BindingId]) -> Vec<String> {
+    fn trait_paths(&self, bounds: &[Bound]) -> Vec<String> {
         bounds
             .iter()
             .filter_map(|bound| {
                 self.program
                     .traits
-                    .get(*bound)
+                    .get(bound.binding)
                     .map(|rust_trait| rust_trait.path.to_string())
             })
             .collect()
