@@ -142,6 +142,13 @@ fn check_is_silent_on_a_valid_program() {
 }
 
 #[test]
+fn signatures_prints_each_function() {
+    let sandbox = Sandbox::new("signatures").with_file("greeting.rslisp", GREETING);
+    let signatures = sandbox.compiler(&["signatures", "greeting.rslisp"]);
+    insta::assert_snapshot!(signatures.assert_exit_code(0).stdout());
+}
+
+#[test]
 fn check_reports_errors_without_terminal_styling() {
     let sandbox = Sandbox::new("check_errors").with_file("unbound.rslisp", UNBOUND_NAME);
     let check = sandbox.compiler(&["check", "unbound.rslisp"]);

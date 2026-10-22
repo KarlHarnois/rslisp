@@ -11,7 +11,7 @@ use rslisp::modules::ModuleSources;
 use rslisp::ownership::OwnershipChecker;
 use rslisp::reader::Reader;
 use rslisp::source::{SourceId, SourceMap, Span};
-use rslisp::types::{TypeChecker, TypeDisplay, TypedProgram};
+use rslisp::types::{TypeChecker, TypedProgram};
 
 pub struct Fixture {
     sources: SourceMap,
@@ -49,11 +49,11 @@ impl Fixture {
 
     pub fn check_report(mut self) -> String {
         match self.checked() {
-            Ok(program) if program.warnings.is_empty() => Self::signatures(&program),
+            Ok(program) if program.warnings.is_empty() => program.entry_signatures(),
             Ok(program) => format!(
                 "{}\n\n{}",
                 self.render(&program.warnings),
-                Self::signatures(&program)
+                program.entry_signatures()
             ),
             Err(diagnostics) => self.render(&diagnostics),
         }
@@ -117,19 +117,6 @@ impl Fixture {
         let module_sources = ModuleSources::new(self.directory(), self.display_directory());
         let module_path = ModulePath::new(self.module_name());
         Expander::new(&mut self.sources, module_sources).expand(module_path, self.entry)
-    }
-
-    fn signatures(program: &TypedProgram) -> String {
-        let display = TypeDisplay::new(&program.bindings, &program.generics);
-        program
-            .entry_module()
-            .definitions
-            .iter()
-            .map(|definition| {
-                let name = program.bindings.get(definition.binding).name();
-                format!("(type {name} {})\n", display.scheme(&definition.scheme))
-            })
-            .collect()
     }
 
     fn render(&self, diagnostics: &Diagnostics) -> String {
