@@ -1,0 +1,24 @@
+(use prelude/macros defrule)
+
+(defrule swapped ((left right) (add right left)))
+(defrule mixed ((left right) (add left right)) ((first second) (sub first second)))
+(defrule partial ((left right) (add left)))
+(defrule unary ((value) (neg value)))
+(defrule conditional ((left right) (if left right right)))
+(defrule nested (((left right) third) (add third third)))
+(defmacro quoted-thing (form) (quote (a b c)))
+(def broken (macro (form) (missing-helper)))
+(defrule shadowed-plus ((left right) (add left right)))
+
+(def one swapped)
+(def two mixed)
+(def three partial)
+(def four unary)
+(def five conditional)
+(def six nested)
+(def seven quoted-thing)
+(def eight broken)
+
+(defn malformed-let () (let bad) (barr))
+
+(defn shadowed () (let add 1) (println shadowed-plus))

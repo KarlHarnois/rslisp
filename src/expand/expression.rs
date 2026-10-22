@@ -78,11 +78,16 @@ impl Expander<'_> {
         }
     }
 
-    fn lower_reference(&self, symbol: &Symbol, span: Span) -> Result<ExprKind, Diagnostic> {
+    fn lower_reference(&mut self, symbol: &Symbol, span: Span) -> Result<ExprKind, Diagnostic> {
         let binding = self.resolve(symbol, Namespace::Value, span)?;
         match self.kind(binding) {
             BindingKind::KernelForm(kernel) => Err(ExpandProblems::form_as_value(kernel, span)),
-            BindingKind::Macro(_) => Err(ExpandProblems::macro_as_value(symbol.name(), span)),
+            BindingKind::Macro(_) => Err(ExpandProblems::macro_as_value(
+                symbol.name(),
+                span,
+                self.macro_function(binding, symbol, span)
+                    .map(|function| Rc::from(self.bindings.get(function).name())),
+            )),
             BindingKind::Boolean(value) => Ok(ExprKind::Leaf(Leaf::Literal(Literal::Bool(value)))),
             _ => Ok(ExprKind::Leaf(Leaf::Var(binding))),
         }

@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/macro_as_function.rslisp
+---
+error[L0304]: `+` is a macro, not a value
+ --> check/macro_as_function.rslisp:1:44
+  |
+1 | (defn main () (println (fold (range 1 4) 0 +)))
+  |                                            ^ used as a value here
+  |
+help: a macro can only be called; pass `add` instead
+  |
+1 - (defn main () (println (fold (range 1 4) 0 +)))
+1 + (defn main () (println (fold (range 1 4) 0 add)))
+  |
