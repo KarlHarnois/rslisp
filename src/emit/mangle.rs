@@ -27,8 +27,9 @@ impl NameMangler {
     const PREDICATE_SUFFIX: char = '?';
     const CHANGE_SUFFIX: char = '!';
     const PREDICATE_PREFIX: &str = "is_";
-    const ARROW: &str = "->";
-    const ARROW_SPELLING: &str = "to_";
+    const ARROW_START: char = '-';
+    const ARROW_END: char = '>';
+    const ARROW_WORD: &str = "to";
     const STRICT_KEYWORDS: [&str; 39] = [
         "as", "async", "await", "break", "const", "continue", "dyn", "else", "enum", "extern",
         "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut",
@@ -65,7 +66,7 @@ impl NameMangler {
             Some(body) if !body.is_empty() => (body, true),
             _ => (name, false),
         };
-        let spelled = Self::spell(&body.replace(Self::ARROW, Self::ARROW_SPELLING));
+        let spelled = Self::spell(body);
         let prefixed = if is_predicate {
             format!("{}{spelled}", Self::PREDICATE_PREFIX)
         } else {
@@ -76,10 +77,15 @@ impl NameMangler {
 
     fn spell(name: &str) -> String {
         let mut spelled = String::new();
-        for character in name.chars() {
-            match Self::spelling(character) {
-                Some(word) => Self::push_word(&mut spelled, word),
-                None => spelled.push(character),
+        let mut characters = name.chars().peekable();
+        while let Some(character) = characters.next() {
+            if character == Self::ARROW_START && characters.peek() == Some(&Self::ARROW_END) {
+                characters.next();
+                Self::push_word(&mut spelled, Self::ARROW_WORD);
+            } else if let Some(word) = Self::spelling(character) {
+                Self::push_word(&mut spelled, word);
+            } else {
+                spelled.push(character);
             }
         }
         spelled.trim_end_matches('_').to_string().replace("__", "_")
@@ -153,6 +159,7 @@ mod tests {
     fn punctuation_is_spelled_out() {
         assert_eq!(NameMangler::value("+"), "plus");
         assert_eq!(NameMangler::value("->string"), "to_string");
+        assert_eq!(NameMangler::value("point->string"), "point_to_string");
         assert_eq!(NameMangler::value("set!"), "set");
         assert_eq!(NameMangler::value("set!x"), "set_bang_x");
     }

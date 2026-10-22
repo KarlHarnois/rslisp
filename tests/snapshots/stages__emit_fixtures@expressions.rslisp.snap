@@ -46,7 +46,7 @@ fn total<A: crate::rt::Number>(a: A, b: A, c: A) -> A {
     a + b + c
 }
 
-fn counterto_text(c: &Counter) -> String {
+fn counter_to_text(c: &Counter) -> String {
     counter_count(c).to_string()
 }
 
@@ -58,7 +58,7 @@ fn main() {
     println!("{}", twice_next(3));
     println!("{}", sum_to(10));
     println!("{}", total(1, 2, 3));
-    println!("{}", counterto_text(&c))
+    println!("{}", counter_to_text(&c))
 }
 
 mod rt {
