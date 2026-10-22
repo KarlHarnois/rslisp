@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/prelude_results.rslisp
+---
+5
+odd
+5
+10
+odd!
+6

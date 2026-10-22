@@ -1,8 +1,14 @@
 (use prelude/types result)
 
-(export ok err ok? err?)
+(export ok err ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
 
 (def ok (rust "Ok({0})" (where (a b) (fn (a) (result a b)))))
 (def err (rust "Err({0})" (where (a b) (fn (b) (result a b)))))
 (def ok? (rust "{0}.is_ok()" (where (a b) (fn ((ref (result a b))) bool))))
 (def err? (rust "{0}.is_err()" (where (a b) (fn ((ref (result a b))) bool))))
+(def unwrap-ok (rust "{0}.unwrap()" (where (a b) (fn ((result a b)) a))))
+(def unwrap-err (rust "{0}.unwrap_err()" (where (a b) (fn ((result a b)) b))))
+(def expect-ok (rust "{0}.expect({1})" (where (a b) (fn ((result a b) (ref str)) a))))
+(def map-ok (rust "{0}.map({1})" (where (a b e) (fn ((result a e) (fn (a) b)) (result b e)))))
+(def map-err (rust "{0}.map_err({1})" (where (a b e) (fn ((result a e) (fn (e) b)) (result a b)))))
+(def then-ok (rust "{0}.and_then({1})" (where (a b e) (fn ((result a e) (fn (a) (result b e))) (result b e)))))
