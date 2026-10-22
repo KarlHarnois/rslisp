@@ -1,0 +1,35 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/mut_places.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Counter {
+    count: i64,
+}
+
+fn make_counter(count: i64) -> Counter {
+    Counter { count }
+}
+
+fn counter_count(instance: &Counter) -> i64 {
+    instance.count
+}
+
+fn bump_field(c: &mut Counter) {
+    c.count += 1
+}
+
+fn bump_reference(t: &mut i64) {
+    *t += 1
+}
+
+fn main() {
+    let mut c = make_counter(0);
+    bump_field(&mut c);
+    let mut n: i64 = 1;
+    let r = &mut n;
+    bump_reference(r);
+    println!("{}", counter_count(&c));
+    println!("{}", n)
+}

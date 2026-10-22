@@ -52,7 +52,7 @@ fn counterto_text(c: &Counter) -> String {
 
 fn main() {
     let mut c = make_counter(0);
-    *&mut c.count += 1;
+    c.count += 1;
     println!("{}", is_in_range(3));
     println!("{}", is_small(2));
     println!("{}", twice_next(3));

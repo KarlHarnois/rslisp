@@ -306,6 +306,7 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 | Placeholders | `{0}`, `{1}` and so on take the call's arguments. `{&0}` takes an argument that Rust borrows by itself, as a format macro or a comparison operator does. No `&` is written before it, and the call does not move it. `{{` and `}}` are literal braces. |
 | Inlining | A `def` of a `rust` form emits nothing. Each use inlines the template. |
 | Parentheses | A non-atomic argument is parenthesized unless its placeholder is the whole template, sits between `(` or `,` and `,` or `)`, or Rust's precedence and associativity keep its grouping on the side it takes. A prefixed argument such as `*x` is parenthesized only before `.`, `[`, `(` or `?`. |
+| Deref place | A `*` written immediately before a placeholder is dropped when the call borrows a `mut` place, because the `*` and the borrow cancel. |
 | Evaluation order | A repeated or out-of-order placeholder binds its arguments to temporaries first. |
 | Values | A function template used as a value becomes a closure. A bare path is used as the path. |
 | Runtime | `prelude/runtime/` holds the parts of `mod rt`. A program carries only the parts its code names, and its `Number` trait carries only the literal conversions it calls. |
