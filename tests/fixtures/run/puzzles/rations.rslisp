@@ -1,5 +1,4 @@
-(use puzzles/support/text lines split parse-integer)
-(use puzzles/support/sequence sum maximum take sort-descending)
+(use puzzles/support/text parse-integer)
 
 (export solve-rations)
 
@@ -18,8 +17,11 @@
   (sum (map (lines group) parse-integer)))
 
 (defn largest-total (totals)
-  (unwrap-or (maximum (values totals)) 0))
+  (unwrap-or (max (values totals)) 0))
 
 (defn podium-total (totals)
   (sort-descending totals)
   (sum (take (values totals) podium-size)))
+
+(defn sort-descending ((items (mut (vec i64))))
+  (sort-by-key! items (fn (value) (- value))))

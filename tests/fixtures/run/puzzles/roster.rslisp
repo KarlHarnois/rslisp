@@ -1,5 +1,4 @@
-(use puzzles/support/text lines split as-str parse-score)
-(use puzzles/support/sequence deref expect element item-at any sort sort-by-key dedup max-by-key)
+(use puzzles/support/text parse-score)
 
 (export solve-roster)
 
@@ -12,8 +11,8 @@
   (for-each (iter people) (fn (person) (println (describe person))))
   (for-each (values (departments people)) (fn (dept) (print-top-scorer people dept)))
   (println (str "Cleo present: " (present? people "Cleo")))
-  (println (str "first two equal: " (same-employee? (element people 0) (element people 1))))
-  (sort-by-key people employee-score)
+  (println (str "first two equal: " (same-employee? (unwrap (get people 0)) (unwrap (get people 1)))))
+  (sort-by-key! people employee-score)
   (for-each (iter people) (fn (person) (println (employee-name person)))))
 
 (defn parse-roster (text)
@@ -21,15 +20,17 @@
 
 (defn parse-employee (line)
   (let fields (collect (split line ",")))
-  (make-employee (to-string (item-at fields 0)) (to-string (item-at fields 1)) (parse-score (item-at fields 2))))
+  (make-employee (to-string (deref (unwrap (get fields 0))))
+                 (to-string (deref (unwrap (get fields 1))))
+                 (parse-score (deref (unwrap (get fields 2))))))
 
 (defn describe (person)
   (str (employee-name person) " (" (employee-dept person) "): " (employee-score person)))
 
 (defn departments (people)
   (let names (collect (map (iter people) (fn (person) (as-str (employee-dept person))))))
-  (sort names)
-  (dedup names)
+  (sort! names)
+  (dedup! names)
   names)
 
 (defn print-top-scorer (people dept)

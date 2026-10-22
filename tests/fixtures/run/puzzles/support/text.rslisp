@@ -1,7 +1,7 @@
-(export lines split as-str parse-integer parse-score)
+(export parse-integer parse-score)
 
-(def lines (rust "{0}.lines()" (fn ((ref str)) (iterator (ref str)))))
-(def split (rust "{0}.split({1})" (fn ((ref str) (ref str)) (iterator (ref str)))))
-(def as-str (rust "{0}.as_str()" (fn ((ref string)) (ref str))))
-(def parse-integer (rust "{0}.parse::<i64>().unwrap()" (fn ((ref str)) i64)))
-(def parse-score (rust "{0}.parse::<u32>().unwrap()" (fn ((ref str)) u32)))
+(defn parse-integer ((text (ref str)))
+  (the i64 (unwrap-ok (parse text))))
+
+(defn parse-score ((text (ref str)))
+  (the u32 (unwrap-ok (parse text))))

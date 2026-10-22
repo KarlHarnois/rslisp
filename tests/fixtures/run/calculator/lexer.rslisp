@@ -1,4 +1,4 @@
-(use calculator/support chars char-at slice-text)
+(use calculator/support char-at)
 
 (export token token-kind token-text tokenize)
 

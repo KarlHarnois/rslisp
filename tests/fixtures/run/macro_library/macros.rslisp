@@ -2,17 +2,7 @@
           symbol? same-binding? value-eq)
 (use prelude/macros map-list)
 
-(export -> ->> assert-eq dotimes case defenum defrecord if-some)
-
-(defrule ->
-  ((value) value)
-  ((value (head arguments ...) more ...) (-> (head value arguments ...) more ...))
-  ((value head more ...) (-> (head value) more ...)))
-
-(defrule ->>
-  ((value) value)
-  ((value (head arguments ...) more ...) (->> (head arguments ... value) more ...))
-  ((value head more ...) (->> (head value) more ...)))
+(export assert-eq dotimes case defenum defrecord if-some)
 
 (defmacro assert-eq (expected actual)
   (template
@@ -92,6 +82,9 @@
     (let field-type (nth field 1))
     (and (symbol? field-type) (value-eq (symbol-name field-type) "string"))))
 
+(defn text= (left right)
+  (= (as-str left) (as-str right)))
+
 (def field-texts
   (fn (name fields record)
     (if (empty? fields)
@@ -107,5 +100,3 @@
            (do (let name (unwrap option-value)) then)
            else))))
 
-(def unwrap (rust "{0}.unwrap()" (where (a) (fn ((option a)) a))))
-(def text= (rust "{0} == {1}" (fn ((ref string) (ref string)) bool)))
