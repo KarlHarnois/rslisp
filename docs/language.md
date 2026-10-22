@@ -53,6 +53,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `if` | `(if test then else)` | `if`/`else` | all: expressions. |
 | `type` | `(type name type)` | signature | name: reference to a `def`. type: type. |
 | `struct` | `(struct name (field type)...)` or `(struct name (where (param...) (field type)...))` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
+| `derive` | `(derive struct trait...)` | `#[derive(...)]` | struct: reference to a `struct` of this module. traits: references to traits. |
 | `new` | `(new name (field value)...)` | struct literal | name: type. fields: field labels with expressions. |
 | `field` | `(field value name)` | `value.name` | value: expression. name: field label. |
 | `quote` | `(quote form)` | none | form: data. |
@@ -71,7 +72,7 @@ In expression positions, the kernel provides the constants `true` and `false`. T
 
 A module body is expanded in two passes:
 
-1. Each top-level form is expanded in order until its head is a definition form: `def`, `type`, `struct`, `rust-trait`, `rust-type`, `use`, `export` or `do`. The names it defines are registered. A `def` whose value is a `macro` is evaluated right away.
+1. Each top-level form is expanded in order until its head is a definition form: `def`, `type`, `struct`, `derive`, `rust-trait`, `rust-type`, `use`, `export` or `do`. The names it defines are registered. A `def` whose value is a `macro` is evaluated right away.
 2. `def` values, types and `export` lists are expanded.
 
 Values and types are therefore order-independent, like Rust items. A macro must appear above its first top-level use.
@@ -173,7 +174,7 @@ Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&
 - **Dereferences.** A borrowed Copy argument is dereferenced when the parameter's type is a type variable whose traits the reference lacks. `(> x 2)` with `x : (ref i64)` emits `*x > 2`. A `fn` passed as an argument takes its parameter types from the parameter's function type, so its body sees them. An argument with more reference layers than its reference parameter passes with the extra layers removed, as Rust's deref coercion does. If an argument's referent type is still unknown at a call, the compiler decides its borrow after it infers the definition.
 - **Fields.** Reading a Copy field copies it. Reading any other field borrows it: `(field person name)` has type `(ref string)`.
 - **No hidden copies.** Copying heap data is always written `(clone x)`, which needs the `clone` trait. A struct implements it when its fields do, as the Struct traits bullet says. `(ref x)` and `(mut x)` force a borrow.
-- **Struct traits.** A struct implements `clone`, `debug`, `partial-eq`, `eq` and `hash` when all its field types do, and the emitted struct derives them. A function-typed field allows all five. The compiler fixes this list, because a marker on `rust-trait` would need syntax that reads as a type application. `prn` and `pr-str` print a value's data form.
+- **Struct traits.** A struct implements `clone`, `debug`, `partial-eq`, `eq` and `hash` when all its field types do, and the emitted struct derives them. A function-typed field allows all five. The compiler fixes this list, because a marker on `rust-trait` would need syntax that reads as a type application. `prn` and `pr-str` print a value's data form. A written `(derive point clone debug)` lists a struct's traits exactly and turns inference off for it. A listed trait brings the traits Rust requires of it: `copy` brings `clone`, `eq` and `partial-ord` bring `partial-eq`, and `ord` brings `eq` and `partial-ord`. `derive` is a kernel form, because the prelude cannot add attributes to an emitted struct.
 - **Moves.** The compiler reports a use after move, points at the move, and suggests `(clone x)`. A move in either branch of an `if` counts.
 - **Function values.** A named function passed where a function type is expected is wrapped in a closure when an expected parameter is a reference and the function's parameter is not. The closure passes each argument through the usual adjustments.
 - **Reborrows.** A `mut` reference passed to a `mut` parameter is reborrowed and stays usable. Passed to any other parameter, it moves, as in Rust.
