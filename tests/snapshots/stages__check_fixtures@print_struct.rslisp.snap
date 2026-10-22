@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/print_struct.rslisp
+---
+error[L0404]: `point` does not implement `display`
+ --> check/print_struct.rslisp:4:12
+  |
+4 |   (println (make-point 0 0)))
+  |            ^^^^^^^^^^^^^^^^ this needs `display`
+  |
+  = note: `display` is implemented for: bool, char, str, string, (ref str), i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+  = help: print a struct's data form with `prn`
