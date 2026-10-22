@@ -18,7 +18,7 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use crate::core::{BindingArena, CoreModule, ModuleId, ModulePath};
-use crate::diagnostic::Diagnostics;
+use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::modules::{ModuleRegistry, ModuleSources};
 use crate::reader::Form;
 use crate::scope::{BindingTable, Phase, Scope, ScopeAllocator};
@@ -61,6 +61,7 @@ pub struct Expander<'s> {
     warnings: Diagnostics,
     phase: Phase,
     expansion_depth: usize,
+    recovered_diagnostics: Vec<Diagnostic>,
 }
 
 impl<'s> Expander<'s> {
@@ -84,11 +85,15 @@ impl<'s> Expander<'s> {
             warnings: Diagnostics::default(),
             phase: Phase::Runtime,
             expansion_depth: 0,
+            recovered_diagnostics: Vec::new(),
         }
     }
 
     pub fn expand(mut self, path: ModulePath, entry: SourceId) -> Result<Program, Diagnostics> {
         let entry = self.load_source_module(path, entry);
+        for diagnostic in std::mem::take(&mut self.recovered_diagnostics) {
+            self.diagnostics.push(diagnostic);
+        }
         let program = Program {
             modules: self.take_modules(),
             entry,

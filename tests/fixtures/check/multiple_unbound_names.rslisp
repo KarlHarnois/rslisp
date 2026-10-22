@@ -1,0 +1,1 @@
+(defn total (x) (+ (fooo x) (barr x)))
