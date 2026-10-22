@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/arithmetic.rslisp
 ---
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 struct Point {
     x: f64,
     y: f64,

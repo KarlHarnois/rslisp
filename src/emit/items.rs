@@ -8,7 +8,7 @@ use super::mangle::NameMangler;
 use super::mutable_locals::MutableLocals;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
 use super::types::{RustTypes, TypePosition};
-use crate::core::{BindingId, ModuleId, StructDerives};
+use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::Diagnostic;
 use crate::types::{GenericParam, Type, TypedDefinition, TypedExpr, TypedExprKind, TypedProgram};
 
@@ -228,14 +228,21 @@ impl<'a> ItemEmitter<'a> {
             )));
         }
         let params = Self::struct_params(&definition.params);
-        vec![
-            Fragment::Text(StructDerives::attribute()),
-            Fragment::Newline,
+        let mut fragments = Vec::new();
+        if !definition.derives.is_empty() {
+            fragments.push(Fragment::Text(format!(
+                "#[derive({})]",
+                definition.derives.join(", ")
+            )));
+            fragments.push(Fragment::Newline);
+        }
+        fragments.extend([
             Fragment::Text(format!("{visibility}struct {}{params} {{", info.name)),
             Fragment::Indented(fields),
             Fragment::Newline,
             Fragment::Text("}".to_string()),
-        ]
+        ]);
+        fragments
     }
 
     fn struct_params(params: &[GenericParam]) -> String {

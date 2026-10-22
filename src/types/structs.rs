@@ -7,6 +7,8 @@ use crate::core::BindingId;
 pub struct StructDefinition {
     pub params: Vec<GenericParam>,
     pub fields: Vec<(Rc<str>, Type)>,
+    pub derives: Vec<&'static str>,
+    pub blocked: Vec<(BindingId, Rc<str>, Type)>,
 }
 
 impl StructDefinition {
@@ -52,6 +54,10 @@ impl StructTable {
 
     pub fn get(&self, binding: BindingId) -> Option<&StructDefinition> {
         self.structs.get(&binding)
+    }
+
+    pub fn get_mut(&mut self, binding: BindingId) -> Option<&mut StructDefinition> {
+        self.structs.get_mut(&binding)
     }
 
     pub fn with_field(&self, name: &str) -> Vec<BindingId> {

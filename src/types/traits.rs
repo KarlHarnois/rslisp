@@ -62,7 +62,12 @@ impl TraitTable {
         let mut found: Vec<BindingId> = self
             .traits
             .iter()
-            .filter(|(_, rust_trait)| paths.contains(&rust_trait.path.as_ref()))
+            .filter(|(_, rust_trait)| {
+                paths.iter().any(|path| {
+                    rust_trait.path.as_ref() == *path
+                        || rust_trait.path.rsplit("::").next() == Some(*path)
+                })
+            })
             .map(|(binding, _)| *binding)
             .collect();
         found.sort();
@@ -72,6 +77,14 @@ impl TraitTable {
     pub fn add_implementor(&mut self, binding: BindingId, implementor: Scheme) {
         if let Some(rust_trait) = self.traits.get_mut(&binding) {
             rust_trait.implementors.push(implementor);
+        }
+    }
+
+    pub fn remove_struct_implementor(&mut self, binding: BindingId, struct_binding: BindingId) {
+        if let Some(rust_trait) = self.traits.get_mut(&binding) {
+            rust_trait.implementors.retain(|implementor| {
+                !matches!(implementor.body, Type::Named(named, _) if named == struct_binding)
+            });
         }
     }
 
