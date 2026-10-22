@@ -1,0 +1,10 @@
+(defn halve (n)
+  (if (= (rem n 2) 0) (ok (/ n 2)) (err "odd")))
+
+(defn main ()
+  (println (unwrap-ok (halve 10)))
+  (println (unwrap-err (halve 7)))
+  (println (expect-ok (halve 10) "even"))
+  (println (unwrap-ok (map-ok (halve 10) (fn (n) (* n 2)))))
+  (println (unwrap-err (map-err (halve 7) (fn (message) (str message "!")))))
+  (println (unwrap-ok (then-ok (halve 10) (fn (n) (ok (+ n 1)))))))

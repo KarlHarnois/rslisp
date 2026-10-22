@@ -7,7 +7,7 @@
 (use prelude/iterator range map filter fold for-each
                       sum count max min max-by-key any all find take take-while)
 (use prelude/option some none some? none? unwrap-or unwrap expect map-some then-some)
-(use prelude/result ok err ok? err?)
+(use prelude/result ok err ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
 (use prelude/number number signed float integer partial-eq partial-ord
                     add sub mul div rem neg sqrt lt le gt ge eq ne
                     + - * / < <= > >= = != ord)
@@ -35,4 +35,4 @@
         range map filter fold for-each
         sum count max min max-by-key any all find take take-while
         some none some? none? unwrap-or unwrap expect map-some then-some
-        ok err ok? err?)
+        ok err ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
