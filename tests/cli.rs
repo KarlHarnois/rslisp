@@ -13,6 +13,7 @@ const CRASHING_RUSTC: &str =
     "#!/bin/sh\necho 'rustc crashed before reporting anything' >&2\nexit 101\n";
 const SILENT_RUSTC: &str = "#!/bin/sh\nexit 0\n";
 const BOUND_MODULE: &str = "(export person)\n\n(defstruct person (name string))\n";
+const STRUCTS: &str = "(defstruct person (name string) (age i64))\n(defstruct ticket (id u32))\n(derive ticket debug)\n\n(defn main () (do))\n";
 const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::ops::Add\" i64 (with i64 person))\n\n(type matches (where ((a (same person))) (fn (a) bool)))\n(defn matches (x) true)\n\n(defn main () (println (matches 1)))\n";
 
 struct Sandbox {
@@ -147,6 +148,13 @@ fn check_is_silent_on_a_valid_program() {
 fn signatures_prints_each_function() {
     let sandbox = Sandbox::new("signatures").with_file("greeting.rslisp", GREETING);
     let signatures = sandbox.compiler(&["signatures", "greeting.rslisp"]);
+    insta::assert_snapshot!(signatures.assert_exit_code(0).stdout());
+}
+
+#[test]
+fn signatures_prints_inferred_struct_derives() {
+    let sandbox = Sandbox::new("signatures_structs").with_file("structs.rslisp", STRUCTS);
+    let signatures = sandbox.compiler(&["signatures", "structs.rslisp"]);
     insta::assert_snapshot!(signatures.assert_exit_code(0).stdout());
 }
 

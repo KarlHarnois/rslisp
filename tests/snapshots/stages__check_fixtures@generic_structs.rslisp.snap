@@ -3,6 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/generic_structs.rslisp
 ---
+(derive pair clone copy debug partial-eq eq hash)
 (type make-pair (where (a b) (fn (a b) (pair a b))))
 (type pair-first (where (a b) (fn ((ref (pair a b))) (ref a))))
 (type pair-second (where (a b) (fn ((ref (pair a b))) (ref b))))

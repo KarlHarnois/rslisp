@@ -3,6 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/filter_over_struct_references.rslisp
 ---
+(derive person clone debug partial-eq eq hash)
 (type make-person (fn (string u32) person))
 (type person-name (fn ((ref person)) (ref string)))
 (type person-age (fn ((ref person)) u32))

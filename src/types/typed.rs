@@ -8,7 +8,7 @@ use super::templates::TemplateBorrows;
 use super::traits::TraitTable;
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
 use crate::core::{
-    BindingArena, BindingId, FieldLabel, Literal, ModuleId, ModulePath, RustTemplate,
+    BindingArena, BindingId, FieldLabel, Literal, ModuleId, ModulePath, RustTemplate, StructDerives,
 };
 use crate::diagnostic::Diagnostics;
 use crate::source::Span;
@@ -154,13 +154,35 @@ impl TypedProgram {
 
     pub fn entry_signatures(&self) -> String {
         let display = TypeDisplay::new(&self.bindings, &self.generics);
-        self.entry_module()
+        let structs = self
+            .entry_module()
+            .structs
+            .iter()
+            .filter_map(|binding| self.inferred_derive_line(*binding))
+            .collect::<String>();
+        let definitions: String = self
+            .entry_module()
             .definitions
             .iter()
             .map(|definition| {
                 let name = self.bindings.get(definition.binding).name();
                 format!("(type {name} {})\n", display.scheme(&definition.scheme))
             })
-            .collect()
+            .collect();
+        format!("{structs}{definitions}")
+    }
+
+    fn inferred_derive_line(&self, binding: BindingId) -> Option<String> {
+        let definition = self.structs.get(binding)?;
+        if definition.written_derive.is_some() {
+            return None;
+        }
+        let name = self.bindings.get(binding).name();
+        let derives: Vec<&str> = definition
+            .derives
+            .iter()
+            .map(|derived| StructDerives::source_name(derived))
+            .collect();
+        Some(format!("(derive {name} {})\n", derives.join(" ")))
     }
 }
