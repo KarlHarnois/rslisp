@@ -340,6 +340,19 @@ impl ExpandProblems {
         }
     }
 
+    pub fn macro_program_only(name: &str, used: Span, defined: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::PROGRAM_ONLY,
+            format!("`{name}` belongs to the program, so macro code cannot run it"),
+            Label::new(used, "macro code runs this"),
+        )
+        .with_label(Label::new(
+            defined,
+            format!("`{name}` expands to Rust code that runs in the program"),
+        ))
+        .with_help(InterpretProblems::RETURN_AS_CODE_HELP)
+    }
+
     fn code_replacement(name: &str) -> Option<(&'static str, &'static str)> {
         Self::CODE_REPLACEMENTS
             .iter()

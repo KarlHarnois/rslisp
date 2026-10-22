@@ -1,0 +1,9 @@
+(use code list)
+
+(def build-code
+  (macro (form)
+    (list (quote rust) "make-value()" (list (quote fn) (list) (quote i64)))))
+
+(def through-builder (macro (form) (build-code form)))
+
+(def built (through-builder))

@@ -20,9 +20,9 @@ use crate::diagnostic::Diagnostics;
 use crate::modules::{ModuleRegistry, ModuleSources};
 use crate::reader::Form;
 use crate::scope::{BindingTable, Phase, Scope, ScopeAllocator};
-use crate::source::{SourceId, SourceMap};
+use crate::source::{SourceId, SourceMap, Span};
 use globals::GlobalTable;
-use macro_call::MacroTable;
+use macro_call::{MacroOrigin, MacroTable};
 
 pub struct Program {
     pub modules: Vec<CoreModule>,
@@ -49,6 +49,7 @@ pub struct Expander<'s> {
     bindings: BindingArena,
     modules: ModuleRegistry,
     macros: MacroTable,
+    macro_origins: HashMap<Span, MacroOrigin>,
     globals: GlobalTable,
     expanded: HashMap<ModuleId, CoreModule>,
     order: Vec<ModuleId>,
@@ -69,6 +70,7 @@ impl<'s> Expander<'s> {
             bindings: BindingArena::default(),
             modules: ModuleRegistry::default(),
             macros: MacroTable::default(),
+            macro_origins: HashMap::new(),
             globals: GlobalTable::default(),
             expanded: HashMap::new(),
             order: Vec::new(),

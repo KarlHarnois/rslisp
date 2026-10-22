@@ -18,6 +18,11 @@ enum MacroState {
     Failed,
 }
 
+pub struct MacroOrigin {
+    pub name: Rc<str>,
+    pub defined: Span,
+}
+
 #[derive(Default)]
 pub struct MacroTable {
     states: HashMap<BindingId, MacroState>,
@@ -96,7 +101,20 @@ impl Expander<'_> {
         );
         self.expansion_depth -= 1;
         let output = result.map_err(|diagnostic| Self::point_at_call(diagnostic, call_site))?;
-        Self::finish_output(output, introduction, call_site)
+        let output = Self::finish_output(output, introduction, call_site)?;
+        self.record_macro_origin(binding, call_site);
+        Ok(output)
+    }
+
+    fn record_macro_origin(&mut self, binding: BindingId, call_site: Span) {
+        let info = self.bindings.get(binding);
+        self.macro_origins.insert(
+            call_site,
+            MacroOrigin {
+                name: Rc::from(info.name()),
+                defined: info.span().unwrap_or(call_site),
+            },
+        );
     }
 
     fn prepare_input(
