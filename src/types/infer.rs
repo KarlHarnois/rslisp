@@ -453,7 +453,7 @@ impl TypeChecker {
                 .unifier
                 .bounds(var)
                 .iter()
-                .any(|bound| self.copy_rules().bound_allows_only_copy(*bound))
+                .any(|bound| self.copy_rules().bound_allows_only_copy_values(*bound))
     }
 
     fn pass_types(

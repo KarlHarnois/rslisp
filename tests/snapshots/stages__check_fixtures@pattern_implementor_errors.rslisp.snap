@@ -43,3 +43,11 @@ error[L0418]: a type parameter alone cannot implement a trait
    |                                     ^^^^^^^^^^^^^ this would match every type
    |
    = help: wrap the parameter in a type, as in `(where ((a clone)) (ref a))`
+
+error[L0404]: `(ref a)` does not implement `labeled`
+  --> check/pattern_implementor_errors.rslisp:21:33
+   |
+21 | (defn label-of (text) (to-label (ref text)))
+   |                                 ^^^^^^^^^^ this needs `labeled`
+   |
+   = note: `labeled` is implemented for: (ref str)
