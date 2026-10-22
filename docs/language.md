@@ -205,6 +205,18 @@ The prelude builds three tools on top of `macro`:
 
 A `defrule` clause is a pattern and a template. In a pattern, `name ...` matches zero or more forms, at any depth, and `(quote name)` matches the symbol `name` itself. A `defmacro` parameter list is a pattern in the same language.
 
+Write a macro with `defrule` when its expansion follows from the shape of its call. Use `defmacro` only for a macro that computes, such as one that counts forms or builds names. `dotimes` and `case` need no computation:
+
+```lisp
+(defrule dotimes
+  (((index count) body ...) (for-each (range 0 count) (fn (index) body ...))))
+
+(defrule case
+  ((value clause ...) (do (let subject value) (case-clauses subject clause ...))))
+```
+
+One implementation per name keeps the compiler small. Compile-time twins of the prelude's Rust templates would disagree with Rust on integer width, overflow, division by zero and floats. Most macros need no computation when written with `defrule`.
+
 ### The `code` module
 
 The compiler provides the `code` module for macro bodies. Code that uses it exists only at compile time.
@@ -218,6 +230,8 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 | `(fail "message" form)`, `(fail "message" form "help")` | Stop expansion with an error at `form`, and an optional help line that says how to fix the call. |
 | `number-add number-sub number-lt number-le number-gt number-ge` | Count and compare positions in code. They take integers. |
 | `value-eq bool-not` | Compare forms and negate booleans. |
+
+Macro code that maps a function over a list of forms imports `map-list` with `(use prelude/macros map-list)`.
 
 ### Hygiene
 
@@ -310,7 +324,7 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 | 8. Generic types | done |
 | 8.1 References at call sites | planned |
 | 8.2 Struct traits | planned |
-| 8.3 Macro code | planned |
+| 8.3 Macro code | done |
 | 8.4 Loops | planned |
 | 9. Enums and `match` | planned |
 | 10. User-defined traits | planned |
@@ -355,16 +369,6 @@ Every struct implements each of `clone`, `debug`, `partial-eq`, `eq` and `hash` 
 - `derive` is a kernel form, because the prelude cannot add attributes to an emitted struct.
 
 Python, Clojure and Kotlin give records equality and printing by default. An order or a default picks a meaning, so the program writes it. A struct that the program changes is never copied, so a change cannot land on a copy.
-
-### 8.3 Macro code
-
-Macro code and program code keep separate names. `+`, `=` and `map` belong to the program. Macro code computes with the `code` module.
-
-- `defrule` becomes the documented default for macros. `defmacro` stays for macros that compute.
-- The prelude exports its list helpers, such as `map-list`, for macro code.
-- L0306 names the `code` function that replaces a program function, such as `number-add` for `+`.
-
-One implementation per name keeps the compiler small. Compile-time twins of the prelude's Rust templates would disagree with Rust on integer width, overflow, division by zero and floats. Most macros need no computation when written with `defrule`.
 
 ### 8.4 Loops
 
