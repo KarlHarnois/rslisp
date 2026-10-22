@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/conflicting_arguments.rslisp
+---
+fn add_item<A>(items: &mut Vec<A>, n: A) {
+    items.push(n)
+}
+
+fn main() {
+    let mut items: Vec<usize> = vec![1_usize];
+    add_item(&mut items, 5);
+    {
+        let call_argument_1 = items.len();
+        add_item(&mut items, call_argument_1)
+    }
+    println!("{}", items.len())
+}

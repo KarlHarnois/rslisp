@@ -19,11 +19,23 @@ pub struct TypedExpr {
 
 impl TypedExpr {
     pub fn is_place(&self) -> bool {
+        self.place_root().is_some()
+    }
+
+    pub fn place_root(&self) -> Option<BindingId> {
         match &self.kind {
-            TypedExprKind::Leaf(TypedLeaf::Local(_)) => true,
-            TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => owner.is_place(),
-            _ => false,
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => Some(*binding),
+            TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => owner.place_root(),
+            _ => None,
         }
+    }
+
+    pub fn mentions_local(&self, binding: BindingId) -> bool {
+        matches!(self.kind, TypedExprKind::Leaf(TypedLeaf::Local(local)) if local == binding)
+            || self
+                .children()
+                .into_iter()
+                .any(|child| child.mentions_local(binding))
     }
 }
 
