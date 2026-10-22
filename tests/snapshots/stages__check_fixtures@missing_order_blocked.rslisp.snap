@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/missing_order_blocked.rslisp
+---
+error[L0404]: `score` does not implement `ord`
+ --> check/missing_order_blocked.rslisp:5:10
+  |
+5 |   (sort! scores)
+  |          ^^^^^^ this needs `ord`
+  |
+  = note: `ord` is never inferred for a struct, so the struct needs a written `derive`
+  = note: `score` cannot derive `ord`: field `points` is `f64`
+  = help: to sort by one field instead, use `sort-by-key!` with the accessor `score-name`
