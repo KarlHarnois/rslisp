@@ -86,8 +86,17 @@ impl<'a> CorePrinter<'a> {
                     .map(|argument| self.expr(argument))
                     .collect(),
             ),
+            ExprKind::Borrow(..) | ExprKind::Deref(..) => self.written(expr.kind()),
             ExprKind::Control(control) => self.control(control),
             ExprKind::Struct(structure) => self.structure(structure),
+        }
+    }
+
+    fn written(&mut self, kind: &ExprKind) -> String {
+        match kind {
+            ExprKind::Borrow(kind, value) => Self::list(kind.keyword(), vec![self.expr(value)]),
+            ExprKind::Deref(value) => Self::list("deref", vec![self.expr(value)]),
+            _ => unreachable!("the caller matches a written form"),
         }
     }
 

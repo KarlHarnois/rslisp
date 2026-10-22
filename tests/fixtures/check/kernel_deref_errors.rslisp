@@ -1,0 +1,8 @@
+(defn bad-value ()
+  (let n 4)
+  (deref n))
+
+(defn bad-copy ()
+  (deref (ref (to-string "a"))))
+
+(defn main () (do))

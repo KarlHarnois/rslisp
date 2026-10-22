@@ -1,0 +1,30 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/kernel_borrows.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Counter {
+    count: i64,
+}
+
+fn make_counter(count: i64) -> Counter {
+    Counter { count }
+}
+
+fn peek(x: &i64) -> i64 {
+    *x
+}
+
+fn main() {
+    let mut n: i64 = 3;
+    let r = &n;
+    println!("{}", peek(r));
+    let m = &mut n;
+    *m += 1;
+    println!("{}", n);
+    let c = make_counter(3);
+    println!("{}", peek(&c.count));
+    let r_2 = &c;
+    println!("{}", peek(&r_2.count))
+}

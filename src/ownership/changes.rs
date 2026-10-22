@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::core::BindingId;
+use crate::core::{BindingId, ReferenceKind};
 use crate::types::{Borrow, Type, TypedExpr, TypedExprKind, TypedProgram, TypedStructExpr};
 
 pub struct InPlaceChanges;
@@ -31,6 +31,9 @@ impl InPlaceChanges {
                     Self::place(&argument.value, changed);
                 }
             }
+        }
+        if let TypedExprKind::Borrow(ReferenceKind::Mutable, value) = &expr.kind {
+            Self::place(value, changed);
         }
         for child in expr.children() {
             Self::expression(child, changed);

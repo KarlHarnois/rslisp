@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::core::BindingId;
+use crate::core::{BindingId, ReferenceKind};
 use crate::types::{Borrow, TypedArgument, TypedExpr, TypedExprKind};
 
 #[derive(Default)]
@@ -19,6 +19,11 @@ impl MutableLocals {
         if let TypedExprKind::Call(_, arguments) | TypedExprKind::Recur(arguments) = &expr.kind {
             self.bindings
                 .extend(arguments.iter().filter_map(Self::mutably_borrowed_local));
+        }
+        if let TypedExprKind::Borrow(ReferenceKind::Mutable, value) = &expr.kind
+            && let Some(binding) = value.place_root()
+        {
+            self.bindings.insert(binding);
         }
         for child in expr.children() {
             self.expr(child);

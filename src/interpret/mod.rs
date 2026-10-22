@@ -80,8 +80,18 @@ impl<'h> Interpreter<'h> {
                 .eval_call(callee, arguments, env, span)
                 .map(Step::Value),
             ExprKind::Recur(arguments) => self.eval_recur(arguments, env),
+            ExprKind::Borrow(_, value) | ExprKind::Deref(value) => {
+                self.eval(value, env).map(Step::Value)
+            }
+            _ => self.value(expr, env, span),
+        }
+    }
+
+    fn value(&mut self, expr: &Expr, env: &Env, span: Span) -> Result<Step, Diagnostic> {
+        match expr.kind() {
             ExprKind::Control(control) => self.step_control(control, env),
             ExprKind::Struct(_) => Err(InterpretProblems::runtime_only("structs", span)),
+            _ => unreachable!("the caller matches a value form"),
         }
     }
 

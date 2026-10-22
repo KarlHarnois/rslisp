@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/kernel_borrows.rslisp
+---
+(def three 3)
+(def four 4)
+(def countdown (fn (n) (if (gt n 0) (recur (sub n 1)) n)))
+(def read-through (fn (n_2) (deref (ref n_2))))
+(def write-through (fn (n_3) (mut n_3)))
+(def main (fn () ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0 display)) (fn ((ref part-type-0)) unit))) (add three four))))

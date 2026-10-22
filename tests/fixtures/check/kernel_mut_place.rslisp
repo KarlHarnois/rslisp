@@ -1,0 +1,3 @@
+(defn main ()
+  (let n 4)
+  (println (deref (mut (ref n)))))

@@ -1,0 +1,11 @@
+(defmacro borrowed () (deref (ref 3)))
+(defmacro mutable () (mut (ref 4)))
+
+(def three (borrowed))
+(def four (mutable))
+
+(defn countdown (n) (if (> n 0) (recur (- n 1)) n))
+(defn read-through (n) (deref (ref n)))
+(defn write-through (n) (mut n))
+
+(defn main () (println (+ three four)))
