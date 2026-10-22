@@ -9,10 +9,9 @@ use crate::diagnostic::{DiagnosticRenderer, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
 use crate::expand::{Expander, Program};
 use crate::modules::ModuleSources;
-use crate::ownership::OwnershipChecker;
 use crate::source::Span;
 use crate::source::{SourceId, SourceMap};
-use crate::types::{TypeChecker, TypedProgram};
+use crate::types::TypedProgram;
 
 pub struct BuildOptions {
     pub profile: BuildProfile,
@@ -61,9 +60,8 @@ impl Terminal {
 
     pub fn check(&mut self, path: &Path) -> Result<TypedProgram, ExitStatus> {
         let program = self.expand(path)?;
-        let mut typed =
-            TypeChecker::check(program).map_err(|diagnostics| self.report(&diagnostics))?;
-        OwnershipChecker::check(&mut typed).map_err(|diagnostics| self.report(&diagnostics))?;
+        let typed = crate::check::ProgramChecker::check(&program)
+            .map_err(|diagnostics| self.report(&diagnostics))?;
         self.print_warnings(&typed.warnings);
         Ok(typed)
     }

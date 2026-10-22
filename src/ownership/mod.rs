@@ -1,3 +1,4 @@
+mod changes;
 mod checks;
 mod definitions;
 mod functions;
@@ -16,6 +17,8 @@ use modes::ModeInference;
 use moves::MoveChecker;
 use names::ChangingFunctionNames;
 use rewrite::ModeRewrite;
+
+pub use changes::InPlaceChanges;
 
 pub struct OwnershipChecker;
 

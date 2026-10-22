@@ -398,7 +398,8 @@ impl CopyTrait {
 pub struct StructDerives;
 
 impl StructDerives {
-    pub const INFERRED: [&'static str; 5] = ["Clone", "Debug", "PartialEq", "Eq", "Hash"];
+    pub const COPY: &'static str = "Copy";
+    pub const INFERRED: [&'static str; 6] = ["Clone", "Copy", "Debug", "PartialEq", "Eq", "Hash"];
     pub const DERIVABLE: [&'static str; 8] = [
         "Clone",
         "Copy",

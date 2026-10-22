@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/arithmetic.rslisp
 ---
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct Point {
     x: f64,
     y: f64,
@@ -21,9 +21,9 @@ fn point_y(instance: &Point) -> f64 {
     instance.y
 }
 
-fn distance_squared(a: &Point, b: &Point) -> f64 {
-    let dx = point_x(a) - point_x(b);
-    let dy = point_y(a) - point_y(b);
+fn distance_squared(a: Point, b: Point) -> f64 {
+    let dx = point_x(&a) - point_x(&b);
+    let dy = point_y(&a) - point_y(&b);
     (dx * dx) + (dy * dy)
 }
 
@@ -50,5 +50,5 @@ fn main() {
             false
         }
     });
-    println!("{}", distance_squared(&make_point(0.0, 0.0), &make_point(3.0, 4.0)))
+    println!("{}", distance_squared(make_point(0.0, 0.0), make_point(3.0, 4.0)))
 }

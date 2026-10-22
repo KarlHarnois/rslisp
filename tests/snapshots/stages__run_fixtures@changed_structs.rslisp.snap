@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/changed_structs.rslisp
+---
+2
+6
+2
+9
+4
