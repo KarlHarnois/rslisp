@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/missing_template_argument.rslisp
+---
+error[L0603]: invalid Rust template: `{1}` has no matching argument
+ --> emit/missing_template_argument.rslisp:3:24
+  |
+3 | (defn main () (println (broken 1)))
+  |                        ^^^^^^^^^^ in this template

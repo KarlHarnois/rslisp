@@ -354,10 +354,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn rust_value(&mut self, template: &Rc<RustTemplate>, ty: &Type, span: Span) -> Code {
-        let parsed = match Template::parse(&template.template) {
-            Ok(parsed) => parsed,
-            Err(error) => return self.template_problem(error, span),
-        };
+        let parsed = Template::new(&template.template);
         match ty {
             Type::Function(..) if parsed.is_path() => Code::atom(template.template.to_string()),
             Type::Function(parameters, _) => self.eta_expanded(&parsed, parameters.len(), span),
@@ -399,10 +396,6 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn template_problem(&mut self, error: TemplateError, span: Span) -> Code {
         let message = match error {
-            TemplateError::MalformedPlaceholder => {
-                "a placeholder is `{` followed by an argument number and `}`, and `{{` is a literal brace"
-                    .to_string()
-            }
             TemplateError::MissingArgument(index) => {
                 format!("`{{{index}}}` has no matching argument")
             }
@@ -515,10 +508,7 @@ impl<'a> ExpressionEmitter<'a> {
         arguments: &[TypedArgument],
         span: Span,
     ) -> Code {
-        let parsed = match Template::parse(&template.template) {
-            Ok(parsed) => parsed,
-            Err(error) => return self.template_problem(error, span),
-        };
+        let parsed = Template::new(&template.template);
         let context = Self::argument_context(arguments);
         let roles: Vec<ArgumentRole> = arguments
             .iter()

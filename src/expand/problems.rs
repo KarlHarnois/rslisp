@@ -30,6 +30,15 @@ impl ExpandProblems {
         .with_help("write a literal brace as `{{` or `}}`")
     }
 
+    pub fn malformed_template(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_TEMPLATE,
+            "this Rust template has a malformed placeholder",
+            Label::new(span, "a placeholder is `{`, a number and `}`"),
+        )
+        .with_help("write a literal brace as `{{` or `}}`")
+    }
+
     pub fn borrowed_type_placeholder(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::BAD_TYPE_TEMPLATE,

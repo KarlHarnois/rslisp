@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/template_definition.rslisp
+---
+error[L0218]: this Rust template has a malformed placeholder
+ --> check/template_definition.rslisp:1:19
+  |
+1 | (def broken (rust "{0" (fn (i64) i64)))
+  |                   ^^^^ a placeholder is `{`, a number and `}`
+  |
+  = help: write a literal brace as `{{` or `}}`

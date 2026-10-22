@@ -2,7 +2,6 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::mangle::NameMangler;
 use super::problems::EmitProblems;
-use super::template::Template;
 use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
@@ -379,7 +378,7 @@ impl<'p> EmitPlan<'p> {
         let is_plain_value = text.chars().all(char::is_alphanumeric);
         let calls_something =
             Self::MACRO_CALLS.iter().any(|call| text.contains(call)) || text.contains(['.', '(']);
-        Template::parse(text).is_ok() && (is_plain_value || !calls_something)
+        is_plain_value || !calls_something
     }
 
     fn visibility(&self, binding: BindingId) -> Visibility {
