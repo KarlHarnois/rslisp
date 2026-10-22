@@ -395,6 +395,12 @@ impl CopyTrait {
     pub const PATH: &'static str = "Copy";
 }
 
+pub struct OrderTrait;
+
+impl OrderTrait {
+    pub const PATH: &'static str = "Ord";
+}
+
 pub struct StructDerives;
 
 impl StructDerives {

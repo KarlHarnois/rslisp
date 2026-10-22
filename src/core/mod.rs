@@ -15,7 +15,7 @@ pub use expr::{
 };
 pub use kernel::{
     ControlForm, CopyTrait, DefinitionForm, ExpressionForm, KernelConstants, KernelForm,
-    KernelType, LeafForm, PrimitiveType, ReferenceKind, StructDerives, StructForm,
+    KernelType, LeafForm, OrderTrait, PrimitiveType, ReferenceKind, StructDerives, StructForm,
 };
 pub use module::{CoreModule, Item, ItemKind, ModuleId, ModulePath};
 pub use printer::CorePrinter;

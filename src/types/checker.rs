@@ -968,50 +968,170 @@ impl TypeChecker {
 
     fn report_missing_trait(&mut self, bound: &Bound, implementor: &Type, span: Span) {
         let display = self.display();
-        let implementors = self
-            .traits
-            .get(bound.binding)
+        let mut diagnostic = self.missing_trait_diagnostic(bound, implementor, span, &display);
+        if let Type::Named(struct_binding, _) = implementor {
+            diagnostic = self.struct_trait_help(diagnostic, *struct_binding, bound, &display);
+        }
+        self.diagnostics.push(diagnostic);
+    }
+
+    fn missing_trait_diagnostic(
+        &self,
+        bound: &Bound,
+        implementor: &Type,
+        span: Span,
+        display: &TypeDisplay<'_>,
+    ) -> Diagnostic {
+        let trait_name = self.bindings.get(bound.binding).name();
+        let found = display.show(implementor);
+        match implementor {
+            Type::Named(struct_binding, _) if self.structs.get(*struct_binding).is_some() => {
+                TypeProblems::missing_trait_on_struct(trait_name, &found, span)
+            }
+            _ => {
+                let implementors = self.implementor_names(bound.binding, display);
+                TypeProblems::missing_trait(trait_name, &found, span, implementors)
+            }
+        }
+    }
+
+    fn implementor_names(
+        &self,
+        trait_binding: BindingId,
+        display: &TypeDisplay<'_>,
+    ) -> Vec<String> {
+        self.traits
+            .get(trait_binding)
             .map(|rust_trait| {
                 rust_trait
                     .implementors
                     .iter()
-                    .map(|known| Self::show_implementor(&display, known))
+                    .map(|known| Self::show_implementor(display, known))
                     .collect()
             })
-            .unwrap_or_default();
-        let mut diagnostic = TypeProblems::missing_trait(
-            self.bindings.get(bound.binding).name(),
-            &display.show(implementor),
-            span,
-            implementors,
-        );
-        if let Type::Named(struct_binding, _) = implementor
-            && let Some(definition) = self.structs.get(*struct_binding)
+            .unwrap_or_default()
+    }
+
+    fn struct_trait_help(
+        &self,
+        diagnostic: Diagnostic,
+        struct_binding: BindingId,
+        bound: &Bound,
+        display: &TypeDisplay<'_>,
+    ) -> Diagnostic {
+        let Some(definition) = self.structs.get(struct_binding) else {
+            return diagnostic;
+        };
+        let struct_name = self.bindings.get(struct_binding).name().to_string();
+        let diagnostic = if self.is_order(bound.binding) {
+            self.with_order_help(
+                diagnostic,
+                definition,
+                struct_binding,
+                &struct_name,
+                bound.binding,
+                display,
+            )
+        } else {
+            self.with_non_order_help(diagnostic, definition, bound.binding, &struct_name, display)
+        };
+        if self
+            .traits
+            .get(bound.binding)
+            .is_some_and(|rust_trait| rust_trait.path.as_ref() == "std::fmt::Display")
         {
-            diagnostic = self.with_written_derive(diagnostic, definition, bound.binding);
-            if let Some((_, field, field_type)) = definition
-                .blocked
-                .iter()
-                .find(|(trait_binding, _, _)| *trait_binding == bound.binding)
-            {
-                let struct_name = self.bindings.get(*struct_binding).name().to_string();
-                let trait_name = self.bindings.get(bound.binding).name().to_string();
-                diagnostic = diagnostic.with_note(TypeProblems::blocked_derive_note(
-                    &struct_name,
-                    &trait_name,
+            return diagnostic.with_help(TypeProblems::print_struct_help());
+        }
+        diagnostic
+    }
+
+    fn with_non_order_help(
+        &self,
+        diagnostic: Diagnostic,
+        definition: &StructDefinition,
+        trait_binding: BindingId,
+        struct_name: &str,
+        display: &TypeDisplay<'_>,
+    ) -> Diagnostic {
+        let diagnostic = self.with_written_derive(diagnostic, definition, trait_binding);
+        match definition
+            .blocked
+            .iter()
+            .find(|(blocked, _, _)| *blocked == trait_binding)
+        {
+            Some((_, field, field_type)) => {
+                diagnostic.with_note(TypeProblems::blocked_derive_note(
+                    struct_name,
+                    self.bindings.get(trait_binding).name(),
                     field,
                     &display.show(field_type),
-                ));
+                ))
             }
-            if self
-                .traits
-                .get(bound.binding)
-                .is_some_and(|rust_trait| rust_trait.path.as_ref() == "std::fmt::Display")
-            {
-                diagnostic = diagnostic.with_help(TypeProblems::print_struct_help());
+            None => diagnostic,
+        }
+    }
+
+    fn is_order(&self, trait_binding: BindingId) -> bool {
+        self.traits
+            .get(trait_binding)
+            .is_some_and(|rust_trait| rust_trait.path.as_ref() == crate::core::OrderTrait::PATH)
+    }
+
+    fn with_order_help(
+        &self,
+        diagnostic: Diagnostic,
+        definition: &StructDefinition,
+        struct_binding: BindingId,
+        struct_name: &str,
+        trait_binding: BindingId,
+        display: &TypeDisplay<'_>,
+    ) -> Diagnostic {
+        let diagnostic = match definition.written_derive {
+            Some(span) => diagnostic.with_label(TypeProblems::derive_leaves_out(span, "ord")),
+            None => diagnostic.with_note(TypeProblems::order_not_inferred_note()),
+        };
+        let sortable = self.first_ord_field(definition, trait_binding);
+        match self.blocking_field(struct_binding, trait_binding) {
+            Some((field, field_type)) => diagnostic
+                .with_note(TypeProblems::order_blocked_note(
+                    struct_name,
+                    &field,
+                    &display.show(&field_type),
+                ))
+                .with_help(TypeProblems::sort_by_key_help(struct_name, sortable)),
+            None => {
+                let fields: Vec<Rc<str>> = definition
+                    .fields
+                    .iter()
+                    .map(|(name, _)| name.clone())
+                    .collect();
+                diagnostic
+                    .with_help(TypeProblems::order_derive_help(
+                        struct_name,
+                        &definition.derives,
+                        &fields,
+                    ))
+                    .with_help(TypeProblems::sort_by_key_help(struct_name, sortable))
             }
         }
-        self.diagnostics.push(diagnostic);
+    }
+
+    fn first_ord_field<'a>(
+        &self,
+        definition: &'a StructDefinition,
+        trait_binding: BindingId,
+    ) -> Option<&'a str> {
+        let params: Vec<GenericId> = definition.params.iter().map(|param| param.id).collect();
+        definition
+            .fields
+            .iter()
+            .find(|(_, ty)| {
+                self.traits
+                    .satisfies(&Bound::plain(trait_binding), ty, &|generic, _| {
+                        params.contains(&generic)
+                    })
+            })
+            .map(|(name, _)| name.as_ref())
     }
 
     fn show_implementor(display: &TypeDisplay<'_>, implementor: &Implementor) -> String {

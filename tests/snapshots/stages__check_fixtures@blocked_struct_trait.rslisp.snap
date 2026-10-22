@@ -9,5 +9,4 @@ error[L0404]: `point` does not implement `eq`
 6 |   (println (same? (make-point 0 0) (make-point 1 1))))
   |                   ^^^^^^^^^^^^^^^^ this needs `eq`
   |
-  = note: `eq` is implemented for: bool, char, str, string, (ref str), i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, (where ((a eq)) (vec a)), (where ((a eq)) (option a)), (where ((a eq) (b eq)) (result a b))
   = note: `point` cannot derive `eq`: field `x` is `f64`
