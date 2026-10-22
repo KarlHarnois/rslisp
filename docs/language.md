@@ -234,6 +234,7 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 | `first rest list prepend concat length empty? nth take drop` | Build and take apart lists of forms. |
 | `symbol? list? string? number?` | Test what kind of form a value is. |
 | `symbol-name`, `(symbol context part...)`, `(string part...)` | Read and build names and strings. |
+| `escape-string`, `escape-format`, `string-strip-suffix` | Escape a string for a Rust string literal or format string in a template, and drop a suffix. |
 | `(same-binding? left right)` | Test whether two symbols refer to the same binding. |
 | `(fail "message" form)`, `(fail "message" form "help")` | Stop expansion with an error at `form`, and an optional help line that says how to fix the call. |
 | `number-add number-sub number-lt number-le number-gt number-ge` | Count and compare positions in code. They take integers. |

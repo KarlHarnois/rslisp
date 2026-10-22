@@ -13,6 +13,16 @@ pub struct TextOperations<'a> {
 impl<'a> TextOperations<'a> {
     const FAIL_ARGUMENTS: usize = 2;
     const FAIL_WITH_HELP_ARGUMENTS: usize = 3;
+    const ESCAPES: [(char, &'static str); 6] = [
+        ('"', "\\\""),
+        ('\\', "\\\\"),
+        ('\n', "\\n"),
+        ('\r', "\\r"),
+        ('\t', "\\t"),
+        ('\0', "\\0"),
+    ];
+    const STRING_BRACES: [(char, &'static str); 2] = [('{', "{{"), ('}', "}}")];
+    const FORMAT_BRACES: [(char, &'static str); 2] = [('{', "{{{{"), ('}', "}}}}")];
 
     pub fn new(arguments: &'a Arguments, call_site: Span) -> Self {
         Self {
@@ -87,6 +97,38 @@ impl<'a> TextOperations<'a> {
     pub fn not(&self) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(1)?;
         Ok(Value::Bool(!self.arguments.boolean(0)?))
+    }
+
+    pub fn escape_string(&self) -> Result<Value, Diagnostic> {
+        self.escape(&Self::STRING_BRACES)
+    }
+
+    pub fn escape_format(&self) -> Result<Value, Diagnostic> {
+        self.escape(&Self::FORMAT_BRACES)
+    }
+
+    pub fn string_strip_suffix(&self) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(2)?;
+        let text = self.arguments.string(0)?;
+        let suffix = self.arguments.string(1)?;
+        Ok(self.string_value(text.strip_suffix(suffix).unwrap_or(text).to_string()))
+    }
+
+    fn escape(&self, braces: &[(char, &'static str); 2]) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(1)?;
+        let text = self.arguments.string(0)?;
+        let mut escaped = String::new();
+        for character in text.chars() {
+            match Self::ESCAPES
+                .iter()
+                .chain(braces)
+                .find(|(from, _)| *from == character)
+            {
+                Some((_, escape)) => escaped.push_str(escape),
+                None => escaped.push(character),
+            }
+        }
+        Ok(self.string_value(escaped))
     }
 
     fn forms_equal(left: &Form, right: &Form) -> bool {
