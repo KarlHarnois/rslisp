@@ -1,0 +1,84 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/expressions.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Counter {
+    count: i64,
+}
+
+fn make_counter(count: i64) -> Counter {
+    Counter { count }
+}
+
+fn counter_count(instance: &Counter) -> i64 {
+    instance.count
+}
+
+fn is_in_range(a: i64) -> bool {
+    a > 1 && a < 5
+}
+
+fn is_small(a: i64) -> bool {
+    a == 1 || a == 2 || a == 3
+}
+
+fn twice_next(x: i64) -> i64 {
+    {
+        let y: i64 = x + 1;
+        y * 2
+    }
+}
+
+fn sum_to(limit: i64) -> i64 {
+    {
+        let mut i: i64 = 0;
+        let mut total_2: i64 = 0;
+        loop {
+            if i > limit {
+                break total_2;
+            } else {
+                (i, total_2) = (i + 1, total_2 + i);
+                continue;
+            }
+        }
+    }
+}
+
+fn total<A: crate::rt::Number>(a: A, b: A, c: A) -> A {
+    (a + b) + c
+}
+
+fn counterto_text(c: &Counter) -> String {
+    counter_count(c).to_string()
+}
+
+fn main() {
+    let mut c = make_counter(0);
+    *&mut c.count += 1;
+    println!("{}", is_in_range(3));
+    println!("{}", is_small(2));
+    println!("{}", twice_next(3));
+    println!("{}", sum_to(10));
+    println!("{}", total(1, 2, 3));
+    println!("{}", counterto_text(&c))
+}
+
+mod rt {
+    use std::ops::{Add, Div, Mul, Rem, Sub};
+
+    pub trait Number:
+        Copy + PartialOrd + Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Div<Output = Self> + Rem<Output = Self>
+    {}
+
+    macro_rules! numbers {
+        ($($number:ty),*) => {
+            $(
+                impl Number for $number {}
+            )*
+        };
+    }
+
+    numbers!(i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64);
+}

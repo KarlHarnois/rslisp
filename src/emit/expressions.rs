@@ -671,6 +671,14 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn conditional(&mut self, test: &TypedExpr, then: &TypedExpr, otherwise: &TypedExpr) -> Code {
+        if let Some(operator) = Self::short_circuit_operator(then, otherwise) {
+            let value = if Self::boolean_literal(then) == Some(true) {
+                otherwise
+            } else {
+                then
+            };
+            return self.short_circuit(operator, test, value);
+        }
         let test = self.expr(test);
         let mut fragments = vec![Fragment::Text("if ".to_string())];
         fragments.extend(test.fragments);
@@ -695,6 +703,53 @@ impl<'a> ExpressionEmitter<'a> {
         Code {
             fragments,
             precedence: Precedence::Block,
+        }
+    }
+
+    fn short_circuit(
+        &mut self,
+        operator: &'static str,
+        test: &TypedExpr,
+        value: &TypedExpr,
+    ) -> Code {
+        let test = self.expr(test);
+        let value = self.expr(value);
+        let test = Self::logical_operand(test, operator);
+        let value = Self::logical_operand(value, operator);
+        Code::joined(
+            vec![test, Code::atom(format!(" {operator} ")), value],
+            Precedence::Operator,
+        )
+    }
+
+    fn logical_operand(code: Code, operator: &'static str) -> Code {
+        let needs_parentheses = match code.precedence {
+            Precedence::Atom | Precedence::Prefix => false,
+            Precedence::Block => true,
+            Precedence::Operator => operator == "&&" && code.text().contains("||"),
+        };
+        if needs_parentheses {
+            code.parenthesized()
+        } else {
+            code
+        }
+    }
+
+    fn short_circuit_operator(then: &TypedExpr, otherwise: &TypedExpr) -> Option<&'static str> {
+        match (
+            Self::boolean_literal(then),
+            Self::boolean_literal(otherwise),
+        ) {
+            (Some(true), None) => Some("||"),
+            (None, Some(false)) => Some("&&"),
+            _ => None,
+        }
+    }
+
+    fn boolean_literal(expr: &TypedExpr) -> Option<bool> {
+        match &expr.kind {
+            TypedExprKind::Leaf(TypedLeaf::Literal(Literal::Bool(value))) => Some(*value),
+            _ => None,
         }
     }
 

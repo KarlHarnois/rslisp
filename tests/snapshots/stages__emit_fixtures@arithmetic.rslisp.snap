@@ -35,20 +35,12 @@ fn main() {
     println!("{}", {
         let left: i64 = 1;
         let middle: i64 = 2;
-        if left < middle {
-            middle < 3
-        } else {
-            false
-        }
+        left < middle && middle < 3
     });
     println!("{}", {
         let left: i64 = 3;
         let middle: i64 = 2;
-        if left < middle {
-            middle < 1
-        } else {
-            false
-        }
+        left < middle && middle < 1
     });
     println!("{}", distance_squared(make_point(0.0, 0.0), make_point(3.0, 4.0)))
 }
