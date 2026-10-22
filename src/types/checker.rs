@@ -363,6 +363,16 @@ impl TypeChecker {
             }
         }
         self.discharge_obligations(ObligationPass::Deferring);
+        let generics: Vec<(BindingId, &TypedExpr)> = typed
+            .iter()
+            .map(|(binding, value)| (*binding, value))
+            .collect();
+        let signature_count = signatures
+            .values()
+            .map(|signature| signature.params.len())
+            .max()
+            .unwrap_or_default();
+        self.generalize_component(&generics, signature_count);
         let mut results = Vec::new();
         for (binding, value) in typed {
             let scheme = self.finish_scheme(binding, &value, signatures.get(&binding));
@@ -464,35 +474,71 @@ impl TypeChecker {
         value: &TypedExpr,
         signature: Option<&Scheme>,
     ) -> Scheme {
-        let inferred = self.component[&binding].clone();
+        let inferred = self.unifier.resolve(&self.component[&binding]);
         if let Some(signature) = signature {
             return Scheme {
                 params: signature.params.clone(),
-                body: self.unifier.resolve(&inferred),
+                body: inferred,
             };
         }
         if matches!(value.kind, TypedExprKind::Fn(_)) {
-            return self.generalize(&inferred, value.span);
+            let params = self.mentioned_generics(&inferred);
+            return Scheme {
+                params,
+                body: inferred,
+            };
         }
         self.monomorphic.push(inferred.clone());
-        Scheme::monomorphic(self.unifier.resolve(&inferred))
+        Scheme::monomorphic(inferred)
     }
 
-    fn generalize(&mut self, inferred: &Type, span: Span) -> Scheme {
+    fn generalize_component(&mut self, members: &[(BindingId, &TypedExpr)], start: usize) {
         let excluded = self.monomorphic_vars();
-        let mut params = Vec::new();
-        for var in self.free_vars(inferred) {
-            if excluded.contains(&var) {
+        let mut vars: Vec<TypeVar> = Vec::new();
+        for (binding, value) in members {
+            let generalizes = !self.signatures.contains_key(binding)
+                && matches!(value.kind, TypedExprKind::Fn(_));
+            if !generalizes {
                 continue;
             }
-            if let Some(param) = self.generalize_var(var, params.len(), span) {
-                params.push(param);
+            for var in self.free_vars(&self.component[binding]) {
+                if !excluded.contains(&var) && !vars.contains(&var) {
+                    vars.push(var);
+                }
+            }
+        }
+        let span = members.first().map_or_else(
+            || Span::new(crate::source::SourceId::new(0), 0..0),
+            |(_, value)| value.span,
+        );
+        let mut position = start;
+        for var in vars {
+            if self.generalize_var(var, position, span).is_some() {
+                position += 1;
             }
         }
         self.discharge_obligations(ObligationPass::Deferring);
-        Scheme {
-            params,
-            body: self.unifier.resolve(inferred),
+    }
+
+    fn mentioned_generics(&self, inferred: &Type) -> Vec<GenericParam> {
+        let mut ids = Vec::new();
+        Self::collect_generics(inferred, &mut ids);
+        ids.into_iter()
+            .filter_map(|id| self.generics.get(&id).cloned())
+            .collect()
+    }
+
+    fn collect_generics(value: &Type, ids: &mut Vec<GenericId>) {
+        match value {
+            Type::Generic(id) => {
+                if !ids.contains(id) {
+                    ids.push(*id);
+                }
+            }
+            _ => value
+                .parts()
+                .into_iter()
+                .for_each(|part| Self::collect_generics(part, ids)),
         }
     }
 
