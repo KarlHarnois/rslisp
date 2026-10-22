@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use super::display::TypeDisplay;
 use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
 use super::traits::TraitTable;
@@ -143,5 +144,17 @@ impl TypedProgram {
             .iter()
             .find(|module| module.id == self.entry)
             .expect("the entry module is checked")
+    }
+
+    pub fn entry_signatures(&self) -> String {
+        let display = TypeDisplay::new(&self.bindings, &self.generics);
+        self.entry_module()
+            .definitions
+            .iter()
+            .map(|definition| {
+                let name = self.bindings.get(definition.binding).name();
+                format!("(type {name} {})\n", display.scheme(&definition.scheme))
+            })
+            .collect()
     }
 }

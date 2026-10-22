@@ -4,6 +4,7 @@ mod emit;
 mod exit_status;
 mod expand;
 mod run;
+mod signatures;
 mod terminal;
 
 use std::path::PathBuf;
@@ -19,6 +20,7 @@ use emit::EmitCommand;
 use exit_status::ExitStatus;
 use expand::ExpandCommand;
 use run::RunCommand;
+use signatures::SignaturesCommand;
 use terminal::BuildOptions;
 
 #[derive(Parser)]
@@ -32,6 +34,8 @@ pub struct Cli {
 enum Command {
     #[command(about = "Read, expand and check a program, then print its diagnostics")]
     Check { file: PathBuf },
+    #[command(about = "Print the inferred signature of each function in a program")]
+    Signatures { file: PathBuf },
     #[command(about = "Print a program as kernel forms after macro expansion")]
     Expand { file: PathBuf },
     #[command(about = "Print the Rust code generated for a program")]
@@ -70,6 +74,7 @@ impl Command {
     fn execute(self) -> ExitStatus {
         match self {
             Command::Check { file } => CheckCommand::new(file).run(),
+            Command::Signatures { file } => SignaturesCommand::new(file).run(),
             Command::Expand { file } => ExpandCommand::new(file).run(),
             Command::Emit { file } => EmitCommand::new(file).run(),
             Command::Build {
