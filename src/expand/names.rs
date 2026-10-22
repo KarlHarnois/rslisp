@@ -1,7 +1,7 @@
 use super::Expander;
 use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
-use crate::core::{BindingId, BindingInfo, BindingKind, Namespace};
+use crate::core::{BindingId, BindingInfo, BindingKind, ModuleId, Namespace};
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
 use crate::reader::{Form, Symbol};
@@ -100,8 +100,34 @@ impl Expander<'_> {
     }
 
     fn unbound(&self, symbol: &Symbol, namespace: Namespace, span: Span) -> Diagnostic {
-        let candidates = self.table.visible_names(symbol, namespace, self.phase);
+        let candidates: Vec<_> = self
+            .table
+            .visible_name_bindings(symbol, namespace, self.phase)
+            .into_iter()
+            .filter(|(name, binding)| self.is_public(name, namespace, *binding))
+            .map(|(name, _)| name)
+            .collect();
         let similar = SimilarName::closest(symbol.name(), &candidates);
         ExpandProblems::unbound(symbol.name(), namespace, span, similar)
+    }
+
+    fn is_public(&self, name: &str, namespace: Namespace, binding: BindingId) -> bool {
+        match self.definition_module(binding) {
+            Some(module) if Some(module) != self.current_module => {
+                self.modules.get(module).exported(name, namespace) == Some(binding)
+            }
+            _ => true,
+        }
+    }
+
+    fn definition_module(&self, binding: BindingId) -> Option<ModuleId> {
+        match self.kind(binding) {
+            BindingKind::Global(module)
+            | BindingKind::Macro(module)
+            | BindingKind::Struct(module)
+            | BindingKind::Trait(module)
+            | BindingKind::RustType(module) => Some(module),
+            _ => None,
+        }
     }
 }

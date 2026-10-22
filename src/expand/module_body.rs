@@ -30,6 +30,7 @@ enum PendingItem {
 
 impl Expander<'_> {
     pub(super) fn expand_module_body(&mut self, module: ModuleId, forms: Vec<Form>) {
+        let outer_module = self.current_module.replace(module);
         let pending = self.register_definitions(module, forms);
         let mut core = CoreModule {
             id: module,
@@ -45,6 +46,7 @@ impl Expander<'_> {
         self.compile_pending_macros();
         self.order.push(module);
         self.expanded.insert(module, core);
+        self.current_module = outer_module;
     }
 
     pub(super) fn split_binder(binder: &Form) -> (&Form, Option<&Form>) {
@@ -196,7 +198,7 @@ impl Expander<'_> {
         let value = &items[2];
         if self.is_kernel_form(value, KernelForm::Macro) {
             let binding =
-                self.define_global(name, Namespace::Value, BindingKind::Macro, context)?;
+                self.define_global(name, Namespace::Value, BindingKind::Macro(module), context)?;
             self.macros.add_pending(binding, value.clone());
             return Ok(None);
         }

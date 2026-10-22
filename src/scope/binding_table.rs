@@ -87,21 +87,21 @@ impl BindingTable {
         }
     }
 
-    pub fn visible_names(
+    pub fn visible_name_bindings(
         &self,
         symbol: &Symbol,
         namespace: Namespace,
         phase: Phase,
-    ) -> Vec<Rc<str>> {
+    ) -> Vec<(Rc<str>, BindingId)> {
         self.entries
             .iter()
             .filter(|((_, entry_namespace), _)| *entry_namespace == namespace)
-            .filter(|(_, entries)| {
+            .flat_map(|((name, _), entries)| {
                 entries
                     .iter()
-                    .any(|entry| entry.is_visible_from(symbol, phase))
+                    .filter(|entry| entry.is_visible_from(symbol, phase))
+                    .map(|entry| (Rc::clone(name), entry.binding))
             })
-            .map(|((name, _), _)| Rc::clone(name))
             .collect()
     }
 

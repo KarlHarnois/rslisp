@@ -1,0 +1,6 @@
+(export make-thing)
+
+(def internal-helper (fn (x) x))
+
+(defmacro make-thing (x)
+  (template (internal-helpr (unquote x))))
