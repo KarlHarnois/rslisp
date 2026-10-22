@@ -25,23 +25,19 @@ fn is_small(a: i64) -> bool {
 }
 
 fn twice_next(x: i64) -> i64 {
-    {
-        let y: i64 = x + 1;
-        y * 2
-    }
+    let y: i64 = x + 1;
+    y * 2
 }
 
 fn sum_to(limit: i64) -> i64 {
-    {
-        let mut i: i64 = 0;
-        let mut total_2: i64 = 0;
-        loop {
-            if i > limit {
-                break total_2;
-            } else {
-                (i, total_2) = (i + 1, total_2 + i);
-                continue;
-            }
+    let mut i: i64 = 0;
+    let mut total_2: i64 = 0;
+    loop {
+        if i > limit {
+            break total_2;
+        } else {
+            (i, total_2) = (i + 1, total_2 + i);
+            continue;
         }
     }
 }

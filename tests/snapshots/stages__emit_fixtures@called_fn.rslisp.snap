@@ -4,10 +4,8 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/called_fn.rslisp
 ---
 fn next_of(n: i64) -> i64 {
-    {
-        let k: i64 = n;
-        k + 1
-    }
+    let k: i64 = n;
+    k + 1
 }
 
 fn main() {
