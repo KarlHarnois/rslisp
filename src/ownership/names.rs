@@ -28,8 +28,9 @@ impl ChangingFunctionNames {
             .params
             .iter()
             .any(|param| matches!(&param.ty, Type::Mut(_)));
-        let name = program.bindings.get(definition.binding).name();
-        (changes_argument && !name.ends_with('!'))
-            .then(|| OwnershipProblems::missing_bang(name, definition.span))
+        let info = program.bindings.get(definition.binding);
+        let span = info.span().unwrap_or(definition.span);
+        (changes_argument && !info.name().ends_with('!'))
+            .then(|| OwnershipProblems::missing_bang(info.name(), span))
     }
 }
