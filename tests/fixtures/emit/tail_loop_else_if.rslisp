@@ -1,0 +1,6 @@
+(defn collatz-steps (n steps)
+  (cond ((= n 1) steps)
+        ((= (rem n 2) 0) (collatz-steps (/ n 2) (+ steps 1)))
+        (else (collatz-steps (+ (* 3 n) 1) (+ steps 1)))))
+
+(defn main () (println (collatz-steps 6 0)))

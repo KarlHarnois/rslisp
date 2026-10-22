@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/tail_loop_else_if.rslisp
+---
+fn collatz_steps(mut n: i64, mut steps: i64) -> i64 {
+    loop {
+        if n == 1 {
+            return steps;
+        } else if n % 2 == 0 {
+            (n, steps) = (n / 2, steps + 1);
+            continue;
+        } else {
+            (n, steps) = (3 * n + 1, steps + 1);
+            continue;
+        }
+    }
+}
+
+fn main() {
+    println!("{}", collatz_steps(6, 0))
+}
