@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/value_parameter_through_references.rslisp
+---
+(type make-employee (fn (string u32) employee))
+(type employee-name (fn ((ref employee)) (ref string)))
+(type employee-score (fn ((ref employee)) u32))
+(type high? (fn ((ref employee)) bool))
+(type big? (fn (i64) bool))
+(type main (fn () unit))
