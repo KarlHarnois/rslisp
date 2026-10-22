@@ -1,0 +1,6 @@
+(defn main ()
+  (println (unwrap (some 3)))
+  (println (expect (some 4) "four"))
+  (println (unwrap (map-some (some 2) (fn (n) (* n 3)))))
+  (println (unwrap (then-some (some 5) (fn (n) (some (+ n 1))))))
+  (println (unwrap-or (map-some (the (option i64) none) (fn (n) (* n 3))) 0)))
