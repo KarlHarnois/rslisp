@@ -8,7 +8,7 @@ error[L0602]: `reset!` and `reset` both become `reset` in Rust
   |
 1 | (defn reset (items) (len items))
   |       ^^^^^ this becomes `reset`
-2 | (defn reset! (items) (push items 0))
+2 | (defn reset! (items) (push! items 0))
   |       ------ this also becomes `reset`
   |
   = help: rename one of them

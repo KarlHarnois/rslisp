@@ -6,8 +6,8 @@ input_file: tests/fixtures/check/mut_parameter_passed_twice.rslisp
 warning[L0504]: `add-one` changes an argument, so its name should end with `!`
  --> check/mut_parameter_passed_twice.rslisp:1:1
   |
-1 | (defn add-one (stack) (push stack 1))
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this function changes an argument
+1 | (defn add-one (stack) (push! stack 1))
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this function changes an argument
   |
   = help: rename it `add-one!`
 

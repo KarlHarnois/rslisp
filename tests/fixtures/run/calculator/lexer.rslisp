@@ -32,7 +32,7 @@
 
 (defn append (items item)
   (let growing items)
-  (push growing item)
+  (push! growing item)
   growing)
 
 (defn digit? (c) (<= (char "0") c (char "9")))
