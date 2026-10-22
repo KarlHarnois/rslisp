@@ -5,7 +5,6 @@
   (for-each (lines "one\ntwo") (fn (line) (println line)))
   (for-each (split "a,b,c" ",") (fn (part) (println part)))
   (println (as-str (to-string "as-str")))
-  (println (slice-text (collect (chars "abcdef")) 1 4))
   (let (good (result i64 _)) (parse "42"))
   (let (bad (result i64 _)) (parse "nope"))
   (println (ok? good))

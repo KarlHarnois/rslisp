@@ -1,7 +1,7 @@
 (use prelude/macros defmacro map-list)
 (use code list prepend length string symbol number-add number-sub number-lt)
 
-(export display to-string print println str char chars lines split trim as-str parse parse-error from-str slice-text)
+(export display to-string print println str char chars lines split trim as-str parse parse-error from-str)
 
 (rust-trait display "std::fmt::Display"
   bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
@@ -10,7 +10,7 @@
 (def print (rust "print!(\"{{}}\", {&0})" (where ((a display)) (fn ((ref a)) unit))))
 (def println (rust "println!(\"{{}}\", {&0})" (where ((a display)) (fn ((ref a)) unit))))
 
-(use prelude/types vec result iterator)
+(use prelude/types result iterator)
 
 (rust-trait from-str "std::str::FromStr"
   bool char string i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
@@ -24,8 +24,6 @@
 (def as-str (rust "{0}.as_str()" (fn ((ref string)) (ref str))))
 (def parse (rust "{0}.parse()" (where ((target from-str))
                                       (fn ((ref str)) (result target (parse-error target))))))
-(def slice-text (rust "{0}[{1}..{2}].iter().collect::<String>()"
-                      (fn ((ref (vec char)) usize usize) string)))
 
 (def repeat-text
   (fn (text count)

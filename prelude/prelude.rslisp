@@ -12,7 +12,7 @@
                     add sub mul div rem neg sqrt lt le gt ge eq ne
                     + - * / < <= > >= = != ord)
 (use prelude/text display to-string print println str char
-                  chars lines split trim as-str parse parse-error from-str slice-text)
+                  chars lines split trim as-str parse parse-error from-str)
 (use prelude/struct defstruct)
 (use prelude/ownership clone copy ref mut deref)
 
@@ -27,7 +27,7 @@
         add sub mul div rem neg sqrt lt le gt ge eq ne
         + - * / < <= > >= = !=
         display to-string print println str char
-        chars lines split trim as-str parse parse-error from-str slice-text
+        chars lines split trim as-str parse parse-error from-str
         defstruct
         clone copy deref
         vec option result iterator slice sequence push len iter values collect
