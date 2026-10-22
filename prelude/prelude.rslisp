@@ -6,7 +6,7 @@
                get pop! sort! sort-by-key! windows at dedup!)
 (use prelude/iterator range map filter fold for-each
                       sum count max min max-by-key any all find take take-while)
-(use prelude/option some none some? none? unwrap-or)
+(use prelude/option some none some? none? unwrap-or unwrap expect map-some then-some)
 (use prelude/result ok err ok? err?)
 (use prelude/number number signed float integer partial-eq partial-ord
                     add sub mul div rem neg sqrt lt le gt ge eq ne
@@ -34,5 +34,5 @@
         get pop! sort! sort-by-key! windows at dedup!
         range map filter fold for-each
         sum count max min max-by-key any all find take take-while
-        some none some? none? unwrap-or
+        some none some? none? unwrap-or unwrap expect map-some then-some
         ok err ok? err?)
