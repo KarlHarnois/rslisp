@@ -15,6 +15,14 @@ impl GateFailure {
         }
     }
 
+    pub fn clippy_missing(error: io::Error) -> Self {
+        Self {
+            message: format!(
+                "cannot run `clippy-driver`: {error}. Run the gate inside `nix develop`."
+            ),
+        }
+    }
+
     pub fn tests_failed(output: &Output) -> Self {
         Self {
             message: format!(

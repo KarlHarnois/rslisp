@@ -41,7 +41,7 @@
             version = crateVersion;
             src = self;
             cargoLock.lockFile = ./Cargo.lock;
-            nativeBuildInputs = [ pkgs.cargo-llvm-cov ];
+            nativeBuildInputs = [ pkgs.cargo-llvm-cov pkgs.clippy ];
             buildPhase = ''
               runHook preBuild
               cargo xtask coverage

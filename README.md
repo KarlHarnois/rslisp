@@ -23,7 +23,7 @@ The project uses a [Nix](https://nixos.org/download/) flake.
 
    If you use [direnv](https://direnv.net/), run `direnv allow` once instead. The shell then loads when you enter the directory.
 
-2. Run the tests with the coverage and CRAP checks:
+2. Run the tests with the coverage, CRAP and emitted-Rust lint checks:
 
    ```sh
    cargo xtask coverage

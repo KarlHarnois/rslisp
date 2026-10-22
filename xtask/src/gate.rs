@@ -2,8 +2,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use crate::checks::{BadgeFreshness, Check, CoverageFloor, CrapLimit};
+use crate::checks::{BadgeFreshness, Check, CleanEmittedRust, CoverageFloor, CrapLimit};
 use crate::crap::ScoredFunction;
+use crate::emitted_lints::{EmittedLints, LintedProgram};
 use crate::failure::GateFailure;
 use crate::functions::{SourceFunction, SourceTree};
 use crate::instrumented_tests::InstrumentedTests;
@@ -17,6 +18,7 @@ struct Measurement {
     report: LcovReport,
     functions: Vec<SourceFunction>,
     readme: String,
+    linted: Vec<LintedProgram>,
 }
 
 impl QualityGate {
@@ -43,20 +45,23 @@ impl QualityGate {
         let readme_path = self.root.join(Self::README);
         let readme = fs::read_to_string(&readme_path)
             .map_err(|error| GateFailure::unreadable(&readme_path, error))?;
+        let linted = EmittedLints::new(&self.root).run()?;
         Ok(Measurement {
             report,
             functions,
             readme,
+            linted,
         })
     }
 
     fn judge(measurement: Measurement) -> ExitCode {
         let coverage = measurement.report.total();
         let scored = Self::score(measurement.functions, &measurement.report);
-        let checks: [&dyn Check; 3] = [
+        let checks: [&dyn Check; 4] = [
             &CoverageFloor::new(Self::MINIMUM_LINE_COVERAGE, &measurement.report),
             &CrapLimit::new(Self::MAXIMUM_CRAP, scored),
             &BadgeFreshness::new(&measurement.readme, coverage),
+            &CleanEmittedRust::new(measurement.linted),
         ];
         let failures = checks
             .into_iter()

@@ -1,6 +1,7 @@
 use crate::badge::CoverageBadge;
 use crate::coverage::LineCoverage;
 use crate::crap::ScoredFunction;
+use crate::emitted_lints::LintedProgram;
 use crate::lcov::LcovReport;
 
 pub trait Check {
@@ -137,13 +138,49 @@ impl Check for BadgeFreshness<'_> {
     }
 }
 
+pub struct CleanEmittedRust {
+    programs: Vec<LintedProgram>,
+}
+
+impl CleanEmittedRust {
+    pub fn new(programs: Vec<LintedProgram>) -> Self {
+        Self { programs }
+    }
+}
+
+impl Check for CleanEmittedRust {
+    fn passes(&self) -> bool {
+        self.programs.is_empty()
+    }
+
+    fn summary(&self) -> String {
+        format!(
+            "clippy warns on the emitted Rust of {} emit fixtures",
+            self.programs.len()
+        )
+    }
+
+    fn details(&self) -> String {
+        let programs: String = self
+            .programs
+            .iter()
+            .map(|program| format!("{}:\n{}\n", program.fixture, program.warnings))
+            .collect();
+        format!(
+            "{programs}Fix the emitter. A lint about the program's own choices belongs in \
+             `EmittedLints::PROGRAM_CHOICES`, with the project owner's approval.\n"
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
 
-    use super::{BadgeFreshness, Check, CoverageFloor, CrapLimit};
+    use super::{BadgeFreshness, Check, CleanEmittedRust, CoverageFloor, CrapLimit};
     use crate::coverage::LineCoverage;
     use crate::crap::ScoredFunction;
+    use crate::emitted_lints::LintedProgram;
     use crate::functions::{LineSpan, SourceFunction};
     use crate::lcov::LcovReport;
 
@@ -206,5 +243,24 @@ mod tests {
         let check = BadgeFreshness::new("# Title\n", coverage);
         assert!(!check.passes());
         assert!(check.details().contains("line%20coverage-75%25"));
+    }
+
+    #[test]
+    fn clean_emitted_rust_passes_without_warnings() {
+        assert!(CleanEmittedRust::new(Vec::new()).passes());
+    }
+
+    #[test]
+    fn clean_emitted_rust_names_each_warned_fixture() {
+        let check = CleanEmittedRust::new(vec![LintedProgram {
+            fixture: "person".to_string(),
+            warnings: "warning: unused variable".to_string(),
+        }]);
+        assert!(!check.passes());
+        assert!(
+            check
+                .details()
+                .contains("person:\nwarning: unused variable")
+        );
     }
 }

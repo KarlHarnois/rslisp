@@ -3,6 +3,7 @@ mod checks;
 mod complexity;
 mod coverage;
 mod crap;
+mod emitted_lints;
 mod failure;
 mod functions;
 mod gate;
@@ -26,7 +27,7 @@ struct Tasks {
 #[derive(Subcommand)]
 enum Task {
     #[command(
-        about = "Run the tests with coverage, then check the coverage floor, the CRAP limit and the README badge"
+        about = "Run the tests with coverage, then check the coverage floor, the CRAP limit, the README badge and the emitted Rust's lints"
     )]
     Coverage,
 }
