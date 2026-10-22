@@ -10,12 +10,28 @@ pub struct ProgramChecker;
 
 impl ProgramChecker {
     pub fn check(program: &Program) -> Result<TypedProgram, Diagnostics> {
-        let typed = Self::typed_and_owned(program, &HashSet::new())?;
+        let typed = Self::checked(program, &HashSet::new())?;
         let blocked = Self::inferred_copy_changed(&typed);
         if blocked.is_empty() {
             return Ok(typed);
         }
-        Self::typed_and_owned(program, &blocked)
+        Self::checked(program, &blocked)
+    }
+
+    fn checked(
+        program: &Program,
+        changed_structs: &HashSet<BindingId>,
+    ) -> Result<TypedProgram, Diagnostics> {
+        match Self::typed_and_owned(program, changed_structs) {
+            Ok(mut typed) => {
+                typed.warnings.extend(program.warnings.clone());
+                Ok(typed)
+            }
+            Err(mut diagnostics) => {
+                diagnostics.extend(program.warnings.clone());
+                Err(diagnostics)
+            }
+        }
     }
 
     fn typed_and_owned(

@@ -3,6 +3,15 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/pattern_implementor_errors.rslisp
 ---
+warning[L0217]: `shown` binds a Rust path that `display` already binds
+ --> check/pattern_implementor_errors.rslisp:1:13
+  |
+1 | (rust-trait shown "std::fmt::Display" i64 (where ((a shown)) (ref a)))
+  |             ^^^^^ this also binds `std::fmt::Display`
+  |
+  = note: two traits that bind one Rust path can disagree about its implementors
+  = help: use `display`, or give `shown` a different Rust path
+
 error[L0404]: `str` does not implement `shown`
  --> check/pattern_implementor_errors.rslisp:6:38
   |
@@ -43,6 +52,15 @@ error[L0418]: a type parameter alone cannot implement a trait
    |                                     ^^^^^^^^^^^^^ this would match every type
    |
    = help: wrap the parameter in a type, as in `(where ((a clone)) (ref a))`
+
+warning[L0217]: `labeled` binds a Rust path that `display` already binds
+  --> check/pattern_implementor_errors.rslisp:19:13
+   |
+19 | (rust-trait labeled "std::fmt::Display" (ref str))
+   |             ^^^^^^^ this also binds `std::fmt::Display`
+   |
+   = note: two traits that bind one Rust path can disagree about its implementors
+   = help: use `display`, or give `labeled` a different Rust path
 
 error[L0404]: `(ref a)` does not implement `labeled`
   --> check/pattern_implementor_errors.rslisp:21:33
