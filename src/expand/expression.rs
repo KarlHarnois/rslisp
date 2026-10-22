@@ -13,6 +13,7 @@ use crate::core::{
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
+use crate::scope::Phase;
 use crate::source::Span;
 use crate::stack::DeepRecursion;
 
@@ -98,14 +99,32 @@ impl Expander<'_> {
             let expanded = self.apply_macro(binding, form.clone(), None)?;
             return self.lower_expansion(&expanded);
         }
-        let callee = self.lower_expr(head)?;
+        let callee = self.lower_recovered(head)?;
         let arguments = items[1..]
             .iter()
-            .map(|argument| self.lower_expr(argument))
+            .map(|argument| self.lower_recovered(argument))
             .collect::<Result<Vec<Expr>, Diagnostic>>()?;
         Ok(Expr::new(
             ExprKind::Call(Box::new(callee), arguments),
             form.span(),
+        ))
+    }
+
+    fn lower_recovered(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
+        match self.lower_expr(form) {
+            Ok(expr) => Ok(expr),
+            Err(diagnostic) => self.recover(diagnostic, form.span()),
+        }
+    }
+
+    fn recover(&mut self, diagnostic: Diagnostic, span: Span) -> Result<Expr, Diagnostic> {
+        if self.phase == Phase::CompileTime {
+            return Err(diagnostic);
+        }
+        self.recovered_diagnostics.push(diagnostic);
+        Ok(Expr::new(
+            ExprKind::Leaf(Leaf::Literal(Literal::Bool(false))),
+            span,
         ))
     }
 
@@ -186,15 +205,38 @@ impl Expander<'_> {
         let mut queue: VecDeque<Form> = forms.iter().cloned().collect();
         let mut items = Vec::new();
         while let Some(form) = queue.pop_front() {
-            let form = self.expand_head(form, Some(&mut context))?;
-            let item = if self.is_kernel_form(&form, KernelForm::Let) {
-                self.lower_let(&form, &mut queue, &context)?
-            } else {
-                BodyItem::Expr(self.lower_expr(&form)?)
-            };
-            items.push(item);
+            items.push(self.lower_body_item(form, &mut queue, &mut context)?);
         }
         Ok(Block { items })
+    }
+
+    fn lower_body_item(
+        &mut self,
+        form: Form,
+        queue: &mut VecDeque<Form>,
+        context: &mut DefinitionContext,
+    ) -> Result<BodyItem, Diagnostic> {
+        let span = form.span();
+        match self.expand_head(form, Some(context)) {
+            Ok(form) if self.is_kernel_form(&form, KernelForm::Let) => {
+                self.lower_let_or_recover(&form, queue, context, span)
+            }
+            Ok(form) => Ok(BodyItem::Expr(self.lower_recovered(&form)?)),
+            Err(diagnostic) => Ok(BodyItem::Expr(self.recover(diagnostic, span)?)),
+        }
+    }
+
+    fn lower_let_or_recover(
+        &mut self,
+        form: &Form,
+        queue: &mut VecDeque<Form>,
+        context: &DefinitionContext,
+        span: Span,
+    ) -> Result<BodyItem, Diagnostic> {
+        match self.lower_let(form, queue, context) {
+            Ok(item) => Ok(item),
+            Err(diagnostic) => Ok(BodyItem::Expr(self.recover(diagnostic, span)?)),
+        }
     }
 
     fn lower_let(
@@ -204,7 +246,7 @@ impl Expander<'_> {
         context: &DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
         let items = Shape::new(KernelForm::Let, form).exactly(3)?;
-        let value = self.lower_expr(&items[2])?;
+        let value = self.lower_recovered(&items[2])?;
         let scope = self.fresh_local_scope();
         let mut binder = items[1].clone();
         binder.add_scope(scope);
@@ -236,9 +278,9 @@ impl Expander<'_> {
 
     fn lower_if(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
         let items = shape.exactly(4)?;
-        let test = self.lower_expr(&items[1])?;
-        let then = self.lower_expr(&items[2])?;
-        let otherwise = self.lower_expr(&items[3])?;
+        let test = self.lower_recovered(&items[1])?;
+        let then = self.lower_recovered(&items[2])?;
+        let otherwise = self.lower_recovered(&items[3])?;
         Ok(ExprKind::Control(Control::If(
             Box::new(test),
             Box::new(then),
@@ -272,12 +314,15 @@ impl Expander<'_> {
         let [label, value] = shape.list(field)? else {
             return Err(shape.malformed(field));
         };
-        Ok((self.field_label(shape, label)?, self.lower_expr(value)?))
+        Ok((
+            self.field_label(shape, label)?,
+            self.lower_recovered(value)?,
+        ))
     }
 
     fn lower_field_access(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
         let items = shape.exactly(3)?;
-        let value = self.lower_expr(&items[1])?;
+        let value = self.lower_recovered(&items[1])?;
         Ok(ExprKind::Struct(StructExpr::Field(
             Box::new(value),
             self.field_label(shape, &items[2])?,
@@ -300,7 +345,7 @@ impl Expander<'_> {
     fn lower_recur(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
         let arguments = shape.items()[1..]
             .iter()
-            .map(|argument| self.lower_expr(argument))
+            .map(|argument| self.lower_recovered(argument))
             .collect::<Result<Vec<Expr>, Diagnostic>>()?;
         Ok(ExprKind::Recur(arguments))
     }

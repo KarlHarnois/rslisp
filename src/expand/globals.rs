@@ -104,10 +104,15 @@ impl Expander<'_> {
 
     fn lower_global(&mut self, binding: BindingId, form: &Form) -> Result<Rc<Expr>, Diagnostic> {
         let outer_phase = std::mem::replace(&mut self.phase, Phase::Runtime);
+        let errors_before = self.recovered_diagnostics.len();
         let lowered = self.lower_expr(form);
         self.phase = outer_phase;
         match lowered {
             Ok(expr) => {
+                if self.recovered_diagnostics.len() > errors_before {
+                    self.globals.states.insert(binding, GlobalState::Failed);
+                    return Err(self.recovered_diagnostics.remove(errors_before));
+                }
                 RecurCheck::outside().value(&expr)?;
                 let expr = Rc::new(expr);
                 self.globals
