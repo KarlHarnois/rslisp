@@ -38,13 +38,27 @@ impl<'a> UsageCollector<'a> {
 
     fn expr(&mut self, expr: &TypedExpr, context: ParamMode) {
         match &expr.kind {
-            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.require(*binding, context),
-            TypedExprKind::Leaf(_) => {}
+            TypedExprKind::Leaf(leaf) => self.leaf(leaf, context),
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
             TypedExprKind::Recur(arguments) => self.recur(arguments),
+            TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => self.written(expr),
             TypedExprKind::Struct(structure) => self.structure(structure, context),
             TypedExprKind::Control(control) => self.control(control, context),
             TypedExprKind::Fn(lambda) => self.closure_body(lambda),
+        }
+    }
+
+    fn leaf(&mut self, leaf: &TypedLeaf, context: ParamMode) {
+        if let TypedLeaf::Local(binding) = leaf {
+            self.require(*binding, context);
+        }
+    }
+
+    fn written(&mut self, expr: &TypedExpr) {
+        match &expr.kind {
+            TypedExprKind::Borrow(_, value) => self.expr(value, ParamMode::Own),
+            TypedExprKind::Deref(value) => self.expr(value, ParamMode::Ref),
+            _ => unreachable!("the caller matches a written form"),
         }
     }
 

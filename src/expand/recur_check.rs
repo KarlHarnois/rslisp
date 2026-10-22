@@ -51,6 +51,9 @@ impl RecurCheck {
                 self.arguments(arguments.iter())
             }
             ExprKind::Recur(arguments) => self.recur(expr, arguments, position),
+            ExprKind::Borrow(_, value) | ExprKind::Deref(value) => {
+                self.expr(value, TailPosition::NotTail)
+            }
             ExprKind::Control(control) => self.control(control, position),
             ExprKind::Struct(structure) => self.structure(structure),
         }

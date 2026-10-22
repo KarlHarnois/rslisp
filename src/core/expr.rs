@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::{BindingId, TypeExpr};
+use super::{BindingId, ReferenceKind, TypeExpr};
 use crate::reader::{Form, Number};
 use crate::source::Span;
 
@@ -16,6 +16,8 @@ pub enum ExprKind {
     Fn(Rc<Lambda>),
     Call(Box<Expr>, Vec<Expr>),
     Recur(Vec<Expr>),
+    Borrow(ReferenceKind, Box<Expr>),
+    Deref(Box<Expr>),
     Control(Control),
     Struct(StructExpr),
 }
@@ -104,6 +106,7 @@ impl Expr {
                 std::iter::once(callee.as_ref()).chain(arguments).collect()
             }
             ExprKind::Recur(arguments) => arguments.iter().collect(),
+            ExprKind::Borrow(_, value) | ExprKind::Deref(value) => vec![value],
             ExprKind::Control(control) => control.children(),
             ExprKind::Struct(structure) => structure.children(),
         }

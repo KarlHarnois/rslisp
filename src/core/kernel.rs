@@ -11,6 +11,8 @@ pub enum ExpressionForm {
     Fn,
     Recur,
     Leaf(LeafForm),
+    Borrow(ReferenceKind),
+    Deref,
     Control(ControlForm),
     Struct(StructForm),
 }
@@ -52,7 +54,7 @@ struct KernelFormRow {
 }
 
 impl KernelForm {
-    const ROWS: [KernelFormRow; 18] = [
+    const ROWS: [KernelFormRow; 21] = [
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Fn),
             name: "fn",
@@ -102,6 +104,21 @@ impl KernelForm {
             form: KernelForm::Expression(ExpressionForm::Struct(StructForm::Field)),
             name: "field",
             shape: "(field value name)",
+        },
+        KernelFormRow {
+            form: KernelForm::Expression(ExpressionForm::Borrow(ReferenceKind::Shared)),
+            name: "ref",
+            shape: "(ref value)",
+        },
+        KernelFormRow {
+            form: KernelForm::Expression(ExpressionForm::Borrow(ReferenceKind::Mutable)),
+            name: "mut",
+            shape: "(mut place)",
+        },
+        KernelFormRow {
+            form: KernelForm::Expression(ExpressionForm::Deref),
+            name: "deref",
+            shape: "(deref value)",
         },
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Leaf(LeafForm::Quote)),

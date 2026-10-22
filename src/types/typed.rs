@@ -8,7 +8,7 @@ use super::templates::TemplateBorrows;
 use super::traits::TraitTable;
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
 use crate::core::{
-    BindingArena, BindingId, FieldLabel, Literal, ModuleId, ModulePath, RustTemplate,
+    BindingArena, BindingId, FieldLabel, Literal, ModuleId, ModulePath, ReferenceKind, RustTemplate,
 };
 use crate::diagnostic::Diagnostics;
 use crate::source::Span;
@@ -48,6 +48,8 @@ pub enum TypedExprKind {
     Fn(Rc<TypedLambda>),
     Call(Box<TypedExpr>, Vec<TypedArgument>),
     Recur(Vec<TypedArgument>),
+    Borrow(ReferenceKind, Box<TypedExpr>),
+    Deref(Box<TypedExpr>),
     Control(TypedControl),
     Struct(TypedStructExpr),
 }

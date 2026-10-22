@@ -9,6 +9,7 @@ use super::shape::Shape;
 use crate::core::{
     Binder, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind, ExpressionForm,
     FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, Namespace, ParsedTemplate,
+    ReferenceKind,
     RustTemplate, StructExpr, StructForm,
 };
 use crate::diagnostic::Diagnostic;
@@ -155,6 +156,8 @@ impl Expander<'_> {
             ExpressionForm::Fn => self.lower_fn(shape),
             ExpressionForm::Recur => self.lower_recur(shape),
             ExpressionForm::Leaf(form) => self.lower_leaf_form(form, shape),
+            ExpressionForm::Borrow(kind) => self.lower_borrow(kind, shape),
+            ExpressionForm::Deref => self.lower_deref(shape),
             ExpressionForm::Control(form) => self.lower_control_form(form, shape),
             ExpressionForm::Struct(form) => self.lower_struct_form(form, shape),
         }
@@ -176,6 +179,18 @@ impl Expander<'_> {
             ControlForm::Do => self.lower_do(shape),
             ControlForm::If => self.lower_if(shape),
         }
+    }
+
+    fn lower_borrow(&mut self, kind: ReferenceKind, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let items = shape.exactly(2)?;
+        let value = self.lower_expr(&items[1])?;
+        Ok(ExprKind::Borrow(kind, Box::new(value)))
+    }
+
+    fn lower_deref(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let items = shape.exactly(2)?;
+        let value = self.lower_expr(&items[1])?;
+        Ok(ExprKind::Deref(Box::new(value)))
     }
 
     fn lower_struct_form(

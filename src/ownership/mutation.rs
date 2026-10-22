@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::core::BindingId;
+use crate::core::{BindingId, ReferenceKind};
 use crate::types::{
     Borrow, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind,
     TypedLambda, TypedLeaf, TypedStructExpr,
@@ -54,6 +54,16 @@ impl ChangedValues {
             TypedExprKind::Recur(arguments) => self.arguments(arguments, enclosing, true),
             TypedExprKind::Control(control) => self.control(control, enclosing),
             TypedExprKind::Struct(structure) => self.structure(structure, enclosing),
+            TypedExprKind::Borrow(ReferenceKind::Mutable, value) => {
+                if let Some(place) = value.place_root() {
+                    let root = self.root(place);
+                    self.changed.insert(root);
+                }
+                self.expr(value, enclosing);
+            }
+            TypedExprKind::Borrow(ReferenceKind::Shared, value) | TypedExprKind::Deref(value) => {
+                self.expr(value, enclosing);
+            }
             TypedExprKind::Fn(lambda) => self.block(&lambda.body, enclosing),
             TypedExprKind::Leaf(_) => {}
         }

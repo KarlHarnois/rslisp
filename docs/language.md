@@ -56,6 +56,9 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `derive` | `(derive struct trait...)` | `#[derive(...)]` | struct: reference to a `struct` of this module. traits: references to traits. |
 | `new` | `(new name (field value)...)` | struct literal | name: type. fields: field labels with expressions. |
 | `field` | `(field value name)` | `value.name` | value: expression. name: field label. |
+| `ref` | `(ref value)` | `&value` | value: expression. |
+| `mut` | `(mut place)` | `&mut place` | place: expression. |
+| `deref` | `(deref value)` | `*value` | value: expression. |
 | `quote` | `(quote form)` | none | form: data. |
 | `macro` | `(def name (macro (form) body...))` | none | form: binder. body: expressions. |
 | `rust` | `(rust "template" type)` | the inlined template | type: type. |
@@ -67,7 +70,9 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 
 In type positions, the kernel provides `fn`, `ref`, `mut`, `where`, `with`, `_`, and the primitive types `bool char str string unit i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64`.
 
-In expression positions, the kernel provides the constants `true` and `false`. They are kernel constants, not prelude definitions. Macro code and program code then see the same booleans, so `if`, `and` and `or` work in both.
+In expression positions, the kernel provides `ref`, `mut` and `deref`, and the constants `true` and `false`. The constants are kernel constants, not prelude definitions. Macro code and program code then see the same booleans, so `if`, `and` and `or` work in both.
+
+`ref`, `mut` and `deref` are kernel forms because a prelude function cannot mark its result as written. The compiler must see the written form to know that the value came from a written borrow or dereference.
 
 ### Module bodies
 
@@ -367,7 +372,7 @@ At each of them, the compiler adds one borrow, removes borrows, or copies a Copy
 - If a function passed as a value needs an adjustment of its parameters, the compiler wraps it in a closure.
 - If a body copies a generic parameter, the compiler infers the parameter's `copy` bound.
 - If the name of a function that changes an argument does not end with `!`, the compiler warns. The emitted Rust drops the `!`.
-- The prelude gains `deref`, which copies a Copy value out of a borrow.
+- `deref` copies a Copy value out of a borrow.
 - A command prints each function's inferred signature, so that a `type` form can pin it.
 
 Rust adjusts a receiver's references automatically, but rslisp has no receivers, so the rule covers every call. A Copy value of 16 bytes or less travels in registers, so copying it costs no more than borrowing it.

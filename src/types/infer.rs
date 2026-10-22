@@ -15,7 +15,7 @@ use super::typed::{
 use super::unifier::{LiteralKind, UnifyError};
 use crate::core::{
     Binder, BindingId, BindingInfo, BindingKind, Block, BodyItem, Control, Expr, ExprKind,
-    FieldLabel, Lambda, Leaf, Literal, PrimitiveType, RustTemplate, StructExpr,
+    FieldLabel, Lambda, Leaf, Literal, PrimitiveType, ReferenceKind, RustTemplate, StructExpr,
 };
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
@@ -44,6 +44,7 @@ impl TypeChecker {
             ExprKind::Fn(lambda) => Self::typed(self.infer_lambda(lambda, span, None), span),
             ExprKind::Call(callee, arguments) => self.infer_call(callee, arguments, span),
             ExprKind::Recur(arguments) => self.infer_recur(arguments, span),
+            ExprKind::Borrow(..) | ExprKind::Deref(..) => self.infer_written(expr, span),
             ExprKind::Control(control) => self.infer_control(control, span),
             ExprKind::Struct(structure) => self.infer_struct(structure, span),
         }
@@ -60,6 +61,73 @@ impl TypeChecker {
             Leaf::Rust(template) => self.infer_inline_rust(template),
         };
         Self::typed(inferred, span)
+    }
+
+    fn infer_written(&mut self, expr: &Expr, span: Span) -> Result<TypedExpr, Diagnostic> {
+        match expr.kind() {
+            ExprKind::Borrow(kind, value) => self.infer_borrow(*kind, value, span),
+            ExprKind::Deref(value) => self.infer_deref(value, span),
+            _ => unreachable!("the caller matches a written form"),
+        }
+    }
+
+    fn infer_borrow(
+        &mut self,
+        kind: ReferenceKind,
+        value: &Expr,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let value = self.infer(value)?;
+        if kind == ReferenceKind::Mutable && !value.is_place() {
+            return Err(TypeProblems::mut_borrow_of_copy(
+                value.span,
+                self.field_place(&value),
+            ));
+        }
+        let borrowed = self.place_type(&value);
+        let ty = match kind {
+            ReferenceKind::Shared => Type::Ref(Box::new(borrowed)),
+            ReferenceKind::Mutable => Type::Mut(Box::new(borrowed)),
+        };
+        Ok(TypedExpr {
+            kind: TypedExprKind::Borrow(kind, Box::new(value)),
+            ty,
+            span,
+        })
+    }
+
+    fn infer_deref(&mut self, value: &Expr, span: Span) -> Result<TypedExpr, Diagnostic> {
+        let value = self.infer(value)?;
+        let referent = self.unifier.fresh();
+        self.require_copy(&referent);
+        self.expect(
+            &Type::Ref(Box::new(referent.clone())),
+            &value.ty,
+            value.span,
+            MismatchContext::Plain,
+        )?;
+        Ok(TypedExpr {
+            kind: TypedExprKind::Deref(Box::new(value)),
+            ty: referent,
+            span,
+        })
+    }
+
+    fn place_type(&self, value: &TypedExpr) -> Type {
+        let TypedExprKind::Struct(TypedStructExpr::Field(owner, label)) = &value.kind else {
+            return value.ty.clone();
+        };
+        let mut owner = self.unifier.resolve(&owner.ty);
+        while let Type::Ref(inner) | Type::Mut(inner) = owner {
+            owner = self.unifier.resolve(&inner);
+        }
+        let Type::Named(binding, arguments) = owner else {
+            return value.ty.clone();
+        };
+        self.structs
+            .get(binding)
+            .and_then(|definition| definition.instantiated_field(&label.name, &arguments))
+            .unwrap_or_else(|| value.ty.clone())
     }
 
     fn infer_control(&mut self, control: &Control, span: Span) -> Result<TypedExpr, Diagnostic> {
@@ -941,5 +1009,71 @@ impl TypeChecker {
         let scheme = self.lower_scheme(&template.type_expr)?;
         let ty = self.instantiate(&scheme);
         Ok((TypedExprKind::Leaf(TypedLeaf::Rust(template.clone())), ty))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::TypeChecker;
+    use crate::core::{BindingArena, Expr, ExprKind, FieldLabel, Leaf, Literal, PrimitiveType};
+    use crate::source::{SourceId, Span};
+    use crate::types::Type;
+    use crate::types::typed::{TypedExpr, TypedExprKind, TypedLeaf, TypedStructExpr};
+
+    struct PlaceTypeFixture {
+        checker: TypeChecker,
+        span: Span,
+    }
+
+    impl PlaceTypeFixture {
+        fn new() -> Self {
+            Self {
+                checker: TypeChecker::new(BindingArena::default()),
+                span: Span::new(SourceId::new(0), 0..0),
+            }
+        }
+
+        fn field_on(&self, owner: TypedExpr) -> TypedExpr {
+            TypedExpr {
+                kind: TypedExprKind::Struct(TypedStructExpr::Field(
+                    Box::new(owner),
+                    FieldLabel {
+                        name: "field".into(),
+                        span: self.span,
+                    },
+                )),
+                ty: Type::Primitive(PrimitiveType::I64),
+                span: self.span,
+            }
+        }
+
+        fn owner(&self) -> TypedExpr {
+            TypedExpr {
+                kind: TypedExprKind::Leaf(TypedLeaf::Literal(Literal::Bool(false))),
+                ty: Type::Primitive(PrimitiveType::I64),
+                span: self.span,
+            }
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "the caller matches a written form")]
+    fn inferring_a_non_written_expression_panics() {
+        let mut fixture = PlaceTypeFixture::new();
+        let expr = Expr::new(
+            ExprKind::Leaf(Leaf::Literal(Literal::Bool(false))),
+            fixture.span,
+        );
+        let _ = fixture.checker.infer_written(&expr, fixture.span);
+    }
+
+    #[test]
+    fn a_field_of_a_non_struct_keeps_the_field_type() {
+        let fixture = PlaceTypeFixture::new();
+        let field = fixture.field_on(fixture.owner());
+        assert_eq!(
+            fixture.checker.place_type(&field),
+            Type::Primitive(PrimitiveType::I64)
+        );
     }
 }

@@ -9,7 +9,9 @@ use super::plan::{EmitPlan, ItemKind};
 use super::problems::EmitProblems;
 use super::template::{Template, TemplateError};
 use super::types::{RustTypes, TypePosition};
-use crate::core::{BindingId, FieldLabel, Literal, ModuleId, PrimitiveType, RustTemplate};
+use crate::core::{
+    BindingId, FieldLabel, Literal, ModuleId, PrimitiveType, ReferenceKind, RustTemplate,
+};
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Number, NumberValue};
 use crate::source::Span;
@@ -198,8 +200,8 @@ impl<'a> ExpressionEmitter<'a> {
             TypedExprKind::Recur(_) => {
                 unreachable!("expansion allows `recur` only in tail position")
             }
-            TypedExprKind::Control(control) => self.control(control),
-            TypedExprKind::Struct(structure) => self.structure(structure, &expr.ty),
+            TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => self.written(expr),
+            _ => self.value(expr),
         }
     }
 
@@ -211,6 +213,44 @@ impl<'a> ExpressionEmitter<'a> {
             }
             TypedLeaf::Global(binding) => self.global(*binding, &expr.ty, expr.span),
             TypedLeaf::Rust(template) => self.rust_value(template, &expr.ty, expr.span),
+        }
+    }
+
+    fn written(&mut self, expr: &TypedExpr) -> Code {
+        match &expr.kind {
+            TypedExprKind::Borrow(kind, value) => self.borrow(*kind, value),
+            TypedExprKind::Deref(value) => self.deref(value),
+            _ => unreachable!("the caller matches a written form"),
+        }
+    }
+
+    fn value(&mut self, expr: &TypedExpr) -> Code {
+        match &expr.kind {
+            TypedExprKind::Control(control) => self.control(control),
+            TypedExprKind::Struct(structure) => self.structure(structure, &expr.ty),
+            _ => unreachable!("the caller matches a value form"),
+        }
+    }
+
+    fn borrow(&mut self, kind: ReferenceKind, value: &TypedExpr) -> Code {
+        let place = self.place(value, TypeContext::Unknown);
+        let prefix = match kind {
+            ReferenceKind::Shared => "&",
+            ReferenceKind::Mutable => "&mut ",
+        };
+        Self::prefixed(prefix, place)
+    }
+
+    fn deref(&mut self, value: &TypedExpr) -> Code {
+        Self::prefixed("*", self.expr_in(value, TypeContext::Known))
+    }
+
+    fn place(&mut self, value: &TypedExpr, context: TypeContext) -> Code {
+        match &value.kind {
+            TypedExprKind::Struct(TypedStructExpr::Field(owner, label)) => {
+                self.field_place(owner, label)
+            }
+            _ => self.expr_in(value, context),
         }
     }
 

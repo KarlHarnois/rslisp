@@ -82,17 +82,30 @@ impl<'a> MoveChecker<'a> {
 
     fn expr(&mut self, expr: &TypedExpr, usage: Usage) {
         match &expr.kind {
-            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => {
-                self.local(*binding, &expr.ty, expr.span, usage)
-            }
-            TypedExprKind::Leaf(_) => {}
+            TypedExprKind::Leaf(leaf) => self.leaf(leaf, expr, usage),
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
             TypedExprKind::Recur(arguments) => self.recur(arguments),
+            TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => self.written(expr),
             TypedExprKind::Struct(structure) => self.structure(structure),
             TypedExprKind::Control(control) => self.control(control, usage),
             TypedExprKind::Fn(lambda) => {
                 self.closure(lambda);
             }
+        }
+    }
+
+    fn leaf(&mut self, leaf: &TypedLeaf, expr: &TypedExpr, usage: Usage) {
+        if let TypedLeaf::Local(binding) = leaf {
+            self.local(*binding, &expr.ty, expr.span, usage);
+        }
+    }
+
+    fn written(&mut self, expr: &TypedExpr) {
+        match &expr.kind {
+            TypedExprKind::Borrow(_, value) | TypedExprKind::Deref(value) => {
+                self.expr(value, Usage::Borrow)
+            }
+            _ => unreachable!("the caller matches a written form"),
         }
     }
 

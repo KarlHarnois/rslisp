@@ -1,0 +1,17 @@
+(def bump! (rust "*{0} += 1" (fn ((mut i64)) unit)))
+(defstruct counter (count i64))
+
+(type peek (fn ((ref i64)) i64))
+(defn peek (x) (deref x))
+
+(defn main ()
+  (let n 3)
+  (let r (ref n))
+  (println (peek r))
+  (let m (mut n))
+  (bump! m)
+  (println n)
+  (let c (make-counter 3))
+  (println (peek (ref (field c count))))
+  (let r (ref c))
+  (println (peek (ref (field r count)))))
