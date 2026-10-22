@@ -3,6 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/pattern_implementors.rslisp
 ---
+(derive pair clone copy debug partial-eq eq hash)
 (type describe (where ((a shown)) (fn ((ref a)) string)))
 (type twice-borrowed (fn ((ref (ref i64))) string))
 (type make-pair (where (a b) (fn (a b) (pair a b))))

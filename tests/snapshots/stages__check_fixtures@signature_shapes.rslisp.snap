@@ -27,6 +27,7 @@ warning[L0504]: `touch-counter` changes an argument, so its name should end with
   |
   = help: rename it `touch-counter!`
 
+(derive counter clone debug partial-eq eq hash)
 (type bump (fn ((mut counter)) unit))
 (type touch (where (t) (fn ((mut t)) unit)))
 (type touch-counter (where (a) (fn ((mut a)) unit)))

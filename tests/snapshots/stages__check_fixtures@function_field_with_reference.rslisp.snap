@@ -3,4 +3,5 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/function_field_with_reference.rslisp
 ---
+(derive handler clone copy debug partial-eq eq hash)
 (type main (fn () unit))

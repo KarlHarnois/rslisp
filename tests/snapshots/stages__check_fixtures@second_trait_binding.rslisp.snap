@@ -3,6 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/second_trait_binding.rslisp
 ---
+(derive point clone copy debug partial-eq eq hash)
 (type make-point (fn (i64 i64) point))
 (type point-x (fn ((ref point)) i64))
 (type point-y (fn ((ref point)) i64))

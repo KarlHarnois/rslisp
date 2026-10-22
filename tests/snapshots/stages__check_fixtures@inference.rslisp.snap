@@ -3,6 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/inference.rslisp
 ---
+(derive point clone copy debug partial-eq)
 (type add-numbers (where ((a number)) (fn (a a) a)))
 (type some-function (where ((a number)) (fn (a) a)))
 (type square (where ((a number)) (fn (a) a)))
