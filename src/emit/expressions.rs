@@ -130,7 +130,9 @@ impl<'a> ExpressionEmitter<'a> {
 
     pub fn function_body(&mut self, block: &TypedBlock) -> Vec<Fragment> {
         if self.tail_loop.is_some() {
-            return self.loop_body(block);
+            let mut fragments = vec![Fragment::Newline];
+            fragments.extend(self.loop_expression(block, LoopExit::Return));
+            return fragments;
         }
         let Some((TypedBodyItem::Expr(tail), leading)) = block.items.split_last() else {
             return self.statements(block);
@@ -608,7 +610,7 @@ impl<'a> ExpressionEmitter<'a> {
         let head = Code::atom(format!("|{}| ", params.join(", ")));
         let body = if self.tail_loop.is_some() {
             Code {
-                fragments: self.loop_body(&lambda.body),
+                fragments: self.loop_expression(&lambda.body, LoopExit::Return),
                 precedence: Precedence::Block,
             }
         } else {
@@ -635,7 +637,8 @@ impl<'a> ExpressionEmitter<'a> {
             fragments.push(Fragment::Text(";".to_string()));
         }
         if self.tail_loop.is_some() {
-            fragments.extend(self.loop_expression_body(&lambda.body));
+            fragments.push(Fragment::Newline);
+            fragments.extend(self.loop_expression(&lambda.body, LoopExit::Break));
         } else {
             fragments.extend(self.statements(&lambda.body));
         }
