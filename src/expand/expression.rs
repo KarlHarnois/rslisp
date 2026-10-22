@@ -8,8 +8,8 @@ use super::recur_check::RecurCheck;
 use super::shape::Shape;
 use crate::core::{
     Binder, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind, ExpressionForm,
-    FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, Namespace, RustTemplate, StructExpr,
-    StructForm,
+    FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, Namespace, ParsedTemplate,
+    RustTemplate, StructExpr, StructForm,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -286,7 +286,10 @@ impl Expander<'_> {
 
     fn lower_rust(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
         let items = shape.exactly(3)?;
-        let template = shape.string(&items[1])?.into();
+        let text = shape.string(&items[1])?;
+        ParsedTemplate::parse(text)
+            .map_err(|_| ExpandProblems::malformed_template(items[1].span()))?;
+        let template = text.into();
         let type_expr = self.lower_type(&items[2])?;
         Ok(ExprKind::Leaf(Leaf::Rust(Rc::new(RustTemplate {
             template,

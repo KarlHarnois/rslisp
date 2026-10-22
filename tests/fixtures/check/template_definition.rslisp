@@ -1,0 +1,5 @@
+(def broken (rust "{0" (fn (i64) i64)))
+
+(defn main ()
+  (println (broken 1))
+  (println (broken 2)))

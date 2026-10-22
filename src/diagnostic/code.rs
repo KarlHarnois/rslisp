@@ -29,6 +29,7 @@ impl DiagnosticCode {
     pub const RECUR_ARGUMENT_COUNT: Self = Self(Cow::Borrowed("L0215"));
     pub const RECUR_OUTSIDE_FN: Self = Self(Cow::Borrowed("L0216"));
     pub const SECOND_TRAIT_PATH: Self = Self(Cow::Borrowed("L0217"));
+    pub const MALFORMED_TEMPLATE: Self = Self(Cow::Borrowed("L0218"));
 
     pub const MACRO_FAILED: Self = Self(Cow::Borrowed("L0301"));
     pub const MACRO_RESULT_NOT_FORM: Self = Self(Cow::Borrowed("L0302"));

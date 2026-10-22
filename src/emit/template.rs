@@ -4,7 +4,6 @@ use crate::core::{ParsedTemplate, Piece};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TemplateError {
-    MalformedPlaceholder,
     MissingArgument(usize),
 }
 
@@ -19,10 +18,10 @@ impl Template {
     const SEPARATORS_BEFORE: [char; 2] = ['(', ','];
     const SEPARATORS_AFTER: [char; 2] = [',', ')'];
 
-    pub fn parse(text: &str) -> Result<Self, TemplateError> {
-        ParsedTemplate::parse(text)
-            .map(|parsed| Self { parsed })
-            .map_err(|_| TemplateError::MalformedPlaceholder)
+    pub fn new(text: &str) -> Self {
+        Self {
+            parsed: ParsedTemplate::parse(text).expect("the expansion stage checked the template"),
+        }
     }
 
     pub fn is_path(&self) -> bool {
@@ -244,8 +243,7 @@ mod tests {
     use super::*;
 
     fn inline(template: &str, arguments: Vec<Code>) -> String {
-        Template::parse(template)
-            .expect("valid template")
+        Template::new(template)
             .inline(arguments)
             .expect("enough arguments")
             .text()
@@ -281,8 +279,7 @@ mod tests {
 
     #[test]
     fn binds_repeated_complex_arguments_to_temporaries() {
-        let code = Template::parse("{0} * {0}")
-            .unwrap()
+        let code = Template::new("{0} * {0}")
             .inline(vec![Code::atom("next()")])
             .unwrap();
         assert_eq!(code.precedence, Precedence::Block);
@@ -290,17 +287,8 @@ mod tests {
     }
 
     #[test]
-    fn reports_a_malformed_placeholder() {
-        assert_eq!(
-            Template::parse("{0").err(),
-            Some(TemplateError::MalformedPlaceholder)
-        );
-    }
-
-    #[test]
     fn reports_a_missing_argument() {
-        let missing = Template::parse("{0} + {1}")
-            .unwrap()
+        let missing = Template::new("{0} + {1}")
             .inline(vec![Code::atom("x")])
             .map(|code| code.text());
         assert_eq!(missing, Err(TemplateError::MissingArgument(1)));
