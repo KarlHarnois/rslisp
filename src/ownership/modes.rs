@@ -42,7 +42,7 @@ impl<'a> ModeInference<'a> {
             let tracked = function
                 .params
                 .iter()
-                .filter(|slot| slot.inferable)
+                .filter(|slot| slot.inferable && !slot.ty.is_unsized())
                 .map(|slot| slot.binding)
                 .collect();
             let required =

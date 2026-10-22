@@ -511,8 +511,9 @@ impl TypeChecker {
             }
         }
         let decided = self.decide_pending_borrows();
-        for (_, value) in &mut typed {
+        for (binding, value) in &mut typed {
             decided.patch(value);
+            self.borrow_unsized_result(*binding, value);
         }
         self.discharge_obligations(ObligationPass::Deferring);
         let generics: Vec<(BindingId, &TypedExpr)> = typed
@@ -552,6 +553,18 @@ impl TypeChecker {
         );
         self.component.clear();
         results
+    }
+
+    fn borrow_unsized_result(&mut self, binding: BindingId, value: &mut TypedExpr) {
+        let Type::Function(parameters, result) = self.unifier.resolve(&value.ty) else {
+            return;
+        };
+        if !result.is_unsized() {
+            return;
+        }
+        let borrowed = Type::Function(parameters, Box::new(Type::Ref(result)));
+        value.ty = borrowed.clone();
+        self.component.insert(binding, borrowed);
     }
 
     fn assign_rust_scheme(&mut self, member: &Definition) -> bool {

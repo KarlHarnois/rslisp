@@ -1,0 +1,6 @@
+(defn keep (text)
+  (println (trim text))
+  text)
+
+(defn main ()
+  (println (keep "hi")))

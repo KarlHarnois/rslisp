@@ -49,6 +49,10 @@ impl Type {
         Type::Ref(Box::new(Type::Primitive(PrimitiveType::Str)))
     }
 
+    pub fn is_unsized(&self) -> bool {
+        matches!(self, Type::Primitive(PrimitiveType::Str))
+    }
+
     pub fn is_reference(&self) -> bool {
         matches!(self, Type::Ref(_) | Type::Mut(_))
     }

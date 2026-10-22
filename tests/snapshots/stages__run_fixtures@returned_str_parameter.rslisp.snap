@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/returned_str_parameter.rslisp
+---
+hi
+hi

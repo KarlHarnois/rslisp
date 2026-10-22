@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/returned_str_parameter.rslisp
+---
+fn keep(text: &str) -> &str {
+    println!("{}", text.trim());
+    text
+}
+
+fn main() {
+    println!("{}", keep("hi"))
+}
