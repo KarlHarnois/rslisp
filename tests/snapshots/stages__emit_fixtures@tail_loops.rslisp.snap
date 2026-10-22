@@ -28,7 +28,7 @@ fn drain<A>(items: &mut Vec<A>) {
 fn fill(items: &mut Vec<i64>, mut n: i64) {
     loop {
         if n == 0 {
-            println!("{}", "done");
+            println!("done");
             return;
         } else {
             items.push(n);

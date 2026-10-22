@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/printing_escapes.rslisp
+---
+fn main() {
+    println!("braces {{done}} quote \" slash \\ newline\ntab\t here");
+    let text = "plain {text} quote \" slash \\".to_string();
+    println!("{}", text);
+    print!("no newline");
+    println!()
+}

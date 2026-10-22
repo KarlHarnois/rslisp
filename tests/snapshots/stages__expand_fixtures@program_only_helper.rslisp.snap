@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/program_only_helper.rslisp
+---
+error[L0306]: `print` belongs to the program, so macro code cannot run it
+   --> expand/program_only_helper.rslisp:2:3
+    |
+  2 |   (print "unused"))
+    |   ^^^^^^^^^^^^^^^^ macro code runs this
+  3 |
+  4 | (def never-called (macro (form) (say-unused)))
+    |                                  ---------- macro code reaches it through this
+    |
+   ::: prelude/text.rslisp:185:11
+    |
+185 | (defmacro print (parts ...)
+    |           ----- `print` expands to Rust code that runs in the program
+    |
+    = help: to compute this in the program, return it as code from the macro, for example with `template`

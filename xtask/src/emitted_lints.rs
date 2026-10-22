@@ -34,7 +34,7 @@ impl<'a> EmittedLints<'a> {
         "clippy::unnecessary_literal_unwrap",
         "clippy::vec_init_then_push",
     ];
-    const UNFIXED: [&'static str; 2] = ["clippy::format_in_format_args", "clippy::print_literal"];
+    const UNFIXED: [&'static str; 0] = [];
 
     pub fn new(root: &'a Path) -> Self {
         Self { root }

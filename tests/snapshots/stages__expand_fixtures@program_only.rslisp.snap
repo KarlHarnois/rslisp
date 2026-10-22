@@ -9,9 +9,9 @@ error[L0306]: `to-string` belongs to the program, so macro code cannot run it
  3 | (def needs-rust (macro (form) (to-string 1) (list)))
    |                                ^^^^^^^^^ macro code runs this
    |
-  ::: prelude/text.rslisp:17:16
+  ::: prelude/text.rslisp:20:16
    |
-17 | (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
+20 | (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
    |                -------------------------------------------------------------------- `to-string` is Rust code that runs in the program
    |
    = help: to compute this in the program, return it as code from the macro, for example with `template`
@@ -44,9 +44,9 @@ error[L0306]: `to-string` belongs to the program, so macro code cannot run it
 15 | (def in-untaken-branch (macro (form) (if true (quote 1) (to-string 1))))
    |                                                          ^^^^^^^^^ macro code runs this
    |
-  ::: prelude/text.rslisp:17:16
+  ::: prelude/text.rslisp:20:16
    |
-17 | (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
+20 | (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
    |                -------------------------------------------------------------------- `to-string` is Rust code that runs in the program
    |
    = help: to compute this in the program, return it as code from the macro, for example with `template`
@@ -74,14 +74,14 @@ error[L0303]: `double` has errors, so macro code cannot use it
    |                                           ^^^^^^ used by macro code here
 
 error[L0306]: `print` belongs to the program, so macro code cannot run it
-  --> expand/program_only.rslisp:29:34
-   |
-29 | (def never-called (macro (form) (print "unused")))
-   |                                  ^^^^^ macro code runs this
-   |
-  ::: prelude/text.rslisp:18:12
-   |
-18 | (def print (rust "print!(\"{{}}\", {&0})" (where ((a display)) (fn ((ref a)) unit))))
-   |            ------------------------------------------------------------------------- `print` is Rust code that runs in the program
-   |
-   = help: to compute this in the program, return it as code from the macro, for example with `template`
+   --> expand/program_only.rslisp:29:33
+    |
+ 29 | (def never-called (macro (form) (print "unused")))
+    |                                 ^^^^^^^^^^^^^^^^ macro code runs this
+    |
+   ::: prelude/text.rslisp:185:11
+    |
+185 | (defmacro print (parts ...)
+    |           ----- `print` expands to Rust code that runs in the program
+    |
+    = help: to compute this in the program, return it as code from the macro, for example with `template`

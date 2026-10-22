@@ -153,6 +153,8 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 | `(iterator a)` | `impl Iterator<Item = A>` | `range map filter fold for-each sum count max min max-by-key any all find take take-while` |
 | `str`, `string` | `&str`, `String` | `to-string display str char print println chars lines split trim as-str parse parse-error from-str` |
 
+`print` and `println` take any number of parts. Each string literal part folds into one format string, and each other part becomes a `{}` placeholder. `str` folds its literal parts the same way. A `print` whose last part ends in a newline emits `println!` without that newline. `prn` and `pr-str` print a value's data form.
+
 `len` takes any `sequence`, a trait backed by `Sequence` in the runtime and implemented for `String`, `str`, `(vec a)` and `(slice a)`. `sort!`, `sort-by-key!`, `max`, `min` and `max-by-key` take the `ord` trait, which lists the same implementors as `partial-ord`, except `f32` and `f64`. `parse` takes a `from-str` target and returns `(result target (parse-error target))`.
 
 An iterator is lazy, as in Rust, so `(fold (range 1 1000001) 0 (fn (total n) (+ total n)))` repeats work without recursion. `(vec 1 2 3)` emits `vec![1, 2, 3]`, and `(vec)` emits `Vec::new()`.

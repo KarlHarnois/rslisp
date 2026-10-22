@@ -1,5 +1,8 @@
 (use prelude/macros defmacro map-list)
-(use code list prepend length string symbol number-add number-sub number-lt)
+(use code first rest list prepend concat length empty? nth take drop
+          symbol symbol? list? string? string same-binding? value-eq
+          number-add number-sub number-lt bool-not
+          escape-string escape-format string-strip-suffix)
 (use prelude/types vec option result iterator)
 
 (export display debug to-string print println prn pr-str str char chars lines split trim as-str parse parse-error from-str)
@@ -15,8 +18,6 @@
   (where ((a debug) (b debug)) (result a b)))
 
 (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
-(def print (rust "print!(\"{{}}\", {&0})" (where ((a display)) (fn ((ref a)) unit))))
-(def println (rust "println!(\"{{}}\", {&0})" (where ((a display)) (fn ((ref a)) unit))))
 (def prn (rust "println!(\"{{:?}}\", {&0})" (where ((a debug)) (fn ((ref a)) unit))))
 (def pr-str (rust "format!(\"{{:?}}\", {&0})" (where ((a debug)) (fn ((ref a)) string))))
 
@@ -33,40 +34,162 @@
 (def parse (rust "{0}.parse()" (where ((target from-str))
                                       (fn ((ref str)) (result target (parse-error target))))))
 
-(def repeat-text
-  (fn (text count)
-    (if (number-lt 0 count)
-        (string text (repeat-text text (number-sub count 1)))
-        "")))
-
 (def placeholders
   (fn (index count)
     (if (number-lt index count)
         (string ", {&" index "}" (placeholders (number-add index 1) count))
         "")))
 
-(def part-types
-  (fn (index count)
-    (if (number-lt index count)
-        (prepend (symbol (quote part-type) "part-type-" index) (part-types (number-add index 1) count))
-        (list))))
-
-(def format-template
-  (fn (count)
-    (string "format!(\"" (repeat-text "{{}}" count) "\"" (placeholders 0 count) ")")))
+(def part-type
+  (fn (index)
+    (symbol (quote part-type) "part-type-" index)))
 
 (def format-type
-  (fn (count)
-    (let variables (part-types 0 count))
+  (fn (result variables)
     (list (quote where)
-          (map-list (fn (variable) (list variable (quote display))) variables)
+          variables
           (list (quote fn)
-                (map-list (fn (variable) (list (quote ref) variable)) variables)
-                (quote string)))))
+                (map-list (fn (variable) (list (quote ref) (first variable))) variables)
+                result))))
+
+(def format-template
+  (fn (function text count)
+    (string function "(\"" text "\"" (placeholders 0 count) ")")))
+
+(def splices?
+  (fn (part name)
+    (if (list? part)
+        (if (empty? part)
+            false
+            (if (symbol? (first part))
+                (same-binding? (first part) name)
+                false))
+        false)))
+
+(def flatten-part
+  (fn (part)
+    (if (string? part)
+        (list (list (quote literal) part))
+        (if (splices? part (quote str))
+            (flatten-parts (drop 1 part))
+            (if (splices? part (quote pr-str))
+                (list (list (quote debug) (nth part 1)))
+                (list (list (quote value) part)))))))
+
+(def flatten-parts
+  (fn (parts)
+    (if (empty? parts)
+        (list)
+        (concat (flatten-part (first parts)) (flatten-parts (rest parts))))))
+
+(def literal-piece?
+  (fn (piece)
+    (value-eq (first piece) (quote literal))))
+
+(def debug-piece?
+  (fn (piece)
+    (value-eq (first piece) (quote debug))))
+
+(def placeholder-count
+  (fn (pieces)
+    (if (empty? pieces)
+        0
+        (number-add (if (literal-piece? (first pieces)) 0 1)
+                    (placeholder-count (rest pieces))))))
+
+(def format-piece
+  (fn (piece index escaper)
+    (if (literal-piece? piece)
+        (list (escaper (nth piece 1)) (list) (list) index)
+        (if (debug-piece? piece)
+            (list "{{:?}}"
+                  (list (nth piece 1))
+                  (list (list (part-type index) (quote debug)))
+                  (number-add index 1))
+            (list "{{}}"
+                  (list (nth piece 1))
+                  (list (list (part-type index) (quote display)))
+                  (number-add index 1))))))
+
+(def format-pieces
+  (fn (pieces index escaper)
+    (if (empty? pieces)
+        (list "" (list) (list) index)
+        (do
+          (let rendered (format-piece (first pieces) index escaper))
+          (let rest (format-pieces (rest pieces) (nth rendered 3) escaper))
+          (list (string (nth rendered 0) (nth rest 0))
+                (concat (nth rendered 1) (nth rest 1))
+                (concat (nth rendered 2) (nth rest 2))
+                (nth rest 3))))))
+
+(def last-piece
+  (fn (pieces)
+    (nth pieces (number-sub (length pieces) 1))))
+
+(def ends-with-newline?
+  (fn (pieces)
+    (if (empty? pieces)
+        false
+        (if (literal-piece? (last-piece pieces))
+            (bool-not (value-eq (string-strip-suffix (nth (last-piece pieces) 1) "\n") (nth (last-piece pieces) 1)))
+            false))))
+
+(def without-trailing-newline
+  (fn (pieces)
+    (let text (nth (last-piece pieces) 1))
+    (concat (take (number-sub (length pieces) 1) pieces)
+            (list (list (quote literal) (string-strip-suffix text "\n"))))))
+
+(def print-call
+  (fn (pieces)
+    (let formatted (format-pieces pieces 0 escape-format))
+    (prepend
+      (list (quote rust)
+            (format-template "print!" (nth formatted 0) (length (nth formatted 2)))
+            (format-type (quote unit) (nth formatted 2)))
+      (nth formatted 1))))
+
+(def println-call
+  (fn (pieces)
+    (let formatted (format-pieces pieces 0 escape-format))
+    (let variables (nth formatted 2))
+    (prepend
+      (list (quote rust)
+            (if (value-eq (nth formatted 0) "")
+                "println!()"
+                (format-template "println!" (nth formatted 0) (length variables)))
+            (format-type (quote unit) variables))
+      (nth formatted 1))))
+
+(def string-form
+  (fn (parts)
+    (let pieces (flatten-parts parts))
+    (let count (placeholder-count pieces))
+    (let formatted (format-pieces pieces 0
+                      (if (number-lt 0 count) escape-format escape-string)))
+    (let variables (nth formatted 2))
+    (if (number-lt 0 count)
+        (prepend
+          (list (quote rust)
+                (format-template "format!" (nth formatted 0) count)
+                (format-type (quote string) variables))
+          (nth formatted 1))
+        (list (list (quote rust)
+                    (string "\"" (nth formatted 0) "\".to_string()")
+                    (format-type (quote string) variables))))))
 
 (defmacro str (parts ...)
-  (let count (length parts))
-  (prepend (list (quote rust) (format-template count) (format-type count)) parts))
+  (string-form parts))
+
+(defmacro print (parts ...)
+  (let pieces (flatten-parts parts))
+  (if (ends-with-newline? pieces)
+      (println-call (without-trailing-newline pieces))
+      (print-call pieces)))
+
+(defmacro println (parts ...)
+  (println-call (flatten-parts parts)))
 
 (defmacro char (text)
   (list (quote rust) (string "'" text "'") (quote char)))
