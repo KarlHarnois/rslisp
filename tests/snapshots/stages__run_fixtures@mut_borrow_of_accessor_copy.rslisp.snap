@@ -3,4 +3,10 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/mut_borrow_of_accessor_copy.rslisp
 ---
-0
+error[L0419]: this argument is a copy, so changing it changes nothing
+ --> run/mut_borrow_of_accessor_copy.rslisp:6:9
+  |
+6 |   (bump (counter-count c))
+  |         ^^^^^^^^^^^^^^^^^ this is a copy, not a place
+  |
+  = help: pass the field as a place: `(field c count)`

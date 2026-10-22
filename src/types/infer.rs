@@ -381,6 +381,12 @@ impl TypeChecker {
                 self.pass(inner, found, value.span, Borrow::Shared)
             }
             (Type::Mut(inner), found) if !found.is_reference() => {
+                if !value.is_place() {
+                    return Err(TypeProblems::mut_borrow_of_copy(
+                        value.span,
+                        self.field_place(value),
+                    ));
+                }
                 self.pass(inner, found, value.span, Borrow::Mutable)
             }
             (expected, Type::Ref(inner)) if Self::is_known_value(expected) => {
@@ -389,6 +395,35 @@ impl TypeChecker {
             }
             (Type::Var(var), Type::Ref(_)) => self.pass_to_variable(*var, &argument, value.span),
             (expected, found) => self.pass(expected, found, value.span, Borrow::None),
+        }
+    }
+
+    fn field_place(&self, value: &TypedExpr) -> Option<String> {
+        let TypedExprKind::Call(callee, arguments) = &value.kind else {
+            return None;
+        };
+        let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = callee.kind else {
+            return None;
+        };
+        let label = self.field_accessors.get(&binding)?;
+        let [argument] = arguments.as_slice() else {
+            return None;
+        };
+        let place = self.local_place(&argument.value)?;
+        Some(format!("(field {place} {label})"))
+    }
+
+    fn local_place(&self, value: &TypedExpr) -> Option<String> {
+        match &value.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => {
+                Some(self.bindings.get(*binding).name().to_string())
+            }
+            TypedExprKind::Struct(TypedStructExpr::Field(owner, label)) => Some(format!(
+                "(field {} {})",
+                self.local_place(owner)?,
+                label.name
+            )),
+            _ => None,
         }
     }
 

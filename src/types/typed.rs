@@ -17,6 +17,16 @@ pub struct TypedExpr {
     pub span: Span,
 }
 
+impl TypedExpr {
+    pub fn is_place(&self) -> bool {
+        match &self.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(_)) => true,
+            TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => owner.is_place(),
+            _ => false,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum TypedExprKind {
     Leaf(TypedLeaf),
