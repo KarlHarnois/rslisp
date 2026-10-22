@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use crate::core::StructDerives;
 use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
 
@@ -97,6 +98,57 @@ impl TypeProblems {
             "`{trait_name}` is implemented for: {}",
             implementors.join(", ")
         ))
+    }
+
+    pub fn missing_trait_on_struct(trait_name: &str, found: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MISSING_TRAIT,
+            format!("`{found}` does not implement `{trait_name}`"),
+            Label::new(span, format!("this needs `{trait_name}`")),
+        )
+    }
+
+    pub fn order_not_inferred_note() -> &'static str {
+        "`ord` is never inferred for a struct, so the struct needs a written `derive`"
+    }
+
+    pub fn order_derive_help(
+        struct_name: &str,
+        derives: &[&'static str],
+        fields: &[Rc<str>],
+    ) -> String {
+        let mut traits: Vec<&str> = derives
+            .iter()
+            .map(|derived| StructDerives::source_name(derived))
+            .collect();
+        traits.push(StructDerives::source_name("Ord"));
+        format!(
+            "add `(derive {struct_name} {})` to compare fields in this order: {}",
+            traits.join(" "),
+            Self::field_order(fields)
+        )
+    }
+
+    pub fn order_blocked_note(struct_name: &str, field: &str, field_type: &str) -> String {
+        format!("`{struct_name}` cannot derive `ord`: field `{field}` is `{field_type}`")
+    }
+
+    pub fn sort_by_key_help(struct_name: &str, field: Option<&str>) -> String {
+        match field {
+            Some(field) => format!(
+                "to sort by one field instead, use `sort-by-key!` with the accessor `{struct_name}-{field}`"
+            ),
+            None => "to sort by one field instead, use `sort-by-key!`".to_string(),
+        }
+    }
+
+    fn field_order(fields: &[Rc<str>]) -> String {
+        let names: Vec<String> = fields.iter().map(|field| format!("`{field}`")).collect();
+        match names.split_last() {
+            None => "no fields".to_string(),
+            Some((last, [])) => last.clone(),
+            Some((last, rest)) => format!("{}, then {last}", rest.join(", ")),
+        }
     }
 
     pub fn blocked_derive_note(

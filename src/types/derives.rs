@@ -265,7 +265,7 @@ impl TypeChecker {
         }
     }
 
-    fn blocking_field(
+    pub(super) fn blocking_field(
         &self,
         struct_binding: BindingId,
         trait_binding: BindingId,
