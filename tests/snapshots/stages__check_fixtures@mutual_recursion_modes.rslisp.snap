@@ -3,6 +3,6 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/mutual_recursion_modes.rslisp
 ---
-(type count-down (where (a) (fn ((ref (vec a)) i64) usize)))
-(type step (where (a) (fn ((ref (vec a)) i64) usize)))
+(type count-down (where ((a sequence)) (fn ((ref a) i64) usize)))
+(type step (where ((a sequence)) (fn ((ref a) i64) usize)))
 (type main (fn () unit))

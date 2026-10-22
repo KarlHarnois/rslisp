@@ -1,4 +1,4 @@
-(defn count-down ((items (vec i64)) n)
+(defn count-down (items n)
   (if (= n 0) (len items) (step items n)))
 
 (defn step (items n)
