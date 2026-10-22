@@ -19,6 +19,7 @@ mod ty;
 mod typed;
 mod unifier;
 mod walk;
+mod wrapper;
 
 pub use checker::TypeChecker;
 pub use copy::{CopyRules, InferredCopies};
