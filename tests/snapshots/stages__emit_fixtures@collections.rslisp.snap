@@ -4,7 +4,7 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/collections.rslisp
 ---
 fn is_even(n: i64) -> bool {
-    (n % 2) == 0
+    n % 2 == 0
 }
 
 fn main() {

@@ -4,6 +4,7 @@ use std::rc::Rc;
 use super::fragment::{Code, Fragment, Precedence};
 use super::locals::LocalNames;
 use super::mangle::NameMangler;
+use super::operator::{RustOperator, Side};
 use super::plan::{EmitPlan, ItemKind};
 use super::problems::EmitProblems;
 use super::template::{Template, TemplateError};
@@ -740,25 +741,26 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn short_circuit(
         &mut self,
-        operator: &'static str,
+        operator: RustOperator,
         test: &TypedExpr,
         value: &TypedExpr,
     ) -> Code {
         let test = self.expr(test);
         let value = self.expr(value);
-        let test = Self::logical_operand(test, operator);
-        let value = Self::logical_operand(value, operator);
+        let test = self.binary_operand(test, operator, Side::Left);
+        let value = self.binary_operand(value, operator, Side::Right);
         Code::joined(
-            vec![test, Code::atom(format!(" {operator} ")), value],
+            vec![test, Code::atom(format!(" {} ", operator.symbol())), value],
             Precedence::Operator,
         )
     }
 
-    fn logical_operand(code: Code, operator: &'static str) -> Code {
+    fn binary_operand(&self, code: Code, operator: RustOperator, side: Side) -> Code {
         let needs_parentheses = match code.precedence {
             Precedence::Atom | Precedence::Prefix => false,
             Precedence::Block => true,
-            Precedence::Operator => operator == "&&" && code.text().contains("||"),
+            Precedence::Operator => RustOperator::outermost(&code.text())
+                .is_none_or(|inner| inner.needs_parentheses(operator, side)),
         };
         if needs_parentheses {
             code.parenthesized()
@@ -767,13 +769,13 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn short_circuit_operator(then: &TypedExpr, otherwise: &TypedExpr) -> Option<&'static str> {
+    fn short_circuit_operator(then: &TypedExpr, otherwise: &TypedExpr) -> Option<RustOperator> {
         match (
             Self::boolean_literal(then),
             Self::boolean_literal(otherwise),
         ) {
-            (Some(true), None) => Some("||"),
-            (None, Some(false)) => Some("&&"),
+            (Some(true), None) => Some(RustOperator::or()),
+            (None, Some(false)) => Some(RustOperator::and()),
             _ => None,
         }
     }

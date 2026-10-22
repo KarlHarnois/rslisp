@@ -32,7 +32,7 @@ mod shapes {
         pub fn distance(a: Point, b: Point) -> f64 {
             let dx = point_x(&a) - point_x(&b);
             let dy = point_y(&a) - point_y(&b);
-            ((dx * dx) + (dy * dy)).sqrt()
+            (dx * dx + dy * dy).sqrt()
         }
     }
 }

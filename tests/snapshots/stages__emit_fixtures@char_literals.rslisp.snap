@@ -1,0 +1,19 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/char_literals.rslisp
+---
+fn is_whitespace(c: char) -> bool {
+    c == ' '
+}
+
+fn is_digit(c: char) -> bool {
+    let left = '0';
+    let middle = c;
+    left <= middle && middle <= '9'
+}
+
+fn main() {
+    println!("{}", is_whitespace(' '));
+    println!("{}", is_digit('5'))
+}

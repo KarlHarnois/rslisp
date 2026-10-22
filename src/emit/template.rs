@@ -1,4 +1,5 @@
 use super::fragment::{Code, Fragment, Precedence};
+use super::operator::{RustOperator, RustText, Side};
 use crate::core::{ParsedTemplate, Piece};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -15,8 +16,6 @@ impl Template {
     const TEMPORARY_PREFIX: &str = "template_argument_";
     const UNARY_OPERATORS: [char; 4] = ['-', '!', '*', '&'];
     const POSTFIX_OPERATORS: [char; 4] = ['.', '[', '(', '?'];
-    const OPENERS: [char; 3] = ['(', '[', '{'];
-    const CLOSERS: [char; 3] = [')', ']', '}'];
     const SEPARATORS_BEFORE: [char; 2] = ['(', ','];
     const SEPARATORS_AFTER: [char; 2] = [',', ')'];
 
@@ -69,13 +68,69 @@ impl Template {
     }
 
     fn argument_in_place(&self, argument: &Code, position: usize) -> Code {
-        if argument.is_atomic()
-            || self.is_isolated(position)
-            || self.holds_prefix(argument, position)
-        {
-            argument.clone()
+        if self.keeps_whole(argument, position) || self.keeps_operator(argument, position) {
+            return argument.clone();
+        }
+        argument.clone().parenthesized()
+    }
+
+    fn keeps_whole(&self, argument: &Code, position: usize) -> bool {
+        argument.is_atomic() || self.is_isolated(position) || self.holds_prefix(argument, position)
+    }
+
+    fn keeps_operator(&self, argument: &Code, position: usize) -> bool {
+        let Some((operator, operator_position)) = self.binary_operator() else {
+            return false;
+        };
+        let Some(inner) = RustOperator::outermost(&argument.text()) else {
+            return false;
+        };
+        !inner.needs_parentheses(operator, Self::side(position, operator_position))
+    }
+
+    fn side(position: usize, operator_position: usize) -> Side {
+        if position < operator_position {
+            Side::Left
         } else {
-            argument.clone().parenthesized()
+            Side::Right
+        }
+    }
+
+    fn binary_operator(&self) -> Option<(RustOperator, usize)> {
+        let mut found = None;
+        for (position, piece) in self.parsed.pieces().iter().enumerate() {
+            let Piece::Literal(literal) = piece else {
+                continue;
+            };
+            for token in RustText::new(literal).tokens() {
+                let Some(operator) = RustOperator::at(token) else {
+                    continue;
+                };
+                if found.is_some() {
+                    return None;
+                }
+                found = Some((operator, position));
+            }
+        }
+        let (operator, position) = found?;
+        self.binary_operands(position)
+            .then_some((operator, position))
+    }
+
+    fn binary_operands(&self, operator_position: usize) -> bool {
+        let has_left = self.parsed.pieces()[..operator_position]
+            .iter()
+            .any(Self::is_operand);
+        let has_right = self.parsed.pieces()[operator_position + 1..]
+            .iter()
+            .any(Self::is_operand);
+        has_left && has_right
+    }
+
+    fn is_operand(piece: &Piece) -> bool {
+        match piece {
+            Piece::Placeholder { .. } => true,
+            Piece::Literal(literal) => !literal.trim().is_empty(),
         }
     }
 
@@ -117,9 +172,7 @@ impl Template {
     }
 
     fn has_top_level_operator(text: &str) -> bool {
-        let mut scanner = NestingScanner::default();
-        text.chars()
-            .any(|character| scanner.is_top_level_operator(character))
+        RustText::new(text).has_top_level_operator()
     }
 
     fn needs_temporaries(&self, arguments: &[Code]) -> bool {
@@ -149,48 +202,6 @@ impl Template {
                 Fragment::Text("}".to_string()),
             ],
             precedence: Precedence::Block,
-        }
-    }
-}
-
-#[derive(Default)]
-struct NestingScanner {
-    depth: usize,
-    in_string: bool,
-    escaped: bool,
-    previous: Option<char>,
-}
-
-impl NestingScanner {
-    const QUOTE: char = '"';
-    const ESCAPE: char = '\\';
-    const RANGE_DOT: char = '.';
-
-    fn is_top_level_operator(&mut self, character: char) -> bool {
-        let at_top_level = self.depth == 0 && !self.in_string;
-        let closes_range = character == Self::RANGE_DOT && self.previous == Some(Self::RANGE_DOT);
-        let separates = character.is_whitespace() || closes_range;
-        self.advance(character);
-        at_top_level && separates
-    }
-
-    fn advance(&mut self, character: char) {
-        if character == Self::QUOTE && !self.escaped {
-            self.in_string = !self.in_string;
-        } else if !self.in_string {
-            self.depth = self.depth_after(character);
-        }
-        self.escaped = character == Self::ESCAPE;
-        self.previous = Some(character);
-    }
-
-    fn depth_after(&self, character: char) -> usize {
-        if Template::OPENERS.contains(&character) {
-            self.depth + 1
-        } else if Template::CLOSERS.contains(&character) {
-            self.depth.saturating_sub(1)
-        } else {
-            self.depth
         }
     }
 }

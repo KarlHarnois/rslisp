@@ -5,6 +5,7 @@ mod literal_generics;
 mod locals;
 mod mangle;
 mod mutable_locals;
+mod operator;
 mod plan;
 mod problems;
 mod runtime;
