@@ -5,8 +5,12 @@ pub struct OwnershipProblems;
 
 impl OwnershipProblems {
     pub fn use_after_move(name: &str, used: Span, moved: Span) -> Diagnostic {
+        Self::moved_value(DiagnosticCode::USE_AFTER_MOVE, name, used, moved)
+    }
+
+    fn moved_value(code: DiagnosticCode, name: &str, used: Span, moved: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::USE_AFTER_MOVE,
+            code,
             format!("use of moved value `{name}`"),
             Label::new(used, "value used here after it moved"),
         )
@@ -18,6 +22,16 @@ impl OwnershipProblems {
             "clone the value if both places need it",
             Suggestion::new(moved, format!("(clone {name})")),
         )
+    }
+
+    pub fn missing_copy_bound(name: &str, parameter: &str, used: Span, moved: Span) -> Diagnostic {
+        Self::moved_value(DiagnosticCode::MISSING_COPY_BOUND, name, used, moved)
+            .with_note(format!(
+                "the signature writes `{parameter}` without `copy`, and a written signature is exact"
+            ))
+            .with_help(format!(
+                "add a `copy` bound to the signature: `({parameter} copy)`"
+            ))
     }
 
     pub fn closure_move_help(diagnostic: Diagnostic) -> Diagnostic {
