@@ -11,3 +11,4 @@ input_file: tests/fixtures/run/stack_machine.rslisp
 countdown: 0
 factorial: 3628800
 underflowing failed: stack underflow
+million-steps: 0
