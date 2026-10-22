@@ -233,13 +233,19 @@ impl ExpandProblems {
         .with_help(format!("write it as `{}`", kernel.shape()))
     }
 
-    pub fn macro_as_value(name: &str, span: Span) -> Diagnostic {
-        Diagnostic::error(
+    pub fn macro_as_value(name: &str, span: Span, function: Option<Rc<str>>) -> Diagnostic {
+        let diagnostic = Diagnostic::error(
             DiagnosticCode::MACRO_AS_VALUE,
             format!("`{name}` is a macro, not a value"),
             Label::new(span, "used as a value here"),
-        )
-        .with_help("a macro can only be called; pass a function instead")
+        );
+        match function {
+            Some(function) => diagnostic.with_suggestion(
+                format!("a macro can only be called; pass `{function}` instead"),
+                Suggestion::new(span, function.to_string()),
+            ),
+            None => diagnostic.with_help("a macro can only be called; pass a function instead"),
+        }
     }
 
     pub fn wrong_namespace(name: &str, expected: &str, span: Span) -> Diagnostic {

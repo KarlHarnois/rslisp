@@ -22,6 +22,14 @@ impl Diagnostics {
         self.items.is_empty()
     }
 
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
+
+    pub fn truncate(&mut self, len: usize) {
+        self.items.truncate(len);
+    }
+
     pub fn in_source_order(&self) -> Vec<&Diagnostic> {
         let mut ordered: Vec<&Diagnostic> = self.items.iter().collect();
         ordered.sort_by_key(|diagnostic| {

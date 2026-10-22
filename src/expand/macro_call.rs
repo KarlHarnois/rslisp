@@ -90,6 +90,30 @@ impl Expander<'_> {
         context: Option<&mut DefinitionContext>,
     ) -> Result<Form, Diagnostic> {
         let call_site = form.span();
+        let mut form = self.run_macro(binding, form, context)?;
+        let origin = self.macro_origin(binding, call_site);
+        self.record_introduced_names(&form, &origin);
+        form.relocate_outside(call_site);
+        self.macro_origins.insert(call_site, origin);
+        Ok(form)
+    }
+
+    pub(super) fn trial_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
+        let diagnostics = self.diagnostics.len();
+        let recovered = self.recovered_diagnostics.len();
+        let result = self.run_macro(binding, form, None).ok();
+        self.diagnostics.truncate(diagnostics);
+        self.recovered_diagnostics.truncate(recovered);
+        result
+    }
+
+    fn run_macro(
+        &mut self,
+        binding: BindingId,
+        form: Form,
+        context: Option<&mut DefinitionContext>,
+    ) -> Result<Form, Diagnostic> {
+        let call_site = form.span();
         if self.expansion_depth >= Self::MAX_EXPANSION_DEPTH {
             return Err(ExpandProblems::expansion_too_deep(call_site));
         }
@@ -103,10 +127,11 @@ impl Expander<'_> {
         );
         self.expansion_depth -= 1;
         let output = result.map_err(|diagnostic| Self::point_at_call(diagnostic, call_site))?;
-        let origin = self.macro_origin(binding, call_site);
-        let output = self.finish_output(output, introduction, &origin)?;
-        self.macro_origins.insert(call_site, origin);
-        Ok(output)
+        let Value::Form(mut form) = output else {
+            return Err(ExpandProblems::macro_result(output.describe(), call_site));
+        };
+        form.flip_scope(introduction);
+        Ok(form)
     }
 
     fn macro_origin(&self, binding: BindingId, call_site: Span) -> MacroOrigin {
@@ -132,24 +157,6 @@ impl Expander<'_> {
             context.record_use_site(use_site);
         }
         (form, introduction)
-    }
-
-    fn finish_output(
-        &mut self,
-        output: Value,
-        introduction: Scope,
-        origin: &MacroOrigin,
-    ) -> Result<Form, Diagnostic> {
-        let Value::Form(mut form) = output else {
-            return Err(ExpandProblems::macro_result(
-                output.describe(),
-                origin.call_site,
-            ));
-        };
-        form.flip_scope(introduction);
-        self.record_introduced_names(&form, origin);
-        form.relocate_outside(origin.call_site);
-        Ok(form)
     }
 
     pub(super) fn introduced_name(&self, call_site: Span, name: &str) -> Option<Span> {

@@ -1,0 +1,94 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/macro_function_edges.rslisp
+---
+error[L0304]: `swapped` is a macro, not a value
+  --> check/macro_function_edges.rslisp:13:10
+   |
+13 | (def one swapped)
+   |          ^^^^^^^ used as a value here
+   |
+   = help: a macro can only be called; pass a function instead
+
+error[L0304]: `mixed` is a macro, not a value
+  --> check/macro_function_edges.rslisp:14:10
+   |
+14 | (def two mixed)
+   |          ^^^^^ used as a value here
+   |
+help: a macro can only be called; pass `add` instead
+   |
+14 - (def two mixed)
+14 + (def two add)
+   |
+
+error[L0304]: `partial` is a macro, not a value
+  --> check/macro_function_edges.rslisp:15:12
+   |
+15 | (def three partial)
+   |            ^^^^^^^ used as a value here
+   |
+   = help: a macro can only be called; pass a function instead
+
+error[L0304]: `unary` is a macro, not a value
+  --> check/macro_function_edges.rslisp:16:11
+   |
+16 | (def four unary)
+   |           ^^^^^ used as a value here
+   |
+   = help: a macro can only be called; pass a function instead
+
+error[L0304]: `conditional` is a macro, not a value
+  --> check/macro_function_edges.rslisp:17:11
+   |
+17 | (def five conditional)
+   |           ^^^^^^^^^^^ used as a value here
+   |
+   = help: a macro can only be called; pass a function instead
+
+error[L0304]: `nested` is a macro, not a value
+  --> check/macro_function_edges.rslisp:18:10
+   |
+18 | (def six nested)
+   |          ^^^^^^ used as a value here
+   |
+   = help: a macro can only be called; pass a function instead
+
+error[L0304]: `quoted-thing` is a macro, not a value
+  --> check/macro_function_edges.rslisp:19:12
+   |
+19 | (def seven quoted-thing)
+   |            ^^^^^^^^^^^^ used as a value here
+   |
+   = help: a macro can only be called; pass a function instead
+
+error[L0304]: `broken` is a macro, not a value
+  --> check/macro_function_edges.rslisp:20:12
+   |
+20 | (def eight broken)
+   |            ^^^^^^ used as a value here
+   |
+   = help: a macro can only be called; pass a function instead
+
+error[L0210]: malformed `let`
+  --> check/macro_function_edges.rslisp:22:24
+   |
+22 | (defn malformed-let () (let bad) (barr))
+   |                        ^^^^^^^^^ this does not fit the shape of `let`
+   |
+   = help: write it as `(let name value)`
+
+error[L0201]: cannot find `barr` in this scope
+  --> check/macro_function_edges.rslisp:22:35
+   |
+22 | (defn malformed-let () (let bad) (barr))
+   |                                   ^^^^ not found in this scope
+
+error[L0304]: `shadowed-plus` is a macro, not a value
+  --> check/macro_function_edges.rslisp:24:40
+   |
+24 | (defn shadowed () (let add 1) (println shadowed-plus))
+   |                                        ^^^^^^^^^^^^^ used as a value here
+   |
+   = help: a macro can only be called; pass a function instead

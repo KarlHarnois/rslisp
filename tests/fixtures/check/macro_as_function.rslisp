@@ -1,0 +1,1 @@
+(defn main () (println (fold (range 1 4) 0 +)))

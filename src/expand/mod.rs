@@ -4,6 +4,7 @@ mod expression;
 mod globals;
 mod host;
 mod macro_call;
+mod macro_function;
 mod module_body;
 mod module_loading;
 mod names;
