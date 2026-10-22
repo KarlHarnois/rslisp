@@ -172,6 +172,8 @@ Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&
 - **Fields.** Reading a Copy field copies it. Reading any other field borrows it: `(field person name)` has type `(ref string)`.
 - **No hidden copies.** Copying heap data is always written `(clone x)`, which needs the `clone` trait. Every struct implements it when its type arguments do, because `struct` derives `Clone`. `(ref x)` and `(mut x)` force a borrow.
 - **Moves.** The compiler reports a use after move, points at the move, and suggests `(clone x)`. A move in either branch of an `if` counts.
+- **Function values.** A named function passed where a function type is expected is wrapped in a closure when an expected parameter is a reference and the function's parameter is not. The closure passes each argument through the usual adjustments.
+- **Reborrows.** A `mut` reference passed to a `mut` parameter is reborrowed and stays usable. Passed to any other parameter, it moves, as in Rust.
 - **Mut borrows.** A `mut` argument must be a place: a local or a field. A copy, such as a call's result, is an error, because changing the copy changes nothing.
 - **Call order.** A call that mutably borrows a variable evaluates its other arguments first. A borrow has no side effect, so the observable order stays the same.
 - **Borrowed results.** A function may return a borrow when it has one borrowed parameter, or none for a string literal. With more than one, it reports an error, because lifetimes cannot be written yet.
