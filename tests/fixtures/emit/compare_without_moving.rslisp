@@ -1,0 +1,13 @@
+(defn bigger (a b) (if (> a b) a b))
+
+(defn same (a b) (if (= a b) a b))
+
+(defn main ()
+  (println (bigger 3 7))
+  (println (bigger (to-string "pear") (to-string "apple")))
+  (println (same 4 4))
+  (let name (to-string "Ana"))
+  (let other (to-string "Bo"))
+  (println (= name other))
+  (println name)
+  (println other))

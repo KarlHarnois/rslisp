@@ -36,12 +36,12 @@
 (def neg (rust "-{0}" (where ((n number signed)) (fn (n) n))))
 (def sqrt (rust "{0}.sqrt()" (fn (f64) f64)))
 
-(def lt (rust "{0} < {1}" (where ((a partial-ord)) (fn (a a) bool))))
-(def le (rust "{0} <= {1}" (where ((a partial-ord)) (fn (a a) bool))))
-(def gt (rust "{0} > {1}" (where ((a partial-ord)) (fn (a a) bool))))
-(def ge (rust "{0} >= {1}" (where ((a partial-ord)) (fn (a a) bool))))
-(def eq (rust "{0} == {1}" (where ((a partial-eq)) (fn (a a) bool))))
-(def ne (rust "{0} != {1}" (where ((a partial-eq)) (fn (a a) bool))))
+(def lt (rust "{&0} < {&1}" (where ((a partial-ord)) (fn (a a) bool))))
+(def le (rust "{&0} <= {&1}" (where ((a partial-ord)) (fn (a a) bool))))
+(def gt (rust "{&0} > {&1}" (where ((a partial-ord)) (fn (a a) bool))))
+(def ge (rust "{&0} >= {&1}" (where ((a partial-ord)) (fn (a a) bool))))
+(def eq (rust "{&0} == {&1}" (where ((a partial-eq)) (fn (a a) bool))))
+(def ne (rust "{&0} != {&1}" (where ((a partial-eq)) (fn (a a) bool))))
 
 (defrule +
   ((a) a)
