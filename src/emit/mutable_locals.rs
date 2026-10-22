@@ -1,9 +1,7 @@
 use std::collections::HashSet;
 
 use crate::core::BindingId;
-use crate::types::{
-    Borrow, TypedArgument, TypedExpr, TypedExprKind, TypedLeaf, TypedStructExpr,
-};
+use crate::types::{Borrow, TypedArgument, TypedExpr, TypedExprKind, TypedLeaf, TypedStructExpr};
 
 #[derive(Default)]
 pub struct MutableLocals {
