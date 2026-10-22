@@ -25,6 +25,9 @@ impl DiagnosticCode {
     pub const FORM_AS_VALUE: Self = Self(Cow::Borrowed("L0211"));
     pub const WRONG_NAMESPACE: Self = Self(Cow::Borrowed("L0212"));
     pub const BAD_TYPE_TEMPLATE: Self = Self(Cow::Borrowed("L0213"));
+    pub const RECUR_OUTSIDE_TAIL: Self = Self(Cow::Borrowed("L0214"));
+    pub const RECUR_ARGUMENT_COUNT: Self = Self(Cow::Borrowed("L0215"));
+    pub const RECUR_OUTSIDE_FN: Self = Self(Cow::Borrowed("L0216"));
 
     pub const MACRO_FAILED: Self = Self(Cow::Borrowed("L0301"));
     pub const MACRO_RESULT_NOT_FORM: Self = Self(Cow::Borrowed("L0302"));

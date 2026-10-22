@@ -6,8 +6,8 @@ use super::problems::ExpandProblems;
 use super::shape::Shape;
 use super::type_parameters::Parameterized;
 use crate::core::{
-    BindingId, BindingKind, CoreModule, DefinitionForm, ExpressionForm, FieldLabel, Item, ItemKind,
-    KernelForm, ModuleId, Namespace, TypeExpr,
+    BindingId, BindingKind, ControlForm, CoreModule, DefinitionForm, ExpressionForm, FieldLabel,
+    Item, ItemKind, KernelForm, ModuleId, Namespace, TypeExpr,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::Form;
@@ -78,7 +78,7 @@ impl Expander<'_> {
             KernelForm::Definition(definition) => {
                 self.register_definition(definition, module, form, context)
             }
-            KernelForm::Expression(ExpressionForm::Do) => {
+            KernelForm::Expression(ExpressionForm::Control(ControlForm::Do)) => {
                 Self::splice(&form, queue);
                 Ok(None)
             }

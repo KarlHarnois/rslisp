@@ -156,6 +156,9 @@ impl<'a> ExpressionEmitter<'a> {
             TypedExprKind::Leaf(leaf) => self.leaf(leaf, expr, context),
             TypedExprKind::Fn(lambda) => self.closure(lambda),
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments, expr.span),
+            TypedExprKind::Recur(_) => {
+                unreachable!("expansion allows `recur` only in tail position")
+            }
             TypedExprKind::Control(control) => self.control(control),
             TypedExprKind::Struct(structure) => self.structure(structure, &expr.ty),
         }
@@ -575,6 +578,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn closure(&mut self, lambda: &TypedLambda) -> Code {
+        let previous = std::mem::replace(&mut self.tail_loop, TailLoop::of_closure(lambda));
         self.locals.enter();
         let params: Vec<String> = lambda
             .params
@@ -582,11 +586,19 @@ impl<'a> ExpressionEmitter<'a> {
             .map(|param| self.bind_parameter(param, TypePosition::Value))
             .collect();
         let head = Code::atom(format!("|{}| ", params.join(", ")));
-        let body = match lambda.body.items.as_slice() {
-            [TypedBodyItem::Expr(only)] => self.expr(only),
-            _ => self.block(&lambda.body),
+        let body = if self.tail_loop.is_some() {
+            Code {
+                fragments: self.loop_body(&lambda.body),
+                precedence: Precedence::Block,
+            }
+        } else {
+            match lambda.body.items.as_slice() {
+                [TypedBodyItem::Expr(only)] => self.expr(only),
+                _ => self.block(&lambda.body),
+            }
         };
         self.locals.leave();
+        self.tail_loop = previous;
         Code::joined(vec![head, body], Precedence::Operator)
     }
 

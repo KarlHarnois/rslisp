@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 use super::Expander;
 use super::problems::ExpandProblems;
+use super::recur_check::RecurCheck;
 use crate::core::{BindingId, Expr};
 use crate::diagnostic::Diagnostic;
 use crate::interpret::{Env, Interpreter, Value};
@@ -107,6 +108,7 @@ impl Expander<'_> {
         self.phase = outer_phase;
         match lowered {
             Ok(expr) => {
+                RecurCheck::outside().value(&expr)?;
                 let expr = Rc::new(expr);
                 self.globals
                     .states

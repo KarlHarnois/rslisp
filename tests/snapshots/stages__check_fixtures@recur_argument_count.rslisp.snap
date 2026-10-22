@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/recur_argument_count.rslisp
+---
+error[L0215]: `recur` passes 0 arguments, but its function takes 1
+ --> check/recur_argument_count.rslisp:1:31
+  |
+1 | (defn short (n) (if (= n 0) 0 (recur)))
+  |                               ^^^^^^^ passes 0 arguments
+  |
+  = help: write `recur` with 1 argument, one for each parameter of the function

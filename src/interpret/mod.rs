@@ -20,6 +20,11 @@ pub trait CompileTimeHost {
     fn same_binding(&self, left: &Symbol, right: &Symbol) -> bool;
 }
 
+enum Step {
+    Value(Value),
+    Recur(Vec<Value>),
+}
+
 pub struct Interpreter<'h> {
     host: &'h mut dyn CompileTimeHost,
     call_site: Span,
@@ -53,19 +58,29 @@ impl<'h> Interpreter<'h> {
     }
 
     pub fn eval(&mut self, expr: &Expr, env: &Env) -> Result<Value, Diagnostic> {
-        DeepRecursion::guard(|| self.eval_kind(expr, env))
+        match self.step(expr, env)? {
+            Step::Value(value) => Ok(value),
+            Step::Recur(..) => unreachable!("expansion allows `recur` only inside a function"),
+        }
     }
 
-    fn eval_kind(&mut self, expr: &Expr, env: &Env) -> Result<Value, Diagnostic> {
+    fn step(&mut self, expr: &Expr, env: &Env) -> Result<Step, Diagnostic> {
+        DeepRecursion::guard(|| self.step_kind(expr, env))
+    }
+
+    fn step_kind(&mut self, expr: &Expr, env: &Env) -> Result<Step, Diagnostic> {
         let span = expr.span();
         match expr.kind() {
-            ExprKind::Leaf(leaf) => self.eval_leaf(leaf, env, span),
-            ExprKind::Fn(lambda) => Ok(Value::Closure(Rc::new(Closure {
+            ExprKind::Leaf(leaf) => self.eval_leaf(leaf, env, span).map(Step::Value),
+            ExprKind::Fn(lambda) => Ok(Step::Value(Value::Closure(Rc::new(Closure {
                 lambda: Rc::clone(lambda),
                 env: env.clone(),
-            }))),
-            ExprKind::Call(callee, arguments) => self.eval_call(callee, arguments, env, span),
-            ExprKind::Control(control) => self.eval_control(control, env),
+            })))),
+            ExprKind::Call(callee, arguments) => self
+                .eval_call(callee, arguments, env, span)
+                .map(Step::Value),
+            ExprKind::Recur(arguments) => self.eval_recur(arguments, env),
+            ExprKind::Control(control) => self.step_control(control, env),
             ExprKind::Struct(_) => Err(InterpretProblems::runtime_only("structs", span)),
         }
     }
@@ -79,10 +94,10 @@ impl<'h> Interpreter<'h> {
         }
     }
 
-    fn eval_control(&mut self, control: &Control, env: &Env) -> Result<Value, Diagnostic> {
+    fn step_control(&mut self, control: &Control, env: &Env) -> Result<Step, Diagnostic> {
         match control {
-            Control::Block(block) => self.eval_block(block, env),
-            Control::If(test, then, otherwise) => self.eval_if(test, then, otherwise, env),
+            Control::Block(block) => self.step_block(block, env),
+            Control::If(test, then, otherwise) => self.step_if(test, then, otherwise, env),
         }
     }
 
@@ -99,6 +114,14 @@ impl<'h> Interpreter<'h> {
             .map(|argument| self.eval(argument, env))
             .collect::<Result<Vec<Value>, Diagnostic>>()?;
         self.call(&function, values, span)
+    }
+
+    fn eval_recur(&mut self, arguments: &[Expr], env: &Env) -> Result<Step, Diagnostic> {
+        let values = arguments
+            .iter()
+            .map(|argument| self.eval(argument, env))
+            .collect::<Result<Vec<Value>, Diagnostic>>()?;
+        Ok(Step::Recur(values))
     }
 
     fn call_closure(
@@ -118,44 +141,62 @@ impl<'h> Interpreter<'h> {
         if self.depth >= Self::MAX_DEPTH {
             return Err(InterpretProblems::too_deep(span));
         }
-        let env = params
-            .iter()
-            .zip(arguments)
-            .fold(closure.env.clone(), |env, (param, value)| {
-                env.bind(param.binding, value)
-            });
+        let env = Self::bind_arguments(closure, arguments);
         self.depth += 1;
-        let result = self.eval_block(&closure.lambda.body, &env);
+        let result = self.run_body(closure, env);
         self.depth -= 1;
         result
     }
 
-    fn eval_block(&mut self, block: &Block, env: &Env) -> Result<Value, Diagnostic> {
+    fn run_body(&mut self, closure: &Closure, mut env: Env) -> Result<Value, Diagnostic> {
+        loop {
+            match self.step_block(&closure.lambda.body, &env) {
+                Ok(Step::Value(value)) => return Ok(value),
+                Ok(Step::Recur(arguments)) => {
+                    env = Self::bind_arguments(closure, arguments);
+                }
+                Err(diagnostic) => return Err(diagnostic),
+            }
+        }
+    }
+
+    fn bind_arguments(closure: &Closure, arguments: Vec<Value>) -> Env {
+        closure
+            .lambda
+            .params
+            .iter()
+            .zip(arguments)
+            .fold(closure.env.clone(), |env, (param, value)| {
+                env.bind(param.binding, value)
+            })
+    }
+
+    fn step_block(&mut self, block: &Block, env: &Env) -> Result<Step, Diagnostic> {
         let mut env = env.clone();
-        let mut last = Value::Unit;
+        let mut last = Step::Value(Value::Unit);
         for item in &block.items {
             last = match item {
                 BodyItem::Let(binder, value) => {
                     let value = self.eval(value, &env)?;
                     env = env.bind(binder.binding, value);
-                    Value::Unit
+                    Step::Value(Value::Unit)
                 }
-                BodyItem::Expr(expr) => self.eval(expr, &env)?,
+                BodyItem::Expr(expr) => self.step(expr, &env)?,
             };
         }
         Ok(last)
     }
 
-    fn eval_if(
+    fn step_if(
         &mut self,
         test: &Expr,
         then: &Expr,
         otherwise: &Expr,
         env: &Env,
-    ) -> Result<Value, Diagnostic> {
+    ) -> Result<Step, Diagnostic> {
         match self.eval(test, env)? {
-            Value::Bool(true) => self.eval(then, env),
-            Value::Bool(false) => self.eval(otherwise, env),
+            Value::Bool(true) => self.step(then, env),
+            Value::Bool(false) => self.step(otherwise, env),
             other => Err(InterpretProblems::not_a_boolean(&other, test.span())),
         }
     }

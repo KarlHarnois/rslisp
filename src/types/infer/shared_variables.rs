@@ -137,7 +137,7 @@ impl SharedVariables {
 impl TypeChecker {
     pub(super) fn pass_shared_arguments(
         &mut self,
-        callee: &TypedExpr,
+        callee: Option<&TypedExpr>,
         shared: &SharedVariables,
         arguments: &mut [TypedArgument],
     ) -> Result<(), Diagnostic> {
@@ -145,9 +145,11 @@ impl TypeChecker {
             if group.is_linked() && self.try_as_written(group, arguments)? {
                 continue;
             }
-            let borrowed_by_rust = group
-                .positions()
-                .all(|position| self.template_borrows.borrows(callee, position));
+            let borrowed_by_rust = callee.is_some_and(|callee| {
+                group
+                    .positions()
+                    .all(|position| self.template_borrows.borrows(callee, position))
+            });
             self.pass_group(group, borrowed_by_rust, arguments)?;
         }
         Ok(())

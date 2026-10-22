@@ -13,6 +13,9 @@ impl TypedExpr {
             TypedExprKind::Call(callee, arguments) => std::iter::once(callee.as_ref())
                 .chain(arguments.iter().map(|argument| &argument.value))
                 .collect(),
+            TypedExprKind::Recur(arguments) => {
+                arguments.iter().map(|argument| &argument.value).collect()
+            }
             TypedExprKind::Control(control) => control.children(),
             TypedExprKind::Struct(structure) => structure.children(),
         }
@@ -24,6 +27,10 @@ impl TypedExpr {
             TypedExprKind::Fn(lambda) => Rc::make_mut(lambda).body.expressions_mut().collect(),
             TypedExprKind::Call(callee, arguments) => std::iter::once(callee.as_mut())
                 .chain(arguments.iter_mut().map(|argument| &mut argument.value))
+                .collect(),
+            TypedExprKind::Recur(arguments) => arguments
+                .iter_mut()
+                .map(|argument| &mut argument.value)
                 .collect(),
             TypedExprKind::Control(control) => control.children_mut(),
             TypedExprKind::Struct(structure) => structure.children_mut(),

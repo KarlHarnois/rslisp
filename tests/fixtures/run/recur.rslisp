@@ -1,0 +1,7 @@
+(defn count-down (n total)
+  (if (= n 0) total (recur (- n 1) (+ total 1))))
+
+(defn main ()
+  (println (count-down 1000000 0))
+  (for-each (range 1 4)
+    (fn (n) (if (> n 100) (println n) (recur (* n 2))))))

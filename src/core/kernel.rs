@@ -9,12 +9,28 @@ pub enum KernelForm {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ExpressionForm {
     Fn,
+    Recur,
+    Leaf(LeafForm),
+    Control(ControlForm),
+    Struct(StructForm),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LeafForm {
+    Quote,
+    Rust,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ControlForm {
     Do,
     If,
-    Quote,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StructForm {
     New,
     Field,
-    Rust,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -36,7 +52,7 @@ struct KernelFormRow {
 }
 
 impl KernelForm {
-    const ROWS: [KernelFormRow; 17] = [
+    const ROWS: [KernelFormRow; 18] = [
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Fn),
             name: "fn",
@@ -53,12 +69,12 @@ impl KernelForm {
             shape: "(let name value)",
         },
         KernelFormRow {
-            form: KernelForm::Expression(ExpressionForm::Do),
+            form: KernelForm::Expression(ExpressionForm::Control(ControlForm::Do)),
             name: "do",
             shape: "(do form ...)",
         },
         KernelFormRow {
-            form: KernelForm::Expression(ExpressionForm::If),
+            form: KernelForm::Expression(ExpressionForm::Control(ControlForm::If)),
             name: "if",
             shape: "(if test then else)",
         },
@@ -78,17 +94,17 @@ impl KernelForm {
             shape: "(derive struct trait ...)",
         },
         KernelFormRow {
-            form: KernelForm::Expression(ExpressionForm::New),
+            form: KernelForm::Expression(ExpressionForm::Struct(StructForm::New)),
             name: "new",
             shape: "(new name (field value) ...)",
         },
         KernelFormRow {
-            form: KernelForm::Expression(ExpressionForm::Field),
+            form: KernelForm::Expression(ExpressionForm::Struct(StructForm::Field)),
             name: "field",
             shape: "(field value name)",
         },
         KernelFormRow {
-            form: KernelForm::Expression(ExpressionForm::Quote),
+            form: KernelForm::Expression(ExpressionForm::Leaf(LeafForm::Quote)),
             name: "quote",
             shape: "(quote form)",
         },
@@ -98,7 +114,7 @@ impl KernelForm {
             shape: "(def name (macro (form) body ...))",
         },
         KernelFormRow {
-            form: KernelForm::Expression(ExpressionForm::Rust),
+            form: KernelForm::Expression(ExpressionForm::Leaf(LeafForm::Rust)),
             name: "rust",
             shape: "(rust \"template\" type)",
         },
@@ -111,6 +127,11 @@ impl KernelForm {
             form: KernelForm::Definition(DefinitionForm::RustType),
             name: "rust-type",
             shape: "(rust-type name \"template\")",
+        },
+        KernelFormRow {
+            form: KernelForm::Expression(ExpressionForm::Recur),
+            name: "recur",
+            shape: "(recur argument ...)",
         },
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::Use),

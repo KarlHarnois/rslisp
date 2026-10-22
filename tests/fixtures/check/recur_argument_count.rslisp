@@ -1,0 +1,3 @@
+(defn short (n) (if (= n 0) 0 (recur)))
+
+(defn main () (println (short 1)))

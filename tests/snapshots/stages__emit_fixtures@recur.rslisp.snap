@@ -1,0 +1,29 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/recur.rslisp
+---
+fn count_down(mut n: i64, mut total: i64) -> i64 {
+    loop {
+        if n == 0 {
+            return total;
+        } else {
+            (n, total) = (n - 1, total + 1);
+            continue;
+        }
+    }
+}
+
+fn main() {
+    println!("{}", count_down(1000000, 0));
+    (1_i64..4_i64).for_each(|mut n: i64| 
+    loop {
+        if n > 100 {
+            println!("{}", n);
+            return;
+        } else {
+            n *= 2;
+            continue;
+        }
+    })
+}

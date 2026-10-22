@@ -47,6 +47,7 @@ pub enum TypedExprKind {
     Leaf(TypedLeaf),
     Fn(Rc<TypedLambda>),
     Call(Box<TypedExpr>, Vec<TypedArgument>),
+    Recur(Vec<TypedArgument>),
     Control(TypedControl),
     Struct(TypedStructExpr),
 }

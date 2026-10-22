@@ -49,7 +49,8 @@ impl OwnershipChecker {
                     .into_iter()
                     .for_each(|diagnostic| diagnostics.push(diagnostic));
             }
-            let needs = OwnershipNeeds::new(rewrite.function_params()).check(&definition.value);
+            let needs = OwnershipNeeds::new(rewrite.function_params())
+                .check(definition.binding, &definition.value);
             needs
                 .into_iter()
                 .for_each(|diagnostic| diagnostics.push(diagnostic));

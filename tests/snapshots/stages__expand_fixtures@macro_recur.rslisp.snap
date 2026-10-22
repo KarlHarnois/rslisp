@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/macro_recur.rslisp
+---
+(def count-from (fn (index forms) (if (empty? forms) index (recur (number-add index 1) (rest forms)))))
+(def answer 3)
+(def main (fn () ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0 display)) (fn ((ref part-type-0)) unit))) answer)))

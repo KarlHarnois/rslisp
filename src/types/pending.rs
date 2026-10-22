@@ -20,7 +20,11 @@ impl DecidedBorrows {
     }
 
     pub fn patch(&self, expr: &mut TypedExpr) {
-        if let TypedExprKind::Call(_, arguments) = &mut expr.kind {
+        let arguments = match &mut expr.kind {
+            TypedExprKind::Call(_, arguments) | TypedExprKind::Recur(arguments) => Some(arguments),
+            _ => None,
+        };
+        if let Some(arguments) = arguments {
             for argument in arguments.iter_mut() {
                 if let Borrow::Pending(id) = argument.borrow {
                     argument.borrow = self.decided.get(&id).copied().unwrap_or(Borrow::None);
