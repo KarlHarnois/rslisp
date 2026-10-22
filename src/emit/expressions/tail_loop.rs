@@ -154,7 +154,9 @@ impl ExpressionEmitter<'_> {
         }
         match &tail.kind {
             TypedExprKind::Control(TypedControl::If(test, then, otherwise)) => {
-                self.loop_conditional(test, then, otherwise)
+                let mut fragments = vec![Fragment::Newline];
+                fragments.extend(self.loop_conditional(test, then, otherwise));
+                fragments
             }
             TypedExprKind::Control(TypedControl::Block(_)) => self.loop_branch(tail),
             _ => self.loop_return(tail),
@@ -178,15 +180,22 @@ impl ExpressionEmitter<'_> {
         otherwise: &TypedExpr,
     ) -> Vec<Fragment> {
         let test = self.expr(test);
-        let mut fragments = vec![Fragment::Newline, Fragment::Text("if ".to_string())];
+        let mut fragments = vec![Fragment::Text("if ".to_string())];
         fragments.extend(test.fragments);
         fragments.push(Fragment::Text(" {".to_string()));
         fragments.push(Fragment::Indented(self.loop_branch(then)));
         fragments.push(Fragment::Newline);
-        fragments.push(Fragment::Text("} else {".to_string()));
-        fragments.push(Fragment::Indented(self.loop_branch(otherwise)));
-        fragments.push(Fragment::Newline);
-        fragments.push(Fragment::Text("}".to_string()));
+        if let TypedExprKind::Control(TypedControl::If(next_test, next_then, next_otherwise)) =
+            &otherwise.kind
+        {
+            fragments.push(Fragment::Text("} else ".to_string()));
+            fragments.extend(self.loop_conditional(next_test, next_then, next_otherwise));
+        } else {
+            fragments.push(Fragment::Text("} else {".to_string()));
+            fragments.push(Fragment::Indented(self.loop_branch(otherwise)));
+            fragments.push(Fragment::Newline);
+            fragments.push(Fragment::Text("}".to_string()));
+        }
         fragments
     }
 
