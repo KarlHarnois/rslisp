@@ -1,4 +1,4 @@
-(defn add-item (items n) (push items n))
+(defn add-item (items n) (push! items n))
 
 (defn main ()
   (let items (vec 1))

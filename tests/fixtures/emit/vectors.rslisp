@@ -2,8 +2,8 @@
 
 (defn main ()
   (let scores (vec))
-  (push scores 10)
-  (push scores 20)
+  (push! scores 10)
+  (push! scores 20)
   (println (len scores))
   (println (len primes))
   (for-each (values scores) (fn (score) (println score)))

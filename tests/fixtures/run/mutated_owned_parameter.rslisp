@@ -1,5 +1,5 @@
 (defn append-one (items)
-  (push items 1)
+  (push! items 1)
   items)
 
 (defn main ()

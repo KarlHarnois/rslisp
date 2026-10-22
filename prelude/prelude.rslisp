@@ -2,7 +2,7 @@
 (use prelude/logic not when unless and or cond)
 (use prelude/syntax defn the -> ->>)
 (use prelude/types vec option result iterator slice sequence)
-(use prelude/vec vec push len iter values collect
+(use prelude/vec vec push! len iter values collect
                get pop! sort! sort-by-key! windows at dedup!)
 (use prelude/iterator range map filter fold for-each
                       sum count max min max-by-key any all find take take-while)
@@ -30,7 +30,7 @@
         chars lines split trim as-str parse parse-error from-str
         defstruct
         clone copy deref
-        vec option result iterator slice sequence push len iter values collect
+        vec option result iterator slice sequence push! len iter values collect
         get pop! sort! sort-by-key! windows at dedup!
         range map filter fold for-each
         sum count max min max-by-key any all find take take-while

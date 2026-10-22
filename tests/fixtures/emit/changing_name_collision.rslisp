@@ -1,5 +1,5 @@
 (defn reset (items) (len items))
-(defn reset! (items) (push items 0))
+(defn reset! (items) (push! items 0))
 
 (defn main ()
   (let items (vec 1))

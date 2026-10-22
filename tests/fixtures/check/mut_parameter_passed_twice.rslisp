@@ -1,4 +1,4 @@
-(defn add-one (stack) (push stack 1))
+(defn add-one (stack) (push! stack 1))
 (defn add-two (stack)
   (add-one stack)
   (add-one stack))

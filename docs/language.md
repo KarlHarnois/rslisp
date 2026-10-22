@@ -143,7 +143,7 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 
 | Type | Rust | Functions |
 |---|---|---|
-| `(vec a)` | `Vec<A>` | `vec push len iter values collect get pop! sort! sort-by-key! windows at dedup!` |
+| `(vec a)` | `Vec<A>` | `vec push! len iter values collect get pop! sort! sort-by-key! windows at dedup!` |
 | `(slice a)` | `[A]` | `windows at` |
 | `(option a)` | `Option<A>` | `some none some? none? unwrap-or unwrap expect map-some then-some` |
 | `(result a b)` | `Result<A, B>` | `ok err ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok` |
