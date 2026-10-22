@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use super::definitions::LocalDefinitions;
+use super::mutation::ChangedValues;
 use super::problems::OwnershipProblems;
 use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostic;
@@ -27,6 +28,8 @@ pub struct MoveChecker<'a> {
     bindings: &'a BindingArena,
     template_borrows: &'a TemplateBorrows,
     generics: &'a HashMap<GenericId, GenericParam>,
+    enclosing: BindingId,
+    changed: ChangedValues,
     moved: HashMap<BindingId, Span>,
     copy_functions: HashSet<BindingId>,
     reported: HashSet<BindingId>,
@@ -42,12 +45,15 @@ impl<'a> MoveChecker<'a> {
         bindings: &'a BindingArena,
         template_borrows: &'a TemplateBorrows,
         generics: &'a HashMap<GenericId, GenericParam>,
+        enclosing: BindingId,
     ) -> Self {
         Self {
             copy,
             bindings,
             template_borrows,
             generics,
+            enclosing,
+            changed: ChangedValues::default(),
             moved: HashMap::new(),
             copy_functions: HashSet::new(),
             reported: HashSet::new(),
@@ -66,6 +72,7 @@ impl<'a> MoveChecker<'a> {
             .filter(|param| !param.annotated)
             .map(|param| param.binding)
             .collect();
+        self.changed = ChangedValues::of(lambda, self.enclosing);
         self.block(&lambda.body, Usage::Move);
         MoveReport {
             diagnostics: self.diagnostics,
@@ -221,22 +228,58 @@ impl<'a> MoveChecker<'a> {
         moved_at: Span,
     ) -> Diagnostic {
         let name = self.bindings.get(binding).name();
+        if let Some(diagnostic) = self.bound_help(binding, ty, span, moved_at) {
+            return diagnostic;
+        }
+        let moved = OwnershipProblems::use_after_move(name, span, moved_at);
+        self.ownership_help(binding, ty, &moved)
+            .unwrap_or_else(|| OwnershipProblems::clone_suggestion(moved, name, moved_at))
+    }
+
+    fn bound_help(
+        &self,
+        binding: BindingId,
+        ty: &Type,
+        span: Span,
+        moved_at: Span,
+    ) -> Option<Diagnostic> {
+        let name = self.bindings.get(binding).name();
         if matches!(ty, Type::Function(..)) {
-            return OwnershipProblems::closure_move_help(OwnershipProblems::use_after_move(
-                name, span, moved_at,
+            return Some(OwnershipProblems::closure_move_help(
+                OwnershipProblems::use_after_move(name, span, moved_at),
             ));
         }
-        if let Type::Generic(generic) = ty
-            && self.parameters.contains(&binding)
-            && let Some(parameter) = self.generics.get(generic)
-        {
-            return OwnershipProblems::missing_copy_bound(name, &parameter.name, span, moved_at);
+        let Type::Generic(generic) = ty else {
+            return None;
+        };
+        if !self.parameters.contains(&binding) {
+            return None;
         }
-        OwnershipProblems::clone_suggestion(
-            OwnershipProblems::use_after_move(name, span, moved_at),
+        let parameter = self.generics.get(generic)?;
+        Some(OwnershipProblems::missing_copy_bound(
             name,
+            &parameter.name,
+            span,
             moved_at,
-        )
+        ))
+    }
+
+    fn ownership_help(
+        &self,
+        binding: BindingId,
+        ty: &Type,
+        moved: &Diagnostic,
+    ) -> Option<Diagnostic> {
+        if matches!(ty, Type::Mut(_)) {
+            return Some(OwnershipProblems::mut_parameter_move_help(moved.clone()));
+        }
+        if self.changed.is_changed(binding) {
+            return Some(OwnershipProblems::changed_value_help(moved.clone()));
+        }
+        if self.parameters.contains(&binding) && self.changed.is_recursive_argument(binding) {
+            return Some(OwnershipProblems::recursive_parameter_help(moved.clone()));
+        }
+        None
     }
 
     fn record_use(&mut self, binding: BindingId, ty: &Type, span: Span, usage: Usage) {

@@ -1,0 +1,18 @@
+(defn twice! (stack)
+  (let copy stack)
+  (push! copy 1)
+  (len stack))
+
+(type store-in-vec (where (a) (fn (a) (vec a))))
+(defn store-in-vec (item) (vec item))
+
+(type fill-twice! (fn ((mut (vec i64))) unit))
+(defn fill-twice! (stack)
+  (store-in-vec stack)
+  (push! stack 1))
+
+(type walk (fn ((vec i64) i64) usize))
+(defn walk (stack n)
+  (if (= n 0)
+      (len stack)
+      (+ (len (store-in-vec stack)) (walk stack (- n 1)))))
