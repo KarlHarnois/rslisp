@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/same_binding_types.rslisp
+---
+(def main (fn () (println true) (println false)))

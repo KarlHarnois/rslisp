@@ -1,0 +1,5 @@
+(use same_binding_types/checks string-type?)
+
+(defn main ()
+  (println (string-type? string))
+  (println (string-type? i64)))
