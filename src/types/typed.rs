@@ -8,7 +8,7 @@ use super::templates::TemplateBorrows;
 use super::traits::TraitTable;
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
 use crate::core::{
-    BindingArena, BindingId, FieldLabel, Literal, ModuleId, ModulePath, RustTemplate, StructDerives,
+    BindingArena, BindingId, FieldLabel, Literal, ModuleId, ModulePath, RustTemplate,
 };
 use crate::diagnostic::Diagnostics;
 use crate::source::Span;
@@ -179,9 +179,9 @@ impl TypedProgram {
         }
         let name = self.bindings.get(binding).name();
         let derives: Vec<&str> = definition
-            .derives
+            .derived_traits
             .iter()
-            .map(|derived| StructDerives::source_name(derived))
+            .map(|binding| self.bindings.get(*binding).name())
             .collect();
         Some(format!("(derive {name} {})\n", derives.join(" ")))
     }

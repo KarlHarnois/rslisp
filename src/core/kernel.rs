@@ -424,26 +424,8 @@ impl StructDerives {
         ("Ord", "PartialOrd"),
     ];
 
-    const SOURCE_NAMES: [(&'static str, &'static str); 8] = [
-        ("Clone", "clone"),
-        ("Copy", "copy"),
-        ("Debug", "debug"),
-        ("PartialEq", "partial-eq"),
-        ("Eq", "eq"),
-        ("PartialOrd", "partial-ord"),
-        ("Ord", "ord"),
-        ("Hash", "hash"),
-    ];
-
     pub fn derive_name(path: &str) -> &str {
         path.rsplit("::").next().unwrap_or(path)
-    }
-
-    pub fn source_name(name: &str) -> &str {
-        Self::SOURCE_NAMES
-            .iter()
-            .find(|(derived, _)| *derived == name)
-            .map_or(name, |(_, source)| *source)
     }
 
     pub fn brings(listed: &str, derived: &str) -> bool {
