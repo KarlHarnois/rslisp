@@ -23,6 +23,7 @@ struct ExpectedFunction<'a> {
     parameters: &'a [Type],
     result: &'a Type,
     context: MismatchContext,
+    written: bool,
 }
 
 impl TypeChecker {
@@ -188,6 +189,7 @@ impl TypeChecker {
                     parameters: &parameters,
                     result: &result,
                     context,
+                    written: matches!(context, MismatchContext::Signature { .. }),
                 };
                 let (kind, ty) = self.infer_lambda(lambda, expr.span(), Some(expectation))?;
                 TypedExpr {
@@ -210,9 +212,12 @@ impl TypeChecker {
     ) -> Result<(TypedExprKind, Type), Diagnostic> {
         let mut params = Vec::new();
         for (position, param) in lambda.params.iter().enumerate() {
-            let expected_parameter = expected
-                .as_ref()
-                .and_then(|expected| expected.parameters.get(position));
+            let expected_parameter = expected.as_ref().and_then(|expected| {
+                expected
+                    .parameters
+                    .get(position)
+                    .map(|parameter| (parameter, expected.written))
+            });
             params.push(self.bind_parameter(param, expected_parameter)?);
         }
         let (body, result) = self.infer_block(&lambda.body)?;
@@ -231,16 +236,17 @@ impl TypeChecker {
     fn bind_parameter(
         &mut self,
         param: &Binder,
-        expected: Option<&Type>,
+        expected: Option<(&Type, bool)>,
     ) -> Result<TypedBinder, Diagnostic> {
         let ty = match (&param.annotation, expected) {
             (Some(annotation), _) => self.lower_type(annotation, &HashMap::new())?,
-            (None, Some(expected)) => expected.clone(),
+            (None, Some((expected, _))) => expected.clone(),
             (None, None) => self.unifier.fresh(),
         };
         self.locals.insert(param.binding, ty.clone());
-        let written_by_signature = expected
-            .is_some_and(|expected| !matches!(self.unifier.shallow(expected), Type::Var(_)));
+        let written_by_signature = expected.is_some_and(|(expected, written)| {
+            written && !matches!(self.unifier.shallow(expected), Type::Var(_))
+        });
         Ok(TypedBinder {
             binding: param.binding,
             ty,
@@ -343,6 +349,7 @@ impl TypeChecker {
                     parameters: &parameters,
                     result: &result,
                     context: MismatchContext::Plain,
+                    written: true,
                 };
                 let (kind, ty) = self.infer_lambda(lambda, span, Some(expectation))?;
                 Ok(TypedExpr { kind, ty, span })
