@@ -280,6 +280,19 @@ impl TypeProblems {
         ))
     }
 
+    pub fn mut_borrow_of_copy(span: Span, place: Option<String>) -> Diagnostic {
+        let help = match place {
+            Some(place) => format!("pass the field as a place: `{place}`"),
+            None => "pass a local or a field, because a call returns a copy".to_string(),
+        };
+        Diagnostic::error(
+            DiagnosticCode::MUT_BORROW_OF_COPY,
+            "this argument is a copy, so changing it changes nothing",
+            Label::new(span, "this is a copy, not a place"),
+        )
+        .with_help(help)
+    }
+
     pub fn misplaced_where(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MISPLACED_WHERE,

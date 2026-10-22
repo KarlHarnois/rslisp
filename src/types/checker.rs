@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
 use super::display::TypeDisplay;
 use super::graph::DependencyGraph;
@@ -11,8 +12,8 @@ use super::ty::{GenericId, GenericParam, Scheme, Type, TypeVar};
 use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
-    BindingArena, BindingId, CoreModule, Expr, ExprKind, ItemKind, Leaf, ModuleId, ParsedTemplate,
-    PrimitiveType, StructDerives, TypeBinder, TypeExpr,
+    BindingArena, BindingId, BodyItem, CoreModule, Expr, ExprKind, ItemKind, Leaf, ModuleId,
+    ParsedTemplate, PrimitiveType, StructDerives, StructExpr, TypeBinder, TypeExpr,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
@@ -45,6 +46,7 @@ pub struct TypeChecker {
     signatures: HashMap<BindingId, (TypeExpr, Span)>,
     monomorphic: Vec<Type>,
     implied_bounds: HashMap<GenericId, Vec<BindingId>>,
+    pub(super) field_accessors: HashMap<BindingId, Rc<str>>,
 }
 
 struct Definition<'p> {
@@ -74,6 +76,7 @@ impl TypeChecker {
             signatures: HashMap::new(),
             monomorphic: Vec::new(),
             implied_bounds: HashMap::new(),
+            field_accessors: HashMap::new(),
         }
     }
 
@@ -95,13 +98,37 @@ impl TypeChecker {
                         .insert(*binding, (signature.clone(), item.span));
                     Ok(())
                 }
-                ItemKind::Def(..) => Ok(()),
+                ItemKind::Def(binding, value) => {
+                    self.record_field_accessor(*binding, value);
+                    Ok(())
+                }
             };
             if let Err(diagnostic) = collected {
                 self.diagnostics.push(diagnostic);
             }
         }
         self.register_derived_traits(modules);
+    }
+
+    fn record_field_accessor(&mut self, binding: BindingId, value: &Expr) {
+        let ExprKind::Fn(lambda) = value.kind() else {
+            return;
+        };
+        let [parameter] = lambda.params.as_slice() else {
+            return;
+        };
+        let [BodyItem::Expr(body)] = lambda.body.items.as_slice() else {
+            return;
+        };
+        let ExprKind::Struct(StructExpr::Field(owner, label)) = body.kind() else {
+            return;
+        };
+        let ExprKind::Leaf(Leaf::Var(owner_binding)) = owner.kind() else {
+            return;
+        };
+        if *owner_binding == parameter.binding {
+            self.field_accessors.insert(binding, label.name.clone());
+        }
     }
 
     fn record_type_arities(&mut self, modules: &[CoreModule]) {
