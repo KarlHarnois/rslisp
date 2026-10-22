@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/sized_bound.rslisp
+---
+fn copy_into<A: Clone>(target: &mut A, source: &A) {
+    target.clone_from(source)
+}
+
+fn main() {
+    let mut first = "Ana".to_string();
+    let second = "Bo".to_string();
+    copy_into(&mut first, &second);
+    println!("{}", first)
+}

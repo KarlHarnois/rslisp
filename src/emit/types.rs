@@ -20,6 +20,7 @@ pub struct RustTypes<'a> {
 
 impl<'a> RustTypes<'a> {
     const MAYBE_UNSIZED: &'static str = "?Sized";
+    const SIZED_TRAITS: [&'static str; 3] = ["Clone", "Copy", "Default"];
     const INFERRED: &'static str = "_";
     const NUMBER_TRAIT: &'static str = "crate::rt::Number";
     const RUNTIME_SUPERTRAITS: [(&'static str, &'static [&'static str]); 4] = [
@@ -129,7 +130,7 @@ impl<'a> RustTypes<'a> {
         if converts_literals && !Self::is_covered(Self::NUMBER_TRAIT, &bounds) {
             bounds.push(Self::NUMBER_TRAIT.to_string());
         }
-        if Self::only_behind_references(signature, param.id, false) {
+        if self.needs_maybe_unsized(param, signature, converts_literals) {
             bounds.push(Self::MAYBE_UNSIZED.to_string());
         }
         if bounds.is_empty() {
@@ -137,6 +138,41 @@ impl<'a> RustTypes<'a> {
         } else {
             format!("{name}: {}", bounds.join(" + "))
         }
+    }
+
+    fn needs_maybe_unsized(
+        &self,
+        param: &GenericParam,
+        signature: &Type,
+        converts_literals: bool,
+    ) -> bool {
+        Self::only_behind_references(signature, param.id, false)
+            && !converts_literals
+            && !self.requires_sized(param)
+    }
+
+    fn requires_sized(&self, param: &GenericParam) -> bool {
+        param
+            .bounds
+            .iter()
+            .chain(
+                self.program
+                    .implied_bounds
+                    .get(&param.id)
+                    .into_iter()
+                    .flatten(),
+            )
+            .any(|bound| self.bound_requires_sized(bound))
+    }
+
+    fn bound_requires_sized(&self, bound: &Bound) -> bool {
+        self.program
+            .traits
+            .get(bound.binding)
+            .is_some_and(|rust_trait| {
+                Self::SIZED_TRAITS.contains(&rust_trait.path.as_ref())
+                    || Self::supertraits(&rust_trait.path).contains(&"Copy")
+            })
     }
 
     fn trait_paths(&self, bounds: &[Bound]) -> Vec<String> {
