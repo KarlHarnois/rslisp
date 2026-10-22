@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/macro_if_mismatch.rslisp
+---
+error[L0401]: mismatched types
+ --> check/macro_if_mismatch.rslisp:2:48
+  |
+2 |   (cond ((> n 0) 1) ((< n 0) "negative") (else 0)))
+  |                              ----------        ^ expected `(ref str)`, found an integer
+  |                              |
+  |                              the first branch is `(ref str)`
+  |
+  = note: both branches of `cond` must have the same type
+
+error[L0401]: mismatched types
+ --> check/macro_if_mismatch.rslisp:8:18
+  |
+8 |   (choose flag 1 "one"))
+  |                - ^^^^^ expected an integer, found `(ref str)`
+  |                |
+  |                the first branch is an integer
+  |
+  = note: both branches of `choose` must have the same type

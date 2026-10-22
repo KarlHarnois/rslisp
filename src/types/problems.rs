@@ -3,18 +3,45 @@ use std::rc::Rc;
 use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub enum MismatchContext {
     Plain,
-    IfTest,
-    IfBranch { first: Span },
-    Signature { signature: Span },
-    Annotation { annotation: Span },
+    IfTest {
+        expanded_from: Option<Rc<str>>,
+    },
+    IfBranch {
+        first: Span,
+        expanded_from: Option<Rc<str>>,
+    },
+    Signature {
+        signature: Span,
+    },
+    Annotation {
+        annotation: Span,
+    },
 }
 
 pub struct TypeProblems;
 
 impl TypeProblems {
+    fn expansion_name(expanded_from: Option<Rc<str>>) -> String {
+        expanded_from.map_or_else(|| "if".to_string(), |name| name.to_string())
+    }
+
+    fn if_test_note(expanded_from: Option<Rc<str>>) -> String {
+        format!(
+            "the test of `{}` must be a `bool`",
+            Self::expansion_name(expanded_from)
+        )
+    }
+
+    fn if_branch_note(expanded_from: Option<Rc<str>>) -> String {
+        format!(
+            "both branches of `{}` must have the same type",
+            Self::expansion_name(expanded_from)
+        )
+    }
+
     pub fn mismatch(
         expected: &str,
         found: &str,
@@ -28,10 +55,15 @@ impl TypeProblems {
         );
         match context {
             MismatchContext::Plain => diagnostic,
-            MismatchContext::IfTest => diagnostic.with_note("the test of `if` must be a `bool`"),
-            MismatchContext::IfBranch { first } => diagnostic
+            MismatchContext::IfTest { expanded_from } => {
+                diagnostic.with_note(Self::if_test_note(expanded_from))
+            }
+            MismatchContext::IfBranch {
+                first,
+                expanded_from,
+            } => diagnostic
                 .with_label(Label::new(first, format!("the first branch is {expected}")))
-                .with_note("both branches of `if` must have the same type"),
+                .with_note(Self::if_branch_note(expanded_from)),
             MismatchContext::Signature { signature } => {
                 diagnostic.with_label(Label::new(signature, "expected because of this signature"))
             }
