@@ -3,6 +3,24 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/mut_parameter_passed_twice.rslisp
 ---
+warning[L0504]: `add-one` changes an argument, so its name should end with `!`
+ --> check/mut_parameter_passed_twice.rslisp:1:1
+  |
+1 | (defn add-one (stack) (push stack 1))
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this function changes an argument
+  |
+  = help: rename it `add-one!`
+
+warning[L0504]: `add-two` changes an argument, so its name should end with `!`
+ --> check/mut_parameter_passed_twice.rslisp:2:1
+  |
+2 | / (defn add-two (stack)
+3 | |   (add-one stack)
+4 | |   (add-one stack))
+  | |__________________^ this function changes an argument
+  |
+  = help: rename it `add-two!`
+
 (type add-one (fn ((mut (vec i64))) unit))
 (type add-two (fn ((mut (vec i64))) unit))
 (type main (fn () unit))

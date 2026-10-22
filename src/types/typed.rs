@@ -8,6 +8,7 @@ use super::ty::{GenericId, GenericParam, Scheme, Type};
 use crate::core::{
     BindingArena, BindingId, FieldLabel, Literal, ModuleId, ModulePath, RustTemplate,
 };
+use crate::diagnostic::Diagnostics;
 use crate::source::Span;
 
 #[derive(Clone, Debug)]
@@ -133,6 +134,7 @@ pub struct TypedProgram {
     pub traits: TraitTable,
     pub generics: HashMap<GenericId, GenericParam>,
     pub implied_bounds: HashMap<GenericId, Vec<BindingId>>,
+    pub warnings: Diagnostics,
 }
 
 impl TypedProgram {

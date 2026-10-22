@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/function_changes_argument.rslisp
+---
+warning[L0504]: `add-one` changes an argument, so its name should end with `!`
+ --> check/function_changes_argument.rslisp:1:1
+  |
+1 | (defn add-one (items) (push items 1))
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this function changes an argument
+  |
+  = help: rename it `add-one!`
+
+(type add-one (fn ((mut (vec i64))) unit))
+(type main (fn () unit))

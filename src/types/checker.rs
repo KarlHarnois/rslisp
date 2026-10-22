@@ -918,6 +918,7 @@ impl TypeChecker {
             traits: self.traits,
             generics: self.generics,
             implied_bounds: self.implied_bounds,
+            warnings: Diagnostics::default(),
         };
         self.diagnostics.into_result(program)
     }
