@@ -24,6 +24,21 @@ impl OwnershipProblems {
         )
     }
 
+    pub fn mut_parameter_move_help(diagnostic: Diagnostic) -> Diagnostic {
+        diagnostic
+            .with_help("use the value before it moves, because a `mut` borrow cannot be cloned")
+    }
+
+    pub fn changed_value_help(diagnostic: Diagnostic) -> Diagnostic {
+        diagnostic.with_help(
+            "change the value in place instead of moving it, so both uses see the change",
+        )
+    }
+
+    pub fn recursive_parameter_help(diagnostic: Diagnostic) -> Diagnostic {
+        diagnostic.with_help("write the parameter as a borrow in a `type` signature: `(ref ...)`")
+    }
+
     pub fn missing_copy_bound(name: &str, parameter: &str, used: Span, moved: Span) -> Diagnostic {
         Self::moved_value(DiagnosticCode::MISSING_COPY_BOUND, name, used, moved)
             .with_note(format!(

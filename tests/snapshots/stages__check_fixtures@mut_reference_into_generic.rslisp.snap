@@ -11,8 +11,4 @@ error[L0501]: use of moved value `stack`
 7 |   (push! stack 1))
   |          ^^^^^ value used here after it moved
   |
-help: clone the value if both places need it
-  |
-6 -   (keep stack)
-6 +   (keep (clone stack))
-  |
+  = help: use the value before it moves, because a `mut` borrow cannot be cloned

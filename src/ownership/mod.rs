@@ -4,6 +4,7 @@ mod definitions;
 mod functions;
 mod modes;
 mod moves;
+mod mutation;
 mod names;
 mod problems;
 mod rewrite;
@@ -45,6 +46,7 @@ impl OwnershipChecker {
                     &program.bindings,
                     &program.template_borrows,
                     &program.generics,
+                    definition.binding,
                 );
                 let report = checker.check(lambda);
                 inferred_copies.extend(report.inferred_copies);
