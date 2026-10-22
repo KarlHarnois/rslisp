@@ -522,11 +522,13 @@ impl<'a> ExpressionEmitter<'a> {
         let borrowed_already =
             argument.value.ty.is_reference() || role.borrows_by_itself(argument.borrow);
         match argument.borrow {
-            Borrow::None | Borrow::Passthrough | Borrow::Collapse(_) => None,
-            Borrow::Shared | Borrow::Mutable if borrowed_already => None,
-            Borrow::Shared => Some("&".to_string()),
-            Borrow::Mutable => Some("&mut ".to_string()),
+            Borrow::Shared if !borrowed_already => Some("&".to_string()),
+            Borrow::Mutable if !borrowed_already => Some("&mut ".to_string()),
             Borrow::Deref(levels) => Some("*".repeat(levels)),
+            Borrow::Pending(_) => {
+                unreachable!("the type checker decides every pending borrow")
+            }
+            _ => None,
         }
     }
 

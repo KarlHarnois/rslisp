@@ -6,6 +6,7 @@ mod graph;
 mod infer;
 mod literal_fit;
 mod lowering;
+mod pending;
 mod problems;
 mod rust_types;
 mod selection;
