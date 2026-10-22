@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/copy_structs.rslisp
+---
+2
+2
+24
+1
+b
+2
+2
+true
+false

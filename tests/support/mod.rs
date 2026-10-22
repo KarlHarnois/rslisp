@@ -8,10 +8,9 @@ use rslisp::diagnostic::{DiagnosticRenderer, Diagnostics};
 use rslisp::emit::{EmittedCrate, RustEmitter};
 use rslisp::expand::Expander;
 use rslisp::modules::ModuleSources;
-use rslisp::ownership::OwnershipChecker;
 use rslisp::reader::Reader;
 use rslisp::source::{SourceId, SourceMap, Span};
-use rslisp::types::{TypeChecker, TypedProgram};
+use rslisp::types::TypedProgram;
 
 pub struct Fixture {
     sources: SourceMap,
@@ -97,9 +96,8 @@ impl Fixture {
     }
 
     fn checked(&mut self) -> Result<TypedProgram, Diagnostics> {
-        let mut program = self.expand().and_then(TypeChecker::check)?;
-        OwnershipChecker::check(&mut program)?;
-        Ok(program)
+        let program = self.expand()?;
+        rslisp::check::ProgramChecker::check(&program)
     }
 
     fn entry_span(&self) -> Span {

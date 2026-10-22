@@ -12,6 +12,6 @@ input_file: tests/fixtures/check/inference.rslisp
 (type point-x (fn ((ref point)) f64))
 (type point-y (fn ((ref point)) f64))
 (type origin point)
-(type distance-squared (fn ((ref point) (ref point)) f64))
+(type distance-squared (fn (point point) f64))
 (type identity (where (a) (fn (a) a)))
 (type main (fn () unit))

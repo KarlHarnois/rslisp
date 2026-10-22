@@ -140,7 +140,7 @@ impl TypeChecker {
         let mut candidates = Vec::new();
         for (trait_binding, name) in derivable {
             for (struct_binding, arity) in structs {
-                let Some(source) = Self::derive_source(*struct_binding, name, written, derivable)
+                let Some(source) = self.derive_source(*struct_binding, name, written, derivable)
                 else {
                     continue;
                 };
@@ -157,6 +157,7 @@ impl TypeChecker {
     }
 
     fn derive_source(
+        &self,
         struct_binding: BindingId,
         name: &str,
         written: &HashMap<BindingId, WrittenDerive>,
@@ -164,6 +165,11 @@ impl TypeChecker {
     ) -> Option<DeriveSource> {
         match written.get(&struct_binding) {
             Some(derive) => Self::listing_span(derive, name, derivable).map(DeriveSource::Listed),
+            None if name == StructDerives::COPY
+                && self.changed_structs.contains(&struct_binding) =>
+            {
+                None
+            }
             None => StructDerives::INFERRED
                 .contains(&name)
                 .then_some(DeriveSource::Inferred),

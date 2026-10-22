@@ -52,7 +52,7 @@ impl BindingInfo {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct BindingArena {
     infos: Vec<BindingInfo>,
 }

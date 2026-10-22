@@ -55,7 +55,6 @@ impl FunctionTable {
         match &slot.ty {
             Type::Mut(_) => ParamMode::Mut,
             written if copy.is_small_copy(written) => ParamMode::Copy,
-            written if copy.is_copy(written) => ParamMode::Ref,
             _ => ParamMode::Own,
         }
     }
@@ -68,7 +67,7 @@ impl FunctionTable {
                 binding: param.binding,
                 ty: param.ty.clone(),
                 inferable: !param.annotated
-                    && !copy.is_copy(&param.ty)
+                    && !copy.is_small_copy(&param.ty)
                     && !matches!(param.ty, Type::Function(..) | Type::Mut(_)),
             })
             .collect();

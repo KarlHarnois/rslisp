@@ -53,6 +53,7 @@ pub struct TypeChecker {
     pub(super) pending_borrows: Vec<PendingBorrow>,
     pub(super) template_borrows: TemplateBorrows,
     pub(super) recur_target: Option<super::infer::RecurTarget>,
+    pub(super) changed_structs: HashSet<BindingId>,
 }
 
 struct Definition<'p> {
@@ -89,6 +90,7 @@ impl TypeChecker {
             pending_borrows: Vec::new(),
             template_borrows: TemplateBorrows::default(),
             recur_target: None,
+            changed_structs: HashSet::new(),
         }
     }
 
@@ -1040,17 +1042,14 @@ impl TypeChecker {
 
 impl TypeChecker {
     pub fn check(
-        program: crate::expand::Program,
+        program: &crate::expand::Program,
+        changed_structs: &HashSet<BindingId>,
     ) -> Result<super::typed::TypedProgram, Diagnostics> {
-        let crate::expand::Program {
-            modules,
-            entry,
-            bindings,
-        } = program;
-        let mut checker = Self::new(bindings);
-        checker.collect_declarations(&modules);
-        let mut definitions = checker.check_definitions(&modules, entry);
-        let order = Self::definition_order(&modules);
+        let mut checker = Self::new(program.bindings.clone());
+        checker.changed_structs = changed_structs.clone();
+        checker.collect_declarations(&program.modules);
+        let mut definitions = checker.check_definitions(&program.modules, program.entry);
+        let order = Self::definition_order(&program.modules);
         let mut finalizer = super::finalize::Finalizer::new(&mut checker);
         for binding in &order {
             if let Some(definition) = definitions.get_mut(binding) {
@@ -1058,11 +1057,12 @@ impl TypeChecker {
             }
         }
         checker.discharge_obligations(ObligationPass::Final);
-        let typed_modules = modules
-            .into_iter()
+        let typed_modules = program
+            .modules
+            .iter()
             .map(|module| Self::typed_module(module, &mut definitions))
             .collect();
-        checker.into_program(typed_modules, entry)
+        checker.into_program(typed_modules, program.entry)
     }
 
     fn definition_order(modules: &[CoreModule]) -> Vec<BindingId> {
@@ -1077,20 +1077,20 @@ impl TypeChecker {
     }
 
     fn typed_module(
-        module: CoreModule,
+        module: &CoreModule,
         definitions: &mut HashMap<BindingId, TypedDefinition>,
     ) -> super::typed::TypedModule {
         let mut typed = super::typed::TypedModule {
             id: module.id,
-            path: module.path,
+            path: module.path.clone(),
             definitions: Vec::new(),
             structs: Vec::new(),
-            exports: module.exports,
+            exports: module.exports.clone(),
         };
-        for item in module.items {
-            match item.kind {
-                ItemKind::Def(binding, _) => typed.definitions.extend(definitions.remove(&binding)),
-                ItemKind::Struct(binding, ..) => typed.structs.push(binding),
+        for item in &module.items {
+            match &item.kind {
+                ItemKind::Def(binding, _) => typed.definitions.extend(definitions.remove(binding)),
+                ItemKind::Struct(binding, ..) => typed.structs.push(*binding),
                 ItemKind::Signature(..)
                 | ItemKind::RustTrait(..)
                 | ItemKind::RustType(..)

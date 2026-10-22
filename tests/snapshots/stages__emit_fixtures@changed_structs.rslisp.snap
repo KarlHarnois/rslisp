@@ -1,0 +1,99 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/changed_structs.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Counter {
+    count: i64,
+}
+
+fn make_counter(count: i64) -> Counter {
+    Counter { count }
+}
+
+fn counter_count(instance: &Counter) -> i64 {
+    instance.count
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Tally {
+    total: i64,
+}
+
+fn make_tally(total: i64) -> Tally {
+    Tally { total }
+}
+
+fn tally_total(instance: &Tally) -> i64 {
+    instance.total
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Mark {
+    x: i64,
+}
+
+fn make_mark(x: i64) -> Mark {
+    Mark { x }
+}
+
+fn mark_x(instance: &Mark) -> i64 {
+    instance.x
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Spot {
+    x: i64,
+}
+
+fn make_spot(x: i64) -> Spot {
+    Spot { x }
+}
+
+fn spot_x(instance: &Spot) -> i64 {
+    instance.x
+}
+
+#[derive(Clone, Debug)]
+struct Pin {
+    x: i64,
+}
+
+fn make_pin(x: i64) -> Pin {
+    Pin { x }
+}
+
+fn pin_x(instance: &Pin) -> i64 {
+    instance.x
+}
+
+fn bump_tally(t: &mut Tally) {
+    std::ops::AddAssign::add_assign(&mut t.total, 1)
+}
+
+fn touch(m: &mut Mark) {
+    {
+    }
+}
+
+fn copy_into<A: Clone>(target: &mut A, source: &A) {
+    target.clone_from(source)
+}
+
+fn main() {
+    let mut c = make_counter(1);
+    std::ops::AddAssign::add_assign(&mut c.count, 1);
+    println!("{}", counter_count(&c));
+    let mut t = make_tally(5);
+    bump_tally(&mut t);
+    println!("{}", tally_total(&t));
+    let mut m = make_mark(2);
+    touch(&mut m);
+    println!("{}", mark_x(&m));
+    let mut s = make_spot(1);
+    let u = make_spot(9);
+    copy_into(&mut s, &u);
+    println!("{}", spot_x(&s));
+    println!("{}", pin_x(&make_pin(4)))
+}
