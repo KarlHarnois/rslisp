@@ -261,6 +261,7 @@ impl TypeChecker {
                 (name, self.structs.get_mut(candidate.struct_binding))
             {
                 definition.derives.push(name);
+                definition.derived_traits.push(candidate.trait_binding);
             }
         }
     }

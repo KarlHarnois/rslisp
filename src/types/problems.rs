@@ -1,6 +1,5 @@
 use std::rc::Rc;
 
-use crate::core::StructDerives;
 use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
 
@@ -112,19 +111,10 @@ impl TypeProblems {
         "`ord` is never inferred for a struct, so the struct needs a written `derive`"
     }
 
-    pub fn order_derive_help(
-        struct_name: &str,
-        derives: &[&'static str],
-        fields: &[Rc<str>],
-    ) -> String {
-        let mut traits: Vec<&str> = derives
-            .iter()
-            .map(|derived| StructDerives::source_name(derived))
-            .collect();
-        traits.push(StructDerives::source_name("Ord"));
+    pub fn order_derive_help(struct_name: &str, derives: &[String], fields: &[Rc<str>]) -> String {
         format!(
             "add `(derive {struct_name} {})` to compare fields in this order: {}",
-            traits.join(" "),
+            derives.join(" "),
             Self::field_order(fields)
         )
     }

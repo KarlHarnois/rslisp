@@ -829,6 +829,7 @@ impl TypeChecker {
                 params,
                 fields: lowered,
                 derives: Vec::new(),
+                derived_traits: Vec::new(),
                 blocked: Vec::new(),
                 written_derive: None,
             },
@@ -1105,10 +1106,16 @@ impl TypeChecker {
                     .iter()
                     .map(|(name, _)| name.clone())
                     .collect();
+                let mut derives: Vec<String> = definition
+                    .derived_traits
+                    .iter()
+                    .map(|binding| self.bindings.get(*binding).name().to_string())
+                    .collect();
+                derives.push(self.bindings.get(trait_binding).name().to_string());
                 diagnostic
                     .with_help(TypeProblems::order_derive_help(
                         struct_name,
-                        &definition.derives,
+                        &derives,
                         &fields,
                     ))
                     .with_help(TypeProblems::sort_by_key_help(struct_name, sortable))

@@ -9,6 +9,7 @@ pub struct StructDefinition {
     pub params: Vec<GenericParam>,
     pub fields: Vec<(Rc<str>, Type)>,
     pub derives: Vec<&'static str>,
+    pub derived_traits: Vec<BindingId>,
     pub blocked: Vec<(BindingId, Rc<str>, Type)>,
     pub written_derive: Option<Span>,
 }
