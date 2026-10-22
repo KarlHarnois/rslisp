@@ -77,6 +77,7 @@ pub enum Borrow {
     Mutable,
     Passthrough,
     Deref(usize),
+    Collapse(usize),
 }
 
 #[derive(Clone, Debug)]

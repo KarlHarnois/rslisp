@@ -522,7 +522,7 @@ impl<'a> ExpressionEmitter<'a> {
         let borrowed_already =
             argument.value.ty.is_reference() || role.borrows_by_itself(argument.borrow);
         match argument.borrow {
-            Borrow::None | Borrow::Passthrough => None,
+            Borrow::None | Borrow::Passthrough | Borrow::Collapse(_) => None,
             Borrow::Shared | Borrow::Mutable if borrowed_already => None,
             Borrow::Shared => Some("&".to_string()),
             Borrow::Mutable => Some("&mut ".to_string()),
