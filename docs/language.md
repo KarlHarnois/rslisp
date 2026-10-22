@@ -46,7 +46,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 
 | Form | Shape | Rust | Positions |
 |---|---|---|---|
-| `fn` | `(fn (param...) body...)` | `fn` item or closure | params: binders. body: expressions. |
+| `fn` | `(fn (param...) body...)` | `fn` item, closure, or block | params: binders. body: expressions. |
 | `def` | `(def name value)` | `fn`, `const`, `static`, or nothing | name: binder. value: expression. |
 | `let` | `(let name value)` | `let` | name: binder. value: expression. |
 | `do` | `(do form...)` | block | forms: expressions. At module level: definitions. |
@@ -82,7 +82,7 @@ Values and types are therefore order-independent, like Rust items. A macro must 
 
 A body is the sequence of forms in `fn`, `macro` and `do`. A `let` binds its name for the rest of the enclosing body. The value of a body is the value of its last form, or unit if the body is empty or ends with a `let`.
 
-A function that calls itself in tail position compiles to a Rust loop. The call reassigns the parameters that change, then starts the next iteration. A call to itself anywhere else stays recursive.
+A function that calls itself in tail position compiles to a Rust loop. The call reassigns the parameters that change, then starts the next iteration. A call to itself anywhere else stays recursive. A `fn` that the program calls where it is written emits as a block that binds each parameter with `let`.
 
 ## Types
 

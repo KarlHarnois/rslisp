@@ -33,6 +33,21 @@ enum ArgumentRole {
     Ordinary,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum LoopExit {
+    Return,
+    Break,
+}
+
+impl LoopExit {
+    fn keyword(self) -> &'static str {
+        match self {
+            LoopExit::Return => "return",
+            LoopExit::Break => "break",
+        }
+    }
+}
+
 impl ArgumentRole {
     fn borrows_by_itself(self, borrow: Borrow) -> bool {
         matches!(
@@ -51,6 +66,7 @@ pub struct ExpressionEmitter<'a> {
     pub problems: Vec<Diagnostic>,
     mutable_locals: HashSet<BindingId>,
     tail_loop: Option<TailLoop>,
+    loop_exit: LoopExit,
 }
 
 impl<'a> ExpressionEmitter<'a> {
@@ -73,6 +89,7 @@ impl<'a> ExpressionEmitter<'a> {
             problems: Vec::new(),
             mutable_locals: HashSet::new(),
             tail_loop: None,
+            loop_exit: LoopExit::Return,
         }
     }
 
@@ -361,6 +378,9 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument], span: Span) -> Code {
+        if let TypedExprKind::Fn(lambda) = &callee.kind {
+            return self.inline_call(lambda, arguments);
+        }
         if let Some(template) = self.called_template(callee) {
             return self.template_call(&template, arguments, span);
         }
@@ -600,6 +620,36 @@ impl<'a> ExpressionEmitter<'a> {
         self.locals.leave();
         self.tail_loop = previous;
         Code::joined(vec![head, body], Precedence::Operator)
+    }
+
+    fn inline_call(&mut self, lambda: &TypedLambda, arguments: &[TypedArgument]) -> Code {
+        let previous = std::mem::replace(&mut self.tail_loop, TailLoop::of_closure(lambda));
+        self.locals.enter();
+        let mut fragments = Vec::new();
+        for (param, argument) in lambda.params.iter().zip(arguments) {
+            let binding = self.bind_parameter(param, TypePosition::Value);
+            let value = self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary);
+            fragments.push(Fragment::Newline);
+            fragments.push(Fragment::Text(format!("let {binding} = ")));
+            fragments.extend(value.fragments);
+            fragments.push(Fragment::Text(";".to_string()));
+        }
+        if self.tail_loop.is_some() {
+            fragments.extend(self.loop_expression_body(&lambda.body));
+        } else {
+            fragments.extend(self.statements(&lambda.body));
+        }
+        self.locals.leave();
+        self.tail_loop = previous;
+        Code {
+            fragments: vec![
+                Fragment::Text("{".to_string()),
+                Fragment::Indented(fragments),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ],
+            precedence: Precedence::Block,
+        }
     }
 
     fn block(&mut self, block: &TypedBlock) -> Code {

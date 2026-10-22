@@ -1,0 +1,3 @@
+(defn next-of (n) ((fn (k) (+ k 1)) n))
+
+(defn main () (println (next-of 3)))

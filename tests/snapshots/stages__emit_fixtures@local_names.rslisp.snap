@@ -4,10 +4,19 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/local_names.rslisp
 ---
 fn main() {
-    println!("{}", (|n: i64| n + 1)(1));
-    println!("{}", (|n: i64| n * 2)(2));
+    println!("{}", {
+        let n: i64 = 1;
+        n + 1
+    });
+    println!("{}", {
+        let n: i64 = 2;
+        n * 2
+    });
     let n: i64 = 5;
-    println!("{}", (|n_2: i64| n_2 - 1)(n));
+    println!("{}", {
+        let n_2: i64 = n;
+        n_2 - 1
+    });
     println!("{}", {
         let left: i64 = 1;
         let middle: i64 = 2;
