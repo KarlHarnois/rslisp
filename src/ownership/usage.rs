@@ -42,7 +42,7 @@ impl<'a> UsageCollector<'a> {
             TypedExprKind::Leaf(_) => {}
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
             TypedExprKind::Recur(arguments) => self.recur(arguments),
-            TypedExprKind::Struct(structure) => self.structure(structure),
+            TypedExprKind::Struct(structure) => self.structure(structure, context),
             TypedExprKind::Control(control) => self.control(control, context),
             TypedExprKind::Fn(lambda) => self.closure_body(lambda),
         }
@@ -54,12 +54,19 @@ impl<'a> UsageCollector<'a> {
         self.self_modes = outer;
     }
 
-    fn structure(&mut self, structure: &TypedStructExpr) {
+    fn structure(&mut self, structure: &TypedStructExpr, context: ParamMode) {
         match structure {
-            TypedStructExpr::Field(value, _) => self.expr(value, ParamMode::Ref),
+            TypedStructExpr::Field(value, _) => self.expr(value, Self::field_context(context)),
             TypedStructExpr::New(_, fields) => fields
                 .iter()
                 .for_each(|(_, value)| self.expr(value, ParamMode::Own)),
+        }
+    }
+
+    fn field_context(context: ParamMode) -> ParamMode {
+        match context {
+            ParamMode::Mut => ParamMode::Mut,
+            ParamMode::Copy | ParamMode::Ref | ParamMode::Own => ParamMode::Ref,
         }
     }
 
