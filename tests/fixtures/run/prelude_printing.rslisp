@@ -1,0 +1,5 @@
+(defn main ()
+  (print "a")
+  (println "b")
+  (print 1)
+  (println ""))
