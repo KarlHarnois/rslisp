@@ -113,7 +113,7 @@ Each type parameter of a struct must appear in a field. Each parameter of a Rust
 (type scale (fn (f64 _) _))
 ```
 
-Inference is Hindley-Milner with trait bounds. Top-level functions generalize to Rust generics. Local `let` bindings stay monomorphic, because Rust closures cannot be generic.
+Inference is Hindley-Milner with trait bounds. Top-level functions generalize to Rust generics. Mutually recursive functions generalize together, so each one declares the type parameters its type mentions. Local `let` bindings stay monomorphic, because Rust closures cannot be generic.
 
 A type parameter satisfies a trait when its `where` names the trait, or when every type its traits allow implements the trait. `(n float)` therefore satisfies `number` and `display`. The emitted Rust names any such bound that the runtime traits' supertraits do not already give.
 
