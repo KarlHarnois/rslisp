@@ -1,0 +1,5 @@
+(defn main ()
+  (println (len (to-string "abc")))
+  (println (len "abcd"))
+  (println (len (vec 1 2 3)))
+  (for-each (windows (vec 1 2 3) 2) (fn (pair) (println (len pair)))))

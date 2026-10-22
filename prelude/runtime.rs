@@ -47,3 +47,31 @@ macro_rules! integers {
 }
 
 integers!(i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize);
+
+pub trait Sequence {
+    fn len(&self) -> usize;
+}
+
+impl Sequence for String {
+    fn len(&self) -> usize {
+        self.as_str().len()
+    }
+}
+
+impl Sequence for str {
+    fn len(&self) -> usize {
+        str::len(self)
+    }
+}
+
+impl<T> Sequence for Vec<T> {
+    fn len(&self) -> usize {
+        Vec::len(self)
+    }
+}
+
+impl<T> Sequence for [T] {
+    fn len(&self) -> usize {
+        <[T]>::len(self)
+    }
+}
