@@ -27,10 +27,13 @@ pub enum Builtin {
     NumberGe,
     ValueEq,
     BoolNot,
+    EscapeString,
+    EscapeFormat,
+    StringStripSuffix,
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 27] = [
+    const NAMES: [(Builtin, &'static str); 30] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -58,6 +61,9 @@ impl Builtin {
         (Builtin::NumberGe, "number-ge"),
         (Builtin::ValueEq, "value-eq"),
         (Builtin::BoolNot, "bool-not"),
+        (Builtin::EscapeString, "escape-string"),
+        (Builtin::EscapeFormat, "escape-format"),
+        (Builtin::StringStripSuffix, "string-strip-suffix"),
     ];
 
     pub fn all() -> impl Iterator<Item = Builtin> {

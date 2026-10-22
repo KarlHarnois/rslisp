@@ -1,0 +1,14 @@
+(use code escape-string escape-format string-strip-suffix)
+
+(defmacro show-escape-string (form)
+  (escape-string "brace { quote \" slash \\ newline\n"))
+
+(defmacro show-escape-format (form)
+  (escape-format "brace { quote \" slash \\ newline\n"))
+
+(defmacro show-strip-suffix (form)
+  (string-strip-suffix "brace { quote \" slash \\ newline\nEND" "END"))
+
+(def escaped-string (show-escape-string "unused"))
+(def escaped-format (show-escape-format "unused"))
+(def stripped-suffix (show-strip-suffix "unused"))
