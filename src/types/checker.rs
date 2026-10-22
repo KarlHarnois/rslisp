@@ -829,6 +829,7 @@ impl TypeChecker {
         if let Type::Named(struct_binding, _) = implementor
             && let Some(definition) = self.structs.get(*struct_binding)
         {
+            diagnostic = self.with_written_derive(diagnostic, definition, bound);
             if let Some((_, field, field_type)) = definition
                 .blocked
                 .iter()
@@ -852,6 +853,31 @@ impl TypeChecker {
             }
         }
         self.diagnostics.push(diagnostic);
+    }
+
+    fn with_written_derive(
+        &self,
+        diagnostic: Diagnostic,
+        definition: &StructDefinition,
+        bound: BindingId,
+    ) -> Diagnostic {
+        let Some(derive_span) = definition.written_derive else {
+            return diagnostic;
+        };
+        if !self.is_derivable(bound) {
+            return diagnostic;
+        }
+        let trait_name = self.bindings.get(bound).name();
+        diagnostic
+            .with_label(TypeProblems::derive_leaves_out(derive_span, trait_name))
+            .with_help(TypeProblems::add_to_derive_help(trait_name))
+    }
+
+    fn is_derivable(&self, bound: BindingId) -> bool {
+        self.traits.get(bound).is_some_and(|rust_trait| {
+            let name = StructDerives::derive_name(&rust_trait.path);
+            StructDerives::DERIVABLE.contains(&name)
+        })
     }
 }
 
