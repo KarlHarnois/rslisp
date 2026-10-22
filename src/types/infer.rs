@@ -552,6 +552,7 @@ impl TypeChecker {
                 self.pass(&parameter, &stripped, span, Borrow::Collapse(extra))
             }
             (Type::Var(var), Type::Ref(_)) => self.pass_to_variable(*var, argument, span),
+            (Type::Mut(_), Type::Mut(_)) => self.pass(parameter, argument, span, Borrow::Reborrow),
             (expected, found) => self.pass(expected, found, span, Borrow::None),
         }
     }

@@ -113,7 +113,8 @@ impl<'a> MoveChecker<'a> {
             self.expr(callee, Usage::Borrow);
         }
         for argument in arguments {
-            let moves = argument.borrow == Borrow::None && !argument.value.ty.is_reference();
+            let moves =
+                argument.borrow == Borrow::None && !matches!(argument.value.ty, Type::Ref(_));
             let usage = if moves { Usage::Move } else { Usage::Borrow };
             self.expr(&argument.value, usage);
         }

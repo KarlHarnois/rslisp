@@ -1,0 +1,12 @@
+(type keep (where (a) (fn (a) (vec a))))
+(defn keep (item) (vec item))
+
+(type twice! (fn ((mut (vec i64))) unit))
+(defn twice! (stack)
+  (keep stack)
+  (push! stack 1))
+
+(defn main ()
+  (let items (vec 1))
+  (twice! items)
+  (println (len items)))

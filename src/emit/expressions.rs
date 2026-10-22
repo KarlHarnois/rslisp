@@ -519,17 +519,21 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn borrow_prefix(argument: &TypedArgument, role: ArgumentRole) -> Option<String> {
-        let borrowed_already =
-            argument.value.ty.is_reference() || role.borrows_by_itself(argument.borrow);
+        let borrowed_already = Self::borrowed_already(argument, role);
         match argument.borrow {
             Borrow::Shared if !borrowed_already => Some("&".to_string()),
             Borrow::Mutable if !borrowed_already => Some("&mut ".to_string()),
             Borrow::Deref(levels) => Some("*".repeat(levels)),
+            Borrow::Reborrow => None,
             Borrow::Pending(_) => {
                 unreachable!("the type checker decides every pending borrow")
             }
             _ => None,
         }
+    }
+
+    fn borrowed_already(argument: &TypedArgument, role: ArgumentRole) -> bool {
+        argument.value.ty.is_reference() || role.borrows_by_itself(argument.borrow)
     }
 
     fn prefixed(prefix: &str, value: Code) -> Code {
