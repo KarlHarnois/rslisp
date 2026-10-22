@@ -52,6 +52,7 @@ impl DiagnosticCode {
     pub const BOUNDED_TYPE_PARAMETER: Self = Self(Cow::Borrowed("L0417"));
     pub const BARE_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0418"));
     pub const MUT_BORROW_OF_COPY: Self = Self(Cow::Borrowed("L0419"));
+    pub const BORROWED_STRUCT_FIELD: Self = Self(Cow::Borrowed("L0420"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));

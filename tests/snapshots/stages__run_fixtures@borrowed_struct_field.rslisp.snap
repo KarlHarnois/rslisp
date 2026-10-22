@@ -3,11 +3,11 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/borrowed_struct_field.rslisp
 ---
-error[E0106]: missing lifetime specifier
- --> run/borrowed_struct_field.rslisp:1:1
+error[L0420]: a struct field cannot hold a borrow
+ --> run/borrowed_struct_field.rslisp:1:32
   |
 1 | (defstruct instruction (opcode (ref str)) (argument i64))
-  | ^ expected named lifetime parameter
+  |                                ^^^^^^^^^ this field type borrows
   |
-  = note: reported by rustc while compiling the generated Rust
-  = help: consider introducing a named lifetime parameter
+  = note: milestone 11 adds written lifetimes, so a struct field cannot borrow yet
+  = help: store an owned value, such as `string`, instead of a borrow

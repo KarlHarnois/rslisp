@@ -629,8 +629,13 @@ impl TypeChecker {
             .map(|(binder, param)| (binder.variable, param.id))
             .collect();
         let mut lowered = Vec::new();
+        let mut borrowed = None;
         for (label, field_type) in fields {
-            lowered.push((label.name.clone(), self.lower_type(field_type, &scope)?));
+            let lowered_type = self.lower_type(field_type, &scope)?;
+            if lowered_type.holds_reference() && borrowed.is_none() {
+                borrowed = Some(field_type.span());
+            }
+            lowered.push((label.name.clone(), lowered_type));
         }
         Self::check_parameters_used(binders, &params, &lowered)?;
         self.structs.add(
@@ -640,7 +645,10 @@ impl TypeChecker {
                 fields: lowered,
             },
         );
-        Ok(())
+        match borrowed {
+            Some(span) => Err(TypeProblems::borrowed_struct_field(span)),
+            None => Ok(()),
+        }
     }
 
     fn lower_implementor(&mut self, implementor: &TypeExpr) -> Result<Scheme, Diagnostic> {
