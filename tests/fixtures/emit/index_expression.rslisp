@@ -1,0 +1,3 @@
+(defn main ()
+  (let numbers (vec 4 8 15 16 23 42))
+  (println (at numbers 0)))
