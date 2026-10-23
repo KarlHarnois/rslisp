@@ -16,17 +16,17 @@ error[L0415]: `pair` takes 2 type arguments but 3 were given
   |                     ^^^^^^^^^^^^^^^^^^ expected 2 type arguments
 
 error[L0416]: no field uses the type parameter `b`
- --> check/generic_struct_errors.rslisp:9:26
+ --> check/generic_struct_errors.rslisp:9:19
   |
-9 | (struct unused (where (a b) (only a)))
-  |                          ^ declared here
+9 | (struct (unused a b) (only a))
+  |                   ^ declared here
   |
   = help: use `b` in a field's type, or remove it
 
 error[L0417]: the type parameter `a` cannot require traits here
-  --> check/generic_struct_errors.rslisp:11:25
+  --> check/generic_struct_errors.rslisp:11:18
    |
-11 | (struct bounded (where ((a display)) (shown a)))
-   |                         ^^^^^^^^^^^ traits given here
+11 | (struct (bounded (a display)) (shown a))
+   |                  ^^^^^^^^^^^ traits given here
    |
    = help: write `a` alone, and require the traits in the `where` of each function that needs them

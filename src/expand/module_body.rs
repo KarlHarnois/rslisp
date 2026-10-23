@@ -5,7 +5,6 @@ use super::Expander;
 use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
-use super::type_parameters::Parameterized;
 use crate::core::{
     BindingId, BindingKind, ControlForm, CoreModule, DefinitionForm, ExpressionForm, FieldLabel,
     Item, ItemKind, KernelForm, ModuleId, Namespace, TypeExpr,
@@ -219,8 +218,10 @@ impl Expander<'_> {
         kind: BindingKind,
         context: &DefinitionContext,
     ) -> Result<BindingId, Diagnostic> {
-        let items = Shape::new(kernel, form).at_least(2)?;
-        self.define_global(&items[1], Namespace::Type, kind, context)
+        let shape = Shape::new(kernel, form);
+        let items = shape.at_least(2)?;
+        let name = self.head_name(&shape, &items[1])?;
+        self.define_global(name, Namespace::Type, kind, context)
     }
 
     fn lower_pending(
@@ -302,16 +303,17 @@ impl Expander<'_> {
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
         let shape = Shape::new(KernelForm::Definition(DefinitionForm::Struct), form);
-        let body = &shape.at_least(2)?[2..];
-        let parameterized = match self.parameterized_body(body) {
-            Some(where_items) => {
-                self.lower_parameters(where_items, || shape.malformed(&body[0]))?
-            }
-            None => Parameterized {
-                binders: Vec::new(),
-                body: body.to_vec(),
-            },
-        };
+        let items = shape.at_least(2)?;
+        let body = items[2..].to_vec();
+        if let Some(where_items) = self.old_parameters(&body) {
+            let span = where_items[0].span();
+            let kind = self
+                .macro_origin_at(span)
+                .map_or("struct", |origin| origin.name.as_ref());
+            let replacement = self.old_head_replacement(kind, &items[1], where_items);
+            return Err(ExpandProblems::parameters_on_name(kind, &replacement, span));
+        }
+        let parameterized = self.lower_head(&shape, &items[1], body)?;
         let fields = parameterized
             .body
             .iter()

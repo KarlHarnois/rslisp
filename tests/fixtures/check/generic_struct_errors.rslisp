@@ -1,4 +1,4 @@
-(struct pair (where (a b) (first a) (second b)))
+(struct (pair a b) (first a) (second b))
 
 (type too-few (fn ((pair i64)) i64))
 (defn too-few (p) 1)
@@ -6,6 +6,6 @@
 (type too-many (fn ((pair i64 i64 i64)) i64))
 (defn too-many (p) 1)
 
-(struct unused (where (a b) (only a)))
+(struct (unused a b) (only a))
 
-(struct bounded (where ((a display)) (shown a)))
+(struct (bounded (a display)) (shown a))

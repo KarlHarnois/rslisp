@@ -231,17 +231,12 @@ impl<'a> CorePrinter<'a> {
         params: &[TypeBinder],
         fields: &[(FieldLabel, TypeExpr)],
     ) -> String {
-        let mut parts = vec![self.name(binding)];
-        let params = self.type_binders(params);
-        let fields: Vec<String> = fields
-            .iter()
-            .map(|(label, field_type)| format!("({} {})", label.name, self.type_expr(field_type)))
-            .collect();
-        if params.is_empty() {
-            parts.extend(fields);
-        } else {
-            parts.push(Self::where_list(params, fields));
-        }
+        let mut parts = vec![self.type_head(binding, params)];
+        parts.extend(
+            fields.iter().map(|(label, field_type)| {
+                format!("({} {})", label.name, self.type_expr(field_type))
+            }),
+        );
         Self::list("struct", parts)
     }
 
@@ -260,6 +255,15 @@ impl<'a> CorePrinter<'a> {
             parts.push(Self::where_list(params, vec![template]));
         }
         Self::list("rust-type", parts)
+    }
+
+    fn type_head(&mut self, binding: BindingId, params: &[TypeBinder]) -> String {
+        let name = self.name(binding);
+        if params.is_empty() {
+            return name;
+        }
+        let binders = self.type_binders(params);
+        format!("({name} {})", binders.join(" "))
     }
 
     fn where_type(&mut self, binders: &[TypeBinder], inner: &TypeExpr) -> String {

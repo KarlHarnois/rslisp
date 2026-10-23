@@ -159,6 +159,13 @@ impl Expander<'_> {
         (form, introduction)
     }
 
+    pub(super) fn macro_origin_at(&self, span: Span) -> Option<&MacroOrigin> {
+        self.macro_origins
+            .values()
+            .filter(|origin| origin.call_site.contains(span))
+            .min_by_key(|origin| origin.call_site.range().len())
+    }
+
     pub(super) fn introduced_name(&self, call_site: Span, name: &str) -> Option<Span> {
         self.introduced_names
             .get(&(call_site, name.to_string()))

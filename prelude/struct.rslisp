@@ -1,29 +1,18 @@
 (use prelude/macros defmacro template map-list)
 (use prelude/logic and)
 (use prelude/syntax defn)
-(use code first list nth drop length empty? list? symbol? symbol symbol-name same-binding?
+(use code first rest list nth drop length empty? list? symbol? symbol symbol-name same-binding?
           value-eq number-lt)
 
 (export defstruct)
 
-(def where-form?
-  (fn (form)
-    (and (list? form)
-         (number-lt 2 (length form))
-         (symbol? (first form))
-         (same-binding? (first form) (quote where)))))
+(def head-name
+  (fn (head)
+    (if (list? head) (first head) head)))
 
-(def parameterized?
-  (fn (body)
-    (and (value-eq (length body) 1) (where-form? (first body)))))
-
-(def struct-params
-  (fn (body)
-    (if (parameterized? body) (nth (first body) 1) (list))))
-
-(def struct-fields
-  (fn (body)
-    (if (parameterized? body) (drop 2 (first body)) body)))
+(def head-params
+  (fn (head)
+    (if (list? head) (rest head) (list))))
 
 (def field-initializer
   (fn (field)
@@ -42,11 +31,11 @@
       (do (type (unquote accessor-name) (unquote (accessor-type name params)))
           (defn (unquote accessor-name) (instance) (field instance (unquote (first field))))))))
 
-(defmacro defstruct (name body ...)
-  (let params (struct-params body))
-  (let fields (struct-fields body))
+(defmacro defstruct (head body ...)
+  (let name (head-name head))
+  (let params (head-params head))
   (template
-    (do (struct (unquote name) (splice body))
-        (defn (unquote (symbol name "make-" name)) (unquote (map-list first fields))
-          (new (unquote name) (splice (map-list field-initializer fields))))
-        (splice (map-list (fn (field) (accessor name params field)) fields)))))
+    (do (struct (unquote head) (splice body))
+        (defn (unquote (symbol name "make-" name)) (unquote (map-list first body))
+          (new (unquote name) (splice (map-list field-initializer body))))
+        (splice (map-list (fn (field) (accessor name params field)) body)))))
