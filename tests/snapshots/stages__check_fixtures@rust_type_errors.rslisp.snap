@@ -4,10 +4,10 @@ expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/rust_type_errors.rslisp
 ---
 error[L0417]: the type parameter `item` cannot require traits here
- --> check/rust_type_errors.rslisp:2:31
+ --> check/rust_type_errors.rslisp:2:24
   |
-2 | (rust-type sorted-set (where ((item partial-ord)) "std::collections::BTreeSet<{0}>"))
-  |                               ^^^^^^^^^^^^^^^^^^ traits given here
+2 | (rust-type (sorted-set (item partial-ord)) "std::collections::BTreeSet<{0}>")
+  |                        ^^^^^^^^^^^^^^^^^^ traits given here
   |
   = help: write `item` alone, and require the traits in the `where` of each function that needs them
 

@@ -246,15 +246,8 @@ impl<'a> CorePrinter<'a> {
         params: &[TypeBinder],
         template: &ParsedTemplate,
     ) -> String {
-        let mut parts = vec![self.name(binding)];
-        let params = self.type_binders(params);
-        let template = format!("{:?}", template.text());
-        if params.is_empty() {
-            parts.push(template);
-        } else {
-            parts.push(Self::where_list(params, vec![template]));
-        }
-        Self::list("rust-type", parts)
+        let head = self.type_head(binding, params);
+        Self::list("rust-type", vec![head, format!("{:?}", template.text())])
     }
 
     fn type_head(&mut self, binding: BindingId, params: &[TypeBinder]) -> String {
