@@ -48,6 +48,39 @@ impl ExpandProblems {
         .with_help(help)
     }
 
+    pub fn type_placeholder_in_type_template(name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::TYPE_PLACEHOLDER_IN_RUST_TYPE,
+            format!("a `rust-type` template cannot name `{name}`"),
+            Label::new(
+                span,
+                "`rust-type` templates name their parameters by number",
+            ),
+        )
+        .with_help("write the placeholder as `{0}`")
+    }
+
+    pub fn rust_type_clauses_need_one_parameter(
+        name: &str,
+        parameters: usize,
+        span: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::RUST_TYPE_CLAUSES_NEED_ONE_PARAMETER,
+            "a `rust-type` with clauses takes one type parameter",
+            Label::new(
+                span,
+                format!(
+                    "this type has {}",
+                    Counted::noun(parameters, "type parameter")
+                ),
+            ),
+        )
+        .with_help(format!(
+            "give the type one parameter, as in `(rust-type ({name} item) ...)`"
+        ))
+    }
+
     pub fn malformed_template(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MALFORMED_TEMPLATE,

@@ -67,7 +67,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `recur` | `(recur argument...)` | `loop` | arguments: expressions. |
 | `try` | `(try expression)` | `expression?` | expression: expression. |
 | `rust-trait` | `(rust-trait name "Path" type...)` | trait bound | name: type binder. types: types, `(with type type)`, or `(where (param...) type)`. |
-| `rust-type` | `(rust-type name "template")` or `(rust-type (name param...) "template")` | the filled template | name: type binder. params: type binders. |
+| `rust-type` | `(rust-type name "template" (type "template")...)` or `(rust-type (name param...) "template" (type "template")...)` | the filled template | name: type binder. params: type binders. clauses: a type and a template. |
 | `use` | `(use module name...)` | path | module: module path. names: binders. |
 | `export` | `(export name...)` | `pub` | names: references in every namespace. |
 
@@ -302,11 +302,15 @@ Field names are not hygienic. They are looked up through the struct type.
 
 A `rust` template names a type parameter of its `where` by name, as `{target}` in `"{0}.parse::<{target}>()"`. The emitter fills it with the Rust type that the binder takes at that call. The name must be a binder of the template's `where`; a name with no matching binder is an error.
 
-`rust-type` binds a type name to a Rust type. `{0}` in the template is the first type parameter in the head, as `{0}` in a `rust` template is the first argument:
+`rust-type` binds a type name to a Rust type. `{0}` in the template is the first type parameter in the head, as `{0}` in a `rust` template is the first argument. A `rust-type` may also list clauses after its template. A clause is a type and a template, and it applies when the type's first argument equals the clause's type. Every other argument uses the template after the name. A `rust-type` with clauses takes exactly one type parameter.
 
 ```lisp
 (rust-type (boxed item) "Box<{0}>")
 (def box-new (rust "Box::new({0})" (where (a) (fn (a) (boxed a)))))
+
+(rust-type (parse-error target)
+  "<{0} as std::str::FromStr>::Err"
+  (i64 "std::num::ParseIntError"))
 ```
 
 `rust-type` is a kernel form: only `struct` creates a type, and it cannot name a type that Rust defines. A template that starts with `impl ` is opaque. A closure parameter or a `let` writes an opaque type as `_`. A `const`, a `static` or a function-type parameter cannot hold one, and rustc reports it. A struct whose Rust name equals the first name in a used Rust type's template is a name collision.

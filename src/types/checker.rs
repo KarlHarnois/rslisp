@@ -187,8 +187,8 @@ impl TypeChecker {
             ItemKind::RustTrait(binding, path, implementors) => {
                 self.collect_trait(*binding, path, implementors)
             }
-            ItemKind::RustType(binding, binders, template) => {
-                self.collect_rust_type(*binding, binders, template)
+            ItemKind::RustType(binding, binders, template, clauses) => {
+                self.collect_rust_type(*binding, binders, template, clauses)
             }
             ItemKind::Signature(binding, signature) => {
                 self.signatures
@@ -290,7 +290,7 @@ impl TypeChecker {
         for item in modules.iter().flat_map(|module| &module.items) {
             if let ItemKind::Struct(binding, params, _)
             | ItemKind::Enum(binding, params, _, _)
-            | ItemKind::RustType(binding, params, _) = &item.kind
+            | ItemKind::RustType(binding, params, ..) = &item.kind
             {
                 self.type_arities.insert(*binding, params.len());
             }
@@ -996,6 +996,7 @@ impl TypeChecker {
                 binding,
                 RustType {
                     template: rust.template.clone(),
+                    clauses: Vec::new(),
                 },
             );
         }
@@ -1079,13 +1080,21 @@ impl TypeChecker {
         &mut self,
         binding: BindingId,
         binders: &[TypeBinder],
-        template: &std::rc::Rc<ParsedTemplate>,
+        template: &Rc<ParsedTemplate>,
+        clauses: &[(TypeExpr, Rc<ParsedTemplate>)],
     ) -> Result<(), Diagnostic> {
         self.reject_bounds(binders)?;
+        let clauses = clauses
+            .iter()
+            .map(|(target, template)| {
+                Ok((self.lower_type(target, &HashMap::new())?, template.clone()))
+            })
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
         self.rust_types.add(
             binding,
             RustType {
                 template: template.clone(),
+                clauses,
             },
         );
         Ok(())

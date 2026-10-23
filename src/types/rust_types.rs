@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
+use super::ty::Type;
 use crate::core::{BindingId, ParsedTemplate};
 
 pub struct RustType {
     pub template: Rc<ParsedTemplate>,
+    pub clauses: Vec<(Type, Rc<ParsedTemplate>)>,
 }
 
 impl RustType {
@@ -12,6 +14,17 @@ impl RustType {
     pub const VECTOR_TEMPLATE: &'static str = "Vec<{0}>";
     pub const BOX_TEMPLATE: &'static str = "Box<{0}>";
     const OPAQUE_PREFIX: &'static str = "impl ";
+
+    pub fn template_for(&self, argument: Option<&Type>) -> &Rc<ParsedTemplate> {
+        argument
+            .and_then(|argument| {
+                self.clauses
+                    .iter()
+                    .find(|(target, _)| target == argument)
+                    .map(|(_, template)| template)
+            })
+            .unwrap_or(&self.template)
+    }
 
     pub fn is_opaque(&self) -> bool {
         self.template.text().starts_with(Self::OPAQUE_PREFIX)

@@ -33,6 +33,8 @@ impl DiagnosticCode {
     pub const TYPE_PARAMETERS_ON_NAME: Self = Self(Cow::Borrowed("L0219"));
     pub const TRY_OUTSIDE_FN: Self = Self(Cow::Borrowed("L0220"));
     pub const TYPE_PARAMETER_PLACEHOLDER: Self = Self(Cow::Borrowed("L0221"));
+    pub const TYPE_PLACEHOLDER_IN_RUST_TYPE: Self = Self(Cow::Borrowed("L0222"));
+    pub const RUST_TYPE_CLAUSES_NEED_ONE_PARAMETER: Self = Self(Cow::Borrowed("L0223"));
 
     pub const MACRO_FAILED: Self = Self(Cow::Borrowed("L0301"));
     pub const MACRO_RESULT_NOT_FORM: Self = Self(Cow::Borrowed("L0302"));

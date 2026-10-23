@@ -1,0 +1,15 @@
+(rust-type (error-of target)
+  "<{0} as std::str::FromStr>::Err"
+  (i64 "std::num::ParseIntError"))
+
+(def read-number
+  (rust "{0}.parse::<i64>()" (fn ((ref str)) (result i64 (error-of i64)))))
+
+(def read-float
+  (rust "{0}.parse::<f32>()" (fn ((ref str)) (result f32 (error-of f32)))))
+
+(defn main ()
+  (let (number (result i64 (error-of i64))) (read-number "2"))
+  (println (unwrap-ok number))
+  (let (float (result f32 (error-of f32))) (read-float "2.5"))
+  (println (unwrap-ok float)))

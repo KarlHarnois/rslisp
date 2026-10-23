@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/rust_type_clauses.rslisp
+---
+fn main() {
+    let number: Result<i64, std::num::ParseIntError> = "2".parse::<i64>();
+    println!("{}", number.unwrap());
+    let float: Result<f32, <f32 as std::str::FromStr>::Err> = "2.5".parse::<f32>();
+    println!("{}", float.unwrap())
+}

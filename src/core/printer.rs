@@ -63,8 +63,8 @@ impl<'a> CorePrinter<'a> {
                 );
                 Self::list("derive", parts)
             }
-            ItemKind::RustType(binding, params, template) => {
-                self.rust_type_item(*binding, params, template)
+            ItemKind::RustType(binding, params, template, clauses) => {
+                self.rust_type_item(*binding, params, template, clauses)
             }
             ItemKind::RustTrait(binding, path, implementors) => {
                 let mut parts = vec![self.name(*binding), format!("{path:?}")];
@@ -344,9 +344,14 @@ impl<'a> CorePrinter<'a> {
         binding: BindingId,
         params: &[TypeBinder],
         template: &ParsedTemplate,
+        clauses: &[(TypeExpr, std::rc::Rc<ParsedTemplate>)],
     ) -> String {
         let head = self.type_head(binding, params);
-        Self::list("rust-type", vec![head, format!("{:?}", template.text())])
+        let mut parts = vec![head, format!("{:?}", template.text())];
+        parts.extend(clauses.iter().map(|(target, template)| {
+            format!("({} {:?})", self.type_expr(target), template.text())
+        }));
+        Self::list("rust-type", parts)
     }
 
     fn type_head(&mut self, binding: BindingId, params: &[TypeBinder]) -> String {
