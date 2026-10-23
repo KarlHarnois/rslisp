@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/template_type_parameter.rslisp
+---
+fn main() {
+    let value: Result<i64, <i64 as std::str::FromStr>::Err> = "2".parse::<i64>();
+    println!("{}", value.unwrap())
+}

@@ -11,7 +11,7 @@ use crate::core::{
     Arm, Binder, BindingId, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind,
     ExpressionForm, FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, Namespace,
     ParsedTemplate, Pattern, PatternKind, ReferenceKind, RustTemplate, StructExpr, StructForm,
-    VariantInfo,
+    TypeExpr, TypeExprKind, VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -550,14 +550,40 @@ impl Expander<'_> {
     fn lower_rust(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
         let items = shape.exactly(3)?;
         let text = shape.string(&items[1])?;
-        ParsedTemplate::parse(text)
+        let template = ParsedTemplate::parse(text)
             .map_err(|_| ExpandProblems::malformed_template(items[1].span()))?;
-        let template = text.into();
         let type_expr = self.lower_type(&items[2])?;
+        self.check_template_type_placeholders(&template, &type_expr, items[1].span())?;
         Ok(ExprKind::Leaf(Leaf::Rust(Rc::new(RustTemplate {
-            template,
+            template: text.into(),
             type_expr,
         }))))
+    }
+
+    fn check_template_type_placeholders(
+        &self,
+        template: &ParsedTemplate,
+        type_expr: &TypeExpr,
+        span: Span,
+    ) -> Result<(), Diagnostic> {
+        let binders = match type_expr.kind() {
+            TypeExprKind::Where(binders, _) => binders.as_slice(),
+            _ => &[],
+        };
+        let parameters: Vec<String> = binders
+            .iter()
+            .map(|binder| self.bindings.get(binder.variable).name().to_string())
+            .collect();
+        for name in template.type_placeholders() {
+            if !parameters.iter().any(|parameter| parameter == name) {
+                return Err(ExpandProblems::unknown_type_placeholder(
+                    name,
+                    &parameters,
+                    span,
+                ));
+            }
+        }
+        Ok(())
     }
 
     fn lower_recur(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {

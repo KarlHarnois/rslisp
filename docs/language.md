@@ -300,6 +300,8 @@ Field names are not hygienic. They are looked up through the struct type.
 (def not (rust "!{0}" (fn (bool) bool)))
 ```
 
+A `rust` template names a type parameter of its `where` by name, as `{target}` in `"{0}.parse::<{target}>()"`. The emitter fills it with the Rust type that the binder takes at that call. The name must be a binder of the template's `where`; a name with no matching binder is an error.
+
 `rust-type` binds a type name to a Rust type. `{0}` in the template is the first type parameter in the head, as `{0}` in a `rust` template is the first argument:
 
 ```lisp
@@ -313,7 +315,7 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 
 | Template rule | Effect |
 |---|---|
-| Placeholders | `{0}`, `{1}` and so on take the call's arguments. `{&0}` takes an argument that Rust borrows by itself, as a format macro or a comparison operator does. No `&` is written before it, and the call does not move it. `{{` and `}}` are literal braces. |
+| Placeholders | `{0}`, `{1}` and so on take the call's arguments. `{&0}` takes an argument that Rust borrows by itself, as a format macro or a comparison operator does. No `&` is written before it, and the call does not move it. `{target}` is the Rust type that the `where` binder `target` takes at the call. `{{` and `}}` are literal braces. |
 | Inlining | A `def` of a `rust` form emits nothing. Each use inlines the template. |
 | Parentheses | A non-atomic argument is parenthesized unless its placeholder is the whole template, sits between `(` or `,` and `,` or `)`, or Rust's precedence and associativity keep its grouping on the side it takes. A prefixed argument such as `*x` is parenthesized only before `.`, `[`, `(` or `?`. |
 | Deref place | A `*` written immediately before a placeholder is dropped when the call borrows a `mut` place, because the `*` and the borrow cancel. |

@@ -5,6 +5,7 @@ use crate::core::{ParsedTemplate, Piece};
 #[derive(Debug, PartialEq, Eq)]
 pub enum TemplateError {
     MissingArgument(usize),
+    MissingTypeArgument(String),
 }
 
 pub struct Template {
@@ -40,13 +41,10 @@ impl Template {
         self.parsed.indexes(argument)
     }
 
-    pub fn inline(&self, arguments: Vec<Code>) -> Result<Code, TemplateError> {
-        self.inline_with_places(arguments, &[])
-    }
-
-    pub fn inline_with_places(
+    pub fn inline_with_types(
         &self,
         arguments: Vec<Code>,
+        types: &[(String, Code)],
         places: &[bool],
     ) -> Result<Code, TemplateError> {
         if let Some(missing) = self
@@ -56,16 +54,23 @@ impl Template {
         {
             return Err(TemplateError::MissingArgument(missing));
         }
+        if let Some(missing) = self
+            .parsed
+            .type_placeholders()
+            .find(|name| !types.iter().any(|(binder, _)| binder.as_str() == *name))
+        {
+            return Err(TemplateError::MissingTypeArgument(missing.to_string()));
+        }
         if let [Piece::Placeholder { index, .. }] = self.parsed.pieces() {
             return Ok(arguments[*index].clone());
         }
         if !places.iter().any(|place| *place) && self.needs_temporaries(&arguments) {
-            return Ok(self.inline_with_temporaries(arguments));
+            return Ok(self.inline_with_temporaries(arguments, types));
         }
-        Ok(self.substitute(&arguments, places))
+        Ok(self.substitute(&arguments, types, places))
     }
 
-    fn substitute(&self, arguments: &[Code], places: &[bool]) -> Code {
+    fn substitute(&self, arguments: &[Code], types: &[(String, Code)], places: &[bool]) -> Code {
         let pieces = self.pieces_without_deref(places);
         let mut fragments = Vec::new();
         for (position, piece) in pieces.iter().enumerate() {
@@ -75,6 +80,13 @@ impl Template {
                     self.argument_in_place(&arguments[*index], position)
                         .fragments,
                 ),
+                Piece::TypePlaceholder { name } => {
+                    let (_, code) = types
+                        .iter()
+                        .find(|(binder, _)| binder.as_str() == name)
+                        .expect("the expansion stage checked the type placeholder");
+                    fragments.push(Fragment::Text(code.text()));
+                }
             }
         }
         Code {
@@ -165,7 +177,7 @@ impl Template {
 
     fn is_operand(piece: &Piece) -> bool {
         match piece {
-            Piece::Placeholder { .. } => true,
+            Piece::Placeholder { .. } | Piece::TypePlaceholder { .. } => true,
             Piece::Literal(literal) => !literal.trim().is_empty(),
         }
     }
@@ -192,7 +204,7 @@ impl Template {
     fn literal_at(&self, position: usize) -> Option<&str> {
         match self.parsed.pieces().get(position)? {
             Piece::Literal(literal) => Some(literal),
-            Piece::Placeholder { .. } => None,
+            Piece::Placeholder { .. } | Piece::TypePlaceholder { .. } => None,
         }
     }
 
@@ -217,7 +229,7 @@ impl Template {
         repeated_or_reordered && arguments.iter().any(|argument| !argument.is_plain_name())
     }
 
-    fn inline_with_temporaries(&self, arguments: Vec<Code>) -> Code {
+    fn inline_with_temporaries(&self, arguments: Vec<Code>, types: &[(String, Code)]) -> Code {
         let mut statements = Vec::new();
         let mut replaced = Vec::new();
         for (index, argument) in arguments.into_iter().enumerate() {
@@ -229,7 +241,7 @@ impl Template {
             replaced.push(Code::atom(temporary));
         }
         statements.push(Fragment::Newline);
-        statements.extend(self.substitute(&replaced, &[]).fragments);
+        statements.extend(self.substitute(&replaced, types, &[]).fragments);
         Code {
             fragments: vec![
                 Fragment::Text("{".to_string()),
@@ -248,7 +260,7 @@ mod tests {
 
     fn inline(template: &str, arguments: Vec<Code>) -> String {
         Template::new(template)
-            .inline(arguments)
+            .inline_with_types(arguments, &[], &[])
             .expect("enough arguments")
             .text()
     }
@@ -262,6 +274,37 @@ mod tests {
         assert_eq!(
             inline("println!(\"{{}}\", {0})", vec![Code::atom("x")]),
             "println!(\"{}\", x)"
+        );
+    }
+
+    #[test]
+    fn keeps_a_template_that_is_one_placeholder() {
+        let code = Template::new("{0}")
+            .inline_with_types(vec![operator("a + b")], &[], &[])
+            .expect("enough arguments");
+        assert_eq!(code.text(), "a + b");
+    }
+
+    #[test]
+    fn substitutes_a_named_type_placeholder() {
+        let code = Template::new("{0}.parse::<{target}>()")
+            .inline_with_types(
+                vec![Code::atom("text")],
+                &[("target".to_string(), Code::atom("i64"))],
+                &[],
+            )
+            .expect("enough arguments");
+        assert_eq!(code.text(), "text.parse::<i64>()");
+    }
+
+    #[test]
+    fn reports_a_missing_type_argument() {
+        let missing = Template::new("{target}")
+            .inline_with_types(Vec::new(), &[], &[])
+            .map(|code| code.text());
+        assert_eq!(
+            missing,
+            Err(TemplateError::MissingTypeArgument("target".to_string()))
         );
     }
 
@@ -284,7 +327,7 @@ mod tests {
     #[test]
     fn binds_repeated_complex_arguments_to_temporaries() {
         let code = Template::new("{0} * {0}")
-            .inline(vec![Code::atom("next()")])
+            .inline_with_types(vec![Code::atom("next()")], &[], &[])
             .unwrap();
         assert_eq!(code.precedence, Precedence::Block);
         assert!(code.text().contains("let template_argument_0 = next();"));
@@ -293,7 +336,7 @@ mod tests {
     #[test]
     fn reports_a_missing_argument() {
         let missing = Template::new("{0} + {1}")
-            .inline(vec![Code::atom("x")])
+            .inline_with_types(vec![Code::atom("x")], &[], &[])
             .map(|code| code.text());
         assert_eq!(missing, Err(TemplateError::MissingArgument(1)));
     }

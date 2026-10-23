@@ -30,6 +30,24 @@ impl ExpandProblems {
         .with_help("write a literal brace as `{{` or `}}`")
     }
 
+    pub fn unknown_type_placeholder(name: &str, parameters: &[String], span: Span) -> Diagnostic {
+        let help = if parameters.is_empty() {
+            format!("add `({name})` to the template's `where`")
+        } else {
+            let names: Vec<String> = parameters
+                .iter()
+                .map(|parameter| format!("`{parameter}`"))
+                .collect();
+            format!("the type parameters are {}", names.join(", "))
+        };
+        Diagnostic::error(
+            DiagnosticCode::TYPE_PARAMETER_PLACEHOLDER,
+            format!("`{{{name}}}` names no type parameter"),
+            Label::new(span, "this template's `where` has no such type parameter"),
+        )
+        .with_help(help)
+    }
+
     pub fn malformed_template(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MALFORMED_TEMPLATE,

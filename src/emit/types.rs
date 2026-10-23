@@ -263,6 +263,7 @@ impl<'a> RustTypes<'a> {
             .map(|piece| match piece {
                 Piece::Literal(text) => text.as_str(),
                 Piece::Placeholder { index, .. } => arguments[*index].as_str(),
+                Piece::TypePlaceholder { .. } => "_",
             })
             .collect()
     }

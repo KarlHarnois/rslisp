@@ -5,6 +5,7 @@ pub struct MalformedPlaceholder;
 pub enum Piece {
     Literal(String),
     Placeholder { index: usize, borrowed: bool },
+    TypePlaceholder { name: String },
 }
 
 #[derive(Clone, Debug)]
@@ -46,19 +47,27 @@ impl ParsedTemplate {
         characters: &mut std::iter::Peekable<std::str::Chars>,
     ) -> Result<Piece, MalformedPlaceholder> {
         let borrowed = characters.next_if_eq(&Self::BORROW).is_some();
-        let index = Self::placeholder_index(characters)?;
-        Ok(Piece::Placeholder { index, borrowed })
+        let name = Self::placeholder_name(characters)?;
+        match name.parse::<usize>() {
+            Ok(index) => Ok(Piece::Placeholder { index, borrowed }),
+            Err(_) if borrowed => Err(MalformedPlaceholder),
+            Err(_) => Ok(Piece::TypePlaceholder { name }),
+        }
     }
 
-    fn placeholder_index(
+    fn placeholder_name(
         characters: &mut impl Iterator<Item = char>,
-    ) -> Result<usize, MalformedPlaceholder> {
-        let mut digits = String::new();
+    ) -> Result<String, MalformedPlaceholder> {
+        let mut name = String::new();
         for next in characters {
             if next == '}' {
-                return digits.parse().map_err(|_| MalformedPlaceholder);
+                return if name.is_empty() {
+                    Err(MalformedPlaceholder)
+                } else {
+                    Ok(name)
+                };
             }
-            digits.push(next);
+            name.push(next);
         }
         Err(MalformedPlaceholder)
     }
@@ -74,7 +83,14 @@ impl ParsedTemplate {
     pub fn placeholders(&self) -> impl Iterator<Item = usize> + '_ {
         self.pieces.iter().filter_map(|piece| match piece {
             Piece::Placeholder { index, .. } => Some(*index),
-            Piece::Literal(_) => None,
+            Piece::Literal(_) | Piece::TypePlaceholder { .. } => None,
+        })
+    }
+
+    pub fn type_placeholders(&self) -> impl Iterator<Item = &str> + '_ {
+        self.pieces.iter().filter_map(|piece| match piece {
+            Piece::TypePlaceholder { name } => Some(name.as_str()),
+            Piece::Literal(_) | Piece::Placeholder { .. } => None,
         })
     }
 
@@ -116,7 +132,7 @@ impl ParsedTemplate {
                 .checked_sub(1)
                 .and_then(|previous| match &self.pieces[previous] {
                     Piece::Literal(literal) => Some(Self::unary_deref(literal)),
-                    Piece::Placeholder { .. } => None,
+                    Piece::Placeholder { .. } | Piece::TypePlaceholder { .. } => None,
                 })
                 .unwrap_or(false);
             if !dereferenced {
@@ -213,9 +229,19 @@ mod tests {
     }
 
     #[test]
-    fn reports_a_placeholder_without_a_number() {
+    fn names_a_type_placeholder() {
+        let parsed = ParsedTemplate::parse("{target}").expect("a named placeholder");
+        assert_eq!(parsed.type_placeholders().collect::<Vec<_>>(), ["target"]);
         assert_eq!(
-            ParsedTemplate::parse("{name}").err(),
+            parsed.placeholders().collect::<Vec<_>>(),
+            Vec::<usize>::new()
+        );
+    }
+
+    #[test]
+    fn reports_a_borrowed_type_placeholder() {
+        assert_eq!(
+            ParsedTemplate::parse("{&target}").err(),
             Some(MalformedPlaceholder)
         );
     }
