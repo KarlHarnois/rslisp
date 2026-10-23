@@ -1,0 +1,20 @@
+(defn checked-half (n)
+  (if (= (rem n 2) 0) (ok (/ n 2)) (err "odd")))
+
+(defn main ()
+  (let numbers (vec 10 20 30))
+  (let index 0)
+  (let first (option/some 5))
+  (println (unwrap first))
+  (println
+    (match (get numbers index)
+      ((some x) (deref x))
+      (none 0)))
+  (println
+    (match (get numbers 5)
+      ((some x) (deref x))
+      (none 0)))
+  (println
+    (match (checked-half 10)
+      ((ok n) (+ n 1))
+      ((err _) 0))))

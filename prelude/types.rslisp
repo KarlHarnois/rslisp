@@ -1,8 +1,8 @@
 (export vec option result iterator slice sequence)
 
 (rust-type (vec item) "Vec<{0}>")
-(rust-type (option value) "Option<{0}>")
-(rust-type (result value error) "Result<{0}, {1}>")
+(enum (option value) (rust "Option") (some value) none)
+(enum (result value error) (rust "Result") (ok value) (err error))
 (rust-type (iterator item) "impl Iterator<Item = {0}>")
 (rust-type (slice item) "[{0}]")
 (rust-trait sequence "crate::rt::Sequence"

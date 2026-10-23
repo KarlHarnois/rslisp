@@ -159,8 +159,8 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 |---|---|---|
 | `(vec a)` | `Vec<A>` | `vec push! len iter values collect get pop! sort! sort-by-key! windows at dedup!` |
 | `(slice a)` | `[A]` | `windows at` |
-| `(option a)` | `Option<A>` | `some none some? none? unwrap-or unwrap expect map-some then-some` |
-| `(result a b)` | `Result<A, B>` | `ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok` |
+| `(option a)` | `Option<A>` | `some none option/some option/none some? none? unwrap-or unwrap expect map-some then-some` |
+| `(result a b)` | `Result<A, B>` | `ok err result/ok result/err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok` |
 | `(iterator a)` | `impl Iterator<Item = A>` | `range map filter fold for-each sum count max min max-by-key any all find take take-while` |
 | `str`, `string` | `&str`, `String` | `to-string display str char print println chars lines split trim as-str parse parse-error from-str` |
 
