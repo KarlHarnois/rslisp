@@ -1,0 +1,10 @@
+(enum operation add sub)
+
+(defn apply (operation left right)
+  (match operation
+    (add (add left right))
+    (sub (sub left right))))
+
+(defn main ()
+  (println (apply operation/add 2 3))
+  (println (apply operation/sub 7 4)))

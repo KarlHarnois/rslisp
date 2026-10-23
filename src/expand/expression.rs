@@ -456,6 +456,7 @@ impl Expander<'_> {
         if let Some(kind) = self.named_symbol_pattern(form, symbol)? {
             return Ok(kind);
         }
+        let outer = self.try_resolve(symbol, Namespace::Value);
         let candidates = self.variant_candidates(symbol, true);
         let binding = self.define_local(form, Namespace::Value, BindingKind::Local, None)?;
         if candidates.is_empty() {
@@ -465,6 +466,7 @@ impl Expander<'_> {
             name: symbol.shared_name(),
             binding,
             candidates,
+            outer,
         })
     }
 

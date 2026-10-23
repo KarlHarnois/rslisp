@@ -469,7 +469,7 @@ A `string` value matched against string literals emits `.as_str()` on the value,
 
 A variant name in a pattern is short, as in `(circle r)`. Its enum is the type of the value at that position. When the matched value's type is still unknown, the enum is the one visible enum that has every variant name the arms use. If two visible enums fit, the match is an error that asks for one qualified pattern. A qualified pattern, such as `(shape/circle r)`, is always allowed.
 
-A bare name that names a variant with no payload of the matched enum is that variant. Any other bare name binds the value. A variant with a `struct` payload takes its patterns positionally, in field order.
+A bare name that names a variant with no payload of the matched enum is that variant. Any other bare name binds the value. A variant pattern binds no value, so in its arm the name keeps its meaning from outside the `match`. A variant with a `struct` payload takes its patterns positionally, in field order.
 
 When the matched value is a reference, each name a pattern binds is a reference of the same kind, as Rust's default binding modes do.
 
