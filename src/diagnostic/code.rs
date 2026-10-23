@@ -80,6 +80,7 @@ impl DiagnosticCode {
     pub const VARIANT_ARM_VALUE: Self = Self(Cow::Borrowed("L0436"));
     pub const NESTED_BOXED_PATTERN: Self = Self(Cow::Borrowed("L0437"));
     pub const ENUM_RUST_TEMPLATE: Self = Self(Cow::Borrowed("L0438"));
+    pub const RECURSIVELY_USED_TYPE_PARAMETER: Self = Self(Cow::Borrowed("L0439"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));

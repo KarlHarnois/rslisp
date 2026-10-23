@@ -35,6 +35,102 @@ pub(super) enum ObligationPass {
     Final,
 }
 
+struct ParameterUsage {
+    outside_self: bool,
+    first_recursive: Option<Span>,
+}
+
+impl ParameterUsage {
+    fn scan(variants: &[VariantDeclaration], enum_binding: BindingId, variable: BindingId) -> Self {
+        let mut usage = Self {
+            outside_self: false,
+            first_recursive: None,
+        };
+        for variant in variants {
+            usage.visit_payload(&variant.payload, enum_binding, variable, false);
+        }
+        usage
+    }
+
+    fn visit_payload(
+        &mut self,
+        payload: &CoreVariantPayload,
+        enum_binding: BindingId,
+        variable: BindingId,
+        inside_self: bool,
+    ) {
+        match payload {
+            CoreVariantPayload::None => {}
+            CoreVariantPayload::Positional(types) => {
+                for type_expr in types {
+                    self.visit(type_expr, enum_binding, variable, inside_self);
+                }
+            }
+            CoreVariantPayload::Named(fields) => {
+                for (_, type_expr) in fields {
+                    self.visit(type_expr, enum_binding, variable, inside_self);
+                }
+            }
+        }
+    }
+
+    fn visit(
+        &mut self,
+        type_expr: &TypeExpr,
+        enum_binding: BindingId,
+        variable: BindingId,
+        inside_self: bool,
+    ) {
+        match type_expr.kind() {
+            TypeExprKind::Named(binding, arguments) => self.visit_named(
+                type_expr,
+                *binding,
+                arguments,
+                enum_binding,
+                variable,
+                inside_self,
+            ),
+            TypeExprKind::Function(parameters, result) => {
+                for parameter in parameters {
+                    self.visit(parameter, enum_binding, variable, inside_self);
+                }
+                self.visit(result, enum_binding, variable, inside_self);
+            }
+            TypeExprKind::Reference(_, inner) => {
+                self.visit(inner, enum_binding, variable, inside_self);
+            }
+            TypeExprKind::Primitive(_) | TypeExprKind::Hole => {}
+            TypeExprKind::Where(..) | TypeExprKind::With(..) => {}
+        }
+    }
+
+    fn visit_named(
+        &mut self,
+        type_expr: &TypeExpr,
+        binding: BindingId,
+        arguments: &[TypeExpr],
+        enum_binding: BindingId,
+        variable: BindingId,
+        inside_self: bool,
+    ) {
+        let inside_self = inside_self || binding == enum_binding;
+        if binding == variable {
+            self.record_use(type_expr.span(), inside_self);
+        }
+        for argument in arguments {
+            self.visit(argument, enum_binding, variable, inside_self);
+        }
+    }
+
+    fn record_use(&mut self, span: Span, inside_self: bool) {
+        if inside_self {
+            self.first_recursive.get_or_insert(span);
+        } else {
+            self.outside_self = true;
+        }
+    }
+}
+
 pub struct TypeChecker {
     pub(super) bindings: BindingArena,
     pub(super) unifier: Unifier,
@@ -990,7 +1086,7 @@ impl TypeChecker {
                 span: variant.span,
             });
         }
-        Self::check_enum_parameters_used(binders, &params, &lowered)?;
+        self.check_enum_parameters_used(binding, binders, &params, variants)?;
         if let Some(rust) = rust {
             self.rust_types.add(
                 binding,
@@ -1040,23 +1136,32 @@ impl TypeChecker {
     }
 
     fn check_enum_parameters_used(
+        &self,
+        enum_binding: BindingId,
         binders: &[TypeBinder],
         params: &[GenericParam],
-        variants: &[VariantDefinition],
+        variants: &[VariantDeclaration],
     ) -> Result<(), Diagnostic> {
-        let unused = binders.iter().zip(params).find(|(_, param)| {
-            !variants
-                .iter()
-                .flat_map(VariantDefinition::payload_types)
-                .any(|payload| payload.mentions(param.id))
+        let enum_name = self.bindings.get(enum_binding).name();
+        let problem = binders.iter().zip(params).find_map(|(binder, param)| {
+            let usage = ParameterUsage::scan(variants, enum_binding, binder.variable);
+            match (usage.outside_self, usage.first_recursive) {
+                (true, _) => None,
+                (false, Some(recursive_use)) => {
+                    Some(TypeProblems::recursively_used_enum_parameter(
+                        &param.name,
+                        enum_name,
+                        binder.span,
+                        recursive_use,
+                    ))
+                }
+                (false, None) => Some(TypeProblems::unused_enum_parameter(
+                    &param.name,
+                    binder.span,
+                )),
+            }
         });
-        match unused {
-            Some((binder, param)) => Err(TypeProblems::unused_enum_parameter(
-                &param.name,
-                binder.span,
-            )),
-            None => Ok(()),
-        }
+        problem.map_or(Ok(()), Err)
     }
 
     fn lower_fields(

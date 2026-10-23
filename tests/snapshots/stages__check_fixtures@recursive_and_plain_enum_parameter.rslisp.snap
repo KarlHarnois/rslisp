@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/recursive_and_plain_enum_parameter.rslisp
+---
+(derive container clone debug partial-eq eq hash)
+(enum (container a) (value a) (next (box (container a))) empty)

@@ -485,6 +485,23 @@ impl TypeProblems {
         .with_help(format!("use `{name}` in a variant payload, or remove it"))
     }
 
+    pub fn recursively_used_enum_parameter(
+        name: &str,
+        enum_name: &str,
+        binder: Span,
+        recursive_use: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::RECURSIVELY_USED_TYPE_PARAMETER,
+            format!("type parameter `{name}` is only used recursively"),
+            Label::new(binder, "declared here"),
+        )
+        .with_label(Label::new(recursive_use, "first recursive use"))
+        .with_help(format!(
+            "use `{name}` in a payload outside `{enum_name}`, or remove it"
+        ))
+    }
+
     pub fn bounded_type_parameter(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::BOUNDED_TYPE_PARAMETER,

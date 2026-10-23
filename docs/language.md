@@ -467,7 +467,7 @@ A payload that holds its own enum by value, directly or through another type tha
 
 A nested pattern at a boxed position is an interim error, `L0437`, because Rust has no stable box pattern. Bind a name and `match` on it in the arm.
 
-Some recursive types still fail. A recursive struct, and a recursive enum whose cycle passes through a `rust-type` that holds its argument by value, reach rustc, which reports an infinite type as `L0604`. An enum whose type parameter is used only recursively reaches rustc's variance check, also `L0604`.
+Some recursive types still fail. A recursive struct, and a recursive enum whose cycle passes through a `rust-type` that holds its argument by value, reach rustc, which reports an infinite type as `L0604`. An enum whose type parameter is used only inside references to the enum itself, at any depth, is an error, `L0439`.
 
 A `match` tests one value against patterns:
 

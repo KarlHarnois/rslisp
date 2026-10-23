@@ -1,0 +1,1 @@
+(enum (container a) (value a) (next (container a)) empty)

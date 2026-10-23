@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/function_and_reference_enum_parameter.rslisp
+---
+(derive thing copy)
