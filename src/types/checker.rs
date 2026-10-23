@@ -167,8 +167,8 @@ impl TypeChecker {
             ItemKind::Struct(binding, params, fields) => {
                 self.collect_struct(*binding, params, fields)
             }
-            ItemKind::Enum(binding, params, variants) => {
-                self.collect_enum(*binding, params, variants)
+            ItemKind::Enum(binding, params, variants, rust) => {
+                self.collect_enum(*binding, params, variants, rust)
             }
             ItemKind::RustTrait(binding, path, implementors) => {
                 self.collect_trait(*binding, path, implementors)
@@ -275,7 +275,7 @@ impl TypeChecker {
     fn record_type_arities(&mut self, modules: &[CoreModule]) {
         for item in modules.iter().flat_map(|module| &module.items) {
             if let ItemKind::Struct(binding, params, _)
-            | ItemKind::Enum(binding, params, _)
+            | ItemKind::Enum(binding, params, _, _)
             | ItemKind::RustType(binding, params, _) = &item.kind
             {
                 self.type_arities.insert(*binding, params.len());
@@ -928,6 +928,7 @@ impl TypeChecker {
         binding: BindingId,
         binders: &[TypeBinder],
         variants: &[VariantDeclaration],
+        rust: &Option<crate::core::EnumRust>,
     ) -> Result<(), Diagnostic> {
         let params = self.struct_params(binders)?;
         let scope: HashMap<BindingId, GenericId> = binders
@@ -946,11 +947,20 @@ impl TypeChecker {
             });
         }
         Self::check_enum_parameters_used(binders, &params, &lowered)?;
+        if let Some(rust) = rust {
+            self.rust_types.add(
+                binding,
+                RustType {
+                    template: rust.template.clone(),
+                },
+            );
+        }
         self.enums.add(
             binding,
             EnumDefinition {
                 params,
                 variants: lowered,
+                rust: rust.clone(),
                 derives: Vec::new(),
                 derived_traits: Vec::new(),
                 blocked: Vec::new(),

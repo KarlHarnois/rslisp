@@ -163,8 +163,9 @@ impl Expander<'_> {
         let name = self.head_name(&shape, &items[1])?;
         let binding =
             self.define_global(name, Namespace::Type, BindingKind::Enum(module), context)?;
+        let first_variant = Self::first_enum_variant(items);
         let mut constructors = Vec::new();
-        for (index, variant) in items[2..].iter().enumerate() {
+        for (index, variant) in items[first_variant..].iter().enumerate() {
             let (variant_name, arity) = self.variant_shape(&shape, variant)?;
             constructors.push(self.define_variant(
                 binding,
@@ -177,6 +178,14 @@ impl Expander<'_> {
         }
         self.enum_variants.insert(binding, constructors);
         Ok(Some(PendingItem::Enum(binding, form)))
+    }
+
+    fn first_enum_variant(items: &[Form]) -> usize {
+        if items.get(2).is_some_and(Self::starts_rust_clause) {
+            3
+        } else {
+            2
+        }
     }
 
     fn define_variant(
@@ -456,7 +465,8 @@ impl Expander<'_> {
     ) -> Result<(), Diagnostic> {
         let shape = Shape::new(KernelForm::Definition(DefinitionForm::Enum), form);
         let items = shape.at_least(2)?;
-        let body = items[2..].to_vec();
+        let first_variant = Self::first_enum_variant(items);
+        let body = items[first_variant..].to_vec();
         if let Some(where_items) = self.old_parameters(&body) {
             let span = where_items[0].span();
             let kind = self
@@ -472,8 +482,13 @@ impl Expander<'_> {
             .iter()
             .map(|variant| self.lower_variant(&shape, enum_name, variant))
             .collect::<Result<Vec<_>, Diagnostic>>()?;
+        let rust = items
+            .get(2)
+            .filter(|clause| Self::starts_rust_clause(clause))
+            .map(|clause| Self::enum_rust(&shape, clause, parameterized.binders.len()))
+            .transpose()?;
         core.items.push(Item {
-            kind: ItemKind::Enum(binding, parameterized.binders, variants),
+            kind: ItemKind::Enum(binding, parameterized.binders, variants, rust),
             span: form.span(),
         });
         Ok(())
@@ -584,7 +599,7 @@ impl Expander<'_> {
             .map(|item| self.derived_trait(&shape, item))
             .collect::<Result<Vec<(BindingId, Span)>, Diagnostic>>()?;
         core.items.push(Item {
-            kind: ItemKind::Derive(binding, traits),
+            kind: ItemKind::Derive(binding, items[1].span(), traits),
             span: form.span(),
         });
         Ok(())

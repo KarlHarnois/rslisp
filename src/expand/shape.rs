@@ -50,6 +50,10 @@ impl<'a> Shape<'a> {
     }
 
     pub fn malformed(&self, part: &Form) -> Diagnostic {
+        self.malformed_with_help(part, format!("write it as `{}`", self.kernel.shape()))
+    }
+
+    pub fn malformed_with_help(&self, part: &Form, help: impl Into<String>) -> Diagnostic {
         let name = self.kernel.name();
         Diagnostic::error(
             DiagnosticCode::MALFORMED_FORM,
@@ -59,6 +63,6 @@ impl<'a> Shape<'a> {
                 format!("this does not fit the shape of `{name}`"),
             ),
         )
-        .with_help(format!("write it as `{}`", self.kernel.shape()))
+        .with_help(help)
     }
 }

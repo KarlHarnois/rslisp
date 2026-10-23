@@ -52,7 +52,7 @@ impl TypeChecker {
                 ItemKind::Struct(binding, params, _) => {
                     Some((*binding, params.len(), DefinitionKind::Struct))
                 }
-                ItemKind::Enum(binding, params, _) => {
+                ItemKind::Enum(binding, params, _, _) => {
                     Some((*binding, params.len(), DefinitionKind::Enum))
                 }
                 _ => None,
@@ -88,9 +88,15 @@ impl TypeChecker {
     ) -> HashMap<BindingId, WrittenDerive> {
         let mut written: HashMap<BindingId, WrittenDerive> = HashMap::new();
         for item in modules.iter().flat_map(|module| &module.items) {
-            let ItemKind::Derive(struct_binding, traits) = &item.kind else {
+            let ItemKind::Derive(struct_binding, name_span, traits) = &item.kind else {
                 continue;
             };
+            if self.is_rust_enum(*struct_binding) {
+                let enum_name = self.bindings.get(*struct_binding).name().to_string();
+                self.diagnostics
+                    .push(TypeProblems::derive_on_rust_type(&enum_name, *name_span));
+                continue;
+            }
             if let Some(first) = written.get(struct_binding) {
                 let struct_name = self.bindings.get(*struct_binding).name().to_string();
                 self.diagnostics.push(TypeProblems::duplicate_derive(
@@ -155,6 +161,9 @@ impl TypeChecker {
         let mut candidates = Vec::new();
         for (trait_binding, name) in derivable {
             for (binding, arity, kind) in types {
+                if self.is_rust_enum(*binding) {
+                    continue;
+                }
                 let Some(source) = self.derive_source(*binding, name, written, derivable) else {
                     continue;
                 };
@@ -169,6 +178,12 @@ impl TypeChecker {
             }
         }
         candidates
+    }
+
+    fn is_rust_enum(&self, binding: BindingId) -> bool {
+        self.enums
+            .get(binding)
+            .is_some_and(|definition| definition.rust.is_some())
     }
 
     fn derive_source(

@@ -411,16 +411,18 @@ impl<'a> ExpressionEmitter<'a> {
         let variant = &definition.variants[index];
         let name = variant.name.clone();
         let payload = variant.payload.clone();
-        let path = format!(
-            "{}::{}",
-            self.types().struct_path(owner),
-            NameMangler::type_name(&name)
-        );
+        let rust_path = definition.rust.as_ref().map(|rust| rust.path.clone());
+        let path = Self::variant_path(self.types().struct_path(owner), rust_path, &name);
         match &payload {
             VariantPayload::None => Code::atom(path),
             VariantPayload::Positional(_) => self.positional_pattern(path, patterns),
             VariantPayload::Named(fields) => self.named_pattern(path, fields, patterns),
         }
+    }
+
+    fn variant_path(owner_path: String, rust_path: Option<std::rc::Rc<str>>, name: &str) -> String {
+        let owner = rust_path.map_or(owner_path, |path| path.to_string());
+        format!("{owner}::{}", NameMangler::type_name(name))
     }
 
     fn positional_pattern(&mut self, path: String, patterns: &[TypedPattern]) -> Code {
@@ -486,11 +488,8 @@ impl<'a> ExpressionEmitter<'a> {
         let variant = &definition.variants[index];
         let name = variant.name.clone();
         let payload = variant.payload.clone();
-        let path = format!(
-            "{}::{}",
-            self.types().struct_path(owner),
-            NameMangler::type_name(&name)
-        );
+        let rust_path = definition.rust.as_ref().map(|rust| rust.path.clone());
+        let path = Self::variant_path(self.types().struct_path(owner), rust_path, &name);
         match &payload {
             VariantPayload::None => Code::atom(path),
             VariantPayload::Positional(_) => self.positional_variant(path, arguments),

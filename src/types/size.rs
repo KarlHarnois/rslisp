@@ -91,6 +91,9 @@ impl<'a> TypeSizes<'a> {
             return None;
         }
         let definition = self.enums.get(binding)?;
+        if definition.rust.is_some() {
+            return None;
+        }
         visiting.push(binding);
         let layout = definition.variants.iter().enumerate().try_fold(
             Layout {
@@ -213,6 +216,7 @@ mod tests {
                         payload,
                         span: crate::source::Span::new(crate::source::SourceId::new(0), 0..0),
                     }],
+                    rust: None,
                     derives: Vec::new(),
                     derived_traits: Vec::new(),
                     blocked: Vec::new(),
@@ -249,6 +253,7 @@ mod tests {
                         payload: VariantPayload::Positional(vec![Type::Named(binding, Vec::new())]),
                         span: crate::source::Span::new(crate::source::SourceId::new(0), 0..0),
                     }],
+                    rust: None,
                     derives: Vec::new(),
                     derived_traits: Vec::new(),
                     blocked: Vec::new(),
