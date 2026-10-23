@@ -1,0 +1,33 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/nested_boxed_read.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Tree<A> {
+    Node(Box<Tree<A>>, A, Box<Tree<A>>),
+    Leaf,
+}
+
+fn nested_total(tree: &Tree<i64>) -> i64 {
+    match tree {
+        Tree::Node(inner, middle, last) if matches!(&**inner, Tree::Node(_, _, _)) => {
+            let Tree::Node(left, value, right) = &**inner else { unreachable!() };
+            let left = &**left;
+            let right = &**right;
+            let last = &**last;
+            2 * *value + nested_total(left) + (nested_total(right) + (*middle + nested_total(last)))
+        },
+        Tree::Node(left, value, right) => {
+            let left = &**left;
+            let right = &**right;
+            nested_total(left) + *value + nested_total(right)
+        },
+        Tree::Leaf => 0,
+    }
+}
+
+fn main() {
+    let tree: Tree<i64> = Tree::Node(Box::new(Tree::Node(Box::new(Tree::Leaf), 2, Box::new(Tree::Leaf))), 1, Box::new(Tree::Node(Box::new(Tree::Leaf), 3, Box::new(Tree::Leaf))));
+    println!("{}", nested_total(&tree))
+}

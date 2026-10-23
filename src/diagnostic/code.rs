@@ -78,7 +78,6 @@ impl DiagnosticCode {
     pub const UNREACHABLE_ARM: Self = Self(Cow::Borrowed("L0434"));
     pub const DERIVE_ON_RUST_TYPE: Self = Self(Cow::Borrowed("L0435"));
     pub const VARIANT_ARM_VALUE: Self = Self(Cow::Borrowed("L0436"));
-    pub const NESTED_BOXED_PATTERN: Self = Self(Cow::Borrowed("L0437"));
     pub const ENUM_RUST_TEMPLATE: Self = Self(Cow::Borrowed("L0438"));
     pub const RECURSIVELY_USED_TYPE_PARAMETER: Self = Self(Cow::Borrowed("L0439"));
 

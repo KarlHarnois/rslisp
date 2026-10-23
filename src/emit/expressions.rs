@@ -19,8 +19,8 @@ use crate::reader::{Number, NumberValue};
 use crate::source::Span;
 use crate::types::{
     Borrow, GenericId, Type, TypedArgument, TypedArm, TypedBinder, TypedBlock, TypedBodyItem,
-    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedPattern, TypedPatternKind,
-    TypedProgram, TypedStructExpr, VariantPayload,
+    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedMatch, TypedPattern,
+    TypedPatternKind, TypedProgram, TypedStructExpr, VariantPayload,
 };
 
 mod tail_loop;
@@ -55,24 +55,81 @@ impl LoopExit {
     }
 }
 
-struct Peel {
-    binding: BindingId,
-    statement: String,
-    expression: String,
+enum Prologue {
+    Peel {
+        binding: BindingId,
+        statement: String,
+        expression: String,
+    },
+    Destructure {
+        statement: String,
+    },
+}
+
+impl Prologue {
+    fn statement(&self) -> &str {
+        match self {
+            Prologue::Peel { statement, .. } | Prologue::Destructure { statement } => statement,
+        }
+    }
+
+    fn expression_of(&self, binding: BindingId) -> Option<&str> {
+        match self {
+            Prologue::Peel {
+                binding: peeled,
+                expression,
+                ..
+            } if *peeled == binding => Some(expression),
+            _ => None,
+        }
+    }
 }
 
 struct PatternEmission {
     code: Code,
     guards: Vec<Code>,
-    peels: Vec<Peel>,
+    prologue: Vec<Prologue>,
 }
 
-impl PatternEmission {
+struct PatternShape {
+    guard: Code,
+    binding: Code,
+    destructure: Code,
+    guards: Vec<Code>,
+    prologue: Vec<Prologue>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum GuardBox {
+    Arm,
+    Nested,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum BoxPosition {
+    Owned,
+    Shared,
+    Mutable,
+}
+
+impl BoxPosition {
+    fn of(ty: &Type) -> Self {
+        match ty {
+            Type::Ref(_) => BoxPosition::Shared,
+            Type::Mut(_) => BoxPosition::Mutable,
+            _ => BoxPosition::Owned,
+        }
+    }
+}
+
+impl PatternShape {
     fn plain(code: Code) -> Self {
         Self {
-            code,
+            guard: code.clone(),
+            binding: code.clone(),
+            destructure: code,
             guards: Vec::new(),
-            peels: Vec::new(),
+            prologue: Vec::new(),
         }
     }
 }
@@ -102,6 +159,7 @@ pub struct ExpressionEmitter<'a> {
 impl<'a> ExpressionEmitter<'a> {
     const ETA_PARAMETER: &'static str = "argument_";
     const STRING_GUARD_BINDING: &'static str = "text";
+    const BOX_BINDING: &'static str = "inner";
     const RECEIVER: &'static str = "{0}.";
     const INTEGER_CONVERSION: &'static str = "from_literal";
     const FLOAT_CONVERSION: &'static str = "from_float_literal";
@@ -214,9 +272,9 @@ impl<'a> ExpressionEmitter<'a> {
     fn tail_block_contents(&mut self, expr: &TypedExpr) -> Option<Vec<Fragment>> {
         match &expr.kind {
             TypedExprKind::Control(TypedControl::Block(block)) => Some(self.block_contents(block)),
-            TypedExprKind::Control(TypedControl::Match(value, arms)) => {
-                let arm = self.sole_sure_arm(arms)?;
-                Some(self.sure_arm_contents(value, arm))
+            TypedExprKind::Control(TypedControl::Match(matched)) => {
+                let arm = self.sole_sure_arm(&matched.arms)?;
+                Some(self.sure_arm_contents(&matched.value, arm))
             }
             TypedExprKind::Call(callee, arguments) => match &callee.kind {
                 TypedExprKind::Fn(lambda) if !Self::contains_try(&lambda.body) => {
@@ -330,17 +388,17 @@ impl<'a> ExpressionEmitter<'a> {
         match control {
             TypedControl::Block(block) => self.block(block),
             TypedControl::If(test, then, otherwise) => self.conditional(test, then, otherwise),
-            TypedControl::Match(value, arms) => self.matching(value, arms),
+            TypedControl::Match(matched) => self.matching(matched),
         }
     }
 
-    fn matching(&mut self, value: &TypedExpr, arms: &[TypedArm]) -> Code {
-        if let Some(arm) = self.sole_sure_arm(arms) {
-            return self.sure_arm(value, arm);
+    fn matching(&mut self, matched: &TypedMatch) -> Code {
+        if let Some(arm) = self.sole_sure_arm(&matched.arms) {
+            return self.sure_arm(&matched.value, arm);
         }
-        let uses_strings = Self::uses_string_literals(arms);
-        let string_value = Self::is_string_value(&value.ty);
-        let value = self.expr(value);
+        let uses_strings = Self::uses_string_literals(&matched.arms);
+        let string_value = Self::is_string_value(&matched.value.ty);
+        let value = self.expr(&matched.value);
         let value = if uses_strings && string_value {
             self.string_view(value)
         } else {
@@ -349,17 +407,19 @@ impl<'a> ExpressionEmitter<'a> {
         let mut fragments = vec![Fragment::Text("match ".to_string())];
         fragments.extend(value.fragments);
         fragments.push(Fragment::Text(" {".to_string()));
+        let position = BoxPosition::of(&matched.value.ty);
         let mut inner = Vec::new();
-        for arm in arms {
+        for arm in &matched.arms {
             inner.push(Fragment::Newline);
             self.locals.enter();
-            let (head, peels) = self.arm_head(&arm.pattern);
+            let (head, prologue) = self.arm_head(&arm.pattern, position);
             inner.extend(head);
             inner.push(Fragment::Text(" => ".to_string()));
-            inner.extend(self.arm_body(&arm.body, peels));
+            inner.extend(self.arm_body(&arm.body, prologue));
             inner.push(Fragment::Text(",".to_string()));
             self.locals.leave();
         }
+        Self::add_fallback(&mut inner, matched.unguarded_exhaustive);
         fragments.push(Fragment::Indented(inner));
         fragments.push(Fragment::Newline);
         fragments.push(Fragment::Text("}".to_string()));
@@ -367,6 +427,14 @@ impl<'a> ExpressionEmitter<'a> {
             fragments,
             precedence: Precedence::Block,
         }
+    }
+
+    fn add_fallback(arms: &mut Vec<Fragment>, unguarded_exhaustive: bool) {
+        if unguarded_exhaustive {
+            return;
+        }
+        arms.push(Fragment::Newline);
+        arms.push(Fragment::Text("_ => unreachable!(),".to_string()));
     }
 
     fn sole_sure_arm<'e>(&self, arms: &'e [TypedArm]) -> Option<&'e TypedArm> {
@@ -406,26 +474,31 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn sure_arm_contents(&mut self, value: &TypedExpr, arm: &TypedArm) -> Vec<Fragment> {
+        let position = BoxPosition::of(&value.ty);
         let value = self.expr(value);
         self.locals.enter();
-        let PatternEmission { code, peels, .. } = self.pattern(&arm.pattern);
+        let PatternEmission { code, prologue, .. } = self.pattern(&arm.pattern, position);
         let mut statements = vec![Fragment::Newline, Fragment::Text("let ".to_string())];
         statements.extend(code.fragments);
         statements.push(Fragment::Text(" = ".to_string()));
         statements.extend(value.fragments);
         statements.push(Fragment::Text(";".to_string()));
         let body = self.block_contents(&arm.body);
-        statements.extend(self.with_prologue(body, &peels));
+        statements.extend(Self::with_prologue(body, &prologue));
         self.locals.leave();
         statements
     }
 
-    fn arm_head(&mut self, pattern: &TypedPattern) -> (Vec<Fragment>, Vec<Peel>) {
+    fn arm_head(
+        &mut self,
+        pattern: &TypedPattern,
+        position: BoxPosition,
+    ) -> (Vec<Fragment>, Vec<Prologue>) {
         let PatternEmission {
             code,
             guards,
-            peels,
-        } = self.pattern(pattern);
+            prologue,
+        } = self.pattern(pattern, position);
         let mut fragments = code.fragments;
         if !guards.is_empty() {
             fragments.push(Fragment::Text(" if ".to_string()));
@@ -436,7 +509,7 @@ impl<'a> ExpressionEmitter<'a> {
                 fragments.extend(guard.fragments);
             }
         }
-        (fragments, peels)
+        (fragments, prologue)
     }
 
     fn uses_string_literals(arms: &[TypedArm]) -> bool {
@@ -465,36 +538,78 @@ impl<'a> ExpressionEmitter<'a> {
         Code::joined(vec![value, Code::atom(".as_str()")], Precedence::Atom)
     }
 
-    fn arm_body(&mut self, body: &TypedBlock, peels: Vec<Peel>) -> Vec<Fragment> {
+    fn arm_body(&mut self, body: &TypedBlock, prologue: Vec<Prologue>) -> Vec<Fragment> {
         if let [TypedBodyItem::Expr(only)] = body.items.as_slice()
             && let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &only.kind
-            && let Some(peel) = peels.iter().find(|peel| peel.binding == *binding)
+            && let Some(expression) = Self::peeled_local(&prologue, *binding)
         {
-            return vec![Fragment::Text(peel.expression.clone())];
+            let expression = expression.to_string();
+            return Self::peeled_arm_body(&expression, *binding, prologue);
         }
-        if let [TypedBodyItem::Expr(only)] = body.items.as_slice()
-            && let TypedExprKind::Control(TypedControl::Match(value, arms)) = &only.kind
-            && let Some(arm) = self.sole_sure_arm(arms)
+        if let Some(fragments) = self.sure_match_arm_body(body, &prologue) {
+            return fragments;
+        }
+        self.prologue_body(body, prologue)
+    }
+
+    fn peeled_arm_body(
+        expression: &str,
+        binding: BindingId,
+        prologue: Vec<Prologue>,
+    ) -> Vec<Fragment> {
+        if !prologue
+            .iter()
+            .any(|entry| matches!(entry, Prologue::Destructure { .. }))
         {
-            let contents = self.sure_arm_contents(value, arm);
-            let contents = self.with_prologue(contents, &peels);
-            return vec![
-                Fragment::Text("{".to_string()),
-                Fragment::Indented(contents),
-                Fragment::Newline,
-                Fragment::Text("}".to_string()),
-            ];
+            return vec![Fragment::Text(expression.to_string())];
         }
+        let expression = expression.to_string();
+        let remaining: Vec<Prologue> = prologue
+            .into_iter()
+            .filter(|entry| entry.expression_of(binding).is_none())
+            .collect();
+        let body = vec![Fragment::Text(expression)];
+        let contents = Self::with_prologue(body, &remaining);
+        Self::block_with(contents)
+    }
+
+    fn sure_match_arm_body(
+        &mut self,
+        body: &TypedBlock,
+        prologue: &[Prologue],
+    ) -> Option<Vec<Fragment>> {
+        let [TypedBodyItem::Expr(only)] = body.items.as_slice() else {
+            return None;
+        };
+        let TypedExprKind::Control(TypedControl::Match(matched)) = &only.kind else {
+            return None;
+        };
+        let arm = self.sole_sure_arm(&matched.arms)?;
+        let contents = self.sure_arm_contents(&matched.value, arm);
+        Some(Self::block_with(Self::with_prologue(contents, prologue)))
+    }
+
+    fn prologue_body(&mut self, body: &TypedBlock, prologue: Vec<Prologue>) -> Vec<Fragment> {
         let body = self.body_fragments(body);
-        if peels.is_empty() {
+        if prologue.is_empty() {
             return body;
         }
+        Self::block_with(Self::with_prologue(body, &prologue))
+    }
+
+    fn block_with(contents: Vec<Fragment>) -> Vec<Fragment> {
         vec![
             Fragment::Text("{".to_string()),
-            Fragment::Indented(self.with_prologue(body, &peels)),
+            Fragment::Indented(contents),
             Fragment::Newline,
             Fragment::Text("}".to_string()),
         ]
+    }
+
+    fn peeled_local(prologue: &[Prologue], binding: BindingId) -> Option<&str> {
+        prologue
+            .iter()
+            .find_map(|entry| entry.expression_of(binding))
     }
 
     fn body_fragments(&mut self, body: &TypedBlock) -> Vec<Fragment> {
@@ -508,11 +623,11 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn with_prologue(&self, body: Vec<Fragment>, peels: &[Peel]) -> Vec<Fragment> {
+    fn with_prologue(body: Vec<Fragment>, prologue: &[Prologue]) -> Vec<Fragment> {
         let mut fragments = Vec::new();
-        for peel in peels {
+        for entry in prologue {
             fragments.push(Fragment::Newline);
-            fragments.push(Fragment::Text(peel.statement.clone()));
+            fragments.push(Fragment::Text(entry.statement().to_string()));
         }
         if !fragments.is_empty() && !matches!(body.first(), Some(Fragment::Newline)) {
             fragments.push(Fragment::Newline);
@@ -521,43 +636,195 @@ impl<'a> ExpressionEmitter<'a> {
         fragments
     }
 
-    fn pattern(&mut self, pattern: &TypedPattern) -> PatternEmission {
-        match &pattern.kind {
-            TypedPatternKind::Wildcard => PatternEmission::plain(Code::atom("_")),
-            TypedPatternKind::Bind(binder) => PatternEmission::plain(Code::atom(self.locals.bind(
-                binder.binding,
-                self.program.bindings.get(binder.binding).name(),
-            ))),
-            TypedPatternKind::Variant(binding, patterns) => {
-                self.variant_pattern(*binding, patterns)
-            }
-            TypedPatternKind::Literal(literal, ty) => self.literal_pattern(literal, ty),
+    fn pattern(&mut self, pattern: &TypedPattern, position: BoxPosition) -> PatternEmission {
+        let shape = self.child_shape(pattern, position, GuardBox::Arm);
+        PatternEmission {
+            code: shape.binding,
+            guards: shape.guards,
+            prologue: shape.prologue,
         }
     }
 
-    fn literal_pattern(&mut self, literal: &Literal, ty: &Type) -> PatternEmission {
-        match literal {
-            Literal::Number(number) => {
-                PatternEmission::plain(Code::atom(Self::number_digits(number, ty)))
-            }
-            Literal::Bool(value) => PatternEmission::plain(Code::atom(value.to_string())),
-            Literal::String(text) if matches!(ty, Type::Primitive(PrimitiveType::String)) => {
-                let binding = self.locals.temporary(Self::STRING_GUARD_BINDING);
-                PatternEmission {
-                    code: Code::atom(binding.clone()),
-                    guards: vec![Code::atom(format!("{binding} == {text:?}"))],
-                    peels: Vec::new(),
+    fn child_shape(
+        &mut self,
+        pattern: &TypedPattern,
+        position: BoxPosition,
+        guard_box: GuardBox,
+    ) -> PatternShape {
+        match pattern.boxed {
+            true => self.boxed_shape(pattern, position, guard_box),
+            false => self.shape(pattern, position, guard_box),
+        }
+    }
+
+    fn shape(
+        &mut self,
+        pattern: &TypedPattern,
+        position: BoxPosition,
+        guard_box: GuardBox,
+    ) -> PatternShape {
+        match &pattern.kind {
+            TypedPatternKind::Wildcard => PatternShape::plain(Code::atom("_")),
+            TypedPatternKind::Bind(binder) => {
+                let name = Code::atom(self.locals.bind(
+                    binder.binding,
+                    self.program.bindings.get(binder.binding).name(),
+                ));
+                PatternShape {
+                    guard: Code::atom("_"),
+                    binding: name.clone(),
+                    destructure: name,
+                    guards: Vec::new(),
+                    prologue: Vec::new(),
                 }
             }
-            Literal::String(text) => PatternEmission::plain(Code::atom(format!("{text:?}"))),
+            TypedPatternKind::Variant(binding, patterns) => {
+                self.variant_shape(*binding, patterns, position, guard_box)
+            }
+            TypedPatternKind::Literal(literal, ty) => self.literal_shape(literal, ty),
         }
     }
 
-    fn variant_pattern(
+    fn boxed_shape(
+        &mut self,
+        pattern: &TypedPattern,
+        position: BoxPosition,
+        guard_box: GuardBox,
+    ) -> PatternShape {
+        match &pattern.kind {
+            TypedPatternKind::Wildcard => PatternShape::plain(Code::atom("_")),
+            TypedPatternKind::Bind(binder) => self.boxed_binding_shape(binder, position),
+            _ => self.boxed_value_shape(pattern, position, guard_box),
+        }
+    }
+
+    fn boxed_binding_shape(&mut self, binder: &TypedBinder, position: BoxPosition) -> PatternShape {
+        let name = self.locals.bind(
+            binder.binding,
+            self.program.bindings.get(binder.binding).name(),
+        );
+        let expression = Self::peel_expression(&name, position);
+        PatternShape {
+            guard: Code::atom("_"),
+            binding: Code::atom(name.clone()),
+            destructure: Code::atom(name.clone()),
+            guards: Vec::new(),
+            prologue: vec![Prologue::Peel {
+                binding: binder.binding,
+                statement: format!("let {name} = {expression};"),
+                expression,
+            }],
+        }
+    }
+
+    fn boxed_value_shape(
+        &mut self,
+        pattern: &TypedPattern,
+        position: BoxPosition,
+        guard_box: GuardBox,
+    ) -> PatternShape {
+        let sure = self.sure_pattern(pattern);
+        let name = self.locals.temporary(Self::BOX_BINDING);
+        let expression = Self::peel_expression(&name, position);
+        let guard = Self::guard_expression(&name, position, guard_box);
+        let inner = self.shape(pattern, position, GuardBox::Nested);
+        let guard_condition = Self::matches_guard(&guard, &inner);
+        let mut prologue = Vec::new();
+        let destructure = match Self::needs_prologue(pattern) {
+            true => {
+                let statement = Self::destructure_statement(&expression, &inner.destructure, sure);
+                prologue.push(Prologue::Destructure { statement });
+                prologue.extend(inner.prologue);
+                Code::atom(name.clone())
+            }
+            false => Code::atom("_"),
+        };
+        PatternShape {
+            guards: vec![guard_condition],
+            guard: Code::atom(name.clone()),
+            binding: Code::atom(name),
+            destructure,
+            prologue,
+        }
+    }
+
+    fn needs_prologue(pattern: &TypedPattern) -> bool {
+        match &pattern.kind {
+            TypedPatternKind::Wildcard | TypedPatternKind::Literal(..) => false,
+            TypedPatternKind::Bind(_) => true,
+            TypedPatternKind::Variant(_, patterns) => patterns.iter().any(Self::needs_prologue),
+        }
+    }
+
+    fn peel_expression(name: &str, position: BoxPosition) -> String {
+        match position {
+            BoxPosition::Owned => format!("*{name}"),
+            BoxPosition::Shared => format!("&**{name}"),
+            BoxPosition::Mutable => format!("&mut **{name}"),
+        }
+    }
+
+    fn guard_expression(name: &str, position: BoxPosition, guard_box: GuardBox) -> String {
+        match guard_box {
+            GuardBox::Nested => format!("&**{name}"),
+            GuardBox::Arm => match position {
+                BoxPosition::Owned => format!("&*{name}"),
+                BoxPosition::Shared | BoxPosition::Mutable => format!("&**{name}"),
+            },
+        }
+    }
+
+    fn matches_guard(expression: &str, shape: &PatternShape) -> Code {
+        let conditions: Vec<String> = shape.guards.iter().map(Code::text).collect();
+        let guard = match conditions.is_empty() {
+            true => shape.guard.text(),
+            false => format!("{} if {}", shape.guard.text(), conditions.join(" && ")),
+        };
+        Code::atom(format!("matches!({expression}, {guard})"))
+    }
+
+    fn destructure_statement(expression: &str, binding: &Code, sure: bool) -> String {
+        let pattern = binding.text();
+        match sure {
+            true => format!("let {pattern} = {expression};"),
+            false => format!("let {pattern} = {expression} else {{ unreachable!() }};"),
+        }
+    }
+
+    fn literal_shape(&mut self, literal: &Literal, ty: &Type) -> PatternShape {
+        match literal {
+            Literal::Number(number) => {
+                let code = Code::atom(Self::number_digits(number, ty));
+                PatternShape::plain(code)
+            }
+            Literal::Bool(value) => {
+                let code = Code::atom(value.to_string());
+                PatternShape::plain(code)
+            }
+            Literal::String(text) if matches!(ty, Type::Primitive(PrimitiveType::String)) => {
+                let binding = self.locals.temporary(Self::STRING_GUARD_BINDING);
+                PatternShape {
+                    guard: Code::atom(binding.clone()),
+                    binding: Code::atom(binding.clone()),
+                    destructure: Code::atom("_"),
+                    guards: vec![Code::atom(format!("{binding} == {text:?}"))],
+                    prologue: Vec::new(),
+                }
+            }
+            Literal::String(text) => {
+                let code = Code::atom(format!("{text:?}"));
+                PatternShape::plain(code)
+            }
+        }
+    }
+
+    fn variant_shape(
         &mut self,
         binding: BindingId,
         patterns: &[TypedPattern],
-    ) -> PatternEmission {
+        position: BoxPosition,
+        guard_box: GuardBox,
+    ) -> PatternShape {
         let BindingKind::Variant(_, VariantInfo { owner, index, .. }) =
             self.program.bindings.get(binding).kind()
         else {
@@ -577,41 +844,49 @@ impl<'a> ExpressionEmitter<'a> {
             .filter(|rust| rust.template_clause)
             .map(|rust| rust.template.clone());
         if let Some(template) = template
-            && let VariantPayload::Positional(types) = &payload
+            && let VariantPayload::Positional(_) = &payload
         {
-            return self.template_pattern(&template, types, patterns);
+            return self.template_shape(&template, patterns, position, guard_box);
         }
         let rust_path = definition.rust.as_ref().map(|rust| rust.path.clone());
         let path = Self::variant_path(self.types().struct_path(owner), rust_path, &name);
         match &payload {
-            VariantPayload::None => PatternEmission::plain(Code::atom(path)),
-            VariantPayload::Positional(types) => self.positional_pattern(path, types, patterns),
-            VariantPayload::Named(fields) => self.named_pattern(path, fields, patterns),
+            VariantPayload::None => PatternShape::plain(Code::atom(path)),
+            VariantPayload::Positional(_) => {
+                self.positional_shape(path, patterns, position, guard_box)
+            }
+            VariantPayload::Named(fields) => {
+                self.named_shape(path, fields, patterns, position, guard_box)
+            }
         }
     }
 
-    fn template_pattern(
+    fn template_shape(
         &mut self,
         template: &ParsedTemplate,
-        payload_types: &[Type],
         patterns: &[TypedPattern],
-    ) -> PatternEmission {
-        let mut arguments = Vec::new();
+        position: BoxPosition,
+        guard_box: GuardBox,
+    ) -> PatternShape {
+        let mut guard_arguments = Vec::new();
+        let mut binding_arguments = Vec::new();
+        let mut destructure_arguments = Vec::new();
         let mut guards = Vec::new();
-        let mut peels = Vec::new();
-        for (pattern, payload) in patterns.iter().zip(payload_types) {
-            let emission = self.pattern(pattern);
-            arguments.push(emission.code);
-            guards.extend(emission.guards);
-            peels.extend(emission.peels);
-            if self.program.is_box(payload) {
-                peels.extend(self.peel_binder(pattern));
-            }
+        let mut prologue = Vec::new();
+        for pattern in patterns {
+            let shape = self.child_shape(pattern, position, guard_box);
+            guard_arguments.push(shape.guard);
+            binding_arguments.push(shape.binding);
+            destructure_arguments.push(shape.destructure);
+            guards.extend(shape.guards);
+            prologue.extend(shape.prologue);
         }
-        PatternEmission {
-            code: self.fill_enum_template(template, arguments),
+        PatternShape {
+            guard: self.fill_enum_template(template, guard_arguments),
+            binding: self.fill_enum_template(template, binding_arguments),
+            destructure: self.fill_enum_template(template, destructure_arguments),
             guards,
-            peels,
+            prologue,
         }
     }
 
@@ -620,99 +895,106 @@ impl<'a> ExpressionEmitter<'a> {
         format!("{owner}::{}", NameMangler::type_name(name))
     }
 
-    fn positional_pattern(
+    fn positional_shape(
         &mut self,
         path: String,
-        payload_types: &[Type],
         patterns: &[TypedPattern],
-    ) -> PatternEmission {
-        let mut parts = vec![Code::atom(format!("{path}("))];
+        position: BoxPosition,
+        guard_box: GuardBox,
+    ) -> PatternShape {
+        let mut guard_parts = vec![Code::atom(format!("{path}("))];
+        let mut binding_parts = vec![Code::atom(format!("{path}("))];
+        let mut destructure_parts = vec![Code::atom(format!("{path}("))];
         let mut guards = Vec::new();
-        let mut peels = Vec::new();
-        for (position, (payload, pattern)) in payload_types.iter().zip(patterns).enumerate() {
-            if position > 0 {
-                parts.push(Code::atom(", "));
+        let mut prologue = Vec::new();
+        for (index, pattern) in patterns.iter().enumerate() {
+            if index > 0 {
+                guard_parts.push(Code::atom(", "));
+                binding_parts.push(Code::atom(", "));
+                destructure_parts.push(Code::atom(", "));
             }
-            let value = self.pattern(pattern);
-            parts.push(value.code);
-            guards.extend(value.guards);
-            peels.extend(value.peels);
-            if self.program.is_box(payload) {
-                peels.extend(self.peel_binder(pattern));
-            }
+            let shape = self.child_shape(pattern, position, guard_box);
+            guard_parts.push(shape.guard);
+            binding_parts.push(shape.binding);
+            destructure_parts.push(shape.destructure);
+            guards.extend(shape.guards);
+            prologue.extend(shape.prologue);
         }
-        parts.push(Code::atom(")"));
-        PatternEmission {
-            code: Code::joined(parts, Precedence::Atom),
+        guard_parts.push(Code::atom(")"));
+        binding_parts.push(Code::atom(")"));
+        destructure_parts.push(Code::atom(")"));
+        PatternShape {
+            guard: Code::joined(guard_parts, Precedence::Atom),
+            binding: Code::joined(binding_parts, Precedence::Atom),
+            destructure: Code::joined(destructure_parts, Precedence::Atom),
             guards,
-            peels,
+            prologue,
         }
     }
 
-    fn named_pattern(
+    fn named_shape(
         &mut self,
         path: String,
         fields: &[(std::rc::Rc<str>, Type)],
         patterns: &[TypedPattern],
-    ) -> PatternEmission {
-        let mut parts = vec![Code::atom(format!("{path} {{ "))];
+        position: BoxPosition,
+        guard_box: GuardBox,
+    ) -> PatternShape {
+        let mut guard_parts = vec![Code::atom(format!("{path} {{ "))];
+        let mut binding_parts = vec![Code::atom(format!("{path} {{ "))];
+        let mut destructure_parts = vec![Code::atom(format!("{path} {{ "))];
         let mut guards = Vec::new();
-        let mut peels = Vec::new();
+        let mut prologue = Vec::new();
         let mut written = 0;
         let mut ignores = false;
-        for ((label, payload), pattern) in fields.iter().zip(patterns) {
+        for ((label, _), pattern) in fields.iter().zip(patterns) {
             if matches!(pattern.kind, TypedPatternKind::Wildcard) {
                 ignores = true;
                 continue;
             }
             if written > 0 {
-                parts.push(Code::atom(", "));
+                guard_parts.push(Code::atom(", "));
+                binding_parts.push(Code::atom(", "));
+                destructure_parts.push(Code::atom(", "));
             }
             written += 1;
             let field = NameMangler::value(label);
-            let value = self.pattern(pattern);
-            let code = value.code;
-            if code.text() == field {
-                parts.push(code);
-            } else {
-                parts.push(Code::atom(format!("{field}: ")));
-                parts.push(code);
-            }
-            guards.extend(value.guards);
-            peels.extend(value.peels);
-            if self.program.is_box(payload) {
-                peels.extend(self.peel_binder(pattern));
-            }
+            let shape = self.child_shape(pattern, position, guard_box);
+            Self::push_field(&mut guard_parts, &field, shape.guard);
+            Self::push_field(&mut binding_parts, &field, shape.binding);
+            Self::push_field(&mut destructure_parts, &field, shape.destructure);
+            guards.extend(shape.guards);
+            prologue.extend(shape.prologue);
         }
         if ignores {
             if written > 0 {
-                parts.push(Code::atom(", "));
+                guard_parts.push(Code::atom(", "));
+                binding_parts.push(Code::atom(", "));
+                destructure_parts.push(Code::atom(", "));
             }
-            parts.push(Code::atom(".."));
+            guard_parts.push(Code::atom(".."));
+            binding_parts.push(Code::atom(".."));
+            destructure_parts.push(Code::atom(".."));
         }
-        parts.push(Code::atom(" }"));
-        PatternEmission {
-            code: Code::joined(parts, Precedence::Atom),
+        guard_parts.push(Code::atom(" }"));
+        binding_parts.push(Code::atom(" }"));
+        destructure_parts.push(Code::atom(" }"));
+        PatternShape {
+            guard: Code::joined(guard_parts, Precedence::Atom),
+            binding: Code::joined(binding_parts, Precedence::Atom),
+            destructure: Code::joined(destructure_parts, Precedence::Atom),
             guards,
-            peels,
+            prologue,
         }
     }
 
-    fn peel_binder(&self, pattern: &TypedPattern) -> Option<Peel> {
-        let TypedPatternKind::Bind(binder) = &pattern.kind else {
-            return None;
-        };
-        let name = self.locals.get(binder.binding)?;
-        let expression = match binder.ty {
-            Type::Ref(_) => format!("&**{name}"),
-            Type::Mut(_) => format!("&mut **{name}"),
-            _ => format!("*{name}"),
-        };
-        Some(Peel {
-            binding: binder.binding,
-            statement: format!("let {name} = {expression};"),
-            expression,
-        })
+    fn push_field(parts: &mut Vec<Code>, field: &str, code: Code) {
+        if code.text() == field {
+            parts.push(code);
+        } else {
+            parts.push(Code::atom(format!("{field}: ")));
+            parts.push(code);
+        }
     }
 
     fn variant(&mut self, binding: BindingId, arguments: &[TypedExpr]) -> Code {

@@ -1,0 +1,11 @@
+(enum (tree a) (node (tree a) a (tree a)) leaf)
+
+(defn inner-left (tree)
+  (match tree
+    ((tree/node (tree/node left _ _) _ _) left)
+    ((tree/node tree/leaf _ _) tree/leaf)
+    (tree/leaf tree/leaf)))
+
+(defn main ()
+  (prn (inner-left (tree/node (tree/node tree/leaf 2 tree/leaf) 1 tree/leaf)))
+  (prn (inner-left (tree/node tree/leaf 1 tree/leaf))))

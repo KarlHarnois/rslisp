@@ -115,20 +115,21 @@ impl<'a> UsageCollector<'a> {
                 self.expr(then, context);
                 self.expr(otherwise, context);
             }
-            TypedControl::Match(value, arms) => {
-                let binders: HashMap<BindingId, Type> = arms
+            TypedControl::Match(matched) => {
+                let binders: HashMap<BindingId, Type> = matched
+                    .arms
                     .iter()
                     .flat_map(|arm| Self::pattern_bindings(&arm.pattern))
                     .collect();
                 self.pattern_bindings.extend(binders.keys().copied());
-                for arm in arms {
+                for arm in &matched.arms {
                     self.block(&arm.body, context);
                 }
                 let moves = binders
                     .iter()
-                    .any(|(binding, ty)| self.binding_needs_move(*binding, ty, arms));
+                    .any(|(binding, ty)| self.binding_needs_move(*binding, ty, &matched.arms));
                 self.expr(
-                    value,
+                    &matched.value,
                     if moves {
                         ParamMode::Own
                     } else {

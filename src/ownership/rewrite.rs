@@ -108,15 +108,15 @@ impl<'a> ModeRewrite<'a> {
     }
 
     fn prepare_match(&mut self, expr: &mut TypedExpr) {
-        let TypedExprKind::Control(TypedControl::Match(value, arms)) = &mut expr.kind else {
+        let TypedExprKind::Control(TypedControl::Match(matched)) = &mut expr.kind else {
             return;
         };
-        let original = value.ty.clone();
-        self.rewrite_local(value);
-        if original.is_reference() || !value.ty.is_reference() {
+        let original = matched.value.ty.clone();
+        self.rewrite_local(&mut matched.value);
+        if original.is_reference() || !matched.value.ty.is_reference() {
             return;
         }
-        for arm in arms {
+        for arm in &mut matched.arms {
             for binder in arm.pattern.binders_mut() {
                 binder.ty = Type::Ref(Box::new(binder.ty.clone()));
                 self.binding_types.insert(binder.binding, binder.ty.clone());

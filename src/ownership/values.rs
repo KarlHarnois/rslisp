@@ -124,9 +124,9 @@ impl<'a> FunctionValueModes<'a> {
                 self.expr(then, current);
                 self.expr(otherwise, current);
             }
-            TypedControl::Match(value, arms) => {
-                self.expr(value, current);
-                for arm in arms {
+            TypedControl::Match(matched) => {
+                self.expr(&mut matched.value, current);
+                for arm in &mut matched.arms {
                     self.block(&mut arm.body, current);
                 }
             }

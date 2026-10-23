@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
-use super::{ArgumentRole, ExpressionEmitter, LoopExit, TypeContext};
+use super::{ArgumentRole, BoxPosition, ExpressionEmitter, LoopExit, TypeContext};
 use crate::core::BindingId;
 use crate::emit::fragment::Fragment;
 use crate::types::{
     Type, TypedArgument, TypedArm, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
-    TypedExprKind, TypedLambda, TypedLeaf,
+    TypedExprKind, TypedLambda, TypedLeaf, TypedMatch,
 };
 
 pub struct TailLoop {
@@ -88,8 +88,8 @@ impl TailLoop {
             TypedExprKind::Control(TypedControl::Block(block)) => {
                 Self::collect_block(function, block, calls);
             }
-            TypedExprKind::Control(TypedControl::Match(_, arms)) => {
-                for arm in arms {
+            TypedExprKind::Control(TypedControl::Match(matched)) => {
+                for arm in &matched.arms {
                     Self::collect_block(function, &arm.body, calls);
                 }
             }
@@ -164,36 +164,38 @@ impl ExpressionEmitter<'_> {
                 fragments
             }
             TypedExprKind::Control(TypedControl::Block(_)) => self.loop_branch(tail),
-            TypedExprKind::Control(TypedControl::Match(value, arms)) => {
+            TypedExprKind::Control(TypedControl::Match(matched)) => {
                 let mut fragments = vec![Fragment::Newline];
-                fragments.extend(self.loop_match(value, arms));
+                fragments.extend(self.loop_match(matched));
                 fragments
             }
             _ => self.loop_return(tail),
         }
     }
 
-    fn loop_match(&mut self, value: &TypedExpr, arms: &[TypedArm]) -> Vec<Fragment> {
-        if let Some(arm) = self.sole_sure_arm(arms) {
-            return self.loop_sure_arm(value, arm);
+    fn loop_match(&mut self, matched: &TypedMatch) -> Vec<Fragment> {
+        if let Some(arm) = self.sole_sure_arm(&matched.arms) {
+            return self.loop_sure_arm(&matched.value, arm);
         }
-        let value = self.expr(value);
+        let value = self.expr(&matched.value);
         let mut fragments = vec![Fragment::Text("match ".to_string())];
         fragments.extend(value.fragments);
         fragments.push(Fragment::Text(" {".to_string()));
+        let position = BoxPosition::of(&matched.value.ty);
         let mut inner = Vec::new();
-        for arm in arms {
+        for arm in &matched.arms {
             inner.push(Fragment::Newline);
             self.locals.enter();
-            let (head, peels) = self.arm_head(&arm.pattern);
+            let (head, prologue) = self.arm_head(&arm.pattern, position);
             inner.extend(head);
             inner.push(Fragment::Text(" => {".to_string()));
             let body = self.loop_block(&arm.body);
-            inner.push(Fragment::Indented(self.with_prologue(body, &peels)));
+            inner.push(Fragment::Indented(Self::with_prologue(body, &prologue)));
             inner.push(Fragment::Newline);
             inner.push(Fragment::Text("}".to_string()));
             self.locals.leave();
         }
+        Self::add_fallback(&mut inner, matched.unguarded_exhaustive);
         fragments.push(Fragment::Indented(inner));
         fragments.push(Fragment::Newline);
         fragments.push(Fragment::Text("}".to_string()));
@@ -201,16 +203,17 @@ impl ExpressionEmitter<'_> {
     }
 
     fn loop_sure_arm(&mut self, value: &TypedExpr, arm: &TypedArm) -> Vec<Fragment> {
+        let position = BoxPosition::of(&value.ty);
         let value = self.expr(value);
         self.locals.enter();
-        let pattern = self.pattern(&arm.pattern);
+        let pattern = self.pattern(&arm.pattern, position);
         let mut fragments = vec![Fragment::Text("let ".to_string())];
         fragments.extend(pattern.code.fragments);
         fragments.push(Fragment::Text(" = ".to_string()));
         fragments.extend(value.fragments);
         fragments.push(Fragment::Text(";".to_string()));
         let body = self.loop_block(&arm.body);
-        fragments.extend(self.with_prologue(body, &pattern.peels));
+        fragments.extend(Self::with_prologue(body, &pattern.prologue));
         self.locals.leave();
         fragments
     }

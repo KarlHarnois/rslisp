@@ -1,0 +1,27 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/nested_boxed_string.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Expr {
+    Call(Box<Expr>, String),
+    Name(String),
+}
+
+fn call_label(expr: Expr) -> String {
+    match expr {
+        Expr::Call(inner, label) if matches!(&*inner, Expr::Name(text) if text == "x") => label,
+        Expr::Call(inner, label) => {
+            let inner = *inner;
+            label
+        },
+        Expr::Name(label) => label,
+    }
+}
+
+fn main() {
+    println!("{}", call_label(Expr::Call(Box::new(Expr::Name("x".to_string())), "hit".to_string())));
+    println!("{}", call_label(Expr::Call(Box::new(Expr::Name("y".to_string())), "miss".to_string())));
+    println!("{}", call_label(Expr::Name("name".to_string())))
+}

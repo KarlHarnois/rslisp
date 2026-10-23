@@ -1,0 +1,27 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/nested_boxed_move.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Tree<A> {
+    Node(Box<Tree<A>>, A, Box<Tree<A>>),
+    Leaf,
+}
+
+fn inner_left<A>(tree: Tree<A>) -> Tree<A> {
+    match tree {
+        Tree::Node(inner, _, _) if matches!(&*inner, Tree::Node(_, _, _)) => {
+            let Tree::Node(left, _, _) = *inner else { unreachable!() };
+            *left
+        },
+        Tree::Node(inner, _, _) if matches!(&*inner, Tree::Leaf) => Tree::Leaf,
+        Tree::Leaf => Tree::Leaf,
+        _ => unreachable!(),
+    }
+}
+
+fn main() {
+    println!("{:?}", inner_left(Tree::Node(Box::new(Tree::Node(Box::new(Tree::Leaf), 2, Box::new(Tree::Leaf))), 1, Box::new(Tree::Leaf))));
+    println!("{:?}", inner_left(Tree::Node(Box::new(Tree::Leaf), 1, Box::new(Tree::Leaf))))
+}

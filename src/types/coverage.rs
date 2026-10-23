@@ -79,6 +79,46 @@ impl TypeChecker {
             .push(TypeProblems::non_exhaustive_match(&cases, span));
     }
 
+    pub(super) fn match_is_exhaustive_without_guards(
+        &self,
+        scrutinee: &Type,
+        arms: &[TypedArm],
+    ) -> bool {
+        let (scrutinee, _) = self.peeled_reference(scrutinee);
+        let matrix: Vec<Vec<CoverPattern>> = arms
+            .iter()
+            .filter(|arm| !self.pattern_has_guard(&arm.pattern))
+            .map(|arm| vec![self.cover_pattern(&arm.pattern)])
+            .collect();
+        !self.useful(
+            &matrix,
+            &[CoverPattern::Wild],
+            std::slice::from_ref(&scrutinee),
+            &mut Vec::new(),
+        )
+    }
+
+    fn pattern_has_guard(&self, pattern: &TypedPattern) -> bool {
+        if pattern.boxed
+            && matches!(
+                &pattern.kind,
+                TypedPatternKind::Variant(..) | TypedPatternKind::Literal(..)
+            )
+        {
+            return true;
+        }
+        match &pattern.kind {
+            TypedPatternKind::Wildcard | TypedPatternKind::Bind(_) => false,
+            TypedPatternKind::Variant(_, arguments) => arguments
+                .iter()
+                .any(|argument| self.pattern_has_guard(argument)),
+            TypedPatternKind::Literal(literal, ty) => {
+                matches!(literal, Literal::String(_))
+                    && matches!(ty, Type::Primitive(PrimitiveType::String))
+            }
+        }
+    }
+
     fn cover_pattern(&self, pattern: &TypedPattern) -> CoverPattern {
         match &pattern.kind {
             TypedPatternKind::Wildcard | TypedPatternKind::Bind(_) => CoverPattern::Wild,
@@ -109,6 +149,15 @@ impl TypeChecker {
         if query.is_empty() {
             return matrix.is_empty();
         }
+        if matrix.is_empty() {
+            return true;
+        }
+        if matrix.iter().any(|row| {
+            row.iter()
+                .all(|pattern| matches!(pattern, CoverPattern::Wild))
+        }) {
+            return false;
+        }
         match &query[0] {
             CoverPattern::Wild => self.useful_wild(matrix, query, types, expanding),
             CoverPattern::Variant { .. } => self.useful_variant(matrix, query, types, expanding),
@@ -125,33 +174,74 @@ impl TypeChecker {
         types: &[Type],
         expanding: &mut Vec<BindingId>,
     ) -> bool {
-        let (owner, constructors) = self.expansion(&types[0], expanding);
-        let pushed = owner.is_some();
+        let owner = self.enum_owner(&types[0]);
+        if let Some(owner) = owner
+            && expanding.contains(&owner)
+        {
+            return self.useful_recursive_wild(matrix, query, types, expanding);
+        }
         if let Some(owner) = owner {
             expanding.push(owner);
         }
-        let result = match constructors {
+        let result = match self.constructors(&types[0]) {
             Some(constructors) => constructors.iter().any(|constructor| {
-                let specialized = self.specialize(matrix, constructor);
-                let mut row: Vec<CoverPattern> = constructor
-                    .arguments
-                    .iter()
-                    .map(|_| CoverPattern::Wild)
-                    .collect();
-                row.extend_from_slice(&query[1..]);
-                let mut columns = constructor.arguments.clone();
-                columns.extend_from_slice(&types[1..]);
-                self.useful(&specialized, &row, &columns, expanding)
+                self.useful_constructor(matrix, query, types, constructor, expanding)
             }),
             None => {
                 let default = Self::default_matrix(matrix);
                 self.useful(&default, &query[1..], &types[1..], expanding)
             }
         };
-        if pushed {
+        if owner.is_some() {
             expanding.pop();
         }
         result
+    }
+
+    fn useful_constructor(
+        &self,
+        matrix: &[Vec<CoverPattern>],
+        query: &[CoverPattern],
+        types: &[Type],
+        constructor: &Constructor,
+        expanding: &mut Vec<BindingId>,
+    ) -> bool {
+        let specialized = self.specialize(matrix, constructor);
+        let mut row: Vec<CoverPattern> = constructor
+            .arguments
+            .iter()
+            .map(|_| CoverPattern::Wild)
+            .collect();
+        row.extend_from_slice(&query[1..]);
+        let mut columns = constructor.arguments.clone();
+        columns.extend_from_slice(&types[1..]);
+        self.useful(&specialized, &row, &columns, expanding)
+    }
+
+    fn useful_recursive_wild(
+        &self,
+        matrix: &[Vec<CoverPattern>],
+        query: &[CoverPattern],
+        types: &[Type],
+        expanding: &mut Vec<BindingId>,
+    ) -> bool {
+        let mut default = Vec::new();
+        let mut concrete = Vec::new();
+        for row in matrix {
+            match row.first() {
+                Some(CoverPattern::Wild) => default.push(row[1..].to_vec()),
+                _ => concrete.push(row.clone()),
+            }
+        }
+        if !default.is_empty() && !self.useful(&default, &query[1..], &types[1..], expanding) {
+            return false;
+        }
+        self.constructors(&types[0])
+            .unwrap_or_default()
+            .iter()
+            .any(|constructor| {
+                self.useful_constructor(&concrete, query, types, constructor, expanding)
+            })
     }
 
     fn useful_variant(
@@ -173,12 +263,13 @@ impl TypeChecker {
             owner: *owner,
             index: *index,
         };
-        let (push_owner, constructors) = self.expansion(&types[0], expanding);
-        let pushed = push_owner.is_some();
-        if let Some(owner) = push_owner {
+        let pushed = self
+            .enum_owner(&types[0])
+            .filter(|owner| !expanding.contains(owner));
+        if let Some(owner) = pushed {
             expanding.push(owner);
         }
-        let constructor = constructors.and_then(|constructors| {
+        let constructor = self.constructors(&types[0]).and_then(|constructors| {
             constructors
                 .into_iter()
                 .find(|constructor| constructor.tag == tag)
@@ -194,7 +285,7 @@ impl TypeChecker {
             }
             None => false,
         };
-        if pushed {
+        if pushed.is_some() {
             expanding.pop();
         }
         result
@@ -217,17 +308,19 @@ impl TypeChecker {
         ty: &Type,
         expanding: &[BindingId],
     ) -> (Option<BindingId>, Option<Vec<Constructor>>) {
+        match self.enum_owner(ty) {
+            Some(owner) if !expanding.contains(&owner) => (Some(owner), self.constructors(ty)),
+            Some(_) => (None, None),
+            None => (None, self.constructors(ty)),
+        }
+    }
+
+    fn enum_owner(&self, ty: &Type) -> Option<BindingId> {
         let (ty, _) = self.peeled_reference(ty);
         let Type::Named(owner, _) = &ty else {
-            return (None, self.constructors(&ty));
+            return None;
         };
-        if self.enums.get(*owner).is_none() {
-            return (None, self.constructors(&ty));
-        }
-        if expanding.contains(owner) {
-            return (None, None);
-        }
-        (Some(*owner), self.constructors(&ty))
+        self.enums.get(*owner).map(|_| *owner)
     }
 
     fn covering_arm(

@@ -1,0 +1,12 @@
+(enum (tree a) (node (tree a) a (tree a)) leaf)
+
+(defn value-or-zero (tree)
+  (match tree
+    ((tree/node (tree/node _ value _) _ _) value)
+    ((tree/node _ value _) value)
+    (tree/leaf 0)))
+
+(defn main ()
+  (println (value-or-zero (tree/node (tree/node tree/leaf 7 tree/leaf) 1 tree/leaf)))
+  (println (value-or-zero (tree/node tree/leaf 2 tree/leaf)))
+  (println (value-or-zero tree/leaf)))
