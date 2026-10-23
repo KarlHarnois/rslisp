@@ -5,6 +5,7 @@ use super::ty::{GenericId, GenericParam, Type};
 use crate::core::BindingId;
 use crate::source::Span;
 
+#[derive(Clone)]
 pub enum VariantPayload {
     None,
     Positional(Vec<Type>),

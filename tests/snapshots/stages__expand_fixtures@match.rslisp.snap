@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/match.rslisp
+---
+(enum shape (circle f64) (labeled (struct (text string) (size f64))) point)
+(def value (match (shape/circle 1.0) ((circle r) r) ((shape/circle r_2) r_2) ((labeled text _) text) (point 0.0)))
+(def renamed (match (shape/circle 1.0) (circle circle)))

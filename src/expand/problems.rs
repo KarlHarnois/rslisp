@@ -376,6 +376,24 @@ impl ExpandProblems {
         )
     }
 
+    pub fn not_a_pattern(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_FORM,
+            "this is not a pattern",
+            Label::new(span, "a pattern names a binding, a literal or a variant"),
+        )
+        .with_help("write a binding name, `_`, a literal, or `(variant pattern ...)`")
+    }
+
+    pub fn arm_body(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_FORM,
+            "an arm has one body form",
+            Label::new(span, "this arm does not fit the shape of `match`"),
+        )
+        .with_help("write each arm as `(pattern body)`")
+    }
+
     pub fn variant_as_value(name: &str, arity: usize, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MALFORMED_FORM,

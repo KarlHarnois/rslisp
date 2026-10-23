@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use super::{
-    Binder, BindingArena, BindingId, Block, BodyItem, Control, CoreModule, Expr, ExprKind,
+    Arm, Binder, BindingArena, BindingId, Block, BodyItem, Control, CoreModule, Expr, ExprKind,
     FieldLabel, Item, ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal, ParsedTemplate,
-    RustTemplate, StructExpr, TypeBinder, TypeBound, TypeExpr, TypeExprKind, VariantDeclaration,
-    VariantPayload,
+    Pattern, PatternKind, RustTemplate, StructExpr, TypeBinder, TypeBound, TypeExpr, TypeExprKind,
+    VariantDeclaration, VariantPayload,
 };
 
 pub struct CorePrinter<'a> {
@@ -146,7 +146,40 @@ impl<'a> CorePrinter<'a> {
                 "if",
                 vec![self.expr(test), self.expr(then), self.expr(otherwise)],
             ),
+            Control::Match(value, arms) => {
+                let mut parts = vec![self.expr(value)];
+                parts.extend(arms.iter().map(|arm| self.arm(arm)));
+                Self::list("match", parts)
+            }
         }
+    }
+
+    fn arm(&mut self, arm: &Arm) -> String {
+        let mut parts = vec![self.pattern(&arm.pattern)];
+        parts.extend(self.block_items(&arm.body));
+        format!("({})", parts.join(" "))
+    }
+
+    fn pattern(&mut self, pattern: &Pattern) -> String {
+        match &pattern.kind {
+            PatternKind::Wildcard => "_".to_string(),
+            PatternKind::Bind(binding) => self.name(*binding),
+            PatternKind::BareName { name, .. } => name.to_string(),
+            PatternKind::Variant(binding, arguments) => self.variant_pattern(*binding, arguments),
+            PatternKind::ShortVariant {
+                name, arguments, ..
+            } => {
+                let mut parts = vec![name.to_string()];
+                parts.extend(arguments.iter().map(|argument| self.pattern(argument)));
+                format!("({})", parts.join(" "))
+            }
+        }
+    }
+
+    fn variant_pattern(&mut self, binding: BindingId, arguments: &[Pattern]) -> String {
+        let mut parts = vec![self.name(binding)];
+        parts.extend(arguments.iter().map(|argument| self.pattern(argument)));
+        format!("({})", parts.join(" "))
     }
 
     fn structure(&mut self, structure: &StructExpr) -> String {

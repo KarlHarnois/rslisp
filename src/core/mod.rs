@@ -10,8 +10,8 @@ mod types;
 pub use binding::{BindingArena, BindingId, BindingInfo, BindingKind, Namespace, VariantInfo};
 pub use builtin::Builtin;
 pub use expr::{
-    Binder, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, Lambda, Leaf, Literal,
-    RustTemplate, StructExpr,
+    Arm, Binder, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, Lambda, Leaf, Literal,
+    Pattern, PatternKind, RustTemplate, StructExpr,
 };
 pub use kernel::{
     ControlForm, CopyTrait, DefinitionForm, ExpressionForm, FunctionFieldTraits, KernelConstants,

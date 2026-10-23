@@ -1,0 +1,30 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/match_nested.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Maybe<A> {
+    Just(A),
+    Nothing,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Shape {
+    Circle(f64),
+    Rect(f64, f64),
+}
+
+fn maybe_area(m: Maybe<Shape>) -> f64 {
+    match m {
+        Maybe::Just(Shape::Circle(r)) => 3.0 * r * r,
+        Maybe::Just(Shape::Rect(w, h)) => w * h,
+        Maybe::Nothing => 0.0,
+    }
+}
+
+fn main() {
+    println!("{}", maybe_area(Maybe::Just(Shape::Circle(2.0))));
+    println!("{}", maybe_area(Maybe::Just(Shape::Rect(2.0, 3.0))));
+    println!("{}", maybe_area(Maybe::Nothing))
+}

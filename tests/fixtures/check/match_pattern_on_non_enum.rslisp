@@ -1,0 +1,14 @@
+(enum shape (circle f64))
+(enum kind (point))
+(type measure (fn (i64) i64))
+(defn measure (n)
+  (match n
+    ((circle _) 0)))
+(type label (fn (i64) i64))
+
+(defn label (n)
+  (match n
+    (point 0)))
+
+(defn main ()
+  (println (label 1)))

@@ -36,6 +36,43 @@ pub enum Leaf {
 pub enum Control {
     Block(Block),
     If(Box<Expr>, Box<Expr>, Box<Expr>),
+    Match(Box<Expr>, Vec<Arm>),
+}
+
+#[derive(Clone, Debug)]
+pub struct Arm {
+    pub pattern: Pattern,
+    pub body: Block,
+    pub span: Span,
+}
+
+#[derive(Clone, Debug)]
+pub struct Pattern {
+    pub kind: PatternKind,
+    pub span: Span,
+}
+
+#[derive(Clone, Debug)]
+pub enum PatternKind {
+    Wildcard,
+    Bind(BindingId),
+    BareName {
+        name: Rc<str>,
+        binding: BindingId,
+        candidates: Vec<BindingId>,
+    },
+    Variant(BindingId, Vec<Pattern>),
+    ShortVariant {
+        name: Rc<str>,
+        candidates: Vec<BindingId>,
+        arguments: Vec<Pattern>,
+    },
+}
+
+impl Pattern {
+    pub fn new(kind: PatternKind, span: Span) -> Self {
+        Self { kind, span }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -132,6 +169,9 @@ impl Control {
         match self {
             Control::Block(block) => block.expressions().collect(),
             Control::If(test, then, otherwise) => vec![test, then, otherwise],
+            Control::Match(value, arms) => std::iter::once(value.as_ref())
+                .chain(arms.iter().flat_map(|arm| arm.body.expressions()))
+                .collect(),
         }
     }
 }

@@ -4,8 +4,8 @@ use super::{ArgumentRole, ExpressionEmitter, LoopExit, TypeContext};
 use crate::core::BindingId;
 use crate::emit::fragment::Fragment;
 use crate::types::{
-    Type, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind,
-    TypedLambda, TypedLeaf,
+    Type, TypedArgument, TypedArm, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
+    TypedExprKind, TypedLambda, TypedLeaf,
 };
 
 pub struct TailLoop {
@@ -88,6 +88,11 @@ impl TailLoop {
             TypedExprKind::Control(TypedControl::Block(block)) => {
                 Self::collect_block(function, block, calls);
             }
+            TypedExprKind::Control(TypedControl::Match(_, arms)) => {
+                for arm in arms {
+                    Self::collect_block(function, &arm.body, calls);
+                }
+            }
             _ => {}
         }
     }
@@ -159,8 +164,35 @@ impl ExpressionEmitter<'_> {
                 fragments
             }
             TypedExprKind::Control(TypedControl::Block(_)) => self.loop_branch(tail),
+            TypedExprKind::Control(TypedControl::Match(value, arms)) => {
+                let mut fragments = vec![Fragment::Newline];
+                fragments.extend(self.loop_match(value, arms));
+                fragments
+            }
             _ => self.loop_return(tail),
         }
+    }
+
+    fn loop_match(&mut self, value: &TypedExpr, arms: &[TypedArm]) -> Vec<Fragment> {
+        let value = self.expr(value);
+        let mut fragments = vec![Fragment::Text("match ".to_string())];
+        fragments.extend(value.fragments);
+        fragments.push(Fragment::Text(" {".to_string()));
+        let mut inner = Vec::new();
+        for arm in arms {
+            inner.push(Fragment::Newline);
+            self.locals.enter();
+            inner.extend(self.pattern(&arm.pattern).fragments);
+            inner.push(Fragment::Text(" => {".to_string()));
+            inner.push(Fragment::Indented(self.loop_block(&arm.body)));
+            inner.push(Fragment::Newline);
+            inner.push(Fragment::Text("}".to_string()));
+            self.locals.leave();
+        }
+        fragments.push(Fragment::Indented(inner));
+        fragments.push(Fragment::Newline);
+        fragments.push(Fragment::Text("}".to_string()));
+        fragments
     }
 
     fn loop_branch(&mut self, branch: &TypedExpr) -> Vec<Fragment> {

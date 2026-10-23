@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_generic.rslisp
+---
+(derive box clone copy debug partial-eq eq hash)
+(derive shape clone copy debug partial-eq)
+(type circle-area (fn ((ref (box shape))) f64))
+(type short-area (fn ((ref (box shape))) f64))
+(type point-area (fn ((ref (box shape))) f64))
+(type main (fn () unit))

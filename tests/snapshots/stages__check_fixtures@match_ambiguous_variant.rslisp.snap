@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_ambiguous_variant.rslisp
+---
+error[L0430]: cannot tell which enum this pattern matches
+ --> check/match_ambiguous_variant.rslisp:7:6
+  |
+7 |     ((same _) (do))))
+  |      ^^^^^^^^ this variant name fits more than one enum
+  |
+  = note: this variant name fits `first` and `second`
+  = help: qualify one pattern with its enum's name, as in `(first/same ...)`
+
+error[L0430]: cannot tell which enum this pattern matches
+  --> check/match_ambiguous_variant.rslisp:11:12
+   |
+11 |     ((wrap (same _)) (do))))
+   |            ^^^^^^^^ this variant name fits more than one enum
+   |
+   = note: this variant name fits `first` and `second`
+   = help: qualify one pattern with its enum's name

@@ -1,0 +1,42 @@
+(enum shape
+  (circle f64)
+  (rect f64 f64)
+  (labeled (struct (text string) (size f64)))
+  point)
+
+(defn area (s)
+  (match s
+    ((circle r) (* 3.0 r r))
+    ((rect w h) (* w h))
+    ((labeled _ size) (* size 1.0))
+    (point 0.0)))
+
+(defn label-length (s)
+  (match s
+    ((labeled t _) (len t))
+    ((circle _) 0)
+    ((rect _ _) 0)
+    (point 0)))
+
+(defn label-details (s)
+  (match s
+    ((labeled t s) (len t))
+    ((circle _) 0)
+    ((rect _ _) 0)
+    (point 0)))
+
+(defn wait (s)
+  (match s
+    ((circle _) (let ignored 0))
+    ((rect _ _) (do))
+    ((labeled _ _) (do))
+    (point (do))))
+
+(defn main ()
+  (println (area (shape/circle 1.0)))
+  (println (area (shape/rect 2.0 3.0)))
+  (println (area (shape/labeled (to-string "box") 2.0)))
+  (println (area shape/point))
+  (println (label-length (shape/labeled (to-string "box") 2.0)))
+  (println (label-details (shape/labeled (to-string "box") 2.0)))
+  (wait (shape/circle 1.0)))

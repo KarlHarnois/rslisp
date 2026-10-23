@@ -1,0 +1,21 @@
+(enum (box a) (wrap a))
+(enum shape (circle f64) point)
+
+(defn circle-area (b)
+  (match b
+    ((wrap (shape/circle r)) (* 3.0 r r))
+    ((wrap point) 0.0)))
+
+(defn short-area (b)
+  (match b
+    ((wrap (circle r)) (* 3.0 r r))
+    ((wrap point) 0.0)))
+
+(defn point-area (b)
+  (match b
+    ((wrap point) 0.0)
+    ((wrap (shape/circle r)) (* 3.0 r r))))
+
+(defn main ()
+  (println (circle-area (box/wrap (shape/circle 2.0))))
+  (println (point-area (box/wrap shape/point))))

@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_in_macro.rslisp
+---
+error[L0303]: a `match` only exists at runtime
+ --> check/match_in_macro.rslisp:3:30
+  |
+3 | (def read-flag (macro (form) (match form ((on) 1) (off 0))))
+  |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ used at compile time here
+
+error[L0303]: enum values only exist at runtime
+ --> check/match_in_macro.rslisp:4:30
+  |
+4 | (def make-flag (macro (form) flag/on))
+  |                              ^^^^^^^ used at compile time here
+5 | (def first (make-flag 1))
+  |            ------------- in this macro call

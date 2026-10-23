@@ -1,7 +1,7 @@
 use super::Expander;
 use super::globals::CompileTimeCheck;
 use super::problems::ExpandProblems;
-use crate::core::{BindingId, BindingKind, Expr, ExprKind, Lambda, Leaf};
+use crate::core::{BindingId, BindingKind, Control, Expr, ExprKind, Lambda, Leaf};
 use crate::diagnostic::{Diagnostic, Label};
 use crate::interpret::InterpretProblems;
 use crate::source::Span;
@@ -36,16 +36,20 @@ impl Expander<'_> {
                 };
                 Err(Self::routed(problem, through))
             }
-            ExprKind::Struct(_) => Err(Self::routed(
-                InterpretProblems::runtime_only("structs", expr.span()),
-                through,
-            )),
-            ExprKind::Try(_) => Err(Self::routed(
-                InterpretProblems::runtime_only("`try` forms", expr.span()),
-                through,
-            )),
-            _ => Ok(()),
+            _ => self.check_value_form(expr, through),
         }
+    }
+
+    fn check_value_form(&self, expr: &Expr, through: Option<Span>) -> Result<(), Diagnostic> {
+        let problem = match expr.kind() {
+            ExprKind::Struct(_) => InterpretProblems::runtime_only("structs", expr.span()),
+            ExprKind::Try(_) => InterpretProblems::runtime_only("`try` forms", expr.span()),
+            ExprKind::Control(Control::Match(..)) => {
+                InterpretProblems::match_only_at_runtime(expr.span())
+            }
+            _ => return Ok(()),
+        };
+        Err(Self::routed(problem, through))
     }
 
     fn check_global(

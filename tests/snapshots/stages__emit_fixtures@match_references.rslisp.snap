@@ -1,0 +1,48 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/match_references.rslisp
+---
+#[derive(Clone, Debug, PartialEq)]
+enum Shape {
+    Circle(f64),
+    Rect(f64, f64),
+    Labeled { text: String, size: f64 },
+    Point,
+}
+
+fn area(s: &Shape) -> f64 {
+    match s {
+        Shape::Circle(r) => 3.0 * *r * *r,
+        Shape::Rect(w, h) => *w * *h,
+        Shape::Labeled { size, .. } => *size,
+        Shape::Point => 0.0,
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum CounterState {
+    Value(i64),
+    Idle,
+}
+
+fn bump(state: &mut CounterState) {
+    match state {
+        CounterState::Value(n) => *n += 1,
+        CounterState::Idle => {},
+    }
+}
+
+fn main() {
+    let mut state = CounterState::Value(1);
+    bump(&mut state);
+    println!("{}", area(&Shape::Circle(1.0)));
+    println!("{}", area(&Shape::Rect(2.0, 3.0)));
+    println!("{}", area(&Shape::Labeled { text: "box".to_string(), size: 2.0 }));
+    println!("{}", area(&Shape::Point));
+    println!("{:?}", CounterState::Idle);
+    match state {
+        CounterState::Value(n) => println!("{}", n),
+        CounterState::Idle => println!("idle"),
+    }
+}

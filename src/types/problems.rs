@@ -275,6 +275,55 @@ impl TypeProblems {
         )
     }
 
+    pub fn ambiguous_variant(name: &str, enums: &[String], span: Span) -> Diagnostic {
+        let diagnostic = Diagnostic::error(
+            DiagnosticCode::AMBIGUOUS_VARIANT,
+            "cannot tell which enum this pattern matches",
+            Label::new(span, "this variant name fits more than one enum"),
+        )
+        .with_note(format!(
+            "this variant name fits {}",
+            enums
+                .iter()
+                .map(|enum_name| format!("`{enum_name}`"))
+                .collect::<Vec<_>>()
+                .join(" and ")
+        ));
+        match enums.first() {
+            Some(enum_name) if !name.is_empty() => diagnostic.with_help(format!(
+                "qualify one pattern with its enum's name, as in `({enum_name}/{name} ...)`"
+            )),
+            _ => diagnostic.with_help("qualify one pattern with its enum's name"),
+        }
+    }
+
+    pub fn unknown_variant(
+        enum_name: &str,
+        variant: &str,
+        variants: &[Rc<str>],
+        span: Span,
+    ) -> Diagnostic {
+        let names: Vec<String> = variants.iter().map(|name| format!("`{name}`")).collect();
+        Diagnostic::error(
+            DiagnosticCode::UNKNOWN_VARIANT,
+            format!("`{enum_name}` has no variant `{variant}`"),
+            Label::new(span, format!("not a variant of `{enum_name}`")),
+        )
+        .with_help(format!("write one of: {}", names.join(", ")))
+    }
+
+    pub fn pattern_count(name: &str, expected: usize, found: usize, span: Span) -> Diagnostic {
+        let expected = Counted::noun(expected, "part");
+        Diagnostic::error(
+            DiagnosticCode::WRONG_PATTERN_COUNT,
+            format!(
+                "`{name}` takes {expected} in a pattern but {found} {} given",
+                Counted::was_or_were(found)
+            ),
+            Label::new(span, "this pattern has the wrong number of parts"),
+        )
+    }
+
     pub fn unknown_field(
         struct_name: &str,
         field: &str,

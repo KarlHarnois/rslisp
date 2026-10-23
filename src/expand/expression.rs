@@ -8,9 +8,10 @@ use super::recur_check::RecurCheck;
 use super::shape::Shape;
 use super::try_check::TryCheck;
 use crate::core::{
-    Binder, BindingId, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind,
+    Arm, Binder, BindingId, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind,
     ExpressionForm, FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, Namespace,
-    ParsedTemplate, ReferenceKind, RustTemplate, StructExpr, StructForm, VariantInfo,
+    ParsedTemplate, Pattern, PatternKind, ReferenceKind, RustTemplate, StructExpr, StructForm,
+    VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -197,10 +198,21 @@ impl Expander<'_> {
         match expression {
             ExpressionForm::Leaf(form) => self.lower_leaf_form(form, shape),
             ExpressionForm::Borrow(kind) => self.lower_borrow(kind, shape),
+            other => self.lower_other_expression(other, shape),
+        }
+    }
+
+    fn lower_other_expression(
+        &mut self,
+        expression: ExpressionForm,
+        shape: &Shape,
+    ) -> Result<ExprKind, Diagnostic> {
+        match expression {
             ExpressionForm::Deref => self.lower_deref(shape),
             ExpressionForm::Control(form) => self.lower_control_form(form, shape),
             ExpressionForm::Struct(form) => self.lower_struct_form(form, shape),
-            _ => unreachable!("the caller matches a value form"),
+            ExpressionForm::Match => self.lower_match(shape),
+            _ => unreachable!("the caller matches a simple expression form"),
         }
     }
 
@@ -388,6 +400,137 @@ impl Expander<'_> {
             Box::new(value),
             self.field_label(shape, &items[2])?,
         )))
+    }
+
+    fn lower_match(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let items = shape.at_least(3)?;
+        let value = self.lower_recovered(&items[1])?;
+        let arms = items[2..]
+            .iter()
+            .map(|arm| self.lower_arm(shape, arm))
+            .collect::<Result<Vec<Arm>, Diagnostic>>()?;
+        Ok(ExprKind::Control(Control::Match(Box::new(value), arms)))
+    }
+
+    fn lower_arm(&mut self, shape: &Shape, arm: &Form) -> Result<Arm, Diagnostic> {
+        let items = shape.list(arm)?;
+        let (pattern, body) = items
+            .split_first()
+            .ok_or_else(|| ExpandProblems::arm_body(arm.span()))?;
+        let [body] = body else {
+            return Err(ExpandProblems::arm_body(arm.span()));
+        };
+        let scope = self.fresh_local_scope();
+        let mut pattern = pattern.clone();
+        let mut body = body.clone();
+        pattern.add_scope(scope);
+        body.add_scope(scope);
+        let pattern = self.lower_pattern(&pattern)?;
+        let body = self.lower_body(std::slice::from_ref(&body))?;
+        Ok(Arm {
+            pattern,
+            body,
+            span: arm.span(),
+        })
+    }
+
+    fn lower_pattern(&mut self, form: &Form) -> Result<Pattern, Diagnostic> {
+        let span = form.span();
+        let kind = match form.kind() {
+            FormKind::Symbol(symbol) => self.lower_symbol_pattern(form, symbol)?,
+            FormKind::List(items) => self.lower_list_pattern(items, span)?,
+            FormKind::Number(_) | FormKind::String(_) => {
+                return Err(ExpandProblems::not_a_pattern(span));
+            }
+        };
+        Ok(Pattern::new(kind, span))
+    }
+
+    fn lower_symbol_pattern(
+        &mut self,
+        form: &Form,
+        symbol: &Symbol,
+    ) -> Result<PatternKind, Diagnostic> {
+        if symbol.name() == "_" {
+            return Ok(PatternKind::Wildcard);
+        }
+        if let Some(binding) = self.try_resolve(symbol, Namespace::Value)
+            && let BindingKind::Variant(_, info) = self.kind(binding)
+        {
+            if info.arity == 0 {
+                return Ok(PatternKind::Variant(binding, Vec::new()));
+            }
+            return Err(ExpandProblems::not_a_pattern(form.span()));
+        }
+        let candidates = self.variant_candidates(symbol, true);
+        let binding = self.define_local(form, Namespace::Value, BindingKind::Local, None)?;
+        if candidates.is_empty() {
+            return Ok(PatternKind::Bind(binding));
+        }
+        Ok(PatternKind::BareName {
+            name: symbol.shared_name(),
+            binding,
+            candidates,
+        })
+    }
+
+    fn lower_list_pattern(
+        &mut self,
+        items: &[Form],
+        span: Span,
+    ) -> Result<PatternKind, Diagnostic> {
+        let Some(head) = items.first().and_then(Form::as_symbol) else {
+            return Err(ExpandProblems::not_a_pattern(span));
+        };
+        if let Some(binding) = self.try_resolve(head, Namespace::Value)
+            && matches!(self.kind(binding), BindingKind::Variant(_, _))
+        {
+            let arguments = items[1..]
+                .iter()
+                .map(|argument| self.lower_pattern(argument))
+                .collect::<Result<Vec<_>, Diagnostic>>()?;
+            return Ok(PatternKind::Variant(binding, arguments));
+        }
+        let candidates = self.variant_candidates(head, false);
+        if candidates.is_empty() {
+            return Err(ExpandProblems::not_a_pattern(span));
+        }
+        let arguments = items[1..]
+            .iter()
+            .map(|argument| self.lower_pattern(argument))
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
+        Ok(PatternKind::ShortVariant {
+            name: head.shared_name(),
+            candidates,
+            arguments,
+        })
+    }
+
+    fn variant_candidates(&self, symbol: &Symbol, nullary: bool) -> Vec<BindingId> {
+        let mut candidates: Vec<BindingId> = self
+            .table
+            .visible_bindings(symbol.scopes(), Namespace::Value, self.phase)
+            .into_iter()
+            .filter(|binding| self.is_variant_candidate(*binding, symbol.name(), nullary))
+            .collect();
+        candidates.sort();
+        candidates.dedup();
+        candidates
+    }
+
+    fn is_variant_candidate(&self, binding: BindingId, name: &str, nullary: bool) -> bool {
+        let BindingKind::Variant(_, info) = self.kind(binding) else {
+            return false;
+        };
+        if nullary && info.arity != 0 {
+            return false;
+        }
+        self.bindings
+            .get(binding)
+            .name()
+            .rsplit('/')
+            .next()
+            .is_some_and(|short| short == name)
     }
 
     fn lower_rust(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {

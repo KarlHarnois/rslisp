@@ -76,6 +76,11 @@ impl RecurCheck {
         match control {
             Control::Block(block) => self.items(&block.items, position),
             Control::If(test, then, otherwise) => self.branches(test, then, otherwise, position),
+            Control::Match(value, arms) => {
+                self.expr(value, TailPosition::NotTail)?;
+                arms.iter()
+                    .try_for_each(|arm| self.items(&arm.body.items, position))
+            }
         }
     }
 

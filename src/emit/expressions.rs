@@ -18,8 +18,9 @@ use crate::diagnostic::Diagnostic;
 use crate::reader::{Number, NumberValue};
 use crate::source::Span;
 use crate::types::{
-    Borrow, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
-    TypedExprKind, TypedLambda, TypedLeaf, TypedProgram, TypedStructExpr, VariantPayload,
+    Borrow, Type, TypedArgument, TypedArm, TypedBinder, TypedBlock, TypedBodyItem, TypedControl,
+    TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedPattern, TypedPatternKind, TypedProgram,
+    TypedStructExpr, VariantPayload,
 };
 
 mod tail_loop;
@@ -302,7 +303,131 @@ impl<'a> ExpressionEmitter<'a> {
         match control {
             TypedControl::Block(block) => self.block(block),
             TypedControl::If(test, then, otherwise) => self.conditional(test, then, otherwise),
+            TypedControl::Match(value, arms) => self.matching(value, arms),
         }
+    }
+
+    fn matching(&mut self, value: &TypedExpr, arms: &[TypedArm]) -> Code {
+        let value = self.expr(value);
+        let mut fragments = vec![Fragment::Text("match ".to_string())];
+        fragments.extend(value.fragments);
+        fragments.push(Fragment::Text(" {".to_string()));
+        let mut inner = Vec::new();
+        for arm in arms {
+            inner.push(Fragment::Newline);
+            self.locals.enter();
+            inner.extend(self.pattern(&arm.pattern).fragments);
+            inner.push(Fragment::Text(" => ".to_string()));
+            inner.extend(self.arm_body(&arm.body));
+            inner.push(Fragment::Text(",".to_string()));
+            self.locals.leave();
+        }
+        fragments.push(Fragment::Indented(inner));
+        fragments.push(Fragment::Newline);
+        fragments.push(Fragment::Text("}".to_string()));
+        Code {
+            fragments,
+            precedence: Precedence::Block,
+        }
+    }
+
+    fn arm_body(&mut self, body: &TypedBlock) -> Vec<Fragment> {
+        match body.items.as_slice() {
+            [] => vec![Fragment::Text("{}".to_string())],
+            [TypedBodyItem::Expr(only)] if Self::is_empty_block(only) => {
+                vec![Fragment::Text("{}".to_string())]
+            }
+            [TypedBodyItem::Expr(only)] => self.expr(only).fragments,
+            _ => self.block(body).fragments,
+        }
+    }
+
+    fn pattern(&mut self, pattern: &TypedPattern) -> Code {
+        match &pattern.kind {
+            TypedPatternKind::Wildcard => Code::atom("_"),
+            TypedPatternKind::Bind(binder) => Code::atom(self.locals.bind(
+                binder.binding,
+                self.program.bindings.get(binder.binding).name(),
+            )),
+            TypedPatternKind::Variant(binding, patterns) => {
+                self.variant_pattern(*binding, patterns)
+            }
+        }
+    }
+
+    fn variant_pattern(&mut self, binding: BindingId, patterns: &[TypedPattern]) -> Code {
+        let BindingKind::Variant(_, VariantInfo { owner, index, .. }) =
+            self.program.bindings.get(binding).kind()
+        else {
+            unreachable!("a typed variant pattern names a variant binding");
+        };
+        let definition = self
+            .program
+            .enums
+            .get(owner)
+            .expect("a reached enum has a definition");
+        let variant = &definition.variants[index];
+        let name = variant.name.clone();
+        let payload = variant.payload.clone();
+        let path = format!(
+            "{}::{}",
+            self.types().struct_path(owner),
+            NameMangler::type_name(&name)
+        );
+        match &payload {
+            VariantPayload::None => Code::atom(path),
+            VariantPayload::Positional(_) => self.positional_pattern(path, patterns),
+            VariantPayload::Named(fields) => self.named_pattern(path, fields, patterns),
+        }
+    }
+
+    fn positional_pattern(&mut self, path: String, patterns: &[TypedPattern]) -> Code {
+        let mut parts = vec![Code::atom(format!("{path}("))];
+        for (position, pattern) in patterns.iter().enumerate() {
+            if position > 0 {
+                parts.push(Code::atom(", "));
+            }
+            parts.push(self.pattern(pattern));
+        }
+        parts.push(Code::atom(")"));
+        Code::joined(parts, Precedence::Atom)
+    }
+
+    fn named_pattern(
+        &mut self,
+        path: String,
+        fields: &[(std::rc::Rc<str>, Type)],
+        patterns: &[TypedPattern],
+    ) -> Code {
+        let mut parts = vec![Code::atom(format!("{path} {{ "))];
+        let mut written = 0;
+        let mut ignores = false;
+        for ((label, _), pattern) in fields.iter().zip(patterns) {
+            if matches!(pattern.kind, TypedPatternKind::Wildcard) {
+                ignores = true;
+                continue;
+            }
+            if written > 0 {
+                parts.push(Code::atom(", "));
+            }
+            written += 1;
+            let field = NameMangler::value(label);
+            let value = self.pattern(pattern);
+            if value.text() == field {
+                parts.push(value);
+            } else {
+                parts.push(Code::atom(format!("{field}: ")));
+                parts.push(value);
+            }
+        }
+        if ignores {
+            if written > 0 {
+                parts.push(Code::atom(", "));
+            }
+            parts.push(Code::atom(".."));
+        }
+        parts.push(Code::atom(" }"));
+        Code::joined(parts, Precedence::Atom)
     }
 
     fn variant(&mut self, binding: BindingId, arguments: &[TypedExpr]) -> Code {
@@ -317,12 +442,14 @@ impl<'a> ExpressionEmitter<'a> {
             .get(owner)
             .expect("a reached enum has a definition");
         let variant = &definition.variants[index];
+        let name = variant.name.clone();
+        let payload = variant.payload.clone();
         let path = format!(
             "{}::{}",
             self.types().struct_path(owner),
-            NameMangler::type_name(&variant.name)
+            NameMangler::type_name(&name)
         );
-        match &variant.payload {
+        match &payload {
             VariantPayload::None => Code::atom(path),
             VariantPayload::Positional(_) => self.positional_variant(path, arguments),
             VariantPayload::Named(fields) => self.named_variant(path, fields, arguments),

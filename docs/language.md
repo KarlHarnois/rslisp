@@ -54,6 +54,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `type` | `(type name type)` | signature | name: reference to a `def`. type: type. |
 | `struct` | `(struct name (field type)...)` or `(struct (name param...) (field type)...)` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
 | `enum` | `(enum name variant...)` or `(enum (name param...) variant...)` | `enum` | name: type binder. params: type binders. variants: a name, `(name type...)`, or `(name (struct (field type)...))`. |
+| `match` | `(match value (pattern body)...)` | `match` | value: expression. patterns: a wildcard, a bare name, or `(variant pattern...)`. arms: one body expression. |
 | `derive` | `(derive type trait...)` | `#[derive(...)]` | type: reference to a `struct` or `enum` of this module. traits: references to traits. |
 | `new` | `(new name (field value)...)` | struct literal | name: type. fields: field labels with expressions. |
 | `field` | `(field value name)` | `value.name` | value: expression. name: field label. |
@@ -446,9 +447,31 @@ A construction is qualified. `(shape/circle 1.0)` constructs a payload variant, 
 
 An enum gets the traits of a struct under 8.2, with its payloads in place of fields. Each structural trait that all payloads support is inferred, and `copy` is inferred when nothing changes the enum in place. A function-typed payload allows `clone`, `copy` and `debug`, and blocks comparison and hashing, because Rust compares function pointers unreliably. A written `derive` is exact, and an order follows the declared variant order. A blocked trait names the variant whose payload blocks it.
 
-A variant that holds its own enum by value is an error; recursive enums come in a later change, where a recursive payload is boxed automatically. `match` over enum values comes in the next change.
+A variant that holds its own enum by value is an error; recursive enums come in a later change, where a recursive payload is boxed automatically.
+
+A `match` tests one value against patterns:
+
+```lisp
+(match shape
+  ((circle r) (* 3.14 r r))
+  ((rect width height) (* width height))
+  ((labeled _ size) size)
+  (point 0.0))
+```
+
+An arm is one pattern and one body expression. The body is in tail position, so `recur` works in an arm, and a call to the enclosing function in an arm compiles into the enclosing tail loop. A pattern is `_`, a bare name, or `(variant pattern...)`, and patterns nest.
+
+A variant name in a pattern is short, as in `(circle r)`. Its enum is the type of the value at that position. When the matched value's type is still unknown, the enum is the one visible enum that has every variant name the arms use. If two visible enums fit, the match is an error that asks for one qualified pattern. A qualified pattern, such as `(shape/circle r)`, is always allowed.
+
+A bare name that names a variant with no payload of the matched enum is that variant. Any other bare name binds the value. A variant with a `struct` payload takes its patterns positionally, in field order.
+
+When the matched value is a reference, each name a pattern binds is a reference of the same kind, as Rust's default binding modes do.
+
+`match` exists only in program code. In macro code it is an error, because a macro cannot run a value's variants.
 
 `enum` is a kernel form, because only the compiler can create a Rust type and its variant bindings. The prelude cannot express a sum type, and a macro cannot register variants for construction or traits.
+
+`match` is a kernel form, because only the compiler can bind a payload without a clone and knows an enum's variants. A prelude function receives an enum as an opaque value, so it cannot take a variant apart or choose an arm. A macro could expand to a Rust `match`, but it would have to restate every variant and it could not bind a borrowed payload without writing a clone.
 
 ### 9.1 Propagating errors with `try`
 
