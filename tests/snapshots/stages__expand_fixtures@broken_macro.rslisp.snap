@@ -11,7 +11,7 @@ error[L0210]: malformed `macro`
   |
   = help: write it as `(def name (macro (form) body ...))`
 
-error[L0303]: the macro `unparameterized` has errors, so this call cannot expand
+error[L0309]: the macro `unparameterized` has errors, so this call cannot expand
  --> expand/broken_macro.rslisp:5:1
   |
 5 | (unparameterized)

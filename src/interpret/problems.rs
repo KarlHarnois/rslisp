@@ -39,7 +39,7 @@ impl InterpretProblems {
 
     fn argument_count(callee: &str, expected: usize, found: usize, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::COMPILE_TIME_ERROR,
+            DiagnosticCode::COMPILE_TIME_ARGUMENT_COUNT,
             format!(
                 "{callee} takes {} but {found} {} given",
                 Counted::noun(expected, "argument"),
@@ -51,7 +51,7 @@ impl InterpretProblems {
 
     pub fn not_callable(value: &Value, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::COMPILE_TIME_ERROR,
+            DiagnosticCode::NOT_CALLABLE,
             format!("{} cannot be called", value.describe()),
             Label::new(span, "called here"),
         )
@@ -59,7 +59,7 @@ impl InterpretProblems {
 
     pub fn not_a_boolean(value: &Value, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::COMPILE_TIME_ERROR,
+            DiagnosticCode::NOT_A_BOOLEAN,
             format!(
                 "the test of `if` must be a boolean, found {}",
                 value.describe()
@@ -70,7 +70,7 @@ impl InterpretProblems {
 
     pub fn out_of_range(function: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::COMPILE_TIME_ERROR,
+            DiagnosticCode::INDEX_OUT_OF_RANGE,
             format!("`{function}` was given an index outside the list"),
             Label::new(span, "index out of range"),
         )
@@ -78,7 +78,7 @@ impl InterpretProblems {
 
     pub fn arithmetic_failed(function: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::COMPILE_TIME_ERROR,
+            DiagnosticCode::ARITHMETIC_OVERFLOW,
             format!("`{function}` overflowed"),
             Label::new(span, "in this call"),
         )
@@ -86,7 +86,7 @@ impl InterpretProblems {
 
     pub fn runtime_only(what: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::COMPILE_TIME_ERROR,
+            DiagnosticCode::RUNTIME_ONLY,
             format!("{what} only exist at runtime"),
             Label::new(span, "used at compile time here"),
         )
@@ -94,7 +94,7 @@ impl InterpretProblems {
 
     pub fn match_only_at_runtime(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::COMPILE_TIME_ERROR,
+            DiagnosticCode::MATCH_AT_RUNTIME,
             "a `match` only exists at runtime",
             Label::new(span, "used at compile time here"),
         )
@@ -102,7 +102,7 @@ impl InterpretProblems {
 
     pub fn program_only(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::PROGRAM_ONLY,
+            DiagnosticCode::RUST_CODE_PROGRAM_ONLY,
             "this Rust code belongs to the program, so macro code cannot run it",
             Label::new(span, "macro code runs this"),
         )
@@ -111,7 +111,7 @@ impl InterpretProblems {
 
     pub fn too_deep(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::COMPILE_TIME_ERROR,
+            DiagnosticCode::COMPILE_TIME_RECURSION,
             "compile-time code recursed too deeply",
             Label::new(span, "while evaluating this call"),
         )

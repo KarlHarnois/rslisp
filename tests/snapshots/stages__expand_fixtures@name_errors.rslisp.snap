@@ -34,7 +34,7 @@ error[L0208]: `def` can only appear at module level
   |
   = help: use `let` to bind a name inside a body
 
-error[L0208]: `let` can only appear directly in a body
+error[L0227]: `let` can only appear directly in a body
  --> expand/name_errors.rslisp:5:12
   |
 5 | (def loose (let x 1))

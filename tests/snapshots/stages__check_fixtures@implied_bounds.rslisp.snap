@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/implied_bounds.rslisp
 ---
-error[L0404]: `n` might not implement `number`
+error[L0440]: `n` might not implement `number`
  --> check/implied_bounds.rslisp:8:27
   |
 8 | (defn square-shown (x) (* x x))

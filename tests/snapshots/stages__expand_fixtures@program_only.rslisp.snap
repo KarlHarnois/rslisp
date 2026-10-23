@@ -16,7 +16,7 @@ error[L0306]: `to-string` belongs to the program, so macro code cannot run it
    |
    = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
-error[L0306]: this Rust code belongs to the program, so macro code cannot run it
+error[L0319]: this Rust code belongs to the program, so macro code cannot run it
  --> expand/program_only.rslisp:7:32
   |
 7 | (def inline-rust (macro (form) (rust "1" i64) (list)))
@@ -67,7 +67,7 @@ error[L0306]: `mul` belongs to the program, so macro code cannot run it
    |
    = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
-error[L0303]: `double` has errors, so macro code cannot use it
+error[L0308]: `double` has errors, so macro code cannot use it
   --> expand/program_only.rslisp:25:43
    |
 25 | (def also-through-a-helper (macro (form) (double 3) (list)))

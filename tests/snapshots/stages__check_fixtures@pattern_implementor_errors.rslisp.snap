@@ -28,7 +28,7 @@ error[L0404]: `unit` does not implement `clone`
   |
   = note: `clone` is implemented for: bool, char, string, (ref str), i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where ((a clone)) (vec a)), (where ((a clone)) (option a)), (where ((a clone) (b clone)) (result a b)), (where ((a clone)) (box a)), (where ((a clone) (b clone)) (pair a b)), (where ((a clone) (b clone)) (pair a b))
 
-error[L0414]: `1` does not fit every type `n` can be
+error[L0441]: `1` does not fit every type `n` can be
   --> check/pattern_implementor_errors.rslisp:12:19
    |
 12 | (defn one (value) 1)
@@ -37,7 +37,7 @@ error[L0414]: `1` does not fit every type `n` can be
    = note: `n` can be any of: i64, (ref a)
    = help: narrow `n` with a trait whose types all hold this value
 
-error[L0404]: `n` might not implement `partial-eq`
+error[L0440]: `n` might not implement `partial-eq`
   --> check/pattern_implementor_errors.rslisp:15:29
    |
 15 | (defn same? (left right) (= left right))

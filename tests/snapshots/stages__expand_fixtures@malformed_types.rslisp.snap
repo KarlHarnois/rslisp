@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).expand_report()"
 input_file: tests/fixtures/expand/malformed_types.rslisp
 ---
-error[L0212]: expected a type
+error[L0234]: expected a type
  --> expand/malformed_types.rslisp:1:17
   |
 1 | (type text-type "text")
@@ -11,7 +11,7 @@ error[L0212]: expected a type
   |
   = help: a type is a name such as `i64`, or a form such as `(fn (i64) i64)` or `(ref str)`
 
-error[L0210]: malformed `ref` type
+error[L0228]: malformed `ref` type
  --> expand/malformed_types.rslisp:4:16
   |
 4 | (type bare-ref ref)
@@ -25,7 +25,7 @@ error[L0212]: expected a type constructor, found `number`
 7 | (type trait-constructor (fn ((number i64)) i64))
   |                               ^^^^^^ not a type constructor
 
-error[L0210]: malformed `fn` type
+error[L0228]: malformed `fn` type
   --> expand/malformed_types.rslisp:10:16
    |
 10 | (type short-fn (fn i64))
@@ -33,7 +33,7 @@ error[L0210]: malformed `fn` type
    |
    = help: write it as `(fn (argument ...) result)`
 
-error[L0210]: malformed `ref` type
+error[L0228]: malformed `ref` type
   --> expand/malformed_types.rslisp:13:22
    |
 13 | (type empty-ref (fn ((ref)) i64))
@@ -41,7 +41,7 @@ error[L0210]: malformed `ref` type
    |
    = help: write it as `(ref type)`
 
-error[L0210]: malformed `where` type
+error[L0228]: malformed `where` type
   --> expand/malformed_types.rslisp:16:19
    |
 16 | (type short-where (where (t)))
@@ -61,7 +61,7 @@ error[L0212]: expected a trait, found `i64`
 22 | (type primitive-bound (where ((t i64)) (fn (t) t)))
    |                                  ^^^ not a trait
 
-error[L0210]: malformed `mut` type
+error[L0228]: malformed `mut` type
   --> expand/malformed_types.rslisp:25:22
    |
 25 | (type empty-mut (fn ((mut)) i64))

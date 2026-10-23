@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/rust_template_placeholder.rslisp
 ---
-error[L0213]: `{1}` names no type parameter
+error[L0225]: `{1}` names no type parameter
  --> check/rust_template_placeholder.rslisp:1:22
   |
 1 | (enum (pair a) (rust "({0}, {1})") (of a a))

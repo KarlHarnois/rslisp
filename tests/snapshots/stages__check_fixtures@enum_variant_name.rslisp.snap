@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/enum_variant_name.rslisp
 ---
-error[L0212]: expected a name
+error[L0235]: expected a name
  --> check/enum_variant_name.rslisp:1:12
   |
 1 | (enum bad ((x) i64))

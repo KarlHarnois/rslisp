@@ -12,7 +12,7 @@ error[L0303]: `first` expects a list as argument 1, found an integer
 10 | (first-of-number)
    | ----------------- in this macro call
 
-error[L0303]: `nth` was given an index outside the list
+error[L0314]: `nth` was given an index outside the list
   --> expand/compile_time_errors.rslisp:4:33
    |
  4 | (def past-the-end (macro (form) (nth form 5)))
@@ -21,7 +21,7 @@ error[L0303]: `nth` was given an index outside the list
 11 | (past-the-end)
    | -------------- in this macro call
 
-error[L0303]: the test of `if` must be a boolean, found an integer
+error[L0313]: the test of `if` must be a boolean, found an integer
   --> expand/compile_time_errors.rslisp:5:36
    |
  5 | (def number-test (macro (form) (if 1 form form)))
@@ -30,7 +30,7 @@ error[L0303]: the test of `if` must be a boolean, found an integer
 12 | (number-test)
    | ------------- in this macro call
 
-error[L0303]: a string cannot be called
+error[L0312]: a string cannot be called
   --> expand/compile_time_errors.rslisp:6:34
    |
  6 | (def call-a-string (macro (form) ("text" form)))
@@ -39,13 +39,13 @@ error[L0303]: a string cannot be called
 13 | (call-a-string)
    | --------------- in this macro call
 
-error[L0303]: structs only exist at runtime
+error[L0316]: structs only exist at runtime
  --> expand/compile_time_errors.rslisp:7:33
   |
 7 | (def read-a-field (macro (form) (field form name)))
   |                                 ^^^^^^^^^^^^^^^^^ used at compile time here
 
-error[L0303]: `first` takes 1 argument but 2 were given
+error[L0311]: `first` takes 1 argument but 2 were given
   --> expand/compile_time_errors.rslisp:8:39
    |
  8 | (def too-many-arguments (macro (form) (first form form)))
