@@ -1,0 +1,13 @@
+(enum box (value i64))
+
+(defn plus-one (n) (+ n 1))
+
+(defn choose (flag)
+  (match flag
+    (true (match (box/value 1) ((value n) (plus-one n))))
+    (false 0)))
+
+(defn main ()
+  (println (match (box/value 2) ((value n) (plus-one n))))
+  (println (choose true))
+  (println (choose false)))
