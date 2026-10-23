@@ -1,7 +1,7 @@
 (use prelude/macros defmacro defrule template)
 (use prelude/logic not when unless and or cond)
 (use prelude/syntax defn the -> ->> try-> let-try loop)
-(use prelude/types vec option result iterator slice sequence)
+(use prelude/types vec option result iterator slice sequence box box-new)
 (use prelude/vec vec push! len iter values collect
                get pop! sort! sort-by-key! windows at dedup!)
 (use prelude/iterator range map filter fold for-each
@@ -30,7 +30,7 @@
         chars lines split trim as-str parse parse-error from-str
         defstruct
         clone copy
-        vec option result iterator slice sequence push! len iter values collect
+        vec option result iterator slice sequence box box-new push! len iter values collect
         get pop! sort! sort-by-key! windows at dedup!
         range map filter fold for-each
         sum count max min max-by-key any all find take take-while

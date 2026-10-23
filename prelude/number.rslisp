@@ -1,6 +1,6 @@
 (use prelude/macros defrule)
 (use prelude/logic and)
-(use prelude/types vec option result)
+(use prelude/types vec option result box)
 
 (export number signed float integer partial-eq hash partial-ord
         add sub mul div rem neg sqrt lt le gt ge eq ne
@@ -19,20 +19,24 @@
   (where ((a (partial-eq b)) b) (with (ref a) (ref b)))
   (where ((a partial-eq)) (vec a))
   (where ((a partial-eq)) (option a))
-  (where ((a partial-eq) (b partial-eq)) (result a b)))
+  (where ((a partial-eq) (b partial-eq)) (result a b))
+  (where ((a partial-eq)) (box a)))
 (rust-trait eq "Eq"
   bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize
   (where ((a eq)) (vec a))
   (where ((a eq)) (option a))
-  (where ((a eq) (b eq)) (result a b)))
+  (where ((a eq) (b eq)) (result a b))
+  (where ((a eq)) (box a)))
 (rust-trait hash "std::hash::Hash"
   bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize
   (where ((a hash)) (vec a))
   (where ((a hash)) (option a))
-  (where ((a hash) (b hash)) (result a b)))
+  (where ((a hash) (b hash)) (result a b))
+  (where ((a hash)) (box a)))
 (rust-trait partial-ord "PartialOrd"
   char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
-  (where ((a partial-ord)) (ref a)))
+  (where ((a partial-ord)) (ref a))
+  (where ((a partial-ord)) (box a)))
 
 (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
 (def sub (rust "{0} - {1}" (where ((n number)) (fn (n n) n))))
@@ -92,4 +96,5 @@
   ((a b) (ne a b)))
 
 (rust-trait ord "Ord"
-  char string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize)
+  char string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize
+  (where ((a ord)) (box a)))

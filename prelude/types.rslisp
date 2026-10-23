@@ -1,6 +1,8 @@
-(export vec option result iterator slice sequence)
+(export vec option result iterator slice sequence box box-new)
 
 (rust-type (vec item) "Vec<{0}>")
+(rust-type (box item) "Box<{0}>")
+(def box-new (rust "Box::new({0})" (where (a) (fn (a) (box a)))))
 (enum (option value) (rust "Option") (some value) none)
 (enum (result value error) (rust "Result") (ok value) (err error))
 (rust-type (iterator item) "impl Iterator<Item = {0}>")
