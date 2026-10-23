@@ -9,7 +9,7 @@ error[L0213]: `{1}` names no type parameter
 1 | (rust-type (shifted item) "Box<{1}>")
   |                           ^^^^^^^^^^ this type has 1 type parameter
   |
-  = help: declare the type parameters on the name, as in `(rust-type (vec item) "Vec<{0}>")`
+  = help: declare the type parameters on the name, as in `(rust-type (shifted a b) "Box<{1}>")`
 
 error[L0213]: the template never uses this type parameter
  --> expand/rust_type_errors.rslisp:2:25
@@ -33,7 +33,7 @@ error[L0213]: `{0}` names no type parameter
 4 | (rust-type plain "Vec<{0}>")
   |                  ^^^^^^^^^^ this type has 0 type parameters
   |
-  = help: declare the type parameters on the name, as in `(rust-type (vec item) "Vec<{0}>")`
+  = help: declare the type parameters on the name, as in `(rust-type (plain a) "Vec<{0}>")`
 
 error[L0210]: malformed `rust-type`
  --> expand/rust_type_errors.rslisp:5:1

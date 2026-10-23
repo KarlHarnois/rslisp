@@ -9,5 +9,5 @@ error[L0428]: `try` cannot return from this function
 3 | (defn stray () (try (some 1)))
   |                ^^^^^^^^^^^^^^ this function returns `(result i64 string)`
   |
-  = note: `try` here needs a function that returns an `option`
+  = note: `try` here needs a function that returns `option`
   = help: make the function return the value `try` needs, or handle this value without `try`

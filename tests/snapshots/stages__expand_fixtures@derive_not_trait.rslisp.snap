@@ -9,4 +9,4 @@ error[L0212]: `string` is not a trait
 2 | (derive ticket string)
   |                ^^^^^^ a `derive` lists traits
   |
-  = help: list traits such as `clone`, `debug` or `ord`
+  = help: list a trait's name, not `string`

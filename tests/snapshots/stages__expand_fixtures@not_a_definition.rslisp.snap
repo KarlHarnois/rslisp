@@ -9,7 +9,7 @@ error[L0207]: expected a definition at module level
 1 | (println "hello")
   | ^^^^^^^^^^^^^^^^^ this is not a definition
   |
-  = help: put expressions inside a function, such as `(defn main () ...)`
+  = help: put expressions inside a function, such as `(def run (fn () ...))`
 
 error[L0207]: expected a definition at module level
  --> expand/not_a_definition.rslisp:2:1
@@ -17,4 +17,4 @@ error[L0207]: expected a definition at module level
 2 | 42
   | ^^ this is not a definition
   |
-  = help: put expressions inside a function, such as `(defn main () ...)`
+  = help: put expressions inside a function, such as `(def run (fn () ...))`

@@ -30,7 +30,12 @@ impl Expander<'_> {
             return Err(shape.malformed(&items[2]));
         };
         let template = Self::type_template(&shape, template_form)?;
-        Self::check_type_placeholders(&template, &parameterized.binders, template_form)?;
+        Self::check_type_placeholders(
+            &template,
+            &parameterized.binders,
+            self.bindings.get(binding).name(),
+            template_form,
+        )?;
         let clauses =
             self.lower_rust_type_clauses(&shape, form, items, parameterized.binders.len())?;
         core.items.push(Item {
@@ -166,15 +171,23 @@ impl Expander<'_> {
     pub(super) fn check_type_placeholders(
         template: &ParsedTemplate,
         binders: &[TypeBinder],
+        name: &str,
         template_form: &Form,
     ) -> Result<(), Diagnostic> {
         if let Some(index) = template
             .placeholders()
             .find(|index| *index >= binders.len())
         {
+            let placeholders = template
+                .placeholders()
+                .max()
+                .map_or(0, |placeholder| placeholder + 1);
             return Err(ExpandProblems::placeholder_without_parameter(
                 index,
                 binders.len(),
+                name,
+                template.text(),
+                placeholders,
                 template_form.span(),
             ));
         }

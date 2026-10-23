@@ -14,7 +14,7 @@ error[L0306]: `to-string` belongs to the program, so macro code cannot run it
 23 | (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
    |                -------------------------------------------------------------------- `to-string` is Rust code that runs in the program
    |
-   = help: to compute this in the program, return it as code from the macro, for example with `template`
+   = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
 error[L0306]: this Rust code belongs to the program, so macro code cannot run it
  --> expand/program_only.rslisp:7:32
@@ -22,7 +22,7 @@ error[L0306]: this Rust code belongs to the program, so macro code cannot run it
 7 | (def inline-rust (macro (form) (rust "1" i64) (list)))
   |                                ^^^^^^^^^^^^^^ macro code runs this
   |
-  = help: to compute this in the program, return it as code from the macro, for example with `template`
+  = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
 error[L0306]: `add` belongs to the program, so macro code cannot run it
   --> expand/program_only.rslisp:11:35
@@ -35,7 +35,7 @@ error[L0306]: `add` belongs to the program, so macro code cannot run it
 46 | (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
    |          ---------------------------------------------------- `add` is Rust code that runs in the program
    |
-   = help: to compute this in the program, return it as code from the macro, for example with `template`
+   = help: to compute this in the program, return it as code from the macro, for example with `quote`
    = help: in macro code, use `number-add` from `code` instead
 
 error[L0306]: `to-string` belongs to the program, so macro code cannot run it
@@ -49,7 +49,7 @@ error[L0306]: `to-string` belongs to the program, so macro code cannot run it
 23 | (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
    |                -------------------------------------------------------------------- `to-string` is Rust code that runs in the program
    |
-   = help: to compute this in the program, return it as code from the macro, for example with `template`
+   = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
 error[L0306]: `mul` belongs to the program, so macro code cannot run it
   --> expand/program_only.rslisp:19:25
@@ -65,7 +65,7 @@ error[L0306]: `mul` belongs to the program, so macro code cannot run it
 48 | (def mul (rust "{0} * {1}" (where ((n number)) (fn (n n) n))))
    |          ---------------------------------------------------- `mul` is Rust code that runs in the program
    |
-   = help: to compute this in the program, return it as code from the macro, for example with `template`
+   = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
 error[L0303]: `double` has errors, so macro code cannot use it
   --> expand/program_only.rslisp:25:43
@@ -84,4 +84,4 @@ error[L0306]: `print` belongs to the program, so macro code cannot run it
 206 | (defmacro print (parts ...)
     |           ----- `print` expands to Rust code that runs in the program
     |
-    = help: to compute this in the program, return it as code from the macro, for example with `template`
+    = help: to compute this in the program, return it as code from the macro, for example with `quote`

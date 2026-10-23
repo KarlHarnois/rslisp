@@ -5,7 +5,7 @@ use crate::source::Span;
 pub struct InterpretProblems;
 
 impl InterpretProblems {
-    pub const RETURN_AS_CODE_HELP: &'static str = "to compute this in the program, return it as code from the macro, for example with `template`";
+    pub const RETURN_AS_CODE_HELP: &'static str = "to compute this in the program, return it as code from the macro, for example with `quote`";
 
     pub fn wrong_argument(
         function: &str,

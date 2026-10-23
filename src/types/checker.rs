@@ -1146,9 +1146,10 @@ impl TypeChecker {
         path: &std::rc::Rc<str>,
         implementors: &[TypeExpr],
     ) -> Result<(), Diagnostic> {
+        let trait_name = self.bindings.get(binding).name().to_string();
         let implementors = implementors
             .iter()
-            .map(|implementor| self.lower_implementor(implementor))
+            .map(|implementor| self.lower_implementor(implementor, &trait_name))
             .collect::<Result<Vec<Implementor>, Diagnostic>>()?;
         self.traits.add(
             binding,
@@ -1277,7 +1278,8 @@ impl TypeChecker {
         };
         if self.is_order(bound.binding) {
             if definition.written_derive.is_none() {
-                diagnostic = diagnostic.with_note(TypeProblems::order_not_inferred_enum_note());
+                diagnostic =
+                    diagnostic.with_note(TypeProblems::order_not_inferred_enum_note(trait_name));
             }
             if let Some((variant, field_type)) = self.blocking_enum_payload(binding, bound.binding)
             {
@@ -1285,6 +1287,7 @@ impl TypeChecker {
                     &enum_name,
                     &variant,
                     &display.show(&field_type),
+                    trait_name,
                 ));
             } else {
                 let mut derives: Vec<String> = definition
@@ -1398,9 +1401,10 @@ impl TypeChecker {
         trait_binding: BindingId,
         display: &TypeDisplay<'_>,
     ) -> Diagnostic {
+        let trait_name = self.bindings.get(trait_binding).name();
         let diagnostic = match definition.written_derive {
-            Some(span) => diagnostic.with_label(TypeProblems::derive_leaves_out(span, "ord")),
-            None => diagnostic.with_note(TypeProblems::order_not_inferred_note()),
+            Some(span) => diagnostic.with_label(TypeProblems::derive_leaves_out(span, trait_name)),
+            None => diagnostic.with_note(TypeProblems::order_not_inferred_note(trait_name)),
         };
         let sortable = self.first_ord_field(definition, trait_binding);
         match self.blocking_field(struct_binding, trait_binding) {
@@ -1409,6 +1413,7 @@ impl TypeChecker {
                     struct_name,
                     &field,
                     &display.show(&field_type),
+                    trait_name,
                 ))
                 .with_help(TypeProblems::sort_by_key_help(struct_name, sortable)),
             None => {

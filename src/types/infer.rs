@@ -68,10 +68,10 @@ struct TrySource {
 }
 
 impl TrySourceKind {
-    fn needed(self) -> &'static str {
+    fn needed(self, name: &str) -> String {
         match self {
-            TrySourceKind::Result => "a `result` with the same error type",
-            TrySourceKind::Option => "an `option`",
+            TrySourceKind::Result => format!("`{name}` with the same error type"),
+            TrySourceKind::Option => format!("`{name}`"),
         }
     }
 }
@@ -1125,8 +1125,9 @@ impl TypeChecker {
             .unify(&expected, &target.returns, span)
             .is_err()
         {
+            let source_name = self.bindings.get(source.binding).name();
             return Err(TypeProblems::try_cannot_return(
-                source.kind.needed(),
+                &source.kind.needed(source_name),
                 &self.describe(&target.returns),
                 span,
             ));

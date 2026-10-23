@@ -12,4 +12,4 @@ error[L0306]: `build-code` belongs to the program, so macro code cannot run it
 7 | (def through-builder (macro (form) (build-code form)))
   |                                    ^^^^^^^^^^^^^^^^^ macro code runs this
   |
-  = help: to compute this in the program, return it as code from the macro, for example with `template`
+  = help: to compute this in the program, return it as code from the macro, for example with `quote`
