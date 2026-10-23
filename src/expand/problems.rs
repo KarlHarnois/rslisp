@@ -400,7 +400,10 @@ impl ExpandProblems {
             format!("`{name}` is a variant constructor, not a value"),
             Label::new(
                 span,
-                format!("this constructor takes {arity} when it is called"),
+                format!(
+                    "this constructor takes {} when it is called",
+                    Counted::noun(arity, "argument")
+                ),
             ),
         )
         .with_help(format!("write `({name} value ...)`"))
