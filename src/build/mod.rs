@@ -1,5 +1,7 @@
 mod profile;
 mod rustc_errors;
+#[allow(dead_code)]
+mod token_alignment;
 
 use std::fs;
 use std::io;
