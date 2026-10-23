@@ -1,4 +1,5 @@
 (use prelude/macros defmacro map-list)
+(use prelude/pair pair)
 (use code first rest list prepend concat length empty? nth take drop
           symbol symbol? list? string? string same-binding? value-eq
           number-add number-sub number-lt bool-not
@@ -16,7 +17,8 @@
   (where ((a debug)) (vec a))
   (where ((a debug)) (option a))
   (where ((a debug) (b debug)) (result a b))
-  (where ((a debug)) (box a)))
+  (where ((a debug)) (box a))
+  (where ((a debug) (b debug)) (pair a b)))
 
 (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
 (def prn (rust "println!(\"{{:?}}\", {&0})" (where ((a debug)) (fn ((ref a)) unit))))

@@ -2,10 +2,10 @@
 
 (defn make (a b) (pair-user/of a b))
 
-(defn first-of (p) (match p ((of a _) a)))
+(defn first-of (p) (match p ((pair-user/of a _) a)))
 
 (defn main ()
   (let p (make (to-string "left") 2))
   (println (first-of p))
   (match (make 3 (to-string "right"))
-    ((of n text) (println (str n text)))))
+    ((pair-user/of n text) (println (str n text)))))

@@ -1,8 +1,9 @@
 (use prelude/types iterator option)
+(use prelude/pair pair)
 (use prelude/number integer number ord add)
 (use prelude/syntax defn)
 
-(export range map filter fold for-each
+(export range map filter fold for-each enumerate zip
         sum count max min max-by-key any all find take take-while)
 
 (def range (rust "{0}..{1}" (where ((n integer)) (fn (n n) (iterator n)))))
@@ -10,6 +11,8 @@
 (def filter (rust "{0}.filter({1})" (where (a) (fn ((iterator a) (fn ((ref a)) bool)) (iterator a)))))
 (def fold (rust "{0}.fold({1}, {2})" (where (a b) (fn ((iterator a) b (fn (b a) b)) b))))
 (def for-each (rust "{0}.for_each({1})" (where (a) (fn ((iterator a) (fn (a) unit)) unit))))
+(def enumerate (rust "{0}.enumerate()" (where (a) (fn ((iterator a)) (iterator (pair usize a))))))
+(def zip (rust "{0}.zip({1})" (where (a b) (fn ((iterator a) (iterator b)) (iterator (pair a b))))))
 (type sum (where ((n number)) (fn ((iterator n)) n)))
 (defn sum (values) (fold values 0 add))
 (def count (rust "{0}.count()" (where (a) (fn ((iterator a)) usize))))

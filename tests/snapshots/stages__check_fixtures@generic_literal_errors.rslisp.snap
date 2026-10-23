@@ -36,5 +36,5 @@ error[L0414]: `10` does not fit every type `a` can be
 11 | (defn below-ten (x) (< x 10))
    |                          ^^ `a` can be `char`, which cannot hold this value
    |
-   = note: `a` can be any of: char, str, string, (ref str), i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (ref a), (box a)
+   = note: `a` can be any of: char, str, string, (ref str), i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (ref a), (box a), (pair a b)
    = help: narrow `a` with a trait whose types all hold this value

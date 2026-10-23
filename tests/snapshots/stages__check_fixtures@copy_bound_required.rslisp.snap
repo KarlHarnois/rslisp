@@ -9,4 +9,4 @@ error[L0404]: `string` does not implement `copy`
 5 |   (println (len (twice (to-string "a")))))
   |                        ^^^^^^^^^^^^^^^ this needs `copy`
   |
-  = note: `copy` is implemented for: bool, char, unit, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where (a) (ref a)), (where ((a copy)) (option a)), (where ((a copy) (b copy)) (result a b))
+  = note: `copy` is implemented for: bool, char, unit, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where (a) (ref a)), (where ((a copy)) (option a)), (where ((a copy) (b copy)) (result a b)), (where ((a copy) (b copy)) (pair a b))

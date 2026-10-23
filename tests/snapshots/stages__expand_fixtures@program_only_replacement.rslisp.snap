@@ -9,9 +9,9 @@ error[L0306]: `add` belongs to the program, so macro code cannot run it
  4 |   (let n (+ (length forms) 1))
    |          ^^^^^^^^^^^^^^^^^^^^ macro code runs this
    |
-  ::: prelude/number.rslisp:41:10
+  ::: prelude/number.rslisp:46:10
    |
-41 | (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
+46 | (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
    |          ---------------------------------------------------- `add` is Rust code that runs in the program
    |
    = help: to compute this in the program, return it as code from the macro, for example with `template`

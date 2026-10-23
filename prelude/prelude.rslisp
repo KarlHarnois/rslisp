@@ -2,9 +2,10 @@
 (use prelude/logic not when unless and or cond)
 (use prelude/syntax defn the -> ->> try-> let-try loop)
 (use prelude/types vec option result iterator slice sequence box box-new)
+(use prelude/pair pair let-pair)
 (use prelude/vec vec push! len iter values collect
                get pop! sort! sort-by-key! windows at dedup!)
-(use prelude/iterator range map filter fold for-each
+(use prelude/iterator range map filter fold for-each enumerate zip
                       sum count max min max-by-key any all find take take-while)
 (use prelude/option some none some? none? unwrap-or unwrap expect map-some then-some)
 (use prelude/result ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
@@ -30,9 +31,10 @@
         chars lines split trim as-str parse parse-error from-str
         defstruct
         clone copy
+        pair let-pair
         vec option result iterator slice sequence box box-new push! len iter values collect
         get pop! sort! sort-by-key! windows at dedup!
-        range map filter fold for-each
+        range map filter fold for-each enumerate zip
         sum count max min max-by-key any all find take take-while
         some none some? none? unwrap-or unwrap expect map-some then-some
         ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)

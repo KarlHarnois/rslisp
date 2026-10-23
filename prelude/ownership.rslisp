@@ -1,4 +1,5 @@
 (use prelude/types vec option result box)
+(use prelude/pair pair)
 
 (export clone copy)
 
@@ -7,12 +8,14 @@
   (where ((a clone)) (vec a))
   (where ((a clone)) (option a))
   (where ((a clone) (b clone)) (result a b))
-  (where ((a clone)) (box a)))
+  (where ((a clone)) (box a))
+  (where ((a clone) (b clone)) (pair a b)))
 
 (rust-trait copy "Copy"
   bool char unit i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
   (where (a) (ref a))
   (where ((a copy)) (option a))
-  (where ((a copy) (b copy)) (result a b)))
+  (where ((a copy) (b copy)) (result a b))
+  (where ((a copy) (b copy)) (pair a b)))
 
 (def clone (rust "{0}.clone()" (where ((a clone)) (fn ((ref a)) a))))

@@ -1,0 +1,17 @@
+(defn main ()
+  (for-each (enumerate (lines "alpha\nbeta"))
+            (fn (entry)
+              (let-pair (index line) entry
+                (println (str index ": " line)))))
+  (let left (collect (lines "a\nb")))
+  (let right (collect (range 1 3)))
+  (for-each (zip (values left) (values right))
+            (fn (entry)
+              (let-pair (text number) entry
+                (println (str text number)))))
+  (let pairs (vec (pair 2 "b") (pair 1 "a")))
+  (sort! pairs)
+  (for-each (values pairs)
+            (fn (entry)
+              (let-pair (number text) entry
+                (println (str number " " text))))))
