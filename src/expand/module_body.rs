@@ -482,7 +482,8 @@ impl Expander<'_> {
             .iter()
             .map(|variant| self.lower_variant(&shape, enum_name, variant))
             .collect::<Result<Vec<_>, Diagnostic>>()?;
-        let rust = Self::lower_enum_rust(&shape, items, &parameterized.binders, &variants)?;
+        let rust =
+            self.lower_enum_rust(&shape, items, &parameterized.binders, &variants, binding)?;
         core.items.push(Item {
             kind: ItemKind::Enum(binding, parameterized.binders, variants, rust),
             span: form.span(),
@@ -491,10 +492,12 @@ impl Expander<'_> {
     }
 
     fn lower_enum_rust(
+        &self,
         shape: &Shape,
         items: &[Form],
         binders: &[crate::core::TypeBinder],
         variants: &[VariantDeclaration],
+        binding: BindingId,
     ) -> Result<Option<crate::core::EnumRust>, Diagnostic> {
         let Some(clause) = items
             .get(2)
@@ -508,7 +511,12 @@ impl Expander<'_> {
                 .as_list()
                 .and_then(|items| items.get(1))
                 .expect("the rust clause holds a string");
-            Self::check_type_placeholders(&rust.template, binders, template_form)?;
+            Self::check_type_placeholders(
+                &rust.template,
+                binders,
+                self.bindings.get(binding).name(),
+                template_form,
+            )?;
             Self::check_enum_rust_template(
                 items.get(1).expect("the enum has a head"),
                 clause,

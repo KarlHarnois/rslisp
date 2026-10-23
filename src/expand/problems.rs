@@ -102,8 +102,14 @@ impl ExpandProblems {
     pub fn placeholder_without_parameter(
         index: usize,
         parameters: usize,
+        name: &str,
+        template: &str,
+        placeholders: usize,
         span: Span,
     ) -> Diagnostic {
+        let names: Vec<String> = (0..placeholders)
+            .map(|position| char::from(b'a' + position as u8).to_string())
+            .collect();
         Diagnostic::error(
             DiagnosticCode::BAD_TYPE_TEMPLATE,
             format!("`{{{index}}}` names no type parameter"),
@@ -115,9 +121,10 @@ impl ExpandProblems {
                 ),
             ),
         )
-        .with_help(
-            "declare the type parameters on the name, as in `(rust-type (vec item) \"Vec<{0}>\")`",
-        )
+        .with_help(format!(
+            "declare the type parameters on the name, as in `(rust-type ({name} {}) \"{template}\")`",
+            names.join(" ")
+        ))
     }
 
     pub fn unused_type_placeholder(index: usize, span: Span) -> Diagnostic {
@@ -246,7 +253,7 @@ impl ExpandProblems {
             "expected a definition at module level",
             Label::new(span, "this is not a definition"),
         )
-        .with_help("put expressions inside a function, such as `(defn main () ...)`")
+        .with_help("put expressions inside a function, such as `(def run (fn () ...))`")
     }
 
     pub fn module_level_only(kernel: KernelForm, span: Span) -> Diagnostic {
@@ -495,7 +502,7 @@ impl ExpandProblems {
             format!("`{name}` is not a trait"),
             Label::new(span, "a `derive` lists traits"),
         )
-        .with_help("list traits such as `clone`, `debug` or `ord`")
+        .with_help(format!("list a trait's name, not `{name}`"))
     }
 
     pub fn broken_definition(name: &str, span: Span) -> Diagnostic {

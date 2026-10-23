@@ -5,7 +5,7 @@ use super::size::TypeSizes;
 use super::structs::StructTable;
 use super::traits::TraitTable;
 use super::ty::{Bound, GenericId, GenericParam, Type};
-use crate::core::{BindingId, CopyTrait};
+use crate::core::{BindingArena, BindingId, CopyTrait};
 
 #[derive(Clone, Default)]
 pub struct InferredCopies {
@@ -50,6 +50,14 @@ impl<'a> CopyRules<'a> {
             sizes: TypeSizes::new(structs, enums),
             copy_traits: traits.with_paths(&[CopyTrait::PATH]),
         }
+    }
+
+    pub fn copy_trait_name<'b>(&self, bindings: &'b BindingArena) -> &'b str {
+        let binding = self
+            .copy_traits
+            .first()
+            .expect("the prelude defines a copy trait");
+        bindings.get(*binding).name()
     }
 
     pub fn is_copy(&self, value: &Type) -> bool {

@@ -9,5 +9,5 @@ error[L0428]: `try` cannot return from this function
 3 | (defn stray () (try (ok 1)))
   |                ^^^^^^^^^^^^ this function returns `unit`
   |
-  = note: `try` here needs a function that returns a `result` with the same error type
+  = note: `try` here needs a function that returns `result` with the same error type
   = help: make the function return the value `try` needs, or handle this value without `try`

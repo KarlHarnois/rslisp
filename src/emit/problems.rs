@@ -10,7 +10,7 @@ impl EmitProblems {
             "the entry file has no `main` function",
             Label::new(span, "a program starts at `main`"),
         )
-        .with_help("add `(defn main () ...)` to the file you build")
+        .with_help("add `(def main (fn () ...))` to the file you build")
     }
 
     pub fn name_collision(

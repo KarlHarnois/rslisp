@@ -14,5 +14,5 @@ error[L0306]: `add` belongs to the program, so macro code cannot run it
 46 | (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
    |          ---------------------------------------------------- `add` is Rust code that runs in the program
    |
-   = help: to compute this in the program, return it as code from the macro, for example with `template`
+   = help: to compute this in the program, return it as code from the macro, for example with `quote`
    = help: in macro code, use `number-add` from `code` instead

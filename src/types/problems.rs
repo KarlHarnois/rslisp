@@ -48,7 +48,7 @@ impl TypeProblems {
             "`try` needs a result or an option",
             Label::new(span, format!("this is {found}")),
         )
-        .with_help("write `try` around a value of type `(result a b)` or `(option a)`")
+        .with_help("write `try` around a result or an option value")
     }
 
     pub fn try_cannot_return(needed: &str, found: &str, span: Span) -> Diagnostic {
@@ -160,8 +160,10 @@ impl TypeProblems {
         )
     }
 
-    pub fn order_not_inferred_note() -> &'static str {
-        "`ord` is never inferred for a struct, so the struct needs a written `derive`"
+    pub fn order_not_inferred_note(trait_name: &str) -> String {
+        format!(
+            "`{trait_name}` is never inferred for a struct, so the struct needs a written `derive`"
+        )
     }
 
     pub fn order_derive_help(struct_name: &str, derives: &[String], fields: &[Rc<str>]) -> String {
@@ -172,8 +174,13 @@ impl TypeProblems {
         )
     }
 
-    pub fn order_blocked_note(struct_name: &str, field: &str, field_type: &str) -> String {
-        format!("`{struct_name}` cannot derive `ord`: field `{field}` is `{field_type}`")
+    pub fn order_blocked_note(
+        struct_name: &str,
+        field: &str,
+        field_type: &str,
+        trait_name: &str,
+    ) -> String {
+        format!("`{struct_name}` cannot derive `{trait_name}`: field `{field}` is `{field_type}`")
     }
 
     pub fn sort_by_key_help(struct_name: &str, field: Option<&str>) -> String {
@@ -236,7 +243,7 @@ impl TypeProblems {
             "`{parameter}` has no trait, so it can be any type, including `string`"
         ))
         .with_help(format!(
-            "give `{parameter}` a numeric trait in the signature, such as `({parameter} number)`"
+            "give `{parameter}` a numeric trait in the signature"
         ))
     }
 
@@ -449,13 +456,15 @@ impl TypeProblems {
         )
     }
 
-    pub fn bare_implementor(span: Span) -> Diagnostic {
+    pub fn bare_implementor(trait_name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::BARE_IMPLEMENTOR,
             "a type parameter alone cannot implement a trait",
             Label::new(span, "this would match every type"),
         )
-        .with_help("wrap the parameter in a type, as in `(where ((a clone)) (ref a))`")
+        .with_help(format!(
+            "wrap the parameter in a type, as in `(where ((a {trait_name})) (ref a))`"
+        ))
     }
 
     pub fn unused_type_parameter(name: &str, span: Span) -> Diagnostic {
@@ -570,8 +579,10 @@ impl TypeProblems {
         )
     }
 
-    pub fn order_not_inferred_enum_note() -> &'static str {
-        "`ord` is never inferred for an enum, so the enum needs a written `derive`"
+    pub fn order_not_inferred_enum_note(trait_name: &str) -> String {
+        format!(
+            "`{trait_name}` is never inferred for an enum, so the enum needs a written `derive`"
+        )
     }
 
     pub fn enum_order_help(enum_name: &str, derives: &[String], variants: &[Rc<str>]) -> String {
@@ -590,8 +601,15 @@ impl TypeProblems {
         format!("add `{trait_name}` to the enum's `derive`")
     }
 
-    pub fn order_blocked_enum_note(enum_name: &str, variant: &str, payload_type: &str) -> String {
-        format!("`{enum_name}` cannot derive `ord`: variant `{variant}` holds `{payload_type}`")
+    pub fn order_blocked_enum_note(
+        enum_name: &str,
+        variant: &str,
+        payload_type: &str,
+        trait_name: &str,
+    ) -> String {
+        format!(
+            "`{enum_name}` cannot derive `{trait_name}`: variant `{variant}` holds `{payload_type}`"
+        )
     }
 
     pub fn blocked_derive(

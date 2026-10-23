@@ -294,6 +294,7 @@ impl<'a> MoveChecker<'a> {
         Some(OwnershipProblems::missing_copy_bound(
             name,
             &parameter.name,
+            self.copy.copy_trait_name(self.bindings),
             span,
             moved_at,
         ))

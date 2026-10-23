@@ -17,4 +17,4 @@ error[L0306]: `print` belongs to the program, so macro code cannot run it
 206 | (defmacro print (parts ...)
     |           ----- `print` expands to Rust code that runs in the program
     |
-    = help: to compute this in the program, return it as code from the macro, for example with `template`
+    = help: to compute this in the program, return it as code from the macro, for example with `quote`

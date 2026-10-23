@@ -9,7 +9,7 @@ error[L0207]: expected a definition at module level
 1 | (if true 1 2)
   | ^^^^^^^^^^^^^ this is not a definition
   |
-  = help: put expressions inside a function, such as `(defn main () ...)`
+  = help: put expressions inside a function, such as `(def run (fn () ...))`
 
 error[L0210]: malformed `struct`
  --> expand/definition_errors.rslisp:3:1

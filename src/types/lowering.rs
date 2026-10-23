@@ -25,12 +25,13 @@ impl TypeChecker {
     pub(super) fn lower_implementor(
         &mut self,
         implementor: &TypeExpr,
+        trait_name: &str,
     ) -> Result<Implementor, Diagnostic> {
         match implementor.kind() {
             TypeExprKind::Where(binders, inner) => {
                 let (params, scope) = self.lower_binders(binders)?;
                 let (body, argument) = self.lower_implementor_body(inner, &scope)?;
-                Self::reject_bare_implementor(&body, implementor.span())?;
+                Self::reject_bare_implementor(&body, implementor.span(), trait_name)?;
                 Ok(Implementor {
                     scheme: Scheme { params, body },
                     argument,
@@ -38,7 +39,7 @@ impl TypeChecker {
             }
             _ => {
                 let (body, argument) = self.lower_implementor_body(implementor, &HashMap::new())?;
-                Self::reject_bare_implementor(&body, implementor.span())?;
+                Self::reject_bare_implementor(&body, implementor.span(), trait_name)?;
                 Ok(Implementor {
                     scheme: Scheme::monomorphic(body),
                     argument,
@@ -61,9 +62,13 @@ impl TypeChecker {
         }
     }
 
-    fn reject_bare_implementor(body: &Type, span: Span) -> Result<(), Diagnostic> {
+    fn reject_bare_implementor(
+        body: &Type,
+        span: Span,
+        trait_name: &str,
+    ) -> Result<(), Diagnostic> {
         if matches!(body, Type::Generic(_)) {
-            return Err(TypeProblems::bare_implementor(span));
+            return Err(TypeProblems::bare_implementor(trait_name, span));
         }
         Ok(())
     }

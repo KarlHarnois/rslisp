@@ -9,4 +9,4 @@ error[L0213]: `{1}` names no type parameter
 1 | (enum (pair a) (rust "({0}, {1})") (of a a))
   |                      ^^^^^^^^^^^^ this type has 1 type parameter
   |
-  = help: declare the type parameters on the name, as in `(rust-type (vec item) "Vec<{0}>")`
+  = help: declare the type parameters on the name, as in `(rust-type (pair a b) "({0}, {1})")`

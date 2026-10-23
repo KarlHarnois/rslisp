@@ -41,13 +41,19 @@ impl OwnershipProblems {
         diagnostic.with_help("write the parameter as a borrow in a `type` signature: `(ref ...)`")
     }
 
-    pub fn missing_copy_bound(name: &str, parameter: &str, used: Span, moved: Span) -> Diagnostic {
+    pub fn missing_copy_bound(
+        name: &str,
+        parameter: &str,
+        copy_trait: &str,
+        used: Span,
+        moved: Span,
+    ) -> Diagnostic {
         Self::moved_value(DiagnosticCode::MISSING_COPY_BOUND, name, used, moved)
             .with_note(format!(
-                "the signature writes `{parameter}` without `copy`, and a written signature is exact"
+                "the signature writes `{parameter}` without `{copy_trait}`, and a written signature is exact"
             ))
             .with_help(format!(
-                "add a `copy` bound to the signature: `({parameter} copy)`"
+                "add a `{copy_trait}` bound to the signature: `({parameter} {copy_trait})`"
             ))
     }
 

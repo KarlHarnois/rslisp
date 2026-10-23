@@ -51,7 +51,7 @@ error[L0418]: a type parameter alone cannot implement a trait
 17 | (rust-trait everything "Everything" (where (a) a))
    |                                     ^^^^^^^^^^^^^ this would match every type
    |
-   = help: wrap the parameter in a type, as in `(where ((a clone)) (ref a))`
+   = help: wrap the parameter in a type, as in `(where ((a everything)) (ref a))`
 
 warning[L0217]: `labeled` binds a Rust path that `display` already binds
   --> check/pattern_implementor_errors.rslisp:19:13

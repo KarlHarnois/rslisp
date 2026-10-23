@@ -10,7 +10,7 @@ error[L0414]: `1` cannot have type `a`
   |                ^ this literal has type `a`
   |
   = note: `a` has no trait, so it can be any type, including `string`
-  = help: give `a` a numeric trait in the signature, such as `(a number)`
+  = help: give `a` a numeric trait in the signature
 
 error[L0414]: `300` does not fit every type `n` can be
  --> check/generic_literal_errors.rslisp:5:21

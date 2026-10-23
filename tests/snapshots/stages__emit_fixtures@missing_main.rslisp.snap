@@ -9,4 +9,4 @@ error[L0601]: the entry file has no `main` function
 1 | (defn helper () 1)
   | ^ a program starts at `main`
   |
-  = help: add `(defn main () ...)` to the file you build
+  = help: add `(def main (fn () ...))` to the file you build
