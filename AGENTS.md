@@ -29,6 +29,8 @@ This file and the reference files it names are the living reference for working 
 - If the prelude can express a feature, NEVER add a kernel form for it.
 - If you add a kernel form, record why the prelude cannot express it in `docs/language.md`.
 - The compiler reads, checks, reports and emits. Every other feature belongs in the prelude.
+- NEVER make the compiler depend on how the prelude implements a form. To learn what a macro does, expand it.
+- NEVER restate in Rust a name or a fact that the prelude states, such as a trait's name. Read it from the prelude's bindings.
 
 ### Rust's performance and model
 
