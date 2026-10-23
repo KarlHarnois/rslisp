@@ -46,6 +46,7 @@ pub struct TypeChecker {
     pub(super) schemes: HashMap<BindingId, Scheme>,
     pub(super) component: HashMap<BindingId, Type>,
     pub(super) locals: HashMap<BindingId, Type>,
+    pub(super) variant_arm: HashMap<BindingId, VariantArmReference>,
     pub(super) compile_time_only: HashSet<BindingId>,
     pub(super) diagnostics: Diagnostics,
     pub(super) warnings: Diagnostics,
@@ -76,6 +77,12 @@ struct Definition<'p> {
 
 type LoweredFields = Vec<(Rc<str>, Type)>;
 
+#[derive(Clone, Copy)]
+pub(super) struct VariantArmReference {
+    pub outer: Option<BindingId>,
+    pub variant: BindingId,
+}
+
 impl TypeChecker {
     const PARAMETER_NAMES: &str = "abcdefghijklmnopqrstuvwxyz";
     pub const MAIN: &str = "main";
@@ -92,6 +99,7 @@ impl TypeChecker {
             schemes: HashMap::new(),
             component: HashMap::new(),
             locals: HashMap::new(),
+            variant_arm: HashMap::new(),
             compile_time_only: HashSet::new(),
             diagnostics: Diagnostics::default(),
             warnings: Diagnostics::default(),
@@ -637,6 +645,7 @@ impl TypeChecker {
 
     fn infer_member(&mut self, member: &Definition) -> Result<TypedExpr, Diagnostic> {
         self.locals.clear();
+        self.variant_arm.clear();
         let expected = self.component[&member.binding].clone();
         let context = match self.signatures.get(&member.binding) {
             Some((_, signature)) => MismatchContext::Signature {

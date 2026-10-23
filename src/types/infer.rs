@@ -3,7 +3,7 @@ mod shared_variables;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use super::checker::TypeChecker;
+use super::checker::{TypeChecker, VariantArmReference};
 use super::pending::{DecidedBorrows, PendingBorrow};
 use super::problems::{MismatchContext, TypeProblems};
 use super::ty::Type;
@@ -31,6 +31,16 @@ struct ExpectedFunction<'a> {
     result: &'a Type,
     context: MismatchContext,
     written: bool,
+}
+
+struct BareNamePattern<'a> {
+    binding: BindingId,
+    name: &'a str,
+    candidates: &'a [BindingId],
+    outer: Option<BindingId>,
+    matched: Type,
+    mode: Option<ReferenceKind>,
+    span: Span,
 }
 
 #[derive(Clone)]
@@ -409,7 +419,16 @@ impl TypeChecker {
                 name,
                 binding,
                 candidates,
-            } => self.bare_name_pattern(*binding, name, candidates, matched, mode, pattern.span),
+                outer,
+            } => self.bare_name_pattern(BareNamePattern {
+                binding: *binding,
+                name,
+                candidates,
+                outer: *outer,
+                matched,
+                mode,
+                span: pattern.span,
+            }),
             PatternKind::Variant(binding, patterns) => {
                 self.named_variant_pattern(*binding, patterns, matched, mode, pattern.span)
             }
@@ -432,20 +451,27 @@ impl TypeChecker {
 
     fn bare_name_pattern(
         &mut self,
-        binding: BindingId,
-        name: &str,
-        candidates: &[BindingId],
-        matched: Type,
-        mode: Option<ReferenceKind>,
-        span: Span,
+        pattern: BareNamePattern<'_>,
     ) -> Result<TypedPatternKind, Diagnostic> {
-        match self.nullary_variant(name, candidates, &matched, span)? {
+        match self.nullary_variant(
+            pattern.name,
+            pattern.candidates,
+            &pattern.matched,
+            pattern.span,
+        )? {
             Some(variant) => {
-                self.locals
-                    .insert(binding, Self::binding_mode_type(matched, mode));
+                self.variant_arm.insert(
+                    pattern.binding,
+                    VariantArmReference {
+                        outer: pattern.outer,
+                        variant,
+                    },
+                );
                 Ok(TypedPatternKind::Variant(variant, Vec::new()))
             }
-            None => Ok(self.bind_pattern(binding, matched, mode, span)),
+            None => {
+                Ok(self.bind_pattern(pattern.binding, pattern.matched, pattern.mode, pattern.span))
+            }
         }
     }
 
@@ -821,6 +847,16 @@ impl TypeChecker {
         binding: BindingId,
         span: Span,
     ) -> Result<(TypedExprKind, Type), Diagnostic> {
+        if let Some(reference) = self.variant_arm.get(&binding).copied() {
+            return match reference.outer {
+                Some(outer) => self.infer_variable(outer, span),
+                None => {
+                    let name = self.bindings.get(binding).name().to_string();
+                    let variant = self.bindings.get(reference.variant).name().to_string();
+                    Err(TypeProblems::variant_arm_value(&name, &variant, span))
+                }
+            };
+        }
         let name = self.bindings.get(binding).name().to_string();
         match self.bindings.get(binding).kind() {
             BindingKind::Local => Ok((

@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_variant_arm_value.rslisp
+---
+error[L0436]: `point` names a variant in this arm, not a value
+ --> check/match_variant_arm_value.rslisp:5:12
+  |
+5 |     (point point)))
+  |            ^^^^^ names the variant, not a value
+  |
+  = help: write `shape/point` for the variant's value

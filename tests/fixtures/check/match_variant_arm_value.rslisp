@@ -1,0 +1,5 @@
+(enum shape (point))
+
+(defn describe (s)
+  (match s
+    (point point)))

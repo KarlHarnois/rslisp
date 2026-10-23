@@ -75,6 +75,7 @@ impl DiagnosticCode {
     pub const NON_EXHAUSTIVE_MATCH: Self = Self(Cow::Borrowed("L0433"));
     pub const UNREACHABLE_ARM: Self = Self(Cow::Borrowed("L0434"));
     pub const DERIVE_ON_RUST_TYPE: Self = Self(Cow::Borrowed("L0435"));
+    pub const VARIANT_ARM_VALUE: Self = Self(Cow::Borrowed("L0436"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));

@@ -297,6 +297,15 @@ impl TypeProblems {
         }
     }
 
+    pub fn variant_arm_value(name: &str, variant: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::VARIANT_ARM_VALUE,
+            format!("`{name}` names a variant in this arm, not a value"),
+            Label::new(span, "names the variant, not a value"),
+        )
+        .with_help(format!("write `{variant}` for the variant's value"))
+    }
+
     pub fn unknown_variant(
         enum_name: &str,
         variant: &str,
