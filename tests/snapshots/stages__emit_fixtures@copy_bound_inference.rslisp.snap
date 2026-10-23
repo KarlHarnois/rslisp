@@ -21,11 +21,7 @@ fn show_twice<A: std::fmt::Display>(x: &A) {
 }
 
 fn bigger<A: PartialOrd>(a: A, b: A) -> A {
-    if a > b {
-        a
-    } else {
-        b
-    }
+    if a > b { a } else { b }
 }
 
 fn main() {

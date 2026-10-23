@@ -15,13 +15,25 @@ fn call_label(expr: Expr) -> String {
         Expr::Call(inner, label) => {
             let inner = *inner;
             label
-        },
+        }
         Expr::Name(label) => label,
     }
 }
 
 fn main() {
-    println!("{}", call_label(Expr::Call(Box::new(Expr::Name("x".to_string())), "hit".to_string())));
-    println!("{}", call_label(Expr::Call(Box::new(Expr::Name("y".to_string())), "miss".to_string())));
+    println!(
+        "{}",
+        call_label(Expr::Call(
+            Box::new(Expr::Name("x".to_string())),
+            "hit".to_string()
+        ))
+    );
+    println!(
+        "{}",
+        call_label(Expr::Call(
+            Box::new(Expr::Name("y".to_string())),
+            "miss".to_string()
+        ))
+    );
     println!("{}", call_label(Expr::Name("name".to_string())))
 }

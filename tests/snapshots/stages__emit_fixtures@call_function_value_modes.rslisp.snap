@@ -3,8 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/call_function_value_modes.rslisp
 ---
-fn take_owned(f: impl Fn(Vec<i64>)) {
-}
+fn take_owned(f: impl Fn(Vec<i64>)) {}
 
 fn change(items: &mut Vec<i64>) {
     items.push(1)

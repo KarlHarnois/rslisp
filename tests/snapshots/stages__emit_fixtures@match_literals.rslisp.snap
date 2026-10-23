@@ -39,9 +39,7 @@ fn main() {
         "left" => println!("ref-left"),
         other => println!("ref-other"),
     }
-    match ({
-        "left".to_string()
-    }).as_str() {
+    match ({ "left".to_string() }).as_str() {
         "left" => println!("block"),
         other => println!("no"),
     }

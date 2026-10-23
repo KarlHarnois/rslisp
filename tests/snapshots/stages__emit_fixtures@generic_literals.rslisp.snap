@@ -18,15 +18,21 @@ fn describe_half<N: crate::rt::Float + std::fmt::Display>(x: N) -> String {
 fn main() {
     println!("{}", increment(41));
     println!("{}", increment(1.5));
-    println!("{}", increment({
-        let result: u8 = 254;
-        result
-    }));
+    println!(
+        "{}",
+        increment({
+            let result: u8 = 254;
+            result
+        })
+    );
     println!("{}", halve(5.0));
-    println!("{}", halve({
-        let result: f32 = 3.0;
-        result
-    }));
+    println!(
+        "{}",
+        halve({
+            let result: f32 = 3.0;
+            result
+        })
+    );
     println!("{}", describe_half(9.0))
 }
 
@@ -34,7 +40,13 @@ mod rt {
     use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
     pub trait Number:
-        Copy + PartialOrd + Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Div<Output = Self> + Rem<Output = Self>
+        Copy
+        + PartialOrd
+        + Add<Output = Self>
+        + Sub<Output = Self>
+        + Mul<Output = Self>
+        + Div<Output = Self>
+        + Rem<Output = Self>
     {
         fn from_literal(value: i128) -> Self;
 
@@ -57,7 +69,9 @@ mod rt {
         };
     }
 
-    numbers!(i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64);
+    numbers!(
+        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+    );
 
     pub trait Signed: Number + Neg<Output = Self> {}
 

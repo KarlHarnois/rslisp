@@ -33,7 +33,7 @@ fn total(tree: &Tree<i64>) -> i64 {
             let left = &**left;
             let right = &**right;
             total(left) + *value + total(right)
-        },
+        }
         Tree::Leaf => 0,
     }
 }
@@ -50,7 +50,7 @@ fn named_total(tree: &NamedTree<i64>) -> i64 {
         NamedTree::Node { left, value } => {
             let left = &**left;
             named_total(left) + *value
-        },
+        }
         NamedTree::Leaf => 0,
     }
 }
@@ -75,8 +75,20 @@ fn main() {
     println!("{:?}", tree);
     println!("{:?}", total(&tree));
     println!("{:?}", first_child(tree));
-    println!("{:?}", named_total(&NamedTree::Node { left: Box::new(NamedTree::Leaf), value: 2 }));
-    println!("{:?}", depth(&Tree::Node(Box::new(Tree::Leaf), 1, Box::new(Tree::Leaf)), 0));
+    println!(
+        "{:?}",
+        named_total(&NamedTree::Node {
+            left: Box::new(NamedTree::Leaf),
+            value: 2
+        })
+    );
+    println!(
+        "{:?}",
+        depth(
+            &Tree::Node(Box::new(Tree::Leaf), 1, Box::new(Tree::Leaf)),
+            0
+        )
+    );
     println!("{:?}", {
         let result: Wrapped<i64> = Wrapped::Holds(Box::new(Some(Wrapped::Empty)), 1);
         result

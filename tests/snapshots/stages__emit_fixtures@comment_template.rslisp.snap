@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/comment_template.rslisp
+---
+fn main() {
+    println!("{}", {
+        // a line comment
+        let value = 1; /* a block comment */
+        value + 1
+    })
+}

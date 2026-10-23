@@ -329,6 +329,10 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 | Runtime | `prelude/runtime/` holds the parts of `mod rt`. A program carries only the parts its code names, and its `Number` trait carries only the literal conversions it calls. |
 | Unsized | A type parameter used only behind references is declared `?Sized` exactly when a reached instantiation is unsized, so a caller that passes `str` can fill it. |
 
+### Formatting
+
+The emitted Rust is formatted by `rustfmt` when `rslisp emit` or `rslisp build` writes it, not by a compiler stage. `rustfmt` reads the nearest `rustfmt.toml`, so the program's directory chooses the layout. If `rustfmt` is missing or fails, the command prints one note and writes the unformatted Rust.
+
 ## Names in Rust
 
 | rslisp | Rust |

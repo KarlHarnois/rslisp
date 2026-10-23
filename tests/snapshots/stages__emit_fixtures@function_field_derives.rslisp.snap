@@ -14,7 +14,10 @@ fn keep<A>(value: A) -> A {
 }
 
 fn main() {
-    let handler = Handler { callback: |value: i64| value, tag: 1 };
+    let handler = Handler {
+        callback: |value: i64| value,
+        tag: 1,
+    };
     keep(&handler.callback);
     keep(handler.tag);
 }

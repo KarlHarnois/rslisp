@@ -1,6 +1,6 @@
+mod formatting;
 mod profile;
 mod rustc_errors;
-#[allow(dead_code)]
 mod token_alignment;
 
 use std::fs;
@@ -11,6 +11,7 @@ use std::process::Command;
 use crate::diagnostic::Diagnostics;
 use crate::emit::EmittedCrate;
 use crate::source::Span;
+pub use formatting::{EmittedFormatting, FormattingError};
 pub use profile::BuildProfile;
 use rustc_errors::RustcDiagnosticMapper;
 

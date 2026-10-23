@@ -25,7 +25,8 @@ fn chosen_count(flag: bool) -> i64 {
         fresh_counter()
     } else {
         fresh_counter()
-    }).count
+    })
+    .count
 }
 
 fn doubler() -> impl Fn(i64) -> i64 {

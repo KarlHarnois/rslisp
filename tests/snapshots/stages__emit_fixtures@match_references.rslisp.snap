@@ -29,7 +29,7 @@ enum CounterState {
 fn bump(state: &mut CounterState) {
     match state {
         CounterState::Value(n) => *n += 1,
-        CounterState::Idle => {},
+        CounterState::Idle => {}
     }
 }
 
@@ -38,7 +38,13 @@ fn main() {
     bump(&mut state);
     println!("{}", area(&Shape::Circle(1.0)));
     println!("{}", area(&Shape::Rect(2.0, 3.0)));
-    println!("{}", area(&Shape::Labeled { text: "box".to_string(), size: 2.0 }));
+    println!(
+        "{}",
+        area(&Shape::Labeled {
+            text: "box".to_string(),
+            size: 2.0
+        })
+    );
     println!("{}", area(&Shape::Point));
     println!("{:?}", CounterState::Idle);
     match state {

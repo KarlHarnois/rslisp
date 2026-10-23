@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use rslisp::build::{BuildError, BuildProfile, RustCompiler};
+use rslisp::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use rslisp::core::{CorePrinter, ModulePath};
 use rslisp::diagnostic::{DiagnosticRenderer, Diagnostics};
 use rslisp::emit::{EmittedCrate, RustEmitter};
@@ -92,7 +92,8 @@ impl Fixture {
 
     fn emit(&mut self) -> Result<EmittedCrate, Diagnostics> {
         let program = self.checked()?;
-        RustEmitter::emit(&program, self.entry_span())
+        let emitted = RustEmitter::emit(&program, self.entry_span())?;
+        Ok(EmittedFormatting::apply(&emitted).expect("rustfmt formats the emitted Rust"))
     }
 
     fn checked(&mut self) -> Result<TypedProgram, Diagnostics> {

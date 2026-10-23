@@ -41,7 +41,7 @@
             version = crateVersion;
             src = self;
             cargoLock.lockFile = ./Cargo.lock;
-            nativeBuildInputs = [ pkgs.cargo-llvm-cov pkgs.clippy ];
+            nativeBuildInputs = [ pkgs.cargo-llvm-cov pkgs.clippy pkgs.rustfmt ];
             buildPhase = ''
               runHook preBuild
               cargo xtask coverage
@@ -111,7 +111,7 @@
           nativeBuildInputs = [ pkgs.makeWrapper ];
           doCheck = false;
           postInstall = ''
-            wrapProgram $out/bin/rslisp --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.rustc ]}
+            wrapProgram $out/bin/rslisp --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.rustc pkgs.rustfmt ]}
           '';
           meta = {
             description = "A minimal Lisp that compiles to Rust";

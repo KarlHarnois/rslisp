@@ -6,12 +6,17 @@ input_file: tests/fixtures/emit/enums_module.rslisp
 fn main() {
     println!("{:?}", crate::enums_module::shape::Shape::Circle(1.0));
     println!("{:?}", crate::enums_module::shape::Shape::Rect(2.0, 3.0));
-    println!("{:?}", crate::enums_module::shape::Shape::Labeled { text: "box".to_string(), size: 2.0 });
+    println!(
+        "{:?}",
+        crate::enums_module::shape::Shape::Labeled {
+            text: "box".to_string(),
+            size: 2.0
+        }
+    );
     println!("{:?}", crate::enums_module::shape::Shape::Point)
 }
 
 mod enums_module {
-
 
     pub(crate) mod shape {
         #[derive(Clone, Debug, PartialEq)]

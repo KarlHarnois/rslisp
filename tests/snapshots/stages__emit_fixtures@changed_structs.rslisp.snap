@@ -72,8 +72,7 @@ fn bump_tally(t: &mut Tally) {
     std::ops::AddAssign::add_assign(&mut t.total, 1)
 }
 
-fn touch(m: &mut Mark) {
-}
+fn touch(m: &mut Mark) {}
 
 fn copy_into<A: Clone>(target: &mut A, source: &A) {
     target.clone_from(source)

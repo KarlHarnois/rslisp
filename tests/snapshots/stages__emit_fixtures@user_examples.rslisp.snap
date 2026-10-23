@@ -43,8 +43,15 @@ mod rt {
     use std::ops::{Add, Div, Mul, Rem, Sub};
 
     pub trait Number:
-        Copy + PartialOrd + Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Div<Output = Self> + Rem<Output = Self>
-    {}
+        Copy
+        + PartialOrd
+        + Add<Output = Self>
+        + Sub<Output = Self>
+        + Mul<Output = Self>
+        + Div<Output = Self>
+        + Rem<Output = Self>
+    {
+    }
 
     macro_rules! numbers {
         ($($number:ty),*) => {
@@ -54,5 +61,7 @@ mod rt {
         };
     }
 
-    numbers!(i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64);
+    numbers!(
+        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+    );
 }

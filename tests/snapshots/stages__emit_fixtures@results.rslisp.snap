@@ -4,11 +4,7 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/results.rslisp
 ---
 fn checked_half(n: i64) -> Result<i64, &'static str> {
-    if n % 2 == 0 {
-        Ok(n / 2)
-    } else {
-        Err("odd")
-    }
+    if n % 2 == 0 { Ok(n / 2) } else { Err("odd") }
 }
 
 fn main() {

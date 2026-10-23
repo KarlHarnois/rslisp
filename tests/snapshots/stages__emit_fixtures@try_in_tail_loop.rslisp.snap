@@ -4,15 +4,19 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/try_in_tail_loop.rslisp
 ---
 fn main() {
-    println!("{}", (|mut attempt: i64| -> Result<i64, std::num::ParseIntError> {
-        loop {
-            if attempt < 1 {
-                attempt += 1;
-                continue;
-            } else {
-                let value: i64 = "7".parse::<i64>()?;
-                return Ok(value);
+    println!(
+        "{}",
+        (|mut attempt: i64| -> Result<i64, std::num::ParseIntError> {
+            loop {
+                if attempt < 1 {
+                    attempt += 1;
+                    continue;
+                } else {
+                    let value: i64 = "7".parse::<i64>()?;
+                    return Ok(value);
+                }
             }
-        }
-    })(0).unwrap())
+        })(0)
+        .unwrap()
+    )
 }

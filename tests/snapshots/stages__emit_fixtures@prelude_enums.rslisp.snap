@@ -4,11 +4,7 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/prelude_enums.rslisp
 ---
 fn checked_half(n: i64) -> Result<i64, &'static str> {
-    if n % 2 == 0 {
-        Ok(n / 2)
-    } else {
-        Err("odd")
-    }
+    if n % 2 == 0 { Ok(n / 2) } else { Err("odd") }
 }
 
 fn main() {
@@ -16,16 +12,25 @@ fn main() {
     let index: usize = 0;
     let first: Option<i64> = Option::Some(5);
     println!("{}", first.unwrap());
-    println!("{}", match numbers.get(index) {
-        Option::Some(x) => *x,
-        Option::None => 0,
-    });
-    println!("{}", match numbers.get(5) {
-        Option::Some(x) => *x,
-        Option::None => 0,
-    });
-    println!("{}", match checked_half(10) {
-        Result::Ok(n) => n + 1,
-        Result::Err(_) => 0,
-    })
+    println!(
+        "{}",
+        match numbers.get(index) {
+            Option::Some(x) => *x,
+            Option::None => 0,
+        }
+    );
+    println!(
+        "{}",
+        match numbers.get(5) {
+            Option::Some(x) => *x,
+            Option::None => 0,
+        }
+    );
+    println!(
+        "{}",
+        match checked_half(10) {
+            Result::Ok(n) => n + 1,
+            Result::Err(_) => 0,
+        }
+    )
 }

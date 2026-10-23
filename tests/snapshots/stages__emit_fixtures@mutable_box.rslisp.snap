@@ -21,13 +21,17 @@ fn left_value(tree: &mut Tree<i64>) -> i64 {
         Tree::Node(left, _, _) => {
             let left = &mut **left;
             value_of(left)
-        },
+        }
         Tree::Leaf => 0,
     }
 }
 
 fn main() {
-    let mut tree: Tree<i64> = Tree::Node(Box::new(Tree::Node(Box::new(Tree::Leaf), 7, Box::new(Tree::Leaf))), 2, Box::new(Tree::Leaf));
+    let mut tree: Tree<i64> = Tree::Node(
+        Box::new(Tree::Node(Box::new(Tree::Leaf), 7, Box::new(Tree::Leaf))),
+        2,
+        Box::new(Tree::Leaf),
+    );
     println!("{}", left_value(&mut tree));
     println!("{:?}", tree)
 }
