@@ -1,8 +1,8 @@
 (use calculator/support char-at slice-text)
 
-(export token token-kind token-text tokenize)
+(export token tokenize)
 
-(defstruct token (kind string) (text string))
+(enum token (symbol string) (number string))
 
 (type tokenize (fn ((ref str)) (result (vec token) string)))
 (defn tokenize (source)
@@ -17,13 +17,13 @@
 (defn scan-character (characters position tokens c)
   (cond ((whitespace? c) (scan characters (+ position 1) tokens))
         ((symbol-character? c)
-         (scan characters (+ position 1) (append tokens (make-token (to-string "symbol") (to-string c)))))
+         (scan characters (+ position 1) (append tokens (token/symbol (to-string c)))))
         ((digit? c) (scan-number characters position tokens))
         (else (err (str "unknown character `" c "` at position " position)))))
 
 (defn scan-number (characters start tokens)
   (let end (digits-end characters start))
-  (scan characters end (append tokens (make-token (to-string "number") (slice-text characters start end)))))
+  (scan characters end (append tokens (token/number (slice-text characters start end)))))
 
 (defn digits-end (characters position)
   (if (and (< position (len characters)) (digit? (char-at characters position)))
