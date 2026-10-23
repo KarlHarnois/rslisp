@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_missing_nested_string.rslisp
+---
+error[L0433]: non-exhaustive `match`
+ --> check/match_missing_nested_string.rslisp:4:3
+  |
+4 | /   (match (get tokens 0)
+5 | |     ((some (symbol "(")) 1)
+6 | |     ((some (number _)) 3)
+7 | |     (none 0)))
+  | |_____________^ this `match` does not cover every value
+  |
+  = note: missing 1 case: `(some (symbol _))`
+  = help: add an arm for each missing case

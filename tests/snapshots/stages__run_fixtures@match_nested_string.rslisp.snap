@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/match_nested_string.rslisp
+---
+1
+2
+3
+0
+0

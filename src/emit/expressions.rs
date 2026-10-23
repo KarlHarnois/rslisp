@@ -55,6 +55,20 @@ impl LoopExit {
     }
 }
 
+struct PatternEmission {
+    code: Code,
+    guards: Vec<Code>,
+}
+
+impl PatternEmission {
+    fn plain(code: Code) -> Self {
+        Self {
+            code,
+            guards: Vec::new(),
+        }
+    }
+}
+
 impl ArgumentRole {
     fn borrows_by_itself(self, borrow: Borrow) -> bool {
         matches!(
@@ -79,6 +93,7 @@ pub struct ExpressionEmitter<'a> {
 
 impl<'a> ExpressionEmitter<'a> {
     const ETA_PARAMETER: &'static str = "argument_";
+    const STRING_GUARD_BINDING: &'static str = "text";
     const RECEIVER: &'static str = "{0}.";
     const INTEGER_CONVERSION: &'static str = "from_literal";
     const FLOAT_CONVERSION: &'static str = "from_float_literal";
@@ -323,7 +338,7 @@ impl<'a> ExpressionEmitter<'a> {
         for arm in arms {
             inner.push(Fragment::Newline);
             self.locals.enter();
-            inner.extend(self.pattern(&arm.pattern).fragments);
+            inner.extend(self.arm_head(&arm.pattern));
             inner.push(Fragment::Text(" => ".to_string()));
             inner.extend(self.arm_body(&arm.body));
             inner.push(Fragment::Text(",".to_string()));
@@ -336,6 +351,21 @@ impl<'a> ExpressionEmitter<'a> {
             fragments,
             precedence: Precedence::Block,
         }
+    }
+
+    fn arm_head(&mut self, pattern: &TypedPattern) -> Vec<Fragment> {
+        let emission = self.pattern(pattern);
+        let mut fragments = emission.code.fragments;
+        if !emission.guards.is_empty() {
+            fragments.push(Fragment::Text(" if ".to_string()));
+            for (position, guard) in emission.guards.into_iter().enumerate() {
+                if position > 0 {
+                    fragments.push(Fragment::Text(" && ".to_string()));
+                }
+                fragments.extend(guard.fragments);
+            }
+        }
+        fragments
     }
 
     fn uses_string_literals(arms: &[TypedArm]) -> bool {
@@ -375,13 +405,13 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn pattern(&mut self, pattern: &TypedPattern) -> Code {
+    fn pattern(&mut self, pattern: &TypedPattern) -> PatternEmission {
         match &pattern.kind {
-            TypedPatternKind::Wildcard => Code::atom("_"),
-            TypedPatternKind::Bind(binder) => Code::atom(self.locals.bind(
+            TypedPatternKind::Wildcard => PatternEmission::plain(Code::atom("_")),
+            TypedPatternKind::Bind(binder) => PatternEmission::plain(Code::atom(self.locals.bind(
                 binder.binding,
                 self.program.bindings.get(binder.binding).name(),
-            )),
+            ))),
             TypedPatternKind::Variant(binding, patterns) => {
                 self.variant_pattern(*binding, patterns)
             }
@@ -389,15 +419,28 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn literal_pattern(&self, literal: &Literal, ty: &Type) -> Code {
+    fn literal_pattern(&mut self, literal: &Literal, ty: &Type) -> PatternEmission {
         match literal {
-            Literal::Number(number) => Code::atom(Self::number_digits(number, ty)),
-            Literal::String(text) => Code::atom(format!("{text:?}")),
-            Literal::Bool(value) => Code::atom(value.to_string()),
+            Literal::Number(number) => {
+                PatternEmission::plain(Code::atom(Self::number_digits(number, ty)))
+            }
+            Literal::Bool(value) => PatternEmission::plain(Code::atom(value.to_string())),
+            Literal::String(text) if matches!(ty, Type::Primitive(PrimitiveType::String)) => {
+                let binding = self.locals.temporary(Self::STRING_GUARD_BINDING);
+                PatternEmission {
+                    code: Code::atom(binding.clone()),
+                    guards: vec![Code::atom(format!("{binding} == {text:?}"))],
+                }
+            }
+            Literal::String(text) => PatternEmission::plain(Code::atom(format!("{text:?}"))),
         }
     }
 
-    fn variant_pattern(&mut self, binding: BindingId, patterns: &[TypedPattern]) -> Code {
+    fn variant_pattern(
+        &mut self,
+        binding: BindingId,
+        patterns: &[TypedPattern],
+    ) -> PatternEmission {
         let BindingKind::Variant(_, VariantInfo { owner, index, .. }) =
             self.program.bindings.get(binding).kind()
         else {
@@ -414,7 +457,7 @@ impl<'a> ExpressionEmitter<'a> {
         let rust_path = definition.rust.as_ref().map(|rust| rust.path.clone());
         let path = Self::variant_path(self.types().struct_path(owner), rust_path, &name);
         match &payload {
-            VariantPayload::None => Code::atom(path),
+            VariantPayload::None => PatternEmission::plain(Code::atom(path)),
             VariantPayload::Positional(_) => self.positional_pattern(path, patterns),
             VariantPayload::Named(fields) => self.named_pattern(path, fields, patterns),
         }
@@ -425,16 +468,22 @@ impl<'a> ExpressionEmitter<'a> {
         format!("{owner}::{}", NameMangler::type_name(name))
     }
 
-    fn positional_pattern(&mut self, path: String, patterns: &[TypedPattern]) -> Code {
+    fn positional_pattern(&mut self, path: String, patterns: &[TypedPattern]) -> PatternEmission {
         let mut parts = vec![Code::atom(format!("{path}("))];
+        let mut guards = Vec::new();
         for (position, pattern) in patterns.iter().enumerate() {
             if position > 0 {
                 parts.push(Code::atom(", "));
             }
-            parts.push(self.pattern(pattern));
+            let value = self.pattern(pattern);
+            parts.push(value.code);
+            guards.extend(value.guards);
         }
         parts.push(Code::atom(")"));
-        Code::joined(parts, Precedence::Atom)
+        PatternEmission {
+            code: Code::joined(parts, Precedence::Atom),
+            guards,
+        }
     }
 
     fn named_pattern(
@@ -442,8 +491,9 @@ impl<'a> ExpressionEmitter<'a> {
         path: String,
         fields: &[(std::rc::Rc<str>, Type)],
         patterns: &[TypedPattern],
-    ) -> Code {
+    ) -> PatternEmission {
         let mut parts = vec![Code::atom(format!("{path} {{ "))];
+        let mut guards = Vec::new();
         let mut written = 0;
         let mut ignores = false;
         for ((label, _), pattern) in fields.iter().zip(patterns) {
@@ -457,12 +507,14 @@ impl<'a> ExpressionEmitter<'a> {
             written += 1;
             let field = NameMangler::value(label);
             let value = self.pattern(pattern);
-            if value.text() == field {
-                parts.push(value);
+            let code = value.code;
+            if code.text() == field {
+                parts.push(code);
             } else {
                 parts.push(Code::atom(format!("{field}: ")));
-                parts.push(value);
+                parts.push(code);
             }
+            guards.extend(value.guards);
         }
         if ignores {
             if written > 0 {
@@ -471,7 +523,10 @@ impl<'a> ExpressionEmitter<'a> {
             parts.push(Code::atom(".."));
         }
         parts.push(Code::atom(" }"));
-        Code::joined(parts, Precedence::Atom)
+        PatternEmission {
+            code: Code::joined(parts, Precedence::Atom),
+            guards,
+        }
     }
 
     fn variant(&mut self, binding: BindingId, arguments: &[TypedExpr]) -> Code {
