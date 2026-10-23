@@ -359,7 +359,7 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 | 8.2 Struct traits | done |
 | 8.3 Macro code | done |
 | 8.4 Loops | done |
-| 9. Enums and `match` | in progress |
+| 9. Enums and `match` | done |
 | 10. User-defined traits | planned |
 | 11. Written lifetimes | planned |
 
