@@ -16,6 +16,19 @@ impl SpanMap {
             .min_by_key(|(range, _)| range.end - range.start)
             .map(|(_, span)| *span)
     }
+
+    pub fn moved(&self, boundaries: &[usize]) -> Self {
+        let entries = self
+            .entries
+            .iter()
+            .filter_map(|(range, span)| {
+                let start = *boundaries.get(range.start)?;
+                let end = *boundaries.get(range.end)?;
+                (start <= end).then_some((start..end, *span))
+            })
+            .collect();
+        Self { entries }
+    }
 }
 
 #[derive(Default)]
