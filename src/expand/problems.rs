@@ -173,6 +173,17 @@ impl ExpandProblems {
             })
     }
 
+    pub fn enum_rust_template(span: Span, label: &str, example: &str) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::ENUM_RUST_TEMPLATE,
+            "a `rust` template needs one variant with a part for each placeholder",
+            Label::new(span, label),
+        )
+        .with_help(format!(
+            "write one positional part for each placeholder, as in `{example}`"
+        ))
+    }
+
     pub fn duplicate(name: &str, span: Span, previous: Option<Span>) -> Diagnostic {
         let diagnostic = Diagnostic::error(
             DiagnosticCode::DUPLICATE_DEFINITION,

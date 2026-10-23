@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/tuple_enum.rslisp
+---
+fn make<A, B>(a: A, b: B) -> (A, B) {
+    (a, b)
+}
+
+fn first_of<A, B>(p: (A, B)) -> A {
+    let (a, _) = p;
+    a
+}
+
+fn main() {
+    let p: (String, i64) = make("left".to_string(), 2);
+    println!("{}", first_of(p));
+    let (n, text) = make(3, "right".to_string());
+    println!("{}{}", n, text)
+}

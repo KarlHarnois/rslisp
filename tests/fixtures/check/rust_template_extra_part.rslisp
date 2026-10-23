@@ -1,0 +1,1 @@
+(enum (pair a) (rust "({0})") (of a a))

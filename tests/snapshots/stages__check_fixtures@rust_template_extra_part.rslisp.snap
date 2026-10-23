@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/rust_template_extra_part.rslisp
+---
+error[L0438]: a `rust` template needs one variant with a part for each placeholder
+ --> check/rust_template_extra_part.rslisp:1:16
+  |
+1 | (enum (pair a) (rust "({0})") (of a a))
+  |                ^^^^^^^^^^^^^^ this template needs 1 positional part
+  |
+  = help: write one positional part for each placeholder, as in `(enum (pair a) (rust "({0})") (of a))`
