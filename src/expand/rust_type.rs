@@ -3,7 +3,6 @@ use std::rc::Rc;
 use super::Expander;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
-use super::type_parameters::Parameterized;
 use crate::core::{
     BindingId, CoreModule, DefinitionForm, Item, ItemKind, KernelForm, ParsedTemplate, TypeBinder,
 };
@@ -20,18 +19,19 @@ impl Expander<'_> {
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
         let shape = Shape::new(KernelForm::Definition(DefinitionForm::RustType), form);
-        let body = &shape.exactly(Self::RUST_TYPE_PARTS)?[2..];
-        let parameterized = match self.parameterized_body(body) {
-            Some(where_items) => {
-                self.lower_parameters(where_items, || shape.malformed(&body[0]))?
-            }
-            None => Parameterized {
-                binders: Vec::new(),
-                body: body.to_vec(),
-            },
-        };
+        let items = shape.exactly(Self::RUST_TYPE_PARTS)?;
+        let body = vec![items[2].clone()];
+        if let Some(where_items) = self.old_parameters(&body) {
+            let span = where_items[0].span();
+            let kind = self
+                .macro_origin_at(span)
+                .map_or("rust-type", |origin| origin.name.as_ref());
+            let replacement = self.old_head_replacement(kind, &items[1], where_items);
+            return Err(ExpandProblems::parameters_on_name(kind, &replacement, span));
+        }
+        let parameterized = self.lower_head(&shape, &items[1], body)?;
         let [template_form] = parameterized.body.as_slice() else {
-            return Err(shape.malformed(&body[0]));
+            return Err(shape.malformed(&items[2]));
         };
         let template = Self::type_template(&shape, template_form)?;
         Self::check_type_placeholders(&template, &parameterized.binders, template_form)?;

@@ -1,4 +1,4 @@
-(rust-type boxed (where (item) "Box<{0}>"))
+(rust-type (boxed item) "Box<{0}>")
 (def box-new (rust "Box::new({0})" (where (a) (fn (a) (boxed a)))))
 
 (struct box (value i64))

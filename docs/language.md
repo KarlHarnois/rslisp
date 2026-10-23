@@ -64,7 +64,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `rust` | `(rust "template" type)` | the inlined template | type: type. |
 | `recur` | `(recur argument...)` | `loop` | arguments: expressions. |
 | `rust-trait` | `(rust-trait name "Path" type...)` | trait bound | name: type binder. types: types, `(with type type)`, or `(where (param...) type)`. |
-| `rust-type` | `(rust-type name "template")` or `(rust-type name (where (param...) "template"))` | the filled template | name: type binder. params: type binders. |
+| `rust-type` | `(rust-type name "template")` or `(rust-type (name param...) "template")` | the filled template | name: type binder. params: type binders. |
 | `use` | `(use module name...)` | path | module: module path. names: binders. |
 | `export` | `(export name...)` | `pub` | names: references in every namespace. |
 
@@ -103,7 +103,7 @@ Type syntax mirrors value syntax:
 | `(where ((n number)) (fn (n) n))` | `fn<N: Number>(N) -> N` |
 | `_` | inferred |
 
-Type variables are bound by a `where` or by a `struct`'s head. A `struct` names its parameters on its name, as `(struct (pair a b) (first a) (second b))` does. A `where` binds them over what its form holds: a signature's type, a `rust-trait` implementor, a `rust-type`'s template or a function type. An unknown type name is an unbound-name error that suggests the closest name.
+Type variables are bound by a `where`, by a `struct`'s head or by a `rust-type`'s head. A type definition names its parameters on its name, as `(struct (pair a b) (first a) (second b))` and `(rust-type (boxed item) "Box<{0}>")` do. A `where` binds them over what its form holds: a signature's type, a `rust-trait` implementor or a function type. An unknown type name is an unbound-name error that suggests the closest name.
 
 A bound names the trait and, optionally, its second type: `(a (partial-eq b))` is Rust's `A: PartialEq<B>`. The second type must be a type the program knows or a binder of the same `where`, as in `(where ((a (partial-eq b)) b) (fn (a b) bool))`. A plain bound keeps Rust's default: `(a partial-eq)` is `A: PartialEq<A>`. A trait takes a second type exactly when one of its `rust-trait` entries uses `with`.
 
@@ -296,10 +296,10 @@ Field names are not hygienic. They are looked up through the struct type.
 (def not (rust "!{0}" (fn (bool) bool)))
 ```
 
-`rust-type` binds a type name to a Rust type. `{0}` in the template is the first `where` parameter, as `{0}` in a `rust` template is the first argument:
+`rust-type` binds a type name to a Rust type. `{0}` in the template is the first type parameter in the head, as `{0}` in a `rust` template is the first argument:
 
 ```lisp
-(rust-type boxed (where (item) "Box<{0}>"))
+(rust-type (boxed item) "Box<{0}>")
 (def box-new (rust "Box::new({0})" (where (a) (fn (a) (boxed a)))))
 ```
 

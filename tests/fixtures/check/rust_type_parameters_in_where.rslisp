@@ -1,0 +1,1 @@
+(rust-type boxed (where (item) "Box<{0}>"))

@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/rust_type_parameters_in_where.rslisp
+---
+error[L0219]: `rust-type` names its type parameters on its name
+ --> check/rust_type_parameters_in_where.rslisp:1:19
+  |
+1 | (rust-type boxed (where (item) "Box<{0}>"))
+  |                   ^^^^^ this `where` names them in the body
+  |
+  = help: write `(rust-type (boxed item) "Box<{0}>")`

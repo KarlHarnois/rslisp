@@ -64,7 +64,9 @@ impl ExpandProblems {
                 ),
             ),
         )
-        .with_help("declare the type parameters in a `where`, as in `(where (item) \"Vec<{0}>\")`")
+        .with_help(
+            "declare the type parameters on the name, as in `(rust-type (vec item) \"Vec<{0}>\")`",
+        )
     }
 
     pub fn unused_type_placeholder(index: usize, span: Span) -> Diagnostic {

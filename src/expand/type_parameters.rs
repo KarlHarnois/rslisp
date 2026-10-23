@@ -12,12 +12,6 @@ pub(super) struct Parameterized {
 impl Expander<'_> {
     const PARAMETERIZED_PARTS: usize = 3;
 
-    pub(super) fn parameterized_body<'f>(&self, body: &'f [Form]) -> Option<&'f [Form]> {
-        (body.len() == 1)
-            .then(|| self.old_parameters(body))
-            .flatten()
-    }
-
     pub(super) fn old_parameters<'f>(&self, body: &'f [Form]) -> Option<&'f [Form]> {
         let items = body.first()?.as_list()?;
         let opens_with_where = items.first().is_some_and(|head| self.is_where(head));
