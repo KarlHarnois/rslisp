@@ -159,7 +159,7 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 | `(vec a)` | `Vec<A>` | `vec push! len iter values collect get pop! sort! sort-by-key! windows at dedup!` |
 | `(slice a)` | `[A]` | `windows at` |
 | `(option a)` | `Option<A>` | `some none some? none? unwrap-or unwrap expect map-some then-some` |
-| `(result a b)` | `Result<A, B>` | `ok err ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok` |
+| `(result a b)` | `Result<A, B>` | `ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok` |
 | `(iterator a)` | `impl Iterator<Item = A>` | `range map filter fold for-each sum count max min max-by-key any all find take take-while` |
 | `str`, `string` | `&str`, `String` | `to-string display str char print println chars lines split trim as-str parse parse-error from-str` |
 
@@ -214,7 +214,7 @@ Macro bodies run in the compiler's interpreter. They use the kernel forms, the b
 
 The compiler checks every macro body and the functions it reaches, even a macro nothing calls. A mistake is reported where the macro is defined, even in a branch that never runs.
 
-The prelude also provides `defn` for a function definition, `the` for a typed value, and `->` and `->>` for threading a value through calls. `defn` expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
+The prelude also provides `defn` for a function definition, `the` for a typed value, `->` and `->>` for threading a value through calls, and `let-try` and `try->` for propagating errors. `defn` expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
 
 The prelude builds three tools on top of `macro`:
 
@@ -455,6 +455,15 @@ A variant that holds its own enum by value is an error; recursive enums come in 
 `(try expression)` emits `expression?`. The value is a `result` or an `option`. A `result` needs the enclosing function to return a `result` with the same error type, and an `option` needs one that returns an `option`. Inference gives the function that return type. A `try` whose function cannot return the value's error is a compile error.
 
 `try` targets the nearest `fn`, as `recur` does. Inside a lambda it leaves the lambda, as Rust's `?` leaves a closure. A `try` outside every `fn` is an error, and in macro code it is the compile-time error for a form that only exists at runtime.
+
+Programs read functionally through two prelude forms over `try`, as `loop` is over `recur`:
+
+```lisp
+(let-try ((tokens (tokenize source))) (evaluate tokens))
+(try-> source tokenize evaluate)
+```
+
+`let-try` expands each binding to `(let name (try expression))` and then the body. `try->` threads a value through calls and applies `try` to every step except the last: `(try-> x f g)` is `(g (try (f x)))`, and `(try-> x f)` is `(f x)`. `ok-or` turns an `option` and an error value into a `result`, and `map-err` converts an error until milestone 10.
 
 `try` is a kernel form, because a prelude function cannot leave its caller early.
 

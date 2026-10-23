@@ -1,0 +1,9 @@
+(type first-even (fn ((vec i64)) (result i64 string)))
+
+(defn first-even (numbers)
+  (let found (find (values numbers) (fn (n) (= (rem n 2) 0))))
+  (ok-or found (to-string "no even number")))
+
+(defn main ()
+  (println (unwrap-ok (first-even (vec 1 2 3))))
+  (println (unwrap-err (first-even (vec 1 3 5)))))
