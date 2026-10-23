@@ -21,7 +21,7 @@ pub struct RustTypes<'a> {
 }
 
 impl<'a> RustTypes<'a> {
-    pub const SLICE_TYPE: &'static str = "[{0}]";
+    pub const SLICE_TYPE: &'static str = RustType::SLICE_TEMPLATE;
     const MAYBE_UNSIZED: &'static str = "?Sized";
     const SIZED_TRAITS: [&'static str; 3] = ["Clone", "Copy", "Default"];
     const INFERRED: &'static str = "_";
@@ -66,13 +66,7 @@ impl<'a> RustTypes<'a> {
         program
             .rust_types
             .get(binding)
-            .is_some_and(|rust_type| Self::compact(rust_type.template.text()) == expected)
-    }
-
-    pub fn compact(text: &str) -> String {
-        text.chars()
-            .filter(|character| !character.is_whitespace())
-            .collect()
+            .is_some_and(|rust_type| rust_type.has_template(expected))
     }
 
     pub fn show(&self, shown: &Type, position: TypePosition) -> String {

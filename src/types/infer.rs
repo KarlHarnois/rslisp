@@ -745,9 +745,26 @@ impl TypeChecker {
         span: Span,
         context: MismatchContext,
     ) -> Result<(), Diagnostic> {
+        if self.coerces(expected, found, span) {
+            return Ok(());
+        }
         self.unifier
             .unify(expected, found, span)
             .map_err(|error| self.unify_problem(error, expected, found, span, context))
+    }
+
+    fn coerces(&mut self, expected: &Type, found: &Type, span: Span) -> bool {
+        match (self.unifier.resolve(expected), self.unifier.resolve(found)) {
+            (Type::Named(slice, slice_arguments), Type::Named(vector, vector_arguments))
+                if self.rust_types.is_slice(slice) && self.rust_types.is_vector(vector) =>
+            {
+                self.unifier
+                    .unify(&slice_arguments[0], &vector_arguments[0], span)
+                    .is_ok()
+            }
+            (Type::Ref(slice), Type::Ref(vector)) => self.coerces(&slice, &vector, span),
+            _ => false,
+        }
     }
 
     fn unify_problem(
@@ -1243,11 +1260,11 @@ impl TypeChecker {
     }
 
     fn pass_argument(&mut self, parameter: &Type, value: &TypedExpr) -> Result<Borrow, Diagnostic> {
-        let argument = self.unifier.resolve(&value.ty);
-        if value.is_written_form() {
-            return self.pass(parameter, &argument, value.span, Borrow::None);
-        }
         let parameter = self.unifier.shallow(parameter);
+        let argument = self.slice_argument(&parameter, &value.ty, value.span);
+        if value.is_written_form() {
+            return self.pass(&parameter, &argument, value.span, Borrow::None);
+        }
         match (&parameter, &argument) {
             (Type::Ref(inner), found) if !found.is_reference() => {
                 self.pass(inner, found, value.span, Borrow::Shared)
@@ -1265,6 +1282,45 @@ impl TypeChecker {
                 Ok(self.defer_borrow(*var, &argument, value.span))
             }
             _ => self.pass_types(&parameter, &argument, value.span),
+        }
+    }
+
+    fn slice_argument(&mut self, parameter: &Type, argument: &Type, span: Span) -> Type {
+        let found = self.unifier.resolve(argument);
+        match (parameter, &found) {
+            (Type::Ref(expected), Type::Ref(referent)) => {
+                Type::Ref(Box::new(self.vector_before_slice(expected, referent, span)))
+            }
+            (Type::Ref(expected), referent) if !referent.is_reference() => {
+                self.vector_before_slice(expected, referent, span)
+            }
+            _ => found,
+        }
+    }
+
+    fn vector_before_slice(&mut self, expected: &Type, found: &Type, span: Span) -> Type {
+        let Type::Named(slice, _) = self.unifier.shallow(expected) else {
+            return found.clone();
+        };
+        let Type::Var(_) = found else {
+            return found.clone();
+        };
+        if !self.rust_types.is_slice(slice) {
+            return found.clone();
+        }
+        let Some(vector) = self
+            .rust_types
+            .binding_with_template(crate::types::RustType::VECTOR_TEMPLATE)
+        else {
+            return found.clone();
+        };
+        let element = self.unifier.fresh();
+        match self
+            .unifier
+            .unify(found, &Type::Named(vector, vec![element]), span)
+        {
+            Ok(()) => self.unifier.resolve(found),
+            Err(_) => found.clone(),
         }
     }
 
