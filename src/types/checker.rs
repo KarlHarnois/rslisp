@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 use super::copy::InferredCopies;
 use super::display::TypeDisplay;
+use super::enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};
 use super::graph::DependencyGraph;
 use super::pending::PendingBorrow;
 use super::problems::{MismatchContext, TypeProblems};
@@ -17,7 +18,7 @@ use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
     BindingArena, BindingId, BodyItem, CopyTrait, CoreModule, Expr, ExprKind, Item, ItemKind, Leaf,
     ModuleId, ParsedTemplate, PrimitiveType, StructDerives, StructExpr, TypeBinder, TypeExpr,
-    TypeExprKind,
+    TypeExprKind, VariantDeclaration, VariantPayload as CoreVariantPayload,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
@@ -38,6 +39,7 @@ pub struct TypeChecker {
     pub(super) bindings: BindingArena,
     pub(super) unifier: Unifier,
     pub(super) structs: StructTable,
+    pub(super) enums: EnumTable,
     pub(super) rust_types: RustTypeTable,
     pub(super) traits: TraitTable,
     pub(super) generics: HashMap<GenericId, GenericParam>,
@@ -81,6 +83,7 @@ impl TypeChecker {
             bindings,
             unifier: Unifier::default(),
             structs: StructTable::default(),
+            enums: EnumTable::default(),
             rust_types: RustTypeTable::default(),
             traits: TraitTable::default(),
             generics: HashMap::new(),
@@ -159,6 +162,9 @@ impl TypeChecker {
         match &item.kind {
             ItemKind::Struct(binding, params, fields) => {
                 self.collect_struct(*binding, params, fields)
+            }
+            ItemKind::Enum(binding, params, variants) => {
+                self.collect_enum(*binding, params, variants)
             }
             ItemKind::RustTrait(binding, path, implementors) => {
                 self.collect_trait(*binding, path, implementors)
@@ -264,8 +270,9 @@ impl TypeChecker {
 
     fn record_type_arities(&mut self, modules: &[CoreModule]) {
         for item in modules.iter().flat_map(|module| &module.items) {
-            if let ItemKind::Struct(binding, params, _) | ItemKind::RustType(binding, params, _) =
-                &item.kind
+            if let ItemKind::Struct(binding, params, _)
+            | ItemKind::Enum(binding, params, _)
+            | ItemKind::RustType(binding, params, _) = &item.kind
             {
                 self.type_arities.insert(*binding, params.len());
             }
@@ -370,7 +377,7 @@ impl TypeChecker {
     }
 
     pub(super) fn copy_rules(&self) -> super::copy::CopyRules<'_> {
-        super::copy::CopyRules::new(&self.traits, &self.generics, &self.structs)
+        super::copy::CopyRules::new(&self.traits, &self.generics, &self.structs, &self.enums)
     }
 
     pub(super) fn require_copy(&mut self, value: &Type) {
@@ -912,6 +919,106 @@ impl TypeChecker {
         })
     }
 
+    fn collect_enum(
+        &mut self,
+        binding: BindingId,
+        binders: &[TypeBinder],
+        variants: &[VariantDeclaration],
+    ) -> Result<(), Diagnostic> {
+        let params = self.struct_params(binders)?;
+        let scope: HashMap<BindingId, GenericId> = binders
+            .iter()
+            .zip(&params)
+            .map(|(binder, param)| (binder.variable, param.id))
+            .collect();
+        let mut lowered = Vec::new();
+        for variant in variants {
+            let payload =
+                self.lower_variant_payload(binding, &variant.name, &variant.payload, &scope)?;
+            lowered.push(VariantDefinition {
+                name: variant.name.clone(),
+                payload,
+                span: variant.span,
+            });
+        }
+        Self::check_enum_parameters_used(binders, &params, &lowered)?;
+        self.enums.add(
+            binding,
+            EnumDefinition {
+                params,
+                variants: lowered,
+                derives: Vec::new(),
+                derived_traits: Vec::new(),
+                blocked: Vec::new(),
+                written_derive: None,
+            },
+        );
+        Ok(())
+    }
+
+    fn lower_variant_payload(
+        &mut self,
+        owner: BindingId,
+        variant: &str,
+        payload: &CoreVariantPayload,
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<VariantPayload, Diagnostic> {
+        match payload {
+            CoreVariantPayload::None => Ok(VariantPayload::None),
+            CoreVariantPayload::Positional(types) => Ok(VariantPayload::Positional(
+                types
+                    .iter()
+                    .map(|payload| self.lower_payload(owner, variant, payload, scope))
+                    .collect::<Result<Vec<_>, Diagnostic>>()?,
+            )),
+            CoreVariantPayload::Named(fields) => Ok(VariantPayload::Named(
+                fields
+                    .iter()
+                    .map(|(label, field_type)| {
+                        Ok((
+                            label.name.clone(),
+                            self.lower_payload(owner, variant, field_type, scope)?,
+                        ))
+                    })
+                    .collect::<Result<Vec<_>, Diagnostic>>()?,
+            )),
+        }
+    }
+
+    fn lower_payload(
+        &mut self,
+        owner: BindingId,
+        variant: &str,
+        payload: &TypeExpr,
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<Type, Diagnostic> {
+        let lowered = self.lower_type(payload, scope)?;
+        if matches!(lowered, Type::Named(binding, _) if binding == owner) {
+            return Err(TypeProblems::recursive_enum(variant, payload.span()));
+        }
+        Ok(lowered)
+    }
+
+    fn check_enum_parameters_used(
+        binders: &[TypeBinder],
+        params: &[GenericParam],
+        variants: &[VariantDefinition],
+    ) -> Result<(), Diagnostic> {
+        let unused = binders.iter().zip(params).find(|(_, param)| {
+            !variants
+                .iter()
+                .flat_map(VariantDefinition::payload_types)
+                .any(|payload| payload.mentions(param.id))
+        });
+        match unused {
+            Some((binder, param)) => Err(TypeProblems::unused_enum_parameter(
+                &param.name,
+                binder.span,
+            )),
+            None => Ok(()),
+        }
+    }
+
     fn lower_fields(
         &mut self,
         fields: &[(crate::core::FieldLabel, TypeExpr)],
@@ -1301,12 +1408,14 @@ impl TypeChecker {
             path: module.path.clone(),
             definitions: Vec::new(),
             structs: Vec::new(),
+            enums: Vec::new(),
             exports: module.exports.clone(),
         };
         for item in &module.items {
             match &item.kind {
                 ItemKind::Def(binding, _) => typed.definitions.extend(definitions.remove(binding)),
                 ItemKind::Struct(binding, ..) => typed.structs.push(*binding),
+                ItemKind::Enum(binding, ..) => typed.enums.push(*binding),
                 ItemKind::Signature(..)
                 | ItemKind::RustTrait(..)
                 | ItemKind::RustType(..)
@@ -1326,6 +1435,7 @@ impl TypeChecker {
             entry,
             bindings: self.bindings,
             structs: self.structs,
+            enums: self.enums,
             rust_types: self.rust_types,
             traits: self.traits,
             generics: self.generics,

@@ -16,7 +16,9 @@ impl InPlaceChanges {
             Self::written_mut_types(&definition.scheme.body, &mut changed);
             Self::expression(&definition.value, &mut changed);
         }
-        changed.retain(|binding| program.structs.get(*binding).is_some());
+        changed.retain(|binding| {
+            program.structs.get(*binding).is_some() || program.enums.get(*binding).is_some()
+        });
         changed
     }
 

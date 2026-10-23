@@ -356,6 +356,15 @@ impl TypeProblems {
         .with_help(format!("use `{name}` in a field's type, or remove it"))
     }
 
+    pub fn unused_enum_parameter(name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::UNUSED_TYPE_PARAMETER,
+            format!("no payload uses the type parameter `{name}`"),
+            Label::new(span, "declared here"),
+        )
+        .with_help(format!("use `{name}` in a variant payload, or remove it"))
+    }
+
     pub fn bounded_type_parameter(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::BOUNDED_TYPE_PARAMETER,
@@ -408,6 +417,15 @@ impl TypeProblems {
             Label::new(span, "not a derivable trait"),
         )
         .with_help(format!("a `derive` lists any of: {}", derivable.join(", ")))
+    }
+
+    pub fn recursive_enum(variant: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::RECURSIVE_ENUM,
+            format!("variant `{variant}` holds its own enum by value"),
+            Label::new(span, "this payload is the enum itself"),
+        )
+        .with_help("recursive enums come in a later change, where a recursive payload is boxed automatically")
     }
 
     pub fn blocked_derive(

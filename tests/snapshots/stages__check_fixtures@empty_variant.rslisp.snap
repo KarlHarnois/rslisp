@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/empty_variant.rslisp
+---
+error[L0210]: malformed `enum`
+ --> check/empty_variant.rslisp:1:11
+  |
+1 | (enum bad ())
+  |           ^^ this does not fit the shape of `enum`
+  |
+  = help: write it as `(enum name variant ...)`

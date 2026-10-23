@@ -15,6 +15,7 @@ pub enum ItemKind {
     Const,
     Static,
     Struct,
+    Enum,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -44,7 +45,7 @@ pub struct ItemInfo {
 pub struct EmitPlan<'p> {
     program: &'p TypedProgram,
     definitions: HashMap<BindingId, (&'p TypedDefinition, ModuleId)>,
-    struct_modules: HashMap<BindingId, ModuleId>,
+    type_modules: HashMap<BindingId, ModuleId>,
     exported: HashSet<BindingId>,
     reached: Vec<BindingId>,
     crate_visible: HashSet<BindingId>,
@@ -63,13 +64,14 @@ impl<'p> EmitPlan<'p> {
         let mut plan = Self {
             program,
             definitions: Self::index_definitions(program),
-            struct_modules: program
+            type_modules: program
                 .modules
                 .iter()
                 .flat_map(|module| {
                     module
                         .structs
                         .iter()
+                        .chain(module.enums.iter())
                         .map(move |binding| (*binding, module.id))
                 })
                 .collect(),
@@ -246,13 +248,35 @@ impl<'p> EmitPlan<'p> {
     fn reach_named(&mut self, binding: BindingId, from: ModuleId) {
         if self.program.rust_types.get(binding).is_some() {
             self.used_rust_types.insert(binding);
+        } else if self.program.enums.get(binding).is_some() {
+            self.reach_enum(binding, from);
         } else {
             self.reach_struct(binding, from);
         }
     }
 
+    fn reach_enum(&mut self, binding: BindingId, from: ModuleId) {
+        let Some(owner) = self.type_modules.get(&binding).copied() else {
+            return;
+        };
+        self.note_visibility(binding, owner, from);
+        if self.reached.contains(&binding) {
+            return;
+        }
+        self.reached.push(binding);
+        let payloads: Vec<Type> = self
+            .program
+            .enums
+            .get(binding)
+            .map(|definition| definition.payload_types().cloned().collect())
+            .unwrap_or_default();
+        payloads
+            .iter()
+            .for_each(|payload| self.visit_type(payload, owner));
+    }
+
     fn reach_struct(&mut self, binding: BindingId, from: ModuleId) {
-        let Some(owner) = self.struct_modules.get(&binding).copied() else {
+        let Some(owner) = self.type_modules.get(&binding).copied() else {
             return;
         };
         self.note_visibility(binding, owner, from);
@@ -312,9 +336,9 @@ impl<'p> EmitPlan<'p> {
     }
 
     fn shadowed_rust_type(&self, info: &ItemInfo) -> Option<BindingId> {
-        let is_struct = info.kind == ItemKind::Struct;
+        let is_type = matches!(info.kind, ItemKind::Struct | ItemKind::Enum);
         self.used_rust_types.iter().copied().find(|binding| {
-            is_struct
+            is_type
                 && self
                     .program
                     .rust_types
@@ -327,18 +351,26 @@ impl<'p> EmitPlan<'p> {
         let name = self.program.bindings.get(binding).name();
         let (module, kind) = match self.definitions.get(&binding) {
             Some((definition, module)) => (*module, self.definition_kind(definition)),
-            None => (self.struct_modules[&binding], ItemKind::Struct),
+            None => (self.type_modules[&binding], self.named_type_kind(binding)),
         };
         let rust_name = match kind {
             ItemKind::Function => NameMangler::value(name),
             ItemKind::Const | ItemKind::Static => NameMangler::constant(name),
-            ItemKind::Struct => NameMangler::type_name(name),
+            ItemKind::Struct | ItemKind::Enum => NameMangler::type_name(name),
         };
         ItemInfo {
             module,
             name: rust_name,
             kind,
             visibility: self.visibility(binding),
+        }
+    }
+
+    fn named_type_kind(&self, binding: BindingId) -> ItemKind {
+        if self.program.enums.get(binding).is_some() {
+            ItemKind::Enum
+        } else {
+            ItemKind::Struct
         }
     }
 

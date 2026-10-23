@@ -133,6 +133,8 @@ impl Expander<'_> {
             BindingKind::Global(module)
             | BindingKind::Macro(module)
             | BindingKind::Struct(module)
+            | BindingKind::Enum(module)
+            | BindingKind::Variant(module, _)
             | BindingKind::Trait(module)
             | BindingKind::RustType(module) => Some(module),
             _ => None,

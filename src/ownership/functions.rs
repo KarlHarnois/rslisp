@@ -39,7 +39,12 @@ pub struct FunctionTable {
 
 impl FunctionTable {
     pub fn collect(program: &TypedProgram) -> Self {
-        let copy = CopyRules::new(&program.traits, &program.generics, &program.structs);
+        let copy = CopyRules::new(
+            &program.traits,
+            &program.generics,
+            &program.structs,
+            &program.enums,
+        );
         let functions = program
             .modules
             .iter()

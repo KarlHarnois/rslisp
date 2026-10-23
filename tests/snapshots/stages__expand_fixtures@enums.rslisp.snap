@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/enums.rslisp
+---
+(enum (pair-of a) (both a a) neither)
+(enum shape (circle f64) (rect f64 f64) (labeled (struct (text string) (size f64))) point)
+(def value (shape/labeled (to-string "box") 2.0))

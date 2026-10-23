@@ -1,0 +1,40 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/enums_construct.rslisp
+---
+enum PairOf<A> {
+    Both(A, A),
+    Neither,
+}
+
+enum Shape {
+    Circle(f64),
+    Rect(f64, f64),
+    Labeled { text: String, size: f64 },
+    Point,
+}
+
+fn make_point() -> Shape {
+    Shape::Point
+}
+
+fn make_neither() -> PairOf<i64> {
+    let result: PairOf<i64> = PairOf::Neither;
+    result
+}
+
+fn main() {
+    let circle = Shape::Circle(1.0);
+    let rect = Shape::Rect(2.0, 3.0);
+    let labeled = Shape::Labeled { text: "box".to_string(), size: 2.0 };
+    let point = make_point();
+    let both: PairOf<i64> = PairOf::Both(1, 2);
+    let neither: PairOf<i64> = make_neither();
+    println!("{}", match &circle { Shape::Circle(radius) => *radius, Shape::Rect(width, height) => *width * *height, Shape::Labeled { text, size } => text.len() as f64 * *size, Shape::Point => 0.0 });
+    println!("{}", match &rect { Shape::Circle(radius) => *radius, Shape::Rect(width, height) => *width * *height, Shape::Labeled { text, size } => text.len() as f64 * *size, Shape::Point => 0.0 });
+    println!("{}", match &labeled { Shape::Circle(radius) => *radius, Shape::Rect(width, height) => *width * *height, Shape::Labeled { text, size } => text.len() as f64 * *size, Shape::Point => 0.0 });
+    println!("{}", match &point { Shape::Circle(radius) => *radius, Shape::Rect(width, height) => *width * *height, Shape::Labeled { text, size } => text.len() as f64 * *size, Shape::Point => 0.0 });
+    println!("{}", match &both { PairOf::Both(left, right) => *left + *right, PairOf::Neither => 0 });
+    println!("{}", match &neither { PairOf::Both(left, right) => *left + *right, PairOf::Neither => 0 })
+}

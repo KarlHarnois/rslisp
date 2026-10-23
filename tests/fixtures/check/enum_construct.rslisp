@@ -1,0 +1,14 @@
+(enum marker (empty) full)
+(enum shape
+  (circle f64)
+  (rect f64 f64)
+  (labeled (struct (text string) (size f64)))
+  point)
+
+(defn main ()
+  (let _ (shape/circle 1.0))
+  (let _ (shape/rect 2.0 3.0))
+  (let _ (shape/labeled (to-string "box") 2.0))
+  (let _ shape/point)
+  (let _ marker/empty)
+  (do))

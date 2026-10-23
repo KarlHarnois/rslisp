@@ -20,6 +20,7 @@ pub enum ExprKind {
     Deref(Box<Expr>),
     Control(Control),
     Struct(StructExpr),
+    Variant(BindingId, Vec<Expr>),
 }
 
 #[derive(Clone, Debug)]
@@ -105,10 +106,20 @@ impl Expr {
             ExprKind::Call(callee, arguments) => {
                 std::iter::once(callee.as_ref()).chain(arguments).collect()
             }
+            ExprKind::Control(control) => control.children(),
+            other => other.nested_children(),
+        }
+    }
+}
+
+impl ExprKind {
+    fn nested_children(&self) -> Vec<&Expr> {
+        match self {
             ExprKind::Recur(arguments) => arguments.iter().collect(),
             ExprKind::Borrow(_, value) | ExprKind::Deref(value) => vec![value],
-            ExprKind::Control(control) => control.children(),
             ExprKind::Struct(structure) => structure.children(),
+            ExprKind::Variant(_, arguments) => arguments.iter().collect(),
+            _ => Vec::new(),
         }
     }
 }

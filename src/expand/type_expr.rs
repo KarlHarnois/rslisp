@@ -36,9 +36,10 @@ impl Expander<'_> {
             BindingKind::KernelType(constructor) => {
                 Err(ExpandProblems::malformed_type(constructor, span))
             }
-            BindingKind::Struct(_) | BindingKind::RustType(_) | BindingKind::TypeVariable => {
-                Ok(TypeExprKind::Named(binding, Vec::new()))
-            }
+            BindingKind::Struct(_)
+            | BindingKind::Enum(_)
+            | BindingKind::RustType(_)
+            | BindingKind::TypeVariable => Ok(TypeExprKind::Named(binding, Vec::new())),
             _ => Err(ExpandProblems::wrong_namespace(
                 symbol.name(),
                 "a type",
@@ -60,7 +61,7 @@ impl Expander<'_> {
             }
             BindingKind::KernelType(KernelType::Where) => self.lower_where(form, items),
             BindingKind::KernelType(KernelType::With) => self.lower_with_type(form, items),
-            BindingKind::Struct(_) | BindingKind::RustType(_) => {
+            BindingKind::Struct(_) | BindingKind::Enum(_) | BindingKind::RustType(_) => {
                 self.lower_named_application(binding, items)
             }
             _ => Err(ExpandProblems::wrong_namespace(

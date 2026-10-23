@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/mixed_variant_payload.rslisp
+---
+error[L0210]: a variant's payload is either types or one `struct` body
+ --> check/mixed_variant_payload.rslisp:1:11
+  |
+1 | (enum bad (value (struct (text string)) i64))
+  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this mixes the two
+  |
+  = help: write the payload as types, as in `(circle f64)`, or as one struct body, as in `(labeled (struct (text string)))`

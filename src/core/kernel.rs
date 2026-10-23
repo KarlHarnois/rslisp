@@ -40,6 +40,7 @@ pub enum DefinitionForm {
     Def,
     Type,
     Struct,
+    Enum,
     Derive,
     RustTrait,
     RustType,
@@ -54,7 +55,7 @@ struct KernelFormRow {
 }
 
 impl KernelForm {
-    const ROWS: [KernelFormRow; 21] = [
+    const ROWS: [KernelFormRow; 22] = [
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Fn),
             name: "fn",
@@ -91,9 +92,14 @@ impl KernelForm {
             shape: "(struct name (field type) ...)",
         },
         KernelFormRow {
+            form: KernelForm::Definition(DefinitionForm::Enum),
+            name: "enum",
+            shape: "(enum name variant ...)",
+        },
+        KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::Derive),
             name: "derive",
-            shape: "(derive struct trait ...)",
+            shape: "(derive type trait ...)",
         },
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Struct(StructForm::New)),

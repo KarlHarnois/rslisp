@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use super::{
     Binder, BindingArena, BindingId, Block, BodyItem, Control, CoreModule, Expr, ExprKind,
     FieldLabel, Item, ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal, ParsedTemplate,
-    RustTemplate, StructExpr, TypeBinder, TypeBound, TypeExpr, TypeExprKind,
+    RustTemplate, StructExpr, TypeBinder, TypeBound, TypeExpr, TypeExprKind, VariantDeclaration,
+    VariantPayload,
 };
 
 pub struct CorePrinter<'a> {
@@ -50,6 +51,7 @@ impl<'a> CorePrinter<'a> {
                 self.type_expr(type_expr)
             ),
             ItemKind::Struct(binding, params, fields) => self.struct_item(*binding, params, fields),
+            ItemKind::Enum(binding, params, variants) => self.enum_item(*binding, params, variants),
             ItemKind::Derive(binding, traits) => {
                 let mut parts = vec![self.name(*binding)];
                 parts.extend(
@@ -79,6 +81,13 @@ impl<'a> CorePrinter<'a> {
             ExprKind::Leaf(leaf) => self.leaf(leaf),
             ExprKind::Fn(lambda) => self.lambda(lambda),
             ExprKind::Call(callee, arguments) => self.call(callee, arguments),
+            ExprKind::Control(control) => self.control(control),
+            other => self.nested_expr(other),
+        }
+    }
+
+    fn nested_expr(&mut self, kind: &ExprKind) -> String {
+        match kind {
             ExprKind::Recur(arguments) => Self::list(
                 "recur",
                 arguments
@@ -86,9 +95,10 @@ impl<'a> CorePrinter<'a> {
                     .map(|argument| self.expr(argument))
                     .collect(),
             ),
-            ExprKind::Borrow(..) | ExprKind::Deref(..) => self.written(expr.kind()),
-            ExprKind::Control(control) => self.control(control),
+            ExprKind::Borrow(..) | ExprKind::Deref(..) => self.written(kind),
             ExprKind::Struct(structure) => self.structure(structure),
+            ExprKind::Variant(binding, arguments) => self.variant(*binding, arguments),
+            _ => unreachable!("the caller matches a nested expression"),
         }
     }
 
@@ -238,6 +248,48 @@ impl<'a> CorePrinter<'a> {
             }),
         );
         Self::list("struct", parts)
+    }
+
+    fn enum_item(
+        &mut self,
+        binding: BindingId,
+        params: &[TypeBinder],
+        variants: &[VariantDeclaration],
+    ) -> String {
+        let mut parts = vec![self.type_head(binding, params)];
+        parts.extend(
+            variants
+                .iter()
+                .map(|variant| self.variant_declaration(variant)),
+        );
+        Self::list("enum", parts)
+    }
+
+    fn variant_declaration(&mut self, variant: &VariantDeclaration) -> String {
+        let name = variant.name.to_string();
+        match &variant.payload {
+            VariantPayload::None => name,
+            VariantPayload::Positional(payload) => {
+                let mut parts = vec![name];
+                parts.extend(payload.iter().map(|payload| self.type_expr(payload)));
+                format!("({})", parts.join(" "))
+            }
+            VariantPayload::Named(fields) => {
+                let fields: Vec<String> = fields
+                    .iter()
+                    .map(|(label, field_type)| {
+                        format!("({} {})", label.name, self.type_expr(field_type))
+                    })
+                    .collect();
+                format!("({name} (struct {}))", fields.join(" "))
+            }
+        }
+    }
+
+    fn variant(&mut self, binding: BindingId, arguments: &[Expr]) -> String {
+        let mut parts = vec![self.name(binding)];
+        parts.extend(arguments.iter().map(|argument| self.expr(argument)));
+        format!("({})", parts.join(" "))
     }
 
     fn rust_type_item(

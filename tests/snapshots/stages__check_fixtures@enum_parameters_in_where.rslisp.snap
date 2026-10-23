@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/enum_parameters_in_where.rslisp
+---
+error[L0219]: `enum` names its type parameters on its name
+ --> check/enum_parameters_in_where.rslisp:1:16
+  |
+1 | (enum pair-of (where (a) (both a a) neither))
+  |                ^^^^^ this `where` names them in the body
+  |
+  = help: write `(enum (pair-of a) (both a a) neither)`

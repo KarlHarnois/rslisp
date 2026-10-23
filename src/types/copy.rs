@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use super::enums::EnumTable;
 use super::size::TypeSizes;
 use super::structs::StructTable;
 use super::traits::TraitTable;
@@ -41,11 +42,12 @@ impl<'a> CopyRules<'a> {
         traits: &'a TraitTable,
         generics: &'a HashMap<GenericId, GenericParam>,
         structs: &'a StructTable,
+        enums: &'a EnumTable,
     ) -> Self {
         Self {
             traits,
             generics,
-            sizes: TypeSizes::new(structs),
+            sizes: TypeSizes::new(structs, enums),
             copy_traits: traits.with_paths(&[CopyTrait::PATH]),
         }
     }
@@ -106,6 +108,7 @@ mod tests {
     struct CopyTraitFixture {
         traits: TraitTable,
         structs: StructTable,
+        enums: crate::types::EnumTable,
         generics: HashMap<crate::types::GenericId, crate::types::GenericParam>,
         bound: crate::core::BindingId,
     }
@@ -132,13 +135,14 @@ mod tests {
             Self {
                 traits,
                 structs: StructTable::default(),
+                enums: crate::types::EnumTable::default(),
                 generics: HashMap::new(),
                 bound,
             }
         }
 
         fn rules(&self) -> CopyRules<'_> {
-            CopyRules::new(&self.traits, &self.generics, &self.structs)
+            CopyRules::new(&self.traits, &self.generics, &self.structs, &self.enums)
         }
     }
 

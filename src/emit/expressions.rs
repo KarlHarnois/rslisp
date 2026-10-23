@@ -11,14 +11,15 @@ use super::template::{Template, TemplateError};
 use super::types::{RustTypes, TypePosition};
 use super::unsized_parameters::UnsizedParameters;
 use crate::core::{
-    BindingId, FieldLabel, Literal, ModuleId, PrimitiveType, ReferenceKind, RustTemplate,
+    BindingId, BindingKind, FieldLabel, Literal, ModuleId, PrimitiveType, ReferenceKind,
+    RustTemplate, VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Number, NumberValue};
 use crate::source::Span;
 use crate::types::{
     Borrow, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
-    TypedExprKind, TypedLambda, TypedLeaf, TypedProgram, TypedStructExpr,
+    TypedExprKind, TypedLambda, TypedLeaf, TypedProgram, TypedStructExpr, VariantPayload,
 };
 
 mod tail_loop;
@@ -237,6 +238,7 @@ impl<'a> ExpressionEmitter<'a> {
         match &expr.kind {
             TypedExprKind::Control(control) => self.control(control),
             TypedExprKind::Struct(structure) => self.structure(structure, &expr.ty),
+            TypedExprKind::Variant(binding, arguments) => self.variant(*binding, arguments),
             _ => unreachable!("the caller matches a value form"),
         }
     }
@@ -286,6 +288,64 @@ impl<'a> ExpressionEmitter<'a> {
             TypedControl::Block(block) => self.block(block),
             TypedControl::If(test, then, otherwise) => self.conditional(test, then, otherwise),
         }
+    }
+
+    fn variant(&mut self, binding: BindingId, arguments: &[TypedExpr]) -> Code {
+        let BindingKind::Variant(_, VariantInfo { owner, index, .. }) =
+            self.program.bindings.get(binding).kind()
+        else {
+            unreachable!("a typed variant expression names a variant binding");
+        };
+        let definition = self
+            .program
+            .enums
+            .get(owner)
+            .expect("a reached enum has a definition");
+        let variant = &definition.variants[index];
+        let path = format!(
+            "{}::{}",
+            self.types().struct_path(owner),
+            NameMangler::type_name(&variant.name)
+        );
+        match &variant.payload {
+            VariantPayload::None => Code::atom(path),
+            VariantPayload::Positional(_) => self.positional_variant(path, arguments),
+            VariantPayload::Named(fields) => self.named_variant(path, fields, arguments),
+        }
+    }
+
+    fn positional_variant(&mut self, path: String, arguments: &[TypedExpr]) -> Code {
+        let mut parts = vec![Code::atom(format!("{path}("))];
+        for (position, argument) in arguments.iter().enumerate() {
+            if position > 0 {
+                parts.push(Code::atom(", "));
+            }
+            parts.push(self.expr(argument));
+        }
+        parts.push(Code::atom(")"));
+        Code::joined(parts, Precedence::Atom)
+    }
+
+    fn named_variant(
+        &mut self,
+        path: String,
+        fields: &[(std::rc::Rc<str>, Type)],
+        arguments: &[TypedExpr],
+    ) -> Code {
+        if fields.is_empty() {
+            return Code::atom(path);
+        }
+        let mut parts = vec![Code::atom(format!("{path} {{ "))];
+        for (position, ((label, _), argument)) in fields.iter().zip(arguments).enumerate() {
+            if position > 0 {
+                parts.push(Code::atom(", "));
+            }
+            let field = NameMangler::value(label);
+            parts.push(Code::atom(format!("{field}: ")));
+            parts.push(self.expr(argument));
+        }
+        parts.push(Code::atom(" }"));
+        Code::joined(parts, Precedence::Atom)
     }
 
     fn structure(&mut self, structure: &TypedStructExpr, ty: &Type) -> Code {

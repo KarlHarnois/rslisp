@@ -1,0 +1,27 @@
+(enum (pair-of a) (both a a) neither)
+(enum shape
+  (circle f64)
+  (rect f64 f64)
+  (labeled (struct (text string) (size f64)))
+  point)
+
+(def area (rust "match {0} {{ Shape::Circle(radius) => *radius, Shape::Rect(width, height) => *width * *height, Shape::Labeled {{ text, size }} => text.len() as f64 * *size, Shape::Point => 0.0 }}" (fn ((ref shape)) f64)))
+
+(def pair-value (rust "match {0} {{ PairOf::Both(left, right) => *left + *right, PairOf::Neither => 0 }}" (fn ((ref (pair-of i64))) i64)))
+
+(defn make-point () shape/point)
+(defn make-neither () (the (pair-of i64) pair-of/neither))
+
+(defn main ()
+  (let circle (shape/circle 1.0))
+  (let rect (shape/rect 2.0 3.0))
+  (let labeled (shape/labeled (to-string "box") 2.0))
+  (let point (make-point))
+  (let both (pair-of/both 1 2))
+  (let neither (make-neither))
+  (println (area circle))
+  (println (area rect))
+  (println (area labeled))
+  (println (area point))
+  (println (pair-value both))
+  (println (pair-value neither)))

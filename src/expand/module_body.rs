@@ -7,10 +7,11 @@ use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{
     BindingId, BindingKind, ControlForm, CoreModule, DefinitionForm, ExpressionForm, FieldLabel,
-    Item, ItemKind, KernelForm, ModuleId, Namespace, TypeExpr,
+    Item, ItemKind, KernelForm, ModuleId, Namespace, TypeExpr, VariantDeclaration, VariantInfo,
+    VariantPayload,
 };
 use crate::diagnostic::Diagnostic;
-use crate::reader::Form;
+use crate::reader::{Form, FormKind, Symbol};
 use crate::source::Span;
 
 enum PendingItem {
@@ -22,6 +23,7 @@ enum PendingItem {
     Signature(Form),
     Derive(Form),
     Struct(BindingId, Form),
+    Enum(BindingId, Form),
     RustTrait(BindingId, Form),
     RustType(BindingId, Form),
     Export(Form),
@@ -99,12 +101,26 @@ impl Expander<'_> {
             DefinitionForm::Def => self.register_def(module, &form, context),
             DefinitionForm::Type => Ok(Some(PendingItem::Signature(form))),
             DefinitionForm::Struct => self.register_struct(module, form, context),
-            DefinitionForm::Derive => Ok(Some(PendingItem::Derive(form))),
             DefinitionForm::RustTrait => self.register_rust_trait(module, form, context),
             DefinitionForm::RustType => self.register_rust_type(module, form, context),
+            other => self.register_other_definition(module, other, form, context),
+        }
+    }
+
+    fn register_other_definition(
+        &mut self,
+        module: ModuleId,
+        definition: DefinitionForm,
+        form: Form,
+        context: &mut DefinitionContext,
+    ) -> Result<Option<PendingItem>, Diagnostic> {
+        match definition {
+            DefinitionForm::Enum => self.register_enum(module, form, context),
+            DefinitionForm::Derive => Ok(Some(PendingItem::Derive(form))),
             DefinitionForm::Use | DefinitionForm::Export => {
                 self.register_module_definition(definition, form, context)
             }
+            _ => unreachable!("the caller matches another definition form"),
         }
     }
 
@@ -134,6 +150,99 @@ impl Expander<'_> {
             context,
         )?;
         Ok(Some(PendingItem::Struct(binding, form)))
+    }
+
+    fn register_enum(
+        &mut self,
+        module: ModuleId,
+        form: Form,
+        context: &mut DefinitionContext,
+    ) -> Result<Option<PendingItem>, Diagnostic> {
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Enum), &form);
+        let items = shape.at_least(2)?;
+        let name = self.head_name(&shape, &items[1])?;
+        let binding =
+            self.define_global(name, Namespace::Type, BindingKind::Enum(module), context)?;
+        let mut constructors = Vec::new();
+        for (index, variant) in items[2..].iter().enumerate() {
+            let (variant_name, arity) = self.variant_shape(&shape, variant)?;
+            constructors.push(self.define_variant(
+                binding,
+                name,
+                variant_name,
+                index,
+                arity,
+                context,
+            )?);
+        }
+        self.enum_variants.insert(binding, constructors);
+        Ok(Some(PendingItem::Enum(binding, form)))
+    }
+
+    fn define_variant(
+        &mut self,
+        owner: BindingId,
+        enum_name: &Form,
+        variant_name: &Form,
+        index: usize,
+        arity: usize,
+        context: &DefinitionContext,
+    ) -> Result<BindingId, Diagnostic> {
+        let BindingKind::Enum(module) = self.kind(owner) else {
+            unreachable!("an enum's owner is an enum binding");
+        };
+        let enum_symbol = enum_name
+            .as_symbol()
+            .ok_or_else(|| ExpandProblems::not_a_name(enum_name.span()))?;
+        let variant_symbol = variant_name
+            .as_symbol()
+            .ok_or_else(|| ExpandProblems::not_a_name(variant_name.span()))?;
+        let constructor = Symbol::with_scopes(
+            format!("{}/{}", enum_symbol.name(), variant_symbol.name()),
+            enum_symbol.scopes().clone(),
+        );
+        let binder = Form::new(FormKind::Symbol(constructor), variant_name.span());
+        self.define_global(
+            &binder,
+            Namespace::Value,
+            BindingKind::Variant(
+                module,
+                VariantInfo {
+                    owner,
+                    index,
+                    arity,
+                },
+            ),
+            context,
+        )
+    }
+
+    fn variant_shape<'f>(
+        &self,
+        shape: &Shape,
+        variant: &'f Form,
+    ) -> Result<(&'f Form, usize), Diagnostic> {
+        match variant.kind() {
+            FormKind::Symbol(_) => Ok((variant, 0)),
+            FormKind::List(items) => {
+                let Some(name) = items.first() else {
+                    return Err(shape.malformed(variant));
+                };
+                let payload = &items[1..];
+                if let [single] = payload
+                    && self.is_struct_payload(single)
+                {
+                    let fields = single.as_list().map_or(&[][..], |items| &items[1..]);
+                    return Ok((name, fields.len()));
+                }
+                Ok((name, payload.len()))
+            }
+            FormKind::Number(_) | FormKind::String(_) => Err(shape.malformed(variant)),
+        }
+    }
+
+    fn is_struct_payload(&self, form: &Form) -> bool {
+        self.is_kernel_form(form, KernelForm::Definition(DefinitionForm::Struct))
     }
 
     fn register_rust_trait(
@@ -237,14 +346,27 @@ impl Expander<'_> {
                 span,
             } => self.lower_def(binding, annotation, span, core),
             PendingItem::Signature(form) => self.lower_signature(module, &form, core),
-            PendingItem::Derive(form) => self.lower_derive(module, &form, core),
             PendingItem::Struct(binding, form) => self.lower_struct(binding, &form, core),
             PendingItem::RustTrait(binding, form) => self.lower_rust_trait(binding, &form, core),
             PendingItem::RustType(binding, form) => self.lower_rust_type(binding, &form, core),
+            other => self.lower_other_pending(module, other, core),
+        }
+    }
+
+    fn lower_other_pending(
+        &mut self,
+        module: ModuleId,
+        item: PendingItem,
+        core: &mut CoreModule,
+    ) -> Result<(), Diagnostic> {
+        match item {
+            PendingItem::Enum(binding, form) => self.lower_enum(binding, &form, core),
+            PendingItem::Derive(form) => self.lower_derive(module, &form, core),
             PendingItem::Export(form) => {
                 self.lower_exports(module, &form, core);
                 Ok(())
             }
+            _ => unreachable!("the caller matches another pending item"),
         }
     }
 
@@ -326,12 +448,125 @@ impl Expander<'_> {
         Ok(())
     }
 
+    fn lower_enum(
+        &mut self,
+        binding: BindingId,
+        form: &Form,
+        core: &mut CoreModule,
+    ) -> Result<(), Diagnostic> {
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Enum), form);
+        let items = shape.at_least(2)?;
+        let body = items[2..].to_vec();
+        if let Some(where_items) = self.old_parameters(&body) {
+            let span = where_items[0].span();
+            let kind = self
+                .macro_origin_at(span)
+                .map_or("enum", |origin| origin.name.as_ref());
+            let replacement = self.old_head_replacement(kind, &items[1], where_items);
+            return Err(ExpandProblems::parameters_on_name(kind, &replacement, span));
+        }
+        let enum_name = self.head_name(&shape, &items[1])?;
+        let parameterized = self.lower_head(&shape, &items[1], body)?;
+        let variants = parameterized
+            .body
+            .iter()
+            .map(|variant| self.lower_variant(&shape, enum_name, variant))
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
+        core.items.push(Item {
+            kind: ItemKind::Enum(binding, parameterized.binders, variants),
+            span: form.span(),
+        });
+        Ok(())
+    }
+
+    fn lower_variant(
+        &mut self,
+        shape: &Shape,
+        enum_name: &Form,
+        variant: &Form,
+    ) -> Result<VariantDeclaration, Diagnostic> {
+        let (variant_name, _) = self.variant_shape(shape, variant)?;
+        let variant_symbol = variant_name
+            .as_symbol()
+            .ok_or_else(|| ExpandProblems::not_a_name(variant_name.span()))?;
+        let binding = self.variant_binding(enum_name, variant_symbol, variant_name.span())?;
+        let payload = self.lower_variant_payload(shape, variant)?;
+        Ok(VariantDeclaration {
+            binding,
+            name: variant_symbol.name().into(),
+            payload,
+            span: variant.span(),
+        })
+    }
+
+    fn variant_binding(
+        &mut self,
+        enum_name: &Form,
+        variant: &Symbol,
+        span: Span,
+    ) -> Result<BindingId, Diagnostic> {
+        let enum_symbol = enum_name
+            .as_symbol()
+            .ok_or_else(|| ExpandProblems::not_a_name(enum_name.span()))?;
+        let constructor = Symbol::with_scopes(
+            format!("{}/{}", enum_symbol.name(), variant.name()),
+            enum_symbol.scopes().clone(),
+        );
+        self.resolve(&constructor, Namespace::Value, span)
+    }
+
+    fn lower_variant_payload(
+        &mut self,
+        shape: &Shape,
+        variant: &Form,
+    ) -> Result<VariantPayload, Diagnostic> {
+        match variant.kind() {
+            FormKind::Symbol(_) => Ok(VariantPayload::None),
+            FormKind::List(items) => {
+                let payload = &items[1..];
+                if payload
+                    .iter()
+                    .any(|payload| self.is_struct_payload(payload))
+                {
+                    self.lower_named_payload(shape, variant, payload)
+                } else if payload.is_empty() {
+                    Ok(VariantPayload::None)
+                } else {
+                    payload
+                        .iter()
+                        .map(|payload| self.lower_type(payload))
+                        .collect::<Result<Vec<_>, Diagnostic>>()
+                        .map(VariantPayload::Positional)
+                }
+            }
+            FormKind::Number(_) | FormKind::String(_) => Err(shape.malformed(variant)),
+        }
+    }
+
+    fn lower_named_payload(
+        &mut self,
+        shape: &Shape,
+        variant: &Form,
+        payload: &[Form],
+    ) -> Result<VariantPayload, Diagnostic> {
+        let [single] = payload else {
+            return Err(ExpandProblems::mixed_variant_payload(variant.span()));
+        };
+        let fields = single.as_list().map_or(&[][..], |fields| &fields[1..]);
+        fields
+            .iter()
+            .map(|field| self.lower_field_declaration(shape, field))
+            .collect::<Result<Vec<_>, Diagnostic>>()
+            .map(VariantPayload::Named)
+    }
+
     fn lower_derive(
         &mut self,
         module: ModuleId,
         form: &Form,
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
+        let _ = module;
         let shape = Shape::new(KernelForm::Definition(DefinitionForm::Derive), form);
         let items = shape.at_least(2)?;
         let binding = self.resolve(shape.symbol(&items[1])?, Namespace::Type, items[1].span())?;
@@ -458,10 +693,35 @@ impl Expander<'_> {
             }
         }
         if found {
+            self.export_enum_constructors(module, symbol, core);
             Ok(())
         } else {
             self.resolve(symbol, Namespace::Value, name.span())
                 .map(|_| ())
+        }
+    }
+
+    fn export_enum_constructors(
+        &mut self,
+        module: ModuleId,
+        symbol: &Symbol,
+        core: &mut CoreModule,
+    ) {
+        let Some(enum_binding) = self.try_resolve(symbol, Namespace::Type) else {
+            return;
+        };
+        if !matches!(self.kind(enum_binding), BindingKind::Enum(_)) {
+            return;
+        }
+        let Some(constructors) = self.enum_variants.get(&enum_binding).cloned() else {
+            return;
+        };
+        for constructor in constructors {
+            let name = self.bindings.get(constructor).name().to_string();
+            self.modules
+                .get_mut(module)
+                .export(name.into(), Namespace::Value, constructor);
+            core.exports.push(constructor);
         }
     }
 }

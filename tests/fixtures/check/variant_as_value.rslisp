@@ -1,0 +1,2 @@
+(enum shape (circle f64) point)
+(def circle shape/circle)

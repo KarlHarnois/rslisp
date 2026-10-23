@@ -47,9 +47,25 @@ pub enum ItemKind {
     Def(BindingId, Expr),
     Signature(BindingId, TypeExpr),
     Struct(BindingId, Vec<TypeBinder>, Vec<(FieldLabel, TypeExpr)>),
+    Enum(BindingId, Vec<TypeBinder>, Vec<VariantDeclaration>),
     Derive(BindingId, Vec<(BindingId, Span)>),
     RustTrait(BindingId, Rc<str>, Vec<TypeExpr>),
     RustType(BindingId, Vec<TypeBinder>, Rc<ParsedTemplate>),
+}
+
+#[derive(Clone, Debug)]
+pub struct VariantDeclaration {
+    pub binding: BindingId,
+    pub name: Rc<str>,
+    pub payload: VariantPayload,
+    pub span: Span,
+}
+
+#[derive(Clone, Debug)]
+pub enum VariantPayload {
+    None,
+    Positional(Vec<TypeExpr>),
+    Named(Vec<(FieldLabel, TypeExpr)>),
 }
 
 #[derive(Clone, Debug)]
