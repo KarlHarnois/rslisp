@@ -1,0 +1,54 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_unreachable_literals.rslisp
+---
+error[L0433]: non-exhaustive `match`
+ --> check/match_unreachable_literals.rslisp:2:3
+  |
+2 | /   (match n
+3 | |     (0 0)
+4 | |     (1 1)
+5 | |     (1 2)))
+  | |__________^ this `match` does not cover every value
+  |
+  = note: missing 1 case: `_`
+  = help: add an arm for each missing case
+
+warning[L0434]: unreachable `match` arm
+ --> check/match_unreachable_literals.rslisp:5:6
+  |
+4 |     (1 1)
+  |      - this arm covers it
+5 |     (1 2)))
+  |      ^ this arm can never match
+
+error[L0433]: non-exhaustive `match`
+  --> check/match_unreachable_literals.rslisp:8:3
+   |
+ 8 | /   (match s
+ 9 | |     ("a" 1)
+10 | |     ("b" 2)
+11 | |     ("a" 3)))
+   | |____________^ this `match` does not cover every value
+   |
+   = note: missing 1 case: `_`
+   = help: add an arm for each missing case
+
+warning[L0434]: unreachable `match` arm
+  --> check/match_unreachable_literals.rslisp:11:6
+   |
+ 9 |     ("a" 1)
+   |      --- this arm covers it
+10 |     ("b" 2)
+11 |     ("a" 3)))
+   |      ^^^ this arm can never match
+
+warning[L0434]: unreachable `match` arm
+  --> check/match_unreachable_literals.rslisp:17:6
+   |
+15 |     (true 1)
+   |      ---- this arm covers it
+16 |     (false 2)
+17 |     (true 3)))
+   |      ^^^^ this arm can never match

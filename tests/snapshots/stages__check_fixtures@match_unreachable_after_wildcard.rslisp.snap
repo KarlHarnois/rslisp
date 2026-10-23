@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_unreachable_after_wildcard.rslisp
+---
+warning[L0434]: unreachable `match` arm
+ --> check/match_unreachable_after_wildcard.rslisp:6:6
+  |
+5 |     (_ 0.0)
+  |      - this arm covers it
+6 |     (point 1.0)))
+  |      ^^^^^ this arm can never match
+
+(derive shape clone copy debug partial-eq)
+(type area (fn (shape) f64))

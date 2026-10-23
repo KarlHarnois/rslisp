@@ -1,0 +1,13 @@
+(enum shape
+  (circle f64)
+  (rect f64 f64)
+  (labeled (struct (text string) (size f64)))
+  point)
+
+(defn area (s)
+  (match s
+    ((circle r) 1.0)
+    ((rect w h) 2.0)
+    ((labeled _ size) 3.0)
+    (point 4.0)
+    (_ 0.0)))

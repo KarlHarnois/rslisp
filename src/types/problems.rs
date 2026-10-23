@@ -330,6 +330,20 @@ impl TypeProblems {
         .with_help("add an arm for each missing case")
     }
 
+    pub fn unreachable_arm(span: Span, covered_by: Option<Span>) -> Diagnostic {
+        let diagnostic = Diagnostic::warning(
+            DiagnosticCode::UNREACHABLE_ARM,
+            "unreachable `match` arm",
+            Label::new(span, "this arm can never match"),
+        );
+        match covered_by {
+            Some(covered_by) => diagnostic.with_label(Label::new(covered_by, "this arm covers it")),
+            None => {
+                diagnostic.with_note("the earlier arms together cover every value this arm matches")
+            }
+        }
+    }
+
     pub fn pattern_count(name: &str, expected: usize, found: usize, span: Span) -> Diagnostic {
         let expected = Counted::noun(expected, "part");
         Diagnostic::error(

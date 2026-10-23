@@ -73,6 +73,7 @@ impl DiagnosticCode {
     pub const UNKNOWN_VARIANT: Self = Self(Cow::Borrowed("L0431"));
     pub const WRONG_PATTERN_COUNT: Self = Self(Cow::Borrowed("L0432"));
     pub const NON_EXHAUSTIVE_MATCH: Self = Self(Cow::Borrowed("L0433"));
+    pub const UNREACHABLE_ARM: Self = Self(Cow::Borrowed("L0434"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));

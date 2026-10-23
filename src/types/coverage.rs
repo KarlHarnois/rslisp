@@ -42,11 +42,20 @@ struct Constructor {
 impl TypeChecker {
     pub(super) fn check_match_coverage(&mut self, span: Span, scrutinee: &Type, arms: &[TypedArm]) {
         let (scrutinee, _) = self.peeled_reference(scrutinee);
-        let matrix: Vec<Vec<CoverPattern>> = arms
-            .iter()
-            .map(|arm| vec![self.cover_pattern(&arm.pattern)])
-            .collect();
-        if self.covers_all(&matrix, std::slice::from_ref(&scrutinee)) {
+        let mut matrix: Vec<Vec<CoverPattern>> = Vec::new();
+        for (position, arm) in arms.iter().enumerate() {
+            let pattern = self.cover_pattern(&arm.pattern);
+            let query = [pattern.clone()];
+            if self.useful(&matrix, &query, std::slice::from_ref(&scrutinee)) {
+                matrix.push(vec![pattern]);
+            } else {
+                let covered_by = self.covering_arm(&arms[..position], &pattern, &scrutinee);
+                self.warnings
+                    .push(TypeProblems::unreachable_arm(arm.pattern.span, covered_by));
+            }
+        }
+        let exhaustive = [CoverPattern::Wild];
+        if !self.useful(&matrix, &exhaustive, std::slice::from_ref(&scrutinee)) {
             return;
         }
         let missing = self.witnesses(&matrix, &[scrutinee]);
@@ -80,22 +89,75 @@ impl TypeChecker {
         }
     }
 
-    fn covers_all(&self, matrix: &[Vec<CoverPattern>], types: &[Type]) -> bool {
-        if types.is_empty() {
-            return !matrix.is_empty();
+    fn useful(&self, matrix: &[Vec<CoverPattern>], query: &[CoverPattern], types: &[Type]) -> bool {
+        if query.is_empty() {
+            return matrix.is_empty();
         }
-        match self.constructors(&types[0]) {
-            Some(constructors) => constructors.iter().all(|constructor| {
-                let specialized = self.specialize(matrix, constructor);
+        match &query[0] {
+            CoverPattern::Wild => match self.constructors(&types[0]) {
+                Some(constructors) => constructors.iter().any(|constructor| {
+                    let specialized = self.specialize(matrix, constructor);
+                    let mut row: Vec<CoverPattern> = constructor
+                        .arguments
+                        .iter()
+                        .map(|_| CoverPattern::Wild)
+                        .collect();
+                    row.extend_from_slice(&query[1..]);
+                    let mut columns = constructor.arguments.clone();
+                    columns.extend_from_slice(&types[1..]);
+                    self.useful(&specialized, &row, &columns)
+                }),
+                None => {
+                    let default = Self::default_matrix(matrix);
+                    self.useful(&default, &query[1..], &types[1..])
+                }
+            },
+            CoverPattern::Variant {
+                owner,
+                index,
+                arguments,
+            } => {
+                let tag = Tag::Variant {
+                    owner: *owner,
+                    index: *index,
+                };
+                let Some(constructor) = self.constructors(&types[0]).and_then(|constructors| {
+                    constructors
+                        .into_iter()
+                        .find(|constructor| constructor.tag == tag)
+                }) else {
+                    return false;
+                };
+                let specialized = self.specialize(matrix, &constructor);
+                let mut row = arguments.clone();
+                row.extend_from_slice(&query[1..]);
                 let mut columns = constructor.arguments.clone();
                 columns.extend_from_slice(&types[1..]);
-                self.covers_all(&specialized, &columns)
-            }),
-            None => {
-                let default = Self::default_matrix(matrix);
-                self.covers_all(&default, &types[1..])
+                self.useful(&specialized, &row, &columns)
+            }
+            CoverPattern::Literal(literal) => {
+                let specialized = Self::specialize_literal(matrix, literal);
+                self.useful(&specialized, &query[1..], &types[1..])
             }
         }
+    }
+
+    fn covering_arm(
+        &self,
+        previous: &[TypedArm],
+        pattern: &CoverPattern,
+        scrutinee: &Type,
+    ) -> Option<Span> {
+        previous
+            .iter()
+            .find(|arm| {
+                !self.useful(
+                    &[vec![self.cover_pattern(&arm.pattern)]],
+                    std::slice::from_ref(pattern),
+                    std::slice::from_ref(scrutinee),
+                )
+            })
+            .map(|arm| arm.pattern.span)
     }
 
     fn witnesses(&self, matrix: &[Vec<CoverPattern>], types: &[Type]) -> Vec<Vec<Witness>> {
@@ -215,6 +277,31 @@ impl TypeChecker {
             }
         }
         specialized
+    }
+
+    fn specialize_literal(
+        matrix: &[Vec<CoverPattern>],
+        literal: &Literal,
+    ) -> Vec<Vec<CoverPattern>> {
+        matrix
+            .iter()
+            .filter_map(|row| match row.first()? {
+                CoverPattern::Wild => Some(row[1..].to_vec()),
+                CoverPattern::Literal(other) if Self::same_literal(other, literal) => {
+                    Some(row[1..].to_vec())
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    fn same_literal(left: &Literal, right: &Literal) -> bool {
+        match (left, right) {
+            (Literal::Number(left), Literal::Number(right)) => left.value() == right.value(),
+            (Literal::String(left), Literal::String(right)) => left == right,
+            (Literal::Bool(left), Literal::Bool(right)) => left == right,
+            _ => false,
+        }
     }
 
     fn default_matrix(matrix: &[Vec<CoverPattern>]) -> Vec<Vec<CoverPattern>> {
