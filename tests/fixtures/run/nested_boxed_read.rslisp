@@ -1,0 +1,15 @@
+(enum (tree a) (node (tree a) a (tree a)) leaf)
+
+(defn nested-total (tree)
+  (match tree
+    ((tree/node (tree/node left value right) middle last)
+     (+ (+ (* 2 value) (nested-total left))
+        (+ (nested-total right) (+ middle (nested-total last)))))
+    ((tree/node left value right)
+     (+ (+ (nested-total left) value) (nested-total right)))
+    (tree/leaf 0)))
+
+(defn main ()
+  (let tree
+    (tree/node (tree/node tree/leaf 2 tree/leaf) 1 (tree/node tree/leaf 3 tree/leaf)))
+  (println (nested-total tree)))

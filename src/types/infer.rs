@@ -10,8 +10,8 @@ use super::ty::Type;
 use super::ty::TypeVar;
 use super::typed::{
     Borrow, PendingModeCheck, TypedArgument, TypedArm, TypedBinder, TypedBlock, TypedBodyItem,
-    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedPattern, TypedPatternKind,
-    TypedStructExpr,
+    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedMatch, TypedPattern,
+    TypedPatternKind, TypedStructExpr,
 };
 use super::unifier::{LiteralKind, UnifyError};
 use super::wrapper::FunctionValueWrapper;
@@ -280,8 +280,13 @@ impl TypeChecker {
             });
         }
         self.check_match_coverage(span, &value.ty, &typed_arms);
+        let unguarded_exhaustive = self.match_is_exhaustive_without_guards(&value.ty, &typed_arms);
         Ok(TypedExpr {
-            kind: TypedExprKind::Control(TypedControl::Match(Box::new(value), typed_arms)),
+            kind: TypedExprKind::Control(TypedControl::Match(TypedMatch {
+                value: Box::new(value),
+                arms: typed_arms,
+                unguarded_exhaustive,
+            })),
             ty: result.unwrap_or_else(Type::unit),
             span,
         })
@@ -441,6 +446,7 @@ impl TypeChecker {
         };
         kind.map(|kind| TypedPattern {
             kind,
+            boxed: false,
             span: pattern.span,
         })
     }
@@ -642,15 +648,8 @@ impl TypeChecker {
             .zip(storage)
             .map(|(pattern, storage)| {
                 let payload = self.visible_payload(storage);
-                let typed = self.lower_pattern(pattern, &payload, mode)?;
-                if self.is_box(storage)
-                    && matches!(
-                        typed.kind,
-                        TypedPatternKind::Variant(..) | TypedPatternKind::Literal(..)
-                    )
-                {
-                    return Err(TypeProblems::nested_boxed_pattern(pattern.span));
-                }
+                let mut typed = self.lower_pattern(pattern, &payload, mode)?;
+                typed.boxed = self.is_box(storage);
                 Ok(typed)
             })
             .collect()

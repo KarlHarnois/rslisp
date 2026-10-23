@@ -47,7 +47,8 @@ impl TypedExpr {
         match &self.kind {
             TypedExprKind::Fn(lambda) => lambda.binders().collect(),
             TypedExprKind::Control(TypedControl::Block(block)) => block.binders().collect(),
-            TypedExprKind::Control(TypedControl::Match(_, arms)) => arms
+            TypedExprKind::Control(TypedControl::Match(matched)) => matched
+                .arms
                 .iter()
                 .flat_map(|arm| arm.pattern.binders().into_iter().chain(arm.body.binders()))
                 .collect(),
@@ -59,7 +60,8 @@ impl TypedExpr {
         match &mut self.kind {
             TypedExprKind::Fn(lambda) => Rc::make_mut(lambda).binders_mut(),
             TypedExprKind::Control(TypedControl::Block(block)) => block.binders_mut().collect(),
-            TypedExprKind::Control(TypedControl::Match(_, arms)) => arms
+            TypedExprKind::Control(TypedControl::Match(matched)) => matched
+                .arms
                 .iter_mut()
                 .flat_map(|arm| {
                     arm.pattern
@@ -109,8 +111,8 @@ impl TypedControl {
         match self {
             TypedControl::Block(block) => block.expressions().collect(),
             TypedControl::If(test, then, otherwise) => vec![test, then, otherwise],
-            TypedControl::Match(value, arms) => std::iter::once(value.as_ref())
-                .chain(arms.iter().flat_map(|arm| arm.body.expressions()))
+            TypedControl::Match(matched) => std::iter::once(matched.value.as_ref())
+                .chain(matched.arms.iter().flat_map(|arm| arm.body.expressions()))
                 .collect(),
         }
     }
@@ -121,8 +123,13 @@ impl TypedControl {
             TypedControl::If(test, then, otherwise) => {
                 vec![test.as_mut(), then.as_mut(), otherwise.as_mut()]
             }
-            TypedControl::Match(value, arms) => std::iter::once(value.as_mut())
-                .chain(arms.iter_mut().flat_map(|arm| arm.body.expressions_mut()))
+            TypedControl::Match(matched) => std::iter::once(matched.value.as_mut())
+                .chain(
+                    matched
+                        .arms
+                        .iter_mut()
+                        .flat_map(|arm| arm.body.expressions_mut()),
+                )
                 .collect(),
         }
     }

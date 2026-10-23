@@ -103,9 +103,9 @@ impl ChangedValues {
                 self.expr(then, enclosing);
                 self.expr(otherwise, enclosing);
             }
-            TypedControl::Match(value, arms) => {
-                self.expr(value, enclosing);
-                for arm in arms {
+            TypedControl::Match(matched) => {
+                self.expr(&matched.value, enclosing);
+                for arm in &matched.arms {
                     self.block(&arm.body, enclosing);
                 }
             }

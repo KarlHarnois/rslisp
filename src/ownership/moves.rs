@@ -135,9 +135,9 @@ impl<'a> MoveChecker<'a> {
         match control {
             TypedControl::Block(block) => self.block(block, usage),
             TypedControl::If(test, then, otherwise) => self.branches(test, then, otherwise, usage),
-            TypedControl::Match(value, arms) => {
-                self.expr(value, Usage::Move);
-                for arm in arms {
+            TypedControl::Match(matched) => {
+                self.expr(&matched.value, Usage::Move);
+                for arm in &matched.arms {
                     let before = self.moved.clone();
                     self.block(&arm.body, usage);
                     let after = std::mem::replace(&mut self.moved, before);

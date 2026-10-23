@@ -556,15 +556,6 @@ impl TypeProblems {
         .with_help(format!("a `derive` lists any of: {}", derivable.join(", ")))
     }
 
-    pub fn nested_boxed_pattern(span: Span) -> Diagnostic {
-        Diagnostic::error(
-            DiagnosticCode::NESTED_BOXED_PATTERN,
-            "a pattern cannot look inside an inferred box yet",
-            Label::new(span, "this pattern looks inside a box"),
-        )
-        .with_help("bind a name here and `match` on it in the arm")
-    }
-
     pub fn blocked_enum_derive(
         enum_name: &str,
         trait_name: &str,

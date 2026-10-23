@@ -1,0 +1,15 @@
+(enum (tree a) (node (tree a) a (tree a)) leaf)
+
+(defn deepest-left (tree)
+  (match tree
+    ((tree/node (tree/node (tree/node left _ _) _ _) _ _) left)
+    ((tree/node (tree/node tree/leaf _ _) _ _) tree/leaf)
+    ((tree/node tree/leaf _ _) tree/leaf)
+    (tree/leaf tree/leaf)))
+
+(defn main ()
+  (prn
+    (deepest-left
+      (tree/node (tree/node (tree/node tree/leaf 3 tree/leaf) 2 tree/leaf) 1 tree/leaf)))
+  (prn (deepest-left (tree/node (tree/node tree/leaf 2 tree/leaf) 1 tree/leaf)))
+  (prn (deepest-left (tree/node tree/leaf 1 tree/leaf))))

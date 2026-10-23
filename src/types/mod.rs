@@ -35,7 +35,7 @@ pub use traits::{Implementor, RustTrait, TraitTable};
 pub use ty::{Bound, GenericId, GenericParam, Scheme, Type, TypeVar};
 pub use typed::{
     Borrow, PendingModeCheck, TypedArgument, TypedArm, TypedBinder, TypedBlock, TypedBodyItem,
-    TypedControl, TypedDefinition, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedModule,
-    TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr,
+    TypedControl, TypedDefinition, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedMatch,
+    TypedModule, TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr,
 };
 pub use wrapper::{FunctionValueWrapper, PreparedFunctionValue};

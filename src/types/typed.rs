@@ -76,7 +76,14 @@ pub enum TypedLeaf {
 pub enum TypedControl {
     Block(TypedBlock),
     If(Box<TypedExpr>, Box<TypedExpr>, Box<TypedExpr>),
-    Match(Box<TypedExpr>, Vec<TypedArm>),
+    Match(TypedMatch),
+}
+
+#[derive(Clone, Debug)]
+pub struct TypedMatch {
+    pub value: Box<TypedExpr>,
+    pub arms: Vec<TypedArm>,
+    pub unguarded_exhaustive: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -89,6 +96,7 @@ pub struct TypedArm {
 #[derive(Clone, Debug)]
 pub struct TypedPattern {
     pub kind: TypedPatternKind,
+    pub boxed: bool,
     pub span: Span,
 }
 

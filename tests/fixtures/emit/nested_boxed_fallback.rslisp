@@ -1,0 +1,12 @@
+(enum (tree a) (node (tree a) a (tree a)) leaf)
+
+(defn nested-value (tree)
+  (match tree
+    ((tree/node (tree/node _ value _) _ _) value)
+    ((tree/node tree/leaf value _) value)
+    (tree/leaf 0)))
+
+(defn main ()
+  (println (nested-value (tree/node (tree/node tree/leaf 7 tree/leaf) 1 tree/leaf)))
+  (println (nested-value (tree/node tree/leaf 2 tree/leaf)))
+  (println (nested-value tree/leaf)))
