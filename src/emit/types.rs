@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use super::mangle::NameMangler;
 use super::plan::EmitPlan;
+use super::unsized_parameters::UnsizedParameters;
 use crate::core::{BindingId, ModuleId, Piece, PrimitiveType};
 use crate::types::{Bound, GenericId, GenericParam, RustType, Type, TypedProgram};
 
@@ -15,10 +16,12 @@ pub enum TypePosition {
 pub struct RustTypes<'a> {
     program: &'a TypedProgram,
     plan: &'a EmitPlan<'a>,
+    unsized_parameters: &'a UnsizedParameters,
     module: ModuleId,
 }
 
 impl<'a> RustTypes<'a> {
+    pub const SLICE_TYPE: &'static str = "[{0}]";
     const MAYBE_UNSIZED: &'static str = "?Sized";
     const SIZED_TRAITS: [&'static str; 3] = ["Clone", "Copy", "Default"];
     const INFERRED: &'static str = "_";
@@ -45,12 +48,31 @@ impl<'a> RustTypes<'a> {
         ),
     ];
 
-    pub fn new(program: &'a TypedProgram, plan: &'a EmitPlan<'a>, module: ModuleId) -> Self {
+    pub fn new(
+        program: &'a TypedProgram,
+        plan: &'a EmitPlan<'a>,
+        unsized_parameters: &'a UnsizedParameters,
+        module: ModuleId,
+    ) -> Self {
         Self {
             program,
             plan,
+            unsized_parameters,
             module,
         }
+    }
+
+    pub fn is_rust_type(program: &TypedProgram, binding: BindingId, expected: &str) -> bool {
+        program
+            .rust_types
+            .get(binding)
+            .is_some_and(|rust_type| Self::compact(rust_type.template.text()) == expected)
+    }
+
+    pub fn compact(text: &str) -> String {
+        text.chars()
+            .filter(|character| !character.is_whitespace())
+            .collect()
     }
 
     pub fn show(&self, shown: &Type, position: TypePosition) -> String {
@@ -147,6 +169,7 @@ impl<'a> RustTypes<'a> {
         converts_literals: bool,
     ) -> bool {
         Self::only_behind_references(signature, param.id, false)
+            && self.unsized_parameters.contains(param.id)
             && !converts_literals
             && !self.requires_sized(param)
     }

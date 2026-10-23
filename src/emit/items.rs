@@ -9,6 +9,7 @@ use super::mutable_locals::MutableLocals;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
 use super::runtime::RuntimeModule;
 use super::types::{RustTypes, TypePosition};
+use super::unsized_parameters::UnsizedParameters;
 use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::Diagnostic;
 use crate::types::{GenericParam, Type, TypedDefinition, TypedExpr, TypedExprKind, TypedProgram};
@@ -56,6 +57,7 @@ impl ModuleTree {
 pub struct ItemEmitter<'a> {
     program: &'a TypedProgram,
     plan: &'a EmitPlan<'a>,
+    unsized_parameters: &'a UnsizedParameters,
     pub problems: Vec<Diagnostic>,
     pub names: Vec<(String, String)>,
 }
@@ -63,10 +65,15 @@ pub struct ItemEmitter<'a> {
 impl<'a> ItemEmitter<'a> {
     const RUNTIME_MODULE: &'static str = "rt";
 
-    pub fn new(program: &'a TypedProgram, plan: &'a EmitPlan<'a>) -> Self {
+    pub fn new(
+        program: &'a TypedProgram,
+        plan: &'a EmitPlan<'a>,
+        unsized_parameters: &'a UnsizedParameters,
+    ) -> Self {
         Self {
             program,
             plan,
+            unsized_parameters,
             problems: Vec::new(),
             names: Vec::new(),
         }
@@ -211,7 +218,12 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn structure(&mut self, binding: BindingId, info: &ItemInfo) -> Vec<Fragment> {
-        let types = RustTypes::new(self.program, self.plan, info.module);
+        let types = RustTypes::new(
+            self.program,
+            self.plan,
+            self.unsized_parameters,
+            info.module,
+        );
         let visibility = info.visibility.keyword();
         let definition = self
             .program
@@ -263,6 +275,7 @@ impl<'a> ItemEmitter<'a> {
         ExpressionEmitter::new(
             self.program,
             self.plan,
+            self.unsized_parameters,
             module,
             LocalNames::new(reserved.collect::<Vec<String>>()),
         )

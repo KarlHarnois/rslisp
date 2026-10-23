@@ -15,7 +15,7 @@ fn wrap<A>(x: A) -> Vec<A> {
     vec![x]
 }
 
-fn show_twice<A: std::fmt::Display + ?Sized>(x: &A) {
+fn show_twice<A: std::fmt::Display>(x: &A) {
     println!("{}", x);
     println!("{}", x)
 }
