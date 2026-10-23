@@ -92,6 +92,14 @@ impl InterpretProblems {
         )
     }
 
+    pub fn match_only_at_runtime(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::COMPILE_TIME_ERROR,
+            "a `match` only exists at runtime",
+            Label::new(span, "used at compile time here"),
+        )
+    }
+
     pub fn program_only(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::PROGRAM_ONLY,

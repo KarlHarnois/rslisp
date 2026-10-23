@@ -9,14 +9,16 @@ use super::problems::{MismatchContext, TypeProblems};
 use super::ty::Type;
 use super::ty::TypeVar;
 use super::typed::{
-    Borrow, PendingModeCheck, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl,
-    TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
+    Borrow, PendingModeCheck, TypedArgument, TypedArm, TypedBinder, TypedBlock, TypedBodyItem,
+    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedPattern, TypedPatternKind,
+    TypedStructExpr,
 };
 use super::unifier::{LiteralKind, UnifyError};
 use super::wrapper::FunctionValueWrapper;
 use crate::core::{
-    Binder, BindingId, BindingKind, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, Lambda,
-    Leaf, Literal, PrimitiveType, ReferenceKind, RustTemplate, StructExpr, VariantInfo,
+    Arm, Binder, BindingId, BindingKind, Block, BodyItem, Control, Expr, ExprKind, FieldLabel,
+    Lambda, Leaf, Literal, Pattern, PatternKind, PrimitiveType, ReferenceKind, RustTemplate,
+    StructExpr, VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
@@ -185,6 +187,7 @@ impl TypeChecker {
                 Self::typed(inferred, span)
             }
             Control::If(test, then, otherwise) => self.infer_if(test, then, otherwise, span),
+            Control::Match(value, arms) => self.infer_match(value, arms, span),
         }
     }
 
@@ -242,6 +245,448 @@ impl TypeChecker {
             ty: Type::Named(owner, type_arguments),
             span,
         })
+    }
+
+    fn infer_match(
+        &mut self,
+        value: &Expr,
+        arms: &[Arm],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let value = self.infer(value)?;
+        self.bind_match_enum(&value.ty, arms, value.span)?;
+        let mut typed_arms = Vec::new();
+        let mut result: Option<Type> = None;
+        for arm in arms {
+            let pattern = self.lower_pattern(&arm.pattern, &value.ty, None)?;
+            let (body, body_type) = self.infer_block(&arm.body)?;
+            if let Some(first) = &result {
+                let span = Self::block_result_span(&body).unwrap_or(arm.span);
+                self.expect(first, &body_type, span, MismatchContext::Plain)?;
+            } else {
+                result = Some(body_type);
+            }
+            typed_arms.push(TypedArm {
+                pattern,
+                body,
+                span: arm.span,
+            });
+        }
+        Ok(TypedExpr {
+            kind: TypedExprKind::Control(TypedControl::Match(Box::new(value), typed_arms)),
+            ty: result.unwrap_or_else(Type::unit),
+            span,
+        })
+    }
+
+    fn bind_match_enum(
+        &mut self,
+        scrutinee: &Type,
+        arms: &[Arm],
+        span: Span,
+    ) -> Result<Option<BindingId>, Diagnostic> {
+        let (matched, _) = self.peeled_reference(scrutinee);
+        match self.unifier.shallow(&matched) {
+            Type::Named(owner, _) if self.enums.get(owner).is_some() => Ok(Some(owner)),
+            Type::Var(_) => {
+                let Some(owner) = self.unknown_match_enum(arms)? else {
+                    return Ok(None);
+                };
+                let expected = Type::Named(owner, self.fresh_arguments(owner));
+                self.expect(&expected, &matched, span, MismatchContext::Plain)?;
+                Ok(Some(owner))
+            }
+            _ => Ok(None),
+        }
+    }
+
+    fn unknown_match_enum(&self, arms: &[Arm]) -> Result<Option<BindingId>, Diagnostic> {
+        let mut fitting: Option<Vec<BindingId>> = None;
+        let mut first: Option<(Rc<str>, Span)> = None;
+        for arm in arms {
+            self.collect_arm_candidates(&arm.pattern, &mut fitting, &mut first);
+        }
+        let Some(mut fitting) = fitting else {
+            return Ok(None);
+        };
+        fitting.sort();
+        fitting.dedup();
+        match fitting.as_slice() {
+            [] => Ok(None),
+            [owner] => Ok(Some(*owner)),
+            _ => {
+                let (name, span) = first.expect("a fitting enum comes from a variant pattern");
+                let names: Vec<String> = fitting
+                    .iter()
+                    .map(|owner| self.bindings.get(*owner).name().to_string())
+                    .collect();
+                Err(TypeProblems::ambiguous_variant(&name, &names, span))
+            }
+        }
+    }
+
+    fn collect_arm_candidates(
+        &self,
+        pattern: &Pattern,
+        fitting: &mut Option<Vec<BindingId>>,
+        first: &mut Option<(Rc<str>, Span)>,
+    ) {
+        let (name, candidates): (&str, Vec<BindingId>) = match &pattern.kind {
+            PatternKind::Variant(binding, _) => (self.variant_name(*binding), vec![*binding]),
+            PatternKind::ShortVariant {
+                name, candidates, ..
+            }
+            | PatternKind::BareName {
+                name, candidates, ..
+            } => (name, candidates.clone()),
+            _ => return,
+        };
+        let owners: Vec<BindingId> = candidates
+            .iter()
+            .map(|binding| self.variant_owner(*binding))
+            .collect();
+        *fitting = Some(match fitting.take() {
+            Some(current) => current
+                .into_iter()
+                .filter(|owner| owners.contains(owner))
+                .collect(),
+            None => owners,
+        });
+        first.get_or_insert_with(|| (name.into(), pattern.span));
+    }
+
+    fn variant_owner(&self, binding: BindingId) -> BindingId {
+        match self.bindings.get(binding).kind() {
+            BindingKind::Variant(_, info) => info.owner,
+            _ => unreachable!("a variant pattern names a variant binding"),
+        }
+    }
+
+    fn variant_name(&self, binding: BindingId) -> &str {
+        self.bindings
+            .get(binding)
+            .name()
+            .rsplit('/')
+            .next()
+            .unwrap_or_default()
+    }
+
+    fn lower_pattern(
+        &mut self,
+        pattern: &Pattern,
+        expected: &Type,
+        inherited: Option<ReferenceKind>,
+    ) -> Result<TypedPattern, Diagnostic> {
+        let (matched, own_mode) = self.peeled_reference(expected);
+        let mode = own_mode.or(inherited);
+        let kind = match &pattern.kind {
+            PatternKind::Wildcard => Ok(TypedPatternKind::Wildcard),
+            PatternKind::Bind(binding) => {
+                Ok(self.bind_pattern(*binding, matched, mode, pattern.span))
+            }
+            PatternKind::BareName {
+                name,
+                binding,
+                candidates,
+            } => self.bare_name_pattern(*binding, name, candidates, matched, mode, pattern.span),
+            PatternKind::Variant(binding, patterns) => {
+                self.named_variant_pattern(*binding, patterns, matched, mode, pattern.span)
+            }
+            PatternKind::ShortVariant {
+                name,
+                candidates,
+                arguments,
+            } => {
+                self.short_variant_pattern(name, candidates, arguments, matched, mode, pattern.span)
+            }
+        };
+        kind.map(|kind| TypedPattern {
+            kind,
+            span: pattern.span,
+        })
+    }
+
+    fn bare_name_pattern(
+        &mut self,
+        binding: BindingId,
+        name: &str,
+        candidates: &[BindingId],
+        matched: Type,
+        mode: Option<ReferenceKind>,
+        span: Span,
+    ) -> Result<TypedPatternKind, Diagnostic> {
+        match self.nullary_variant(name, candidates, &matched, span)? {
+            Some(variant) => {
+                self.locals
+                    .insert(binding, Self::binding_mode_type(matched, mode));
+                Ok(TypedPatternKind::Variant(variant, Vec::new()))
+            }
+            None => Ok(self.bind_pattern(binding, matched, mode, span)),
+        }
+    }
+
+    fn nullary_variant(
+        &mut self,
+        name: &str,
+        candidates: &[BindingId],
+        matched: &Type,
+        span: Span,
+    ) -> Result<Option<BindingId>, Diagnostic> {
+        if let Type::Named(owner, _) = self.unifier.shallow(matched)
+            && self.enums.get(owner).is_some()
+        {
+            return Ok(self.find_nullary_variant(owner, name, candidates));
+        }
+        if !matches!(self.unifier.shallow(matched), Type::Var(_)) {
+            return Ok(None);
+        }
+        let owner = self.unique_candidate_owner(candidates, span)?;
+        let arguments = self.fresh_arguments(owner);
+        let expected = Type::Named(owner, arguments);
+        self.expect(&expected, matched, span, MismatchContext::Plain)?;
+        Ok(self.find_nullary_variant(owner, name, candidates))
+    }
+
+    fn find_nullary_variant(
+        &self,
+        owner: BindingId,
+        name: &str,
+        candidates: &[BindingId],
+    ) -> Option<BindingId> {
+        let definition = self.enums.get(owner)?;
+        let variant = definition
+            .variants
+            .iter()
+            .find(|variant| variant.name.as_ref() == name)?;
+        if !matches!(variant.payload, super::enums::VariantPayload::None) {
+            return None;
+        }
+        candidates.iter().copied().find(|binding| {
+            matches!(
+                self.bindings.get(*binding).kind(),
+                BindingKind::Variant(_, info) if info.owner == owner
+            )
+        })
+    }
+
+    fn bind_pattern(
+        &mut self,
+        binding: BindingId,
+        matched: Type,
+        mode: Option<ReferenceKind>,
+        span: Span,
+    ) -> TypedPatternKind {
+        let ty = Self::binding_mode_type(matched, mode);
+        self.locals.insert(binding, ty.clone());
+        TypedPatternKind::Bind(TypedBinder {
+            binding,
+            ty,
+            span,
+            annotated: false,
+        })
+    }
+
+    fn named_variant_pattern(
+        &mut self,
+        binding: BindingId,
+        patterns: &[Pattern],
+        matched: Type,
+        mode: Option<ReferenceKind>,
+        span: Span,
+    ) -> Result<TypedPatternKind, Diagnostic> {
+        let owner = self.variant_owner(binding);
+        let arguments = self.match_arguments(matched, owner, span)?;
+        let index = match self.bindings.get(binding).kind() {
+            BindingKind::Variant(_, info) => info.index,
+            _ => unreachable!("a qualified pattern names a variant binding"),
+        };
+        let payload = self
+            .enums
+            .get(owner)
+            .and_then(|definition| definition.instantiated_payload(index, &arguments))
+            .unwrap_or_default();
+        self.check_pattern_count(
+            self.variant_name(binding),
+            payload.len(),
+            patterns.len(),
+            span,
+        )?;
+        let typed = patterns
+            .iter()
+            .zip(&payload)
+            .map(|(pattern, payload)| self.lower_pattern(pattern, payload, mode))
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
+        Ok(TypedPatternKind::Variant(binding, typed))
+    }
+
+    fn short_variant_pattern(
+        &mut self,
+        name: &str,
+        candidates: &[BindingId],
+        arguments: &[Pattern],
+        matched: Type,
+        mode: Option<ReferenceKind>,
+        span: Span,
+    ) -> Result<TypedPatternKind, Diagnostic> {
+        let (owner, type_arguments) = self.short_pattern_owner(candidates, &matched, span)?;
+        let definition = self
+            .enums
+            .get(owner)
+            .expect("a matching enum has a definition");
+        let Some(index) = definition
+            .variants
+            .iter()
+            .position(|variant| variant.name.as_ref() == name)
+        else {
+            let variants: Vec<Rc<str>> = definition
+                .variants
+                .iter()
+                .map(|variant| variant.name.clone())
+                .collect();
+            let enum_name = self.bindings.get(owner).name();
+            return Err(TypeProblems::unknown_variant(
+                enum_name, name, &variants, span,
+            ));
+        };
+        let payload = definition
+            .instantiated_payload(index, &type_arguments)
+            .unwrap_or_default();
+        let binding = self.candidate_binding(candidates, owner, index);
+        self.check_pattern_count(name, payload.len(), arguments.len(), span)?;
+        let typed = arguments
+            .iter()
+            .zip(&payload)
+            .map(|(pattern, payload)| self.lower_pattern(pattern, payload, mode))
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
+        Ok(TypedPatternKind::Variant(binding, typed))
+    }
+
+    fn short_pattern_owner(
+        &mut self,
+        candidates: &[BindingId],
+        matched: &Type,
+        span: Span,
+    ) -> Result<(BindingId, Vec<Type>), Diagnostic> {
+        if let Type::Named(owner, arguments) = self.unifier.shallow(matched)
+            && self.enums.get(owner).is_some()
+        {
+            return Ok((owner, arguments));
+        }
+        let owner = if matches!(self.unifier.shallow(matched), Type::Var(_)) {
+            self.unique_candidate_owner(candidates, span)?
+        } else {
+            self.candidate_owners(candidates)[0]
+        };
+        let arguments = self.fresh_arguments(owner);
+        let expected = Type::Named(owner, arguments.clone());
+        self.expect(&expected, matched, span, MismatchContext::Plain)?;
+        Ok((owner, arguments))
+    }
+
+    fn candidate_owners(&self, candidates: &[BindingId]) -> Vec<BindingId> {
+        let mut owners: Vec<BindingId> = candidates
+            .iter()
+            .map(|binding| self.variant_owner(*binding))
+            .collect();
+        owners.sort();
+        owners.dedup();
+        owners
+    }
+
+    fn unique_candidate_owner(
+        &self,
+        candidates: &[BindingId],
+        span: Span,
+    ) -> Result<BindingId, Diagnostic> {
+        let owners = self.candidate_owners(candidates);
+        match owners.as_slice() {
+            [owner] => Ok(*owner),
+            _ => {
+                let names: Vec<String> = owners
+                    .iter()
+                    .map(|owner| self.bindings.get(*owner).name().to_string())
+                    .collect();
+                Err(TypeProblems::ambiguous_variant("", &names, span))
+            }
+        }
+    }
+
+    fn candidate_binding(
+        &self,
+        candidates: &[BindingId],
+        owner: BindingId,
+        index: usize,
+    ) -> BindingId {
+        *candidates
+            .iter()
+            .find(|binding| {
+                matches!(
+                    self.bindings.get(**binding).kind(),
+                    BindingKind::Variant(_, info) if info.owner == owner && info.index == index
+                )
+            })
+            .unwrap_or(&candidates[0])
+    }
+
+    fn check_pattern_count(
+        &self,
+        name: &str,
+        expected: usize,
+        found: usize,
+        span: Span,
+    ) -> Result<(), Diagnostic> {
+        if expected == found {
+            return Ok(());
+        }
+        Err(TypeProblems::pattern_count(name, expected, found, span))
+    }
+
+    fn match_arguments(
+        &mut self,
+        matched: Type,
+        owner: BindingId,
+        span: Span,
+    ) -> Result<Vec<Type>, Diagnostic> {
+        match self.unifier.shallow(&matched) {
+            Type::Named(binding, arguments) if binding == owner => Ok(arguments),
+            Type::Var(_) => {
+                let arguments = self.fresh_arguments(owner);
+                let named = Type::Named(owner, arguments.clone());
+                self.expect(&named, &matched, span, MismatchContext::Plain)?;
+                Ok(arguments)
+            }
+            found => {
+                let expected = Type::Named(owner, self.fresh_arguments(owner));
+                self.expect(&expected, &found, span, MismatchContext::Plain)?;
+                Ok(Vec::new())
+            }
+        }
+    }
+
+    fn peeled_reference(&self, ty: &Type) -> (Type, Option<ReferenceKind>) {
+        let mut matched = self.unifier.resolve(ty);
+        let mut mode = None;
+        loop {
+            match matched.clone() {
+                Type::Ref(inner) => {
+                    mode.get_or_insert(ReferenceKind::Shared);
+                    matched = self.unifier.resolve(&inner);
+                }
+                Type::Mut(inner) => {
+                    mode.get_or_insert(ReferenceKind::Mutable);
+                    matched = self.unifier.resolve(&inner);
+                }
+                _ => return (matched, mode),
+            }
+        }
+    }
+
+    fn binding_mode_type(matched: Type, mode: Option<ReferenceKind>) -> Type {
+        match mode {
+            Some(ReferenceKind::Shared) => Type::Ref(Box::new(matched)),
+            Some(ReferenceKind::Mutable) => Type::Mut(Box::new(matched)),
+            None => matched,
+        }
     }
 
     fn typed(

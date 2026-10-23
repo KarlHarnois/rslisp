@@ -89,9 +89,10 @@ impl<'h> Interpreter<'h> {
 
     fn value(&mut self, expr: &Expr, env: &Env, span: Span) -> Result<Step, Diagnostic> {
         match expr.kind() {
-            ExprKind::Control(control) => self.step_control(control, env),
+            ExprKind::Control(control) => self.step_control(control, env, span),
             ExprKind::Struct(_) => Err(InterpretProblems::runtime_only("structs", span)),
             ExprKind::Try(_) => Err(InterpretProblems::runtime_only("`try` forms", span)),
+            ExprKind::Variant(..) => Err(InterpretProblems::runtime_only("enum values", span)),
             _ => unreachable!("the caller matches a value form"),
         }
     }
@@ -105,10 +106,16 @@ impl<'h> Interpreter<'h> {
         }
     }
 
-    fn step_control(&mut self, control: &Control, env: &Env) -> Result<Step, Diagnostic> {
+    fn step_control(
+        &mut self,
+        control: &Control,
+        env: &Env,
+        span: Span,
+    ) -> Result<Step, Diagnostic> {
         match control {
             Control::Block(block) => self.step_block(block, env),
             Control::If(test, then, otherwise) => self.step_if(test, then, otherwise, env),
+            Control::Match(..) => Err(InterpretProblems::match_only_at_runtime(span)),
         }
     }
 

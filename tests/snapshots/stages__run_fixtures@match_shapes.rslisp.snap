@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/match_shapes.rslisp
+---
+3
+6
+2
+0
+3
+3

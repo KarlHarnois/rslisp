@@ -76,6 +76,50 @@ pub enum TypedLeaf {
 pub enum TypedControl {
     Block(TypedBlock),
     If(Box<TypedExpr>, Box<TypedExpr>, Box<TypedExpr>),
+    Match(Box<TypedExpr>, Vec<TypedArm>),
+}
+
+#[derive(Clone, Debug)]
+pub struct TypedArm {
+    pub pattern: TypedPattern,
+    pub body: TypedBlock,
+    pub span: Span,
+}
+
+#[derive(Clone, Debug)]
+pub struct TypedPattern {
+    pub kind: TypedPatternKind,
+    pub span: Span,
+}
+
+#[derive(Clone, Debug)]
+pub enum TypedPatternKind {
+    Wildcard,
+    Bind(TypedBinder),
+    Variant(BindingId, Vec<TypedPattern>),
+}
+
+impl TypedPattern {
+    pub fn binders(&self) -> Vec<&TypedBinder> {
+        match &self.kind {
+            TypedPatternKind::Wildcard => Vec::new(),
+            TypedPatternKind::Bind(binder) => vec![binder],
+            TypedPatternKind::Variant(_, patterns) => {
+                patterns.iter().flat_map(TypedPattern::binders).collect()
+            }
+        }
+    }
+
+    pub fn binders_mut(&mut self) -> Vec<&mut TypedBinder> {
+        match &mut self.kind {
+            TypedPatternKind::Wildcard => Vec::new(),
+            TypedPatternKind::Bind(binder) => vec![binder],
+            TypedPatternKind::Variant(_, patterns) => patterns
+                .iter_mut()
+                .flat_map(TypedPattern::binders_mut)
+                .collect(),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

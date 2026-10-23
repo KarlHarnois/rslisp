@@ -1,0 +1,60 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/match_shapes.rslisp
+---
+#[derive(Clone, Debug, PartialEq)]
+enum Shape {
+    Circle(f64),
+    Rect(f64, f64),
+    Labeled { text: String, size: f64 },
+    Point,
+}
+
+fn area(s: &Shape) -> f64 {
+    match s {
+        Shape::Circle(r) => 3.0 * *r * *r,
+        Shape::Rect(w, h) => *w * *h,
+        Shape::Labeled { size, .. } => *size * 1.0,
+        Shape::Point => 0.0,
+    }
+}
+
+fn label_length(s: &Shape) -> usize {
+    match s {
+        Shape::Labeled { text: t, .. } => t.len(),
+        Shape::Circle(_) => 0,
+        Shape::Rect(_, _) => 0,
+        Shape::Point => 0,
+    }
+}
+
+fn label_details(s: &Shape) -> usize {
+    match s {
+        Shape::Labeled { text: t, size: s_2 } => t.len(),
+        Shape::Circle(_) => 0,
+        Shape::Rect(_, _) => 0,
+        Shape::Point => 0,
+    }
+}
+
+fn wait(s: &Shape) {
+    match s {
+        Shape::Circle(_) => {
+            let ignored: i64 = 0;
+        },
+        Shape::Rect(_, _) => {},
+        Shape::Labeled { .. } => {},
+        Shape::Point => {},
+    }
+}
+
+fn main() {
+    println!("{}", area(&Shape::Circle(1.0)));
+    println!("{}", area(&Shape::Rect(2.0, 3.0)));
+    println!("{}", area(&Shape::Labeled { text: "box".to_string(), size: 2.0 }));
+    println!("{}", area(&Shape::Point));
+    println!("{}", label_length(&Shape::Labeled { text: "box".to_string(), size: 2.0 }));
+    println!("{}", label_details(&Shape::Labeled { text: "box".to_string(), size: 2.0 }));
+    wait(&Shape::Circle(1.0))
+}

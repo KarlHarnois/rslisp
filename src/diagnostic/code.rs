@@ -69,6 +69,9 @@ impl DiagnosticCode {
     pub const RECURSIVE_ENUM: Self = Self(Cow::Borrowed("L0427"));
     pub const TRY_TARGET: Self = Self(Cow::Borrowed("L0428"));
     pub const TRY_NOT_RESULT_OR_OPTION: Self = Self(Cow::Borrowed("L0429"));
+    pub const AMBIGUOUS_VARIANT: Self = Self(Cow::Borrowed("L0430"));
+    pub const UNKNOWN_VARIANT: Self = Self(Cow::Borrowed("L0431"));
+    pub const WRONG_PATTERN_COUNT: Self = Self(Cow::Borrowed("L0432"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));

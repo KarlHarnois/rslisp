@@ -1,0 +1,6 @@
+(enum a (point))
+(enum b (point f64))
+(type describe (fn (b) b))
+(defn describe (s)
+  (match s
+    (point point)))

@@ -1,0 +1,11 @@
+(enum first (same i64))
+(enum second (same i64))
+(enum (box a) (wrap a))
+
+(defn pick (value)
+  (match value
+    ((same _) (do))))
+
+(defn nested (value)
+  (match value
+    ((wrap (same _)) (do))))

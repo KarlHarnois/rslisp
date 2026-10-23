@@ -1,0 +1,37 @@
+(enum shape
+  (circle f64)
+  (rect f64 f64)
+  (labeled (struct (text string) (size f64)))
+  point)
+
+(type area (fn ((ref shape)) f64))
+
+(defn area (s)
+  (match s
+    ((shape/circle r) (* 3.0 (deref r) (deref r)))
+    ((rect w h) (* (deref w) (deref h)))
+    ((labeled _ size) (deref size))
+    (point 0.0)))
+
+(enum counter-state (value i64) idle)
+
+(def bump-value! (rust "*{0} += {1}" (fn ((mut i64) i64) unit)))
+
+(type bump! (fn ((mut counter-state)) unit))
+
+(defn bump! (state)
+  (match state
+    ((value n) (bump-value! n 1))
+    (idle (do))))
+
+(defn main ()
+  (let state (counter-state/value 1))
+  (bump! (mut state))
+  (println (area (shape/circle 1.0)))
+  (println (area (shape/rect 2.0 3.0)))
+  (println (area (shape/labeled (to-string "box") 2.0)))
+  (println (area shape/point))
+  (prn counter-state/idle)
+  (match state
+    ((value n) (println n))
+    (idle (println "idle"))))

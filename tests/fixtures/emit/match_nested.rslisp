@@ -1,0 +1,15 @@
+(enum (maybe a) (just a) nothing)
+(enum shape (circle f64) (rect f64 f64))
+
+(type maybe-area (fn ((maybe shape)) f64))
+
+(defn maybe-area (m)
+  (match m
+    ((just (circle r)) (* 3.0 r r))
+    ((just (rect w h)) (* w h))
+    (nothing 0.0)))
+
+(defn main ()
+  (println (maybe-area (maybe/just (shape/circle 2.0))))
+  (println (maybe-area (maybe/just (shape/rect 2.0 3.0))))
+  (println (maybe-area maybe/nothing)))

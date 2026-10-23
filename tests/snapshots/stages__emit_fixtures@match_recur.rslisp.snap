@@ -1,0 +1,33 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/match_recur.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Tick {
+    Stop,
+    Tick,
+}
+
+fn countdown(t: Tick, mut n: i64) -> i64 {
+    loop {
+        match t {
+            Tick::Stop => {
+                return n;
+            }
+            Tick::Tick => {
+                if n == 0 {
+                    return n;
+                } else {
+                    n -= 1;
+                    continue;
+                }
+            }
+        }
+    }
+}
+
+fn main() {
+    println!("{}", countdown(Tick::Tick, 5));
+    println!("{}", countdown(Tick::Stop, 5))
+}

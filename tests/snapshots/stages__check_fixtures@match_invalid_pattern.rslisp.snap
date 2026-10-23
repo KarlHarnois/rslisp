@@ -1,0 +1,28 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_invalid_pattern.rslisp
+---
+error[L0210]: this is not a pattern
+ --> check/match_invalid_pattern.rslisp:4:6
+  |
+4 |     ((0 value) value)
+  |      ^^^^^^^^^ a pattern names a binding, a literal or a variant
+  |
+  = help: write a binding name, `_`, a literal, or `(variant pattern ...)`
+
+error[L0210]: this is not a pattern
+ --> check/match_invalid_pattern.rslisp:8:6
+  |
+8 |     ((+ value) value)
+  |      ^^^^^^^^^ a pattern names a binding, a literal or a variant
+  |
+  = help: write a binding name, `_`, a literal, or `(variant pattern ...)`
+
+error[L0210]: this is not a pattern
+  --> check/match_invalid_pattern.rslisp:12:6
+   |
+12 |     (shape/circle 0.0)))
+   |      ^^^^^^^^^^^^ a pattern names a binding, a literal or a variant
+   |
+   = help: write a binding name, `_`, a literal, or `(variant pattern ...)`

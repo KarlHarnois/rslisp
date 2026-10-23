@@ -1,0 +1,10 @@
+(enum shape (circle f64) (rect f64 f64))
+
+(defn area (s)
+  (match s
+    ((circle _ _) 0.0)
+    ((rect w) w)))
+
+(defn qualified (s)
+  (match s
+    ((shape/circle _ _) 0.0)))

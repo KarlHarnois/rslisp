@@ -50,8 +50,9 @@ impl<'a> ModeInference<'a> {
                 .iter()
                 .map(|slot| modes[&slot.binding])
                 .collect();
-            let required = UsageCollector::new(self.functions, modes, tracked, self_modes)
-                .collect(&function.lambda.body);
+            let required =
+                UsageCollector::new(self.functions, modes, &self.copy, tracked, self_modes)
+                    .collect(&function.lambda.body);
             for (binding, needed) in required {
                 let current = modes[&binding];
                 if needed > current {

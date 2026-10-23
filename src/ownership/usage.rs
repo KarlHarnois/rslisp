@@ -3,31 +3,38 @@ use std::collections::{HashMap, HashSet};
 use super::functions::{FunctionTable, ParamMode};
 use crate::core::{BindingId, ReferenceKind};
 use crate::types::{
-    Borrow, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind,
-    TypedLambda, TypedLeaf, TypedStructExpr,
+    Borrow, CopyRules, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
+    TypedExprKind, TypedLambda, TypedLeaf, TypedPattern, TypedStructExpr,
 };
 
 pub struct UsageCollector<'a> {
     functions: &'a FunctionTable,
     modes: &'a HashMap<BindingId, ParamMode>,
+    copy: &'a CopyRules<'a>,
     tracked: HashSet<BindingId>,
+    pattern_bindings: HashSet<BindingId>,
     self_modes: Vec<ParamMode>,
     required: HashMap<BindingId, ParamMode>,
+    pattern_required: HashMap<BindingId, ParamMode>,
 }
 
 impl<'a> UsageCollector<'a> {
     pub fn new(
         functions: &'a FunctionTable,
         modes: &'a HashMap<BindingId, ParamMode>,
+        copy: &'a CopyRules<'a>,
         tracked: HashSet<BindingId>,
         self_modes: Vec<ParamMode>,
     ) -> Self {
         Self {
             functions,
             modes,
+            copy,
             tracked,
+            pattern_bindings: HashSet::new(),
             self_modes,
             required: HashMap::new(),
+            pattern_required: HashMap::new(),
         }
     }
 
@@ -108,6 +115,27 @@ impl<'a> UsageCollector<'a> {
                 self.expr(then, context);
                 self.expr(otherwise, context);
             }
+            TypedControl::Match(value, arms) => {
+                let binders: HashMap<BindingId, Type> = arms
+                    .iter()
+                    .flat_map(|arm| Self::pattern_bindings(&arm.pattern))
+                    .collect();
+                self.pattern_bindings.extend(binders.keys().copied());
+                for arm in arms {
+                    self.block(&arm.body, context);
+                }
+                let moves = binders
+                    .iter()
+                    .any(|(binding, ty)| self.binding_needs_move(*binding, ty, arms));
+                self.expr(
+                    value,
+                    if moves {
+                        ParamMode::Own
+                    } else {
+                        ParamMode::Ref
+                    },
+                );
+            }
         }
     }
 
@@ -185,9 +213,51 @@ impl<'a> UsageCollector<'a> {
         }
     }
 
+    fn pattern_bindings(pattern: &TypedPattern) -> Vec<(BindingId, Type)> {
+        pattern
+            .binders()
+            .into_iter()
+            .map(|binder| (binder.binding, binder.ty.clone()))
+            .collect()
+    }
+
+    fn binding_needs_move(
+        &self,
+        binding: BindingId,
+        ty: &Type,
+        arms: &[crate::types::TypedArm],
+    ) -> bool {
+        match self
+            .pattern_required
+            .get(&binding)
+            .copied()
+            .unwrap_or(ParamMode::Copy)
+        {
+            ParamMode::Copy | ParamMode::Ref => false,
+            ParamMode::Mut => true,
+            ParamMode::Own => {
+                !self.copy.is_copy(ty) || arms.iter().any(|arm| Self::returns(arm, binding))
+            }
+        }
+    }
+
+    fn returns(arm: &crate::types::TypedArm, binding: BindingId) -> bool {
+        matches!(
+            arm.body.items.last(),
+            Some(TypedBodyItem::Expr(expr))
+                if matches!(expr.kind, TypedExprKind::Leaf(TypedLeaf::Local(local)) if local == binding)
+        )
+    }
+
     fn require(&mut self, binding: BindingId, mode: ParamMode) {
         if self.tracked.contains(&binding) {
             let required = self.required.entry(binding).or_insert(ParamMode::Copy);
+            *required = (*required).max(mode);
+        } else if self.pattern_bindings.contains(&binding) {
+            let required = self
+                .pattern_required
+                .entry(binding)
+                .or_insert(ParamMode::Copy);
             *required = (*required).max(mode);
         }
     }

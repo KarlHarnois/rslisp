@@ -1,0 +1,10 @@
+(enum tick stop tick)
+
+(defn countdown (t n)
+  (match t
+    (tick/stop n)
+    (tick/tick (if (= n 0) n (recur t (- n 1))))))
+
+(defn main ()
+  (println (countdown tick/tick 5))
+  (println (countdown tick/stop 5)))

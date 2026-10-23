@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_pattern_on_non_enum.rslisp
+---
+error[L0401]: mismatched types
+ --> check/match_pattern_on_non_enum.rslisp:6:6
+  |
+6 |     ((circle _) 0)))
+  |      ^^^^^^^^^^ expected `shape`, found `i64`

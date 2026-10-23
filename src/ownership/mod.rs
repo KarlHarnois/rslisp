@@ -55,7 +55,7 @@ impl OwnershipChecker {
             &program.bindings,
             &mut diagnostics,
         );
-        let rewrite = ModeRewrite::new(&functions, &modes);
+        let mut rewrite = ModeRewrite::new(&functions, &modes);
         rewrite.apply(program);
         FunctionValueModes::apply(program, rewrite.function_params())
             .into_iter()
