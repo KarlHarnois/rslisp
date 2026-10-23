@@ -1,0 +1,23 @@
+(defn show-number (text)
+  (let (parsed (result i64 _)) (parse text))
+  (if (ok? parsed) (to-string (unwrap-ok parsed)) (to-string "error")))
+
+(defn show-float (text)
+  (let (parsed (result f64 _)) (parse text))
+  (if (ok? parsed) (to-string (unwrap-ok parsed)) (to-string "error")))
+
+(defn show-bool (text)
+  (let (parsed (result bool _)) (parse text))
+  (if (ok? parsed) (to-string (unwrap-ok parsed)) (to-string "error")))
+
+(defn show-char (text)
+  (let (parsed (result char _)) (parse text))
+  (if (ok? parsed) (to-string (unwrap-ok parsed)) (to-string "error")))
+
+(defn main ()
+  (println (show-number "42"))
+  (println (show-number "nope"))
+  (println (show-float "2.5"))
+  (println (show-bool "true"))
+  (println (show-char "x"))
+  (println (show-char "xy")))

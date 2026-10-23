@@ -4,13 +4,13 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/try_in_inline_function.rslisp
 ---
 fn main() {
-    println!("{}", (|left: &str, right: &str| -> Result<i64, <i64 as std::str::FromStr>::Err> {
-        let a: i64 = left.parse()?;
-        let b: i64 = right.parse()?;
+    println!("{}", (|left: &str, right: &str| -> Result<i64, std::num::ParseIntError> {
+        let a: i64 = left.parse::<i64>()?;
+        let b: i64 = right.parse::<i64>()?;
         Ok(a + b)
     })("2", "3").unwrap());
-    println!("{}", (|text: &str| -> Result<i64, <i64 as std::str::FromStr>::Err> {
-        let value: i64 = text.parse()?;
+    println!("{}", (|text: &str| -> Result<i64, std::num::ParseIntError> {
+        let value: i64 = text.parse::<i64>()?;
         Ok(value)
     })("x").is_err())
 }

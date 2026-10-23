@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/parse_target.rslisp
+---
+fn add_one(text: &str) -> Result<i64, std::num::ParseIntError> {
+    Ok(text.parse::<i64>()? + 1)
+}
+
+fn read_number<Target: std::str::FromStr>(text: &str) -> Result<Target, <Target as std::str::FromStr>::Err> {
+    text.parse::<Target>()
+}
+
+fn main() {
+    println!("{}", add_one("2").unwrap());
+    let parsed: Result<i64, std::num::ParseIntError> = read_number("3");
+    println!("{}", parsed.unwrap())
+}

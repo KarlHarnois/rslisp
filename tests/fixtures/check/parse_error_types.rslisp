@@ -1,0 +1,8 @@
+(type read-number (where ((target from-str)) (fn ((ref str)) (result target (parse-error target)))))
+
+(defn read-number (text)
+  (ok (try (parse text))))
+
+(defn main ()
+  (let (parsed (result i64 _)) (read-number "2"))
+  (println (unwrap-ok parsed)))

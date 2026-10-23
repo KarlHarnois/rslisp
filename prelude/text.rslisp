@@ -25,15 +25,33 @@
 (rust-trait from-str "std::str::FromStr"
   bool char string i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
 
-(rust-type (parse-error target) "<{0} as std::str::FromStr>::Err")
+(rust-type (parse-error target)
+  "<{0} as std::str::FromStr>::Err"
+  (bool "std::str::ParseBoolError")
+  (char "std::char::ParseCharError")
+  (string "std::convert::Infallible")
+  (i8 "std::num::ParseIntError")
+  (i16 "std::num::ParseIntError")
+  (i32 "std::num::ParseIntError")
+  (i64 "std::num::ParseIntError")
+  (i128 "std::num::ParseIntError")
+  (isize "std::num::ParseIntError")
+  (u8 "std::num::ParseIntError")
+  (u16 "std::num::ParseIntError")
+  (u32 "std::num::ParseIntError")
+  (u64 "std::num::ParseIntError")
+  (u128 "std::num::ParseIntError")
+  (usize "std::num::ParseIntError")
+  (f32 "std::num::ParseFloatError")
+  (f64 "std::num::ParseFloatError"))
 
 (def chars (rust "{0}.chars()" (fn ((ref str)) (iterator char))))
 (def lines (rust "{0}.lines()" (fn ((ref str)) (iterator (ref str)))))
 (def split (rust "{0}.split({1})" (fn ((ref str) (ref str)) (iterator (ref str)))))
 (def trim (rust "{0}.trim()" (fn ((ref str)) (ref str))))
 (def as-str (rust "{0}.as_str()" (fn ((ref string)) (ref str))))
-(def parse (rust "{0}.parse()" (where ((target from-str))
-                                      (fn ((ref str)) (result target (parse-error target))))))
+(def parse (rust "{0}.parse::<{target}>()" (where ((target from-str))
+                                              (fn ((ref str)) (result target (parse-error target))))))
 
 (def placeholders
   (fn (index count)
