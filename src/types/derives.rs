@@ -5,7 +5,7 @@ use super::checker::TypeChecker;
 use super::problems::TypeProblems;
 use super::traits::Implementor;
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
-use crate::core::{BindingId, CoreModule, ItemKind, StructDerives};
+use crate::core::{BindingId, CoreModule, FunctionFieldTraits, ItemKind, StructDerives};
 use crate::modules::ModuleSources;
 use crate::source::Span;
 
@@ -336,12 +336,8 @@ impl TypeChecker {
     ) -> Option<(Rc<str>, Type)> {
         let definition = self.enums.get(binding)?;
         let params: Vec<GenericId> = definition.params.iter().map(|param| param.id).collect();
-        definition.blocking_variant(&|payload| {
-            self.traits
-                .satisfies(&Bound::plain(trait_binding), payload, &|generic, _| {
-                    params.contains(&generic)
-                })
-        })
+        definition
+            .blocking_variant(&|payload| self.payload_satisfies(trait_binding, payload, &params))
     }
 
     pub(super) fn blocking_field(
@@ -354,15 +350,30 @@ impl TypeChecker {
         definition
             .fields
             .iter()
-            .find(|(_, ty)| {
-                !matches!(ty, Type::Function(..))
-                    && !self
-                        .traits
-                        .satisfies(&Bound::plain(trait_binding), ty, &|generic, _| {
-                            params.contains(&generic)
-                        })
-            })
+            .find(|(_, ty)| !self.payload_satisfies(trait_binding, ty, &params))
             .map(|(name, ty)| (name.clone(), ty.clone()))
+    }
+
+    fn payload_satisfies(
+        &self,
+        trait_binding: BindingId,
+        payload: &Type,
+        params: &[GenericId],
+    ) -> bool {
+        match payload {
+            Type::Function(..) => self.function_field_trait_allowed(trait_binding),
+            _ => self
+                .traits
+                .satisfies(&Bound::plain(trait_binding), payload, &|generic, _| {
+                    params.contains(&generic)
+                }),
+        }
+    }
+
+    fn function_field_trait_allowed(&self, trait_binding: BindingId) -> bool {
+        self.traits.get(trait_binding).is_some_and(|rust_trait| {
+            FunctionFieldTraits::ALLOWED.contains(&StructDerives::derive_name(&rust_trait.path))
+        })
     }
 
     fn derived_implementor(

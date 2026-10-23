@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/function_field_derives.rslisp
+---
+#[derive(Clone, Copy, Debug)]
+struct Handler {
+    callback: fn(i64) -> i64,
+    tag: i64,
+}
+
+fn keep<A>(value: A) -> A {
+    value
+}
+
+fn main() {
+    let handler = Handler { callback: |value: i64| value, tag: 1 };
+    keep(&handler.callback);
+    keep(handler.tag);
+}

@@ -424,6 +424,12 @@ impl OrderTrait {
     pub const PATH: &'static str = "Ord";
 }
 
+pub struct FunctionFieldTraits;
+
+impl FunctionFieldTraits {
+    pub const ALLOWED: [&'static str; 3] = ["Clone", "Copy", "Debug"];
+}
+
 pub struct StructDerives;
 
 impl StructDerives {

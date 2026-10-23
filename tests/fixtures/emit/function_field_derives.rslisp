@@ -1,0 +1,7 @@
+(struct handler (callback (fn (i64) i64)) (tag i64))
+(defn keep (value) value)
+(defn main ()
+  (let handler (new handler (callback (fn (value) value)) (tag 1)))
+  (keep (field handler callback))
+  (keep (field handler tag))
+  (do))
