@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/recursive_enum_parameter.rslisp
+---
+error[L0439]: type parameter `a` is only used recursively
+ --> check/recursive_enum_parameter.rslisp:1:16
+  |
+1 | (enum (wrapped a) (holds (option (wrapped a))) empty)
+  |                ^ declared here            - first recursive use
+  |
+  = help: use `a` in a payload outside `wrapped`, or remove it

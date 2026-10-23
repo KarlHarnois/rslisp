@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/direct_recursive_enum_parameter.rslisp
+---
+error[L0439]: type parameter `a` is only used recursively
+ --> check/direct_recursive_enum_parameter.rslisp:1:14
+  |
+1 | (enum (chain a) (link (chain a)) end)
+  |              ^ declared here - first recursive use
+  |
+  = help: use `a` in a payload outside `chain`, or remove it
