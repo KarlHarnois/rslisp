@@ -344,13 +344,15 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 | 6. Emit and build | done |
 | 7. Ownership | done |
 | 8. Generic types | done |
-| 8.1 References at call sites | planned |
-| 8.2 Struct traits | planned |
+| 8.1 References at call sites | done |
+| 8.2 Struct traits | done |
 | 8.3 Macro code | done |
 | 8.4 Loops | done |
 | 9. Enums and `match` | planned |
 | 10. User-defined traits | planned |
 | 11. Written lifetimes | planned |
+
+A planned milestone is settled design, and new work follows it.
 
 Unless a program writes ownership, traits, bounds or loops, the compiler infers them, and a written form is exact. A `type` signature is exact: a type parameter it declares without `copy` gets no inferred `copy` bound. A `derive` form lists a struct's traits exactly. A written `ref`, `mut` or `deref` turns off adjustment for that value.
 
