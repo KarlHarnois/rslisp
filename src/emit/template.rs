@@ -36,6 +36,10 @@ impl Template {
         self.parsed.dereferences(argument)
     }
 
+    pub fn indexes(&self, argument: usize) -> bool {
+        self.parsed.indexes(argument)
+    }
+
     pub fn inline(&self, arguments: Vec<Code>) -> Result<Code, TemplateError> {
         self.inline_with_places(arguments, &[])
     }

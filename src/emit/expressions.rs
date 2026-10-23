@@ -875,7 +875,7 @@ impl<'a> ExpressionEmitter<'a> {
         position: usize,
         argument: &TypedArgument,
     ) -> ArgumentRole {
-        if position == 0 && template.template.starts_with(Self::RECEIVER) {
+        if Self::is_receiver(template, parsed, position) {
             ArgumentRole::Receiver
         } else if Self::is_mut_place(parsed, position, argument) {
             ArgumentRole::MutPlace
@@ -884,6 +884,10 @@ impl<'a> ExpressionEmitter<'a> {
         } else {
             ArgumentRole::Ordinary
         }
+    }
+
+    fn is_receiver(template: &RustTemplate, parsed: &Template, position: usize) -> bool {
+        (position == 0 && template.template.starts_with(Self::RECEIVER)) || parsed.indexes(position)
     }
 
     fn is_mut_place(parsed: &Template, position: usize, argument: &TypedArgument) -> bool {

@@ -96,6 +96,15 @@ impl ParsedTemplate {
             .any(|piece| matches!(piece, Piece::Placeholder { borrowed: true, .. }))
     }
 
+    pub fn indexes(&self, argument: usize) -> bool {
+        self.pieces.iter().enumerate().any(|(position, piece)| {
+            matches!(piece, Piece::Placeholder { index, .. } if *index == argument)
+                && self.pieces.get(position + 1).is_some_and(|next| {
+                    matches!(next, Piece::Literal(literal) if literal.trim_start().starts_with('['))
+                })
+        })
+    }
+
     pub fn dereferences(&self, argument: usize) -> bool {
         let mut found = false;
         for (position, piece) in self.pieces.iter().enumerate() {
@@ -165,6 +174,19 @@ mod tests {
         let parsed = ParsedTemplate::parse("println!(\"{{}}\", {&0})").expect("a valid template");
         assert!(parsed.borrows(0));
         assert!(parsed.borrows_any());
+    }
+
+    #[test]
+    fn reports_a_placeholder_before_a_bracket() {
+        let parsed = ParsedTemplate::parse("{0} [{1}]").expect("a valid template");
+        assert!(parsed.indexes(0));
+        assert!(!parsed.indexes(1));
+    }
+
+    #[test]
+    fn ignores_a_placeholder_before_other_text() {
+        let parsed = ParsedTemplate::parse("{0}({1})").expect("a valid template");
+        assert!(!parsed.indexes(0));
     }
 
     #[test]
