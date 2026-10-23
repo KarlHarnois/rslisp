@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/parse_error_types.rslisp
+---
+42
+error
+2.5
+true
+x
+error

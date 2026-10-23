@@ -3,19 +3,19 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/try_functional.rslisp
 ---
-fn add_text_let(text: &str) -> Result<i64, <i64 as std::str::FromStr>::Err> {
-    let value: i64 = text.parse()?;
+fn add_text_let(text: &str) -> Result<i64, std::num::ParseIntError> {
+    let value: i64 = text.parse::<i64>()?;
     Ok(value + 1)
 }
 
-fn add_text_threaded(text: &str) -> Result<i64, <i64 as std::str::FromStr>::Err> {
-    let value: i64 = text.parse()?;
+fn add_text_threaded(text: &str) -> Result<i64, std::num::ParseIntError> {
+    let value: i64 = text.parse::<i64>()?;
     Ok(value + 1)
 }
 
-fn add_two_texts(left: &str, right: &str) -> Result<i64, <i64 as std::str::FromStr>::Err> {
-    let a: i64 = left.parse()?;
-    let b: i64 = right.parse()?;
+fn add_two_texts(left: &str, right: &str) -> Result<i64, std::num::ParseIntError> {
+    let a: i64 = left.parse::<i64>()?;
+    let b: i64 = right.parse::<i64>()?;
     Ok(a + b)
 }
 

@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/parse_error_types.rslisp
+---
+(type read-number (where ((target from-str)) (fn ((ref str)) (result target (parse-error target)))))
+(type main (fn () unit))
