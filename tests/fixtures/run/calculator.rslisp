@@ -1,4 +1,4 @@
-(use calculator/lexer tokenize token-kind token-text)
+(use calculator/lexer token tokenize)
 (use calculator/parser evaluate)
 
 (defn main ()
@@ -13,5 +13,9 @@
       (println (str "error: " (unwrap-err (map-ok outcome (fn (tokens) (do))))))))
 
 (defn report (tokens)
-  (for-each (iter tokens) (fn (t) (println (str (token-kind t) " " (token-text t)))))
+  (for-each (iter tokens)
+            (fn (t)
+              (match t
+                ((symbol text) (println (str "symbol " text)))
+                ((number text) (println (str "number " text))))))
   (println (str "= " (evaluate tokens))))

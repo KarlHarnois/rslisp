@@ -1,10 +1,7 @@
-(export char-at item-at slice-text)
+(export char-at slice-text)
 
 (defn char-at (items position)
   (deref (unwrap (get items position))))
-
-(defn item-at (items position)
-  (unwrap (get items position)))
 
 (def slice-text (rust "{0}[{1}..{2}].iter().collect::<String>()"
                       (fn ((ref (vec char)) usize usize) string)))

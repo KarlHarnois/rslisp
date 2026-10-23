@@ -10,6 +10,6 @@
 
 (defn calculate (source)
   (let outcome (then-ok (tokenize source) (fn (tokens) (evaluate (ref tokens)))))
-  (if (ok? outcome)
-      (println (str source " = " (unwrap-ok outcome)))
-      (println (str source " -> error: " (unwrap-err outcome)))))
+  (match outcome
+    ((ok value) (println (str source " = " value)))
+    ((err message) (println (str source " -> error: " message)))))
