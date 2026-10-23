@@ -10,7 +10,7 @@ use crate::core::{
     Item, ItemKind, KernelForm, ModuleId, Namespace, TypeExpr, VariantDeclaration, VariantInfo,
     VariantPayload,
 };
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Counted, Diagnostic};
 use crate::reader::{Form, FormKind, Symbol};
 use crate::source::Span;
 
@@ -482,16 +482,102 @@ impl Expander<'_> {
             .iter()
             .map(|variant| self.lower_variant(&shape, enum_name, variant))
             .collect::<Result<Vec<_>, Diagnostic>>()?;
-        let rust = items
-            .get(2)
-            .filter(|clause| Self::starts_rust_clause(clause))
-            .map(|clause| Self::enum_rust(&shape, clause, parameterized.binders.len()))
-            .transpose()?;
+        let rust = Self::lower_enum_rust(&shape, items, &parameterized.binders, &variants)?;
         core.items.push(Item {
             kind: ItemKind::Enum(binding, parameterized.binders, variants, rust),
             span: form.span(),
         });
         Ok(())
+    }
+
+    fn lower_enum_rust(
+        shape: &Shape,
+        items: &[Form],
+        binders: &[crate::core::TypeBinder],
+        variants: &[VariantDeclaration],
+    ) -> Result<Option<crate::core::EnumRust>, Diagnostic> {
+        let Some(clause) = items
+            .get(2)
+            .filter(|clause| Self::starts_rust_clause(clause))
+        else {
+            return Ok(None);
+        };
+        let rust = Self::enum_rust(shape, clause, binders.len())?;
+        if rust.template_clause {
+            let template_form = clause
+                .as_list()
+                .and_then(|items| items.get(1))
+                .expect("the rust clause holds a string");
+            Self::check_type_placeholders(&rust.template, binders, template_form)?;
+            Self::check_enum_rust_template(
+                items.get(1).expect("the enum has a head"),
+                clause,
+                variants,
+                &rust,
+                binders.len(),
+            )?;
+        }
+        Ok(Some(rust))
+    }
+
+    fn check_enum_rust_template(
+        enum_head: &Form,
+        clause: &Form,
+        variants: &[VariantDeclaration],
+        rust: &crate::core::EnumRust,
+        parameters: usize,
+    ) -> Result<(), Diagnostic> {
+        let example = Self::enum_rust_template_example(enum_head, variants, rust);
+        let [variant] = variants else {
+            return Err(ExpandProblems::enum_rust_template(
+                clause.span(),
+                "this template needs exactly one variant",
+                &example,
+            ));
+        };
+        let VariantPayload::Positional(parts) = &variant.payload else {
+            return Err(ExpandProblems::enum_rust_template(
+                clause.span(),
+                "this template needs positional parts",
+                &example,
+            ));
+        };
+        if parts.len() != parameters {
+            return Err(ExpandProblems::enum_rust_template(
+                clause.span(),
+                &format!(
+                    "this template needs {}",
+                    Counted::noun(parameters, "positional part")
+                ),
+                &example,
+            ));
+        }
+        Ok(())
+    }
+
+    fn enum_rust_template_example(
+        enum_head: &Form,
+        variants: &[VariantDeclaration],
+        rust: &crate::core::EnumRust,
+    ) -> String {
+        let variant = variants
+            .first()
+            .map_or("variant", |variant| variant.name.as_ref());
+        let parameters = Self::enum_parameter_names(enum_head);
+        let parts = parameters.join(" ");
+        let variant = format!("({variant} {parts})");
+        format!(
+            "(enum {enum_head} (rust {:?}) {variant})",
+            rust.path.as_ref()
+        )
+    }
+
+    fn enum_parameter_names(enum_head: &Form) -> Vec<String> {
+        enum_head
+            .as_list()
+            .and_then(|items| items.get(1..))
+            .map(|parameters| parameters.iter().map(ToString::to_string).collect())
+            .unwrap_or_default()
     }
 
     fn lower_variant(

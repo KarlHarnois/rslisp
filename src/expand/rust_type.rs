@@ -107,14 +107,23 @@ impl Expander<'_> {
         let Some([_, path]) = clause.as_list() else {
             return Err(Self::malformed_rust_clause(shape, clause));
         };
-        let FormKind::String(path) = path.kind() else {
+        let FormKind::String(text) = path.kind() else {
             return Err(Self::malformed_rust_clause(shape, clause));
         };
-        let template = Self::enum_rust_template(path, parameters)
+        if ParsedTemplate::parse(text).is_ok_and(|parsed| parsed.placeholders().next().is_some()) {
+            let template = Self::type_template(shape, path)?;
+            return Ok(EnumRust {
+                path: Rc::clone(text),
+                template: Rc::new(template),
+                template_clause: true,
+            });
+        }
+        let template = Self::enum_rust_template(text, parameters)
             .map_err(|_| Self::malformed_rust_clause(shape, clause))?;
         Ok(EnumRust {
-            path: Rc::clone(path),
+            path: Rc::clone(text),
             template: Rc::new(template),
+            template_clause: false,
         })
     }
 
@@ -154,7 +163,7 @@ impl Expander<'_> {
         Ok(template)
     }
 
-    fn check_type_placeholders(
+    pub(super) fn check_type_placeholders(
         template: &ParsedTemplate,
         binders: &[TypeBinder],
         template_form: &Form,

@@ -1,0 +1,1 @@
+(enum (boxed a) (rust "({0})") (wrap a a))

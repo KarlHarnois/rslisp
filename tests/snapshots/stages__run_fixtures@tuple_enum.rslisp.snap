@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/tuple_enum.rslisp
+---
+left
+3right

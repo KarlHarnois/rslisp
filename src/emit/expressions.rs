@@ -11,8 +11,8 @@ use super::template::{Template, TemplateError};
 use super::types::{RustTypes, TypePosition};
 use super::unsized_parameters::UnsizedParameters;
 use crate::core::{
-    BindingId, BindingKind, FieldLabel, Literal, ModuleId, PrimitiveType, ReferenceKind,
-    RustTemplate, VariantInfo,
+    BindingId, BindingKind, FieldLabel, Literal, ModuleId, ParsedTemplate, PrimitiveType,
+    ReferenceKind, RustTemplate, VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Number, NumberValue};
@@ -571,12 +571,47 @@ impl<'a> ExpressionEmitter<'a> {
         let variant = &definition.variants[index];
         let name = variant.name.clone();
         let payload = variant.payload.clone();
+        let template = definition
+            .rust
+            .as_ref()
+            .filter(|rust| rust.template_clause)
+            .map(|rust| rust.template.clone());
+        if let Some(template) = template
+            && let VariantPayload::Positional(types) = &payload
+        {
+            return self.template_pattern(&template, types, patterns);
+        }
         let rust_path = definition.rust.as_ref().map(|rust| rust.path.clone());
         let path = Self::variant_path(self.types().struct_path(owner), rust_path, &name);
         match &payload {
             VariantPayload::None => PatternEmission::plain(Code::atom(path)),
             VariantPayload::Positional(types) => self.positional_pattern(path, types, patterns),
             VariantPayload::Named(fields) => self.named_pattern(path, fields, patterns),
+        }
+    }
+
+    fn template_pattern(
+        &mut self,
+        template: &ParsedTemplate,
+        payload_types: &[Type],
+        patterns: &[TypedPattern],
+    ) -> PatternEmission {
+        let mut arguments = Vec::new();
+        let mut guards = Vec::new();
+        let mut peels = Vec::new();
+        for (pattern, payload) in patterns.iter().zip(payload_types) {
+            let emission = self.pattern(pattern);
+            arguments.push(emission.code);
+            guards.extend(emission.guards);
+            peels.extend(emission.peels);
+            if self.program.is_box(payload) {
+                peels.extend(self.peel_binder(pattern));
+            }
+        }
+        PatternEmission {
+            code: self.fill_enum_template(template, arguments),
+            guards,
+            peels,
         }
     }
 
@@ -694,6 +729,21 @@ impl<'a> ExpressionEmitter<'a> {
         let variant = &definition.variants[index];
         let name = variant.name.clone();
         let payload = variant.payload.clone();
+        let template = definition
+            .rust
+            .as_ref()
+            .filter(|rust| rust.template_clause)
+            .map(|rust| rust.template.clone());
+        if let Some(template) = template
+            && let VariantPayload::Positional(types) = &payload
+        {
+            let arguments = arguments
+                .iter()
+                .zip(types)
+                .map(|(argument, payload)| self.payload_argument(argument, payload))
+                .collect();
+            return self.fill_enum_template(&template, arguments);
+        }
         let rust_path = definition.rust.as_ref().map(|rust| rust.path.clone());
         let path = Self::variant_path(self.types().struct_path(owner), rust_path, &name);
         match &payload {
@@ -701,6 +751,12 @@ impl<'a> ExpressionEmitter<'a> {
             VariantPayload::Positional(types) => self.positional_variant(path, types, arguments),
             VariantPayload::Named(fields) => self.named_variant(path, fields, arguments),
         }
+    }
+
+    fn fill_enum_template(&mut self, template: &ParsedTemplate, arguments: Vec<Code>) -> Code {
+        Template::new(template.text())
+            .inline_with_types(arguments, &[], &[])
+            .expect("the expansion checked the template")
     }
 
     fn positional_variant(

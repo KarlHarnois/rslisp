@@ -67,6 +67,7 @@ pub enum ItemKind {
 pub struct EnumRust {
     pub path: Rc<str>,
     pub template: Rc<ParsedTemplate>,
+    pub template_clause: bool,
 }
 
 #[derive(Clone, Debug)]
