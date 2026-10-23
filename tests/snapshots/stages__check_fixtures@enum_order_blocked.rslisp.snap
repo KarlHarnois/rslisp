@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/enum_order_blocked.rslisp
+---
+error[L0404]: `value` does not implement `ord`
+ --> check/enum_order_blocked.rslisp:4:10
+  |
+4 |   (sort! values))
+  |          ^^^^^^ this needs `ord`
+  |
+  = note: `ord` is never inferred for an enum, so the enum needs a written `derive`
+  = note: `value` cannot derive `ord`: variant `number` holds `f64`

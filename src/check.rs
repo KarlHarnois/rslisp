@@ -60,6 +60,9 @@ impl ProgramChecker {
                 typed.structs.get(*binding).is_some_and(|definition| {
                     definition.written_derive.is_none()
                         && definition.derives.contains(&StructDerives::COPY)
+                }) || typed.enums.get(*binding).is_some_and(|definition| {
+                    definition.written_derive.is_none()
+                        && definition.derives.contains(&StructDerives::COPY)
                 })
             })
             .collect()

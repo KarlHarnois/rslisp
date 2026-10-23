@@ -1,0 +1,8 @@
+(enum counter (value i64))
+
+(type touch! (fn ((mut counter)) unit))
+(defn touch! (value) (do))
+
+(defn main ()
+  (let counter (counter/value 1))
+  (touch! (mut counter)))

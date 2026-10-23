@@ -21,28 +21,40 @@ enum DeriveSource {
 }
 
 #[derive(Clone, Copy)]
+enum DefinitionKind {
+    Struct,
+    Enum,
+}
+
+#[derive(Clone, Copy)]
 struct DeriveCandidate {
-    struct_binding: BindingId,
+    binding: BindingId,
+    kind: DefinitionKind,
     trait_binding: BindingId,
     source: DeriveSource,
 }
 
 impl TypeChecker {
     pub(super) fn register_derived_traits(&mut self, modules: &[CoreModule]) {
-        let structs = Self::struct_arities(modules);
+        let types = Self::type_arities(modules);
         let derivable = Self::derivable_traits(modules);
         let written = self.written_derives(modules, &derivable);
-        let mut candidates = self.add_derive_candidates(&structs, &derivable, &written);
+        let mut candidates = self.add_derive_candidates(&types, &derivable, &written);
         self.remove_blocked_derives(&mut candidates);
         self.record_derives(&candidates, &derivable);
     }
 
-    fn struct_arities(modules: &[CoreModule]) -> Vec<(BindingId, usize)> {
+    fn type_arities(modules: &[CoreModule]) -> Vec<(BindingId, usize, DefinitionKind)> {
         modules
             .iter()
             .flat_map(|module| &module.items)
             .filter_map(|item| match &item.kind {
-                ItemKind::Struct(binding, params, _) => Some((*binding, params.len())),
+                ItemKind::Struct(binding, params, _) => {
+                    Some((*binding, params.len(), DefinitionKind::Struct))
+                }
+                ItemKind::Enum(binding, params, _) => {
+                    Some((*binding, params.len(), DefinitionKind::Enum))
+                }
                 _ => None,
             })
             .collect()
@@ -98,6 +110,9 @@ impl TypeChecker {
             if let Some(definition) = self.structs.get_mut(*struct_binding) {
                 definition.written_derive = Some(item.span);
             }
+            if let Some(definition) = self.enums.get_mut(*struct_binding) {
+                definition.written_derive = Some(item.span);
+            }
             written.insert(
                 *struct_binding,
                 WrittenDerive {
@@ -133,21 +148,21 @@ impl TypeChecker {
 
     fn add_derive_candidates(
         &mut self,
-        structs: &[(BindingId, usize)],
+        types: &[(BindingId, usize, DefinitionKind)],
         derivable: &[(BindingId, &'static str)],
         written: &HashMap<BindingId, WrittenDerive>,
     ) -> Vec<DeriveCandidate> {
         let mut candidates = Vec::new();
         for (trait_binding, name) in derivable {
-            for (struct_binding, arity) in structs {
-                let Some(source) = self.derive_source(*struct_binding, name, written, derivable)
-                else {
+            for (binding, arity, kind) in types {
+                let Some(source) = self.derive_source(*binding, name, written, derivable) else {
                     continue;
                 };
-                let implementor = self.derived_implementor(*struct_binding, *arity, *trait_binding);
+                let implementor = self.derived_implementor(*binding, *arity, *trait_binding);
                 self.traits.add_implementor(*trait_binding, implementor);
                 candidates.push(DeriveCandidate {
-                    struct_binding: *struct_binding,
+                    binding: *binding,
+                    kind: *kind,
                     trait_binding: *trait_binding,
                     source,
                 });
@@ -201,10 +216,10 @@ impl TypeChecker {
             }
             for (candidate, field, ty) in blocked {
                 self.traits
-                    .remove_struct_implementor(candidate.trait_binding, candidate.struct_binding);
+                    .remove_struct_implementor(candidate.trait_binding, candidate.binding);
                 candidates.retain(|kept| {
-                    (kept.struct_binding, kept.trait_binding)
-                        != (candidate.struct_binding, candidate.trait_binding)
+                    (kept.binding, kept.trait_binding)
+                        != (candidate.binding, candidate.trait_binding)
                 });
                 self.report_blocked_derive(candidate, field, ty);
             }
@@ -218,7 +233,7 @@ impl TypeChecker {
         candidates
             .iter()
             .filter_map(|candidate| {
-                self.blocking_field(candidate.struct_binding, candidate.trait_binding)
+                self.blocking_payload(candidate.binding, candidate.kind, candidate.trait_binding)
                     .map(|(field, ty)| (*candidate, field, ty))
             })
             .collect()
@@ -226,19 +241,43 @@ impl TypeChecker {
 
     fn report_blocked_derive(&mut self, candidate: DeriveCandidate, field: Rc<str>, ty: Type) {
         match candidate.source {
-            DeriveSource::Listed(span) => {
-                let display = self.display();
-                let diagnostic = TypeProblems::blocked_derive(
-                    self.bindings.get(candidate.struct_binding).name(),
-                    self.bindings.get(candidate.trait_binding).name(),
-                    &field,
-                    &display.show(&ty),
-                    span,
-                );
-                self.diagnostics.push(diagnostic);
+            DeriveSource::Listed(span) => self.report_listed_block(candidate, &field, &ty, span),
+            DeriveSource::Inferred => self.record_inferred_block(candidate, field, ty),
+        }
+    }
+
+    fn report_listed_block(
+        &mut self,
+        candidate: DeriveCandidate,
+        field: &Rc<str>,
+        ty: &Type,
+        span: Span,
+    ) {
+        let display = self.display();
+        let name = self.bindings.get(candidate.binding).name();
+        let trait_name = self.bindings.get(candidate.trait_binding).name();
+        let diagnostic = match candidate.kind {
+            DefinitionKind::Struct => {
+                TypeProblems::blocked_derive(name, trait_name, field, &display.show(ty), span)
             }
-            DeriveSource::Inferred => {
-                if let Some(definition) = self.structs.get_mut(candidate.struct_binding) {
+            DefinitionKind::Enum => {
+                TypeProblems::blocked_enum_derive(name, trait_name, field, &display.show(ty), span)
+            }
+        };
+        self.diagnostics.push(diagnostic);
+    }
+
+    fn record_inferred_block(&mut self, candidate: DeriveCandidate, field: Rc<str>, ty: Type) {
+        match candidate.kind {
+            DefinitionKind::Struct => {
+                if let Some(definition) = self.structs.get_mut(candidate.binding) {
+                    definition
+                        .blocked
+                        .push((candidate.trait_binding, field, ty));
+                }
+            }
+            DefinitionKind::Enum => {
+                if let Some(definition) = self.enums.get_mut(candidate.binding) {
                     definition
                         .blocked
                         .push((candidate.trait_binding, field, ty));
@@ -257,13 +296,52 @@ impl TypeChecker {
                 .iter()
                 .find(|(binding, _)| *binding == candidate.trait_binding)
                 .map(|(_, name)| *name);
-            if let (Some(name), Some(definition)) =
-                (name, self.structs.get_mut(candidate.struct_binding))
-            {
-                definition.derives.push(name);
-                definition.derived_traits.push(candidate.trait_binding);
+            match candidate.kind {
+                DefinitionKind::Struct => {
+                    if let (Some(name), Some(definition)) =
+                        (name, self.structs.get_mut(candidate.binding))
+                    {
+                        definition.derives.push(name);
+                        definition.derived_traits.push(candidate.trait_binding);
+                    }
+                }
+                DefinitionKind::Enum => {
+                    if let (Some(name), Some(definition)) =
+                        (name, self.enums.get_mut(candidate.binding))
+                    {
+                        definition.derives.push(name);
+                        definition.derived_traits.push(candidate.trait_binding);
+                    }
+                }
             }
         }
+    }
+
+    fn blocking_payload(
+        &self,
+        binding: BindingId,
+        kind: DefinitionKind,
+        trait_binding: BindingId,
+    ) -> Option<(Rc<str>, Type)> {
+        match kind {
+            DefinitionKind::Struct => self.blocking_field(binding, trait_binding),
+            DefinitionKind::Enum => self.blocking_enum_payload(binding, trait_binding),
+        }
+    }
+
+    pub(super) fn blocking_enum_payload(
+        &self,
+        binding: BindingId,
+        trait_binding: BindingId,
+    ) -> Option<(Rc<str>, Type)> {
+        let definition = self.enums.get(binding)?;
+        let params: Vec<GenericId> = definition.params.iter().map(|param| param.id).collect();
+        definition.blocking_variant(&|payload| {
+            self.traits
+                .satisfies(&Bound::plain(trait_binding), payload, &|generic, _| {
+                    params.contains(&generic)
+                })
+        })
     }
 
     pub(super) fn blocking_field(

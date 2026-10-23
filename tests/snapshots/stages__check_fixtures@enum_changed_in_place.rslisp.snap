@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/enum_changed_in_place.rslisp
+---
+(derive counter clone debug partial-eq eq hash)
+(type touch! (fn ((mut counter)) unit))
+(type main (fn () unit))

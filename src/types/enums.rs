@@ -66,6 +66,16 @@ impl EnumDefinition {
             .flat_map(|variant| variant.payload_types())
     }
 
+    pub fn blocking_variant(&self, satisfies: &dyn Fn(&Type) -> bool) -> Option<(Rc<str>, Type)> {
+        self.variants.iter().find_map(|variant| {
+            variant
+                .payload_types()
+                .into_iter()
+                .find(|payload| !matches!(payload, Type::Function(..)) && !satisfies(payload))
+                .map(|payload| (variant.name.clone(), payload.clone()))
+        })
+    }
+
     fn replacements(&self, arguments: &[Type]) -> HashMap<GenericId, Type> {
         self.params
             .iter()
@@ -87,6 +97,10 @@ impl EnumTable {
 
     pub fn get(&self, binding: BindingId) -> Option<&EnumDefinition> {
         self.enums.get(&binding)
+    }
+
+    pub fn get_mut(&mut self, binding: BindingId) -> Option<&mut EnumDefinition> {
+        self.enums.get_mut(&binding)
     }
 }
 
@@ -179,5 +193,25 @@ mod tests {
         let definition = fixture.definition(vec![fixture.variant("empty", VariantPayload::None)]);
         assert_eq!(definition.instantiated_payload(0, &[]), Some(Vec::new()));
         assert_eq!(definition.payload_types().count(), 0);
+    }
+
+    #[test]
+    fn a_blocking_variant_names_the_payload_that_fails() {
+        let fixture = Enums::new();
+        let definition = fixture.definition(vec![
+            fixture.variant(
+                "text",
+                VariantPayload::Positional(vec![Type::Primitive(PrimitiveType::String)]),
+            ),
+            fixture.variant(
+                "number",
+                VariantPayload::Positional(vec![Type::Primitive(PrimitiveType::F64)]),
+            ),
+        ]);
+        let blocking = definition
+            .blocking_variant(&|payload| matches!(payload, Type::Primitive(PrimitiveType::String)))
+            .expect("the number payload does not satisfy the test");
+        assert_eq!(blocking.0.as_ref(), "number");
+        assert_eq!(blocking.1, Type::Primitive(PrimitiveType::F64));
     }
 }

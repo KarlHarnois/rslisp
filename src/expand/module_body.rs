@@ -570,7 +570,10 @@ impl Expander<'_> {
         let shape = Shape::new(KernelForm::Definition(DefinitionForm::Derive), form);
         let items = shape.at_least(2)?;
         let binding = self.resolve(shape.symbol(&items[1])?, Namespace::Type, items[1].span())?;
-        if self.kind(binding) != BindingKind::Struct(module) {
+        if !matches!(
+            self.kind(binding),
+            BindingKind::Struct(owner) | BindingKind::Enum(owner) if owner == module
+        ) {
             return Err(ExpandProblems::derive_target(
                 self.bindings.get(binding).name(),
                 items[1].span(),

@@ -428,6 +428,61 @@ impl TypeProblems {
         .with_help("recursive enums come in a later change, where a recursive payload is boxed automatically")
     }
 
+    pub fn blocked_enum_derive(
+        enum_name: &str,
+        trait_name: &str,
+        variant: &str,
+        payload_type: &str,
+        span: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::BLOCKED_DERIVE,
+            format!("`{enum_name}` cannot derive `{trait_name}`"),
+            Label::new(
+                span,
+                format!("variant `{variant}` holds `{payload_type}`, which is not `{trait_name}`"),
+            ),
+        )
+        .with_help(format!(
+            "change the payload of variant `{variant}`, or leave this trait out of the `derive`"
+        ))
+    }
+
+    pub fn blocked_enum_derive_note(
+        enum_name: &str,
+        trait_name: &str,
+        variant: &str,
+        payload_type: &str,
+    ) -> String {
+        format!(
+            "`{enum_name}` cannot derive `{trait_name}`: variant `{variant}` holds `{payload_type}`"
+        )
+    }
+
+    pub fn order_not_inferred_enum_note() -> &'static str {
+        "`ord` is never inferred for an enum, so the enum needs a written `derive`"
+    }
+
+    pub fn enum_order_help(enum_name: &str, derives: &[String], variants: &[Rc<str>]) -> String {
+        format!(
+            "add `(derive {enum_name} {})` to compare variants in declared order: {}",
+            derives.join(" "),
+            Self::field_order(variants)
+        )
+    }
+
+    pub fn print_enum_help() -> &'static str {
+        "print an enum's data form with `prn`"
+    }
+
+    pub fn add_to_enum_derive_help(trait_name: &str) -> String {
+        format!("add `{trait_name}` to the enum's `derive`")
+    }
+
+    pub fn order_blocked_enum_note(enum_name: &str, variant: &str, payload_type: &str) -> String {
+        format!("`{enum_name}` cannot derive `ord`: variant `{variant}` holds `{payload_type}`")
+    }
+
     pub fn blocked_derive(
         struct_name: &str,
         trait_name: &str,

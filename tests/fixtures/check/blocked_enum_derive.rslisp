@@ -1,0 +1,2 @@
+(enum value (text string) (number f64))
+(derive value eq)

@@ -1,0 +1,30 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/enums.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum PairOf<A> {
+    Both(A, A),
+    Neither,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+enum Shape {
+    Circle(f64),
+    Rect(f64, f64),
+    Labeled { text: String, size: f64 },
+    Point,
+}
+
+fn main() {
+    println!("{:?}", Shape::Circle(1.0));
+    println!("{:?}", Shape::Rect(2.0, 3.0));
+    println!("{:?}", Shape::Labeled { text: "box".to_string(), size: 2.0 });
+    println!("{:?}", Shape::Point);
+    println!("{:?}", PairOf::Both("left".to_string(), "right".to_string()));
+    println!("{:?}", {
+        let result: PairOf<i64> = PairOf::Neither;
+        result
+    })
+}

@@ -1,0 +1,5 @@
+(enum value (number f64))
+(derive value debug)
+
+(defn main ()
+  (prn (clone (value/number 1.0))))

@@ -1,0 +1,4 @@
+(enum value (number f64))
+(defn main ()
+  (let values (vec (value/number 1.0)))
+  (sort! values))

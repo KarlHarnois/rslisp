@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/enums_written_derive.rslisp
+---
+(type main (fn () unit))

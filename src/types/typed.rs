@@ -183,6 +183,12 @@ impl TypedProgram {
             .structs
             .iter()
             .filter_map(|binding| self.inferred_derive_line(*binding))
+            .chain(
+                self.entry_module()
+                    .enums
+                    .iter()
+                    .filter_map(|binding| self.inferred_enum_derive_line(*binding)),
+            )
             .collect::<String>();
         let definitions: String = self
             .entry_module()
@@ -194,6 +200,20 @@ impl TypedProgram {
             })
             .collect();
         format!("{structs}{definitions}")
+    }
+
+    fn inferred_enum_derive_line(&self, binding: BindingId) -> Option<String> {
+        let definition = self.enums.get(binding)?;
+        if definition.written_derive.is_some() {
+            return None;
+        }
+        let name = self.bindings.get(binding).name();
+        let derives: Vec<&str> = definition
+            .derived_traits
+            .iter()
+            .map(|binding| self.bindings.get(*binding).name())
+            .collect();
+        Some(format!("(derive {name} {})\n", derives.join(" ")))
     }
 
     fn inferred_derive_line(&self, binding: BindingId) -> Option<String> {
