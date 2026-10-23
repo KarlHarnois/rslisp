@@ -2,10 +2,10 @@
 
 (export pair let-pair)
 
-(enum (pair a b) (rust "({0}, {1})") (of a b))
+(enum (pair a b) (rust "({0}, {1})") (pair a b))
 
 (def pair (rust "({0}, {1})" (where (a b) (fn (a b) (pair a b)))))
 
 (defrule let-pair
   (((first second) value body ...)
-   (match value ((of first second) (do body ...)))))
+   (match value ((pair first second) (do body ...)))))

@@ -1,0 +1,27 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/pair_variant.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Thing {
+    Of(i64),
+    Other(String),
+}
+
+fn describe<A: std::fmt::Display, B: std::fmt::Display>(entry: &(A, B)) -> String {
+    let (index, line) = entry;
+    format!("{}: {}", index, line)
+}
+
+fn main() {
+    println!("{}", describe(&(1_i64, "alpha")));
+    match Thing::Of(2) {
+        Thing::Of(n) => println!("{}", n),
+        Thing::Other(_) => println!("{}", 0_i64),
+    }
+    match Thing::Other("beta".to_string()) {
+        Thing::Of(_) => println!("{}", 0_i64),
+        Thing::Other(s) => println!("{}", s),
+    }
+}
