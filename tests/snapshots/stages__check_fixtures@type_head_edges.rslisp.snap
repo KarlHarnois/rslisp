@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/type_head_edges.rslisp
+---
+error[L0210]: malformed `struct`
+ --> check/type_head_edges.rslisp:1:9
+  |
+1 | (struct () (x i64))
+  |         ^^ this does not fit the shape of `struct`
+  |
+  = help: write it as `(struct name (field type) ...)`
+
+error[L0219]: `struct` names its type parameters on its name
+ --> check/type_head_edges.rslisp:2:16
+  |
+2 | (struct empty (where () (x i64)))
+  |                ^^^^^ this `where` names them in the body
+  |
+  = help: write `(struct empty (x i64))`

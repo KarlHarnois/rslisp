@@ -47,7 +47,7 @@ impl Expander<'_> {
             .map_or_else(|| head.to_string(), |symbol| symbol.name().to_string());
         let parameters = where_items[1].as_list().unwrap_or_default();
         let head = if parameters.is_empty() {
-            format!("({name})")
+            name
         } else {
             let rendered: Vec<String> = parameters.iter().map(Form::to_string).collect();
             format!("({name} {})", rendered.join(" "))
