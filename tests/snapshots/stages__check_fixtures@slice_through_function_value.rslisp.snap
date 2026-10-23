@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/slice_through_function_value.rslisp
+---
+(type apply-reader (fn ((fn ((ref (vec i64))) i64) (ref (vec i64))) i64))
+(type main (fn () unit))

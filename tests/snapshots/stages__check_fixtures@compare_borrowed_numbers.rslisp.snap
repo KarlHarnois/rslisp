@@ -3,5 +3,5 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/compare_borrowed_numbers.rslisp
 ---
-(type big? (fn ((ref (vec i64))) bool))
+(type big? (fn ((ref (slice i64))) bool))
 (type main (fn () unit))

@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/slice_recursive_vector.rslisp
+---
+(type sum-vec (fn ((ref (vec i64))) i64))
+(type walk (fn ((ref (vec i64))) i64))
+(type main (fn () unit))

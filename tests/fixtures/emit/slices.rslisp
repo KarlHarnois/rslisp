@@ -1,0 +1,21 @@
+(defn total (numbers)
+  (sum (values numbers)))
+
+(defn first-number (numbers)
+  (at numbers 0))
+
+(defn count-pairs (numbers)
+  (count (windows numbers 2)))
+
+(defn total-from (numbers index)
+  (if (< index (len numbers))
+      (recur numbers (+ index 1))
+      (total numbers)))
+
+(defn main ()
+  (let numbers (vec 2 3 5 7 11))
+  (println (total numbers))
+  (println (at (ref numbers) 0))
+  (println (first-number numbers))
+  (println (count-pairs numbers))
+  (println (total-from numbers 0)))

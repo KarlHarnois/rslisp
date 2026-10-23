@@ -1,0 +1,9 @@
+(def sum-vec (rust "{0}.iter().copied().sum::<i64>()" (fn ((ref (vec i64))) i64)))
+
+(defn walk (numbers)
+  (if (> (len numbers) 0)
+      (sum-vec numbers)
+      (recur numbers)))
+
+(defn main ()
+  (println (walk (vec 4 8 15))))

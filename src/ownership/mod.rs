@@ -8,6 +8,7 @@ mod mutation;
 mod names;
 mod problems;
 mod rewrite;
+mod slices;
 mod usage;
 mod values;
 
@@ -23,6 +24,7 @@ use moves::MoveChecker;
 use names::ChangingFunctionNames;
 use problems::OwnershipProblems;
 use rewrite::ModeRewrite;
+use slices::SliceSelection;
 use values::FunctionValueModes;
 
 pub use changes::InPlaceChanges;
@@ -55,7 +57,10 @@ impl OwnershipChecker {
             &program.bindings,
             &mut diagnostics,
         );
-        let mut rewrite = ModeRewrite::new(&functions, &modes);
+        let slices = SliceSelection::of(program, &functions, &modes)
+            .map(|selection| selection.run())
+            .unwrap_or_default();
+        let mut rewrite = ModeRewrite::new(&functions, &modes, &slices);
         rewrite.apply(program);
         FunctionValueModes::apply(program, rewrite.function_params())
             .into_iter()

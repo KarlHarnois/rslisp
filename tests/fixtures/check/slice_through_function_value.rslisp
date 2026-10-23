@@ -1,0 +1,5 @@
+(defn apply-reader ((reader (fn ((ref (vec i64))) i64)) xs)
+  (reader xs))
+
+(defn main ()
+  (println (apply-reader (fn (numbers) (at numbers 0)) (vec 4 8 15))))
