@@ -1,0 +1,8 @@
+(rust-type (cell a) "std::cell::Cell<{0}>")
+(def cell-new (rust "std::cell::Cell::new({0})" (where (a) (fn (a) (cell a)))))
+
+(enum tree (leaf i64) (node (cell tree)))
+
+(defn main ()
+  (let t (tree/node (cell-new (tree/leaf 1))))
+  (println 1))

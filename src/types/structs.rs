@@ -9,6 +9,7 @@ use crate::source::Span;
 pub struct StructDefinition {
     pub params: Vec<GenericParam>,
     pub fields: Vec<(Rc<str>, Type)>,
+    pub field_spans: Vec<Span>,
     pub derives: Vec<&'static str>,
     pub derived_traits: Vec<BindingId>,
     pub blocked: Vec<(BindingId, Rc<str>, Type)>,
