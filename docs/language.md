@@ -160,7 +160,7 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 | `(vec a)` | `Vec<A>` | `vec push! len iter values collect get pop! sort! sort-by-key! windows at dedup!` |
 | `(slice a)` | `[A]` | `windows at` |
 | `(box a)` | `Box<A>` | `box-new` |
-| `(pair a b)` | `(A, B)` | `pair pair/of let-pair` |
+| `(pair a b)` | `(A, B)` | `pair pair/pair let-pair` |
 | `(option a)` | `Option<A>` | `some none option/some option/none some? none? unwrap-or unwrap expect map-some then-some` |
 | `(result a b)` | `Result<A, B>` | `ok err result/ok result/err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok` |
 | `(iterator a)` | `impl Iterator<Item = A>` | `range map filter fold for-each enumerate zip sum count max min max-by-key any all find take take-while` |
@@ -447,7 +447,7 @@ An `enum` declares a sum type. A variant is a bare name, `(name type ...)` with 
 
 An optional `(rust "Path")` as the first form after the name makes the enum name a Rust type, such as `(enum (option value) (rust "Option") (some value) none)`. The clause holds one string: a Rust path, or a type template when the string holds a placeholder such as `{0}`. Only in that position does `(rust "...")` mean the clause. The compiler appends the enum's type parameters to a path, so `(option i64)` emits `Option<i64>`. Such an enum emits no Rust definition, and a construction or pattern emits the path, then `::`, then the variant's Rust name: `(option/some x)` emits `Option::Some(x)` and the pattern `none` emits `Option::None`. The enum reads as a `rust-type` in its emitted Rust, its traits, its size, its display in diagnostics and `signatures`, and `try`. Its traits come from `rust-trait` entries only, with no inferred traits and no `derive`; a `derive` of it is an error, `L0435`.
 
-A template clause fills its placeholders from the enum's type arguments and from the variant's payload. Such an enum has exactly one variant, with one positional payload part per placeholder; otherwise the compiler reports `L0438`. The type emits the template filled with the type arguments, so `(pair usize string)` emits `(usize, String)`. A construction and a pattern emit the template filled with the payload in order, so `(pair/of i x)` emits `(i, x)` and the pattern `(of index line)` emits `(index, line)`.
+A template clause fills its placeholders from the enum's type arguments and from the variant's payload. Such an enum has exactly one variant, with one positional payload part per placeholder; otherwise the compiler reports `L0438`. The type emits the template filled with the type arguments, so `(pair usize string)` emits `(usize, String)`. A construction and a pattern emit the template filled with the payload in order, so `(pair i x)` emits `(i, x)` and the pattern `(pair index line)` emits `(index, line)`.
 
 ```lisp
 (enum shape

@@ -1,0 +1,14 @@
+(enum thing (of i64) (other string))
+
+(defn describe (entry)
+  (match entry
+    ((pair index line) (str index ": " line))))
+
+(defn main ()
+  (println (describe (pair 1 "alpha")))
+  (match (thing/of 2)
+    ((of n) (println n))
+    ((other _) (println 0)))
+  (match (thing/other (to-string "beta"))
+    ((of _) (println 0))
+    ((other s) (println s))))
