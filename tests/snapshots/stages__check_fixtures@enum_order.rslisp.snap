@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/enum_order.rslisp
+---
+error[L0404]: `rank` does not implement `ord`
+ --> check/enum_order.rslisp:4:10
+  |
+4 |   (sort! values))
+  |          ^^^^^^ this needs `ord`
+  |
+  = note: `ord` is never inferred for an enum, so the enum needs a written `derive`
+  = help: add `(derive rank clone copy debug partial-eq eq hash ord)` to compare variants in declared order: `low`, then `high`

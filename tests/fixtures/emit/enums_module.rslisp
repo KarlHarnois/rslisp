@@ -1,0 +1,7 @@
+(use enums_module/shape shape)
+
+(defn main ()
+  (prn (shape/circle 1.0))
+  (prn (shape/rect 2.0 3.0))
+  (prn (shape/labeled (to-string "box") 2.0))
+  (prn shape/point))

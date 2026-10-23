@@ -312,6 +312,13 @@ impl<'a> ItemEmitter<'a> {
             variants.push(Fragment::Text(format!("{name}{payload},")));
         }
         let mut fragments = Vec::new();
+        if !definition.derives.is_empty() {
+            fragments.push(Fragment::Text(format!(
+                "#[derive({})]",
+                definition.derives.join(", ")
+            )));
+            fragments.push(Fragment::Newline);
+        }
         fragments.extend([
             Fragment::Text(format!("{visibility}enum {}{params} {{", info.name)),
             Fragment::Indented(variants),

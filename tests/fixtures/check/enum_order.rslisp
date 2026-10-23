@@ -1,0 +1,4 @@
+(enum rank low high)
+(defn main ()
+  (let values (vec rank/low rank/high))
+  (sort! values))

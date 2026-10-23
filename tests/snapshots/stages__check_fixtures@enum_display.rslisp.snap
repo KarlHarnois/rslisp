@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/enum_display.rslisp
+---
+error[L0404]: `value` does not implement `display`
+ --> check/enum_display.rslisp:2:24
+  |
+2 | (defn main () (println (value/number 1.0)))
+  |                        ^^^^^^^^^^^^^^^^^^ this needs `display`
+  |
+  = help: print an enum's data form with `prn`

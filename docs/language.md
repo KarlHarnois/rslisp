@@ -54,7 +54,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `type` | `(type name type)` | signature | name: reference to a `def`. type: type. |
 | `struct` | `(struct name (field type)...)` or `(struct (name param...) (field type)...)` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
 | `enum` | `(enum name variant...)` or `(enum (name param...) variant...)` | `enum` | name: type binder. params: type binders. variants: a name, `(name type...)`, or `(name (struct (field type)...))`. |
-| `derive` | `(derive struct trait...)` | `#[derive(...)]` | struct: reference to a `struct` of this module. traits: references to traits. |
+| `derive` | `(derive type trait...)` | `#[derive(...)]` | type: reference to a `struct` or `enum` of this module. traits: references to traits. |
 | `new` | `(new name (field value)...)` | struct literal | name: type. fields: field labels with expressions. |
 | `field` | `(field value name)` | `value.name` | value: expression. name: field label. |
 | `ref` | `(ref value)` | `&value` | value: expression. |
@@ -442,6 +442,8 @@ An `enum` declares a sum type. A variant is a bare name, `(name type ...)` with 
 ```
 
 A construction is qualified. `(shape/circle 1.0)` constructs a payload variant, and `shape/point` is the value of a variant with no payload. A variant with a struct payload takes its fields positionally, in field order: `(shape/labeled (to-string "box") 2.0)`. Using a payload constructor as a value is an error. `(export shape)` exports the enum and every constructor it defines.
+
+An enum gets the traits of a struct under 8.2, with its payloads in place of fields. Each structural trait that all payloads support is inferred, and `copy` is inferred when nothing changes the enum in place. A written `derive` is exact, and an order follows the declared variant order. A blocked trait names the variant whose payload blocks it.
 
 A variant that holds its own enum by value is an error; recursive enums come in a later change, where a recursive payload is boxed automatically. `match` over enum values comes in the next change.
 

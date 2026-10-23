@@ -1,0 +1,14 @@
+(enum (pair-of a) (both a a) neither)
+(enum shape
+  (circle f64)
+  (rect f64 f64)
+  (labeled (struct (text string) (size f64)))
+  point)
+
+(defn main ()
+  (prn (shape/circle 1.0))
+  (prn (shape/rect 2.0 3.0))
+  (prn (shape/labeled (to-string "box") 2.0))
+  (prn shape/point)
+  (prn (pair-of/both (to-string "left") (to-string "right")))
+  (prn (the (pair-of i64) pair-of/neither)))

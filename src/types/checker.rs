@@ -1150,8 +1150,8 @@ impl TypeChecker {
     fn report_missing_trait(&mut self, bound: &Bound, implementor: &Type, span: Span) {
         let display = self.display();
         let mut diagnostic = self.missing_trait_diagnostic(bound, implementor, span, &display);
-        if let Type::Named(struct_binding, _) = implementor {
-            diagnostic = self.struct_trait_help(diagnostic, *struct_binding, bound, &display);
+        if let Type::Named(binding, _) = implementor {
+            diagnostic = self.type_trait_help(diagnostic, *binding, bound, &display);
         }
         self.diagnostics.push(diagnostic);
     }
@@ -1166,7 +1166,9 @@ impl TypeChecker {
         let trait_name = self.bindings.get(bound.binding).name();
         let found = display.show(implementor);
         match implementor {
-            Type::Named(struct_binding, _) if self.structs.get(*struct_binding).is_some() => {
+            Type::Named(binding, _)
+                if self.structs.get(*binding).is_some() || self.enums.get(*binding).is_some() =>
+            {
                 TypeProblems::missing_trait_on_struct(trait_name, &found, span)
             }
             _ => {
@@ -1191,6 +1193,87 @@ impl TypeChecker {
                     .collect()
             })
             .unwrap_or_default()
+    }
+
+    fn type_trait_help(
+        &self,
+        diagnostic: Diagnostic,
+        binding: BindingId,
+        bound: &Bound,
+        display: &TypeDisplay<'_>,
+    ) -> Diagnostic {
+        if self.enums.get(binding).is_some() {
+            return self.enum_trait_help(diagnostic, binding, bound, display);
+        }
+        self.struct_trait_help(diagnostic, binding, bound, display)
+    }
+
+    fn enum_trait_help(
+        &self,
+        diagnostic: Diagnostic,
+        binding: BindingId,
+        bound: &Bound,
+        display: &TypeDisplay<'_>,
+    ) -> Diagnostic {
+        let definition = self
+            .enums
+            .get(binding)
+            .expect("enum trait help names an enum");
+        let enum_name = self.bindings.get(binding).name().to_string();
+        let trait_name = self.bindings.get(bound.binding).name();
+        let mut diagnostic = match definition.written_derive {
+            Some(span) if self.is_derivable(bound.binding) => diagnostic
+                .with_label(TypeProblems::derive_leaves_out(span, trait_name))
+                .with_help(TypeProblems::add_to_enum_derive_help(trait_name)),
+            _ => diagnostic,
+        };
+        if self.is_order(bound.binding) {
+            if definition.written_derive.is_none() {
+                diagnostic = diagnostic.with_note(TypeProblems::order_not_inferred_enum_note());
+            }
+            if let Some((variant, field_type)) = self.blocking_enum_payload(binding, bound.binding)
+            {
+                diagnostic = diagnostic.with_note(TypeProblems::order_blocked_enum_note(
+                    &enum_name,
+                    &variant,
+                    &display.show(&field_type),
+                ));
+            } else {
+                let mut derives: Vec<String> = definition
+                    .derived_traits
+                    .iter()
+                    .map(|binding| self.bindings.get(*binding).name().to_string())
+                    .collect();
+                derives.push(trait_name.to_string());
+                let variants: Vec<Rc<str>> = definition
+                    .variants
+                    .iter()
+                    .map(|variant| variant.name.clone())
+                    .collect();
+                diagnostic = diagnostic.with_help(TypeProblems::enum_order_help(
+                    &enum_name, &derives, &variants,
+                ));
+            }
+        } else if let Some((blocked, variant, payload)) = definition
+            .blocked
+            .iter()
+            .find(|(blocked, _, _)| *blocked == bound.binding)
+        {
+            diagnostic = diagnostic.with_note(TypeProblems::blocked_enum_derive_note(
+                &enum_name,
+                self.bindings.get(*blocked).name(),
+                variant,
+                &display.show(payload),
+            ));
+        }
+        if self
+            .traits
+            .get(bound.binding)
+            .is_some_and(|rust_trait| rust_trait.path.as_ref() == "std::fmt::Display")
+        {
+            return diagnostic.with_help(TypeProblems::print_enum_help());
+        }
+        diagnostic
     }
 
     fn struct_trait_help(

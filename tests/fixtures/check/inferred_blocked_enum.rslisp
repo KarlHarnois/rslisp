@@ -1,0 +1,4 @@
+(rust-type file "std::fs::File")
+(enum value (file file) (number f64))
+(type clone-value (fn (file) value))
+(defn clone-value (f) (clone (value/file f)))

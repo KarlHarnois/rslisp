@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/inferred_blocked_enum.rslisp
+---
+error[L0404]: `value` does not implement `clone`
+ --> check/inferred_blocked_enum.rslisp:4:30
+  |
+4 | (defn clone-value (f) (clone (value/file f)))
+  |                              ^^^^^^^^^^^^^^ this needs `clone`
+  |
+  = note: `value` cannot derive `clone`: variant `file` holds `file`

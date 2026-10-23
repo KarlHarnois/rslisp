@@ -3,11 +3,13 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/enums_construct.rslisp
 ---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 enum PairOf<A> {
     Both(A, A),
     Neither,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 enum Shape {
     Circle(f64),
     Rect(f64, f64),

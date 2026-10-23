@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/derive_leaves_out_enum.rslisp
+---
+error[L0404]: `value` does not implement `clone`
+ --> check/derive_leaves_out_enum.rslisp:5:15
+  |
+2 | (derive value debug)
+  | -------------------- this `derive` leaves out `clone`
+...
+5 |   (prn (clone (value/number 1.0))))
+  |               ^^^^^^^^^^^^^^^^^^ this needs `clone`
+  |
+  = help: add `clone` to the enum's `derive`
