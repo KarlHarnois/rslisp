@@ -1,0 +1,1 @@
+(defstruct pair (where (a b) (first a) (second b)))

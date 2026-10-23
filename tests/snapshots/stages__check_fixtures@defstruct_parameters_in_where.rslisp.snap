@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/defstruct_parameters_in_where.rslisp
+---
+error[L0219]: `defstruct` names its type parameters on its name
+ --> check/defstruct_parameters_in_where.rslisp:1:18
+  |
+1 | (defstruct pair (where (a b) (first a) (second b)))
+  |                  ^^^^^ this `where` names them in the body
+  |
+  = help: write `(defstruct (pair a b) (first a) (second b))`

@@ -52,7 +52,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `do` | `(do form...)` | block | forms: expressions. At module level: definitions. |
 | `if` | `(if test then else)` | `if`/`else` | all: expressions. |
 | `type` | `(type name type)` | signature | name: reference to a `def`. type: type. |
-| `struct` | `(struct name (field type)...)` or `(struct name (where (param...) (field type)...))` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
+| `struct` | `(struct name (field type)...)` or `(struct (name param...) (field type)...)` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
 | `derive` | `(derive struct trait...)` | `#[derive(...)]` | struct: reference to a `struct` of this module. traits: references to traits. |
 | `new` | `(new name (field value)...)` | struct literal | name: type. fields: field labels with expressions. |
 | `field` | `(field value name)` | `value.name` | value: expression. name: field label. |
@@ -103,14 +103,14 @@ Type syntax mirrors value syntax:
 | `(where ((n number)) (fn (n) n))` | `fn<N: Number>(N) -> N` |
 | `_` | inferred |
 
-Type variables are bound only by `where`. A `where` binds them over what its form holds: a signature's type, a struct's fields or a Rust type's template. An unknown type name is an unbound-name error that suggests the closest name.
+Type variables are bound by a `where` or by a `struct`'s head. A `struct` names its parameters on its name, as `(struct (pair a b) (first a) (second b))` does. A `where` binds them over what its form holds: a signature's type, a `rust-trait` implementor, a `rust-type`'s template or a function type. An unknown type name is an unbound-name error that suggests the closest name.
 
 A bound names the trait and, optionally, its second type: `(a (partial-eq b))` is Rust's `A: PartialEq<B>`. The second type must be a type the program knows or a binder of the same `where`, as in `(where ((a (partial-eq b)) b) (fn (a b) bool))`. A plain bound keeps Rust's default: `(a partial-eq)` is `A: PartialEq<A>`. A trait takes a second type exactly when one of its `rust-trait` entries uses `with`.
 
 A struct field cannot hold a borrow outside a function type, because Rust needs a lifetime that the program cannot write yet. Each type parameter of a struct must appear in a field. Each parameter of a Rust type must appear in its template. A type parameter takes no traits, because Rust would demand a type's traits at every use. A function that needs a trait names it in its own `where`. A type takes exactly as many arguments as it has parameters.
 
 ```lisp
-(struct pair (where (a b) (first a) (second b)))
+(struct (pair a b) (first a) (second b))
 (type swap (where ((a clone) (b clone)) (fn ((ref (pair a b))) (pair b a))))
 ```
 

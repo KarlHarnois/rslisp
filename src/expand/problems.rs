@@ -337,6 +337,15 @@ impl ExpandProblems {
         .with_help(format!("write it as `{}`", constructor.shape()))
     }
 
+    pub fn parameters_on_name(kind: &str, replacement: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::TYPE_PARAMETERS_ON_NAME,
+            format!("`{kind}` names its type parameters on its name"),
+            Label::new(span, "this `where` names them in the body"),
+        )
+        .with_help(format!("write `{replacement}`"))
+    }
+
     pub fn signature_target(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::WRONG_NAMESPACE,
