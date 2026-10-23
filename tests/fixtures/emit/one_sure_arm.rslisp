@@ -1,0 +1,20 @@
+(enum box (value i64))
+
+(defn unbox (b)
+  (match b
+    ((value n) (+ n 1))))
+
+(defn ignore (b)
+  (match b
+    (_ 0)))
+
+(defn countdown (b)
+  (match b
+    ((value n) (if (= n 0) n (countdown (box/value (- n 1)))))))
+
+(defn main ()
+  (println (unbox (box/value 41)))
+  (println (ignore (box/value 5)))
+  (println (countdown (box/value 3)))
+  (match (box/value 7)
+    ((value n) (println n))))

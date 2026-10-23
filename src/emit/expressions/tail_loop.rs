@@ -174,6 +174,9 @@ impl ExpressionEmitter<'_> {
     }
 
     fn loop_match(&mut self, value: &TypedExpr, arms: &[TypedArm]) -> Vec<Fragment> {
+        if let Some(arm) = self.sole_sure_arm(arms) {
+            return self.loop_sure_arm(value, arm);
+        }
         let value = self.expr(value);
         let mut fragments = vec![Fragment::Text("match ".to_string())];
         fragments.extend(value.fragments);
@@ -194,6 +197,21 @@ impl ExpressionEmitter<'_> {
         fragments.push(Fragment::Indented(inner));
         fragments.push(Fragment::Newline);
         fragments.push(Fragment::Text("}".to_string()));
+        fragments
+    }
+
+    fn loop_sure_arm(&mut self, value: &TypedExpr, arm: &TypedArm) -> Vec<Fragment> {
+        let value = self.expr(value);
+        self.locals.enter();
+        let pattern = self.pattern(&arm.pattern);
+        let mut fragments = vec![Fragment::Text("let ".to_string())];
+        fragments.extend(pattern.code.fragments);
+        fragments.push(Fragment::Text(" = ".to_string()));
+        fragments.extend(value.fragments);
+        fragments.push(Fragment::Text(";".to_string()));
+        let body = self.loop_block(&arm.body);
+        fragments.extend(self.with_prologue(body, &pattern.peels));
+        self.locals.leave();
         fragments
     }
 

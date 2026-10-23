@@ -214,6 +214,10 @@ impl<'a> ExpressionEmitter<'a> {
     fn tail_block_contents(&mut self, expr: &TypedExpr) -> Option<Vec<Fragment>> {
         match &expr.kind {
             TypedExprKind::Control(TypedControl::Block(block)) => Some(self.block_contents(block)),
+            TypedExprKind::Control(TypedControl::Match(value, arms)) => {
+                let arm = self.sole_sure_arm(arms)?;
+                Some(self.sure_arm_contents(value, arm))
+            }
             TypedExprKind::Call(callee, arguments) => match &callee.kind {
                 TypedExprKind::Fn(lambda) if !Self::contains_try(&lambda.body) => {
                     Some(self.inline_call_contents(lambda, arguments))
@@ -331,6 +335,9 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn matching(&mut self, value: &TypedExpr, arms: &[TypedArm]) -> Code {
+        if let Some(arm) = self.sole_sure_arm(arms) {
+            return self.sure_arm(value, arm);
+        }
         let uses_strings = Self::uses_string_literals(arms);
         let string_value = Self::is_string_value(&value.ty);
         let value = self.expr(value);
@@ -360,6 +367,57 @@ impl<'a> ExpressionEmitter<'a> {
             fragments,
             precedence: Precedence::Block,
         }
+    }
+
+    fn sole_sure_arm<'e>(&self, arms: &'e [TypedArm]) -> Option<&'e TypedArm> {
+        match arms {
+            [arm] if self.sure_pattern(&arm.pattern) => Some(arm),
+            _ => None,
+        }
+    }
+
+    fn sure_pattern(&self, pattern: &TypedPattern) -> bool {
+        let TypedPatternKind::Variant(binding, parts) = &pattern.kind else {
+            return !matches!(pattern.kind, TypedPatternKind::Literal(..));
+        };
+        let BindingKind::Variant(_, VariantInfo { owner, .. }) =
+            self.program.bindings.get(*binding).kind()
+        else {
+            unreachable!("a typed variant pattern names a variant binding");
+        };
+        self.program
+            .enums
+            .get(owner)
+            .is_some_and(|definition| definition.variants.len() == 1)
+            && parts.iter().all(|part| self.sure_pattern(part))
+    }
+
+    fn sure_arm(&mut self, value: &TypedExpr, arm: &TypedArm) -> Code {
+        let statements = self.sure_arm_contents(value, arm);
+        Code {
+            fragments: vec![
+                Fragment::Text("{".to_string()),
+                Fragment::Indented(statements),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ],
+            precedence: Precedence::Block,
+        }
+    }
+
+    fn sure_arm_contents(&mut self, value: &TypedExpr, arm: &TypedArm) -> Vec<Fragment> {
+        let value = self.expr(value);
+        self.locals.enter();
+        let PatternEmission { code, peels, .. } = self.pattern(&arm.pattern);
+        let mut statements = vec![Fragment::Newline, Fragment::Text("let ".to_string())];
+        statements.extend(code.fragments);
+        statements.push(Fragment::Text(" = ".to_string()));
+        statements.extend(value.fragments);
+        statements.push(Fragment::Text(";".to_string()));
+        let body = self.block_contents(&arm.body);
+        statements.extend(self.with_prologue(body, &peels));
+        self.locals.leave();
+        statements
     }
 
     fn arm_head(&mut self, pattern: &TypedPattern) -> (Vec<Fragment>, Vec<Peel>) {
@@ -413,6 +471,19 @@ impl<'a> ExpressionEmitter<'a> {
             && let Some(peel) = peels.iter().find(|peel| peel.binding == *binding)
         {
             return vec![Fragment::Text(peel.expression.clone())];
+        }
+        if let [TypedBodyItem::Expr(only)] = body.items.as_slice()
+            && let TypedExprKind::Control(TypedControl::Match(value, arms)) = &only.kind
+            && let Some(arm) = self.sole_sure_arm(arms)
+        {
+            let contents = self.sure_arm_contents(value, arm);
+            let contents = self.with_prologue(contents, &peels);
+            return vec![
+                Fragment::Text("{".to_string()),
+                Fragment::Indented(contents),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ];
         }
         let body = self.body_fragments(body);
         if peels.is_empty() {
