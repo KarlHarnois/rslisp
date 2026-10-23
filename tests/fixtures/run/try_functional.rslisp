@@ -1,0 +1,21 @@
+(type add-text-let (fn ((ref str)) (result i64 (parse-error i64))))
+(type add-text-threaded (fn ((ref str)) (result i64 (parse-error i64))))
+(type add-two-texts (fn ((ref str) (ref str)) (result i64 (parse-error i64))))
+
+(defn add-text-let (text)
+  (let-try ((value (parse text)))
+    (ok (+ value 1))))
+
+(defn add-text-threaded (text)
+  (try-> text parse (fn (value) (ok (+ value 1)))))
+
+(defn add-two-texts (left right)
+  (let-try ((a (parse left))
+            (b (parse right)))
+    (ok (+ a b))))
+
+(defn main ()
+  (println (unwrap-ok (add-text-let "41")))
+  (println (unwrap-ok (add-text-threaded "41")))
+  (println (unwrap-ok (add-two-texts "2" "3")))
+  (println (err? (add-text-threaded "x"))))

@@ -1,6 +1,6 @@
 (use prelude/macros defrule)
 
-(export defn the -> ->> loop)
+(export defn the -> ->> try-> let-try loop)
 
 (defrule defn
   ((name params body ...) (def name (fn params body ...))))
@@ -21,3 +21,12 @@
   ((value) value)
   ((value (head arguments ...) more ...) (->> (head arguments ... value) more ...))
   ((value head more ...) (->> (head value) more ...)))
+
+(defrule let-try
+  ((((name value) ...) body ...)
+   (do (let name (try value)) ... body ...)))
+
+(defrule try->
+  ((value) value)
+  ((value head) (head value))
+  ((value head more ...) (try-> (try (head value)) more ...)))

@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/try_ok_or.rslisp
+---
+fn first_even(numbers: Vec<i64>) -> Result<i64, String> {
+    let found: Option<i64> = numbers.iter().copied().find(|n: &i64| *n % 2 == 0);
+    found.ok_or("no even number".to_string())
+}
+
+fn main() {
+    println!("{}", first_even(vec![1_i64, 2_i64, 3_i64]).unwrap());
+    println!("{}", first_even(vec![1_i64, 3_i64, 5_i64]).unwrap_err())
+}

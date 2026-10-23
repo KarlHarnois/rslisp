@@ -1,13 +1,13 @@
 (use prelude/macros defmacro defrule template)
 (use prelude/logic not when unless and or cond)
-(use prelude/syntax defn the -> ->> loop)
+(use prelude/syntax defn the -> ->> try-> let-try loop)
 (use prelude/types vec option result iterator slice sequence)
 (use prelude/vec vec push! len iter values collect
                get pop! sort! sort-by-key! windows at dedup!)
 (use prelude/iterator range map filter fold for-each
                       sum count max min max-by-key any all find take take-while)
 (use prelude/option some none some? none? unwrap-or unwrap expect map-some then-some)
-(use prelude/result ok err ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
+(use prelude/result ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
 (use prelude/number number signed float integer partial-eq hash partial-ord
                     add sub mul div rem neg sqrt lt le gt ge eq ne
                     + - * / < <= > >= = != ord)
@@ -22,7 +22,7 @@
         i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
         defmacro defrule template
         true false not when unless and or cond
-        defn the -> ->> loop
+        defn the -> ->> try-> let-try loop
         number signed float integer partial-eq hash partial-ord ord
         add sub mul div rem neg sqrt lt le gt ge eq ne
         + - * / < <= > >= = !=
@@ -35,4 +35,4 @@
         range map filter fold for-each
         sum count max min max-by-key any all find take take-while
         some none some? none? unwrap-or unwrap expect map-some then-some
-        ok err ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
+        ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
