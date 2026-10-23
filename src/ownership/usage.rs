@@ -48,7 +48,9 @@ impl<'a> UsageCollector<'a> {
     fn nested_expr(&mut self, expr: &TypedExpr, kind: &TypedExprKind, context: ParamMode) {
         match kind {
             TypedExprKind::Recur(arguments) => self.recur(arguments),
-            TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => self.written(expr),
+            TypedExprKind::Try(_) | TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => {
+                self.written(expr)
+            }
             TypedExprKind::Struct(structure) => self.structure(structure, context),
             TypedExprKind::Variant(_, arguments) => arguments
                 .iter()
@@ -71,6 +73,7 @@ impl<'a> UsageCollector<'a> {
                 self.expr(value, ParamMode::Mut)
             }
             TypedExprKind::Deref(value) => self.expr(value, ParamMode::Ref),
+            TypedExprKind::Try(value) => self.expr(value, ParamMode::Own),
             _ => unreachable!("the caller matches a written form"),
         }
     }

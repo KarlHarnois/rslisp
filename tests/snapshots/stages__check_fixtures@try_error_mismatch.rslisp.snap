@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/try_error_mismatch.rslisp
+---
+error[L0428]: `try` cannot return from this function
+ --> check/try_error_mismatch.rslisp:5:23
+  |
+5 | (defn consumer () (ok (try (source))))
+  |                       ^^^^^^^^^^^^^^ this function returns `(result i64 bool)`
+  |
+  = note: `try` here needs a function that returns a `result` with the same error type
+  = help: make the function return the value `try` needs, or handle this value without `try`

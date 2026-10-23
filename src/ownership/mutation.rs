@@ -63,6 +63,7 @@ impl ChangedValues {
             TypedExprKind::Variant(_, arguments) => arguments
                 .iter()
                 .for_each(|argument| self.expr(argument, enclosing)),
+            TypedExprKind::Try(value) => self.expr(value, enclosing),
             TypedExprKind::Borrow(..) | TypedExprKind::Deref(_) => self.written(expr, enclosing),
             TypedExprKind::Fn(lambda) => self.block(&lambda.body, enclosing),
             _ => {}

@@ -31,6 +31,7 @@ impl DiagnosticCode {
     pub const SECOND_TRAIT_PATH: Self = Self(Cow::Borrowed("L0217"));
     pub const MALFORMED_TEMPLATE: Self = Self(Cow::Borrowed("L0218"));
     pub const TYPE_PARAMETERS_ON_NAME: Self = Self(Cow::Borrowed("L0219"));
+    pub const TRY_OUTSIDE_FN: Self = Self(Cow::Borrowed("L0220"));
 
     pub const MACRO_FAILED: Self = Self(Cow::Borrowed("L0301"));
     pub const MACRO_RESULT_NOT_FORM: Self = Self(Cow::Borrowed("L0302"));
@@ -66,6 +67,8 @@ impl DiagnosticCode {
     pub const TRAIT_NO_SECOND_TYPE: Self = Self(Cow::Borrowed("L0425"));
     pub const MISPLACED_WITH: Self = Self(Cow::Borrowed("L0426"));
     pub const RECURSIVE_ENUM: Self = Self(Cow::Borrowed("L0427"));
+    pub const TRY_TARGET: Self = Self(Cow::Borrowed("L0428"));
+    pub const TRY_NOT_RESULT_OR_OPTION: Self = Self(Cow::Borrowed("L0429"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));

@@ -101,7 +101,9 @@ impl<'a> FunctionValueModes<'a> {
                     self.expr(argument, current);
                 }
             }
-            TypedExprKind::Borrow(_, value) | TypedExprKind::Deref(value) => {
+            TypedExprKind::Try(value)
+            | TypedExprKind::Borrow(_, value)
+            | TypedExprKind::Deref(value) => {
                 self.expr(value, current);
             }
             TypedExprKind::Fn(lambda) => {

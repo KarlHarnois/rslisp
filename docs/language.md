@@ -64,6 +64,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `macro` | `(def name (macro (form) body...))` | none | form: binder. body: expressions. |
 | `rust` | `(rust "template" type)` | the inlined template | type: type. |
 | `recur` | `(recur argument...)` | `loop` | arguments: expressions. |
+| `try` | `(try expression)` | `expression?` | expression: expression. |
 | `rust-trait` | `(rust-trait name "Path" type...)` | trait bound | name: type binder. types: types, `(with type type)`, or `(where (param...) type)`. |
 | `rust-type` | `(rust-type name "template")` or `(rust-type (name param...) "template")` | the filled template | name: type binder. params: type binders. |
 | `use` | `(use module name...)` | path | module: module path. names: binders. |
@@ -448,6 +449,14 @@ An enum gets the traits of a struct under 8.2, with its payloads in place of fie
 A variant that holds its own enum by value is an error; recursive enums come in a later change, where a recursive payload is boxed automatically. `match` over enum values comes in the next change.
 
 `enum` is a kernel form, because only the compiler can create a Rust type and its variant bindings. The prelude cannot express a sum type, and a macro cannot register variants for construction or traits.
+
+### 9.1 Propagating errors with `try`
+
+`(try expression)` emits `expression?`. The value is a `result` or an `option`. A `result` needs the enclosing function to return a `result` with the same error type, and an `option` needs one that returns an `option`. Inference gives the function that return type. A `try` whose function cannot return the value's error is a compile error.
+
+`try` targets the nearest `fn`, as `recur` does. Inside a lambda it leaves the lambda, as Rust's `?` leaves a closure. A `try` outside every `fn` is an error, and in macro code it is the compile-time error for a form that only exists at runtime.
+
+`try` is a kernel form, because a prelude function cannot leave its caller early.
 
 ### 10. User-defined traits
 

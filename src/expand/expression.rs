@@ -6,6 +6,7 @@ use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::recur_check::RecurCheck;
 use super::shape::Shape;
+use super::try_check::TryCheck;
 use crate::core::{
     Binder, BindingId, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind,
     ExpressionForm, FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, Namespace,
@@ -60,6 +61,7 @@ impl Expander<'_> {
             .collect::<Result<Vec<Binder>, Diagnostic>>()?;
         let body = self.lower_body(&body)?;
         RecurCheck::inside(params.len()).block(&body)?;
+        TryCheck::inside().block(&body)?;
         Ok(Lambda { params, body })
     }
 
@@ -182,11 +184,23 @@ impl Expander<'_> {
         match expression {
             ExpressionForm::Fn => self.lower_fn(shape),
             ExpressionForm::Recur => self.lower_recur(shape),
+            ExpressionForm::Try => self.lower_try(shape),
+            other => self.lower_value_form(other, shape),
+        }
+    }
+
+    fn lower_value_form(
+        &mut self,
+        expression: ExpressionForm,
+        shape: &Shape,
+    ) -> Result<ExprKind, Diagnostic> {
+        match expression {
             ExpressionForm::Leaf(form) => self.lower_leaf_form(form, shape),
             ExpressionForm::Borrow(kind) => self.lower_borrow(kind, shape),
             ExpressionForm::Deref => self.lower_deref(shape),
             ExpressionForm::Control(form) => self.lower_control_form(form, shape),
             ExpressionForm::Struct(form) => self.lower_struct_form(form, shape),
+            _ => unreachable!("the caller matches a value form"),
         }
     }
 
@@ -395,5 +409,11 @@ impl Expander<'_> {
             .map(|argument| self.lower_recovered(argument))
             .collect::<Result<Vec<Expr>, Diagnostic>>()?;
         Ok(ExprKind::Recur(arguments))
+    }
+
+    fn lower_try(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let items = shape.exactly(2)?;
+        let value = self.lower_recovered(&items[1])?;
+        Ok(ExprKind::Try(Box::new(value)))
     }
 }

@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/try_option.rslisp
+---
+fn first_even_double(numbers: Vec<i64>) -> Option<i64> {
+    let found: i64 = numbers.iter().copied().find(|n: &i64| *n % 2 == 0)?;
+    Some(found * 2)
+}
+
+fn main() {
+    println!("{}", first_even_double(vec![1_i64, 2_i64, 3_i64]).unwrap());
+    println!("{}", first_even_double(vec![1_i64, 3_i64, 5_i64]).is_none())
+}

@@ -63,7 +63,7 @@ impl RecurCheck {
     ) -> Result<(), Diagnostic> {
         match kind {
             ExprKind::Recur(arguments) => self.recur(expr, arguments, position),
-            ExprKind::Borrow(_, value) | ExprKind::Deref(value) => {
+            ExprKind::Try(value) | ExprKind::Borrow(_, value) | ExprKind::Deref(value) => {
                 self.expr(value, TailPosition::NotTail)
             }
             ExprKind::Struct(structure) => self.structure(structure),

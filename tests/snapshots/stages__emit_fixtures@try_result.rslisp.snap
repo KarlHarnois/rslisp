@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/try_result.rslisp
+---
+fn parse_add(left: &str, right: &str) -> Result<i64, <i64 as std::str::FromStr>::Err> {
+    let left_number: i64 = left.parse()?;
+    let right_number: i64 = right.parse()?;
+    Ok(left_number + right_number)
+}
+
+fn main() {
+    println!("{}", parse_add("2", "3").unwrap());
+    println!("{}", parse_add("2", "x").is_err())
+}

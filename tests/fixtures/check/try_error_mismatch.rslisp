@@ -1,0 +1,5 @@
+(type source (fn () (result i64 string)))
+(defn source () (ok 1))
+
+(type consumer (fn () (result i64 bool)))
+(defn consumer () (ok (try (source))))

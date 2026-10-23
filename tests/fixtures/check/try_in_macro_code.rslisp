@@ -1,0 +1,3 @@
+(defmacro passes-through (form) (try form))
+
+(defn main () (passes-through 1))

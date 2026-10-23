@@ -1,0 +1,3 @@
+(def stray (try (ok 1)))
+
+(defn main () (println stray))

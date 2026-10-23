@@ -1,0 +1,10 @@
+(type parse-add (fn ((ref str) (ref str)) (result i64 (parse-error i64))))
+
+(defn parse-add (left right)
+  (let left-number (try (parse left)))
+  (let right-number (try (parse right)))
+  (ok (+ left-number right-number)))
+
+(defn main ()
+  (println (unwrap-ok (parse-add "2" "3")))
+  (println (err? (parse-add "2" "x"))))

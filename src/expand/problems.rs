@@ -282,6 +282,15 @@ impl ExpandProblems {
         ))
     }
 
+    pub fn try_outside_fn(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::TRY_OUTSIDE_FN,
+            "`try` is not inside a function",
+            Label::new(span, "there is no function here for `try` to return from"),
+        )
+        .with_help("write `try` inside a `fn` body")
+    }
+
     pub fn recur_outside_fn(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::RECUR_OUTSIDE_FN,

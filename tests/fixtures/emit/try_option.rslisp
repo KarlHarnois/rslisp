@@ -1,0 +1,9 @@
+(type first-even-double (fn ((vec i64)) (option i64)))
+
+(defn first-even-double (numbers)
+  (let found (try (find (values numbers) (fn (n) (= (rem n 2) 0)))))
+  (some (* found 2)))
+
+(defn main ()
+  (println (unwrap (first-even-double (vec 1 2 3))))
+  (println (none? (first-even-double (vec 1 3 5)))))

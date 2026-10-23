@@ -37,6 +37,33 @@ pub(super) struct RecurTarget {
     result: Type,
 }
 
+#[derive(Clone)]
+pub(super) struct TryTarget {
+    returns: Type,
+}
+
+#[derive(Clone, Copy)]
+enum TrySourceKind {
+    Result,
+    Option,
+}
+
+struct TrySource {
+    kind: TrySourceKind,
+    binding: BindingId,
+    value: Type,
+    error: Option<Type>,
+}
+
+impl TrySourceKind {
+    fn needed(self) -> &'static str {
+        match self {
+            TrySourceKind::Result => "a `result` with the same error type",
+            TrySourceKind::Option => "an `option`",
+        }
+    }
+}
+
 impl TypeChecker {
     pub(super) fn infer(&mut self, expr: &Expr) -> Result<TypedExpr, Diagnostic> {
         let span = expr.span();
@@ -57,6 +84,7 @@ impl TypeChecker {
     ) -> Result<TypedExpr, Diagnostic> {
         match kind {
             ExprKind::Recur(arguments) => self.infer_recur(arguments, span),
+            ExprKind::Try(value) => self.infer_try(value, span),
             ExprKind::Borrow(..) | ExprKind::Deref(..) => self.infer_written(expr, span),
             ExprKind::Struct(structure) => self.infer_struct(structure, span),
             ExprKind::Variant(binding, arguments) => self.infer_variant(*binding, arguments, span),
@@ -369,8 +397,12 @@ impl TypeChecker {
             result: result.clone(),
         };
         let previous = self.recur_target.replace(target);
+        let previous_try = self.try_target.replace(TryTarget {
+            returns: result.clone(),
+        });
         let inferred = self.infer_block(&lambda.body);
         self.recur_target = previous;
+        self.try_target = previous_try;
         let (body, found) = inferred?;
         let result_span = Self::block_result_span(&body).unwrap_or(span);
         let context = expected
@@ -505,6 +537,77 @@ impl TypeChecker {
             ty: target.result,
             span,
         })
+    }
+
+    fn infer_try(&mut self, value: &Expr, span: Span) -> Result<TypedExpr, Diagnostic> {
+        let target = self
+            .try_target
+            .clone()
+            .expect("expansion checks that `try` is inside a function");
+        let value = self.infer(value)?;
+        let operand = self.unifier.resolve(&value.ty);
+        let Some(source) = self.try_source(&operand) else {
+            return Err(TypeProblems::try_needs_value(
+                &self.describe(&operand),
+                span,
+            ));
+        };
+        let expected = self.try_return_type(&source);
+        if self
+            .unifier
+            .unify(&expected, &target.returns, span)
+            .is_err()
+        {
+            return Err(TypeProblems::try_cannot_return(
+                source.kind.needed(),
+                &self.describe(&target.returns),
+                span,
+            ));
+        }
+        Ok(TypedExpr {
+            kind: TypedExprKind::Try(Box::new(value)),
+            ty: source.value,
+            span,
+        })
+    }
+
+    fn try_source(&self, operand: &Type) -> Option<TrySource> {
+        let Type::Named(binding, arguments) = operand else {
+            return None;
+        };
+        let rust_name = self.rust_types.get(*binding)?.leading_name();
+        match (rust_name, arguments.as_slice()) {
+            ("Result", [value, error]) => Some(TrySource {
+                kind: TrySourceKind::Result,
+                binding: *binding,
+                value: value.clone(),
+                error: Some(error.clone()),
+            }),
+            ("Option", [value]) => Some(TrySource {
+                kind: TrySourceKind::Option,
+                binding: *binding,
+                value: value.clone(),
+                error: None,
+            }),
+            _ => None,
+        }
+    }
+
+    fn try_return_type(&mut self, source: &TrySource) -> Type {
+        let value = self.unifier.fresh();
+        match source.kind {
+            TrySourceKind::Result => Type::Named(
+                source.binding,
+                vec![
+                    value,
+                    source
+                        .error
+                        .clone()
+                        .expect("a result source carries an error type"),
+                ],
+            ),
+            TrySourceKind::Option => Type::Named(source.binding, vec![value]),
+        }
     }
 
     fn infer_arguments(
