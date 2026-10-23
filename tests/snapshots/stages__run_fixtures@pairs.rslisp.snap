@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/pairs.rslisp
+---
+0: alpha
+1: beta
+a1
+b2
+1 a
+2 b

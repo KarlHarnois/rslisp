@@ -102,7 +102,7 @@ Type syntax mirrors value syntax:
 | `(fn (i64 i64) i64)` | `fn(i64, i64) -> i64` |
 | `(ref str)` | `&str` |
 | `(mut point)` | `&mut Point` |
-| `(pair i64 string)` | `Pair<i64, String>` |
+| `(pair i64 string)` | `(i64, String)` |
 | `(where ((n number)) (fn (n) n))` | `fn<N: Number>(N) -> N` |
 | `_` | inferred |
 
@@ -160,9 +160,10 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 | `(vec a)` | `Vec<A>` | `vec push! len iter values collect get pop! sort! sort-by-key! windows at dedup!` |
 | `(slice a)` | `[A]` | `windows at` |
 | `(box a)` | `Box<A>` | `box-new` |
+| `(pair a b)` | `(A, B)` | `pair pair/of let-pair` |
 | `(option a)` | `Option<A>` | `some none option/some option/none some? none? unwrap-or unwrap expect map-some then-some` |
 | `(result a b)` | `Result<A, B>` | `ok err result/ok result/err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok` |
-| `(iterator a)` | `impl Iterator<Item = A>` | `range map filter fold for-each sum count max min max-by-key any all find take take-while` |
+| `(iterator a)` | `impl Iterator<Item = A>` | `range map filter fold for-each enumerate zip sum count max min max-by-key any all find take take-while` |
 | `str`, `string` | `&str`, `String` | `to-string display str char print println chars lines split trim as-str parse parse-error from-str` |
 
 `print` and `println` take any number of parts. Each string literal part folds into one format string, and each other part becomes a `{}` placeholder. `str` folds its literal parts the same way. A `print` whose last part ends in a newline emits `println!` without that newline. `prn` and `pr-str` print a value's data form.
