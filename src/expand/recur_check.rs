@@ -50,12 +50,25 @@ impl RecurCheck {
                 self.expr(callee, TailPosition::NotTail)?;
                 self.arguments(arguments.iter())
             }
+            ExprKind::Control(control) => self.control(control, position),
+            other => self.nested_expr(expr, other, position),
+        }
+    }
+
+    fn nested_expr(
+        &self,
+        expr: &Expr,
+        kind: &ExprKind,
+        position: TailPosition,
+    ) -> Result<(), Diagnostic> {
+        match kind {
             ExprKind::Recur(arguments) => self.recur(expr, arguments, position),
             ExprKind::Borrow(_, value) | ExprKind::Deref(value) => {
                 self.expr(value, TailPosition::NotTail)
             }
-            ExprKind::Control(control) => self.control(control, position),
             ExprKind::Struct(structure) => self.structure(structure),
+            ExprKind::Variant(_, arguments) => self.arguments(arguments.iter()),
+            _ => unreachable!("the caller matches a nested expression"),
         }
     }
 

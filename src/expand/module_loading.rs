@@ -5,8 +5,8 @@ use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{
-    BindingInfo, BindingKind, Builtin, DefinitionForm, KernelConstants, KernelForm, KernelType,
-    ModuleId, ModulePath, Namespace,
+    BindingId, BindingInfo, BindingKind, Builtin, DefinitionForm, KernelConstants, KernelForm,
+    KernelType, ModuleId, ModulePath, Namespace,
 };
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
@@ -143,10 +143,41 @@ impl Expander<'_> {
             }
         }
         if found {
+            if self
+                .modules
+                .get(target)
+                .exported(symbol.name(), Namespace::Type)
+                .is_some_and(|binding| matches!(self.kind(binding), BindingKind::Enum(_)))
+            {
+                self.import_enum_constructors(target, symbol, span)?;
+            }
             Ok(())
         } else {
             Err(self.missing_export(target, path, symbol, span))
         }
+    }
+
+    fn import_enum_constructors(
+        &mut self,
+        target: ModuleId,
+        symbol: &Symbol,
+        span: Span,
+    ) -> Result<(), Diagnostic> {
+        let prefix = format!("{}/", symbol.name());
+        let constructors: Vec<(Rc<str>, BindingId)> = self
+            .modules
+            .get(target)
+            .exports()
+            .filter(|(name, namespace, _)| {
+                *namespace == Namespace::Value && name.starts_with(&prefix)
+            })
+            .map(|(name, _, binding)| (Rc::clone(name), binding))
+            .collect();
+        for (name, binding) in constructors {
+            let constructor = Symbol::with_scopes(name, symbol.scopes().clone());
+            self.bind_import(&constructor, Namespace::Value, binding, span)?;
+        }
+        Ok(())
     }
 
     fn missing_export(

@@ -84,13 +84,23 @@ impl<'a> MoveChecker<'a> {
         match &expr.kind {
             TypedExprKind::Leaf(leaf) => self.leaf(leaf, expr, usage),
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
+            TypedExprKind::Control(control) => self.control(control, usage),
+            other => self.nested_expr(expr, other),
+        }
+    }
+
+    fn nested_expr(&mut self, expr: &TypedExpr, kind: &TypedExprKind) {
+        match kind {
             TypedExprKind::Recur(arguments) => self.recur(arguments),
             TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => self.written(expr),
             TypedExprKind::Struct(structure) => self.structure(structure),
-            TypedExprKind::Control(control) => self.control(control, usage),
+            TypedExprKind::Variant(_, arguments) => arguments
+                .iter()
+                .for_each(|argument| self.expr(argument, Usage::Move)),
             TypedExprKind::Fn(lambda) => {
                 self.closure(lambda);
             }
+            _ => unreachable!("the caller matches a nested expression"),
         }
     }
 

@@ -53,6 +53,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `if` | `(if test then else)` | `if`/`else` | all: expressions. |
 | `type` | `(type name type)` | signature | name: reference to a `def`. type: type. |
 | `struct` | `(struct name (field type)...)` or `(struct (name param...) (field type)...)` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
+| `enum` | `(enum name variant...)` or `(enum (name param...) variant...)` | `enum` | name: type binder. params: type binders. variants: a name, `(name type...)`, or `(name (struct (field type)...))`. |
 | `derive` | `(derive struct trait...)` | `#[derive(...)]` | struct: reference to a `struct` of this module. traits: references to traits. |
 | `new` | `(new name (field value)...)` | struct literal | name: type. fields: field labels with expressions. |
 | `field` | `(field value name)` | `value.name` | value: expression. name: field label. |
@@ -78,7 +79,7 @@ In expression positions, the kernel provides `ref`, `mut` and `deref`, and the c
 
 A module body is expanded in two passes:
 
-1. Each top-level form is expanded in order until its head is a definition form: `def`, `type`, `struct`, `derive`, `rust-trait`, `rust-type`, `use`, `export` or `do`. The names it defines are registered. A `def` whose value is a `macro` is evaluated right away.
+1. Each top-level form is expanded in order until its head is a definition form: `def`, `type`, `struct`, `enum`, `derive`, `rust-trait`, `rust-type`, `use`, `export` or `do`. The names it defines are registered. A `def` whose value is a `macro` is evaluated right away.
 2. `def` values, types and `export` lists are expanded.
 
 Values and types are therefore order-independent, like Rust items. A macro must appear above its first top-level use.
@@ -348,13 +349,13 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 | 8.2 Struct traits | done |
 | 8.3 Macro code | done |
 | 8.4 Loops | done |
-| 9. Enums and `match` | planned |
+| 9. Enums and `match` | in progress |
 | 10. User-defined traits | planned |
 | 11. Written lifetimes | planned |
 
 A planned milestone is settled design, and new work follows it.
 
-Unless a program writes ownership, traits, bounds or loops, the compiler infers them, and a written form is exact. A `type` signature is exact: a type parameter it declares without `copy` gets no inferred `copy` bound. A `derive` form lists a struct's traits exactly. A written `ref`, `mut` or `deref` turns off adjustment for that value.
+Unless a program writes ownership, traits, bounds or loops, the compiler infers them, and a written form is exact. A `type` signature is exact: a type parameter it declares without `copy` gets no inferred `copy` bound. A `derive` form lists a type's traits exactly. A written `ref`, `mut` or `deref` turns off adjustment for that value.
 
 ### 8.1 References at call sites
 
@@ -430,7 +431,21 @@ Rust has no guaranteed tail calls. Without this milestone, recursion is the only
 
 ### 9. Enums and `match`
 
-The language gains sum types and a `match` over their variants. A program can then match on `option` and `result`, not only test them with `some?` and `ok?`.
+An `enum` declares a sum type. A variant is a bare name, `(name type ...)` with positional payloads, or `(name (struct (field type)...))` with named fields. Within one variant the payload is either types or one `struct` body. A generic enum puts its parameters on its name, as `(enum (pair-of a) (both a a) neither)`.
+
+```lisp
+(enum shape
+  (circle f64)
+  (rect f64 f64)
+  (labeled (struct (text string) (size f64)))
+  point)
+```
+
+A construction is qualified. `(shape/circle 1.0)` constructs a payload variant, and `shape/point` is the value of a variant with no payload. A variant with a struct payload takes its fields positionally, in field order: `(shape/labeled (to-string "box") 2.0)`. Using a payload constructor as a value is an error. `(export shape)` exports the enum and every constructor it defines.
+
+A variant that holds its own enum by value is an error; recursive enums come in a later change, where a recursive payload is boxed automatically. `match` over enum values comes in the next change.
+
+`enum` is a kernel form, because only the compiler can create a Rust type and its variant bindings. The prelude cannot express a sum type, and a macro cannot register variants for construction or traits.
 
 ### 10. User-defined traits
 

@@ -1,6 +1,13 @@
 use std::rc::Rc;
 
 use super::{Builtin, KernelForm, KernelType, ModuleId};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct VariantInfo {
+    pub owner: BindingId,
+    pub index: usize,
+    pub arity: usize,
+}
 use crate::source::Span;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -22,6 +29,8 @@ pub enum BindingKind {
     Global(ModuleId),
     Local,
     Struct(ModuleId),
+    Enum(ModuleId),
+    Variant(ModuleId, VariantInfo),
     Trait(ModuleId),
     RustType(ModuleId),
     TypeVariable,

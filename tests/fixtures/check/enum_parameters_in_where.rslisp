@@ -1,0 +1,1 @@
+(enum pair-of (where (a) (both a a) neither))

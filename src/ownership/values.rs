@@ -50,7 +50,12 @@ impl<'a> FunctionValueModes<'a> {
         program: &'a mut TypedProgram,
         function_params: &'a HashMap<BindingId, Vec<Type>>,
     ) -> Vec<Diagnostic> {
-        let copy = CopyRules::new(&program.traits, &program.generics, &program.structs);
+        let copy = CopyRules::new(
+            &program.traits,
+            &program.generics,
+            &program.structs,
+            &program.enums,
+        );
         let mut values = Self {
             bindings: &mut program.bindings,
             generics: &program.generics,
@@ -82,9 +87,20 @@ impl<'a> FunctionValueModes<'a> {
                 self.arguments(arguments, expected.as_deref(), current);
                 self.expr(callee, current);
             }
-            TypedExprKind::Recur(arguments) => self.arguments(arguments, current, current),
             TypedExprKind::Control(control) => self.control(control, current),
-            TypedExprKind::Struct(structure) => self.structure(structure, &ty, current),
+            other => self.nested_expr(other, &ty, current),
+        }
+    }
+
+    fn nested_expr(&mut self, kind: &mut TypedExprKind, ty: &Type, current: Option<&[Type]>) {
+        match kind {
+            TypedExprKind::Recur(arguments) => self.arguments(arguments, current, current),
+            TypedExprKind::Struct(structure) => self.structure(structure, ty, current),
+            TypedExprKind::Variant(_, arguments) => {
+                for argument in arguments {
+                    self.expr(argument, current);
+                }
+            }
             TypedExprKind::Borrow(_, value) | TypedExprKind::Deref(value) => {
                 self.expr(value, current);
             }
@@ -94,7 +110,7 @@ impl<'a> FunctionValueModes<'a> {
                     lambda.params.iter().map(|param| param.ty.clone()).collect();
                 self.block(&mut lambda.body, Some(&params));
             }
-            TypedExprKind::Leaf(_) => {}
+            _ => {}
         }
     }
 
@@ -375,6 +391,7 @@ mod tests {
         bindings: BindingArena,
         generics: HashMap<GenericId, GenericParam>,
         structs: StructTable,
+        enums: crate::types::EnumTable,
         function_params: HashMap<BindingId, Vec<Type>>,
         traits: TraitTable,
     }
@@ -402,6 +419,7 @@ mod tests {
                 bindings,
                 generics: HashMap::new(),
                 structs: StructTable::default(),
+                enums: crate::types::EnumTable::default(),
                 function_params: HashMap::new(),
                 traits,
             }
@@ -436,7 +454,7 @@ mod tests {
         }
 
         fn values(&mut self) -> FunctionValueModes<'_> {
-            let copy = CopyRules::new(&self.traits, &self.generics, &self.structs);
+            let copy = CopyRules::new(&self.traits, &self.generics, &self.structs, &self.enums);
             FunctionValueModes {
                 bindings: &mut self.bindings,
                 generics: &self.generics,

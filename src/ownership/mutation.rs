@@ -51,12 +51,21 @@ impl ChangedValues {
             TypedExprKind::Call(callee, arguments) => {
                 self.call(callee, arguments, enclosing);
             }
-            TypedExprKind::Recur(arguments) => self.arguments(arguments, enclosing, true),
             TypedExprKind::Control(control) => self.control(control, enclosing),
+            other => self.nested_expr(expr, other, enclosing),
+        }
+    }
+
+    fn nested_expr(&mut self, expr: &TypedExpr, kind: &TypedExprKind, enclosing: BindingId) {
+        match kind {
+            TypedExprKind::Recur(arguments) => self.arguments(arguments, enclosing, true),
             TypedExprKind::Struct(structure) => self.structure(structure, enclosing),
+            TypedExprKind::Variant(_, arguments) => arguments
+                .iter()
+                .for_each(|argument| self.expr(argument, enclosing)),
             TypedExprKind::Borrow(..) | TypedExprKind::Deref(_) => self.written(expr, enclosing),
             TypedExprKind::Fn(lambda) => self.block(&lambda.body, enclosing),
-            TypedExprKind::Leaf(_) => {}
+            _ => {}
         }
     }
 

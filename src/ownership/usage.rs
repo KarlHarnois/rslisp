@@ -40,11 +40,21 @@ impl<'a> UsageCollector<'a> {
         match &expr.kind {
             TypedExprKind::Leaf(leaf) => self.leaf(leaf, context),
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
+            TypedExprKind::Control(control) => self.control(control, context),
+            other => self.nested_expr(expr, other, context),
+        }
+    }
+
+    fn nested_expr(&mut self, expr: &TypedExpr, kind: &TypedExprKind, context: ParamMode) {
+        match kind {
             TypedExprKind::Recur(arguments) => self.recur(arguments),
             TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => self.written(expr),
             TypedExprKind::Struct(structure) => self.structure(structure, context),
-            TypedExprKind::Control(control) => self.control(control, context),
+            TypedExprKind::Variant(_, arguments) => arguments
+                .iter()
+                .for_each(|argument| self.expr(argument, ParamMode::Own)),
             TypedExprKind::Fn(lambda) => self.closure_body(lambda),
+            _ => unreachable!("the caller matches a nested expression"),
         }
     }
 

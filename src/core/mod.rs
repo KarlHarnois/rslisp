@@ -7,7 +7,7 @@ mod printer;
 mod template;
 mod types;
 
-pub use binding::{BindingArena, BindingId, BindingInfo, BindingKind, Namespace};
+pub use binding::{BindingArena, BindingId, BindingInfo, BindingKind, Namespace, VariantInfo};
 pub use builtin::Builtin;
 pub use expr::{
     Binder, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, Lambda, Leaf, Literal,
@@ -17,7 +17,9 @@ pub use kernel::{
     ControlForm, CopyTrait, DefinitionForm, ExpressionForm, KernelConstants, KernelForm,
     KernelType, LeafForm, OrderTrait, PrimitiveType, ReferenceKind, StructDerives, StructForm,
 };
-pub use module::{CoreModule, Item, ItemKind, ModuleId, ModulePath};
+pub use module::{
+    CoreModule, Item, ItemKind, ModuleId, ModulePath, VariantDeclaration, VariantPayload,
+};
 pub use printer::CorePrinter;
 pub use template::{MalformedPlaceholder, ParsedTemplate, Piece};
 pub use types::{TypeBinder, TypeBound, TypeExpr, TypeExprKind};

@@ -15,12 +15,8 @@ impl TypedExpr {
             TypedExprKind::Call(callee, arguments) => std::iter::once(callee.as_ref())
                 .chain(arguments.iter().map(|argument| &argument.value))
                 .collect(),
-            TypedExprKind::Recur(arguments) => {
-                arguments.iter().map(|argument| &argument.value).collect()
-            }
-            TypedExprKind::Borrow(_, value) | TypedExprKind::Deref(value) => vec![value],
             TypedExprKind::Control(control) => control.children(),
-            TypedExprKind::Struct(structure) => structure.children(),
+            other => other.nested_children(),
         }
     }
 
@@ -31,13 +27,8 @@ impl TypedExpr {
             TypedExprKind::Call(callee, arguments) => std::iter::once(callee.as_mut())
                 .chain(arguments.iter_mut().map(|argument| &mut argument.value))
                 .collect(),
-            TypedExprKind::Recur(arguments) => arguments
-                .iter_mut()
-                .map(|argument| &mut argument.value)
-                .collect(),
-            TypedExprKind::Borrow(_, value) | TypedExprKind::Deref(value) => vec![value],
             TypedExprKind::Control(control) => control.children_mut(),
-            TypedExprKind::Struct(structure) => structure.children_mut(),
+            other => other.nested_children_mut(),
         }
     }
 
@@ -64,6 +55,33 @@ impl TypedExpr {
         match &mut self.kind {
             TypedExprKind::Fn(lambda) => Rc::make_mut(lambda).binders_mut(),
             TypedExprKind::Control(TypedControl::Block(block)) => block.binders_mut().collect(),
+            _ => Vec::new(),
+        }
+    }
+}
+
+impl TypedExprKind {
+    fn nested_children(&self) -> Vec<&TypedExpr> {
+        match self {
+            TypedExprKind::Recur(arguments) => {
+                arguments.iter().map(|argument| &argument.value).collect()
+            }
+            TypedExprKind::Borrow(_, value) | TypedExprKind::Deref(value) => vec![value],
+            TypedExprKind::Struct(structure) => structure.children(),
+            TypedExprKind::Variant(_, arguments) => arguments.iter().collect(),
+            _ => Vec::new(),
+        }
+    }
+
+    fn nested_children_mut(&mut self) -> Vec<&mut TypedExpr> {
+        match self {
+            TypedExprKind::Recur(arguments) => arguments
+                .iter_mut()
+                .map(|argument| &mut argument.value)
+                .collect(),
+            TypedExprKind::Borrow(_, value) | TypedExprKind::Deref(value) => vec![value],
+            TypedExprKind::Struct(structure) => structure.children_mut(),
+            TypedExprKind::Variant(_, arguments) => arguments.iter_mut().collect(),
             _ => Vec::new(),
         }
     }

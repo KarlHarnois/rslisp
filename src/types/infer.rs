@@ -16,7 +16,7 @@ use super::unifier::{LiteralKind, UnifyError};
 use super::wrapper::FunctionValueWrapper;
 use crate::core::{
     Binder, BindingId, BindingKind, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, Lambda,
-    Leaf, Literal, PrimitiveType, ReferenceKind, RustTemplate, StructExpr,
+    Leaf, Literal, PrimitiveType, ReferenceKind, RustTemplate, StructExpr, VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
@@ -44,10 +44,23 @@ impl TypeChecker {
             ExprKind::Leaf(leaf) => self.infer_leaf(leaf, span),
             ExprKind::Fn(lambda) => Self::typed(self.infer_lambda(lambda, span, None), span),
             ExprKind::Call(callee, arguments) => self.infer_call(callee, arguments, span),
+            ExprKind::Control(control) => self.infer_control(control, span),
+            other => self.infer_nested(expr, other, span),
+        }
+    }
+
+    fn infer_nested(
+        &mut self,
+        expr: &Expr,
+        kind: &ExprKind,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        match kind {
             ExprKind::Recur(arguments) => self.infer_recur(arguments, span),
             ExprKind::Borrow(..) | ExprKind::Deref(..) => self.infer_written(expr, span),
-            ExprKind::Control(control) => self.infer_control(control, span),
             ExprKind::Struct(structure) => self.infer_struct(structure, span),
+            ExprKind::Variant(binding, arguments) => self.infer_variant(*binding, arguments, span),
+            _ => unreachable!("the caller matches a nested expression"),
         }
     }
 
@@ -158,6 +171,49 @@ impl TypeChecker {
             }
             StructExpr::Field(value, label) => self.infer_field(value, label, span),
         }
+    }
+
+    fn infer_variant(
+        &mut self,
+        binding: BindingId,
+        arguments: &[Expr],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let BindingKind::Variant(
+            _,
+            VariantInfo {
+                owner,
+                index,
+                arity,
+            },
+        ) = self.bindings.get(binding).kind()
+        else {
+            unreachable!("the expander resolves a variant call to a variant binding");
+        };
+        let type_arguments = self.fresh_arguments(owner);
+        let payload = self
+            .enums
+            .get(owner)
+            .and_then(|definition| definition.instantiated_payload(index, &type_arguments))
+            .unwrap_or_default();
+        if arguments.len() != arity {
+            return Err(TypeProblems::wrong_argument_count(
+                arity,
+                arguments.len(),
+                span,
+            ));
+        }
+        let mut typed = Vec::new();
+        for (argument, expected) in arguments.iter().zip(&payload) {
+            let value = self.infer(argument)?;
+            self.expect(expected, &value.ty, value.span, MismatchContext::Plain)?;
+            typed.push(value);
+        }
+        Ok(TypedExpr {
+            kind: TypedExprKind::Variant(binding, typed),
+            ty: Type::Named(owner, type_arguments),
+            span,
+        })
     }
 
     fn typed(

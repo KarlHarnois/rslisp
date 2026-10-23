@@ -65,6 +65,7 @@ impl DiagnosticCode {
     pub const DUPLICATE_DERIVE: Self = Self(Cow::Borrowed("L0424"));
     pub const TRAIT_NO_SECOND_TYPE: Self = Self(Cow::Borrowed("L0425"));
     pub const MISPLACED_WITH: Self = Self(Cow::Borrowed("L0426"));
+    pub const RECURSIVE_ENUM: Self = Self(Cow::Borrowed("L0427"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));

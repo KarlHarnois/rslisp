@@ -129,10 +129,21 @@ impl<'a> ItemEmitter<'a> {
         ));
         match (info.kind, self.plan.definition(binding)) {
             (ItemKind::Struct, _) => self.structure(binding, info),
-            (ItemKind::Function, Some(definition)) => self.function(definition, info),
-            (ItemKind::Const, Some(definition)) => self.constant(definition, info, false),
-            (ItemKind::Static, Some(definition)) => self.constant(definition, info, true),
-            (_, None) => Vec::new(),
+            (ItemKind::Enum, _) => self.enumeration(binding, info),
+            (ItemKind::Function, definition) => self.function(
+                definition.expect("a planned function has a definition"),
+                info,
+            ),
+            (ItemKind::Const, definition) => self.constant(
+                definition.expect("a planned constant has a definition"),
+                info,
+                false,
+            ),
+            (ItemKind::Static, definition) => self.constant(
+                definition.expect("a planned static has a definition"),
+                info,
+                true,
+            ),
         }
     }
 
@@ -251,6 +262,59 @@ impl<'a> ItemEmitter<'a> {
         fragments.extend([
             Fragment::Text(format!("{visibility}struct {}{params} {{", info.name)),
             Fragment::Indented(fields),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ]);
+        fragments
+    }
+
+    fn enumeration(&mut self, binding: BindingId, info: &ItemInfo) -> Vec<Fragment> {
+        let types = RustTypes::new(
+            self.program,
+            self.plan,
+            self.unsized_parameters,
+            info.module,
+        );
+        let visibility = info.visibility.keyword();
+        let definition = self
+            .program
+            .enums
+            .get(binding)
+            .expect("a reached enum has a definition");
+        let params = Self::struct_params(&definition.params);
+        let mut variants = Vec::new();
+        for variant in &definition.variants {
+            let name = NameMangler::type_name(&variant.name);
+            let payload = match &variant.payload {
+                crate::types::VariantPayload::None => String::new(),
+                crate::types::VariantPayload::Positional(payload_types) => {
+                    let payload: Vec<String> = payload_types
+                        .iter()
+                        .map(|payload| types.show(payload, TypePosition::Value))
+                        .collect();
+                    format!("({})", payload.join(", "))
+                }
+                crate::types::VariantPayload::Named(fields) => {
+                    let fields: Vec<String> = fields
+                        .iter()
+                        .map(|(label, field_type)| {
+                            format!(
+                                "{}: {}",
+                                NameMangler::value(label),
+                                types.show(field_type, TypePosition::Value)
+                            )
+                        })
+                        .collect();
+                    format!(" {{ {} }}", fields.join(", "))
+                }
+            };
+            variants.push(Fragment::Newline);
+            variants.push(Fragment::Text(format!("{name}{payload},")));
+        }
+        let mut fragments = Vec::new();
+        fragments.extend([
+            Fragment::Text(format!("{visibility}enum {}{params} {{", info.name)),
+            Fragment::Indented(variants),
             Fragment::Newline,
             Fragment::Text("}".to_string()),
         ]);

@@ -7,9 +7,9 @@ use super::problems::ExpandProblems;
 use super::recur_check::RecurCheck;
 use super::shape::Shape;
 use crate::core::{
-    Binder, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind, ExpressionForm,
-    FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, Namespace, ParsedTemplate,
-    ReferenceKind, RustTemplate, StructExpr, StructForm,
+    Binder, BindingId, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind,
+    ExpressionForm, FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, Namespace,
+    ParsedTemplate, ReferenceKind, RustTemplate, StructExpr, StructForm, VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -89,6 +89,14 @@ impl Expander<'_> {
                     .map(|function| Rc::from(self.bindings.get(function).name())),
             )),
             BindingKind::Boolean(value) => Ok(ExprKind::Leaf(Leaf::Literal(Literal::Bool(value)))),
+            BindingKind::Variant(_, info) if info.arity == 0 => {
+                Ok(ExprKind::Variant(binding, Vec::new()))
+            }
+            BindingKind::Variant(_, info) => Err(ExpandProblems::variant_as_value(
+                self.bindings.get(binding).name(),
+                info.arity,
+                span,
+            )),
             _ => Ok(ExprKind::Leaf(Leaf::Var(binding))),
         }
     }
@@ -104,6 +112,16 @@ impl Expander<'_> {
             let expanded = self.apply_macro(binding, form.clone(), None)?;
             return self.lower_expansion(&expanded);
         }
+        if let Some(binding) = self.variant_head(form) {
+            let arguments = items[1..]
+                .iter()
+                .map(|argument| self.lower_recovered(argument))
+                .collect::<Result<Vec<Expr>, Diagnostic>>()?;
+            return Ok(Expr::new(
+                ExprKind::Variant(binding, arguments),
+                form.span(),
+            ));
+        }
         let callee = self.lower_recovered(head)?;
         let arguments = items[1..]
             .iter()
@@ -113,6 +131,16 @@ impl Expander<'_> {
             ExprKind::Call(Box::new(callee), arguments),
             form.span(),
         ))
+    }
+
+    fn variant_head(&self, form: &Form) -> Option<BindingId> {
+        let head = form.as_list()?.first()?.as_symbol()?;
+        let binding = self.try_resolve(head, Namespace::Value)?;
+        matches!(
+            self.kind(binding),
+            BindingKind::Variant(_, VariantInfo { arity, .. }) if arity > 0
+        )
+        .then_some(binding)
     }
 
     fn lower_recovered(&mut self, form: &Form) -> Result<Expr, Diagnostic> {

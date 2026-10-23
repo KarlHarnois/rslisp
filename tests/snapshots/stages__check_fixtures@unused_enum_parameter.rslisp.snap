@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/unused_enum_parameter.rslisp
+---
+error[L0416]: no payload uses the type parameter `b`
+ --> check/unused_enum_parameter.rslisp:1:18
+  |
+1 | (enum (pair-of a b) (both a a) neither)
+  |                  ^ declared here
+  |
+  = help: use `b` in a variant payload, or remove it

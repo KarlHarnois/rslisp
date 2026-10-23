@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use super::display::TypeDisplay;
+use super::enums::EnumTable;
 use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
 use super::templates::TemplateBorrows;
@@ -59,6 +60,7 @@ pub enum TypedExprKind {
     Deref(Box<TypedExpr>),
     Control(TypedControl),
     Struct(TypedStructExpr),
+    Variant(BindingId, Vec<TypedExpr>),
 }
 
 #[derive(Clone, Debug)]
@@ -146,6 +148,7 @@ pub struct TypedModule {
     pub path: ModulePath,
     pub definitions: Vec<TypedDefinition>,
     pub structs: Vec<BindingId>,
+    pub enums: Vec<BindingId>,
     pub exports: Vec<BindingId>,
 }
 
@@ -154,6 +157,7 @@ pub struct TypedProgram {
     pub entry: ModuleId,
     pub bindings: BindingArena,
     pub structs: StructTable,
+    pub enums: EnumTable,
     pub rust_types: RustTypeTable,
     pub traits: TraitTable,
     pub generics: HashMap<GenericId, GenericParam>,

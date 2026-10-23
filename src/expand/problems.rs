@@ -348,6 +348,37 @@ impl ExpandProblems {
         .with_help(format!("write `{replacement}`"))
     }
 
+    pub fn mixed_variant_payload(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_FORM,
+            "a variant's payload is either types or one `struct` body",
+            Label::new(span, "this mixes the two"),
+        )
+        .with_help(
+            "write the payload as types, as in `(circle f64)`, or as one struct body, as in `(labeled (struct (text string)))`",
+        )
+    }
+
+    pub fn not_a_name(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::WRONG_NAMESPACE,
+            "expected a name",
+            Label::new(span, "this is not a name"),
+        )
+    }
+
+    pub fn variant_as_value(name: &str, arity: usize, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_FORM,
+            format!("`{name}` is a variant constructor, not a value"),
+            Label::new(
+                span,
+                format!("this constructor takes {arity} when it is called"),
+            ),
+        )
+        .with_help(format!("write `({name} value ...)`"))
+    }
+
     pub fn signature_target(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::WRONG_NAMESPACE,
