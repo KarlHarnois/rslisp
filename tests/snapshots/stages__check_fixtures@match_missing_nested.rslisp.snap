@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_missing_nested.rslisp
+---
+error[L0433]: non-exhaustive `match`
+ --> check/match_missing_nested.rslisp:7:3
+  |
+7 | /   (match m
+8 | |     ((just (circle r)) (* 3.0 r r))
+9 | |     (nothing 0.0)))
+  | |__________________^ this `match` does not cover every value
+  |
+  = note: missing 1 case: `(just (rect _ _))`
+  = help: add an arm for each missing case

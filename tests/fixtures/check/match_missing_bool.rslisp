@@ -1,0 +1,3 @@
+(defn answer (flag)
+  (match flag
+    (true 1)))

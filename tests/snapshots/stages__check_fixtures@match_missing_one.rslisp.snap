@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_missing_one.rslisp
+---
+error[L0433]: non-exhaustive `match`
+ --> check/match_missing_one.rslisp:4:3
+  |
+4 | /   (match s
+5 | |     ((circle r) (* 3.0 r r))
+6 | |     ((rect w h) (* w h))))
+  | |_________________________^ this `match` does not cover every value
+  |
+  = note: missing 1 case: `point`
+  = help: add an arm for each missing case

@@ -471,6 +471,8 @@ A bare name that names a variant with no payload of the matched enum is that var
 
 When the matched value is a reference, each name a pattern binds is a reference of the same kind, as Rust's default binding modes do.
 
+A `match` must cover every value its type can hold. A missing value is an error that lists each missing case as a pattern. Numbers and strings are never covered by literals alone, so a match on them needs a `_` or a name arm. The compiler decides coverage with the usefulness algorithm from Maranget's "Warnings for pattern matching", so nested patterns are checked too.
+
 `match` exists only in program code. In macro code it is an error, because a macro cannot run a value's variants.
 
 `enum` is a kernel form, because only the compiler can create a Rust type and its variant bindings. The prelude cannot express a sum type, and a macro cannot register variants for construction or traits.

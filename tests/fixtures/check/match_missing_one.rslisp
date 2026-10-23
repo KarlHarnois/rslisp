@@ -1,0 +1,6 @@
+(enum shape (circle f64) (rect f64 f64) point)
+
+(defn area (s)
+  (match s
+    ((circle r) (* 3.0 r r))
+    ((rect w h) (* w h))))

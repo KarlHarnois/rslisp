@@ -312,6 +312,24 @@ impl TypeProblems {
         .with_help(format!("write one of: {}", names.join(", ")))
     }
 
+    pub fn non_exhaustive_match(cases: &[String], span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::NON_EXHAUSTIVE_MATCH,
+            "non-exhaustive `match`",
+            Label::new(span, "this `match` does not cover every value"),
+        )
+        .with_note(format!(
+            "missing {}: {}",
+            Counted::noun(cases.len(), "case"),
+            cases
+                .iter()
+                .map(|case| format!("`{case}`"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ))
+        .with_help("add an arm for each missing case")
+    }
+
     pub fn pattern_count(name: &str, expected: usize, found: usize, span: Span) -> Diagnostic {
         let expected = Counted::noun(expected, "part");
         Diagnostic::error(

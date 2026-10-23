@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_missing_bool.rslisp
+---
+error[L0433]: non-exhaustive `match`
+ --> check/match_missing_bool.rslisp:2:3
+  |
+2 | /   (match flag
+3 | |     (true 1)))
+  | |_____________^ this `match` does not cover every value
+  |
+  = note: missing 1 case: `false`
+  = help: add an arm for each missing case

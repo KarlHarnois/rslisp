@@ -1,5 +1,6 @@
 mod checker;
 mod copy;
+mod coverage;
 mod derives;
 mod display;
 mod enums;

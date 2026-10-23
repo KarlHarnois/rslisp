@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_missing_literal.rslisp
+---
+error[L0433]: non-exhaustive `match`
+ --> check/match_missing_literal.rslisp:2:3
+  |
+2 | /   (match n
+3 | |     (0 "zero")
+4 | |     (1 "one")))
+  | |______________^ this `match` does not cover every value
+  |
+  = note: missing 1 case: `_`
+  = help: add an arm for each missing case
