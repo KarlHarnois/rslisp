@@ -255,10 +255,11 @@ impl TypeChecker {
     ) -> Result<TypedExpr, Diagnostic> {
         let value = self.infer(value)?;
         self.bind_match_enum(&value.ty, arms, value.span)?;
+        let pattern_type = self.pattern_type(&value.ty, arms);
         let mut typed_arms = Vec::new();
         let mut result: Option<Type> = None;
         for arm in arms {
-            let pattern = self.lower_pattern(&arm.pattern, &value.ty, None)?;
+            let pattern = self.lower_pattern(&arm.pattern, &pattern_type, None)?;
             let (body, body_type) = self.infer_block(&arm.body)?;
             if let Some(first) = &result {
                 let span = Self::block_result_span(&body).unwrap_or(arm.span);
@@ -297,6 +298,25 @@ impl TypeChecker {
                 Ok(Some(owner))
             }
             _ => Ok(None),
+        }
+    }
+
+    fn pattern_type(&self, scrutinee: &Type, arms: &[Arm]) -> Type {
+        let strings = arms
+            .iter()
+            .any(|arm| matches!(arm.pattern.kind, PatternKind::Literal(Literal::String(_))));
+        if strings && Self::is_string_value(scrutinee) {
+            Type::str_ref()
+        } else {
+            scrutinee.clone()
+        }
+    }
+
+    fn is_string_value(ty: &Type) -> bool {
+        match ty {
+            Type::Primitive(PrimitiveType::String) => true,
+            Type::Ref(inner) => matches!(inner.as_ref(), Type::Primitive(PrimitiveType::String)),
+            _ => false,
         }
     }
 
@@ -399,6 +419,9 @@ impl TypeChecker {
             } => {
                 self.short_variant_pattern(name, candidates, arguments, matched, mode, pattern.span)
             }
+            PatternKind::Literal(literal) => {
+                self.literal_pattern(literal, &matched, expected, pattern.span)
+            }
         };
         kind.map(|kind| TypedPattern {
             kind,
@@ -467,6 +490,25 @@ impl TypeChecker {
                 BindingKind::Variant(_, info) if info.owner == owner
             )
         })
+    }
+
+    fn literal_pattern(
+        &mut self,
+        literal: &Literal,
+        matched: &Type,
+        expected: &Type,
+        span: Span,
+    ) -> Result<TypedPatternKind, Diagnostic> {
+        let literal_type = self.literal_type(literal);
+        let compared = match literal {
+            Literal::String(_) => expected,
+            _ => matched,
+        };
+        self.expect(compared, &literal_type, span, MismatchContext::Plain)?;
+        Ok(TypedPatternKind::Literal(
+            literal.clone(),
+            self.unifier.resolve(&literal_type),
+        ))
     }
 
     fn bind_pattern(

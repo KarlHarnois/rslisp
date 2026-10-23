@@ -1,0 +1,34 @@
+(defn describe-number (n)
+  (match n
+    (0 "zero")
+    (1 "one")
+    (other "many")))
+
+(defn flip (flag)
+  (match flag
+    (true false)
+    (false true)))
+
+(type label (fn (string) f64))
+
+(defn label (s)
+  (match s
+    ("left" 1.0)
+    ("right" 2.0)
+    (other 0.0)))
+
+(defn main ()
+  (println (describe-number 0))
+  (println (describe-number 1))
+  (println (describe-number 5))
+  (println (flip true))
+  (println (label (to-string "left")))
+  (println (label (to-string "right")))
+  (println (label (to-string "other")))
+  (let (word (ref string)) (ref (to-string "left")))
+  (match word
+    ("left" (println "ref-left"))
+    (other (println "ref-other")))
+  (match (do (to-string "left"))
+    ("left" (println "block"))
+    (other (println "no"))))

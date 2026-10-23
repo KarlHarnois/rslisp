@@ -113,12 +113,18 @@ impl<'a> CorePrinter<'a> {
 
     fn leaf(&mut self, leaf: &Leaf) -> String {
         match leaf {
-            Leaf::Literal(Literal::Number(number)) => number.text().to_string(),
-            Leaf::Literal(Literal::String(text)) => format!("{text:?}"),
-            Leaf::Literal(Literal::Bool(value)) => value.to_string(),
+            Leaf::Literal(literal) => self.literal(literal),
             Leaf::Var(binding) => self.name(*binding),
             Leaf::Quote(form) => Self::list("quote", vec![form.to_string()]),
             Leaf::Rust(template) => self.rust(template),
+        }
+    }
+
+    fn literal(&self, literal: &Literal) -> String {
+        match literal {
+            Literal::Number(number) => number.text().to_string(),
+            Literal::String(text) => format!("{text:?}"),
+            Literal::Bool(value) => value.to_string(),
         }
     }
 
@@ -173,6 +179,7 @@ impl<'a> CorePrinter<'a> {
                 parts.extend(arguments.iter().map(|argument| self.pattern(argument)));
                 format!("({})", parts.join(" "))
             }
+            PatternKind::Literal(literal) => self.literal(literal),
         }
     }
 

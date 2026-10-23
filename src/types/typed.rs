@@ -97,12 +97,13 @@ pub enum TypedPatternKind {
     Wildcard,
     Bind(TypedBinder),
     Variant(BindingId, Vec<TypedPattern>),
+    Literal(Literal, Type),
 }
 
 impl TypedPattern {
     pub fn binders(&self) -> Vec<&TypedBinder> {
         match &self.kind {
-            TypedPatternKind::Wildcard => Vec::new(),
+            TypedPatternKind::Wildcard | TypedPatternKind::Literal(..) => Vec::new(),
             TypedPatternKind::Bind(binder) => vec![binder],
             TypedPatternKind::Variant(_, patterns) => {
                 patterns.iter().flat_map(TypedPattern::binders).collect()
@@ -112,7 +113,7 @@ impl TypedPattern {
 
     pub fn binders_mut(&mut self) -> Vec<&mut TypedBinder> {
         match &mut self.kind {
-            TypedPatternKind::Wildcard => Vec::new(),
+            TypedPatternKind::Wildcard | TypedPatternKind::Literal(..) => Vec::new(),
             TypedPatternKind::Bind(binder) => vec![binder],
             TypedPatternKind::Variant(_, patterns) => patterns
                 .iter_mut()

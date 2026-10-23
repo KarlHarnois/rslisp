@@ -54,7 +54,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `type` | `(type name type)` | signature | name: reference to a `def`. type: type. |
 | `struct` | `(struct name (field type)...)` or `(struct (name param...) (field type)...)` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
 | `enum` | `(enum name variant...)` or `(enum (name param...) variant...)` | `enum` | name: type binder. params: type binders. variants: a name, `(name type...)`, or `(name (struct (field type)...))`. |
-| `match` | `(match value (pattern body)...)` | `match` | value: expression. patterns: a wildcard, a bare name, or `(variant pattern...)`. arms: one body expression. |
+| `match` | `(match value (pattern body)...)` | `match` | value: expression. patterns: a wildcard, a literal, a bare name, or `(variant pattern...)`. arms: one body expression. |
 | `derive` | `(derive type trait...)` | `#[derive(...)]` | type: reference to a `struct` or `enum` of this module. traits: references to traits. |
 | `new` | `(new name (field value)...)` | struct literal | name: type. fields: field labels with expressions. |
 | `field` | `(field value name)` | `value.name` | value: expression. name: field label. |
@@ -459,7 +459,9 @@ A `match` tests one value against patterns:
   (point 0.0))
 ```
 
-An arm is one pattern and one body expression. The body is in tail position, so `recur` works in an arm, and a call to the enclosing function in an arm compiles into the enclosing tail loop. A pattern is `_`, a bare name, or `(variant pattern...)`, and patterns nest.
+An arm is one pattern and one body expression. The body is in tail position, so `recur` works in an arm, and a call to the enclosing function in an arm compiles into the enclosing tail loop. A pattern is `_`, a literal, a bare name, or `(variant pattern...)`, and patterns nest. Literal patterns are numbers, booleans and strings.
+
+A `string` value matched against string literals emits `.as_str()` on the value, which borrows and allocates nothing.
 
 A variant name in a pattern is short, as in `(circle r)`. Its enum is the type of the value at that position. When the matched value's type is still unknown, the enum is the one visible enum that has every variant name the arms use. If two visible enums fit, the match is an error that asks for one qualified pattern. A qualified pattern, such as `(shape/circle r)`, is always allowed.
 

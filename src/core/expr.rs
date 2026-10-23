@@ -67,6 +67,7 @@ pub enum PatternKind {
         candidates: Vec<BindingId>,
         arguments: Vec<Pattern>,
     },
+    Literal(Literal),
 }
 
 impl Pattern {

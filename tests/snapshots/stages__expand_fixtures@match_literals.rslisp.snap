@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/match_literals.rslisp
+---
+(def value (match 1 (0 0) (1 1) (other other)))

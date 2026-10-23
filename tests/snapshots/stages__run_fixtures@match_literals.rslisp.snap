@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/match_literals.rslisp
+---
+zero
+one
+many
+false
+1
+2
+0
+ref-left
+block
