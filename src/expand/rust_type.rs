@@ -4,13 +4,16 @@ use super::Expander;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{
-    BindingId, CoreModule, DefinitionForm, Item, ItemKind, KernelForm, ParsedTemplate, TypeBinder,
+    BindingId, CoreModule, DefinitionForm, EnumRust, Item, ItemKind, KernelForm, ParsedTemplate,
+    TypeBinder,
 };
 use crate::diagnostic::Diagnostic;
-use crate::reader::Form;
+use crate::reader::{Form, FormKind};
 
 impl Expander<'_> {
     const RUST_TYPE_PARTS: usize = 3;
+    const RUST_CLAUSE: &'static str = "rust";
+    const RUST_CLAUSE_HELP: &'static str = "write it as `(rust \"Path\")`";
 
     pub(super) fn lower_rust_type(
         &mut self,
@@ -40,6 +43,51 @@ impl Expander<'_> {
             span: form.span(),
         });
         Ok(())
+    }
+
+    pub(super) fn starts_rust_clause(form: &Form) -> bool {
+        form.as_list()
+            .and_then(<[Form]>::first)
+            .and_then(Form::as_symbol)
+            .is_some_and(|symbol| symbol.name() == Self::RUST_CLAUSE)
+    }
+
+    pub(super) fn enum_rust(
+        shape: &Shape,
+        clause: &Form,
+        parameters: usize,
+    ) -> Result<EnumRust, Diagnostic> {
+        let Some([_, path]) = clause.as_list() else {
+            return Err(Self::malformed_rust_clause(shape, clause));
+        };
+        let FormKind::String(path) = path.kind() else {
+            return Err(Self::malformed_rust_clause(shape, clause));
+        };
+        let template = Self::enum_rust_template(path, parameters)
+            .map_err(|_| Self::malformed_rust_clause(shape, clause))?;
+        Ok(EnumRust {
+            path: Rc::clone(path),
+            template: Rc::new(template),
+        })
+    }
+
+    fn enum_rust_template(
+        path: &str,
+        parameters: usize,
+    ) -> Result<ParsedTemplate, crate::core::MalformedPlaceholder> {
+        let arguments: Vec<String> = (0..parameters)
+            .map(|index| format!("{{{index}}}"))
+            .collect();
+        let template = if arguments.is_empty() {
+            path.to_string()
+        } else {
+            format!("{path}<{}>", arguments.join(", "))
+        };
+        ParsedTemplate::parse(&template)
+    }
+
+    fn malformed_rust_clause(shape: &Shape, clause: &Form) -> Diagnostic {
+        shape.malformed_with_help(clause, Self::RUST_CLAUSE_HELP)
     }
 
     fn type_template(shape: &Shape, template_form: &Form) -> Result<ParsedTemplate, Diagnostic> {

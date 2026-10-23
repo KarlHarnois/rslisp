@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/rust_enum_clause_not_string.rslisp
+---
+error[L0210]: malformed `enum`
+ --> check/rust_enum_clause_not_string.rslisp:1:16
+  |
+1 | (enum ordering (rust 1) less equal greater)
+  |                ^^^^^^^^ this does not fit the shape of `enum`
+  |
+  = help: write it as `(rust "Path")`

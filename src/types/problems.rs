@@ -605,6 +605,15 @@ impl TypeProblems {
         ))
     }
 
+    pub fn derive_on_rust_type(enum_name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::DERIVE_ON_RUST_TYPE,
+            format!("`{enum_name}` is a Rust type, so it has no `derive`"),
+            Label::new(span, format!("`{enum_name}` names a Rust type")),
+        )
+        .with_help("the traits of a Rust type come from its `rust-trait` entries")
+    }
+
     pub fn duplicate_derive(struct_name: &str, span: Span, first: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::DUPLICATE_DERIVE,

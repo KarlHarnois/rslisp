@@ -250,7 +250,7 @@ impl TypedProgram {
 
     fn inferred_enum_derive_line(&self, binding: BindingId) -> Option<String> {
         let definition = self.enums.get(binding)?;
-        if definition.written_derive.is_some() {
+        if definition.rust.is_some() || definition.written_derive.is_some() {
             return None;
         }
         let name = self.bindings.get(binding).name();

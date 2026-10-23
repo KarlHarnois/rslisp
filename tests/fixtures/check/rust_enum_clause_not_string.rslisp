@@ -1,0 +1,3 @@
+(enum ordering (rust 1) less equal greater)
+
+(defn main () (do))

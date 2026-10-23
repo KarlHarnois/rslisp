@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/rust_enum.rslisp
+---
+fn main() {
+    let order = std::cmp::Ordering::Less;
+    println!("{}", match order {
+        std::cmp::Ordering::Less => "less",
+        std::cmp::Ordering::Equal => "equal",
+        std::cmp::Ordering::Greater => "greater",
+    })
+}

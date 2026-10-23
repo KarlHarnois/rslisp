@@ -53,7 +53,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `if` | `(if test then else)` | `if`/`else` | all: expressions. |
 | `type` | `(type name type)` | signature | name: reference to a `def`. type: type. |
 | `struct` | `(struct name (field type)...)` or `(struct (name param...) (field type)...)` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
-| `enum` | `(enum name variant...)` or `(enum (name param...) variant...)` | `enum` | name: type binder. params: type binders. variants: a name, `(name type...)`, or `(name (struct (field type)...))`. |
+| `enum` | `(enum name (rust "Path")? variant...)` or `(enum (name param...) (rust "Path")? variant...)` | `enum`, or the named Rust type | name: type binder. params: type binders. `rust`: an optional Rust path. variants: a name, `(name type...)`, or `(name (struct (field type)...))`. |
 | `match` | `(match value (pattern body)...)` | `match` | value: expression. patterns: a wildcard, a literal, a bare name, or `(variant pattern...)`. arms: one body expression. |
 | `derive` | `(derive type trait...)` | `#[derive(...)]` | type: reference to a `struct` or `enum` of this module. traits: references to traits. |
 | `new` | `(new name (field value)...)` | struct literal | name: type. fields: field labels with expressions. |
@@ -436,6 +436,8 @@ Rust has no guaranteed tail calls. Without this milestone, recursion is the only
 ### 9. Enums and `match`
 
 An `enum` declares a sum type. A variant is a bare name, `(name type ...)` with positional payloads, or `(name (struct (field type)...))` with named fields. Within one variant the payload is either types or one `struct` body. A generic enum puts its parameters on its name, as `(enum (pair-of a) (both a a) neither)`.
+
+An optional `(rust "Path")` as the first form after the name makes the enum name a Rust type, such as `(enum (option value) (rust "Option") (some value) none)`. The clause holds one string, a Rust path, and only in that position does `(rust "...")` mean the clause. The compiler appends the enum's type parameters to the path, so `(option i64)` emits `Option<i64>`. Such an enum emits no Rust definition, and a construction or pattern emits the path, then `::`, then the variant's Rust name: `(option/some x)` emits `Option::Some(x)` and the pattern `none` emits `Option::None`. The enum reads as a `rust-type` in its emitted Rust, its traits, its size, its display in diagnostics and `signatures`, and `try`. Its traits come from `rust-trait` entries only, with no inferred traits and no `derive`; a `derive` of it is an error, `L0435`.
 
 ```lisp
 (enum shape

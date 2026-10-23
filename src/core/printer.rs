@@ -51,8 +51,10 @@ impl<'a> CorePrinter<'a> {
                 self.type_expr(type_expr)
             ),
             ItemKind::Struct(binding, params, fields) => self.struct_item(*binding, params, fields),
-            ItemKind::Enum(binding, params, variants) => self.enum_item(*binding, params, variants),
-            ItemKind::Derive(binding, traits) => {
+            ItemKind::Enum(binding, params, variants, rust) => {
+                self.enum_item(*binding, params, variants, rust)
+            }
+            ItemKind::Derive(binding, _, traits) => {
                 let mut parts = vec![self.name(*binding)];
                 parts.extend(
                     traits
@@ -296,8 +298,12 @@ impl<'a> CorePrinter<'a> {
         binding: BindingId,
         params: &[TypeBinder],
         variants: &[VariantDeclaration],
+        rust: &Option<crate::core::EnumRust>,
     ) -> String {
         let mut parts = vec![self.type_head(binding, params)];
+        if let Some(rust) = rust {
+            parts.push(format!("(rust {:?})", rust.path));
+        }
         parts.extend(
             variants
                 .iter()

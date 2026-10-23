@@ -19,7 +19,7 @@ pub use kernel::{
     StructForm,
 };
 pub use module::{
-    CoreModule, Item, ItemKind, ModuleId, ModulePath, VariantDeclaration, VariantPayload,
+    CoreModule, EnumRust, Item, ItemKind, ModuleId, ModulePath, VariantDeclaration, VariantPayload,
 };
 pub use printer::CorePrinter;
 pub use template::{MalformedPlaceholder, ParsedTemplate, Piece};

@@ -1,0 +1,11 @@
+(enum ordering (rust "std::cmp::Ordering") less equal greater)
+
+(def compare (rust "std::cmp::Ordering::Less" (fn () ordering)))
+
+(defn main ()
+  (let order (compare))
+  (println
+    (match order
+      (less "less")
+      (equal "equal")
+      (greater "greater"))))
