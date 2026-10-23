@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/try_in_tail_loop.rslisp
+---
+fn main() {
+    println!("{}", (|mut attempt: i64| -> Result<i64, <i64 as std::str::FromStr>::Err> {
+        loop {
+            if attempt < 1 {
+                attempt += 1;
+                continue;
+            } else {
+                let value: i64 = "7".parse()?;
+                return Ok(value);
+            }
+        }
+    })(0).unwrap())
+}

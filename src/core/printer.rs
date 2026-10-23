@@ -95,6 +95,7 @@ impl<'a> CorePrinter<'a> {
                     .map(|argument| self.expr(argument))
                     .collect(),
             ),
+            ExprKind::Try(value) => Self::list("try", vec![self.expr(value)]),
             ExprKind::Borrow(..) | ExprKind::Deref(..) => self.written(kind),
             ExprKind::Struct(structure) => self.structure(structure),
             ExprKind::Variant(binding, arguments) => self.variant(*binding, arguments),

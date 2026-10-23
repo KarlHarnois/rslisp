@@ -160,7 +160,7 @@ impl<'a> ExpressionEmitter<'a> {
         fragments.push(Fragment::Newline);
         fragments.extend(
             Code::joined(
-                vec![Code::atom("move "), self.closure(lambda)],
+                vec![Code::atom("move "), self.closure(lambda, &tail.ty)],
                 Precedence::Operator,
             )
             .spanned(tail.span)
@@ -191,7 +191,9 @@ impl<'a> ExpressionEmitter<'a> {
         match &expr.kind {
             TypedExprKind::Control(TypedControl::Block(block)) => Some(self.block_contents(block)),
             TypedExprKind::Call(callee, arguments) => match &callee.kind {
-                TypedExprKind::Fn(lambda) => Some(self.inline_call_contents(lambda, arguments)),
+                TypedExprKind::Fn(lambda) if !Self::contains_try(&lambda.body) => {
+                    Some(self.inline_call_contents(lambda, arguments))
+                }
                 _ => None,
             },
             _ => None,
@@ -205,12 +207,14 @@ impl<'a> ExpressionEmitter<'a> {
     fn expr_in(&mut self, expr: &TypedExpr, context: TypeContext) -> Code {
         match &expr.kind {
             TypedExprKind::Leaf(leaf) => self.leaf(leaf, expr, context),
-            TypedExprKind::Fn(lambda) => self.closure(lambda),
+            TypedExprKind::Fn(lambda) => self.closure(lambda, &expr.ty),
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments, expr.span),
             TypedExprKind::Recur(_) => {
                 unreachable!("expansion allows `recur` only in tail position")
             }
-            TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => self.written(expr),
+            TypedExprKind::Try(_) | TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => {
+                self.written(expr)
+            }
             _ => self.value(expr),
         }
     }
@@ -226,8 +230,19 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
+    fn propagate(&mut self, value: &TypedExpr) -> Code {
+        let value = self.expr_in(value, TypeContext::Known);
+        let value = if value.is_atomic() {
+            value
+        } else {
+            value.parenthesized()
+        };
+        Code::joined(vec![value, Code::atom("?")], Precedence::Atom)
+    }
+
     fn written(&mut self, expr: &TypedExpr) -> Code {
         match &expr.kind {
+            TypedExprKind::Try(value) => self.propagate(value),
             TypedExprKind::Borrow(kind, value) => self.borrow(*kind, value),
             TypedExprKind::Deref(value) => self.deref(value),
             _ => unreachable!("the caller matches a written form"),
@@ -533,7 +548,9 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument], span: Span) -> Code {
-        if let TypedExprKind::Fn(lambda) = &callee.kind {
+        if let TypedExprKind::Fn(lambda) = &callee.kind
+            && !Self::contains_try(&lambda.body)
+        {
             return self.inline_call(lambda, arguments);
         }
         if let Some(template) = self.called_template(callee) {
@@ -597,6 +614,21 @@ impl<'a> ExpressionEmitter<'a> {
                 Fragment::Text("}".to_string()),
             ],
             precedence: Precedence::Block,
+        }
+    }
+
+    fn contains_try(block: &TypedBlock) -> bool {
+        block.expressions().any(Self::expression_contains_try)
+    }
+
+    fn expression_contains_try(expr: &TypedExpr) -> bool {
+        match &expr.kind {
+            TypedExprKind::Try(_) => true,
+            TypedExprKind::Fn(_) => false,
+            _ => expr
+                .children()
+                .into_iter()
+                .any(Self::expression_contains_try),
         }
     }
 
@@ -785,7 +817,8 @@ impl<'a> ExpressionEmitter<'a> {
         parts
     }
 
-    fn closure(&mut self, lambda: &TypedLambda) -> Code {
+    fn closure(&mut self, lambda: &TypedLambda, ty: &Type) -> Code {
+        let annotated = Self::contains_try(&lambda.body);
         let previous = std::mem::replace(&mut self.tail_loop, TailLoop::of_closure(lambda));
         self.locals.enter();
         let params: Vec<String> = lambda
@@ -793,21 +826,52 @@ impl<'a> ExpressionEmitter<'a> {
             .iter()
             .map(|param| self.bind_parameter(param, TypePosition::Value))
             .collect();
-        let head = Code::atom(format!("|{}| ", params.join(", ")));
-        let body = if self.tail_loop.is_some() {
-            Code {
-                fragments: self.loop_expression(&lambda.body, LoopExit::Return),
-                precedence: Precedence::Block,
-            }
-        } else {
-            match lambda.body.items.as_slice() {
-                [TypedBodyItem::Expr(only)] => self.expr(only),
-                _ => self.block(&lambda.body),
-            }
-        };
+        let body = self.closure_body(lambda, annotated);
         self.locals.leave();
         self.tail_loop = previous;
+        let head = match (annotated, ty) {
+            (true, Type::Function(_, result)) => {
+                let result = self.types().show(result, TypePosition::Value);
+                Code::atom(format!("|{}| -> {result} ", params.join(", ")))
+            }
+            _ => Code::atom(format!("|{}| ", params.join(", "))),
+        };
         Code::joined(vec![head, body], Precedence::Operator)
+    }
+
+    fn closure_body(&mut self, lambda: &TypedLambda, annotated: bool) -> Code {
+        if self.tail_loop.is_some() {
+            let fragments = self.loop_expression(&lambda.body, LoopExit::Return);
+            return if annotated {
+                Self::braced(fragments)
+            } else {
+                Code {
+                    fragments,
+                    precedence: Precedence::Block,
+                }
+            };
+        }
+        if annotated {
+            return self.block(&lambda.body);
+        }
+        match lambda.body.items.as_slice() {
+            [TypedBodyItem::Expr(only)] => self.expr(only),
+            _ => self.block(&lambda.body),
+        }
+    }
+
+    fn braced(fragments: Vec<Fragment>) -> Code {
+        let mut inner = vec![Fragment::Newline];
+        inner.extend(fragments);
+        Code {
+            fragments: vec![
+                Fragment::Text("{".to_string()),
+                Fragment::Indented(inner),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ],
+            precedence: Precedence::Block,
+        }
     }
 
     fn inline_call(&mut self, lambda: &TypedLambda, arguments: &[TypedArgument]) -> Code {

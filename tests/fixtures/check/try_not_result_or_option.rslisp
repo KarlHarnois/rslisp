@@ -1,0 +1,5 @@
+(type stray (fn () unit))
+(defn stray () (try (do)))
+
+(type stray-vector (fn () unit))
+(defn stray-vector () (try (vec 1)))

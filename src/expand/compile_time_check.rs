@@ -40,6 +40,10 @@ impl Expander<'_> {
                 InterpretProblems::runtime_only("structs", expr.span()),
                 through,
             )),
+            ExprKind::Try(_) => Err(Self::routed(
+                InterpretProblems::runtime_only("`try` forms", expr.span()),
+                through,
+            )),
             _ => Ok(()),
         }
     }

@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/try_in_macro_code.rslisp
+---
+error[L0303]: `try` forms only exist at runtime
+ --> check/try_in_macro_code.rslisp:1:33
+  |
+1 | (defmacro passes-through (form) (try form))
+  |                                 ^^^^^^^^^^ used at compile time here

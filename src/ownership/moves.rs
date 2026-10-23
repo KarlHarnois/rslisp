@@ -92,7 +92,9 @@ impl<'a> MoveChecker<'a> {
     fn nested_expr(&mut self, expr: &TypedExpr, kind: &TypedExprKind) {
         match kind {
             TypedExprKind::Recur(arguments) => self.recur(arguments),
-            TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => self.written(expr),
+            TypedExprKind::Try(_) | TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => {
+                self.written(expr)
+            }
             TypedExprKind::Struct(structure) => self.structure(structure),
             TypedExprKind::Variant(_, arguments) => arguments
                 .iter()
@@ -115,6 +117,7 @@ impl<'a> MoveChecker<'a> {
             TypedExprKind::Borrow(_, value) | TypedExprKind::Deref(value) => {
                 self.expr(value, Usage::Borrow)
             }
+            TypedExprKind::Try(value) => self.expr(value, Usage::Move),
             _ => unreachable!("the caller matches a written form"),
         }
     }

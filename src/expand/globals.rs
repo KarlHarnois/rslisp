@@ -4,6 +4,7 @@ use std::rc::Rc;
 use super::Expander;
 use super::problems::ExpandProblems;
 use super::recur_check::RecurCheck;
+use super::try_check::TryCheck;
 use crate::core::{BindingId, Expr};
 use crate::diagnostic::Diagnostic;
 use crate::interpret::{Env, Interpreter, Value};
@@ -114,6 +115,7 @@ impl Expander<'_> {
                     return Err(self.recovered_diagnostics.remove(errors_before));
                 }
                 RecurCheck::outside().value(&expr)?;
+                TryCheck::outside().value(&expr)?;
                 let expr = Rc::new(expr);
                 self.globals
                     .states

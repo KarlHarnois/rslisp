@@ -66,7 +66,9 @@ impl TypedExprKind {
             TypedExprKind::Recur(arguments) => {
                 arguments.iter().map(|argument| &argument.value).collect()
             }
-            TypedExprKind::Borrow(_, value) | TypedExprKind::Deref(value) => vec![value],
+            TypedExprKind::Try(value)
+            | TypedExprKind::Borrow(_, value)
+            | TypedExprKind::Deref(value) => vec![value],
             TypedExprKind::Struct(structure) => structure.children(),
             TypedExprKind::Variant(_, arguments) => arguments.iter().collect(),
             _ => Vec::new(),
@@ -79,7 +81,9 @@ impl TypedExprKind {
                 .iter_mut()
                 .map(|argument| &mut argument.value)
                 .collect(),
-            TypedExprKind::Borrow(_, value) | TypedExprKind::Deref(value) => vec![value],
+            TypedExprKind::Try(value)
+            | TypedExprKind::Borrow(_, value)
+            | TypedExprKind::Deref(value) => vec![value],
             TypedExprKind::Struct(structure) => structure.children_mut(),
             TypedExprKind::Variant(_, arguments) => arguments.iter_mut().collect(),
             _ => Vec::new(),

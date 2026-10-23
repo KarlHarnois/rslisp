@@ -1,0 +1,6 @@
+(defn main ()
+  (println (unwrap-ok (loop ((attempt 0))
+                         (if (< attempt 1)
+                             (recur (+ attempt 1))
+                             (do (let (value i64) (try (parse "7")))
+                                 (ok value)))))))

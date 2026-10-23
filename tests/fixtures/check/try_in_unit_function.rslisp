@@ -1,0 +1,3 @@
+(type stray (fn () unit))
+
+(defn stray () (try (ok 1)))

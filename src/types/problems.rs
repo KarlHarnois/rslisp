@@ -42,6 +42,27 @@ impl TypeProblems {
         )
     }
 
+    pub fn try_needs_value(found: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::TRY_NOT_RESULT_OR_OPTION,
+            "`try` needs a result or an option",
+            Label::new(span, format!("this is {found}")),
+        )
+        .with_help("write `try` around a value of type `(result a b)` or `(option a)`")
+    }
+
+    pub fn try_cannot_return(needed: &str, found: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::TRY_TARGET,
+            "`try` cannot return from this function",
+            Label::new(span, format!("this function returns {found}")),
+        )
+        .with_note(format!("`try` here needs a function that returns {needed}"))
+        .with_help(
+            "make the function return the value `try` needs, or handle this value without `try`",
+        )
+    }
+
     pub fn mismatch(
         expected: &str,
         found: &str,

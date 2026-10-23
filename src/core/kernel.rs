@@ -10,6 +10,7 @@ pub enum KernelForm {
 pub enum ExpressionForm {
     Fn,
     Recur,
+    Try,
     Leaf(LeafForm),
     Borrow(ReferenceKind),
     Deref,
@@ -55,7 +56,7 @@ struct KernelFormRow {
 }
 
 impl KernelForm {
-    const ROWS: [KernelFormRow; 22] = [
+    const ROWS: [KernelFormRow; 23] = [
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Fn),
             name: "fn",
@@ -155,6 +156,11 @@ impl KernelForm {
             form: KernelForm::Expression(ExpressionForm::Recur),
             name: "recur",
             shape: "(recur argument ...)",
+        },
+        KernelFormRow {
+            form: KernelForm::Expression(ExpressionForm::Try),
+            name: "try",
+            shape: "(try expression)",
         },
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::Use),

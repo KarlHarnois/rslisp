@@ -91,6 +91,7 @@ impl<'h> Interpreter<'h> {
         match expr.kind() {
             ExprKind::Control(control) => self.step_control(control, env),
             ExprKind::Struct(_) => Err(InterpretProblems::runtime_only("structs", span)),
+            ExprKind::Try(_) => Err(InterpretProblems::runtime_only("`try` forms", span)),
             _ => unreachable!("the caller matches a value form"),
         }
     }

@@ -16,7 +16,7 @@
 (use prelude/struct defstruct)
 (use prelude/ownership clone copy)
 
-(export fn def let do if type struct enum derive new field quote macro rust rust-trait rust-type use export recur
+(export fn def let do if type struct enum derive new field quote macro rust rust-trait rust-type use export recur try
         ref mut deref where with _
         bool char str string unit
         i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64

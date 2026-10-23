@@ -56,6 +56,7 @@ pub enum TypedExprKind {
     Fn(Rc<TypedLambda>),
     Call(Box<TypedExpr>, Vec<TypedArgument>),
     Recur(Vec<TypedArgument>),
+    Try(Box<TypedExpr>),
     Borrow(ReferenceKind, Box<TypedExpr>),
     Deref(Box<TypedExpr>),
     Control(TypedControl),

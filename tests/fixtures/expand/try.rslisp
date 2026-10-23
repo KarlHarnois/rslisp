@@ -1,0 +1,9 @@
+(type parse-add (fn ((ref str) (ref str)) (result i64 (parse-error i64))))
+
+(defn parse-add (left right)
+  (let a (try (parse left)))
+  (let b (try (parse right)))
+  (ok (+ a b)))
+
+(defn threaded (text)
+  (ok (try (parse text))))

@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/try_outside_fn.rslisp
+---
+error[L0220]: `try` is not inside a function
+ --> check/try_outside_fn.rslisp:1:12
+  |
+1 | (def stray (try (ok 1)))
+  |            ^^^^^^^^^^^^ there is no function here for `try` to return from
+  |
+  = help: write `try` inside a `fn` body
