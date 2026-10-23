@@ -1,0 +1,5 @@
+(defstruct handler (callback (fn (i64) i64)) (tag i64))
+
+(defn main ()
+  (= (make-handler (fn (value) value) 1)
+     (make-handler (fn (value) value) 1)))

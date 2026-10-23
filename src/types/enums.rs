@@ -71,7 +71,7 @@ impl EnumDefinition {
             variant
                 .payload_types()
                 .into_iter()
-                .find(|payload| !matches!(payload, Type::Function(..)) && !satisfies(payload))
+                .find(|payload| !satisfies(payload))
                 .map(|payload| (variant.name.clone(), payload.clone()))
         })
     }

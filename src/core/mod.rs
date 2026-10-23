@@ -14,8 +14,9 @@ pub use expr::{
     RustTemplate, StructExpr,
 };
 pub use kernel::{
-    ControlForm, CopyTrait, DefinitionForm, ExpressionForm, KernelConstants, KernelForm,
-    KernelType, LeafForm, OrderTrait, PrimitiveType, ReferenceKind, StructDerives, StructForm,
+    ControlForm, CopyTrait, DefinitionForm, ExpressionForm, FunctionFieldTraits, KernelConstants,
+    KernelForm, KernelType, LeafForm, OrderTrait, PrimitiveType, ReferenceKind, StructDerives,
+    StructForm,
 };
 pub use module::{
     CoreModule, Item, ItemKind, ModuleId, ModulePath, VariantDeclaration, VariantPayload,
