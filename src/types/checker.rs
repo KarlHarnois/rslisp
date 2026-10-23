@@ -1046,13 +1046,14 @@ impl TypeChecker {
             .zip(&params)
             .map(|(binder, param)| (binder.variable, param.id))
             .collect();
-        let (lowered, borrowed) = self.lower_fields(fields, &scope)?;
+        let (lowered, field_spans, borrowed) = self.lower_fields(fields, &scope)?;
         Self::check_parameters_used(binders, &params, &lowered)?;
         self.structs.add(
             binding,
             StructDefinition {
                 params,
                 fields: lowered,
+                field_spans,
                 derives: Vec::new(),
                 derived_traits: Vec::new(),
                 blocked: Vec::new(),
@@ -1079,10 +1080,11 @@ impl TypeChecker {
             .collect();
         let mut lowered = Vec::new();
         for variant in variants {
-            let payload = self.lower_variant_payload(&variant.payload, &scope)?;
+            let (payload, payload_spans) = self.lower_variant_payload(&variant.payload, &scope)?;
             lowered.push(VariantDefinition {
                 name: variant.name.clone(),
                 payload,
+                payload_spans,
                 span: variant.span,
             });
         }
@@ -1115,22 +1117,31 @@ impl TypeChecker {
         &mut self,
         payload: &CoreVariantPayload,
         scope: &HashMap<BindingId, GenericId>,
-    ) -> Result<VariantPayload, Diagnostic> {
+    ) -> Result<(VariantPayload, Vec<Span>), Diagnostic> {
         match payload {
-            CoreVariantPayload::None => Ok(VariantPayload::None),
-            CoreVariantPayload::Positional(types) => Ok(VariantPayload::Positional(
-                types
-                    .iter()
-                    .map(|payload| self.lower_type(payload, scope))
-                    .collect::<Result<Vec<_>, Diagnostic>>()?,
+            CoreVariantPayload::None => Ok((VariantPayload::None, Vec::new())),
+            CoreVariantPayload::Positional(types) => Ok((
+                VariantPayload::Positional(
+                    types
+                        .iter()
+                        .map(|payload| self.lower_type(payload, scope))
+                        .collect::<Result<Vec<_>, Diagnostic>>()?,
+                ),
+                types.iter().map(TypeExpr::span).collect(),
             )),
-            CoreVariantPayload::Named(fields) => Ok(VariantPayload::Named(
+            CoreVariantPayload::Named(fields) => Ok((
+                VariantPayload::Named(
+                    fields
+                        .iter()
+                        .map(|(label, field_type)| {
+                            Ok((label.name.clone(), self.lower_type(field_type, scope)?))
+                        })
+                        .collect::<Result<Vec<_>, Diagnostic>>()?,
+                ),
                 fields
                     .iter()
-                    .map(|(label, field_type)| {
-                        Ok((label.name.clone(), self.lower_type(field_type, scope)?))
-                    })
-                    .collect::<Result<Vec<_>, Diagnostic>>()?,
+                    .map(|(_, field_type)| field_type.span())
+                    .collect(),
             )),
         }
     }
@@ -1168,8 +1179,9 @@ impl TypeChecker {
         &mut self,
         fields: &[(crate::core::FieldLabel, TypeExpr)],
         scope: &HashMap<BindingId, GenericId>,
-    ) -> Result<(LoweredFields, Option<Span>), Diagnostic> {
+    ) -> Result<(LoweredFields, Vec<Span>, Option<Span>), Diagnostic> {
         let mut lowered = Vec::new();
+        let mut spans = Vec::new();
         let mut borrowed = None;
         for (label, field_type) in fields {
             let lowered_type = self.lower_type(field_type, scope)?;
@@ -1177,8 +1189,9 @@ impl TypeChecker {
                 borrowed = Some(field_type.span());
             }
             lowered.push((label.name.clone(), lowered_type));
+            spans.push(field_type.span());
         }
-        Ok((lowered, borrowed))
+        Ok((lowered, spans, borrowed))
     }
 
     fn collect_rust_type(

@@ -12,7 +12,10 @@ use super::types::{RustTypes, TypePosition};
 use super::unsized_parameters::UnsizedParameters;
 use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::Diagnostic;
-use crate::types::{GenericParam, Type, TypedDefinition, TypedExpr, TypedExprKind, TypedProgram};
+use crate::source::Span;
+use crate::types::{
+    GenericParam, Type, TypedDefinition, TypedExpr, TypedExprKind, TypedProgram, VariantDefinition,
+};
 
 #[derive(Default)]
 struct ModuleTree {
@@ -242,13 +245,17 @@ impl<'a> ItemEmitter<'a> {
             .get(binding)
             .expect("a reached struct has a definition");
         let mut fields = Vec::new();
-        for (name, field_type) in &definition.fields {
+        for ((name, field_type), span) in definition.fields.iter().zip(&definition.field_spans) {
             fields.push(Fragment::Newline);
             fields.push(Fragment::Text(format!(
-                "{visibility}{}: {},",
-                NameMangler::value(name),
-                types.show(field_type, TypePosition::Value)
+                "{visibility}{}: ",
+                NameMangler::value(name)
             )));
+            fields.push(Fragment::Spanned(
+                *span,
+                vec![Fragment::Text(types.show(field_type, TypePosition::Value))],
+            ));
+            fields.push(Fragment::Text(",".to_string()));
         }
         let params = Self::struct_params(&definition.params);
         let mut fragments = Vec::new();
@@ -260,7 +267,8 @@ impl<'a> ItemEmitter<'a> {
             fragments.push(Fragment::Newline);
         }
         fragments.extend([
-            Fragment::Text(format!("{visibility}struct {}{params} {{", info.name)),
+            self.spanned_head(binding, format!("{visibility}struct {}{params}", info.name)),
+            Fragment::Text(" {".to_string()),
             Fragment::Indented(fields),
             Fragment::Newline,
             Fragment::Text("}".to_string()),
@@ -284,32 +292,8 @@ impl<'a> ItemEmitter<'a> {
         let params = Self::struct_params(&definition.params);
         let mut variants = Vec::new();
         for variant in &definition.variants {
-            let name = NameMangler::type_name(&variant.name);
-            let payload = match &variant.payload {
-                crate::types::VariantPayload::None => String::new(),
-                crate::types::VariantPayload::Positional(payload_types) => {
-                    let payload: Vec<String> = payload_types
-                        .iter()
-                        .map(|payload| types.show(payload, TypePosition::Value))
-                        .collect();
-                    format!("({})", payload.join(", "))
-                }
-                crate::types::VariantPayload::Named(fields) => {
-                    let fields: Vec<String> = fields
-                        .iter()
-                        .map(|(label, field_type)| {
-                            format!(
-                                "{}: {}",
-                                NameMangler::value(label),
-                                types.show(field_type, TypePosition::Value)
-                            )
-                        })
-                        .collect();
-                    format!(" {{ {} }}", fields.join(", "))
-                }
-            };
             variants.push(Fragment::Newline);
-            variants.push(Fragment::Text(format!("{name}{payload},")));
+            variants.extend(Self::variant(variant, &types));
         }
         let mut fragments = Vec::new();
         if !definition.derives.is_empty() {
@@ -320,12 +304,78 @@ impl<'a> ItemEmitter<'a> {
             fragments.push(Fragment::Newline);
         }
         fragments.extend([
-            Fragment::Text(format!("{visibility}enum {}{params} {{", info.name)),
+            self.spanned_head(binding, format!("{visibility}enum {}{params}", info.name)),
+            Fragment::Text(" {".to_string()),
             Fragment::Indented(variants),
             Fragment::Newline,
             Fragment::Text("}".to_string()),
         ]);
         fragments
+    }
+
+    fn variant(variant: &VariantDefinition, types: &RustTypes) -> Vec<Fragment> {
+        let mut fragments = vec![Fragment::Text(NameMangler::type_name(&variant.name))];
+        fragments.extend(Self::variant_payload(variant, types));
+        fragments.push(Fragment::Text(",".to_string()));
+        fragments
+    }
+
+    fn variant_payload(variant: &VariantDefinition, types: &RustTypes) -> Vec<Fragment> {
+        match &variant.payload {
+            crate::types::VariantPayload::None => Vec::new(),
+            crate::types::VariantPayload::Positional(payload_types) => {
+                Self::positional_payload(payload_types, &variant.payload_spans, types)
+            }
+            crate::types::VariantPayload::Named(fields) => {
+                Self::named_payload(fields, &variant.payload_spans, types)
+            }
+        }
+    }
+
+    fn positional_payload(
+        payload_types: &[Type],
+        spans: &[Span],
+        types: &RustTypes,
+    ) -> Vec<Fragment> {
+        let mut fragments = vec![Fragment::Text("(".to_string())];
+        for (position, (payload, span)) in payload_types.iter().zip(spans).enumerate() {
+            if position > 0 {
+                fragments.push(Fragment::Text(", ".to_string()));
+            }
+            fragments.push(Fragment::Spanned(
+                *span,
+                vec![Fragment::Text(types.show(payload, TypePosition::Value))],
+            ));
+        }
+        fragments.push(Fragment::Text(")".to_string()));
+        fragments
+    }
+
+    fn named_payload(
+        fields: &[(std::rc::Rc<str>, Type)],
+        spans: &[Span],
+        types: &RustTypes,
+    ) -> Vec<Fragment> {
+        let mut fragments = vec![Fragment::Text(" { ".to_string())];
+        for (position, ((label, field_type), span)) in fields.iter().zip(spans).enumerate() {
+            if position > 0 {
+                fragments.push(Fragment::Text(", ".to_string()));
+            }
+            fragments.push(Fragment::Text(format!("{}: ", NameMangler::value(label))));
+            fragments.push(Fragment::Spanned(
+                *span,
+                vec![Fragment::Text(types.show(field_type, TypePosition::Value))],
+            ));
+        }
+        fragments.push(Fragment::Text(" }".to_string()));
+        fragments
+    }
+
+    fn spanned_head(&self, binding: BindingId, head: String) -> Fragment {
+        match self.program.bindings.get(binding).span() {
+            Some(span) => Fragment::Spanned(span, vec![Fragment::Text(head)]),
+            None => Fragment::Text(head),
+        }
     }
 
     fn struct_params(params: &[GenericParam]) -> String {

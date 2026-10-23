@@ -16,6 +16,7 @@ pub enum VariantPayload {
 pub struct VariantDefinition {
     pub name: Rc<str>,
     pub payload: VariantPayload,
+    pub payload_spans: Vec<Span>,
     pub span: Span,
 }
 
@@ -136,6 +137,7 @@ mod tests {
             VariantDefinition {
                 name: name.into(),
                 payload,
+                payload_spans: Vec::new(),
                 span: self.span,
             }
         }

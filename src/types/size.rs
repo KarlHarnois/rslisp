@@ -196,6 +196,7 @@ mod tests {
                         ("first".into(), Type::Primitive(PrimitiveType::I64)),
                         ("second".into(), Type::Primitive(PrimitiveType::I64)),
                     ],
+                    field_spans: Vec::new(),
                     derives: Vec::new(),
                     derived_traits: Vec::new(),
                     blocked: Vec::new(),
@@ -214,6 +215,7 @@ mod tests {
                     variants: vec![VariantDefinition {
                         name: "value".into(),
                         payload,
+                        payload_spans: Vec::new(),
                         span: crate::source::Span::new(crate::source::SourceId::new(0), 0..0),
                     }],
                     rust: None,
@@ -233,6 +235,7 @@ mod tests {
                 StructDefinition {
                     params: Vec::new(),
                     fields: vec![("next".into(), Type::Named(binding, Vec::new()))],
+                    field_spans: Vec::new(),
                     derives: Vec::new(),
                     derived_traits: Vec::new(),
                     blocked: Vec::new(),
@@ -251,6 +254,7 @@ mod tests {
                     variants: vec![VariantDefinition {
                         name: "next".into(),
                         payload: VariantPayload::Positional(vec![Type::Named(binding, Vec::new())]),
+                        payload_spans: Vec::new(),
                         span: crate::source::Span::new(crate::source::SourceId::new(0), 0..0),
                     }],
                     rust: None,
