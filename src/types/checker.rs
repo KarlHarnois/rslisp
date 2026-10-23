@@ -65,6 +65,7 @@ pub struct TypeChecker {
     pub(super) inferred_copies: InferredCopies,
     macro_origins: HashMap<Span, Rc<str>>,
     copy_trait: Option<BindingId>,
+    box_binding: Option<BindingId>,
     pub(super) written_parameters: HashMap<BindingId, Vec<bool>>,
     pub(super) pending_mode_checks: Vec<PendingModeCheck>,
 }
@@ -118,6 +119,7 @@ impl TypeChecker {
             inferred_copies: InferredCopies::default(),
             macro_origins: HashMap::new(),
             copy_trait: None,
+            box_binding: None,
             written_parameters: HashMap::new(),
             pending_mode_checks: Vec::new(),
         }
@@ -130,6 +132,10 @@ impl TypeChecker {
             if let Err(diagnostic) = self.collect_item(item) {
                 self.diagnostics.push(diagnostic);
             }
+        }
+        self.box_binding = self.rust_types.box_binding();
+        if let Some(box_binding) = self.box_binding {
+            super::boxes::BoxPlanner::add_boxes(&mut self.structs, &mut self.enums, box_binding);
         }
         self.register_derived_traits(modules);
         self.check_trait_claims(modules);
@@ -390,6 +396,36 @@ impl TypeChecker {
 
     pub(super) fn copy_rules(&self) -> super::copy::CopyRules<'_> {
         super::copy::CopyRules::new(&self.traits, &self.generics, &self.structs, &self.enums)
+    }
+
+    pub(super) fn is_box(&self, ty: &Type) -> bool {
+        matches!(ty, Type::Named(binding, arguments) if Some(*binding) == self.box_binding && arguments.len() == 1)
+    }
+
+    pub(super) fn visible_payload(&self, ty: &Type) -> Type {
+        match ty {
+            Type::Named(binding, arguments)
+                if Some(*binding) == self.box_binding && arguments.len() == 1 =>
+            {
+                arguments[0].clone()
+            }
+            _ => ty.clone(),
+        }
+    }
+
+    pub(super) fn visible_payloads(
+        &self,
+        owner: BindingId,
+        index: usize,
+        arguments: &[Type],
+    ) -> Vec<Type> {
+        self.enums
+            .get(owner)
+            .and_then(|definition| definition.instantiated_payload(index, arguments))
+            .unwrap_or_default()
+            .into_iter()
+            .map(|payload| self.visible_payload(&payload))
+            .collect()
     }
 
     pub(super) fn require_copy(&mut self, value: &Type) {
@@ -947,8 +983,7 @@ impl TypeChecker {
             .collect();
         let mut lowered = Vec::new();
         for variant in variants {
-            let payload =
-                self.lower_variant_payload(binding, &variant.name, &variant.payload, &scope)?;
+            let payload = self.lower_variant_payload(&variant.payload, &scope)?;
             lowered.push(VariantDefinition {
                 name: variant.name.clone(),
                 payload,
@@ -981,8 +1016,6 @@ impl TypeChecker {
 
     fn lower_variant_payload(
         &mut self,
-        owner: BindingId,
-        variant: &str,
         payload: &CoreVariantPayload,
         scope: &HashMap<BindingId, GenericId>,
     ) -> Result<VariantPayload, Diagnostic> {
@@ -991,35 +1024,18 @@ impl TypeChecker {
             CoreVariantPayload::Positional(types) => Ok(VariantPayload::Positional(
                 types
                     .iter()
-                    .map(|payload| self.lower_payload(owner, variant, payload, scope))
+                    .map(|payload| self.lower_type(payload, scope))
                     .collect::<Result<Vec<_>, Diagnostic>>()?,
             )),
             CoreVariantPayload::Named(fields) => Ok(VariantPayload::Named(
                 fields
                     .iter()
                     .map(|(label, field_type)| {
-                        Ok((
-                            label.name.clone(),
-                            self.lower_payload(owner, variant, field_type, scope)?,
-                        ))
+                        Ok((label.name.clone(), self.lower_type(field_type, scope)?))
                     })
                     .collect::<Result<Vec<_>, Diagnostic>>()?,
             )),
         }
-    }
-
-    fn lower_payload(
-        &mut self,
-        owner: BindingId,
-        variant: &str,
-        payload: &TypeExpr,
-        scope: &HashMap<BindingId, GenericId>,
-    ) -> Result<Type, Diagnostic> {
-        let lowered = self.lower_type(payload, scope)?;
-        if matches!(lowered, Type::Named(binding, _) if binding == owner) {
-            return Err(TypeProblems::recursive_enum(variant, payload.span()));
-        }
-        Ok(lowered)
     }
 
     fn check_enum_parameters_used(
@@ -1549,6 +1565,7 @@ impl TypeChecker {
             structs: self.structs,
             enums: self.enums,
             rust_types: self.rust_types,
+            box_binding: self.box_binding,
             traits: self.traits,
             generics: self.generics,
             implied_bounds: self.implied_bounds,

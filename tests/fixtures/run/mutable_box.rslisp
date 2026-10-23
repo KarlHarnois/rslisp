@@ -1,0 +1,20 @@
+(enum (tree a) (node (tree a) a (tree a)) leaf)
+
+(type value-of! (fn ((mut (tree i64))) i64))
+
+(defn value-of! (tree)
+  (match tree
+    ((tree/node _ value _) (deref value))
+    (tree/leaf 0)))
+
+(type left-value! (fn ((mut (tree i64))) i64))
+
+(defn left-value! (tree)
+  (match tree
+    ((tree/node left _ _) (value-of! left))
+    (tree/leaf 0)))
+
+(defn main ()
+  (let tree (tree/node (tree/node tree/leaf 7 tree/leaf) 2 tree/leaf))
+  (println (left-value! (mut tree)))
+  (prn tree))

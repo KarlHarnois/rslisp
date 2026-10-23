@@ -1,0 +1,34 @@
+(enum (tree a) (node (tree a) a (tree a)) leaf)
+(enum (wrapped a) (holds (option (wrapped a)) a) empty)
+(enum (vector-tree a) (many (vec (vector-tree a))) (none a))
+(enum (named-tree a) (node (struct (left (named-tree a)) (value a))) leaf)
+
+(defn total (tree)
+  (match tree
+    ((tree/node left value right) (+ (+ (total left) value) (total right)))
+    (tree/leaf 0)))
+
+(defn first-child (tree)
+  (match tree
+    ((tree/node left _ _) left)
+    (tree/leaf tree/leaf)))
+
+(defn named-total (tree)
+  (match tree
+    ((named-tree/node left value) (+ (named-total left) value))
+    (named-tree/leaf 0)))
+
+(defn depth (tree count)
+  (match tree
+    ((tree/node left _ _) (recur left (+ count 1)))
+    (tree/leaf count)))
+
+(defn main ()
+  (let tree (tree/node tree/leaf 1 tree/leaf))
+  (prn tree)
+  (prn (total tree))
+  (prn (first-child tree))
+  (prn (named-total (named-tree/node named-tree/leaf 2)))
+  (prn (depth (tree/node tree/leaf 1 tree/leaf) 0))
+  (prn (the (wrapped i64) (wrapped/holds (some wrapped/empty) 1)))
+  (prn (the (vector-tree i64) (vector-tree/many (vec (vector-tree/none 1))))))

@@ -46,7 +46,12 @@ impl TypeChecker {
         for (position, arm) in arms.iter().enumerate() {
             let pattern = self.cover_pattern(&arm.pattern);
             let query = [pattern.clone()];
-            if self.useful(&matrix, &query, std::slice::from_ref(&scrutinee)) {
+            if self.useful(
+                &matrix,
+                &query,
+                std::slice::from_ref(&scrutinee),
+                &mut Vec::new(),
+            ) {
                 matrix.push(vec![pattern]);
             } else {
                 let covered_by = self.covering_arm(&arms[..position], &pattern, &scrutinee);
@@ -55,10 +60,15 @@ impl TypeChecker {
             }
         }
         let exhaustive = [CoverPattern::Wild];
-        if !self.useful(&matrix, &exhaustive, std::slice::from_ref(&scrutinee)) {
+        if !self.useful(
+            &matrix,
+            &exhaustive,
+            std::slice::from_ref(&scrutinee),
+            &mut Vec::new(),
+        ) {
             return;
         }
-        let missing = self.witnesses(&matrix, &[scrutinee]);
+        let missing = self.witnesses(&matrix, &[scrutinee], &mut Vec::new());
         let mut seen = HashSet::new();
         let cases: Vec<String> = missing
             .iter()
@@ -89,57 +99,135 @@ impl TypeChecker {
         }
     }
 
-    fn useful(&self, matrix: &[Vec<CoverPattern>], query: &[CoverPattern], types: &[Type]) -> bool {
+    fn useful(
+        &self,
+        matrix: &[Vec<CoverPattern>],
+        query: &[CoverPattern],
+        types: &[Type],
+        expanding: &mut Vec<BindingId>,
+    ) -> bool {
         if query.is_empty() {
             return matrix.is_empty();
         }
         match &query[0] {
-            CoverPattern::Wild => match self.constructors(&types[0]) {
-                Some(constructors) => constructors.iter().any(|constructor| {
-                    let specialized = self.specialize(matrix, constructor);
-                    let mut row: Vec<CoverPattern> = constructor
-                        .arguments
-                        .iter()
-                        .map(|_| CoverPattern::Wild)
-                        .collect();
-                    row.extend_from_slice(&query[1..]);
-                    let mut columns = constructor.arguments.clone();
-                    columns.extend_from_slice(&types[1..]);
-                    self.useful(&specialized, &row, &columns)
-                }),
-                None => {
-                    let default = Self::default_matrix(matrix);
-                    self.useful(&default, &query[1..], &types[1..])
-                }
-            },
-            CoverPattern::Variant {
-                owner,
-                index,
-                arguments,
-            } => {
-                let tag = Tag::Variant {
-                    owner: *owner,
-                    index: *index,
-                };
-                let Some(constructor) = self.constructors(&types[0]).and_then(|constructors| {
-                    constructors
-                        .into_iter()
-                        .find(|constructor| constructor.tag == tag)
-                }) else {
-                    return false;
-                };
+            CoverPattern::Wild => self.useful_wild(matrix, query, types, expanding),
+            CoverPattern::Variant { .. } => self.useful_variant(matrix, query, types, expanding),
+            CoverPattern::Literal(literal) => {
+                self.useful_literal(matrix, literal, query, types, expanding)
+            }
+        }
+    }
+
+    fn useful_wild(
+        &self,
+        matrix: &[Vec<CoverPattern>],
+        query: &[CoverPattern],
+        types: &[Type],
+        expanding: &mut Vec<BindingId>,
+    ) -> bool {
+        let (owner, constructors) = self.expansion(&types[0], expanding);
+        let pushed = owner.is_some();
+        if let Some(owner) = owner {
+            expanding.push(owner);
+        }
+        let result = match constructors {
+            Some(constructors) => constructors.iter().any(|constructor| {
+                let specialized = self.specialize(matrix, constructor);
+                let mut row: Vec<CoverPattern> = constructor
+                    .arguments
+                    .iter()
+                    .map(|_| CoverPattern::Wild)
+                    .collect();
+                row.extend_from_slice(&query[1..]);
+                let mut columns = constructor.arguments.clone();
+                columns.extend_from_slice(&types[1..]);
+                self.useful(&specialized, &row, &columns, expanding)
+            }),
+            None => {
+                let default = Self::default_matrix(matrix);
+                self.useful(&default, &query[1..], &types[1..], expanding)
+            }
+        };
+        if pushed {
+            expanding.pop();
+        }
+        result
+    }
+
+    fn useful_variant(
+        &self,
+        matrix: &[Vec<CoverPattern>],
+        query: &[CoverPattern],
+        types: &[Type],
+        expanding: &mut Vec<BindingId>,
+    ) -> bool {
+        let CoverPattern::Variant {
+            owner,
+            index,
+            arguments,
+        } = &query[0]
+        else {
+            unreachable!("the caller matches a variant query");
+        };
+        let tag = Tag::Variant {
+            owner: *owner,
+            index: *index,
+        };
+        let (push_owner, constructors) = self.expansion(&types[0], expanding);
+        let pushed = push_owner.is_some();
+        if let Some(owner) = push_owner {
+            expanding.push(owner);
+        }
+        let constructor = constructors.and_then(|constructors| {
+            constructors
+                .into_iter()
+                .find(|constructor| constructor.tag == tag)
+        });
+        let result = match constructor {
+            Some(constructor) => {
                 let specialized = self.specialize(matrix, &constructor);
                 let mut row = arguments.clone();
                 row.extend_from_slice(&query[1..]);
                 let mut columns = constructor.arguments.clone();
                 columns.extend_from_slice(&types[1..]);
-                self.useful(&specialized, &row, &columns)
+                self.useful(&specialized, &row, &columns, expanding)
             }
-            CoverPattern::Literal(literal) => {
-                let specialized = Self::specialize_literal(matrix, literal);
-                self.useful(&specialized, &query[1..], &types[1..])
-            }
+            None => false,
+        };
+        if pushed {
+            expanding.pop();
         }
+        result
+    }
+
+    fn useful_literal(
+        &self,
+        matrix: &[Vec<CoverPattern>],
+        literal: &Literal,
+        query: &[CoverPattern],
+        types: &[Type],
+        expanding: &mut Vec<BindingId>,
+    ) -> bool {
+        let specialized = Self::specialize_literal(matrix, literal);
+        self.useful(&specialized, &query[1..], &types[1..], expanding)
+    }
+
+    fn expansion(
+        &self,
+        ty: &Type,
+        expanding: &[BindingId],
+    ) -> (Option<BindingId>, Option<Vec<Constructor>>) {
+        let (ty, _) = self.peeled_reference(ty);
+        let Type::Named(owner, _) = &ty else {
+            return (None, self.constructors(&ty));
+        };
+        if self.enums.get(*owner).is_none() {
+            return (None, self.constructors(&ty));
+        }
+        if expanding.contains(owner) {
+            return (None, None);
+        }
+        (Some(*owner), self.constructors(&ty))
     }
 
     fn covering_arm(
@@ -155,12 +243,18 @@ impl TypeChecker {
                     &[vec![self.cover_pattern(&arm.pattern)]],
                     std::slice::from_ref(pattern),
                     std::slice::from_ref(scrutinee),
+                    &mut Vec::new(),
                 )
             })
             .map(|arm| arm.pattern.span)
     }
 
-    fn witnesses(&self, matrix: &[Vec<CoverPattern>], types: &[Type]) -> Vec<Vec<Witness>> {
+    fn witnesses(
+        &self,
+        matrix: &[Vec<CoverPattern>],
+        types: &[Type],
+        expanding: &mut Vec<BindingId>,
+    ) -> Vec<Vec<Witness>> {
         if types.is_empty() {
             return if matrix.is_empty() {
                 vec![Vec::new()]
@@ -168,14 +262,19 @@ impl TypeChecker {
                 Vec::new()
             };
         }
-        match self.constructors(&types[0]) {
+        let (owner, constructors) = self.expansion(&types[0], expanding);
+        let pushed = owner.is_some();
+        if let Some(owner) = owner {
+            expanding.push(owner);
+        }
+        let result = match constructors {
             Some(constructors) => constructors
                 .iter()
                 .flat_map(|constructor| {
                     let specialized = self.specialize(matrix, constructor);
                     let mut columns = constructor.arguments.clone();
                     columns.extend_from_slice(&types[1..]);
-                    self.witnesses(&specialized, &columns)
+                    self.witnesses(&specialized, &columns, expanding)
                         .into_iter()
                         .map(|row| {
                             let (arguments, rest) = row.split_at(constructor.arguments.len());
@@ -189,7 +288,7 @@ impl TypeChecker {
                 .collect(),
             None => {
                 let default = Self::default_matrix(matrix);
-                self.witnesses(&default, &types[1..])
+                self.witnesses(&default, &types[1..], expanding)
                     .into_iter()
                     .map(|row| {
                         let mut witness = Vec::with_capacity(row.len() + 1);
@@ -199,7 +298,11 @@ impl TypeChecker {
                     })
                     .collect()
             }
+        };
+        if pushed {
+            expanding.pop();
         }
+        result
     }
 
     fn constructors(&self, ty: &Type) -> Option<Vec<Constructor>> {
@@ -224,9 +327,7 @@ impl TypeChecker {
                         .enumerate()
                         .map(|(index, _)| Constructor {
                             tag: Tag::Variant { owner, index },
-                            arguments: definition
-                                .instantiated_payload(index, &arguments)
-                                .unwrap_or_default(),
+                            arguments: self.visible_payloads(owner, index, &arguments),
                         })
                         .collect(),
                 )

@@ -232,11 +232,7 @@ impl TypeChecker {
             unreachable!("the expander resolves a variant call to a variant binding");
         };
         let type_arguments = self.fresh_arguments(owner);
-        let payload = self
-            .enums
-            .get(owner)
-            .and_then(|definition| definition.instantiated_payload(index, &type_arguments))
-            .unwrap_or_default();
+        let payload = self.visible_payloads(owner, index, &type_arguments);
         if arguments.len() != arity {
             return Err(TypeProblems::wrong_argument_count(
                 arity,
@@ -580,22 +576,18 @@ impl TypeChecker {
             BindingKind::Variant(_, info) => info.index,
             _ => unreachable!("a qualified pattern names a variant binding"),
         };
-        let payload = self
+        let storage = self
             .enums
             .get(owner)
             .and_then(|definition| definition.instantiated_payload(index, &arguments))
             .unwrap_or_default();
         self.check_pattern_count(
             self.variant_name(binding),
-            payload.len(),
+            storage.len(),
             patterns.len(),
             span,
         )?;
-        let typed = patterns
-            .iter()
-            .zip(&payload)
-            .map(|(pattern, payload)| self.lower_pattern(pattern, payload, mode))
-            .collect::<Result<Vec<_>, Diagnostic>>()?;
+        let typed = self.lower_payload_patterns(patterns, &storage, mode)?;
         Ok(TypedPatternKind::Variant(binding, typed))
     }
 
@@ -628,17 +620,40 @@ impl TypeChecker {
                 enum_name, name, &variants, span,
             ));
         };
-        let payload = definition
-            .instantiated_payload(index, &type_arguments)
+        let storage = self
+            .enums
+            .get(owner)
+            .and_then(|definition| definition.instantiated_payload(index, &type_arguments))
             .unwrap_or_default();
         let binding = self.candidate_binding(candidates, owner, index);
-        self.check_pattern_count(name, payload.len(), arguments.len(), span)?;
-        let typed = arguments
-            .iter()
-            .zip(&payload)
-            .map(|(pattern, payload)| self.lower_pattern(pattern, payload, mode))
-            .collect::<Result<Vec<_>, Diagnostic>>()?;
+        self.check_pattern_count(name, storage.len(), arguments.len(), span)?;
+        let typed = self.lower_payload_patterns(arguments, &storage, mode)?;
         Ok(TypedPatternKind::Variant(binding, typed))
+    }
+
+    fn lower_payload_patterns(
+        &mut self,
+        patterns: &[Pattern],
+        storage: &[Type],
+        mode: Option<ReferenceKind>,
+    ) -> Result<Vec<TypedPattern>, Diagnostic> {
+        patterns
+            .iter()
+            .zip(storage)
+            .map(|(pattern, storage)| {
+                let payload = self.visible_payload(storage);
+                let typed = self.lower_pattern(pattern, &payload, mode)?;
+                if self.is_box(storage)
+                    && matches!(
+                        typed.kind,
+                        TypedPatternKind::Variant(..) | TypedPatternKind::Literal(..)
+                    )
+                {
+                    return Err(TypeProblems::nested_boxed_pattern(pattern.span));
+                }
+                Ok(typed)
+            })
+            .collect()
     }
 
     fn short_pattern_owner(
