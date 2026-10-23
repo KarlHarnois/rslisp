@@ -1,3 +1,0 @@
-(export to-index)
-
-(def to-index (rust "{0} as usize" (fn (i64) usize)))
