@@ -7,7 +7,9 @@ fn add_one(text: &str) -> Result<i64, std::num::ParseIntError> {
     Ok(text.parse::<i64>()? + 1)
 }
 
-fn read_number<Target: std::str::FromStr>(text: &str) -> Result<Target, <Target as std::str::FromStr>::Err> {
+fn read_number<Target: std::str::FromStr>(
+    text: &str,
+) -> Result<Target, <Target as std::str::FromStr>::Err> {
     text.parse::<Target>()
 }
 

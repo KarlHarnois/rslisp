@@ -42,19 +42,37 @@ fn wait(s: &Shape) {
     match s {
         Shape::Circle(_) => {
             let ignored: i64 = 0;
-        },
-        Shape::Rect(_, _) => {},
-        Shape::Labeled { .. } => {},
-        Shape::Point => {},
+        }
+        Shape::Rect(_, _) => {}
+        Shape::Labeled { .. } => {}
+        Shape::Point => {}
     }
 }
 
 fn main() {
     println!("{}", area(&Shape::Circle(1.0)));
     println!("{}", area(&Shape::Rect(2.0, 3.0)));
-    println!("{}", area(&Shape::Labeled { text: "box".to_string(), size: 2.0 }));
+    println!(
+        "{}",
+        area(&Shape::Labeled {
+            text: "box".to_string(),
+            size: 2.0
+        })
+    );
     println!("{}", area(&Shape::Point));
-    println!("{}", label_length(&Shape::Labeled { text: "box".to_string(), size: 2.0 }));
-    println!("{}", label_details(&Shape::Labeled { text: "box".to_string(), size: 2.0 }));
+    println!(
+        "{}",
+        label_length(&Shape::Labeled {
+            text: "box".to_string(),
+            size: 2.0
+        })
+    );
+    println!(
+        "{}",
+        label_details(&Shape::Labeled {
+            text: "box".to_string(),
+            size: 2.0
+        })
+    );
     wait(&Shape::Circle(1.0))
 }

@@ -11,12 +11,19 @@ enum Tree<A> {
 
 fn deepest_left<A>(tree: Tree<A>) -> Tree<A> {
     match tree {
-        Tree::Node(inner, _, _) if matches!(&*inner, Tree::Node(inner_2, _, _) if matches!(&**inner_2, Tree::Node(_, _, _))) => {
-            let Tree::Node(inner_2, _, _) = *inner else { unreachable!() };
-            let Tree::Node(left, _, _) = *inner_2 else { unreachable!() };
+        Tree::Node(inner, _, _) if matches!(&*inner, Tree::Node(inner_2, _, _) if matches!(&**inner_2, Tree::Node(_, _, _))) =>
+        {
+            let Tree::Node(inner_2, _, _) = *inner else {
+                unreachable!()
+            };
+            let Tree::Node(left, _, _) = *inner_2 else {
+                unreachable!()
+            };
             *left
-        },
-        Tree::Node(inner, _, _) if matches!(&*inner, Tree::Node(inner_2, _, _) if matches!(&**inner_2, Tree::Leaf)) => Tree::Leaf,
+        }
+        Tree::Node(inner, _, _) if matches!(&*inner, Tree::Node(inner_2, _, _) if matches!(&**inner_2, Tree::Leaf)) => {
+            Tree::Leaf
+        }
         Tree::Node(inner, _, _) if matches!(&*inner, Tree::Leaf) => Tree::Leaf,
         Tree::Leaf => Tree::Leaf,
         _ => unreachable!(),
@@ -24,7 +31,28 @@ fn deepest_left<A>(tree: Tree<A>) -> Tree<A> {
 }
 
 fn main() {
-    println!("{:?}", deepest_left(Tree::Node(Box::new(Tree::Node(Box::new(Tree::Node(Box::new(Tree::Leaf), 3, Box::new(Tree::Leaf))), 2, Box::new(Tree::Leaf))), 1, Box::new(Tree::Leaf))));
-    println!("{:?}", deepest_left(Tree::Node(Box::new(Tree::Node(Box::new(Tree::Leaf), 2, Box::new(Tree::Leaf))), 1, Box::new(Tree::Leaf))));
-    println!("{:?}", deepest_left(Tree::Node(Box::new(Tree::Leaf), 1, Box::new(Tree::Leaf))))
+    println!(
+        "{:?}",
+        deepest_left(Tree::Node(
+            Box::new(Tree::Node(
+                Box::new(Tree::Node(Box::new(Tree::Leaf), 3, Box::new(Tree::Leaf))),
+                2,
+                Box::new(Tree::Leaf)
+            )),
+            1,
+            Box::new(Tree::Leaf)
+        ))
+    );
+    println!(
+        "{:?}",
+        deepest_left(Tree::Node(
+            Box::new(Tree::Node(Box::new(Tree::Leaf), 2, Box::new(Tree::Leaf))),
+            1,
+            Box::new(Tree::Leaf)
+        ))
+    );
+    println!(
+        "{:?}",
+        deepest_left(Tree::Node(Box::new(Tree::Leaf), 1, Box::new(Tree::Leaf)))
+    )
 }

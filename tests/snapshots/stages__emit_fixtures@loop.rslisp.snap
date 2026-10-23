@@ -23,18 +23,20 @@ fn once(n: i64) -> i64 {
 
 fn main() {
     println!("{}", sum_to(10));
-    (1_i64..4_i64).for_each(|n: i64| println!("{}", {
-        let mut k: i64 = n;
-        let mut power: i64 = 1;
-        loop {
-            if k == 0 {
-                break power;
-            } else {
-                (k, power) = (k - 1, power * 2);
-                continue;
+    (1_i64..4_i64).for_each(|n: i64| {
+        println!("{}", {
+            let mut k: i64 = n;
+            let mut power: i64 = 1;
+            loop {
+                if k == 0 {
+                    break power;
+                } else {
+                    (k, power) = (k - 1, power * 2);
+                    continue;
+                }
             }
-        }
-    }));
+        })
+    });
     {
         let mut i: i64 = 0;
         loop {

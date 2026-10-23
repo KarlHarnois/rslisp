@@ -22,7 +22,10 @@ fn pair_second<A, B>(instance: &Pair<A, B>) -> &B {
 }
 
 fn swap<A: Clone, B: Clone>(p: &Pair<A, B>) -> Pair<B, A> {
-    Pair { first: p.second.clone(), second: p.first.clone() }
+    Pair {
+        first: p.second.clone(),
+        second: p.first.clone(),
+    }
 }
 
 fn main() {

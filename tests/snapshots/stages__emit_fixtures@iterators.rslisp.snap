@@ -7,6 +7,10 @@ fn main() {
     println!("{}", (1_i64..6_i64).fold(0, |total: i64, n: i64| total + n));
     let doubled: Vec<i64> = (1_i64..4_i64).map(|n: i64| n * 2).collect::<Vec<_>>();
     doubled.iter().copied().for_each(|n: i64| println!("{}", n));
-    let small: Vec<i64> = doubled.iter().copied().filter(|n: &i64| *n < 5).collect::<Vec<_>>();
+    let small: Vec<i64> = doubled
+        .iter()
+        .copied()
+        .filter(|n: &i64| *n < 5)
+        .collect::<Vec<_>>();
     println!("{}", small.len())
 }

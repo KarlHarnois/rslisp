@@ -3,7 +3,7 @@ use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 
 use super::exit_status::ExitStatus;
-use crate::build::{BuildError, BuildProfile, RustCompiler};
+use crate::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use crate::core::ModulePath;
 use crate::diagnostic::{DiagnosticRenderer, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
@@ -54,8 +54,15 @@ impl Terminal {
 
     pub fn emit(&mut self, path: &Path) -> Result<EmittedCrate, ExitStatus> {
         let program = self.check(path)?;
-        RustEmitter::emit(&program, Self::entry_span())
-            .map_err(|diagnostics| self.report(&diagnostics))
+        let emitted = RustEmitter::emit(&program, Self::entry_span())
+            .map_err(|diagnostics| self.report(&diagnostics))?;
+        match EmittedFormatting::apply(&emitted) {
+            Ok(formatted) => Ok(formatted),
+            Err(error) => {
+                eprintln!("note: {error}; writing unformatted Rust");
+                Ok(emitted)
+            }
+        }
     }
 
     pub fn check(&mut self, path: &Path) -> Result<TypedProgram, ExitStatus> {

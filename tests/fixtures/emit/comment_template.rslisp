@@ -1,0 +1,2 @@
+(def answer (rust "{{\n    // a line comment\n    let value = 1; /* a block comment */\n    value + 1\n}}" (fn () i64)))
+(defn main () (println (answer)))

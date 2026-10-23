@@ -12,9 +12,11 @@ enum Tree<A> {
 fn nested_value(tree: Tree<i64>) -> i64 {
     match tree {
         Tree::Node(inner, _, _) if matches!(&*inner, Tree::Node(_, _, _)) => {
-            let Tree::Node(_, value, _) = *inner else { unreachable!() };
+            let Tree::Node(_, value, _) = *inner else {
+                unreachable!()
+            };
             value
-        },
+        }
         Tree::Node(inner, value, _) if matches!(&*inner, Tree::Leaf) => value,
         Tree::Leaf => 0,
         _ => unreachable!(),
@@ -22,7 +24,17 @@ fn nested_value(tree: Tree<i64>) -> i64 {
 }
 
 fn main() {
-    println!("{}", nested_value(Tree::Node(Box::new(Tree::Node(Box::new(Tree::Leaf), 7, Box::new(Tree::Leaf))), 1, Box::new(Tree::Leaf))));
-    println!("{}", nested_value(Tree::Node(Box::new(Tree::Leaf), 2, Box::new(Tree::Leaf))));
+    println!(
+        "{}",
+        nested_value(Tree::Node(
+            Box::new(Tree::Node(Box::new(Tree::Leaf), 7, Box::new(Tree::Leaf))),
+            1,
+            Box::new(Tree::Leaf)
+        ))
+    );
+    println!(
+        "{}",
+        nested_value(Tree::Node(Box::new(Tree::Leaf), 2, Box::new(Tree::Leaf)))
+    );
     println!("{}", nested_value(Tree::Leaf))
 }

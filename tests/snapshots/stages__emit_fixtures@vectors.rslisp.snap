@@ -3,7 +3,8 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/vectors.rslisp
 ---
-static PRIMES: std::sync::LazyLock<Vec<i64>> = std::sync::LazyLock::new(|| vec![2_i64, 3_i64, 5_i64, 7_i64]);
+static PRIMES: std::sync::LazyLock<Vec<i64>> =
+    std::sync::LazyLock::new(|| vec![2_i64, 3_i64, 5_i64, 7_i64]);
 
 fn main() {
     let mut scores: Vec<i64> = Vec::new();
@@ -11,6 +12,9 @@ fn main() {
     scores.push(20);
     println!("{}", scores.len());
     println!("{}", PRIMES.len());
-    scores.iter().copied().for_each(|score: i64| println!("{}", score));
+    scores
+        .iter()
+        .copied()
+        .for_each(|score: i64| println!("{}", score));
     PRIMES.iter().for_each(|prime: &i64| println!("{}", prime))
 }

@@ -12,6 +12,9 @@ const RUSTC_SYNTAX_ERROR: &str = "(def doubled-sign (rust \"{0} + + 1\" (fn (i64
 const CRASHING_RUSTC: &str =
     "#!/bin/sh\necho 'rustc crashed before reporting anything' >&2\nexit 101\n";
 const SILENT_RUSTC: &str = "#!/bin/sh\nexit 0\n";
+const PASSTHROUGH_RUSTFMT: &str =
+    "#!/bin/sh\nwhile IFS= read -r line; do printf '%s\\n' \"$line\"; done\n";
+const FAILING_RUSTFMT: &str = "#!/bin/sh\nprintf 'rustfmt failed in the sandbox\\n' >&2\nexit 1\n";
 const BOUND_MODULE: &str = "(export person)\n\n(defstruct person (name string))\n";
 const STRUCTS: &str = "(defstruct person (name string) (age i64))\n(defstruct ticket (id u32))\n(derive ticket debug)\n\n(defn main () (do))\n";
 const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::ops::Add\" i64 (with i64 person))\n\n(type matches (where ((a (same person))) (fn (a) bool)))\n(defn matches (x) true)\n\n(defn main () (println (matches 1)))\n";
@@ -220,6 +223,33 @@ fn build_writes_the_program_to_the_output_path() {
 }
 
 #[test]
+fn emit_without_rustfmt_prints_one_note_and_writes_unformatted_rust() {
+    let sandbox = Sandbox::new("emit_without_rustfmt").with_file("greeting.rslisp", GREETING);
+    let emit = sandbox.compiler_with_path("no-tools", &["emit", "greeting.rslisp"]);
+    let emit = emit.assert_exit_code(0);
+    assert!(emit.stdout().contains("fn main() {"));
+    assert_eq!(emit.stderr().matches("note:").count(), 1);
+    assert!(emit.stderr().contains("rustfmt"));
+    assert!(emit.stderr().contains("unformatted"));
+}
+
+#[test]
+fn emit_with_a_failing_rustfmt_prints_one_note_and_writes_unformatted_rust() {
+    let sandbox = Sandbox::new("emit_failing_rustfmt")
+        .with_file("greeting.rslisp", GREETING)
+        .with_executable("tools/rustfmt", FAILING_RUSTFMT);
+    let emit = sandbox.compiler_with_path("tools", &["emit", "greeting.rslisp"]);
+    let emit = emit.assert_exit_code(0);
+    assert!(emit.stdout().contains("fn main() {"));
+    assert_eq!(emit.stderr().matches("note:").count(), 1);
+    assert!(
+        emit.stderr().contains("rustfmt failed"),
+        "stderr: {}",
+        emit.stderr()
+    );
+}
+
+#[test]
 fn build_reports_rustc_errors_as_program_errors() {
     let sandbox = Sandbox::new("build_rustc_error").with_file("sign.rslisp", RUSTC_SYNTAX_ERROR);
     let build = sandbox.compiler(&["build", "sign.rslisp"]);
@@ -265,8 +295,10 @@ fn every_command_reports_program_errors() {
 
 #[test]
 fn build_without_rustc_is_a_usage_error() {
-    let sandbox = Sandbox::new("build_without_rustc").with_file("greeting.rslisp", GREETING);
-    let build = sandbox.compiler_with_path("no-tools", &["build", "greeting.rslisp"]);
+    let sandbox = Sandbox::new("build_without_rustc")
+        .with_file("greeting.rslisp", GREETING)
+        .with_executable("tools/rustfmt", PASSTHROUGH_RUSTFMT);
+    let build = sandbox.compiler_with_path("tools", &["build", "greeting.rslisp"]);
     assert!(
         build
             .assert_exit_code(2)
@@ -293,7 +325,8 @@ fn build_cannot_write_under_a_file() {
 fn build_reports_a_rustc_failure_without_diagnostics() {
     let sandbox = Sandbox::new("build_rustc_crash")
         .with_file("greeting.rslisp", GREETING)
-        .with_executable("tools/rustc", CRASHING_RUSTC);
+        .with_executable("tools/rustc", CRASHING_RUSTC)
+        .with_executable("tools/rustfmt", PASSTHROUGH_RUSTFMT);
     let build = sandbox.compiler_with_path("tools", &["build", "greeting.rslisp"]);
     insta::assert_snapshot!(build.assert_exit_code(1).stderr());
 }
@@ -302,7 +335,8 @@ fn build_reports_a_rustc_failure_without_diagnostics() {
 fn run_reports_a_program_that_cannot_start() {
     let sandbox = Sandbox::new("run_missing_program")
         .with_file("greeting.rslisp", GREETING)
-        .with_executable("tools/rustc", SILENT_RUSTC);
+        .with_executable("tools/rustc", SILENT_RUSTC)
+        .with_executable("tools/rustfmt", PASSTHROUGH_RUSTFMT);
     let run = sandbox.compiler_with_path("tools", &["run", "greeting.rslisp"]);
     assert!(
         run.assert_exit_code(2)
