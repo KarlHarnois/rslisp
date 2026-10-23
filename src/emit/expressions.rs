@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use super::fragment::{Code, Fragment, Precedence};
@@ -18,9 +18,9 @@ use crate::diagnostic::Diagnostic;
 use crate::reader::{Number, NumberValue};
 use crate::source::Span;
 use crate::types::{
-    Borrow, Type, TypedArgument, TypedArm, TypedBinder, TypedBlock, TypedBodyItem, TypedControl,
-    TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedPattern, TypedPatternKind, TypedProgram,
-    TypedStructExpr, VariantPayload,
+    Borrow, GenericId, Type, TypedArgument, TypedArm, TypedBinder, TypedBlock, TypedBodyItem,
+    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedPattern, TypedPatternKind,
+    TypedProgram, TypedStructExpr, VariantPayload,
 };
 
 mod tail_loop;
@@ -250,7 +250,7 @@ impl<'a> ExpressionEmitter<'a> {
                 Code::atom(self.locals.get(*binding).unwrap_or("_").to_string())
             }
             TypedLeaf::Global(binding) => self.global(*binding, &expr.ty, expr.span),
-            TypedLeaf::Rust(template) => self.rust_value(template, &expr.ty, expr.span),
+            TypedLeaf::Rust(template) => self.rust_value(template, &expr.ty, Vec::new(), expr.span),
         }
     }
 
@@ -823,7 +823,8 @@ impl<'a> ExpressionEmitter<'a> {
             .definition(binding)
             .map(|definition| &definition.value.kind)
         {
-            return self.rust_value(template, ty, span);
+            let types = self.definition_type_arguments(binding, ty);
+            return self.rust_value(template, ty, types, span);
         }
         let path = self.plan.path_to(binding, self.module);
         match self.plan.item(binding).map(|item| item.kind) {
@@ -832,29 +833,49 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn rust_value(&mut self, template: &Rc<RustTemplate>, ty: &Type, span: Span) -> Code {
+    fn rust_value(
+        &mut self,
+        template: &Rc<RustTemplate>,
+        ty: &Type,
+        types: Vec<(String, Code)>,
+        span: Span,
+    ) -> Code {
         let parsed = Template::new(&template.template);
         match ty {
             Type::Function(..) if parsed.is_path() => Code::atom(template.template.to_string()),
-            Type::Function(parameters, _) => self.eta_expanded(&parsed, parameters.len(), span),
-            _ => self.inline(&parsed, Vec::new(), span),
+            Type::Function(parameters, _) => {
+                self.eta_expanded(&parsed, parameters.len(), types, span)
+            }
+            _ => self.inline(&parsed, Vec::new(), types, span),
         }
     }
 
-    fn eta_expanded(&mut self, template: &Template, count: usize, span: Span) -> Code {
+    fn eta_expanded(
+        &mut self,
+        template: &Template,
+        count: usize,
+        types: Vec<(String, Code)>,
+        span: Span,
+    ) -> Code {
         let names: Vec<String> = (0..count)
             .map(|index| format!("{}{index}", Self::ETA_PARAMETER))
             .collect();
         let arguments = names.iter().map(|name| Code::atom(name.clone())).collect();
-        let body = self.inline(template, arguments, span);
+        let body = self.inline(template, arguments, types, span);
         Code::joined(
             vec![Code::atom(format!("|{}| ", names.join(", "))), body],
             Precedence::Operator,
         )
     }
 
-    fn inline(&mut self, template: &Template, arguments: Vec<Code>, span: Span) -> Code {
-        match template.inline(arguments) {
+    fn inline(
+        &mut self,
+        template: &Template,
+        arguments: Vec<Code>,
+        types: Vec<(String, Code)>,
+        span: Span,
+    ) -> Code {
+        match template.inline_with_types(arguments, &types, &[]) {
             Ok(code) => code,
             Err(error) => self.template_problem(error, span),
         }
@@ -864,10 +885,11 @@ impl<'a> ExpressionEmitter<'a> {
         &mut self,
         template: &Template,
         arguments: Vec<Code>,
+        types: Vec<(String, Code)>,
         places: &[bool],
         span: Span,
     ) -> Code {
-        match template.inline_with_places(arguments, places) {
+        match template.inline_with_types(arguments, &types, places) {
             Ok(code) => code,
             Err(error) => self.template_problem(error, span),
         }
@@ -877,6 +899,9 @@ impl<'a> ExpressionEmitter<'a> {
         let message = match error {
             TemplateError::MissingArgument(index) => {
                 format!("`{{{index}}}` has no matching argument")
+            }
+            TemplateError::MissingTypeArgument(name) => {
+                format!("`{{{name}}}` has no matching type argument")
             }
         };
         self.problems
@@ -891,7 +916,8 @@ impl<'a> ExpressionEmitter<'a> {
             return self.inline_call(lambda, arguments);
         }
         if let Some(template) = self.called_template(callee) {
-            return self.template_call(&template, arguments, span);
+            let types = self.callee_type_arguments(callee);
+            return self.template_call(&template, arguments, types, span);
         }
         if let Some(last) = Self::last_conflicting_argument(arguments) {
             return self.call_with_temporaries(callee, arguments, last);
@@ -998,10 +1024,73 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
+    fn callee_type_arguments(&self, callee: &TypedExpr) -> Vec<(String, Code)> {
+        match &callee.kind {
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
+                self.definition_type_arguments(*binding, &callee.ty)
+            }
+            _ => Vec::new(),
+        }
+    }
+
+    fn definition_type_arguments(
+        &self,
+        binding: BindingId,
+        instantiated: &Type,
+    ) -> Vec<(String, Code)> {
+        let Some(definition) = self.plan.definition(binding) else {
+            return Vec::new();
+        };
+        let mut bindings = HashMap::new();
+        Self::collect_generic_bindings(&definition.scheme.body, instantiated, &mut bindings);
+        definition
+            .scheme
+            .params
+            .iter()
+            .filter_map(|param| {
+                let ty = bindings.get(&param.id)?;
+                Some((
+                    param.name.to_string(),
+                    Code::atom(self.types().show(ty, TypePosition::Value)),
+                ))
+            })
+            .collect()
+    }
+
+    fn collect_generic_bindings(
+        pattern: &Type,
+        instantiated: &Type,
+        bindings: &mut HashMap<GenericId, Type>,
+    ) {
+        match (pattern, instantiated) {
+            (Type::Generic(generic), ty) => {
+                bindings.entry(*generic).or_insert_with(|| ty.clone());
+            }
+            (Type::Named(owner, arguments), Type::Named(other, other_arguments))
+                if owner == other =>
+            {
+                for (argument, other_argument) in arguments.iter().zip(other_arguments) {
+                    Self::collect_generic_bindings(argument, other_argument, bindings);
+                }
+            }
+            (Type::Function(parameters, result), Type::Function(other, other_result)) => {
+                for (parameter, other_parameter) in parameters.iter().zip(other) {
+                    Self::collect_generic_bindings(parameter, other_parameter, bindings);
+                }
+                Self::collect_generic_bindings(result, other_result, bindings);
+            }
+            (Type::Ref(inner), Type::Ref(other)) | (Type::Mut(inner), Type::Mut(other)) => {
+                Self::collect_generic_bindings(inner, other, bindings);
+            }
+            _ => {}
+        }
+    }
+
     fn template_call(
         &mut self,
         template: &RustTemplate,
         arguments: &[TypedArgument],
+        types: Vec<(String, Code)>,
         span: Span,
     ) -> Code {
         let parsed = Template::new(&template.template);
@@ -1020,7 +1109,7 @@ impl<'a> ExpressionEmitter<'a> {
             .zip(&roles)
             .map(|(argument, role)| self.argument(argument, context, *role))
             .collect();
-        self.inline_with_places(&parsed, arguments, &places, span)
+        self.inline_with_places(&parsed, arguments, types, &places, span)
     }
 
     fn argument_context(arguments: &[TypedArgument]) -> TypeContext {

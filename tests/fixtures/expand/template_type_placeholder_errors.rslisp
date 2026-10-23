@@ -1,0 +1,5 @@
+(defn inline-without-where (text)
+  (rust "{missing}" (fn ((ref str)) (ref str))))
+
+(def wrong-name
+  (rust "{target}" (where ((item from-str)) (fn ((ref str)) (result item (parse-error item))))))
