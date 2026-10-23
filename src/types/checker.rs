@@ -48,6 +48,7 @@ pub struct TypeChecker {
     pub(super) locals: HashMap<BindingId, Type>,
     pub(super) compile_time_only: HashSet<BindingId>,
     pub(super) diagnostics: Diagnostics,
+    pub(super) warnings: Diagnostics,
     missing_annotations: Diagnostics,
     pub(super) type_arities: HashMap<BindingId, usize>,
     trait_arguments: HashSet<BindingId>,
@@ -93,6 +94,7 @@ impl TypeChecker {
             locals: HashMap::new(),
             compile_time_only: HashSet::new(),
             diagnostics: Diagnostics::default(),
+            warnings: Diagnostics::default(),
             missing_annotations: Diagnostics::default(),
             type_arities: HashMap::new(),
             trait_arguments: HashSet::new(),
@@ -1515,7 +1517,13 @@ impl TypeChecker {
         modules: Vec<super::typed::TypedModule>,
         entry: crate::core::ModuleId,
     ) -> Result<super::typed::TypedProgram, Diagnostics> {
-        let program = super::typed::TypedProgram {
+        let warnings = self.warnings;
+        let mut diagnostics = self.diagnostics;
+        if diagnostics.has_errors() {
+            diagnostics.extend(warnings);
+            return Err(diagnostics);
+        }
+        Ok(super::typed::TypedProgram {
             modules,
             entry,
             bindings: self.bindings,
@@ -1528,9 +1536,8 @@ impl TypeChecker {
             template_borrows: self.template_borrows,
             pending_mode_checks: self.pending_mode_checks,
             borrowed_parameters: HashSet::new(),
-            warnings: Diagnostics::default(),
-        };
-        self.diagnostics.into_result(program)
+            warnings,
+        })
     }
 }
 

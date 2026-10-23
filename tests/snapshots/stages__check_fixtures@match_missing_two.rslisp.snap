@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_missing_two.rslisp
+---
+error[L0433]: non-exhaustive `match`
+ --> check/match_missing_two.rslisp:4:3
+  |
+4 | /   (match s
+5 | |     ((circle r) (* 3.0 r r))))
+  | |_____________________________^ this `match` does not cover every value
+  |
+  = note: missing 2 cases: `(rect _ _)`, `point`
+  = help: add an arm for each missing case

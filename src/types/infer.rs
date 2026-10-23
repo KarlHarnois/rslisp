@@ -273,6 +273,7 @@ impl TypeChecker {
                 span: arm.span,
             });
         }
+        self.check_match_coverage(span, &value.ty, &typed_arms);
         Ok(TypedExpr {
             kind: TypedExprKind::Control(TypedControl::Match(Box::new(value), typed_arms)),
             ty: result.unwrap_or_else(Type::unit),
@@ -705,7 +706,7 @@ impl TypeChecker {
         }
     }
 
-    fn peeled_reference(&self, ty: &Type) -> (Type, Option<ReferenceKind>) {
+    pub(super) fn peeled_reference(&self, ty: &Type) -> (Type, Option<ReferenceKind>) {
         let mut matched = self.unifier.resolve(ty);
         let mut mode = None;
         loop {
