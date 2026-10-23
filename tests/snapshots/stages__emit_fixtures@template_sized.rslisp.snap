@@ -1,0 +1,55 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/template_sized.rslisp
+---
+fn exchange<A>(a: &mut A, b: &mut A) {
+    std::mem::swap(a, b)
+}
+
+fn swap_spots<A>(a: &mut A, b: &mut A) {
+    exchange(a, b)
+}
+
+fn measure<A: crate::rt::Sequence + ?Sized>(value: &A) -> usize {
+    value.len()
+}
+
+fn main() {
+    let mut a = "a".to_string();
+    let mut b = "b".to_string();
+    swap_spots(&mut a, &mut b);
+    println!("{}{}", a, b);
+    let numbers: Vec<i64> = vec![1_i64, 2_i64, 3_i64];
+    println!("{}", measure(numbers.as_slice()))
+}
+
+mod rt {
+    pub trait Sequence {
+        fn len(&self) -> usize;
+    }
+
+    impl Sequence for String {
+        fn len(&self) -> usize {
+            self.as_str().len()
+        }
+    }
+
+    impl Sequence for str {
+        fn len(&self) -> usize {
+            str::len(self)
+        }
+    }
+
+    impl<T> Sequence for Vec<T> {
+        fn len(&self) -> usize {
+            Vec::len(self)
+        }
+    }
+
+    impl<T> Sequence for [T] {
+        fn len(&self) -> usize {
+            <[T]>::len(self)
+        }
+    }
+}

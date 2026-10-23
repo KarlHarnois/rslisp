@@ -1,0 +1,15 @@
+(def swap-cells (rust "std::mem::swap({&0}, {&1})" (where (a) (fn ((mut a) (mut a)) unit))))
+
+(defn exchange! (a b) (swap-cells a b))
+(defn swap-spots! (a b) (exchange! a b))
+
+(def first-slice (rust "{0}.as_slice()" (where (a) (fn ((ref (vec a))) (ref (slice a))))))
+(defn measure (value) (len value))
+
+(defn main ()
+  (let a (to-string "a"))
+  (let b (to-string "b"))
+  (swap-spots! a b)
+  (println a b)
+  (let numbers (vec 1 2 3))
+  (println (measure (first-slice numbers))))

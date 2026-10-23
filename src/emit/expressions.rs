@@ -9,6 +9,7 @@ use super::plan::{EmitPlan, ItemKind};
 use super::problems::EmitProblems;
 use super::template::{Template, TemplateError};
 use super::types::{RustTypes, TypePosition};
+use super::unsized_parameters::UnsizedParameters;
 use crate::core::{
     BindingId, FieldLabel, Literal, ModuleId, PrimitiveType, ReferenceKind, RustTemplate,
 };
@@ -65,6 +66,7 @@ impl ArgumentRole {
 pub struct ExpressionEmitter<'a> {
     program: &'a TypedProgram,
     plan: &'a EmitPlan<'a>,
+    unsized_parameters: &'a UnsizedParameters,
     module: ModuleId,
     pub locals: LocalNames,
     pub problems: Vec<Diagnostic>,
@@ -82,12 +84,14 @@ impl<'a> ExpressionEmitter<'a> {
     pub fn new(
         program: &'a TypedProgram,
         plan: &'a EmitPlan<'a>,
+        unsized_parameters: &'a UnsizedParameters,
         module: ModuleId,
         locals: LocalNames,
     ) -> Self {
         Self {
             program,
             plan,
+            unsized_parameters,
             module,
             locals,
             problems: Vec::new(),
@@ -107,7 +111,12 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     pub fn types(&self) -> RustTypes<'a> {
-        RustTypes::new(self.program, self.plan, self.module)
+        RustTypes::new(
+            self.program,
+            self.plan,
+            self.unsized_parameters,
+            self.module,
+        )
     }
 
     pub fn bind_parameter(&mut self, param: &TypedBinder, position: TypePosition) -> String {

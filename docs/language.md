@@ -316,7 +316,7 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 | Evaluation order | A repeated or out-of-order placeholder binds its arguments to temporaries first. |
 | Values | A function template used as a value becomes a closure. A bare path is used as the path. |
 | Runtime | `prelude/runtime/` holds the parts of `mod rt`. A program carries only the parts its code names, and its `Number` trait carries only the literal conversions it calls. |
-| Unsized | A type parameter used only behind a reference is declared `?Sized`, so `str` can fill it. |
+| Unsized | A type parameter used only behind references is declared `?Sized` exactly when a reached instantiation is unsized, so a caller that passes `str` can fill it. |
 
 ## Names in Rust
 

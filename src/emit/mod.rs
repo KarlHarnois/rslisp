@@ -11,6 +11,7 @@ mod problems;
 mod runtime;
 mod template;
 mod types;
+mod unsized_parameters;
 mod writer;
 
 pub use writer::SpanMap;
@@ -20,6 +21,7 @@ use crate::source::Span;
 use crate::types::TypedProgram;
 use items::ItemEmitter;
 use plan::EmitPlan;
+use unsized_parameters::UnsizedParameters;
 use writer::RustWriter;
 
 pub struct EmittedCrate {
@@ -33,7 +35,8 @@ pub struct RustEmitter;
 impl RustEmitter {
     pub fn emit(program: &TypedProgram, entry: Span) -> Result<EmittedCrate, Diagnostics> {
         let plan = EmitPlan::build(program, entry)?;
-        let mut items = ItemEmitter::new(program, &plan);
+        let unsized_parameters = UnsizedParameters::of(program, &plan);
+        let mut items = ItemEmitter::new(program, &plan, &unsized_parameters);
         let fragments = items.crate_fragments();
         let mut problems = Diagnostics::default();
         items
