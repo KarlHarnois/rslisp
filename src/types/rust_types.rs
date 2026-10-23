@@ -10,6 +10,7 @@ pub struct RustType {
 impl RustType {
     pub const SLICE_TEMPLATE: &'static str = "[{0}]";
     pub const VECTOR_TEMPLATE: &'static str = "Vec<{0}>";
+    pub const BOX_TEMPLATE: &'static str = "Box<{0}>";
     const OPAQUE_PREFIX: &'static str = "impl ";
 
     pub fn is_opaque(&self) -> bool {
@@ -54,6 +55,14 @@ impl RustTypeTable {
 
     pub fn is_vector(&self, binding: BindingId) -> bool {
         self.has_template(binding, RustType::VECTOR_TEMPLATE)
+    }
+
+    pub fn is_box(&self, binding: BindingId) -> bool {
+        self.has_template(binding, RustType::BOX_TEMPLATE)
+    }
+
+    pub fn box_binding(&self) -> Option<BindingId> {
+        self.binding_with_template(RustType::BOX_TEMPLATE)
     }
 
     pub fn binding_with_template(&self, template: &str) -> Option<BindingId> {

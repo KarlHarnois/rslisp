@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/inferred_box.rslisp
+---
+Node(Leaf, 1, Leaf)
+1
+Leaf
+2
+1
+Holds(Some(Empty), 1)
+Many([None(1)])

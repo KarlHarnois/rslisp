@@ -1,0 +1,88 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/inferred_box.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Tree<A> {
+    Node(Box<Tree<A>>, A, Box<Tree<A>>),
+    Leaf,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Wrapped<A> {
+    Holds(Box<Option<Wrapped<A>>>, A),
+    Empty,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum VectorTree<A> {
+    Many(Vec<VectorTree<A>>),
+    None(A),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum NamedTree<A> {
+    Node { left: Box<NamedTree<A>>, value: A },
+    Leaf,
+}
+
+fn total(tree: &Tree<i64>) -> i64 {
+    match tree {
+        Tree::Node(left, value, right) => {
+            let left = &**left;
+            let right = &**right;
+            total(left) + *value + total(right)
+        },
+        Tree::Leaf => 0,
+    }
+}
+
+fn first_child<A>(tree: Tree<A>) -> Tree<A> {
+    match tree {
+        Tree::Node(left, _, _) => *left,
+        Tree::Leaf => Tree::Leaf,
+    }
+}
+
+fn named_total(tree: &NamedTree<i64>) -> i64 {
+    match tree {
+        NamedTree::Node { left, value } => {
+            let left = &**left;
+            named_total(left) + *value
+        },
+        NamedTree::Leaf => 0,
+    }
+}
+
+fn depth<A>(mut tree: &Tree<A>, mut count: i64) -> i64 {
+    loop {
+        match tree {
+            Tree::Node(left, _, _) => {
+                let left = &**left;
+                (tree, count) = (left, count + 1);
+                continue;
+            }
+            Tree::Leaf => {
+                return count;
+            }
+        }
+    }
+}
+
+fn main() {
+    let tree: Tree<i64> = Tree::Node(Box::new(Tree::Leaf), 1, Box::new(Tree::Leaf));
+    println!("{:?}", tree);
+    println!("{:?}", total(&tree));
+    println!("{:?}", first_child(tree));
+    println!("{:?}", named_total(&NamedTree::Node { left: Box::new(NamedTree::Leaf), value: 2 }));
+    println!("{:?}", depth(&Tree::Node(Box::new(Tree::Leaf), 1, Box::new(Tree::Leaf)), 0));
+    println!("{:?}", {
+        let result: Wrapped<i64> = Wrapped::Holds(Box::new(Some(Wrapped::Empty)), 1);
+        result
+    });
+    println!("{:?}", {
+        let result: VectorTree<i64> = VectorTree::Many(vec![VectorTree::None(1)]);
+        result
+    })
+}

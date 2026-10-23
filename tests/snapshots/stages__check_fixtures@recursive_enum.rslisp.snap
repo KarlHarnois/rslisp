@@ -3,10 +3,5 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/recursive_enum.rslisp
 ---
-error[L0427]: variant `branch` holds its own enum by value
- --> check/recursive_enum.rslisp:1:31
-  |
-1 | (enum node (leaf i64) (branch node node))
-  |                               ^^^^ this payload is the enum itself
-  |
-  = help: recursive enums come in a later change, where a recursive payload is boxed automatically
+(derive node clone debug partial-eq eq hash)
+(enum node (leaf i64) (branch (box node) (box node)))

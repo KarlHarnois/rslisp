@@ -55,9 +55,16 @@ impl LoopExit {
     }
 }
 
+struct Peel {
+    binding: BindingId,
+    statement: String,
+    expression: String,
+}
+
 struct PatternEmission {
     code: Code,
     guards: Vec<Code>,
+    peels: Vec<Peel>,
 }
 
 impl PatternEmission {
@@ -65,6 +72,7 @@ impl PatternEmission {
         Self {
             code,
             guards: Vec::new(),
+            peels: Vec::new(),
         }
     }
 }
@@ -338,9 +346,10 @@ impl<'a> ExpressionEmitter<'a> {
         for arm in arms {
             inner.push(Fragment::Newline);
             self.locals.enter();
-            inner.extend(self.arm_head(&arm.pattern));
+            let (head, peels) = self.arm_head(&arm.pattern);
+            inner.extend(head);
             inner.push(Fragment::Text(" => ".to_string()));
-            inner.extend(self.arm_body(&arm.body));
+            inner.extend(self.arm_body(&arm.body, peels));
             inner.push(Fragment::Text(",".to_string()));
             self.locals.leave();
         }
@@ -353,19 +362,23 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn arm_head(&mut self, pattern: &TypedPattern) -> Vec<Fragment> {
-        let emission = self.pattern(pattern);
-        let mut fragments = emission.code.fragments;
-        if !emission.guards.is_empty() {
+    fn arm_head(&mut self, pattern: &TypedPattern) -> (Vec<Fragment>, Vec<Peel>) {
+        let PatternEmission {
+            code,
+            guards,
+            peels,
+        } = self.pattern(pattern);
+        let mut fragments = code.fragments;
+        if !guards.is_empty() {
             fragments.push(Fragment::Text(" if ".to_string()));
-            for (position, guard) in emission.guards.into_iter().enumerate() {
+            for (position, guard) in guards.into_iter().enumerate() {
                 if position > 0 {
                     fragments.push(Fragment::Text(" && ".to_string()));
                 }
                 fragments.extend(guard.fragments);
             }
         }
-        fragments
+        (fragments, peels)
     }
 
     fn uses_string_literals(arms: &[TypedArm]) -> bool {
@@ -394,7 +407,26 @@ impl<'a> ExpressionEmitter<'a> {
         Code::joined(vec![value, Code::atom(".as_str()")], Precedence::Atom)
     }
 
-    fn arm_body(&mut self, body: &TypedBlock) -> Vec<Fragment> {
+    fn arm_body(&mut self, body: &TypedBlock, peels: Vec<Peel>) -> Vec<Fragment> {
+        if let [TypedBodyItem::Expr(only)] = body.items.as_slice()
+            && let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &only.kind
+            && let Some(peel) = peels.iter().find(|peel| peel.binding == *binding)
+        {
+            return vec![Fragment::Text(peel.expression.clone())];
+        }
+        let body = self.body_fragments(body);
+        if peels.is_empty() {
+            return body;
+        }
+        vec![
+            Fragment::Text("{".to_string()),
+            Fragment::Indented(self.with_prologue(body, &peels)),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ]
+    }
+
+    fn body_fragments(&mut self, body: &TypedBlock) -> Vec<Fragment> {
         match body.items.as_slice() {
             [] => vec![Fragment::Text("{}".to_string())],
             [TypedBodyItem::Expr(only)] if Self::is_empty_block(only) => {
@@ -403,6 +435,19 @@ impl<'a> ExpressionEmitter<'a> {
             [TypedBodyItem::Expr(only)] => self.expr(only).fragments,
             _ => self.block(body).fragments,
         }
+    }
+
+    fn with_prologue(&self, body: Vec<Fragment>, peels: &[Peel]) -> Vec<Fragment> {
+        let mut fragments = Vec::new();
+        for peel in peels {
+            fragments.push(Fragment::Newline);
+            fragments.push(Fragment::Text(peel.statement.clone()));
+        }
+        if !fragments.is_empty() && !matches!(body.first(), Some(Fragment::Newline)) {
+            fragments.push(Fragment::Newline);
+        }
+        fragments.extend(body);
+        fragments
     }
 
     fn pattern(&mut self, pattern: &TypedPattern) -> PatternEmission {
@@ -430,6 +475,7 @@ impl<'a> ExpressionEmitter<'a> {
                 PatternEmission {
                     code: Code::atom(binding.clone()),
                     guards: vec![Code::atom(format!("{binding} == {text:?}"))],
+                    peels: Vec::new(),
                 }
             }
             Literal::String(text) => PatternEmission::plain(Code::atom(format!("{text:?}"))),
@@ -458,7 +504,7 @@ impl<'a> ExpressionEmitter<'a> {
         let path = Self::variant_path(self.types().struct_path(owner), rust_path, &name);
         match &payload {
             VariantPayload::None => PatternEmission::plain(Code::atom(path)),
-            VariantPayload::Positional(_) => self.positional_pattern(path, patterns),
+            VariantPayload::Positional(types) => self.positional_pattern(path, types, patterns),
             VariantPayload::Named(fields) => self.named_pattern(path, fields, patterns),
         }
     }
@@ -468,21 +514,32 @@ impl<'a> ExpressionEmitter<'a> {
         format!("{owner}::{}", NameMangler::type_name(name))
     }
 
-    fn positional_pattern(&mut self, path: String, patterns: &[TypedPattern]) -> PatternEmission {
+    fn positional_pattern(
+        &mut self,
+        path: String,
+        payload_types: &[Type],
+        patterns: &[TypedPattern],
+    ) -> PatternEmission {
         let mut parts = vec![Code::atom(format!("{path}("))];
         let mut guards = Vec::new();
-        for (position, pattern) in patterns.iter().enumerate() {
+        let mut peels = Vec::new();
+        for (position, (payload, pattern)) in payload_types.iter().zip(patterns).enumerate() {
             if position > 0 {
                 parts.push(Code::atom(", "));
             }
             let value = self.pattern(pattern);
             parts.push(value.code);
             guards.extend(value.guards);
+            peels.extend(value.peels);
+            if self.program.is_box(payload) {
+                peels.extend(self.peel_binder(pattern));
+            }
         }
         parts.push(Code::atom(")"));
         PatternEmission {
             code: Code::joined(parts, Precedence::Atom),
             guards,
+            peels,
         }
     }
 
@@ -494,9 +551,10 @@ impl<'a> ExpressionEmitter<'a> {
     ) -> PatternEmission {
         let mut parts = vec![Code::atom(format!("{path} {{ "))];
         let mut guards = Vec::new();
+        let mut peels = Vec::new();
         let mut written = 0;
         let mut ignores = false;
-        for ((label, _), pattern) in fields.iter().zip(patterns) {
+        for ((label, payload), pattern) in fields.iter().zip(patterns) {
             if matches!(pattern.kind, TypedPatternKind::Wildcard) {
                 ignores = true;
                 continue;
@@ -515,6 +573,10 @@ impl<'a> ExpressionEmitter<'a> {
                 parts.push(code);
             }
             guards.extend(value.guards);
+            peels.extend(value.peels);
+            if self.program.is_box(payload) {
+                peels.extend(self.peel_binder(pattern));
+            }
         }
         if ignores {
             if written > 0 {
@@ -526,7 +588,25 @@ impl<'a> ExpressionEmitter<'a> {
         PatternEmission {
             code: Code::joined(parts, Precedence::Atom),
             guards,
+            peels,
         }
+    }
+
+    fn peel_binder(&self, pattern: &TypedPattern) -> Option<Peel> {
+        let TypedPatternKind::Bind(binder) = &pattern.kind else {
+            return None;
+        };
+        let name = self.locals.get(binder.binding)?;
+        let expression = match binder.ty {
+            Type::Ref(_) => format!("&**{name}"),
+            Type::Mut(_) => format!("&mut **{name}"),
+            _ => format!("*{name}"),
+        };
+        Some(Peel {
+            binding: binder.binding,
+            statement: format!("let {name} = {expression};"),
+            expression,
+        })
     }
 
     fn variant(&mut self, binding: BindingId, arguments: &[TypedExpr]) -> Code {
@@ -547,18 +627,23 @@ impl<'a> ExpressionEmitter<'a> {
         let path = Self::variant_path(self.types().struct_path(owner), rust_path, &name);
         match &payload {
             VariantPayload::None => Code::atom(path),
-            VariantPayload::Positional(_) => self.positional_variant(path, arguments),
+            VariantPayload::Positional(types) => self.positional_variant(path, types, arguments),
             VariantPayload::Named(fields) => self.named_variant(path, fields, arguments),
         }
     }
 
-    fn positional_variant(&mut self, path: String, arguments: &[TypedExpr]) -> Code {
+    fn positional_variant(
+        &mut self,
+        path: String,
+        payload_types: &[Type],
+        arguments: &[TypedExpr],
+    ) -> Code {
         let mut parts = vec![Code::atom(format!("{path}("))];
-        for (position, argument) in arguments.iter().enumerate() {
+        for (position, (payload, argument)) in payload_types.iter().zip(arguments).enumerate() {
             if position > 0 {
                 parts.push(Code::atom(", "));
             }
-            parts.push(self.expr(argument));
+            parts.push(self.payload_argument(argument, payload));
         }
         parts.push(Code::atom(")"));
         Code::joined(parts, Precedence::Atom)
@@ -574,16 +659,45 @@ impl<'a> ExpressionEmitter<'a> {
             return Code::atom(path);
         }
         let mut parts = vec![Code::atom(format!("{path} {{ "))];
-        for (position, ((label, _), argument)) in fields.iter().zip(arguments).enumerate() {
+        for (position, ((label, payload), argument)) in fields.iter().zip(arguments).enumerate() {
             if position > 0 {
                 parts.push(Code::atom(", "));
             }
             let field = NameMangler::value(label);
             parts.push(Code::atom(format!("{field}: ")));
-            parts.push(self.expr(argument));
+            parts.push(self.payload_argument(argument, payload));
         }
         parts.push(Code::atom(" }"));
         Code::joined(parts, Precedence::Atom)
+    }
+
+    fn payload_argument(&mut self, argument: &TypedExpr, payload: &Type) -> Code {
+        let value = self.expr(argument);
+        if self.program.is_box(payload) {
+            self.box_new(value)
+        } else {
+            value
+        }
+    }
+
+    fn box_new(&self, argument: Code) -> Code {
+        let binding = self
+            .program
+            .box_binding
+            .expect("an inferred box names the prelude's box type");
+        let rust_type = self
+            .program
+            .rust_types
+            .get(binding)
+            .expect("the prelude's box type is a Rust type");
+        Code::joined(
+            vec![
+                Code::atom(format!("{}::new(", rust_type.leading_name())),
+                argument,
+                Code::atom(")"),
+            ],
+            Precedence::Atom,
+        )
     }
 
     fn structure(&mut self, structure: &TypedStructExpr, ty: &Type) -> Code {

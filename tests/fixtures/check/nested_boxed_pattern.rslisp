@@ -1,0 +1,6 @@
+(enum (tree a) (node (tree a) a (tree a)) leaf)
+
+(defn total (tree)
+  (match tree
+    ((tree/node (tree/node left value right) _ _) (+ (total left) value))
+    (tree/leaf 0)))

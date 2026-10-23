@@ -66,7 +66,6 @@ impl DiagnosticCode {
     pub const DUPLICATE_DERIVE: Self = Self(Cow::Borrowed("L0424"));
     pub const TRAIT_NO_SECOND_TYPE: Self = Self(Cow::Borrowed("L0425"));
     pub const MISPLACED_WITH: Self = Self(Cow::Borrowed("L0426"));
-    pub const RECURSIVE_ENUM: Self = Self(Cow::Borrowed("L0427"));
     pub const TRY_TARGET: Self = Self(Cow::Borrowed("L0428"));
     pub const TRY_NOT_RESULT_OR_OPTION: Self = Self(Cow::Borrowed("L0429"));
     pub const AMBIGUOUS_VARIANT: Self = Self(Cow::Borrowed("L0430"));
@@ -76,6 +75,7 @@ impl DiagnosticCode {
     pub const UNREACHABLE_ARM: Self = Self(Cow::Borrowed("L0434"));
     pub const DERIVE_ON_RUST_TYPE: Self = Self(Cow::Borrowed("L0435"));
     pub const VARIANT_ARM_VALUE: Self = Self(Cow::Borrowed("L0436"));
+    pub const NESTED_BOXED_PATTERN: Self = Self(Cow::Borrowed("L0437"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));

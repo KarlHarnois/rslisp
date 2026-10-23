@@ -12,6 +12,7 @@ pub enum VariantPayload {
     Named(Vec<(Rc<str>, Type)>),
 }
 
+#[derive(Clone)]
 pub struct VariantDefinition {
     pub name: Rc<str>,
     pub payload: VariantPayload,
@@ -44,6 +45,7 @@ impl VariantDefinition {
     }
 }
 
+#[derive(Clone)]
 pub struct EnumDefinition {
     pub params: Vec<GenericParam>,
     pub variants: Vec<VariantDefinition>,
@@ -87,7 +89,7 @@ impl EnumDefinition {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct EnumTable {
     enums: HashMap<BindingId, EnumDefinition>,
 }
@@ -103,6 +105,12 @@ impl EnumTable {
 
     pub fn get_mut(&mut self, binding: BindingId) -> Option<&mut EnumDefinition> {
         self.enums.get_mut(&binding)
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (BindingId, &EnumDefinition)> {
+        self.enums
+            .iter()
+            .map(|(binding, definition)| (*binding, definition))
     }
 }
 

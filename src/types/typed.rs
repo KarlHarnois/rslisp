@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use super::display::TypeDisplay;
-use super::enums::EnumTable;
+use super::enums::{EnumTable, VariantDefinition, VariantPayload};
 use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
 use super::templates::TemplateBorrows;
@@ -205,6 +205,7 @@ pub struct TypedProgram {
     pub structs: StructTable,
     pub enums: EnumTable,
     pub rust_types: RustTypeTable,
+    pub box_binding: Option<BindingId>,
     pub traits: TraitTable,
     pub generics: HashMap<GenericId, GenericParam>,
     pub implied_bounds: HashMap<GenericId, Vec<Bound>>,
@@ -215,6 +216,10 @@ pub struct TypedProgram {
 }
 
 impl TypedProgram {
+    pub fn is_box(&self, ty: &Type) -> bool {
+        matches!(ty, Type::Named(binding, arguments) if Some(*binding) == self.box_binding && arguments.len() == 1)
+    }
+
     pub fn entry_module(&self) -> &TypedModule {
         self.modules
             .iter()
@@ -235,6 +240,12 @@ impl TypedProgram {
                     .iter()
                     .filter_map(|binding| self.inferred_enum_derive_line(*binding)),
             )
+            .chain(
+                self.entry_module()
+                    .enums
+                    .iter()
+                    .filter_map(|binding| self.inferred_enum_box_line(*binding)),
+            )
             .collect::<String>();
         let definitions: String = self
             .entry_module()
@@ -246,6 +257,57 @@ impl TypedProgram {
             })
             .collect();
         format!("{structs}{definitions}")
+    }
+
+    fn inferred_enum_box_line(&self, binding: BindingId) -> Option<String> {
+        let definition = self.enums.get(binding)?;
+        if !definition
+            .payload_types()
+            .any(|payload| self.is_box(payload))
+        {
+            return None;
+        }
+        let display = TypeDisplay::new(&self.bindings, &self.generics);
+        let name = self.bindings.get(binding).name();
+        let head = if definition.params.is_empty() {
+            name.to_string()
+        } else {
+            let params: Vec<&str> = definition
+                .params
+                .iter()
+                .map(|param| param.name.as_ref())
+                .collect();
+            format!("({name} {})", params.join(" "))
+        };
+        let rust = definition
+            .rust
+            .as_ref()
+            .map(|rust| format!(" (rust {:?})", rust.path))
+            .unwrap_or_default();
+        let variants: Vec<String> = definition
+            .variants
+            .iter()
+            .map(|variant| Self::show_variant(&display, variant))
+            .collect();
+        Some(format!("(enum {head}{rust} {})\n", variants.join(" ")))
+    }
+
+    fn show_variant(display: &TypeDisplay<'_>, variant: &VariantDefinition) -> String {
+        let name = &variant.name;
+        match &variant.payload {
+            VariantPayload::None => name.to_string(),
+            VariantPayload::Positional(types) => {
+                let types: Vec<String> = types.iter().map(|ty| display.show(ty)).collect();
+                format!("({name} {})", types.join(" "))
+            }
+            VariantPayload::Named(fields) => {
+                let fields: Vec<String> = fields
+                    .iter()
+                    .map(|(label, ty)| format!("({label} {})", display.show(ty)))
+                    .collect();
+                format!("({name} (struct {}))", fields.join(" "))
+            }
+        }
     }
 
     fn inferred_enum_derive_line(&self, binding: BindingId) -> Option<String> {

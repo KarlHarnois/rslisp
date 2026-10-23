@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/nested_boxed_pattern.rslisp
+---
+error[L0437]: a pattern cannot look inside an inferred box yet
+ --> check/nested_boxed_pattern.rslisp:5:17
+  |
+5 |     ((tree/node (tree/node left value right) _ _) (+ (total left) value))
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this pattern looks inside a box
+  |
+  = help: bind a name here and `match` on it in the arm

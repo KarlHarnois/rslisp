@@ -34,7 +34,7 @@ This file and the reference files it names are the living reference for working 
 
 ### Rust's performance and model
 
-- NEVER emit a clone or an allocation that the source does not write.
+- NEVER emit a clone or an allocation that the source does not write, except the `Box` that a recursive enum position requires, because no program can build that type without it.
 - Keep the emitted Rust readable as hand-written Rust.
 
 ### Let the code speak

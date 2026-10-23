@@ -1,0 +1,21 @@
+(enum (tree a) (node (tree a) a (tree a)) leaf)
+(enum (named-tree a) (node (struct (left (named-tree a)) (value a))) leaf)
+(enum (wrapped a) (holds (option (wrapped a)) a) empty)
+(struct (holder a) (child a))
+(enum (boxed-tree a) (branch (holder (boxed-tree a)) a) tip)
+(enum (left a) (make-left (right a)) (stop-left a))
+(enum (right a) (make-right (left a)) (stop-right a))
+(enum (vector-tree a) (many (vec (vector-tree a))) (none a))
+
+(defn total (tree)
+  (match tree
+    ((tree/node left value right) (+ (+ (total left) value) (total right)))
+    (tree/leaf 0)))
+
+(defn holder-value (tree)
+  (match tree
+    ((boxed-tree/branch holder value) value)
+    (boxed-tree/tip 0)))
+
+(defn main ()
+  (println (total (tree/node tree/leaf 1 tree/leaf))))

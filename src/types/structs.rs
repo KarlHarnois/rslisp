@@ -5,6 +5,7 @@ use super::ty::{GenericId, GenericParam, Type};
 use crate::core::BindingId;
 use crate::source::Span;
 
+#[derive(Clone)]
 pub struct StructDefinition {
     pub params: Vec<GenericParam>,
     pub fields: Vec<(Rc<str>, Type)>,
@@ -45,7 +46,7 @@ impl StructDefinition {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct StructTable {
     structs: HashMap<BindingId, StructDefinition>,
 }
@@ -61,6 +62,12 @@ impl StructTable {
 
     pub fn get_mut(&mut self, binding: BindingId) -> Option<&mut StructDefinition> {
         self.structs.get_mut(&binding)
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (BindingId, &StructDefinition)> {
+        self.structs
+            .iter()
+            .map(|(binding, definition)| (*binding, definition))
     }
 
     pub fn with_field(&self, name: &str) -> Vec<BindingId> {

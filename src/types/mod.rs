@@ -1,3 +1,4 @@
+mod boxes;
 mod checker;
 mod copy;
 mod coverage;

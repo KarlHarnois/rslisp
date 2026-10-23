@@ -530,13 +530,13 @@ impl TypeProblems {
         .with_help(format!("a `derive` lists any of: {}", derivable.join(", ")))
     }
 
-    pub fn recursive_enum(variant: &str, span: Span) -> Diagnostic {
+    pub fn nested_boxed_pattern(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::RECURSIVE_ENUM,
-            format!("variant `{variant}` holds its own enum by value"),
-            Label::new(span, "this payload is the enum itself"),
+            DiagnosticCode::NESTED_BOXED_PATTERN,
+            "a pattern cannot look inside an inferred box yet",
+            Label::new(span, "this pattern looks inside a box"),
         )
-        .with_help("recursive enums come in a later change, where a recursive payload is boxed automatically")
+        .with_help("bind a name here and `match` on it in the arm")
     }
 
     pub fn blocked_enum_derive(
