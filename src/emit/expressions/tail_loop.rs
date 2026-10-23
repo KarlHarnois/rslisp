@@ -182,7 +182,7 @@ impl ExpressionEmitter<'_> {
         for arm in arms {
             inner.push(Fragment::Newline);
             self.locals.enter();
-            inner.extend(self.pattern(&arm.pattern).fragments);
+            inner.extend(self.arm_head(&arm.pattern));
             inner.push(Fragment::Text(" => {".to_string()));
             inner.push(Fragment::Indented(self.loop_block(&arm.body)));
             inner.push(Fragment::Newline);

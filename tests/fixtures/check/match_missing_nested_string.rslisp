@@ -1,0 +1,7 @@
+(enum token (symbol string) (number string))
+
+(defn classify (tokens)
+  (match (get tokens 0)
+    ((some (symbol "(")) 1)
+    ((some (number _)) 3)
+    (none 0)))

@@ -527,15 +527,26 @@ impl TypeChecker {
         span: Span,
     ) -> Result<TypedPatternKind, Diagnostic> {
         let literal_type = self.literal_type(literal);
+        let matched = self.unifier.resolve(matched);
+        if matches!(literal, Literal::String(_)) && Self::is_string_position(&matched) {
+            return Ok(TypedPatternKind::Literal(literal.clone(), matched));
+        }
         let compared = match literal {
             Literal::String(_) => expected,
-            _ => matched,
+            _ => &matched,
         };
         self.expect(compared, &literal_type, span, MismatchContext::Plain)?;
         Ok(TypedPatternKind::Literal(
             literal.clone(),
             self.unifier.resolve(&literal_type),
         ))
+    }
+
+    fn is_string_position(ty: &Type) -> bool {
+        matches!(
+            ty,
+            Type::Primitive(PrimitiveType::String | PrimitiveType::Str)
+        )
     }
 
     fn bind_pattern(

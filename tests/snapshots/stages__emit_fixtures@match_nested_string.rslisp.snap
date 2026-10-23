@@ -1,0 +1,50 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/match_nested_string.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Token {
+    Symbol(String),
+    Number(String),
+}
+
+fn classify(tokens: &[Token], position: usize) -> i64 {
+    match tokens.get(position) {
+        Option::Some(Token::Symbol(text)) if text == "(" => 1,
+        Option::Some(Token::Symbol(_)) => 2,
+        Option::Some(Token::Number(_)) => 3,
+        Option::None => 0,
+    }
+}
+
+fn scan(tokens: &[Token], mut position: usize) -> i64 {
+    loop {
+        match tokens.get(position) {
+            Option::Some(Token::Symbol(text)) if text == "(" => {
+                position += 1;
+                continue;
+            }
+            Option::Some(Token::Symbol(_)) => {
+                return 2;
+            }
+            Option::Some(Token::Number(_)) => {
+                return 3;
+            }
+            Option::None => {
+                return 0;
+            }
+        }
+    }
+}
+
+fn main() {
+    let open = vec![Token::Symbol("(".to_string())];
+    let name = vec![Token::Symbol("foo".to_string())];
+    let number = vec![Token::Number("42".to_string())];
+    println!("{}", classify(&open, 0));
+    println!("{}", classify(&name, 0));
+    println!("{}", classify(&number, 0));
+    println!("{}", classify(&Vec::new(), 0));
+    println!("{}", scan(&open, 0))
+}
