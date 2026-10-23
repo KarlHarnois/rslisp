@@ -27,7 +27,7 @@ error[L0210]: malformed `rust-trait`
   |
   = help: write it as `(rust-trait name "Path" type ...)`
 
-error[L0212]: `println` cannot have a type signature here
+error[L0236]: `println` cannot have a type signature here
  --> expand/definition_errors.rslisp:7:7
   |
 7 | (type println (fn (str) unit))

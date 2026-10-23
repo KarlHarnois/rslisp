@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/variant_as_value.rslisp
 ---
-error[L0210]: `shape/circle` is a variant constructor, not a value
+error[L0233]: `shape/circle` is a variant constructor, not a value
  --> check/variant_as_value.rslisp:2:13
   |
 2 | (def circle shape/circle)

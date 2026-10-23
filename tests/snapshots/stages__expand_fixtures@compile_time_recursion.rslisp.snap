@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).expand_report()"
 input_file: tests/fixtures/expand/compile_time_recursion.rslisp
 ---
-error[L0303]: compile-time code recursed too deeply
+error[L0318]: compile-time code recursed too deeply
  --> expand/compile_time_recursion.rslisp:1:24
   |
 1 | (def countdown (fn (n) (countdown n)))

@@ -11,7 +11,7 @@ error[L0412]: `first` only exists at compile time
   |
   = note: definitions that use the `code` module or `quote` can only be used by macros
 
-error[L0412]: quoted code only exists at compile time
+error[L0442]: quoted code only exists at compile time
  --> check/compile_time_errors.rslisp:4:17
   |
 4 | (defn quotes () (quote (a b)))

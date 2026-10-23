@@ -9,13 +9,13 @@ error[L0201]: cannot find `missing-name` in this scope
 3 | (def unbound-helper (fn () missing-name))
   |                            ^^^^^^^^^^^^ not found in this scope
 
-error[L0303]: the macro `calls-unbound-helper` has errors, so this call cannot expand
+error[L0309]: the macro `calls-unbound-helper` has errors, so this call cannot expand
  --> expand/broken_helper.rslisp:9:1
   |
 9 | (calls-unbound-helper)
   | ^^^^^^^^^^^^^^^^^^^^^^ this call needs the macro
 
-error[L0303]: `unbound-helper` has errors, so macro code cannot use it
+error[L0308]: `unbound-helper` has errors, so macro code cannot use it
   --> expand/broken_helper.rslisp:11:47
    |
 11 | (def also-calls-unbound-helper (macro (form) (unbound-helper) (list)))

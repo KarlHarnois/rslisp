@@ -1,0 +1,9 @@
+---
+source: tests/diagnostic_snapshots.rs
+expression: fixture.render(diagnostic)
+---
+error[L0310]: `origin` is not available at compile time
+ --> sample.rslisp:1:1
+  |
+1 | origin
+  | ^^^^^^ used by macro code here

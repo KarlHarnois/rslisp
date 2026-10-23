@@ -216,7 +216,7 @@ impl TypeProblems {
 
     pub fn missing_bound(trait_name: &str, generic: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::MISSING_TRAIT,
+            DiagnosticCode::MISSING_BOUND,
             format!("`{generic}` might not implement `{trait_name}`"),
             Label::new(span, format!("this needs `{trait_name}`")),
         )
@@ -255,7 +255,7 @@ impl TypeProblems {
         span: Span,
     ) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::LITERAL_TYPE_PARAMETER,
+            DiagnosticCode::LITERAL_MISFIT,
             format!("`{literal}` does not fit every type `{parameter}` can be"),
             Label::new(
                 span,
@@ -432,7 +432,7 @@ impl TypeProblems {
 
     pub fn quote_at_runtime(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::COMPILE_TIME_ONLY,
+            DiagnosticCode::QUOTE_AT_RUNTIME,
             "quoted code only exists at compile time",
             Label::new(span, "used in code that runs in the program"),
         )
@@ -478,7 +478,7 @@ impl TypeProblems {
 
     pub fn unused_enum_parameter(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::UNUSED_TYPE_PARAMETER,
+            DiagnosticCode::UNUSED_ENUM_PARAMETER,
             format!("no payload uses the type parameter `{name}`"),
             Label::new(span, "declared here"),
         )

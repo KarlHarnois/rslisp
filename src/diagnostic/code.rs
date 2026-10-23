@@ -35,6 +35,21 @@ impl DiagnosticCode {
     pub const TYPE_PARAMETER_PLACEHOLDER: Self = Self(Cow::Borrowed("L0221"));
     pub const TYPE_PLACEHOLDER_IN_RUST_TYPE: Self = Self(Cow::Borrowed("L0222"));
     pub const RUST_TYPE_CLAUSES_NEED_ONE_PARAMETER: Self = Self(Cow::Borrowed("L0223"));
+    pub const BORROWED_TYPE_PLACEHOLDER: Self = Self(Cow::Borrowed("L0224"));
+    pub const PLACEHOLDER_WITHOUT_PARAMETER: Self = Self(Cow::Borrowed("L0225"));
+    pub const UNUSED_TYPE_PLACEHOLDER: Self = Self(Cow::Borrowed("L0226"));
+    pub const LET_OUTSIDE_BODY: Self = Self(Cow::Borrowed("L0227"));
+    pub const MALFORMED_TYPE: Self = Self(Cow::Borrowed("L0228"));
+    pub const MACRO_OUTSIDE_DEF: Self = Self(Cow::Borrowed("L0229"));
+    pub const MIXED_VARIANT_PAYLOAD: Self = Self(Cow::Borrowed("L0230"));
+    pub const NOT_A_PATTERN: Self = Self(Cow::Borrowed("L0231"));
+    pub const ARM_BODY: Self = Self(Cow::Borrowed("L0232"));
+    pub const VARIANT_AS_VALUE: Self = Self(Cow::Borrowed("L0233"));
+    pub const NOT_A_TYPE: Self = Self(Cow::Borrowed("L0234"));
+    pub const NOT_A_NAME: Self = Self(Cow::Borrowed("L0235"));
+    pub const SIGNATURE_TARGET: Self = Self(Cow::Borrowed("L0236"));
+    pub const DERIVE_TARGET: Self = Self(Cow::Borrowed("L0237"));
+    pub const DERIVE_TRAIT: Self = Self(Cow::Borrowed("L0238"));
 
     pub const MACRO_FAILED: Self = Self(Cow::Borrowed("L0301"));
     pub const MACRO_RESULT_NOT_FORM: Self = Self(Cow::Borrowed("L0302"));
@@ -43,6 +58,18 @@ impl DiagnosticCode {
     pub const EXPANSION_TOO_DEEP: Self = Self(Cow::Borrowed("L0305"));
     pub const PROGRAM_ONLY: Self = Self(Cow::Borrowed("L0306"));
     pub const COMPILE_TIME_CYCLE: Self = Self(Cow::Borrowed("L0307"));
+    pub const BROKEN_DEFINITION: Self = Self(Cow::Borrowed("L0308"));
+    pub const BROKEN_MACRO: Self = Self(Cow::Borrowed("L0309"));
+    pub const NOT_AT_COMPILE_TIME: Self = Self(Cow::Borrowed("L0310"));
+    pub const COMPILE_TIME_ARGUMENT_COUNT: Self = Self(Cow::Borrowed("L0311"));
+    pub const NOT_CALLABLE: Self = Self(Cow::Borrowed("L0312"));
+    pub const NOT_A_BOOLEAN: Self = Self(Cow::Borrowed("L0313"));
+    pub const INDEX_OUT_OF_RANGE: Self = Self(Cow::Borrowed("L0314"));
+    pub const ARITHMETIC_OVERFLOW: Self = Self(Cow::Borrowed("L0315"));
+    pub const RUNTIME_ONLY: Self = Self(Cow::Borrowed("L0316"));
+    pub const MATCH_AT_RUNTIME: Self = Self(Cow::Borrowed("L0317"));
+    pub const COMPILE_TIME_RECURSION: Self = Self(Cow::Borrowed("L0318"));
+    pub const RUST_CODE_PROGRAM_ONLY: Self = Self(Cow::Borrowed("L0319"));
 
     pub const MISMATCHED_TYPES: Self = Self(Cow::Borrowed("L0401"));
     pub const WRONG_ARGUMENT_COUNT: Self = Self(Cow::Borrowed("L0402"));
@@ -80,6 +107,10 @@ impl DiagnosticCode {
     pub const VARIANT_ARM_VALUE: Self = Self(Cow::Borrowed("L0436"));
     pub const ENUM_RUST_TEMPLATE: Self = Self(Cow::Borrowed("L0438"));
     pub const RECURSIVELY_USED_TYPE_PARAMETER: Self = Self(Cow::Borrowed("L0439"));
+    pub const MISSING_BOUND: Self = Self(Cow::Borrowed("L0440"));
+    pub const LITERAL_MISFIT: Self = Self(Cow::Borrowed("L0441"));
+    pub const QUOTE_AT_RUNTIME: Self = Self(Cow::Borrowed("L0442"));
+    pub const UNUSED_ENUM_PARAMETER: Self = Self(Cow::Borrowed("L0443"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));

@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).expand_report()"
 input_file: tests/fixtures/expand/derive_not_trait.rslisp
 ---
-error[L0212]: `string` is not a trait
+error[L0238]: `string` is not a trait
  --> expand/derive_not_trait.rslisp:2:16
   |
 2 | (derive ticket string)

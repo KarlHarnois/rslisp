@@ -48,7 +48,7 @@ error[L0303]: `number-add` expects an integer as argument 1, found a float
 20 | (add-a-float)
    | ------------- in this macro call
 
-error[L0303]: `number-add` overflowed
+error[L0315]: `number-add` overflowed
   --> expand/compile_time_type_errors.rslisp:8:29
    |
  8 | (def overflow (macro (form) (number-add 170141183460469231731687303715884105727 1)))
@@ -75,7 +75,7 @@ error[L0303]: `bool-not` expects a boolean as argument 1, found an integer
 23 | (negate-a-number)
    | ----------------- in this macro call
 
-error[L0303]: a boolean cannot be called
+error[L0312]: a boolean cannot be called
   --> expand/compile_time_type_errors.rslisp:11:30
    |
 11 | (def call-true (macro (form) (true)))
@@ -102,7 +102,7 @@ error[L0303]: `fail` expects a string as argument 3, found an integer
 26 | (fail-with-a-numbered-help)
    | --------------------------- in this macro call
 
-error[L0303]: this function takes 1 argument but 0 were given
+error[L0311]: this function takes 1 argument but 0 were given
   --> expand/compile_time_type_errors.rslisp:14:38
    |
 14 | (def call-with-too-few (macro (form) ((fn (x) x))))

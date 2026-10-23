@@ -92,7 +92,7 @@ impl ExpandProblems {
 
     pub fn borrowed_type_placeholder(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::BAD_TYPE_TEMPLATE,
+            DiagnosticCode::BORROWED_TYPE_PLACEHOLDER,
             "a type template cannot borrow a placeholder",
             Label::new(span, "`{&...}` only makes sense for a value"),
         )
@@ -111,7 +111,7 @@ impl ExpandProblems {
             .map(|position| char::from(b'a' + position as u8).to_string())
             .collect();
         Diagnostic::error(
-            DiagnosticCode::BAD_TYPE_TEMPLATE,
+            DiagnosticCode::PLACEHOLDER_WITHOUT_PARAMETER,
             format!("`{{{index}}}` names no type parameter"),
             Label::new(
                 span,
@@ -129,7 +129,7 @@ impl ExpandProblems {
 
     pub fn unused_type_placeholder(index: usize, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::BAD_TYPE_TEMPLATE,
+            DiagnosticCode::UNUSED_TYPE_PLACEHOLDER,
             "the template never uses this type parameter",
             Label::new(span, format!("its placeholder is `{{{index}}}`")),
         )
@@ -267,7 +267,7 @@ impl ExpandProblems {
 
     pub fn let_outside_body(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::MODULE_LEVEL_ONLY,
+            DiagnosticCode::LET_OUTSIDE_BODY,
             "`let` can only appear directly in a body",
             Label::new(span, "not allowed here"),
         )
@@ -276,7 +276,7 @@ impl ExpandProblems {
 
     pub fn macro_outside_def(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::MALFORMED_FORM,
+            DiagnosticCode::MACRO_OUTSIDE_DEF,
             "`macro` must be the value of a module-level `def`",
             Label::new(span, "not allowed here"),
         )
@@ -399,7 +399,7 @@ impl ExpandProblems {
 
     pub fn not_a_type(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::WRONG_NAMESPACE,
+            DiagnosticCode::NOT_A_TYPE,
             "expected a type",
             Label::new(span, "this is not a type"),
         )
@@ -410,7 +410,7 @@ impl ExpandProblems {
 
     pub fn malformed_type(constructor: KernelType, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::MALFORMED_FORM,
+            DiagnosticCode::MALFORMED_TYPE,
             format!("malformed `{}` type", constructor.name()),
             Label::new(span, "this does not fit the shape of the type"),
         )
@@ -428,7 +428,7 @@ impl ExpandProblems {
 
     pub fn mixed_variant_payload(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::MALFORMED_FORM,
+            DiagnosticCode::MIXED_VARIANT_PAYLOAD,
             "a variant's payload is either types or one `struct` body",
             Label::new(span, "this mixes the two"),
         )
@@ -439,7 +439,7 @@ impl ExpandProblems {
 
     pub fn not_a_name(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::WRONG_NAMESPACE,
+            DiagnosticCode::NOT_A_NAME,
             "expected a name",
             Label::new(span, "this is not a name"),
         )
@@ -447,7 +447,7 @@ impl ExpandProblems {
 
     pub fn not_a_pattern(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::MALFORMED_FORM,
+            DiagnosticCode::NOT_A_PATTERN,
             "this is not a pattern",
             Label::new(span, "a pattern names a binding, a literal or a variant"),
         )
@@ -456,7 +456,7 @@ impl ExpandProblems {
 
     pub fn arm_body(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::MALFORMED_FORM,
+            DiagnosticCode::ARM_BODY,
             "an arm has one body form",
             Label::new(span, "this arm does not fit the shape of `match`"),
         )
@@ -465,7 +465,7 @@ impl ExpandProblems {
 
     pub fn variant_as_value(name: &str, arity: usize, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::MALFORMED_FORM,
+            DiagnosticCode::VARIANT_AS_VALUE,
             format!("`{name}` is a variant constructor, not a value"),
             Label::new(
                 span,
@@ -480,7 +480,7 @@ impl ExpandProblems {
 
     pub fn signature_target(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::WRONG_NAMESPACE,
+            DiagnosticCode::SIGNATURE_TARGET,
             format!("`{name}` cannot have a type signature here"),
             Label::new(span, "not a definition of this module"),
         )
@@ -489,7 +489,7 @@ impl ExpandProblems {
 
     pub fn derive_target(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::WRONG_NAMESPACE,
+            DiagnosticCode::DERIVE_TARGET,
             format!("`{name}` cannot have a `derive` here"),
             Label::new(span, "not a struct of this module"),
         )
@@ -498,7 +498,7 @@ impl ExpandProblems {
 
     pub fn derive_trait(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::WRONG_NAMESPACE,
+            DiagnosticCode::DERIVE_TRAIT,
             format!("`{name}` is not a trait"),
             Label::new(span, "a `derive` lists traits"),
         )
@@ -507,7 +507,7 @@ impl ExpandProblems {
 
     pub fn broken_definition(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::COMPILE_TIME_ERROR,
+            DiagnosticCode::BROKEN_DEFINITION,
             format!("`{name}` has errors, so macro code cannot use it"),
             Label::new(span, "used by macro code here"),
         )
@@ -554,7 +554,7 @@ impl ExpandProblems {
 
     pub fn broken_macro(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::COMPILE_TIME_ERROR,
+            DiagnosticCode::BROKEN_MACRO,
             format!("the macro `{name}` has errors, so this call cannot expand"),
             Label::new(span, "this call needs the macro"),
         )
@@ -562,7 +562,7 @@ impl ExpandProblems {
 
     pub fn not_at_compile_time(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::COMPILE_TIME_ERROR,
+            DiagnosticCode::NOT_AT_COMPILE_TIME,
             format!("`{name}` is not available at compile time"),
             Label::new(span, "used by macro code here"),
         )

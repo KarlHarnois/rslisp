@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).expand_report()"
 input_file: tests/fixtures/expand/expression_errors.rslisp
 ---
-error[L0210]: `macro` must be the value of a module-level `def`
+error[L0229]: `macro` must be the value of a module-level `def`
  --> expand/expression_errors.rslisp:3:33
   |
 3 | (def macro-as-expression (fn () (macro (form) form)))

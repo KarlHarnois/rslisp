@@ -28,6 +28,7 @@ use crate::source::{SourceId, SourceMap, Span};
 use globals::GlobalTable;
 pub use macro_call::MacroOrigin;
 use macro_call::MacroTable;
+pub use problems::ExpandProblems;
 
 pub struct Program {
     pub modules: Vec<CoreModule>,
