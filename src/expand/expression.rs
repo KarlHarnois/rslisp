@@ -439,9 +439,8 @@ impl Expander<'_> {
         let kind = match form.kind() {
             FormKind::Symbol(symbol) => self.lower_symbol_pattern(form, symbol)?,
             FormKind::List(items) => self.lower_list_pattern(items, span)?,
-            FormKind::Number(_) | FormKind::String(_) => {
-                return Err(ExpandProblems::not_a_pattern(span));
-            }
+            FormKind::Number(number) => PatternKind::Literal(Literal::Number(number.clone())),
+            FormKind::String(text) => PatternKind::Literal(Literal::String(Rc::clone(text))),
         };
         Ok(Pattern::new(kind, span))
     }
@@ -454,13 +453,8 @@ impl Expander<'_> {
         if symbol.name() == "_" {
             return Ok(PatternKind::Wildcard);
         }
-        if let Some(binding) = self.try_resolve(symbol, Namespace::Value)
-            && let BindingKind::Variant(_, info) = self.kind(binding)
-        {
-            if info.arity == 0 {
-                return Ok(PatternKind::Variant(binding, Vec::new()));
-            }
-            return Err(ExpandProblems::not_a_pattern(form.span()));
+        if let Some(kind) = self.named_symbol_pattern(form, symbol)? {
+            return Ok(kind);
         }
         let candidates = self.variant_candidates(symbol, true);
         let binding = self.define_local(form, Namespace::Value, BindingKind::Local, None)?;
@@ -472,6 +466,24 @@ impl Expander<'_> {
             binding,
             candidates,
         })
+    }
+
+    fn named_symbol_pattern(
+        &self,
+        form: &Form,
+        symbol: &Symbol,
+    ) -> Result<Option<PatternKind>, Diagnostic> {
+        let Some(binding) = self.try_resolve(symbol, Namespace::Value) else {
+            return Ok(None);
+        };
+        match self.kind(binding) {
+            BindingKind::Boolean(value) => Ok(Some(PatternKind::Literal(Literal::Bool(value)))),
+            BindingKind::Variant(_, info) if info.arity == 0 => {
+                Ok(Some(PatternKind::Variant(binding, Vec::new())))
+            }
+            BindingKind::Variant(_, _) => Err(ExpandProblems::not_a_pattern(form.span())),
+            _ => Ok(None),
+        }
     }
 
     fn lower_list_pattern(

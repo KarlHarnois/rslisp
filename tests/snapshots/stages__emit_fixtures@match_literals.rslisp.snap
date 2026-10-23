@@ -1,0 +1,48 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/match_literals.rslisp
+---
+fn describe_number(n: i64) -> &'static str {
+    match n {
+        0 => "zero",
+        1 => "one",
+        other => "many",
+    }
+}
+
+fn flip(flag: bool) -> bool {
+    match flag {
+        true => false,
+        false => true,
+    }
+}
+
+fn label(s: String) -> f64 {
+    match s.as_str() {
+        "left" => 1.0,
+        "right" => 2.0,
+        other => 0.0,
+    }
+}
+
+fn main() {
+    println!("{}", describe_number(0));
+    println!("{}", describe_number(1));
+    println!("{}", describe_number(5));
+    println!("{}", flip(true));
+    println!("{}", label("left".to_string()));
+    println!("{}", label("right".to_string()));
+    println!("{}", label("other".to_string()));
+    let word: &String = &"left".to_string();
+    match word.as_str() {
+        "left" => println!("ref-left"),
+        other => println!("ref-other"),
+    }
+    match ({
+        "left".to_string()
+    }).as_str() {
+        "left" => println!("block"),
+        other => println!("no"),
+    }
+}

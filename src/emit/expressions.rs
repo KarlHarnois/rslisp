@@ -308,7 +308,14 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn matching(&mut self, value: &TypedExpr, arms: &[TypedArm]) -> Code {
+        let uses_strings = Self::uses_string_literals(arms);
+        let string_value = Self::is_string_value(&value.ty);
         let value = self.expr(value);
+        let value = if uses_strings && string_value {
+            self.string_view(value)
+        } else {
+            value
+        };
         let mut fragments = vec![Fragment::Text("match ".to_string())];
         fragments.extend(value.fragments);
         fragments.push(Fragment::Text(" {".to_string()));
@@ -329,6 +336,32 @@ impl<'a> ExpressionEmitter<'a> {
             fragments,
             precedence: Precedence::Block,
         }
+    }
+
+    fn uses_string_literals(arms: &[TypedArm]) -> bool {
+        arms.iter().any(|arm| {
+            matches!(
+                arm.pattern.kind,
+                TypedPatternKind::Literal(Literal::String(_), _)
+            )
+        })
+    }
+
+    fn is_string_value(ty: &Type) -> bool {
+        match ty {
+            Type::Primitive(PrimitiveType::String) => true,
+            Type::Ref(inner) => matches!(inner.as_ref(), Type::Primitive(PrimitiveType::String)),
+            _ => false,
+        }
+    }
+
+    fn string_view(&self, value: Code) -> Code {
+        let value = if value.is_atomic() {
+            value
+        } else {
+            value.parenthesized()
+        };
+        Code::joined(vec![value, Code::atom(".as_str()")], Precedence::Atom)
     }
 
     fn arm_body(&mut self, body: &TypedBlock) -> Vec<Fragment> {
@@ -352,6 +385,15 @@ impl<'a> ExpressionEmitter<'a> {
             TypedPatternKind::Variant(binding, patterns) => {
                 self.variant_pattern(*binding, patterns)
             }
+            TypedPatternKind::Literal(literal, ty) => self.literal_pattern(literal, ty),
+        }
+    }
+
+    fn literal_pattern(&self, literal: &Literal, ty: &Type) -> Code {
+        match literal {
+            Literal::Number(number) => Code::atom(Self::number_digits(number, ty)),
+            Literal::String(text) => Code::atom(format!("{text:?}")),
+            Literal::Bool(value) => Code::atom(value.to_string()),
         }
     }
 
