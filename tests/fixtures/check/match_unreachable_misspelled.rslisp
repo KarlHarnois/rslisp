@@ -1,0 +1,6 @@
+(enum shape (circle f64) point)
+
+(defn area (s)
+  (match s
+    (piont 0.0)
+    (point 1.0)))
