@@ -229,6 +229,14 @@ mod tests {
     }
 
     #[test]
+    fn reports_an_empty_placeholder() {
+        assert_eq!(
+            ParsedTemplate::parse("{}").err(),
+            Some(MalformedPlaceholder)
+        );
+    }
+
+    #[test]
     fn names_a_type_placeholder() {
         let parsed = ParsedTemplate::parse("{target}").expect("a named placeholder");
         assert_eq!(parsed.type_placeholders().collect::<Vec<_>>(), ["target"]);

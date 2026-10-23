@@ -156,7 +156,7 @@ impl KernelForm {
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::RustType),
             name: "rust-type",
-            shape: "(rust-type name \"template\")",
+            shape: "(rust-type name \"template\" (type \"template\") ...)",
         },
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Recur),

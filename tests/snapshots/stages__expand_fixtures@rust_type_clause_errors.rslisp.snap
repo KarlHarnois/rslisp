@@ -1,0 +1,28 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/rust_type_clause_errors.rslisp
+---
+error[L0223]: a `rust-type` with clauses takes one type parameter
+ --> expand/rust_type_clause_errors.rslisp:1:12
+  |
+1 | (rust-type (pair a b) "Pair<{0}, {1}>" (i64 "std::num::ParseIntError"))
+  |            ^^^^^^^^^^ this type has 2 type parameters
+  |
+  = help: give the type one parameter, as in `(rust-type (pair item) ...)`
+
+error[L0222]: a `rust-type` template cannot name `a`
+ --> expand/rust_type_clause_errors.rslisp:2:22
+  |
+2 | (rust-type (named a) "{a}")
+  |                      ^^^^^ `rust-type` templates name their parameters by number
+  |
+  = help: write the placeholder as `{0}`
+
+error[L0210]: malformed `rust-type`
+ --> expand/rust_type_clause_errors.rslisp:3:1
+  |
+3 | (rust-type (broken a) "{0}" (i64))
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `rust-type`
+  |
+  = help: write it as `(rust-type name "template" (type "template") ...)`

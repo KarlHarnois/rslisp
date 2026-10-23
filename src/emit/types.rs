@@ -242,28 +242,37 @@ impl<'a> RustTypes<'a> {
     }
 
     fn named(&self, binding: BindingId, arguments: &[Type], position: TypePosition) -> String {
-        let arguments: Vec<String> = arguments
-            .iter()
-            .map(|argument| self.show(argument, Self::inner(position)))
-            .collect();
         match self.program.rust_types.get(binding) {
-            Some(rust_type) => Self::rust_type(rust_type, &arguments, position),
-            None => Self::applied(self.struct_path(binding), &arguments),
+            Some(rust_type) => self.rust_type(rust_type, arguments, position),
+            None => {
+                let arguments: Vec<String> = arguments
+                    .iter()
+                    .map(|argument| self.show(argument, Self::inner(position)))
+                    .collect();
+                Self::applied(self.struct_path(binding), &arguments)
+            }
         }
     }
 
-    fn rust_type(rust_type: &RustType, arguments: &[String], position: TypePosition) -> String {
+    fn rust_type(
+        &self,
+        rust_type: &RustType,
+        arguments: &[Type],
+        position: TypePosition,
+    ) -> String {
         if rust_type.is_opaque() && position == TypePosition::Value {
             return Self::INFERRED.to_string();
         }
-        rust_type
-            .template
+        let template = rust_type.template_for(arguments.first());
+        template
             .pieces()
             .iter()
             .map(|piece| match piece {
-                Piece::Literal(text) => text.as_str(),
-                Piece::Placeholder { index, .. } => arguments[*index].as_str(),
-                Piece::TypePlaceholder { .. } => "_",
+                Piece::Literal(text) => text.to_string(),
+                Piece::Placeholder { index, .. } => {
+                    self.show(&arguments[*index], Self::inner(position))
+                }
+                Piece::TypePlaceholder { .. } => "_".to_string(),
             })
             .collect()
     }
