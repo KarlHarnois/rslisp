@@ -17,17 +17,23 @@ pub struct ModeRewrite<'a> {
 }
 
 impl<'a> ModeRewrite<'a> {
-    pub fn new(functions: &FunctionTable, modes: &'a HashMap<BindingId, ParamMode>) -> Self {
+    pub fn new(
+        functions: &FunctionTable,
+        modes: &'a HashMap<BindingId, ParamMode>,
+        slices: &'a HashMap<BindingId, Type>,
+    ) -> Self {
         let mut param_types = HashMap::new();
         let mut function_params = HashMap::new();
         for (function, info) in functions.iter() {
             let mut types = Vec::new();
             for slot in &info.params {
-                let rewritten = match (slot.inferable, modes.get(&slot.binding)) {
-                    (true, Some(ParamMode::Ref)) => Type::Ref(Box::new(slot.ty.clone())),
-                    (true, Some(ParamMode::Mut)) => Type::Mut(Box::new(slot.ty.clone())),
-                    _ => slot.ty.clone(),
-                };
+                let rewritten = slices.get(&slot.binding).cloned().unwrap_or_else(|| {
+                    match (slot.inferable, modes.get(&slot.binding)) {
+                        (true, Some(ParamMode::Ref)) => Type::Ref(Box::new(slot.ty.clone())),
+                        (true, Some(ParamMode::Mut)) => Type::Mut(Box::new(slot.ty.clone())),
+                        _ => slot.ty.clone(),
+                    }
+                });
                 if rewritten != slot.ty {
                     param_types.insert(slot.binding, rewritten.clone());
                 }

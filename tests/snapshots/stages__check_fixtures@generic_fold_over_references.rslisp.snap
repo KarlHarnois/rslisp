@@ -3,5 +3,5 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/generic_fold_over_references.rslisp
 ---
-(type total (fn ((ref (vec i64))) i64))
+(type total (fn ((ref (slice i64))) i64))
 (type main (fn () unit))
