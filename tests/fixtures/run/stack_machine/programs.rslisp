@@ -1,45 +1,45 @@
-(use stack_machine/instruction push-op add-op sub-op mul-op dup-op swap-op over-op jump-op jump-if-zero-op print-op halt-op)
+(use stack_machine/instruction instruction)
 
 (export countdown factorial underflowing million-steps)
 
 (defn countdown ()
-  (vec (push-op 5)
-       (dup-op)
-       (jump-if-zero-op 8)
-       (dup-op)
-       (print-op)
-       (push-op 1)
-       (sub-op)
-       (jump-op 1)
-       (halt-op)))
+  (vec (instruction/push 5)
+       instruction/dup
+       (instruction/jump-if-zero 8)
+       instruction/dup
+       instruction/print
+       (instruction/push 1)
+       instruction/sub
+       (instruction/jump 1)
+       instruction/halt))
 
 (defn factorial ()
-  (vec (push-op 10)
-       (push-op 1)
-       (over-op)
-       (jump-if-zero-op 11)
-       (over-op)
-       (mul-op)
-       (swap-op)
-       (push-op 1)
-       (sub-op)
-       (swap-op)
-       (jump-op 2)
-       (halt-op)))
+  (vec (instruction/push 10)
+       (instruction/push 1)
+       instruction/over
+       (instruction/jump-if-zero 11)
+       instruction/over
+       instruction/mul
+       instruction/swap
+       (instruction/push 1)
+       instruction/sub
+       instruction/swap
+       (instruction/jump 2)
+       instruction/halt))
 
 (defn underflowing ()
-  (vec (push-op 1)
-       (add-op)
-       (halt-op)))
+  (vec (instruction/push 1)
+       instruction/add
+       instruction/halt))
 
 (defn million-steps ()
-  (vec (push-op 7)
-       (push-op 8)
-       (sub-op)
-       (push-op 199999)
-       (dup-op)
-       (jump-if-zero-op 9)
-       (push-op 1)
-       (sub-op)
-       (jump-op 4)
-       (halt-op)))
+  (vec (instruction/push 7)
+       (instruction/push 8)
+       instruction/sub
+       (instruction/push 199999)
+       instruction/dup
+       (instruction/jump-if-zero 9)
+       (instruction/push 1)
+       instruction/sub
+       (instruction/jump 4)
+       instruction/halt))

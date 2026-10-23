@@ -1,30 +1,14 @@
-(export instruction instruction-opcode instruction-argument
-        push-code add-code sub-code mul-code dup-code swap-code over-code
-        jump-code jump-if-zero-code print-code halt-code
-        push-op add-op sub-op mul-op dup-op swap-op over-op jump-op jump-if-zero-op print-op halt-op)
+(export instruction)
 
-(defstruct instruction (opcode u8) (argument i64))
-
-(def push-code 0)
-(def add-code 1)
-(def sub-code 2)
-(def mul-code 3)
-(def dup-code 4)
-(def swap-code 5)
-(def over-code 6)
-(def jump-code 7)
-(def jump-if-zero-code 8)
-(def print-code 9)
-(def halt-code 10)
-
-(defn push-op (value) (make-instruction push-code value))
-(defn add-op () (make-instruction add-code 0))
-(defn sub-op () (make-instruction sub-code 0))
-(defn mul-op () (make-instruction mul-code 0))
-(defn dup-op () (make-instruction dup-code 0))
-(defn swap-op () (make-instruction swap-code 0))
-(defn over-op () (make-instruction over-code 0))
-(defn jump-op (target) (make-instruction jump-code target))
-(defn jump-if-zero-op (target) (make-instruction jump-if-zero-code target))
-(defn print-op () (make-instruction print-code 0))
-(defn halt-op () (make-instruction halt-code 0))
+(enum instruction
+  (push i64)
+  add
+  sub
+  mul
+  dup
+  swap
+  over
+  (jump usize)
+  (jump-if-zero usize)
+  print
+  halt)
