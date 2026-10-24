@@ -220,6 +220,16 @@ impl TypeChecker {
         arguments: &[Expr],
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
+        self.infer_variant_expecting(binding, arguments, None, span)
+    }
+
+    fn infer_variant_expecting(
+        &mut self,
+        binding: BindingId,
+        arguments: &[Expr],
+        expected: Option<&Type>,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
         let BindingKind::Variant(
             _,
             VariantInfo {
@@ -231,7 +241,10 @@ impl TypeChecker {
         else {
             unreachable!("the expander resolves a variant call to a variant binding");
         };
-        let type_arguments = self.fresh_arguments(owner);
+        let type_arguments = match expected.map(|expected| self.unifier.shallow(expected)) {
+            Some(Type::Named(expected_owner, arguments)) if expected_owner == owner => arguments,
+            _ => self.fresh_arguments(owner),
+        };
         let payload = self.visible_payloads(owner, index, &type_arguments);
         if arguments.len() != arity {
             return Err(TypeProblems::wrong_argument_count(
@@ -242,8 +255,7 @@ impl TypeChecker {
         }
         let mut typed = Vec::new();
         for (argument, expected) in arguments.iter().zip(&payload) {
-            let value = self.infer(argument)?;
-            self.expect(expected, &value.ty, value.span, MismatchContext::Plain)?;
+            let value = self.infer_against(argument, expected, MismatchContext::Plain)?;
             typed.push(value);
         }
         Ok(TypedExpr {
@@ -259,25 +271,26 @@ impl TypeChecker {
         arms: &[Arm],
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
+        self.infer_match_expecting(value, arms, None, span)
+    }
+
+    fn infer_match_expecting(
+        &mut self,
+        value: &Expr,
+        arms: &[Arm],
+        expected: Option<&Type>,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
         let value = self.infer(value)?;
         self.bind_match_enum(&value.ty, arms, value.span)?;
         let pattern_type = self.pattern_type(&value.ty, arms);
         let mut typed_arms = Vec::new();
         let mut result: Option<Type> = None;
         for arm in arms {
-            let pattern = self.lower_pattern(&arm.pattern, &pattern_type, None)?;
-            let (body, body_type) = self.infer_block(&arm.body)?;
-            if let Some(first) = &result {
-                let span = Self::block_result_span(&body).unwrap_or(arm.span);
-                self.expect(first, &body_type, span, MismatchContext::Plain)?;
-            } else {
-                result = Some(body_type);
-            }
-            typed_arms.push(TypedArm {
-                pattern,
-                body,
-                span: arm.span,
-            });
+            let (typed_arm, body_type) = self.infer_arm(arm, &pattern_type, expected)?;
+            let span = Self::block_result_span(&typed_arm.body).unwrap_or(typed_arm.span);
+            self.record_arm_result(&mut result, &body_type, span)?;
+            typed_arms.push(typed_arm);
         }
         self.check_match_coverage(span, &value.ty, &typed_arms);
         let unguarded_exhaustive = self.match_is_exhaustive_without_guards(&value.ty, &typed_arms);
@@ -290,6 +303,44 @@ impl TypeChecker {
             ty: result.unwrap_or_else(Type::unit),
             span,
         })
+    }
+
+    fn infer_arm(
+        &mut self,
+        arm: &Arm,
+        pattern_type: &Type,
+        expected: Option<&Type>,
+    ) -> Result<(TypedArm, Type), Diagnostic> {
+        let pattern = self.lower_pattern(&arm.pattern, pattern_type, None)?;
+        let (body, body_type) = match expected {
+            Some(expected) => {
+                self.infer_block_expecting(&arm.body, expected, MismatchContext::Plain)?
+            }
+            None => self.infer_block(&arm.body)?,
+        };
+        Ok((
+            TypedArm {
+                pattern,
+                body,
+                span: arm.span,
+            },
+            body_type,
+        ))
+    }
+
+    fn record_arm_result(
+        &mut self,
+        result: &mut Option<Type>,
+        body_type: &Type,
+        span: Span,
+    ) -> Result<(), Diagnostic> {
+        match result {
+            Some(first) => self.expect(first, body_type, span, MismatchContext::Plain),
+            None => {
+                *result = Some(body_type.clone());
+                Ok(())
+            }
+        }
     }
 
     fn bind_match_enum(
@@ -915,7 +966,19 @@ impl TypeChecker {
         expected: &Type,
         context: MismatchContext,
     ) -> Result<TypedExpr, Diagnostic> {
-        let value = match (expr.kind(), self.unifier.shallow(expected)) {
+        let value = self.infer_expecting(expr, expected, &context)?;
+        let value = self.copy_out_of_borrow(value, expected);
+        self.expect(expected, &value.ty, value.span, context)?;
+        Ok(value)
+    }
+
+    fn infer_expecting(
+        &mut self,
+        expr: &Expr,
+        expected: &Type,
+        context: &MismatchContext,
+    ) -> Result<TypedExpr, Diagnostic> {
+        match (expr.kind(), self.unifier.shallow(expected)) {
             (ExprKind::Fn(lambda), Type::Function(parameters, result))
                 if parameters.len() == lambda.params.len() =>
             {
@@ -926,16 +989,44 @@ impl TypeChecker {
                     written: matches!(context, MismatchContext::Signature { .. }),
                 };
                 let (kind, ty) = self.infer_lambda(lambda, expr.span(), Some(expectation))?;
-                TypedExpr {
+                Ok(TypedExpr {
                     kind,
                     ty,
                     span: expr.span(),
+                })
+            }
+            (ExprKind::Call(callee, arguments), _) => {
+                self.infer_call_expecting(callee, arguments, Some(expected), expr.span())
+            }
+            (ExprKind::Control(Control::Match(value, arms)), _) => {
+                self.infer_match_expecting(value, arms, Some(expected), expr.span())
+            }
+            (ExprKind::Variant(binding, arguments), _) => {
+                self.infer_variant_expecting(*binding, arguments, Some(expected), expr.span())
+            }
+            _ => self.infer(expr),
+        }
+    }
+
+    fn copy_out_of_borrow(&self, value: TypedExpr, expected: &Type) -> TypedExpr {
+        if value.is_written_form() {
+            return value;
+        }
+        let span = value.span;
+        let expected = self.unifier.resolve(expected);
+        let found = self.unifier.resolve(&value.ty);
+        match found {
+            Type::Ref(referent)
+                if *referent == expected && self.copy_rules().is_small_copy(&expected) =>
+            {
+                TypedExpr {
+                    kind: TypedExprKind::Deref(Box::new(value)),
+                    ty: expected,
+                    span,
                 }
             }
-            _ => self.infer(expr)?,
-        };
-        self.expect(expected, &value.ty, value.span, context)?;
-        Ok(value)
+            _ => value,
+        }
     }
 
     fn infer_lambda(
@@ -966,14 +1057,14 @@ impl TypeChecker {
         let previous_try = self.try_target.replace(TryTarget {
             returns: result.clone(),
         });
-        let inferred = self.infer_block(&lambda.body);
+        let context = expected
+            .as_ref()
+            .map_or(MismatchContext::Plain, |expected| expected.context.clone());
+        let inferred = self.infer_block_expecting(&lambda.body, &result, context.clone());
         self.recur_target = previous;
         self.try_target = previous_try;
         let (body, found) = inferred?;
         let result_span = Self::block_result_span(&body).unwrap_or(span);
-        let context = expected
-            .as_ref()
-            .map_or(MismatchContext::Plain, |expected| expected.context.clone());
         self.expect(&result, &found, result_span, context)?;
         let parameter_types = params.iter().map(|param| param.ty.clone()).collect();
         let function = Type::Function(parameter_types, Box::new(result));
@@ -1013,10 +1104,35 @@ impl TypeChecker {
     }
 
     fn infer_block(&mut self, block: &Block) -> Result<(TypedBlock, Type), Diagnostic> {
+        self.infer_block_with(block, None)
+    }
+
+    fn infer_block_expecting(
+        &mut self,
+        block: &Block,
+        expected: &Type,
+        context: MismatchContext,
+    ) -> Result<(TypedBlock, Type), Diagnostic> {
+        self.infer_block_with(block, Some((expected, context)))
+    }
+
+    fn infer_block_with(
+        &mut self,
+        block: &Block,
+        expected: Option<(&Type, MismatchContext)>,
+    ) -> Result<(TypedBlock, Type), Diagnostic> {
         let mut items = Vec::new();
         let mut result = Type::unit();
-        for item in &block.items {
-            let (typed, item_type) = self.infer_body_item(item)?;
+        let last = block.items.len().checked_sub(1);
+        for (position, item) in block.items.iter().enumerate() {
+            let (typed, item_type) = match (item, Some(position) == last, &expected) {
+                (BodyItem::Expr(expr), true, Some((expected, context))) => {
+                    let typed = self.infer_against(expr, expected, context.clone())?;
+                    let ty = typed.ty.clone();
+                    (TypedBodyItem::Expr(typed), ty)
+                }
+                _ => self.infer_body_item(item)?,
+            };
             items.push(typed);
             result = item_type;
         }
@@ -1069,6 +1185,16 @@ impl TypeChecker {
         arguments: &[Expr],
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
+        self.infer_call_expecting(callee, arguments, None, span)
+    }
+
+    fn infer_call_expecting(
+        &mut self,
+        callee: &Expr,
+        arguments: &[Expr],
+        expected: Option<&Type>,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
         let callee = self.infer(callee)?;
         let (parameters, result) = self.function_shape(&callee, arguments.len())?;
         if parameters.len() != arguments.len() {
@@ -1078,6 +1204,7 @@ impl TypeChecker {
                 span,
             ));
         }
+        self.expect_call_result(expected, &result, span)?;
         let shared = SharedVariables::of(&parameters, &self.unifier);
         let mut typed_arguments =
             self.infer_arguments(Some(&callee), &parameters, arguments, &shared)?;
@@ -1087,6 +1214,22 @@ impl TypeChecker {
             ty: result,
             span,
         })
+    }
+
+    fn expect_call_result(
+        &mut self,
+        expected: Option<&Type>,
+        result: &Type,
+        span: Span,
+    ) -> Result<(), Diagnostic> {
+        let Some(expected) = expected else {
+            return Ok(());
+        };
+        let resolved = self.unifier.resolve(result);
+        if resolved.has_vars() && resolved.shares_head_with(&self.unifier.resolve(expected)) {
+            self.expect(expected, result, span, MismatchContext::Plain)?;
+        }
+        Ok(())
     }
 
     fn infer_recur(&mut self, arguments: &[Expr], span: Span) -> Result<TypedExpr, Diagnostic> {
