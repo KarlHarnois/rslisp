@@ -44,20 +44,16 @@ impl TypeExpr {
         self.span
     }
 
-    pub fn replacing(&self, variable: BindingId, replacement: BindingId) -> TypeExpr {
+    pub fn replacing(&self, variable: BindingId, replacement: &TypeExpr) -> TypeExpr {
         let kind = match self.kind() {
-            TypeExprKind::Named(binding, arguments) => {
-                let arguments = arguments
+            TypeExprKind::Named(binding, _) if *binding == variable => replacement.kind().clone(),
+            TypeExprKind::Named(binding, arguments) => TypeExprKind::Named(
+                *binding,
+                arguments
                     .iter()
                     .map(|argument| argument.replacing(variable, replacement))
-                    .collect();
-                let binding = if *binding == variable {
-                    replacement
-                } else {
-                    *binding
-                };
-                TypeExprKind::Named(binding, arguments)
-            }
+                    .collect(),
+            ),
             TypeExprKind::Function(parameters, result) => TypeExprKind::Function(
                 parameters
                     .iter()

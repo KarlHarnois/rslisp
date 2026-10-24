@@ -51,14 +51,6 @@ error[L0210]: malformed `impl`
   |
   = help: write a trait this module defines
 
-error[L0210]: malformed `impl`
- --> check/malformed_traits.rslisp:9:15
-  |
-9 | (impl painted i64 (area (c) c))
-  |               ^^^ this does not fit the shape of `impl`
-  |
-  = help: write a struct or an enum
-
 error[L0239]: `circle` is missing `area` from `painted`
   --> check/malformed_traits.rslisp:10:15
    |

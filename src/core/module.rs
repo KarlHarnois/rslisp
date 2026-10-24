@@ -57,7 +57,7 @@ pub enum ItemKind {
     Derive(BindingId, Span, Vec<(BindingId, Span)>),
     RustTrait(BindingId, Rc<str>, Vec<TypeExpr>),
     Trait(BindingId, Rc<str>, BindingId, Vec<TraitMethod>),
-    Impl(BindingId, BindingId, Vec<ImplMethod>),
+    Impl(BindingId, TypeExpr, Vec<ImplMethod>),
     RustType(
         BindingId,
         Vec<TypeBinder>,

@@ -177,14 +177,14 @@ impl<'p> EmitPlan<'p> {
     }
 
     fn reach_implemented_types(&mut self) {
-        let implemented: Vec<(BindingId, ModuleId)> = self
+        let implemented: Vec<(Type, ModuleId)> = self
             .program
             .trait_impls
             .iter()
-            .map(|implementation| (implementation.type_binding, implementation.module))
+            .map(|implementation| (implementation.implementor.clone(), implementation.module))
             .collect();
-        for (binding, module) in implemented {
-            self.reach_named(binding, module);
+        for (implementor, module) in implemented {
+            self.visit_type(&implementor, module);
         }
     }
 

@@ -526,7 +526,7 @@ Programs read functionally through two prelude forms over `try`, as `loop` is ov
 
 ### 10. User-defined traits
 
-A program defines traits and implements them for its own structs and enums in one module. `rust-trait` binds only traits that Rust defines.
+A program defines traits and implements them in one module. An `impl` accepts any concrete type the program can write without a type variable: a struct, an enum, a primitive such as `i64` or `bool`, `string`, or an applied type such as `(vec i64)`. A type with a type variable, such as `(vec a)`, is an error until a program needs generic implementations. An unsized implementor such as `str` must take every receiver by reference. `rust-trait` binds only traits that Rust defines.
 
 ```lisp
 (trait shape

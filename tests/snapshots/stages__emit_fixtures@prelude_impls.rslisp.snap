@@ -1,0 +1,37 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/prelude_impls.rslisp
+---
+fn make_numbers() -> Vec<i64> {
+    vec![1_i64, 2_i64, 3_i64]
+}
+
+fn main() {
+    println!("{}", 3_i64.label());
+    let name = "Ada".to_string();
+    println!("{}", name.label());
+    println!("{}", make_numbers().label())
+}
+
+trait Label {
+    fn label(&self) -> String;
+}
+
+impl Label for i64 {
+    fn label(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl Label for String {
+    fn label(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl Label for Vec<i64> {
+    fn label(&self) -> String {
+        format!("{:?}", self)
+    }
+}

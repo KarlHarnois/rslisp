@@ -1373,13 +1373,22 @@ impl TypeChecker {
     fn collect_trait_impls(&mut self, modules: &[CoreModule]) {
         for module in modules {
             for item in &module.items {
-                let ItemKind::Impl(trait_binding, type_binding, methods) = &item.kind else {
+                let ItemKind::Impl(trait_binding, implementor, methods) = &item.kind else {
                     continue;
                 };
+                let implementor_span = implementor.span();
+                let implementor = match self.lower_type(implementor, &HashMap::new()) {
+                    Ok(implementor) => implementor,
+                    Err(diagnostic) => {
+                        self.diagnostics.push(diagnostic);
+                        continue;
+                    }
+                };
+                self.report_unsized_implementor(&implementor, implementor_span, methods);
                 self.traits.add_implementor(
                     *trait_binding,
                     Implementor {
-                        scheme: Scheme::monomorphic(Type::Named(*type_binding, Vec::new())),
+                        scheme: Scheme::monomorphic(implementor.clone()),
                         argument: None,
                     },
                 );
@@ -1397,11 +1406,47 @@ impl TypeChecker {
                 }
                 self.trait_impls.push(TypedTraitImpl {
                     trait_binding: *trait_binding,
-                    type_binding: *type_binding,
+                    implementor,
+                    implementor_span,
                     module: module.id,
                     methods: typed_methods,
                 });
             }
+        }
+    }
+
+    fn report_unsized_implementor(
+        &mut self,
+        implementor: &Type,
+        span: Span,
+        methods: &[crate::core::ImplMethod],
+    ) {
+        if !Self::is_unsized_implementor(&self.rust_types, implementor) {
+            return;
+        }
+        for method in methods {
+            let owned = self
+                .trait_methods
+                .get(&method.trait_method)
+                .is_some_and(|info| info.receiver == Some(ReceiverKind::Owned));
+            if !owned {
+                continue;
+            }
+            let implementor_name = self.display().show(implementor);
+            let method_name = self.bindings.get(method.trait_method).name().to_string();
+            self.diagnostics.push(TypeProblems::unsized_implementor(
+                &implementor_name,
+                &method_name,
+                span,
+            ));
+        }
+    }
+
+    fn is_unsized_implementor(rust_types: &RustTypeTable, implementor: &Type) -> bool {
+        match implementor {
+            Type::Primitive(PrimitiveType::Str) => true,
+            Type::Named(binding, _) => rust_types.is_slice(*binding),
+            _ => false,
         }
     }
 

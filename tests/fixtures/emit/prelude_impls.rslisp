@@ -1,0 +1,20 @@
+(trait label
+  (label (fn ((ref self)) string)))
+
+(impl label i64
+  (label (number) (to-string number)))
+
+(impl label string
+  (label (text) (to-string text)))
+
+(impl label (vec i64)
+  (label (numbers) (pr-str numbers)))
+
+(defn make-numbers ()
+  (vec 1 2 3))
+
+(defn main ()
+  (println (label 3))
+  (let name (to-string "Ada"))
+  (println (label name))
+  (println (label (make-numbers))))

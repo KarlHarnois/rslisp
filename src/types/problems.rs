@@ -467,6 +467,15 @@ impl TypeProblems {
         ))
     }
 
+    pub fn unsized_implementor(implementor: &str, method: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::UNSIZABLE_IMPLEMENTOR,
+            format!("`{implementor}` has no size, so `{method}` cannot take `self` by value"),
+            Label::new(span, format!("`{implementor}` has no size")),
+        )
+        .with_help("take the receiver by reference, as in `(fn ((ref self)) ...)`")
+    }
+
     pub fn unused_type_parameter(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::UNUSED_TYPE_PARAMETER,

@@ -237,7 +237,8 @@ pub struct TypedImplMethod {
 
 pub struct TypedTraitImpl {
     pub trait_binding: BindingId,
-    pub type_binding: BindingId,
+    pub implementor: Type,
+    pub implementor_span: Span,
     pub module: ModuleId,
     pub methods: Vec<TypedImplMethod>,
 }

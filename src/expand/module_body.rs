@@ -29,7 +29,7 @@ struct ImplLowering<'a, 'f> {
     shape: &'a Shape<'f>,
     trait_methods: &'a TraitMethods,
     trait_name: &'a str,
-    type_binding: BindingId,
+    implementor: &'a TypeExpr,
 }
 
 enum PendingItem {
@@ -45,7 +45,7 @@ enum PendingItem {
     RustTrait(BindingId, Form),
     RustType(BindingId, Form),
     Trait(BindingId, Form),
-    Impl(BindingId, BindingId, Form),
+    Impl(BindingId, TypeExpr, Form),
     Export(Form),
 }
 
@@ -345,8 +345,8 @@ impl Expander<'_> {
         let shape = Shape::new(KernelForm::Definition(DefinitionForm::Impl), &form);
         let items = shape.at_least(3)?;
         let trait_binding = self.impl_trait(&shape, &items[1])?;
-        let type_binding = self.impl_type(&shape, &items[2])?;
-        Ok(Some(PendingItem::Impl(trait_binding, type_binding, form)))
+        let implementor = self.impl_type(&shape, &items[2])?;
+        Ok(Some(PendingItem::Impl(trait_binding, implementor, form)))
     }
 
     fn impl_trait(&mut self, shape: &Shape, form: &Form) -> Result<BindingId, Diagnostic> {
@@ -357,15 +357,42 @@ impl Expander<'_> {
         Err(shape.malformed_with_help(form, "write a trait this module defines"))
     }
 
-    fn impl_type(&mut self, shape: &Shape, form: &Form) -> Result<BindingId, Diagnostic> {
-        let binding = self.resolve(shape.symbol(form)?, Namespace::Type, form.span())?;
-        if matches!(
-            self.kind(binding),
-            BindingKind::Struct(_) | BindingKind::Enum(_)
-        ) {
-            return Ok(binding);
+    fn impl_type(&mut self, shape: &Shape, form: &Form) -> Result<TypeExpr, Diagnostic> {
+        if let Some(variable) = self.unresolved_type_name(form) {
+            let name = variable.as_symbol().map_or("", crate::reader::Symbol::name);
+            return Err(ExpandProblems::generic_implementor(name, variable.span()));
         }
-        Err(shape.malformed_with_help(form, "write a struct or an enum"))
+        let implementor = self.lower_type(form)?;
+        if matches!(
+            implementor.kind(),
+            TypeExprKind::Named(..) | TypeExprKind::Primitive(_)
+        ) {
+            return Ok(implementor);
+        }
+        Err(shape.malformed_with_help(
+            form,
+            "write a concrete type such as `i64`, `string` or `(vec i64)`",
+        ))
+    }
+
+    fn unresolved_type_name<'f>(&self, form: &'f Form) -> Option<&'f Form> {
+        match form.kind() {
+            FormKind::Symbol(symbol) => self.is_type_variable(symbol).then_some(form),
+            FormKind::List(items) => {
+                let (head, arguments) = items.split_first()?;
+                let symbol = head.as_symbol()?;
+                self.try_resolve(symbol, Namespace::Type)?;
+                arguments
+                    .iter()
+                    .find_map(|argument| self.unresolved_type_name(argument))
+            }
+            FormKind::String(_) | FormKind::Number(_) => None,
+        }
+    }
+
+    fn is_type_variable(&self, symbol: &Symbol) -> bool {
+        self.try_resolve(symbol, Namespace::Type).is_none()
+            && self.try_resolve(symbol, Namespace::Value).is_none()
     }
 
     fn definition_head(&self, form: &Form) -> Result<KernelForm, Diagnostic> {
@@ -456,8 +483,8 @@ impl Expander<'_> {
             PendingItem::Enum(binding, form) => self.lower_enum(binding, &form, core),
             PendingItem::Derive(form) => self.lower_derive(module, &form, core),
             PendingItem::Trait(binding, form) => self.lower_trait(binding, &form, core),
-            PendingItem::Impl(trait_binding, type_binding, form) => {
-                self.lower_impl(trait_binding, type_binding, &form, core)
+            PendingItem::Impl(trait_binding, implementor, form) => {
+                self.lower_impl(trait_binding, implementor, &form, core)
             }
             PendingItem::Export(form) => {
                 self.lower_exports(module, &form, core);
@@ -950,7 +977,7 @@ impl Expander<'_> {
     fn lower_impl(
         &mut self,
         trait_binding: BindingId,
-        type_binding: BindingId,
+        implementor: TypeExpr,
         form: &Form,
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
@@ -960,12 +987,12 @@ impl Expander<'_> {
             return Err(shape.malformed_with_help(form, "define the trait before implementing it"));
         };
         let trait_name = self.bindings.get(trait_binding).name().to_string();
-        let type_name = self.bindings.get(type_binding).name().to_string();
+        let type_name = items[2].to_string();
         let lowering = ImplLowering {
             shape: &shape,
             trait_methods: &trait_methods,
             trait_name: &trait_name,
-            type_binding,
+            implementor: &implementor,
         };
         let (methods, implemented) = self.lower_impl_methods(&lowering, &items[3..], core)?;
         for (method, _) in &trait_methods.methods {
@@ -980,7 +1007,7 @@ impl Expander<'_> {
             }
         }
         core.items.push(Item {
-            kind: ItemKind::Impl(trait_binding, type_binding, methods),
+            kind: ItemKind::Impl(trait_binding, implementor, methods),
             span: form.span(),
             hidden: false,
         });
@@ -1042,7 +1069,7 @@ impl Expander<'_> {
             return Ok(None);
         }
         let specialized =
-            signature.replacing(lowering.trait_methods.self_variable, lowering.type_binding);
+            signature.replacing(lowering.trait_methods.self_variable, lowering.implementor);
         let lambda = Rc::new(self.lower_lambda(lowering.shape, params, &method_items[2..])?);
         let synthetic = self.bindings.add(BindingInfo::new(
             self.bindings.get(*method_binding).name().into(),
