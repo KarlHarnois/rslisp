@@ -1,0 +1,11 @@
+(defn count-words (text)
+  (fold (split (as-str text) " ")
+        (hash-map)
+        (fn (counts word)
+          (update counts (to-string word) (fn (n) (+ n 1)) 0))))
+
+(defn main ()
+  (let counts (count-words (to-string "the cat and the hat")))
+  (println (len counts))
+  (println (unwrap (lookup counts "the")))
+  (println (unwrap (lookup counts "cat"))))

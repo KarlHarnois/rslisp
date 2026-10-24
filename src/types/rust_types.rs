@@ -80,6 +80,10 @@ impl RustTypeTable {
         self.has_template(binding, "std::collections::BTreeMap<{0}, {1}>")
     }
 
+    pub fn is_hash_map(&self, binding: BindingId) -> bool {
+        self.has_template(binding, "std::collections::HashMap<{0}, {1}>")
+    }
+
     pub fn option_binding(&self) -> Option<BindingId> {
         self.binding_with_template("Option<{0}>")
     }

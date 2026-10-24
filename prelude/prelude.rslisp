@@ -4,7 +4,7 @@
 (use prelude/types vec option result iterator slice sequence box box-new)
 (use prelude/pair pair let-pair let-fields)
 (use prelude/assoc assoc assoc-in)
-(use prelude/map sorted-map lookup keys vals entries update into-sorted-map)
+(use prelude/map sorted-map hash-map lookup keys vals entries update into-sorted-map into-hash-map)
 (use prelude/sequence empty?)
 (use prelude/vec vec push! len iter values collect
                get pop! sort! sort-by-key! windows at dedup!)
@@ -37,7 +37,7 @@
         defstruct
         clone copy set!
         io-error slurp slurp-stdin read-line command-line-args exit
-        sorted-map lookup keys vals entries update into-sorted-map empty?
+        sorted-map hash-map lookup keys vals entries update into-sorted-map into-hash-map empty?
         pair let-pair let-fields assoc assoc-in
         vec option result iterator slice sequence box box-new push! len iter values collect
         get pop! sort! sort-by-key! windows at dedup!

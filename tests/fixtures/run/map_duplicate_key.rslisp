@@ -1,0 +1,5 @@
+(defn main ()
+  (let sorted (sorted-map "a" 1 "a" 2))
+  (let hashed (hash-map "a" 1 "a" 2))
+  (println (unwrap (lookup sorted "a")))
+  (println (unwrap (lookup hashed "a"))))

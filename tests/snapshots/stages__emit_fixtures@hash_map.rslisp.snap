@@ -1,0 +1,49 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/hash_map.rslisp
+---
+fn main() {
+    let empty: std::collections::HashMap<String, i64> = {
+        let result: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+        result
+    };
+    let built: std::collections::HashMap<&str, i64> = {
+        let mut map = std::collections::HashMap::new();
+        map.insert("b", 2_i64);
+        map.insert("a", 1_i64);
+        map
+    };
+    let added: std::collections::HashMap<&str, i64> = {
+        let mut built = built;
+        built.insert("c", 3);
+        built
+    };
+    let mut changed: std::collections::HashMap<&str, i64> = {
+        let mut added = added;
+        added.insert("a", 10);
+        added
+    };
+    *changed.get_mut(&"b").unwrap() = 20;
+    let pairs: Vec<(&str, i64)> = vec![("x", 1_i64), ("y", 2_i64)];
+    let collected: std::collections::HashMap<&str, i64> = pairs
+        .into_iter()
+        .collect::<std::collections::HashMap<_, _>>(
+    );
+    let next: std::collections::HashMap<&str, i64> = {
+        let mut changed = changed;
+        let function = |n: i64| n + 1;
+        let old = changed.remove(&"a").unwrap_or(0);
+        changed.insert("a", function(old));
+        changed
+    };
+    println!("{} {}", next.len(), empty.is_empty());
+    println!("{}", next.get("a").unwrap());
+    next.keys().for_each(|key: &&str| println!("{}", key));
+    next.values().for_each(|value: &i64| println!("{}", value));
+    next.iter().for_each(|entry: (&&str, &i64)| {
+        let (key, value) = entry;
+        println!("{} {}", key, value)
+    });
+    println!("{}", collected.len())
+}

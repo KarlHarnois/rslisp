@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/hash_map_key_not_hash.rslisp
+---
+error[L0404]: `float-key` does not implement `hash`
+ --> check/hash_map_key_not_hash.rslisp:4:24
+  |
+4 |   (let items (hash-map (new float-key (value 1.5)) 1))
+  |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `hash`
+  |
+  = note: `float-key` cannot derive `hash`: field `value` is `f64`
+
+error[L0404]: `float-key` does not implement `eq`
+ --> check/hash_map_key_not_hash.rslisp:4:24
+  |
+4 |   (let items (hash-map (new float-key (value 1.5)) 1))
+  |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `eq`
+  |
+  = note: `float-key` cannot derive `eq`: field `value` is `f64`
