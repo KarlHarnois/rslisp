@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_struct_pattern_count.rslisp
+---
+error[L0432]: `parsed` takes 2 parts in a pattern but 1 was given
+ --> check/match_struct_pattern_count.rslisp:6:6
+  |
+6 |     ((parsed node) node)))
+  |      ^^^^^^^^^^^^^ this pattern has the wrong number of parts
+
+error[L0432]: `parsed` takes 2 parts in a pattern but 3 were given
+  --> check/match_struct_pattern_count.rslisp:10:6
+   |
+10 |     ((parsed node _ next) node)))
+   |      ^^^^^^^^^^^^^^^^^^^^ this pattern has the wrong number of parts

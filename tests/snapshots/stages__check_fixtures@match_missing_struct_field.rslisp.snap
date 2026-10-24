@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_missing_struct_field.rslisp
+---
+error[L0433]: non-exhaustive `match`
+ --> check/match_missing_struct_field.rslisp:5:3
+  |
+5 | /   (match p
+6 | |     ((parsed (branch _) _) 0)))
+  | |______________________________^ this `match` does not cover every value
+  |
+  = note: missing 1 case: `(parsed leaf _)`
+  = help: add an arm for each missing case

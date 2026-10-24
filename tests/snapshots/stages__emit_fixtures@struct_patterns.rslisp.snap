@@ -1,0 +1,77 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/struct_patterns.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Tree {
+    Leaf,
+    Branch(Box<Tree>),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Parsed {
+    node: Tree,
+    next: usize,
+}
+
+fn make_parsed(node: Tree, next: usize) -> Parsed {
+    Parsed { node, next }
+}
+
+fn wrap(p: Parsed) -> Tree {
+    let Parsed { node, .. } = p;
+    Tree::Branch(Box::new(node))
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Wrapper {
+    Wrapped(Parsed),
+    Empty,
+}
+
+fn unwrap(w: Wrapper) -> Tree {
+    match w {
+        Wrapper::Wrapped(Parsed { node, .. }) => node,
+        Wrapper::Empty => Tree::Leaf,
+    }
+}
+
+fn next_of(p: &Parsed) -> usize {
+    let Parsed { next, .. } = p;
+    *next
+}
+
+fn node_of(p: &Parsed) -> &Tree {
+    let Parsed { node, .. } = p;
+    node
+}
+
+fn fields(p: Parsed) -> Tree {
+    let Parsed { node, .. } = p;
+    Tree::Branch(Box::new(node))
+}
+
+fn main() {
+    println!("{:?}", wrap(make_parsed(Tree::Leaf, 0)));
+    println!(
+        "{:?}",
+        unwrap(Wrapper::Wrapped(make_parsed(
+            Tree::Branch(Box::new(Tree::Leaf)),
+            1
+        )))
+    );
+    println!("{:?}", unwrap(Wrapper::Empty));
+    println!("{:?}", next_of(&make_parsed(Tree::Leaf, 2)));
+    println!(
+        "{:?}",
+        node_of(&make_parsed(Tree::Branch(Box::new(Tree::Leaf)), 4))
+    );
+    println!(
+        "{:?}",
+        fields(make_parsed(
+            Tree::Branch(Box::new(Tree::Branch(Box::new(Tree::Leaf)))),
+            3
+        ))
+    )
+}

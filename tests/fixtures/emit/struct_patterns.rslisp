@@ -1,0 +1,37 @@
+(enum tree leaf (branch tree))
+(defstruct parsed (node tree) (next usize))
+
+(defn wrap (p)
+  (match p
+    ((parsed node _) (tree/branch node))))
+
+(enum wrapper (wrapped parsed) empty)
+
+(defn unwrap (w)
+  (match w
+    ((wrapped (parsed node _)) node)
+    (empty tree/leaf)))
+
+(type next-of (fn ((ref parsed)) usize))
+
+(defn next-of (p)
+  (match p
+    ((parsed _ next) next)))
+
+(type node-of (fn ((ref parsed)) (ref tree)))
+
+(defn node-of (p)
+  (match p
+    ((parsed node _) node)))
+
+(defn fields (p)
+  (let-fields (parsed (node _)) p
+    (tree/branch node)))
+
+(defn main ()
+  (prn (wrap (make-parsed tree/leaf 0)))
+  (prn (unwrap (wrapper/wrapped (make-parsed (tree/branch tree/leaf) 1))))
+  (prn (unwrap wrapper/empty))
+  (prn (next-of (make-parsed tree/leaf 2)))
+  (prn (node-of (make-parsed (tree/branch tree/leaf) 4)))
+  (prn (fields (make-parsed (tree/branch (tree/branch tree/leaf)) 3))))

@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_unreachable_struct_arm.rslisp
+---
+warning[L0434]: unreachable `match` arm
+ --> check/match_unreachable_struct_arm.rslisp:6:6
+  |
+5 |     ((range start end) (- end start))
+  |      ----------------- this arm covers it
+6 |     ((range _ end) end)))
+  |      ^^^^^^^^^^^^^ this arm can never match
+
+(derive range clone copy debug partial-eq eq hash)
+(type make-range (fn (i64 i64) range))
+(type range-start (fn ((ref range)) i64))
+(type range-end (fn ((ref range)) i64))
+(type total (fn (range) i64))

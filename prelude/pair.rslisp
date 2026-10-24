@@ -1,6 +1,6 @@
 (use prelude/macros defrule)
 
-(export pair let-pair)
+(export pair let-pair let-fields)
 
 (enum (pair a b) (rust "({0}, {1})") (pair a b))
 
@@ -9,3 +9,7 @@
 (defrule let-pair
   (((first second) value body ...)
    (match value ((pair first second) (do body ...)))))
+
+(defrule let-fields
+  (((type-name (name ...)) value body ...)
+   (match value ((type-name name ...) (do body ...)))))

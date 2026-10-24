@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/struct_patterns.rslisp
+---
+Branch(Leaf)
+Branch(Leaf)
+Leaf
+2
+Branch(Leaf)
+Branch(Branch(Branch(Leaf)))

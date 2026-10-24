@@ -63,6 +63,7 @@ pub enum PatternKind {
         outer: Option<BindingId>,
     },
     Variant(BindingId, Vec<Pattern>),
+    Struct(BindingId, Vec<Pattern>),
     ShortVariant {
         name: Rc<str>,
         candidates: Vec<BindingId>,

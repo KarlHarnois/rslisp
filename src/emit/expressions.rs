@@ -445,19 +445,23 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn sure_pattern(&self, pattern: &TypedPattern) -> bool {
-        let TypedPatternKind::Variant(binding, parts) = &pattern.kind else {
-            return !matches!(pattern.kind, TypedPatternKind::Literal(..));
-        };
-        let BindingKind::Variant(_, VariantInfo { owner, .. }) =
-            self.program.bindings.get(*binding).kind()
-        else {
-            unreachable!("a typed variant pattern names a variant binding");
-        };
-        self.program
-            .enums
-            .get(owner)
-            .is_some_and(|definition| definition.variants.len() == 1)
-            && parts.iter().all(|part| self.sure_pattern(part))
+        match &pattern.kind {
+            TypedPatternKind::Variant(binding, parts) => {
+                let BindingKind::Variant(_, VariantInfo { owner, .. }) =
+                    self.program.bindings.get(*binding).kind()
+                else {
+                    unreachable!("a typed variant pattern names a variant binding");
+                };
+                self.program
+                    .enums
+                    .get(owner)
+                    .is_some_and(|definition| definition.variants.len() == 1)
+                    && parts.iter().all(|part| self.sure_pattern(part))
+            }
+            TypedPatternKind::Struct(_, parts) => parts.iter().all(|part| self.sure_pattern(part)),
+            TypedPatternKind::Literal(..) => false,
+            TypedPatternKind::Wildcard | TypedPatternKind::Bind(_) => true,
+        }
     }
 
     fn sure_arm(&mut self, value: &TypedExpr, arm: &TypedArm) -> Code {
@@ -678,6 +682,9 @@ impl<'a> ExpressionEmitter<'a> {
             TypedPatternKind::Variant(binding, patterns) => {
                 self.variant_shape(*binding, patterns, position, guard_box)
             }
+            TypedPatternKind::Struct(binding, patterns) => {
+                self.struct_shape(*binding, patterns, position, guard_box)
+            }
             TypedPatternKind::Literal(literal, ty) => self.literal_shape(literal, ty),
         }
     }
@@ -766,7 +773,9 @@ impl<'a> ExpressionEmitter<'a> {
         match &pattern.kind {
             TypedPatternKind::Wildcard | TypedPatternKind::Literal(..) => false,
             TypedPatternKind::Bind(_) => true,
-            TypedPatternKind::Variant(_, patterns) => patterns.iter().any(Self::needs_prologue),
+            TypedPatternKind::Variant(_, patterns) | TypedPatternKind::Struct(_, patterns) => {
+                patterns.iter().any(Self::needs_prologue)
+            }
         }
     }
 
@@ -830,6 +839,24 @@ impl<'a> ExpressionEmitter<'a> {
                 PatternShape::plain(code)
             }
         }
+    }
+
+    fn struct_shape(
+        &mut self,
+        binding: BindingId,
+        patterns: &[TypedPattern],
+        position: BoxPosition,
+        guard_box: GuardBox,
+    ) -> PatternShape {
+        let fields = self
+            .program
+            .structs
+            .get(binding)
+            .expect("a reached struct has a definition")
+            .fields
+            .clone();
+        let path = self.types().struct_path(binding);
+        self.named_shape(path, &fields, patterns, position, guard_box)
     }
 
     fn variant_shape(
