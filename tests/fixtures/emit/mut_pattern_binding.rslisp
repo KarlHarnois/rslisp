@@ -1,0 +1,6 @@
+(defn main ()
+  (let holder (pair (vec 1) (vec 2)))
+  (let-pair (left right) holder
+    (push! left 3)
+    (println (len left))
+    (println (len right))))
