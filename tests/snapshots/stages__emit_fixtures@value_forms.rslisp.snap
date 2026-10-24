@@ -41,7 +41,7 @@ fn ends_with_let() {
 }
 
 fn main() {
-    println!("{}", apply_to_four(|argument_0| argument_0.sqrt()));
+    println!("{}", apply_to_four(|argument_0: f64| argument_0.sqrt()));
     println!("{}", apply_to_four(f64::sqrt));
     println!("{}", *ROOT_OF_TWO);
     println!("{}", THREE);

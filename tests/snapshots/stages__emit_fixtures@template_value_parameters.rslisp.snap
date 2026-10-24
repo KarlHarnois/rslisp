@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/template_value_parameters.rslisp
+---
+fn main() {
+    "a1 b2"
+        .split(|argument_0: char| argument_0.is_whitespace())
+        .for_each(|part: &str| println!("{}", part))
+}

@@ -39,7 +39,7 @@ mod prelude {
 
     pub(crate) mod iterator {
         pub fn sum<N: crate::rt::Number>(values: impl Iterator<Item = N>) -> N {
-            values.fold(N::from_literal(0), |argument_0, argument_1| {
+            values.fold(N::from_literal(0), |argument_0: N, argument_1: N| {
                 argument_0 + argument_1
             })
         }
