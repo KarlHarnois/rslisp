@@ -66,7 +66,7 @@ impl Rustfmt {
         let mut input = child.stdin.take().expect("standard input is piped");
         input
             .write_all(source.as_bytes())
-            .map_err(FormattingError::Unavailable)?;
+            .map_err(|error| FormattingError::Failed(error.to_string()))?;
         drop(input);
         let output = child
             .wait_with_output()
