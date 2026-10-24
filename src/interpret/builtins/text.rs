@@ -103,6 +103,20 @@ impl<'a> TextOperations<'a> {
         self.escape(&Self::STRING_BRACES)
     }
 
+    pub fn escape_char(&self) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(1)?;
+        let text = self.arguments.string(0)?;
+        let mut escaped = String::new();
+        for character in text.chars().flat_map(char::escape_debug) {
+            match character {
+                '{' => escaped.push_str("{{"),
+                '}' => escaped.push_str("}}"),
+                _ => escaped.push(character),
+            }
+        }
+        Ok(self.string_value(escaped))
+    }
+
     pub fn escape_format(&self) -> Result<Value, Diagnostic> {
         self.escape(&Self::FORMAT_BRACES)
     }

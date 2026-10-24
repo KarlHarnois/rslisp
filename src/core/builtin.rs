@@ -28,12 +28,13 @@ pub enum Builtin {
     ValueEq,
     BoolNot,
     EscapeString,
+    EscapeChar,
     EscapeFormat,
     StringStripSuffix,
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 30] = [
+    const NAMES: [(Builtin, &'static str); 31] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -62,6 +63,7 @@ impl Builtin {
         (Builtin::ValueEq, "value-eq"),
         (Builtin::BoolNot, "bool-not"),
         (Builtin::EscapeString, "escape-string"),
+        (Builtin::EscapeChar, "escape-char"),
         (Builtin::EscapeFormat, "escape-format"),
         (Builtin::StringStripSuffix, "string-strip-suffix"),
     ];

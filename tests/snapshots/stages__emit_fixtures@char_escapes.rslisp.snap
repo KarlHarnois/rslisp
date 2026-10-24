@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/char_escapes.rslisp
+---
+fn main() {
+    println!("{}", '\n' == ' ');
+    println!("{}", '\t' == '\'');
+    println!("{}", '\\' == '\"');
+    println!("{}", '{' == '}');
+    println!("{}", '\u{1}' == 'a')
+}

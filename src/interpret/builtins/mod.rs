@@ -21,7 +21,7 @@ pub struct BuiltinCall {
 }
 
 impl BuiltinCall {
-    const IMPLEMENTATIONS: [(Builtin, Implementation); 30] = [
+    const IMPLEMENTATIONS: [(Builtin, Implementation); 31] = [
         (Builtin::First, |operations, _| operations.lists.first()),
         (Builtin::Rest, |operations, _| operations.lists.rest()),
         (Builtin::List, |operations, _| operations.lists.list()),
@@ -87,6 +87,9 @@ impl BuiltinCall {
         }),
         (Builtin::EscapeString, |operations, _| {
             operations.text.escape_string()
+        }),
+        (Builtin::EscapeChar, |operations, _| {
+            operations.text.escape_char()
         }),
         (Builtin::EscapeFormat, |operations, _| {
             operations.text.escape_format()

@@ -1,0 +1,6 @@
+(defn main ()
+  (println (= (char "\n") (char " ")))
+  (println (= (char "\t") (char "'")))
+  (println (= (char "\\") (char "\"")))
+  (println (= (char "{") (char "}")))
+  (println (= (char "\u{1}") (char "a"))))
