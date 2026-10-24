@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/main_error.rslisp
+---
+fn main_body() -> Result<i64, std::io::Error> {
+    let text = std::fs::read_to_string("missing.txt")?;
+    println!("{}", text);
+    Ok(0_i64)
+}
+
+fn main() {
+    if let Err(error) = main_body() {
+        eprintln!("{}", error);
+        std::process::exit(1);
+    }
+}

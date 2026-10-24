@@ -1,0 +1,5 @@
+(defn main ()
+  (let-try ((text (slurp "missing.txt")))
+    (do
+      (println text)
+      (ok 0))))

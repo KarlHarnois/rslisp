@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/missing_file.rslisp
+---
+cannot read: No such file or directory (os error 2)

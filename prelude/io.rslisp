@@ -1,0 +1,25 @@
+(use prelude/types vec option result)
+
+(export io-error slurp slurp-stdin read-line command-line-args exit)
+
+(rust-type io-error "std::io::Error")
+
+(def slurp
+  (rust "std::fs::read_to_string({0})"
+        (fn ((ref str)) (result string io-error))))
+
+(def slurp-stdin
+  (rust "std::io::read_to_string(std::io::stdin())"
+        (fn () (result string io-error))))
+
+(def read-line
+  (rust "crate::rt::read_line()"
+        (fn () (result (option string) io-error))))
+
+(def command-line-args
+  (rust "std::env::args().skip(1).collect::<Vec<String>>()"
+        (fn () (vec string))))
+
+(def exit
+  (rust "std::process::exit({0})"
+        (fn (i32) unit)))

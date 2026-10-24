@@ -200,6 +200,21 @@ pub struct TypedDefinition {
     pub span: Span,
 }
 
+impl TypedDefinition {
+    pub fn result_error(&self, rust_types: &RustTypeTable) -> Option<&Type> {
+        let Type::Function(_, result) = &self.value.ty else {
+            return None;
+        };
+        let Type::Named(binding, arguments) = result.as_ref() else {
+            return None;
+        };
+        if !rust_types.is_result(*binding) || arguments.len() != 2 {
+            return None;
+        }
+        Some(&arguments[1])
+    }
+}
+
 pub struct TypedModule {
     pub id: ModuleId,
     pub path: ModulePath,

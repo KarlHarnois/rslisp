@@ -1,0 +1,11 @@
+(defn main ()
+  (match (read-line)
+    ((ok line)
+     (match line
+       ((some text) (println text))
+       (none (println "end"))))
+    ((err error) (println error)))
+  (match (slurp-stdin)
+    ((ok text) (println (count (lines (as-str text)))))
+    ((err error) (println error)))
+  (exit 0))

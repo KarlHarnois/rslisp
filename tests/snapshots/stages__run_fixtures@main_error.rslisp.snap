@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/main_error.rslisp
+---
+stderr:
+No such file or directory (os error 2)
+exit code: 1

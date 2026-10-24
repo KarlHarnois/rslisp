@@ -139,6 +139,13 @@ impl<'a> ItemEmitter<'a> {
             info.name.clone(),
             self.program.bindings.get(binding).name().to_string(),
         ));
+        if self.plan.is_result_main(binding) {
+            let definition = self
+                .plan
+                .definition(binding)
+                .expect("a planned main has a definition");
+            return self.result_main(definition, info);
+        }
         match (info.kind, self.plan.definition(binding)) {
             (ItemKind::Struct, _) => self.structure(binding, info),
             (ItemKind::Enum, _) => self.enumeration(binding, info),
@@ -374,6 +381,40 @@ impl<'a> ItemEmitter<'a> {
             vec![
                 Fragment::Text(format!("fn {name}({}){result} {{", params.join(", "))),
                 Fragment::Indented(body),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ],
+        )]
+    }
+
+    fn result_main(&mut self, definition: &TypedDefinition, info: &ItemInfo) -> Vec<Fragment> {
+        let mut fragments = self.function(definition, info);
+        fragments.extend([Fragment::Newline, Fragment::Newline]);
+        fragments.extend(self.main_wrapper(definition.span));
+        fragments
+    }
+
+    fn main_wrapper(&self, span: Span) -> Vec<Fragment> {
+        let body = self
+            .plan
+            .main_body_name()
+            .expect("a result main has a body name");
+        vec![Fragment::Spanned(
+            span,
+            vec![
+                Fragment::Text("fn main() {".to_string()),
+                Fragment::Indented(vec![
+                    Fragment::Newline,
+                    Fragment::Text(format!("if let Err(error) = {body}() {{")),
+                    Fragment::Indented(vec![
+                        Fragment::Newline,
+                        Fragment::Text("eprintln!(\"{}\", error);".to_string()),
+                        Fragment::Newline,
+                        Fragment::Text("std::process::exit(1);".to_string()),
+                    ]),
+                    Fragment::Newline,
+                    Fragment::Text("}".to_string()),
+                ]),
                 Fragment::Newline,
                 Fragment::Text("}".to_string()),
             ],

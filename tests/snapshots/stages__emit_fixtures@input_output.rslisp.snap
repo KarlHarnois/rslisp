@@ -1,0 +1,38 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/input_output.rslisp
+---
+fn main() {
+    match crate::rt::read_line() {
+        Result::Ok(line) => match line {
+            Option::Some(text) => println!("{}", text),
+            Option::None => println!("end"),
+        },
+        Result::Err(error) => println!("{}", error),
+    }
+    match std::io::read_to_string(std::io::stdin()) {
+        Result::Ok(text) => println!("{}", text.as_str().lines().count()),
+        Result::Err(error) => println!("{}", error),
+    }
+    std::process::exit(0_i32)
+}
+
+mod rt {
+    pub fn read_line() -> std::io::Result<Option<String>> {
+        let mut line = String::new();
+        match std::io::stdin().read_line(&mut line) {
+            Ok(0) => Ok(None),
+            Ok(_) => {
+                if line.ends_with('\n') {
+                    line.pop();
+                }
+                if line.ends_with('\r') {
+                    line.pop();
+                }
+                Ok(Some(line))
+            }
+            Err(error) => Err(error),
+        }
+    }
+}

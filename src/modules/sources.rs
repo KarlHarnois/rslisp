@@ -25,7 +25,7 @@ impl ModuleSources {
     pub const CODE: &str = "code";
     pub const PRELUDE: &str = "prelude";
     const PRELUDE_DIRECTORY: &str = "prelude/";
-    const PRELUDE_FILES: [(&str, &str); 15] = [
+    const PRELUDE_FILES: [(&str, &str); 16] = [
         ("prelude", include_str!("../../prelude/prelude.rslisp")),
         (
             "prelude/macros",
@@ -65,6 +65,7 @@ impl ModuleSources {
             "prelude/result",
             include_str!("../../prelude/result.rslisp"),
         ),
+        ("prelude/io", include_str!("../../prelude/io.rslisp")),
     ];
 
     pub fn new(root: PathBuf, display_root: PathBuf) -> Self {
