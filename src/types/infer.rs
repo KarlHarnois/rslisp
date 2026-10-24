@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use super::checker::{TypeChecker, VariantArmReference};
-use super::collection::Collection;
+use super::collection::{Collection, CollectionKind};
 use super::pending::{DecidedBorrows, PendingBorrow};
 use super::problems::{MismatchContext, TypeProblems};
 use super::rust_types::RustType;
@@ -2018,19 +2018,26 @@ impl TypeChecker {
     }
 
     fn check_map_key(&mut self, collection: &Collection, span: Span) {
-        let binding = self
-            .traits
-            .with_paths(&["Ord"])
-            .first()
-            .copied()
-            .expect("the prelude defines ord");
+        let paths: &[&str] = if collection.kind() == CollectionKind::SortedMap {
+            &["Ord"]
+        } else {
+            &["std::hash::Hash", "Eq"]
+        };
         let key = self.unifier.resolve(collection.key());
-        if key.has_vars() || matches!(key, Type::Generic(_)) {
+        if key.is_unknown() {
             return;
         }
-        let bound = Bound::plain(binding);
-        if !self.traits.satisfies(&bound, &key, &|_, _| false) {
-            self.report_missing_trait(&bound, &key, span);
+        for path in paths {
+            let binding = self
+                .traits
+                .with_paths(&[path])
+                .first()
+                .copied()
+                .expect("the prelude defines the map key traits");
+            let bound = Bound::plain(binding);
+            if !self.traits.satisfies(&bound, &key, &|_, _| false) {
+                self.report_missing_trait(&bound, &key, span);
+            }
         }
     }
 
@@ -2072,12 +2079,8 @@ impl TypeChecker {
 
     fn check_borrow(&mut self, collection: &Collection, query: &Type, span: Span) {
         let key = self.unifier.resolve(collection.key());
-        let query = self.unifier.resolve(query);
-        if key.has_vars()
-            || query.has_vars()
-            || matches!(key, Type::Generic(_))
-            || matches!(query, Type::Generic(_))
-        {
+        let query = self.unifier.resolve(query).without_reference();
+        if key.is_unknown() || query.is_unknown() {
             return;
         }
         let binding = self

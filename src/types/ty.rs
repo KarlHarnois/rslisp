@@ -61,6 +61,17 @@ impl Type {
         self.any_part(&|part| *part == Type::Var(var))
     }
 
+    pub fn is_unknown(&self) -> bool {
+        self.has_vars() || matches!(self, Self::Generic(_))
+    }
+
+    pub fn without_reference(self) -> Self {
+        match self {
+            Self::Ref(inner) | Self::Mut(inner) => *inner,
+            other => other,
+        }
+    }
+
     pub fn has_vars(&self) -> bool {
         self.any_part(&|part| matches!(part, Type::Var(_)))
     }

@@ -33,7 +33,9 @@ impl RuntimePart {
             .map(|(_, marker)| *marker)
             .expect("every runtime part has a marker");
         if self == Self::MapSequence {
-            code.contains(marker) && code.contains("crate::rt::Sequence")
+            (code.contains("std::collections::BTreeMap")
+                || code.contains("std::collections::HashMap"))
+                && code.contains("crate::rt::Sequence")
         } else {
             code.contains(marker)
         }

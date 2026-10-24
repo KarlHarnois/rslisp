@@ -6,6 +6,7 @@ use crate::core::PrimitiveType;
 pub enum CollectionKind {
     Vector,
     SortedMap,
+    HashMap,
 }
 
 pub struct Collection {
@@ -31,12 +32,17 @@ impl Collection {
                 value: value.clone(),
             });
         }
-        if rust_types.is_sorted_map(*binding) {
+        if rust_types.is_sorted_map(*binding) || rust_types.is_hash_map(*binding) {
             let [key, value] = arguments.as_slice() else {
                 return None;
             };
+            let kind = if rust_types.is_sorted_map(*binding) {
+                CollectionKind::SortedMap
+            } else {
+                CollectionKind::HashMap
+            };
             return Some(Self {
-                kind: CollectionKind::SortedMap,
+                kind,
                 ty: ty.clone(),
                 key: key.clone(),
                 value: value.clone(),
@@ -62,6 +68,9 @@ impl Collection {
     }
 
     pub fn is_map(&self) -> bool {
-        self.kind == CollectionKind::SortedMap
+        matches!(
+            self.kind,
+            CollectionKind::SortedMap | CollectionKind::HashMap
+        )
     }
 }

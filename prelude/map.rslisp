@@ -1,14 +1,15 @@
 (use code list prepend string length empty? number-add number-lt)
 (use prelude/macros defmacro defrule)
-(use prelude/types vec sorted-map)
+(use prelude/types vec sorted-map hash-map)
 (use prelude/pair pair)
-(use prelude/number ord)
+(use prelude/number ord hash eq)
 
-(export sorted-map lookup keys vals entries update into-sorted-map)
+(export sorted-map hash-map lookup keys vals entries update into-sorted-map into-hash-map)
 
 (rust-trait borrow "std::borrow::Borrow"
   bool char (ref str) string i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
-  (with string str))
+  (with string str)
+  (with (ref str) str))
 
 (def map-inserts
   (fn (index count)
@@ -51,10 +52,18 @@
 (defmacro sorted-map (pairs ...)
   (map-form "std::collections::BTreeMap" (quote sorted-map) (quote (ord)) pairs))
 
+(defmacro hash-map (pairs ...)
+  (map-form "std::collections::HashMap" (quote hash-map) (quote (hash eq)) pairs))
+
 (def into-sorted-map
   (rust "{0}.into_iter().collect::<std::collections::BTreeMap<_, _>>()"
         (where ((key ord) (value))
           (fn ((vec (pair key value))) (sorted-map key value)))))
+
+(def into-hash-map
+  (rust "{0}.into_iter().collect::<std::collections::HashMap<_, _>>()"
+        (where ((key hash eq) (value))
+          (fn ((vec (pair key value))) (hash-map key value)))))
 
 (defrule lookup
   ((m key) (map-at lookup m key)))
