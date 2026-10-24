@@ -49,6 +49,7 @@ impl UpdateArgument {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum ArgumentRole {
     Receiver,
+    IndexReceiver,
     Borrowed,
     MutPlace,
     Ordinary,
@@ -152,8 +153,10 @@ impl ArgumentRole {
     fn borrows_by_itself(self, borrow: Borrow) -> bool {
         matches!(
             (self, borrow),
-            (ArgumentRole::Receiver, Borrow::Shared | Borrow::Mutable)
-                | (ArgumentRole::Borrowed, Borrow::Shared)
+            (
+                ArgumentRole::Receiver | ArgumentRole::IndexReceiver,
+                Borrow::Shared | Borrow::Mutable,
+            ) | (ArgumentRole::Borrowed, Borrow::Shared)
         )
     }
 }
@@ -389,7 +392,13 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn deref(&mut self, value: &TypedExpr) -> Code {
-        Self::prefixed("*", self.expr_in(value, TypeContext::Known))
+        match &value.kind {
+            TypedExprKind::Borrow(_, place) => self.place(place, TypeContext::Known),
+            TypedExprKind::Call(callee, _) if self.borrowed_index_template(callee).is_some() => {
+                self.place(value, TypeContext::Known)
+            }
+            _ => Self::prefixed("*", self.expr_in(value, TypeContext::Known)),
+        }
     }
 
     fn place(&mut self, value: &TypedExpr, context: TypeContext) -> Code {
@@ -397,8 +406,28 @@ impl<'a> ExpressionEmitter<'a> {
             TypedExprKind::Struct(TypedStructExpr::Field(owner, label)) => {
                 self.field_place(owner, label)
             }
+            TypedExprKind::Borrow(ReferenceKind::Shared, inner) => self.place(inner, context),
+            TypedExprKind::Call(callee, arguments) => match self.borrowed_index_template(callee) {
+                Some(template) => {
+                    let types = self.callee_type_arguments(callee);
+                    self.template_call(&template, arguments, types, value.span)
+                }
+                None => self.expr_in(value, context),
+            },
             _ => self.expr_in(value, context),
         }
+    }
+
+    fn borrowed_index_template(&self, callee: &TypedExpr) -> Option<RustTemplate> {
+        let template = self.called_template(callee)?;
+        let place = template.template.strip_prefix('&')?;
+        if !ParsedTemplate::parse(place).ok()?.indexes(0) {
+            return None;
+        }
+        Some(RustTemplate {
+            template: Rc::from(place),
+            type_expr: template.type_expr.clone(),
+        })
     }
 
     fn control(&mut self, control: &TypedControl) -> Code {
@@ -1806,8 +1835,13 @@ impl<'a> ExpressionEmitter<'a> {
         position: usize,
         argument: &TypedArgument,
     ) -> ArgumentRole {
-        if Self::is_receiver(template, parsed, position) {
+        if position == 0
+            && (template.template.starts_with(Self::RECEIVER)
+                || template.template.starts_with(Self::DEREF_RECEIVER))
+        {
             ArgumentRole::Receiver
+        } else if parsed.indexes(position) {
+            ArgumentRole::IndexReceiver
         } else if Self::is_mut_place(parsed, position, argument) {
             ArgumentRole::MutPlace
         } else if parsed.borrows(position) {
@@ -1815,13 +1849,6 @@ impl<'a> ExpressionEmitter<'a> {
         } else {
             ArgumentRole::Ordinary
         }
-    }
-
-    fn is_receiver(template: &RustTemplate, parsed: &Template, position: usize) -> bool {
-        (position == 0
-            && (template.template.starts_with(Self::RECEIVER)
-                || template.template.starts_with(Self::DEREF_RECEIVER)))
-            || parsed.indexes(position)
     }
 
     fn is_mut_place(parsed: &Template, position: usize, argument: &TypedArgument) -> bool {
@@ -1844,6 +1871,11 @@ impl<'a> ExpressionEmitter<'a> {
         context: TypeContext,
         role: ArgumentRole,
     ) -> Code {
+        if argument.borrow == Borrow::Deref(1) && self.is_borrowed_index_call(&argument.value) {
+            return self
+                .place(&argument.value, context)
+                .spanned(argument.value.span);
+        }
         let value = self
             .argument_value(&argument.value, context, role)
             .spanned(argument.value.span);
@@ -1868,6 +1900,7 @@ impl<'a> ExpressionEmitter<'a> {
             (TypedExprKind::Struct(TypedStructExpr::Field(owner, label)), _) => {
                 self.field_place(owner, label)
             }
+            (_, ArgumentRole::IndexReceiver) => self.place(value, context),
             (TypedExprKind::Borrow(ReferenceKind::Mutable, place), ArgumentRole::MutPlace) => {
                 self.place(place, TypeContext::Known)
             }
@@ -1878,6 +1911,10 @@ impl<'a> ExpressionEmitter<'a> {
             }
             _ => self.expr_in(value, context),
         }
+    }
+
+    fn is_borrowed_index_call(&self, value: &TypedExpr) -> bool {
+        matches!(&value.kind, TypedExprKind::Call(callee, _) if self.borrowed_index_template(callee).is_some())
     }
 
     fn is_static(&self, binding: BindingId) -> bool {

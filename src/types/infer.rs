@@ -310,9 +310,15 @@ impl TypeChecker {
         let mut typed_arms = Vec::new();
         let mut result: Option<Type> = None;
         for arm in arms {
-            let (typed_arm, body_type) = self.infer_arm(arm, &pattern_type, expected)?;
+            let (mut typed_arm, body_type) = self.infer_arm(arm, &pattern_type, expected)?;
             let span = Self::block_result_span(&typed_arm.body).unwrap_or(typed_arm.span);
-            self.record_arm_result(&mut result, &body_type, span)?;
+            self.record_arm_result(
+                &mut result,
+                &mut typed_arms,
+                &mut typed_arm,
+                &body_type,
+                span,
+            )?;
             typed_arms.push(typed_arm);
         }
         self.check_match_coverage(span, &value.ty, &typed_arms);
@@ -354,16 +360,61 @@ impl TypeChecker {
     fn record_arm_result(
         &mut self,
         result: &mut Option<Type>,
+        earlier: &mut [TypedArm],
+        arm: &mut TypedArm,
         body_type: &Type,
         span: Span,
     ) -> Result<(), Diagnostic> {
-        match result {
-            Some(first) => self.expect(first, body_type, span, MismatchContext::Plain),
-            None => {
-                *result = Some(body_type.clone());
-                Ok(())
+        let Some(first) = result.clone() else {
+            *result = Some(body_type.clone());
+            return Ok(());
+        };
+        if let Some(target) = self.copy_target(&first, body_type, span) {
+            for earlier_arm in earlier.iter_mut() {
+                self.copy_arm_out(earlier_arm, &target);
             }
+            *result = Some(target);
+            return Ok(());
         }
+        if let Some(target) = self.copy_target(body_type, &first, span) {
+            self.copy_arm_out(arm, &target);
+            *result = Some(target);
+            return Ok(());
+        }
+        self.expect(&first, body_type, span, MismatchContext::Plain)
+    }
+
+    fn copy_target(&mut self, reference: &Type, value: &Type, span: Span) -> Option<Type> {
+        let Type::Ref(inner) = self.unifier.resolve(reference) else {
+            return None;
+        };
+        let value = self.unifier.resolve(value);
+        let literal = self.is_literal(&value);
+        if !literal && !self.copy_rules().is_small_copy(&value) {
+            return None;
+        }
+        self.unifier.unify(inner.as_ref(), &value, span).ok()?;
+        if literal && matches!(inner.as_ref(), Type::Var(_)) {
+            return Some(value);
+        }
+        let target = self.unifier.resolve(&value);
+        self.copy_rules().is_small_copy(&target).then_some(target)
+    }
+
+    fn is_literal(&self, value: &Type) -> bool {
+        matches!(value, Type::Var(var) if self.unifier.literal_kind(*var).is_some())
+    }
+
+    fn copy_arm_out(&self, arm: &mut TypedArm, expected: &Type) {
+        let Some(TypedBodyItem::Expr(value)) = arm.body.items.last_mut() else {
+            return;
+        };
+        let span = value.span;
+        *value = TypedExpr {
+            kind: TypedExprKind::Deref(Box::new(value.clone())),
+            ty: expected.clone(),
+            span,
+        };
     }
 
     fn bind_match_enum(

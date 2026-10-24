@@ -1,0 +1,40 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/element_borrows.rslisp
+---
+fn flip(flag: bool) -> bool {
+    !flag
+}
+
+fn main() {
+    let mut grid = vec![vec![true, false], vec![false, true]];
+    let row = &grid[1];
+    println!("{}", &row[0]);
+    println!("{}", &grid[1][0]);
+    println!("{}", flip(grid[1][0]));
+    let mut rows = vec![vec!["alpha".to_string()], vec!["beta".to_string()]];
+    let last_row = &rows[1];
+    let word = &last_row[0];
+    println!("{}", word);
+    println!("{}", &vec![5_i64, 6_i64][0]);
+    println!(
+        "{}",
+        match grid.get(1) {
+            Option::None => false,
+            Option::Some(row_2) => row_2[0],
+        }
+    );
+    let three: i64 = 3;
+    println!("{}", three);
+    let numbers: Vec<i64> = vec![4_i64, 5_i64];
+    println!(
+        "{}",
+        match numbers.get(1) {
+            Option::Some(_) => numbers[1],
+            Option::None => 0,
+        }
+    );
+    grid.push(vec![true, true]);
+    rows.push(vec!["gamma".to_string()])
+}
