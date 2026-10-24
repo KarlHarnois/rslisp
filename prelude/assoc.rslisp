@@ -1,0 +1,13 @@
+(use prelude/macros defrule)
+
+(export assoc assoc-in)
+
+(defrule assoc
+  ((value (field expression) more ...)
+   (new _ value (field expression) more ...))
+  ((value key item)
+   (assoc-at value (key) item)))
+
+(defrule assoc-in
+  ((value (key ...) item)
+   (assoc-at value (key ...) item)))

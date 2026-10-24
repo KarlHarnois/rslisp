@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/assoc.rslisp
+---
+(struct point (x i64) (y i64))
+(def make-point (fn (x y) (new point (x x) (y y))))
+(type point-x (fn ((ref point)) _))
+(def point-x (fn (instance) (field instance x)))
+(type point-y (fn ((ref point)) _))
+(def point-y (fn (instance_2) (field instance_2 y)))
+(def bump (fn (p) (new _ p (x 1))))
+(def main (fn () (let grid ((rust "vec![{0}, {1}, {2}]" (where (item) (fn (item item item) (vec item)))) 1 2 3)) (let next (assoc-at grid (1) 9)) (let rows ((rust "vec![{0}, {1}]" (where (item_2) (fn (item_2 item_2) (vec item_2)))) ((rust "vec![{0}, {1}]" (where (item_3) (fn (item_3 item_3) (vec item_3)))) 1 2) ((rust "vec![{0}, {1}]" (where (item_4) (fn (item_4 item_4) (vec item_4)))) 3 4))) (let changed (assoc-at rows (1 0) 9)) ((rust "println!(\"{{}}{{}}{{}}\", {&0}, {&1}, {&2})" (where ((part-type-0 display) (part-type-1 display) (part-type-2 display)) (fn ((ref part-type-0) (ref part-type-1) (ref part-type-2)) unit))) (point-x (bump (make-point 1 2))) (at next 0) (len changed))))

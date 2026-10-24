@@ -1,0 +1,4 @@
+(defn main ()
+  (let grid (vec 1 2))
+  (let next (assoc grid 0 3))
+  (println (at next 0) " " (at grid 0)))

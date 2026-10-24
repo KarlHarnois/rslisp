@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/assoc_in_macro.rslisp
+---
+error[L0316]: collection updates only exist at runtime
+ --> check/assoc_in_macro.rslisp:4:3
+  |
+4 |   (assoc (quote (1 2)) 0 form))
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ used at compile time here

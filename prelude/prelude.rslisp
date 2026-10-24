@@ -3,6 +3,7 @@
 (use prelude/syntax defn the -> ->> try-> let-try loop)
 (use prelude/types vec option result iterator slice sequence box box-new)
 (use prelude/pair pair let-pair let-fields)
+(use prelude/assoc assoc assoc-in)
 (use prelude/vec vec push! len iter values collect
                get pop! sort! sort-by-key! windows at dedup!)
 (use prelude/iterator range map filter fold for-each enumerate zip
@@ -20,7 +21,7 @@
 (use prelude/place set!)
 
 (export fn def let do if type struct enum derive match new field quote macro rust rust-trait rust-type trait impl use export recur try
-        ref mut deref where with _
+        ref mut deref where with _ assoc-at
         bool char str string unit
         i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
         defmacro defrule template
@@ -34,7 +35,7 @@
         defstruct
         clone copy set!
         io-error slurp slurp-stdin read-line command-line-args exit
-        pair let-pair let-fields
+        pair let-pair let-fields assoc assoc-in
         vec option result iterator slice sequence box box-new push! len iter values collect
         get pop! sort! sort-by-key! windows at dedup!
         range map filter fold for-each enumerate zip

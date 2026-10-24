@@ -212,6 +212,7 @@ impl Expander<'_> {
             ExpressionForm::Control(form) => self.lower_control_form(form, shape),
             ExpressionForm::Struct(form) => self.lower_struct_form(form, shape),
             ExpressionForm::Match => self.lower_match(shape),
+            ExpressionForm::Assoc => self.lower_assoc(shape),
             _ => unreachable!("the caller matches a simple expression form"),
         }
     }
@@ -363,6 +364,24 @@ impl Expander<'_> {
 
     fn lower_new(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
         let items = shape.at_least(2)?;
+        if items[1]
+            .as_symbol()
+            .is_some_and(|symbol| symbol.name() == "_")
+        {
+            return self.lower_new_update(shape);
+        }
+        self.lower_new_construction(shape)
+    }
+
+    fn lower_new_update(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let items = shape.at_least(3)?;
+        let base = self.lower_expr(&items[2])?;
+        let fields = self.lower_fields(shape, &items[3..])?;
+        Ok(ExprKind::Struct(StructExpr::Update(Box::new(base), fields)))
+    }
+
+    fn lower_new_construction(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let items = shape.at_least(2)?;
         let name = shape.symbol(&items[1])?;
         let binding = self.resolve(name, Namespace::Type, items[1].span())?;
         if !matches!(self.kind(binding), BindingKind::Struct(_)) {
@@ -372,11 +391,31 @@ impl Expander<'_> {
                 items[1].span(),
             ));
         }
-        let fields = items[2..]
+        let fields = self.lower_fields(shape, &items[2..])?;
+        Ok(ExprKind::Struct(StructExpr::New(binding, fields)))
+    }
+
+    fn lower_fields(
+        &mut self,
+        shape: &Shape,
+        fields: &[Form],
+    ) -> Result<Vec<(FieldLabel, Expr)>, Diagnostic> {
+        fields
             .iter()
             .map(|field| self.lower_field_value(shape, field))
+            .collect()
+    }
+
+    fn lower_assoc(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let items = shape.exactly(4)?;
+        let value = self.lower_expr(&items[1])?;
+        let keys = shape
+            .list(&items[2])?
+            .iter()
+            .map(|key| self.lower_expr(key))
             .collect::<Result<Vec<_>, Diagnostic>>()?;
-        Ok(ExprKind::Struct(StructExpr::New(binding, fields)))
+        let item = self.lower_expr(&items[3])?;
+        Ok(ExprKind::Assoc(Box::new(value), keys, Box::new(item)))
     }
 
     fn lower_field_value(

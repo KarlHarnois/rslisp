@@ -135,6 +135,15 @@ impl<'a> CorePrinter<'a> {
 
     fn nested_expr(&mut self, kind: &ExprKind) -> String {
         match kind {
+            ExprKind::Struct(structure) => self.structure(structure),
+            ExprKind::Variant(binding, arguments) => self.variant(*binding, arguments),
+            ExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item),
+            _ => self.written_or_recur(kind),
+        }
+    }
+
+    fn written_or_recur(&mut self, kind: &ExprKind) -> String {
+        match kind {
             ExprKind::Recur(arguments) => Self::list(
                 "recur",
                 arguments
@@ -144,10 +153,20 @@ impl<'a> CorePrinter<'a> {
             ),
             ExprKind::Try(value) => Self::list("try", vec![self.expr(value)]),
             ExprKind::Borrow(..) | ExprKind::Deref(..) => self.written(kind),
-            ExprKind::Struct(structure) => self.structure(structure),
-            ExprKind::Variant(binding, arguments) => self.variant(*binding, arguments),
-            _ => unreachable!("the caller matches a nested expression"),
+            _ => unreachable!("the caller matches a written or recurring expression"),
         }
+    }
+
+    fn assoc(&mut self, value: &Expr, keys: &[Expr], item: &Expr) -> String {
+        let keys: Vec<String> = keys.iter().map(|key| self.expr(key)).collect();
+        Self::list(
+            "assoc-at",
+            vec![
+                self.expr(value),
+                format!("({})", keys.join(" ")),
+                self.expr(item),
+            ],
+        )
     }
 
     fn written(&mut self, kind: &ExprKind) -> String {
@@ -239,6 +258,15 @@ impl<'a> CorePrinter<'a> {
         match structure {
             StructExpr::New(binding, fields) => {
                 let mut parts = vec![self.name(*binding)];
+                parts.extend(
+                    fields
+                        .iter()
+                        .map(|(label, value)| format!("({} {})", label.name, self.expr(value))),
+                );
+                Self::list("new", parts)
+            }
+            StructExpr::Update(base, fields) => {
+                let mut parts = vec!["_".to_string(), self.expr(base)];
                 parts.extend(
                     fields
                         .iter()

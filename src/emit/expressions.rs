@@ -340,6 +340,7 @@ impl<'a> ExpressionEmitter<'a> {
             TypedExprKind::Control(control) => self.control(control),
             TypedExprKind::Struct(structure) => self.structure(structure, &expr.ty),
             TypedExprKind::Variant(binding, arguments) => self.variant(*binding, arguments),
+            TypedExprKind::Assoc(value, keys, item) => self.assoc_block(value, keys, item),
             _ => unreachable!("the caller matches a value form"),
         }
     }
@@ -1153,8 +1154,67 @@ impl<'a> ExpressionEmitter<'a> {
     fn structure(&mut self, structure: &TypedStructExpr, ty: &Type) -> Code {
         match structure {
             TypedStructExpr::New(binding, fields) => self.construction(*binding, fields),
+            TypedStructExpr::Update(binding, base, fields) => self.update(*binding, base, fields),
             TypedStructExpr::Field(value, label) => self.field_access(value, label, ty),
         }
+    }
+
+    fn assoc_block(&mut self, value: &TypedExpr, keys: &[TypedExpr], item: &TypedExpr) -> Code {
+        self.locals.enter();
+        let name = self.assoc_name(value);
+        let inner = self.assoc_assignment(&name, value, keys, item);
+        self.locals.leave();
+        Code {
+            fragments: vec![
+                Fragment::Text("{".to_string()),
+                Fragment::Indented(inner),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ],
+            precedence: Precedence::Block,
+        }
+    }
+
+    fn assoc_name(&mut self, value: &TypedExpr) -> String {
+        match &value.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self
+                .locals
+                .get(*binding)
+                .map(str::to_string)
+                .unwrap_or_else(|| self.locals.temporary("value")),
+            _ => self.locals.temporary("value"),
+        }
+    }
+
+    fn assoc_assignment(
+        &mut self,
+        name: &str,
+        value: &TypedExpr,
+        keys: &[TypedExpr],
+        item: &TypedExpr,
+    ) -> Vec<Fragment> {
+        let value_code = self.expr(value);
+        let key_codes: Vec<Code> = keys.iter().map(|key| self.expr(key)).collect();
+        let item_code = self.expr(item);
+        let mut inner = vec![
+            Fragment::Newline,
+            Fragment::Text(format!("let mut {name} = ")),
+        ];
+        inner.extend(value_code.fragments);
+        inner.push(Fragment::Text(";".to_string()));
+        inner.push(Fragment::Newline);
+        inner.push(Fragment::Text(name.to_string()));
+        for key in key_codes {
+            inner.push(Fragment::Text("[".to_string()));
+            inner.extend(key.fragments);
+            inner.push(Fragment::Text("]".to_string()));
+        }
+        inner.push(Fragment::Text(" = ".to_string()));
+        inner.extend(item_code.fragments);
+        inner.push(Fragment::Text(";".to_string()));
+        inner.push(Fragment::Newline);
+        inner.push(Fragment::Text(name.to_string()));
+        inner
     }
 
     fn statement(&mut self, item: &TypedBodyItem, is_tail: bool) -> Code {
@@ -1958,6 +2018,33 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn is_empty_block(expr: &TypedExpr) -> bool {
         matches!(&expr.kind, TypedExprKind::Control(TypedControl::Block(block)) if block.items.is_empty())
+    }
+
+    fn update(
+        &mut self,
+        binding: BindingId,
+        base: &TypedExpr,
+        fields: &[(FieldLabel, TypedExpr)],
+    ) -> Code {
+        let path = self.types().struct_path(binding);
+        let mut parts = vec![Code::atom(format!("{path} {{ "))];
+        for (position, (label, value)) in fields.iter().enumerate() {
+            if position > 0 {
+                parts.push(Code::atom(", "));
+            }
+            let field = NameMangler::value(&label.name);
+            let value = self.expr(value);
+            if value.text() == field {
+                parts.push(value);
+            } else {
+                parts.push(Code::atom(format!("{field}: ")));
+                parts.push(value);
+            }
+        }
+        parts.push(Code::atom(", .."));
+        parts.push(self.expr(base));
+        parts.push(Code::atom(" }"));
+        Code::joined(parts, Precedence::Atom)
     }
 
     fn construction(&mut self, binding: BindingId, fields: &[(FieldLabel, TypedExpr)]) -> Code {

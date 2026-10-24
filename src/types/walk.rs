@@ -86,6 +86,10 @@ impl TypedExprKind {
             | TypedExprKind::Deref(value) => vec![value],
             TypedExprKind::Struct(structure) => structure.children(),
             TypedExprKind::Variant(_, arguments) => arguments.iter().collect(),
+            TypedExprKind::Assoc(value, keys, item) => std::iter::once(value.as_ref())
+                .chain(keys)
+                .chain(std::iter::once(item.as_ref()))
+                .collect(),
             _ => Vec::new(),
         }
     }
@@ -101,6 +105,10 @@ impl TypedExprKind {
             | TypedExprKind::Deref(value) => vec![value],
             TypedExprKind::Struct(structure) => structure.children_mut(),
             TypedExprKind::Variant(_, arguments) => arguments.iter_mut().collect(),
+            TypedExprKind::Assoc(value, keys, item) => std::iter::once(value.as_mut())
+                .chain(keys.iter_mut())
+                .chain(std::iter::once(item.as_mut()))
+                .collect(),
             _ => Vec::new(),
         }
     }
@@ -138,14 +146,18 @@ impl TypedControl {
 impl TypedStructExpr {
     fn children(&self) -> Vec<&TypedExpr> {
         match self {
-            TypedStructExpr::New(_, fields) => fields.iter().map(|(_, value)| value).collect(),
+            TypedStructExpr::New(_, fields) | TypedStructExpr::Update(_, _, fields) => {
+                fields.iter().map(|(_, value)| value).collect()
+            }
             TypedStructExpr::Field(value, _) => vec![value],
         }
     }
 
     fn children_mut(&mut self) -> Vec<&mut TypedExpr> {
         match self {
-            TypedStructExpr::New(_, fields) => fields.iter_mut().map(|(_, value)| value).collect(),
+            TypedStructExpr::New(_, fields) | TypedStructExpr::Update(_, _, fields) => {
+                fields.iter_mut().map(|(_, value)| value).collect()
+            }
             TypedStructExpr::Field(value, _) => vec![value.as_mut()],
         }
     }

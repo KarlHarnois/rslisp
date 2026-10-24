@@ -6,6 +6,7 @@ use std::rc::Rc;
 use super::checker::{TypeChecker, VariantArmReference};
 use super::pending::{DecidedBorrows, PendingBorrow};
 use super::problems::{MismatchContext, TypeProblems};
+use super::rust_types::RustType;
 use super::ty::Type;
 use super::ty::TypeVar;
 use super::typed::{
@@ -98,8 +99,15 @@ impl TypeChecker {
             ExprKind::Recur(arguments) => self.infer_recur(arguments, span),
             ExprKind::Try(value) => self.infer_try(value, span),
             ExprKind::Borrow(..) | ExprKind::Deref(..) => self.infer_written(expr, span),
+            _ => self.infer_composite(kind, span),
+        }
+    }
+
+    fn infer_composite(&mut self, kind: &ExprKind, span: Span) -> Result<TypedExpr, Diagnostic> {
+        match kind {
             ExprKind::Struct(structure) => self.infer_struct(structure, span),
             ExprKind::Variant(binding, arguments) => self.infer_variant(*binding, arguments, span),
+            ExprKind::Assoc(value, keys, item) => self.infer_assoc(value, keys, item, span),
             _ => unreachable!("the caller matches a nested expression"),
         }
     }
@@ -209,6 +217,9 @@ impl TypeChecker {
         match structure {
             StructExpr::New(binding, fields) => {
                 Self::typed(self.infer_new(*binding, fields, span), span)
+            }
+            StructExpr::Update(base, fields) => {
+                Self::typed(self.infer_update(base, fields, span), span)
             }
             StructExpr::Field(value, label) => self.infer_field(value, label, span),
         }
@@ -1863,11 +1874,150 @@ impl TypeChecker {
     ) -> Result<(TypedExprKind, Type), Diagnostic> {
         let struct_name = self.bindings.get(binding).name().to_string();
         let arguments = self.fresh_arguments(binding);
-        let declared: Vec<(Rc<str>, Type)> = self
+        let typed_fields = self.check_fields(binding, &arguments, fields)?;
+        let declared = self.instantiated_fields(binding, &arguments);
+        let missing: Vec<Rc<str>> = declared
+            .iter()
+            .map(|(name, _)| name.clone())
+            .filter(|name| !fields.iter().any(|(label, _)| label.name == *name))
+            .collect();
+        if !missing.is_empty() {
+            return Err(TypeProblems::missing_fields(&struct_name, &missing, span));
+        }
+        Ok((
+            TypedExprKind::Struct(TypedStructExpr::New(binding, typed_fields)),
+            Type::Named(binding, arguments),
+        ))
+    }
+
+    fn infer_assoc(
+        &mut self,
+        value: &Expr,
+        keys: &[Expr],
+        item: &Expr,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let value = self.infer(value)?;
+        let element = self.assoc_element(keys.len(), &value)?;
+        let typed_keys = self.assoc_keys(keys)?;
+        let item = self.infer(item)?;
+        self.expect(&element, &item.ty, item.span, MismatchContext::Plain)?;
+        let ty = self.unifier.resolve(&value.ty);
+        Ok(TypedExpr {
+            kind: TypedExprKind::Assoc(Box::new(value), typed_keys, Box::new(item)),
+            ty,
+            span,
+        })
+    }
+
+    fn assoc_element(&mut self, depth: usize, value: &TypedExpr) -> Result<Type, Diagnostic> {
+        let element = self.unifier.fresh();
+        let expected = self.nested_vector_type(depth, &element);
+        self.expect(&expected, &value.ty, value.span, MismatchContext::Plain)?;
+        Ok(element)
+    }
+
+    fn assoc_keys(&mut self, keys: &[Expr]) -> Result<Vec<TypedExpr>, Diagnostic> {
+        let mut typed_keys = Vec::new();
+        for key in keys {
+            let typed = self.infer(key)?;
+            self.expect(
+                &Type::Primitive(PrimitiveType::Usize),
+                &typed.ty,
+                typed.span,
+                MismatchContext::Plain,
+            )?;
+            typed_keys.push(typed);
+        }
+        Ok(typed_keys)
+    }
+
+    fn nested_vector_type(&self, depth: usize, element: &Type) -> Type {
+        let vector = self
+            .rust_types
+            .binding_with_template(RustType::VECTOR_TEMPLATE)
+            .expect("the prelude defines a vector type");
+        (0..depth).fold(element.clone(), |ty, _| Type::Named(vector, vec![ty]))
+    }
+
+    fn infer_update(
+        &mut self,
+        base: &Expr,
+        fields: &[(FieldLabel, Expr)],
+        span: Span,
+    ) -> Result<(TypedExprKind, Type), Diagnostic> {
+        let base = self.infer(base)?;
+        let (binding, arguments) = self.update_owner(&base, fields, span)?;
+        let typed_fields = self.check_fields(binding, &arguments, fields)?;
+        Ok((
+            TypedExprKind::Struct(TypedStructExpr::Update(
+                binding,
+                Box::new(base),
+                typed_fields,
+            )),
+            Type::Named(binding, arguments),
+        ))
+    }
+
+    fn update_owner(
+        &mut self,
+        base: &TypedExpr,
+        fields: &[(FieldLabel, Expr)],
+        span: Span,
+    ) -> Result<(BindingId, Vec<Type>), Diagnostic> {
+        let owner = self.unifier.shallow(&base.ty);
+        match owner {
+            Type::Named(binding, arguments) if self.structs.get(binding).is_some() => {
+                Ok((binding, arguments))
+            }
+            Type::Var(_) => self.update_owner_from_fields(&owner, fields, span),
+            other => Err(TypeProblems::no_fields(
+                &self.display().show(&other),
+                base.span,
+            )),
+        }
+    }
+
+    fn update_owner_from_fields(
+        &mut self,
+        owner: &Type,
+        fields: &[(FieldLabel, Expr)],
+        span: Span,
+    ) -> Result<(BindingId, Vec<Type>), Diagnostic> {
+        let first = fields
+            .first()
+            .expect("the expander requires a field in an update");
+        let candidates: Vec<BindingId> = self
             .structs
-            .get(binding)
-            .map(|definition| definition.instantiated_fields(&arguments))
-            .unwrap_or_default();
+            .with_field(&first.0.name)
+            .into_iter()
+            .filter(|binding| {
+                let definition = self
+                    .structs
+                    .get(*binding)
+                    .expect("a struct with a field has a definition");
+                fields
+                    .iter()
+                    .all(|(label, _)| definition.field(&label.name).is_some())
+            })
+            .collect();
+        let [binding] = candidates.as_slice() else {
+            return Err(TypeProblems::ambiguous_field(&first.0.name, first.0.span));
+        };
+        let arguments = self.fresh_arguments(*binding);
+        let expected = Type::Named(*binding, arguments.clone());
+        self.expect(&expected, owner, span, MismatchContext::Plain)?;
+        Ok((*binding, arguments))
+    }
+
+    fn check_fields(
+        &mut self,
+        binding: BindingId,
+        arguments: &[Type],
+        fields: &[(FieldLabel, Expr)],
+    ) -> Result<Vec<(FieldLabel, TypedExpr)>, Diagnostic> {
+        let struct_name = self.bindings.get(binding).name().to_string();
+        let declared = self.instantiated_fields(binding, arguments);
         let mut typed_fields = Vec::new();
         for (label, value) in fields {
             let Some((_, field_type)) = declared.iter().find(|(name, _)| *name == label.name)
@@ -1884,18 +2034,14 @@ impl TypeChecker {
             self.expect(field_type, &typed.ty, typed.span, MismatchContext::Plain)?;
             typed_fields.push((label.clone(), typed));
         }
-        let missing: Vec<Rc<str>> = declared
-            .iter()
-            .map(|(name, _)| name.clone())
-            .filter(|name| !fields.iter().any(|(label, _)| label.name == *name))
-            .collect();
-        if !missing.is_empty() {
-            return Err(TypeProblems::missing_fields(&struct_name, &missing, span));
-        }
-        Ok((
-            TypedExprKind::Struct(TypedStructExpr::New(binding, typed_fields)),
-            Type::Named(binding, arguments),
-        ))
+        Ok(typed_fields)
+    }
+
+    fn instantiated_fields(&self, binding: BindingId, arguments: &[Type]) -> Vec<(Rc<str>, Type)> {
+        self.structs
+            .get(binding)
+            .map(|definition| definition.instantiated_fields(arguments))
+            .unwrap_or_default()
     }
 
     fn fresh_arguments(&mut self, binding: BindingId) -> Vec<Type> {

@@ -64,14 +64,37 @@ impl ChangedValues {
         match kind {
             TypedExprKind::Recur(arguments) => self.arguments(arguments, enclosing, true),
             TypedExprKind::Struct(structure) => self.structure(structure, enclosing),
-            TypedExprKind::Variant(_, arguments) => arguments
-                .iter()
-                .for_each(|argument| self.expr(argument, enclosing)),
+            TypedExprKind::Variant(_, arguments) => self.expressions(arguments, enclosing),
+            TypedExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item, enclosing),
+            TypedExprKind::Fn(lambda) => self.block(&lambda.body, enclosing),
+            _ => self.value_kind(expr, kind, enclosing),
+        }
+    }
+
+    fn value_kind(&mut self, expr: &TypedExpr, kind: &TypedExprKind, enclosing: BindingId) {
+        match kind {
             TypedExprKind::Try(value) => self.expr(value, enclosing),
             TypedExprKind::Borrow(..) | TypedExprKind::Deref(_) => self.written(expr, enclosing),
-            TypedExprKind::Fn(lambda) => self.block(&lambda.body, enclosing),
             _ => {}
         }
+    }
+
+    fn expressions(&mut self, arguments: &[TypedExpr], enclosing: BindingId) {
+        arguments
+            .iter()
+            .for_each(|argument| self.expr(argument, enclosing));
+    }
+
+    fn assoc(
+        &mut self,
+        value: &TypedExpr,
+        keys: &[TypedExpr],
+        item: &TypedExpr,
+        enclosing: BindingId,
+    ) {
+        self.expr(value, enclosing);
+        self.expressions(keys, enclosing);
+        self.expr(item, enclosing);
     }
 
     fn written(&mut self, expr: &TypedExpr, enclosing: BindingId) {
@@ -122,6 +145,12 @@ impl ChangedValues {
             TypedStructExpr::New(_, fields) => fields
                 .iter()
                 .for_each(|(_, value)| self.expr(value, enclosing)),
+            TypedStructExpr::Update(_, base, fields) => {
+                self.expr(base, enclosing);
+                fields
+                    .iter()
+                    .for_each(|(_, value)| self.expr(value, enclosing));
+            }
         }
     }
 
