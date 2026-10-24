@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/generic_implementor.rslisp
+---
+error[L0242]: an `impl` cannot name a type variable
+ --> check/generic_implementor.rslisp:4:21
+  |
+4 | (impl labelled (vec a)
+  |                     ^ `a` is a type variable
+  |
+  = help: write a concrete type; generic implementations wait until a program needs them

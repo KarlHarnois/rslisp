@@ -537,6 +537,15 @@ impl ExpandProblems {
         .with_help("declare it in the trait, or remove it")
     }
 
+    pub fn generic_implementor(name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::GENERIC_IMPLEMENTOR,
+            "an `impl` cannot name a type variable",
+            Label::new(span, format!("`{name}` is a type variable")),
+        )
+        .with_help("write a concrete type; generic implementations wait until a program needs them")
+    }
+
     pub fn broken_definition(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::BROKEN_DEFINITION,

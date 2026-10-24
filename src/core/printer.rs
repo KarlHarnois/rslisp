@@ -103,8 +103,8 @@ impl<'a> CorePrinter<'a> {
             }));
             return Self::list("trait", parts);
         }
-        if let ItemKind::Impl(trait_binding, type_binding, methods) = &item.kind {
-            let mut parts = vec![self.name(*trait_binding), self.name(*type_binding)];
+        if let ItemKind::Impl(trait_binding, implementor, methods) = &item.kind {
+            let mut parts = vec![self.name(*trait_binding), self.type_expr(implementor)];
             parts.extend(methods.iter().map(|method| self.impl_method(method)));
             return Self::list("impl", parts);
         }

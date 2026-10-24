@@ -1,0 +1,8 @@
+(trait consumed
+  (take (fn (self) i64)))
+
+(impl consumed str
+  (take (text) 0))
+
+(impl consumed (slice i64)
+  (take (values) 0))

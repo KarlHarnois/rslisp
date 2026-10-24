@@ -261,11 +261,15 @@ impl<'a> ItemEmitter<'a> {
         let mut items = Vec::new();
         for position in 0..self.program.trait_impls.len() {
             let trait_binding = self.program.trait_impls[position].trait_binding;
-            let type_binding = self.program.trait_impls[position].type_binding;
+            let implementor = self.program.trait_impls[position].implementor.clone();
             let module = self.program.trait_impls[position].module;
             let methods = self.program.trait_impls[position].methods.clone();
             let trait_name = self.trait_name(trait_binding);
-            let type_name = NameMangler::type_name(self.program.bindings.get(type_binding).name());
+            let type_name = {
+                let types =
+                    RustTypes::new(self.program, self.plan, self.unsized_parameters, module);
+                types.show(&implementor, TypePosition::Signature)
+            };
             let mut body = Vec::new();
             for method in &methods {
                 body.push(Fragment::Newline);

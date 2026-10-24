@@ -1358,7 +1358,7 @@ impl<'a> ExpressionEmitter<'a> {
             let (receiver, rest) = arguments
                 .split_first()
                 .expect("a receiver method has a receiver argument");
-            let receiver = self.argument(receiver, TypeContext::Known, ArgumentRole::Receiver);
+            let receiver = self.argument(receiver, TypeContext::Unknown, ArgumentRole::Receiver);
             let receiver = if receiver.is_atomic() {
                 receiver
             } else {

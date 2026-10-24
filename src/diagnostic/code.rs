@@ -53,6 +53,7 @@ impl DiagnosticCode {
     pub const MISSING_METHOD: Self = Self(Cow::Borrowed("L0239"));
     pub const EXTRA_METHOD: Self = Self(Cow::Borrowed("L0240"));
     pub const UNDECLARED_METHOD: Self = Self(Cow::Borrowed("L0241"));
+    pub const GENERIC_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0242"));
 
     pub const MACRO_FAILED: Self = Self(Cow::Borrowed("L0301"));
     pub const MACRO_RESULT_NOT_FORM: Self = Self(Cow::Borrowed("L0302"));
@@ -114,6 +115,7 @@ impl DiagnosticCode {
     pub const LITERAL_MISFIT: Self = Self(Cow::Borrowed("L0441"));
     pub const QUOTE_AT_RUNTIME: Self = Self(Cow::Borrowed("L0442"));
     pub const UNUSED_ENUM_PARAMETER: Self = Self(Cow::Borrowed("L0443"));
+    pub const UNSIZABLE_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0444"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));
