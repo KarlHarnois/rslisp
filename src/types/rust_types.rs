@@ -35,7 +35,9 @@ impl RustType {
             .text()
             .chars()
             .filter(|character| !character.is_whitespace())
-            .eq(template.chars())
+            .eq(template
+                .chars()
+                .filter(|character| !character.is_whitespace()))
     }
 
     pub fn leading_name(&self) -> &str {
@@ -72,6 +74,22 @@ impl RustTypeTable {
 
     pub fn is_box(&self, binding: BindingId) -> bool {
         self.has_template(binding, RustType::BOX_TEMPLATE)
+    }
+
+    pub fn is_sorted_map(&self, binding: BindingId) -> bool {
+        self.has_template(binding, "std::collections::BTreeMap<{0}, {1}>")
+    }
+
+    pub fn option_binding(&self) -> Option<BindingId> {
+        self.binding_with_template("Option<{0}>")
+    }
+
+    pub fn iterator_binding(&self) -> Option<BindingId> {
+        self.binding_with_template("impl Iterator<Item = {0}>")
+    }
+
+    pub fn pair_binding(&self) -> Option<BindingId> {
+        self.binding_with_template("({0}, {1})")
     }
 
     pub fn is_result(&self, binding: BindingId) -> bool {

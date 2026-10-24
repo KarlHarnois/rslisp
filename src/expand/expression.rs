@@ -9,9 +9,9 @@ use super::shape::Shape;
 use super::try_check::TryCheck;
 use crate::core::{
     Arm, Binder, BindingId, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind,
-    ExpressionForm, FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, Namespace,
-    ParsedTemplate, Pattern, PatternKind, ReferenceKind, RustTemplate, StructExpr, StructForm,
-    TypeExpr, TypeExprKind, VariantInfo,
+    ExpressionForm, FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, MapOperation,
+    Namespace, ParsedTemplate, Pattern, PatternKind, ReferenceKind, RustTemplate, StructExpr,
+    StructForm, TypeExpr, TypeExprKind, VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -203,6 +203,18 @@ impl Expander<'_> {
     }
 
     fn lower_other_expression(
+        &mut self,
+        expression: ExpressionForm,
+        shape: &Shape,
+    ) -> Result<ExprKind, Diagnostic> {
+        match expression {
+            ExpressionForm::MapAt => self.lower_map_at(shape),
+            ExpressionForm::SetAt => self.lower_set_at(shape),
+            other => self.lower_simple_expression(other, shape),
+        }
+    }
+
+    fn lower_simple_expression(
         &mut self,
         expression: ExpressionForm,
         shape: &Shape,
@@ -416,6 +428,32 @@ impl Expander<'_> {
             .collect::<Result<Vec<_>, Diagnostic>>()?;
         let item = self.lower_expr(&items[3])?;
         Ok(ExprKind::Assoc(Box::new(value), keys, Box::new(item)))
+    }
+
+    fn lower_map_at(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let items = shape.at_least(3)?;
+        let operation = items[1]
+            .as_symbol()
+            .and_then(|symbol| MapOperation::of(symbol.name()))
+            .ok_or_else(|| shape.malformed(&items[1]))?;
+        let value = self.lower_expr(&items[2])?;
+        let arguments = items[3..]
+            .iter()
+            .map(|argument| self.lower_expr(argument))
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
+        Ok(ExprKind::MapAt(operation, Box::new(value), arguments))
+    }
+
+    fn lower_set_at(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let items = shape.exactly(4)?;
+        let value = self.lower_expr(&items[1])?;
+        let keys = shape
+            .list(&items[2])?
+            .iter()
+            .map(|key| self.lower_expr(key))
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
+        let item = self.lower_expr(&items[3])?;
+        Ok(ExprKind::SetAt(Box::new(value), keys, Box::new(item)))
     }
 
     fn lower_field_value(

@@ -23,6 +23,40 @@ pub enum ExprKind {
     Struct(StructExpr),
     Variant(BindingId, Vec<Expr>),
     Assoc(Box<Expr>, Vec<Expr>, Box<Expr>),
+    MapAt(MapOperation, Box<Expr>, Vec<Expr>),
+    SetAt(Box<Expr>, Vec<Expr>, Box<Expr>),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MapOperation {
+    Lookup,
+    Keys,
+    Vals,
+    Entries,
+    Update,
+}
+
+impl MapOperation {
+    pub fn of(name: &str) -> Option<Self> {
+        match name {
+            "lookup" => Some(Self::Lookup),
+            "keys" => Some(Self::Keys),
+            "vals" => Some(Self::Vals),
+            "entries" => Some(Self::Entries),
+            "update" => Some(Self::Update),
+            _ => None,
+        }
+    }
+
+    pub fn keyword(self) -> &'static str {
+        match self {
+            Self::Lookup => "lookup",
+            Self::Keys => "keys",
+            Self::Vals => "vals",
+            Self::Entries => "entries",
+            Self::Update => "update",
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -164,10 +198,21 @@ impl ExprKind {
             }
             ExprKind::Struct(structure) => structure.children(),
             ExprKind::Variant(_, arguments) => arguments.iter().collect(),
-            ExprKind::Assoc(value, keys, item) => std::iter::once(value.as_ref())
-                .chain(keys)
-                .chain(std::iter::once(item.as_ref()))
-                .collect(),
+            other => other.collection_children(),
+        }
+    }
+
+    fn collection_children(&self) -> Vec<&Expr> {
+        match self {
+            ExprKind::Assoc(value, keys, item) | ExprKind::SetAt(value, keys, item) => {
+                std::iter::once(value.as_ref())
+                    .chain(keys)
+                    .chain(std::iter::once(item.as_ref()))
+                    .collect()
+            }
+            ExprKind::MapAt(_, value, arguments) => {
+                std::iter::once(value.as_ref()).chain(arguments).collect()
+            }
             _ => Vec::new(),
         }
     }

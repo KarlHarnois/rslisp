@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/lookup_key_not_borrowed.rslisp
+---
+error[L0404]: `string` does not implement `borrow`
+ --> check/lookup_key_not_borrowed.rslisp:3:13
+  |
+3 |   (lookup m (len m)))
+  |             ^^^^^^^ this needs `borrow`
+  |
+  = note: `borrow` is implemented for: bool, char, (ref str), string, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (with string str)

@@ -1,0 +1,3 @@
+(defn main ()
+  (let m (sorted-map "a" 1))
+  (set-at m ("a" "b") 2))

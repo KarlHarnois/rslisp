@@ -1,0 +1,3 @@
+(defn main ()
+  (let m (sorted-map (to-string "a") 1))
+  (lookup m (len m)))

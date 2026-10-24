@@ -46,6 +46,9 @@ impl Expander<'_> {
             ExprKind::Assoc(..) => {
                 InterpretProblems::runtime_only("collection updates", expr.span())
             }
+            ExprKind::MapAt(..) | ExprKind::SetAt(..) => {
+                InterpretProblems::runtime_only("map operations", expr.span())
+            }
             ExprKind::Try(_) => InterpretProblems::runtime_only("`try` forms", expr.span()),
             ExprKind::Control(Control::Match(..)) => {
                 InterpretProblems::match_only_at_runtime(expr.span())

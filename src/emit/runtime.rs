@@ -9,11 +9,12 @@ enum RuntimePart {
     Float,
     Integer,
     Sequence,
+    MapSequence,
     Io,
 }
 
 impl RuntimePart {
-    const ALL: [(RuntimePart, &'static str); 8] = [
+    const ALL: [(RuntimePart, &'static str); 9] = [
         (RuntimePart::Number, "crate::rt::Number"),
         (RuntimePart::FromLiteral, "::from_literal("),
         (RuntimePart::FromFloatLiteral, "::from_float_literal("),
@@ -21,8 +22,22 @@ impl RuntimePart {
         (RuntimePart::Float, "crate::rt::Float"),
         (RuntimePart::Integer, "crate::rt::Integer"),
         (RuntimePart::Sequence, "crate::rt::Sequence"),
+        (RuntimePart::MapSequence, "std::collections::BTreeMap"),
         (RuntimePart::Io, "crate::rt::read_line"),
     ];
+
+    fn present(self, code: &str) -> bool {
+        let marker = Self::ALL
+            .iter()
+            .find(|(part, _)| *part == self)
+            .map(|(_, marker)| *marker)
+            .expect("every runtime part has a marker");
+        if self == Self::MapSequence {
+            code.contains(marker) && code.contains("crate::rt::Sequence")
+        } else {
+            code.contains(marker)
+        }
+    }
 
     fn required(self) -> Option<RuntimePart> {
         match self {
@@ -32,6 +47,7 @@ impl RuntimePart {
             | RuntimePart::Integer => Some(RuntimePart::Number),
             RuntimePart::Float => Some(RuntimePart::Signed),
             RuntimePart::Number | RuntimePart::Sequence | RuntimePart::Io => None,
+            RuntimePart::MapSequence => Some(RuntimePart::Sequence),
         }
     }
 }
@@ -51,12 +67,14 @@ impl RuntimeModule {
     const FLOAT: &'static str = include_str!("../../prelude/runtime/float.rs");
     const INTEGER: &'static str = include_str!("../../prelude/runtime/integer.rs");
     const SEQUENCE: &'static str = include_str!("../../prelude/runtime/sequence.rs");
+    const MAP_SEQUENCE: &'static str = include_str!("../../prelude/runtime/map_sequence.rs");
     const IO: &'static str = include_str!("../../prelude/runtime/io.rs");
-    const FIXED_PARTS: [(RuntimePart, &'static str); 5] = [
+    const FIXED_PARTS: [(RuntimePart, &'static str); 6] = [
         (RuntimePart::Signed, Self::SIGNED),
         (RuntimePart::Float, Self::FLOAT),
         (RuntimePart::Integer, Self::INTEGER),
         (RuntimePart::Sequence, Self::SEQUENCE),
+        (RuntimePart::MapSequence, Self::MAP_SEQUENCE),
         (RuntimePart::Io, Self::IO),
     ];
     const CONVERSIONS: &'static [Conversion] = &[
@@ -79,8 +97,8 @@ impl RuntimeModule {
     pub fn of(code: &str) -> Option<RuntimeModule> {
         let mut parts: BTreeSet<RuntimePart> = RuntimePart::ALL
             .into_iter()
-            .filter(|(_, marker)| code.contains(marker))
             .map(|(part, _)| part)
+            .filter(|part| part.present(code))
             .collect();
         let mut unchecked: Vec<RuntimePart> = parts.iter().copied().collect();
         while let Some(part) = unchecked.pop() {

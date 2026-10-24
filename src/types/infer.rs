@@ -4,9 +4,11 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use super::checker::{TypeChecker, VariantArmReference};
+use super::collection::Collection;
 use super::pending::{DecidedBorrows, PendingBorrow};
 use super::problems::{MismatchContext, TypeProblems};
 use super::rust_types::RustType;
+use super::ty::Bound;
 use super::ty::Type;
 use super::ty::TypeVar;
 use super::typed::{
@@ -18,14 +20,20 @@ use super::unifier::{LiteralKind, UnifyError};
 use super::wrapper::FunctionValueWrapper;
 use crate::core::{
     Arm, Binder, BindingId, BindingKind, Block, BodyItem, Control, Expr, ExprKind, FieldLabel,
-    Lambda, Leaf, Literal, Pattern, PatternKind, PrimitiveType, ReferenceKind, RustTemplate,
-    StructExpr, VariantInfo,
+    Lambda, Leaf, Literal, MapOperation, Pattern, PatternKind, PrimitiveType, ReferenceKind,
+    RustTemplate, StructExpr, TypeExpr, TypeExprKind, VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
 use crate::reader::NumberValue;
 use crate::source::Span;
 use shared_variables::SharedVariables;
+
+enum MapIterator {
+    Keys,
+    Vals,
+    Entries,
+}
 
 struct ExpectedFunction<'a> {
     parameters: &'a [Type],
@@ -108,6 +116,10 @@ impl TypeChecker {
             ExprKind::Struct(structure) => self.infer_struct(structure, span),
             ExprKind::Variant(binding, arguments) => self.infer_variant(*binding, arguments, span),
             ExprKind::Assoc(value, keys, item) => self.infer_assoc(value, keys, item, span),
+            ExprKind::MapAt(operation, value, arguments) => {
+                self.infer_map_at(*operation, value, arguments, span)
+            }
+            ExprKind::SetAt(value, keys, item) => self.infer_set_at(value, keys, item, span),
             _ => unreachable!("the caller matches a nested expression"),
         }
     }
@@ -1909,6 +1921,51 @@ impl TypeChecker {
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
         let value = self.infer(value)?;
+        let resolved = self.unifier.resolve(&value.ty);
+        if let Some(collection) =
+            Collection::of(&resolved, &self.rust_types).filter(Collection::is_map)
+        {
+            return self.infer_map_assoc(value, resolved, collection, keys, item, span);
+        }
+        self.infer_vector_assoc(value, keys, item, span)
+    }
+
+    fn infer_map_assoc(
+        &mut self,
+        value: TypedExpr,
+        resolved: Type,
+        collection: Collection,
+        keys: &[Expr],
+        item: &Expr,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        if keys.len() != 1 {
+            return Err(TypeProblems::wrong_argument_count(1, keys.len(), span));
+        }
+        let key = self.infer(&keys[0])?;
+        self.expect(collection.key(), &key.ty, key.span, MismatchContext::Plain)?;
+        self.check_map_key(&collection, key.span);
+        let item = self.infer(item)?;
+        self.expect(
+            collection.value(),
+            &item.ty,
+            item.span,
+            MismatchContext::Plain,
+        )?;
+        Ok(TypedExpr {
+            kind: TypedExprKind::Assoc(Box::new(value), vec![key], Box::new(item)),
+            ty: resolved,
+            span,
+        })
+    }
+
+    fn infer_vector_assoc(
+        &mut self,
+        value: TypedExpr,
+        keys: &[Expr],
+        item: &Expr,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
         let element = self.assoc_element(keys.len(), &value)?;
         let typed_keys = self.assoc_keys(keys)?;
         let item = self.infer(item)?;
@@ -1919,6 +1976,304 @@ impl TypeChecker {
             ty,
             span,
         })
+    }
+
+    fn infer_map_at(
+        &mut self,
+        operation: MapOperation,
+        value: &Expr,
+        arguments: &[Expr],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let value = self.infer(value)?;
+        let collection = self.map_collection(&value)?;
+        self.check_map_key(&collection, value.span);
+        match operation {
+            MapOperation::Lookup => self.infer_map_lookup(value, collection, arguments, span),
+            MapOperation::Keys => {
+                self.infer_map_iterator(value, collection, MapIterator::Keys, arguments, span)
+            }
+            MapOperation::Vals => {
+                self.infer_map_iterator(value, collection, MapIterator::Vals, arguments, span)
+            }
+            MapOperation::Entries => {
+                self.infer_map_iterator(value, collection, MapIterator::Entries, arguments, span)
+            }
+            MapOperation::Update => self.infer_map_update(value, collection, arguments, span),
+        }
+    }
+
+    fn map_collection(&self, value: &TypedExpr) -> Result<Collection, Diagnostic> {
+        let resolved = self.unifier.resolve(&value.ty);
+        Collection::of(&resolved, &self.rust_types)
+            .filter(Collection::is_map)
+            .ok_or_else(|| {
+                TypeProblems::mismatch(
+                    "a map",
+                    &self.display().show(&resolved),
+                    value.span,
+                    MismatchContext::Plain,
+                )
+            })
+    }
+
+    fn check_map_key(&mut self, collection: &Collection, span: Span) {
+        let binding = self
+            .traits
+            .with_paths(&["Ord"])
+            .first()
+            .copied()
+            .expect("the prelude defines ord");
+        let key = self.unifier.resolve(collection.key());
+        if key.has_vars() || matches!(key, Type::Generic(_)) {
+            return;
+        }
+        let bound = Bound::plain(binding);
+        if !self.traits.satisfies(&bound, &key, &|_, _| false) {
+            self.report_missing_trait(&bound, &key, span);
+        }
+    }
+
+    fn infer_map_lookup(
+        &mut self,
+        value: TypedExpr,
+        collection: Collection,
+        arguments: &[Expr],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        if arguments.len() != 1 {
+            return Err(TypeProblems::wrong_argument_count(1, arguments.len(), span));
+        }
+        let query_type = self.unifier.fresh();
+        let parameters = vec![
+            Type::Ref(Box::new(collection.ty().clone())),
+            Type::Ref(Box::new(query_type)),
+        ];
+        let result = self.option_type(collection.value().clone());
+        let call = self.synthetic_call_with_value(
+            "{0}.get({1})",
+            parameters,
+            result,
+            value,
+            arguments,
+            span,
+        )?;
+        let query = match &call.kind {
+            TypedExprKind::Call(_, arguments) => {
+                arguments.get(1).map(|argument| argument.value.ty.clone())
+            }
+            _ => None,
+        };
+        if let Some(query) = query {
+            self.check_borrow(&collection, &query, arguments[0].span());
+        }
+        Ok(call)
+    }
+
+    fn check_borrow(&mut self, collection: &Collection, query: &Type, span: Span) {
+        let key = self.unifier.resolve(collection.key());
+        let query = self.unifier.resolve(query);
+        if key.has_vars()
+            || query.has_vars()
+            || matches!(key, Type::Generic(_))
+            || matches!(query, Type::Generic(_))
+        {
+            return;
+        }
+        let binding = self
+            .traits
+            .with_paths(&["std::borrow::Borrow"])
+            .first()
+            .copied()
+            .expect("the prelude defines borrow");
+        let bound = Bound {
+            binding,
+            argument: Some(query),
+        };
+        if !self.traits.satisfies(&bound, &key, &|_, _| false) {
+            self.report_missing_trait(&bound, &key, span);
+        }
+    }
+
+    fn infer_map_iterator(
+        &mut self,
+        value: TypedExpr,
+        collection: Collection,
+        iterator: MapIterator,
+        arguments: &[Expr],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        if !arguments.is_empty() {
+            return Err(TypeProblems::wrong_argument_count(0, arguments.len(), span));
+        }
+        let result = match iterator {
+            MapIterator::Keys => self.iterator_type(Type::Ref(Box::new(collection.key().clone()))),
+            MapIterator::Vals => {
+                self.iterator_type(Type::Ref(Box::new(collection.value().clone())))
+            }
+            MapIterator::Entries => self.iterator_type(self.pair_type(
+                Type::Ref(Box::new(collection.key().clone())),
+                Type::Ref(Box::new(collection.value().clone())),
+            )),
+        };
+        let template = match iterator {
+            MapIterator::Keys => "{0}.keys()",
+            MapIterator::Vals => "{0}.values()",
+            MapIterator::Entries => "{0}.iter()",
+        };
+        let parameters = vec![Type::Ref(Box::new(collection.ty().clone()))];
+        self.synthetic_call_with_value(template, parameters, result, value, arguments, span)
+    }
+
+    fn infer_map_update(
+        &mut self,
+        value: TypedExpr,
+        collection: Collection,
+        arguments: &[Expr],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        if arguments.len() != 3 {
+            return Err(TypeProblems::wrong_argument_count(3, arguments.len(), span));
+        }
+        let value_type = collection.value().clone();
+        let function_type = Type::Function(
+            crate::types::ClosureKind::Fn,
+            vec![value_type.clone()],
+            Box::new(value_type.clone()),
+        );
+        let parameters = vec![
+            collection.ty().clone(),
+            collection.key().clone(),
+            function_type,
+            value_type,
+        ];
+        let result = collection.ty().clone();
+        self.synthetic_call_with_value("@map-update", parameters, result, value, arguments, span)
+    }
+
+    fn infer_set_at(
+        &mut self,
+        value: &Expr,
+        keys: &[Expr],
+        item: &Expr,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let value = self.infer(value)?;
+        let resolved = self.unifier.resolve(&value.ty);
+        let Some(collection) = Collection::of(&resolved, &self.rust_types) else {
+            return Err(TypeProblems::mismatch(
+                "a collection",
+                &self.display().show(&resolved),
+                value.span,
+                MismatchContext::Plain,
+            ));
+        };
+        if collection.is_map() {
+            self.check_map_key(&collection, value.span);
+        }
+        let (parameters, template) = if collection.is_map() {
+            if keys.len() != 1 {
+                return Err(TypeProblems::wrong_argument_count(1, keys.len(), span));
+            }
+            (
+                vec![
+                    Type::Mut(Box::new(collection.ty().clone())),
+                    collection.key().clone(),
+                    collection.value().clone(),
+                ],
+                "*{0}.get_mut(&{1}).unwrap() = {2}".to_string(),
+            )
+        } else {
+            let depth = keys.len();
+            let item_type = self.assoc_element(depth, &value)?;
+            let mut parameters = vec![Type::Mut(Box::new(collection.ty().clone()))];
+            parameters.extend((0..depth).map(|_| Type::Primitive(PrimitiveType::Usize)));
+            parameters.push(item_type);
+            let mut template = "{0}".to_string();
+            for index in 1..=depth {
+                template.push_str(&format!("[{{{index}}}]"));
+            }
+            template.push_str(&format!(" = {{{}}}", depth + 1));
+            (parameters, template)
+        };
+        let mut arguments = Vec::with_capacity(keys.len() + 1);
+        arguments.extend(keys.iter().cloned());
+        arguments.push(item.clone());
+        self.synthetic_call_with_value(&template, parameters, Type::unit(), value, &arguments, span)
+    }
+
+    fn synthetic_call_with_value(
+        &mut self,
+        template: &str,
+        parameters: Vec<Type>,
+        result: Type,
+        value: TypedExpr,
+        arguments: &[Expr],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let mut typed_arguments = Vec::with_capacity(parameters.len());
+        let borrow = self.pass_call_argument(None, 0, &parameters[0], &value)?;
+        typed_arguments.push(TypedArgument { value, borrow });
+        for (position, argument) in arguments.iter().enumerate() {
+            let index = position + 1;
+            let parameter = &parameters[index];
+            let value = self.infer_argument(parameter, argument)?;
+            let borrow = self.pass_call_argument(None, index, parameter, &value)?;
+            typed_arguments.push(TypedArgument { value, borrow });
+        }
+        let parameters: Vec<Type> = parameters
+            .iter()
+            .map(|parameter| self.unifier.resolve(parameter))
+            .collect();
+        let result = self.unifier.resolve(&result);
+        let callee = self.rust_template(template, parameters, result.clone(), span);
+        Ok(TypedExpr {
+            kind: TypedExprKind::Call(Box::new(callee), typed_arguments),
+            ty: result,
+            span,
+        })
+    }
+
+    fn rust_template(
+        &self,
+        template: &str,
+        parameters: Vec<Type>,
+        result: Type,
+        span: Span,
+    ) -> TypedExpr {
+        let template = RustTemplate {
+            template: Rc::from(template),
+            type_expr: TypeExpr::new(TypeExprKind::Hole, span),
+        };
+        TypedExpr {
+            kind: TypedExprKind::Leaf(TypedLeaf::Rust(Rc::new(template))),
+            ty: Type::Function(crate::types::ClosureKind::Fn, parameters, Box::new(result)),
+            span,
+        }
+    }
+
+    fn option_type(&self, value: Type) -> Type {
+        let option = self
+            .rust_types
+            .option_binding()
+            .expect("the prelude defines an option type");
+        Type::Named(option, vec![Type::Ref(Box::new(value))])
+    }
+
+    fn iterator_type(&self, item: Type) -> Type {
+        let iterator = self
+            .rust_types
+            .iterator_binding()
+            .expect("the prelude defines an iterator type");
+        Type::Named(iterator, vec![item])
+    }
+
+    fn pair_type(&self, first: Type, second: Type) -> Type {
+        let pair = self
+            .rust_types
+            .pair_binding()
+            .expect("the prelude defines a pair type");
+        Type::Named(pair, vec![first, second])
     }
 
     fn assoc_element(&mut self, depth: usize, value: &TypedExpr) -> Result<Type, Diagnostic> {

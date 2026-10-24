@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/assoc_in_map_two_keys.rslisp
+---
+error[L0402]: this function takes 1 argument but 2 were given
+ --> check/assoc_in_map_two_keys.rslisp:3:16
+  |
+3 |   (let changed (assoc-in m ("a" "b") 2))
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^ expected 1 argument
