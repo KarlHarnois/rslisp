@@ -1,0 +1,13 @@
+(defstruct counter (value i64))
+
+(defn read-counter (c)
+  (field c value))
+
+(trait readable
+  (read-value (fn ((ref self)) i64)))
+
+(impl readable counter
+  (read-value (c) (read-counter c)))
+
+(defn main ()
+  (println (read-value (make-counter 1))))
