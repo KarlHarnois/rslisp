@@ -1,0 +1,6 @@
+(type show (fn (str) unit))
+(defn show (text) (println text))
+
+(defn main ()
+  (show "x")
+  (show (as-str (to-string "y"))))

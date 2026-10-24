@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/borrowed_str_parameter.rslisp
+---
+fn show(text: &str) {
+    println!("{}", text)
+}
+
+fn main() {
+    show("x");
+    show("y".to_string().as_str())
+}

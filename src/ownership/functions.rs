@@ -68,6 +68,7 @@ impl FunctionTable {
     pub fn fixed_mode(slot: &ParamSlot, copy: &CopyRules) -> ParamMode {
         match &slot.ty {
             Type::Mut(_) => ParamMode::Mut,
+            borrowed if borrowed.is_unsized() => ParamMode::Ref,
             written if copy.is_small_copy(written) => ParamMode::Copy,
             _ => ParamMode::Own,
         }

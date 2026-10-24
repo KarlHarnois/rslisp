@@ -28,7 +28,10 @@ impl<'a> ModeRewrite<'a> {
             let mut types = Vec::new();
             for slot in &info.params {
                 let rewritten = slices.get(&slot.binding).cloned().unwrap_or_else(|| {
-                    match (slot.inferable, modes.get(&slot.binding)) {
+                    match (
+                        slot.inferable || slot.ty.is_unsized(),
+                        modes.get(&slot.binding),
+                    ) {
                         (true, Some(ParamMode::Ref)) => Type::Ref(Box::new(slot.ty.clone())),
                         (true, Some(ParamMode::Mut)) => Type::Mut(Box::new(slot.ty.clone())),
                         _ => slot.ty.clone(),
