@@ -666,14 +666,11 @@ impl<'a> ExpressionEmitter<'a> {
         match &pattern.kind {
             TypedPatternKind::Wildcard => PatternShape::plain(Code::atom("_")),
             TypedPatternKind::Bind(binder) => {
-                let name = Code::atom(self.locals.bind(
-                    binder.binding,
-                    self.program.bindings.get(binder.binding).name(),
-                ));
+                let name = self.pattern_binding(binder);
                 PatternShape {
                     guard: Code::atom("_"),
-                    binding: name.clone(),
-                    destructure: name,
+                    binding: Code::atom(name.clone()),
+                    destructure: Code::atom(name),
                     guards: Vec::new(),
                     prologue: Vec::new(),
                 }
@@ -682,6 +679,18 @@ impl<'a> ExpressionEmitter<'a> {
                 self.variant_shape(*binding, patterns, position, guard_box)
             }
             TypedPatternKind::Literal(literal, ty) => self.literal_shape(literal, ty),
+        }
+    }
+
+    fn pattern_binding(&mut self, binder: &TypedBinder) -> String {
+        let name = self.locals.bind(
+            binder.binding,
+            self.program.bindings.get(binder.binding).name(),
+        );
+        if self.mutable_locals.contains(&binder.binding) && !binder.ty.is_reference() {
+            format!("mut {name}")
+        } else {
+            name
         }
     }
 
@@ -704,6 +713,11 @@ impl<'a> ExpressionEmitter<'a> {
             self.program.bindings.get(binder.binding).name(),
         );
         let expression = Self::peel_expression(&name, position);
+        let peeled =
+            match self.mutable_locals.contains(&binder.binding) && !binder.ty.is_reference() {
+                true => format!("mut {name}"),
+                false => name.clone(),
+            };
         PatternShape {
             guard: Code::atom("_"),
             binding: Code::atom(name.clone()),
@@ -711,7 +725,7 @@ impl<'a> ExpressionEmitter<'a> {
             guards: Vec::new(),
             prologue: vec![Prologue::Peel {
                 binding: binder.binding,
-                statement: format!("let {name} = {expression};"),
+                statement: format!("let {peeled} = {expression};"),
                 expression,
             }],
         }

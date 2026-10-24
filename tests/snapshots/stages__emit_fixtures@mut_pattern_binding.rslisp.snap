@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/mut_pattern_binding.rslisp
+---
+fn main() {
+    let holder: (Vec<i64>, Vec<i64>) = (vec![1_i64], vec![2_i64]);
+    let (mut left, right) = holder;
+    left.push(3);
+    println!("{}", left.len());
+    println!("{}", right.len())
+}
