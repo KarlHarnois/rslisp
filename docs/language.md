@@ -366,7 +366,7 @@ The emitted Rust is formatted by `rustfmt` when `rslisp emit` or `rslisp build` 
 | 8.3 Macro code | done |
 | 8.4 Loops | done |
 | 9. Enums and `match` | done |
-| 10. User-defined traits | in progress |
+| 10. User-defined traits | done |
 | 11. Written lifetimes | planned |
 
 A planned milestone is settled design, and new work follows it.
@@ -520,7 +520,7 @@ Programs read functionally through two prelude forms over `try`, as `loop` is ov
 (try-> source tokenize evaluate)
 ```
 
-`let-try` expands each binding to `(let name (try expression))` and then the body. `try->` threads a value through calls and applies `try` to every step except the last: `(try-> x f g)` is `(g (try (f x)))`, and `(try-> x f)` is `(f x)`. `ok-or` turns an `option` and an error value into a `result`, and `map-err` converts an error until milestone 10.
+`let-try` expands each binding to `(let name (try expression))` and then the body. `try->` threads a value through calls and applies `try` to every step except the last: `(try-> x f g)` is `(g (try (f x)))`, and `(try-> x f)` is `(f x)`. `ok-or` turns an `option` and an error value into a `result`, and `map-err` converts an error.
 
 `try` is a kernel form, because a prelude function cannot leave its caller early.
 
