@@ -14,6 +14,10 @@ enum CoverPattern {
         index: usize,
         arguments: Vec<CoverPattern>,
     },
+    Struct {
+        owner: BindingId,
+        arguments: Vec<CoverPattern>,
+    },
     Literal(Literal),
 }
 
@@ -25,12 +29,17 @@ enum Witness {
         index: usize,
         arguments: Vec<Witness>,
     },
+    Struct {
+        owner: BindingId,
+        arguments: Vec<Witness>,
+    },
     Bool(bool),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Tag {
     Variant { owner: BindingId, index: usize },
+    Struct(BindingId),
     Bool(bool),
 }
 
@@ -109,9 +118,11 @@ impl TypeChecker {
         }
         match &pattern.kind {
             TypedPatternKind::Wildcard | TypedPatternKind::Bind(_) => false,
-            TypedPatternKind::Variant(_, arguments) => arguments
-                .iter()
-                .any(|argument| self.pattern_has_guard(argument)),
+            TypedPatternKind::Variant(_, arguments) | TypedPatternKind::Struct(_, arguments) => {
+                arguments
+                    .iter()
+                    .any(|argument| self.pattern_has_guard(argument))
+            }
             TypedPatternKind::Literal(literal, ty) => {
                 matches!(literal, Literal::String(_))
                     && matches!(ty, Type::Primitive(PrimitiveType::String))
@@ -135,6 +146,13 @@ impl TypeChecker {
                         .collect(),
                 }
             }
+            TypedPatternKind::Struct(binding, arguments) => CoverPattern::Struct {
+                owner: *binding,
+                arguments: arguments
+                    .iter()
+                    .map(|argument| self.cover_pattern(argument))
+                    .collect(),
+            },
             TypedPatternKind::Literal(literal, _) => CoverPattern::Literal(literal.clone()),
         }
     }
@@ -161,6 +179,7 @@ impl TypeChecker {
         match &query[0] {
             CoverPattern::Wild => self.useful_wild(matrix, query, types, expanding),
             CoverPattern::Variant { .. } => self.useful_variant(matrix, query, types, expanding),
+            CoverPattern::Struct { .. } => self.useful_struct(matrix, query, types, expanding),
             CoverPattern::Literal(literal) => {
                 self.useful_literal(matrix, literal, query, types, expanding)
             }
@@ -174,7 +193,7 @@ impl TypeChecker {
         types: &[Type],
         expanding: &mut Vec<BindingId>,
     ) -> bool {
-        let owner = self.enum_owner(&types[0]);
+        let owner = self.value_owner(&types[0]);
         if let Some(owner) = owner
             && expanding.contains(&owner)
         {
@@ -264,7 +283,7 @@ impl TypeChecker {
             index: *index,
         };
         let pushed = self
-            .enum_owner(&types[0])
+            .value_owner(&types[0])
             .filter(|owner| !expanding.contains(owner));
         if let Some(owner) = pushed {
             expanding.push(owner);
@@ -291,6 +310,34 @@ impl TypeChecker {
         result
     }
 
+    fn useful_struct(
+        &self,
+        matrix: &[Vec<CoverPattern>],
+        query: &[CoverPattern],
+        types: &[Type],
+        expanding: &mut Vec<BindingId>,
+    ) -> bool {
+        let CoverPattern::Struct { owner, arguments } = &query[0] else {
+            unreachable!("the caller matches a struct query");
+        };
+        let constructor = self.constructors(&types[0]).and_then(|constructors| {
+            constructors
+                .into_iter()
+                .find(|constructor| constructor.tag == Tag::Struct(*owner))
+        });
+        match constructor {
+            Some(constructor) => {
+                let specialized = self.specialize(matrix, &constructor);
+                let mut row = arguments.clone();
+                row.extend_from_slice(&query[1..]);
+                let mut columns = constructor.arguments.clone();
+                columns.extend_from_slice(&types[1..]);
+                self.useful(&specialized, &row, &columns, expanding)
+            }
+            None => false,
+        }
+    }
+
     fn useful_literal(
         &self,
         matrix: &[Vec<CoverPattern>],
@@ -308,19 +355,20 @@ impl TypeChecker {
         ty: &Type,
         expanding: &[BindingId],
     ) -> (Option<BindingId>, Option<Vec<Constructor>>) {
-        match self.enum_owner(ty) {
+        match self.value_owner(ty) {
             Some(owner) if !expanding.contains(&owner) => (Some(owner), self.constructors(ty)),
             Some(_) => (None, None),
             None => (None, self.constructors(ty)),
         }
     }
 
-    fn enum_owner(&self, ty: &Type) -> Option<BindingId> {
+    fn value_owner(&self, ty: &Type) -> Option<BindingId> {
         let (ty, _) = self.peeled_reference(ty);
         let Type::Named(owner, _) = &ty else {
             return None;
         };
-        self.enums.get(*owner).map(|_| *owner)
+        let owned = self.enums.get(*owner).is_some() || self.structs.get(*owner).is_some();
+        owned.then_some(*owner)
     }
 
     fn covering_arm(
@@ -412,18 +460,28 @@ impl TypeChecker {
                 },
             ]),
             Type::Named(owner, arguments) => {
-                let definition = self.enums.get(owner)?;
-                Some(
-                    definition
-                        .variants
-                        .iter()
-                        .enumerate()
-                        .map(|(index, _)| Constructor {
-                            tag: Tag::Variant { owner, index },
-                            arguments: self.visible_payloads(owner, index, &arguments),
-                        })
+                if let Some(definition) = self.enums.get(owner) {
+                    return Some(
+                        definition
+                            .variants
+                            .iter()
+                            .enumerate()
+                            .map(|(index, _)| Constructor {
+                                tag: Tag::Variant { owner, index },
+                                arguments: self.visible_payloads(owner, index, &arguments),
+                            })
+                            .collect(),
+                    );
+                }
+                let definition = self.structs.get(owner)?;
+                Some(vec![Constructor {
+                    tag: Tag::Struct(owner),
+                    arguments: definition
+                        .instantiated_fields(&arguments)
+                        .into_iter()
+                        .map(|(_, field_type)| field_type)
                         .collect(),
-                )
+                }])
             }
             _ => None,
         }
@@ -434,43 +492,48 @@ impl TypeChecker {
         matrix: &[Vec<CoverPattern>],
         constructor: &Constructor,
     ) -> Vec<Vec<CoverPattern>> {
-        let mut specialized = Vec::new();
-        for row in matrix {
-            let Some(first) = row.first() else {
-                continue;
-            };
-            let expanded = match first {
-                CoverPattern::Wild => {
-                    let mut expanded = vec![CoverPattern::Wild; constructor.arguments.len()];
-                    expanded.extend_from_slice(&row[1..]);
-                    Some(expanded)
-                }
-                CoverPattern::Variant {
-                    owner,
-                    index,
-                    arguments,
-                } if constructor.tag
-                    == (Tag::Variant {
-                        owner: *owner,
-                        index: *index,
-                    }) =>
-                {
-                    let mut expanded = arguments.clone();
-                    expanded.extend_from_slice(&row[1..]);
-                    Some(expanded)
-                }
-                CoverPattern::Literal(Literal::Bool(value))
-                    if constructor.tag == Tag::Bool(*value) =>
-                {
-                    Some(row[1..].to_vec())
-                }
-                _ => None,
-            };
-            if let Some(expanded) = expanded {
-                specialized.push(expanded);
+        matrix
+            .iter()
+            .filter_map(|row| Self::specialize_row(row, constructor))
+            .collect()
+    }
+
+    fn specialize_row(
+        row: &[CoverPattern],
+        constructor: &Constructor,
+    ) -> Option<Vec<CoverPattern>> {
+        let first = row.first()?;
+        match first {
+            CoverPattern::Wild => {
+                let arguments = vec![CoverPattern::Wild; constructor.arguments.len()];
+                Some(Self::with_arguments(row, &arguments))
             }
+            CoverPattern::Variant {
+                owner,
+                index,
+                arguments,
+            } if constructor.tag
+                == (Tag::Variant {
+                    owner: *owner,
+                    index: *index,
+                }) =>
+            {
+                Some(Self::with_arguments(row, arguments))
+            }
+            CoverPattern::Struct { owner, arguments } if constructor.tag == Tag::Struct(*owner) => {
+                Some(Self::with_arguments(row, arguments))
+            }
+            CoverPattern::Literal(Literal::Bool(value)) if constructor.tag == Tag::Bool(*value) => {
+                Some(row[1..].to_vec())
+            }
+            _ => None,
         }
-        specialized
+    }
+
+    fn with_arguments(row: &[CoverPattern], arguments: &[CoverPattern]) -> Vec<CoverPattern> {
+        let mut expanded = arguments.to_vec();
+        expanded.extend_from_slice(&row[1..]);
+        expanded
     }
 
     fn specialize_literal(
@@ -513,6 +576,10 @@ impl TypeChecker {
                 index,
                 arguments: arguments.to_vec(),
             },
+            Tag::Struct(owner) => Witness::Struct {
+                owner,
+                arguments: arguments.to_vec(),
+            },
             Tag::Bool(value) => Witness::Bool(value),
         }
     }
@@ -521,6 +588,14 @@ impl TypeChecker {
         match witness {
             Witness::Wild => "_".to_string(),
             Witness::Bool(value) => value.to_string(),
+            Witness::Struct { owner, arguments } => {
+                let name = self.bindings.get(*owner).name();
+                let parts: Vec<String> = arguments
+                    .iter()
+                    .map(|argument| self.show_witness(argument))
+                    .collect();
+                format!("({name} {})", parts.join(" "))
+            }
             Witness::Variant {
                 owner,
                 index,

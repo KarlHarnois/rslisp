@@ -496,28 +496,66 @@ impl Expander<'_> {
         let Some(head) = items.first().and_then(Form::as_symbol) else {
             return Err(ExpandProblems::not_a_pattern(span));
         };
-        if let Some(binding) = self.try_resolve(head, Namespace::Value)
-            && matches!(self.kind(binding), BindingKind::Variant(_, _))
-        {
-            let arguments = items[1..]
-                .iter()
-                .map(|argument| self.lower_pattern(argument))
-                .collect::<Result<Vec<_>, Diagnostic>>()?;
-            return Ok(PatternKind::Variant(binding, arguments));
+        if let Some(binding) = self.variant_pattern_head(head) {
+            return self.variant_pattern(binding, &items[1..]);
         }
+        if let Some(binding) = self.struct_pattern_head(head) {
+            return self.struct_pattern(binding, &items[1..]);
+        }
+        self.short_variant_pattern(head, &items[1..], span)
+    }
+
+    fn variant_pattern_head(&self, head: &Symbol) -> Option<BindingId> {
+        let binding = self.try_resolve(head, Namespace::Value)?;
+        matches!(self.kind(binding), BindingKind::Variant(_, _)).then_some(binding)
+    }
+
+    fn struct_pattern_head(&self, head: &Symbol) -> Option<BindingId> {
+        let binding = self.try_resolve(head, Namespace::Type)?;
+        matches!(self.kind(binding), BindingKind::Struct(_)).then_some(binding)
+    }
+
+    fn variant_pattern(
+        &mut self,
+        binding: BindingId,
+        arguments: &[Form],
+    ) -> Result<PatternKind, Diagnostic> {
+        Ok(PatternKind::Variant(
+            binding,
+            self.lower_pattern_arguments(arguments)?,
+        ))
+    }
+
+    fn struct_pattern(
+        &mut self,
+        binding: BindingId,
+        arguments: &[Form],
+    ) -> Result<PatternKind, Diagnostic> {
+        Ok(PatternKind::Struct(
+            binding,
+            self.lower_pattern_arguments(arguments)?,
+        ))
+    }
+
+    fn short_variant_pattern(
+        &mut self,
+        head: &Symbol,
+        arguments: &[Form],
+        span: Span,
+    ) -> Result<PatternKind, Diagnostic> {
         let candidates = self.variant_candidates(head, false);
         if candidates.is_empty() {
             return Err(ExpandProblems::not_a_pattern(span));
         }
-        let arguments = items[1..]
-            .iter()
-            .map(|argument| self.lower_pattern(argument))
-            .collect::<Result<Vec<_>, Diagnostic>>()?;
         Ok(PatternKind::ShortVariant {
             name: head.shared_name(),
             candidates,
-            arguments,
+            arguments: self.lower_pattern_arguments(arguments)?,
         })
+    }
+
+    fn lower_pattern_arguments(&mut self, forms: &[Form]) -> Result<Vec<Pattern>, Diagnostic> {
+        forms.iter().map(|form| self.lower_pattern(form)).collect()
     }
 
     fn variant_candidates(&self, symbol: &Symbol, nullary: bool) -> Vec<BindingId> {

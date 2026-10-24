@@ -1,0 +1,6 @@
+(enum tree leaf (branch tree))
+(defstruct parsed (node tree) (next usize))
+
+(defn branch-only (p)
+  (match p
+    ((parsed (branch _) _) 0)))

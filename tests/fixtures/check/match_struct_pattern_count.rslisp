@@ -1,0 +1,10 @@
+(enum tree leaf (branch tree))
+(defstruct parsed (node tree) (next usize))
+
+(defn missing (p)
+  (match p
+    ((parsed node) node)))
+
+(defn extra (p)
+  (match p
+    ((parsed node _ next) node)))

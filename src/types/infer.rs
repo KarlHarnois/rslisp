@@ -484,6 +484,9 @@ impl TypeChecker {
             PatternKind::Variant(binding, patterns) => {
                 self.named_variant_pattern(*binding, patterns, matched, mode, pattern.span)
             }
+            PatternKind::Struct(binding, patterns) => {
+                self.struct_pattern(*binding, patterns, matched, mode, pattern.span)
+            }
             PatternKind::ShortVariant {
                 name,
                 candidates,
@@ -646,6 +649,34 @@ impl TypeChecker {
         )?;
         let typed = self.lower_payload_patterns(patterns, &storage, mode)?;
         Ok(TypedPatternKind::Variant(binding, typed))
+    }
+
+    fn struct_pattern(
+        &mut self,
+        binding: BindingId,
+        patterns: &[Pattern],
+        matched: Type,
+        mode: Option<ReferenceKind>,
+        span: Span,
+    ) -> Result<TypedPatternKind, Diagnostic> {
+        let arguments = self.match_arguments(matched, binding, span)?;
+        let fields = self
+            .structs
+            .get(binding)
+            .map(|definition| definition.instantiated_fields(&arguments))
+            .unwrap_or_default();
+        self.check_pattern_count(
+            self.bindings.get(binding).name(),
+            fields.len(),
+            patterns.len(),
+            span,
+        )?;
+        let typed = patterns
+            .iter()
+            .zip(&fields)
+            .map(|(pattern, (_, field_type))| self.lower_pattern(pattern, field_type, mode))
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
+        Ok(TypedPatternKind::Struct(binding, typed))
     }
 
     fn short_variant_pattern(

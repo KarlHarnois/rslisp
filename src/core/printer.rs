@@ -218,20 +218,19 @@ impl<'a> CorePrinter<'a> {
             PatternKind::Wildcard => "_".to_string(),
             PatternKind::Bind(binding) => self.name(*binding),
             PatternKind::BareName { name, .. } => name.to_string(),
-            PatternKind::Variant(binding, arguments) => self.variant_pattern(*binding, arguments),
+            PatternKind::Variant(binding, arguments) | PatternKind::Struct(binding, arguments) => {
+                let name = self.name(*binding);
+                self.prefixed_pattern(name, arguments)
+            }
             PatternKind::ShortVariant {
                 name, arguments, ..
-            } => {
-                let mut parts = vec![name.to_string()];
-                parts.extend(arguments.iter().map(|argument| self.pattern(argument)));
-                format!("({})", parts.join(" "))
-            }
+            } => self.prefixed_pattern(name.to_string(), arguments),
             PatternKind::Literal(literal) => self.literal(literal),
         }
     }
 
-    fn variant_pattern(&mut self, binding: BindingId, arguments: &[Pattern]) -> String {
-        let mut parts = vec![self.name(binding)];
+    fn prefixed_pattern(&mut self, name: String, arguments: &[Pattern]) -> String {
+        let mut parts = vec![name];
         parts.extend(arguments.iter().map(|argument| self.pattern(argument)));
         format!("({})", parts.join(" "))
     }
