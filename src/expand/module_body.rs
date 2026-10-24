@@ -1064,6 +1064,7 @@ impl Expander<'_> {
         });
         Ok(Some(ImplMethod {
             binding: synthetic,
+            trait_method: *method_binding,
             name: self.bindings.get(*method_binding).name().into(),
             lambda,
         }))

@@ -86,6 +86,7 @@ impl<'p> EmitPlan<'p> {
             used_rust_types: BTreeSet::new(),
         };
         plan.visit_definition(main);
+        plan.reach_implemented_types();
         plan.assign_items()?;
         Ok(plan)
     }
@@ -173,6 +174,18 @@ impl<'p> EmitPlan<'p> {
                     .map(move |definition| (definition.binding, (definition, module.id)))
             })
             .collect()
+    }
+
+    fn reach_implemented_types(&mut self) {
+        let implemented: Vec<(BindingId, ModuleId)> = self
+            .program
+            .trait_impls
+            .iter()
+            .map(|implementation| (implementation.type_binding, implementation.module))
+            .collect();
+        for (binding, module) in implemented {
+            self.reach_named(binding, module);
+        }
     }
 
     fn visit_definition(&mut self, binding: BindingId) {

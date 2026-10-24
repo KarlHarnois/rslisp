@@ -14,7 +14,8 @@ use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    GenericParam, Type, TypedDefinition, TypedExpr, TypedExprKind, TypedProgram, VariantDefinition,
+    GenericId, GenericParam, ReceiverKind, Type, TypedDefinition, TypedExpr, TypedExprKind,
+    TypedProgram, VariantDefinition,
 };
 
 #[derive(Default)]
@@ -84,6 +85,16 @@ impl<'a> ItemEmitter<'a> {
 
     pub fn crate_fragments(&mut self) -> Vec<Fragment> {
         let mut fragments = Self::separated(self.module_items(self.program.entry));
+        let traits = self.traits();
+        if !traits.is_empty() {
+            fragments.extend([Fragment::Newline, Fragment::Newline]);
+            fragments.extend(Self::separated(traits));
+        }
+        let implementations = self.trait_impls();
+        if !implementations.is_empty() {
+            fragments.extend([Fragment::Newline, Fragment::Newline]);
+            fragments.extend(Self::separated(implementations));
+        }
         let mut tree = ModuleTree::default();
         for module in &self.program.modules {
             if module.id != self.program.entry {
@@ -148,6 +159,189 @@ impl<'a> ItemEmitter<'a> {
                 true,
             ),
         }
+    }
+
+    fn traits(&self) -> Vec<Vec<Fragment>> {
+        self.program
+            .trait_definitions
+            .iter()
+            .map(|trait_definition| {
+                let mut methods = Vec::new();
+                for method in &trait_definition.methods {
+                    methods.push(Fragment::Newline);
+                    methods.extend(self.trait_method(method.binding, method.receiver));
+                }
+                vec![
+                    Fragment::Text(format!("trait {} {{", trait_definition.rust_name)),
+                    Fragment::Indented(methods),
+                    Fragment::Newline,
+                    Fragment::Text("}".to_string()),
+                ]
+            })
+            .collect()
+    }
+
+    fn trait_method(&self, binding: BindingId, receiver: Option<ReceiverKind>) -> Vec<Fragment> {
+        let definition = self
+            .plan
+            .definition(binding)
+            .expect("a trait method has a definition");
+        let Type::Function(parameters, result) = &definition.scheme.body else {
+            unreachable!("a trait method has a function type")
+        };
+        let self_generic = definition.scheme.params.first().map(|param| param.id);
+        let types = RustTypes::new(
+            self.program,
+            self.plan,
+            self.unsized_parameters,
+            self.program.entry,
+        );
+        let mut rendered = Vec::new();
+        if let Some(kind) = receiver {
+            rendered.push(Self::receiver_keyword(kind).to_string());
+        }
+        let first = usize::from(receiver.is_some());
+        rendered.extend(parameters.iter().skip(first).map(|parameter| {
+            format!(
+                "_: {}",
+                Self::show_self_type(parameter, self_generic, &types)
+            )
+        }));
+        let result = if RustTypes::is_unit(result) {
+            String::new()
+        } else {
+            format!(" -> {}", Self::show_self_type(result, self_generic, &types))
+        };
+        let name = NameMangler::value(self.program.bindings.get(binding).name());
+        vec![Fragment::Text(format!(
+            "fn {name}({}){result};",
+            rendered.join(", ")
+        ))]
+    }
+
+    fn receiver_keyword(kind: ReceiverKind) -> &'static str {
+        match kind {
+            ReceiverKind::Owned => "self",
+            ReceiverKind::Shared => "&self",
+            ReceiverKind::Mutable => "&mut self",
+        }
+    }
+
+    fn show_self_type(ty: &Type, self_generic: Option<GenericId>, types: &RustTypes) -> String {
+        if Self::is_self_type(ty, self_generic) {
+            return "Self".to_string();
+        }
+        Self::show_reference(ty, self_generic, types)
+            .unwrap_or_else(|| types.show(ty, TypePosition::Signature))
+    }
+
+    fn is_self_type(ty: &Type, self_generic: Option<GenericId>) -> bool {
+        matches!(ty, Type::Generic(generic) if Some(*generic) == self_generic)
+    }
+
+    fn show_reference(
+        ty: &Type,
+        self_generic: Option<GenericId>,
+        types: &RustTypes,
+    ) -> Option<String> {
+        match ty {
+            Type::Ref(inner) => Some(format!(
+                "&{}",
+                Self::show_self_type(inner, self_generic, types)
+            )),
+            Type::Mut(inner) => Some(format!(
+                "&mut {}",
+                Self::show_self_type(inner, self_generic, types)
+            )),
+            _ => None,
+        }
+    }
+
+    fn trait_impls(&mut self) -> Vec<Vec<Fragment>> {
+        let mut items = Vec::new();
+        for position in 0..self.program.trait_impls.len() {
+            let trait_binding = self.program.trait_impls[position].trait_binding;
+            let type_binding = self.program.trait_impls[position].type_binding;
+            let module = self.program.trait_impls[position].module;
+            let methods = self.program.trait_impls[position].methods.clone();
+            let trait_name = self.trait_name(trait_binding);
+            let type_name = NameMangler::type_name(self.program.bindings.get(type_binding).name());
+            let mut body = Vec::new();
+            for method in &methods {
+                body.push(Fragment::Newline);
+                body.extend(self.impl_method(method.binding, method.receiver, module));
+            }
+            items.push(vec![
+                Fragment::Text(format!("impl {trait_name} for {type_name} {{")),
+                Fragment::Indented(body),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ]);
+        }
+        items
+    }
+
+    fn trait_name(&self, binding: BindingId) -> String {
+        NameMangler::type_name(self.program.bindings.get(binding).name())
+    }
+
+    fn impl_method(
+        &mut self,
+        binding: BindingId,
+        receiver: Option<ReceiverKind>,
+        module: ModuleId,
+    ) -> Vec<Fragment> {
+        let definition = self
+            .plan
+            .definition(binding)
+            .expect("an implementation method has a definition");
+        let TypedExprKind::Fn(lambda) = &definition.value.kind else {
+            unreachable!("an implementation method is a function")
+        };
+        let mut emitter = self.expressions(module, &definition.value);
+        emitter.prepare_tail_loop(definition.binding, lambda);
+        let types = emitter.types();
+        let mut params = Vec::new();
+        if let Some(kind) = receiver {
+            let first = &lambda.params[0];
+            emitter.locals.bind_receiver(first.binding);
+            params.push(Self::receiver_keyword(kind).to_string());
+            params.extend(
+                lambda.params[1..]
+                    .iter()
+                    .map(|param| emitter.bind_parameter(param, TypePosition::Signature)),
+            );
+        } else {
+            params.extend(
+                lambda
+                    .params
+                    .iter()
+                    .map(|param| emitter.bind_parameter(param, TypePosition::Signature)),
+            );
+        }
+        let result = match &definition.value.ty {
+            Type::Function(parameters, result) if !RustTypes::is_unit(result) => {
+                let position = if parameters.iter().any(Type::holds_reference) {
+                    TypePosition::Signature
+                } else {
+                    TypePosition::StaticResult
+                };
+                format!(" -> {}", types.show(result, position))
+            }
+            _ => String::new(),
+        };
+        let body = emitter.function_body(&lambda.body);
+        self.absorb(emitter);
+        let name = NameMangler::value(self.program.bindings.get(binding).name());
+        vec![Fragment::Spanned(
+            definition.span,
+            vec![
+                Fragment::Text(format!("fn {name}({}){result} {{", params.join(", "))),
+                Fragment::Indented(body),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ],
+        )]
     }
 
     fn function(&mut self, definition: &TypedDefinition, info: &ItemInfo) -> Vec<Fragment> {
