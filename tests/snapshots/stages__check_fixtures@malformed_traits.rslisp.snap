@@ -49,7 +49,7 @@ error[L0210]: malformed `impl`
 8 | (impl circle painted (area (c) (field c radius)))
   |       ^^^^^^ this does not fit the shape of `impl`
   |
-  = help: write a trait this module defines
+  = help: write a visible trait
 
 error[L0239]: `circle` is missing `area` from `painted`
   --> check/malformed_traits.rslisp:10:15

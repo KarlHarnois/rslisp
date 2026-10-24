@@ -1229,7 +1229,12 @@ impl<'a> ExpressionEmitter<'a> {
     fn global(&mut self, binding: BindingId, ty: &Type, span: Span) -> Code {
         if let Some(info) = self.program.trait_methods.get(&binding) {
             let name = NameMangler::value(self.program.bindings.get(binding).name());
-            return Code::atom(format!("{}::{name}", info.rust_name));
+            let path = if self.plan.uses_trait(self.module, info.trait_binding) {
+                info.rust_name.to_string()
+            } else {
+                self.plan.trait_path(info.trait_binding, self.module)
+            };
+            return Code::atom(format!("{path}::{name}"));
         }
         if let Some(TypedExprKind::Leaf(TypedLeaf::Rust(template))) = self
             .plan
@@ -1377,7 +1382,8 @@ impl<'a> ExpressionEmitter<'a> {
             .iter()
             .map(|argument| self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary))
             .collect();
-        let mut parts = vec![Code::atom(format!("{}::{name}(", info.rust_name))];
+        let path = self.plan.trait_path(info.trait_binding, self.module);
+        let mut parts = vec![Code::atom(format!("{path}::{name}("))];
         parts.extend(Self::separated(arguments));
         parts.push(Code::atom(")"));
         Code::joined(parts, Precedence::Atom)

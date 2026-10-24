@@ -1,0 +1,62 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/trait_modules.rslisp
+---
+use crate::trait_modules::shapes::Shape;
+
+fn total_area<A: Shape>(shapes: &[A]) -> f64 {
+    shapes
+        .iter()
+        .fold(0.0, |total: f64, shape: &A| total + shape.area())
+}
+
+fn areas<A: Shape>(items: &[A]) -> Vec<f64> {
+    let shapes = items.iter();
+    shapes.map(Shape::area).collect::<Vec<_>>()
+}
+
+fn main() {
+    let shapes = vec![
+        crate::trait_modules::circles::Circle { radius: 1.0 },
+        crate::trait_modules::circles::Circle { radius: 2.0 },
+    ];
+    println!("{}", total_area(&shapes));
+    println!(
+        "{}",
+        areas(&shapes)
+            .iter()
+            .copied()
+            .fold(0.0, |total: f64, area: f64| total + area)
+    );
+    let mut circle = crate::trait_modules::circles::Circle { radius: 1.0 };
+    circle.scale(2.0);
+    println!("{}", circle.area())
+}
+
+mod trait_modules {
+
+    pub(crate) mod circles {
+        #[derive(Clone, Debug, PartialEq)]
+        pub struct Circle {
+            pub radius: f64,
+        }
+
+        impl crate::trait_modules::shapes::Shape for Circle {
+            fn area(&self) -> f64 {
+                3.0 * self.radius * self.radius
+            }
+            fn scale(&mut self, factor: f64) {
+                let _radius = self.radius;
+                let _factor = factor;
+            }
+        }
+    }
+
+    pub(crate) mod shapes {
+        pub trait Shape {
+            fn area(&self) -> f64;
+            fn scale(&mut self, _: f64);
+        }
+    }
+}

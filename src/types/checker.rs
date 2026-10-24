@@ -235,9 +235,11 @@ impl TypeChecker {
     pub(super) fn collect_declarations(&mut self, modules: &[CoreModule]) {
         self.record_type_arities(modules);
         self.record_trait_arguments(modules);
-        for item in modules.iter().flat_map(|module| &module.items) {
-            if let Err(diagnostic) = self.collect_item(item) {
-                self.diagnostics.push(diagnostic);
+        for module in modules {
+            for item in &module.items {
+                if let Err(diagnostic) = self.collect_item(module.id, item) {
+                    self.diagnostics.push(diagnostic);
+                }
             }
         }
         self.box_binding = self.rust_types.box_binding();
@@ -284,12 +286,12 @@ impl TypeChecker {
         }
     }
 
-    fn collect_item(&mut self, item: &Item) -> Result<(), Diagnostic> {
+    fn collect_item(&mut self, module: ModuleId, item: &Item) -> Result<(), Diagnostic> {
         match &item.kind {
             ItemKind::Def(..) | ItemKind::Signature(..) | ItemKind::Derive(..) => {
                 self.collect_value_item(item)
             }
-            _ => self.collect_type_item(item),
+            _ => self.collect_type_item(module, item),
         }
     }
 
@@ -308,7 +310,7 @@ impl TypeChecker {
         Ok(())
     }
 
-    fn collect_type_item(&mut self, item: &Item) -> Result<(), Diagnostic> {
+    fn collect_type_item(&mut self, module: ModuleId, item: &Item) -> Result<(), Diagnostic> {
         let kind = &item.kind;
         if let ItemKind::Struct(binding, params, fields) = kind {
             return self.collect_struct(*binding, params, fields);
@@ -323,7 +325,7 @@ impl TypeChecker {
             return self.collect_rust_type(*binding, binders, template, clauses);
         }
         if let ItemKind::Trait(binding, rust_name, self_variable, methods) = kind {
-            return self.collect_user_trait(*binding, rust_name, *self_variable, methods);
+            return self.collect_user_trait(module, *binding, rust_name, *self_variable, methods);
         }
         Ok(())
     }
@@ -1289,6 +1291,7 @@ impl TypeChecker {
 
     fn collect_user_trait(
         &mut self,
+        module: ModuleId,
         binding: BindingId,
         rust_name: &std::rc::Rc<str>,
         self_variable: BindingId,
@@ -1308,6 +1311,7 @@ impl TypeChecker {
             self.trait_methods.insert(
                 method.binding,
                 TraitMethodInfo {
+                    trait_binding: binding,
                     rust_name: rust_name.clone(),
                     receiver,
                 },
@@ -1319,6 +1323,7 @@ impl TypeChecker {
         }
         self.trait_definitions.push(TypedTrait {
             binding,
+            module,
             rust_name: rust_name.clone(),
             methods: typed_methods,
         });

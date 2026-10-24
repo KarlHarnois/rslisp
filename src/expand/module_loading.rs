@@ -135,6 +135,18 @@ impl Expander<'_> {
         symbol: &Symbol,
         span: Span,
     ) -> Result<(), Diagnostic> {
+        if !self.bind_exported_namespaces(target, symbol, span)? {
+            return Err(self.missing_export(target, path, symbol, span));
+        }
+        self.import_members(target, symbol, span)
+    }
+
+    fn bind_exported_namespaces(
+        &mut self,
+        target: ModuleId,
+        symbol: &Symbol,
+        span: Span,
+    ) -> Result<bool, Diagnostic> {
         let mut found = false;
         for namespace in Self::NAMESPACES {
             if let Some(binding) = self.modules.get(target).exported(symbol.name(), namespace) {
@@ -142,19 +154,29 @@ impl Expander<'_> {
                 found = true;
             }
         }
-        if found {
-            if self
-                .modules
-                .get(target)
-                .exported(symbol.name(), Namespace::Type)
-                .is_some_and(|binding| matches!(self.kind(binding), BindingKind::Enum(_)))
-            {
-                self.import_enum_constructors(target, symbol, span)?;
-            }
-            Ok(())
-        } else {
-            Err(self.missing_export(target, path, symbol, span))
+        Ok(found)
+    }
+
+    fn import_members(
+        &mut self,
+        target: ModuleId,
+        symbol: &Symbol,
+        span: Span,
+    ) -> Result<(), Diagnostic> {
+        let Some(binding) = self
+            .modules
+            .get(target)
+            .exported(symbol.name(), Namespace::Type)
+        else {
+            return Ok(());
+        };
+        if matches!(self.kind(binding), BindingKind::Enum(_)) {
+            self.import_enum_constructors(target, symbol, span)?;
         }
+        if matches!(self.kind(binding), BindingKind::Trait(_)) {
+            self.import_trait_methods(target, symbol, binding, span)?;
+        }
+        Ok(())
     }
 
     fn import_enum_constructors(
@@ -176,6 +198,32 @@ impl Expander<'_> {
         for (name, binding) in constructors {
             let constructor = Symbol::with_scopes(name, symbol.scopes().clone());
             self.bind_import(&constructor, Namespace::Value, binding, span)?;
+        }
+        Ok(())
+    }
+
+    fn import_trait_methods(
+        &mut self,
+        target: ModuleId,
+        symbol: &Symbol,
+        trait_binding: BindingId,
+        span: Span,
+    ) -> Result<(), Diagnostic> {
+        let Some(trait_methods) = self.trait_methods.get(&trait_binding) else {
+            return Ok(());
+        };
+        let methods: Vec<BindingId> = trait_methods
+            .methods
+            .iter()
+            .map(|(binding, _)| *binding)
+            .collect();
+        for method in methods {
+            let name: Rc<str> = self.bindings.get(method).name().into();
+            if self.modules.get(target).exported(&name, Namespace::Value) != Some(method) {
+                continue;
+            }
+            let imported = Symbol::with_scopes(Rc::clone(&name), symbol.scopes().clone());
+            self.bind_import(&imported, Namespace::Value, method, span)?;
         }
         Ok(())
     }
