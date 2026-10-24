@@ -30,11 +30,15 @@ impl NameMangler {
     const ARROW_START: char = '-';
     const ARROW_END: char = '>';
     const ARROW_WORD: &str = "to";
-    const STRICT_KEYWORDS: [&str; 39] = [
+    const STRICT_KEYWORDS: [&str; 35] = [
         "as", "async", "await", "break", "const", "continue", "dyn", "else", "enum", "extern",
-        "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut",
-        "pub", "ref", "return", "static", "struct", "trait", "true", "type", "unsafe", "use",
-        "where", "while", "abstract", "become", "box", "do", "gen",
+        "false", "fn", "for", "gen", "if", "impl", "in", "let", "loop", "match", "mod", "move",
+        "mut", "pub", "ref", "return", "static", "struct", "trait", "true", "type", "unsafe",
+        "use", "where", "while",
+    ];
+    const RESERVED_KEYWORDS: [&str; 13] = [
+        "abstract", "become", "box", "do", "final", "macro", "override", "priv", "try", "typeof",
+        "unsized", "virtual", "yield",
     ];
     const NON_RAW_KEYWORDS: [&str; 4] = ["self", "Self", "super", "crate"];
 
@@ -119,7 +123,9 @@ impl NameMangler {
     fn guard_keyword(name: String) -> String {
         if Self::NON_RAW_KEYWORDS.contains(&name.as_str()) {
             format!("{name}_")
-        } else if Self::STRICT_KEYWORDS.contains(&name.as_str()) {
+        } else if Self::STRICT_KEYWORDS.contains(&name.as_str())
+            || Self::RESERVED_KEYWORDS.contains(&name.as_str())
+        {
             format!("r#{name}")
         } else {
             name
@@ -166,7 +172,14 @@ mod tests {
 
     #[test]
     fn keywords_become_raw_identifiers() {
-        assert_eq!(NameMangler::value("type"), "r#type");
-        assert_eq!(NameMangler::value("self"), "self_");
+        for keyword in NameMangler::STRICT_KEYWORDS
+            .into_iter()
+            .chain(NameMangler::RESERVED_KEYWORDS)
+        {
+            assert_eq!(NameMangler::value(keyword), format!("r#{keyword}"));
+        }
+        for keyword in NameMangler::NON_RAW_KEYWORDS {
+            assert_eq!(NameMangler::value(keyword), format!("{keyword}_"));
+        }
     }
 }
