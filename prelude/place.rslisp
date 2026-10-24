@@ -1,7 +1,5 @@
-(use code first rest list prepend concat length empty? symbol? list?
-          same-binding? number-add number-sub number-lt string)
+(use code first rest list concat empty? symbol? list? same-binding?)
 (use prelude/macros defmacro)
-(use prelude/types vec)
 (use prelude/vec at)
 
 (export set!)
@@ -31,46 +29,7 @@
                 (list (first (rest (rest form)))))
         (list))))
 
-(def index-placeholders
-  (fn (index count)
-    (if (number-lt index (number-add count 1))
-        (string "[{" index "}]" (index-placeholders (number-add index 1) count))
-        "")))
-
-(def set-template
-  (fn (count)
-    (string "{0}" (index-placeholders 1 count)
-            " = {" (number-add count 1) "}")))
-
-(def repeated-type
-  (fn (item count)
-    (if (number-lt 0 count)
-        (prepend item (repeated-type item (number-sub count 1)))
-        (list))))
-
-(def nested-vector
-  (fn (depth)
-    (if (number-lt 0 depth)
-        (list (quote vec) (nested-vector (number-sub depth 1)))
-        (quote a))))
-
-(def at-type
-  (fn (count)
-    (list (quote where) (list (quote a))
-          (list (quote fn)
-                (concat (list (list (quote mut) (nested-vector count)))
-                        (concat (repeated-type (quote usize) count)
-                                (list (quote a))))
-                (quote unit)))))
-
-(def at-set
-  (fn (form value)
-    (let count (length (at-indices form)))
-    (prepend (list (quote rust) (set-template count) (at-type count))
-             (concat (prepend (at-base form) (at-indices form))
-                     (list value)))))
-
 (defmacro set! (target value)
   (if (at-form? target)
-      (at-set target value)
+      (list (quote set-at) (at-base target) (at-indices target) value)
       (list (quote set-place!) target value)))

@@ -1,0 +1,92 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/sorted_map.rslisp
+---
+fn size_of<A: crate::rt::Sequence>(collection: &A) -> usize {
+    collection.len()
+}
+
+fn main() {
+    let empty: std::collections::BTreeMap<String, i64> = {
+        let result: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::new();
+        result
+    };
+    let built: std::collections::BTreeMap<&str, i64> = {
+        let mut map = std::collections::BTreeMap::new();
+        map.insert("b", 2_i64);
+        map.insert("a", 1_i64);
+        map
+    };
+    let added: std::collections::BTreeMap<&str, i64> = {
+        let mut built = built;
+        built.insert("c", 3);
+        built
+    };
+    let mut changed: std::collections::BTreeMap<&str, i64> = {
+        let mut added = added;
+        added.insert("a", 10);
+        added
+    };
+    *changed.get_mut(&"b").unwrap() = 20;
+    let pairs: Vec<(&str, i64)> = vec![("x", 1_i64), ("y", 2_i64)];
+    let collected: std::collections::BTreeMap<&str, i64> = pairs
+        .into_iter()
+        .collect::<std::collections::BTreeMap<_, _>>(
+    );
+    let next: std::collections::BTreeMap<&str, i64> = {
+        let mut changed = changed;
+        let function = |n: i64| n + 1;
+        let old = changed.remove(&"a").unwrap_or(0);
+        changed.insert("a", function(old));
+        changed
+    };
+    println!("{} {}", next.len(), empty.is_empty());
+    println!("{}", next.get("a").unwrap());
+    next.keys().for_each(|key: &&str| println!("{}", key));
+    next.values().for_each(|value: &i64| println!("{}", value));
+    next.iter().for_each(|entry: (&&str, &i64)| {
+        let (key, value) = entry;
+        println!("{} {}", key, value)
+    });
+    println!("{}", collected.len());
+    println!("{}", size_of(&next))
+}
+
+mod rt {
+    pub trait Sequence {
+        fn len(&self) -> usize;
+    }
+
+    impl Sequence for String {
+        fn len(&self) -> usize {
+            self.as_str().len()
+        }
+    }
+
+    impl Sequence for str {
+        fn len(&self) -> usize {
+            str::len(self)
+        }
+    }
+
+    impl<T> Sequence for Vec<T> {
+        fn len(&self) -> usize {
+            Vec::len(self)
+        }
+    }
+
+    impl<T> Sequence for [T] {
+        fn len(&self) -> usize {
+            <[T]>::len(self)
+        }
+    }
+
+    use std::collections::BTreeMap;
+
+    impl<Key, Value> Sequence for BTreeMap<Key, Value> {
+        fn len(&self) -> usize {
+            BTreeMap::len(self)
+        }
+    }
+}

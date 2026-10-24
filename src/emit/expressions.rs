@@ -18,9 +18,9 @@ use crate::diagnostic::Diagnostic;
 use crate::reader::{Number, NumberValue};
 use crate::source::Span;
 use crate::types::{
-    Borrow, GenericId, Type, TypedArgument, TypedArm, TypedBinder, TypedBlock, TypedBodyItem,
-    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedMatch, TypedPattern,
-    TypedPatternKind, TypedProgram, TypedStructExpr, VariantPayload,
+    Borrow, Collection, GenericId, Type, TypedArgument, TypedArm, TypedBinder, TypedBlock,
+    TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedMatch,
+    TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr, VariantPayload,
 };
 
 mod tail_loop;
@@ -30,6 +30,20 @@ use tail_loop::TailLoop;
 enum TypeContext {
     Known,
     Unknown,
+}
+
+struct UpdateArgument {
+    name: Option<String>,
+    code: Code,
+}
+
+impl UpdateArgument {
+    fn usage(&self) -> Code {
+        match &self.name {
+            Some(name) => Code::atom(name.clone()),
+            None => self.code.clone(),
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -161,6 +175,8 @@ impl<'a> ExpressionEmitter<'a> {
     const STRING_GUARD_BINDING: &'static str = "text";
     const BOX_BINDING: &'static str = "inner";
     const RECEIVER: &'static str = "{0}.";
+    const DEREF_RECEIVER: &'static str = "*{0}.";
+    const MAP_UPDATE_TEMPLATE: &'static str = "@map-update";
     const INTEGER_CONVERSION: &'static str = "from_literal";
     const FLOAT_CONVERSION: &'static str = "from_float_literal";
 
@@ -1194,7 +1210,6 @@ impl<'a> ExpressionEmitter<'a> {
         item: &TypedExpr,
     ) -> Vec<Fragment> {
         let value_code = self.expr(value);
-        let key_codes: Vec<Code> = keys.iter().map(|key| self.expr(key)).collect();
         let item_code = self.expr(item);
         let mut inner = vec![
             Fragment::Newline,
@@ -1203,6 +1218,20 @@ impl<'a> ExpressionEmitter<'a> {
         inner.extend(value_code.fragments);
         inner.push(Fragment::Text(";".to_string()));
         inner.push(Fragment::Newline);
+        if let Some(collection) = Collection::of(&value.ty, &self.program.rust_types)
+            && collection.is_map()
+        {
+            let key_code = self.expr(&keys[0]);
+            inner.push(Fragment::Text(format!("{name}.insert(")));
+            inner.extend(key_code.fragments);
+            inner.push(Fragment::Text(", ".to_string()));
+            inner.extend(item_code.fragments);
+            inner.push(Fragment::Text(");".to_string()));
+            inner.push(Fragment::Newline);
+            inner.push(Fragment::Text(name.to_string()));
+            return inner;
+        }
+        let key_codes: Vec<Code> = keys.iter().map(|key| self.expr(key)).collect();
         inner.push(Fragment::Text(name.to_string()));
         for key in key_codes {
             inner.push(Fragment::Text("[".to_string()));
@@ -1654,6 +1683,9 @@ impl<'a> ExpressionEmitter<'a> {
         types: Vec<(String, Code)>,
         span: Span,
     ) -> Code {
+        if template.template.as_ref() == Self::MAP_UPDATE_TEMPLATE {
+            return self.map_update_call(arguments);
+        }
         let parsed = Template::new(&template.template);
         let context = Self::argument_context(arguments);
         let roles: Vec<ArgumentRole> = arguments
@@ -1671,6 +1703,84 @@ impl<'a> ExpressionEmitter<'a> {
             .map(|(argument, role)| self.argument(argument, context, *role))
             .collect();
         self.inline_with_places(&parsed, arguments, types, &places, span)
+    }
+
+    fn map_update_call(&mut self, arguments: &[TypedArgument]) -> Code {
+        self.locals.enter();
+        let map_name = self.map_update_base(&arguments[0].value);
+        let map = self.expr(&arguments[0].value);
+        let key = self.update_argument(&arguments[1].value, "key");
+        let function = self.update_argument(&arguments[2].value, "function");
+        let default = self.update_argument(&arguments[3].value, "default");
+        let old = self.locals.temporary("old");
+        let mut inner = vec![
+            Fragment::Newline,
+            Fragment::Text(format!("let mut {map_name} = ")),
+        ];
+        inner.extend(map.fragments);
+        inner.push(Fragment::Text(";".to_string()));
+        for argument in [&key, &function, &default] {
+            if let Some(name) = &argument.name {
+                inner.push(Fragment::Newline);
+                inner.push(Fragment::Text(format!("let {name} = ")));
+                inner.extend(argument.code.fragments.clone());
+                inner.push(Fragment::Text(";".to_string()));
+            }
+        }
+        let key_use = key.usage();
+        let function_use = function.usage();
+        let default_use = default.usage();
+        inner.push(Fragment::Newline);
+        inner.push(Fragment::Text(format!("let {old} = {map_name}.remove(&")));
+        inner.extend(key_use.fragments.clone());
+        inner.push(Fragment::Text(").unwrap_or(".to_string()));
+        inner.extend(default_use.fragments);
+        inner.push(Fragment::Text(");".to_string()));
+        inner.push(Fragment::Newline);
+        inner.push(Fragment::Text(format!("{map_name}.insert(")));
+        inner.extend(key_use.fragments);
+        inner.push(Fragment::Text(", ".to_string()));
+        inner.extend(function_use.fragments);
+        inner.push(Fragment::Text(format!("({old}));")));
+        inner.push(Fragment::Newline);
+        inner.push(Fragment::Text(map_name));
+        self.locals.leave();
+        Code {
+            fragments: vec![
+                Fragment::Text("{".to_string()),
+                Fragment::Indented(inner),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ],
+            precedence: Precedence::Block,
+        }
+    }
+
+    fn map_update_base(&mut self, value: &TypedExpr) -> String {
+        match &value.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self
+                .locals
+                .get(*binding)
+                .map(str::to_string)
+                .unwrap_or_else(|| self.locals.temporary("map")),
+            _ => self.locals.temporary("map"),
+        }
+    }
+
+    fn update_argument(&mut self, value: &TypedExpr, role: &str) -> UpdateArgument {
+        let code = self.expr(value);
+        if matches!(
+            value.kind,
+            TypedExprKind::Leaf(TypedLeaf::Literal(_)) | TypedExprKind::Leaf(TypedLeaf::Local(_))
+        ) {
+            UpdateArgument { name: None, code }
+        } else {
+            let name = self.locals.temporary(role);
+            UpdateArgument {
+                name: Some(name),
+                code,
+            }
+        }
     }
 
     fn argument_context(arguments: &[TypedArgument]) -> TypeContext {
@@ -1705,7 +1815,10 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn is_receiver(template: &RustTemplate, parsed: &Template, position: usize) -> bool {
-        (position == 0 && template.template.starts_with(Self::RECEIVER)) || parsed.indexes(position)
+        (position == 0
+            && (template.template.starts_with(Self::RECEIVER)
+                || template.template.starts_with(Self::DEREF_RECEIVER)))
+            || parsed.indexes(position)
     }
 
     fn is_mut_place(parsed: &Template, position: usize, argument: &TypedArgument) -> bool {

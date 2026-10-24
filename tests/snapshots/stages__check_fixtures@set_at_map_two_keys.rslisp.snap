@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/set_at_map_two_keys.rslisp
+---
+error[L0402]: this function takes 1 argument but 2 were given
+ --> check/set_at_map_two_keys.rslisp:3:3
+  |
+3 |   (set-at m ("a" "b") 2))
+  |   ^^^^^^^^^^^^^^^^^^^^^^ expected 1 argument

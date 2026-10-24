@@ -1,0 +1,6 @@
+(use prelude/types sequence)
+
+(export empty?)
+
+(def empty?
+  (rust "{0}.is_empty()" (where ((collection sequence)) (fn ((ref collection)) bool))))

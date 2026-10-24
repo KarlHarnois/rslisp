@@ -20,6 +20,8 @@ pub enum ExpressionForm {
     Struct(StructForm),
     Match,
     Assoc,
+    MapAt,
+    SetAt,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -62,7 +64,7 @@ struct KernelFormRow {
 }
 
 impl KernelForm {
-    const ROWS: [KernelFormRow; 27] = [
+    const ROWS: [KernelFormRow; 29] = [
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Fn),
             name: "fn",
@@ -117,6 +119,16 @@ impl KernelForm {
             form: KernelForm::Expression(ExpressionForm::Assoc),
             name: "assoc-at",
             shape: "(assoc-at value (key ...) item)",
+        },
+        KernelFormRow {
+            form: KernelForm::Expression(ExpressionForm::MapAt),
+            name: "map-at",
+            shape: "(map-at operation value argument ...)",
+        },
+        KernelFormRow {
+            form: KernelForm::Expression(ExpressionForm::SetAt),
+            name: "set-at",
+            shape: "(set-at value (key ...) item)",
         },
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Struct(StructForm::New)),

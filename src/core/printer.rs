@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use super::{
     Arm, Binder, BindingArena, BindingId, Block, BodyItem, ClosureKind, Control, CoreModule, Expr,
     ExprKind, FieldLabel, Item, ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal,
-    ParsedTemplate, Pattern, PatternKind, RustTemplate, StructExpr, TypeBinder, TypeBound,
-    TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload,
+    MapOperation, ParsedTemplate, Pattern, PatternKind, RustTemplate, StructExpr, TypeBinder,
+    TypeBound, TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload,
 };
 
 pub struct CorePrinter<'a> {
@@ -138,6 +138,10 @@ impl<'a> CorePrinter<'a> {
             ExprKind::Struct(structure) => self.structure(structure),
             ExprKind::Variant(binding, arguments) => self.variant(*binding, arguments),
             ExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item),
+            ExprKind::MapAt(operation, value, arguments) => {
+                self.map_at(*operation, value, arguments)
+            }
+            ExprKind::SetAt(value, keys, item) => self.set_at(value, keys, item),
             _ => self.written_or_recur(kind),
         }
     }
@@ -161,6 +165,24 @@ impl<'a> CorePrinter<'a> {
         let keys: Vec<String> = keys.iter().map(|key| self.expr(key)).collect();
         Self::list(
             "assoc-at",
+            vec![
+                self.expr(value),
+                format!("({})", keys.join(" ")),
+                self.expr(item),
+            ],
+        )
+    }
+
+    fn map_at(&mut self, operation: MapOperation, value: &Expr, arguments: &[Expr]) -> String {
+        let mut parts = vec![operation.keyword().to_string(), self.expr(value)];
+        parts.extend(arguments.iter().map(|argument| self.expr(argument)));
+        Self::list("map-at", parts)
+    }
+
+    fn set_at(&mut self, value: &Expr, keys: &[Expr], item: &Expr) -> String {
+        let keys: Vec<String> = keys.iter().map(|key| self.expr(key)).collect();
+        Self::list(
+            "set-at",
             vec![
                 self.expr(value),
                 format!("({})", keys.join(" ")),

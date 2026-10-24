@@ -1530,7 +1530,7 @@ impl TypeChecker {
         }
     }
 
-    fn report_missing_trait(&mut self, bound: &Bound, implementor: &Type, span: Span) {
+    pub(super) fn report_missing_trait(&mut self, bound: &Bound, implementor: &Type, span: Span) {
         let display = self.display();
         let mut diagnostic = self.missing_trait_diagnostic(bound, implementor, span, &display);
         if let Type::Named(binding, _) = implementor {

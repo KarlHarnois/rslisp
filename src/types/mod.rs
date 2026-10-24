@@ -1,5 +1,6 @@
 mod boxes;
 mod checker;
+mod collection;
 mod copy;
 mod coverage;
 mod derives;
@@ -26,6 +27,7 @@ mod wrapper;
 
 pub use crate::core::ClosureKind;
 pub use checker::TypeChecker;
+pub use collection::{Collection, CollectionKind};
 pub use copy::{CopyRules, InferredCopies};
 pub use display::TypeDisplay;
 pub use enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};

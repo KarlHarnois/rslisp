@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/sorted_map_words.rslisp
+---
+and 1
+cat 1
+hat 1
+the 2

@@ -1,0 +1,11 @@
+(defn count-words (text)
+  (fold (split (as-str text) " ")
+        (sorted-map)
+        (fn (counts word)
+          (update counts (to-string word) (fn (n) (+ n 1)) 0))))
+
+(defn main ()
+  (for-each (entries (count-words (to-string "the cat and the hat")))
+            (fn (entry)
+              (let-pair (word count) entry
+                (println (str word " " count))))))

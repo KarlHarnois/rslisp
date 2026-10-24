@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/sorted_map.rslisp
+---
+(def main (fn () (let m ((rust "{{ let mut map = std::collections::BTreeMap::new(); map.insert({0}, {1}); map }}" (where ((key ord) value) (fn (key value) (sorted-map key value)))) "a" 1)) (let found (map-at lookup m "a")) (for-each (map-at keys m) (fn (key_2) ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0 display)) (fn ((ref part-type-0)) unit))) key_2))) (for-each (map-at vals m) (fn (value_2) ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0_2 display)) (fn ((ref part-type-0_2)) unit))) value_2))) (for-each (map-at entries m) (fn (entry) ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0_3 display)) (fn ((ref part-type-0_3)) unit))) entry))) (let next (map-at update m "a" (fn (n) (add n 1)) 0)) (set-at next ("a") 2) ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0_4 display)) (fn ((ref part-type-0_4)) unit))) found)))

@@ -1,0 +1,72 @@
+(use code list prepend string length empty? number-add number-lt)
+(use prelude/macros defmacro defrule)
+(use prelude/types vec sorted-map)
+(use prelude/pair pair)
+(use prelude/number ord)
+
+(export sorted-map lookup keys vals entries update into-sorted-map)
+
+(rust-trait borrow "std::borrow::Borrow"
+  bool char (ref str) string i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
+  (with string str))
+
+(def map-inserts
+  (fn (index count)
+    (if (number-lt index count)
+        (string "map.insert({" index "}, {" (number-add index 1) "}); "
+                (map-inserts (number-add index 2) count))
+        "")))
+
+(def map-parameters
+  (fn (index count)
+    (if (number-lt index count)
+        (prepend (quote key)
+                 (prepend (quote value)
+                          (map-parameters (number-add index 2) count)))
+        (list))))
+
+(def map-type
+  (fn (name bounds count)
+    (list (quote where)
+          (list (prepend (quote key) bounds) (quote value))
+          (list (quote fn)
+                (map-parameters 0 count)
+                (list name (quote key) (quote value))))))
+
+(def map-form
+  (fn (rust-type name bounds pairs)
+    (if (empty? pairs)
+        (list (quote rust) (string rust-type "::new()")
+              (list (quote where) (list (prepend (quote key) bounds) (quote value))
+                    (list name (quote key) (quote value))))
+        (do
+          (let count (length pairs))
+          (prepend
+            (list (quote rust)
+                  (string "{{ let mut map = " rust-type "::new(); "
+                          (map-inserts 0 count) "map }}")
+                  (map-type name bounds count))
+            pairs)))))
+
+(defmacro sorted-map (pairs ...)
+  (map-form "std::collections::BTreeMap" (quote sorted-map) (quote (ord)) pairs))
+
+(def into-sorted-map
+  (rust "{0}.into_iter().collect::<std::collections::BTreeMap<_, _>>()"
+        (where ((key ord) (value))
+          (fn ((vec (pair key value))) (sorted-map key value)))))
+
+(defrule lookup
+  ((m key) (map-at lookup m key)))
+
+(defrule keys
+  ((m) (map-at keys m)))
+
+(defrule vals
+  ((m) (map-at vals m)))
+
+(defrule entries
+  ((m) (map-at entries m)))
+
+(defrule update
+  ((m key function default) (map-at update m key function default)))

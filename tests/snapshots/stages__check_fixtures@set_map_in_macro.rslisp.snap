@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/set_map_in_macro.rslisp
+---
+error[L0316]: map operations only exist at runtime
+ --> check/set_map_in_macro.rslisp:2:3
+  |
+2 |   (set! (at m (to-string "x")) 1))
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ used at compile time here

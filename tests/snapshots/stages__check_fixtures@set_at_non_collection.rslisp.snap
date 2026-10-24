@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/set_at_non_collection.rslisp
+---
+error[L0401]: mismatched types
+ --> check/set_at_non_collection.rslisp:4:13
+  |
+4 |   (set! (at (new cell (alive false)) 0) true))
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^ expected a collection, found cell

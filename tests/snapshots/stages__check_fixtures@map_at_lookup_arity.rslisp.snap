@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/map_at_lookup_arity.rslisp
+---
+error[L0402]: this function takes 1 argument but 0 were given
+ --> check/map_at_lookup_arity.rslisp:2:3
+  |
+2 |   (map-at lookup (sorted-map "a" 1)))
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 1 argument
