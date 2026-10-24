@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/match_moves_in_every_arm.rslisp
+---
+(type consume (fn ((vec i64)) usize))
+(type choose (fn (bool) usize))
+(type main (fn () unit))
