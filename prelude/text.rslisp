@@ -7,7 +7,7 @@
 (use prelude/types vec option result iterator box)
 (use prelude/io io-error)
 
-(export display debug to-string print println prn pr-str str char chars lines split trim as-str parse parse-error from-str)
+(export display debug to-string print println prn pr-str str char chars lines split trim as-str parse parse-error from-str lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!)
 
 (rust-trait display "std::fmt::Display"
   bool char str string (ref str) io-error i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
@@ -215,3 +215,12 @@
 
 (defmacro char (text)
   (list (quote rust) (string "'" (escape-char text) "'") (quote char)))
+
+(def split-when (rust "{0}.split({1})" (fn ((ref str) (fn (char) bool)) (iterator (ref str)))))
+(def lower-case (rust "{0}.to_lowercase()" (fn ((ref str)) string)))
+(def upper-case (rust "{0}.to_uppercase()" (fn ((ref str)) string)))
+(def alphanumeric? (rust "{0}.is_alphanumeric()" (fn (char) bool)))
+(def whitespace? (rust "{0}.is_whitespace()" (fn (char) bool)))
+(def digit? (rust "{0}.is_ascii_digit()" (fn (char) bool)))
+(def append! (rust "{0}.push_str({1})" (fn ((mut string) (ref str)) unit)))
+(def append-char! (rust "{0}.push({1})" (fn ((mut string) char) unit)))
