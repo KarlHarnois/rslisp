@@ -25,13 +25,39 @@ impl GenericId {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ClosureKind {
+    Fn,
+    FnMut,
+    FnOnce,
+}
+
+impl ClosureKind {
+    pub fn meets(self, required: Self) -> bool {
+        matches!(
+            (self, required),
+            (Self::Fn, _)
+                | (Self::FnMut, Self::FnMut | Self::FnOnce)
+                | (Self::FnOnce, Self::FnOnce)
+        )
+    }
+
+    pub fn keyword(self) -> &'static str {
+        match self {
+            Self::Fn => "Fn",
+            Self::FnMut => "FnMut",
+            Self::FnOnce => "FnOnce",
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Type {
     Var(TypeVar),
     Generic(GenericId),
     Primitive(PrimitiveType),
     Named(BindingId, Vec<Type>),
-    Function(Vec<Type>, Box<Type>),
+    Function(ClosureKind, Vec<Type>, Box<Type>),
     Ref(Box<Type>),
     Mut(Box<Type>),
 }
@@ -94,7 +120,8 @@ impl Type {
                     .map(|argument| argument.substitute_vars(replacements))
                     .collect(),
             ),
-            Type::Function(parameters, result) => Type::Function(
+            Type::Function(kind, parameters, result) => Type::Function(
+                *kind,
                 parameters
                     .iter()
                     .map(|parameter| parameter.substitute_vars(replacements))
@@ -116,7 +143,8 @@ impl Type {
             Type::Named(binding, arguments) => {
                 Type::Named(*binding, Self::substitute_all(arguments, replacements))
             }
-            Type::Function(parameters, result) => Type::Function(
+            Type::Function(kind, parameters, result) => Type::Function(
+                *kind,
                 Self::substitute_all(parameters, replacements),
                 Box::new(result.substitute(replacements)),
             ),
@@ -136,7 +164,7 @@ impl Type {
     pub fn parts(&self) -> Vec<&Type> {
         match self {
             Type::Named(_, arguments) => arguments.iter().collect(),
-            Type::Function(parameters, result) => parameters
+            Type::Function(_, parameters, result) => parameters
                 .iter()
                 .chain(std::iter::once(result.as_ref()))
                 .collect(),
@@ -266,10 +294,15 @@ mod tests {
         let replacement = fixture.replacement.clone();
         assert_eq!(
             fixture.substitute(&Type::Function(
+                ClosureKind::Fn,
                 vec![variable.clone()],
                 Box::new(variable.clone())
             )),
-            Type::Function(vec![replacement.clone()], Box::new(replacement.clone()))
+            Type::Function(
+                ClosureKind::Fn,
+                vec![replacement.clone()],
+                Box::new(replacement.clone())
+            )
         );
         assert_eq!(
             fixture.substitute(&Type::Ref(Box::new(variable.clone()))),

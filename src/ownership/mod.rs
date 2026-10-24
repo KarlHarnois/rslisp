@@ -2,6 +2,7 @@ mod changes;
 mod checks;
 mod definitions;
 mod functions;
+mod kinds;
 mod modes;
 mod moves;
 mod mutation;
@@ -19,6 +20,7 @@ use crate::diagnostic::Diagnostics;
 use crate::types::{CopyRules, InferredCopies, PendingModeCheck, TypedExprKind, TypedProgram};
 use checks::{BorrowedResults, OwnershipNeeds};
 use functions::{FunctionTable, ParamMode};
+use kinds::{ClosureKinds, KindReport};
 use modes::ModeInference;
 use moves::MoveChecker;
 use names::ChangingFunctionNames;
@@ -66,6 +68,17 @@ impl OwnershipChecker {
         FunctionValueModes::apply(program, rewrite.function_params())
             .into_iter()
             .for_each(|diagnostic| diagnostics.push(diagnostic));
+        let function_parameters = ClosureKinds::function_parameters(program);
+        let kinds = ClosureKinds::new(
+            &program.traits,
+            &program.generics,
+            &program.structs,
+            &program.enums,
+            &program.bindings,
+            function_parameters,
+        );
+        let report = kinds.run(&mut program.modules);
+        Self::apply_kinds(program, report, &mut diagnostics);
         let mut inferred_copies = InferredCopies::default();
         for definition in program
             .modules
@@ -108,6 +121,14 @@ impl OwnershipChecker {
             program.warnings.extend(warnings);
         }
         diagnostics.into_result(inferred_copies)
+    }
+
+    fn apply_kinds(program: &mut TypedProgram, report: KindReport, diagnostics: &mut Diagnostics) {
+        program.mutable_function_bindings = report.mutable_bindings;
+        report
+            .diagnostics
+            .into_iter()
+            .for_each(|diagnostic| diagnostics.push(diagnostic));
     }
 
     fn check_written_modes(

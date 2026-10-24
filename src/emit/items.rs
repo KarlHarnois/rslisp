@@ -206,7 +206,7 @@ impl<'a> ItemEmitter<'a> {
             .plan
             .definition(binding)
             .expect("a trait method has a definition");
-        let Type::Function(parameters, result) = &definition.scheme.body else {
+        let Type::Function(_, parameters, result) = &definition.scheme.body else {
             unreachable!("a trait method has a function type")
         };
         let self_generic = definition.scheme.params.first().map(|param| param.id);
@@ -363,7 +363,7 @@ impl<'a> ItemEmitter<'a> {
             );
         }
         let result = match &definition.value.ty {
-            Type::Function(parameters, result) if !RustTypes::is_unit(result) => {
+            Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
                 let position = if parameters.iter().any(Type::holds_reference) {
                     TypePosition::Signature
                 } else {
@@ -434,7 +434,7 @@ impl<'a> ItemEmitter<'a> {
             .map(|param| emitter.bind_parameter(param, TypePosition::Signature))
             .collect();
         let result = match &definition.value.ty {
-            Type::Function(parameters, result) if !RustTypes::is_unit(result) => {
+            Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
                 let position = if parameters.iter().any(Type::holds_reference) {
                     TypePosition::Signature
                 } else {
@@ -664,6 +664,8 @@ impl<'a> ItemEmitter<'a> {
             .into_iter()
             .filter_map(|binding| self.plan.item(binding))
             .map(|item| item.name.clone());
+        let mut mutable = MutableLocals::of(value);
+        mutable.extend(self.program.mutable_function_bindings.iter().copied());
         ExpressionEmitter::new(
             self.program,
             self.plan,
@@ -671,7 +673,7 @@ impl<'a> ItemEmitter<'a> {
             module,
             LocalNames::new(reserved.collect::<Vec<String>>()),
         )
-        .with_mutable_locals(MutableLocals::of(value))
+        .with_mutable_locals(mutable.into_set())
     }
 
     fn absorb(&mut self, emitter: ExpressionEmitter) {

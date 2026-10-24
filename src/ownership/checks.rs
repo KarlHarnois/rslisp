@@ -11,7 +11,7 @@ pub struct BorrowedResults;
 
 impl BorrowedResults {
     pub fn check(definition: &TypedDefinition, bindings: &BindingArena) -> Option<Diagnostic> {
-        let Type::Function(parameters, result) = &definition.value.ty else {
+        let Type::Function(_, parameters, result) = &definition.value.ty else {
             return None;
         };
         let borrowed_parameters = parameters
@@ -98,7 +98,7 @@ impl<'a> OwnershipNeeds<'a> {
             return parameters.clone();
         }
         match &callee.ty {
-            Type::Function(parameters, _) => parameters.clone(),
+            Type::Function(_, parameters, _) => parameters.clone(),
             _ => Vec::new(),
         }
     }

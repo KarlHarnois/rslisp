@@ -7,7 +7,7 @@ use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
 use super::templates::TemplateBorrows;
 use super::traits::TraitTable;
-use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
+use super::ty::{Bound, ClosureKind, GenericId, GenericParam, Scheme, Type};
 use crate::core::{
     BindingArena, BindingId, FieldLabel, Literal, ModuleId, ModulePath, ReferenceKind, RustTemplate,
 };
@@ -173,6 +173,9 @@ pub struct TypedLambda {
     pub params: Vec<TypedBinder>,
     pub body: TypedBlock,
     pub wraps: Option<BindingId>,
+    pub kind: ClosureKind,
+    pub moved_capture: Option<(BindingId, Span)>,
+    pub changed_capture: Option<(BindingId, Span)>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -204,7 +207,7 @@ pub struct TypedDefinition {
 
 impl TypedDefinition {
     pub fn result_error(&self, rust_types: &RustTypeTable) -> Option<&Type> {
-        let Type::Function(_, result) = &self.value.ty else {
+        let Type::Function(_, _, result) = &self.value.ty else {
             return None;
         };
         let Type::Named(binding, arguments) = result.as_ref() else {
@@ -283,6 +286,7 @@ pub struct TypedProgram {
     pub template_borrows: TemplateBorrows,
     pub pending_mode_checks: Vec<PendingModeCheck>,
     pub borrowed_parameters: HashSet<BindingId>,
+    pub mutable_function_bindings: HashSet<BindingId>,
     pub warnings: Diagnostics,
 }
 

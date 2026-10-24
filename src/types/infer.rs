@@ -1021,7 +1021,7 @@ impl TypeChecker {
         context: &MismatchContext,
     ) -> Result<TypedExpr, Diagnostic> {
         match (expr.kind(), self.unifier.shallow(expected)) {
-            (ExprKind::Fn(lambda), Type::Function(parameters, result))
+            (ExprKind::Fn(lambda), Type::Function(_, parameters, result))
                 if parameters.len() == lambda.params.len() =>
             {
                 let expectation = ExpectedFunction {
@@ -1109,12 +1109,19 @@ impl TypeChecker {
         let result_span = Self::block_result_span(&body).unwrap_or(span);
         self.expect(&result, &found, result_span, context)?;
         let parameter_types = params.iter().map(|param| param.ty.clone()).collect();
-        let function = Type::Function(parameter_types, Box::new(result));
+        let function = Type::Function(
+            crate::types::ClosureKind::Fn,
+            parameter_types,
+            Box::new(result),
+        );
         Ok((
             TypedExprKind::Fn(Rc::new(TypedLambda {
                 params,
                 body,
                 wraps: None,
+                kind: crate::types::ClosureKind::Fn,
+                moved_capture: None,
+                changed_capture: None,
             })),
             function,
         ))
@@ -1393,7 +1400,7 @@ impl TypeChecker {
             return self.wrap_function_value(parameter, value);
         };
         match self.unifier.shallow(parameter) {
-            Type::Function(parameters, result) if parameters.len() == lambda.params.len() => {
+            Type::Function(_, parameters, result) if parameters.len() == lambda.params.len() => {
                 let expectation = ExpectedFunction {
                     parameters: &parameters,
                     result: &result,
@@ -1416,7 +1423,7 @@ impl TypeChecker {
             return Ok(value);
         };
         let binding = *binding;
-        let (Type::Function(expected, expected_result), Type::Function(found, found_result)) = (
+        let (Type::Function(_, expected, expected_result), Type::Function(_, found, found_result)) = (
             self.unifier.resolve(parameter),
             self.unifier.resolve(&value.ty),
         ) else {
@@ -1455,12 +1462,16 @@ impl TypeChecker {
         argument_count: usize,
     ) -> Result<(Vec<Type>, Type), Diagnostic> {
         match self.unifier.shallow(&callee.ty) {
-            Type::Function(parameters, result) => Ok((parameters, *result)),
+            Type::Function(_, parameters, result) => Ok((parameters, *result)),
             Type::Var(var) if self.unifier.literal_kind(var).is_none() => {
                 let parameters: Vec<Type> =
                     (0..argument_count).map(|_| self.unifier.fresh()).collect();
                 let result = self.unifier.fresh();
-                let shape = Type::Function(parameters.clone(), Box::new(result.clone()));
+                let shape = Type::Function(
+                    crate::types::ClosureKind::Fn,
+                    parameters.clone(),
+                    Box::new(result.clone()),
+                );
                 self.expect(&shape, &callee.ty, callee.span, MismatchContext::Plain)?;
                 Ok((parameters, result))
             }

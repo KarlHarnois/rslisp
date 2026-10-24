@@ -161,7 +161,11 @@ impl TypeChecker {
             .map(|parameter| self.lower_type(parameter, scope))
             .collect::<Result<Vec<Type>, Diagnostic>>()?;
         let result = self.lower_type(result, scope)?;
-        Ok(Type::Function(parameters, Box::new(result)))
+        Ok(Type::Function(
+            super::ty::ClosureKind::Fn,
+            parameters,
+            Box::new(result),
+        ))
     }
 
     fn lower_reference(

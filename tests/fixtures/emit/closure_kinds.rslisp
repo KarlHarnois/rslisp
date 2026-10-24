@@ -1,0 +1,74 @@
+(defn apply (f x) (f x))
+
+(defn call-twice (f)
+  (f)
+  (f))
+
+(defn keep (f) (do))
+
+(type hold (fn ((fn () i64)) (fn () i64)))
+(defn hold (f) f)
+
+(defn alias (f x)
+  (let g f)
+  (g x))
+
+(defn call-inside (f x)
+  (let g (fn () (f x)))
+  (g))
+
+(defn nested-mover ()
+  (let text (to-string "nested"))
+  (let consume (fn () text))
+  (let start (fn () (consume)))
+  (start))
+
+(defn make-adder (n) (fn (x) (+ x n)))
+
+(defn make-mutator ()
+  (let items (vec 1))
+  (fn () (push! items 2)))
+
+(defn make-vec-changer ()
+  (let items (vec 1))
+  (fn ()
+    (let borrowed (mut items))
+    (push! borrowed 2)))
+
+(defn make-mover ()
+  (let text (to-string "fake"))
+  (fn () text))
+
+(defn choose (flag)
+  (if flag (fn () 1) (fn () 2)))
+
+(defn choose-by (value)
+  (match value
+    (0 (fn () 1))
+    (_ (fn () 2))))
+
+(defn choose-block ()
+  (do (fn () 3)))
+
+(defn main ()
+  (let text (to-string "fake"))
+  (println (apply (fn (ignored) text) 0))
+  (let items (vec 1))
+  (let add (fn (x) (push! items x)))
+  (call-twice (fn () (add 2)))
+  (keep (fn (value) (+ value 1)))
+  (println (len items))
+  (println (alias (fn (value) (+ value 1)) 2))
+  (println (call-inside (fn (value) (+ value 1)) 3))
+  (nested-mover)
+  (println ((make-adder 5) 1))
+  (let mutator (make-mutator))
+  (mutator)
+  (mutator)
+  (let changer (make-vec-changer))
+  (changer)
+  (println ((make-mover)))
+  (println ((hold (fn () 1))))
+  (println ((choose true)))
+  (println ((choose-by 1)))
+  (println ((choose-block))))

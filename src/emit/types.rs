@@ -4,7 +4,7 @@ use super::mangle::NameMangler;
 use super::plan::EmitPlan;
 use super::unsized_parameters::UnsizedParameters;
 use crate::core::{BindingId, ModuleId, Piece, PrimitiveType};
-use crate::types::{Bound, GenericId, GenericParam, RustType, Type, TypedProgram};
+use crate::types::{Bound, ClosureKind, GenericId, GenericParam, RustType, Type, TypedProgram};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum TypePosition {
@@ -79,7 +79,9 @@ impl<'a> RustTypes<'a> {
                 .map_or_else(|| "_".to_string(), Self::generic_name),
             Type::Primitive(primitive) => Self::primitive(*primitive).to_string(),
             Type::Named(binding, arguments) => self.named(*binding, arguments, position),
-            Type::Function(parameters, result) => self.function(parameters, result, position),
+            Type::Function(kind, parameters, result) => {
+                self.function(*kind, parameters, result, position)
+            }
             Type::Ref(inner) | Type::Mut(inner) => self.reference(shown, inner, position),
         }
     }
@@ -233,7 +235,7 @@ impl<'a> RustTypes<'a> {
             Type::Named(_, parts) => parts
                 .iter()
                 .all(|part| Self::only_behind_references(part, generic, false)),
-            Type::Function(parameters, result) => parameters
+            Type::Function(_, parameters, result) => parameters
                 .iter()
                 .chain(std::iter::once(result.as_ref()))
                 .all(|part| Self::only_behind_references(part, generic, false)),
@@ -291,7 +293,13 @@ impl<'a> RustTypes<'a> {
             .is_some_and(RustType::is_opaque)
     }
 
-    fn function(&self, parameters: &[Type], result: &Type, position: TypePosition) -> String {
+    fn function(
+        &self,
+        kind: ClosureKind,
+        parameters: &[Type],
+        result: &Type,
+        position: TypePosition,
+    ) -> String {
         let parameters: Vec<String> = parameters
             .iter()
             .map(|parameter| self.show(parameter, TypePosition::Value))
@@ -302,8 +310,10 @@ impl<'a> RustTypes<'a> {
             format!(" -> {}", self.show(result, TypePosition::Value))
         };
         let keyword = match position {
-            TypePosition::Signature | TypePosition::StaticResult => "impl Fn",
-            TypePosition::Value => "fn",
+            TypePosition::Signature | TypePosition::StaticResult => {
+                format!("impl {}", kind.keyword())
+            }
+            TypePosition::Value => "fn".to_string(),
         };
         format!("{keyword}({}){result}", parameters.join(", "))
     }

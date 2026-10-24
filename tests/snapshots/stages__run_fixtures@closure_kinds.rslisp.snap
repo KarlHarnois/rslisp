@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/closure_kinds.rslisp
+---
+captured
+3
+3
+4
+6
+fake
+1
+2
+3

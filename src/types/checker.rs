@@ -729,13 +729,13 @@ impl TypeChecker {
     }
 
     fn borrow_unsized_result(&mut self, binding: BindingId, value: &mut TypedExpr) {
-        let Type::Function(parameters, result) = self.unifier.resolve(&value.ty) else {
+        let Type::Function(kind, parameters, result) = self.unifier.resolve(&value.ty) else {
             return;
         };
         if !result.is_unsized() {
             return;
         }
-        let borrowed = Type::Function(parameters, Box::new(Type::Ref(result)));
+        let borrowed = Type::Function(kind, parameters, Box::new(Type::Ref(result)));
         value.ty = borrowed.clone();
         self.component.insert(binding, borrowed);
     }
@@ -803,7 +803,11 @@ impl TypeChecker {
             return self.unifier.fresh();
         };
         let parameters = lambda.params.iter().map(|_| self.unifier.fresh()).collect();
-        Type::Function(parameters, Box::new(self.unifier.fresh()))
+        Type::Function(
+            super::ty::ClosureKind::Fn,
+            parameters,
+            Box::new(self.unifier.fresh()),
+        )
     }
 
     fn infer_member(&mut self, member: &Definition) -> Result<TypedExpr, Diagnostic> {
@@ -1035,7 +1039,7 @@ impl TypeChecker {
     fn collect_vars(value: &Type, vars: &mut Vec<TypeVar>) {
         match value {
             Type::Var(var) if !vars.contains(var) => vars.push(*var),
-            Type::Function(parameters, result) => {
+            Type::Function(_, parameters, result) => {
                 parameters
                     .iter()
                     .for_each(|parameter| Self::collect_vars(parameter, vars));
@@ -1907,6 +1911,7 @@ impl TypeChecker {
             template_borrows: self.template_borrows,
             pending_mode_checks: self.pending_mode_checks,
             borrowed_parameters: HashSet::new(),
+            mutable_function_bindings: HashSet::new(),
             warnings,
         })
     }

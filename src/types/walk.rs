@@ -185,7 +185,7 @@ impl TypedBlock {
         self.expressions().any(|expr| expr.writes_local(binding))
     }
 
-    fn expressions_mut(&mut self) -> impl Iterator<Item = &mut TypedExpr> {
+    pub fn expressions_mut(&mut self) -> impl Iterator<Item = &mut TypedExpr> {
         self.items.iter_mut().map(TypedBodyItem::expr_mut)
     }
 

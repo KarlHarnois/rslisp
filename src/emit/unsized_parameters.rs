@@ -95,8 +95,8 @@ impl UnsizedParameters {
                 Self::bind_all(scheme_parts, actual_parts, bound)
             }
             (
-                Type::Function(scheme_parameters, scheme_result),
-                Type::Function(actual_parameters, actual_result),
+                Type::Function(_, scheme_parameters, scheme_result),
+                Type::Function(_, actual_parameters, actual_result),
             ) if scheme_parameters.len() == actual_parameters.len() => {
                 Self::bind_all(scheme_parameters, actual_parameters, bound)
                     && Self::bind(scheme_result, actual_result, bound)
