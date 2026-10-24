@@ -74,7 +74,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `use` | `(use module name...)` | path | module: module path. names: binders. |
 | `export` | `(export name...)` | `pub` | names: references in every namespace. |
 
-In type positions, the kernel provides `fn`, `ref`, `mut`, `where`, `with`, `_`, and the primitive types `bool char str string unit i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64`.
+In type positions, the kernel provides `fn`, `fn-mut`, `fn-once`, `ref`, `mut`, `where`, `with`, `_`, and the primitive types `bool char str string unit i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64`.
 
 In expression positions, the kernel provides `ref`, `mut` and `deref`, and the constants `true` and `false`. The constants are kernel constants, not prelude definitions. Macro code and program code then see the same booleans, so `if`, `and` and `or` work in both.
 
@@ -105,13 +105,15 @@ Type syntax mirrors value syntax:
 |---|---|
 | `i64` | `i64` |
 | `(fn (i64 i64) i64)` | `fn(i64, i64) -> i64` |
+| `(fn-mut (i64) i64)` | `impl FnMut(i64) -> i64` |
+| `(fn-once (i64) i64)` | `impl FnOnce(i64) -> i64` |
 | `(ref str)` | `&str` |
 | `(mut point)` | `&mut Point` |
 | `(pair i64 string)` | `(i64, String)` |
 | `(where ((n number)) (fn (n) n))` | `fn<N: Number>(N) -> N` |
 | `_` | inferred |
 
-Type variables are bound by a `where`, by a `struct`'s head or by a `rust-type`'s head. A type definition names its parameters on its name, as `(struct (pair a b) (first a) (second b))` and `(rust-type (boxed item) "Box<{0}>")` do. A `where` binds them over what its form holds: a signature's type, a `rust-trait` implementor or a function type. An unknown type name is an unbound-name error that suggests the closest name.
+A function type's kind is `fn`, `fn-mut` or `fn-once`. A written `fn-mut` or `fn-once` is exact, a plain `fn` leaves the kind to inference, and an inferred function never needs a written kind. Type variables are bound by a `where`, by a `struct`'s head or by a `rust-type`'s head. A type definition names its parameters on its name, as `(struct (pair a b) (first a) (second b))` and `(rust-type (boxed item) "Box<{0}>")` do. A `where` binds them over what its form holds: a signature's type, a `rust-trait` implementor or a function type. An unknown type name is an unbound-name error that suggests the closest name.
 
 A bound names the trait and, optionally, its second type: `(a (partial-eq b))` is Rust's `A: PartialEq<B>`. The second type must be a type the program knows or a binder of the same `where`, as in `(where ((a (partial-eq b)) b) (fn (a b) bool))`. A plain bound keeps Rust's default: `(a partial-eq)` is `A: PartialEq<A>`. A trait takes a second type exactly when one of its `rust-trait` entries uses `with`.
 
@@ -210,7 +212,7 @@ Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&
 - **Value updates.** `(assoc value (field value)...)` returns a changed struct with Rust's struct update syntax, as `(assoc cell (alive true))` emits `Cell { alive: true, ..cell }`. `(assoc coll key value)` and `(assoc-in coll (key...) value)` consume the collection and return it changed, as `(assoc grid 1 alive)` emits `{ let mut grid = grid; grid[1] = alive; grid }`. The base moves, so a later use is a use-after-move error whose help suggests `(clone base)`. `assoc` and `assoc-in` are prelude macros. The `assoc-at` collection rule picks the emitted Rust from the base's inferred type; it knows `(vec a)` now, and the sorted-map and hash-map entries will go in the same rule, next to the vector entry.
 - **Call order.** A call that mutably borrows a variable evaluates its other arguments first. A borrow has no side effect, so the observable order stays the same.
 - **Borrowed results.** A function may return a borrow when it has one borrowed parameter, or none for a string literal. With more than one, it reports an error, because lifetimes cannot be written yet.
-- **Closures.** A closure's body decides its kind. A closure that moves a capture, or passes it to a parameter that owns it, is `FnOnce`. One that changes a capture, or passes it to a `mut` parameter, is `FnMut`. Every other closure is `Fn`. A function parameter that the body calls at most once and uses no other way is `FnOnce`. One called more than once, or called while it changes a capture, is `FnMut`, with a `mut` parameter binding. One only passed on takes the kind its callee needs. `Fn` meets `FnMut` and `FnOnce`, and `FnMut` meets `FnOnce`, as in Rust. A closure stronger than the parameter accepts is an error, `L0509`; its label names the capture and its help says to clone it or to borrow it. A function-typed parameter emits `impl Fn`, `impl FnMut` or `impl FnOnce`, and so does a returned closure behind its return type. A closure returned from a function is a `move` closure. A closure that only borrows or copies its captures is Copy and can be passed more than once. A local closure that changes a captured local emits as `let mut`, because Rust takes a `FnMut` closure mutably.
+- **Closures.** A closure's body decides its kind. A closure that moves a capture, or passes it to a parameter that owns it, is `FnOnce`. One that changes a capture, or passes it to a `mut` parameter, is `FnMut`. Every other closure is `Fn`. A function parameter that the body calls at most once and uses no other way is `FnOnce`. One called more than once, or called while it changes a capture, is `FnMut`, with a `mut` parameter binding. One only passed on takes the kind its callee needs. A signature writes `(fn-mut ...)` or `(fn-once ...)` to pin a kind, and that written kind is exact; a plain `(fn ...)` leaves the kind to inference. The prelude's `rust` templates write the kind their Rust body requires. `Fn` meets `FnMut` and `FnOnce`, and `FnMut` meets `FnOnce`, as in Rust. A closure stronger than the parameter accepts is an error, `L0509`; its label names the capture and its help says to clone it or to borrow it. A function-typed parameter emits `impl Fn`, `impl FnMut` or `impl FnOnce`, and so does a returned closure behind its return type. A closure returned from a function is a `move` closure. A closure that only borrows or copies its captures is Copy and can be passed more than once. A local closure that changes a captured local emits as `let mut`, because Rust takes a `FnMut` closure mutably.
 - **rustc.** Any lifetime or aliasing error that slips past these checks comes from rustc, mapped back to the source and the user's names.
 
 ## Macros

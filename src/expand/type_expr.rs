@@ -1,8 +1,8 @@
 use super::Expander;
 use super::problems::ExpandProblems;
 use crate::core::{
-    BindingId, BindingKind, KernelType, Namespace, ReferenceKind, TypeBinder, TypeBound, TypeExpr,
-    TypeExprKind,
+    BindingId, BindingKind, ClosureKind, KernelType, Namespace, ReferenceKind, TypeBinder,
+    TypeBound, TypeExpr, TypeExprKind,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -55,7 +55,9 @@ impl Expander<'_> {
     ) -> Result<TypeExprKind, Diagnostic> {
         let (head, binding) = self.type_constructor(form, items)?;
         match self.kind(binding) {
-            BindingKind::KernelType(KernelType::Function) => self.lower_function_type(form, items),
+            BindingKind::KernelType(KernelType::Function(kind)) => {
+                self.lower_function_type(kind, form, items)
+            }
             BindingKind::KernelType(KernelType::Reference(kind)) => {
                 self.lower_reference_type(kind, form, items)
             }
@@ -101,10 +103,11 @@ impl Expander<'_> {
 
     fn lower_function_type(
         &mut self,
+        kind: ClosureKind,
         form: &Form,
         items: &[Form],
     ) -> Result<TypeExprKind, Diagnostic> {
-        let malformed = || ExpandProblems::malformed_type(KernelType::Function, form.span());
+        let malformed = || ExpandProblems::malformed_type(KernelType::Function(kind), form.span());
         if items.len() != Self::FUNCTION_TYPE_PARTS {
             return Err(malformed());
         }
@@ -114,7 +117,7 @@ impl Expander<'_> {
             .map(|parameter| self.lower_type(parameter))
             .collect::<Result<Vec<TypeExpr>, Diagnostic>>()?;
         let result = self.lower_type(&items[2])?;
-        Ok(TypeExprKind::Function(parameters, Box::new(result)))
+        Ok(TypeExprKind::Function(kind, parameters, Box::new(result)))
     }
 
     fn lower_reference_type(

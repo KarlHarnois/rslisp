@@ -98,6 +98,7 @@ impl OwnershipProblems {
         actual: ClosureKind,
         required: ClosureKind,
         capture: Option<&str>,
+        callee: Option<&str>,
         passed: Span,
         capture_span: Option<Span>,
     ) -> Diagnostic {
@@ -111,7 +112,7 @@ impl OwnershipProblems {
             ),
             primary,
         )
-        .with_help(Self::closure_kind_help(capture));
+        .with_help(Self::closure_kind_help(actual, required, capture, callee));
         match secondary {
             Some(label) => diagnostic.with_label(label),
             None => diagnostic,
@@ -145,7 +146,25 @@ impl OwnershipProblems {
         }
     }
 
-    fn closure_kind_help(capture: Option<&str>) -> String {
+    fn closure_kind_help(
+        actual: ClosureKind,
+        required: ClosureKind,
+        capture: Option<&str>,
+        callee: Option<&str>,
+    ) -> String {
+        if actual == ClosureKind::FnMut {
+            let callee = callee.unwrap_or("this function");
+            return match capture {
+                Some(name) => format!(
+                    "`{callee}` calls this closure as `{}`, but it changes `{name}`",
+                    required.keyword()
+                ),
+                None => format!(
+                    "`{callee}` calls this closure as `{}`, but it changes a captured value",
+                    required.keyword()
+                ),
+            };
+        }
         match capture {
             Some(name) => format!("clone `{name}`, or borrow it with `(ref {name})`"),
             None => "clone the closure's captures, or borrow them instead".to_string(),

@@ -1,3 +1,5 @@
+use super::ClosureKind;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KernelForm {
     Expression(ExpressionForm),
@@ -376,7 +378,7 @@ impl PrimitiveType {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KernelType {
-    Function,
+    Function(ClosureKind),
     Reference(ReferenceKind),
     Where,
     With,
@@ -402,7 +404,9 @@ impl ReferenceKind {
 impl KernelType {
     pub fn all() -> impl Iterator<Item = KernelType> {
         [
-            KernelType::Function,
+            KernelType::Function(ClosureKind::Fn),
+            KernelType::Function(ClosureKind::FnMut),
+            KernelType::Function(ClosureKind::FnOnce),
             KernelType::Reference(ReferenceKind::Shared),
             KernelType::Reference(ReferenceKind::Mutable),
             KernelType::Where,
@@ -415,7 +419,7 @@ impl KernelType {
 
     pub fn shape(self) -> &'static str {
         match self {
-            KernelType::Function => "(fn (argument ...) result)",
+            KernelType::Function(kind) => kind.shape(),
             KernelType::Reference(ReferenceKind::Shared) => "(ref type)",
             KernelType::Reference(ReferenceKind::Mutable) => "(mut type)",
             KernelType::Where => "(where (variable (variable trait ...) ...) type)",
@@ -426,7 +430,7 @@ impl KernelType {
 
     pub fn name(self) -> &'static str {
         match self {
-            KernelType::Function => "fn",
+            KernelType::Function(kind) => kind.name(),
             KernelType::Reference(kind) => kind.keyword(),
             KernelType::Where => "where",
             KernelType::With => "with",

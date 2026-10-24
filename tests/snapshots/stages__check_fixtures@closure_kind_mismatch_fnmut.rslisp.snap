@@ -4,20 +4,12 @@ expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/closure_kind_mismatch_fnmut.rslisp
 ---
 error[L0509]: this closure is `FnMut`, but the parameter accepts `Fn`
- --> check/closure_kind_mismatch_fnmut.rslisp:4:25
+ --> check/closure_kind_mismatch_fnmut.rslisp:6:23
   |
-4 |   (map (iter (vec 1 2)) add)
-  |                         ^^^ `items` changes here
+6 |   (keep (fn () (push! more 2))))
+  |         --------------^^^^----
+  |         |             |
+  |         |             `more` changes here
+  |         this closure is passed here
   |
-  = help: clone `items`, or borrow it with `(ref items)`
-
-error[L0509]: this closure is `FnMut`, but the parameter accepts `Fn`
- --> check/closure_kind_mismatch_fnmut.rslisp:6:44
-  |
-6 |   (map (iter (vec 1 2)) (fn (value) (push! more (deref value)))))
-  |                         -------------------^^^^----------------
-  |                         |                  |
-  |                         |                  `more` changes here
-  |                         this closure is passed here
-  |
-  = help: clone `more`, or borrow it with `(ref more)`
+  = help: `keep` calls this closure as `Fn`, but it changes `more`

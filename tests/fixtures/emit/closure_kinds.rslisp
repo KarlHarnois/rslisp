@@ -9,6 +9,9 @@
 (type hold (fn ((fn () i64)) (fn () i64)))
 (defn hold (f) f)
 
+(type hold-mut (fn ((fn-mut () i64)) i64))
+(defn hold-mut (f) (f))
+
 (defn alias (f x)
   (let g f)
   (g x))
@@ -22,6 +25,16 @@
   (let consume (fn () text))
   (let start (fn () (consume)))
   (start))
+
+(type returns-mut (fn () (fn-mut () unit)))
+(defn returns-mut ()
+  (let items (vec 1))
+  (fn () (push! items 2)))
+
+(type returns-once (fn () (fn-once () string)))
+(defn returns-once ()
+  (let text (to-string "written"))
+  (fn () text))
 
 (defn make-adder (n) (fn (x) (+ x n)))
 
@@ -69,6 +82,11 @@
   (changer)
   (println ((make-mover)))
   (println ((hold (fn () 1))))
+  (println (hold-mut (fn () 1)))
   (println ((choose true)))
   (println ((choose-by 1)))
-  (println ((choose-block))))
+  (println ((choose-block)))
+  (let returned-mut (returns-mut))
+  (returned-mut)
+  (returned-mut)
+  (println ((returns-once))))

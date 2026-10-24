@@ -1,6 +1,48 @@
 use super::{BindingId, PrimitiveType, ReferenceKind};
 use crate::source::Span;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ClosureKind {
+    Fn,
+    FnMut,
+    FnOnce,
+}
+
+impl ClosureKind {
+    pub fn meets(self, required: Self) -> bool {
+        matches!(
+            (self, required),
+            (Self::Fn, _)
+                | (Self::FnMut, Self::FnMut | Self::FnOnce)
+                | (Self::FnOnce, Self::FnOnce)
+        )
+    }
+
+    pub fn keyword(self) -> &'static str {
+        match self {
+            Self::Fn => "Fn",
+            Self::FnMut => "FnMut",
+            Self::FnOnce => "FnOnce",
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Fn => "fn",
+            Self::FnMut => "fn-mut",
+            Self::FnOnce => "fn-once",
+        }
+    }
+
+    pub fn shape(self) -> &'static str {
+        match self {
+            Self::Fn => "(fn (argument ...) result)",
+            Self::FnMut => "(fn-mut (argument ...) result)",
+            Self::FnOnce => "(fn-once (argument ...) result)",
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct TypeExpr {
     kind: TypeExprKind,
@@ -11,7 +53,7 @@ pub struct TypeExpr {
 pub enum TypeExprKind {
     Primitive(PrimitiveType),
     Named(BindingId, Vec<TypeExpr>),
-    Function(Vec<TypeExpr>, Box<TypeExpr>),
+    Function(ClosureKind, Vec<TypeExpr>, Box<TypeExpr>),
     Reference(ReferenceKind, Box<TypeExpr>),
     Hole,
     Where(Vec<TypeBinder>, Box<TypeExpr>),
@@ -54,7 +96,8 @@ impl TypeExpr {
                     .map(|argument| argument.replacing(variable, replacement))
                     .collect(),
             ),
-            TypeExprKind::Function(parameters, result) => TypeExprKind::Function(
+            TypeExprKind::Function(kind, parameters, result) => TypeExprKind::Function(
+                *kind,
                 parameters
                     .iter()
                     .map(|parameter| parameter.replacing(variable, replacement))

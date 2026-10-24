@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/closure_kind_mismatch.rslisp
 ---
-error[L0509]: this closure is `FnOnce`, but the parameter accepts `Fn`
+error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
  --> check/closure_kind_mismatch.rslisp:3:39
   |
 3 |   (map (iter (vec 1 2)) (fn (ignored) text)))

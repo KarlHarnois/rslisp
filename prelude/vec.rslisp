@@ -40,7 +40,7 @@
 (def get (rust "{0}.get({1})" (where (a) (fn ((ref (slice a)) usize) (option (ref a))))))
 (def pop! (rust "{0}.pop()" (where (a) (fn ((mut (vec a))) (option a)))))
 (def sort! (rust "{0}.sort()" (where ((a ord)) (fn ((mut (vec a))) unit))))
-(def sort-by-key! (rust "{0}.sort_by_key({1})" (where (a (k ord)) (fn ((mut (vec a)) (fn ((ref a)) k)) unit))))
+(def sort-by-key! (rust "{0}.sort_by_key({1})" (where (a (k ord)) (fn ((mut (vec a)) (fn-mut ((ref a)) k)) unit))))
 (def windows (rust "{0}.windows({1})" (where (a) (fn ((ref (slice a)) usize) (iterator (ref (slice a)))))))
 (def at (rust "{0}[{1}]" (where ((a copy)) (fn ((ref (slice a)) usize) a))))
 (def dedup! (rust "{0}.dedup()" (where ((a partial-eq)) (fn ((mut (vec a))) unit))))

@@ -9,5 +9,5 @@
 (def unwrap-or (rust "{0}.unwrap_or({1})" (where (a) (fn ((option a) a) a))))
 (def unwrap (rust "{0}.unwrap()" (where (a) (fn ((option a)) a))))
 (def expect (rust "{0}.expect({1})" (where (a) (fn ((option a) (ref str)) a))))
-(def map-some (rust "{0}.map({1})" (where (a b) (fn ((option a) (fn (a) b)) (option b)))))
-(def then-some (rust "{0}.and_then({1})" (where (a b) (fn ((option a) (fn (a) (option b))) (option b)))))
+(def map-some (rust "{0}.map({1})" (where (a b) (fn ((option a) (fn-once (a) b)) (option b)))))
+(def then-some (rust "{0}.and_then({1})" (where (a b) (fn ((option a) (fn-once (a) (option b))) (option b)))))
