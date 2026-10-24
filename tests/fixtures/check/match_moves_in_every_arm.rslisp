@@ -1,0 +1,12 @@
+(type consume (fn ((vec i64)) usize))
+
+(defn consume (items) (len items))
+
+(defn choose (flag)
+  (let items (vec 1 2 3))
+  (match flag
+    (true (consume items))
+    (false (consume items))))
+
+(defn main ()
+  (println (choose true)))

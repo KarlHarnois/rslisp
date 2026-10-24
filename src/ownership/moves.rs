@@ -137,11 +137,16 @@ impl<'a> MoveChecker<'a> {
             TypedControl::If(test, then, otherwise) => self.branches(test, then, otherwise, usage),
             TypedControl::Match(matched) => {
                 self.expr(&matched.value, Usage::Move);
+                let before = self.moved.clone();
+                let mut arm_moves = Vec::new();
                 for arm in &matched.arms {
-                    let before = self.moved.clone();
+                    self.moved.clone_from(&before);
                     self.block(&arm.body, usage);
-                    let after = std::mem::replace(&mut self.moved, before);
-                    self.moved.extend(after);
+                    arm_moves.push(self.moved.clone());
+                }
+                self.moved = before;
+                for moved in arm_moves {
+                    self.moved.extend(moved);
                 }
             }
         }
