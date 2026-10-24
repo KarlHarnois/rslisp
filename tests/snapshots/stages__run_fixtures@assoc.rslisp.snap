@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/assoc.rslisp
+---
+3 8 seed
+6 5 two
+1
+1 9 3
+6 8
+9

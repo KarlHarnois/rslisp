@@ -22,6 +22,7 @@ pub enum ExprKind {
     Control(Control),
     Struct(StructExpr),
     Variant(BindingId, Vec<Expr>),
+    Assoc(Box<Expr>, Vec<Expr>, Box<Expr>),
 }
 
 #[derive(Clone, Debug)]
@@ -81,6 +82,7 @@ impl Pattern {
 #[derive(Clone, Debug)]
 pub enum StructExpr {
     New(BindingId, Vec<(FieldLabel, Expr)>),
+    Update(Box<Expr>, Vec<(FieldLabel, Expr)>),
     Field(Box<Expr>, FieldLabel),
 }
 
@@ -162,6 +164,10 @@ impl ExprKind {
             }
             ExprKind::Struct(structure) => structure.children(),
             ExprKind::Variant(_, arguments) => arguments.iter().collect(),
+            ExprKind::Assoc(value, keys, item) => std::iter::once(value.as_ref())
+                .chain(keys)
+                .chain(std::iter::once(item.as_ref()))
+                .collect(),
             _ => Vec::new(),
         }
     }
@@ -182,7 +188,9 @@ impl Control {
 impl StructExpr {
     fn children(&self) -> Vec<&Expr> {
         match self {
-            StructExpr::New(_, fields) => fields.iter().map(|(_, value)| value).collect(),
+            StructExpr::New(_, fields) | StructExpr::Update(_, fields) => {
+                fields.iter().map(|(_, value)| value).collect()
+            }
             StructExpr::Field(value, _) => vec![value],
         }
     }

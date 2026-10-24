@@ -94,18 +94,35 @@ impl<'a> MoveChecker<'a> {
     fn nested_expr(&mut self, expr: &TypedExpr, kind: &TypedExprKind) {
         match kind {
             TypedExprKind::Recur(arguments) => self.recur(arguments),
+            TypedExprKind::Struct(structure) => self.structure(structure),
+            TypedExprKind::Variant(_, arguments) => self.expressions(arguments),
+            TypedExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item),
+            _ => self.value_kind(expr, kind),
+        }
+    }
+
+    fn value_kind(&mut self, expr: &TypedExpr, kind: &TypedExprKind) {
+        match kind {
             TypedExprKind::Try(_) | TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => {
                 self.written(expr)
             }
-            TypedExprKind::Struct(structure) => self.structure(structure),
-            TypedExprKind::Variant(_, arguments) => arguments
-                .iter()
-                .for_each(|argument| self.expr(argument, Usage::Move)),
             TypedExprKind::Fn(lambda) => {
                 self.closure(lambda);
             }
             _ => unreachable!("the caller matches a nested expression"),
         }
+    }
+
+    fn expressions(&mut self, arguments: &[TypedExpr]) {
+        arguments
+            .iter()
+            .for_each(|argument| self.expr(argument, Usage::Move));
+    }
+
+    fn assoc(&mut self, value: &TypedExpr, keys: &[TypedExpr], item: &TypedExpr) {
+        self.expr(value, Usage::Move);
+        self.expressions(keys);
+        self.expr(item, Usage::Move);
     }
 
     fn leaf(&mut self, leaf: &TypedLeaf, expr: &TypedExpr, usage: Usage) {
@@ -130,6 +147,12 @@ impl<'a> MoveChecker<'a> {
             TypedStructExpr::New(_, fields) => fields
                 .iter()
                 .for_each(|(_, value)| self.expr(value, Usage::Move)),
+            TypedStructExpr::Update(_, base, fields) => {
+                self.expr(base, Usage::Move);
+                fields
+                    .iter()
+                    .for_each(|(_, value)| self.expr(value, Usage::Move));
+            }
         }
     }
 

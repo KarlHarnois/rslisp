@@ -63,13 +63,26 @@ impl RecurCheck {
     ) -> Result<(), Diagnostic> {
         match kind {
             ExprKind::Recur(arguments) => self.recur(expr, arguments, position),
+            ExprKind::Struct(structure) => self.structure(structure),
+            ExprKind::Variant(_, arguments) => self.arguments(arguments.iter()),
+            ExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item),
+            _ => self.value_kind(kind),
+        }
+    }
+
+    fn value_kind(&self, kind: &ExprKind) -> Result<(), Diagnostic> {
+        match kind {
             ExprKind::Try(value) | ExprKind::Borrow(_, value) | ExprKind::Deref(value) => {
                 self.expr(value, TailPosition::NotTail)
             }
-            ExprKind::Struct(structure) => self.structure(structure),
-            ExprKind::Variant(_, arguments) => self.arguments(arguments.iter()),
             _ => unreachable!("the caller matches a nested expression"),
         }
+    }
+
+    fn assoc(&self, value: &Expr, keys: &[Expr], item: &Expr) -> Result<(), Diagnostic> {
+        self.expr(value, TailPosition::NotTail)?;
+        self.arguments(keys.iter())?;
+        self.expr(item, TailPosition::NotTail)
     }
 
     fn control(&self, control: &Control, position: TailPosition) -> Result<(), Diagnostic> {
@@ -99,6 +112,10 @@ impl RecurCheck {
     fn structure(&self, structure: &StructExpr) -> Result<(), Diagnostic> {
         match structure {
             StructExpr::New(_, fields) => self.arguments(fields.iter().map(|(_, value)| value)),
+            StructExpr::Update(base, fields) => {
+                self.expr(base, TailPosition::NotTail)?;
+                self.arguments(fields.iter().map(|(_, value)| value))
+            }
             StructExpr::Field(value, _) => self.expr(value, TailPosition::NotTail),
         }
     }

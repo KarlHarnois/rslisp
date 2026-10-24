@@ -62,6 +62,7 @@ pub enum TypedExprKind {
     Control(TypedControl),
     Struct(TypedStructExpr),
     Variant(BindingId, Vec<TypedExpr>),
+    Assoc(Box<TypedExpr>, Vec<TypedExpr>, Box<TypedExpr>),
 }
 
 #[derive(Clone, Debug)]
@@ -137,6 +138,7 @@ impl TypedPattern {
 #[derive(Clone, Debug)]
 pub enum TypedStructExpr {
     New(BindingId, Vec<(FieldLabel, TypedExpr)>),
+    Update(BindingId, Box<TypedExpr>, Vec<(FieldLabel, TypedExpr)>),
     Field(Box<TypedExpr>, FieldLabel),
 }
 

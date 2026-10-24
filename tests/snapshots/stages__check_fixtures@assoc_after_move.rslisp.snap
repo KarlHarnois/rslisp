@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/assoc_after_move.rslisp
+---
+error[L0501]: use of moved value `grid`
+ --> check/assoc_after_move.rslisp:4:32
+  |
+3 |   (let next (assoc grid 0 3))
+  |                    ---- value moved here
+4 |   (println (at next 0) " " (at grid 0)))
+  |                                ^^^^ value used here after it moved
+  |
+help: clone the value if both places need it
+  |
+3 -   (let next (assoc grid 0 3))
+3 +   (let next (assoc (clone grid) 0 3))
+  |

@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/assoc_bad_base.rslisp
+---
+error[L0410]: `bool` has no fields
+ --> check/assoc_bad_base.rslisp:2:10
+  |
+2 |   (assoc true (x 2)))
+  |          ^^^^ only structs have fields

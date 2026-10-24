@@ -56,7 +56,8 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `enum` | `(enum name (rust "Path")? variant...)` or `(enum (name param...) (rust "Path")? variant...)` | `enum`, or the named Rust type | name: type binder. params: type binders. `rust`: an optional Rust path. variants: a name, `(name type...)`, or `(name (struct (field type)...))`. |
 | `match` | `(match value (pattern body)...)` | `match` | value: expression. patterns: a wildcard, a literal, a bare name, `(variant pattern...)` or `(type-name pattern...)`. arms: one body expression. |
 | `derive` | `(derive type trait...)` | `#[derive(...)]` | type: reference to a `struct` or `enum` of this module. traits: references to traits. |
-| `new` | `(new name (field value)...)` | struct literal | name: type. fields: field labels with expressions. |
+| `new` | `(new name (field value)...)` or `(new _ base (field value)...)` | struct literal or struct update | name: type, or `_` with a base expression. base: expression. fields: field labels with expressions. |
+| `assoc-at` | `(assoc-at value (key...) item)` | block | value: expression. keys: expressions. item: expression. |
 | `field` | `(field value name)` | `value.name` | value: expression. name: field label. |
 | `ref` | `(ref value)` | `&value` | value: expression. |
 | `mut` | `(mut place)` | `&mut place` | place: expression. |
@@ -78,6 +79,8 @@ In type positions, the kernel provides `fn`, `ref`, `mut`, `where`, `with`, `_`,
 In expression positions, the kernel provides `ref`, `mut` and `deref`, and the constants `true` and `false`. The constants are kernel constants, not prelude definitions. Macro code and program code then see the same booleans, so `if`, `and` and `or` work in both.
 
 `ref`, `mut` and `deref` are kernel forms because a prelude function cannot mark its result as written. The compiler must see the written form to know that the value came from a written borrow or dereference.
+
+`assoc-at` is a kernel form because only the compiler knows a collection's inferred type. A prelude macro cannot choose between a vector and a map, so the `assoc-at` collection rule picks the emitted Rust by type. The rule knows `(vec a)` now; the sorted-map and hash-map entries will go in the same rule.
 
 ### Module bodies
 
@@ -204,6 +207,7 @@ Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&
 - **Reborrows.** A `mut` reference passed to a `mut` parameter is reborrowed and stays usable. Passed to any other parameter, it moves, as in Rust.
 - **Mut borrows.** A `mut` argument must be a place: a local or a field. A field is borrowed in place, even when the field is not Copy. A copy, such as a call's result, is an error, because changing the copy changes nothing.
 - **Assignment.** `(set! place value)` changes a local or a field in place. Inside the place, `(at items index)` names an element, so `(set! (at (at grid y) x) alive)` emits `grid[y][x] = alive`. A target that is not a place is the same error as a `mut` argument. `set!` is prelude code: a local or field target assigns through a `mut` parameter, and an `at` target becomes an indexing assignment.
+- **Value updates.** `(assoc value (field value)...)` returns a changed struct with Rust's struct update syntax, as `(assoc cell (alive true))` emits `Cell { alive: true, ..cell }`. `(assoc coll key value)` and `(assoc-in coll (key...) value)` consume the collection and return it changed, as `(assoc grid 1 alive)` emits `{ let mut grid = grid; grid[1] = alive; grid }`. The base moves, so a later use is a use-after-move error whose help suggests `(clone base)`. `assoc` and `assoc-in` are prelude macros. The `assoc-at` collection rule picks the emitted Rust from the base's inferred type; it knows `(vec a)` now, and the sorted-map and hash-map entries will go in the same rule, next to the vector entry.
 - **Call order.** A call that mutably borrows a variable evaluates its other arguments first. A borrow has no side effect, so the observable order stays the same.
 - **Borrowed results.** A function may return a borrow when it has one borrowed parameter, or none for a string literal. With more than one, it reports an error, because lifetimes cannot be written yet.
 - **Closures.** A function-typed parameter is `impl Fn`. A closure returned from a function is a `move` closure. A closure that only borrows or copies its captures is Copy and can be passed more than once. A closure that moves a capture is an error, `L0508`, because the language has no closure that consumes its captures yet. A local closure that changes a captured local emits as `let mut`, because Rust takes a `FnMut` closure mutably.
@@ -224,7 +228,7 @@ Macro bodies run in the compiler's interpreter. They use the kernel forms, the b
 
 The compiler checks every macro body and the functions it reaches, even a macro nothing calls. A mistake is reported where the macro is defined, even in a branch that never runs.
 
-The prelude also provides `defn` for a function definition, `the` for a typed value, `->` and `->>` for threading a value through calls, and `let-try` and `try->` for propagating errors. `defn` expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
+The prelude also provides `defn` for a function definition, `the` for a typed value, `->` and `->>` for threading a value through calls, `let-try` and `try->` for propagating errors, and `assoc` and `assoc-in` for changing a value. `defn` expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
 
 The prelude builds three tools on top of `macro`:
 

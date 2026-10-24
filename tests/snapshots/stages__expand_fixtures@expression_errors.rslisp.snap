@@ -17,7 +17,7 @@ error[L0210]: malformed `new`
 5 | (def bare-field (fn () (new pair left)))
   |                                  ^^^^ this does not fit the shape of `new`
   |
-  = help: write it as `(new name (field value) ...)`
+  = help: write it as `(new name (field value) ...) or (new _ base (field value) ...)`
 
 error[L0210]: malformed `rust`
  --> expand/expression_errors.rslisp:7:17

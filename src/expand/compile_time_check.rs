@@ -43,6 +43,9 @@ impl Expander<'_> {
     fn check_value_form(&self, expr: &Expr, through: Option<Span>) -> Result<(), Diagnostic> {
         let problem = match expr.kind() {
             ExprKind::Struct(_) => InterpretProblems::runtime_only("structs", expr.span()),
+            ExprKind::Assoc(..) => {
+                InterpretProblems::runtime_only("collection updates", expr.span())
+            }
             ExprKind::Try(_) => InterpretProblems::runtime_only("`try` forms", expr.span()),
             ExprKind::Control(Control::Match(..)) => {
                 InterpretProblems::match_only_at_runtime(expr.span())

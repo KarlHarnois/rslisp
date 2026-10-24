@@ -1,0 +1,4 @@
+(use prelude/macros defmacro)
+
+(defmacro bad (form)
+  (assoc (quote (1 2)) 0 form))

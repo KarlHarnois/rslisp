@@ -96,16 +96,17 @@ impl<'a> FunctionValueModes<'a> {
         match kind {
             TypedExprKind::Recur(arguments) => self.arguments(arguments, current, current),
             TypedExprKind::Struct(structure) => self.structure(structure, ty, current),
-            TypedExprKind::Variant(_, arguments) => {
-                for argument in arguments {
-                    self.expr(argument, current);
-                }
-            }
+            TypedExprKind::Variant(_, arguments) => self.expressions(arguments, current),
+            TypedExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item, current),
+            _ => self.value_kind(kind, current),
+        }
+    }
+
+    fn value_kind(&mut self, kind: &mut TypedExprKind, current: Option<&[Type]>) {
+        match kind {
             TypedExprKind::Try(value)
             | TypedExprKind::Borrow(_, value)
-            | TypedExprKind::Deref(value) => {
-                self.expr(value, current);
-            }
+            | TypedExprKind::Deref(value) => self.expr(value, current),
             TypedExprKind::Fn(lambda) => {
                 let lambda = Rc::make_mut(lambda);
                 let params: Vec<Type> =
@@ -114,6 +115,24 @@ impl<'a> FunctionValueModes<'a> {
             }
             _ => {}
         }
+    }
+
+    fn expressions(&mut self, arguments: &mut [TypedExpr], current: Option<&[Type]>) {
+        for argument in arguments {
+            self.expr(argument, current);
+        }
+    }
+
+    fn assoc(
+        &mut self,
+        value: &mut TypedExpr,
+        keys: &mut [TypedExpr],
+        item: &mut TypedExpr,
+        current: Option<&[Type]>,
+    ) {
+        self.expr(value, current);
+        self.expressions(keys, current);
+        self.expr(item, current);
     }
 
     fn control(&mut self, control: &mut TypedControl, current: Option<&[Type]>) {
@@ -137,11 +156,25 @@ impl<'a> FunctionValueModes<'a> {
         match structure {
             TypedStructExpr::Field(value, _) => self.expr(value, current),
             TypedStructExpr::New(binding, fields) => {
-                let field_types = self.field_types(*binding, ty);
-                for (label, value) in fields {
-                    self.field(&field_types, label, value, current);
-                }
+                self.fields(*binding, fields, ty, current);
             }
+            TypedStructExpr::Update(binding, base, fields) => {
+                self.expr(base, current);
+                self.fields(*binding, fields, ty, current);
+            }
+        }
+    }
+
+    fn fields(
+        &mut self,
+        binding: BindingId,
+        fields: &mut [(FieldLabel, TypedExpr)],
+        ty: &Type,
+        current: Option<&[Type]>,
+    ) {
+        let field_types = self.field_types(binding, ty);
+        for (label, value) in fields {
+            self.field(&field_types, label, value, current);
         }
     }
 
