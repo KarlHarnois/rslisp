@@ -67,6 +67,8 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `recur` | `(recur argument...)` | `loop` | arguments: expressions. |
 | `try` | `(try expression)` | `expression?` | expression: expression. |
 | `rust-trait` | `(rust-trait name "Path" type...)` | trait bound | name: type binder. types: types, `(with type type)`, or `(where (param...) type)`. |
+| `trait` | `(trait name (method type)...)` | `trait` | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. |
+| `impl` | `(impl trait type (method (param...) body...)...)` | `impl` | trait and type: references to a trait and a struct or enum. methods: a name, parameter binders and a body. |
 | `rust-type` | `(rust-type name "template" (type "template")...)` or `(rust-type (name param...) "template" (type "template")...)` | the filled template | name: type binder. params: type binders. clauses: a type and a template. |
 | `use` | `(use module name...)` | path | module: module path. names: binders. |
 | `export` | `(export name...)` | `pub` | names: references in every namespace. |
@@ -81,7 +83,7 @@ In expression positions, the kernel provides `ref`, `mut` and `deref`, and the c
 
 A module body is expanded in two passes:
 
-1. Each top-level form is expanded in order until its head is a definition form: `def`, `type`, `struct`, `enum`, `derive`, `rust-trait`, `rust-type`, `use`, `export` or `do`. The names it defines are registered. A `def` whose value is a `macro` is evaluated right away.
+1. Each top-level form is expanded in order until its head is a definition form: `def`, `type`, `struct`, `enum`, `derive`, `rust-trait`, `rust-type`, `trait`, `impl`, `use`, `export` or `do`. The names it defines are registered. A `def` whose value is a `macro` is evaluated right away.
 2. `def` values, types and `export` lists are expanded.
 
 Values and types are therefore order-independent, like Rust items. A macro must appear above its first top-level use.
@@ -364,7 +366,7 @@ The emitted Rust is formatted by `rustfmt` when `rslisp emit` or `rslisp build` 
 | 8.3 Macro code | done |
 | 8.4 Loops | done |
 | 9. Enums and `match` | done |
-| 10. User-defined traits | planned |
+| 10. User-defined traits | in progress |
 | 11. Written lifetimes | planned |
 
 A planned milestone is settled design, and new work follows it.
@@ -524,7 +526,25 @@ Programs read functionally through two prelude forms over `try`, as `loop` is ov
 
 ### 10. User-defined traits
 
-A program defines traits and implements them. `rust-trait` binds only traits that Rust defines.
+A program defines traits and implements them for its own structs and enums in one module. `rust-trait` binds only traits that Rust defines.
+
+```lisp
+(trait shape
+  (area (fn ((ref self)) f64))
+  (scale! (fn ((mut self) f64) unit)))
+
+(impl shape circle
+  (area (c) (* 3.0 (field c radius) (field c radius)))
+  (scale! (c factor) (do)))
+```
+
+`self` is a type variable bound by the trait. A method is an ordinary function type whose first parameter states the receiver's ownership: `self`, `(ref self)` or `(mut self)`. Such a method emits a Rust receiver, `fn area(&self) -> f64`, and a call emits `c.area()`. Every other method has no receiver and emits an associated function, `Shape::name(...)`. A method value such as `(map shapes area)` emits a path, `Shape::area`. Default methods and supertraits wait until a program needs them.
+
+An `impl` writes each method like `defn`. Its parameter types come from the trait, and the first parameter emits as Rust's `self`. A missing method, an extra method and a method the trait does not declare are errors. A method name is a top-level name, so two traits in one module cannot share one; `use` picks between modules.
+
+A method is an ordinary function: `(area c)` is a call, and `(map shapes area)` passes the method as a value. A call on an unknown type adds the trait's bound, as `<` adds `ord`, and a written signature stays exact.
+
+`trait` and `impl` are kernel forms. A macro returns a form and cannot emit a Rust `trait` or `impl` item, and only the compiler can add a trait and its implementors to the trait table. A method call needs no kernel form: each method is an ordinary generic function, so the existing call, inference and emission paths handle it.
 
 ### 11. Written lifetimes
 

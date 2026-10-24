@@ -46,6 +46,8 @@ pub enum DefinitionForm {
     Derive,
     RustTrait,
     RustType,
+    Trait,
+    Impl,
     Use,
     Export,
 }
@@ -57,7 +59,7 @@ struct KernelFormRow {
 }
 
 impl KernelForm {
-    const ROWS: [KernelFormRow; 24] = [
+    const ROWS: [KernelFormRow; 26] = [
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Fn),
             name: "fn",
@@ -167,6 +169,16 @@ impl KernelForm {
             form: KernelForm::Expression(ExpressionForm::Try),
             name: "try",
             shape: "(try expression)",
+        },
+        KernelFormRow {
+            form: KernelForm::Definition(DefinitionForm::Trait),
+            name: "trait",
+            shape: "(trait name (method type) ...)",
+        },
+        KernelFormRow {
+            form: KernelForm::Definition(DefinitionForm::Impl),
+            name: "impl",
+            shape: "(impl trait type (method (param ...) body ...) ...)",
         },
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::Use),

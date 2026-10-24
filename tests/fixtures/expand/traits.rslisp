@@ -1,0 +1,12 @@
+(struct circle (radius f64))
+
+(trait shape
+  (area (fn ((ref self)) f64))
+  (scale! (fn ((mut self) f64) unit)))
+
+(impl shape circle
+  (area (c) (* 3.0 (field c radius) (field c radius)))
+  (scale! (c factor) (do)))
+
+(defn area-of (c)
+  (area c))

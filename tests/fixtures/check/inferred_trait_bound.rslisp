@@ -1,0 +1,13 @@
+(struct circle (radius f64))
+
+(trait shape
+  (area (fn ((ref self)) f64)))
+
+(impl shape circle
+  (area (c) (* 3.0 (field c radius) (field c radius))))
+
+(defn total-area (shapes)
+  (fold (values shapes) 0.0 (fn (total shape) (+ total (area shape)))))
+
+(defn main ()
+  (println (total-area (vec (new circle (radius 1.0))))))

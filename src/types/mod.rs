@@ -34,8 +34,9 @@ pub use templates::TemplateBorrows;
 pub use traits::{Implementor, RustTrait, TraitTable};
 pub use ty::{Bound, GenericId, GenericParam, Scheme, Type, TypeVar};
 pub use typed::{
-    Borrow, PendingModeCheck, TypedArgument, TypedArm, TypedBinder, TypedBlock, TypedBodyItem,
-    TypedControl, TypedDefinition, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedMatch,
-    TypedModule, TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr,
+    Borrow, PendingModeCheck, ReceiverKind, TraitMethodInfo, TypedArgument, TypedArm, TypedBinder,
+    TypedBlock, TypedBodyItem, TypedControl, TypedDefinition, TypedExpr, TypedExprKind,
+    TypedLambda, TypedLeaf, TypedMatch, TypedModule, TypedPattern, TypedPatternKind, TypedProgram,
+    TypedStructExpr, TypedTrait, TypedTraitImpl, TypedTraitMethod,
 };
 pub use wrapper::{FunctionValueWrapper, PreparedFunctionValue};

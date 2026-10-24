@@ -41,6 +41,7 @@ impl Expander<'_> {
         core.items.push(Item {
             kind: ItemKind::RustType(binding, parameterized.binders, Rc::new(template), clauses),
             span: form.span(),
+            hidden: false,
         });
         Ok(())
     }

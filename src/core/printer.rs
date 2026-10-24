@@ -36,46 +36,91 @@ impl<'a> CorePrinter<'a> {
                 .collect();
             lines.push(Self::list("export", exports));
         }
-        lines.extend(module.items.iter().map(|item| self.item(item)));
+        lines.extend(
+            module
+                .items
+                .iter()
+                .filter(|item| !item.hidden)
+                .map(|item| self.item(item)),
+        );
         lines.iter().map(|line| format!("{line}\n")).collect()
     }
 
     fn item(&mut self, item: &Item) -> String {
-        match &item.kind {
-            ItemKind::Def(binding, value) => {
-                format!("(def {} {})", self.name(*binding), self.expr(value))
-            }
-            ItemKind::Signature(binding, type_expr) => format!(
+        if let ItemKind::Def(binding, value) = &item.kind {
+            return format!("(def {} {})", self.name(*binding), self.expr(value));
+        }
+        if let ItemKind::Signature(binding, type_expr) = &item.kind {
+            return format!(
                 "(type {} {})",
                 self.name(*binding),
                 self.type_expr(type_expr)
-            ),
-            ItemKind::Struct(binding, params, fields) => self.struct_item(*binding, params, fields),
-            ItemKind::Enum(binding, params, variants, rust) => {
-                self.enum_item(*binding, params, variants, rust)
-            }
-            ItemKind::Derive(binding, _, traits) => {
-                let mut parts = vec![self.name(*binding)];
-                parts.extend(
-                    traits
-                        .iter()
-                        .map(|(trait_binding, _)| self.name(*trait_binding)),
-                );
-                Self::list("derive", parts)
-            }
-            ItemKind::RustType(binding, params, template, clauses) => {
-                self.rust_type_item(*binding, params, template, clauses)
-            }
-            ItemKind::RustTrait(binding, path, implementors) => {
-                let mut parts = vec![self.name(*binding), format!("{path:?}")];
-                parts.extend(
-                    implementors
-                        .iter()
-                        .map(|implementor| self.type_expr(implementor)),
-                );
-                Self::list("rust-trait", parts)
-            }
+            );
         }
+        self.type_item(item)
+    }
+
+    fn type_item(&mut self, item: &Item) -> String {
+        if let ItemKind::Struct(binding, params, fields) = &item.kind {
+            return self.struct_item(*binding, params, fields);
+        }
+        if let ItemKind::Enum(binding, params, variants, rust) = &item.kind {
+            return self.enum_item(*binding, params, variants, rust);
+        }
+        if let ItemKind::Derive(binding, _, traits) = &item.kind {
+            let mut parts = vec![self.name(*binding)];
+            parts.extend(
+                traits
+                    .iter()
+                    .map(|(trait_binding, _)| self.name(*trait_binding)),
+            );
+            return Self::list("derive", parts);
+        }
+        self.imported_type_item(item)
+    }
+
+    fn imported_type_item(&mut self, item: &Item) -> String {
+        if let ItemKind::RustType(binding, params, template, clauses) = &item.kind {
+            return self.rust_type_item(*binding, params, template, clauses);
+        }
+        if let ItemKind::RustTrait(binding, path, implementors) = &item.kind {
+            let mut parts = vec![self.name(*binding), format!("{path:?}")];
+            parts.extend(
+                implementors
+                    .iter()
+                    .map(|implementor| self.type_expr(implementor)),
+            );
+            return Self::list("rust-trait", parts);
+        }
+        if let ItemKind::Trait(binding, _, _, methods) = &item.kind {
+            let mut parts = vec![self.name(*binding)];
+            parts.extend(methods.iter().map(|method| {
+                format!(
+                    "({} {})",
+                    self.name(method.binding),
+                    self.type_expr(&method.signature)
+                )
+            }));
+            return Self::list("trait", parts);
+        }
+        if let ItemKind::Impl(trait_binding, type_binding, methods) = &item.kind {
+            let mut parts = vec![self.name(*trait_binding), self.name(*type_binding)];
+            parts.extend(methods.iter().map(|method| self.impl_method(method)));
+            return Self::list("impl", parts);
+        }
+        String::new()
+    }
+
+    fn impl_method(&mut self, method: &super::ImplMethod) -> String {
+        let params: Vec<String> = method
+            .lambda
+            .params
+            .iter()
+            .map(|param| self.binder(param))
+            .collect();
+        let mut parts = vec![method.name.to_string(), format!("({})", params.join(" "))];
+        parts.extend(self.block_items(&method.lambda.body));
+        format!("({})", parts.join(" "))
     }
 
     fn expr(&mut self, expr: &Expr) -> String {

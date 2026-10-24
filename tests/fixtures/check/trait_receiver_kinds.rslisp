@@ -1,0 +1,20 @@
+(struct point (x i64))
+
+(trait sample
+  (by-value (fn (self) i64))
+  (by-ref (fn ((ref self)) i64))
+  (bump! (fn ((mut self) i64) unit))
+  (free (fn (i64) i64))
+  (borrowed (fn ((ref i64)) i64))
+  (other (fn (point) i64)))
+
+(impl sample point
+  (by-value (p) (field p x))
+  (by-ref (p) (field p x))
+  (bump! (p value) (do))
+  (free (value) value)
+  (borrowed (value) (deref value))
+  (other (p) (field p x)))
+
+(defn main ()
+  (println (free 1)))

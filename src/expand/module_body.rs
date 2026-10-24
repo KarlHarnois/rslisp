@@ -2,17 +2,35 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use super::Expander;
+use super::TraitMethods;
 use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{
-    BindingId, BindingKind, ControlForm, CoreModule, DefinitionForm, ExpressionForm, FieldLabel,
-    Item, ItemKind, KernelForm, ModuleId, Namespace, TypeExpr, VariantDeclaration, VariantInfo,
-    VariantPayload,
+    BindingId, BindingInfo, BindingKind, ControlForm, CoreModule, DefinitionForm, Expr, ExprKind,
+    ExpressionForm, FieldLabel, ImplMethod, Item, ItemKind, KernelForm, Leaf, ModuleId, Namespace,
+    RustTemplate, TraitMethod, TypeBinder, TypeBound, TypeExpr, TypeExprKind, VariantDeclaration,
+    VariantInfo, VariantPayload,
 };
 use crate::diagnostic::{Counted, Diagnostic};
+use crate::emit::mangle::NameMangler;
 use crate::reader::{Form, FormKind, Symbol};
 use crate::source::Span;
+
+struct TraitLowering<'a, 'f> {
+    shape: &'a Shape<'f>,
+    binding: BindingId,
+    self_variable: BindingId,
+    rust_name: &'a Rc<str>,
+    scope: crate::scope::Scope,
+}
+
+struct ImplLowering<'a, 'f> {
+    shape: &'a Shape<'f>,
+    trait_methods: &'a TraitMethods,
+    trait_name: &'a str,
+    type_binding: BindingId,
+}
 
 enum PendingItem {
     Def {
@@ -26,6 +44,8 @@ enum PendingItem {
     Enum(BindingId, Form),
     RustTrait(BindingId, Form),
     RustType(BindingId, Form),
+    Trait(BindingId, Form),
+    Impl(BindingId, BindingId, Form),
     Export(Form),
 }
 
@@ -39,7 +59,15 @@ impl Expander<'_> {
             items: Vec::new(),
             exports: Vec::new(),
         };
+        let mut impls = Vec::new();
         for item in pending {
+            if matches!(&item, PendingItem::Impl(..)) {
+                impls.push(item);
+            } else if let Err(diagnostic) = self.lower_pending(module, item, &mut core) {
+                self.diagnostics.push(diagnostic);
+            }
+        }
+        for item in impls {
             if let Err(diagnostic) = self.lower_pending(module, item, &mut core) {
                 self.diagnostics.push(diagnostic);
             }
@@ -117,6 +145,8 @@ impl Expander<'_> {
         match definition {
             DefinitionForm::Enum => self.register_enum(module, form, context),
             DefinitionForm::Derive => Ok(Some(PendingItem::Derive(form))),
+            DefinitionForm::Trait => self.register_trait(module, form, context),
+            DefinitionForm::Impl => self.register_impl(form),
             DefinitionForm::Use | DefinitionForm::Export => {
                 self.register_module_definition(definition, form, context)
             }
@@ -284,6 +314,60 @@ impl Expander<'_> {
         Ok(Some(PendingItem::RustType(binding, form)))
     }
 
+    fn register_trait(
+        &mut self,
+        module: ModuleId,
+        form: Form,
+        context: &mut DefinitionContext,
+    ) -> Result<Option<PendingItem>, Diagnostic> {
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Trait), &form);
+        let items = shape.at_least(2)?;
+        let name = self.head_name(&shape, &items[1])?;
+        let binding =
+            self.define_global(name, Namespace::Type, BindingKind::Trait(module), context)?;
+        for method in &items[2..] {
+            let method_items = method.as_list().ok_or_else(|| shape.malformed(method))?;
+            let [method_name, _] = method_items else {
+                return Err(shape.malformed(method));
+            };
+            let method = self.define_global(
+                method_name,
+                Namespace::Value,
+                BindingKind::Global(module),
+                context,
+            );
+            method?;
+        }
+        Ok(Some(PendingItem::Trait(binding, form)))
+    }
+
+    fn register_impl(&mut self, form: Form) -> Result<Option<PendingItem>, Diagnostic> {
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Impl), &form);
+        let items = shape.at_least(3)?;
+        let trait_binding = self.impl_trait(&shape, &items[1])?;
+        let type_binding = self.impl_type(&shape, &items[2])?;
+        Ok(Some(PendingItem::Impl(trait_binding, type_binding, form)))
+    }
+
+    fn impl_trait(&mut self, shape: &Shape, form: &Form) -> Result<BindingId, Diagnostic> {
+        let binding = self.resolve(shape.symbol(form)?, Namespace::Type, form.span())?;
+        if matches!(self.kind(binding), BindingKind::Trait(_)) {
+            return Ok(binding);
+        }
+        Err(shape.malformed_with_help(form, "write a trait this module defines"))
+    }
+
+    fn impl_type(&mut self, shape: &Shape, form: &Form) -> Result<BindingId, Diagnostic> {
+        let binding = self.resolve(shape.symbol(form)?, Namespace::Type, form.span())?;
+        if matches!(
+            self.kind(binding),
+            BindingKind::Struct(_) | BindingKind::Enum(_)
+        ) {
+            return Ok(binding);
+        }
+        Err(shape.malformed_with_help(form, "write a struct or an enum"))
+    }
+
     fn definition_head(&self, form: &Form) -> Result<KernelForm, Diagnostic> {
         let not_a_definition = || ExpandProblems::not_a_definition(form.span());
         let head = form
@@ -371,6 +455,10 @@ impl Expander<'_> {
         match item {
             PendingItem::Enum(binding, form) => self.lower_enum(binding, &form, core),
             PendingItem::Derive(form) => self.lower_derive(module, &form, core),
+            PendingItem::Trait(binding, form) => self.lower_trait(binding, &form, core),
+            PendingItem::Impl(trait_binding, type_binding, form) => {
+                self.lower_impl(trait_binding, type_binding, &form, core)
+            }
             PendingItem::Export(form) => {
                 self.lower_exports(module, &form, core);
                 Ok(())
@@ -394,12 +482,14 @@ impl Expander<'_> {
             core.items.push(Item {
                 kind: ItemKind::Signature(binding, signature),
                 span,
+                hidden: false,
             });
         }
         let value = self.lowered_global(binding, span)?;
         core.items.push(Item {
             kind: ItemKind::Def(binding, (*value).clone()),
             span,
+            hidden: false,
         });
         Ok(())
     }
@@ -423,6 +513,7 @@ impl Expander<'_> {
         core.items.push(Item {
             kind: ItemKind::Signature(binding, signature),
             span: form.span(),
+            hidden: false,
         });
         Ok(())
     }
@@ -453,6 +544,7 @@ impl Expander<'_> {
         core.items.push(Item {
             kind: ItemKind::Struct(binding, parameterized.binders, fields),
             span: form.span(),
+            hidden: false,
         });
         Ok(())
     }
@@ -487,6 +579,7 @@ impl Expander<'_> {
         core.items.push(Item {
             kind: ItemKind::Enum(binding, parameterized.binders, variants, rust),
             span: form.span(),
+            hidden: false,
         });
         Ok(())
     }
@@ -695,6 +788,7 @@ impl Expander<'_> {
         core.items.push(Item {
             kind: ItemKind::Derive(binding, items[1].span(), traits),
             span: form.span(),
+            hidden: false,
         });
         Ok(())
     }
@@ -728,6 +822,253 @@ impl Expander<'_> {
         ))
     }
 
+    fn lower_trait(
+        &mut self,
+        binding: BindingId,
+        form: &Form,
+        core: &mut CoreModule,
+    ) -> Result<(), Diagnostic> {
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Trait), form);
+        let items = shape.at_least(2)?;
+        let name = self.head_name(&shape, &items[1])?;
+        let rust_name: Rc<str> = Rc::from(NameMangler::type_name(name.to_string().as_str()));
+        let scope = self.fresh_local_scope();
+        let mut self_symbol = Symbol::new("self");
+        self_symbol.scopes_mut().add(scope);
+        let self_form = Form::new(FormKind::Symbol(self_symbol), items[1].span());
+        let self_variable = self.define_binder_variable(&self_form)?;
+        let lowering = TraitLowering {
+            shape: &shape,
+            binding,
+            self_variable,
+            rust_name: &rust_name,
+            scope,
+        };
+        let methods = self.lower_trait_methods(&lowering, &items[2..], core)?;
+        self.trait_methods.insert(
+            binding,
+            TraitMethods {
+                rust_name: Rc::clone(&rust_name),
+                self_variable,
+                methods: methods
+                    .iter()
+                    .map(|method| (method.binding, method.signature.clone()))
+                    .collect(),
+            },
+        );
+        core.items.push(Item {
+            kind: ItemKind::Trait(binding, rust_name, self_variable, methods),
+            span: form.span(),
+            hidden: false,
+        });
+        Ok(())
+    }
+
+    fn lower_trait_methods(
+        &mut self,
+        lowering: &TraitLowering<'_, '_>,
+        forms: &[Form],
+        core: &mut CoreModule,
+    ) -> Result<Vec<TraitMethod>, Diagnostic> {
+        let mut methods = Vec::new();
+        for method in forms {
+            let lowered = self.lower_trait_method(lowering, method, core);
+            methods.push(lowered?);
+        }
+        Ok(methods)
+    }
+
+    fn lower_trait_method(
+        &mut self,
+        lowering: &TraitLowering<'_, '_>,
+        method: &Form,
+        core: &mut CoreModule,
+    ) -> Result<TraitMethod, Diagnostic> {
+        let method_items = method
+            .as_list()
+            .ok_or_else(|| lowering.shape.malformed(method))?;
+        let method_name = &method_items[0];
+        let signature_form = &method_items[1];
+        let method_symbol = lowering.shape.symbol(method_name)?;
+        let method_binding = self.resolve(method_symbol, Namespace::Value, method_name.span())?;
+        let mut signature_form = signature_form.clone();
+        signature_form.add_scope(lowering.scope);
+        let signature = self.lower_type(&signature_form)?;
+        let TypeExprKind::Function(_, _) = signature.kind() else {
+            return Err(lowering.shape.malformed(&signature_form));
+        };
+        let template = RustTemplate {
+            template: Rc::from(format!(
+                "{}::{}",
+                lowering.rust_name,
+                NameMangler::value(method_symbol.name())
+            )),
+            type_expr: Self::trait_method_scheme(
+                lowering.self_variable,
+                lowering.binding,
+                &signature,
+                method.span(),
+            ),
+        };
+        let value = Expr::new(
+            ExprKind::Leaf(Leaf::Rust(Rc::new(template))),
+            signature_form.span(),
+        );
+        core.items.push(Item {
+            kind: ItemKind::Def(method_binding, value),
+            span: signature_form.span(),
+            hidden: true,
+        });
+        Ok(TraitMethod {
+            binding: method_binding,
+            signature,
+        })
+    }
+
+    fn trait_method_scheme(
+        self_variable: BindingId,
+        trait_binding: BindingId,
+        signature: &TypeExpr,
+        span: Span,
+    ) -> TypeExpr {
+        TypeExpr::new(
+            TypeExprKind::Where(
+                vec![TypeBinder {
+                    variable: self_variable,
+                    bounds: vec![TypeBound {
+                        binding: trait_binding,
+                        argument: None,
+                    }],
+                    span,
+                }],
+                Box::new(signature.clone()),
+            ),
+            span,
+        )
+    }
+
+    fn lower_impl(
+        &mut self,
+        trait_binding: BindingId,
+        type_binding: BindingId,
+        form: &Form,
+        core: &mut CoreModule,
+    ) -> Result<(), Diagnostic> {
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Impl), form);
+        let items = shape.at_least(3)?;
+        let Some(trait_methods) = self.trait_methods.get(&trait_binding).cloned() else {
+            return Err(shape.malformed_with_help(form, "define the trait before implementing it"));
+        };
+        let trait_name = self.bindings.get(trait_binding).name().to_string();
+        let type_name = self.bindings.get(type_binding).name().to_string();
+        let lowering = ImplLowering {
+            shape: &shape,
+            trait_methods: &trait_methods,
+            trait_name: &trait_name,
+            type_binding,
+        };
+        let (methods, implemented) = self.lower_impl_methods(&lowering, &items[3..], core)?;
+        for (method, _) in &trait_methods.methods {
+            if !implemented.contains(method) {
+                let name = self.bindings.get(*method).name().to_string();
+                self.diagnostics.push(ExpandProblems::missing_method(
+                    &name,
+                    &trait_name,
+                    &type_name,
+                    items[2].span(),
+                ));
+            }
+        }
+        core.items.push(Item {
+            kind: ItemKind::Impl(trait_binding, type_binding, methods),
+            span: form.span(),
+            hidden: false,
+        });
+        Ok(())
+    }
+
+    fn lower_impl_methods(
+        &mut self,
+        lowering: &ImplLowering<'_, '_>,
+        forms: &[Form],
+        core: &mut CoreModule,
+    ) -> Result<(Vec<ImplMethod>, std::collections::HashSet<BindingId>), Diagnostic> {
+        let mut methods = Vec::new();
+        let mut implemented = std::collections::HashSet::new();
+        for method in forms {
+            let lowered = self.lower_impl_method(lowering, method, &mut implemented, core);
+            if let Some(method) = lowered? {
+                methods.push(method);
+            }
+        }
+        Ok((methods, implemented))
+    }
+
+    fn lower_impl_method(
+        &mut self,
+        lowering: &ImplLowering<'_, '_>,
+        method: &Form,
+        implemented: &mut std::collections::HashSet<BindingId>,
+        core: &mut CoreModule,
+    ) -> Result<Option<ImplMethod>, Diagnostic> {
+        let method_items = method
+            .as_list()
+            .ok_or_else(|| lowering.shape.malformed(method))?;
+        let Some(method_name) = method_items.first() else {
+            return Err(lowering.shape.malformed(method));
+        };
+        let Some(params) = method_items.get(1) else {
+            return Err(lowering.shape.malformed(method));
+        };
+        let method_symbol = lowering.shape.symbol(method_name)?;
+        let Some((method_binding, signature)) = lowering
+            .trait_methods
+            .methods
+            .iter()
+            .find(|(binding, _)| self.bindings.get(*binding).name() == method_symbol.name())
+        else {
+            self.diagnostics.push(ExpandProblems::undeclared_method(
+                method_symbol.name(),
+                lowering.trait_name,
+                method_name.span(),
+            ));
+            return Ok(None);
+        };
+        if !implemented.insert(*method_binding) {
+            self.diagnostics.push(ExpandProblems::extra_method(
+                method_symbol.name(),
+                method_name.span(),
+            ));
+            return Ok(None);
+        }
+        let specialized =
+            signature.replacing(lowering.trait_methods.self_variable, lowering.type_binding);
+        let lambda = Rc::new(self.lower_lambda(lowering.shape, params, &method_items[2..])?);
+        let synthetic = self.bindings.add(BindingInfo::new(
+            self.bindings.get(*method_binding).name().into(),
+            BindingKind::Local,
+            Some(method_name.span()),
+        ));
+        core.items.push(Item {
+            kind: ItemKind::Signature(synthetic, specialized),
+            span: method_name.span(),
+            hidden: true,
+        });
+        core.items.push(Item {
+            kind: ItemKind::Def(
+                synthetic,
+                Expr::new(ExprKind::Fn(Rc::clone(&lambda)), method.span()),
+            ),
+            span: method.span(),
+            hidden: true,
+        });
+        Ok(Some(ImplMethod {
+            binding: synthetic,
+            name: self.bindings.get(*method_binding).name().into(),
+            lambda,
+        }))
+    }
+
     fn lower_rust_trait(
         &mut self,
         binding: BindingId,
@@ -746,6 +1087,7 @@ impl Expander<'_> {
         core.items.push(Item {
             kind: ItemKind::RustTrait(binding, path, implementors),
             span: form.span(),
+            hidden: false,
         });
         Ok(())
     }

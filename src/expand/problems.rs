@@ -505,6 +505,38 @@ impl ExpandProblems {
         .with_help(format!("list a trait's name, not `{name}`"))
     }
 
+    pub fn missing_method(
+        method: &str,
+        trait_name: &str,
+        type_name: &str,
+        span: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MISSING_METHOD,
+            format!("`{type_name}` is missing `{method}` from `{trait_name}`"),
+            Label::new(span, format!("this implementation is missing `{method}`")),
+        )
+        .with_help(format!("add the `{method}` method"))
+    }
+
+    pub fn extra_method(method: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::EXTRA_METHOD,
+            format!("`{method}` is implemented more than once"),
+            Label::new(span, "defined again here"),
+        )
+        .with_help("remove one of the definitions")
+    }
+
+    pub fn undeclared_method(method: &str, trait_name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::UNDECLARED_METHOD,
+            format!("`{trait_name}` does not declare `{method}`"),
+            Label::new(span, format!("not a method of `{trait_name}`")),
+        )
+        .with_help("declare it in the trait, or remove it")
+    }
+
     pub fn broken_definition(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::BROKEN_DEFINITION,

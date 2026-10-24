@@ -1,7 +1,7 @@
 use std::fmt;
 use std::rc::Rc;
 
-use super::{BindingId, Expr, FieldLabel, ParsedTemplate, TypeBinder, TypeExpr};
+use super::{BindingId, Expr, FieldLabel, Lambda, ParsedTemplate, TypeBinder, TypeExpr};
 use crate::source::Span;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -40,6 +40,7 @@ impl fmt::Display for ModulePath {
 pub struct Item {
     pub kind: ItemKind,
     pub span: Span,
+    pub hidden: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -55,12 +56,27 @@ pub enum ItemKind {
     ),
     Derive(BindingId, Span, Vec<(BindingId, Span)>),
     RustTrait(BindingId, Rc<str>, Vec<TypeExpr>),
+    Trait(BindingId, Rc<str>, BindingId, Vec<TraitMethod>),
+    Impl(BindingId, BindingId, Vec<ImplMethod>),
     RustType(
         BindingId,
         Vec<TypeBinder>,
         Rc<ParsedTemplate>,
         Vec<(TypeExpr, Rc<ParsedTemplate>)>,
     ),
+}
+
+#[derive(Clone, Debug)]
+pub struct TraitMethod {
+    pub binding: BindingId,
+    pub signature: TypeExpr,
+}
+
+#[derive(Clone, Debug)]
+pub struct ImplMethod {
+    pub binding: BindingId,
+    pub name: Rc<str>,
+    pub lambda: Rc<Lambda>,
 }
 
 #[derive(Clone, Debug)]

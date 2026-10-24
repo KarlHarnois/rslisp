@@ -13,12 +13,15 @@ use super::structs::{StructDefinition, StructTable};
 use super::templates::TemplateBorrows;
 use super::traits::{Implementor, RustTrait, TraitTable};
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type, TypeVar};
-use super::typed::{PendingModeCheck, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
+use super::typed::{
+    PendingModeCheck, ReceiverKind, TraitMethodInfo, TypedDefinition, TypedExpr, TypedExprKind,
+    TypedLeaf, TypedTrait, TypedTraitImpl, TypedTraitMethod,
+};
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
     BindingArena, BindingId, BodyItem, CopyTrait, CoreModule, Expr, ExprKind, Item, ItemKind, Leaf,
-    ModuleId, ParsedTemplate, PrimitiveType, StructDerives, StructExpr, TypeBinder, TypeExpr,
-    TypeExprKind, VariantDeclaration, VariantPayload as CoreVariantPayload,
+    ModuleId, ParsedTemplate, PrimitiveType, ReferenceKind, StructDerives, StructExpr, TypeBinder,
+    TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload as CoreVariantPayload,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
@@ -164,6 +167,10 @@ pub struct TypeChecker {
     box_binding: Option<BindingId>,
     pub(super) written_parameters: HashMap<BindingId, Vec<bool>>,
     pub(super) pending_mode_checks: Vec<PendingModeCheck>,
+    pub(super) trait_definitions: Vec<TypedTrait>,
+    pub(super) trait_impls: Vec<TypedTraitImpl>,
+    pub(super) trait_methods: HashMap<BindingId, TraitMethodInfo>,
+    pub(super) synthetic_bindings: HashSet<BindingId>,
 }
 
 struct Definition<'p> {
@@ -218,6 +225,10 @@ impl TypeChecker {
             box_binding: None,
             written_parameters: HashMap::new(),
             pending_mode_checks: Vec::new(),
+            trait_definitions: Vec::new(),
+            trait_impls: Vec::new(),
+            trait_methods: HashMap::new(),
+            synthetic_bindings: HashSet::new(),
         }
     }
 
@@ -233,6 +244,7 @@ impl TypeChecker {
         if let Some(box_binding) = self.box_binding {
             super::boxes::BoxPlanner::add_boxes(&mut self.structs, &mut self.enums, box_binding);
         }
+        self.collect_trait_impls(modules);
         self.register_derived_traits(modules);
         self.check_trait_claims(modules);
         self.copy_trait = self.traits.with_paths(&[CopyTrait::PATH]).first().copied();
@@ -274,29 +286,46 @@ impl TypeChecker {
 
     fn collect_item(&mut self, item: &Item) -> Result<(), Diagnostic> {
         match &item.kind {
-            ItemKind::Struct(binding, params, fields) => {
-                self.collect_struct(*binding, params, fields)
+            ItemKind::Def(..) | ItemKind::Signature(..) | ItemKind::Derive(..) => {
+                self.collect_value_item(item)
             }
-            ItemKind::Enum(binding, params, variants, rust) => {
-                self.collect_enum(*binding, params, variants, rust)
-            }
-            ItemKind::RustTrait(binding, path, implementors) => {
-                self.collect_trait(*binding, path, implementors)
-            }
-            ItemKind::RustType(binding, binders, template, clauses) => {
-                self.collect_rust_type(*binding, binders, template, clauses)
-            }
-            ItemKind::Signature(binding, signature) => {
-                self.signatures
-                    .insert(*binding, (signature.clone(), item.span));
-                Ok(())
-            }
-            ItemKind::Derive(..) => Ok(()),
-            ItemKind::Def(binding, value) => {
-                self.record_field_accessor(*binding, value);
-                Ok(())
-            }
+            _ => self.collect_type_item(item),
         }
+    }
+
+    fn collect_value_item(&mut self, item: &Item) -> Result<(), Diagnostic> {
+        if let ItemKind::Signature(binding, signature) = &item.kind {
+            self.signatures
+                .insert(*binding, (signature.clone(), item.span));
+            return Ok(());
+        }
+        if let ItemKind::Derive(..) = &item.kind {
+            return Ok(());
+        }
+        if let ItemKind::Def(binding, value) = &item.kind {
+            self.record_field_accessor(*binding, value);
+        }
+        Ok(())
+    }
+
+    fn collect_type_item(&mut self, item: &Item) -> Result<(), Diagnostic> {
+        let kind = &item.kind;
+        if let ItemKind::Struct(binding, params, fields) = kind {
+            return self.collect_struct(*binding, params, fields);
+        }
+        if let ItemKind::Enum(binding, params, variants, rust) = kind {
+            return self.collect_enum(*binding, params, variants, rust);
+        }
+        if let ItemKind::RustTrait(binding, path, implementors) = kind {
+            return self.collect_trait(*binding, path, implementors);
+        }
+        if let ItemKind::RustType(binding, binders, template, clauses) = kind {
+            return self.collect_rust_type(*binding, binders, template, clauses);
+        }
+        if let ItemKind::Trait(binding, rust_name, self_variable, methods) = kind {
+            return self.collect_user_trait(*binding, rust_name, *self_variable, methods);
+        }
+        Ok(())
     }
 
     fn record_trait_arguments(&mut self, modules: &[CoreModule]) {
@@ -1258,6 +1287,115 @@ impl TypeChecker {
         }
     }
 
+    fn collect_user_trait(
+        &mut self,
+        binding: BindingId,
+        rust_name: &std::rc::Rc<str>,
+        self_variable: BindingId,
+        methods: &[crate::core::TraitMethod],
+    ) -> Result<(), Diagnostic> {
+        self.traits.add(
+            binding,
+            RustTrait {
+                path: rust_name.clone(),
+                implementors: Vec::new(),
+            },
+        );
+        let mut typed_methods = Vec::new();
+        for method in methods {
+            let receiver = Self::receiver_kind(&method.signature, self_variable);
+            self.synthetic_bindings.insert(method.binding);
+            self.trait_methods.insert(
+                method.binding,
+                TraitMethodInfo {
+                    rust_name: rust_name.clone(),
+                    receiver,
+                },
+            );
+            typed_methods.push(TypedTraitMethod {
+                binding: method.binding,
+                receiver,
+            });
+        }
+        self.trait_definitions.push(TypedTrait {
+            binding,
+            rust_name: rust_name.clone(),
+            methods: typed_methods,
+        });
+        Ok(())
+    }
+
+    fn receiver_kind(signature: &TypeExpr, self_variable: BindingId) -> Option<ReceiverKind> {
+        let TypeExprKind::Function(parameters, _) = signature.kind() else {
+            return None;
+        };
+        parameters
+            .first()
+            .and_then(|parameter| Self::parameter_receiver(parameter, self_variable))
+    }
+
+    fn parameter_receiver(parameter: &TypeExpr, self_variable: BindingId) -> Option<ReceiverKind> {
+        match parameter.kind() {
+            TypeExprKind::Named(binding, arguments) => {
+                Self::named_receiver(*binding, arguments, self_variable, ReceiverKind::Owned)
+            }
+            TypeExprKind::Reference(kind, inner) => {
+                Self::reference_receiver(*kind, inner, self_variable)
+            }
+            _ => None,
+        }
+    }
+
+    fn reference_receiver(
+        kind: ReferenceKind,
+        inner: &TypeExpr,
+        self_variable: BindingId,
+    ) -> Option<ReceiverKind> {
+        let TypeExprKind::Named(binding, arguments) = inner.kind() else {
+            return None;
+        };
+        let receiver = match kind {
+            ReferenceKind::Shared => ReceiverKind::Shared,
+            ReferenceKind::Mutable => ReceiverKind::Mutable,
+        };
+        Self::named_receiver(*binding, arguments, self_variable, receiver)
+    }
+
+    fn named_receiver(
+        binding: BindingId,
+        arguments: &[TypeExpr],
+        self_variable: BindingId,
+        receiver: ReceiverKind,
+    ) -> Option<ReceiverKind> {
+        (binding == self_variable && arguments.is_empty()).then_some(receiver)
+    }
+
+    fn collect_trait_impls(&mut self, modules: &[CoreModule]) {
+        for module in modules {
+            for item in &module.items {
+                let ItemKind::Impl(trait_binding, type_binding, methods) = &item.kind else {
+                    continue;
+                };
+                self.traits.add_implementor(
+                    *trait_binding,
+                    Implementor {
+                        scheme: Scheme::monomorphic(Type::Named(*type_binding, Vec::new())),
+                        argument: None,
+                    },
+                );
+                let method_bindings: Vec<BindingId> = methods.iter().map(|m| m.binding).collect();
+                self.synthetic_bindings
+                    .extend(method_bindings.iter().copied());
+                self.trait_impls.push(TypedTraitImpl {
+                    trait_binding: *trait_binding,
+                    type_binding: *type_binding,
+                    module: module.id,
+                    methods: method_bindings,
+                });
+            }
+        }
+    }
+
     fn collect_trait(
         &mut self,
         binding: BindingId,
@@ -1673,6 +1811,8 @@ impl TypeChecker {
                 ItemKind::Signature(..)
                 | ItemKind::RustTrait(..)
                 | ItemKind::RustType(..)
+                | ItemKind::Trait(..)
+                | ItemKind::Impl(..)
                 | ItemKind::Derive(..) => {}
             }
         }
@@ -1699,6 +1839,10 @@ impl TypeChecker {
             rust_types: self.rust_types,
             box_binding: self.box_binding,
             traits: self.traits,
+            trait_definitions: self.trait_definitions,
+            trait_impls: self.trait_impls,
+            trait_methods: self.trait_methods,
+            synthetic_bindings: self.synthetic_bindings,
             generics: self.generics,
             implied_bounds: self.implied_bounds,
             template_borrows: self.template_borrows,

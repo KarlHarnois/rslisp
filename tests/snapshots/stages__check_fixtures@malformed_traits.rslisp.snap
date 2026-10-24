@@ -1,0 +1,108 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/malformed_traits.rslisp
+---
+error[L0210]: malformed `trait`
+ --> check/malformed_traits.rslisp:1:1
+  |
+1 | (trait)
+  | ^^^^^^^ this does not fit the shape of `trait`
+  |
+  = help: write it as `(trait name (method type) ...)`
+
+error[L0210]: malformed `trait`
+ --> check/malformed_traits.rslisp:2:18
+  |
+2 | (trait shape-one area)
+  |                  ^^^^ this does not fit the shape of `trait`
+  |
+  = help: write it as `(trait name (method type) ...)`
+
+error[L0210]: malformed `trait`
+ --> check/malformed_traits.rslisp:3:18
+  |
+3 | (trait shape-two (area))
+  |                  ^^^^^^ this does not fit the shape of `trait`
+  |
+  = help: write it as `(trait name (method type) ...)`
+
+error[L0210]: malformed `trait`
+ --> check/malformed_traits.rslisp:4:15
+  |
+4 | (trait broken (area))
+  |               ^^^^^^ this does not fit the shape of `trait`
+  |
+  = help: write it as `(trait name (method type) ...)`
+
+error[L0210]: malformed `trait`
+ --> check/malformed_traits.rslisp:5:30
+  |
+5 | (trait not-a-function (probe i64))
+  |                              ^^^ this does not fit the shape of `trait`
+  |
+  = help: write it as `(trait name (method type) ...)`
+
+error[L0210]: malformed `impl`
+ --> check/malformed_traits.rslisp:8:7
+  |
+8 | (impl circle painted (area (c) (field c radius)))
+  |       ^^^^^^ this does not fit the shape of `impl`
+  |
+  = help: write a trait this module defines
+
+error[L0210]: malformed `impl`
+ --> check/malformed_traits.rslisp:9:15
+  |
+9 | (impl painted i64 (area (c) c))
+  |               ^^^ this does not fit the shape of `impl`
+  |
+  = help: write a struct or an enum
+
+error[L0239]: `circle` is missing `area` from `painted`
+  --> check/malformed_traits.rslisp:10:15
+   |
+10 | (impl painted circle)
+   |               ^^^^^^ this implementation is missing `area`
+   |
+   = help: add the `area` method
+
+error[L0210]: malformed `impl`
+  --> check/malformed_traits.rslisp:11:22
+   |
+11 | (impl painted circle area)
+   |                      ^^^^ this does not fit the shape of `impl`
+   |
+   = help: write it as `(impl trait type (method (param ...) body ...) ...)`
+
+error[L0210]: malformed `impl`
+  --> check/malformed_traits.rslisp:12:22
+   |
+12 | (impl painted circle (area))
+   |                      ^^^^^^ this does not fit the shape of `impl`
+   |
+   = help: write it as `(impl trait type (method (param ...) body ...) ...)`
+
+error[L0239]: `circle` is missing `area` from `painted`
+  --> check/malformed_traits.rslisp:13:15
+   |
+13 | (impl painted circle (nope (c) c))
+   |               ^^^^^^ this implementation is missing `area`
+   |
+   = help: add the `area` method
+
+error[L0241]: `painted` does not declare `nope`
+  --> check/malformed_traits.rslisp:13:23
+   |
+13 | (impl painted circle (nope (c) c))
+   |                       ^^^^ not a method of `painted`
+   |
+   = help: declare it in the trait, or remove it
+
+error[L0210]: malformed `impl`
+  --> check/malformed_traits.rslisp:14:1
+   |
+14 | (impl broken circle (anything (c) c))
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `impl`
+   |
+   = help: define the trait before implementing it
