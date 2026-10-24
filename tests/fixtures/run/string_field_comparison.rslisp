@@ -1,0 +1,8 @@
+(defstruct box (name string))
+
+(type same-name (fn ((ref box) (ref string)) bool))
+(defn same-name (b name)
+  (= (field b name) name))
+
+(defn main ()
+  (println (same-name (make-box (to-string "x")) (to-string "x"))))
