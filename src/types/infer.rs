@@ -1459,8 +1459,21 @@ impl TypeChecker {
             }
             (Type::Var(var), Type::Ref(_)) => self.pass_to_variable(*var, argument, span),
             (Type::Mut(_), Type::Mut(_)) => self.pass(parameter, argument, span, Borrow::Reborrow),
-            (expected, found) => self.pass(expected, found, span, Borrow::None),
+            (expected, found) => self.pass_value(expected, found, span),
         }
+    }
+
+    fn pass_value(
+        &mut self,
+        expected: &Type,
+        found: &Type,
+        span: Span,
+    ) -> Result<Borrow, Diagnostic> {
+        if expected.is_unsized() && matches!(found, Type::Var(_)) {
+            let borrowed = Type::Ref(Box::new(expected.clone()));
+            return self.pass(&borrowed, found, span, Borrow::None);
+        }
+        self.pass(expected, found, span, Borrow::None)
     }
 
     fn collapses(&self, parameter: &Type, argument: &Type) -> bool {

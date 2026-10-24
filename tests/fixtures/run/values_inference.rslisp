@@ -1,0 +1,14 @@
+(defn parse-record (line-number line)
+  (let fields (collect (split line ",")))
+  (len fields))
+
+(defn count-lines (lines)
+  (fold (enumerate (values lines))
+        0
+        (fn (state entry)
+          (let-pair (index line) entry
+            (+ state (parse-record (+ index 1) line))))))
+
+(defn main ()
+  (let lines (collect (lines "a,b\nc,d")))
+  (println (count-lines lines)))
