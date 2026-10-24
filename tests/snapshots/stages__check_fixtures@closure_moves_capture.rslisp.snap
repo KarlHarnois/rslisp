@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/closure_moves_capture.rslisp
+---
+error[L0508]: this closure moves a captured value
+ --> check/closure_moves_capture.rslisp:5:33
+  |
+5 |   (println (apply (fn (ignored) text))))
+  |                                 ^^^^ `text` moves here
+  |
+  = help: clone the value with `(clone text)`, or return a borrow instead

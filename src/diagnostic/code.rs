@@ -124,6 +124,7 @@ impl DiagnosticCode {
     pub const MISSING_COPY_BOUND: Self = Self(Cow::Borrowed("L0505"));
     pub const WRITTEN_MODE_MISMATCH: Self = Self(Cow::Borrowed("L0506"));
     pub const FUNCTION_VALUE_MISMATCH: Self = Self(Cow::Borrowed("L0507"));
+    pub const CLOSURE_MOVES_CAPTURE: Self = Self(Cow::Borrowed("L0508"));
 
     pub const MISSING_MAIN: Self = Self(Cow::Borrowed("L0601"));
     pub const NAME_COLLISION: Self = Self(Cow::Borrowed("L0602"));

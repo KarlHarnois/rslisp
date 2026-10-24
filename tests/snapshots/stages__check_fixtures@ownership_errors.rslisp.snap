@@ -48,6 +48,14 @@ help: clone the value if both places need it
 15 +   (if flag (store (clone name)) (store name))
    |
 
+error[L0508]: this closure moves a captured value
+  --> check/ownership_errors.rslisp:21:27
+   |
+21 |   (let take (fn () (store name)))
+   |                           ^^^^ `name` moves here
+   |
+   = help: clone the value with `(clone name)`, or return a borrow instead
+
 error[L0501]: use of moved value `take`
   --> check/ownership_errors.rslisp:23:15
    |
@@ -56,4 +64,4 @@ error[L0501]: use of moved value `take`
 23 |   (apply-once take))
    |               ^^^^ value used here after it moved
    |
-   = help: this closure moves a captured value, so it can only be used once
+   = help: this closure moves a captured value, so it cannot be copied
