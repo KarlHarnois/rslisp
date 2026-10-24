@@ -1,0 +1,123 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/shapes_trait.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Circle {
+    radius: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Rect {
+    width: f64,
+    height: f64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct Labeled {
+    text: String,
+    size: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Point {}
+
+fn main() {
+    println!("{}", Circle { radius: 1.0 }.area());
+    println!(
+        "{}",
+        Rect {
+            width: 2.0,
+            height: 3.0
+        }
+        .area()
+    );
+    println!(
+        "{}",
+        Labeled {
+            text: "box".to_string(),
+            size: 2.0
+        }
+        .area()
+    );
+    println!("{}", Point {}.area());
+    println!(
+        "{}",
+        Labeled {
+            text: "box".to_string(),
+            size: 2.0
+        }
+        .label_length()
+    );
+    println!(
+        "{}",
+        Labeled {
+            text: "box".to_string(),
+            size: 2.0
+        }
+        .label_details()
+    );
+    Circle { radius: 1.0 }.wait()
+}
+
+trait Shape {
+    fn area(&self) -> f64;
+    fn label_length(&self) -> usize;
+    fn label_details(&self) -> usize;
+    fn wait(&self);
+}
+
+impl Shape for Circle {
+    fn area(&self) -> f64 {
+        3.0 * self.radius * self.radius
+    }
+    fn label_length(&self) -> usize {
+        0
+    }
+    fn label_details(&self) -> usize {
+        0
+    }
+    fn wait(&self) {
+        let ignored: i64 = 0;
+    }
+}
+
+impl Shape for Rect {
+    fn area(&self) -> f64 {
+        self.width * self.height
+    }
+    fn label_length(&self) -> usize {
+        0
+    }
+    fn label_details(&self) -> usize {
+        0
+    }
+    fn wait(&self) {}
+}
+
+impl Shape for Labeled {
+    fn area(&self) -> f64 {
+        self.size * 1.0
+    }
+    fn label_length(&self) -> usize {
+        self.text.len()
+    }
+    fn label_details(&self) -> usize {
+        self.text.len()
+    }
+    fn wait(&self) {}
+}
+
+impl Shape for Point {
+    fn area(&self) -> f64 {
+        0.0
+    }
+    fn label_length(&self) -> usize {
+        0
+    }
+    fn label_details(&self) -> usize {
+        0
+    }
+    fn wait(&self) {}
+}
