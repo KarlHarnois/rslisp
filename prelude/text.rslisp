@@ -3,7 +3,7 @@
 (use code first rest list prepend concat length empty? nth take drop
           symbol symbol? list? string? string same-binding? value-eq
           number-add number-sub number-lt bool-not
-          escape-string escape-format string-strip-suffix)
+          escape-string escape-char escape-format string-strip-suffix)
 (use prelude/types vec option result iterator box)
 
 (export display debug to-string print println prn pr-str str char chars lines split trim as-str parse parse-error from-str)
@@ -213,4 +213,4 @@
   (println-call (flatten-parts parts)))
 
 (defmacro char (text)
-  (list (quote rust) (string "'" text "'") (quote char)))
+  (list (quote rust) (string "'" (escape-char text) "'") (quote char)))
