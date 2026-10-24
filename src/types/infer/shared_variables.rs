@@ -170,10 +170,8 @@ impl TypeChecker {
         let Some(assignment) = self.written_assignment(group, arguments) else {
             return Ok(false);
         };
-        if assignment
-            .values()
-            .any(|argument| self.referent_unknown(argument))
-            || !self.group_bounds_hold(group, &assignment)
+        if !self.written_depths_agree(group, arguments)
+            || !self.written_types_hold(group, &assignment)
         {
             return Ok(false);
         }
@@ -186,6 +184,32 @@ impl TypeChecker {
             }
         }
         Ok(true)
+    }
+
+    fn written_depths_agree(&self, group: &SharedGroup, arguments: &[TypedArgument]) -> bool {
+        let resolved: Vec<Type> = group
+            .positions()
+            .map(|position| self.unifier.resolve(&arguments[position].value.ty))
+            .collect();
+        let referent = Self::innermost_referent(&resolved[0]).clone();
+        if !resolved
+            .iter()
+            .all(|argument| Self::innermost_referent(argument) == &referent)
+        {
+            return true;
+        }
+        let depths: Vec<usize> = group
+            .positions()
+            .map(|position| self.reference_depth_as_written(&arguments[position]))
+            .collect();
+        depths.windows(2).all(|pair| pair[0] == pair[1])
+    }
+
+    fn written_types_hold(&self, group: &SharedGroup, assignment: &HashMap<TypeVar, Type>) -> bool {
+        !assignment
+            .values()
+            .any(|argument| self.referent_unknown(argument))
+            && self.group_bounds_hold(group, assignment)
     }
 
     fn written_assignment(
@@ -239,7 +263,10 @@ impl TypeChecker {
             return self.pass_each(callee, group, arguments);
         }
         let referent = self.unify_referents(&positions, &resolved, arguments)?;
-        let depths: Vec<usize> = resolved.iter().map(Self::reference_depth).collect();
+        let depths: Vec<usize> = positions
+            .iter()
+            .map(|position| self.reference_depth_as_written(&arguments[*position]))
+            .collect();
         let target = self.target_depth(group, &referent, &depths, borrowed_by_rust);
         let span = arguments[positions[0]].value.span;
         let chosen = Self::with_references(referent, target);
@@ -355,6 +382,11 @@ impl TypeChecker {
             .satisfies(&bound, implementor, &|generic, required| {
                 self.unifier.generic_bounds(generic).contains(required)
             })
+    }
+
+    fn reference_depth_as_written(&self, argument: &TypedArgument) -> usize {
+        let written = self.place_type(&argument.value);
+        Self::reference_depth(&self.unifier.resolve(&written))
     }
 
     fn with_references(referent: Type, depth: usize) -> Type {
