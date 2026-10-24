@@ -229,11 +229,17 @@ pub struct TraitMethodInfo {
     pub receiver: Option<ReceiverKind>,
 }
 
+#[derive(Clone, Copy)]
+pub struct TypedImplMethod {
+    pub binding: BindingId,
+    pub receiver: Option<ReceiverKind>,
+}
+
 pub struct TypedTraitImpl {
     pub trait_binding: BindingId,
     pub type_binding: BindingId,
     pub module: ModuleId,
-    pub methods: Vec<BindingId>,
+    pub methods: Vec<TypedImplMethod>,
 }
 
 pub struct TypedProgram {

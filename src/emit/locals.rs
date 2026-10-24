@@ -46,6 +46,16 @@ impl LocalNames {
         candidate
     }
 
+    pub fn bind_receiver(&mut self, binding: BindingId) -> String {
+        let name = "self".to_string();
+        self.used.insert(name.clone());
+        if let Some(scope) = self.scopes.last_mut() {
+            scope.push(name.clone());
+        }
+        self.assigned.insert(binding, name.clone());
+        name
+    }
+
     pub fn temporary(&mut self, base: &str) -> String {
         let mut candidate = base.to_string();
         let mut suffix = Self::FIRST_SUFFIX;

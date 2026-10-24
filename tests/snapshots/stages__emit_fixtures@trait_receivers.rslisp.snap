@@ -1,0 +1,144 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/trait_receivers.rslisp
+---
+#[derive(Clone, Debug, PartialEq)]
+struct Circle {
+    radius: f64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct Square {
+    side: f64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Tag {
+    Dot,
+    Box,
+}
+
+fn total_area<A: Shape>(shapes: &[A]) -> f64 {
+    shapes
+        .iter()
+        .fold(0.0, |total: f64, shape: &A| total + shape.area())
+}
+
+fn areas<A: Shape>(items: &[A]) -> Vec<f64> {
+    let shapes = items.iter();
+    shapes.map(Shape::area).collect::<Vec<_>>()
+}
+
+fn total_of(areas_2: impl Iterator<Item = f64>) -> f64 {
+    areas_2.fold(0.0, |total: f64, area: f64| total + area)
+}
+
+fn main() {
+    let shapes = vec![Circle { radius: 1.0 }, Circle { radius: 2.0 }];
+    println!("{}", total_area(&shapes));
+    println!("{}", total_of(areas(&shapes).iter().copied()));
+    println!("{}", Tag::Box.area());
+    println!("{}", Tag::Dot.area());
+    println!("{}", Square { side: 2.0 }.area());
+    println!("{}", Circle { radius: 1.0 }.area());
+    println!(
+        "{}",
+        (if true {
+            Circle { radius: 1.0 }
+        } else {
+            Circle { radius: 2.0 }
+        })
+        .area()
+    );
+    println!("{}", Labelled::label(1, &Tag::Dot));
+    println!("{}", Tag::Dot.take());
+    println!("{}", Tag::Dot.itself().area());
+    let mut first = Tag::Dot;
+    let mut second = Tag::Box;
+    first.swap(&mut second);
+    let mut circle = Circle { radius: 1.0 };
+    circle.scale(2.0);
+    println!("{}", circle.area())
+}
+
+trait Shape {
+    fn area(&self) -> f64;
+    fn scale(&mut self, _: f64);
+}
+
+trait Labelled {
+    fn label(_: i64, _: &Self) -> i64;
+}
+
+trait Consumed {
+    fn take(self) -> i64;
+}
+
+trait Identity {
+    fn itself(&self) -> Self;
+}
+
+trait Swapped {
+    fn swap(&mut self, _: &mut Self);
+}
+
+impl Shape for Circle {
+    fn area(&self) -> f64 {
+        3.0 * self.radius * self.radius
+    }
+    fn scale(&mut self, factor: f64) {
+        let _radius = self.radius;
+        let _factor = factor;
+    }
+}
+
+impl Shape for Square {
+    fn area(&self) -> f64 {
+        self.side * self.side
+    }
+    fn scale(&mut self, factor: f64) {
+        let _side = self.side;
+        let _factor = factor;
+    }
+}
+
+impl Shape for Tag {
+    fn area(&self) -> f64 {
+        match self {
+            Tag::Dot => 0.0,
+            Tag::Box => 1.0,
+        }
+    }
+    fn scale(&mut self, factor: f64) {
+        let _factor = factor;
+    }
+}
+
+impl Labelled for Tag {
+    fn label(value: i64, t: &Tag) -> i64 {
+        let _t = t;
+        value
+    }
+}
+
+impl Consumed for Tag {
+    fn take(self) -> i64 {
+        match self {
+            Tag::Dot => 0,
+            Tag::Box => 1,
+        }
+    }
+}
+
+impl Identity for Tag {
+    fn itself(&self) -> Tag {
+        self.clone()
+    }
+}
+
+impl Swapped for Tag {
+    fn swap(&mut self, b: &mut Tag) {
+        let _b = b;
+    }
+}

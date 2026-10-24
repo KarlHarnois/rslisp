@@ -75,6 +75,7 @@ pub struct TraitMethod {
 #[derive(Clone, Debug)]
 pub struct ImplMethod {
     pub binding: BindingId,
+    pub trait_method: BindingId,
     pub name: Rc<str>,
     pub lambda: Rc<Lambda>,
 }

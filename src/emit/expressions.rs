@@ -1227,6 +1227,10 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn global(&mut self, binding: BindingId, ty: &Type, span: Span) -> Code {
+        if let Some(info) = self.program.trait_methods.get(&binding) {
+            let name = NameMangler::value(self.program.bindings.get(binding).name());
+            return Code::atom(format!("{}::{name}", info.rust_name));
+        }
         if let Some(TypedExprKind::Leaf(TypedLeaf::Rust(template))) = self
             .plan
             .definition(binding)
@@ -1324,6 +1328,11 @@ impl<'a> ExpressionEmitter<'a> {
         {
             return self.inline_call(lambda, arguments);
         }
+        if let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = &callee.kind
+            && self.program.trait_methods.contains_key(binding)
+        {
+            return self.trait_method_call(*binding, arguments);
+        }
         if let Some(template) = self.called_template(callee) {
             let types = self.callee_type_arguments(callee);
             return self.template_call(&template, arguments, types, span);
@@ -1336,6 +1345,42 @@ impl<'a> ExpressionEmitter<'a> {
             .map(|argument| self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary))
             .collect();
         self.call_code(callee, arguments)
+    }
+
+    fn trait_method_call(&mut self, binding: BindingId, arguments: &[TypedArgument]) -> Code {
+        let info = self
+            .program
+            .trait_methods
+            .get(&binding)
+            .expect("a trait method call names a method");
+        let name = NameMangler::value(self.program.bindings.get(binding).name());
+        if info.receiver.is_some() {
+            let (receiver, rest) = arguments
+                .split_first()
+                .expect("a receiver method has a receiver argument");
+            let receiver = self.argument(receiver, TypeContext::Known, ArgumentRole::Receiver);
+            let receiver = if receiver.is_atomic() {
+                receiver
+            } else {
+                receiver.parenthesized()
+            };
+            let rest: Vec<Code> = rest
+                .iter()
+                .map(|argument| self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary))
+                .collect();
+            let mut parts = vec![receiver, Code::atom(format!(".{name}("))];
+            parts.extend(Self::separated(rest));
+            parts.push(Code::atom(")"));
+            return Code::joined(parts, Precedence::Atom);
+        }
+        let arguments: Vec<Code> = arguments
+            .iter()
+            .map(|argument| self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary))
+            .collect();
+        let mut parts = vec![Code::atom(format!("{}::{name}(", info.rust_name))];
+        parts.extend(Self::separated(arguments));
+        parts.push(Code::atom(")"));
+        Code::joined(parts, Precedence::Atom)
     }
 
     fn call_code(&mut self, callee: &TypedExpr, arguments: Vec<Code>) -> Code {

@@ -1383,14 +1383,23 @@ impl TypeChecker {
                         argument: None,
                     },
                 );
-                let method_bindings: Vec<BindingId> = methods.iter().map(|m| m.binding).collect();
-                self.synthetic_bindings
-                    .extend(method_bindings.iter().copied());
+                let mut typed_methods = Vec::new();
+                for method in methods {
+                    self.synthetic_bindings.insert(method.binding);
+                    let receiver = self
+                        .trait_methods
+                        .get(&method.trait_method)
+                        .and_then(|info| info.receiver);
+                    typed_methods.push(super::typed::TypedImplMethod {
+                        binding: method.binding,
+                        receiver,
+                    });
+                }
                 self.trait_impls.push(TypedTraitImpl {
                     trait_binding: *trait_binding,
                     type_binding: *type_binding,
                     module: module.id,
-                    methods: method_bindings,
+                    methods: typed_methods,
                 });
             }
         }
