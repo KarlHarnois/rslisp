@@ -1,0 +1,43 @@
+(struct circle (radius f64))
+(struct rect (width f64) (height f64))
+(struct labeled (text string) (size f64))
+(struct point)
+
+(trait shape
+  (area (fn ((ref self)) f64))
+  (label-length (fn ((ref self)) usize))
+  (label-details (fn ((ref self)) usize))
+  (wait (fn ((ref self)) unit)))
+
+(impl shape circle
+  (area (c) (* 3.0 (field c radius) (field c radius)))
+  (label-length (c) 0)
+  (label-details (c) 0)
+  (wait (c) (let ignored 0)))
+
+(impl shape rect
+  (area (r) (* (field r width) (field r height)))
+  (label-length (r) 0)
+  (label-details (r) 0)
+  (wait (r) (do)))
+
+(impl shape labeled
+  (area (l) (* (field l size) 1.0))
+  (label-length (l) (len (field l text)))
+  (label-details (l) (len (field l text)))
+  (wait (l) (do)))
+
+(impl shape point
+  (area (p) 0.0)
+  (label-length (p) 0)
+  (label-details (p) 0)
+  (wait (p) (do)))
+
+(defn main ()
+  (println (area (new circle (radius 1.0))))
+  (println (area (new rect (width 2.0) (height 3.0))))
+  (println (area (new labeled (text (to-string "box")) (size 2.0))))
+  (println (area (new point)))
+  (println (label-length (new labeled (text (to-string "box")) (size 2.0))))
+  (println (label-details (new labeled (text (to-string "box")) (size 2.0))))
+  (wait (new circle (radius 1.0))))
