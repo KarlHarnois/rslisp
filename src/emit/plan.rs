@@ -379,7 +379,7 @@ impl<'p> EmitPlan<'p> {
                     .for_each(|argument| self.visit_type(argument, module));
                 self.reach_named(*binding, module);
             }
-            Type::Function(parameters, result) => {
+            Type::Function(_, parameters, result) => {
                 parameters
                     .iter()
                     .for_each(|parameter| self.visit_type(parameter, module));

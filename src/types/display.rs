@@ -24,7 +24,7 @@ impl<'a> TypeDisplay<'a> {
                 .map_or_else(|| Self::UNKNOWN.to_string(), |param| param.name.to_string()),
             Type::Primitive(primitive) => primitive.name().to_string(),
             Type::Named(binding, arguments) => self.named(*binding, arguments),
-            Type::Function(parameters, result) => self.function(parameters, result),
+            Type::Function(_, parameters, result) => self.function(parameters, result),
             Type::Ref(inner) | Type::Mut(inner) => {
                 format!("({} {})", Self::reference_keyword(shown), self.show(inner))
             }

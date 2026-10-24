@@ -1362,7 +1362,7 @@ impl<'a> ExpressionEmitter<'a> {
         let parsed = Template::new(&template.template);
         match ty {
             Type::Function(..) if parsed.is_path() => Code::atom(template.template.to_string()),
-            Type::Function(parameters, _) => {
+            Type::Function(_, parameters, _) => {
                 self.eta_expanded(&parsed, parameters.len(), types, span)
             }
             _ => self.inline(&parsed, Vec::new(), types, span),
@@ -1634,7 +1634,7 @@ impl<'a> ExpressionEmitter<'a> {
                     Self::collect_generic_bindings(argument, other_argument, bindings);
                 }
             }
-            (Type::Function(parameters, result), Type::Function(other, other_result)) => {
+            (Type::Function(_, parameters, result), Type::Function(_, other, other_result)) => {
                 for (parameter, other_parameter) in parameters.iter().zip(other) {
                     Self::collect_generic_bindings(parameter, other_parameter, bindings);
                 }
@@ -1819,7 +1819,7 @@ impl<'a> ExpressionEmitter<'a> {
         self.locals.leave();
         self.tail_loop = previous;
         let head = match (annotated, ty) {
-            (true, Type::Function(_, result)) => {
+            (true, Type::Function(_, _, result)) => {
                 let result = self.types().show(result, TypePosition::Value);
                 Code::atom(format!("|{}| -> {result} ", params.join(", ")))
             }

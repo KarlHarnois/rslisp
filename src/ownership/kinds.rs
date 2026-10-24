@@ -1,0 +1,1125 @@
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::rc::Rc;
+
+use super::definitions::LocalDefinitions;
+use super::problems::OwnershipProblems;
+use crate::core::{BindingArena, BindingId, ReferenceKind};
+use crate::diagnostic::Diagnostic;
+use crate::source::Span;
+use crate::types::{
+    Borrow, ClosureKind, CopyRules, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem,
+    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedModule, TypedProgram,
+    TypedStructExpr,
+};
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Usage {
+    Move,
+    Borrow,
+}
+
+#[derive(Default)]
+struct CaptureReport {
+    moved: BTreeMap<BindingId, Span>,
+    changed: BTreeMap<BindingId, Span>,
+}
+
+impl CaptureReport {
+    fn merge(&mut self, other: Self) {
+        for (binding, span) in other.moved {
+            self.moved.entry(binding).or_insert(span);
+        }
+        for (binding, span) in other.changed {
+            self.changed.entry(binding).or_insert(span);
+        }
+    }
+
+    fn outside(&self, own: &HashSet<BindingId>) -> Self {
+        Self {
+            moved: self.moved_outside(own),
+            changed: self.changed_outside(own),
+        }
+    }
+
+    fn moved_outside(&self, own: &HashSet<BindingId>) -> BTreeMap<BindingId, Span> {
+        self.moved
+            .iter()
+            .filter(|(binding, _)| !own.contains(binding))
+            .map(|(binding, span)| (*binding, *span))
+            .collect()
+    }
+
+    fn changed_outside(&self, own: &HashSet<BindingId>) -> BTreeMap<BindingId, Span> {
+        self.changed
+            .iter()
+            .filter(|(binding, _)| !own.contains(binding))
+            .map(|(binding, span)| (*binding, *span))
+            .collect()
+    }
+
+    fn kind(&self) -> ClosureKind {
+        if !self.moved.is_empty() {
+            ClosureKind::FnOnce
+        } else if !self.changed.is_empty() {
+            ClosureKind::FnMut
+        } else {
+            ClosureKind::Fn
+        }
+    }
+}
+
+pub struct KindReport {
+    pub mutable_bindings: HashSet<BindingId>,
+    pub diagnostics: Vec<Diagnostic>,
+}
+
+pub struct ClosureKinds<'a> {
+    copy: CopyRules<'a>,
+    bindings: &'a BindingArena,
+    parameter_kinds: HashMap<BindingId, ClosureKind>,
+    binding_kinds: HashMap<BindingId, ClosureKind>,
+    binding_captures: HashMap<BindingId, BindingId>,
+    value_parameters: HashMap<BindingId, Vec<BindingId>>,
+    function_parameters: HashMap<BindingId, Vec<BindingId>>,
+    result_kinds: HashMap<BindingId, ClosureKind>,
+}
+
+impl<'a> ClosureKinds<'a> {
+    pub fn function_parameters(program: &TypedProgram) -> HashMap<BindingId, Vec<BindingId>> {
+        program
+            .modules
+            .iter()
+            .flat_map(|module| &module.definitions)
+            .filter_map(|definition| match &definition.value.kind {
+                TypedExprKind::Fn(lambda) => Some((
+                    definition.binding,
+                    lambda.params.iter().map(|param| param.binding).collect(),
+                )),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn new(
+        traits: &'a crate::types::TraitTable,
+        generics: &'a HashMap<crate::types::GenericId, crate::types::GenericParam>,
+        structs: &'a crate::types::StructTable,
+        enums: &'a crate::types::EnumTable,
+        bindings: &'a BindingArena,
+        function_parameters: HashMap<BindingId, Vec<BindingId>>,
+    ) -> Self {
+        Self {
+            copy: CopyRules::new(traits, generics, structs, enums),
+            bindings,
+            parameter_kinds: HashMap::new(),
+            binding_kinds: HashMap::new(),
+            binding_captures: HashMap::new(),
+            value_parameters: HashMap::new(),
+            function_parameters,
+            result_kinds: HashMap::new(),
+        }
+    }
+
+    pub fn run(mut self, modules: &mut [TypedModule]) -> KindReport {
+        loop {
+            self.recompute_lambdas(modules);
+            self.recompute_result_kinds(modules);
+            let kinds = self.recompute_parameter_kinds(modules);
+            if kinds == self.parameter_kinds {
+                break;
+            }
+            self.parameter_kinds = kinds;
+        }
+        let diagnostics = self.check_calls(modules);
+        let mut mutable_bindings: HashSet<BindingId> = self
+            .parameter_kinds
+            .iter()
+            .filter(|(_, kind)| **kind == ClosureKind::FnMut)
+            .map(|(binding, _)| *binding)
+            .collect();
+        mutable_bindings.extend(self.called_mutable_bindings(modules));
+        self.patch_types(modules);
+        KindReport {
+            mutable_bindings,
+            diagnostics,
+        }
+    }
+
+    fn recompute_lambdas(&mut self, modules: &mut [TypedModule]) {
+        self.binding_kinds.clear();
+        self.binding_captures.clear();
+        self.value_parameters.clear();
+        for definition in modules
+            .iter_mut()
+            .flat_map(|module| module.definitions.iter_mut())
+        {
+            self.patch_expression(&mut definition.value);
+        }
+    }
+
+    fn patch_expression(&mut self, expr: &mut TypedExpr) {
+        if let TypedExprKind::Fn(lambda) = &mut expr.kind {
+            let lambda = Rc::make_mut(lambda);
+            for child in lambda.body.expressions_mut() {
+                self.patch_expression(child);
+            }
+            let report = self.analyze_lambda(lambda);
+            lambda.kind = report.kind();
+            lambda.moved_capture = report
+                .moved
+                .first_key_value()
+                .map(|(binding, span)| (*binding, *span));
+            lambda.changed_capture = report
+                .changed
+                .first_key_value()
+                .map(|(binding, span)| (*binding, *span));
+            if let Type::Function(kind, _, _) = &mut expr.ty {
+                *kind = lambda.kind;
+            }
+            return;
+        }
+        for child in expr.children_mut() {
+            self.patch_expression(child);
+        }
+    }
+
+    fn analyze_lambda(&mut self, lambda: &TypedLambda) -> CaptureReport {
+        let own = LocalDefinitions::of(lambda);
+        self.scan_block(&lambda.body, &own, Usage::Move)
+    }
+
+    fn scan_block(
+        &mut self,
+        block: &TypedBlock,
+        own: &HashSet<BindingId>,
+        usage: Usage,
+    ) -> CaptureReport {
+        let last = block.items.len().checked_sub(1);
+        let mut total = CaptureReport::default();
+        for (position, item) in block.items.iter().enumerate() {
+            match item {
+                TypedBodyItem::Let(binder, value) => {
+                    total.merge(self.scan_expression(value, own, Usage::Move));
+                    self.register_binding(binder.binding, value);
+                }
+                TypedBodyItem::Expr(expr) if Some(position) == last => {
+                    total.merge(self.scan_expression(expr, own, usage));
+                }
+                TypedBodyItem::Expr(expr) => {
+                    total.merge(self.scan_expression(expr, own, Usage::Move));
+                }
+            }
+        }
+        total
+    }
+
+    fn register_binding(&mut self, binding: BindingId, value: &TypedExpr) {
+        if !matches!(value.ty, Type::Function(..)) {
+            return;
+        }
+        self.binding_kinds.insert(binding, self.value_kind(value));
+        if let Some(capture) = self.value_capture(value) {
+            self.binding_captures.insert(binding, capture);
+        }
+        if let Some(parameters) = self.value_parameters_of(value) {
+            self.value_parameters.insert(binding, parameters);
+        }
+    }
+
+    fn scan_expression(
+        &mut self,
+        expr: &TypedExpr,
+        own: &HashSet<BindingId>,
+        usage: Usage,
+    ) -> CaptureReport {
+        match &expr.kind {
+            TypedExprKind::Leaf(leaf) => self.scan_leaf(leaf, expr, own, usage),
+            TypedExprKind::Fn(lambda) => self.scan_lambda(lambda, own),
+            TypedExprKind::Call(callee, arguments) => {
+                let mut report = CaptureReport::default();
+                self.scan_call(callee, arguments, own, &mut report);
+                report
+            }
+            TypedExprKind::Control(control) => self.scan_control(control, own, usage),
+            other => self.scan_nested(expr, other, own),
+        }
+    }
+
+    fn scan_leaf(
+        &mut self,
+        leaf: &TypedLeaf,
+        expr: &TypedExpr,
+        own: &HashSet<BindingId>,
+        usage: Usage,
+    ) -> CaptureReport {
+        let mut report = CaptureReport::default();
+        if let TypedLeaf::Local(binding) = leaf
+            && !own.contains(binding)
+            && usage == Usage::Move
+        {
+            self.record_move(&mut report, *binding, &expr.ty, expr.span);
+        }
+        report
+    }
+
+    fn scan_lambda(&mut self, lambda: &TypedLambda, own: &HashSet<BindingId>) -> CaptureReport {
+        self.analyze_lambda(lambda).outside(own)
+    }
+
+    fn scan_nested(
+        &mut self,
+        expr: &TypedExpr,
+        kind: &TypedExprKind,
+        own: &HashSet<BindingId>,
+    ) -> CaptureReport {
+        match kind {
+            TypedExprKind::Recur(arguments) => {
+                let mut report = CaptureReport::default();
+                self.scan_arguments(arguments, own, &mut report);
+                report
+            }
+            TypedExprKind::Try(_) | TypedExprKind::Borrow(..) | TypedExprKind::Deref(_) => {
+                self.scan_written(expr, kind, own)
+            }
+            _ => self.scan_value(kind, own),
+        }
+    }
+
+    fn scan_written(
+        &mut self,
+        expr: &TypedExpr,
+        kind: &TypedExprKind,
+        own: &HashSet<BindingId>,
+    ) -> CaptureReport {
+        match kind {
+            TypedExprKind::Try(value) => self.scan_expression(value, own, Usage::Move),
+            TypedExprKind::Borrow(reference, value) => {
+                self.scan_borrow(expr, *reference, value, own)
+            }
+            TypedExprKind::Deref(value) => self.scan_expression(value, own, Usage::Borrow),
+            _ => unreachable!("the caller matches a written form"),
+        }
+    }
+
+    fn scan_value(&mut self, kind: &TypedExprKind, own: &HashSet<BindingId>) -> CaptureReport {
+        match kind {
+            TypedExprKind::Struct(structure) => self.scan_structure(structure, own),
+            TypedExprKind::Variant(_, arguments) => {
+                let values: Vec<&TypedExpr> = arguments.iter().collect();
+                self.scan_values(&values, own)
+            }
+            TypedExprKind::Assoc(value, keys, item) => {
+                let mut values = vec![value.as_ref()];
+                values.extend(keys);
+                values.push(item);
+                self.scan_values(&values, own)
+            }
+            _ => unreachable!("the caller matches a value form"),
+        }
+    }
+
+    fn scan_borrow(
+        &mut self,
+        expr: &TypedExpr,
+        reference: ReferenceKind,
+        value: &TypedExpr,
+        own: &HashSet<BindingId>,
+    ) -> CaptureReport {
+        let mut report = CaptureReport::default();
+        if matches!(reference, ReferenceKind::Mutable)
+            && let Some(root) = value.place_root()
+            && !own.contains(&root)
+        {
+            report.changed.entry(root).or_insert(expr.span);
+        }
+        report.merge(self.scan_expression(value, own, Usage::Borrow));
+        report
+    }
+
+    fn scan_structure(
+        &mut self,
+        structure: &TypedStructExpr,
+        own: &HashSet<BindingId>,
+    ) -> CaptureReport {
+        match structure {
+            TypedStructExpr::New(_, fields) => {
+                let values: Vec<&TypedExpr> = fields.iter().map(|(_, value)| value).collect();
+                self.scan_values(&values, own)
+            }
+            TypedStructExpr::Update(_, base, fields) => {
+                let mut values = vec![base.as_ref()];
+                values.extend(fields.iter().map(|(_, value)| value));
+                self.scan_values(&values, own)
+            }
+            TypedStructExpr::Field(value, _) => self.scan_expression(value, own, Usage::Borrow),
+        }
+    }
+
+    fn scan_values(&mut self, values: &[&TypedExpr], own: &HashSet<BindingId>) -> CaptureReport {
+        let mut report = CaptureReport::default();
+        for value in values {
+            report.merge(self.scan_expression(value, own, Usage::Move));
+        }
+        report
+    }
+
+    fn scan_call(
+        &mut self,
+        callee: &TypedExpr,
+        arguments: &[TypedArgument],
+        own: &HashSet<BindingId>,
+        report: &mut CaptureReport,
+    ) {
+        self.scan_callee(callee, own, report);
+        self.scan_arguments(arguments, own, report);
+    }
+
+    fn scan_callee(
+        &mut self,
+        callee: &TypedExpr,
+        own: &HashSet<BindingId>,
+        report: &mut CaptureReport,
+    ) {
+        let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &callee.kind else {
+            report.merge(self.scan_expression(callee, own, Usage::Borrow));
+            return;
+        };
+        if own.contains(binding) {
+            return;
+        }
+        self.record_call(report, *binding, callee.span);
+    }
+
+    fn record_call(&self, report: &mut CaptureReport, binding: BindingId, span: Span) {
+        match self.kind_of(binding) {
+            ClosureKind::Fn => {}
+            ClosureKind::FnMut => {
+                report.changed.entry(binding).or_insert(span);
+            }
+            ClosureKind::FnOnce => {
+                report.moved.entry(binding).or_insert(span);
+            }
+        }
+    }
+
+    fn scan_arguments(
+        &mut self,
+        arguments: &[TypedArgument],
+        own: &HashSet<BindingId>,
+        report: &mut CaptureReport,
+    ) {
+        for argument in arguments {
+            self.scan_argument(argument, own, report);
+        }
+    }
+
+    fn scan_argument(
+        &mut self,
+        argument: &TypedArgument,
+        own: &HashSet<BindingId>,
+        report: &mut CaptureReport,
+    ) {
+        if matches!(argument.borrow, Borrow::Mutable | Borrow::Reborrow)
+            && let Some(root) = argument.value.place_root()
+            && !own.contains(&root)
+        {
+            report.changed.entry(root).or_insert(argument.value.span);
+        }
+        let usage = if argument.borrow == Borrow::None && !argument.value.ty.is_reference() {
+            Usage::Move
+        } else {
+            Usage::Borrow
+        };
+        report.merge(self.scan_expression(&argument.value, own, usage));
+    }
+
+    fn scan_control(
+        &mut self,
+        control: &TypedControl,
+        own: &HashSet<BindingId>,
+        usage: Usage,
+    ) -> CaptureReport {
+        match control {
+            TypedControl::Block(block) => self.scan_block(block, own, usage),
+            TypedControl::If(test, then, otherwise) => {
+                self.scan_branches(test, then, otherwise, own, usage)
+            }
+            TypedControl::Match(matched) => self.scan_match(matched, own, usage),
+        }
+    }
+
+    fn scan_branches(
+        &mut self,
+        test: &TypedExpr,
+        then: &TypedExpr,
+        otherwise: &TypedExpr,
+        own: &HashSet<BindingId>,
+        usage: Usage,
+    ) -> CaptureReport {
+        let mut report = self.scan_expression(test, own, Usage::Borrow);
+        report.merge(self.scan_expression(then, own, usage));
+        report.merge(self.scan_expression(otherwise, own, usage));
+        report
+    }
+
+    fn scan_match(
+        &mut self,
+        matched: &crate::types::TypedMatch,
+        own: &HashSet<BindingId>,
+        usage: Usage,
+    ) -> CaptureReport {
+        let mut report = self.scan_expression(&matched.value, own, Usage::Move);
+        for arm in &matched.arms {
+            report.merge(self.scan_block(&arm.body, own, usage));
+        }
+        report
+    }
+
+    fn record_move(&self, report: &mut CaptureReport, binding: BindingId, ty: &Type, span: Span) {
+        if !self.is_copy_binding(binding, ty) {
+            report.moved.entry(binding).or_insert(span);
+        }
+    }
+
+    fn is_copy_binding(&self, binding: BindingId, ty: &Type) -> bool {
+        if matches!(ty, Type::Function(..)) {
+            return self.kind_of(binding) == ClosureKind::Fn;
+        }
+        self.copy.is_copy(ty)
+    }
+
+    fn kind_of(&self, binding: BindingId) -> ClosureKind {
+        self.binding_kinds
+            .get(&binding)
+            .or_else(|| self.parameter_kinds.get(&binding))
+            .copied()
+            .unwrap_or(ClosureKind::Fn)
+    }
+
+    fn value_kind(&self, value: &TypedExpr) -> ClosureKind {
+        if !matches!(value.ty, Type::Function(..)) {
+            return ClosureKind::Fn;
+        }
+        self.function_value_kind(value)
+    }
+
+    fn function_value_kind(&self, value: &TypedExpr) -> ClosureKind {
+        match &value.kind {
+            TypedExprKind::Fn(lambda) => lambda.kind,
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.kind_of(*binding),
+            TypedExprKind::Leaf(_) => ClosureKind::Fn,
+            TypedExprKind::Call(callee, _) => self.call_result_kind(callee),
+            TypedExprKind::Control(control) => self.control_value_kind(control),
+            _ => ClosureKind::Fn,
+        }
+    }
+
+    fn control_value_kind(&self, control: &TypedControl) -> ClosureKind {
+        match control {
+            TypedControl::Block(block) => self.block_value_kind(block),
+            TypedControl::If(_, then, otherwise) => {
+                self.value_kind(then).max(self.value_kind(otherwise))
+            }
+            TypedControl::Match(matched) => matched
+                .arms
+                .iter()
+                .map(|arm| self.block_value_kind(&arm.body))
+                .max()
+                .unwrap_or(ClosureKind::Fn),
+        }
+    }
+
+    fn block_value_kind(&self, block: &TypedBlock) -> ClosureKind {
+        match block.items.last() {
+            Some(TypedBodyItem::Expr(expr)) => self.value_kind(expr),
+            _ => ClosureKind::Fn,
+        }
+    }
+
+    fn call_result_kind(&self, callee: &TypedExpr) -> ClosureKind {
+        match &callee.kind {
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => self.result_kind(*binding),
+            _ => ClosureKind::Fn,
+        }
+    }
+
+    fn result_kind(&self, binding: BindingId) -> ClosureKind {
+        self.result_kinds
+            .get(&binding)
+            .copied()
+            .unwrap_or(ClosureKind::Fn)
+    }
+
+    fn value_capture(&self, value: &TypedExpr) -> Option<BindingId> {
+        match &value.kind {
+            TypedExprKind::Fn(lambda) => Self::lambda_capture(lambda),
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => {
+                self.binding_captures.get(binding).copied()
+            }
+            _ => None,
+        }
+    }
+
+    fn lambda_capture(lambda: &TypedLambda) -> Option<BindingId> {
+        match lambda.kind {
+            ClosureKind::Fn => None,
+            ClosureKind::FnMut => lambda.changed_capture.map(|(binding, _)| binding),
+            ClosureKind::FnOnce => lambda.moved_capture.map(|(binding, _)| binding),
+        }
+    }
+
+    fn value_parameters_of(&self, value: &TypedExpr) -> Option<Vec<BindingId>> {
+        match &value.kind {
+            TypedExprKind::Fn(lambda) => {
+                Some(lambda.params.iter().map(|param| param.binding).collect())
+            }
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => {
+                self.value_parameters.get(binding).cloned()
+            }
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
+                self.function_parameters.get(binding).cloned()
+            }
+            _ => None,
+        }
+    }
+
+    fn recompute_result_kinds(&mut self, modules: &[TypedModule]) {
+        self.result_kinds.clear();
+        for definition in modules.iter().flat_map(|module| &module.definitions) {
+            let TypedExprKind::Fn(lambda) = &definition.value.kind else {
+                continue;
+            };
+            let Type::Function(_, _, result) = &definition.value.ty else {
+                continue;
+            };
+            if matches!(result.as_ref(), Type::Function(..)) {
+                self.result_kinds
+                    .insert(definition.binding, self.block_value_kind(&lambda.body));
+            }
+        }
+    }
+
+    fn recompute_parameter_kinds(
+        &self,
+        modules: &[TypedModule],
+    ) -> HashMap<BindingId, ClosureKind> {
+        let mut kinds: HashMap<BindingId, ClosureKind> = modules
+            .iter()
+            .flat_map(|module| &module.definitions)
+            .flat_map(|definition| self.lambdas(&definition.value))
+            .flat_map(|lambda| {
+                lambda
+                    .params
+                    .iter()
+                    .map(|param| (param.binding, ClosureKind::Fn))
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        for definition in modules.iter().flat_map(|module| &module.definitions) {
+            self.requirements(&definition.value, &mut kinds);
+        }
+        kinds
+    }
+
+    fn lambdas(&self, expr: &TypedExpr) -> Vec<Rc<TypedLambda>> {
+        let mut found = Vec::new();
+        self.collect_lambdas(expr, &mut found);
+        found
+    }
+
+    fn collect_lambdas(&self, expr: &TypedExpr, found: &mut Vec<Rc<TypedLambda>>) {
+        if let TypedExprKind::Fn(lambda) = &expr.kind {
+            found.push(Rc::clone(lambda));
+            for child in lambda.body.expressions() {
+                self.collect_lambdas(child, found);
+            }
+            return;
+        }
+        for child in expr.children() {
+            self.collect_lambdas(child, found);
+        }
+    }
+
+    fn requirements(&self, expr: &TypedExpr, kinds: &mut HashMap<BindingId, ClosureKind>) {
+        if let TypedExprKind::Fn(lambda) = &expr.kind {
+            self.lambda_requirements(lambda, kinds);
+            for child in lambda.body.expressions() {
+                self.requirements(child, kinds);
+            }
+            return;
+        }
+        for child in expr.children() {
+            self.requirements(child, kinds);
+        }
+    }
+
+    fn lambda_requirements(
+        &self,
+        lambda: &TypedLambda,
+        kinds: &mut HashMap<BindingId, ClosureKind>,
+    ) {
+        let params: Vec<BindingId> = lambda.params.iter().map(|param| param.binding).collect();
+        let mut calls: HashMap<BindingId, usize> = HashMap::new();
+        let mut required: HashMap<BindingId, ClosureKind> = HashMap::new();
+        self.require_block(&lambda.body, &params, None, &mut calls, &mut required);
+        for param in params {
+            let called = match calls.get(&param).copied().unwrap_or(0) {
+                0 => ClosureKind::Fn,
+                1 => ClosureKind::FnOnce,
+                _ => ClosureKind::FnMut,
+            };
+            let requirement = called.max(required.get(&param).copied().unwrap_or(ClosureKind::Fn));
+            let current = kinds.entry(param).or_insert(ClosureKind::Fn);
+            *current = (*current).max(requirement);
+        }
+    }
+
+    fn require_block(
+        &self,
+        block: &TypedBlock,
+        params: &[BindingId],
+        nested: Option<ClosureKind>,
+        calls: &mut HashMap<BindingId, usize>,
+        required: &mut HashMap<BindingId, ClosureKind>,
+    ) {
+        for item in &block.items {
+            match item {
+                TypedBodyItem::Let(_, value) => {
+                    self.require_expression(value, params, nested, calls, required)
+                }
+                TypedBodyItem::Expr(expr) => {
+                    self.require_expression(expr, params, nested, calls, required)
+                }
+            }
+        }
+    }
+
+    fn require_expression(
+        &self,
+        expr: &TypedExpr,
+        params: &[BindingId],
+        nested: Option<ClosureKind>,
+        calls: &mut HashMap<BindingId, usize>,
+        required: &mut HashMap<BindingId, ClosureKind>,
+    ) {
+        match &expr.kind {
+            TypedExprKind::Fn(lambda) => {
+                self.require_block(&lambda.body, params, Some(lambda.kind), calls, required)
+            }
+            TypedExprKind::Call(callee, arguments) => {
+                self.require_call(callee, arguments, params, nested, calls, required)
+            }
+            TypedExprKind::Control(control) => {
+                self.require_control(control, params, nested, calls, required)
+            }
+            TypedExprKind::Leaf(leaf) => self.require_leaf(leaf, params, required),
+            other => self.require_nested(other, params, nested, calls, required),
+        }
+    }
+
+    fn require_leaf(
+        &self,
+        leaf: &TypedLeaf,
+        params: &[BindingId],
+        required: &mut HashMap<BindingId, ClosureKind>,
+    ) {
+        if let TypedLeaf::Local(binding) = leaf
+            && params.contains(binding)
+        {
+            Self::require(required, *binding, ClosureKind::Fn);
+        }
+    }
+
+    fn require_call(
+        &self,
+        callee: &TypedExpr,
+        arguments: &[TypedArgument],
+        params: &[BindingId],
+        nested: Option<ClosureKind>,
+        calls: &mut HashMap<BindingId, usize>,
+        required: &mut HashMap<BindingId, ClosureKind>,
+    ) {
+        let calls_a_parameter = self.require_callee(callee, params, nested, calls, required);
+        self.require_arguments(arguments, callee, params, nested, calls, required);
+        if !calls_a_parameter {
+            self.require_expression(callee, params, nested, calls, required);
+        }
+    }
+
+    fn require_callee(
+        &self,
+        callee: &TypedExpr,
+        params: &[BindingId],
+        nested: Option<ClosureKind>,
+        calls: &mut HashMap<BindingId, usize>,
+        required: &mut HashMap<BindingId, ClosureKind>,
+    ) -> bool {
+        let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &callee.kind else {
+            return false;
+        };
+        if !params.contains(binding) {
+            return false;
+        }
+        *calls.entry(*binding).or_insert(0) += 1;
+        if let Some(kind) = nested {
+            Self::require(required, *binding, kind);
+        }
+        true
+    }
+
+    fn require_arguments(
+        &self,
+        arguments: &[TypedArgument],
+        callee: &TypedExpr,
+        params: &[BindingId],
+        nested: Option<ClosureKind>,
+        calls: &mut HashMap<BindingId, usize>,
+        required: &mut HashMap<BindingId, ClosureKind>,
+    ) {
+        for (position, argument) in arguments.iter().enumerate() {
+            let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &argument.value.kind else {
+                self.require_expression(&argument.value, params, nested, calls, required);
+                continue;
+            };
+            if !params.contains(binding) {
+                self.require_expression(&argument.value, params, nested, calls, required);
+                continue;
+            }
+            let kind = self.expected_kind(callee, position);
+            Self::require(required, *binding, kind);
+        }
+    }
+
+    fn require_control(
+        &self,
+        control: &TypedControl,
+        params: &[BindingId],
+        nested: Option<ClosureKind>,
+        calls: &mut HashMap<BindingId, usize>,
+        required: &mut HashMap<BindingId, ClosureKind>,
+    ) {
+        match control {
+            TypedControl::Block(block) => {
+                self.require_block(block, params, nested, calls, required)
+            }
+            TypedControl::If(test, then, otherwise) => {
+                for expr in [test.as_ref(), then.as_ref(), otherwise.as_ref()] {
+                    self.require_expression(expr, params, nested, calls, required);
+                }
+            }
+            TypedControl::Match(matched) => {
+                self.require_expression(&matched.value, params, nested, calls, required);
+                for arm in &matched.arms {
+                    self.require_block(&arm.body, params, nested, calls, required);
+                }
+            }
+        }
+    }
+
+    fn require_nested(
+        &self,
+        kind: &TypedExprKind,
+        params: &[BindingId],
+        nested: Option<ClosureKind>,
+        calls: &mut HashMap<BindingId, usize>,
+        required: &mut HashMap<BindingId, ClosureKind>,
+    ) {
+        match kind {
+            TypedExprKind::Recur(arguments) => {
+                self.require_recur(arguments, params, nested, calls, required)
+            }
+            TypedExprKind::Try(value)
+            | TypedExprKind::Borrow(_, value)
+            | TypedExprKind::Deref(value) => {
+                self.require_expression(value, params, nested, calls, required)
+            }
+            TypedExprKind::Struct(_) | TypedExprKind::Variant(..) | TypedExprKind::Assoc(..) => {
+                self.require_value(kind, params, nested, calls, required)
+            }
+            _ => unreachable!("the caller matches a nested expression"),
+        }
+    }
+
+    fn require_recur(
+        &self,
+        arguments: &[TypedArgument],
+        params: &[BindingId],
+        nested: Option<ClosureKind>,
+        calls: &mut HashMap<BindingId, usize>,
+        required: &mut HashMap<BindingId, ClosureKind>,
+    ) {
+        for argument in arguments {
+            let passes_parameter = matches!(
+                &argument.value.kind,
+                TypedExprKind::Leaf(TypedLeaf::Local(binding)) if params.contains(binding)
+            );
+            if !passes_parameter {
+                self.require_expression(&argument.value, params, nested, calls, required);
+            }
+        }
+    }
+
+    fn require_value(
+        &self,
+        kind: &TypedExprKind,
+        params: &[BindingId],
+        nested: Option<ClosureKind>,
+        calls: &mut HashMap<BindingId, usize>,
+        required: &mut HashMap<BindingId, ClosureKind>,
+    ) {
+        match kind {
+            TypedExprKind::Struct(structure) => {
+                self.require_structure(structure, params, nested, calls, required)
+            }
+            TypedExprKind::Variant(_, arguments) => {
+                for argument in arguments {
+                    self.require_expression(argument, params, nested, calls, required);
+                }
+            }
+            TypedExprKind::Assoc(value, keys, item) => {
+                self.require_expression(value, params, nested, calls, required);
+                for key in keys {
+                    self.require_expression(key, params, nested, calls, required);
+                }
+                self.require_expression(item, params, nested, calls, required);
+            }
+            _ => unreachable!("the caller matches a value form"),
+        }
+    }
+
+    fn require_structure(
+        &self,
+        structure: &TypedStructExpr,
+        params: &[BindingId],
+        nested: Option<ClosureKind>,
+        calls: &mut HashMap<BindingId, usize>,
+        required: &mut HashMap<BindingId, ClosureKind>,
+    ) {
+        let values: Vec<&TypedExpr> = match structure {
+            TypedStructExpr::New(_, fields) => fields.iter().map(|(_, value)| value).collect(),
+            TypedStructExpr::Update(_, base, fields) => std::iter::once(base.as_ref())
+                .chain(fields.iter().map(|(_, value)| value))
+                .collect(),
+            TypedStructExpr::Field(value, _) => vec![value],
+        };
+        for value in values {
+            self.require_expression(value, params, nested, calls, required);
+        }
+    }
+
+    fn require(
+        required: &mut HashMap<BindingId, ClosureKind>,
+        binding: BindingId,
+        kind: ClosureKind,
+    ) {
+        let current = required.entry(binding).or_insert(ClosureKind::Fn);
+        *current = (*current).max(kind);
+    }
+
+    fn expected_kind(&self, callee: &TypedExpr, position: usize) -> ClosureKind {
+        match &callee.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self
+                .value_parameters
+                .get(binding)
+                .and_then(|params| params.get(position))
+                .map(|param| self.kind_of(*param))
+                .unwrap_or(ClosureKind::Fn),
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => self
+                .function_parameters
+                .get(binding)
+                .and_then(|params| params.get(position))
+                .map(|param| self.kind_of(*param))
+                .unwrap_or(ClosureKind::Fn),
+            TypedExprKind::Fn(lambda) => lambda
+                .params
+                .get(position)
+                .map(|param| self.kind_of(param.binding))
+                .unwrap_or(ClosureKind::Fn),
+            _ => ClosureKind::Fn,
+        }
+    }
+
+    fn check_calls(&self, modules: &[TypedModule]) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        for definition in modules.iter().flat_map(|module| &module.definitions) {
+            self.check_expression(&definition.value, &mut diagnostics);
+        }
+        diagnostics
+    }
+
+    fn check_expression(&self, expr: &TypedExpr, diagnostics: &mut Vec<Diagnostic>) {
+        match &expr.kind {
+            TypedExprKind::Call(callee, arguments) => {
+                self.check_call(callee, arguments, diagnostics);
+                self.check_expression(callee, diagnostics);
+                for argument in arguments {
+                    self.check_expression(&argument.value, diagnostics);
+                }
+            }
+            TypedExprKind::Fn(lambda) => {
+                for child in lambda.body.expressions() {
+                    self.check_expression(child, diagnostics);
+                }
+            }
+            _ => {
+                for child in expr.children() {
+                    self.check_expression(child, diagnostics);
+                }
+            }
+        }
+    }
+
+    fn check_call(
+        &self,
+        callee: &TypedExpr,
+        arguments: &[TypedArgument],
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
+        for (position, argument) in arguments.iter().enumerate() {
+            if !matches!(argument.value.ty, Type::Function(..)) {
+                continue;
+            }
+            let required = self.expected_kind(callee, position);
+            let actual = self.value_kind(&argument.value);
+            if !actual.meets(required) {
+                self.report_mismatch(argument, actual, required, diagnostics);
+            }
+        }
+    }
+
+    fn report_mismatch(
+        &self,
+        argument: &TypedArgument,
+        actual: ClosureKind,
+        required: ClosureKind,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
+        let capture = self.value_capture(&argument.value);
+        diagnostics.push(OwnershipProblems::closure_kind_mismatch(
+            actual,
+            required,
+            capture.map(|binding| self.bindings.get(binding).name()),
+            argument.value.span,
+            capture.and_then(|binding| self.capture_span(&argument.value, binding)),
+        ));
+    }
+
+    fn capture_span(&self, value: &TypedExpr, _binding: BindingId) -> Option<Span> {
+        let TypedExprKind::Fn(lambda) = &value.kind else {
+            return None;
+        };
+        if lambda.kind == ClosureKind::FnMut {
+            return lambda.changed_capture.map(|(_, span)| span);
+        }
+        lambda.moved_capture.map(|(_, span)| span)
+    }
+
+    fn called_mutable_bindings(&self, modules: &[TypedModule]) -> HashSet<BindingId> {
+        let mut bindings = HashSet::new();
+        for definition in modules.iter().flat_map(|module| &module.definitions) {
+            self.collect_called(&definition.value, &mut bindings);
+        }
+        bindings
+    }
+
+    fn collect_called(&self, expr: &TypedExpr, bindings: &mut HashSet<BindingId>) {
+        if let TypedExprKind::Call(callee, arguments) = &expr.kind {
+            if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &callee.kind
+                && self.kind_of(*binding) == ClosureKind::FnMut
+            {
+                bindings.insert(*binding);
+            }
+            self.collect_called(callee, bindings);
+            for argument in arguments {
+                self.collect_called(&argument.value, bindings);
+            }
+            return;
+        }
+        if let TypedExprKind::Fn(lambda) = &expr.kind {
+            for child in lambda.body.expressions() {
+                self.collect_called(child, bindings);
+            }
+            return;
+        }
+        for child in expr.children() {
+            self.collect_called(child, bindings);
+        }
+    }
+
+    fn patch_types(&self, modules: &mut [TypedModule]) {
+        for definition in modules
+            .iter_mut()
+            .flat_map(|module| module.definitions.iter_mut())
+        {
+            let lambda = match &definition.value.kind {
+                TypedExprKind::Fn(lambda) => Rc::clone(lambda),
+                _ => continue,
+            };
+            let returned = self.block_value_kind(&lambda.body);
+            self.patch_expression_types(&mut definition.value);
+            if let Type::Function(_, parameters, result) = &mut definition.scheme.body {
+                Self::patch_function(
+                    parameters,
+                    result,
+                    &lambda.params,
+                    &self.parameter_kinds,
+                    returned,
+                );
+            }
+        }
+    }
+
+    fn patch_expression_types(&self, expr: &mut TypedExpr) {
+        if let TypedExprKind::Fn(lambda) = &mut expr.kind {
+            let lambda = Rc::make_mut(lambda);
+            for param in &mut lambda.params {
+                Self::patch_parameter(param.binding, &mut param.ty, &self.parameter_kinds);
+            }
+            let returned = self.block_value_kind(&lambda.body);
+            if let Type::Function(_, parameters, result) = &mut expr.ty {
+                Self::patch_function(
+                    parameters,
+                    result,
+                    &lambda.params,
+                    &self.parameter_kinds,
+                    returned,
+                );
+            }
+            for child in lambda.body.expressions_mut() {
+                self.patch_expression_types(child);
+            }
+            return;
+        }
+        for child in expr.children_mut() {
+            self.patch_expression_types(child);
+        }
+    }
+
+    fn patch_function(
+        parameters: &mut [Type],
+        result: &mut Type,
+        binders: &[TypedBinder],
+        parameter_kinds: &HashMap<BindingId, ClosureKind>,
+        returned: ClosureKind,
+    ) {
+        for (parameter, binder) in parameters.iter_mut().zip(binders) {
+            Self::patch_parameter(binder.binding, parameter, parameter_kinds);
+        }
+        if let Type::Function(kind, _, _) = result {
+            *kind = returned;
+        }
+    }
+
+    fn patch_parameter(
+        binding: BindingId,
+        ty: &mut Type,
+        parameter_kinds: &HashMap<BindingId, ClosureKind>,
+    ) {
+        if let Type::Function(kind, _, _) = ty {
+            *kind = parameter_kinds
+                .get(&binding)
+                .copied()
+                .unwrap_or(ClosureKind::Fn);
+        }
+    }
+}

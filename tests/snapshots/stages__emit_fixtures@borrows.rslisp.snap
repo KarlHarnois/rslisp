@@ -18,7 +18,7 @@ fn pass_borrowed(number: &i64) -> i64 {
     takes_number(*number)
 }
 
-fn call_twice(action: impl Fn()) {
+fn call_twice(mut action: impl FnMut()) {
     action();
     action()
 }

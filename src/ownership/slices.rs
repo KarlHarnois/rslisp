@@ -31,7 +31,7 @@ impl<'a> SliceSelection<'a> {
             .iter()
             .flat_map(|module| &module.definitions)
             .filter_map(|definition| match &definition.scheme.body {
-                Type::Function(parameters, _) => Some((definition.binding, parameters.clone())),
+                Type::Function(_, parameters, _) => Some((definition.binding, parameters.clone())),
                 _ => None,
             })
             .collect();

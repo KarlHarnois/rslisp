@@ -15,7 +15,7 @@ pub struct MutableLocals {
 }
 
 impl MutableLocals {
-    pub fn of(value: &TypedExpr) -> HashSet<BindingId> {
+    pub fn of(value: &TypedExpr) -> Self {
         let mut found = Self::default();
         found.expr(value);
         let called_closures: Vec<BindingId> = found
@@ -24,7 +24,15 @@ impl MutableLocals {
             .copied()
             .collect();
         found.bindings.extend(called_closures);
-        found.bindings
+        found
+    }
+
+    pub fn extend(&mut self, bindings: impl IntoIterator<Item = BindingId>) {
+        self.bindings.extend(bindings);
+    }
+
+    pub fn into_set(self) -> HashSet<BindingId> {
+        self.bindings
     }
 
     fn expr(&mut self, expr: &TypedExpr) {

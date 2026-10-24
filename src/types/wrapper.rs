@@ -84,10 +84,17 @@ impl PreparedFunctionValue {
                 items: vec![TypedBodyItem::Expr(call)],
             },
             wraps: self.wraps,
+            kind: crate::types::ClosureKind::Fn,
+            moved_capture: None,
+            changed_capture: None,
         };
         TypedExpr {
             kind: TypedExprKind::Fn(Rc::new(lambda)),
-            ty: Type::Function(parameters, Box::new(expected_result.clone())),
+            ty: Type::Function(
+                crate::types::ClosureKind::Fn,
+                parameters,
+                Box::new(expected_result.clone()),
+            ),
             span: self.span,
         }
     }

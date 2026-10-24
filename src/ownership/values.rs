@@ -232,7 +232,7 @@ impl<'a> FunctionValueModes<'a> {
             return Some(parameters.clone());
         }
         match &callee.ty {
-            Type::Function(parameters, _) => Some(parameters.clone()),
+            Type::Function(_, parameters, _) => Some(parameters.clone()),
             _ => None,
         }
     }
@@ -251,13 +251,13 @@ impl<'a> FunctionValueModes<'a> {
     }
 
     fn compare(&mut self, value: &mut TypedExpr, expected: &Type) -> bool {
-        let Type::Function(expected_parameters, expected_result) = expected else {
+        let Type::Function(_, expected_parameters, expected_result) = expected else {
             return false;
         };
         let Some((binding, actual)) = self.function_value(value) else {
             return false;
         };
-        let Type::Function(actual_parameters, actual_result) = &actual else {
+        let Type::Function(_, actual_parameters, actual_result) = &actual else {
             return false;
         };
         let adjustments = match self.adjustments(expected_parameters, actual_parameters) {
@@ -358,10 +358,17 @@ impl<'a> FunctionValueModes<'a> {
             _ => return None,
         };
         let parameters = self.function_params.get(&binding)?;
-        let Type::Function(_, result) = &value.ty else {
+        let Type::Function(_, _, result) = &value.ty else {
             return None;
         };
-        Some((binding, Type::Function(parameters.clone(), result.clone())))
+        Some((
+            binding,
+            Type::Function(
+                crate::types::ClosureKind::Fn,
+                parameters.clone(),
+                result.clone(),
+            ),
+        ))
     }
 
     fn adjustment(&self, expected: &Type, actual: &Type) -> Option<Adjustment> {

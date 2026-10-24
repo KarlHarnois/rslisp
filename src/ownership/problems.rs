@@ -2,6 +2,7 @@ use super::functions::ParamMode;
 use crate::core::ReferenceKind;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
+use crate::types::ClosureKind;
 
 pub struct OwnershipProblems;
 
@@ -93,15 +94,62 @@ impl OwnershipProblems {
         diagnostic.with_help("this closure moves a captured value, so it cannot be copied")
     }
 
-    pub fn closure_moves_capture(name: &str, moved: Span) -> Diagnostic {
-        Diagnostic::error(
-            DiagnosticCode::CLOSURE_MOVES_CAPTURE,
-            "this closure moves a captured value",
-            Label::new(moved, format!("`{name}` moves here")),
+    pub fn closure_kind_mismatch(
+        actual: ClosureKind,
+        required: ClosureKind,
+        capture: Option<&str>,
+        passed: Span,
+        capture_span: Option<Span>,
+    ) -> Diagnostic {
+        let (primary, secondary) = Self::closure_kind_labels(actual, capture, passed, capture_span);
+        let diagnostic = Diagnostic::error(
+            DiagnosticCode::CLOSURE_KIND_MISMATCH,
+            format!(
+                "this closure is `{}`, but the parameter accepts `{}`",
+                actual.keyword(),
+                required.keyword()
+            ),
+            primary,
         )
-        .with_help(format!(
-            "clone the value with `(clone {name})`, or return a borrow instead"
-        ))
+        .with_help(Self::closure_kind_help(capture));
+        match secondary {
+            Some(label) => diagnostic.with_label(label),
+            None => diagnostic,
+        }
+    }
+
+    fn closure_kind_labels(
+        actual: ClosureKind,
+        capture: Option<&str>,
+        passed: Span,
+        capture_span: Option<Span>,
+    ) -> (Label, Option<Label>) {
+        let action = if actual == ClosureKind::FnOnce {
+            "moves"
+        } else {
+            "changes"
+        };
+        match (capture, capture_span) {
+            (Some(name), Some(span)) => (
+                Label::new(span, format!("`{name}` {action} here")),
+                Some(Label::new(passed, "this closure is passed here")),
+            ),
+            (Some(name), None) => (Label::new(passed, format!("`{name}` {action} here")), None),
+            (None, _) => (
+                Label::new(
+                    passed,
+                    "this closure is stronger than the parameter accepts",
+                ),
+                None,
+            ),
+        }
+    }
+
+    fn closure_kind_help(capture: Option<&str>) -> String {
+        match capture {
+            Some(name) => format!("clone `{name}`, or borrow it with `(ref {name})`"),
+            None => "clone the closure's captures, or borrow them instead".to_string(),
+        }
     }
 
     pub fn ambiguous_borrow(function: &str, span: Span) -> Diagnostic {

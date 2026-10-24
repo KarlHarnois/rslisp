@@ -111,7 +111,8 @@ impl Unifier {
     pub fn resolve(&self, value: &Type) -> Type {
         match self.shallow(value) {
             Type::Named(binding, arguments) => Type::Named(binding, self.resolve_all(&arguments)),
-            Type::Function(parameters, result) => Type::Function(
+            Type::Function(kind, parameters, result) => Type::Function(
+                kind,
                 self.resolve_all(&parameters),
                 Box::new(self.resolve(&result)),
             ),
@@ -146,8 +147,8 @@ impl Unifier {
                 self.bind_checked(var, other, span)
             }
             (
-                Type::Function(left_parameters, left_result),
-                Type::Function(right_parameters, right_result),
+                Type::Function(_, left_parameters, left_result),
+                Type::Function(_, right_parameters, right_result),
             ) => self.unify_functions(
                 &left_parameters,
                 &left_result,

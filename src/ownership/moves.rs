@@ -1,13 +1,12 @@
 use std::collections::{HashMap, HashSet};
 
-use super::definitions::LocalDefinitions;
 use super::mutation::ChangedValues;
 use super::problems::OwnershipProblems;
 use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Borrow, CopyRules, GenericId, GenericParam, InferredCopies, TemplateBorrows, Type,
+    Borrow, ClosureKind, CopyRules, GenericId, GenericParam, InferredCopies, TemplateBorrows, Type,
     TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda,
     TypedLeaf, TypedStructExpr,
 };
@@ -33,7 +32,6 @@ pub struct MoveChecker<'a> {
     moved: HashMap<BindingId, Span>,
     copy_functions: HashSet<BindingId>,
     reported: HashSet<BindingId>,
-    reported_captures: HashSet<BindingId>,
     parameters: HashSet<BindingId>,
     unwritten_parameters: HashSet<BindingId>,
     inferred_copies: InferredCopies,
@@ -58,7 +56,6 @@ impl<'a> MoveChecker<'a> {
             moved: HashMap::new(),
             copy_functions: HashSet::new(),
             reported: HashSet::new(),
-            reported_captures: HashSet::new(),
             parameters: HashSet::new(),
             unwritten_parameters: HashSet::new(),
             inferred_copies: InferredCopies::default(),
@@ -178,27 +175,8 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn closure(&mut self, lambda: &TypedLambda) -> bool {
-        let own_bindings = LocalDefinitions::of(lambda);
-        let moved_before: HashSet<BindingId> = self.moved.keys().copied().collect();
         self.block(&lambda.body, Usage::Move);
-        let captures: Vec<(BindingId, Span)> = self
-            .moved
-            .iter()
-            .filter(|(binding, _)| {
-                !moved_before.contains(binding) && !own_bindings.contains(binding)
-            })
-            .map(|(binding, span)| (*binding, *span))
-            .collect();
-        for (binding, span) in &captures {
-            if self.reported_captures.insert(*binding) {
-                self.diagnostics
-                    .push(OwnershipProblems::closure_moves_capture(
-                        self.bindings.get(*binding).name(),
-                        *span,
-                    ));
-            }
-        }
-        captures.is_empty()
+        lambda.kind == ClosureKind::Fn
     }
 
     fn bind(&mut self, binding: BindingId, value: &TypedExpr) {

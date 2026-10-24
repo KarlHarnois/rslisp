@@ -86,7 +86,7 @@ impl<'a> ModeRewrite<'a> {
     }
 
     fn replace_parameters(function: &mut Type, params: &[Type]) {
-        if let Type::Function(parameters, _) = function {
+        if let Type::Function(_, parameters, _) = function {
             *parameters = params.to_vec();
         }
     }
@@ -179,7 +179,7 @@ impl<'a> ModeRewrite<'a> {
                 .get(&function)
                 .cloned()
                 .unwrap_or_else(|| match &callee.ty {
-                    Type::Function(parameters, _) => parameters.clone(),
+                    Type::Function(_, parameters, _) => parameters.clone(),
                     _ => Vec::new(),
                 });
         for (argument, param) in arguments.iter_mut().zip(&params) {
