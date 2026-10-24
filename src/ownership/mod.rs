@@ -20,7 +20,7 @@ use crate::diagnostic::Diagnostics;
 use crate::types::{CopyRules, InferredCopies, PendingModeCheck, TypedExprKind, TypedProgram};
 use checks::{BorrowedResults, OwnershipNeeds};
 use functions::{FunctionTable, ParamMode};
-use kinds::{ClosureKinds, KindReport};
+use kinds::{ClosureKinds, KindReport, KindSources};
 use modes::ModeInference;
 use moves::MoveChecker;
 use names::ChangingFunctionNames;
@@ -68,15 +68,16 @@ impl OwnershipChecker {
         FunctionValueModes::apply(program, rewrite.function_params())
             .into_iter()
             .for_each(|diagnostic| diagnostics.push(diagnostic));
-        let function_parameters = ClosureKinds::function_parameters(program);
-        let kinds = ClosureKinds::new(
-            &program.traits,
-            &program.generics,
-            &program.structs,
-            &program.enums,
-            &program.bindings,
-            function_parameters,
-        );
+        let kinds = ClosureKinds::new(KindSources {
+            traits: &program.traits,
+            generics: &program.generics,
+            structs: &program.structs,
+            enums: &program.enums,
+            bindings: &program.bindings,
+            function_parameters: ClosureKinds::function_parameters(program),
+            rust_parameter_kinds: ClosureKinds::rust_parameter_kinds(program),
+            written_parameter_kinds: ClosureKinds::written_parameter_kinds(program),
+        });
         let report = kinds.run(&mut program.modules);
         Self::apply_kinds(program, report, &mut diagnostics);
         let mut inferred_copies = InferredCopies::default();

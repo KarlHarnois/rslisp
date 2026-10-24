@@ -93,7 +93,7 @@ impl ParameterUsage {
                 variable,
                 inside_self,
             ),
-            TypeExprKind::Function(parameters, result) => {
+            TypeExprKind::Function(_, parameters, result) => {
                 for parameter in parameters {
                     self.visit(parameter, enum_binding, variable, inside_self);
                 }
@@ -279,7 +279,7 @@ impl TypeChecker {
 
     fn signature_parameter_is_written(signature: &TypeExpr, position: usize) -> bool {
         match signature.kind() {
-            TypeExprKind::Function(parameters, _) => parameters
+            TypeExprKind::Function(_, parameters, _) => parameters
                 .get(position)
                 .is_none_or(|parameter| !matches!(parameter.kind(), TypeExprKind::Hole)),
             _ => true,
@@ -703,7 +703,9 @@ impl TypeChecker {
         }
         let mut results = Vec::new();
         for (binding, value) in typed {
-            let scheme = self.finish_scheme(binding, &value, signatures.get(&binding));
+            let signature = signatures.get(&binding);
+            let written_result = signature.is_some_and(Self::writes_function_result);
+            let scheme = self.finish_scheme(binding, &value, signature);
             self.schemes.insert(binding, scheme.clone());
             let span = members
                 .iter()
@@ -716,6 +718,7 @@ impl TypeChecker {
                     scheme,
                     value,
                     span,
+                    written_result,
                 },
             ));
         }
@@ -726,6 +729,17 @@ impl TypeChecker {
         );
         self.component.clear();
         results
+    }
+
+    fn writes_function_result(signature: &Scheme) -> bool {
+        matches!(
+            &signature.body,
+            crate::types::Type::Function(_, _, result)
+                if matches!(
+                    result.as_ref(),
+                    crate::types::Type::Function(kind, _, _) if *kind != crate::core::ClosureKind::Fn
+                )
+        )
     }
 
     fn borrow_unsized_result(&mut self, binding: BindingId, value: &mut TypedExpr) {
@@ -774,6 +788,7 @@ impl TypeChecker {
                 scheme,
                 value,
                 span: member.span,
+                written_result: false,
             },
         ))
     }
@@ -804,7 +819,7 @@ impl TypeChecker {
         };
         let parameters = lambda.params.iter().map(|_| self.unifier.fresh()).collect();
         Type::Function(
-            super::ty::ClosureKind::Fn,
+            crate::core::ClosureKind::Fn,
             parameters,
             Box::new(self.unifier.fresh()),
         )
@@ -1335,7 +1350,7 @@ impl TypeChecker {
     }
 
     fn receiver_kind(signature: &TypeExpr, self_variable: BindingId) -> Option<ReceiverKind> {
-        let TypeExprKind::Function(parameters, _) = signature.kind() else {
+        let TypeExprKind::Function(_, parameters, _) = signature.kind() else {
             return None;
         };
         parameters

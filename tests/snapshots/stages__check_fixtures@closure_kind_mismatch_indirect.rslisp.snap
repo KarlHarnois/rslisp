@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/closure_kind_mismatch_indirect.rslisp
 ---
-error[L0509]: this closure is `FnOnce`, but the parameter accepts `Fn`
+error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
  --> check/closure_kind_mismatch_indirect.rslisp:4:25
   |
 4 |   (map (iter (vec 1 2)) consume)
@@ -11,7 +11,7 @@ error[L0509]: this closure is `FnOnce`, but the parameter accepts `Fn`
   |
   = help: clone `text`, or borrow it with `(ref text)`
 
-error[L0509]: this closure is `FnOnce`, but the parameter accepts `Fn`
+error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
  --> check/closure_kind_mismatch_indirect.rslisp:6:25
   |
 6 |   (map (iter (vec 1 2)) (if true (fn (ignored) other) (fn (ignored) other))))

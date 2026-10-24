@@ -1,0 +1,4 @@
+(type bad-mut (fn ((fn-mut (i64))) i64))
+(defn bad-mut (f) 1)
+(type bad-once (fn ((fn-once (i64))) i64))
+(defn bad-once (f) 1)

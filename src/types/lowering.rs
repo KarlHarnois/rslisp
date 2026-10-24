@@ -4,6 +4,7 @@ use super::checker::TypeChecker;
 use super::problems::TypeProblems;
 use super::traits::Implementor;
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
+use crate::core::ClosureKind;
 use crate::core::{BindingId, BindingKind, ReferenceKind, TypeBinder, TypeExpr, TypeExprKind};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
@@ -140,8 +141,8 @@ impl TypeChecker {
             TypeExprKind::Named(binding, arguments) => {
                 self.lower_named(*binding, arguments, type_expr.span(), scope)
             }
-            TypeExprKind::Function(parameters, result) => {
-                self.lower_function(parameters, result, scope)
+            TypeExprKind::Function(kind, parameters, result) => {
+                self.lower_function(*kind, parameters, result, scope)
             }
             TypeExprKind::Reference(kind, inner) => self.lower_reference(*kind, inner, scope),
             TypeExprKind::Hole => Ok(self.unifier.fresh()),
@@ -152,6 +153,7 @@ impl TypeChecker {
 
     fn lower_function(
         &mut self,
+        kind: ClosureKind,
         parameters: &[TypeExpr],
         result: &TypeExpr,
         scope: &HashMap<BindingId, GenericId>,
@@ -161,11 +163,7 @@ impl TypeChecker {
             .map(|parameter| self.lower_type(parameter, scope))
             .collect::<Result<Vec<Type>, Diagnostic>>()?;
         let result = self.lower_type(result, scope)?;
-        Ok(Type::Function(
-            super::ty::ClosureKind::Fn,
-            parameters,
-            Box::new(result),
-        ))
+        Ok(Type::Function(kind, parameters, Box::new(result)))
     }
 
     fn lower_reference(

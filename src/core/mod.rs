@@ -24,4 +24,4 @@ pub use module::{
 };
 pub use printer::CorePrinter;
 pub use template::{MalformedPlaceholder, ParsedTemplate, Piece};
-pub use types::{TypeBinder, TypeBound, TypeExpr, TypeExprKind};
+pub use types::{ClosureKind, TypeBinder, TypeBound, TypeExpr, TypeExprKind};

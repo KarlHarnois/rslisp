@@ -73,6 +73,17 @@ pub struct KindReport {
     pub diagnostics: Vec<Diagnostic>,
 }
 
+pub struct KindSources<'a> {
+    pub traits: &'a crate::types::TraitTable,
+    pub generics: &'a HashMap<crate::types::GenericId, crate::types::GenericParam>,
+    pub structs: &'a crate::types::StructTable,
+    pub enums: &'a crate::types::EnumTable,
+    pub bindings: &'a BindingArena,
+    pub function_parameters: HashMap<BindingId, Vec<BindingId>>,
+    pub rust_parameter_kinds: HashMap<BindingId, Vec<ClosureKind>>,
+    pub written_parameter_kinds: HashMap<BindingId, ClosureKind>,
+}
+
 pub struct ClosureKinds<'a> {
     copy: CopyRules<'a>,
     bindings: &'a BindingArena,
@@ -81,6 +92,8 @@ pub struct ClosureKinds<'a> {
     binding_captures: HashMap<BindingId, BindingId>,
     value_parameters: HashMap<BindingId, Vec<BindingId>>,
     function_parameters: HashMap<BindingId, Vec<BindingId>>,
+    rust_parameter_kinds: HashMap<BindingId, Vec<ClosureKind>>,
+    written_parameter_kinds: HashMap<BindingId, ClosureKind>,
     result_kinds: HashMap<BindingId, ClosureKind>,
 }
 
@@ -100,22 +113,68 @@ impl<'a> ClosureKinds<'a> {
             .collect()
     }
 
-    pub fn new(
-        traits: &'a crate::types::TraitTable,
-        generics: &'a HashMap<crate::types::GenericId, crate::types::GenericParam>,
-        structs: &'a crate::types::StructTable,
-        enums: &'a crate::types::EnumTable,
-        bindings: &'a BindingArena,
-        function_parameters: HashMap<BindingId, Vec<BindingId>>,
-    ) -> Self {
+    pub fn written_parameter_kinds(program: &TypedProgram) -> HashMap<BindingId, ClosureKind> {
+        program
+            .modules
+            .iter()
+            .flat_map(|module| &module.definitions)
+            .filter_map(|definition| match &definition.value.kind {
+                TypedExprKind::Fn(lambda) => Some(&lambda.params),
+                _ => None,
+            })
+            .flatten()
+            .filter_map(|param| match &param.ty {
+                Type::Function(kind, _, _) if param.annotated && *kind != ClosureKind::Fn => {
+                    Some((param.binding, *kind))
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn rust_parameter_kinds(program: &TypedProgram) -> HashMap<BindingId, Vec<ClosureKind>> {
+        program
+            .modules
+            .iter()
+            .flat_map(|module| &module.definitions)
+            .filter_map(|definition| {
+                if !matches!(
+                    definition.value.kind,
+                    TypedExprKind::Leaf(TypedLeaf::Rust(_))
+                ) {
+                    return None;
+                }
+                let Type::Function(_, parameters, _) = &definition.scheme.body else {
+                    return None;
+                };
+                let kinds = parameters
+                    .iter()
+                    .map(|parameter| match parameter {
+                        Type::Function(kind, _, _) => *kind,
+                        _ => ClosureKind::Fn,
+                    })
+                    .collect();
+                Some((definition.binding, kinds))
+            })
+            .collect()
+    }
+
+    pub fn new(sources: KindSources<'a>) -> Self {
         Self {
-            copy: CopyRules::new(traits, generics, structs, enums),
-            bindings,
+            copy: CopyRules::new(
+                sources.traits,
+                sources.generics,
+                sources.structs,
+                sources.enums,
+            ),
+            bindings: sources.bindings,
             parameter_kinds: HashMap::new(),
             binding_kinds: HashMap::new(),
             binding_captures: HashMap::new(),
             value_parameters: HashMap::new(),
-            function_parameters,
+            function_parameters: sources.function_parameters,
+            rust_parameter_kinds: sources.rust_parameter_kinds,
+            written_parameter_kinds: sources.written_parameter_kinds,
             result_kinds: HashMap::new(),
         }
     }
@@ -611,7 +670,14 @@ impl<'a> ClosureKinds<'a> {
                 lambda
                     .params
                     .iter()
-                    .map(|param| (param.binding, ClosureKind::Fn))
+                    .map(|param| {
+                        let kind = self
+                            .written_parameter_kinds
+                            .get(&param.binding)
+                            .copied()
+                            .unwrap_or(ClosureKind::Fn);
+                        (param.binding, kind)
+                    })
                     .collect::<Vec<_>>()
             })
             .collect();
@@ -663,6 +729,9 @@ impl<'a> ClosureKinds<'a> {
         let mut required: HashMap<BindingId, ClosureKind> = HashMap::new();
         self.require_block(&lambda.body, &params, None, &mut calls, &mut required);
         for param in params {
+            if self.written_parameter_kinds.contains_key(&param) {
+                continue;
+            }
             let called = match calls.get(&param).copied().unwrap_or(0) {
                 0 => ClosureKind::Fn,
                 1 => ClosureKind::FnOnce,
@@ -924,12 +993,19 @@ impl<'a> ClosureKinds<'a> {
                 .and_then(|params| params.get(position))
                 .map(|param| self.kind_of(*param))
                 .unwrap_or(ClosureKind::Fn),
-            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => self
-                .function_parameters
-                .get(binding)
-                .and_then(|params| params.get(position))
-                .map(|param| self.kind_of(*param))
-                .unwrap_or(ClosureKind::Fn),
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
+                if let Some(params) = self.function_parameters.get(binding) {
+                    return params
+                        .get(position)
+                        .map(|param| self.kind_of(*param))
+                        .unwrap_or(ClosureKind::Fn);
+                }
+                self.rust_parameter_kinds
+                    .get(binding)
+                    .and_then(|kinds| kinds.get(position))
+                    .copied()
+                    .unwrap_or(ClosureKind::Fn)
+            }
             TypedExprKind::Fn(lambda) => lambda
                 .params
                 .get(position)
@@ -982,26 +1058,39 @@ impl<'a> ClosureKinds<'a> {
             let required = self.expected_kind(callee, position);
             let actual = self.value_kind(&argument.value);
             if !actual.meets(required) {
-                self.report_mismatch(argument, actual, required, diagnostics);
+                self.report_mismatch(callee, argument, actual, required, diagnostics);
             }
         }
     }
 
     fn report_mismatch(
         &self,
+        callee: &TypedExpr,
         argument: &TypedArgument,
         actual: ClosureKind,
         required: ClosureKind,
         diagnostics: &mut Vec<Diagnostic>,
     ) {
         let capture = self.value_capture(&argument.value);
+        let callee_name = self.callee_name(callee);
         diagnostics.push(OwnershipProblems::closure_kind_mismatch(
             actual,
             required,
             capture.map(|binding| self.bindings.get(binding).name()),
+            callee_name.as_deref(),
             argument.value.span,
             capture.and_then(|binding| self.capture_span(&argument.value, binding)),
         ));
+    }
+
+    fn callee_name(&self, callee: &TypedExpr) -> Option<String> {
+        match &callee.kind {
+            TypedExprKind::Leaf(TypedLeaf::Global(binding))
+            | TypedExprKind::Leaf(TypedLeaf::Local(binding)) => {
+                Some(self.bindings.get(*binding).name().to_string())
+            }
+            _ => None,
+        }
     }
 
     fn capture_span(&self, value: &TypedExpr, _binding: BindingId) -> Option<Span> {
@@ -1056,7 +1145,7 @@ impl<'a> ClosureKinds<'a> {
                 _ => continue,
             };
             let returned = self.block_value_kind(&lambda.body);
-            self.patch_expression_types(&mut definition.value);
+            self.patch_expression_types(&mut definition.value, !definition.written_result);
             if let Type::Function(_, parameters, result) = &mut definition.scheme.body {
                 Self::patch_function(
                     parameters,
@@ -1064,12 +1153,13 @@ impl<'a> ClosureKinds<'a> {
                     &lambda.params,
                     &self.parameter_kinds,
                     returned,
+                    !definition.written_result,
                 );
             }
         }
     }
 
-    fn patch_expression_types(&self, expr: &mut TypedExpr) {
+    fn patch_expression_types(&self, expr: &mut TypedExpr, patch_result: bool) {
         if let TypedExprKind::Fn(lambda) = &mut expr.kind {
             let lambda = Rc::make_mut(lambda);
             for param in &mut lambda.params {
@@ -1083,15 +1173,16 @@ impl<'a> ClosureKinds<'a> {
                     &lambda.params,
                     &self.parameter_kinds,
                     returned,
+                    patch_result,
                 );
             }
             for child in lambda.body.expressions_mut() {
-                self.patch_expression_types(child);
+                self.patch_expression_types(child, true);
             }
             return;
         }
         for child in expr.children_mut() {
-            self.patch_expression_types(child);
+            self.patch_expression_types(child, true);
         }
     }
 
@@ -1101,9 +1192,13 @@ impl<'a> ClosureKinds<'a> {
         binders: &[TypedBinder],
         parameter_kinds: &HashMap<BindingId, ClosureKind>,
         returned: ClosureKind,
+        patch_result: bool,
     ) {
         for (parameter, binder) in parameters.iter_mut().zip(binders) {
             Self::patch_parameter(binder.binding, parameter, parameter_kinds);
+        }
+        if !patch_result {
+            return;
         }
         if let Type::Function(kind, _, _) = result {
             *kind = returned;

@@ -930,7 +930,7 @@ impl Expander<'_> {
         let mut signature_form = signature_form.clone();
         signature_form.add_scope(lowering.scope);
         let signature = self.lower_type(&signature_form)?;
-        let TypeExprKind::Function(_, _) = signature.kind() else {
+        let TypeExprKind::Function(_, _, _) = signature.kind() else {
             return Err(lowering.shape.malformed(&signature_form));
         };
         let template = RustTemplate {

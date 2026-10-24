@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::core::{BindingId, PrimitiveType};
+use crate::core::{BindingId, ClosureKind, PrimitiveType};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TypeVar(u32);
@@ -22,32 +22,6 @@ pub struct GenericId(u32);
 impl GenericId {
     pub fn new(index: usize) -> Self {
         Self(u32::try_from(index).expect("fewer than 2^32 generic parameters"))
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum ClosureKind {
-    Fn,
-    FnMut,
-    FnOnce,
-}
-
-impl ClosureKind {
-    pub fn meets(self, required: Self) -> bool {
-        matches!(
-            (self, required),
-            (Self::Fn, _)
-                | (Self::FnMut, Self::FnMut | Self::FnOnce)
-                | (Self::FnOnce, Self::FnOnce)
-        )
-    }
-
-    pub fn keyword(self) -> &'static str {
-        match self {
-            Self::Fn => "Fn",
-            Self::FnMut => "FnMut",
-            Self::FnOnce => "FnOnce",
-        }
     }
 }
 

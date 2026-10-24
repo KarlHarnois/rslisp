@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use super::{
-    Arm, Binder, BindingArena, BindingId, Block, BodyItem, Control, CoreModule, Expr, ExprKind,
-    FieldLabel, Item, ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal, ParsedTemplate,
-    Pattern, PatternKind, RustTemplate, StructExpr, TypeBinder, TypeBound, TypeExpr, TypeExprKind,
-    VariantDeclaration, VariantPayload,
+    Arm, Binder, BindingArena, BindingId, Block, BodyItem, ClosureKind, Control, CoreModule, Expr,
+    ExprKind, FieldLabel, Item, ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal,
+    ParsedTemplate, Pattern, PatternKind, RustTemplate, StructExpr, TypeBinder, TypeBound,
+    TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload,
 };
 
 pub struct CorePrinter<'a> {
@@ -313,7 +313,9 @@ impl<'a> CorePrinter<'a> {
         match type_expr.kind() {
             TypeExprKind::Primitive(primitive) => primitive.name().to_string(),
             TypeExprKind::Named(binding, arguments) => self.named_type(*binding, arguments),
-            TypeExprKind::Function(parameters, result) => self.function_type(parameters, result),
+            TypeExprKind::Function(kind, parameters, result) => {
+                self.function_type(*kind, parameters, result)
+            }
             TypeExprKind::Reference(kind, inner) => {
                 Self::list(kind.keyword(), vec![self.type_expr(inner)])
             }
@@ -336,13 +338,18 @@ impl<'a> CorePrinter<'a> {
         format!("({})", parts.join(" "))
     }
 
-    fn function_type(&mut self, parameters: &[TypeExpr], result: &TypeExpr) -> String {
+    fn function_type(
+        &mut self,
+        kind: ClosureKind,
+        parameters: &[TypeExpr],
+        result: &TypeExpr,
+    ) -> String {
         let parameters: Vec<String> = parameters
             .iter()
             .map(|parameter| self.type_expr(parameter))
             .collect();
         Self::list(
-            "fn",
+            kind.name(),
             vec![
                 format!("({})", parameters.join(" ")),
                 self.type_expr(result),

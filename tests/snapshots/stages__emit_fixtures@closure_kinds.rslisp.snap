@@ -18,6 +18,10 @@ fn hold(f: impl Fn() -> i64) -> impl Fn() -> i64 {
     f
 }
 
+fn hold_mut(mut f: impl FnMut() -> i64) -> i64 {
+    f()
+}
+
 fn alias<A, B>(f: impl Fn(A) -> B, x: A) -> B {
     let g = f;
     g(x)
@@ -33,6 +37,16 @@ fn nested_mover() -> String {
     let consume = || text;
     let start = || consume();
     start()
+}
+
+fn returns_mut() -> impl FnMut() {
+    let mut items: Vec<i64> = vec![1_i64];
+    move || items.push(2)
+}
+
+fn returns_once() -> impl FnOnce() -> String {
+    let text = "written".to_string();
+    move || text
 }
 
 fn make_adder<A: crate::rt::Number>(n: A) -> impl Fn(A) -> A {
@@ -91,9 +105,14 @@ fn main() {
     changer();
     println!("{}", make_mover()());
     println!("{}", hold(|| 1)());
+    println!("{}", hold_mut(|| 1));
     println!("{}", choose(true)());
     println!("{}", choose_by(1)());
-    println!("{}", choose_block()())
+    println!("{}", choose_block()());
+    let mut returned_mut = returns_mut();
+    returned_mut();
+    returned_mut();
+    println!("{}", returns_once()())
 }
 
 mod rt {

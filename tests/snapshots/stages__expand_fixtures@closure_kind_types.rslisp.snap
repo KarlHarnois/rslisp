@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/closure_kind_types.rslisp
+---
+(def accept-many (fn ((f (fn-mut (i64) i64))) (f 1)))
+(def accept-once (fn ((f_2 (fn-once () i64))) (f_2)))
