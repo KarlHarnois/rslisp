@@ -1,0 +1,5 @@
+(def split-when (rust "{0}.split({1})" (fn ((ref str) (fn (char) bool)) (iterator (ref str)))))
+(def space? (rust "{0}.is_whitespace()" (fn (char) bool)))
+
+(defn main ()
+  (for-each (split-when "a1 b2" space?) (fn (part) (println part))))

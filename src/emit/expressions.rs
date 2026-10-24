@@ -1391,9 +1391,7 @@ impl<'a> ExpressionEmitter<'a> {
         let parsed = Template::new(&template.template);
         match ty {
             Type::Function(..) if parsed.is_path() => Code::atom(template.template.to_string()),
-            Type::Function(_, parameters, _) => {
-                self.eta_expanded(&parsed, parameters.len(), types, span)
-            }
+            Type::Function(_, parameters, _) => self.eta_expanded(&parsed, parameters, types, span),
             _ => self.inline(&parsed, Vec::new(), types, span),
         }
     }
@@ -1401,17 +1399,22 @@ impl<'a> ExpressionEmitter<'a> {
     fn eta_expanded(
         &mut self,
         template: &Template,
-        count: usize,
+        parameters: &[Type],
         types: Vec<(String, Code)>,
         span: Span,
     ) -> Code {
-        let names: Vec<String> = (0..count)
+        let names: Vec<String> = (0..parameters.len())
             .map(|index| format!("{}{index}", Self::ETA_PARAMETER))
+            .collect();
+        let parameters: Vec<String> = names
+            .iter()
+            .zip(parameters)
+            .map(|(name, ty)| format!("{name}: {}", self.types().show(ty, TypePosition::Value)))
             .collect();
         let arguments = names.iter().map(|name| Code::atom(name.clone())).collect();
         let body = self.inline(template, arguments, types, span);
         Code::joined(
-            vec![Code::atom(format!("|{}| ", names.join(", "))), body],
+            vec![Code::atom(format!("|{}| ", parameters.join(", "))), body],
             Precedence::Operator,
         )
     }
