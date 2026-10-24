@@ -7,7 +7,8 @@
 (use prelude/map sorted-map hash-map lookup keys vals entries update into-sorted-map into-hash-map)
 (use prelude/sequence empty?)
 (use prelude/vec vec push! len iter values collect
-               get pop! sort! sort-by-key! windows at dedup!)
+               get pop! sort! sort-by-key! windows at dedup!
+               first last reverse reverse! sort-descending!)
 (use prelude/iterator range map filter fold for-each enumerate zip
                       sum count max min max-by-key any all find take take-while)
 (use prelude/option some none some? none? unwrap-or unwrap expect map-some then-some)
@@ -16,7 +17,8 @@
                     add sub mul div rem neg sqrt lt le gt ge eq ne
                     + - * / < <= > >= = != ord)
 (use prelude/text display debug to-string print println prn pr-str str char
-                  chars lines split trim as-str parse parse-error from-str)
+                  chars lines split trim as-str parse parse-error from-str
+                  lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!)
 (use prelude/struct defstruct)
 (use prelude/ownership clone copy)
 (use prelude/io io-error slurp slurp-stdin read-line command-line-args exit)
@@ -34,6 +36,7 @@
         + - * / < <= > >= = !=
         display debug to-string print println prn pr-str str char
         chars lines split trim as-str parse parse-error from-str
+        lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!
         defstruct
         clone copy set!
         io-error slurp slurp-stdin read-line command-line-args exit
@@ -41,6 +44,7 @@
         pair let-pair let-fields assoc assoc-in
         vec option result iterator slice sequence box box-new push! len iter values collect
         get pop! sort! sort-by-key! windows at dedup!
+        first last reverse reverse! sort-descending!
         range map filter fold for-each enumerate zip
         sum count max min max-by-key any all find take take-while
         some none some? none? unwrap-or unwrap expect map-some then-some

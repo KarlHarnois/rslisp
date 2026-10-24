@@ -1,0 +1,37 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/library_helpers.rslisp
+---
+fn oldest_first(left: &i64, right: &i64) -> i64 {
+    *right - *left
+}
+
+fn main() {
+    let mut numbers: Vec<i64> = vec![3_i64, 1_i64, 2_i64];
+    println!("{}", numbers.is_empty());
+    numbers.sort_by(|left, right| right.cmp(left));
+    println!("{}", numbers.first().unwrap());
+    println!("{}", numbers.last().unwrap());
+    numbers.reverse();
+    numbers.iter().rev().for_each(|n: &i64| println!("{}", n));
+    numbers.sort_by(|left, right| oldest_first(left, right).cmp(&0));
+    numbers.sort_by(|left, right| (|left: &i64, right: &i64| *right - *left)(left, right).cmp(&0));
+    let mut words = vec!["Alpha".to_string(), "beta".to_string()];
+    words.sort();
+    println!("{} {}", "MiXeD".to_lowercase(), "MiXeD".to_uppercase());
+    println!(
+        "{}{}{}",
+        'a'.is_alphanumeric(),
+        ' '.is_whitespace(),
+        '7'.is_ascii_digit()
+    );
+    "a1 b2"
+        .split(|argument_0: char| argument_0.is_whitespace())
+        .for_each(|part: &str| println!("{}", part));
+    let mut message = "ab".to_string();
+    message.push_str("cd");
+    message.push('!');
+    println!("{}", message);
+    words.push("gamma".to_string())
+}

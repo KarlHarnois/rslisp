@@ -1,10 +1,11 @@
-(use prelude/macros defmacro)
+(use prelude/macros defmacro defrule)
 (use prelude/types vec option iterator slice sequence)
 (use prelude/number ord partial-eq)
 (use prelude/ownership copy)
 (use code list prepend length empty? string number-add number-sub number-lt)
 
-(export vec push! len iter values collect get pop! sort! sort-by-key! windows at dedup!)
+(export vec push! len iter values collect get pop! sort! sort-by-key! windows at dedup!
+        first last reverse reverse! sort-descending!)
 
 (def element-placeholders
   (fn (index count)
@@ -39,8 +40,19 @@
 (def collect (rust "{0}.collect::<Vec<_>>()" (where (a) (fn ((iterator a)) (vec a)))))
 (def get (rust "{0}.get({1})" (where (a) (fn ((ref (slice a)) usize) (option (ref a))))))
 (def pop! (rust "{0}.pop()" (where (a) (fn ((mut (vec a))) (option a)))))
-(def sort! (rust "{0}.sort()" (where ((a ord)) (fn ((mut (vec a))) unit))))
+(def sort-ascending! (rust "{0}.sort()" (where ((a ord)) (fn ((mut (vec a))) unit))))
+(def sort-with! (rust "{0}.sort_by(|left, right| {1}(left, right).cmp(&0))"
+                     (where (a) (fn ((mut (vec a)) (fn ((ref a) (ref a)) i64)) unit))))
+(defrule sort!
+  ((items) (sort-ascending! items))
+  ((items compare) (sort-with! items compare)))
 (def sort-by-key! (rust "{0}.sort_by_key({1})" (where (a (k ord)) (fn ((mut (vec a)) (fn-mut ((ref a)) k)) unit))))
 (def windows (rust "{0}.windows({1})" (where (a) (fn ((ref (slice a)) usize) (iterator (ref (slice a)))))))
 (def at (rust "{0}[{1}]" (where ((a copy)) (fn ((ref (slice a)) usize) a))))
+(def first (rust "{0}.first()" (where (item) (fn ((ref (slice item))) (option (ref item))))))
+(def last (rust "{0}.last()" (where (item) (fn ((ref (slice item))) (option (ref item))))))
+(def reverse (rust "{0}.iter().rev()" (where (item) (fn ((ref (slice item))) (iterator (ref item))))))
+(def reverse! (rust "{0}.reverse()" (where (item) (fn ((mut (vec item))) unit))))
+(def sort-descending! (rust "{0}.sort_by(|left, right| right.cmp(left))"
+                          (where ((item ord)) (fn ((mut (vec item))) unit))))
 (def dedup! (rust "{0}.dedup()" (where ((a partial-eq)) (fn ((mut (vec a))) unit))))

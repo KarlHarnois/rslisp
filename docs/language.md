@@ -168,20 +168,21 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 
 | Type | Rust | Functions |
 |---|---|---|
-| `(vec a)` | `Vec<A>` | `vec push! len iter values collect get pop! sort! sort-by-key! windows at dedup!` |
-| `(slice a)` | `[A]` | `windows at` |
+| `(vec a)` | `Vec<A>` | `vec push! len iter values collect get pop! sort! sort-by-key! windows at dedup! first last empty? reverse reverse! sort-descending!` |
+| `(slice a)` | `[A]` | `windows at first last empty? reverse` |
 | `(box a)` | `Box<A>` | `box-new` |
 | `(pair a b)` | `(A, B)` | `pair pair/pair let-pair` |
 | `(option a)` | `Option<A>` | `some none option/some option/none some? none? unwrap-or unwrap expect map-some then-some` |
 | `(result a b)` | `Result<A, B>` | `ok err result/ok result/err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok` |
 | `(iterator a)` | `impl Iterator<Item = A>` | `range map filter fold for-each enumerate zip sum count max min max-by-key any all find take take-while` |
-| `str`, `string` | `&str`, `String` | `to-string display str char print println chars lines split trim as-str parse parse-error from-str` |
+| `char` | `char` | `alphanumeric? whitespace? digit?` |
+| `str`, `string` | `&str`, `String` | `to-string display str char print println chars lines split trim as-str parse parse-error from-str lower-case upper-case split-when append! append-char! empty?` |
 | `(sorted-map key value)` | `std::collections::BTreeMap<K, V>` | `sorted-map lookup keys vals entries update into-sorted-map assoc set! len empty?` |
 | `(hash-map key value)` | `std::collections::HashMap<K, V>` | `hash-map lookup keys vals entries update into-hash-map assoc set! len empty?` |
 
 `print` and `println` take any number of parts. Each string literal part folds into one format string, and each other part becomes a `{}` placeholder. `str` folds its literal parts the same way. A `print` whose last part ends in a newline emits `println!` without that newline. `prn` and `pr-str` print a value's data form.
 
-`len` takes any `sequence`, a trait backed by `Sequence` in the runtime and implemented for `String`, `str`, `(vec a)`, `(slice a)`, `(sorted-map k v)` and `(hash-map k v)`. `empty?` tests the same trait. `sort!`, `sort-by-key!`, `max`, `min` and `max-by-key` take the `ord` trait, which lists the same implementors as `partial-ord`, except `f32` and `f64`. `parse` takes a `from-str` target and returns `(result target (parse-error target))`, and emits `text.parse::<target>()`. `parse-error` names the target's Rust error from the prelude's clauses, so `(parse-error i64)` emits `std::num::ParseIntError` and a target the prelude does not state emits `<target as std::str::FromStr>::Err`.
+`len` takes any `sequence`, a trait backed by `Sequence` in the runtime and implemented for `String`, `str`, `(vec a)`, `(slice a)`, `(sorted-map k v)` and `(hash-map k v)`. `empty?` tests the same trait. `sort!`, `sort-by-key!`, `max`, `min` and `max-by-key` take the `ord` trait, which lists the same implementors as `partial-ord`, except `f32` and `f64`. A two-argument `sort!` takes a comparator of type `(fn ((ref a) (ref a)) i64)`, which sorts as in Clojure: a negative result puts the left value first. `parse` takes a `from-str` target and returns `(result target (parse-error target))`, and emits `text.parse::<target>()`. `parse-error` names the target's Rust error from the prelude's clauses, so `(parse-error i64)` emits `std::num::ParseIntError` and a target the prelude does not state emits `<target as std::str::FromStr>::Err`.
 
 An iterator is lazy, as in Rust, so `(fold (range 1 1000001) 0 (fn (total n) (+ total n)))` repeats work without recursion. `(vec 1 2 3)` emits `vec![1, 2, 3]`, and `(vec)` emits `Vec::new()`.
 
