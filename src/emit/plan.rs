@@ -88,7 +88,7 @@ impl<'p> EmitPlan<'p> {
             trait_uses: HashMap::new(),
         };
         plan.visit_definition(main);
-        plan.reach_implemented_types();
+        plan.reach_implementations();
         plan.assign_items()?;
         plan.collect_trait_uses();
         Ok(plan)
@@ -263,15 +263,28 @@ impl<'p> EmitPlan<'p> {
             .collect()
     }
 
-    fn reach_implemented_types(&mut self) {
-        let implemented: Vec<(Type, ModuleId)> = self
+    fn reach_implementations(&mut self) {
+        let implementations: Vec<(Type, ModuleId, Vec<BindingId>)> = self
             .program
             .trait_impls
             .iter()
-            .map(|implementation| (implementation.implementor.clone(), implementation.module))
+            .map(|implementation| {
+                (
+                    implementation.implementor.clone(),
+                    implementation.module,
+                    implementation
+                        .methods
+                        .iter()
+                        .map(|method| method.binding)
+                        .collect(),
+                )
+            })
             .collect();
-        for (implementor, module) in implemented {
+        for (implementor, module, methods) in implementations {
             self.visit_type(&implementor, module);
+            for method in methods {
+                self.visit_definition(method);
+            }
         }
     }
 
@@ -418,6 +431,9 @@ impl<'p> EmitPlan<'p> {
         let mut taken: HashMap<(ModuleId, String), BindingId> = HashMap::new();
         let mut diagnostics = Diagnostics::default();
         for binding in self.reached.clone() {
+            if self.program.synthetic_bindings.contains(&binding) {
+                continue;
+            }
             let info = self.item_info(binding);
             let key = (info.module, info.name.clone());
             match taken

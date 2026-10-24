@@ -1,0 +1,31 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/impl_method_calls.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Counter {
+    value: i64,
+}
+
+fn make_counter(value: i64) -> Counter {
+    Counter { value }
+}
+
+fn read_counter(c: Counter) -> i64 {
+    c.value
+}
+
+fn main() {
+    println!("{}", make_counter(1).read_value())
+}
+
+trait Readable {
+    fn read_value(&self) -> i64;
+}
+
+impl Readable for Counter {
+    fn read_value(&self) -> i64 {
+        read_counter(*self)
+    }
+}
