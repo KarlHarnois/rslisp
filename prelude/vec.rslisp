@@ -48,7 +48,7 @@
   ((items compare) (sort-with! items compare)))
 (def sort-by-key! (rust "{0}.sort_by_key({1})" (where (a (k ord)) (fn ((mut (vec a)) (fn-mut ((ref a)) k)) unit))))
 (def windows (rust "{0}.windows({1})" (where (a) (fn ((ref (slice a)) usize) (iterator (ref (slice a)))))))
-(def at (rust "{0}[{1}]" (where ((a copy)) (fn ((ref (slice a)) usize) a))))
+(def at (rust "&{0}[{1}]" (where (a) (fn ((ref (slice a)) usize) (ref a)))))
 (def first (rust "{0}.first()" (where (item) (fn ((ref (slice item))) (option (ref item))))))
 (def last (rust "{0}.last()" (where (item) (fn ((ref (slice item))) (option (ref item))))))
 (def reverse (rust "{0}.iter().rev()" (where (item) (fn ((ref (slice item))) (iterator (ref item))))))

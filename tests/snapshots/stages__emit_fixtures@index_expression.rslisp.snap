@@ -5,5 +5,5 @@ input_file: tests/fixtures/emit/index_expression.rslisp
 ---
 fn main() {
     let numbers: Vec<i64> = vec![4_i64, 8_i64, 15_i64, 16_i64, 23_i64, 42_i64];
-    println!("{}", numbers[0])
+    println!("{}", &numbers[0])
 }
