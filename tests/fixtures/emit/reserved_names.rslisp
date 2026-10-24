@@ -1,0 +1,12 @@
+(defn main ()
+  (do
+    (let final 1)
+    (let macro 2)
+    (let override 3)
+    (let priv 4)
+    (let typeof 5)
+    (let unsized 6)
+    (let virtual 7)
+    (let yield 8)
+    (let try 9)
+    (println final)))

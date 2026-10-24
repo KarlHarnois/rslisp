@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/reserved_names.rslisp
+---
+fn main() {
+    let r#final: i64 = 1;
+    let r#macro: i64 = 2;
+    let r#override: i64 = 3;
+    let r#priv: i64 = 4;
+    let r#typeof: i64 = 5;
+    let r#unsized: i64 = 6;
+    let r#virtual: i64 = 7;
+    let r#yield: i64 = 8;
+    let r#try: i64 = 9;
+    println!("{}", r#final)
+}
