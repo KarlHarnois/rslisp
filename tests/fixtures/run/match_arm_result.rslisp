@@ -1,0 +1,12 @@
+(enum value (number i64))
+
+(trait read
+  (read (fn ((ref self)) (result i64 string))))
+
+(impl read value
+  (read (v)
+    (match v
+      ((number n) (ok n)))))
+
+(defn main ()
+  (prn (read (value/number 3))))
