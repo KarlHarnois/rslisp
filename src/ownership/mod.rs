@@ -28,6 +28,7 @@ use slices::SliceSelection;
 use values::FunctionValueModes;
 
 pub use changes::InPlaceChanges;
+pub use mutation::ChangedValues;
 
 pub struct OwnershipChecker;
 

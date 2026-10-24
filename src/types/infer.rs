@@ -1506,20 +1506,32 @@ impl TypeChecker {
             (Type::Ref(inner), found) if !found.is_reference() => {
                 self.pass(inner, found, value.span, Borrow::Shared)
             }
-            (Type::Mut(inner), found) if !found.is_reference() => {
-                if !value.is_place() {
-                    return Err(TypeProblems::mut_borrow_of_copy(
-                        value.span,
-                        self.field_place(value),
-                    ));
-                }
-                self.pass(inner, found, value.span, Borrow::Mutable)
-            }
+            (Type::Mut(inner), _) => self.pass_mut_argument(inner, &parameter, &argument, value),
             (Type::Var(var), Type::Ref(_)) if self.referent_unknown(&argument) => {
                 Ok(self.defer_borrow(*var, &argument, value.span))
             }
             _ => self.pass_types(&parameter, &argument, value.span),
         }
+    }
+
+    fn pass_mut_argument(
+        &mut self,
+        inner: &Type,
+        parameter: &Type,
+        argument: &Type,
+        value: &TypedExpr,
+    ) -> Result<Borrow, Diagnostic> {
+        let place = self.place_type(value);
+        if value.is_place() && !place.is_reference() {
+            return self.pass(inner, &place, value.span, Borrow::Mutable);
+        }
+        if !value.is_place() && !argument.is_reference() {
+            return Err(TypeProblems::mut_borrow_of_copy(
+                value.span,
+                self.field_place(value),
+            ));
+        }
+        self.pass_types(parameter, argument, value.span)
     }
 
     fn slice_argument(&mut self, parameter: &Type, argument: &Type, span: Span) -> Type {

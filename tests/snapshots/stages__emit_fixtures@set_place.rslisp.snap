@@ -1,0 +1,51 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/set_place.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Cell {
+    alive: bool,
+    label: String,
+}
+
+fn make_cell(alive: bool, label: String) -> Cell {
+    Cell { alive, label }
+}
+
+fn cell_alive(instance: &Cell) -> bool {
+    instance.alive
+}
+
+fn cell_label(instance: &Cell) -> &String {
+    &instance.label
+}
+
+fn revive(cell: &mut Cell) {
+    cell.alive = true
+}
+
+fn rename(cell: &mut Cell, label: String) {
+    cell.label = label
+}
+
+fn main() {
+    let mut grid = Vec::new();
+    grid.push(vec![false, false]);
+    grid.push(vec![false, false]);
+    grid[1][0] = true;
+    let alive = match grid.get(1) {
+        Option::Some(row) => row[0],
+        Option::None => false,
+    };
+    println!("{}", alive);
+    let mut cell = make_cell(false, "seed".to_string());
+    revive(&mut cell);
+    rename(&mut cell, "grown".to_string());
+    println!("{} {}", cell_alive(&cell), cell_label(&cell));
+    let mut total: i64 = 0;
+    let mut add = |n: i64| total = if n > total { n } else { total };
+    add(1);
+    add(2);
+    println!("{}", total)
+}

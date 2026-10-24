@@ -16,6 +16,7 @@
                   chars lines split trim as-str parse parse-error from-str)
 (use prelude/struct defstruct)
 (use prelude/ownership clone copy)
+(use prelude/place set!)
 
 (export fn def let do if type struct enum derive match new field quote macro rust rust-trait rust-type trait impl use export recur try
         ref mut deref where with _
@@ -30,7 +31,7 @@
         display debug to-string print println prn pr-str str char
         chars lines split trim as-str parse parse-error from-str
         defstruct
-        clone copy
+        clone copy set!
         pair let-pair let-fields
         vec option result iterator slice sequence box box-new push! len iter values collect
         get pop! sort! sort-by-key! windows at dedup!

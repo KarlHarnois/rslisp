@@ -1651,9 +1651,7 @@ impl<'a> ExpressionEmitter<'a> {
     fn is_mut_place(parsed: &Template, position: usize, argument: &TypedArgument) -> bool {
         parsed.dereferences(position)
             && (Self::written_mut_place(&argument.value)
-                || (argument.borrow == Borrow::Mutable
-                    && !argument.value.ty.is_reference()
-                    && argument.value.place_root().is_some()))
+                || (argument.borrow == Borrow::Mutable && argument.value.place_root().is_some()))
     }
 
     fn written_mut_place(value: &TypedExpr) -> bool {
@@ -1996,7 +1994,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn field_place(&mut self, value: &TypedExpr, label: &FieldLabel) -> Code {
-        let value = self.expr(value);
+        let value = self.place(value, TypeContext::Known);
         let value = if value.is_atomic() {
             value
         } else {

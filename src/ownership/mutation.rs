@@ -28,6 +28,10 @@ impl ChangedValues {
         self.changed.contains(&self.root(binding))
     }
 
+    pub fn changed_bindings(&self) -> impl Iterator<Item = BindingId> + '_ {
+        self.changed.iter().copied()
+    }
+
     pub fn is_recursive_argument(&self, binding: BindingId) -> bool {
         self.recursive_arguments.contains(&binding)
     }
