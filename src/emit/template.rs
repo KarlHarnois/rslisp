@@ -154,15 +154,16 @@ impl Template {
                 let Some(operator) = RustOperator::at(token) else {
                     continue;
                 };
+                if !self.binary_operands(position) {
+                    continue;
+                }
                 if found.is_some() {
                     return None;
                 }
                 found = Some((operator, position));
             }
         }
-        let (operator, position) = found?;
-        self.binary_operands(position)
-            .then_some((operator, position))
+        found
     }
 
     fn binary_operands(&self, operator_position: usize) -> bool {
