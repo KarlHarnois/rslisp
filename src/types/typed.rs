@@ -220,11 +220,13 @@ pub struct TypedTraitMethod {
 
 pub struct TypedTrait {
     pub binding: BindingId,
+    pub module: ModuleId,
     pub rust_name: Rc<str>,
     pub methods: Vec<TypedTraitMethod>,
 }
 
 pub struct TraitMethodInfo {
+    pub trait_binding: BindingId,
     pub rust_name: Rc<str>,
     pub receiver: Option<ReceiverKind>,
 }

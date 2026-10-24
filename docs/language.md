@@ -526,7 +526,7 @@ Programs read functionally through two prelude forms over `try`, as `loop` is ov
 
 ### 10. User-defined traits
 
-A program defines traits and implements them in one module. An `impl` accepts any concrete type the program can write without a type variable: a struct, an enum, a primitive such as `i64` or `bool`, `string`, or an applied type such as `(vec i64)`. A type with a type variable, such as `(vec a)`, is an error until a program needs generic implementations. An unsized implementor such as `str` must take every receiver by reference. `rust-trait` binds only traits that Rust defines.
+A program defines traits and implements them. An `impl` accepts any concrete type the program can write without a type variable: a struct, an enum, a primitive such as `i64` or `bool`, `string`, or an applied type such as `(vec i64)`. A type with a type variable, such as `(vec a)`, is an error until a program needs generic implementations. An unsized implementor such as `str` must take every receiver by reference. `rust-trait` binds only traits that Rust defines.
 
 ```lisp
 (trait shape
@@ -540,7 +540,11 @@ A program defines traits and implements them in one module. An `impl` accepts an
 
 `self` is a type variable bound by the trait. A method is an ordinary function type whose first parameter states the receiver's ownership: `self`, `(ref self)` or `(mut self)`. Such a method emits a Rust receiver, `fn area(&self) -> f64`, and a call emits `c.area()`. Every other method has no receiver and emits an associated function, `Shape::name(...)`. A method value such as `(map shapes area)` emits a path, `Shape::area`. Default methods and supertraits wait until a program needs them.
 
-An `impl` writes each method like `defn`. Its parameter types come from the trait, and the first parameter emits as Rust's `self`. A missing method, an extra method and a method the trait does not declare are errors. A method name is a top-level name, so two traits in one module cannot share one; `use` picks between modules.
+An `impl` writes each method like `defn`. Its parameter types come from the trait, and the first parameter emits as Rust's `self`. A missing method, an extra method and a method the trait does not declare are errors. An `impl` may name a trait and a struct or enum from any visible module. Every module of a program is one Rust crate, so Rust's coherence rule never rejects such an `impl`. A method name is a top-level name, so two traits in one module cannot share one; `use` picks between modules.
+
+`(export shape)` exports the trait and every method it declares, as `(export shape)` exports an enum and its constructors. `(use shapes shape)` imports the trait and every method it declares. A method name that clashes with a name the module already binds is the existing duplicate-name error.
+
+A trait emits in its own module's Rust `mod`, with the visibility the emitter gives an exported struct. An `impl` emits in the `mod` of the module that writes it. A module that calls a method with Rust method syntax has the trait in scope: the compiler emits a Rust `use` of the trait at the top of that module's `mod`, once per trait and only in a module that needs it. A method value emits the trait's path from the calling module, as `Shape::area` with the `use` or as a full path without one.
 
 A method is an ordinary function: `(area c)` is a call, and `(map shapes area)` passes the method as a value. A call on an unknown type adds the trait's bound, as `<` adds `ord`, and a written signature stays exact.
 

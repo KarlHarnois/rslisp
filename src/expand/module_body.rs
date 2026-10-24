@@ -59,23 +59,32 @@ impl Expander<'_> {
             items: Vec::new(),
             exports: Vec::new(),
         };
-        let mut impls = Vec::new();
-        for item in pending {
-            if matches!(&item, PendingItem::Impl(..)) {
-                impls.push(item);
-            } else if let Err(diagnostic) = self.lower_pending(module, item, &mut core) {
-                self.diagnostics.push(diagnostic);
-            }
-        }
-        for item in impls {
-            if let Err(diagnostic) = self.lower_pending(module, item, &mut core) {
-                self.diagnostics.push(diagnostic);
-            }
-        }
+        let (impls, rest): (Vec<PendingItem>, Vec<PendingItem>) = pending
+            .into_iter()
+            .partition(|item| matches!(item, PendingItem::Impl(..)));
+        let (exports, rest): (Vec<PendingItem>, Vec<PendingItem>) = rest
+            .into_iter()
+            .partition(|item| matches!(item, PendingItem::Export(..)));
+        self.lower_pending_group(module, rest, &mut core);
+        self.lower_pending_group(module, impls, &mut core);
+        self.lower_pending_group(module, exports, &mut core);
         self.compile_pending_macros();
         self.order.push(module);
         self.expanded.insert(module, core);
         self.current_module = outer_module;
+    }
+
+    fn lower_pending_group(
+        &mut self,
+        module: ModuleId,
+        items: Vec<PendingItem>,
+        core: &mut CoreModule,
+    ) {
+        for item in items {
+            if let Err(diagnostic) = self.lower_pending(module, item, core) {
+                self.diagnostics.push(diagnostic);
+            }
+        }
     }
 
     pub(super) fn split_binder(binder: &Form) -> (&Form, Option<&Form>) {
@@ -354,7 +363,7 @@ impl Expander<'_> {
         if matches!(self.kind(binding), BindingKind::Trait(_)) {
             return Ok(binding);
         }
-        Err(shape.malformed_with_help(form, "write a trait this module defines"))
+        Err(shape.malformed_with_help(form, "write a visible trait"))
     }
 
     fn impl_type(&mut self, shape: &Shape, form: &Form) -> Result<TypeExpr, Diagnostic> {
@@ -1176,10 +1185,35 @@ impl Expander<'_> {
         }
         if found {
             self.export_enum_constructors(module, symbol, core);
+            self.export_trait_methods(module, symbol, core);
             Ok(())
         } else {
             self.resolve(symbol, Namespace::Value, name.span())
                 .map(|_| ())
+        }
+    }
+
+    fn export_trait_methods(&mut self, module: ModuleId, symbol: &Symbol, core: &mut CoreModule) {
+        let Some(trait_binding) = self.try_resolve(symbol, Namespace::Type) else {
+            return;
+        };
+        if !matches!(self.kind(trait_binding), BindingKind::Trait(_)) {
+            return;
+        }
+        let Some(trait_methods) = self.trait_methods.get(&trait_binding) else {
+            return;
+        };
+        let methods: Vec<BindingId> = trait_methods
+            .methods
+            .iter()
+            .map(|(binding, _)| *binding)
+            .collect();
+        for method in methods {
+            let name = self.bindings.get(method).name().to_string();
+            self.modules
+                .get_mut(module)
+                .export(name.into(), Namespace::Value, method);
+            core.exports.push(method);
         }
     }
 

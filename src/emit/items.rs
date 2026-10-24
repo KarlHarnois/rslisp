@@ -85,16 +85,6 @@ impl<'a> ItemEmitter<'a> {
 
     pub fn crate_fragments(&mut self) -> Vec<Fragment> {
         let mut fragments = Self::separated(self.module_items(self.program.entry));
-        let traits = self.traits();
-        if !traits.is_empty() {
-            fragments.extend([Fragment::Newline, Fragment::Newline]);
-            fragments.extend(Self::separated(traits));
-        }
-        let implementations = self.trait_impls();
-        if !implementations.is_empty() {
-            fragments.extend([Fragment::Newline, Fragment::Newline]);
-            fragments.extend(Self::separated(implementations));
-        }
         let mut tree = ModuleTree::default();
         for module in &self.program.modules {
             if module.id != self.program.entry {
@@ -128,11 +118,19 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn module_items(&mut self, module: ModuleId) -> Vec<Vec<Fragment>> {
-        self.plan
+        let mut items: Vec<Vec<Fragment>> = self
+            .plan
             .items_of(module)
             .into_iter()
             .map(|binding| self.item(binding))
-            .collect()
+            .collect();
+        items.extend(self.traits(module));
+        items.extend(self.trait_impls(module));
+        let uses = self.use_lines(module);
+        if !uses.is_empty() {
+            items.insert(0, uses);
+        }
+        items
     }
 
     fn item(&mut self, binding: BindingId) -> Vec<Fragment> {
@@ -161,24 +159,39 @@ impl<'a> ItemEmitter<'a> {
         }
     }
 
-    fn traits(&self) -> Vec<Vec<Fragment>> {
+    fn traits(&self, module: ModuleId) -> Vec<Vec<Fragment>> {
         self.program
             .trait_definitions
             .iter()
+            .filter(|trait_definition| trait_definition.module == module)
             .map(|trait_definition| {
                 let mut methods = Vec::new();
                 for method in &trait_definition.methods {
                     methods.push(Fragment::Newline);
                     methods.extend(self.trait_method(method.binding, method.receiver));
                 }
+                let visibility = self.trait_visibility(module, trait_definition.binding);
                 vec![
-                    Fragment::Text(format!("trait {} {{", trait_definition.rust_name)),
+                    Fragment::Text(format!(
+                        "{visibility}trait {} {{",
+                        trait_definition.rust_name
+                    )),
                     Fragment::Indented(methods),
                     Fragment::Newline,
                     Fragment::Text("}".to_string()),
                 ]
             })
             .collect()
+    }
+
+    fn trait_visibility(&self, module: ModuleId, binding: BindingId) -> &'static str {
+        let exported = self
+            .program
+            .modules
+            .iter()
+            .find(|candidate| candidate.id == module)
+            .is_some_and(|candidate| candidate.exports.contains(&binding));
+        if exported { "pub " } else { "" }
     }
 
     fn trait_method(&self, binding: BindingId, receiver: Option<ReceiverKind>) -> Vec<Fragment> {
@@ -257,14 +270,16 @@ impl<'a> ItemEmitter<'a> {
         }
     }
 
-    fn trait_impls(&mut self) -> Vec<Vec<Fragment>> {
+    fn trait_impls(&mut self, module: ModuleId) -> Vec<Vec<Fragment>> {
         let mut items = Vec::new();
         for position in 0..self.program.trait_impls.len() {
+            if self.program.trait_impls[position].module != module {
+                continue;
+            }
             let trait_binding = self.program.trait_impls[position].trait_binding;
             let implementor = self.program.trait_impls[position].implementor.clone();
-            let module = self.program.trait_impls[position].module;
             let methods = self.program.trait_impls[position].methods.clone();
-            let trait_name = self.trait_name(trait_binding);
+            let trait_path = self.plan.trait_path(trait_binding, module);
             let type_name = {
                 let types =
                     RustTypes::new(self.program, self.plan, self.unsized_parameters, module);
@@ -276,7 +291,7 @@ impl<'a> ItemEmitter<'a> {
                 body.extend(self.impl_method(method.binding, method.receiver, module));
             }
             items.push(vec![
-                Fragment::Text(format!("impl {trait_name} for {type_name} {{")),
+                Fragment::Text(format!("impl {trait_path} for {type_name} {{")),
                 Fragment::Indented(body),
                 Fragment::Newline,
                 Fragment::Text("}".to_string()),
@@ -285,8 +300,25 @@ impl<'a> ItemEmitter<'a> {
         items
     }
 
-    fn trait_name(&self, binding: BindingId) -> String {
-        NameMangler::type_name(self.program.bindings.get(binding).name())
+    fn use_lines(&self, module: ModuleId) -> Vec<Fragment> {
+        let Some(uses) = self.plan.trait_uses(module) else {
+            return Vec::new();
+        };
+        let mut paths: Vec<String> = uses
+            .iter()
+            .filter(|binding| self.plan.trait_module(**binding) != Some(module))
+            .map(|binding| self.plan.trait_path(*binding, module))
+            .collect();
+        paths.sort();
+        paths.dedup();
+        let mut fragments = Vec::new();
+        for (position, path) in paths.iter().enumerate() {
+            if position > 0 {
+                fragments.push(Fragment::Newline);
+            }
+            fragments.push(Fragment::Text(format!("use {path};")));
+        }
+        fragments
     }
 
     fn impl_method(

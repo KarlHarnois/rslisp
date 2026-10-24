@@ -51,6 +51,7 @@ pub struct EmitPlan<'p> {
     crate_visible: HashSet<BindingId>,
     items: HashMap<BindingId, ItemInfo>,
     used_rust_types: BTreeSet<BindingId>,
+    trait_uses: HashMap<ModuleId, BTreeSet<BindingId>>,
 }
 
 impl<'p> EmitPlan<'p> {
@@ -84,10 +85,12 @@ impl<'p> EmitPlan<'p> {
             crate_visible: HashSet::new(),
             items: HashMap::new(),
             used_rust_types: BTreeSet::new(),
+            trait_uses: HashMap::new(),
         };
         plan.visit_definition(main);
         plan.reach_implemented_types();
         plan.assign_items()?;
+        plan.collect_trait_uses();
         Ok(plan)
     }
 
@@ -121,6 +124,90 @@ impl<'p> EmitPlan<'p> {
         segments.extend(self.module_segments(info.module));
         segments.push(info.name.clone());
         segments.join("::")
+    }
+
+    pub fn trait_path(&self, binding: BindingId, from: ModuleId) -> String {
+        let definition = self
+            .program
+            .trait_definitions
+            .iter()
+            .find(|trait_definition| trait_definition.binding == binding)
+            .expect("a trait method names a trait definition");
+        if definition.module == from {
+            return definition.rust_name.to_string();
+        }
+        let mut segments = vec!["crate".to_string()];
+        segments.extend(self.module_segments(definition.module));
+        segments.push(definition.rust_name.to_string());
+        segments.join("::")
+    }
+
+    pub fn trait_module(&self, binding: BindingId) -> Option<ModuleId> {
+        self.program
+            .trait_definitions
+            .iter()
+            .find(|trait_definition| trait_definition.binding == binding)
+            .map(|trait_definition| trait_definition.module)
+    }
+
+    pub fn trait_uses(&self, module: ModuleId) -> Option<&BTreeSet<BindingId>> {
+        self.trait_uses.get(&module)
+    }
+
+    pub fn uses_trait(&self, module: ModuleId, binding: BindingId) -> bool {
+        self.trait_uses
+            .get(&module)
+            .is_some_and(|uses| uses.contains(&binding))
+    }
+
+    fn collect_trait_uses(&mut self) {
+        let modules: Vec<ModuleId> = self
+            .program
+            .modules
+            .iter()
+            .map(|module| module.id)
+            .collect();
+        for module in modules {
+            let mut uses = BTreeSet::new();
+            for binding in self.items_of(module) {
+                if let Some(definition) = self.definition(binding) {
+                    Self::collect_expr_trait_uses(&definition.value, self.program, &mut uses);
+                }
+            }
+            let impl_methods: Vec<BindingId> = self
+                .program
+                .trait_impls
+                .iter()
+                .filter(|implementation| implementation.module == module)
+                .flat_map(|implementation| implementation.methods.iter())
+                .map(|method| method.binding)
+                .collect();
+            for binding in impl_methods {
+                if let Some(definition) = self.definition(binding) {
+                    Self::collect_expr_trait_uses(&definition.value, self.program, &mut uses);
+                }
+            }
+            if !uses.is_empty() {
+                self.trait_uses.insert(module, uses);
+            }
+        }
+    }
+
+    fn collect_expr_trait_uses(
+        expr: &TypedExpr,
+        program: &TypedProgram,
+        uses: &mut BTreeSet<BindingId>,
+    ) {
+        if let TypedExprKind::Call(callee, _) = &expr.kind
+            && let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = &callee.kind
+            && let Some(info) = program.trait_methods.get(binding)
+            && info.receiver.is_some()
+        {
+            uses.insert(info.trait_binding);
+        }
+        for child in expr.children() {
+            Self::collect_expr_trait_uses(child, program, uses);
+        }
     }
 
     pub fn module_segments(&self, module: ModuleId) -> Vec<String> {
