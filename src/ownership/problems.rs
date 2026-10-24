@@ -90,7 +90,18 @@ impl OwnershipProblems {
     }
 
     pub fn closure_move_help(diagnostic: Diagnostic) -> Diagnostic {
-        diagnostic.with_help("this closure moves a captured value, so it can only be used once")
+        diagnostic.with_help("this closure moves a captured value, so it cannot be copied")
+    }
+
+    pub fn closure_moves_capture(name: &str, moved: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::CLOSURE_MOVES_CAPTURE,
+            "this closure moves a captured value",
+            Label::new(moved, format!("`{name}` moves here")),
+        )
+        .with_help(format!(
+            "clone the value with `(clone {name})`, or return a borrow instead"
+        ))
     }
 
     pub fn ambiguous_borrow(function: &str, span: Span) -> Diagnostic {

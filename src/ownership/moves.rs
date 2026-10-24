@@ -33,6 +33,7 @@ pub struct MoveChecker<'a> {
     moved: HashMap<BindingId, Span>,
     copy_functions: HashSet<BindingId>,
     reported: HashSet<BindingId>,
+    reported_captures: HashSet<BindingId>,
     parameters: HashSet<BindingId>,
     unwritten_parameters: HashSet<BindingId>,
     inferred_copies: InferredCopies,
@@ -57,6 +58,7 @@ impl<'a> MoveChecker<'a> {
             moved: HashMap::new(),
             copy_functions: HashSet::new(),
             reported: HashSet::new(),
+            reported_captures: HashSet::new(),
             parameters: HashSet::new(),
             unwritten_parameters: HashSet::new(),
             inferred_copies: InferredCopies::default(),
@@ -156,11 +158,24 @@ impl<'a> MoveChecker<'a> {
         let own_bindings = LocalDefinitions::of(lambda);
         let moved_before: HashSet<BindingId> = self.moved.keys().copied().collect();
         self.block(&lambda.body, Usage::Move);
-        let moves_a_capture = self
+        let captures: Vec<(BindingId, Span)> = self
             .moved
-            .keys()
-            .any(|binding| !moved_before.contains(binding) && !own_bindings.contains(binding));
-        !moves_a_capture
+            .iter()
+            .filter(|(binding, _)| {
+                !moved_before.contains(binding) && !own_bindings.contains(binding)
+            })
+            .map(|(binding, span)| (*binding, *span))
+            .collect();
+        for (binding, span) in &captures {
+            if self.reported_captures.insert(*binding) {
+                self.diagnostics
+                    .push(OwnershipProblems::closure_moves_capture(
+                        self.bindings.get(*binding).name(),
+                        *span,
+                    ));
+            }
+        }
+        captures.is_empty()
     }
 
     fn bind(&mut self, binding: BindingId, value: &TypedExpr) {

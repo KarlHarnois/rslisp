@@ -1,0 +1,5 @@
+(defn apply (f) (f 0))
+
+(defn main ()
+  (let text (to-string "x"))
+  (println (apply (fn (ignored) text))))

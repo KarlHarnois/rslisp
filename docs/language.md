@@ -201,7 +201,7 @@ Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&
 - **Mut borrows.** A `mut` argument must be a place: a local or a field. A copy, such as a call's result, is an error, because changing the copy changes nothing.
 - **Call order.** A call that mutably borrows a variable evaluates its other arguments first. A borrow has no side effect, so the observable order stays the same.
 - **Borrowed results.** A function may return a borrow when it has one borrowed parameter, or none for a string literal. With more than one, it reports an error, because lifetimes cannot be written yet.
-- **Closures.** A function-typed parameter is `impl Fn`. A closure returned from a function is a `move` closure. A closure that only borrows or copies its captures is Copy and can be passed more than once. One that moves a capture can be used once.
+- **Closures.** A function-typed parameter is `impl Fn`. A closure returned from a function is a `move` closure. A closure that only borrows or copies its captures is Copy and can be passed more than once. A closure that moves a capture is an error, `L0508`, because the language has no closure that consumes its captures yet.
 - **rustc.** Any lifetime or aliasing error that slips past these checks comes from rustc, mapped back to the source and the user's names.
 
 ## Macros
