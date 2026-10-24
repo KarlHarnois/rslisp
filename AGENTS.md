@@ -100,6 +100,9 @@ The exceptions are:
 - If a change alters a CLI command's arguments, exit codes or written files, add a test to `tests/cli.rs`.
 - If a fixture imports a module, put the module in a subdirectory: each top-level fixture file is an entry.
 - Give fixtures fake data only.
+- A run fixture MAY carry a `<fixture>.arguments` sidecar with one argument per line.
+- The harness runs the compiled fixture with those arguments in the fixture's directory.
+- When a fixture writes to standard error or exits nonzero, its snapshot appends the standard error and exit code after the standard output.
 - Create or update snapshots with `INSTA_UPDATE=always`.
 - NEVER commit a snapshot that you have not read.
 - NEVER lower `MINIMUM_LINE_COVERAGE` or raise `MAXIMUM_CRAP` in `xtask/src/gate.rs` without the project owner's approval.

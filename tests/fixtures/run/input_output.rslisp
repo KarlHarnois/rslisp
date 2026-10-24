@@ -1,0 +1,5 @@
+(defn main ()
+  (let-try ((text (slurp (as-str (unwrap (get (command-line-args) 0))))))
+    (do
+      (println (count (lines (as-str text))))
+      (ok (do)))))

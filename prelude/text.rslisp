@@ -5,15 +5,16 @@
           number-add number-sub number-lt bool-not
           escape-string escape-char escape-format string-strip-suffix)
 (use prelude/types vec option result iterator box)
+(use prelude/io io-error)
 
 (export display debug to-string print println prn pr-str str char chars lines split trim as-str parse parse-error from-str)
 
 (rust-trait display "std::fmt::Display"
-  bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
+  bool char str string (ref str) io-error i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
   (where ((a display)) (ref a)))
 
 (rust-trait debug "std::fmt::Debug"
-  bool char str string (ref str) i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
+  bool char str string (ref str) io-error i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
   (where ((a debug)) (vec a))
   (where ((a debug)) (option a))
   (where ((a debug) (b debug)) (result a b))

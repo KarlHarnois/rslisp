@@ -44,6 +44,8 @@ pub struct ItemInfo {
 
 pub struct EmitPlan<'p> {
     program: &'p TypedProgram,
+    main: BindingId,
+    main_body: Option<String>,
     definitions: HashMap<BindingId, (&'p TypedDefinition, ModuleId)>,
     type_modules: HashMap<BindingId, ModuleId>,
     exported: HashSet<BindingId>,
@@ -64,6 +66,8 @@ impl<'p> EmitPlan<'p> {
             .ok_or_else(|| Diagnostics::from(EmitProblems::missing_main(entry_span)))?;
         let mut plan = Self {
             program,
+            main,
+            main_body: None,
             definitions: Self::index_definitions(program),
             type_modules: program
                 .modules
@@ -89,6 +93,7 @@ impl<'p> EmitPlan<'p> {
         };
         plan.visit_definition(main);
         plan.reach_implementations();
+        plan.main_body = plan.choose_main_body_name();
         plan.assign_items()?;
         plan.collect_trait_uses();
         Ok(plan)
@@ -96,6 +101,33 @@ impl<'p> EmitPlan<'p> {
 
     pub fn item(&self, binding: BindingId) -> Option<&ItemInfo> {
         self.items.get(&binding)
+    }
+
+    pub fn is_result_main(&self, binding: BindingId) -> bool {
+        binding == self.main && self.main_body.is_some()
+    }
+
+    pub fn main_body_name(&self) -> Option<&str> {
+        self.main_body.as_deref()
+    }
+
+    fn choose_main_body_name(&self) -> Option<String> {
+        self.definition(self.main)?
+            .result_error(&self.program.rust_types)?;
+        let taken: BTreeSet<String> = self
+            .reached
+            .iter()
+            .filter(|binding| **binding != self.main)
+            .filter(|binding| !self.program.synthetic_bindings.contains(*binding))
+            .map(|binding| self.item_info(*binding))
+            .filter(|info| info.module == self.program.entry)
+            .map(|info| info.name)
+            .collect();
+        let mut name = "main_body".to_string();
+        while taken.contains(&name) {
+            name.push('_');
+        }
+        Some(name)
     }
 
     pub fn definition(&self, binding: BindingId) -> Option<&'p TypedDefinition> {
@@ -469,10 +501,11 @@ impl<'p> EmitPlan<'p> {
             Some((definition, module)) => (*module, self.definition_kind(definition)),
             None => (self.type_modules[&binding], self.named_type_kind(binding)),
         };
-        let rust_name = match kind {
-            ItemKind::Function => NameMangler::value(name),
-            ItemKind::Const | ItemKind::Static => NameMangler::constant(name),
-            ItemKind::Struct | ItemKind::Enum => NameMangler::type_name(name),
+        let rust_name = match (kind, binding == self.main, &self.main_body) {
+            (ItemKind::Function, true, Some(body)) => body.clone(),
+            (ItemKind::Function, ..) => NameMangler::value(name),
+            (ItemKind::Const | ItemKind::Static, ..) => NameMangler::constant(name),
+            (ItemKind::Struct | ItemKind::Enum, ..) => NameMangler::type_name(name),
         };
         ItemInfo {
             module,

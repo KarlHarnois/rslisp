@@ -82,11 +82,19 @@ impl Fixture {
             &binary,
             self.entry_span(),
         ) {
-            Ok(()) => Self::stdout_of(&binary),
+            Ok(()) => Self::report_of(&binary, &self.arguments(), &self.directory()),
             Err(BuildError::Program(diagnostics)) => self.render(&diagnostics),
             Err(BuildError::Environment(message)) => {
                 panic!("the build environment failed: {message}")
             }
+        }
+    }
+
+    fn arguments(&self) -> Vec<String> {
+        let arguments = self.path.with_extension("arguments");
+        match fs::read_to_string(arguments) {
+            Ok(text) => text.lines().map(str::to_string).collect(),
+            Err(_) => Vec::new(),
         }
     }
 
@@ -105,11 +113,23 @@ impl Fixture {
         Span::new(self.entry, 0..0)
     }
 
-    fn stdout_of(binary: &Path) -> String {
+    fn report_of(binary: &Path, arguments: &[String], directory: &Path) -> String {
         let output = Command::new(binary)
+            .args(arguments)
+            .current_dir(directory)
             .output()
             .expect("the compiled fixture runs");
-        String::from_utf8(output.stdout).expect("fixtures print text")
+        let stdout = String::from_utf8(output.stdout).expect("fixtures print text");
+        let stderr = String::from_utf8(output.stderr).expect("fixtures print text");
+        if stderr.is_empty() && output.status.success() {
+            stdout
+        } else {
+            let code = output
+                .status
+                .code()
+                .map_or_else(|| "a signal".to_string(), |code| code.to_string());
+            format!("{stdout}stderr:\n{stderr}exit code: {code}\n")
+        }
     }
 
     fn expand(&mut self) -> Result<rslisp::expand::Program, Diagnostics> {
