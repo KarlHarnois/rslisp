@@ -47,6 +47,13 @@ impl Program {
     }
 }
 
+#[derive(Clone)]
+pub struct TraitMethods {
+    pub rust_name: Rc<str>,
+    pub self_variable: crate::core::BindingId,
+    pub methods: Vec<(crate::core::BindingId, crate::core::TypeExpr)>,
+}
+
 pub struct Expander<'s> {
     sources: &'s mut SourceMap,
     module_sources: ModuleSources,
@@ -61,6 +68,7 @@ pub struct Expander<'s> {
     introduced_names: HashMap<(Span, String), Span>,
     trait_paths: HashMap<crate::core::BindingId, Rc<str>>,
     enum_variants: HashMap<crate::core::BindingId, Vec<crate::core::BindingId>>,
+    trait_methods: HashMap<crate::core::BindingId, TraitMethods>,
     globals: GlobalTable,
     expanded: HashMap<ModuleId, CoreModule>,
     order: Vec<ModuleId>,
@@ -88,6 +96,7 @@ impl<'s> Expander<'s> {
             introduced_names: HashMap::new(),
             trait_paths: HashMap::new(),
             enum_variants: HashMap::new(),
+            trait_methods: HashMap::new(),
             globals: GlobalTable::default(),
             expanded: HashMap::new(),
             order: Vec::new(),

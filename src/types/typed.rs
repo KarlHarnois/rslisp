@@ -206,6 +206,36 @@ pub struct TypedModule {
     pub exports: Vec<BindingId>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReceiverKind {
+    Owned,
+    Shared,
+    Mutable,
+}
+
+pub struct TypedTraitMethod {
+    pub binding: BindingId,
+    pub receiver: Option<ReceiverKind>,
+}
+
+pub struct TypedTrait {
+    pub binding: BindingId,
+    pub rust_name: Rc<str>,
+    pub methods: Vec<TypedTraitMethod>,
+}
+
+pub struct TraitMethodInfo {
+    pub rust_name: Rc<str>,
+    pub receiver: Option<ReceiverKind>,
+}
+
+pub struct TypedTraitImpl {
+    pub trait_binding: BindingId,
+    pub type_binding: BindingId,
+    pub module: ModuleId,
+    pub methods: Vec<BindingId>,
+}
+
 pub struct TypedProgram {
     pub modules: Vec<TypedModule>,
     pub entry: ModuleId,
@@ -215,6 +245,10 @@ pub struct TypedProgram {
     pub rust_types: RustTypeTable,
     pub box_binding: Option<BindingId>,
     pub traits: TraitTable,
+    pub trait_definitions: Vec<TypedTrait>,
+    pub trait_impls: Vec<TypedTraitImpl>,
+    pub trait_methods: HashMap<BindingId, TraitMethodInfo>,
+    pub synthetic_bindings: HashSet<BindingId>,
     pub generics: HashMap<GenericId, GenericParam>,
     pub implied_bounds: HashMap<GenericId, Vec<Bound>>,
     pub template_borrows: TemplateBorrows,
@@ -259,6 +293,7 @@ impl TypedProgram {
             .entry_module()
             .definitions
             .iter()
+            .filter(|definition| !self.synthetic_bindings.contains(&definition.binding))
             .map(|definition| {
                 let name = self.bindings.get(definition.binding).name();
                 format!("(type {name} {})\n", display.scheme(&definition.scheme))

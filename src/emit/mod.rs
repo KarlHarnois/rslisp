@@ -3,7 +3,7 @@ mod fragment;
 mod items;
 mod literal_generics;
 mod locals;
-mod mangle;
+pub(crate) mod mangle;
 mod mutable_locals;
 mod operator;
 mod plan;

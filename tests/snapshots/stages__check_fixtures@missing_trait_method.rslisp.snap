@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/missing_trait_method.rslisp
+---
+error[L0239]: `circle` is missing `scale!` from `shape`
+ --> check/missing_trait_method.rslisp:7:13
+  |
+7 | (impl shape circle
+  |             ^^^^^^ this implementation is missing `scale!`
+  |
+  = help: add the `scale!` method

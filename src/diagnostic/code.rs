@@ -50,6 +50,9 @@ impl DiagnosticCode {
     pub const SIGNATURE_TARGET: Self = Self(Cow::Borrowed("L0236"));
     pub const DERIVE_TARGET: Self = Self(Cow::Borrowed("L0237"));
     pub const DERIVE_TRAIT: Self = Self(Cow::Borrowed("L0238"));
+    pub const MISSING_METHOD: Self = Self(Cow::Borrowed("L0239"));
+    pub const EXTRA_METHOD: Self = Self(Cow::Borrowed("L0240"));
+    pub const UNDECLARED_METHOD: Self = Self(Cow::Borrowed("L0241"));
 
     pub const MACRO_FAILED: Self = Self(Cow::Borrowed("L0301"));
     pub const MACRO_RESULT_NOT_FORM: Self = Self(Cow::Borrowed("L0302"));

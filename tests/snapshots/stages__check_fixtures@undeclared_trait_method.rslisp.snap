@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/undeclared_trait_method.rslisp
+---
+error[L0241]: `shape` does not declare `perimeter`
+ --> check/undeclared_trait_method.rslisp:8:4
+  |
+8 |   (perimeter (c) (* 6.28 (field c radius))))
+  |    ^^^^^^^^^ not a method of `shape`
+  |
+  = help: declare it in the trait, or remove it
