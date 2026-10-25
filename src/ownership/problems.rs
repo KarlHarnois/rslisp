@@ -171,6 +171,19 @@ impl OwnershipProblems {
         }
     }
 
+    pub fn local_borrow(borrowed: Span, defined: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::LOCAL_BORROW,
+            "cannot return a borrow of a local value",
+            Label::new(borrowed, "this borrows a local value"),
+        )
+        .with_label(Label::new(
+            defined,
+            "this local is dropped when the function returns",
+        ))
+        .with_help("return an owned value with `(clone ...)`, or borrow from a parameter")
+    }
+
     pub fn needs_ownership(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::NEEDS_OWNERSHIP,

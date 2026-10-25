@@ -226,7 +226,7 @@ Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&
 - **Assignment.** `(set! place value)` changes a local or a field in place. Inside the place, `(at items index)` names an element, so `(set! (at (at grid y) x) alive)` emits `grid[y][x] = alive`. A value-position `(at items index)` returns a borrow of the element, so a non-Copy row reads without `get` and `unwrap`. A Copy element meeting a value parameter is copied out, so `(at (at grid 1) 0)` emits `grid[1][0]` there and `&grid[1][0]` where it stays borrowed. A map element assigns through `get_mut`, so `(set! (at m k) v)` emits `*m.get_mut(&k).unwrap() = v` and panics on a missing key. A target that is not a place is the same error as a `mut` argument. `set!` is prelude code: a local or field target assigns through a `mut` parameter, and an `at` target becomes a vector or map assignment.
 - **Value updates.** `(assoc value (field value)...)` returns a changed struct with Rust's struct update syntax, as `(assoc cell (alive true))` emits `Cell { alive: true, ..cell }`. `(assoc coll key value)` and `(assoc-in coll (key...) value)` consume the collection and return it changed, as `(assoc grid 1 alive)` emits `{ let mut grid = grid; grid[1] = alive; grid }`. The base moves, so a later use is a use-after-move error whose help suggests `(clone base)`. `assoc` and `assoc-in` are prelude macros. The `assoc-at` collection rule picks the emitted Rust from the base's inferred type; it knows `(vec a)`, `(sorted-map k v)` and `(hash-map k v)`, and a map update emits `{ let mut m = m; m.insert(k, v); m }`.
 - **Call order.** A call that mutably borrows a variable evaluates its other arguments first. A borrow has no side effect, so the observable order stays the same.
-- **Borrowed results.** A function may return a borrow. When its parameters contribute more than one lifetime, the compiler adds one shared lifetime, `'a`, to every reference parameter and the result, so the result may borrow from any of them. With one, Rust's elision decides.
+- **Borrowed results.** A function may return a borrow. When its parameters contribute more than one lifetime, the compiler adds one shared lifetime, `'a`, to every reference parameter and the result, so the result may borrow from any of them. With one, Rust's elision decides. A returned borrow of a local value is an error, `L0510`.
 - **Closures.** A closure's body decides its kind. A closure that moves a capture, or passes it to a parameter that owns it, is `FnOnce`. One that changes a capture, or passes it to a `mut` parameter, is `FnMut`. Every other closure is `Fn`. A function parameter that the body calls at most once and uses no other way is `FnOnce`. One called more than once, or called while it changes a capture, is `FnMut`, with a `mut` parameter binding. One only passed on takes the kind its callee needs. A signature writes `(fn-mut ...)` or `(fn-once ...)` to pin a kind, and that written kind is exact; a plain `(fn ...)` leaves the kind to inference. The prelude's `rust` templates write the kind their Rust body requires. `Fn` meets `FnMut` and `FnOnce`, and `FnMut` meets `FnOnce`, as in Rust. A closure stronger than the parameter accepts is an error, `L0509`; its label names the capture and its help says to clone it or to borrow it. A function-typed parameter emits `impl Fn`, `impl FnMut` or `impl FnOnce`, and so does a returned closure behind its return type. A closure returned from a function is a `move` closure. A closure that only borrows or copies its captures is Copy and can be passed more than once. A local closure that changes a captured local emits as `let mut`, because Rust takes a `FnMut` closure mutably.
 - **rustc.** Any lifetime or aliasing error that slips past these checks comes from rustc, mapped back to the source and the user's names.
 
@@ -395,7 +395,7 @@ The emitted Rust is formatted by `rustfmt` when `rslisp emit` or `rslisp build` 
 | 8.4 Loops | done |
 | 9. Enums and `match` | done |
 | 10. User-defined traits | done |
-| 11. Written lifetimes | planned |
+| 11. Written lifetimes | done |
 
 A planned milestone is settled design, and new work follows it.
 
@@ -608,7 +608,7 @@ A `rust-trait` method needs no kernel form beyond the `impl` item it lets the pr
 
 ### 11. Written lifetimes
 
-A function whose result holds a borrow adds one lifetime when its parameters contribute more than one. Every reference parameter and the result share it:
+A function whose result holds a borrow adds one lifetime when its parameters contribute more than one elided lifetime. Every reference parameter and the result share it:
 
 ```lisp
 (type longer (fn ((ref str) (ref str)) (ref str)))
@@ -664,3 +664,7 @@ enum Token<'a> {
 A use of a borrowed struct emits `Snippet<'_>` or the function's shared lifetime. A lifetime written in the head is exact and replaces the inferred one, as `(struct (label 'a) (text (ref 'a str)))` does.
 
 A trait signature owns its lifetimes. The compiler adds the shared lifetime to the trait's declaration, and an impl copies the parameter types exactly. An impl for a type that holds a borrow writes that type with its lifetime, as `impl<'a> Finder for Snippet<'a>`, and its methods elide every lifetime Rust elides. A method with a `(ref self)` receiver takes no shared lifetime, because Rust's receiver elision makes its result borrow from the receiver.
+
+A returned borrow of a local value is an error, `L0510`, because the local is dropped when the function returns. rustc reports the lifetime errors the compiler does not see, mapped back to the source and the names the program wrote.
+
+`ref`, `mut`, `where`, `struct` and `enum` gained a lifetime position or binder, so this milestone needs no kernel form. A macro cannot add a lifetime to a function's emitted signature or to a struct's generic list, because the compiler builds both from the inferred type rather than from a form a macro returns.

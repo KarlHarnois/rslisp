@@ -125,6 +125,7 @@ impl DiagnosticCode {
     pub const WRITTEN_MODE_MISMATCH: Self = Self(Cow::Borrowed("L0506"));
     pub const FUNCTION_VALUE_MISMATCH: Self = Self(Cow::Borrowed("L0507"));
     pub const CLOSURE_KIND_MISMATCH: Self = Self(Cow::Borrowed("L0509"));
+    pub const LOCAL_BORROW: Self = Self(Cow::Borrowed("L0510"));
 
     pub const MISSING_MAIN: Self = Self(Cow::Borrowed("L0601"));
     pub const NAME_COLLISION: Self = Self(Cow::Borrowed("L0602"));
