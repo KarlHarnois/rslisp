@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/rust_trait_methods.rslisp
+---
+(rust-trait shown "std::fmt::Debug" (method show (fn ((ref self)) string)) i64)

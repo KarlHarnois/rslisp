@@ -1,0 +1,3 @@
+(rust-trait shown "std::fmt::Debug"
+  (method show (fn ((ref self)) string))
+  i64)

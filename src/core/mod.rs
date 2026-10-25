@@ -19,8 +19,8 @@ pub use kernel::{
     StructForm,
 };
 pub use module::{
-    CoreModule, EnumRust, ImplMethod, Item, ItemKind, ModuleId, ModulePath, TraitMethod,
-    VariantDeclaration, VariantPayload,
+    CoreModule, EnumRust, ImplMethod, Item, ItemKind, ModuleId, ModulePath,
+    RUST_TRAIT_METHOD_MARKER, TraitMethod, VariantDeclaration, VariantPayload,
 };
 pub use printer::CorePrinter;
 pub use template::{MalformedPlaceholder, ParsedTemplate, Piece};

@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/rust_trait_impl.rslisp
+---
+#[derive(Clone)]
+struct Point {}
+
+fn main() {
+    let _point = Point {};
+}
+
+impl std::fmt::Write for Point {
+    fn write_str(&mut self, _text: &str) -> std::fmt::Result {
+        std::fmt::Result::Ok(())
+    }
+}

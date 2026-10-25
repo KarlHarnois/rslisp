@@ -69,7 +69,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `rust` | `(rust "template" type)` | the inlined template | type: type. |
 | `recur` | `(recur argument...)` | `loop` | arguments: expressions. |
 | `try` | `(try expression)` | `expression?` | expression: expression. |
-| `rust-trait` | `(rust-trait name "Path" type...)` | trait bound | name: type binder. types: types, `(with type type)`, or `(where (param...) type)`. |
+| `rust-trait` | `(rust-trait name "Path" (method name type)? type...)` | trait bound, or a Rust `impl` for a program type when it declares a method | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. types: types, `(with type type)`, or `(where (param...) type)`. |
 | `trait` | `(trait name (method type)...)` | `trait` | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. |
 | `impl` | `(impl trait type (method (param...) body...)...)` | `impl` | trait and type: references to a trait and a struct or enum. methods: a name, parameter binders and a body. |
 | `rust-type` | `(rust-type name "template" (type "template")...)` or `(rust-type (name param...) "template" (type "template")...)` | the filled template | name: type binder. params: type binders. clauses: a type and a template. |
@@ -561,6 +561,8 @@ Programs read functionally through two prelude forms over `try`, as `loop` is ov
 
 A program defines traits and implements them. An `impl` accepts any concrete type the program can write without a type variable: a struct, an enum, a primitive such as `i64` or `bool`, `string`, or an applied type such as `(vec i64)`. A type with a type variable, such as `(vec a)`, is an error until a program needs generic implementations. An unsized implementor such as `str` must take every receiver by reference. `rust-trait` binds only traits that Rust defines.
 
+A `rust-trait` that declares a method can also be implemented, and the compiler emits the Rust `impl`. The method's name and signature come from the `rust-trait` entry, so the program writes only the method body.
+
 ```lisp
 (trait shape
   (area (fn ((ref self)) f64))
@@ -582,6 +584,8 @@ A trait emits in its own module's Rust `mod`, with the visibility the emitter gi
 A method is an ordinary function: `(area c)` is a call, and `(map shapes area)` passes the method as a value. A call on an unknown type adds the trait's bound, as `<` adds `ord`, and a written signature stays exact.
 
 `trait` and `impl` are kernel forms. A macro returns a form and cannot emit a Rust `trait` or `impl` item, and only the compiler can add a trait and its implementors to the trait table. A method call needs no kernel form: each method is an ordinary generic function, so the existing call, inference and emission paths handle it.
+
+A `rust-trait` method needs no kernel form beyond the `impl` item it lets the program write. The prelude states the method's name and signature, and the compiler reads them from the `rust-trait` binding, so no Rust fact about the trait is restated in Rust.
 
 ### 11. Written lifetimes
 
