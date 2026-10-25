@@ -356,8 +356,13 @@ impl<'a> CorePrinter<'a> {
             TypeExprKind::Function(kind, parameters, result) => {
                 self.function_type(*kind, parameters, result)
             }
-            TypeExprKind::Reference(kind, inner) => {
-                Self::list(kind.keyword(), vec![self.type_expr(inner)])
+            TypeExprKind::Reference(kind, lifetime, inner) => {
+                let mut parts = Vec::new();
+                if let Some(lifetime) = lifetime {
+                    parts.push(self.name(*lifetime));
+                }
+                parts.push(self.type_expr(inner));
+                Self::list(kind.keyword(), parts)
             }
             TypeExprKind::Hole => "_".to_string(),
             TypeExprKind::Where(binders, inner) => self.where_type(binders, inner),

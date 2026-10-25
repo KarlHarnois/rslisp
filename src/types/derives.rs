@@ -407,6 +407,7 @@ impl TypeChecker {
         let arguments = params.iter().map(|param| Type::Generic(param.id)).collect();
         Implementor {
             scheme: Scheme {
+                lifetimes: Vec::new(),
                 params,
                 body: Type::Named(binding, arguments),
             },

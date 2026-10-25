@@ -62,7 +62,7 @@ impl<'a> TypeSizes<'a> {
     fn layout(&self, ty: &Type, visiting: &mut Vec<BindingId>) -> Option<Layout> {
         match ty {
             Type::Primitive(primitive) => Self::primitive(*primitive),
-            Type::Ref(_) | Type::Mut(_) => Some(Layout::POINTER),
+            Type::Ref(_, _) | Type::Mut(_, _) => Some(Layout::POINTER),
             Type::Named(binding, arguments) => {
                 if self.structs.get(*binding).is_some() {
                     self.structure(*binding, arguments, visiting)
@@ -191,6 +191,7 @@ mod tests {
             self.structs.add(
                 binding,
                 StructDefinition {
+                    lifetimes: Vec::new(),
                     params: Vec::new(),
                     fields: vec![
                         ("first".into(), Type::Primitive(PrimitiveType::I64)),
@@ -211,6 +212,7 @@ mod tests {
             self.enums.add(
                 binding,
                 EnumDefinition {
+                    lifetimes: Vec::new(),
                     params: Vec::new(),
                     variants: vec![VariantDefinition {
                         name: "value".into(),
@@ -233,6 +235,7 @@ mod tests {
             self.structs.add(
                 binding,
                 StructDefinition {
+                    lifetimes: Vec::new(),
                     params: Vec::new(),
                     fields: vec![("next".into(), Type::Named(binding, Vec::new()))],
                     field_spans: Vec::new(),
@@ -250,6 +253,7 @@ mod tests {
             self.enums.add(
                 binding,
                 EnumDefinition {
+                    lifetimes: Vec::new(),
                     params: Vec::new(),
                     variants: vec![VariantDefinition {
                         name: "next".into(),

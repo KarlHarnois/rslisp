@@ -1,4 +1,5 @@
 use super::Expander;
+use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{BindingKind, KernelType, Namespace, TypeBinder};
 use crate::diagnostic::Diagnostic;
@@ -72,6 +73,17 @@ impl Expander<'_> {
         mut binders: Vec<Form>,
         mut body: Vec<Form>,
     ) -> Result<Parameterized, Diagnostic> {
+        if let Some(binder) = binders.iter().find(|binder| {
+            binder.as_list().is_some_and(|parts| {
+                parts.len() > 1
+                    && parts
+                        .first()
+                        .and_then(Form::as_symbol)
+                        .is_some_and(|symbol| symbol.name().starts_with('\''))
+            })
+        }) {
+            return Err(ExpandProblems::bounded_lifetime(binder.span()));
+        }
         let scope = self.fresh_local_scope();
         binders
             .iter_mut()

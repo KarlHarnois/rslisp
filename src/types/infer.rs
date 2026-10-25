@@ -168,8 +168,8 @@ impl TypeChecker {
         }
         let borrowed = self.place_type(&value);
         let ty = match kind {
-            ReferenceKind::Shared => Type::Ref(Box::new(borrowed)),
-            ReferenceKind::Mutable => Type::Mut(Box::new(borrowed)),
+            ReferenceKind::Shared => Type::shared(borrowed),
+            ReferenceKind::Mutable => Type::mutable(borrowed),
         };
         Ok(TypedExpr {
             kind: TypedExprKind::Borrow(kind, Box::new(value)),
@@ -182,11 +182,11 @@ impl TypeChecker {
         let value = self.infer(value)?;
         let referent = self.unifier.fresh();
         self.require_copy(&referent);
-        if let Type::Mut(inner) = self.unifier.resolve(&value.ty) {
+        if let Type::Mut(_, inner) = self.unifier.resolve(&value.ty) {
             self.expect(&referent, &inner, value.span, MismatchContext::Plain)?;
         } else {
             self.expect(
-                &Type::Ref(Box::new(referent.clone())),
+                &Type::shared(referent.clone()),
                 &value.ty,
                 value.span,
                 MismatchContext::Plain,
@@ -204,7 +204,7 @@ impl TypeChecker {
             return value.ty.clone();
         };
         let mut owner = self.unifier.resolve(&owner.ty);
-        while let Type::Ref(inner) | Type::Mut(inner) = owner {
+        while let Type::Ref(_, inner) | Type::Mut(_, inner) = owner {
             owner = self.unifier.resolve(&inner);
         }
         let Type::Named(binding, arguments) = owner else {
@@ -426,7 +426,7 @@ impl TypeChecker {
     }
 
     fn copy_target(&mut self, reference: &Type, value: &Type, span: Span) -> Option<Type> {
-        let Type::Ref(inner) = self.unifier.resolve(reference) else {
+        let Type::Ref(_, inner) = self.unifier.resolve(reference) else {
             return None;
         };
         let value = self.unifier.resolve(value);
@@ -493,7 +493,7 @@ impl TypeChecker {
     fn is_string_value(ty: &Type) -> bool {
         match ty {
             Type::Primitive(PrimitiveType::String) => true,
-            Type::Ref(inner) => matches!(inner.as_ref(), Type::Primitive(PrimitiveType::String)),
+            Type::Ref(_, inner) => matches!(inner.as_ref(), Type::Primitive(PrimitiveType::String)),
             _ => false,
         }
     }
@@ -959,11 +959,11 @@ impl TypeChecker {
         let mut mode = None;
         loop {
             match matched.clone() {
-                Type::Ref(inner) => {
+                Type::Ref(_, inner) => {
                     mode.get_or_insert(ReferenceKind::Shared);
                     matched = self.unifier.resolve(&inner);
                 }
-                Type::Mut(inner) => {
+                Type::Mut(_, inner) => {
                     mode.get_or_insert(ReferenceKind::Mutable);
                     matched = self.unifier.resolve(&inner);
                 }
@@ -974,8 +974,8 @@ impl TypeChecker {
 
     fn binding_mode_type(matched: Type, mode: Option<ReferenceKind>) -> Type {
         match mode {
-            Some(ReferenceKind::Shared) => Type::Ref(Box::new(matched)),
-            Some(ReferenceKind::Mutable) => Type::Mut(Box::new(matched)),
+            Some(ReferenceKind::Shared) => Type::shared(matched),
+            Some(ReferenceKind::Mutable) => Type::mutable(matched),
             None => matched,
         }
     }
@@ -1011,7 +1011,7 @@ impl TypeChecker {
                     .unify(&slice_arguments[0], &vector_arguments[0], span)
                     .is_ok()
             }
-            (Type::Ref(slice), Type::Ref(vector)) => self.coerces(&slice, &vector, span),
+            (Type::Ref(_, slice), Type::Ref(_, vector)) => self.coerces(&slice, &vector, span),
             _ => false,
         }
     }
@@ -1162,7 +1162,7 @@ impl TypeChecker {
         let expected = self.unifier.resolve(expected);
         let found = self.unifier.resolve(&value.ty);
         match found {
-            Type::Ref(referent)
+            Type::Ref(_, referent)
                 if *referent == expected && self.copy_rules().is_small_copy(&expected) =>
             {
                 TypedExpr {
@@ -1725,7 +1725,7 @@ impl TypeChecker {
         if let TypedExprKind::Borrow(kind, _) = &value.kind
             && !self.parameter_is_written(call, position)
             && !self.unifier.shallow(parameter).is_reference()
-            && let Type::Ref(referent) | Type::Mut(referent) = &value.ty
+            && let Type::Ref(_, referent) | Type::Mut(_, referent) = &value.ty
         {
             self.pass(parameter, referent, value.span, Borrow::None)?;
             self.pending_mode_checks.push(PendingModeCheck {
@@ -1754,7 +1754,7 @@ impl TypeChecker {
             return self.pass(&parameter, &argument, value.span, Borrow::None);
         }
         match (&parameter, &argument) {
-            (Type::Ref(inner), found) if !found.is_reference() => {
+            (Type::Ref(_, inner), found) if !found.is_reference() => {
                 if let Some(help) = self.string_as_str_help(inner, found, value) {
                     return Err(TypeProblems::mismatch(
                         &self.describe(inner),
@@ -1766,8 +1766,8 @@ impl TypeChecker {
                 }
                 self.pass(inner, found, value.span, Borrow::Shared)
             }
-            (Type::Mut(inner), _) => self.pass_mut_argument(inner, &parameter, &argument, value),
-            (Type::Var(var), Type::Ref(_)) if self.referent_unknown(&argument) => {
+            (Type::Mut(_, inner), _) => self.pass_mut_argument(inner, &parameter, &argument, value),
+            (Type::Var(var), Type::Ref(_, _)) if self.referent_unknown(&argument) => {
                 Ok(self.defer_borrow(*var, &argument, value.span))
             }
             _ => self.pass_types(&parameter, &argument, value.span),
@@ -1812,10 +1812,10 @@ impl TypeChecker {
     fn slice_argument(&mut self, parameter: &Type, argument: &Type, span: Span) -> Type {
         let found = self.unifier.resolve(argument);
         match (parameter, &found) {
-            (Type::Ref(expected), Type::Ref(referent)) => {
-                Type::Ref(Box::new(self.vector_before_slice(expected, referent, span)))
+            (Type::Ref(_, expected), Type::Ref(_, referent)) => {
+                Type::shared(self.vector_before_slice(expected, referent, span))
             }
-            (Type::Ref(expected), referent) if !referent.is_reference() => {
+            (Type::Ref(_, expected), referent) if !referent.is_reference() => {
                 self.vector_before_slice(expected, referent, span)
             }
             _ => found,
@@ -1906,20 +1906,22 @@ impl TypeChecker {
         span: Span,
     ) -> Result<Borrow, Diagnostic> {
         match (parameter, argument) {
-            (expected, Type::Ref(_)) if Self::is_known_value(expected) => {
+            (expected, Type::Ref(_, _)) if Self::is_known_value(expected) => {
                 let levels = Self::reference_depth(argument);
                 let referent = Self::innermost_referent(argument).clone();
                 self.expect(expected, &referent, span, MismatchContext::Plain)?;
                 Ok(self.borrow_of_referent(&referent, levels))
             }
-            (Type::Ref(_), Type::Ref(_)) if self.collapses(parameter, argument) => {
+            (Type::Ref(_, _), Type::Ref(_, _)) if self.collapses(parameter, argument) => {
                 let parameter = self.unifier.resolve(parameter);
                 let extra = Self::reference_depth(argument) - Self::reference_depth(&parameter);
                 let stripped = Self::without_references(argument, extra);
                 self.pass(&parameter, &stripped, span, Borrow::Collapse(extra))
             }
-            (Type::Var(var), Type::Ref(_)) => self.pass_to_variable(*var, argument, span),
-            (Type::Mut(_), Type::Mut(_)) => self.pass(parameter, argument, span, Borrow::Reborrow),
+            (Type::Var(var), Type::Ref(_, _)) => self.pass_to_variable(*var, argument, span),
+            (Type::Mut(_, _), Type::Mut(_, _)) => {
+                self.pass(parameter, argument, span, Borrow::Reborrow)
+            }
             (expected, found) => self.pass_value(expected, found, span),
         }
     }
@@ -1931,7 +1933,7 @@ impl TypeChecker {
         span: Span,
     ) -> Result<Borrow, Diagnostic> {
         if expected.is_unsized() && matches!(found, Type::Var(_)) {
-            let borrowed = Type::Ref(Box::new(expected.clone()));
+            let borrowed = Type::shared(expected.clone());
             return self.pass(&borrowed, found, span, Borrow::None);
         }
         self.pass(expected, found, span, Borrow::None)
@@ -1945,21 +1947,21 @@ impl TypeChecker {
 
     fn reference_depth(value: &Type) -> usize {
         match value {
-            Type::Ref(inner) => 1 + Self::reference_depth(inner),
+            Type::Ref(_, inner) => 1 + Self::reference_depth(inner),
             _ => 0,
         }
     }
 
     fn innermost_referent(value: &Type) -> &Type {
         match value {
-            Type::Ref(inner) => Self::innermost_referent(inner),
+            Type::Ref(_, inner) => Self::innermost_referent(inner),
             _ => value,
         }
     }
 
     fn without_references(value: &Type, levels: usize) -> Type {
         match value {
-            Type::Ref(inner) if levels > 0 => Self::without_references(inner, levels - 1),
+            Type::Ref(_, inner) if levels > 0 => Self::without_references(inner, levels - 1),
             _ => value.clone(),
         }
     }
@@ -2012,14 +2014,14 @@ impl TypeChecker {
     ) -> Result<Borrow, Diagnostic> {
         let mut levels = 0;
         let mut passed = argument;
-        while let Type::Ref(referent) = passed
+        while let Type::Ref(_, referent) = passed
             && self.dereferences(var, passed, referent)
         {
             levels += 1;
             passed = referent;
         }
         if levels == 0
-            && let Type::Ref(referent) = argument
+            && let Type::Ref(_, referent) = argument
             && self.passes_through(var, argument, referent)
         {
             return self.pass(&Type::Var(var), referent, span, Borrow::Passthrough);
@@ -2294,8 +2296,8 @@ impl TypeChecker {
         }
         let query_type = self.unifier.fresh();
         let parameters = vec![
-            Type::Ref(Box::new(collection.ty().clone())),
-            Type::Ref(Box::new(query_type)),
+            Type::shared(collection.ty().clone()),
+            Type::shared(query_type),
         ];
         let result = self.option_type(collection.value().clone());
         let call = self.synthetic_call_with_value(
@@ -2351,13 +2353,11 @@ impl TypeChecker {
             return Err(TypeProblems::wrong_argument_count(0, arguments.len(), span));
         }
         let result = match iterator {
-            MapIterator::Keys => self.iterator_type(Type::Ref(Box::new(collection.key().clone()))),
-            MapIterator::Vals => {
-                self.iterator_type(Type::Ref(Box::new(collection.value().clone())))
-            }
+            MapIterator::Keys => self.iterator_type(Type::shared(collection.key().clone())),
+            MapIterator::Vals => self.iterator_type(Type::shared(collection.value().clone())),
             MapIterator::Entries => self.iterator_type(self.pair_type(
-                Type::Ref(Box::new(collection.key().clone())),
-                Type::Ref(Box::new(collection.value().clone())),
+                Type::shared(collection.key().clone()),
+                Type::shared(collection.value().clone()),
             )),
         };
         let template = match iterator {
@@ -2365,7 +2365,7 @@ impl TypeChecker {
             MapIterator::Vals => "{0}.values()",
             MapIterator::Entries => "{0}.iter()",
         };
-        let parameters = vec![Type::Ref(Box::new(collection.ty().clone()))];
+        let parameters = vec![Type::shared(collection.ty().clone())];
         self.synthetic_call_with_value(template, parameters, result, value, arguments, span)
     }
 
@@ -2421,7 +2421,7 @@ impl TypeChecker {
             }
             (
                 vec![
-                    Type::Mut(Box::new(collection.ty().clone())),
+                    Type::mutable(collection.ty().clone()),
                     collection.key().clone(),
                     collection.value().clone(),
                 ],
@@ -2430,7 +2430,7 @@ impl TypeChecker {
         } else {
             let depth = keys.len();
             let item_type = self.assoc_element(depth, &value)?;
-            let mut parameters = vec![Type::Mut(Box::new(collection.ty().clone()))];
+            let mut parameters = vec![Type::mutable(collection.ty().clone())];
             parameters.extend((0..depth).map(|_| Type::Primitive(PrimitiveType::Usize)));
             parameters.push(item_type);
             let mut template = "{0}".to_string();
@@ -2501,7 +2501,7 @@ impl TypeChecker {
             .rust_types
             .option_binding()
             .expect("the prelude defines an option type");
-        Type::Named(option, vec![Type::Ref(Box::new(value))])
+        Type::Named(option, vec![Type::shared(value)])
     }
 
     fn iterator_type(&self, item: Type) -> Type {
@@ -2694,7 +2694,7 @@ impl TypeChecker {
         let ty = if self.copy_rules().is_small_copy(&ty) {
             ty
         } else {
-            Type::Ref(Box::new(ty))
+            Type::shared(ty)
         };
         Ok(TypedExpr {
             kind: TypedExprKind::Struct(TypedStructExpr::Field(Box::new(value), label.clone())),
@@ -2709,7 +2709,7 @@ impl TypeChecker {
         label: &FieldLabel,
     ) -> Result<(BindingId, Vec<Type>), Diagnostic> {
         let mut owner = self.unifier.shallow(&value.ty);
-        while let Type::Ref(inner) | Type::Mut(inner) = owner {
+        while let Type::Ref(_, inner) | Type::Mut(_, inner) = owner {
             owner = self.unifier.shallow(&inner);
         }
         match owner {

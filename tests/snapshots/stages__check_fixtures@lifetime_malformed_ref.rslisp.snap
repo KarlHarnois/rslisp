@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/lifetime_malformed_ref.rslisp
+---
+error[L0228]: malformed `ref` type
+ --> check/lifetime_malformed_ref.rslisp:1:33
+  |
+1 | (type first (where ('a 'b) (fn ((ref 'a str extra) (ref 'b str)) (ref 'a str))))
+  |                                 ^^^^^^^^^^^^^^^^^^ this does not fit the shape of the type
+  |
+  = help: write it as `(ref type)`

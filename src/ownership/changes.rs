@@ -53,7 +53,7 @@ impl InPlaceChanges {
     }
 
     fn written_mut_types(ty: &Type, changed: &mut HashSet<BindingId>) {
-        if let Type::Mut(inner) = ty {
+        if let Type::Mut(_, inner) = ty {
             Self::changed_type(inner, changed);
         }
         for part in ty.parts() {
@@ -63,7 +63,7 @@ impl InPlaceChanges {
 
     fn changed_type(ty: &Type, changed: &mut HashSet<BindingId>) {
         let mut resolved = ty;
-        while let Type::Ref(inner) | Type::Mut(inner) = resolved {
+        while let Type::Ref(_, inner) | Type::Mut(_, inner) = resolved {
             resolved = inner;
         }
         if let Type::Named(binding, _) = resolved {

@@ -48,7 +48,7 @@ impl ChangingFunctionNames {
         let changes_argument = lambda
             .params
             .iter()
-            .any(|param| matches!(&param.ty, Type::Mut(_)));
+            .any(|param| matches!(&param.ty, Type::Mut(_, _)));
         let info = program.bindings.get(definition.binding);
         let span = info.span().unwrap_or(definition.span);
         (changes_argument && !info.name().ends_with('!'))

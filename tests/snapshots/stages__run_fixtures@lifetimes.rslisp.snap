@@ -5,3 +5,4 @@ input_file: tests/fixtures/run/lifetimes.rslisp
 ---
 hello there
 hello there
+hello

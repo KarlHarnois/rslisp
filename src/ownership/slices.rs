@@ -76,10 +76,8 @@ impl<'a> ShrinkSelection<'a> {
 
     fn shrunk(&self, shrink: &Shrink) -> Type {
         match shrink {
-            Shrink::Slice(element) => {
-                Type::Ref(Box::new(Type::Named(self.slice, vec![element.clone()])))
-            }
-            Shrink::Str => Type::Ref(Box::new(Type::Primitive(PrimitiveType::Str))),
+            Shrink::Slice(element) => Type::shared(Type::Named(self.slice, vec![element.clone()])),
+            Shrink::Str => Type::shared(Type::Primitive(PrimitiveType::Str)),
         }
     }
 
@@ -176,7 +174,7 @@ impl<'a> ShrinkSelection<'a> {
     }
 
     fn accepts(&self, parameter: &Type, shrink: &Shrink) -> bool {
-        let Type::Ref(inner) = parameter else {
+        let Type::Ref(_, inner) = parameter else {
             return false;
         };
         match shrink {

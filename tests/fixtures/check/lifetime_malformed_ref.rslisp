@@ -1,0 +1,2 @@
+(type first (where ('a 'b) (fn ((ref 'a str extra) (ref 'b str)) (ref 'a str))))
+(defn first (a b) a)

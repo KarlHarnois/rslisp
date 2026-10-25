@@ -8,7 +8,7 @@ use super::operator::{RustOperator, Side};
 use super::plan::{EmitPlan, ItemKind};
 use super::problems::EmitProblems;
 use super::template::{Template, TemplateError};
-use super::types::{RustTypes, TypePosition};
+use super::types::{LifetimeScope, RustTypes, TypePosition};
 use super::unsized_parameters::UnsizedParameters;
 use crate::core::{
     BindingId, BindingKind, FieldLabel, Literal, ModuleId, ParsedTemplate, PrimitiveType,
@@ -130,8 +130,8 @@ enum BoxPosition {
 impl BoxPosition {
     fn of(ty: &Type) -> Self {
         match ty {
-            Type::Ref(_) => BoxPosition::Shared,
-            Type::Mut(_) => BoxPosition::Mutable,
+            Type::Ref(_, _) => BoxPosition::Shared,
+            Type::Mut(_, _) => BoxPosition::Mutable,
             _ => BoxPosition::Owned,
         }
     }
@@ -222,14 +222,14 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     pub fn bind_parameter(&mut self, param: &TypedBinder, position: TypePosition) -> String {
-        self.bind_parameter_with_lifetime(param, position, None)
+        self.bind_parameter_in(param, position, &LifetimeScope::default())
     }
 
-    pub fn bind_parameter_with_lifetime(
+    pub fn bind_parameter_in(
         &mut self,
         param: &TypedBinder,
         position: TypePosition,
-        lifetime: Option<&str>,
+        lifetimes: &LifetimeScope,
     ) -> String {
         let name = self.locals.bind(
             param.binding,
@@ -248,8 +248,7 @@ impl<'a> ExpressionEmitter<'a> {
         };
         format!(
             "{mutable}{name}: {}",
-            self.types()
-                .show_with_lifetime(&param.ty, position, lifetime)
+            self.types().show_in(&param.ty, position, lifetimes)
         )
     }
 
@@ -397,7 +396,8 @@ impl<'a> ExpressionEmitter<'a> {
         program.borrowed_parameters.contains(binding)
             && matches!(
                 (kind, &value.ty),
-                (ReferenceKind::Shared, Type::Ref(_)) | (ReferenceKind::Mutable, Type::Mut(_))
+                (ReferenceKind::Shared, Type::Ref(_, _))
+                    | (ReferenceKind::Mutable, Type::Mut(_, _))
             )
     }
 
@@ -584,7 +584,7 @@ impl<'a> ExpressionEmitter<'a> {
     fn is_string_value(ty: &Type) -> bool {
         match ty {
             Type::Primitive(PrimitiveType::String) => true,
-            Type::Ref(inner) => matches!(inner.as_ref(), Type::Primitive(PrimitiveType::String)),
+            Type::Ref(_, inner) => matches!(inner.as_ref(), Type::Primitive(PrimitiveType::String)),
             _ => false,
         }
     }
@@ -1730,7 +1730,8 @@ impl<'a> ExpressionEmitter<'a> {
                 }
                 Self::collect_generic_bindings(result, other_result, bindings);
             }
-            (Type::Ref(inner), Type::Ref(other)) | (Type::Mut(inner), Type::Mut(other)) => {
+            (Type::Ref(_, inner), Type::Ref(_, other))
+            | (Type::Mut(_, inner), Type::Mut(_, other)) => {
                 Self::collect_generic_bindings(inner, other, bindings);
             }
             _ => {}
@@ -2350,7 +2351,7 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn declared_field_type(&self, value: &TypedExpr, label: &FieldLabel) -> Option<Type> {
         let mut owner = &value.ty;
-        while let Type::Ref(inner) | Type::Mut(inner) = owner {
+        while let Type::Ref(_, inner) | Type::Mut(_, inner) = owner {
             owner = inner;
         }
         let Type::Named(binding, arguments) = owner else {

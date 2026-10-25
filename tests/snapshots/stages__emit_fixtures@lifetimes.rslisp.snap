@@ -11,7 +11,12 @@ fn longer<'a>(a: &'a str, b: &'a str) -> &'a str {
     if a.len() > b.len() { a } else { b }
 }
 
+fn first<'a, 'b>(a: &'a str, b: &'b str) -> &'a str {
+    a
+}
+
 fn main() {
     println!("{}", written_longer("hi", "hello there"));
-    println!("{}", longer("hi", "hello there"))
+    println!("{}", longer("hi", "hello there"));
+    println!("{}", first("hello", "hi"))
 }

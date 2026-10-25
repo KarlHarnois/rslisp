@@ -67,7 +67,7 @@ impl FunctionTable {
 
     pub fn fixed_mode(slot: &ParamSlot, copy: &CopyRules) -> ParamMode {
         match &slot.ty {
-            Type::Mut(_) => ParamMode::Mut,
+            Type::Mut(_, _) => ParamMode::Mut,
             borrowed if borrowed.is_unsized() => ParamMode::Ref,
             written if copy.is_small_copy(written) => ParamMode::Copy,
             _ => ParamMode::Own,
@@ -82,7 +82,7 @@ impl FunctionTable {
                 binding: param.binding,
                 ty: param.ty.clone(),
                 inferable: !param.annotated
-                    && !matches!(param.ty, Type::Function(..) | Type::Mut(_))
+                    && !matches!(param.ty, Type::Function(..) | Type::Mut(_, _))
                     && (!copy.is_small_copy(&param.ty) || lambda.body.writes_local(param.binding)),
             })
             .collect();

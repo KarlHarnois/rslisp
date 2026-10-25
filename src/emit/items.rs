@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 
 use super::expressions::ExpressionEmitter;
 use super::fragment::{Code, Fragment};
@@ -8,14 +8,14 @@ use super::mangle::NameMangler;
 use super::mutable_locals::MutableLocals;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
 use super::runtime::RuntimeModule;
-use super::types::{RustTypes, TypePosition};
+use super::types::{LifetimeScope, RustTypes, TypePosition};
 use super::unsized_parameters::UnsizedParameters;
 use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    GenericId, GenericParam, ReceiverKind, Type, TypedConversion, TypedDefinition, TypedExpr,
-    TypedExprKind, TypedProgram, VariantDefinition,
+    GenericId, GenericParam, Lifetime, ReceiverKind, Type, TypedBinder, TypedConversion,
+    TypedDefinition, TypedExpr, TypedExprKind, TypedProgram, VariantDefinition,
 };
 
 #[derive(Default)]
@@ -68,7 +68,6 @@ pub struct ItemEmitter<'a> {
 
 impl<'a> ItemEmitter<'a> {
     const RUNTIME_MODULE: &'static str = "rt";
-    const INFERRED_LIFETIME: &'static str = "'a";
 
     pub fn new(
         program: &'a TypedProgram,
@@ -269,7 +268,7 @@ impl<'a> ItemEmitter<'a> {
         );
         let mut rendered = Vec::new();
         if let Some(kind) = receiver {
-            rendered.push(Self::receiver_keyword(kind).to_string());
+            rendered.push(Self::receiver_keyword(kind, None));
         }
         let first = usize::from(receiver.is_some());
         rendered.extend(parameters.iter().skip(first).map(|parameter| {
@@ -290,11 +289,12 @@ impl<'a> ItemEmitter<'a> {
         ))]
     }
 
-    fn receiver_keyword(kind: ReceiverKind) -> &'static str {
+    fn receiver_keyword(kind: ReceiverKind, lifetime: Option<&str>) -> String {
+        let lifetime = lifetime.map_or_else(String::new, |lifetime| format!("{lifetime} "));
         match kind {
-            ReceiverKind::Owned => "self",
-            ReceiverKind::Shared => "&self",
-            ReceiverKind::Mutable => "&mut self",
+            ReceiverKind::Owned => "self".to_string(),
+            ReceiverKind::Shared => format!("&{lifetime}self"),
+            ReceiverKind::Mutable => format!("&{lifetime}mut self"),
         }
     }
 
@@ -316,11 +316,11 @@ impl<'a> ItemEmitter<'a> {
         types: &RustTypes,
     ) -> Option<String> {
         match ty {
-            Type::Ref(inner) => Some(format!(
+            Type::Ref(_, inner) => Some(format!(
                 "&{}",
                 Self::show_self_type(inner, self_generic, types)
             )),
-            Type::Mut(inner) => Some(format!(
+            Type::Mut(_, inner) => Some(format!(
                 "&mut {}",
                 Self::show_self_type(inner, self_generic, types)
             )),
@@ -395,19 +395,26 @@ impl<'a> ItemEmitter<'a> {
         let mut emitter = self.expressions(module, &definition.value);
         emitter.prepare_tail_loop(definition.binding, lambda);
         let types = emitter.types();
-        let lifetime = Self::signature_lifetime(&definition.value);
+        let inferred = self.inferred_lifetime(&[], &definition.value);
+        let scope = self.lifetime_scope(&[], inferred.as_deref());
         let mut params = Vec::new();
         if let Some(kind) = receiver {
             let first = &lambda.params[0];
             emitter.locals.bind_receiver(first.binding);
-            params.push(Self::receiver_keyword(kind).to_string());
-            params.extend(lambda.params[1..].iter().map(|param| {
-                emitter.bind_parameter_with_lifetime(param, TypePosition::Signature, lifetime)
-            }));
+            let receiver_lifetime = self.receiver_lifetime(first, &scope);
+            params.push(Self::receiver_keyword(kind, receiver_lifetime.as_deref()));
+            params.extend(
+                lambda.params[1..]
+                    .iter()
+                    .map(|param| emitter.bind_parameter_in(param, TypePosition::Signature, &scope)),
+            );
         } else {
-            params.extend(lambda.params.iter().map(|param| {
-                emitter.bind_parameter_with_lifetime(param, TypePosition::Signature, lifetime)
-            }));
+            params.extend(
+                lambda
+                    .params
+                    .iter()
+                    .map(|param| emitter.bind_parameter_in(param, TypePosition::Signature, &scope)),
+            );
         }
         let result = match &definition.value.ty {
             Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
@@ -416,17 +423,15 @@ impl<'a> ItemEmitter<'a> {
                 } else {
                     TypePosition::StaticResult
                 };
-                format!(
-                    " -> {}",
-                    types.show_with_lifetime(result, position, lifetime)
-                )
+                format!(" -> {}", types.show_in(result, position, &scope))
             }
             _ => String::new(),
         };
         let body = emitter.function_body(&lambda.body);
         self.absorb(emitter);
         let name = NameMangler::value(self.program.bindings.get(binding).name());
-        let generics = Self::with_lifetime(lifetime, String::new());
+        let generics =
+            Self::with_lifetimes(&inferred.into_iter().collect::<Vec<_>>(), String::new());
         vec![Fragment::Spanned(
             definition.span,
             vec![
@@ -482,13 +487,12 @@ impl<'a> ItemEmitter<'a> {
         let mut emitter = self.expressions(info.module, &definition.value);
         emitter.prepare_tail_loop(definition.binding, lambda);
         let types = emitter.types();
-        let lifetime = Self::signature_lifetime(&definition.value);
+        let inferred = self.inferred_lifetime(&definition.scheme.lifetimes, &definition.value);
+        let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
         let params: Vec<String> = lambda
             .params
             .iter()
-            .map(|param| {
-                emitter.bind_parameter_with_lifetime(param, TypePosition::Signature, lifetime)
-            })
+            .map(|param| emitter.bind_parameter_in(param, TypePosition::Signature, &scope))
             .collect();
         let result = match &definition.value.ty {
             Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
@@ -497,16 +501,13 @@ impl<'a> ItemEmitter<'a> {
                 } else {
                     TypePosition::StaticResult
                 };
-                format!(
-                    " -> {}",
-                    types.show_with_lifetime(result, position, lifetime)
-                )
+                format!(" -> {}", types.show_in(result, position, &scope))
             }
             _ => String::new(),
         };
         let literal_generics = LiteralGenerics::of(&definition.value);
-        let generics = Self::with_lifetime(
-            lifetime,
+        let generics = Self::with_lifetimes(
+            &self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),
             types.generics(
                 &definition.scheme.params,
                 &definition.scheme.body,
@@ -578,6 +579,20 @@ impl<'a> ItemEmitter<'a> {
             .structs
             .get(binding)
             .expect("a reached struct has a definition");
+        let lifetimes: Vec<String> = definition
+            .lifetimes
+            .iter()
+            .map(|lifetime| RustTypes::binding_lifetime(self.program, *lifetime))
+            .collect();
+        let scope = LifetimeScope::new(
+            definition
+                .lifetimes
+                .iter()
+                .zip(&lifetimes)
+                .map(|(binding, name)| (*binding, name.clone()))
+                .collect(),
+        )
+        .with_elided(lifetimes.first().cloned());
         let mut fields = Vec::new();
         for ((name, field_type), span) in definition.fields.iter().zip(&definition.field_spans) {
             fields.push(Fragment::Newline);
@@ -587,11 +602,15 @@ impl<'a> ItemEmitter<'a> {
             )));
             fields.push(Fragment::Spanned(
                 *span,
-                vec![Fragment::Text(types.show(field_type, TypePosition::Value))],
+                vec![Fragment::Text(types.show_in(
+                    field_type,
+                    TypePosition::Value,
+                    &scope,
+                ))],
             ));
             fields.push(Fragment::Text(",".to_string()));
         }
-        let params = Self::struct_params(&definition.params);
+        let params = Self::struct_params(&definition.params, &lifetimes);
         let mut fragments = Vec::new();
         if !definition.derives.is_empty() {
             fragments.push(Fragment::Text(format!(
@@ -623,11 +642,25 @@ impl<'a> ItemEmitter<'a> {
             .enums
             .get(binding)
             .expect("a reached enum has a definition");
-        let params = Self::struct_params(&definition.params);
+        let lifetimes: Vec<String> = definition
+            .lifetimes
+            .iter()
+            .map(|lifetime| RustTypes::binding_lifetime(self.program, *lifetime))
+            .collect();
+        let scope = LifetimeScope::new(
+            definition
+                .lifetimes
+                .iter()
+                .zip(&lifetimes)
+                .map(|(binding, name)| (*binding, name.clone()))
+                .collect(),
+        )
+        .with_elided(lifetimes.first().cloned());
+        let params = Self::struct_params(&definition.params, &lifetimes);
         let mut variants = Vec::new();
         for variant in &definition.variants {
             variants.push(Fragment::Newline);
-            variants.extend(Self::variant(variant, &types));
+            variants.extend(Self::variant(variant, &types, &scope));
         }
         let mut fragments = Vec::new();
         if !definition.derives.is_empty() {
@@ -647,21 +680,29 @@ impl<'a> ItemEmitter<'a> {
         fragments
     }
 
-    fn variant(variant: &VariantDefinition, types: &RustTypes) -> Vec<Fragment> {
+    fn variant(
+        variant: &VariantDefinition,
+        types: &RustTypes,
+        scope: &LifetimeScope,
+    ) -> Vec<Fragment> {
         let mut fragments = vec![Fragment::Text(NameMangler::type_name(&variant.name))];
-        fragments.extend(Self::variant_payload(variant, types));
+        fragments.extend(Self::variant_payload(variant, types, scope));
         fragments.push(Fragment::Text(",".to_string()));
         fragments
     }
 
-    fn variant_payload(variant: &VariantDefinition, types: &RustTypes) -> Vec<Fragment> {
+    fn variant_payload(
+        variant: &VariantDefinition,
+        types: &RustTypes,
+        scope: &LifetimeScope,
+    ) -> Vec<Fragment> {
         match &variant.payload {
             crate::types::VariantPayload::None => Vec::new(),
             crate::types::VariantPayload::Positional(payload_types) => {
-                Self::positional_payload(payload_types, &variant.payload_spans, types)
+                Self::positional_payload(payload_types, &variant.payload_spans, types, scope)
             }
             crate::types::VariantPayload::Named(fields) => {
-                Self::named_payload(fields, &variant.payload_spans, types)
+                Self::named_payload(fields, &variant.payload_spans, types, scope)
             }
         }
     }
@@ -670,6 +711,7 @@ impl<'a> ItemEmitter<'a> {
         payload_types: &[Type],
         spans: &[Span],
         types: &RustTypes,
+        scope: &LifetimeScope,
     ) -> Vec<Fragment> {
         let mut fragments = vec![Fragment::Text("(".to_string())];
         for (position, (payload, span)) in payload_types.iter().zip(spans).enumerate() {
@@ -678,7 +720,11 @@ impl<'a> ItemEmitter<'a> {
             }
             fragments.push(Fragment::Spanned(
                 *span,
-                vec![Fragment::Text(types.show(payload, TypePosition::Value))],
+                vec![Fragment::Text(types.show_in(
+                    payload,
+                    TypePosition::Value,
+                    scope,
+                ))],
             ));
         }
         fragments.push(Fragment::Text(")".to_string()));
@@ -689,6 +735,7 @@ impl<'a> ItemEmitter<'a> {
         fields: &[(std::rc::Rc<str>, Type)],
         spans: &[Span],
         types: &RustTypes,
+        scope: &LifetimeScope,
     ) -> Vec<Fragment> {
         let mut fragments = vec![Fragment::Text(" { ".to_string())];
         for (position, ((label, field_type), span)) in fields.iter().zip(spans).enumerate() {
@@ -698,7 +745,11 @@ impl<'a> ItemEmitter<'a> {
             fragments.push(Fragment::Text(format!("{}: ", NameMangler::value(label))));
             fragments.push(Fragment::Spanned(
                 *span,
-                vec![Fragment::Text(types.show(field_type, TypePosition::Value))],
+                vec![Fragment::Text(types.show_in(
+                    field_type,
+                    TypePosition::Value,
+                    scope,
+                ))],
             ));
         }
         fragments.push(Fragment::Text(" }".to_string()));
@@ -712,38 +763,104 @@ impl<'a> ItemEmitter<'a> {
         }
     }
 
-    fn struct_params(params: &[GenericParam]) -> String {
-        if params.is_empty() {
+    fn struct_params(params: &[GenericParam], lifetimes: &[String]) -> String {
+        if params.is_empty() && lifetimes.is_empty() {
             return String::new();
         }
-        let names: Vec<String> = params.iter().map(RustTypes::generic_name).collect();
+        let mut names = lifetimes.to_vec();
+        names.extend(params.iter().map(RustTypes::generic_name));
         format!("<{}>", names.join(", "))
     }
 
-    fn signature_lifetime(value: &TypedExpr) -> Option<&'static str> {
+    fn needs_shared_lifetime(value: &TypedExpr) -> bool {
         let Type::Function(_, parameters, result) = &value.ty else {
-            return None;
+            return false;
         };
         let result_lifetimes = Self::borrow_lifetimes(result);
         let parameter_lifetimes: usize = parameters.iter().map(Self::borrow_lifetimes).sum();
-        (result_lifetimes > 0 && parameter_lifetimes > 1).then_some(Self::INFERRED_LIFETIME)
+        result_lifetimes > 0 && parameter_lifetimes > 1
+    }
+
+    fn inferred_lifetime(&self, lifetimes: &[BindingId], value: &TypedExpr) -> Option<String> {
+        Self::needs_shared_lifetime(value)
+            .then(|| Self::unused_lifetime_name(self.program, lifetimes))
+    }
+
+    fn unused_lifetime_name(program: &TypedProgram, lifetimes: &[BindingId]) -> String {
+        let used: HashSet<String> = lifetimes
+            .iter()
+            .map(|binding| RustTypes::binding_lifetime(program, *binding))
+            .collect();
+        for position in 0.. {
+            let letter = u8::try_from(position)
+                .ok()
+                .and_then(|offset| b'a'.checked_add(offset))
+                .filter(|letter| letter.is_ascii_lowercase())
+                .map(char::from);
+            let name =
+                letter.map_or_else(|| format!("'a{position}"), |letter| format!("'{letter}"));
+            if !used.contains(&name) {
+                return name;
+            }
+        }
+        unreachable!("a finite set of lifetimes leaves a name")
+    }
+
+    fn lifetime_scope(&self, lifetimes: &[BindingId], elided: Option<&str>) -> LifetimeScope {
+        LifetimeScope::new(
+            lifetimes
+                .iter()
+                .map(|binding| {
+                    (
+                        *binding,
+                        RustTypes::binding_lifetime(self.program, *binding),
+                    )
+                })
+                .collect(),
+        )
+        .with_elided(elided.map(str::to_string))
+    }
+
+    fn declared_lifetimes(&self, inferred: Option<&str>, written: &[BindingId]) -> Vec<String> {
+        let mut lifetimes: Vec<String> = inferred.map(str::to_string).into_iter().collect();
+        lifetimes.extend(
+            written
+                .iter()
+                .map(|binding| RustTypes::binding_lifetime(self.program, *binding)),
+        );
+        lifetimes
     }
 
     fn borrow_lifetimes(ty: &Type) -> usize {
         match ty {
-            Type::Ref(inner) | Type::Mut(inner) => 1 + Self::borrow_lifetimes(inner),
+            Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
+                usize::from(*lifetime == Lifetime::Elided) + Self::borrow_lifetimes(inner)
+            }
             Type::Named(_, arguments) => arguments.iter().map(Self::borrow_lifetimes).sum(),
             Type::Function(..) | Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => 0,
         }
     }
 
-    fn with_lifetime(lifetime: Option<&str>, generics: String) -> String {
-        match (lifetime, generics.is_empty()) {
-            (None, _) => generics,
-            (Some(lifetime), true) => format!("<{lifetime}>"),
-            (Some(lifetime), false) => {
-                format!("<{lifetime}, {}>", &generics[1..generics.len() - 1])
-            }
+    fn with_lifetimes(lifetimes: &[String], generics: String) -> String {
+        if lifetimes.is_empty() {
+            return generics;
+        }
+        let mut parts = lifetimes.to_vec();
+        if !generics.is_empty() {
+            parts.push(generics[1..generics.len() - 1].to_string());
+        }
+        format!("<{}>", parts.join(", "))
+    }
+
+    fn receiver_lifetime(&self, first: &TypedBinder, scope: &LifetimeScope) -> Option<String> {
+        match first.ty.reference_lifetime() {
+            Some(Lifetime::Elided) => scope.elided().map(str::to_string),
+            Some(Lifetime::Written(binding)) => Some(
+                scope
+                    .name_of(binding)
+                    .unwrap_or_else(|| RustTypes::binding_lifetime(self.program, binding)),
+            ),
+            None => None,
         }
     }
 

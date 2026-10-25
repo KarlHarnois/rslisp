@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/lifetime_bounds.rslisp
+---
+error[L0417]: a lifetime cannot require traits
+ --> check/lifetime_bounds.rslisp:1:20
+  |
+1 | (type keep (where (('a clone)) (fn ((ref 'a str)) (ref 'a str))))
+  |                    ^^^^^^^^^^ traits given here
+  |
+  = help: write the lifetime alone, as in `'a`

@@ -7,6 +7,7 @@ use crate::source::Span;
 
 #[derive(Clone)]
 pub struct StructDefinition {
+    pub lifetimes: Vec<BindingId>,
     pub params: Vec<GenericParam>,
     pub fields: Vec<(Rc<str>, Type)>,
     pub field_spans: Vec<Span>,

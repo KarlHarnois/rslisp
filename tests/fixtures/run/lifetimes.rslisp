@@ -3,6 +3,10 @@
 
 (defn longer (a b) (if (> (len a) (len b)) a b))
 
+(type first (where ('a 'b) (fn ((ref 'a str) (ref 'b str)) (ref 'a str))))
+(defn first (a b) a)
+
 (defn main ()
   (println (written-longer "hi" "hello there"))
-  (println (longer "hi" "hello there")))
+  (println (longer "hi" "hello there"))
+  (println (first "hello" "hi")))

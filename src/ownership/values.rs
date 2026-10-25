@@ -386,8 +386,8 @@ impl<'a> FunctionValueModes<'a> {
             return None;
         }
         match actual {
-            Type::Ref(_) => Some(Adjustment::Shared),
-            Type::Mut(_) => Some(Adjustment::Mutable),
+            Type::Ref(_, _) => Some(Adjustment::Shared),
+            Type::Mut(_, _) => Some(Adjustment::Mutable),
             _ => None,
         }
     }
@@ -400,7 +400,7 @@ impl<'a> FunctionValueModes<'a> {
     }
 
     fn reborrowed(&self, expected: &Type, actual: &Type) -> Option<Adjustment> {
-        matches!((expected, actual), (Type::Mut(_), Type::Ref(_))).then_some(Adjustment::None)
+        matches!((expected, actual), (Type::Mut(_, _), Type::Ref(_, _))).then_some(Adjustment::None)
     }
 
     fn removed_borrows(&self, expected: &Type, actual: &Type) -> Option<Adjustment> {
@@ -416,14 +416,14 @@ impl<'a> FunctionValueModes<'a> {
 
     fn reference_depth(value: &Type) -> usize {
         match value {
-            Type::Ref(inner) => 1 + Self::reference_depth(inner),
+            Type::Ref(_, inner) => 1 + Self::reference_depth(inner),
             _ => 0,
         }
     }
 
     fn without_references(value: &Type, levels: usize) -> Type {
         match value {
-            Type::Ref(inner) if levels > 0 => Self::without_references(inner, levels - 1),
+            Type::Ref(_, inner) if levels > 0 => Self::without_references(inner, levels - 1),
             _ => value.clone(),
         }
     }
@@ -483,11 +483,11 @@ mod tests {
         }
 
         fn borrowed(&self, value: Type) -> Type {
-            Type::Ref(Box::new(value))
+            Type::shared(value)
         }
 
         fn changed(&self, value: Type) -> Type {
-            Type::Mut(Box::new(value))
+            Type::mutable(value)
         }
 
         fn decide(&mut self, expected: &Type, actual: &Type) -> Option<Adjustment> {

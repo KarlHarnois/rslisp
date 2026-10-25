@@ -25,6 +25,25 @@ impl GenericId {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Lifetime {
+    Elided,
+    Written(BindingId),
+}
+
+impl Lifetime {
+    pub fn written(binding: BindingId) -> Self {
+        Self::Written(binding)
+    }
+
+    pub fn binding(self) -> Option<BindingId> {
+        match self {
+            Self::Elided => None,
+            Self::Written(binding) => Some(binding),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Type {
     Var(TypeVar),
@@ -32,8 +51,8 @@ pub enum Type {
     Primitive(PrimitiveType),
     Named(BindingId, Vec<Type>),
     Function(ClosureKind, Vec<Type>, Box<Type>),
-    Ref(Box<Type>),
-    Mut(Box<Type>),
+    Ref(Lifetime, Box<Type>),
+    Mut(Lifetime, Box<Type>),
 }
 
 impl Type {
@@ -46,7 +65,22 @@ impl Type {
     }
 
     pub fn str_ref() -> Type {
-        Type::Ref(Box::new(Type::Primitive(PrimitiveType::Str)))
+        Type::shared(Type::Primitive(PrimitiveType::Str))
+    }
+
+    pub fn shared(inner: Type) -> Type {
+        Type::Ref(Lifetime::Elided, Box::new(inner))
+    }
+
+    pub fn mutable(inner: Type) -> Type {
+        Type::Mut(Lifetime::Elided, Box::new(inner))
+    }
+
+    pub fn reference_lifetime(&self) -> Option<Lifetime> {
+        match self {
+            Type::Ref(lifetime, _) | Type::Mut(lifetime, _) => Some(*lifetime),
+            _ => None,
+        }
     }
 
     pub fn is_unsized(&self) -> bool {
@@ -54,7 +88,7 @@ impl Type {
     }
 
     pub fn is_reference(&self) -> bool {
-        matches!(self, Type::Ref(_) | Type::Mut(_))
+        matches!(self, Type::Ref(..) | Type::Mut(..))
     }
 
     pub fn contains_var(&self, var: TypeVar) -> bool {
@@ -67,7 +101,7 @@ impl Type {
 
     pub fn without_reference(self) -> Self {
         match self {
-            Self::Ref(inner) | Self::Mut(inner) => *inner,
+            Self::Ref(_, inner) | Self::Mut(_, inner) => *inner,
             other => other,
         }
     }
@@ -86,7 +120,7 @@ impl Type {
 
     pub fn stores_reference(&self) -> bool {
         match self {
-            Type::Ref(_) | Type::Mut(_) => true,
+            Type::Ref(..) | Type::Mut(..) => true,
             Type::Function(..) => false,
             _ => self.parts().into_iter().any(Type::stores_reference),
         }
@@ -113,8 +147,12 @@ impl Type {
                     .collect(),
                 Box::new(result.substitute_vars(replacements)),
             ),
-            Type::Ref(inner) => Type::Ref(Box::new(inner.substitute_vars(replacements))),
-            Type::Mut(inner) => Type::Mut(Box::new(inner.substitute_vars(replacements))),
+            Type::Ref(lifetime, inner) => {
+                Type::Ref(*lifetime, Box::new(inner.substitute_vars(replacements)))
+            }
+            Type::Mut(lifetime, inner) => {
+                Type::Mut(*lifetime, Box::new(inner.substitute_vars(replacements)))
+            }
             Type::Generic(_) | Type::Primitive(_) => self.clone(),
         }
     }
@@ -133,8 +171,12 @@ impl Type {
                 Self::substitute_all(parameters, replacements),
                 Box::new(result.substitute(replacements)),
             ),
-            Type::Ref(inner) => Type::Ref(Box::new(inner.substitute(replacements))),
-            Type::Mut(inner) => Type::Mut(Box::new(inner.substitute(replacements))),
+            Type::Ref(lifetime, inner) => {
+                Type::Ref(*lifetime, Box::new(inner.substitute(replacements)))
+            }
+            Type::Mut(lifetime, inner) => {
+                Type::Mut(*lifetime, Box::new(inner.substitute(replacements)))
+            }
             Type::Var(_) | Type::Primitive(_) => self.clone(),
         }
     }
@@ -153,7 +195,7 @@ impl Type {
                 .iter()
                 .chain(std::iter::once(result.as_ref()))
                 .collect(),
-            Type::Ref(inner) | Type::Mut(inner) => vec![inner],
+            Type::Ref(_, inner) | Type::Mut(_, inner) => vec![inner],
             Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => Vec::new(),
         }
     }
@@ -216,6 +258,7 @@ pub struct GenericParam {
 
 #[derive(Clone, Debug)]
 pub struct Scheme {
+    pub lifetimes: Vec<BindingId>,
     pub params: Vec<GenericParam>,
     pub body: Type,
 }
@@ -223,6 +266,7 @@ pub struct Scheme {
 impl Scheme {
     pub fn monomorphic(body: Type) -> Self {
         Self {
+            lifetimes: Vec::new(),
             params: Vec::new(),
             body,
         }
@@ -290,12 +334,12 @@ mod tests {
             )
         );
         assert_eq!(
-            fixture.substitute(&Type::Ref(Box::new(variable.clone()))),
-            Type::Ref(Box::new(replacement.clone()))
+            fixture.substitute(&Type::shared(variable.clone())),
+            Type::shared(replacement.clone())
         );
         assert_eq!(
-            fixture.substitute(&Type::Mut(Box::new(variable.clone()))),
-            Type::Mut(Box::new(replacement.clone()))
+            fixture.substitute(&Type::mutable(variable.clone())),
+            Type::mutable(replacement.clone())
         );
         assert_eq!(
             fixture.substitute(&fixture.named()),

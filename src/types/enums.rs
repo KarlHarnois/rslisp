@@ -48,6 +48,7 @@ impl VariantDefinition {
 
 #[derive(Clone)]
 pub struct EnumDefinition {
+    pub lifetimes: Vec<BindingId>,
     pub params: Vec<GenericParam>,
     pub variants: Vec<VariantDefinition>,
     pub rust: Option<crate::core::EnumRust>,
@@ -180,6 +181,7 @@ mod tests {
 
         fn definition(&self, variants: Vec<VariantDefinition>) -> EnumDefinition {
             EnumDefinition {
+                lifetimes: Vec::new(),
                 params: Vec::new(),
                 variants,
                 rust: None,
@@ -200,6 +202,7 @@ mod tests {
             bounds: Vec::new(),
         };
         let definition = EnumDefinition {
+            lifetimes: Vec::new(),
             params: vec![parameter.clone()],
             variants: vec![fixture.variant(
                 "value",
