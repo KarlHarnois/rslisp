@@ -160,6 +160,12 @@ impl Expander<'_> {
                 template_form.span(),
             ));
         }
+        if let Some(name) = template.binder_names().first().copied() {
+            return Err(ExpandProblems::type_placeholder_in_type_template(
+                &format!("!{name}"),
+                template_form.span(),
+            ));
+        }
         if let Some(name) = template.type_placeholders().next() {
             return Err(ExpandProblems::type_placeholder_in_type_template(
                 name,
