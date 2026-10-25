@@ -1,5 +1,8 @@
-(type longer (fn ((ref str) (ref str)) (ref str)))
+(type written-longer (fn ((ref str) (ref str)) (ref str)))
+(defn written-longer (a b) (if (> (len a) (len b)) a b))
+
 (defn longer (a b) (if (> (len a) (len b)) a b))
 
 (defn main ()
+  (println (written-longer "hi" "hello there"))
   (println (longer "hi" "hello there")))

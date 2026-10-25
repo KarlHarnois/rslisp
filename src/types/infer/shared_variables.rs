@@ -339,12 +339,23 @@ impl TypeChecker {
         if self.copies_out(group, referent) {
             0
         } else if depths.windows(2).all(|pair| pair[0] == pair[1]) {
-            depths[0]
+            let depth = depths[0];
+            if self.reference_blocks_bounds(group, referent, depth) {
+                0
+            } else {
+                depth
+            }
         } else if borrowed_by_rust {
             0
         } else {
             1
         }
+    }
+
+    fn reference_blocks_bounds(&self, group: &SharedGroup, referent: &Type, depth: usize) -> bool {
+        depth > 0
+            && !self.group_fails_bounds(group, referent)
+            && self.group_fails_bounds(group, &Self::with_references(referent.clone(), depth))
     }
 
     fn copies_out(&self, group: &SharedGroup, referent: &Type) -> bool {
