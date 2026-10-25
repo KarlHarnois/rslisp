@@ -1938,6 +1938,9 @@ impl<'a> ExpressionEmitter<'a> {
                 self.field_place(owner, label)
             }
             (_, ArgumentRole::IndexReceiver) => self.place(value, context),
+            (_, ArgumentRole::Borrowed) if self.is_borrowed_index_call(value) => {
+                self.place(value, context)
+            }
             (TypedExprKind::Borrow(ReferenceKind::Mutable, place), ArgumentRole::MutPlace) => {
                 self.place(place, TypeContext::Known)
             }

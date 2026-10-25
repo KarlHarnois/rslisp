@@ -29,7 +29,7 @@ fn total_from<A: Copy + crate::rt::Number>(numbers: &[A], mut index: usize) -> A
 fn main() {
     let numbers: Vec<i64> = vec![2_i64, 3_i64, 5_i64, 7_i64, 11_i64];
     println!("{}", total(&numbers));
-    println!("{}", &numbers[0]);
+    println!("{}", numbers[0]);
     println!("{}", first_number(&numbers));
     println!("{}", count_pairs(&numbers));
     println!("{}", total_from(&numbers, 0));

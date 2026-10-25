@@ -1,0 +1,5 @@
+(defn main ()
+  (let grid (vec (vec true false)))
+  (push! grid (vec false true))
+  (let row (at grid 1))
+  (println (at row 0)))
