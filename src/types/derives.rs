@@ -66,7 +66,9 @@ impl TypeChecker {
             .filter(|module| ModuleSources::is_prelude(&module.path))
             .flat_map(|module| &module.items)
             .filter_map(|item| match &item.kind {
-                ItemKind::RustTrait(binding, path, ..) => Some((*binding, path.as_ref())),
+                ItemKind::RustTrait(declaration) => {
+                    Some((declaration.binding, declaration.path.as_ref()))
+                }
                 _ => None,
             })
             .collect();

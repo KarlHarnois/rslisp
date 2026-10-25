@@ -1,0 +1,17 @@
+(enum sign (good) (bad))
+(enum choice
+  (number i64)
+  (status sign))
+
+(display choice (c)
+  (match c
+    ((number n) (if (> n 0) "positive" "nonpositive"))
+    ((status s) (match s
+                  ((good) "good")
+                  ((bad) "bad")))))
+
+(defn main ()
+  (println (choice/number 2))
+  (println (choice/number -2))
+  (println (choice/status sign/good))
+  (println (choice/status sign/bad)))

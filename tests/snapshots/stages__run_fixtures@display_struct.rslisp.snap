@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/display_struct.rslisp
+---
+(1, 2)
+(3, 4)
+(5, 6)

@@ -1,0 +1,41 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/display_nested.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Sign {
+    Good,
+    Bad,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Choice {
+    Number(i64),
+    Status(Sign),
+}
+
+fn main() {
+    println!("{}", Choice::Number(2));
+    println!("{}", Choice::Number(-2));
+    println!("{}", Choice::Status(Sign::Good));
+    println!("{}", Choice::Status(Sign::Bad))
+}
+
+impl std::fmt::Display for Choice {
+    fn fmt(&self, out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Choice::Number(n) => {
+                if *n > 0 {
+                    write!(out, "positive")
+                } else {
+                    write!(out, "nonpositive")
+                }
+            }
+            Choice::Status(s) => match s {
+                Sign::Good => write!(out, "good"),
+                Sign::Bad => write!(out, "bad"),
+            },
+        }
+    }
+}

@@ -13,6 +13,7 @@ pub struct Implementor {
 pub struct RustTrait {
     pub path: Rc<str>,
     pub implementors: Vec<Implementor>,
+    pub help: Option<Rc<str>>,
 }
 
 impl RustTrait {

@@ -1,0 +1,3 @@
+(rust-trait shown "std::fmt::Debug"
+  (help "implement it for a struct or enum")
+  i64)

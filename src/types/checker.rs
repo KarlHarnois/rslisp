@@ -20,8 +20,8 @@ use super::typed::{
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
     BindingArena, BindingId, BodyItem, CopyTrait, CoreModule, Expr, ExprKind, Item, ItemKind, Leaf,
-    ModuleId, ParsedTemplate, PrimitiveType, ReferenceKind, StructDerives, StructExpr, TraitMethod,
-    TypeBinder, TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload as CoreVariantPayload,
+    ModuleId, ParsedTemplate, PrimitiveType, ReferenceKind, StructDerives, StructExpr, TypeBinder,
+    TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload as CoreVariantPayload,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
@@ -322,8 +322,8 @@ impl TypeChecker {
         if let ItemKind::Enum(binding, params, variants, rust) = kind {
             return self.collect_enum(*binding, params, variants, rust);
         }
-        if let ItemKind::RustTrait(binding, path, self_variable, methods, implementors) = kind {
-            return self.collect_rust_trait(*binding, path, *self_variable, methods, implementors);
+        if let ItemKind::RustTrait(declaration) = kind {
+            return self.collect_rust_trait(declaration);
         }
         if let ItemKind::RustType(binding, binders, template, clauses) = kind {
             return self.collect_rust_type(*binding, binders, template, clauses);
@@ -336,11 +336,11 @@ impl TypeChecker {
 
     fn record_trait_arguments(&mut self, modules: &[CoreModule]) {
         for item in modules.iter().flat_map(|module| &module.items) {
-            let ItemKind::RustTrait(binding, _, _, _, implementors) = &item.kind else {
+            let ItemKind::RustTrait(declaration) = &item.kind else {
                 continue;
             };
-            if implementors.iter().any(Self::entry_uses_with) {
-                self.trait_arguments.insert(*binding);
+            if declaration.implementors.iter().any(Self::entry_uses_with) {
+                self.trait_arguments.insert(declaration.binding);
             }
         }
     }
@@ -359,10 +359,12 @@ impl TypeChecker {
 
     fn check_trait_claims(&mut self, modules: &[CoreModule]) {
         for item in modules.iter().flat_map(|module| &module.items) {
-            let ItemKind::RustTrait(trait_binding, path, _, _, implementors) = &item.kind else {
+            let ItemKind::RustTrait(declaration) = &item.kind else {
                 continue;
             };
-            for implementor in implementors {
+            let trait_binding = &declaration.binding;
+            let path = &declaration.path;
+            for implementor in &declaration.implementors {
                 let implementor = Self::implemented_type(implementor);
                 let TypeExprKind::Named(binding, _) = implementor.kind() else {
                     continue;
@@ -1325,6 +1327,7 @@ impl TypeChecker {
             RustTrait {
                 path: rust_name.clone(),
                 implementors: Vec::new(),
+                help: None,
             },
         );
         let mut typed_methods = Vec::new();
@@ -1412,6 +1415,9 @@ impl TypeChecker {
                         continue;
                     }
                 };
+                if self.report_foreign_implementor(*trait_binding, &implementor, implementor_span) {
+                    continue;
+                }
                 self.report_unsized_implementor(&implementor, implementor_span, methods);
                 self.traits.add_implementor(
                     *trait_binding,
@@ -1470,6 +1476,34 @@ impl TypeChecker {
         }
     }
 
+    fn report_foreign_implementor(
+        &mut self,
+        trait_binding: BindingId,
+        implementor: &Type,
+        span: Span,
+    ) -> bool {
+        if !self.rust_trait_paths.contains_key(&trait_binding) || self.is_program_type(implementor)
+        {
+            return false;
+        }
+        let implementor_name = self.display().show(implementor);
+        let trait_name = self.bindings.get(trait_binding).name().to_string();
+        self.diagnostics.push(TypeProblems::foreign_implementor(
+            &trait_name,
+            &implementor_name,
+            span,
+        ));
+        true
+    }
+
+    fn is_program_type(&self, implementor: &Type) -> bool {
+        matches!(
+            implementor,
+            Type::Named(binding, _)
+                if self.structs.get(*binding).is_some() || self.enums.get(*binding).is_some()
+        )
+    }
+
     fn is_unsized_implementor(rust_types: &RustTypeTable, implementor: &Type) -> bool {
         match implementor {
             Type::Primitive(PrimitiveType::Str) => true,
@@ -1483,6 +1517,7 @@ impl TypeChecker {
         binding: BindingId,
         path: &std::rc::Rc<str>,
         implementors: &[TypeExpr],
+        help: Option<Rc<str>>,
     ) -> Result<(), Diagnostic> {
         let trait_name = self.bindings.get(binding).name().to_string();
         let implementors = implementors
@@ -1494,6 +1529,7 @@ impl TypeChecker {
             RustTrait {
                 path: path.clone(),
                 implementors,
+                help,
             },
         );
         Ok(())
@@ -1501,22 +1537,24 @@ impl TypeChecker {
 
     fn collect_rust_trait(
         &mut self,
-        binding: BindingId,
-        path: &Rc<str>,
-        self_variable: BindingId,
-        methods: &[TraitMethod],
-        implementors: &[TypeExpr],
+        declaration: &crate::core::RustTraitDeclaration,
     ) -> Result<(), Diagnostic> {
-        self.collect_trait(binding, path, implementors)?;
-        self.rust_trait_paths.insert(binding, Rc::clone(path));
-        for method in methods {
-            let receiver = Self::receiver_kind(&method.signature, self_variable);
+        self.collect_trait(
+            declaration.binding,
+            &declaration.path,
+            &declaration.implementors,
+            declaration.help.clone(),
+        )?;
+        self.rust_trait_paths
+            .insert(declaration.binding, Rc::clone(&declaration.path));
+        for method in &declaration.methods {
+            let receiver = Self::receiver_kind(&method.signature, declaration.self_variable);
             self.synthetic_bindings.insert(method.binding);
             self.trait_methods.insert(
                 method.binding,
                 TraitMethodInfo {
-                    trait_binding: binding,
-                    rust_name: Rc::clone(path),
+                    trait_binding: declaration.binding,
+                    rust_name: Rc::clone(&declaration.path),
                     receiver,
                 },
             );
@@ -1577,7 +1615,7 @@ impl TypeChecker {
     ) -> Diagnostic {
         let trait_name = self.bindings.get(bound.binding).name();
         let found = display.show(implementor);
-        match implementor {
+        let diagnostic = match implementor {
             Type::Named(binding, _)
                 if self.structs.get(*binding).is_some() || self.enums.get(*binding).is_some() =>
             {
@@ -1587,6 +1625,14 @@ impl TypeChecker {
                 let implementors = self.implementor_names(bound.binding, display);
                 TypeProblems::missing_trait(trait_name, &found, span, implementors)
             }
+        };
+        match self
+            .traits
+            .get(bound.binding)
+            .and_then(|known| known.help.as_deref())
+        {
+            Some(help) => diagnostic.with_help(help),
+            None => diagnostic,
         }
     }
 
@@ -1680,13 +1726,6 @@ impl TypeChecker {
                 &display.show(payload),
             ));
         }
-        if self
-            .traits
-            .get(bound.binding)
-            .is_some_and(|rust_trait| rust_trait.path.as_ref() == "std::fmt::Display")
-        {
-            return diagnostic.with_help(TypeProblems::print_enum_help());
-        }
         diagnostic
     }
 
@@ -1701,7 +1740,7 @@ impl TypeChecker {
             return diagnostic;
         };
         let struct_name = self.bindings.get(struct_binding).name().to_string();
-        let diagnostic = if self.is_order(bound.binding) {
+        if self.is_order(bound.binding) {
             self.with_order_help(
                 diagnostic,
                 definition,
@@ -1712,15 +1751,7 @@ impl TypeChecker {
             )
         } else {
             self.with_non_order_help(diagnostic, definition, bound.binding, &struct_name, display)
-        };
-        if self
-            .traits
-            .get(bound.binding)
-            .is_some_and(|rust_trait| rust_trait.path.as_ref() == "std::fmt::Display")
-        {
-            return diagnostic.with_help(TypeProblems::print_struct_help());
         }
-        diagnostic
     }
 
     fn with_non_order_help(

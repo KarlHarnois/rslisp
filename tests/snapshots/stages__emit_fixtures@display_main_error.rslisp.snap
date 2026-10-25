@@ -1,0 +1,38 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/display_main_error.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum AppError {
+    BadInput(String),
+    Missing,
+}
+
+fn fail(is_missing: bool) -> Result<(), AppError> {
+    if is_missing {
+        Err(AppError::Missing)
+    } else {
+        Err(AppError::BadInput("oops".to_string()))
+    }
+}
+
+fn main_body() -> Result<(), AppError> {
+    fail(true)
+}
+
+fn main() {
+    if let Err(error) = main_body() {
+        eprintln!("{}", error);
+        std::process::exit(1);
+    }
+}
+
+impl std::fmt::Display for AppError {
+    fn fmt(&self, out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppError::BadInput(message) => write!(out, "bad input: {}", message),
+            AppError::Missing => write!(out, "missing"),
+        }
+    }
+}

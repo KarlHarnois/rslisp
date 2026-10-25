@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/malformed_rust_trait_help.rslisp
+---
+error[L0210]: malformed `rust-trait`
+ --> expand/malformed_rust_trait_help.rslisp:1:37
+  |
+1 | (rust-trait shown "std::fmt::Debug" (help))
+  |                                     ^^^^^^ this does not fit the shape of `rust-trait`
+  |
+  = help: write it as `(rust-trait name "Path" (method name type)? (help "text")? type ...)`

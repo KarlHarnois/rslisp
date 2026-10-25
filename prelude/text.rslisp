@@ -1,4 +1,4 @@
-(use prelude/macros defmacro map-list)
+(use prelude/macros defmacro template map-list)
 (use prelude/pair pair)
 (use code first rest list prepend concat length empty? nth take drop
           symbol symbol? list? string? string same-binding? value-eq
@@ -9,7 +9,12 @@
 
 (export display debug to-string print println prn pr-str str char chars lines split trim as-str parse parse-error from-str lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!)
 
+(rust-type formatter "std::fmt::Formatter<'_>")
+(rust-type fmt-result "std::fmt::Result")
+
 (rust-trait display "std::fmt::Display"
+  (method fmt (fn ((ref self) (mut formatter)) fmt-result))
+  (help "implement `display` with `(display type (value) ...)`, or print the data form with `prn`")
   bool char str string (ref str) io-error i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
   (where ((a display)) (ref a)))
 
@@ -212,6 +217,90 @@
 
 (defmacro println (parts ...)
   (println-call (flatten-parts parts)))
+
+(def display-type
+  (fn (variables)
+    (list (quote where)
+          variables
+          (list (quote fn)
+                (concat (list (list (quote mut) (quote formatter)))
+                        (map-list (fn (variable) (list (quote ref) (first variable))) variables))
+                (quote fmt-result)))))
+
+(def display-template
+  (fn (pieces)
+    (let formatted (format-pieces pieces 0 escape-format))
+    (let count (placeholder-count pieces))
+    (list (string "write!({0}, \"" (nth formatted 0) "\""
+                  (placeholders 1 (number-add count 1)) ")")
+          (display-type (nth formatted 2))
+          (nth formatted 1))))
+
+(def display-write
+  (fn (parts out)
+    (let rendered (display-template (flatten-parts parts)))
+    (prepend
+      (list (quote rust) (nth rendered 0) (nth rendered 1))
+      (concat (list out) (nth rendered 2)))))
+
+(def kernel-form?
+  (fn (form name)
+    (if (list? form)
+        (if (empty? form)
+            false
+            (same-binding? (first form) name))
+        false)))
+
+(def display-match?
+  (fn (form) (kernel-form? form (quote match))))
+(def display-if?
+  (fn (form) (kernel-form? form (quote if))))
+
+(def display-arm
+  (fn (body out)
+    (if (list? body)
+        (if (splices? body (quote str))
+            (display-write (drop 1 body) out)
+            (if (display-match? body)
+                (display-match body out)
+                (if (display-if? body)
+                    (display-if body out)
+                    (display-write (list body) out))))
+        (display-write (list body) out))))
+
+(def display-match
+  (fn (form out)
+    (concat
+      (take 2 form)
+      (map-list (fn (arm) (list (first arm) (display-arm (nth arm 1) out)))
+                (drop 2 form)))))
+
+(def display-if
+  (fn (form out)
+    (list (first form) (nth form 1)
+          (display-arm (nth form 2) out)
+          (display-arm (nth form 3) out))))
+
+(def display-body
+  (fn (parts out)
+    (if (empty? parts)
+        (display-write (list) out)
+        (if (empty? (rest parts))
+            (do
+              (let part (first parts))
+              (if (display-match? part)
+                  (display-match part out)
+                  (if (display-if? part)
+                      (display-if part out)
+                      (display-write parts out))))
+            (display-write parts out)))))
+
+(defmacro display (type param parts ...)
+  (let out (symbol (quote display) "out"))
+  (list (quote impl) (quote display) type
+        (list (quote fmt)
+              (concat param (list out))
+              (display-body parts out))))
 
 (defmacro char (text)
   (list (quote rust) (string "'" (escape-char text) "'") (quote char)))

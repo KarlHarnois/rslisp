@@ -9,4 +9,4 @@ error[L0404]: `point` does not implement `display`
 4 |   (println (make-point 0 0)))
   |            ^^^^^^^^^^^^^^^^ this needs `display`
   |
-  = help: print a struct's data form with `prn`
+  = help: implement `display` with `(display type (value) ...)`, or print the data form with `prn`
