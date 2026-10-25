@@ -1,0 +1,48 @@
+(enum app-error
+  (io io-error)
+  (parse (parse-error i64)))
+
+(type half (fn ((ref str)) (result i64 (parse-error i64))))
+
+(defn half (text)
+  (ok (try (parse text))))
+
+(type read-number (fn ((ref str)) (result i64 app-error)))
+
+(defn read-number (text)
+  (ok (try (parse text))))
+
+(type read-file (fn ((ref str)) (result string app-error)))
+
+(defn read-file (path)
+  (let text (try (slurp path)))
+  (ok text))
+
+(defn found (n)
+  (if (> n 0) (some n) none))
+
+(defn show (value)
+  (match value
+    ((some n) (println n))
+    (none (println "none"))))
+
+(defn choose ()
+  (let (value (result i64 string)) (ok 1))
+  (let (bad (result i64 string)) (err (to-string "bad")))
+  (match value
+    ((ok n) (println n))
+    ((err e) (println e))))
+
+(defn main ()
+  (println (unwrap-ok (half "2")))
+  (match (read-number "3")
+    ((ok n) (println n))
+    ((err (app-error/parse _reason)) (println "not a number"))
+    ((err (app-error/io _reason)) (println "cannot read")))
+  (match (read-file "missing.txt")
+    ((ok text) (println text))
+    ((err (app-error/io _reason)) (println "cannot read"))
+    ((err (app-error/parse _reason)) (println "not a number")))
+  (show (found 1))
+  (show (found 0))
+  (choose))

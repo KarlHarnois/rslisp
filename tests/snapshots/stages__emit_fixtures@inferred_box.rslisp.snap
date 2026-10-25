@@ -90,7 +90,7 @@ fn main() {
         )
     );
     println!("{:?}", {
-        let result: Wrapped<i64> = Wrapped::Holds(Box::new(Some(Wrapped::Empty)), 1);
+        let result: Wrapped<i64> = Wrapped::Holds(Box::new(Option::Some(Wrapped::Empty)), 1);
         result
     });
     println!("{:?}", {

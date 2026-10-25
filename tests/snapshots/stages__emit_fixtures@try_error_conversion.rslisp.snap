@@ -10,7 +10,7 @@ enum AppError {
 
 fn read_number(path: &str) -> Result<i64, AppError> {
     let text = std::fs::read_to_string(path)?;
-    Ok(text.as_str().parse::<i64>()?)
+    Result::Ok(text.as_str().parse::<i64>()?)
 }
 
 fn main() {

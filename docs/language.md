@@ -487,7 +487,7 @@ A template clause fills its placeholders from the enum's type arguments and from
   point)
 ```
 
-A construction is qualified. `(shape/circle 1.0)` constructs a payload variant, and `shape/point` is the value of a variant with no payload. A variant with a struct payload takes its fields positionally, in field order: `(shape/labeled (to-string "box") 2.0)`. Using a payload constructor as a value is an error. `(export shape)` exports the enum and every constructor it defines.
+A construction is qualified. `(shape/circle 1.0)` constructs a payload variant, and `shape/point` is the value of a variant with no payload. A variant with a struct payload takes its fields positionally, in field order: `(shape/labeled (to-string "box") 2.0)`. Using a payload constructor as a value is an error. `(export shape)` exports the enum and every constructor it defines. The prelude defines `ok` and `err` as macros over `result/ok` and `result/err`, and `some` as a macro over `option/some`, so a program writes `(ok value)`, `(err error)` and `(some value)`. `none` is the `option/none` value.
 
 An enum gets the traits of a struct under 8.2, with its payloads in place of fields. Each structural trait that all payloads support is inferred, and `copy` is inferred when nothing changes the enum in place. A function-typed payload allows `clone`, `copy` and `debug`, and blocks comparison and hashing, because Rust compares function pointers unreliably. A written `derive` is exact, and an order follows the declared variant order. A blocked trait names the variant whose payload blocks it.
 
@@ -545,6 +545,8 @@ A `match` must cover every value its type can hold. A missing value is an error 
 `(try expression)` emits `expression?`. The value is a `result` or an `option`. An `option` needs the enclosing function to return an `option`. A `result` needs the enclosing function to return a `result` whose error is the value's error, or whose error is a program enum with exactly one variant that holds the value's error. The compiler emits `impl From` for each conversion a `try` uses, so `(try x)` emits `x?` and Rust converts the error. The enum takes no type parameters, and the variant holds one positional payload that is not a box. A second variant that holds the same error makes `try` report `L0437`, because the conversion cannot choose between them.
 
 A `try` conversion needs the function's error type to be known. An unwritten signature fixes the error type to the first `try`'s error, so a function that converts errors writes a `type` signature naming the error enum. A conversion moves the error into the variant and adds no context; `map-err` stays the way to add context.
+
+When a `try` converts no error and it is the whole argument of the `result` enum's `ok` constructor, `Result::Ok(x?)` has the same value as `x`. The compiler emits `x` instead, so `(defn half (text) (ok (try (parse text))))` emits `text.parse::<i64>()`. A `try` that converts an error keeps `Result::Ok(x?)`.
 
 Conversion belongs to the compiler: only type inference knows the enclosing function's error type, and only the compiler emits a Rust `impl From`. A macro sees neither the function's inferred error nor an enum's variants.
 

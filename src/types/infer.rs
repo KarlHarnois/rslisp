@@ -13,9 +13,9 @@ use super::ty::Bound;
 use super::ty::Type;
 use super::ty::TypeVar;
 use super::typed::{
-    Borrow, PendingModeCheck, TypedArgument, TypedArm, TypedBinder, TypedBlock, TypedBodyItem,
-    TypedControl, TypedConversion, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedMatch,
-    TypedPattern, TypedPatternKind, TypedStructExpr,
+    Borrow, PendingModeCheck, TryErrorConversion, TypedArgument, TypedArm, TypedBinder, TypedBlock,
+    TypedBodyItem, TypedControl, TypedConversion, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf,
+    TypedMatch, TypedPattern, TypedPatternKind, TypedStructExpr,
 };
 use super::unifier::{LiteralKind, UnifyError};
 use super::wrapper::FunctionValueWrapper;
@@ -289,11 +289,55 @@ impl TypeChecker {
             let value = self.infer_against(argument, expected, MismatchContext::Plain)?;
             typed.push(value);
         }
+        if let Some(value) = self.result_ok_try(owner, index, &typed) {
+            return Ok(value);
+        }
         Ok(TypedExpr {
             kind: TypedExprKind::Variant(binding, typed),
             ty: Type::Named(owner, type_arguments),
             span,
         })
+    }
+
+    fn result_ok_try(
+        &self,
+        owner: BindingId,
+        index: usize,
+        typed: &[TypedExpr],
+    ) -> Option<TypedExpr> {
+        if !self.is_result_ok_variant(owner, index) {
+            return None;
+        }
+        let [
+            TypedExpr {
+                kind:
+                    TypedExprKind::Try {
+                        value,
+                        conversion: TryErrorConversion::Identity,
+                    },
+                ..
+            },
+        ] = typed
+        else {
+            return None;
+        };
+        Some((**value).clone())
+    }
+
+    fn is_result_ok_variant(&self, owner: BindingId, index: usize) -> bool {
+        if !self.rust_types.is_result(owner) {
+            return false;
+        }
+        let definition = self.enums.get(owner).expect("a variant owner is an enum");
+        let value = definition
+            .params
+            .first()
+            .expect("the result enum has a value parameter");
+        matches!(
+            &definition.variants[index].payload,
+            VariantPayload::Positional(parts)
+                if matches!(parts.as_slice(), [Type::Generic(parameter)] if *parameter == value.id)
+        )
     }
 
     fn infer_match(
@@ -1382,15 +1426,21 @@ impl TypeChecker {
             ));
         };
         let expected = self.try_return_type(&source);
-        if self
+        let conversion = if self
             .unifier
             .unify(&expected, &target.returns, span)
             .is_err()
         {
             self.convert_try_error(&source, &target.returns, span)?;
-        }
+            TryErrorConversion::Converted
+        } else {
+            TryErrorConversion::Identity
+        };
         Ok(TypedExpr {
-            kind: TypedExprKind::Try(Box::new(value)),
+            kind: TypedExprKind::Try {
+                value: Box::new(value),
+                conversion,
+            },
             ty: source.value,
             span,
         })

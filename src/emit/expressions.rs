@@ -317,7 +317,7 @@ impl<'a> ExpressionEmitter<'a> {
             TypedExprKind::Recur(_) => {
                 unreachable!("expansion allows `recur` only in tail position")
             }
-            TypedExprKind::Try(_) | TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => {
+            TypedExprKind::Try { .. } | TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => {
                 self.written(expr)
             }
             _ => self.value(expr),
@@ -347,7 +347,7 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn written(&mut self, expr: &TypedExpr) -> Code {
         match &expr.kind {
-            TypedExprKind::Try(value) => self.propagate(value),
+            TypedExprKind::Try { value, .. } => self.propagate(value),
             TypedExprKind::Borrow(kind, value) => self.borrow(*kind, value),
             TypedExprKind::Deref(value) => self.deref(value),
             _ => unreachable!("the caller matches a written form"),
@@ -1617,7 +1617,7 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn expression_contains_try(expr: &TypedExpr) -> bool {
         match &expr.kind {
-            TypedExprKind::Try(_) => true,
+            TypedExprKind::Try { .. } => true,
             TypedExprKind::Fn(_) => false,
             _ => expr
                 .children()

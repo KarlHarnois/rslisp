@@ -337,7 +337,7 @@ impl<'a> ClosureKinds<'a> {
                 self.scan_arguments(arguments, own, &mut report);
                 report
             }
-            TypedExprKind::Try(_) | TypedExprKind::Borrow(..) | TypedExprKind::Deref(_) => {
+            TypedExprKind::Try { .. } | TypedExprKind::Borrow(..) | TypedExprKind::Deref(_) => {
                 self.scan_written(expr, kind, own)
             }
             _ => self.scan_value(kind, own),
@@ -351,7 +351,7 @@ impl<'a> ClosureKinds<'a> {
         own: &HashSet<BindingId>,
     ) -> CaptureReport {
         match kind {
-            TypedExprKind::Try(value) => self.scan_expression(value, own, Usage::Move),
+            TypedExprKind::Try { value, .. } => self.scan_expression(value, own, Usage::Move),
             TypedExprKind::Borrow(reference, value) => {
                 self.scan_borrow(expr, *reference, value, own)
             }
@@ -897,7 +897,7 @@ impl<'a> ClosureKinds<'a> {
             TypedExprKind::Recur(arguments) => {
                 self.require_recur(arguments, params, nested, calls, required)
             }
-            TypedExprKind::Try(value)
+            TypedExprKind::Try { value, .. }
             | TypedExprKind::Borrow(_, value)
             | TypedExprKind::Deref(value) => {
                 self.require_expression(value, params, nested, calls, required)
