@@ -299,6 +299,8 @@ Hygiene gives three guarantees:
 2. A free symbol in a macro's output means what it meant where the macro was defined.
 3. A name that comes from the macro's input binds in the user's scope.
 
+A `rust` template's own binders are hygienic too. A name written as `{!name}` takes a fresh Rust name at each use, so a template's closure parameter never hides a name that the program's code captures. The template keeps the name when no name at the call uses it, so `numbers.sort_by(|left, right| ...)` reads as hand-written Rust.
+
 `(symbol context part...)` builds a symbol with the scopes of `context`. It is the one deliberate way to introduce a name the user can see:
 
 ```lisp
@@ -344,7 +346,7 @@ A `rust-trait` implementor can take type parameters from a `where`. `(where ((a 
 
 | Template rule | Effect |
 |---|---|
-| Placeholders | `{0}`, `{1}` and so on take the call's arguments. `{&0}` takes an argument that Rust borrows by itself, as a format macro or a comparison operator does. No `&` is written before it, and the call does not move it. `{target}` is the Rust type that the `where` binder `target` takes at the call. `{{` and `}}` are literal braces. |
+| Placeholders | `{0}`, `{1}` and so on take the call's arguments. `{&0}` takes an argument that Rust borrows by itself, as a format macro or a comparison operator does. No `&` is written before it, and the call does not move it. `{target}` is the Rust type that the `where` binder `target` takes at the call. `{!name}` is a name that the template's text binds: every occurrence takes the same fresh Rust name, chosen not to hide a name at the call. `{{` and `}}` are literal braces. |
 | Inlining | A `def` of a `rust` form emits nothing. Each use inlines the template. |
 | Parentheses | A non-atomic argument is parenthesized unless its placeholder is the whole template, sits between `(` or `,` and `,` or `)`, or Rust's precedence and associativity keep its grouping on the side it takes. A prefixed argument such as `*x` is parenthesized only before `.`, `[`, `(` or `?`. |
 | Deref place | A `*` written immediately before a placeholder is dropped when the call borrows a `mut` place, because the `*` and the borrow cancel. |

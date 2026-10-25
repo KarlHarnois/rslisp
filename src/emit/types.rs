@@ -274,7 +274,7 @@ impl<'a> RustTypes<'a> {
                 Piece::Placeholder { index, .. } => {
                     self.show(&arguments[*index], Self::inner(position))
                 }
-                Piece::TypePlaceholder { .. } => "_".to_string(),
+                Piece::TypePlaceholder { .. } | Piece::BinderPlaceholder { .. } => "_".to_string(),
             })
             .collect()
     }

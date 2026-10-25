@@ -6,6 +6,7 @@ pub enum Piece {
     Literal(String),
     Placeholder { index: usize, borrowed: bool },
     TypePlaceholder { name: String },
+    BinderPlaceholder { name: String },
 }
 
 #[derive(Clone, Debug)]
@@ -16,6 +17,7 @@ pub struct ParsedTemplate {
 
 impl ParsedTemplate {
     const BORROW: char = '&';
+    const BINDER: char = '!';
 
     pub fn parse(text: &str) -> Result<Self, MalformedPlaceholder> {
         let mut pieces = Vec::new();
@@ -48,6 +50,15 @@ impl ParsedTemplate {
     ) -> Result<Piece, MalformedPlaceholder> {
         let borrowed = characters.next_if_eq(&Self::BORROW).is_some();
         let name = Self::placeholder_name(characters)?;
+        if let Some(binder) = name.strip_prefix(Self::BINDER) {
+            return if borrowed || binder.is_empty() {
+                Err(MalformedPlaceholder)
+            } else {
+                Ok(Piece::BinderPlaceholder {
+                    name: binder.to_string(),
+                })
+            };
+        }
         match name.parse::<usize>() {
             Ok(index) => Ok(Piece::Placeholder { index, borrowed }),
             Err(_) if borrowed => Err(MalformedPlaceholder),
@@ -83,15 +94,81 @@ impl ParsedTemplate {
     pub fn placeholders(&self) -> impl Iterator<Item = usize> + '_ {
         self.pieces.iter().filter_map(|piece| match piece {
             Piece::Placeholder { index, .. } => Some(*index),
-            Piece::Literal(_) | Piece::TypePlaceholder { .. } => None,
+            Piece::Literal(_) | Piece::TypePlaceholder { .. } | Piece::BinderPlaceholder { .. } => {
+                None
+            }
         })
     }
 
     pub fn type_placeholders(&self) -> impl Iterator<Item = &str> + '_ {
         self.pieces.iter().filter_map(|piece| match piece {
             Piece::TypePlaceholder { name } => Some(name.as_str()),
-            Piece::Literal(_) | Piece::Placeholder { .. } => None,
+            Piece::Literal(_) | Piece::Placeholder { .. } | Piece::BinderPlaceholder { .. } => None,
         })
+    }
+
+    pub fn binder_names(&self) -> Vec<&str> {
+        let mut names = Vec::new();
+        for piece in &self.pieces {
+            if let Piece::BinderPlaceholder { name } = piece
+                && !names.contains(&name.as_str())
+            {
+                names.push(name.as_str());
+            }
+        }
+        names
+    }
+
+    pub fn with_binders(&self, renames: &[(String, String)]) -> Self {
+        let pieces = self
+            .pieces
+            .iter()
+            .map(|piece| match piece {
+                Piece::BinderPlaceholder { name } => {
+                    let fresh = renames
+                        .iter()
+                        .find(|(binder, _)| binder == name)
+                        .map_or(name.as_str(), |(_, fresh)| fresh.as_str());
+                    Piece::Literal(fresh.to_string())
+                }
+                other => other.clone(),
+            })
+            .collect();
+        Self::from_pieces(pieces)
+    }
+
+    fn from_pieces(pieces: Vec<Piece>) -> Self {
+        let mut merged: Vec<Piece> = Vec::new();
+        for piece in pieces {
+            if let (Piece::Literal(text), Some(Piece::Literal(previous))) =
+                (&piece, merged.last_mut())
+            {
+                previous.push_str(text);
+            } else {
+                merged.push(piece);
+            }
+        }
+        let text = merged.iter().map(Self::rendered_piece).collect();
+        Self {
+            pieces: merged,
+            text,
+        }
+    }
+
+    fn rendered_piece(piece: &Piece) -> String {
+        match piece {
+            Piece::Literal(literal) => literal.replace('{', "{{").replace('}', "}}"),
+            Piece::Placeholder { index, borrowed } => {
+                let borrow = if *borrowed {
+                    Self::BORROW.to_string()
+                } else {
+                    String::new()
+                };
+                format!("{{{borrow}{index}}}")
+            }
+            Piece::TypePlaceholder { name } => format!("{{{name}}}"),
+            Piece::BinderPlaceholder { name } => format!("{{!{name}}}"),
+        }
     }
 
     pub fn borrows(&self, argument: usize) -> bool {
@@ -132,7 +209,9 @@ impl ParsedTemplate {
         }
         match self.pieces.get(position + 1)? {
             Piece::Literal(literal) => Some(literal),
-            Piece::Placeholder { .. } | Piece::TypePlaceholder { .. } => None,
+            Piece::Placeholder { .. }
+            | Piece::TypePlaceholder { .. }
+            | Piece::BinderPlaceholder { .. } => None,
         }
     }
 
@@ -163,7 +242,9 @@ impl ParsedTemplate {
                 .checked_sub(1)
                 .and_then(|previous| match &self.pieces[previous] {
                     Piece::Literal(literal) => Some(Self::unary_deref(literal)),
-                    Piece::Placeholder { .. } | Piece::TypePlaceholder { .. } => None,
+                    Piece::Placeholder { .. }
+                    | Piece::TypePlaceholder { .. }
+                    | Piece::BinderPlaceholder { .. } => None,
                 })
                 .unwrap_or(false);
             if !dereferenced {
@@ -325,6 +406,37 @@ mod tests {
     fn reports_a_borrowed_type_placeholder() {
         assert_eq!(
             ParsedTemplate::parse("{&target}").err(),
+            Some(MalformedPlaceholder)
+        );
+    }
+
+    #[test]
+    fn names_each_binder_once() {
+        let parsed =
+            ParsedTemplate::parse("|{!left}, {!right}| {!left}").expect("a template with binders");
+        assert_eq!(parsed.binder_names(), ["left", "right"]);
+        assert_eq!(
+            parsed.placeholders().collect::<Vec<_>>(),
+            Vec::<usize>::new()
+        );
+        assert_eq!(
+            parsed.type_placeholders().collect::<Vec<_>>(),
+            Vec::<&str>::new()
+        );
+    }
+
+    #[test]
+    fn reports_a_borrowed_binder_placeholder() {
+        assert_eq!(
+            ParsedTemplate::parse("{&!left}").err(),
+            Some(MalformedPlaceholder)
+        );
+    }
+
+    #[test]
+    fn reports_an_empty_binder_placeholder() {
+        assert_eq!(
+            ParsedTemplate::parse("{!}").err(),
             Some(MalformedPlaceholder)
         );
     }

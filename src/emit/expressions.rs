@@ -1418,11 +1418,17 @@ impl<'a> ExpressionEmitter<'a> {
         span: Span,
     ) -> Code {
         let parsed = Template::new(&template.template);
-        match ty {
-            Type::Function(..) if parsed.is_path() => Code::atom(template.template.to_string()),
+        if matches!(ty, Type::Function(..)) && parsed.is_path() {
+            return Code::atom(template.template.to_string());
+        }
+        self.locals.enter();
+        let parsed = self.with_fresh_template_binders(&parsed);
+        let code = match ty {
             Type::Function(_, parameters, _) => self.eta_expanded(&parsed, parameters, types, span),
             _ => self.inline(&parsed, Vec::new(), types, span),
-        }
+        };
+        self.locals.leave();
+        code
     }
 
     fn eta_expanded(
@@ -1482,6 +1488,9 @@ impl<'a> ExpressionEmitter<'a> {
             }
             TemplateError::MissingTypeArgument(name) => {
                 format!("`{{{name}}}` has no matching type argument")
+            }
+            TemplateError::UnresolvedBinder(name) => {
+                format!("`{{!{name}}}` has no fresh name")
             }
         };
         self.problems
@@ -1719,6 +1728,8 @@ impl<'a> ExpressionEmitter<'a> {
             return self.map_update_call(arguments);
         }
         let mut parsed = Template::new(&template.template);
+        self.locals.enter();
+        parsed = self.with_fresh_template_binders(&parsed);
         let context = Self::argument_context(arguments);
         let roles: Vec<ArgumentRole> = arguments
             .iter()
@@ -1750,7 +1761,18 @@ impl<'a> ExpressionEmitter<'a> {
             codes[position] = self.inlined_closure_body(lambda, &call_arguments);
             parsed = without;
         }
-        self.inline_with_places(&parsed, codes, types, &places, span)
+        let code = self.inline_with_places(&parsed, codes, types, &places, span);
+        self.locals.leave();
+        code
+    }
+
+    fn with_fresh_template_binders(&mut self, template: &Template) -> Template {
+        let renames: Vec<(String, String)> = template
+            .binder_names()
+            .into_iter()
+            .map(|name| (name.to_string(), self.locals.temporary(name)))
+            .collect();
+        template.with_binders(&renames)
     }
 
     fn inlines_call(lambda: &TypedLambda, call_arguments: &[&str]) -> bool {

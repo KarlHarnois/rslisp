@@ -41,7 +41,7 @@
 (def get (rust "{0}.get({1})" (where (a) (fn ((ref (slice a)) usize) (option (ref a))))))
 (def pop! (rust "{0}.pop()" (where (a) (fn ((mut (vec a))) (option a)))))
 (def sort-ascending! (rust "{0}.sort()" (where ((a ord)) (fn ((mut (vec a))) unit))))
-(def sort-with! (rust "{0}.sort_by(|left, right| {1}(left, right).cmp(&0))"
+(def sort-with! (rust "{0}.sort_by(|{!left}, {!right}| {1}({!left}, {!right}).cmp(&0))"
                      (where (a) (fn ((mut (vec a)) (fn ((ref a) (ref a)) i64)) unit))))
 (defrule sort!
   ((items) (sort-ascending! items))
@@ -53,6 +53,6 @@
 (def last (rust "{0}.last()" (where (item) (fn ((ref (slice item))) (option (ref item))))))
 (def reverse (rust "{0}.iter().rev()" (where (item) (fn ((ref (slice item))) (iterator (ref item))))))
 (def reverse! (rust "{0}.reverse()" (where (item) (fn ((mut (vec item))) unit))))
-(def sort-descending! (rust "{0}.sort_by(|left, right| right.cmp(left))"
+(def sort-descending! (rust "{0}.sort_by(|{!left}, {!right}| {!right}.cmp({!left}))"
                           (where ((item ord)) (fn ((mut (vec item))) unit))))
 (def dedup! (rust "{0}.dedup()" (where ((a partial-eq)) (fn ((mut (vec a))) unit))))

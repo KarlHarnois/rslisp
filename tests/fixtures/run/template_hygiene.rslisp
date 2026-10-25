@@ -1,0 +1,13 @@
+(defn ordered (left)
+  (let numbers (vec 3 1 2))
+  (sort! numbers (fn (a b) (+ left (- b a))))
+  (println (unwrap (first numbers))))
+
+(defn sorted ()
+  (let numbers (vec 3 1 2))
+  (sort! numbers (fn (a b) (- b a)))
+  (println (unwrap (first numbers))))
+
+(defn main ()
+  (ordered -5)
+  (sorted))

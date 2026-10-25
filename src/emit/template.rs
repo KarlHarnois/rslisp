@@ -6,6 +6,7 @@ use crate::core::{ParsedTemplate, Piece};
 pub enum TemplateError {
     MissingArgument(usize),
     MissingTypeArgument(String),
+    UnresolvedBinder(String),
 }
 
 pub struct Template {
@@ -44,6 +45,16 @@ impl Template {
     #[cfg(test)]
     pub fn text(&self) -> &str {
         self.parsed.text()
+    }
+
+    pub fn binder_names(&self) -> Vec<&str> {
+        self.parsed.binder_names()
+    }
+
+    pub fn with_binders(&self, renames: &[(String, String)]) -> Self {
+        Self {
+            parsed: self.parsed.with_binders(renames),
+        }
     }
 
     pub fn called_arguments(&self, argument: usize) -> Option<Vec<&str>> {
@@ -91,12 +102,17 @@ impl Template {
             return Ok(arguments[*index].clone());
         }
         if !places.iter().any(|place| *place) && self.needs_temporaries(&arguments) {
-            return Ok(self.inline_with_temporaries(arguments, types));
+            return self.inline_with_temporaries(arguments, types);
         }
-        Ok(self.substitute(&arguments, types, places))
+        self.substitute(&arguments, types, places)
     }
 
-    fn substitute(&self, arguments: &[Code], types: &[(String, Code)], places: &[bool]) -> Code {
+    fn substitute(
+        &self,
+        arguments: &[Code],
+        types: &[(String, Code)],
+        places: &[bool],
+    ) -> Result<Code, TemplateError> {
         let pieces = self.pieces_without_deref(places);
         let mut fragments = Vec::new();
         for (position, piece) in pieces.iter().enumerate() {
@@ -113,12 +129,15 @@ impl Template {
                         .expect("the expansion stage checked the type placeholder");
                     fragments.push(Fragment::Text(code.text()));
                 }
+                Piece::BinderPlaceholder { name } => {
+                    return Err(TemplateError::UnresolvedBinder(name.clone()));
+                }
             }
         }
-        Code {
+        Ok(Code {
             fragments,
             precedence: self.precedence(),
-        }
+        })
     }
 
     fn pieces_without_deref(&self, places: &[bool]) -> Vec<Piece> {
@@ -204,7 +223,9 @@ impl Template {
 
     fn is_operand(piece: &Piece) -> bool {
         match piece {
-            Piece::Placeholder { .. } | Piece::TypePlaceholder { .. } => true,
+            Piece::Placeholder { .. }
+            | Piece::TypePlaceholder { .. }
+            | Piece::BinderPlaceholder { .. } => true,
             Piece::Literal(literal) => !literal.trim().is_empty(),
         }
     }
@@ -231,7 +252,9 @@ impl Template {
     fn literal_at(&self, position: usize) -> Option<&str> {
         match self.parsed.pieces().get(position)? {
             Piece::Literal(literal) => Some(literal),
-            Piece::Placeholder { .. } | Piece::TypePlaceholder { .. } => None,
+            Piece::Placeholder { .. }
+            | Piece::TypePlaceholder { .. }
+            | Piece::BinderPlaceholder { .. } => None,
         }
     }
 
@@ -256,7 +279,11 @@ impl Template {
         repeated_or_reordered && arguments.iter().any(|argument| !argument.is_plain_name())
     }
 
-    fn inline_with_temporaries(&self, arguments: Vec<Code>, types: &[(String, Code)]) -> Code {
+    fn inline_with_temporaries(
+        &self,
+        arguments: Vec<Code>,
+        types: &[(String, Code)],
+    ) -> Result<Code, TemplateError> {
         let mut statements = Vec::new();
         let mut replaced = Vec::new();
         for (index, argument) in arguments.into_iter().enumerate() {
@@ -268,8 +295,8 @@ impl Template {
             replaced.push(Code::atom(temporary));
         }
         statements.push(Fragment::Newline);
-        statements.extend(self.substitute(&replaced, types, &[]).fragments);
-        Code {
+        statements.extend(self.substitute(&replaced, types, &[])?.fragments);
+        Ok(Code {
             fragments: vec![
                 Fragment::Text("{".to_string()),
                 Fragment::Indented(statements),
@@ -277,7 +304,7 @@ impl Template {
                 Fragment::Text("}".to_string()),
             ],
             precedence: Precedence::Block,
-        }
+        })
     }
 }
 
@@ -393,5 +420,30 @@ mod tests {
             .inline_with_types(vec![Code::atom("x")], &[], &[])
             .map(|code| code.text());
         assert_eq!(missing, Err(TemplateError::MissingArgument(1)));
+    }
+
+    #[test]
+    fn renames_each_binder_use() {
+        let template =
+            Template::new("{0}.sort_by(|{!left}, {!right}| {1}({!left}, {!right}).cmp(&0))");
+        let renamed = template.with_binders(&[
+            ("left".to_string(), "left_2".to_string()),
+            ("right".to_string(), "right".to_string()),
+        ]);
+        assert_eq!(
+            renamed.text(),
+            "{0}.sort_by(|left_2, right| {1}(left_2, right).cmp(&0))"
+        );
+    }
+
+    #[test]
+    fn reports_an_unresolved_binder() {
+        let error = Template::new("|{!left}| {!left}")
+            .inline_with_types(Vec::new(), &[], &[])
+            .map(|code| code.text());
+        assert_eq!(
+            error,
+            Err(TemplateError::UnresolvedBinder("left".to_string()))
+        );
     }
 }
