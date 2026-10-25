@@ -43,6 +43,8 @@ pub struct Item {
     pub hidden: bool,
 }
 
+pub const RUST_TRAIT_METHOD_MARKER: &str = "method";
+
 #[derive(Clone, Debug)]
 pub enum ItemKind {
     Def(BindingId, Expr),
@@ -55,7 +57,13 @@ pub enum ItemKind {
         Option<EnumRust>,
     ),
     Derive(BindingId, Span, Vec<(BindingId, Span)>),
-    RustTrait(BindingId, Rc<str>, Vec<TypeExpr>),
+    RustTrait(
+        BindingId,
+        Rc<str>,
+        BindingId,
+        Vec<TraitMethod>,
+        Vec<TypeExpr>,
+    ),
     Trait(BindingId, Rc<str>, BindingId, Vec<TraitMethod>),
     Impl(BindingId, TypeExpr, Vec<ImplMethod>),
     RustType(

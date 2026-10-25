@@ -20,8 +20,8 @@ use super::typed::{
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
     BindingArena, BindingId, BodyItem, CopyTrait, CoreModule, Expr, ExprKind, Item, ItemKind, Leaf,
-    ModuleId, ParsedTemplate, PrimitiveType, ReferenceKind, StructDerives, StructExpr, TypeBinder,
-    TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload as CoreVariantPayload,
+    ModuleId, ParsedTemplate, PrimitiveType, ReferenceKind, StructDerives, StructExpr, TraitMethod,
+    TypeBinder, TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload as CoreVariantPayload,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
@@ -168,6 +168,7 @@ pub struct TypeChecker {
     pub(super) written_parameters: HashMap<BindingId, Vec<bool>>,
     pub(super) pending_mode_checks: Vec<PendingModeCheck>,
     pub(super) trait_definitions: Vec<TypedTrait>,
+    pub(super) rust_trait_paths: HashMap<BindingId, Rc<str>>,
     pub(super) trait_impls: Vec<TypedTraitImpl>,
     pub(super) conversions: Vec<TypedConversion>,
     pub(super) trait_methods: HashMap<BindingId, TraitMethodInfo>,
@@ -227,6 +228,7 @@ impl TypeChecker {
             written_parameters: HashMap::new(),
             pending_mode_checks: Vec::new(),
             trait_definitions: Vec::new(),
+            rust_trait_paths: HashMap::new(),
             trait_impls: Vec::new(),
             conversions: Vec::new(),
             trait_methods: HashMap::new(),
@@ -320,8 +322,8 @@ impl TypeChecker {
         if let ItemKind::Enum(binding, params, variants, rust) = kind {
             return self.collect_enum(*binding, params, variants, rust);
         }
-        if let ItemKind::RustTrait(binding, path, implementors) = kind {
-            return self.collect_trait(*binding, path, implementors);
+        if let ItemKind::RustTrait(binding, path, self_variable, methods, implementors) = kind {
+            return self.collect_rust_trait(*binding, path, *self_variable, methods, implementors);
         }
         if let ItemKind::RustType(binding, binders, template, clauses) = kind {
             return self.collect_rust_type(*binding, binders, template, clauses);
@@ -334,7 +336,7 @@ impl TypeChecker {
 
     fn record_trait_arguments(&mut self, modules: &[CoreModule]) {
         for item in modules.iter().flat_map(|module| &module.items) {
-            let ItemKind::RustTrait(binding, _, implementors) = &item.kind else {
+            let ItemKind::RustTrait(binding, _, _, _, implementors) = &item.kind else {
                 continue;
             };
             if implementors.iter().any(Self::entry_uses_with) {
@@ -357,7 +359,7 @@ impl TypeChecker {
 
     fn check_trait_claims(&mut self, modules: &[CoreModule]) {
         for item in modules.iter().flat_map(|module| &module.items) {
-            let ItemKind::RustTrait(trait_binding, path, implementors) = &item.kind else {
+            let ItemKind::RustTrait(trait_binding, path, _, _, implementors) = &item.kind else {
                 continue;
             };
             for implementor in implementors {
@@ -1497,6 +1499,31 @@ impl TypeChecker {
         Ok(())
     }
 
+    fn collect_rust_trait(
+        &mut self,
+        binding: BindingId,
+        path: &Rc<str>,
+        self_variable: BindingId,
+        methods: &[TraitMethod],
+        implementors: &[TypeExpr],
+    ) -> Result<(), Diagnostic> {
+        self.collect_trait(binding, path, implementors)?;
+        self.rust_trait_paths.insert(binding, Rc::clone(path));
+        for method in methods {
+            let receiver = Self::receiver_kind(&method.signature, self_variable);
+            self.synthetic_bindings.insert(method.binding);
+            self.trait_methods.insert(
+                method.binding,
+                TraitMethodInfo {
+                    trait_binding: binding,
+                    rust_name: Rc::clone(path),
+                    receiver,
+                },
+            );
+        }
+        Ok(())
+    }
+
     fn check_generic_bound(&mut self, generic: GenericId, bound: Bound, span: Span) {
         if self.unifier.generic_bounds(generic).contains(&bound) {
             return;
@@ -1920,6 +1947,7 @@ impl TypeChecker {
             box_binding: self.box_binding,
             traits: self.traits,
             trait_definitions: self.trait_definitions,
+            rust_trait_paths: self.rust_trait_paths,
             trait_impls: self.trait_impls,
             conversions: self.conversions,
             trait_methods: self.trait_methods,

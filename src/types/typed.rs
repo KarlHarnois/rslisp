@@ -287,6 +287,7 @@ pub struct TypedProgram {
     pub box_binding: Option<BindingId>,
     pub traits: TraitTable,
     pub trait_definitions: Vec<TypedTrait>,
+    pub rust_trait_paths: HashMap<BindingId, Rc<str>>,
     pub trait_impls: Vec<TypedTraitImpl>,
     pub conversions: Vec<TypedConversion>,
     pub trait_methods: HashMap<BindingId, TraitMethodInfo>,

@@ -1,0 +1,13 @@
+(struct point)
+(derive point clone)
+(rust-type fmt-result "std::fmt::Result")
+
+(rust-trait shown "std::fmt::Write"
+  (method write-str (fn ((mut self) (ref str)) fmt-result)))
+
+(impl shown point
+  (write-str (p _text)
+    (rust "std::fmt::Result::Ok(())" fmt-result)))
+
+(defn main ()
+  (let _point (new point)))

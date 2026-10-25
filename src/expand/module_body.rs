@@ -9,8 +9,8 @@ use super::shape::Shape;
 use crate::core::{
     BindingId, BindingInfo, BindingKind, ControlForm, CoreModule, DefinitionForm, Expr, ExprKind,
     ExpressionForm, FieldLabel, ImplMethod, Item, ItemKind, KernelForm, Leaf, ModuleId, Namespace,
-    RustTemplate, TraitMethod, TypeBinder, TypeBound, TypeExpr, TypeExprKind, VariantDeclaration,
-    VariantInfo, VariantPayload,
+    RUST_TRAIT_METHOD_MARKER, RustTemplate, TraitMethod, TypeBinder, TypeBound, TypeExpr,
+    TypeExprKind, VariantDeclaration, VariantInfo, VariantPayload,
 };
 use crate::diagnostic::{Counted, Diagnostic};
 use crate::emit::mangle::NameMangler;
@@ -299,13 +299,31 @@ impl Expander<'_> {
         form: Form,
         context: &mut DefinitionContext,
     ) -> Result<Option<PendingItem>, Diagnostic> {
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::RustTrait), &form);
         let binding = self.register_type_name(
             &form,
             KernelForm::Definition(DefinitionForm::RustTrait),
             BindingKind::Trait(module),
             context,
         )?;
+        for entry in shape.items().iter().skip(3) {
+            if !Self::is_rust_trait_method(entry) {
+                continue;
+            }
+            let Some([_, name, ..]) = entry.as_list() else {
+                continue;
+            };
+            self.define_global(name, Namespace::Value, BindingKind::Global(module), context)?;
+        }
         Ok(Some(PendingItem::RustTrait(binding, form)))
+    }
+
+    fn is_rust_trait_method(entry: &Form) -> bool {
+        entry
+            .as_list()
+            .and_then(|items| items.first())
+            .and_then(|head| head.as_symbol())
+            .is_some_and(|marker| marker.name() == RUST_TRAIT_METHOD_MARKER)
     }
 
     fn register_rust_type(
@@ -1116,17 +1134,62 @@ impl Expander<'_> {
         let items = shape.at_least(3)?;
         let path: Rc<str> = shape.string(&items[2])?.into();
         self.warn_second_trait_path(binding, &items[1], &path);
-        let implementors = items[3..]
-            .iter()
-            .map(|item| self.lower_type(item))
-            .collect::<Result<Vec<TypeExpr>, Diagnostic>>()?;
+        let scope = self.fresh_local_scope();
+        let mut self_symbol = Symbol::new("self");
+        self_symbol.scopes_mut().add(scope);
+        let self_form = Form::new(FormKind::Symbol(self_symbol), items[1].span());
+        let self_variable = self.define_binder_variable(&self_form)?;
+        let mut methods = Vec::new();
+        let mut implementors = Vec::new();
+        for entry in &items[3..] {
+            if Self::is_rust_trait_method(entry) {
+                methods.push(self.lower_rust_trait_method(&shape, scope, entry)?);
+            } else {
+                implementors.push(self.lower_type(entry)?);
+            }
+        }
+        self.trait_methods.insert(
+            binding,
+            TraitMethods {
+                rust_name: Rc::clone(&path),
+                self_variable,
+                methods: methods
+                    .iter()
+                    .map(|method| (method.binding, method.signature.clone()))
+                    .collect(),
+            },
+        );
         self.trait_paths.insert(binding, path.clone());
         core.items.push(Item {
-            kind: ItemKind::RustTrait(binding, path, implementors),
+            kind: ItemKind::RustTrait(binding, path, self_variable, methods, implementors),
             span: form.span(),
             hidden: false,
         });
         Ok(())
+    }
+
+    fn lower_rust_trait_method(
+        &mut self,
+        shape: &Shape<'_>,
+        scope: crate::scope::Scope,
+        entry: &Form,
+    ) -> Result<TraitMethod, Diagnostic> {
+        let method = shape.list(entry)?;
+        let [_, name, signature] = method else {
+            return Err(shape.malformed(entry));
+        };
+        let symbol = shape.symbol(name)?;
+        let binding = self.resolve(symbol, Namespace::Value, name.span())?;
+        let mut lowered = signature.clone();
+        lowered.add_scope(scope);
+        let lowered = self.lower_type(&lowered)?;
+        if !matches!(lowered.kind(), TypeExprKind::Function(..)) {
+            return Err(shape.malformed(signature));
+        }
+        Ok(TraitMethod {
+            binding,
+            signature: lowered,
+        })
     }
 
     fn warn_second_trait_path(&mut self, binding: BindingId, name: &Form, path: &str) {
