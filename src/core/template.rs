@@ -112,6 +112,37 @@ impl ParsedTemplate {
             .any(|piece| matches!(piece, Piece::Placeholder { borrowed: true, .. }))
     }
 
+    pub fn called_arguments(&self, argument: usize) -> Option<Vec<&str>> {
+        let literal = self.call_literal(argument)?;
+        Self::arguments_after_open_parenthesis(literal)
+    }
+
+    fn call_literal(&self, argument: usize) -> Option<&str> {
+        let mut uses = self
+            .pieces
+            .iter()
+            .enumerate()
+            .filter_map(|(position, piece)| {
+                matches!(piece, Piece::Placeholder { index, .. } if *index == argument)
+                    .then_some(position)
+            });
+        let position = uses.next()?;
+        if uses.next().is_some() {
+            return None;
+        }
+        match self.pieces.get(position + 1)? {
+            Piece::Literal(literal) => Some(literal),
+            Piece::Placeholder { .. } | Piece::TypePlaceholder { .. } => None,
+        }
+    }
+
+    fn arguments_after_open_parenthesis(literal: &str) -> Option<Vec<&str>> {
+        let inner = literal.trim_start().strip_prefix('(')?;
+        let close = inner.find(')')?;
+        let arguments: Vec<&str> = inner[..close].split(',').map(str::trim).collect();
+        (!arguments.iter().any(|name| name.is_empty())).then_some(arguments)
+    }
+
     pub fn indexes(&self, argument: usize) -> bool {
         self.pieces.iter().enumerate().any(|(position, piece)| {
             matches!(piece, Piece::Placeholder { index, .. } if *index == argument)
@@ -234,6 +265,50 @@ mod tests {
             ParsedTemplate::parse("{}").err(),
             Some(MalformedPlaceholder)
         );
+    }
+
+    #[test]
+    fn reads_the_arguments_of_a_called_placeholder() {
+        let parsed = ParsedTemplate::parse("{0}.sort_by(|left, right| {1}(left, right).cmp(&0))")
+            .expect("a valid template");
+        assert_eq!(parsed.called_arguments(1), Some(vec!["left", "right"]));
+    }
+
+    #[test]
+    fn rejects_a_placeholder_that_is_not_called() {
+        let parsed = ParsedTemplate::parse("{1}.len()").expect("a valid template");
+        assert_eq!(parsed.called_arguments(1), None);
+    }
+
+    #[test]
+    fn rejects_a_repeated_called_placeholder() {
+        let parsed = ParsedTemplate::parse("{1}(a) + {1}(b)").expect("a valid template");
+        assert_eq!(parsed.called_arguments(1), None);
+    }
+
+    #[test]
+    fn rejects_a_call_with_no_arguments() {
+        let parsed = ParsedTemplate::parse("{1}()").expect("a valid template");
+        assert_eq!(parsed.called_arguments(1), None);
+    }
+
+    #[test]
+    fn rejects_a_placeholder_followed_by_another_placeholder() {
+        let parsed = ParsedTemplate::parse("{1}{0}").expect("a valid template");
+        assert_eq!(parsed.called_arguments(1), None);
+    }
+
+    #[test]
+    fn rejects_a_trailing_placeholder() {
+        let parsed = ParsedTemplate::parse("{1}").expect("a valid template");
+        assert_eq!(parsed.called_arguments(1), None);
+    }
+
+    #[test]
+    fn rejects_an_uncalled_argument_zero() {
+        let parsed = ParsedTemplate::parse("{0}.sort_by(|left, right| {1}(left, right))")
+            .expect("a valid template");
+        assert_eq!(parsed.called_arguments(0), None);
     }
 
     #[test]

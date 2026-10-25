@@ -1,0 +1,21 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/sort_with_literal_comparator.rslisp
+---
+fn ordered(seed: i64) {
+    let mut numbers: Vec<i64> = vec![3_i64, 1_i64, 2_i64];
+    numbers.sort_by(|left, right| (*right - *left).cmp(&0));
+    numbers.sort_by(|left, right| {
+        (|a: &i64, b: &i64| {
+            let difference: i64 = *b - *a;
+            difference + difference
+        })(left, right)
+        .cmp(&0)
+    });
+    println!("{}", numbers.first().unwrap())
+}
+
+fn main() {
+    ordered(1)
+}

@@ -18,9 +18,9 @@ use crate::diagnostic::Diagnostic;
 use crate::reader::{Number, NumberValue};
 use crate::source::Span;
 use crate::types::{
-    Borrow, Collection, GenericId, Type, TypedArgument, TypedArm, TypedBinder, TypedBlock,
-    TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedMatch,
-    TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr, VariantPayload,
+    Borrow, ClosureKind, Collection, GenericId, Type, TypedArgument, TypedArm, TypedBinder,
+    TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf,
+    TypedMatch, TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr, VariantPayload,
 };
 
 mod tail_loop;
@@ -1718,7 +1718,7 @@ impl<'a> ExpressionEmitter<'a> {
         if template.template.as_ref() == Self::MAP_UPDATE_TEMPLATE {
             return self.map_update_call(arguments);
         }
-        let parsed = Template::new(&template.template);
+        let mut parsed = Template::new(&template.template);
         let context = Self::argument_context(arguments);
         let roles: Vec<ArgumentRole> = arguments
             .iter()
@@ -1729,12 +1729,49 @@ impl<'a> ExpressionEmitter<'a> {
             .iter()
             .map(|role| *role == ArgumentRole::MutPlace)
             .collect();
-        let arguments: Vec<Code> = arguments
+        let mut codes: Vec<Code> = arguments
             .iter()
             .zip(&roles)
             .map(|(argument, role)| self.argument(argument, context, *role))
             .collect();
-        self.inline_with_places(&parsed, arguments, types, &places, span)
+        for (position, argument) in arguments.iter().enumerate() {
+            let Some(call_arguments) = parsed.called_arguments(position) else {
+                continue;
+            };
+            let TypedExprKind::Fn(lambda) = &argument.value.kind else {
+                continue;
+            };
+            if !Self::inlines_call(lambda, &call_arguments) {
+                continue;
+            }
+            let Some(without) = parsed.without_call(position) else {
+                continue;
+            };
+            codes[position] = self.inlined_closure_body(lambda, &call_arguments);
+            parsed = without;
+        }
+        self.inline_with_places(&parsed, codes, types, &places, span)
+    }
+
+    fn inlines_call(lambda: &TypedLambda, call_arguments: &[&str]) -> bool {
+        lambda.kind == ClosureKind::Fn
+            && lambda.moved_capture.is_none()
+            && lambda.wraps.is_none()
+            && !Self::contains_try(&lambda.body)
+            && matches!(lambda.body.items.as_slice(), [TypedBodyItem::Expr(_)])
+            && lambda.params.len() == call_arguments.len()
+    }
+
+    fn inlined_closure_body(&mut self, lambda: &TypedLambda, call_arguments: &[&str]) -> Code {
+        let previous = std::mem::replace(&mut self.tail_loop, TailLoop::of_closure(lambda));
+        self.locals.enter();
+        for (param, name) in lambda.params.iter().zip(call_arguments) {
+            self.locals.bind_exact(param.binding, name);
+        }
+        let body = self.closure_body(lambda, false);
+        self.locals.leave();
+        self.tail_loop = previous;
+        body
     }
 
     fn map_update_call(&mut self, arguments: &[TypedArgument]) -> Code {
