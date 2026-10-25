@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/at_borrowed_row.rslisp
+---
+fn main() {
+    let mut grid = vec![vec![true, false]];
+    grid.push(vec![false, true]);
+    let row = &grid[1];
+    println!("{}", row[0])
+}

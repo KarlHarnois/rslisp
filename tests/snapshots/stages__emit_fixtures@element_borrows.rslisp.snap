@@ -10,14 +10,14 @@ fn flip(flag: bool) -> bool {
 fn main() {
     let mut grid = vec![vec![true, false], vec![false, true]];
     let row = &grid[1];
-    println!("{}", &row[0]);
-    println!("{}", &grid[1][0]);
+    println!("{}", row[0]);
+    println!("{}", grid[1][0]);
     println!("{}", flip(grid[1][0]));
     let mut rows = vec![vec!["alpha".to_string()], vec!["beta".to_string()]];
     let last_row = &rows[1];
     let word = &last_row[0];
     println!("{}", word);
-    println!("{}", &vec![5_i64, 6_i64][0]);
+    println!("{}", vec![5_i64, 6_i64][0]);
     println!(
         "{}",
         match grid.get(1) {
