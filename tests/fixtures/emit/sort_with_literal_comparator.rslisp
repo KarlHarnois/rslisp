@@ -1,0 +1,10 @@
+(defn ordered (seed)
+  (let numbers (vec 3 1 2))
+  (sort! numbers (fn (a b) (- b a)))
+  (sort! numbers (fn (a b)
+                   (let difference (- b a))
+                   (+ difference difference)))
+  (println (unwrap (first numbers))))
+
+(defn main ()
+  (ordered 1))

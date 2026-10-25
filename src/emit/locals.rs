@@ -46,6 +46,14 @@ impl LocalNames {
         candidate
     }
 
+    pub fn bind_exact(&mut self, binding: BindingId, name: &str) {
+        self.used.insert(name.to_string());
+        if let Some(scope) = self.scopes.last_mut() {
+            scope.push(name.to_string());
+        }
+        self.assigned.insert(binding, name.to_string());
+    }
+
     pub fn bind_receiver(&mut self, binding: BindingId) -> String {
         let name = "self".to_string();
         self.used.insert(name.clone());

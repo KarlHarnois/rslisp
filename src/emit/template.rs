@@ -41,6 +41,32 @@ impl Template {
         self.parsed.indexes(argument)
     }
 
+    #[cfg(test)]
+    pub fn text(&self) -> &str {
+        self.parsed.text()
+    }
+
+    pub fn called_arguments(&self, argument: usize) -> Option<Vec<&str>> {
+        self.parsed.called_arguments(argument)
+    }
+
+    pub fn without_call(&self, argument: usize) -> Option<Self> {
+        let text = self.parsed.text();
+        let token = [format!("{{{argument}}}"), format!("{{&{argument}}}")]
+            .into_iter()
+            .find_map(|token| text.find(&token).map(|offset| (offset, token.len())))?;
+        let call = &text[token.0 + token.1..];
+        let trimmed = call.trim_start();
+        if !trimmed.starts_with('(') {
+            return None;
+        }
+        let open = call.len() - trimmed.len();
+        let close = call[open..].find(')')? + open;
+        let mut without = text.to_string();
+        without.replace_range(token.0 + token.1 + open..token.0 + token.1 + close + 1, "");
+        Some(Self::new(&without))
+    }
+
     pub fn inline_with_types(
         &self,
         arguments: Vec<Code>,
@@ -332,6 +358,33 @@ mod tests {
             .unwrap();
         assert_eq!(code.precedence, Precedence::Block);
         assert!(code.text().contains("let template_argument_0 = next();"));
+    }
+
+    #[test]
+    fn removes_a_called_placeholder() {
+        let template = Template::new("{0}.sort_by(|left, right| {1}(left, right).cmp(&0))");
+        assert_eq!(
+            template.without_call(1).expect("a call").text(),
+            "{0}.sort_by(|left, right| {1}.cmp(&0))"
+        );
+    }
+
+    #[test]
+    fn removes_a_borrowed_call() {
+        let template = Template::new("f({&1}(a))");
+        assert_eq!(template.without_call(1).expect("a call").text(), "f({&1})");
+    }
+
+    #[test]
+    fn leaves_a_placeholder_without_a_call_alone() {
+        let template = Template::new("{0}.len()");
+        assert!(template.without_call(0).is_none());
+    }
+
+    #[test]
+    fn reports_a_call_without_a_closing_parenthesis() {
+        let template = Template::new("{0}(a");
+        assert!(template.without_call(0).is_none());
     }
 
     #[test]

@@ -16,7 +16,7 @@ fn main() {
     numbers.reverse();
     numbers.iter().rev().for_each(|n: &i64| println!("{}", n));
     numbers.sort_by(|left, right| oldest_first(left, right).cmp(&0));
-    numbers.sort_by(|left, right| (|left: &i64, right: &i64| *right - *left)(left, right).cmp(&0));
+    numbers.sort_by(|left, right| (*right - *left).cmp(&0));
     let mut words = vec!["Alpha".to_string(), "beta".to_string()];
     words.sort();
     println!("{} {}", "MiXeD".to_lowercase(), "MiXeD".to_uppercase());
