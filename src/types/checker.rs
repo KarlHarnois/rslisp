@@ -147,6 +147,7 @@ pub struct TypeChecker {
     pub(super) locals: HashMap<BindingId, Type>,
     pub(super) variant_arm: HashMap<BindingId, VariantArmReference>,
     pub(super) compile_time_only: HashSet<BindingId>,
+    failed_bindings: HashSet<BindingId>,
     pub(super) diagnostics: Diagnostics,
     pub(super) warnings: Diagnostics,
     missing_annotations: Diagnostics,
@@ -208,6 +209,7 @@ impl TypeChecker {
             locals: HashMap::new(),
             variant_arm: HashMap::new(),
             compile_time_only: HashSet::new(),
+            failed_bindings: HashSet::new(),
             diagnostics: Diagnostics::default(),
             warnings: Diagnostics::default(),
             missing_annotations: Diagnostics::default(),
@@ -475,6 +477,11 @@ impl TypeChecker {
                 .filter(|binding| !self.compile_time_only.contains(binding))
                 .map(|binding| by_binding[binding])
                 .collect();
+            let bindings: Vec<BindingId> = members.iter().map(|member| member.binding).collect();
+            if graph.depends_on_any(&bindings, &self.failed_bindings) {
+                self.failed_bindings.extend(bindings);
+                continue;
+            }
             typed.extend(self.check_component(&members));
         }
         typed
@@ -686,6 +693,7 @@ impl TypeChecker {
                 Ok(value) => typed.push((member.binding, value)),
                 Err(diagnostic) => {
                     self.diagnostics.push(diagnostic);
+                    self.failed_bindings.insert(member.binding);
                     let failed = self.failed_scheme();
                     self.schemes.insert(member.binding, failed);
                 }

@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/failed_definition_cascade.rslisp
+---
+error[L0401]: mismatched types
+ --> check/failed_definition_cascade.rslisp:6:7
+  |
+5 |       (pair (vec) 1)
+  |       -------------- the first branch is `(pair (vec _) _)`
+6 |       (pair (vec) "x")))
+  |       ^^^^^^^^^^^^^^^^ expected `(pair (vec _) _)`, found `(pair (vec _) (ref str))`
+  |
+  = note: both branches of `if` must have the same type
