@@ -173,6 +173,7 @@ pub struct TypeChecker {
     pub(super) conversions: Vec<TypedConversion>,
     pub(super) trait_methods: HashMap<BindingId, TraitMethodInfo>,
     pub(super) synthetic_bindings: HashSet<BindingId>,
+    pub(super) pinned: HashMap<BindingId, Type>,
 }
 
 struct Definition<'p> {
@@ -233,6 +234,7 @@ impl TypeChecker {
             conversions: Vec::new(),
             trait_methods: HashMap::new(),
             synthetic_bindings: HashSet::new(),
+            pinned: HashMap::new(),
         }
     }
 
@@ -800,23 +802,27 @@ impl TypeChecker {
     }
 
     fn prepare_member(&mut self, member: &Definition) -> Option<(BindingId, Scheme)> {
-        let Some((signature, _)) = self.signatures.get(&member.binding).cloned() else {
-            let shape = self.unwritten_shape(member.value);
-            self.component.insert(member.binding, shape);
-            return None;
-        };
-        match self.lower_scheme(&signature) {
-            Ok(scheme) => {
-                self.component.insert(member.binding, scheme.body.clone());
-                Some((member.binding, scheme))
-            }
-            Err(diagnostic) => {
-                self.diagnostics.push(diagnostic);
-                let fresh = self.unifier.fresh();
-                self.component.insert(member.binding, fresh);
-                None
-            }
+        if let Some((signature, _)) = self.signatures.get(&member.binding).cloned() {
+            return match self.lower_scheme(&signature) {
+                Ok(scheme) => {
+                    self.component.insert(member.binding, scheme.body.clone());
+                    Some((member.binding, scheme))
+                }
+                Err(diagnostic) => {
+                    self.diagnostics.push(diagnostic);
+                    let fresh = self.unifier.fresh();
+                    self.component.insert(member.binding, fresh);
+                    None
+                }
+            };
         }
+        if let Some(pinned) = self.pinned.get(&member.binding).cloned() {
+            self.component.insert(member.binding, pinned);
+            return None;
+        }
+        let shape = self.unwritten_shape(member.value);
+        self.component.insert(member.binding, shape);
+        None
     }
 
     fn unwritten_shape(&mut self, value: &Expr) -> Type {
@@ -1890,10 +1896,12 @@ impl TypeChecker {
         program: &crate::expand::Program,
         changed_structs: &HashSet<BindingId>,
         inferred_copies: &InferredCopies,
+        pinned: &HashMap<BindingId, Type>,
     ) -> Result<super::typed::TypedProgram, Diagnostics> {
         let mut checker = Self::new(program.bindings.clone());
         checker.changed_structs = changed_structs.clone();
         checker.inferred_copies = inferred_copies.clone();
+        checker.pinned = pinned.clone();
         checker.macro_origins = program
             .macro_origins
             .iter()

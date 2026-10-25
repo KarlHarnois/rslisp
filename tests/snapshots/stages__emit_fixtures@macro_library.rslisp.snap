@@ -10,7 +10,7 @@ fn main() {
 mod macro_tools {
 
     pub(crate) mod helpers {
-        pub(crate) fn exclaim<A: std::fmt::Display + ?Sized>(text: &A) -> String {
+        pub(crate) fn exclaim(text: &str) -> String {
             format!("{}!", text)
         }
     }

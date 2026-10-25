@@ -38,7 +38,7 @@ fn total(tree: &Tree<i64>) -> i64 {
     }
 }
 
-fn first_child<A>(tree: Tree<A>) -> Tree<A> {
+fn first_child(tree: Tree<i64>) -> Tree<i64> {
     match tree {
         Tree::Node(left, _, _) => *left,
         Tree::Leaf => Tree::Leaf,
@@ -55,7 +55,7 @@ fn named_total(tree: &NamedTree<i64>) -> i64 {
     }
 }
 
-fn depth<A>(mut tree: &Tree<A>, mut count: i64) -> i64 {
+fn depth(mut tree: &Tree<i64>, mut count: i64) -> i64 {
     loop {
         match tree {
             Tree::Node(left, _, _) => {

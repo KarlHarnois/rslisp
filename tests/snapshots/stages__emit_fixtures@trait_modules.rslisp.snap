@@ -29,6 +29,18 @@ fn main() {
             .copied()
             .fold(0.0, |total: f64, area: f64| total + area)
     );
+    let squares = vec![
+        crate::trait_modules::squares::Square { side: 2.0 },
+        crate::trait_modules::squares::Square { side: 3.0 },
+    ];
+    println!("{}", total_area(&squares));
+    println!(
+        "{}",
+        areas(&squares)
+            .iter()
+            .copied()
+            .fold(0.0, |total: f64, area: f64| total + area)
+    );
     let mut circle = crate::trait_modules::circles::Circle { radius: 1.0 };
     circle.scale(2.0);
     println!("{}", circle.area())
@@ -57,6 +69,23 @@ mod trait_modules {
         pub trait Shape {
             fn area(&self) -> f64;
             fn scale(&mut self, _: f64);
+        }
+    }
+
+    pub(crate) mod squares {
+        #[derive(Clone, Debug, PartialEq)]
+        pub struct Square {
+            pub side: f64,
+        }
+
+        impl crate::trait_modules::shapes::Shape for Square {
+            fn area(&self) -> f64 {
+                self.side * self.side
+            }
+            fn scale(&mut self, factor: f64) {
+                let _side = self.side;
+                let _factor = factor;
+            }
         }
     }
 }

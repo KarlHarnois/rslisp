@@ -8,7 +8,7 @@ struct Counter {
     count: i64,
 }
 
-fn apply_to_four<A>(f: impl FnOnce(f64) -> A) -> A {
+fn apply_to_four(f: impl FnOnce(f64) -> f64) -> f64 {
     f(4.0)
 }
 

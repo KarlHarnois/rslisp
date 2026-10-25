@@ -15,7 +15,7 @@ warning[L0217]: `shown` binds a Rust path that `display` already binds
 (derive pair clone copy debug partial-eq eq hash)
 (type describe (where ((a shown)) (fn ((ref a)) string)))
 (type twice-borrowed (fn ((ref (ref i64))) string))
-(type make-pair (where (a b) (fn (a b) (pair a b))))
+(type make-pair (fn (i64 string) (pair i64 string)))
 (type pair-first (where (a b) (fn ((ref (pair a b))) (ref a))))
 (type pair-second (where (a b) (fn ((ref (pair a b))) (ref b))))
 (type origin (pair i64 string))

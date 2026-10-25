@@ -11,7 +11,11 @@
 
 (defn main ()
   (println (len (twice 3)))
+  (println (len (twice 1.5)))
   (println (len (twice-pinned 3)))
   (println (len (wrap 3)))
+  (println (len (wrap (to-string "one"))))
   (show-twice 3)
-  (println (bigger 1 2)))
+  (show-twice (to-string "two"))
+  (println (bigger 1 2))
+  (println (bigger (to-string "pear") (to-string "apple"))))

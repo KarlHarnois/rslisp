@@ -3,16 +3,16 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/closure_kinds.rslisp
 ---
-fn apply<A, B>(f: impl FnOnce(A) -> B, x: A) -> B {
+fn apply(f: impl FnOnce(i64) -> String, x: i64) -> String {
     f(x)
 }
 
-fn call_twice<A>(mut f: impl FnMut() -> A) -> A {
+fn call_twice(mut f: impl FnMut()) {
     f();
     f()
 }
 
-fn keep<A>(f: &A) {}
+fn keep(f: impl Fn(i64) -> i64) {}
 
 fn hold(f: impl Fn() -> i64) -> impl Fn() -> i64 {
     f
@@ -22,12 +22,12 @@ fn hold_mut(mut f: impl FnMut() -> i64) -> i64 {
     f()
 }
 
-fn alias<A, B>(f: impl Fn(A) -> B, x: A) -> B {
+fn alias(f: impl Fn(i64) -> i64, x: i64) -> i64 {
     let g = f;
     g(x)
 }
 
-fn call_inside<A, B>(f: impl FnOnce(A) -> B, x: A) -> B {
+fn call_inside(f: impl FnOnce(i64) -> i64, x: i64) -> i64 {
     let g = || f(x);
     g()
 }
@@ -49,8 +49,8 @@ fn returns_once() -> impl FnOnce() -> String {
     move || text
 }
 
-fn make_adder<A: crate::rt::Number>(n: A) -> impl Fn(A) -> A {
-    move |x: A| x + n
+fn make_adder(n: i64) -> impl Fn(i64) -> i64 {
+    move |x: i64| x + n
 }
 
 fn make_mutator() -> impl FnMut() {
@@ -92,7 +92,7 @@ fn main() {
     let mut items: Vec<i64> = vec![1_i64];
     let mut add = |x: i64| items.push(x);
     call_twice(|| add(2));
-    keep(&(|value: i64| value + 1));
+    keep(|value: i64| value + 1);
     println!("{}", items.len());
     println!("{}", alias(|value: i64| value + 1, 2));
     println!("{}", call_inside(|value: i64| value + 1, 3));
@@ -113,31 +113,4 @@ fn main() {
     returned_mut();
     returned_mut();
     println!("{}", returns_once()())
-}
-
-mod rt {
-    use std::ops::{Add, Div, Mul, Rem, Sub};
-
-    pub trait Number:
-        Copy
-        + PartialOrd
-        + Add<Output = Self>
-        + Sub<Output = Self>
-        + Mul<Output = Self>
-        + Div<Output = Self>
-        + Rem<Output = Self>
-    {
-    }
-
-    macro_rules! numbers {
-        ($($number:ty),*) => {
-            $(
-                impl Number for $number {}
-            )*
-        };
-    }
-
-    numbers!(
-        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
-    );
 }

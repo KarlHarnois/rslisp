@@ -9,13 +9,13 @@ enum Thing {
     Other(String),
 }
 
-fn describe<A: std::fmt::Display, B: std::fmt::Display>(entry: &(A, B)) -> String {
+fn describe(entry: (i64, &str)) -> String {
     let (index, line) = entry;
     format!("{}: {}", index, line)
 }
 
 fn main() {
-    println!("{}", describe(&(1_i64, "alpha")));
+    println!("{}", describe((1_i64, "alpha")));
     match Thing::Of(2) {
         Thing::Of(n) => println!("{}", n),
         Thing::Other(_) => println!("{}", 0_i64),

@@ -2,4 +2,6 @@
 
 (defn compare-with-name (x) (compare x (to-string "Ana")))
 
-(defn main () (println (compare-with-name (to-string "Bo"))))
+(defn main ()
+  (println (compare-with-name (to-string "Bo")))
+  (println (compare-with-name "Bob")))

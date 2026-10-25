@@ -5,11 +5,11 @@ input_file: tests/fixtures/emit/user_examples.rslisp
 ---
 const IS_ADMIN: bool = true;
 
-fn some_function<A: crate::rt::Number>(x: A) -> A {
+fn some_function(x: i64) -> i64 {
     x * x
 }
 
-fn square<A: crate::rt::Number>(x: A) -> A {
+fn square(x: f64) -> f64 {
     x * x
 }
 
@@ -37,31 +37,4 @@ fn main() {
     if IS_ADMIN {
         println!("welcome")
     }
-}
-
-mod rt {
-    use std::ops::{Add, Div, Mul, Rem, Sub};
-
-    pub trait Number:
-        Copy
-        + PartialOrd
-        + Add<Output = Self>
-        + Sub<Output = Self>
-        + Mul<Output = Self>
-        + Div<Output = Self>
-        + Rem<Output = Self>
-    {
-    }
-
-    macro_rules! numbers {
-        ($($number:ty),*) => {
-            $(
-                impl Number for $number {}
-            )*
-        };
-    }
-
-    numbers!(
-        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
-    );
 }

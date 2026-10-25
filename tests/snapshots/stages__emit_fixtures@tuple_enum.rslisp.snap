@@ -7,7 +7,7 @@ fn make<A, B>(a: A, b: B) -> (A, B) {
     (a, b)
 }
 
-fn first_of<A, B>(p: (A, B)) -> A {
+fn first_of(p: (String, i64)) -> String {
     let (a, _) = p;
     a
 }

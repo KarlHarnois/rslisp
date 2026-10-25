@@ -1,0 +1,443 @@
+use std::collections::{BTreeMap, HashMap, HashSet};
+
+use super::graph::DependencyGraph;
+use super::ty::{GenericId, Type};
+use super::typed::{TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
+use crate::core::{BindingId, Expr, ItemKind};
+use crate::expand::Program;
+
+struct UseTypes {
+    types: Vec<Option<Type>>,
+    resolved: bool,
+}
+
+struct FunctionUses {
+    params: Vec<GenericId>,
+    body: Type,
+    uses: Vec<UseTypes>,
+    written: bool,
+}
+
+struct Target {
+    params: Vec<GenericId>,
+    body: Type,
+}
+
+pub struct InstantiationReport {
+    entries: BTreeMap<BindingId, FunctionUses>,
+    substitutions: HashMap<BindingId, HashMap<GenericId, Type>>,
+}
+
+impl InstantiationReport {
+    pub fn of(program: &Program, typed: &TypedProgram) -> Self {
+        let written = Self::written_signatures(program);
+        let groups = Self::recursive_groups(program);
+        let targets = Self::targets(typed);
+        let mut entries = Self::entries(&targets, &written);
+        Self::collect_uses(typed, &targets, &groups, &mut entries);
+        let substitutions = Self::group_substitutions(&targets, &groups, &entries);
+        Self {
+            entries,
+            substitutions,
+        }
+    }
+
+    pub fn one_type(&self, binding: BindingId) -> Option<HashMap<GenericId, Type>> {
+        self.substitutions.get(&binding).cloned()
+    }
+
+    fn written_signatures(program: &Program) -> HashSet<BindingId> {
+        program
+            .modules
+            .iter()
+            .flat_map(|module| &module.items)
+            .filter_map(|item| match &item.kind {
+                ItemKind::Signature(binding, _) => Some(*binding),
+                _ => None,
+            })
+            .collect()
+    }
+
+    fn recursive_groups(program: &Program) -> HashMap<BindingId, usize> {
+        let definitions: Vec<(BindingId, &Expr)> = program
+            .modules
+            .iter()
+            .flat_map(|module| &module.items)
+            .filter_map(|item| match &item.kind {
+                ItemKind::Def(binding, value) => Some((*binding, value)),
+                _ => None,
+            })
+            .collect();
+        let graph = DependencyGraph::build(&definitions, &program.bindings);
+        let order: Vec<BindingId> = definitions.iter().map(|(binding, _)| *binding).collect();
+        let mut groups = HashMap::new();
+        for (index, component) in graph.components(&order).into_iter().enumerate() {
+            for binding in component {
+                groups.insert(binding, index);
+            }
+        }
+        groups
+    }
+
+    fn targets(typed: &TypedProgram) -> HashMap<BindingId, Target> {
+        typed
+            .modules
+            .iter()
+            .flat_map(|module| &module.definitions)
+            .filter(|definition| {
+                matches!(definition.value.kind, TypedExprKind::Fn(_))
+                    && !definition.scheme.params.is_empty()
+            })
+            .map(|definition| {
+                let target = Target {
+                    params: definition
+                        .scheme
+                        .params
+                        .iter()
+                        .map(|param| param.id)
+                        .collect(),
+                    body: definition.scheme.body.clone(),
+                };
+                (definition.binding, target)
+            })
+            .collect()
+    }
+
+    fn entries(
+        targets: &HashMap<BindingId, Target>,
+        written: &HashSet<BindingId>,
+    ) -> BTreeMap<BindingId, FunctionUses> {
+        targets
+            .iter()
+            .map(|(binding, target)| {
+                let entry = FunctionUses {
+                    params: target.params.clone(),
+                    body: target.body.clone(),
+                    uses: Vec::new(),
+                    written: written.contains(binding),
+                };
+                (*binding, entry)
+            })
+            .collect()
+    }
+
+    fn collect_uses(
+        typed: &TypedProgram,
+        targets: &HashMap<BindingId, Target>,
+        groups: &HashMap<BindingId, usize>,
+        entries: &mut BTreeMap<BindingId, FunctionUses>,
+    ) {
+        for module in &typed.modules {
+            for definition in &module.definitions {
+                Self::collect_expr(
+                    &definition.value,
+                    definition.binding,
+                    targets,
+                    groups,
+                    entries,
+                );
+            }
+        }
+    }
+
+    fn collect_expr(
+        expr: &TypedExpr,
+        enclosing: BindingId,
+        targets: &HashMap<BindingId, Target>,
+        groups: &HashMap<BindingId, usize>,
+        entries: &mut BTreeMap<BindingId, FunctionUses>,
+    ) {
+        if let TypedExprKind::Call(callee, arguments) = &expr.kind {
+            Self::collect_callee(callee, arguments, enclosing, targets, groups, entries);
+            return;
+        }
+        if let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = &expr.kind {
+            Self::record(*binding, &expr.ty, enclosing, targets, groups, entries);
+        }
+        for child in expr.children() {
+            Self::collect_expr(child, enclosing, targets, groups, entries);
+        }
+    }
+
+    fn collect_callee(
+        callee: &TypedExpr,
+        arguments: &[super::typed::TypedArgument],
+        enclosing: BindingId,
+        targets: &HashMap<BindingId, Target>,
+        groups: &HashMap<BindingId, usize>,
+        entries: &mut BTreeMap<BindingId, FunctionUses>,
+    ) {
+        match &callee.kind {
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
+                Self::record(*binding, &callee.ty, enclosing, targets, groups, entries);
+            }
+            _ => Self::collect_expr(callee, enclosing, targets, groups, entries),
+        }
+        for argument in arguments {
+            Self::collect_expr(&argument.value, enclosing, targets, groups, entries);
+        }
+    }
+
+    fn record(
+        target_binding: BindingId,
+        actual: &Type,
+        enclosing: BindingId,
+        targets: &HashMap<BindingId, Target>,
+        groups: &HashMap<BindingId, usize>,
+        entries: &mut BTreeMap<BindingId, FunctionUses>,
+    ) {
+        if groups.get(&enclosing) == groups.get(&target_binding) {
+            return;
+        }
+        let Some(target) = targets.get(&target_binding) else {
+            return;
+        };
+        let entry = entries
+            .get_mut(&target_binding)
+            .expect("every target has an entry");
+        entry
+            .uses
+            .push(Self::use_types(&target.body, &target.params, actual));
+    }
+
+    fn use_types(body: &Type, params: &[GenericId], actual: &Type) -> UseTypes {
+        let mut bound = HashMap::new();
+        let matched = Self::bind(body, actual, &mut bound);
+        let types: Vec<Option<Type>> = params
+            .iter()
+            .map(|param| bound.get(param).cloned())
+            .collect();
+        let resolved = matched
+            && types
+                .iter()
+                .all(|ty| ty.as_ref().is_some_and(|ty| !ty.is_unknown()));
+        UseTypes { types, resolved }
+    }
+
+    fn bind(scheme: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
+        match scheme {
+            Type::Generic(generic) => {
+                bound.insert(*generic, actual.clone());
+                true
+            }
+            Type::Named(..) => Self::bind_named(scheme, actual, bound),
+            Type::Function(..) => Self::bind_function(scheme, actual, bound),
+            Type::Ref(..) | Type::Mut(..) => Self::bind_reference(scheme, actual, bound),
+            Type::Primitive(primitive) => {
+                matches!(actual, Type::Primitive(other) if primitive == other)
+            }
+            Type::Var(_) => false,
+        }
+    }
+
+    fn bind_named(scheme: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
+        let (Type::Named(left, left_arguments), Type::Named(right, right_arguments)) =
+            (scheme, actual)
+        else {
+            return false;
+        };
+        left == right
+            && left_arguments.len() == right_arguments.len()
+            && Self::bind_all(left_arguments, right_arguments, bound)
+    }
+
+    fn bind_function(scheme: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
+        let (
+            Type::Function(_, left_parameters, left_result),
+            Type::Function(_, right_parameters, right_result),
+        ) = (scheme, actual)
+        else {
+            return false;
+        };
+        left_parameters.len() == right_parameters.len()
+            && Self::bind_all(left_parameters, right_parameters, bound)
+            && Self::bind(left_result, right_result, bound)
+    }
+
+    fn bind_reference(scheme: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
+        match (scheme, actual) {
+            (Type::Ref(left), Type::Ref(right)) | (Type::Mut(left), Type::Mut(right)) => {
+                Self::bind(left, right, bound)
+            }
+            _ => false,
+        }
+    }
+
+    fn bind_all(scheme: &[Type], actual: &[Type], bound: &mut HashMap<GenericId, Type>) -> bool {
+        scheme
+            .iter()
+            .zip(actual)
+            .all(|(scheme, actual)| Self::bind(scheme, actual, bound))
+    }
+
+    fn group_substitutions(
+        targets: &HashMap<BindingId, Target>,
+        groups: &HashMap<BindingId, usize>,
+        entries: &BTreeMap<BindingId, FunctionUses>,
+    ) -> HashMap<BindingId, HashMap<GenericId, Type>> {
+        let mut members: HashMap<usize, Vec<BindingId>> = HashMap::new();
+        for binding in targets.keys() {
+            if let Some(group) = groups.get(binding) {
+                members.entry(*group).or_default().push(*binding);
+            }
+        }
+        let mut substitutions = HashMap::new();
+        for members in members.values() {
+            if let Some(substitution) = Self::decide_group(members, entries) {
+                for member in members {
+                    substitutions.insert(*member, substitution.clone());
+                }
+            }
+        }
+        substitutions
+    }
+
+    fn decide_group(
+        members: &[BindingId],
+        entries: &BTreeMap<BindingId, FunctionUses>,
+    ) -> Option<HashMap<GenericId, Type>> {
+        if members.iter().any(|member| entries[member].written) {
+            return None;
+        }
+        let combined = Self::combined_uses(members, entries)?;
+        members
+            .iter()
+            .all(|member| Self::covers_params(&entries[member], &combined))
+            .then_some(combined)
+    }
+
+    fn combined_uses(
+        members: &[BindingId],
+        entries: &BTreeMap<BindingId, FunctionUses>,
+    ) -> Option<HashMap<GenericId, Type>> {
+        let mut combined: HashMap<GenericId, Type> = HashMap::new();
+        let mut uses = 0;
+        for member in members {
+            for used in &entries[member].uses {
+                if !used.resolved {
+                    return None;
+                }
+                uses += 1;
+                Self::merge_use(&mut combined, &entries[member].params, used)?;
+            }
+        }
+        (uses > 0).then_some(combined)
+    }
+
+    fn merge_use(
+        combined: &mut HashMap<GenericId, Type>,
+        params: &[GenericId],
+        used: &UseTypes,
+    ) -> Option<()> {
+        for (param, ty) in params.iter().zip(&used.types) {
+            let ty = ty.clone().expect("a resolved use names every parameter");
+            match combined.entry(*param) {
+                std::collections::hash_map::Entry::Occupied(existing) => {
+                    if *existing.get() != ty {
+                        return None;
+                    }
+                }
+                std::collections::hash_map::Entry::Vacant(entry) => {
+                    entry.insert(ty);
+                }
+            }
+        }
+        Some(())
+    }
+
+    fn covers_params(entry: &FunctionUses, combined: &HashMap<GenericId, Type>) -> bool {
+        entry
+            .params
+            .iter()
+            .all(|param| combined.contains_key(param))
+    }
+}
+
+pub struct Pinning {
+    pins: Vec<(BindingId, Type)>,
+}
+
+impl Pinning {
+    pub fn of(report: &InstantiationReport) -> Self {
+        let pins = report
+            .entries
+            .iter()
+            .filter_map(|(binding, entry)| {
+                let substitution = report.one_type(*binding)?;
+                Some((*binding, entry.body.substitute(&substitution)))
+            })
+            .collect();
+        Self { pins }
+    }
+
+    pub fn pins(&self) -> &[(BindingId, Type)] {
+        &self.pins
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use super::InstantiationReport;
+    use crate::core::{
+        BindingArena, BindingId, BindingInfo, BindingKind, ClosureKind, ModuleId, PrimitiveType,
+    };
+    use crate::types::{GenericId, Type, TypeVar};
+
+    struct BindFixture {
+        bound: HashMap<GenericId, Type>,
+        named: BindingId,
+    }
+
+    impl BindFixture {
+        fn new() -> Self {
+            let mut bindings = BindingArena::default();
+            let named = bindings.add(BindingInfo::new(
+                "item".into(),
+                BindingKind::Global(ModuleId::new(0)),
+                None,
+            ));
+            Self {
+                bound: HashMap::new(),
+                named,
+            }
+        }
+
+        fn bind(&mut self, scheme: &Type, actual: &Type) -> bool {
+            InstantiationReport::bind(scheme, actual, &mut self.bound)
+        }
+
+        fn primitive(&self) -> Type {
+            Type::Primitive(PrimitiveType::I64)
+        }
+    }
+
+    #[test]
+    fn a_type_variable_scheme_does_not_bind() {
+        let mut fixture = BindFixture::new();
+        let scheme = Type::Var(TypeVar::new(0));
+        assert!(!fixture.bind(&scheme, &fixture.primitive()));
+    }
+
+    #[test]
+    fn a_named_scheme_does_not_bind_a_primitive() {
+        let mut fixture = BindFixture::new();
+        let scheme = Type::Named(fixture.named, Vec::new());
+        assert!(!fixture.bind(&scheme, &fixture.primitive()));
+    }
+
+    #[test]
+    fn a_function_scheme_does_not_bind_a_primitive() {
+        let mut fixture = BindFixture::new();
+        let scheme = Type::Function(ClosureKind::Fn, Vec::new(), Box::new(Type::unit()));
+        assert!(!fixture.bind(&scheme, &fixture.primitive()));
+    }
+
+    #[test]
+    fn a_reference_scheme_does_not_bind_a_primitive() {
+        let mut fixture = BindFixture::new();
+        let scheme = Type::Ref(Box::new(Type::Primitive(PrimitiveType::I64)));
+        assert!(!fixture.bind(&scheme, &fixture.primitive()));
+    }
+}

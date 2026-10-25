@@ -14,7 +14,7 @@ fn factorial(mut n: i64, mut total: i64) -> i64 {
     }
 }
 
-fn drain<A>(items: &mut Vec<A>) {
+fn drain(items: &mut Vec<i64>) {
     loop {
         if items.len() == 0 {
             return;

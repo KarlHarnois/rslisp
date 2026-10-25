@@ -32,7 +32,11 @@ fn main() {
     println!("{}", &numbers[0]);
     println!("{}", first_number(&numbers));
     println!("{}", count_pairs(&numbers));
-    println!("{}", total_from(&numbers, 0))
+    println!("{}", total_from(&numbers, 0));
+    let floats = vec![1.5_f64, 2.5_f64, 3.5_f64];
+    println!("{}", first_number(&floats));
+    println!("{}", count_pairs(&floats));
+    println!("{}", total_from(&floats, 0))
 }
 
 mod prelude {

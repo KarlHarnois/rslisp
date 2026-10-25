@@ -7,7 +7,7 @@ fn bigger<A: PartialOrd>(a: A, b: A) -> A {
     if a > b { a } else { b }
 }
 
-fn same<A: PartialEq>(a: A, b: A) -> A {
+fn same(a: i64, b: i64) -> i64 {
     if a == b { a } else { b }
 }
 

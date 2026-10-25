@@ -21,7 +21,12 @@ fn main() {
     swap_spots(&mut a, &mut b);
     println!("{}{}", a, b);
     let numbers: Vec<i64> = vec![1_i64, 2_i64, 3_i64];
-    println!("{}", measure(numbers.as_slice()))
+    println!("{}", measure(numbers.as_slice()));
+    let mut mut_a: i64 = 1;
+    let mut mut_b: i64 = 2;
+    swap_spots(&mut mut_a, &mut mut_b);
+    println!("{}{}", mut_a, mut_b);
+    println!("{}", measure(&"abc".to_string()))
 }
 
 mod rt {

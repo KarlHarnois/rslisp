@@ -4,5 +4,5 @@ expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/inferred_trait_bound.rslisp
 ---
 (derive circle clone copy debug partial-eq)
-(type total-area (where ((a copy shape)) (fn ((ref (slice a))) f64)))
+(type total-area (fn ((ref (slice circle))) f64))
 (type main (fn () unit))
