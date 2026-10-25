@@ -39,6 +39,12 @@ impl DependencyGraph {
         self.compile_time_only.contains(&binding)
     }
 
+    pub fn depends_on_any(&self, roots: &[BindingId], bindings: &HashSet<BindingId>) -> bool {
+        self.reachable_from(roots)
+            .iter()
+            .any(|binding| bindings.contains(binding))
+    }
+
     pub fn reachable_from(&self, roots: &[BindingId]) -> HashSet<BindingId> {
         let mut reached: HashSet<BindingId> = HashSet::new();
         let mut pending: Vec<BindingId> = roots.to_vec();

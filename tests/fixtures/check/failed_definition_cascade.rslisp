@@ -1,0 +1,19 @@
+(use prelude/pair pair)
+
+(defn broken ()
+  (if true
+      (pair (vec) 1)
+      (pair (vec) "x")))
+
+(defn count-word (word words)
+  (fold (iter words) 0
+        (fn (total candidate)
+          (if (= candidate word) (+ total 1) total))))
+
+(defn rank-word (word words)
+  (pair (neg (count-word word words)) (clone word)))
+
+(defn main ()
+  (let words (broken))
+  (let entries (collect (map (iter words) (fn (word) (rank-word word words)))))
+  (println (len entries)))
