@@ -26,8 +26,12 @@ fn bigger<A: PartialOrd>(a: A, b: A) -> A {
 
 fn main() {
     println!("{}", twice(3).len());
+    println!("{}", twice(1.5).len());
     println!("{}", twice_pinned(3).len());
     println!("{}", wrap(3).len());
+    println!("{}", wrap("one".to_string()).len());
     show_twice(&3);
-    println!("{}", bigger(1, 2))
+    show_twice(&"two".to_string());
+    println!("{}", bigger(1, 2));
+    println!("{}", bigger("pear".to_string(), "apple".to_string()))
 }

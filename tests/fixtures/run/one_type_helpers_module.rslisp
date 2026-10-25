@@ -1,0 +1,4 @@
+(use one_type_helpers_module/helper shout)
+
+(defn main ()
+  (println (shout 7)))

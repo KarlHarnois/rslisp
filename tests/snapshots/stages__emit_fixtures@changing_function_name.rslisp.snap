@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/changing_function_name.rslisp
 ---
-fn add_item<A>(items: &mut Vec<A>, n: A) {
+fn add_item(items: &mut Vec<i64>, n: i64) {
     items.push(n)
 }
 

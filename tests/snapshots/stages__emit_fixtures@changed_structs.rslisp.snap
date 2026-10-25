@@ -74,7 +74,7 @@ fn bump_tally(t: &mut Tally) {
 
 fn touch(m: &mut Mark) {}
 
-fn copy_into<A: Clone>(target: &mut A, source: &A) {
+fn copy_into(target: &mut Spot, source: &Spot) {
     target.clone_from(source)
 }
 

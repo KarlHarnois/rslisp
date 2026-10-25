@@ -9,7 +9,7 @@ input_file: tests/fixtures/check/ownership_modes.rslisp
 (type person-age (fn ((ref person)) i64))
 (type label (fn ((ref person)) string))
 (type forward (fn ((ref person)) string))
-(type keep (where (a) (fn (a) a)))
+(type keep (fn (person) person))
 (type store (fn (string) person))
 (type first-name (fn ((ref person)) (ref string)))
 (type print-then-keep (fn (person) person))

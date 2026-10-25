@@ -3,10 +3,11 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/unresolved_second_type.rslisp
 ---
-fn compare_with_name<A: PartialEq<String>>(x: &A) -> bool {
+fn compare_with_name<A: PartialEq<String> + ?Sized>(x: &A) -> bool {
     x == &"Ana".to_string()
 }
 
 fn main() {
-    println!("{}", compare_with_name(&"Bo".to_string()))
+    println!("{}", compare_with_name(&"Bo".to_string()));
+    println!("{}", compare_with_name("Bob"))
 }

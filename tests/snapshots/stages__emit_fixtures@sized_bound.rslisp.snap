@@ -11,5 +11,9 @@ fn main() {
     let mut first = "Ana".to_string();
     let second = "Bo".to_string();
     copy_into(&mut first, &second);
-    println!("{}", first)
+    println!("{}", first);
+    let mut left: Vec<i64> = vec![1_i64, 2_i64];
+    let right: Vec<i64> = vec![3_i64, 4_i64];
+    copy_into(&mut left, &right);
+    println!("{}", left.len())
 }

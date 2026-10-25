@@ -3,5 +3,5 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/closure_moves_capture.rslisp
 ---
-(type apply (where (a) (fn ((fn (i64) a)) a)))
+(type apply (fn ((fn (i64) string)) string))
 (type main (fn () unit))

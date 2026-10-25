@@ -3,5 +3,5 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/compare_inferred.rslisp
 ---
-(type same? (where ((a partial-eq)) (fn (a a) bool)))
+(type same? (fn (i64 i64) bool))
 (type main (fn () unit))

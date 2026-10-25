@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/one_type_helpers_module.rslisp
+---
+fn main() {
+    println!("{}", crate::one_type_helpers_module::helper::shout(7))
+}
+
+mod one_type_helpers_module {
+
+    pub(crate) mod helper {
+        pub fn shout(value: i64) -> String {
+            value.to_string()
+        }
+    }
+}

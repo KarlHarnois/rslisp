@@ -1,0 +1,4 @@
+(export shout)
+
+(defn shout (value)
+  (to-string value))

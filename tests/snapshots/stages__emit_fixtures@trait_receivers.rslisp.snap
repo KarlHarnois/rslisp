@@ -38,6 +38,9 @@ fn main() {
     let shapes = vec![Circle { radius: 1.0 }, Circle { radius: 2.0 }];
     println!("{}", total_area(&shapes));
     println!("{}", total_of(areas(&shapes).iter().copied()));
+    let squares = vec![Square { side: 2.0 }, Square { side: 3.0 }];
+    println!("{}", total_area(&squares));
+    println!("{}", total_of(areas(&squares).iter().copied()));
     println!("{}", Tag::Box.area());
     println!("{}", Tag::Dot.area());
     println!("{}", Square { side: 2.0 }.area());

@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/conflicting_arguments.rslisp
 ---
-fn add_item<A>(items: &mut Vec<A>, n: A) {
+fn add_item(items: &mut Vec<usize>, n: usize) {
     items.push(n)
 }
 

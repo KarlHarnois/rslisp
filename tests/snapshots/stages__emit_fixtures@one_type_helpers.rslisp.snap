@@ -1,0 +1,110 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/one_type_helpers.rslisp
+---
+fn is_alive(grid: &[Vec<bool>], x: usize, y: usize) -> bool {
+    *grid.get(y).unwrap().get(x).unwrap()
+}
+
+fn print_generation(generation: i64) {
+    println!("{}", generation)
+}
+
+fn size_many<A: crate::rt::Sequence>(items: &A) -> usize {
+    items.len()
+}
+
+fn shout(value: i64) -> String {
+    value.to_string()
+}
+
+fn countdown(value: i64, mut is_done: bool) -> i64 {
+    loop {
+        if is_done {
+            return value;
+        } else {
+            is_done = true;
+            continue;
+        }
+    }
+}
+
+fn even_step(value: i64, is_done: bool) -> i64 {
+    if is_done {
+        value
+    } else {
+        odd_step(value, true)
+    }
+}
+
+fn odd_step(value: i64, is_done: bool) -> i64 {
+    if is_done {
+        value
+    } else {
+        even_step(value, true)
+    }
+}
+
+fn identity<A>(x: A) -> A {
+    x
+}
+
+fn add(x: i64, y: i64) -> i64 {
+    x + y
+}
+
+fn show_cell(cell: i64) -> String {
+    cell.to_string()
+}
+
+fn label(value: i64) -> String {
+    show_cell(value)
+}
+
+fn main() {
+    let grid = vec![vec![true, false], vec![false, true]];
+    println!("{}", is_alive(&grid, 1, 0));
+    print_generation(42);
+    let word = "one".to_string();
+    println!("{}", size_many(&word));
+    println!("{}", size_many(&vec![1_i64, 2_i64]));
+    (0_i64..4_i64)
+        .map(|argument: i64| shout(argument))
+        .for_each(|text: String| println!("{}", text));
+    println!("{}", countdown(3, false));
+    println!("{}", even_step(4, false));
+    println!("{}", identity(3));
+    println!("{}", add(1, 2));
+    println!("{}", label(42))
+}
+
+mod rt {
+    pub trait Sequence {
+        fn len(&self) -> usize;
+    }
+
+    impl Sequence for String {
+        fn len(&self) -> usize {
+            self.as_str().len()
+        }
+    }
+
+    impl Sequence for str {
+        fn len(&self) -> usize {
+            str::len(self)
+        }
+    }
+
+    impl<T> Sequence for Vec<T> {
+        fn len(&self) -> usize {
+            Vec::len(self)
+        }
+    }
+
+    impl<T> Sequence for [T] {
+        fn len(&self) -> usize {
+            <[T]>::len(self)
+        }
+    }
+}

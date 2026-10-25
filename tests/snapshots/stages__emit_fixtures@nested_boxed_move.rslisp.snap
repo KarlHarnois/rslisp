@@ -9,7 +9,7 @@ enum Tree<A> {
     Leaf,
 }
 
-fn inner_left<A>(tree: Tree<A>) -> Tree<A> {
+fn inner_left(tree: Tree<i64>) -> Tree<i64> {
     match tree {
         Tree::Node(inner, _, _) if matches!(&*inner, Tree::Node(_, _, _)) => {
             let Tree::Node(left, _, _) = *inner else {

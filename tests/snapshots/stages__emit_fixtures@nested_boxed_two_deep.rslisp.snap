@@ -9,7 +9,7 @@ enum Tree<A> {
     Leaf,
 }
 
-fn deepest_left<A>(tree: Tree<A>) -> Tree<A> {
+fn deepest_left(tree: Tree<i64>) -> Tree<i64> {
     match tree {
         Tree::Node(inner, _, _) if matches!(&*inner, Tree::Node(inner_2, _, _) if matches!(&**inner_2, Tree::Node(_, _, _))) =>
         {

@@ -9,7 +9,7 @@ enum Operation {
     Sub,
 }
 
-fn apply<A: crate::rt::Number>(operation: Operation, left: A, right: A) -> A {
+fn apply(operation: Operation, left: i64, right: i64) -> i64 {
     match operation {
         Operation::Add => left + right,
         Operation::Sub => left - right,
@@ -19,31 +19,4 @@ fn apply<A: crate::rt::Number>(operation: Operation, left: A, right: A) -> A {
 fn main() {
     println!("{}", apply(Operation::Add, 2, 3));
     println!("{}", apply(Operation::Sub, 7, 4))
-}
-
-mod rt {
-    use std::ops::{Add, Div, Mul, Rem, Sub};
-
-    pub trait Number:
-        Copy
-        + PartialOrd
-        + Add<Output = Self>
-        + Sub<Output = Self>
-        + Mul<Output = Self>
-        + Div<Output = Self>
-        + Rem<Output = Self>
-    {
-    }
-
-    macro_rules! numbers {
-        ($($number:ty),*) => {
-            $(
-                impl Number for $number {}
-            )*
-        };
-    }
-
-    numbers!(
-        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
-    );
 }

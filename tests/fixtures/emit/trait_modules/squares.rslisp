@@ -1,0 +1,9 @@
+(use trait_modules/shapes shape)
+
+(struct square (side f64))
+
+(export square)
+
+(impl shape square
+  (area (s) (* (field s side) (field s side)))
+  (scale! (s factor) (do (let _side (field s side)) (let _factor factor))))

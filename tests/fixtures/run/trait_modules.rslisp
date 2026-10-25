@@ -1,5 +1,6 @@
 (use trait_modules/shapes shape)
 (use trait_modules/circles circle)
+(use trait_modules/squares square)
 
 (defn total-area (shapes)
   (fold (iter shapes) 0.0 (fn (total shape) (+ total (area shape)))))
@@ -12,6 +13,9 @@
   (let shapes (vec (new circle (radius 1.0)) (new circle (radius 2.0))))
   (println (total-area shapes))
   (println (fold (values (areas shapes)) 0.0 (fn (total area) (+ total area))))
+  (let squares (vec (new square (side 2.0)) (new square (side 3.0))))
+  (println (total-area squares))
+  (println (fold (values (areas squares)) 0.0 (fn (total area) (+ total area))))
   (let circle (new circle (radius 1.0)))
   (scale! circle 2.0)
   (println (area circle)))

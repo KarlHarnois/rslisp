@@ -13,7 +13,7 @@ fn unbox(b: Box) -> i64 {
     n + 1
 }
 
-fn ignore<A>(b: &A) -> i64 {
+fn ignore(b: Box) -> i64 {
     let _ = b;
     0
 }
@@ -32,7 +32,7 @@ fn countdown(mut b: Box) -> i64 {
 
 fn main() {
     println!("{}", unbox(Box::Value(41)));
-    println!("{}", ignore(&Box::Value(5)));
+    println!("{}", ignore(Box::Value(5)));
     println!("{}", countdown(Box::Value(3)));
     let Box::Value(n) = Box::Value(7);
     println!("{}", n)
