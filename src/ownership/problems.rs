@@ -171,17 +171,6 @@ impl OwnershipProblems {
         }
     }
 
-    pub fn ambiguous_borrow(function: &str, span: Span) -> Diagnostic {
-        Diagnostic::error(
-            DiagnosticCode::AMBIGUOUS_BORROW,
-            format!("`{function}` returns a borrow, but it borrows several parameters"),
-            Label::new(span, "cannot tell which parameter the result borrows from"),
-        )
-        .with_help(
-            "return an owned value with `(clone ...)`; lifetime annotations are not supported yet",
-        )
-    }
-
     pub fn needs_ownership(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::NEEDS_OWNERSHIP,

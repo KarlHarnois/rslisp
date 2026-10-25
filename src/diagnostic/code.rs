@@ -120,7 +120,6 @@ impl DiagnosticCode {
     pub const FOREIGN_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0445"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
-    pub const AMBIGUOUS_BORROW: Self = Self(Cow::Borrowed("L0502"));
     pub const NEEDS_OWNERSHIP: Self = Self(Cow::Borrowed("L0503"));
     pub const MISSING_BANG: Self = Self(Cow::Borrowed("L0504"));
     pub const MISSING_COPY_BOUND: Self = Self(Cow::Borrowed("L0505"));

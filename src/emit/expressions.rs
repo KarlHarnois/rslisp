@@ -222,6 +222,15 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     pub fn bind_parameter(&mut self, param: &TypedBinder, position: TypePosition) -> String {
+        self.bind_parameter_with_lifetime(param, position, None)
+    }
+
+    pub fn bind_parameter_with_lifetime(
+        &mut self,
+        param: &TypedBinder,
+        position: TypePosition,
+        lifetime: Option<&str>,
+    ) -> String {
         let name = self.locals.bind(
             param.binding,
             self.program.bindings.get(param.binding).name(),
@@ -239,7 +248,8 @@ impl<'a> ExpressionEmitter<'a> {
         };
         format!(
             "{mutable}{name}: {}",
-            self.types().show(&param.ty, position)
+            self.types()
+                .show_with_lifetime(&param.ty, position, lifetime)
         )
     }
 

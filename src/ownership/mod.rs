@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostics;
 use crate::types::{CopyRules, InferredCopies, PendingModeCheck, TypedExprKind, TypedProgram};
-use checks::{BorrowedResults, OwnershipNeeds};
+use checks::OwnershipNeeds;
 use functions::{FunctionTable, ParamMode};
 use kinds::{ClosureKinds, KindReport, KindSources};
 use modes::ModeInference;
@@ -103,9 +103,6 @@ impl OwnershipChecker {
                 inferred_copies.extend(report.inferred_copies);
                 report
                     .diagnostics
-                    .into_iter()
-                    .for_each(|diagnostic| diagnostics.push(diagnostic));
-                BorrowedResults::check(definition, &program.bindings)
                     .into_iter()
                     .for_each(|diagnostic| diagnostics.push(diagnostic));
             }

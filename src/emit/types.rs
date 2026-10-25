@@ -70,6 +70,15 @@ impl<'a> RustTypes<'a> {
     }
 
     pub fn show(&self, shown: &Type, position: TypePosition) -> String {
+        self.show_with_lifetime(shown, position, None)
+    }
+
+    pub fn show_with_lifetime(
+        &self,
+        shown: &Type,
+        position: TypePosition,
+        lifetime: Option<&str>,
+    ) -> String {
         match shown {
             Type::Var(_) => "_".to_string(),
             Type::Generic(generic) => self
@@ -78,15 +87,21 @@ impl<'a> RustTypes<'a> {
                 .get(generic)
                 .map_or_else(|| "_".to_string(), Self::generic_name),
             Type::Primitive(primitive) => Self::primitive(*primitive).to_string(),
-            Type::Named(binding, arguments) => self.named(*binding, arguments, position),
+            Type::Named(binding, arguments) => self.named(*binding, arguments, position, lifetime),
             Type::Function(kind, parameters, result) => {
                 self.function(*kind, parameters, result, position)
             }
-            Type::Ref(inner) | Type::Mut(inner) => self.reference(shown, inner, position),
+            Type::Ref(inner) | Type::Mut(inner) => self.reference(shown, inner, position, lifetime),
         }
     }
 
-    fn reference(&self, reference: &Type, inner: &Type, position: TypePosition) -> String {
+    fn reference(
+        &self,
+        reference: &Type,
+        inner: &Type,
+        position: TypePosition,
+        lifetime: Option<&str>,
+    ) -> String {
         let mutability = if matches!(reference, Type::Mut(_)) {
             "mut "
         } else {
@@ -94,8 +109,8 @@ impl<'a> RustTypes<'a> {
         };
         format!(
             "&{}{mutability}{}",
-            Self::lifetime(position),
-            self.show(inner, Self::inner(position))
+            Self::lifetime(position, lifetime),
+            self.show_with_lifetime(inner, Self::inner(position), lifetime)
         )
     }
 
@@ -243,13 +258,21 @@ impl<'a> RustTypes<'a> {
         }
     }
 
-    fn named(&self, binding: BindingId, arguments: &[Type], position: TypePosition) -> String {
+    fn named(
+        &self,
+        binding: BindingId,
+        arguments: &[Type],
+        position: TypePosition,
+        lifetime: Option<&str>,
+    ) -> String {
         match self.program.rust_types.get(binding) {
-            Some(rust_type) => self.rust_type(rust_type, arguments, position),
+            Some(rust_type) => self.rust_type(rust_type, arguments, position, lifetime),
             None => {
                 let arguments: Vec<String> = arguments
                     .iter()
-                    .map(|argument| self.show(argument, Self::inner(position)))
+                    .map(|argument| {
+                        self.show_with_lifetime(argument, Self::inner(position), lifetime)
+                    })
                     .collect();
                 Self::applied(self.struct_path(binding), &arguments)
             }
@@ -261,6 +284,7 @@ impl<'a> RustTypes<'a> {
         rust_type: &RustType,
         arguments: &[Type],
         position: TypePosition,
+        lifetime: Option<&str>,
     ) -> String {
         if rust_type.is_opaque() && position == TypePosition::Value {
             return Self::INFERRED.to_string();
@@ -272,7 +296,7 @@ impl<'a> RustTypes<'a> {
             .map(|piece| match piece {
                 Piece::Literal(text) => text.to_string(),
                 Piece::Placeholder { index, .. } => {
-                    self.show(&arguments[*index], Self::inner(position))
+                    self.show_with_lifetime(&arguments[*index], Self::inner(position), lifetime)
                 }
                 Piece::TypePlaceholder { .. } | Piece::BinderPlaceholder { .. } => "_".to_string(),
             })
@@ -318,10 +342,11 @@ impl<'a> RustTypes<'a> {
         format!("{keyword}({}){result}", parameters.join(", "))
     }
 
-    fn lifetime(position: TypePosition) -> &'static str {
-        match position {
-            TypePosition::StaticResult => "'static ",
-            TypePosition::Signature | TypePosition::Value => "",
+    fn lifetime(position: TypePosition, lifetime: Option<&str>) -> String {
+        match (position, lifetime) {
+            (TypePosition::StaticResult, _) => "'static ".to_string(),
+            (_, Some(lifetime)) => format!("{lifetime} "),
+            (TypePosition::Signature | TypePosition::Value, None) => String::new(),
         }
     }
 

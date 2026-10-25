@@ -25,15 +25,6 @@ error[L0503]: this value is borrowed, but the call needs to own it
   |
   = help: pass a copy with `(clone ...)`
 
-error[L0502]: `pick-name` returns a borrow, but it borrows several parameters
-  --> check/ownership_errors.rslisp:11:1
-   |
-11 | / (defn pick-name (first second)
-12 | |   (if true (person-name first) (person-name second)))
-   | |_____________________________________________________^ cannot tell which parameter the result borrows from
-   |
-   = help: return an owned value with `(clone ...)`; lifetime annotations are not supported yet
-
 error[L0501]: use of moved value `name`
   --> check/ownership_errors.rslisp:16:10
    |
