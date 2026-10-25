@@ -301,7 +301,8 @@ impl<'a> RustTypes<'a> {
                     .iter()
                     .map(|argument| self.show_in(argument, Self::inner(position), scope))
                     .collect();
-                if self.has_lifetime_parameter(binding) {
+                let lifetime_arguments = self.lifetime_parameter_count(binding);
+                for _ in 0..lifetime_arguments {
                     arguments.insert(0, Self::lifetime_argument(position, scope));
                 }
                 Self::applied(self.struct_path(binding), &arguments)
@@ -333,8 +334,23 @@ impl<'a> RustTypes<'a> {
             .collect()
     }
 
-    fn has_lifetime_parameter(&self, binding: BindingId) -> bool {
-        self.program.has_lifetime_parameter(binding)
+    fn lifetime_parameter_count(&self, binding: BindingId) -> usize {
+        if let Some(definition) = self.program.structs.get(binding) {
+            if !definition.lifetimes.is_empty() {
+                return definition.lifetimes.len();
+            }
+            return usize::from(self.program.definition_holds_borrow(binding));
+        }
+        if let Some(definition) = self.program.enums.get(binding) {
+            if definition.rust.is_some() {
+                return 0;
+            }
+            if !definition.lifetimes.is_empty() {
+                return definition.lifetimes.len();
+            }
+            return usize::from(self.program.definition_holds_borrow(binding));
+        }
+        0
     }
 
     fn lifetime_argument(position: TypePosition, scope: &LifetimeScope) -> String {
@@ -392,9 +408,19 @@ impl<'a> RustTypes<'a> {
         position: TypePosition,
         scope: &LifetimeScope,
     ) -> String {
-        let name = match lifetime {
+        self.lifetime_name(lifetime, position, scope)
+            .map_or_else(String::new, |name| format!("{name} "))
+    }
+
+    pub fn lifetime_name(
+        &self,
+        lifetime: Lifetime,
+        position: TypePosition,
+        scope: &LifetimeScope,
+    ) -> Option<String> {
+        match lifetime {
             Lifetime::Elided if position == TypePosition::StaticResult => {
-                return "'static ".to_string();
+                Some("'static".to_string())
             }
             Lifetime::Elided => scope.elided().map(str::to_string),
             Lifetime::Written(binding) => Some(
@@ -402,8 +428,16 @@ impl<'a> RustTypes<'a> {
                     .name_of(binding)
                     .unwrap_or_else(|| Self::binding_lifetime(self.program, binding)),
             ),
-        };
-        name.map_or_else(String::new, |name| format!("{name} "))
+        }
+    }
+
+    pub fn reference_lifetime_name(
+        &self,
+        reference: &Type,
+        position: TypePosition,
+        scope: &LifetimeScope,
+    ) -> Option<String> {
+        self.lifetime_name(reference.reference_lifetime()?, position, scope)
     }
 
     pub fn binding_lifetime(program: &TypedProgram, binding: BindingId) -> String {

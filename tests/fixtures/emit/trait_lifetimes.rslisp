@@ -1,0 +1,14 @@
+(struct snippet (text (ref str)))
+
+(trait finder
+  (find (fn ((ref self) (ref str)) (ref str)))
+  (text (fn ((ref self)) (ref str))))
+
+(impl finder snippet
+  (find (s needle) (do (len needle) (field s text)))
+  (text (s) (field s text)))
+
+(defn main ()
+  (let s (new snippet (text "hello there")))
+  (println (find s "there"))
+  (println (text s)))
