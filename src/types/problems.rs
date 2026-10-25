@@ -581,16 +581,6 @@ impl TypeProblems {
         .with_help(help)
     }
 
-    pub fn borrowed_struct_field(span: Span) -> Diagnostic {
-        Diagnostic::error(
-            DiagnosticCode::BORROWED_STRUCT_FIELD,
-            "a struct field cannot hold a borrow",
-            Label::new(span, "this field type borrows"),
-        )
-        .with_note("milestone 11 adds written lifetimes, so a struct field cannot borrow yet")
-        .with_help("store an owned value, such as `string`, instead of a borrow")
-    }
-
     pub fn trait_claim_on_struct(struct_name: &str, trait_name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::TRAIT_CLAIM_ON_STRUCT,

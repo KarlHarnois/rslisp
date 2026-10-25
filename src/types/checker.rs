@@ -1122,7 +1122,7 @@ impl TypeChecker {
             .zip(&params)
             .map(|(binder, param)| (binder.variable, param.id))
             .collect();
-        let (lowered, field_spans, borrowed) = self.lower_fields(fields, &scope)?;
+        let (lowered, field_spans) = self.lower_fields(fields, &scope)?;
         Self::check_parameters_used(binders, &params, &lowered)?;
         self.structs.add(
             binding,
@@ -1137,9 +1137,7 @@ impl TypeChecker {
                 written_derive: None,
             },
         );
-        borrowed.map_or(Ok(()), |span| {
-            Err(TypeProblems::borrowed_struct_field(span))
-        })
+        Ok(())
     }
 
     fn collect_enum(
@@ -1263,19 +1261,14 @@ impl TypeChecker {
         &mut self,
         fields: &[(crate::core::FieldLabel, TypeExpr)],
         scope: &HashMap<BindingId, GenericId>,
-    ) -> Result<(LoweredFields, Vec<Span>, Option<Span>), Diagnostic> {
+    ) -> Result<(LoweredFields, Vec<Span>), Diagnostic> {
         let mut lowered = Vec::new();
         let mut spans = Vec::new();
-        let mut borrowed = None;
         for (label, field_type) in fields {
-            let lowered_type = self.lower_type(field_type, scope)?;
-            if lowered_type.stores_reference() && borrowed.is_none() {
-                borrowed = Some(field_type.span());
-            }
-            lowered.push((label.name.clone(), lowered_type));
+            lowered.push((label.name.clone(), self.lower_type(field_type, scope)?));
             spans.push(field_type.span());
         }
-        Ok((lowered, spans, borrowed))
+        Ok((lowered, spans))
     }
 
     fn collect_rust_type(

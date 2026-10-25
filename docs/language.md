@@ -125,7 +125,7 @@ A lifetime is a symbol that starts with `'`. It is declared beside a type parame
 
 A bound names the trait and, optionally, its second type: `(a (partial-eq b))` is Rust's `A: PartialEq<B>`. The second type must be a type the program knows or a binder of the same `where`, as in `(where ((a (partial-eq b)) b) (fn (a b) bool))`. A plain bound keeps Rust's default: `(a partial-eq)` is `A: PartialEq<A>`. A trait takes a second type exactly when one of its `rust-trait` entries uses `with`.
 
-A struct field cannot hold a borrow yet, even with a written lifetime. Each type parameter of a struct must appear in a field. Each parameter of a Rust type must appear in its template. A type parameter takes no traits, because Rust would demand a type's traits at every use. A function that needs a trait names it in its own `where`. A type takes exactly as many arguments as it has parameters.
+A struct or enum whose fields or payloads store a borrow gets one inferred lifetime parameter before its type parameters. The source keeps writing the bare type name, and a lifetime written in the head is exact and replaces the inferred one. Each type parameter of a struct must appear in a field. Each parameter of a Rust type must appear in its template. A type parameter takes no traits, because Rust would demand a type's traits at every use. A function that needs a trait names it in its own `where`. A type takes exactly as many arguments as it has parameters.
 
 ```lisp
 (struct (pair a b) (first a) (second b))
@@ -639,3 +639,26 @@ fn first<'a>(a: &'a str, b: &str) -> &'a str {
 ```
 
 A lifetime is declared with the type variables, as `(where ('a 'b) ...)` does. A reference names it as its first part, `(ref 'a str)` or `(mut 'a point)`. A written lifetime is exact, and the compiler adds no shared lifetime to a type that writes one.
+
+A struct whose field stores a borrow gets one inferred lifetime parameter before its type parameters. The source keeps writing the bare type name, and the compiler fills the lifetime at each use:
+
+```lisp
+(struct snippet (text (ref str)))
+
+(enum token
+  (symbol (ref str))
+  (number (ref str)))
+```
+
+```rust
+struct Snippet<'a> {
+    text: &'a str,
+}
+
+enum Token<'a> {
+    Symbol(&'a str),
+    Number(&'a str),
+}
+```
+
+A use of a borrowed struct emits `Snippet<'_>` or the function's shared lifetime. A lifetime written in the head is exact and replaces the inferred one, as `(struct (label 'a) (text (ref 'a str)))` does.

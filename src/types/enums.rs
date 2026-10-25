@@ -36,11 +36,11 @@ impl VariantDefinition {
             VariantPayload::None => Vec::new(),
             VariantPayload::Positional(types) => types
                 .iter()
-                .map(|payload| payload.substitute(replacements))
+                .map(|payload| payload.without_written_lifetimes().substitute(replacements))
                 .collect(),
             VariantPayload::Named(fields) => fields
                 .iter()
-                .map(|(_, payload)| payload.substitute(replacements))
+                .map(|(_, payload)| payload.without_written_lifetimes().substitute(replacements))
                 .collect(),
         }
     }

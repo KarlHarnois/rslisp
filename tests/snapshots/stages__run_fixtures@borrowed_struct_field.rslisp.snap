@@ -3,11 +3,4 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/borrowed_struct_field.rslisp
 ---
-error[L0420]: a struct field cannot hold a borrow
- --> run/borrowed_struct_field.rslisp:1:32
-  |
-1 | (defstruct instruction (opcode (ref str)) (argument i64))
-  |                                ^^^^^^^^^ this field type borrows
-  |
-  = note: milestone 11 adds written lifetimes, so a struct field cannot borrow yet
-  = help: store an owned value, such as `string`, instead of a borrow
+push

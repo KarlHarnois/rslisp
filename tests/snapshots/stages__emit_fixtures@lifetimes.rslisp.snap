@@ -15,8 +15,45 @@ fn first<'a, 'b>(a: &'a str, b: &'b str) -> &'a str {
     a
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Snippet<'a> {
+    text: &'a str,
+}
+
+fn snippet_of(source: &str) -> Snippet<'_> {
+    Snippet { text: source }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Label<'a> {
+    text: &'a str,
+}
+
+fn label_of(source: &str) -> Label<'_> {
+    Label { text: source }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Token<'a> {
+    Symbol(&'a str),
+    Number(&'a str),
+}
+
+fn token_text(token: Token<'_>) -> &str {
+    match token {
+        Token::Symbol(text) => text,
+        Token::Number(text) => text,
+    }
+}
+
 fn main() {
     println!("{}", written_longer("hi", "hello there"));
     println!("{}", longer("hi", "hello there"));
-    println!("{}", first("hello", "hi"))
+    println!("{}", first("hello", "hi"));
+    let source = "hello there";
+    let shorter = snippet_of(source);
+    println!("snippet {}", shorter.text);
+    let named = label_of(source);
+    println!("label {}", named.text);
+    println!("token {}", token_text(Token::Symbol("hi")))
 }

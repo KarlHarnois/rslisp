@@ -126,6 +126,29 @@ impl Type {
         }
     }
 
+    pub fn without_written_lifetimes(&self) -> Type {
+        match self {
+            Type::Ref(_, inner) => Type::shared(inner.without_written_lifetimes()),
+            Type::Mut(_, inner) => Type::mutable(inner.without_written_lifetimes()),
+            Type::Named(binding, arguments) => Type::Named(
+                *binding,
+                arguments
+                    .iter()
+                    .map(Type::without_written_lifetimes)
+                    .collect(),
+            ),
+            Type::Function(kind, parameters, result) => Type::Function(
+                *kind,
+                parameters
+                    .iter()
+                    .map(Type::without_written_lifetimes)
+                    .collect(),
+                Box::new(result.without_written_lifetimes()),
+            ),
+            other => other.clone(),
+        }
+    }
+
     pub fn substitute_vars(&self, replacements: &HashMap<TypeVar, Type>) -> Type {
         match self {
             Type::Var(var) => replacements
