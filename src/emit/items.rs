@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 
 use super::expressions::ExpressionEmitter;
 use super::fragment::{Code, Fragment};
@@ -266,25 +266,53 @@ impl<'a> ItemEmitter<'a> {
             self.unsized_parameters,
             self.program.entry,
         );
+        let inferred = self.inferred_lifetime_for_method(
+            &definition.scheme.lifetimes,
+            &definition.value,
+            receiver.is_some(),
+        );
+        let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
         let mut rendered = Vec::new();
         if let Some(kind) = receiver {
-            rendered.push(Self::receiver_keyword(kind, None));
+            let lifetime = parameters.first().and_then(|parameter| {
+                types.reference_lifetime_name(parameter, TypePosition::Signature, &scope)
+            });
+            rendered.push(Self::receiver_keyword(kind, lifetime.as_deref()));
         }
         let first = usize::from(receiver.is_some());
         rendered.extend(parameters.iter().skip(first).map(|parameter| {
             format!(
                 "_: {}",
-                Self::show_self_type(parameter, self_generic, &types)
+                Self::show_self_type(
+                    parameter,
+                    self_generic,
+                    &types,
+                    TypePosition::Signature,
+                    &scope,
+                )
             )
         }));
         let result = if RustTypes::is_unit(result) {
             String::new()
         } else {
-            format!(" -> {}", Self::show_self_type(result, self_generic, &types))
+            format!(
+                " -> {}",
+                Self::show_self_type(
+                    result,
+                    self_generic,
+                    &types,
+                    TypePosition::Signature,
+                    &scope,
+                )
+            )
         };
         let name = NameMangler::value(self.program.bindings.get(binding).name());
+        let generics = Self::with_lifetimes(
+            &self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),
+            String::new(),
+        );
         vec![Fragment::Text(format!(
-            "fn {name}({}){result};",
+            "fn {name}{generics}({}){result};",
             rendered.join(", ")
         ))]
     }
@@ -298,12 +326,18 @@ impl<'a> ItemEmitter<'a> {
         }
     }
 
-    fn show_self_type(ty: &Type, self_generic: Option<GenericId>, types: &RustTypes) -> String {
+    fn show_self_type(
+        ty: &Type,
+        self_generic: Option<GenericId>,
+        types: &RustTypes,
+        position: TypePosition,
+        scope: &LifetimeScope,
+    ) -> String {
         if Self::is_self_type(ty, self_generic) {
             return "Self".to_string();
         }
-        Self::show_reference(ty, self_generic, types)
-            .unwrap_or_else(|| types.show(ty, TypePosition::Signature))
+        Self::show_reference(ty, self_generic, types, position, scope)
+            .unwrap_or_else(|| types.show_in(ty, position, scope))
     }
 
     fn is_self_type(ty: &Type, self_generic: Option<GenericId>) -> bool {
@@ -314,18 +348,21 @@ impl<'a> ItemEmitter<'a> {
         ty: &Type,
         self_generic: Option<GenericId>,
         types: &RustTypes,
+        position: TypePosition,
+        scope: &LifetimeScope,
     ) -> Option<String> {
-        match ty {
-            Type::Ref(_, inner) => Some(format!(
-                "&{}",
-                Self::show_self_type(inner, self_generic, types)
-            )),
-            Type::Mut(_, inner) => Some(format!(
-                "&mut {}",
-                Self::show_self_type(inner, self_generic, types)
-            )),
-            _ => None,
-        }
+        let (lifetime, mutability, inner) = match ty {
+            Type::Ref(lifetime, inner) => (*lifetime, "", inner),
+            Type::Mut(lifetime, inner) => (*lifetime, "mut ", inner),
+            _ => return None,
+        };
+        let lifetime = types
+            .lifetime_name(lifetime, position, scope)
+            .map_or_else(String::new, |name| format!("{name} "));
+        Some(format!(
+            "&{lifetime}{mutability}{}",
+            Self::show_self_type(inner, self_generic, types, position, scope)
+        ))
     }
 
     fn trait_impls(&mut self, module: ModuleId) -> Vec<Vec<Fragment>> {
@@ -338,18 +375,29 @@ impl<'a> ItemEmitter<'a> {
             let implementor = self.program.trait_impls[position].implementor.clone();
             let methods = self.program.trait_impls[position].methods.clone();
             let trait_path = self.plan.trait_path(trait_binding, module);
-            let type_name = {
+            let lifetime = self.implementor_lifetime(&implementor);
+            let (type_name, generics) = {
                 let types =
                     RustTypes::new(self.program, self.plan, self.unsized_parameters, module);
-                types.show(&implementor, TypePosition::Signature)
+                let scope = LifetimeScope::default().with_elided(lifetime.clone());
+                let type_name = types.show_in(&implementor, TypePosition::Signature, &scope);
+                let generics = lifetime
+                    .as_ref()
+                    .map_or_else(String::new, |lifetime| format!("<{lifetime}>"));
+                (type_name, generics)
             };
             let mut body = Vec::new();
             for method in &methods {
                 body.push(Fragment::Newline);
-                body.extend(self.impl_method(method.binding, method.receiver, module));
+                body.extend(self.impl_method(
+                    method.binding,
+                    method.receiver,
+                    module,
+                    lifetime.as_deref(),
+                ));
             }
             items.push(vec![
-                Fragment::Text(format!("impl {trait_path} for {type_name} {{")),
+                Fragment::Text(format!("impl{generics} {trait_path} for {type_name} {{")),
                 Fragment::Indented(body),
                 Fragment::Newline,
                 Fragment::Text("}".to_string()),
@@ -384,6 +432,7 @@ impl<'a> ItemEmitter<'a> {
         binding: BindingId,
         receiver: Option<ReceiverKind>,
         module: ModuleId,
+        reserved_lifetime: Option<&str>,
     ) -> Vec<Fragment> {
         let definition = self
             .plan
@@ -395,8 +444,13 @@ impl<'a> ItemEmitter<'a> {
         let mut emitter = self.expressions(module, &definition.value);
         emitter.prepare_tail_loop(definition.binding, lambda);
         let types = emitter.types();
-        let inferred = self.inferred_lifetime(&[], &definition.value);
-        let scope = self.lifetime_scope(&[], inferred.as_deref());
+        let inferred = self.inferred_lifetime_for_method_avoiding(
+            &definition.scheme.lifetimes,
+            &definition.value,
+            receiver.is_some(),
+            reserved_lifetime,
+        );
+        let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
         let mut params = Vec::new();
         if let Some(kind) = receiver {
             let first = &lambda.params[0];
@@ -433,8 +487,10 @@ impl<'a> ItemEmitter<'a> {
         let body = emitter.function_body(&lambda.body);
         self.absorb(emitter);
         let name = NameMangler::value(self.program.bindings.get(binding).name());
-        let generics =
-            Self::with_lifetimes(&inferred.into_iter().collect::<Vec<_>>(), String::new());
+        let generics = Self::with_lifetimes(
+            &self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),
+            String::new(),
+        );
         vec![Fragment::Spanned(
             definition.span,
             vec![
@@ -775,15 +831,56 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn inferred_lifetime(&self, lifetimes: &[BindingId], value: &TypedExpr) -> Option<String> {
-        self.needs_shared_lifetime(value)
-            .then(|| Self::unused_lifetime_name(self.program, lifetimes))
+        self.inferred_lifetime_avoiding(lifetimes, value, None)
+    }
+
+    fn inferred_lifetime_for_method(
+        &self,
+        lifetimes: &[BindingId],
+        value: &TypedExpr,
+        has_receiver: bool,
+    ) -> Option<String> {
+        self.inferred_lifetime_for_method_avoiding(lifetimes, value, has_receiver, None)
+    }
+
+    fn inferred_lifetime_avoiding(
+        &self,
+        lifetimes: &[BindingId],
+        value: &TypedExpr,
+        reserved: Option<&str>,
+    ) -> Option<String> {
+        self.inferred_lifetime_for_method_avoiding(lifetimes, value, false, reserved)
+    }
+
+    fn inferred_lifetime_for_method_avoiding(
+        &self,
+        lifetimes: &[BindingId],
+        value: &TypedExpr,
+        has_receiver: bool,
+        reserved: Option<&str>,
+    ) -> Option<String> {
+        if has_receiver {
+            return None;
+        }
+        self.needs_shared_lifetime(value).then(|| {
+            let mut used: Vec<String> = lifetimes
+                .iter()
+                .map(|binding| RustTypes::binding_lifetime(self.program, *binding))
+                .collect();
+            used.extend(reserved.map(str::to_string));
+            Self::unused_lifetime_name_from(&used)
+        })
     }
 
     fn unused_lifetime_name(program: &TypedProgram, lifetimes: &[BindingId]) -> String {
-        let used: HashSet<String> = lifetimes
+        let used: Vec<String> = lifetimes
             .iter()
             .map(|binding| RustTypes::binding_lifetime(program, *binding))
             .collect();
+        Self::unused_lifetime_name_from(&used)
+    }
+
+    fn unused_lifetime_name_from(used: &[String]) -> String {
         for position in 0.. {
             let letter = u8::try_from(position)
                 .ok()
@@ -849,6 +946,27 @@ impl<'a> ItemEmitter<'a> {
             parts.push(generics[1..generics.len() - 1].to_string());
         }
         format!("<{}>", parts.join(", "))
+    }
+
+    fn implementor_lifetime(&self, implementor: &Type) -> Option<String> {
+        let Type::Named(binding, _) = implementor else {
+            return None;
+        };
+        if !self.program.has_lifetime_parameter(*binding) {
+            return None;
+        }
+        let written = if let Some(definition) = self.program.structs.get(*binding) {
+            definition.lifetimes.first().copied()
+        } else {
+            self.program
+                .enums
+                .get(*binding)
+                .and_then(|definition| definition.lifetimes.first().copied())
+        };
+        Some(written.map_or_else(
+            || Self::unused_lifetime_name(self.program, &[]),
+            |binding| RustTypes::binding_lifetime(self.program, binding),
+        ))
     }
 
     fn receiver_lifetime(&self, first: &TypedBinder, scope: &LifetimeScope) -> Option<String> {

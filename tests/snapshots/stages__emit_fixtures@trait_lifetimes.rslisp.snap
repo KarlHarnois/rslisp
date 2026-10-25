@@ -1,0 +1,32 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/trait_lifetimes.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Snippet<'a> {
+    text: &'a str,
+}
+
+fn main() {
+    let s = Snippet {
+        text: "hello there",
+    };
+    println!("{}", s.find("there"));
+    println!("{}", s.text())
+}
+
+trait Finder {
+    fn find(&self, _: &str) -> &str;
+    fn text(&self) -> &str;
+}
+
+impl<'a> Finder for Snippet<'a> {
+    fn find(&self, needle: &str) -> &str {
+        needle.len();
+        self.text
+    }
+    fn text(&self) -> &str {
+        self.text
+    }
+}
