@@ -1,0 +1,22 @@
+(defn make ()
+  (let text (to-string "hi"))
+  (ref text))
+
+(defn pick (flag)
+  (let text (to-string "hi"))
+  (if flag (ref text) (ref text)))
+
+(defn nested ()
+  (let text (to-string "hi"))
+  (do (ref text)))
+
+(enum choice yes no)
+
+(defn choose (value)
+  (let text (to-string "hi"))
+  (match value
+    (yes (ref text))
+    (no (ref text))))
+
+(defn main ()
+  (println (make)))

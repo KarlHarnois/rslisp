@@ -1,9 +1,76 @@
 use std::collections::HashMap;
 
 use super::problems::OwnershipProblems;
-use crate::core::BindingId;
+use crate::core::{BindingId, ReferenceKind};
 use crate::diagnostic::Diagnostic;
-use crate::types::{Borrow, Type, TypedArgument, TypedExpr, TypedExprKind, TypedLeaf};
+use crate::source::Span;
+use crate::types::{
+    Borrow, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl,
+    TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf,
+};
+
+pub struct ReturnedBorrows;
+
+impl ReturnedBorrows {
+    pub fn check(definition: &TypedDefinition) -> Option<Diagnostic> {
+        let TypedExprKind::Fn(lambda) = &definition.value.kind else {
+            return None;
+        };
+        let Type::Function(_, _, result) = &definition.value.ty else {
+            return None;
+        };
+        if !result.holds_reference() {
+            return None;
+        }
+        let (borrowed, binding) =
+            Self::borrowed_local(Self::tail_of(&lambda.body)?, &lambda.params)?;
+        let defined = Self::local_span(&lambda.body, binding).unwrap_or(borrowed.span);
+        Some(OwnershipProblems::local_borrow(borrowed.span, defined))
+    }
+
+    fn borrowed_local<'e>(
+        expr: &'e TypedExpr,
+        params: &[TypedBinder],
+    ) -> Option<(&'e TypedExpr, BindingId)> {
+        match &expr.kind {
+            TypedExprKind::Borrow(ReferenceKind::Shared, inner)
+            | TypedExprKind::Borrow(ReferenceKind::Mutable, inner) => {
+                let binding = inner.place_root()?;
+                params
+                    .iter()
+                    .all(|param| param.binding != binding)
+                    .then_some((expr, binding))
+            }
+            TypedExprKind::Control(TypedControl::Block(block)) => {
+                Self::tail_of(block).and_then(|tail| Self::borrowed_local(tail, params))
+            }
+            TypedExprKind::Control(TypedControl::If(_, then, otherwise)) => {
+                Self::borrowed_local(then, params)
+                    .or_else(|| Self::borrowed_local(otherwise, params))
+            }
+            TypedExprKind::Control(TypedControl::Match(matched)) => {
+                matched.arms.iter().find_map(|arm| {
+                    Self::tail_of(&arm.body).and_then(|tail| Self::borrowed_local(tail, params))
+                })
+            }
+            _ => None,
+        }
+    }
+
+    fn tail_of(block: &TypedBlock) -> Option<&TypedExpr> {
+        match block.items.last()? {
+            TypedBodyItem::Expr(expr) => Some(expr),
+            TypedBodyItem::Let(..) => None,
+        }
+    }
+
+    fn local_span(block: &TypedBlock, binding: BindingId) -> Option<Span> {
+        block.items.iter().find_map(|item| match item {
+            TypedBodyItem::Let(binder, _) if binder.binding == binding => Some(binder.span),
+            _ => None,
+        })
+    }
+}
 
 pub struct OwnershipNeeds<'a> {
     function_params: &'a HashMap<BindingId, Vec<Type>>,
