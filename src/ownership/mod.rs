@@ -26,7 +26,7 @@ use moves::MoveChecker;
 use names::ChangingFunctionNames;
 use problems::OwnershipProblems;
 use rewrite::ModeRewrite;
-use slices::SliceSelection;
+use slices::ShrinkSelection;
 use values::FunctionValueModes;
 
 pub use changes::InPlaceChanges;
@@ -60,7 +60,7 @@ impl OwnershipChecker {
             &program.bindings,
             &mut diagnostics,
         );
-        let slices = SliceSelection::of(program, &functions, &modes)
+        let slices = ShrinkSelection::of(program, &functions, &modes)
             .map(|selection| selection.run())
             .unwrap_or_default();
         let mut rewrite = ModeRewrite::new(&functions, &modes, &slices);

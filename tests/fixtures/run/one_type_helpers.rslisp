@@ -4,6 +4,9 @@
 (defn print-generation (generation)
   (println generation))
 
+(defn size (items)
+  (len items))
+
 (defn size-many (items)
   (len items))
 
@@ -37,6 +40,7 @@
   (println (is-alive grid 1 0))
   (print-generation 42)
   (let word (to-string "one"))
+  (println (size word))
   (println (size-many word))
   (println (size-many (vec 1 2)))
   (for-each (map (range 0 4) shout) (fn (text) (println text)))

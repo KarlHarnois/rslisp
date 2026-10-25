@@ -11,6 +11,10 @@ fn print_generation(generation: i64) {
     println!("{}", generation)
 }
 
+fn size(items: &str) -> usize {
+    items.len()
+}
+
 fn size_many<A: crate::rt::Sequence>(items: &A) -> usize {
     items.len()
 }
@@ -67,6 +71,7 @@ fn main() {
     println!("{}", is_alive(&grid, 1, 0));
     print_generation(42);
     let word = "one".to_string();
+    println!("{}", size(&word));
     println!("{}", size_many(&word));
     println!("{}", size_many(&vec![1_i64, 2_i64]));
     (0_i64..4_i64)
