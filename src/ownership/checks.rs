@@ -1,32 +1,9 @@
 use std::collections::HashMap;
 
 use super::problems::OwnershipProblems;
-use crate::core::{BindingArena, BindingId};
+use crate::core::BindingId;
 use crate::diagnostic::Diagnostic;
-use crate::types::{
-    Borrow, Type, TypedArgument, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf,
-};
-
-pub struct BorrowedResults;
-
-impl BorrowedResults {
-    pub fn check(definition: &TypedDefinition, bindings: &BindingArena) -> Option<Diagnostic> {
-        let Type::Function(_, parameters, result) = &definition.value.ty else {
-            return None;
-        };
-        let borrowed_parameters = parameters
-            .iter()
-            .filter(|parameter| parameter.holds_reference())
-            .count();
-        let is_ambiguous = result.holds_reference() && borrowed_parameters > 1;
-        is_ambiguous.then(|| {
-            OwnershipProblems::ambiguous_borrow(
-                bindings.get(definition.binding).name(),
-                definition.span,
-            )
-        })
-    }
-}
+use crate::types::{Borrow, Type, TypedArgument, TypedExpr, TypedExprKind, TypedLeaf};
 
 pub struct OwnershipNeeds<'a> {
     function_params: &'a HashMap<BindingId, Vec<Type>>,

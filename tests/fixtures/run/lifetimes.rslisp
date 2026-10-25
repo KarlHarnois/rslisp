@@ -1,0 +1,5 @@
+(type longer (fn ((ref str) (ref str)) (ref str)))
+(defn longer (a b) (if (> (len a) (len b)) a b))
+
+(defn main ()
+  (println (longer "hi" "hello there")))
