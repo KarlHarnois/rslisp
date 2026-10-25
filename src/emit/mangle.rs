@@ -57,6 +57,21 @@ impl NameMangler {
         Self::snake(name).to_uppercase()
     }
 
+    pub fn lifetime(name: &str) -> String {
+        let body = name.strip_prefix('\'').unwrap_or(name);
+        let mangled = Self::snake(body);
+        let reserved = mangled == "_"
+            || mangled == "static"
+            || Self::NON_RAW_KEYWORDS.contains(&mangled.as_str())
+            || Self::STRICT_KEYWORDS.contains(&mangled.as_str())
+            || Self::RESERVED_KEYWORDS.contains(&mangled.as_str());
+        if reserved {
+            format!("'{mangled}_")
+        } else {
+            format!("'{mangled}")
+        }
+    }
+
     pub fn type_name(name: &str) -> String {
         Self::snake(name)
             .split('_')

@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/lifetime_undeclared.rslisp
+---
+error[L0201]: cannot find lifetime `'missing` in this scope
+ --> check/lifetime_undeclared.rslisp:1:22
+  |
+1 | (type pick (fn ((ref 'missing str)) (ref str)))
+  |                      ^^^^^^^^ not found in this scope
+  |
+  = help: declare the lifetime in the enclosing `where` or type head

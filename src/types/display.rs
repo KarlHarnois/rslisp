@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
+use super::ty::{Bound, GenericId, GenericParam, Lifetime, Scheme, Type};
 use crate::core::{BindingArena, BindingId};
 
 pub struct TypeDisplay<'a> {
@@ -25,8 +25,8 @@ impl<'a> TypeDisplay<'a> {
             Type::Primitive(primitive) => primitive.name().to_string(),
             Type::Named(binding, arguments) => self.named(*binding, arguments),
             Type::Function(_, parameters, result) => self.function(parameters, result),
-            Type::Ref(inner) | Type::Mut(inner) => {
-                format!("({} {})", Self::reference_keyword(shown), self.show(inner))
+            Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
+                self.reference(shown, *lifetime, inner)
             }
         }
     }
@@ -52,23 +52,37 @@ impl<'a> TypeDisplay<'a> {
     }
 
     fn reference_keyword(reference: &Type) -> &'static str {
-        if matches!(reference, Type::Mut(_)) {
+        if matches!(reference, Type::Mut(_, _)) {
             "mut"
         } else {
             "ref"
         }
     }
 
+    fn reference(&self, reference: &Type, lifetime: Lifetime, inner: &Type) -> String {
+        let mut parts = vec![Self::reference_keyword(reference).to_string()];
+        if let Lifetime::Written(binding) = lifetime {
+            parts.push(self.bindings.get(binding).name().to_string());
+        }
+        parts.push(self.show(inner));
+        format!("({})", parts.join(" "))
+    }
+
     pub fn scheme(&self, scheme: &Scheme) -> String {
-        if scheme.params.is_empty() {
+        let mut declared: Vec<String> = scheme
+            .lifetimes
+            .iter()
+            .map(|binding| self.bindings.get(*binding).name().to_string())
+            .collect();
+        declared.extend(scheme.params.iter().map(|param| self.param(param)));
+        if declared.is_empty() {
             return self.show(&scheme.body);
         }
-        let params: Vec<String> = scheme
-            .params
-            .iter()
-            .map(|param| self.param(param))
-            .collect();
-        format!("(where ({}) {})", params.join(" "), self.show(&scheme.body))
+        format!(
+            "(where ({}) {})",
+            declared.join(" "),
+            self.show(&scheme.body)
+        )
     }
 
     fn param(&self, param: &GenericParam) -> String {

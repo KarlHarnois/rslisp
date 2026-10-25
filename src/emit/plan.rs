@@ -388,7 +388,7 @@ impl<'p> EmitPlan<'p> {
                     .for_each(|parameter| self.visit_type(parameter, module));
                 self.visit_type(result, module);
             }
-            Type::Ref(inner) | Type::Mut(inner) => self.visit_type(inner, module),
+            Type::Ref(_, inner) | Type::Mut(_, inner) => self.visit_type(inner, module),
             Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => {}
         }
     }

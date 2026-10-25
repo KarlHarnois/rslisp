@@ -116,8 +116,8 @@ impl Unifier {
                 self.resolve_all(&parameters),
                 Box::new(self.resolve(&result)),
             ),
-            Type::Ref(inner) => Type::Ref(Box::new(self.resolve(&inner))),
-            Type::Mut(inner) => Type::Mut(Box::new(self.resolve(&inner))),
+            Type::Ref(lifetime, inner) => Type::Ref(lifetime, Box::new(self.resolve(&inner))),
+            Type::Mut(lifetime, inner) => Type::Mut(lifetime, Box::new(self.resolve(&inner))),
             other => other,
         }
     }
@@ -156,9 +156,8 @@ impl Unifier {
                 &right_result,
                 span,
             ),
-            (Type::Ref(left), Type::Ref(right)) | (Type::Mut(left), Type::Mut(right)) => {
-                self.unify(&left, &right, span)
-            }
+            (Type::Ref(_, left), Type::Ref(_, right))
+            | (Type::Mut(_, left), Type::Mut(_, right)) => self.unify(&left, &right, span),
             (left, right) => self.unify_rigid(&left, &right, span),
         }
     }

@@ -37,7 +37,7 @@ pub use rust_types::{RustType, RustTypeTable};
 pub use structs::{StructDefinition, StructTable};
 pub use templates::TemplateBorrows;
 pub use traits::{Implementor, RustTrait, TraitTable};
-pub use ty::{Bound, GenericId, GenericParam, Scheme, Type, TypeVar};
+pub use ty::{Bound, GenericId, GenericParam, Lifetime, Scheme, Type, TypeVar};
 pub use typed::{
     Borrow, PendingModeCheck, ReceiverKind, TraitMethodInfo, TypedArgument, TypedArm, TypedBinder,
     TypedBlock, TypedBodyItem, TypedControl, TypedConversion, TypedDefinition, TypedExpr,

@@ -74,14 +74,14 @@ impl UnsizedParameters {
                 bound.insert(*generic, actual.clone());
                 true
             }
-            Type::Ref(inner) | Type::Mut(inner) => Self::bind_reference(inner, actual, bound),
+            Type::Ref(_, inner) | Type::Mut(_, inner) => Self::bind_reference(inner, actual, bound),
             _ => Self::bind_compound(scheme, actual, bound),
         }
     }
 
     fn bind_reference(inner: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
         let actual = match actual {
-            Type::Ref(actual) | Type::Mut(actual) => actual,
+            Type::Ref(_, actual) | Type::Mut(_, actual) => actual,
             actual => actual,
         };
         Self::bind(inner, actual, bound)

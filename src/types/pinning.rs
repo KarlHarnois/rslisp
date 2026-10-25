@@ -256,9 +256,8 @@ impl InstantiationReport {
 
     fn bind_reference(scheme: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
         match (scheme, actual) {
-            (Type::Ref(left), Type::Ref(right)) | (Type::Mut(left), Type::Mut(right)) => {
-                Self::bind(left, right, bound)
-            }
+            (Type::Ref(_, left), Type::Ref(_, right))
+            | (Type::Mut(_, left), Type::Mut(_, right)) => Self::bind(left, right, bound),
             _ => false,
         }
     }
@@ -437,7 +436,7 @@ mod tests {
     #[test]
     fn a_reference_scheme_does_not_bind_a_primitive() {
         let mut fixture = BindFixture::new();
-        let scheme = Type::Ref(Box::new(Type::Primitive(PrimitiveType::I64)));
+        let scheme = Type::shared(Type::Primitive(PrimitiveType::I64));
         assert!(!fixture.bind(&scheme, &fixture.primitive()));
     }
 }

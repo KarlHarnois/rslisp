@@ -220,17 +220,18 @@ impl<'a> MoveChecker<'a> {
     fn moves(&self, callee: &TypedExpr, position: usize, argument: &TypedArgument) -> bool {
         !self.template_borrows.borrows(callee, position)
             && argument.borrow == Borrow::None
-            && !matches!(argument.value.ty, Type::Ref(_))
+            && !matches!(argument.value.ty, Type::Ref(_, _))
     }
 
     fn recur(&mut self, arguments: &[TypedArgument]) {
         for argument in arguments {
-            let usage =
-                if argument.borrow == Borrow::None && !matches!(argument.value.ty, Type::Ref(_)) {
-                    Usage::Move
-                } else {
-                    Usage::Borrow
-                };
+            let usage = if argument.borrow == Borrow::None
+                && !matches!(argument.value.ty, Type::Ref(_, _))
+            {
+                Usage::Move
+            } else {
+                Usage::Borrow
+            };
             self.expr(&argument.value, usage);
         }
     }
@@ -327,7 +328,7 @@ impl<'a> MoveChecker<'a> {
         ty: &Type,
         moved: &Diagnostic,
     ) -> Option<Diagnostic> {
-        if matches!(ty, Type::Mut(_)) {
+        if matches!(ty, Type::Mut(_, _)) {
             return Some(OwnershipProblems::mut_parameter_move_help(moved.clone()));
         }
         if self.changed.is_changed(binding) {

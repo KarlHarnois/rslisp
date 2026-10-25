@@ -54,7 +54,7 @@ pub enum TypeExprKind {
     Primitive(PrimitiveType),
     Named(BindingId, Vec<TypeExpr>),
     Function(ClosureKind, Vec<TypeExpr>, Box<TypeExpr>),
-    Reference(ReferenceKind, Box<TypeExpr>),
+    Reference(ReferenceKind, Option<BindingId>, Box<TypeExpr>),
     Hole,
     Where(Vec<TypeBinder>, Box<TypeExpr>),
     With(Box<TypeExpr>, Box<TypeExpr>),
@@ -65,6 +65,7 @@ pub struct TypeBinder {
     pub variable: BindingId,
     pub bounds: Vec<TypeBound>,
     pub span: Span,
+    pub lifetime: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -104,9 +105,11 @@ impl TypeExpr {
                     .collect(),
                 Box::new(result.replacing(variable, replacement)),
             ),
-            TypeExprKind::Reference(kind, inner) => {
-                TypeExprKind::Reference(*kind, Box::new(inner.replacing(variable, replacement)))
-            }
+            TypeExprKind::Reference(kind, lifetime, inner) => TypeExprKind::Reference(
+                *kind,
+                *lifetime,
+                Box::new(inner.replacing(variable, replacement)),
+            ),
             other => other.clone(),
         };
         TypeExpr::new(kind, self.span)

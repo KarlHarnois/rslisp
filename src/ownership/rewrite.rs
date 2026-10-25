@@ -4,7 +4,7 @@ use std::rc::Rc;
 use super::functions::{FunctionTable, ParamMode};
 use crate::core::{BindingId, ReferenceKind};
 use crate::types::{
-    Borrow, Type, TypedArgument, TypedControl, TypedDefinition, TypedExpr, TypedExprKind,
+    Borrow, Lifetime, Type, TypedArgument, TypedControl, TypedDefinition, TypedExpr, TypedExprKind,
     TypedLeaf, TypedProgram,
 };
 
@@ -32,8 +32,8 @@ impl<'a> ModeRewrite<'a> {
                         slot.inferable || slot.ty.is_unsized(),
                         modes.get(&slot.binding),
                     ) {
-                        (true, Some(ParamMode::Ref)) => Type::Ref(Box::new(slot.ty.clone())),
-                        (true, Some(ParamMode::Mut)) => Type::Mut(Box::new(slot.ty.clone())),
+                        (true, Some(ParamMode::Ref)) => Type::shared(slot.ty.clone()),
+                        (true, Some(ParamMode::Mut)) => Type::mutable(slot.ty.clone()),
                         _ => slot.ty.clone(),
                     }
                 });
@@ -83,11 +83,67 @@ impl<'a> ModeRewrite<'a> {
             }
             _ => self.expr(&mut definition.value, None),
         }
+        Self::carry_function_lifetimes(&definition.scheme.body, &mut definition.value.ty);
+        if let TypedExprKind::Fn(lambda) = &mut definition.value.kind {
+            let written = definition.scheme.body.clone();
+            if let Type::Function(_, parameters, _) = &written {
+                let lambda = Rc::make_mut(lambda);
+                for (param, written) in lambda.params.iter_mut().zip(parameters) {
+                    Self::carry_lifetimes(written, &mut param.ty);
+                }
+            }
+        }
     }
 
     fn replace_parameters(function: &mut Type, params: &[Type]) {
         if let Type::Function(_, parameters, _) = function {
-            *parameters = params.to_vec();
+            let mut carried = params.to_vec();
+            for (written, replacement) in parameters.iter().zip(&mut carried) {
+                Self::carry_lifetimes(written, replacement);
+            }
+            *parameters = carried;
+        }
+    }
+
+    fn carry_function_lifetimes(written: &Type, value: &mut Type) {
+        if let (
+            Type::Function(_, written_parameters, written_result),
+            Type::Function(_, parameters, result),
+        ) = (written, value)
+        {
+            for (written, value) in written_parameters.iter().zip(parameters.iter_mut()) {
+                Self::carry_lifetimes(written, value);
+            }
+            Self::carry_lifetimes(written_result, result);
+        }
+    }
+
+    fn carry_lifetimes(written: &Type, value: &mut Type) {
+        match (written, value) {
+            (Type::Ref(written_lifetime, written), Type::Ref(lifetime, value))
+            | (Type::Mut(written_lifetime, written), Type::Mut(lifetime, value)) => {
+                if matches!(written_lifetime, Lifetime::Written(_)) {
+                    *lifetime = *written_lifetime;
+                }
+                Self::carry_lifetimes(written, value);
+            }
+            (
+                Type::Function(_, written_parameters, written_result),
+                Type::Function(_, parameters, result),
+            ) => {
+                for (written, value) in written_parameters.iter().zip(parameters.iter_mut()) {
+                    Self::carry_lifetimes(written, value);
+                }
+                Self::carry_lifetimes(written_result, result);
+            }
+            (Type::Named(written_binding, written), Type::Named(binding, value))
+                if written_binding == binding =>
+            {
+                for (written, value) in written.iter().zip(value.iter_mut()) {
+                    Self::carry_lifetimes(written, value);
+                }
+            }
+            _ => {}
         }
     }
 
@@ -121,7 +177,7 @@ impl<'a> ModeRewrite<'a> {
         }
         for arm in &mut matched.arms {
             for binder in arm.pattern.binders_mut() {
-                binder.ty = Type::Ref(Box::new(binder.ty.clone()));
+                binder.ty = Type::shared(binder.ty.clone());
                 self.binding_types.insert(binder.binding, binder.ty.clone());
                 self.added_references.insert(binder.binding);
             }
@@ -136,8 +192,12 @@ impl<'a> ModeRewrite<'a> {
                 };
                 let matching = matches!(
                     (kind, self.modes.get(binding), &value.ty),
-                    (ReferenceKind::Shared, Some(ParamMode::Ref), Type::Ref(_))
-                        | (ReferenceKind::Mutable, Some(ParamMode::Mut), Type::Mut(_))
+                    (ReferenceKind::Shared, Some(ParamMode::Ref), Type::Ref(_, _))
+                        | (
+                            ReferenceKind::Mutable,
+                            Some(ParamMode::Mut),
+                            Type::Mut(_, _)
+                        )
                 );
                 matching.then(|| value.ty.clone())
             }
@@ -201,8 +261,8 @@ impl<'a> ModeRewrite<'a> {
             return;
         }
         if argument.borrow == Borrow::None
-            && matches!(argument.value.ty, Type::Mut(_))
-            && matches!(param, Type::Mut(_))
+            && matches!(argument.value.ty, Type::Mut(_, _))
+            && matches!(param, Type::Mut(_, _))
         {
             argument.borrow = Borrow::Reborrow;
             return;
@@ -233,8 +293,8 @@ impl<'a> ModeRewrite<'a> {
 
     fn borrow_mode(param: &Type) -> Borrow {
         match param {
-            Type::Ref(_) => Borrow::Shared,
-            Type::Mut(_) => Borrow::Mutable,
+            Type::Ref(_, _) => Borrow::Shared,
+            Type::Mut(_, _) => Borrow::Mutable,
             _ => Borrow::None,
         }
     }

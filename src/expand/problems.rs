@@ -144,6 +144,14 @@ impl ExpandProblems {
         span: Span,
         similar: Option<Rc<str>>,
     ) -> Diagnostic {
+        if namespace == Namespace::Type && name.starts_with(Self::QUOTE_SHORTHAND) {
+            return Diagnostic::error(
+                DiagnosticCode::UNBOUND_NAME,
+                format!("cannot find lifetime `{name}` in this scope"),
+                Label::new(span, "not found in this scope"),
+            )
+            .with_help("declare the lifetime in the enclosing `where` or type head");
+        }
         let what = Self::describe(namespace);
         let diagnostic = Diagnostic::error(
             DiagnosticCode::UNBOUND_NAME,
@@ -157,7 +165,7 @@ impl ExpandProblems {
             ),
             None => diagnostic,
         };
-        if name.starts_with(Self::QUOTE_SHORTHAND) {
+        if namespace == Namespace::Value && name.starts_with(Self::QUOTE_SHORTHAND) {
             diagnostic.with_help(format!(
                 "there is no quote shorthand; write `(quote {})`",
                 &name[1..]
@@ -165,6 +173,15 @@ impl ExpandProblems {
         } else {
             diagnostic
         }
+    }
+
+    pub fn bounded_lifetime(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::BOUNDED_TYPE_PARAMETER,
+            "a lifetime cannot require traits",
+            Label::new(span, "traits given here"),
+        )
+        .with_help("write the lifetime alone, as in `'a`")
     }
 
     pub fn ambiguous(name: &str, span: Span, definitions: Vec<Span>) -> Diagnostic {

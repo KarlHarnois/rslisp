@@ -1,0 +1,1 @@
+(rust-type (stored 'a) "Stored<{0}>")

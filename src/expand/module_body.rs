@@ -1009,6 +1009,7 @@ impl Expander<'_> {
                         argument: None,
                     }],
                     span,
+                    lifetime: false,
                 }],
                 Box::new(signature.clone()),
             ),

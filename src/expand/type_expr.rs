@@ -10,7 +10,7 @@ use crate::source::Span;
 
 impl Expander<'_> {
     const FUNCTION_TYPE_PARTS: usize = 3;
-    const WRAPPER_TYPE_PARTS: usize = 2;
+    const LIFETIME_PREFIX: char = '\'';
     const WHERE_PARTS: usize = 3;
     const WITH_PARTS: usize = 3;
 
@@ -40,6 +40,11 @@ impl Expander<'_> {
             | BindingKind::Enum(_)
             | BindingKind::RustType(_)
             | BindingKind::TypeVariable => Ok(TypeExprKind::Named(binding, Vec::new())),
+            BindingKind::Lifetime => Err(ExpandProblems::wrong_namespace(
+                symbol.name(),
+                "a type",
+                span,
+            )),
             _ => Err(ExpandProblems::wrong_namespace(
                 symbol.name(),
                 "a type",
@@ -126,14 +131,28 @@ impl Expander<'_> {
         form: &Form,
         items: &[Form],
     ) -> Result<TypeExprKind, Diagnostic> {
-        if items.len() != Self::WRAPPER_TYPE_PARTS {
-            return Err(ExpandProblems::malformed_type(
-                KernelType::Reference(kind),
-                form.span(),
-            ));
-        }
-        let inner = self.lower_type(&items[1])?;
-        Ok(TypeExprKind::Reference(kind, Box::new(inner)))
+        let malformed = || ExpandProblems::malformed_type(KernelType::Reference(kind), form.span());
+        let (lifetime, inner) = match items {
+            [_, inner] => (None, inner),
+            [_, lifetime, inner] => {
+                let symbol = lifetime.as_symbol().ok_or_else(malformed)?;
+                if !symbol.name().starts_with(Self::LIFETIME_PREFIX) {
+                    return Err(malformed());
+                }
+                let binding = self.resolve(symbol, Namespace::Type, lifetime.span())?;
+                if !matches!(self.kind(binding), BindingKind::Lifetime) {
+                    return Err(ExpandProblems::wrong_namespace(
+                        symbol.name(),
+                        "a lifetime",
+                        lifetime.span(),
+                    ));
+                }
+                (Some(binding), inner)
+            }
+            _ => return Err(malformed()),
+        };
+        let inner = self.lower_type(inner)?;
+        Ok(TypeExprKind::Reference(kind, lifetime, Box::new(inner)))
     }
 
     fn lower_where(&mut self, form: &Form, items: &[Form]) -> Result<TypeExprKind, Diagnostic> {
@@ -171,7 +190,13 @@ impl Expander<'_> {
             Some([name, ..]) => name,
             _ => binder,
         };
-        self.define_local(name, Namespace::Type, BindingKind::TypeVariable, None)
+        let kind = match name.as_symbol() {
+            Some(symbol) if symbol.name().starts_with(Self::LIFETIME_PREFIX) => {
+                BindingKind::Lifetime
+            }
+            _ => BindingKind::TypeVariable,
+        };
+        self.define_local(name, Namespace::Type, kind, None)
     }
 
     pub(super) fn lower_type_binder(
@@ -191,6 +216,7 @@ impl Expander<'_> {
             variable,
             bounds,
             span: binder.span(),
+            lifetime: matches!(self.kind(variable), BindingKind::Lifetime),
         })
     }
 

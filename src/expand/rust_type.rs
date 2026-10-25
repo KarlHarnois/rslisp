@@ -28,6 +28,13 @@ impl Expander<'_> {
         self.reject_old_rust_type_parameters(items)?;
         let body = vec![items[2].clone()];
         let parameterized = self.lower_head(&shape, &items[1], body)?;
+        if let Some(binder) = parameterized.binders.iter().find(|binder| binder.lifetime) {
+            return Err(ExpandProblems::wrong_namespace(
+                self.bindings.get(binder.variable).name(),
+                "a type parameter",
+                binder.span,
+            ));
+        }
         let [template_form] = parameterized.body.as_slice() else {
             return Err(shape.malformed(&items[2]));
         };

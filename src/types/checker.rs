@@ -99,7 +99,7 @@ impl ParameterUsage {
                 }
                 self.visit(result, enum_binding, variable, inside_self);
             }
-            TypeExprKind::Reference(_, inner) => {
+            TypeExprKind::Reference(_, _, inner) => {
                 self.visit(inner, enum_binding, variable, inside_self);
             }
             TypeExprKind::Primitive(_) | TypeExprKind::Hole => {}
@@ -429,7 +429,8 @@ impl TypeChecker {
             | ItemKind::Enum(binding, params, _, _)
             | ItemKind::RustType(binding, params, ..) = &item.kind
             {
-                self.type_arities.insert(*binding, params.len());
+                let arity = params.iter().filter(|binder| !binder.lifetime).count();
+                self.type_arities.insert(*binding, arity);
             }
         }
     }
@@ -765,7 +766,7 @@ impl TypeChecker {
         if !result.is_unsized() {
             return;
         }
-        let borrowed = Type::Function(kind, parameters, Box::new(Type::Ref(result)));
+        let borrowed = Type::Function(kind, parameters, Box::new(Type::shared(*result)));
         value.ty = borrowed.clone();
         self.component.insert(binding, borrowed);
     }
@@ -867,6 +868,7 @@ impl TypeChecker {
         let inferred = self.unifier.resolve(&self.component[&binding]);
         if let Some(signature) = signature {
             return Scheme {
+                lifetimes: signature.lifetimes.clone(),
                 params: signature.params.clone(),
                 body: inferred,
             };
@@ -874,6 +876,7 @@ impl TypeChecker {
         if matches!(value.kind, TypedExprKind::Fn(_)) {
             let params = self.mentioned_generics(&inferred);
             return Scheme {
+                lifetimes: Vec::new(),
                 params,
                 body: inferred,
             };
@@ -1083,7 +1086,7 @@ impl TypeChecker {
             Type::Named(_, arguments) => arguments
                 .iter()
                 .for_each(|argument| Self::collect_vars(argument, vars)),
-            Type::Ref(inner) | Type::Mut(inner) => Self::collect_vars(inner, vars),
+            Type::Ref(_, inner) | Type::Mut(_, inner) => Self::collect_vars(inner, vars),
             _ => {}
         }
     }
@@ -1091,6 +1094,7 @@ impl TypeChecker {
     fn failed_scheme(&mut self) -> Scheme {
         let param = self.new_generic(Self::parameter_name(0).as_str(), Vec::new());
         Scheme {
+            lifetimes: Vec::new(),
             body: Type::Generic(param.id),
             params: vec![param],
         }
@@ -1111,8 +1115,10 @@ impl TypeChecker {
         fields: &[(crate::core::FieldLabel, TypeExpr)],
     ) -> Result<(), Diagnostic> {
         let params = self.struct_params(binders)?;
+        let lifetimes = Self::lifetime_binders(binders);
         let scope: HashMap<BindingId, GenericId> = binders
             .iter()
+            .filter(|binder| !binder.lifetime)
             .zip(&params)
             .map(|(binder, param)| (binder.variable, param.id))
             .collect();
@@ -1121,6 +1127,7 @@ impl TypeChecker {
         self.structs.add(
             binding,
             StructDefinition {
+                lifetimes,
                 params,
                 fields: lowered,
                 field_spans,
@@ -1143,8 +1150,10 @@ impl TypeChecker {
         rust: &Option<crate::core::EnumRust>,
     ) -> Result<(), Diagnostic> {
         let params = self.struct_params(binders)?;
+        let lifetimes = Self::lifetime_binders(binders);
         let scope: HashMap<BindingId, GenericId> = binders
             .iter()
+            .filter(|binder| !binder.lifetime)
             .zip(&params)
             .map(|(binder, param)| (binder.variable, param.id))
             .collect();
@@ -1171,6 +1180,7 @@ impl TypeChecker {
         self.enums.add(
             binding,
             EnumDefinition {
+                lifetimes,
                 params,
                 variants: lowered,
                 rust: rust.clone(),
@@ -1224,24 +1234,28 @@ impl TypeChecker {
         variants: &[VariantDeclaration],
     ) -> Result<(), Diagnostic> {
         let enum_name = self.bindings.get(enum_binding).name();
-        let problem = binders.iter().zip(params).find_map(|(binder, param)| {
-            let usage = ParameterUsage::scan(variants, enum_binding, binder.variable);
-            match (usage.outside_self, usage.first_recursive) {
-                (true, _) => None,
-                (false, Some(recursive_use)) => {
-                    Some(TypeProblems::recursively_used_enum_parameter(
+        let problem = binders
+            .iter()
+            .filter(|binder| !binder.lifetime)
+            .zip(params)
+            .find_map(|(binder, param)| {
+                let usage = ParameterUsage::scan(variants, enum_binding, binder.variable);
+                match (usage.outside_self, usage.first_recursive) {
+                    (true, _) => None,
+                    (false, Some(recursive_use)) => {
+                        Some(TypeProblems::recursively_used_enum_parameter(
+                            &param.name,
+                            enum_name,
+                            binder.span,
+                            recursive_use,
+                        ))
+                    }
+                    (false, None) => Some(TypeProblems::unused_enum_parameter(
                         &param.name,
-                        enum_name,
                         binder.span,
-                        recursive_use,
-                    ))
+                    )),
                 }
-                (false, None) => Some(TypeProblems::unused_enum_parameter(
-                    &param.name,
-                    binder.span,
-                )),
-            }
-        });
+            });
         problem.map_or(Ok(()), Err)
     }
 
@@ -1292,11 +1306,20 @@ impl TypeChecker {
         self.reject_bounds(binders)?;
         Ok(binders
             .iter()
+            .filter(|binder| !binder.lifetime)
             .map(|binder| {
                 let name = self.bindings.get(binder.variable).name().to_string();
                 self.new_generic(&name, Vec::new())
             })
             .collect())
+    }
+
+    fn lifetime_binders(binders: &[TypeBinder]) -> Vec<BindingId> {
+        binders
+            .iter()
+            .filter(|binder| binder.lifetime)
+            .map(|binder| binder.variable)
+            .collect()
     }
 
     fn reject_bounds(&self, binders: &[TypeBinder]) -> Result<(), Diagnostic> {
@@ -1314,11 +1337,15 @@ impl TypeChecker {
         params: &[GenericParam],
         fields: &[(std::rc::Rc<str>, Type)],
     ) -> Result<(), Diagnostic> {
-        let unused = binders.iter().zip(params).find(|(_, param)| {
-            !fields
-                .iter()
-                .any(|(_, field_type)| field_type.mentions(param.id))
-        });
+        let unused = binders
+            .iter()
+            .filter(|binder| !binder.lifetime)
+            .zip(params)
+            .find(|(_, param)| {
+                !fields
+                    .iter()
+                    .any(|(_, field_type)| field_type.mentions(param.id))
+            });
         match unused {
             Some((binder, param)) => Err(TypeProblems::unused_type_parameter(
                 &param.name,
@@ -1384,7 +1411,7 @@ impl TypeChecker {
             TypeExprKind::Named(binding, arguments) => {
                 Self::named_receiver(*binding, arguments, self_variable, ReceiverKind::Owned)
             }
-            TypeExprKind::Reference(kind, inner) => {
+            TypeExprKind::Reference(kind, _, inner) => {
                 Self::reference_receiver(*kind, inner, self_variable)
             }
             _ => None,

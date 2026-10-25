@@ -401,7 +401,7 @@ impl TypeChecker {
     }
 
     fn with_references(referent: Type, depth: usize) -> Type {
-        (0..depth).fold(referent, |inner, _| Type::Ref(Box::new(inner)))
+        (0..depth).fold(referent, |inner, _| Type::shared(inner))
     }
 
     fn borrow_for_depth(depth: usize, target: usize) -> Borrow {

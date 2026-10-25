@@ -1,16 +1,46 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use super::mangle::NameMangler;
 use super::plan::EmitPlan;
 use super::unsized_parameters::UnsizedParameters;
 use crate::core::{BindingId, ModuleId, Piece, PrimitiveType};
-use crate::types::{Bound, ClosureKind, GenericId, GenericParam, RustType, Type, TypedProgram};
+use crate::types::{
+    Bound, ClosureKind, GenericId, GenericParam, Lifetime, RustType, Type, TypedProgram,
+};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum TypePosition {
     Signature,
     StaticResult,
     Value,
+}
+
+#[derive(Default)]
+pub struct LifetimeScope {
+    names: HashMap<BindingId, String>,
+    elided: Option<String>,
+}
+
+impl LifetimeScope {
+    pub fn new(names: HashMap<BindingId, String>) -> Self {
+        Self {
+            names,
+            elided: None,
+        }
+    }
+
+    pub fn with_elided(mut self, elided: Option<String>) -> Self {
+        self.elided = elided;
+        self
+    }
+
+    pub fn name_of(&self, binding: BindingId) -> Option<String> {
+        self.names.get(&binding).cloned()
+    }
+
+    pub fn elided(&self) -> Option<&str> {
+        self.elided.as_deref()
+    }
 }
 
 pub struct RustTypes<'a> {
@@ -25,6 +55,7 @@ impl<'a> RustTypes<'a> {
     const MAYBE_UNSIZED: &'static str = "?Sized";
     const SIZED_TRAITS: [&'static str; 3] = ["Clone", "Copy", "Default"];
     const INFERRED: &'static str = "_";
+    const ELIDED_LIFETIME_ARGUMENT: &'static str = "'_";
     const NUMBER_TRAIT: &'static str = "crate::rt::Number";
     const RUNTIME_SUPERTRAITS: [(&'static str, &'static [&'static str]); 4] = [
         ("crate::rt::Number", &["Copy", "PartialOrd", "PartialEq"]),
@@ -70,15 +101,10 @@ impl<'a> RustTypes<'a> {
     }
 
     pub fn show(&self, shown: &Type, position: TypePosition) -> String {
-        self.show_with_lifetime(shown, position, None)
+        self.show_in(shown, position, &LifetimeScope::default())
     }
 
-    pub fn show_with_lifetime(
-        &self,
-        shown: &Type,
-        position: TypePosition,
-        lifetime: Option<&str>,
-    ) -> String {
+    pub fn show_in(&self, shown: &Type, position: TypePosition, scope: &LifetimeScope) -> String {
         match shown {
             Type::Var(_) => "_".to_string(),
             Type::Generic(generic) => self
@@ -87,30 +113,33 @@ impl<'a> RustTypes<'a> {
                 .get(generic)
                 .map_or_else(|| "_".to_string(), Self::generic_name),
             Type::Primitive(primitive) => Self::primitive(*primitive).to_string(),
-            Type::Named(binding, arguments) => self.named(*binding, arguments, position, lifetime),
+            Type::Named(binding, arguments) => self.named(*binding, arguments, position, scope),
             Type::Function(kind, parameters, result) => {
                 self.function(*kind, parameters, result, position)
             }
-            Type::Ref(inner) | Type::Mut(inner) => self.reference(shown, inner, position, lifetime),
+            Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
+                self.reference(shown, *lifetime, inner, position, scope)
+            }
         }
     }
 
     fn reference(
         &self,
         reference: &Type,
+        lifetime: Lifetime,
         inner: &Type,
         position: TypePosition,
-        lifetime: Option<&str>,
+        scope: &LifetimeScope,
     ) -> String {
-        let mutability = if matches!(reference, Type::Mut(_)) {
+        let mutability = if matches!(reference, Type::Mut(_, _)) {
             "mut "
         } else {
             ""
         };
         format!(
             "&{}{mutability}{}",
-            Self::lifetime(position, lifetime),
-            self.show_with_lifetime(inner, Self::inner(position), lifetime)
+            self.lifetime(lifetime, position, scope),
+            self.show_in(inner, Self::inner(position), scope)
         )
     }
 
@@ -244,7 +273,7 @@ impl<'a> RustTypes<'a> {
     ) -> bool {
         match signature {
             Type::Generic(found) if *found == generic => behind_reference,
-            Type::Ref(inner) | Type::Mut(inner) => {
+            Type::Ref(_, inner) | Type::Mut(_, inner) => {
                 Self::only_behind_references(inner, generic, true)
             }
             Type::Named(_, parts) => parts
@@ -263,17 +292,18 @@ impl<'a> RustTypes<'a> {
         binding: BindingId,
         arguments: &[Type],
         position: TypePosition,
-        lifetime: Option<&str>,
+        scope: &LifetimeScope,
     ) -> String {
         match self.program.rust_types.get(binding) {
-            Some(rust_type) => self.rust_type(rust_type, arguments, position, lifetime),
+            Some(rust_type) => self.rust_type(rust_type, arguments, position, scope),
             None => {
-                let arguments: Vec<String> = arguments
+                let mut arguments: Vec<String> = arguments
                     .iter()
-                    .map(|argument| {
-                        self.show_with_lifetime(argument, Self::inner(position), lifetime)
-                    })
+                    .map(|argument| self.show_in(argument, Self::inner(position), scope))
                     .collect();
+                if self.has_lifetime_parameter(binding) {
+                    arguments.insert(0, Self::lifetime_argument(position, scope));
+                }
                 Self::applied(self.struct_path(binding), &arguments)
             }
         }
@@ -284,7 +314,7 @@ impl<'a> RustTypes<'a> {
         rust_type: &RustType,
         arguments: &[Type],
         position: TypePosition,
-        lifetime: Option<&str>,
+        scope: &LifetimeScope,
     ) -> String {
         if rust_type.is_opaque() && position == TypePosition::Value {
             return Self::INFERRED.to_string();
@@ -296,11 +326,31 @@ impl<'a> RustTypes<'a> {
             .map(|piece| match piece {
                 Piece::Literal(text) => text.to_string(),
                 Piece::Placeholder { index, .. } => {
-                    self.show_with_lifetime(&arguments[*index], Self::inner(position), lifetime)
+                    self.show_in(&arguments[*index], Self::inner(position), scope)
                 }
                 Piece::TypePlaceholder { .. } | Piece::BinderPlaceholder { .. } => "_".to_string(),
             })
             .collect()
+    }
+
+    fn has_lifetime_parameter(&self, binding: BindingId) -> bool {
+        if let Some(definition) = self.program.structs.get(binding) {
+            return !definition.lifetimes.is_empty();
+        }
+        if let Some(definition) = self.program.enums.get(binding) {
+            return definition.rust.is_none() && !definition.lifetimes.is_empty();
+        }
+        false
+    }
+
+    fn lifetime_argument(position: TypePosition, scope: &LifetimeScope) -> String {
+        match position {
+            TypePosition::StaticResult => "'static".to_string(),
+            TypePosition::Signature | TypePosition::Value => scope.elided().map_or_else(
+                || Self::ELIDED_LIFETIME_ARGUMENT.to_string(),
+                str::to_string,
+            ),
+        }
     }
 
     fn applied(path: String, arguments: &[String]) -> String {
@@ -342,12 +392,28 @@ impl<'a> RustTypes<'a> {
         format!("{keyword}({}){result}", parameters.join(", "))
     }
 
-    fn lifetime(position: TypePosition, lifetime: Option<&str>) -> String {
-        match (position, lifetime) {
-            (TypePosition::StaticResult, _) => "'static ".to_string(),
-            (_, Some(lifetime)) => format!("{lifetime} "),
-            (TypePosition::Signature | TypePosition::Value, None) => String::new(),
-        }
+    fn lifetime(
+        &self,
+        lifetime: Lifetime,
+        position: TypePosition,
+        scope: &LifetimeScope,
+    ) -> String {
+        let name = match lifetime {
+            Lifetime::Elided if position == TypePosition::StaticResult => {
+                return "'static ".to_string();
+            }
+            Lifetime::Elided => scope.elided().map(str::to_string),
+            Lifetime::Written(binding) => Some(
+                scope
+                    .name_of(binding)
+                    .unwrap_or_else(|| Self::binding_lifetime(self.program, binding)),
+            ),
+        };
+        name.map_or_else(String::new, |name| format!("{name} "))
+    }
+
+    pub fn binding_lifetime(program: &TypedProgram, binding: BindingId) -> String {
+        NameMangler::lifetime(program.bindings.get(binding).name())
     }
 
     fn inner(position: TypePosition) -> TypePosition {

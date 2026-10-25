@@ -1,0 +1,2 @@
+(type pick (fn ((ref 'missing str)) (ref str)))
+(defn pick (text) text)

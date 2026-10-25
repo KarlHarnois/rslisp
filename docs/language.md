@@ -112,16 +112,20 @@ Type syntax mirrors value syntax:
 | `(fn-mut (i64) i64)` | `impl FnMut(i64) -> i64` |
 | `(fn-once (i64) i64)` | `impl FnOnce(i64) -> i64` |
 | `(ref str)` | `&str` |
+| `(ref 'a str)` | `&'a str` |
 | `(mut point)` | `&mut Point` |
+| `(mut 'a point)` | `&'a mut Point` |
 | `(pair i64 string)` | `(i64, String)` |
 | `(where ((n number)) (fn (n) n))` | `fn<N: Number>(N) -> N` |
 | `_` | inferred |
 
 A function type's kind is `fn`, `fn-mut` or `fn-once`. A written `fn-mut` or `fn-once` is exact, a plain `fn` leaves the kind to inference, and an inferred function never needs a written kind. Type variables are bound by a `where`, by a `struct`'s head or by a `rust-type`'s head. A type definition names its parameters on its name, as `(struct (pair a b) (first a) (second b))` and `(rust-type (boxed item) "Box<{0}>")` do. A `where` binds them over what its form holds: a signature's type, a `rust-trait` implementor or a function type. An unknown type name is an unbound-name error that suggests the closest name.
 
+A lifetime is a symbol that starts with `'`. It is declared beside a type parameter: in a `where` for a function, or in a struct or enum head, as `(struct (snippet 'a) (text (ref 'a str)))` does. A reference names one as an optional first part: `(ref 'a t)` and `(mut 'a t)`. A written lifetime is exact. An elided reference leaves its lifetime to Rust's elision.
+
 A bound names the trait and, optionally, its second type: `(a (partial-eq b))` is Rust's `A: PartialEq<B>`. The second type must be a type the program knows or a binder of the same `where`, as in `(where ((a (partial-eq b)) b) (fn (a b) bool))`. A plain bound keeps Rust's default: `(a partial-eq)` is `A: PartialEq<A>`. A trait takes a second type exactly when one of its `rust-trait` entries uses `with`.
 
-A struct field cannot hold a borrow outside a function type, because Rust needs a lifetime that the program cannot write yet. Each type parameter of a struct must appear in a field. Each parameter of a Rust type must appear in its template. A type parameter takes no traits, because Rust would demand a type's traits at every use. A function that needs a trait names it in its own `where`. A type takes exactly as many arguments as it has parameters.
+A struct field cannot hold a borrow yet, even with a written lifetime. Each type parameter of a struct must appear in a field. Each parameter of a Rust type must appear in its template. A type parameter takes no traits, because Rust would demand a type's traits at every use. A function that needs a trait names it in its own `where`. A type takes exactly as many arguments as it has parameters.
 
 ```lisp
 (struct (pair a b) (first a) (second b))
@@ -620,3 +624,18 @@ fn longer<'a>(a: &'a str, b: &'a str) -> &'a str {
 A written `type` signature with references but no lifetimes infers them the same way. Written ownership stays exact. When the parameters contribute one lifetime, Rust's elision decides, and no lifetime appears.
 
 The compiler infers the parameter modes as well. A parameter that shares one type with another takes the value its argument refers to, not the argument's reference, so `(defn longer (a b) ...)` needs no `type` signature.
+
+A program writes a lifetime when it wants the result to borrow from one particular parameter:
+
+```lisp
+(type first (where ('a 'b) (fn ((ref 'a str) (ref 'b str)) (ref 'a str))))
+(defn first (a b) a)
+```
+
+```rust
+fn first<'a>(a: &'a str, b: &str) -> &'a str {
+    a
+}
+```
+
+A lifetime is declared with the type variables, as `(where ('a 'b) ...)` does. A reference names it as its first part, `(ref 'a str)` or `(mut 'a point)`. A written lifetime is exact, and the compiler adds no shared lifetime to a type that writes one.
