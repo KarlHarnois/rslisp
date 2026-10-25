@@ -53,6 +53,10 @@ impl<'a> Shape<'a> {
         self.malformed_with_help(part, format!("write it as `{}`", self.kernel.shape()))
     }
 
+    pub fn malformed_form_with_help(&self, help: impl Into<String>) -> Diagnostic {
+        self.malformed_with_help(self.form, help)
+    }
+
     pub fn malformed_with_help(&self, part: &Form, help: impl Into<String>) -> Diagnostic {
         let name = self.kernel.name();
         Diagnostic::error(

@@ -363,6 +363,11 @@ impl Expander<'_> {
     }
 
     fn lower_if(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        if shape.items().len() == 3 {
+            return Err(shape.malformed_form_with_help(
+                "write `(when test body ...)` to run forms only when the test holds",
+            ));
+        }
         let items = shape.exactly(4)?;
         let test = self.lower_recovered(&items[1])?;
         let then = self.lower_recovered(&items[2])?;
