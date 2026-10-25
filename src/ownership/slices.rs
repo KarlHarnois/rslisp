@@ -1,13 +1,19 @@
 use std::collections::{HashMap, HashSet};
 
 use super::functions::{FunctionTable, ParamMode};
-use crate::core::BindingId;
+use crate::core::{BindingId, PrimitiveType};
 use crate::types::{
     GenericId, RustType, Type, TypedArgument, TypedBlock, TypedExpr, TypedExprKind, TypedLeaf,
     TypedProgram,
 };
 
-pub struct SliceSelection<'a> {
+#[derive(Clone)]
+enum Shrink {
+    Slice(Type),
+    Str,
+}
+
+pub struct ShrinkSelection<'a> {
     program: &'a TypedProgram,
     functions: &'a FunctionTable,
     modes: &'a HashMap<BindingId, ParamMode>,
@@ -16,7 +22,7 @@ pub struct SliceSelection<'a> {
     slice: BindingId,
 }
 
-impl<'a> SliceSelection<'a> {
+impl<'a> ShrinkSelection<'a> {
     pub fn of(
         program: &'a TypedProgram,
         functions: &'a FunctionTable,
@@ -64,52 +70,64 @@ impl<'a> SliceSelection<'a> {
         }
         eligible
             .into_iter()
-            .map(|binding| {
-                let element = candidates[&binding].clone();
-                (
-                    binding,
-                    Type::Ref(Box::new(Type::Named(self.slice, vec![element]))),
-                )
-            })
+            .map(|binding| (binding, self.shrunk(&candidates[&binding])))
             .collect()
     }
 
-    fn candidates(&self) -> HashMap<BindingId, Type> {
+    fn shrunk(&self, shrink: &Shrink) -> Type {
+        match shrink {
+            Shrink::Slice(element) => {
+                Type::Ref(Box::new(Type::Named(self.slice, vec![element.clone()])))
+            }
+            Shrink::Str => Type::Ref(Box::new(Type::Primitive(PrimitiveType::Str))),
+        }
+    }
+
+    fn candidates(&self) -> HashMap<BindingId, Shrink> {
         let mut found = HashMap::new();
         for (function, info) in self.functions.iter() {
             if self.values.contains(function) {
                 continue;
             }
             for slot in &info.params {
-                let Type::Named(vector, arguments) = &slot.ty else {
+                if !slot.inferable || self.modes.get(&slot.binding) != Some(&ParamMode::Ref) {
                     continue;
-                };
-                if slot.inferable
-                    && self.modes.get(&slot.binding) == Some(&ParamMode::Ref)
-                    && self.program.rust_types.is_vector(*vector)
-                    && let [element] = arguments.as_slice()
-                {
-                    found.insert(slot.binding, element.clone());
+                }
+                if let Some(shrink) = self.candidate_shrink(&slot.ty) {
+                    found.insert(slot.binding, shrink);
                 }
             }
         }
         found
     }
 
+    fn candidate_shrink(&self, ty: &Type) -> Option<Shrink> {
+        match ty {
+            Type::Named(vector, arguments) if self.program.rust_types.is_vector(*vector) => {
+                match arguments.as_slice() {
+                    [element] => Some(Shrink::Slice(element.clone())),
+                    _ => None,
+                }
+            }
+            Type::Primitive(PrimitiveType::String) => Some(Shrink::Str),
+            _ => None,
+        }
+    }
+
     fn refused(
         &self,
-        candidates: &HashMap<BindingId, Type>,
+        candidates: &HashMap<BindingId, Shrink>,
         eligible: &HashSet<BindingId>,
     ) -> HashSet<BindingId> {
         let mut refused = HashSet::new();
         for (function, info) in self.functions.iter() {
-            let local: HashMap<BindingId, Type> = info
+            let local: HashMap<BindingId, Shrink> = info
                 .params
                 .iter()
                 .filter_map(|slot| {
                     candidates
                         .get(&slot.binding)
-                        .map(|element| (slot.binding, element.clone()))
+                        .map(|shrink| (slot.binding, shrink.clone()))
                 })
                 .collect();
             if local.is_empty() {
@@ -126,7 +144,7 @@ impl<'a> SliceSelection<'a> {
         &self,
         callee: &TypedExpr,
         position: usize,
-        element: &Type,
+        shrink: &Shrink,
         eligible: &HashSet<BindingId>,
     ) -> bool {
         let TypedExprKind::Leaf(TypedLeaf::Global(function)) = &callee.kind else {
@@ -141,7 +159,7 @@ impl<'a> SliceSelection<'a> {
         self.declared.get(function).is_some_and(|parameters| {
             parameters
                 .get(position)
-                .is_some_and(|parameter| self.accepts_slice(parameter, element))
+                .is_some_and(|parameter| self.accepts(parameter, shrink))
         })
     }
 
@@ -157,19 +175,37 @@ impl<'a> SliceSelection<'a> {
             .is_some_and(|slot| eligible.contains(&slot.binding))
     }
 
-    fn accepts_slice(&self, parameter: &Type, element: &Type) -> bool {
+    fn accepts(&self, parameter: &Type, shrink: &Shrink) -> bool {
         let Type::Ref(inner) = parameter else {
             return false;
         };
-        match inner.as_ref() {
+        match shrink {
+            Shrink::Slice(element) => self.accepts_slice(inner, element),
+            Shrink::Str => self.accepts_str(inner),
+        }
+    }
+
+    fn accepts_slice(&self, inner: &Type, element: &Type) -> bool {
+        match inner {
             Type::Named(binding, _) if self.program.rust_types.is_slice(*binding) => true,
-            Type::Generic(generic) => self.generic_accepts_slice(*generic, element),
+            Type::Generic(generic) => {
+                self.generic_accepts(*generic, &Type::Named(self.slice, vec![element.clone()]))
+            }
             _ => false,
         }
     }
 
-    fn generic_accepts_slice(&self, generic: GenericId, element: &Type) -> bool {
-        let candidate = Type::Named(self.slice, vec![element.clone()]);
+    fn accepts_str(&self, inner: &Type) -> bool {
+        match inner {
+            Type::Primitive(PrimitiveType::Str) => true,
+            Type::Generic(generic) => {
+                self.generic_accepts(*generic, &Type::Primitive(PrimitiveType::Str))
+            }
+            _ => false,
+        }
+    }
+
+    fn generic_accepts(&self, generic: GenericId, candidate: &Type) -> bool {
         self.program
             .generics
             .get(&generic)
@@ -185,7 +221,7 @@ impl<'a> SliceSelection<'a> {
             .all(|bound| {
                 self.program
                     .traits
-                    .satisfies(bound, &candidate, &|_, _| false)
+                    .satisfies(bound, candidate, &|_, _| false)
             })
     }
 
@@ -210,18 +246,18 @@ impl<'a> SliceSelection<'a> {
 }
 
 struct BodyUses<'a, 'b> {
-    selection: &'a SliceSelection<'b>,
+    selection: &'a ShrinkSelection<'b>,
     function: BindingId,
-    candidates: &'a HashMap<BindingId, Type>,
+    candidates: &'a HashMap<BindingId, Shrink>,
     eligible: &'a HashSet<BindingId>,
     refused: HashSet<BindingId>,
 }
 
 impl<'a, 'b> BodyUses<'a, 'b> {
     fn new(
-        selection: &'a SliceSelection<'b>,
+        selection: &'a ShrinkSelection<'b>,
         function: BindingId,
-        candidates: &'a HashMap<BindingId, Type>,
+        candidates: &'a HashMap<BindingId, Shrink>,
         eligible: &'a HashSet<BindingId>,
     ) -> Self {
         Self {
@@ -281,11 +317,11 @@ impl<'a, 'b> BodyUses<'a, 'b> {
 
     fn argument(&mut self, callee: &TypedExpr, position: usize, value: &TypedExpr) {
         if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &value.kind
-            && let Some(element) = self.candidates.get(binding)
+            && let Some(shrink) = self.candidates.get(binding)
         {
             if !self
                 .selection
-                .argument_accepts(callee, position, element, self.eligible)
+                .argument_accepts(callee, position, shrink, self.eligible)
             {
                 self.refuse(*binding);
             }
