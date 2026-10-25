@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/if_without_else.rslisp
+---
+error[L0210]: malformed `if`
+ --> expand/if_without_else.rslisp:2:3
+  |
+2 |   (if (= n 0) (println n)))
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `if`
+  |
+  = help: write `(when test body ...)` to run forms only when the test holds
