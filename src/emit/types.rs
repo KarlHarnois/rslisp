@@ -334,13 +334,7 @@ impl<'a> RustTypes<'a> {
     }
 
     fn has_lifetime_parameter(&self, binding: BindingId) -> bool {
-        if let Some(definition) = self.program.structs.get(binding) {
-            return !definition.lifetimes.is_empty();
-        }
-        if let Some(definition) = self.program.enums.get(binding) {
-            return definition.rust.is_none() && !definition.lifetimes.is_empty();
-        }
-        false
+        self.program.has_lifetime_parameter(binding)
     }
 
     fn lifetime_argument(position: TypePosition, scope: &LifetimeScope) -> String {

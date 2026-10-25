@@ -6,3 +6,6 @@ input_file: tests/fixtures/run/lifetimes.rslisp
 hello there
 hello there
 hello
+snippet hello there
+label hello there
+token hi

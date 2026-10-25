@@ -320,6 +320,64 @@ impl TypedProgram {
             .expect("the entry module is checked")
     }
 
+    pub fn has_lifetime_parameter(&self, binding: BindingId) -> bool {
+        if let Some(definition) = self.structs.get(binding) {
+            return !definition.lifetimes.is_empty() || self.definition_holds_borrow(binding);
+        }
+        if let Some(definition) = self.enums.get(binding) {
+            return definition.rust.is_none()
+                && (!definition.lifetimes.is_empty() || self.definition_holds_borrow(binding));
+        }
+        false
+    }
+
+    pub fn type_holds_borrow(&self, ty: &Type) -> bool {
+        self.type_holds_borrow_with(ty, &mut HashSet::new())
+    }
+
+    fn type_holds_borrow_with(&self, ty: &Type, visiting: &mut HashSet<BindingId>) -> bool {
+        match ty {
+            Type::Ref(..) | Type::Mut(..) => true,
+            Type::Function(..) => false,
+            Type::Named(binding, arguments) => {
+                arguments
+                    .iter()
+                    .any(|argument| self.type_holds_borrow_with(argument, visiting))
+                    || self.definition_holds_borrow_with(*binding, visiting)
+            }
+            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => false,
+        }
+    }
+
+    pub fn definition_holds_borrow(&self, binding: BindingId) -> bool {
+        self.definition_holds_borrow_with(binding, &mut HashSet::new())
+    }
+
+    fn definition_holds_borrow_with(
+        &self,
+        binding: BindingId,
+        visiting: &mut HashSet<BindingId>,
+    ) -> bool {
+        if !visiting.insert(binding) {
+            return false;
+        }
+        let holds = if let Some(definition) = self.structs.get(binding) {
+            definition
+                .fields
+                .iter()
+                .any(|(_, field)| self.type_holds_borrow_with(field, visiting))
+        } else if let Some(definition) = self.enums.get(binding) {
+            definition.rust.is_none()
+                && definition
+                    .payload_types()
+                    .any(|payload| self.type_holds_borrow_with(payload, visiting))
+        } else {
+            false
+        };
+        visiting.remove(&binding);
+        holds
+    }
+
     pub fn entry_signatures(&self) -> String {
         let display = TypeDisplay::new(&self.bindings, &self.generics);
         let structs = self

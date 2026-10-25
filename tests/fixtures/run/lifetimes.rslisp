@@ -6,7 +6,25 @@
 (type first (where ('a 'b) (fn ((ref 'a str) (ref 'b str)) (ref 'a str))))
 (defn first (a b) a)
 
+(struct snippet (text (ref str)))
+(defn snippet-of (source) (new snippet (text source)))
+
+(struct (label 'a) (text (ref 'a str)))
+(defn label-of (source) (new label (text source)))
+
+(enum token (symbol (ref str)) (number (ref str)))
+(defn token-text (token)
+  (match token
+    ((symbol text) text)
+    ((number text) text)))
+
 (defn main ()
   (println (written-longer "hi" "hello there"))
   (println (longer "hi" "hello there"))
-  (println (first "hello" "hi")))
+  (println (first "hello" "hi"))
+  (let source "hello there")
+  (let shorter (snippet-of source))
+  (println (str "snippet " (field shorter text)))
+  (let named (label-of source))
+  (println (str "label " (field named text)))
+  (println (str "token " (token-text (token/symbol "hi")))))

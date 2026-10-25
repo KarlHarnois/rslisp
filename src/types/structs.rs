@@ -27,15 +27,25 @@ impl StructDefinition {
 
     pub fn instantiated_field(&self, name: &str, arguments: &[Type]) -> Option<Type> {
         let replacements = self.replacements(arguments);
-        self.field(name)
-            .map(|field_type| field_type.substitute(&replacements))
+        self.field(name).map(|field_type| {
+            field_type
+                .without_written_lifetimes()
+                .substitute(&replacements)
+        })
     }
 
     pub fn instantiated_fields(&self, arguments: &[Type]) -> Vec<(Rc<str>, Type)> {
         let replacements = self.replacements(arguments);
         self.fields
             .iter()
-            .map(|(name, field_type)| (name.clone(), field_type.substitute(&replacements)))
+            .map(|(name, field_type)| {
+                (
+                    name.clone(),
+                    field_type
+                        .without_written_lifetimes()
+                        .substitute(&replacements),
+                )
+            })
             .collect()
     }
 

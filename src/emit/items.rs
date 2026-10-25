@@ -418,7 +418,10 @@ impl<'a> ItemEmitter<'a> {
         }
         let result = match &definition.value.ty {
             Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
-                let position = if parameters.iter().any(Type::holds_reference) {
+                let position = if parameters
+                    .iter()
+                    .any(|parameter| self.program.type_holds_borrow(parameter))
+                {
                     TypePosition::Signature
                 } else {
                     TypePosition::StaticResult
@@ -496,7 +499,10 @@ impl<'a> ItemEmitter<'a> {
             .collect();
         let result = match &definition.value.ty {
             Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
-                let position = if parameters.iter().any(Type::holds_reference) {
+                let position = if parameters
+                    .iter()
+                    .any(|parameter| self.program.type_holds_borrow(parameter))
+                {
                     TypePosition::Signature
                 } else {
                     TypePosition::StaticResult
@@ -579,20 +585,12 @@ impl<'a> ItemEmitter<'a> {
             .structs
             .get(binding)
             .expect("a reached struct has a definition");
-        let lifetimes: Vec<String> = definition
-            .lifetimes
-            .iter()
-            .map(|lifetime| RustTypes::binding_lifetime(self.program, *lifetime))
-            .collect();
-        let scope = LifetimeScope::new(
-            definition
-                .lifetimes
-                .iter()
-                .zip(&lifetimes)
-                .map(|(binding, name)| (*binding, name.clone()))
-                .collect(),
-        )
-        .with_elided(lifetimes.first().cloned());
+        let inferred = (definition.lifetimes.is_empty()
+            && self.program.definition_holds_borrow(binding))
+        .then(|| Self::unused_lifetime_name(self.program, &definition.lifetimes));
+        let lifetimes = self.declared_lifetimes(inferred.as_deref(), &definition.lifetimes);
+        let scope =
+            self.lifetime_scope(&definition.lifetimes, lifetimes.first().map(String::as_str));
         let mut fields = Vec::new();
         for ((name, field_type), span) in definition.fields.iter().zip(&definition.field_spans) {
             fields.push(Fragment::Newline);
@@ -642,20 +640,12 @@ impl<'a> ItemEmitter<'a> {
             .enums
             .get(binding)
             .expect("a reached enum has a definition");
-        let lifetimes: Vec<String> = definition
-            .lifetimes
-            .iter()
-            .map(|lifetime| RustTypes::binding_lifetime(self.program, *lifetime))
-            .collect();
-        let scope = LifetimeScope::new(
-            definition
-                .lifetimes
-                .iter()
-                .zip(&lifetimes)
-                .map(|(binding, name)| (*binding, name.clone()))
-                .collect(),
-        )
-        .with_elided(lifetimes.first().cloned());
+        let inferred = (definition.lifetimes.is_empty()
+            && self.program.definition_holds_borrow(binding))
+        .then(|| Self::unused_lifetime_name(self.program, &definition.lifetimes));
+        let lifetimes = self.declared_lifetimes(inferred.as_deref(), &definition.lifetimes);
+        let scope =
+            self.lifetime_scope(&definition.lifetimes, lifetimes.first().map(String::as_str));
         let params = Self::struct_params(&definition.params, &lifetimes);
         let mut variants = Vec::new();
         for variant in &definition.variants {
@@ -772,17 +762,20 @@ impl<'a> ItemEmitter<'a> {
         format!("<{}>", names.join(", "))
     }
 
-    fn needs_shared_lifetime(value: &TypedExpr) -> bool {
+    fn needs_shared_lifetime(&self, value: &TypedExpr) -> bool {
         let Type::Function(_, parameters, result) = &value.ty else {
             return false;
         };
-        let result_lifetimes = Self::borrow_lifetimes(result);
-        let parameter_lifetimes: usize = parameters.iter().map(Self::borrow_lifetimes).sum();
+        let result_lifetimes = self.borrow_lifetimes(result);
+        let parameter_lifetimes: usize = parameters
+            .iter()
+            .map(|parameter| self.borrow_lifetimes(parameter))
+            .sum();
         result_lifetimes > 0 && parameter_lifetimes > 1
     }
 
     fn inferred_lifetime(&self, lifetimes: &[BindingId], value: &TypedExpr) -> Option<String> {
-        Self::needs_shared_lifetime(value)
+        self.needs_shared_lifetime(value)
             .then(|| Self::unused_lifetime_name(self.program, lifetimes))
     }
 
@@ -831,12 +824,18 @@ impl<'a> ItemEmitter<'a> {
         lifetimes
     }
 
-    fn borrow_lifetimes(ty: &Type) -> usize {
+    fn borrow_lifetimes(&self, ty: &Type) -> usize {
         match ty {
             Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
-                usize::from(*lifetime == Lifetime::Elided) + Self::borrow_lifetimes(inner)
+                usize::from(*lifetime == Lifetime::Elided) + self.borrow_lifetimes(inner)
             }
-            Type::Named(_, arguments) => arguments.iter().map(Self::borrow_lifetimes).sum(),
+            Type::Named(binding, arguments) => {
+                usize::from(self.program.has_lifetime_parameter(*binding))
+                    + arguments
+                        .iter()
+                        .map(|argument| self.borrow_lifetimes(argument))
+                        .sum::<usize>()
+            }
             Type::Function(..) | Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => 0,
         }
     }
