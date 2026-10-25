@@ -83,9 +83,12 @@ impl<'a> CorePrinter<'a> {
         if let ItemKind::RustType(binding, params, template, clauses) = &item.kind {
             return self.rust_type_item(*binding, params, template, clauses);
         }
-        if let ItemKind::RustTrait(binding, path, _, methods, implementors) = &item.kind {
-            let mut parts = vec![self.name(*binding), format!("{path:?}")];
-            parts.extend(methods.iter().map(|method| {
+        if let ItemKind::RustTrait(declaration) = &item.kind {
+            let mut parts = vec![
+                self.name(declaration.binding),
+                format!("{:?}", declaration.path),
+            ];
+            parts.extend(declaration.methods.iter().map(|method| {
                 format!(
                     "({} {} {})",
                     crate::core::RUST_TRAIT_METHOD_MARKER,
@@ -93,8 +96,15 @@ impl<'a> CorePrinter<'a> {
                     self.type_expr(&method.signature)
                 )
             }));
+            if let Some(help) = &declaration.help {
+                parts.push(format!(
+                    "({} {help:?})",
+                    crate::core::RUST_TRAIT_HELP_MARKER
+                ));
+            }
             parts.extend(
-                implementors
+                declaration
+                    .implementors
                     .iter()
                     .map(|implementor| self.type_expr(implementor)),
             );

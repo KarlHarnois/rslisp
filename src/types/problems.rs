@@ -189,6 +189,19 @@ impl TypeProblems {
         ))
     }
 
+    pub fn foreign_implementor(trait_name: &str, found: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::FOREIGN_IMPLEMENTOR,
+            format!("`{found}` cannot implement `{trait_name}`"),
+            Label::new(
+                span,
+                format!("only a struct or enum of this program can implement `{trait_name}`"),
+            ),
+        )
+        .with_note("Rust implements a trait only for a type in the crate that defines the trait or the type")
+        .with_help("implement it for a struct or enum this program defines")
+    }
+
     pub fn missing_trait_on_struct(trait_name: &str, found: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MISSING_TRAIT,
@@ -245,10 +258,6 @@ impl TypeProblems {
         field_type: &str,
     ) -> String {
         format!("`{struct_name}` cannot derive `{trait_name}`: field `{field}` is `{field_type}`")
-    }
-
-    pub fn print_struct_help() -> &'static str {
-        "print a struct's data form with `prn`"
     }
 
     pub fn missing_bound(trait_name: &str, generic: &str, span: Span) -> Diagnostic {
@@ -645,10 +654,6 @@ impl TypeProblems {
             derives.join(" "),
             Self::field_order(variants)
         )
-    }
-
-    pub fn print_enum_help() -> &'static str {
-        "print an enum's data form with `prn`"
     }
 
     pub fn add_to_enum_derive_help(trait_name: &str) -> String {

@@ -9,4 +9,4 @@ error[L0210]: malformed `rust-trait`
 1 | (rust-trait shown "std::fmt::Debug" (method show))
   |                                     ^^^^^^^^^^^^^ this does not fit the shape of `rust-trait`
   |
-  = help: write it as `(rust-trait name "Path" (method name type)? type ...)`
+  = help: write it as `(rust-trait name "Path" (method name type)? (help "text")? type ...)`

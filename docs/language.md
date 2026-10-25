@@ -69,7 +69,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `rust` | `(rust "template" type)` | the inlined template | type: type. |
 | `recur` | `(recur argument...)` | `loop` | arguments: expressions. |
 | `try` | `(try expression)` | `expression?` | expression: expression. |
-| `rust-trait` | `(rust-trait name "Path" (method name type)? type...)` | trait bound, or a Rust `impl` for a program type when it declares a method | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. types: types, `(with type type)`, or `(where (param...) type)`. |
+| `rust-trait` | `(rust-trait name "Path" (method name type)? (help "text")? type...)` | trait bound, or a Rust `impl` for a program type when it declares a method | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. help: the help line a missing implementor shows. types: types, `(with type type)`, or `(where (param...) type)`. |
 | `trait` | `(trait name (method type)...)` | `trait` | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. |
 | `impl` | `(impl trait type (method (param...) body...)...)` | `impl` | trait and type: references to a trait and a struct or enum. methods: a name, parameter binders and a body. |
 | `rust-type` | `(rust-type name "template" (type "template")...)` or `(rust-type (name param...) "template" (type "template")...)` | the filled template | name: type binder. params: type binders. clauses: a type and a template. |
@@ -180,7 +180,7 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 | `(sorted-map key value)` | `std::collections::BTreeMap<K, V>` | `sorted-map lookup keys vals entries update into-sorted-map assoc set! len empty?` |
 | `(hash-map key value)` | `std::collections::HashMap<K, V>` | `hash-map lookup keys vals entries update into-hash-map assoc set! len empty?` |
 
-`print` and `println` take any number of parts. Each string literal part folds into one format string, and each other part becomes a `{}` placeholder. `str` folds its literal parts the same way. A `print` whose last part ends in a newline emits `println!` without that newline. `prn` and `pr-str` print a value's data form.
+`print` and `println` take any number of parts. Each string literal part folds into one format string, and each other part becomes a `{}` placeholder. `str` folds its literal parts the same way. A `print` whose last part ends in a newline emits `println!` without that newline. `prn` and `pr-str` print a value's data form. `(display type (value) parts...)` implements `display` for a struct or enum the program defines, and makes the type printable with `print`, `println`, `str` and `to-string`.
 
 `len` takes any `sequence`, a trait backed by `Sequence` in the runtime and implemented for `String`, `str`, `(vec a)`, `(slice a)`, `(sorted-map k v)` and `(hash-map k v)`. `empty?` tests the same trait. `sort!`, `sort-by-key!`, `max`, `min` and `max-by-key` take the `ord` trait, which lists the same implementors as `partial-ord`, except `f32` and `f64`. A two-argument `sort!` takes a comparator of type `(fn ((ref a) (ref a)) i64)`, which sorts as in Clojure: a negative result puts the left value first. `parse` takes a `from-str` target and returns `(result target (parse-error target))`, and emits `text.parse::<target>()`. `parse-error` names the target's Rust error from the prelude's clauses, so `(parse-error i64)` emits `std::num::ParseIntError` and a target the prelude does not state emits `<target as std::str::FromStr>::Err`.
 
@@ -190,7 +190,7 @@ An iterator is lazy, as in Rust, so `(fold (range 1 1000001) 0 (fn (total n) (+ 
 
 Program input and output use Rust's standard library through the prelude. `slurp` reads a file, `slurp-stdin` reads all of standard input, and both return `(result string io-error)`. `read-line` returns `(result (option string) io-error)`, returns `none` at end of input, and drops a trailing newline and carriage return. `io-error` is Rust's `std::io::Error`, which implements `display` and `debug`. `command-line-args` returns the arguments after the program name. `exit` stops the process with an `i32` code.
 
-A `main` whose inferred type is a `result` emits an inner function for its body and a `fn main()` that prints its error with `display` to standard error and exits 1. The success path exits 0. The error type must implement `display`.
+A `main` whose inferred type is a `result` emits an inner function for its body and a `fn main()` that prints its error with `display` to standard error and exits 1. The success path exits 0. The error type must implement `display`; a program's own enum implements it with `display`.
 
 - `iter` yields `(ref a)`. `values` yields copies, so its elements must be `copy`.
 - `filter` passes each element to its test as a reference, as Rust does.
@@ -561,7 +561,16 @@ Programs read functionally through two prelude forms over `try`, as `loop` is ov
 
 A program defines traits and implements them. An `impl` accepts any concrete type the program can write without a type variable: a struct, an enum, a primitive such as `i64` or `bool`, `string`, or an applied type such as `(vec i64)`. A type with a type variable, such as `(vec a)`, is an error until a program needs generic implementations. An unsized implementor such as `str` must take every receiver by reference. `rust-trait` binds only traits that Rust defines.
 
-A `rust-trait` that declares a method can also be implemented, and the compiler emits the Rust `impl`. The method's name and signature come from the `rust-trait` entry, so the program writes only the method body.
+A `rust-trait` that declares a method can also be implemented, and the compiler emits the Rust `impl`. The method's name and signature come from the `rust-trait` entry, so the program writes only the method body. Its implementor must be a struct or enum of the program, because Rust's coherence rule rejects an implementation for a type outside the crate. A `rust-trait` entry may also state a `(help "text")` line, which the compiler shows when a type does not implement the trait.
+
+The prelude's `display` trait declares `fmt`, and the prelude's `display` macro writes the implementation from printing parts:
+
+```lisp
+(struct point (x i64) (y i64))
+(display point (p) "(" (field p x) ", " (field p y) ")")
+```
+
+The parts follow `println`: a string is literal text, any other form prints with `display`, and `(str ...)` splices. A `(pr-str ...)` part prints its value's data form. When the parts are exactly one `match` form, each arm body becomes a write of that body's parts, and a `(str ...)` arm writes those parts. Any other arm body is one part, and the rule applies again to a nested `match` or `if`. A single `if` form writes in both branches the same way. The type then works with `print`, `println`, `str`, `to-string`, and as the error type of a `main` that returns a `result`. An implementor that is not a struct or enum of the program is an error, `L0445`.
 
 ```lisp
 (trait shape
@@ -585,7 +594,7 @@ A method is an ordinary function: `(area c)` is a call, and `(map shapes area)` 
 
 `trait` and `impl` are kernel forms. A macro returns a form and cannot emit a Rust `trait` or `impl` item, and only the compiler can add a trait and its implementors to the trait table. A method call needs no kernel form: each method is an ordinary generic function, so the existing call, inference and emission paths handle it.
 
-A `rust-trait` method needs no kernel form beyond the `impl` item it lets the program write. The prelude states the method's name and signature, and the compiler reads them from the `rust-trait` binding, so no Rust fact about the trait is restated in Rust.
+A `rust-trait` method needs no kernel form beyond the `impl` item it lets the program write. The prelude states the method's name and signature, and the compiler reads them from the `rust-trait` binding, so no Rust fact about the trait is restated in Rust. The `display` form is a prelude macro over `impl`, because a macro returns a form and cannot emit the Rust `impl` item itself.
 
 ### 11. Written lifetimes
 

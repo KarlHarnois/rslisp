@@ -138,6 +138,7 @@ mod tests {
                         scheme: Scheme::monomorphic(Type::Primitive(PrimitiveType::I64)),
                         argument: None,
                     }],
+                    help: None,
                 },
             );
             Self {

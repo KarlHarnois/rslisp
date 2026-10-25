@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/rust_trait_help.rslisp
+---
+(rust-trait shown "std::fmt::Debug" (help "implement it for a struct or enum") i64)

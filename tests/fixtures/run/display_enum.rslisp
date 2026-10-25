@@ -1,0 +1,15 @@
+(enum token
+  (number i64)
+  (word string)
+  end)
+
+(display token (t)
+  (match t
+    ((number n) (str "number " n))
+    ((word w) (str "word " w))
+    (end "end")))
+
+(defn main ()
+  (println (token/number 1))
+  (println (token/word (to-string "hello")))
+  (println token/end))

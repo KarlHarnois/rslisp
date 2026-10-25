@@ -1,0 +1,27 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/display_enum.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Token {
+    Number(i64),
+    Word(String),
+    End,
+}
+
+fn main() {
+    println!("{}", Token::Number(1));
+    println!("{}", Token::Word("hello".to_string()));
+    println!("{}", Token::End)
+}
+
+impl std::fmt::Display for Token {
+    fn fmt(&self, out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Token::Number(n) => write!(out, "number {}", n),
+            Token::Word(w) => write!(out, "word {}", w),
+            Token::End => write!(out, "end"),
+        }
+    }
+}

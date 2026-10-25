@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/foreign_display.rslisp
+---
+error[L0445]: `(vec i64)` cannot implement `display`
+ --> check/foreign_display.rslisp:1:10
+  |
+1 | (display (vec i64) (numbers)
+  |          ^^^^^^^^^ only a struct or enum of this program can implement `display`
+  |
+  = note: Rust implements a trait only for a type in the crate that defines the trait or the type
+  = help: implement it for a struct or enum this program defines

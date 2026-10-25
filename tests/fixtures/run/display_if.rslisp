@@ -1,0 +1,10 @@
+(struct point (x i64))
+
+(display point (p)
+  (if (> (field p x) 0)
+      (str "positive " (field p x))
+      "not positive"))
+
+(defn main ()
+  (println (new point (x 1)))
+  (println (new point (x 0))))

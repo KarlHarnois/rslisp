@@ -9,4 +9,4 @@ error[L0404]: `value` does not implement `display`
 2 | (defn main () (println (value/number 1.0)))
   |                        ^^^^^^^^^^^^^^^^^^ this needs `display`
   |
-  = help: print an enum's data form with `prn`
+  = help: implement `display` with `(display type (value) ...)`, or print the data form with `prn`

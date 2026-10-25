@@ -12,9 +12,9 @@ error[L0306]: `print` belongs to the program, so macro code cannot run it
   4 | (def never-called (macro (form) (say-unused)))
     |                                  ---------- macro code reaches it through this
     |
-   ::: prelude/text.rslisp:207:11
+   ::: prelude/text.rslisp:212:11
     |
-207 | (defmacro print (parts ...)
+212 | (defmacro print (parts ...)
     |           ----- `print` expands to Rust code that runs in the program
     |
     = help: to compute this in the program, return it as code from the macro, for example with `quote`
