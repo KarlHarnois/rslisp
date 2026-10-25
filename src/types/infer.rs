@@ -5,6 +5,7 @@ use std::rc::Rc;
 
 use super::checker::{TypeChecker, VariantArmReference};
 use super::collection::{Collection, CollectionKind};
+use super::enums::VariantPayload;
 use super::pending::{DecidedBorrows, PendingBorrow};
 use super::problems::{MismatchContext, TypeProblems};
 use super::rust_types::RustType;
@@ -13,8 +14,8 @@ use super::ty::Type;
 use super::ty::TypeVar;
 use super::typed::{
     Borrow, PendingModeCheck, TypedArgument, TypedArm, TypedBinder, TypedBlock, TypedBodyItem,
-    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedMatch, TypedPattern,
-    TypedPatternKind, TypedStructExpr,
+    TypedControl, TypedConversion, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedMatch,
+    TypedPattern, TypedPatternKind, TypedStructExpr,
 };
 use super::unifier::{LiteralKind, UnifyError};
 use super::wrapper::FunctionValueWrapper;
@@ -63,7 +64,7 @@ pub(super) struct TryTarget {
     returns: Type,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 enum TrySourceKind {
     Result,
     Option,
@@ -76,10 +77,17 @@ struct TrySource {
     error: Option<Type>,
 }
 
+struct TryConversion {
+    enum_binding: BindingId,
+    variant: usize,
+}
+
 impl TrySourceKind {
     fn needed(self, name: &str) -> String {
         match self {
-            TrySourceKind::Result => format!("`{name}` with the same error type"),
+            TrySourceKind::Result => {
+                format!("`{name}` whose error can hold this value's error")
+            }
             TrySourceKind::Option => format!("`{name}`"),
         }
     }
@@ -1379,18 +1387,135 @@ impl TypeChecker {
             .unify(&expected, &target.returns, span)
             .is_err()
         {
-            let source_name = self.bindings.get(source.binding).name();
-            return Err(TypeProblems::try_cannot_return(
-                &source.kind.needed(source_name),
-                &self.describe(&target.returns),
-                span,
-            ));
+            self.convert_try_error(&source, &target.returns, span)?;
         }
         Ok(TypedExpr {
             kind: TypedExprKind::Try(Box::new(value)),
             ty: source.value,
             span,
         })
+    }
+
+    fn convert_try_error(
+        &mut self,
+        source: &TrySource,
+        returns: &Type,
+        span: Span,
+    ) -> Result<(), Diagnostic> {
+        let returns = self.unifier.resolve(returns);
+        let Some(target) = self.try_source(&returns) else {
+            return Err(self.try_target_problem(source, &returns, span));
+        };
+        if source.kind != TrySourceKind::Result || target.kind != TrySourceKind::Result {
+            return Err(self.try_target_problem(source, &returns, span));
+        }
+        let source_error = source
+            .error
+            .clone()
+            .expect("a result source carries an error type");
+        let target_error = target.error.expect("a result target carries an error type");
+        let conversion = self.conversion_variant(&target_error, &source_error, span)?;
+        self.record_conversion(conversion, self.unifier.resolve(&source_error));
+        Ok(())
+    }
+
+    fn try_target_problem(&self, source: &TrySource, returns: &Type, span: Span) -> Diagnostic {
+        let source_name = self.bindings.get(source.binding).name();
+        TypeProblems::try_cannot_return(
+            &source.kind.needed(source_name),
+            &self.describe(returns),
+            span,
+        )
+    }
+
+    fn conversion_variant(
+        &mut self,
+        error: &Type,
+        source: &Type,
+        span: Span,
+    ) -> Result<TryConversion, Diagnostic> {
+        let Type::Named(binding, _) = error else {
+            return Err(self.no_conversion(error, source, span));
+        };
+        let Some(definition) = self.enums.get(*binding) else {
+            return Err(self.no_conversion(error, source, span));
+        };
+        if definition.rust.is_some() || !definition.params.is_empty() {
+            return Err(self.no_conversion(error, source, span));
+        }
+        let candidates: Vec<(usize, Rc<str>, Type)> = definition
+            .variants
+            .iter()
+            .enumerate()
+            .filter_map(|(variant, candidate)| {
+                let VariantPayload::Positional(payloads) = &candidate.payload else {
+                    return None;
+                };
+                let [payload] = payloads.as_slice() else {
+                    return None;
+                };
+                (!self.is_box(payload) && Self::could_unify(payload, source))
+                    .then(|| (variant, Rc::clone(&candidate.name), payload.clone()))
+            })
+            .collect();
+        if candidates.len() > 1 {
+            let variants: Vec<(String, String)> = candidates
+                .iter()
+                .map(|(_, name, payload)| (name.to_string(), self.describe(payload)))
+                .collect();
+            return Err(TypeProblems::try_ambiguous_conversion(
+                &self.describe(source),
+                &self.describe(error),
+                &variants,
+                span,
+            ));
+        }
+        let Some((variant, _, payload)) = candidates.first() else {
+            return Err(self.no_conversion(error, source, span));
+        };
+        self.unifier
+            .unify(payload, source, span)
+            .map_err(|_| self.no_conversion(error, source, span))?;
+        Ok(TryConversion {
+            enum_binding: *binding,
+            variant: *variant,
+        })
+    }
+
+    fn no_conversion(&self, error: &Type, source: &Type, span: Span) -> Diagnostic {
+        TypeProblems::try_no_conversion(&self.describe(source), &self.describe(error), span)
+    }
+
+    fn could_unify(left: &Type, right: &Type) -> bool {
+        if !right.has_vars() {
+            return left == right;
+        }
+        match (left, right) {
+            (_, Type::Var(_)) => true,
+            (Type::Named(left, left_parts), Type::Named(right, right_parts)) => {
+                left == right
+                    && left_parts.len() == right_parts.len()
+                    && left_parts
+                        .iter()
+                        .zip(right_parts)
+                        .all(|(left, right)| Self::could_unify(left, right))
+            }
+            _ => false,
+        }
+    }
+
+    fn record_conversion(&mut self, conversion: TryConversion, error: Type) {
+        let known = self
+            .conversions
+            .iter()
+            .any(|known| known.enum_binding == conversion.enum_binding && known.error == error);
+        if !known {
+            self.conversions.push(TypedConversion {
+                enum_binding: conversion.enum_binding,
+                variant: conversion.variant,
+                error,
+            });
+        }
     }
 
     fn try_source(&self, operand: &Type) -> Option<TrySource> {
@@ -2569,7 +2694,22 @@ mod tests {
     };
     use crate::source::{SourceId, Span};
     use crate::types::typed::{TypedExpr, TypedExprKind, TypedLeaf, TypedStructExpr};
-    use crate::types::{Type, TypeVar};
+    use crate::types::{ClosureKind, Type, TypeVar};
+
+    #[test]
+    fn a_function_error_with_an_open_part_does_not_convert() {
+        let payload = Type::Function(
+            ClosureKind::Fn,
+            vec![Type::Primitive(PrimitiveType::I64)],
+            Box::new(Type::Primitive(PrimitiveType::I64)),
+        );
+        let error = Type::Function(
+            ClosureKind::Fn,
+            vec![Type::Primitive(PrimitiveType::I64)],
+            Box::new(Type::Var(TypeVar::new(0))),
+        );
+        assert!(!TypeChecker::could_unify(&payload, &error));
+    }
 
     struct PlaceTypeFixture {
         checker: TypeChecker,

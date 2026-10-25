@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/try_ambiguous_conversion.rslisp
+---
+error[L0437]: `try` cannot choose an error variant
+ --> check/try_ambiguous_conversion.rslisp:9:23
+  |
+9 | (defn consumer () (ok (try (source))))
+  |                       ^^^^^^^^^^^^^^ this error is `io-error`
+  |
+  = note: this function returns a result whose error is `app-error`
+  = note: `try` converts an error through one variant of an error enum that holds it
+  = note: variant `io` holds `io-error`
+  = note: variant `read` holds `io-error`
+  = help: keep one variant for each error type, or convert the error with `map-err`

@@ -1,0 +1,7 @@
+(enum app-error
+  (io io-error)
+  (parse (parse-error i64)))
+
+(defn read-number (path)
+  (let text (try (slurp path)))
+  (ok (try (parse (as-str text)))))

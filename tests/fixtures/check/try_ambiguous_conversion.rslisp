@@ -1,0 +1,9 @@
+(enum app-error
+  (io io-error)
+  (read io-error))
+
+(type source (fn () (result i64 io-error)))
+(defn source () (ok 1))
+
+(type consumer (fn () (result i64 app-error)))
+(defn consumer () (ok (try (source))))

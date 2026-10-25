@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/try_error_conversion.rslisp
+---
+42
+not a number
+cannot read

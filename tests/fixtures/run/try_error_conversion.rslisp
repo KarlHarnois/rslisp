@@ -1,0 +1,27 @@
+(enum app-error
+  (io io-error)
+  (parse (parse-error i64)))
+
+(type read-number (fn ((ref str)) (result i64 app-error)))
+
+(defn read-number (path)
+  (let text (try (slurp path)))
+  (ok (try (parse (as-str text)))))
+
+(defn main ()
+  (let arguments (command-line-args))
+  (let good (as-str (unwrap (get arguments 0))))
+  (let bad (as-str (unwrap (get arguments 1))))
+  (let missing (as-str (unwrap (get arguments 2))))
+  (match (read-number good)
+    ((ok number) (println number))
+    ((err (app-error/io _reason)) (println "cannot read"))
+    ((err (app-error/parse _reason)) (println "not a number")))
+  (match (read-number bad)
+    ((ok number) (println number))
+    ((err (app-error/io _reason)) (println "cannot read"))
+    ((err (app-error/parse _reason)) (println "not a number")))
+  (match (read-number missing)
+    ((ok number) (println number))
+    ((err (app-error/io _reason)) (println "cannot read"))
+    ((err (app-error/parse _reason)) (println "not a number"))))

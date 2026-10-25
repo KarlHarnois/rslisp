@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/try_no_conversion.rslisp
+---
+error[L0437]: `try` cannot convert this error
+ --> check/try_no_conversion.rslisp:8:7
+  |
+8 |   (ok (try (parse (as-str text)))))
+  |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^ this error is `(parse-error _)`
+  |
+  = note: this function returns a result whose error is `app-error`
+  = note: `try` converts an error through one variant of an error enum that holds it
+  = help: write the function's error type as an enum with one variant for each error it tries, or convert the error with `map-err`

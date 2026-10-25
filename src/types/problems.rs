@@ -63,6 +63,43 @@ impl TypeProblems {
         )
     }
 
+    pub fn try_ambiguous_conversion(
+        source: &str,
+        target: &str,
+        variants: &[(String, String)],
+        span: Span,
+    ) -> Diagnostic {
+        let mut diagnostic = Diagnostic::error(
+            DiagnosticCode::TRY_NO_CONVERSION,
+            "`try` cannot choose an error variant",
+            Label::new(span, format!("this error is {source}")),
+        )
+        .with_note(format!(
+            "this function returns a result whose error is {target}"
+        ))
+        .with_note("`try` converts an error through one variant of an error enum that holds it");
+        for (name, payload) in variants {
+            diagnostic = diagnostic.with_note(format!("variant `{name}` holds {payload}"));
+        }
+        diagnostic
+            .with_help("keep one variant for each error type, or convert the error with `map-err`")
+    }
+
+    pub fn try_no_conversion(source: &str, target: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::TRY_NO_CONVERSION,
+            "`try` cannot convert this error",
+            Label::new(span, format!("this error is {source}")),
+        )
+        .with_note(format!(
+            "this function returns a result whose error is {target}"
+        ))
+        .with_note("`try` converts an error through one variant of an error enum that holds it")
+        .with_help(
+            "write the function's error type as an enum with one variant for each error it tries, or convert the error with `map-err`",
+        )
+    }
+
     pub fn mismatch(
         expected: &str,
         found: &str,

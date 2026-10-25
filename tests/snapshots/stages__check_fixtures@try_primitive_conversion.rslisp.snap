@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/try_primitive_conversion.rslisp
+---
+(derive message-error clone debug partial-eq eq hash)
+(type source (fn () (result i64 string)))
+(type consumer (fn () (result i64 message-error)))

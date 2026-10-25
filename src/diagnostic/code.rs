@@ -102,6 +102,7 @@ impl DiagnosticCode {
     pub const MISPLACED_WITH: Self = Self(Cow::Borrowed("L0426"));
     pub const TRY_TARGET: Self = Self(Cow::Borrowed("L0428"));
     pub const TRY_NOT_RESULT_OR_OPTION: Self = Self(Cow::Borrowed("L0429"));
+    pub const TRY_NO_CONVERSION: Self = Self(Cow::Borrowed("L0437"));
     pub const AMBIGUOUS_VARIANT: Self = Self(Cow::Borrowed("L0430"));
     pub const UNKNOWN_VARIANT: Self = Self(Cow::Borrowed("L0431"));
     pub const WRONG_PATTERN_COUNT: Self = Self(Cow::Borrowed("L0432"));

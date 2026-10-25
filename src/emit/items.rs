@@ -14,8 +14,8 @@ use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    GenericId, GenericParam, ReceiverKind, Type, TypedDefinition, TypedExpr, TypedExprKind,
-    TypedProgram, VariantDefinition,
+    GenericId, GenericParam, ReceiverKind, Type, TypedConversion, TypedDefinition, TypedExpr,
+    TypedExprKind, TypedProgram, VariantDefinition,
 };
 
 #[derive(Default)]
@@ -126,11 +126,61 @@ impl<'a> ItemEmitter<'a> {
             .collect();
         items.extend(self.traits(module));
         items.extend(self.trait_impls(module));
+        items.extend(self.conversions(module));
         let uses = self.use_lines(module);
         if !uses.is_empty() {
             items.insert(0, uses);
         }
         items
+    }
+
+    fn conversions(&self, module: ModuleId) -> Vec<Vec<Fragment>> {
+        self.program
+            .conversions
+            .iter()
+            .filter(|conversion| {
+                self.plan
+                    .item(conversion.enum_binding)
+                    .is_some_and(|info| info.module == module)
+            })
+            .map(|conversion| self.conversion(conversion))
+            .collect()
+    }
+
+    fn conversion(&self, conversion: &TypedConversion) -> Vec<Fragment> {
+        let info = self
+            .plan
+            .item(conversion.enum_binding)
+            .expect("a used conversion names a planned enum");
+        let definition = self
+            .program
+            .enums
+            .get(conversion.enum_binding)
+            .expect("a conversion names an enum");
+        let variant = &definition.variants[conversion.variant];
+        let types = RustTypes::new(
+            self.program,
+            self.plan,
+            self.unsized_parameters,
+            info.module,
+        );
+        let error = types.show(&conversion.error, TypePosition::Signature);
+        let variant_name = NameMangler::type_name(&variant.name);
+        vec![
+            Fragment::Text(format!("impl From<{error}> for {} {{", info.name)),
+            Fragment::Indented(vec![
+                Fragment::Newline,
+                Fragment::Text(format!("fn from(error: {error}) -> Self {{")),
+                Fragment::Indented(vec![
+                    Fragment::Newline,
+                    Fragment::Text(format!("{}::{variant_name}(error)", info.name)),
+                ]),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ]),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ]
     }
 
     fn item(&mut self, binding: BindingId) -> Vec<Fragment> {

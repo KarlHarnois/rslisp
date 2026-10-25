@@ -1,0 +1,39 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/try_error_conversion.rslisp
+---
+enum AppError {
+    Io(std::io::Error),
+    Parse(std::num::ParseIntError),
+}
+
+fn read_number(path: &str) -> Result<i64, AppError> {
+    let text = std::fs::read_to_string(path)?;
+    Ok(text.as_str().parse::<i64>()?)
+}
+
+fn main() {
+    match read_number("number.txt") {
+        Result::Ok(number) => println!("{}", number),
+        Result::Err(AppError::Io(_reason)) => println!("cannot read"),
+        Result::Err(AppError::Parse(_reason)) => println!("not a number"),
+    }
+    match read_number("missing.txt") {
+        Result::Ok(number) => println!("{}", number),
+        Result::Err(AppError::Io(_reason)) => println!("cannot read"),
+        Result::Err(AppError::Parse(_reason)) => println!("not a number"),
+    }
+}
+
+impl From<std::io::Error> for AppError {
+    fn from(error: std::io::Error) -> Self {
+        AppError::Io(error)
+    }
+}
+
+impl From<std::num::ParseIntError> for AppError {
+    fn from(error: std::num::ParseIntError) -> Self {
+        AppError::Parse(error)
+    }
+}

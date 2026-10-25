@@ -38,8 +38,8 @@ pub use traits::{Implementor, RustTrait, TraitTable};
 pub use ty::{Bound, GenericId, GenericParam, Scheme, Type, TypeVar};
 pub use typed::{
     Borrow, PendingModeCheck, ReceiverKind, TraitMethodInfo, TypedArgument, TypedArm, TypedBinder,
-    TypedBlock, TypedBodyItem, TypedControl, TypedDefinition, TypedExpr, TypedExprKind,
-    TypedLambda, TypedLeaf, TypedMatch, TypedModule, TypedPattern, TypedPatternKind, TypedProgram,
-    TypedStructExpr, TypedTrait, TypedTraitImpl, TypedTraitMethod,
+    TypedBlock, TypedBodyItem, TypedControl, TypedConversion, TypedDefinition, TypedExpr,
+    TypedExprKind, TypedLambda, TypedLeaf, TypedMatch, TypedModule, TypedPattern, TypedPatternKind,
+    TypedProgram, TypedStructExpr, TypedTrait, TypedTraitImpl, TypedTraitMethod,
 };
 pub use wrapper::{FunctionValueWrapper, PreparedFunctionValue};
