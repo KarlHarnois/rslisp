@@ -10,19 +10,19 @@ enum AppError {
 
 fn read_number(path: &str) -> Result<i64, AppError> {
     let text = std::fs::read_to_string(path)?;
-    Result::Ok(text.as_str().parse::<i64>()?)
+    Ok(text.as_str().parse::<i64>()?)
 }
 
 fn main() {
     match read_number("number.txt") {
-        Result::Ok(number) => println!("{}", number),
-        Result::Err(AppError::Io(_reason)) => println!("cannot read"),
-        Result::Err(AppError::Parse(_reason)) => println!("not a number"),
+        Ok(number) => println!("{}", number),
+        Err(AppError::Io(_reason)) => println!("cannot read"),
+        Err(AppError::Parse(_reason)) => println!("not a number"),
     }
     match read_number("missing.txt") {
-        Result::Ok(number) => println!("{}", number),
-        Result::Err(AppError::Io(_reason)) => println!("cannot read"),
-        Result::Err(AppError::Parse(_reason)) => println!("not a number"),
+        Ok(number) => println!("{}", number),
+        Err(AppError::Io(_reason)) => println!("cannot read"),
+        Err(AppError::Parse(_reason)) => println!("not a number"),
     }
 }
 

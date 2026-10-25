@@ -6,7 +6,7 @@ input_file: tests/fixtures/emit/try_result.rslisp
 fn parse_add(left: &str, right: &str) -> Result<i64, std::num::ParseIntError> {
     let left_number: i64 = left.parse::<i64>()?;
     let right_number: i64 = right.parse::<i64>()?;
-    Result::Ok(left_number + right_number)
+    Ok(left_number + right_number)
 }
 
 fn main() {

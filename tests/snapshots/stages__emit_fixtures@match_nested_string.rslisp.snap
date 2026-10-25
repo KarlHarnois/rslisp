@@ -11,27 +11,27 @@ enum Token {
 
 fn classify(tokens: &[Token], position: usize) -> i64 {
     match tokens.get(position) {
-        Option::Some(Token::Symbol(text)) if text == "(" => 1,
-        Option::Some(Token::Symbol(_)) => 2,
-        Option::Some(Token::Number(_)) => 3,
-        Option::None => 0,
+        Some(Token::Symbol(text)) if text == "(" => 1,
+        Some(Token::Symbol(_)) => 2,
+        Some(Token::Number(_)) => 3,
+        None => 0,
     }
 }
 
 fn scan(tokens: &[Token], mut position: usize) -> i64 {
     loop {
         match tokens.get(position) {
-            Option::Some(Token::Symbol(text)) if text == "(" => {
+            Some(Token::Symbol(text)) if text == "(" => {
                 position += 1;
                 continue;
             }
-            Option::Some(Token::Symbol(_)) => {
+            Some(Token::Symbol(_)) => {
                 return 2;
             }
-            Option::Some(Token::Number(_)) => {
+            Some(Token::Number(_)) => {
                 return 3;
             }
-            Option::None => {
+            None => {
                 return 0;
             }
         }

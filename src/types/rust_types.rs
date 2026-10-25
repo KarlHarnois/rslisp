@@ -96,11 +96,6 @@ impl RustTypeTable {
         self.binding_with_template("({0}, {1})")
     }
 
-    pub fn is_result(&self, binding: BindingId) -> bool {
-        self.get(binding)
-            .is_some_and(|rust_type| rust_type.leading_name() == "Result")
-    }
-
     pub fn box_binding(&self) -> Option<BindingId> {
         self.binding_with_template(RustType::BOX_TEMPLATE)
     }

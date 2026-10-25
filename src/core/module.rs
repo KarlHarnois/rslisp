@@ -98,6 +98,7 @@ pub struct EnumRust {
     pub path: Rc<str>,
     pub template: Rc<ParsedTemplate>,
     pub template_clause: bool,
+    pub bare: bool,
 }
 
 #[derive(Clone, Debug)]

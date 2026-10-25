@@ -6,7 +6,7 @@ input_file: tests/fixtures/emit/main_error.rslisp
 fn main_body() -> Result<i64, std::io::Error> {
     let text = std::fs::read_to_string("missing.txt")?;
     println!("{}", text);
-    Result::Ok(0)
+    Ok(0)
 }
 
 fn main() {

@@ -325,19 +325,8 @@ impl TypeChecker {
     }
 
     fn is_result_ok_variant(&self, owner: BindingId, index: usize) -> bool {
-        if !self.rust_types.is_result(owner) {
-            return false;
-        }
         let definition = self.enums.get(owner).expect("a variant owner is an enum");
-        let value = definition
-            .params
-            .first()
-            .expect("the result enum has a value parameter");
-        matches!(
-            &definition.variants[index].payload,
-            VariantPayload::Positional(parts)
-                if matches!(parts.as_slice(), [Type::Generic(parameter)] if *parameter == value.id)
-        )
+        definition.is_result_shaped() && definition.holds_parameter(index, 0)
     }
 
     fn infer_match(
@@ -1572,22 +1561,24 @@ impl TypeChecker {
         let Type::Named(binding, arguments) = operand else {
             return None;
         };
-        let rust_name = self.rust_types.get(*binding)?.leading_name();
-        match (rust_name, arguments.as_slice()) {
-            ("Result", [value, error]) => Some(TrySource {
+        let definition = self.enums.get(*binding)?;
+        if definition.is_result_shaped() && arguments.len() == 2 {
+            return Some(TrySource {
                 kind: TrySourceKind::Result,
                 binding: *binding,
-                value: value.clone(),
-                error: Some(error.clone()),
-            }),
-            ("Option", [value]) => Some(TrySource {
+                value: arguments[0].clone(),
+                error: Some(arguments[1].clone()),
+            });
+        }
+        if definition.is_option_shaped() && arguments.len() == 1 {
+            return Some(TrySource {
                 kind: TrySourceKind::Option,
                 binding: *binding,
-                value: value.clone(),
+                value: arguments[0].clone(),
                 error: None,
-            }),
-            _ => None,
+            });
         }
+        None
     }
 
     fn try_return_type(&mut self, source: &TrySource) -> Type {

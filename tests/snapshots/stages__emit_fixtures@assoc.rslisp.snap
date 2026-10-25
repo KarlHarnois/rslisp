@@ -62,8 +62,8 @@ fn main() {
         rows
     };
     let cell: i64 = match changed.get(1) {
-        Option::Some(row) => row[0],
-        Option::None => 0,
+        Some(row) => row[0],
+        None => 0,
     };
     println!("{}", cell)
 }

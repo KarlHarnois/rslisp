@@ -13,7 +13,9 @@ use crate::reader::{Form, FormKind};
 impl Expander<'_> {
     const RUST_TYPE_PARTS: usize = 3;
     const RUST_CLAUSE: &'static str = "rust";
-    const RUST_CLAUSE_HELP: &'static str = "write it as `(rust \"Path\")`";
+    const BARE_WORD: &'static str = "bare";
+    const RUST_CLAUSE_HELP: &'static str =
+        "write it as `(rust \"Path\")` or `(rust \"Path\" bare)`";
 
     pub(super) fn lower_rust_type(
         &mut self,
@@ -110,18 +112,26 @@ impl Expander<'_> {
         clause: &Form,
         parameters: usize,
     ) -> Result<EnumRust, Diagnostic> {
-        let Some([_, path]) = clause.as_list() else {
-            return Err(Self::malformed_rust_clause(shape, clause));
-        };
+        let items = clause
+            .as_list()
+            .expect("the caller checks that the rust clause is a list");
+        let path = items
+            .get(1)
+            .ok_or_else(|| Self::malformed_rust_clause(shape, clause))?;
+        let bare = Self::bare_clause(shape, clause, &items[2..])?;
         let FormKind::String(text) = path.kind() else {
             return Err(Self::malformed_rust_clause(shape, clause));
         };
         if ParsedTemplate::parse(text).is_ok_and(|parsed| parsed.placeholders().next().is_some()) {
+            if bare {
+                return Err(Self::malformed_rust_clause(shape, clause));
+            }
             let template = Self::type_template(shape, path)?;
             return Ok(EnumRust {
                 path: Rc::clone(text),
                 template: Rc::new(template),
                 template_clause: true,
+                bare: false,
             });
         }
         let template = Self::enum_rust_template(text, parameters)
@@ -130,7 +140,22 @@ impl Expander<'_> {
             path: Rc::clone(text),
             template: Rc::new(template),
             template_clause: false,
+            bare,
         })
+    }
+
+    fn bare_clause(shape: &Shape, clause: &Form, rest: &[Form]) -> Result<bool, Diagnostic> {
+        match rest {
+            [] => Ok(false),
+            [word]
+                if word
+                    .as_symbol()
+                    .is_some_and(|symbol| symbol.name() == Self::BARE_WORD) =>
+            {
+                Ok(true)
+            }
+            _ => Err(Self::malformed_rust_clause(shape, clause)),
+        }
     }
 
     fn enum_rust_template(
