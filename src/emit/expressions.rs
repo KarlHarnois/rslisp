@@ -2077,6 +2077,9 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn conditional(&mut self, test: &TypedExpr, then: &TypedExpr, otherwise: &TypedExpr) -> Code {
+        if Self::is_empty_block(then) && !Self::is_empty_block(otherwise) {
+            return self.negated_conditional(test, otherwise);
+        }
         if let Some(operator) = Self::short_circuit_operator(then, otherwise) {
             let value = if Self::boolean_literal(then) == Some(true) {
                 otherwise
@@ -2106,6 +2109,20 @@ impl<'a> ExpressionEmitter<'a> {
             fragments.push(Fragment::Newline);
             fragments.push(Fragment::Text("}".to_string()));
         }
+        Code {
+            fragments,
+            precedence: Precedence::Block,
+        }
+    }
+
+    fn negated_conditional(&mut self, test: &TypedExpr, branch: &TypedExpr) -> Code {
+        let test = Self::prefixed("!", self.expr(test));
+        let mut fragments = vec![Fragment::Text("if ".to_string())];
+        fragments.extend(test.fragments);
+        fragments.push(Fragment::Text(" {".to_string()));
+        fragments.push(Fragment::Indented(self.branch(branch)));
+        fragments.push(Fragment::Newline);
+        fragments.push(Fragment::Text("}".to_string()));
         Code {
             fragments,
             precedence: Precedence::Block,
