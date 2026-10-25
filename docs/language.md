@@ -618,3 +618,5 @@ fn longer<'a>(a: &'a str, b: &'a str) -> &'a str {
 ```
 
 A written `type` signature with references but no lifetimes infers them the same way. Written ownership stays exact. When the parameters contribute one lifetime, Rust's elision decides, and no lifetime appears.
+
+The compiler infers the parameter modes as well. A parameter that shares one type with another takes the value its argument refers to, not the argument's reference, so `(defn longer (a b) ...)` needs no `type` signature.
