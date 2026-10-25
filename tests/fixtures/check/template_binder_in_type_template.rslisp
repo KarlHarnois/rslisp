@@ -1,0 +1,4 @@
+(rust-type (boxed item) "{!item}")
+
+(defn main ()
+  (do))

@@ -1,0 +1,21 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/bare_variants.rslisp
+---
+fn main() {
+    let value: Option<i64> = Some(1);
+    let nothing: Option<i64> = None;
+    let answer: Result<i64, String> = Ok(1);
+    let bad: Result<i64, String> = Err("bad".to_string());
+    println!("{}", nothing.is_none());
+    match value {
+        Some(n) => println!("{}", n),
+        None => println!("none"),
+    }
+    match answer {
+        Ok(n) => println!("{}", n),
+        Err(e) => println!("{}", e),
+    }
+    println!("{}", bad.is_err())
+}

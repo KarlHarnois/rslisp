@@ -5,15 +5,15 @@ input_file: tests/fixtures/emit/input_output.rslisp
 ---
 fn main() {
     match crate::rt::read_line() {
-        Result::Ok(line) => match line {
-            Option::Some(text) => println!("{}", text),
-            Option::None => println!("end"),
+        Ok(line) => match line {
+            Some(text) => println!("{}", text),
+            None => println!("end"),
         },
-        Result::Err(error) => println!("{}", error),
+        Err(error) => println!("{}", error),
     }
     match std::io::read_to_string(std::io::stdin()) {
-        Result::Ok(text) => println!("{}", text.as_str().lines().count()),
-        Result::Err(error) => println!("{}", error),
+        Ok(text) => println!("{}", text.as_str().lines().count()),
+        Err(error) => println!("{}", error),
     }
     std::process::exit(0_i32)
 }

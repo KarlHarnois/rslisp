@@ -217,17 +217,15 @@ pub struct TypedDefinition {
 }
 
 impl TypedDefinition {
-    pub fn result_error(&self, rust_types: &RustTypeTable) -> Option<&Type> {
+    pub fn result_error(&self, enums: &EnumTable) -> Option<&Type> {
         let Type::Function(_, _, result) = &self.value.ty else {
             return None;
         };
         let Type::Named(binding, arguments) = result.as_ref() else {
             return None;
         };
-        if !rust_types.is_result(*binding) || arguments.len() != 2 {
-            return None;
-        }
-        Some(&arguments[1])
+        let definition = enums.get(*binding)?;
+        (definition.is_result_shaped() && arguments.len() == 2).then(|| &arguments[1])
     }
 }
 
@@ -378,7 +376,10 @@ impl TypedProgram {
         let rust = definition
             .rust
             .as_ref()
-            .map(|rust| format!(" (rust {:?})", rust.path))
+            .map(|rust| {
+                let bare = if rust.bare { " bare" } else { "" };
+                format!(" (rust {:?}{bare})", rust.path)
+            })
             .unwrap_or_default();
         let variants: Vec<String> = definition
             .variants

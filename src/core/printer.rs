@@ -421,7 +421,8 @@ impl<'a> CorePrinter<'a> {
     ) -> String {
         let mut parts = vec![self.type_head(binding, params)];
         if let Some(rust) = rust {
-            parts.push(format!("(rust {:?})", rust.path));
+            let bare = if rust.bare { " bare" } else { "" };
+            parts.push(format!("(rust {:?}{bare})", rust.path));
         }
         parts.extend(
             variants

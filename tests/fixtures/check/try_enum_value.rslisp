@@ -1,0 +1,11 @@
+(enum shape
+  (circle f64)
+  point)
+
+(type stray (fn (shape) shape))
+
+(defn stray (value)
+  (try value))
+
+(defn main ()
+  (do))

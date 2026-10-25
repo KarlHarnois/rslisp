@@ -35,8 +35,8 @@ fn main() {
     grid.push(vec![false, false]);
     grid[1][0] = true;
     let alive = match grid.get(1) {
-        Option::Some(row) => row[0],
-        Option::None => false,
+        Some(row) => row[0],
+        None => false,
     };
     println!("{}", alive);
     let mut cell = make_cell(false, "seed".to_string());

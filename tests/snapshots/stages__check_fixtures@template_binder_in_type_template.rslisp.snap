@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/template_binder_in_type_template.rslisp
+---
+error[L0222]: a `rust-type` template cannot name `!item`
+ --> check/template_binder_in_type_template.rslisp:1:25
+  |
+1 | (rust-type (boxed item) "{!item}")
+  |                         ^^^^^^^^^ `rust-type` templates name their parameters by number
+  |
+  = help: write the placeholder as `{0}`

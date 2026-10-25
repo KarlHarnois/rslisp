@@ -1,0 +1,13 @@
+(defn main ()
+  (let (value (option i64)) (some 1))
+  (let (nothing (option i64)) none)
+  (let (answer (result i64 string)) (ok 1))
+  (let (bad (result i64 string)) (err (to-string "bad")))
+  (println (none? nothing))
+  (match value
+    ((some n) (println n))
+    (none (println "none")))
+  (match answer
+    ((ok n) (println n))
+    ((err e) (println e)))
+  (println (err? bad)))

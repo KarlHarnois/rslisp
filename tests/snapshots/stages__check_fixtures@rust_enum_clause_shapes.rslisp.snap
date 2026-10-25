@@ -1,0 +1,28 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/rust_enum_clause_shapes.rslisp
+---
+error[L0210]: malformed `enum`
+ --> check/rust_enum_clause_shapes.rslisp:1:9
+  |
+1 | (enum a (rust) one)
+  |         ^^^^^^ this does not fit the shape of `enum`
+  |
+  = help: write it as `(rust "Path")` or `(rust "Path" bare)`
+
+error[L0210]: malformed `enum`
+ --> check/rust_enum_clause_shapes.rslisp:2:9
+  |
+2 | (enum b (rust "Thing" extra) one)
+  |         ^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `enum`
+  |
+  = help: write it as `(rust "Path")` or `(rust "Path" bare)`
+
+error[L0210]: malformed `enum`
+ --> check/rust_enum_clause_shapes.rslisp:3:9
+  |
+3 | (enum c (rust "{0}" bare) (of a))
+  |         ^^^^^^^^^^^^^^^^^ this does not fit the shape of `enum`
+  |
+  = help: write it as `(rust "Path")` or `(rust "Path" bare)`

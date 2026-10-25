@@ -58,6 +58,42 @@ pub struct EnumDefinition {
 }
 
 impl EnumDefinition {
+    pub fn is_bare_rust(&self) -> bool {
+        self.rust
+            .as_ref()
+            .is_some_and(|rust| rust.bare && !rust.template_clause)
+    }
+
+    pub fn is_result_shaped(&self) -> bool {
+        self.is_bare_rust()
+            && self.params.len() == 2
+            && self.variants.len() == 2
+            && self.holds_parameter(0, 0)
+            && self.holds_parameter(1, 1)
+    }
+
+    pub fn is_option_shaped(&self) -> bool {
+        self.is_bare_rust()
+            && self.params.len() == 1
+            && self.variants.len() == 2
+            && self.holds_parameter(0, 0)
+            && matches!(
+                self.variants.get(1).map(|variant| &variant.payload),
+                Some(VariantPayload::None)
+            )
+    }
+
+    pub fn holds_parameter(&self, variant: usize, parameter: usize) -> bool {
+        let Some(parameter) = self.params.get(parameter) else {
+            return false;
+        };
+        matches!(
+            self.variants.get(variant).map(|variant| &variant.payload),
+            Some(VariantPayload::Positional(parts))
+                if matches!(parts.as_slice(), [Type::Generic(id)] if *id == parameter.id)
+        )
+    }
+
     pub fn instantiated_payload(&self, index: usize, arguments: &[Type]) -> Option<Vec<Type>> {
         let replacements = self.replacements(arguments);
         self.variants

@@ -5,8 +5,8 @@
 (rust-type (hash-map key value) "std::collections::HashMap<{0}, {1}>")
 (rust-type (box item) "Box<{0}>")
 (def box-new (rust "Box::new({0})" (where (a) (fn (a) (box a)))))
-(enum (option value) (rust "Option") (some value) none)
-(enum (result value error) (rust "Result") (ok value) (err error))
+(enum (option value) (rust "Option" bare) (some value) none)
+(enum (result value error) (rust "Result" bare) (ok value) (err error))
 (rust-type (iterator item) "impl Iterator<Item = {0}>")
 (rust-type (slice item) "[{0}]")
 (rust-trait sequence "crate::rt::Sequence"

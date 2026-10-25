@@ -113,7 +113,7 @@ impl<'p> EmitPlan<'p> {
 
     fn choose_main_body_name(&self) -> Option<String> {
         self.definition(self.main)?
-            .result_error(&self.program.rust_types)?;
+            .result_error(&self.program.enums)?;
         let taken: BTreeSet<String> = self
             .reached
             .iter()

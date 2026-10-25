@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/bare_enum.rslisp
+---
+(enum (outcome value error) (rust "Result" bare) (ok value) (err error))
+(def main (fn () (do)))

@@ -21,8 +21,8 @@ fn main() {
     println!(
         "{}",
         match grid.get(1) {
-            Option::None => false,
-            Option::Some(row_2) => row_2[0],
+            None => false,
+            Some(row_2) => row_2[0],
         }
     );
     let three: i64 = 3;
@@ -31,8 +31,8 @@ fn main() {
     println!(
         "{}",
         match numbers.get(1) {
-            Option::Some(_) => numbers[1],
-            Option::None => 0,
+            Some(_) => numbers[1],
+            None => 0,
         }
     );
     grid.push(vec![true, true]);

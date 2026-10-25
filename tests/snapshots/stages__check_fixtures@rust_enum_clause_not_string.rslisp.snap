@@ -9,4 +9,4 @@ error[L0210]: malformed `enum`
 1 | (enum ordering (rust 1) less equal greater)
   |                ^^^^^^^^ this does not fit the shape of `enum`
   |
-  = help: write it as `(rust "Path")`
+  = help: write it as `(rust "Path")` or `(rust "Path" bare)`

@@ -11,9 +11,9 @@ enum AppError {
 
 fn fail(is_missing: bool) -> Result<(), AppError> {
     if is_missing {
-        Result::Err(AppError::Missing)
+        Err(AppError::Missing)
     } else {
-        Result::Err(AppError::BadInput("oops".to_string()))
+        Err(AppError::BadInput("oops".to_string()))
     }
 }
 

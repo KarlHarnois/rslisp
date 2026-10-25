@@ -13,7 +13,7 @@ fn main() {
                     continue;
                 } else {
                     let value: i64 = "7".parse::<i64>()?;
-                    return Result::Ok(value);
+                    return Ok(value);
                 }
             }
         })(0)
