@@ -100,7 +100,7 @@ impl<'a> MoveChecker<'a> {
 
     fn value_kind(&mut self, expr: &TypedExpr, kind: &TypedExprKind) {
         match kind {
-            TypedExprKind::Try(_) | TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => {
+            TypedExprKind::Try { .. } | TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => {
                 self.written(expr)
             }
             TypedExprKind::Fn(lambda) => {
@@ -133,7 +133,7 @@ impl<'a> MoveChecker<'a> {
             TypedExprKind::Borrow(_, value) | TypedExprKind::Deref(value) => {
                 self.expr(value, Usage::Borrow)
             }
-            TypedExprKind::Try(value) => self.expr(value, Usage::Move),
+            TypedExprKind::Try { value, .. } => self.expr(value, Usage::Move),
             _ => unreachable!("the caller matches a written form"),
         }
     }

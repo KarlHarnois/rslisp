@@ -73,7 +73,7 @@ impl ChangedValues {
 
     fn value_kind(&mut self, expr: &TypedExpr, kind: &TypedExprKind, enclosing: BindingId) {
         match kind {
-            TypedExprKind::Try(value) => self.expr(value, enclosing),
+            TypedExprKind::Try { value, .. } => self.expr(value, enclosing),
             TypedExprKind::Borrow(..) | TypedExprKind::Deref(_) => self.written(expr, enclosing),
             _ => {}
         }

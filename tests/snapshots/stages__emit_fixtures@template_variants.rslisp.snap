@@ -1,0 +1,71 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/template_variants.rslisp
+---
+enum AppError {
+    Io(std::io::Error),
+    Parse(std::num::ParseIntError),
+}
+
+fn half(text: &str) -> Result<i64, std::num::ParseIntError> {
+    text.parse::<i64>()
+}
+
+fn read_number(text: &str) -> Result<i64, AppError> {
+    Result::Ok(text.parse::<i64>()?)
+}
+
+fn read_file(path: &str) -> Result<String, AppError> {
+    let text = std::fs::read_to_string(path)?;
+    Result::Ok(text)
+}
+
+fn found(n: i64) -> Option<i64> {
+    if n > 0 { Option::Some(n) } else { None }
+}
+
+fn show(value: Option<i64>) {
+    match value {
+        Option::Some(n) => println!("{}", n),
+        Option::None => println!("none"),
+    }
+}
+
+fn choose() {
+    let value: Result<i64, String> = Result::Ok(1);
+    let bad: Result<i64, String> = Result::Err("bad".to_string());
+    match value {
+        Result::Ok(n) => println!("{}", n),
+        Result::Err(e) => println!("{}", e),
+    }
+}
+
+fn main() {
+    println!("{}", half("2").unwrap());
+    match read_number("3") {
+        Result::Ok(n) => println!("{}", n),
+        Result::Err(AppError::Parse(_reason)) => println!("not a number"),
+        Result::Err(AppError::Io(_reason)) => println!("cannot read"),
+    }
+    match read_file("missing.txt") {
+        Result::Ok(text) => println!("{}", text),
+        Result::Err(AppError::Io(_reason)) => println!("cannot read"),
+        Result::Err(AppError::Parse(_reason)) => println!("not a number"),
+    }
+    show(found(1));
+    show(found(0));
+    choose()
+}
+
+impl From<std::num::ParseIntError> for AppError {
+    fn from(error: std::num::ParseIntError) -> Self {
+        AppError::Parse(error)
+    }
+}
+
+impl From<std::io::Error> for AppError {
+    fn from(error: std::io::Error) -> Self {
+        AppError::Io(error)
+    }
+}

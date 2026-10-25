@@ -57,13 +57,22 @@ pub enum TypedExprKind {
     Fn(Rc<TypedLambda>),
     Call(Box<TypedExpr>, Vec<TypedArgument>),
     Recur(Vec<TypedArgument>),
-    Try(Box<TypedExpr>),
+    Try {
+        value: Box<TypedExpr>,
+        conversion: TryErrorConversion,
+    },
     Borrow(ReferenceKind, Box<TypedExpr>),
     Deref(Box<TypedExpr>),
     Control(TypedControl),
     Struct(TypedStructExpr),
     Variant(BindingId, Vec<TypedExpr>),
     Assoc(Box<TypedExpr>, Vec<TypedExpr>, Box<TypedExpr>),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TryErrorConversion {
+    Identity,
+    Converted,
 }
 
 #[derive(Clone, Debug)]

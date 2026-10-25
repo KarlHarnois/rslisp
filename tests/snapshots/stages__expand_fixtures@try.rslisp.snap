@@ -4,5 +4,5 @@ expression: "Fixture::load(path).expand_report()"
 input_file: tests/fixtures/expand/try.rslisp
 ---
 (type parse-add (fn ((ref str) (ref str)) (result i64 (parse-error i64))))
-(def parse-add (fn (left right) (let a (try (parse left))) (let b (try (parse right))) (ok (add a b))))
-(def threaded (fn (text) (ok (try (parse text)))))
+(def parse-add (fn (left right) (let a (try (parse left))) (let b (try (parse right))) (result/ok (add a b))))
+(def threaded (fn (text) (result/ok (try (parse text)))))

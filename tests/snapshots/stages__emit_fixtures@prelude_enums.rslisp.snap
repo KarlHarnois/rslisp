@@ -4,7 +4,11 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/prelude_enums.rslisp
 ---
 fn checked_half(n: i64) -> Result<i64, &'static str> {
-    if n % 2 == 0 { Ok(n / 2) } else { Err("odd") }
+    if n % 2 == 0 {
+        Result::Ok(n / 2)
+    } else {
+        Result::Err("odd")
+    }
 }
 
 fn main() {

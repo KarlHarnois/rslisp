@@ -104,7 +104,7 @@ impl<'a> FunctionValueModes<'a> {
 
     fn value_kind(&mut self, kind: &mut TypedExprKind, current: Option<&[Type]>) {
         match kind {
-            TypedExprKind::Try(value)
+            TypedExprKind::Try { value, .. }
             | TypedExprKind::Borrow(_, value)
             | TypedExprKind::Deref(value) => self.expr(value, current),
             TypedExprKind::Fn(lambda) => {

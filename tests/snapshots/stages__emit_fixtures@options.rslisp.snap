@@ -4,7 +4,7 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/options.rslisp
 ---
 fn main() {
-    let found: Option<i64> = Some(3_i64);
+    let found: Option<i64> = Option::Some(3);
     let missing: Option<i64> = {
         let result: Option<i64> = None;
         result

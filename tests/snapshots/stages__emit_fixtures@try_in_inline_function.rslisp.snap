@@ -9,7 +9,7 @@ fn main() {
         (|left: &str, right: &str| -> Result<i64, std::num::ParseIntError> {
             let a: i64 = left.parse::<i64>()?;
             let b: i64 = right.parse::<i64>()?;
-            Ok(a + b)
+            Result::Ok(a + b)
         })("2", "3")
         .unwrap()
     );
@@ -17,7 +17,7 @@ fn main() {
         "{}",
         (|text: &str| -> Result<i64, std::num::ParseIntError> {
             let value: i64 = text.parse::<i64>()?;
-            Ok(value)
+            Result::Ok(value)
         })("x")
         .is_err()
     )

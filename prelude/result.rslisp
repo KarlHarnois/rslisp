@@ -1,9 +1,13 @@
+(use prelude/macros defrule)
 (use prelude/types result option)
 
 (export ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
 
-(def ok (rust "Ok({0})" (where (a b) (fn (a) (result a b)))))
-(def err (rust "Err({0})" (where (a b) (fn (b) (result a b)))))
+(defrule ok
+  ((value) (result/ok value)))
+
+(defrule err
+  ((value) (result/err value)))
 (def ok-or (rust "{0}.ok_or({1})" (where (a b) (fn ((option a) b) (result a b)))))
 (def ok? (rust "{0}.is_ok()" (where (a b) (fn ((ref (result a b))) bool))))
 (def err? (rust "{0}.is_err()" (where (a b) (fn ((ref (result a b))) bool))))

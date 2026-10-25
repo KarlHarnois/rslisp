@@ -64,7 +64,7 @@ impl<'a> UsageCollector<'a> {
 
     fn value_kind(&mut self, expr: &TypedExpr, kind: &TypedExprKind) {
         match kind {
-            TypedExprKind::Try(_) | TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => {
+            TypedExprKind::Try { .. } | TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => {
                 self.written(expr)
             }
             TypedExprKind::Fn(lambda) => self.closure_body(lambda),
@@ -97,7 +97,7 @@ impl<'a> UsageCollector<'a> {
                 self.expr(value, ParamMode::Mut)
             }
             TypedExprKind::Deref(value) => self.expr(value, ParamMode::Ref),
-            TypedExprKind::Try(value) => self.expr(value, ParamMode::Own),
+            TypedExprKind::Try { value, .. } => self.expr(value, ParamMode::Own),
             _ => unreachable!("the caller matches a written form"),
         }
     }
