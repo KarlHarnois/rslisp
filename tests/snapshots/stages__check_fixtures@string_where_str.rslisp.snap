@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/string_where_str.rslisp
+---
+error[L0401]: mismatched types
+ --> check/string_where_str.rslisp:8:10
+  |
+8 |   (shout name))
+  |          ^^^^ expected `str`, found `string`
+  |
+  = help: borrow it as a `str` with `(as-str name)`
+
+error[L0401]: mismatched types
+  --> check/string_where_str.rslisp:11:10
+   |
+11 |   (shout (to-string "y")))
+   |          ^^^^^^^^^^^^^^^ expected `str`, found `string`

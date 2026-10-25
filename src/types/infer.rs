@@ -1714,6 +1714,15 @@ impl TypeChecker {
         }
         match (&parameter, &argument) {
             (Type::Ref(inner), found) if !found.is_reference() => {
+                if let Some(help) = self.string_as_str_help(inner, found, value) {
+                    return Err(TypeProblems::mismatch(
+                        &self.describe(inner),
+                        &self.describe(found),
+                        value.span,
+                        MismatchContext::Plain,
+                    )
+                    .with_help(help));
+                }
                 self.pass(inner, found, value.span, Borrow::Shared)
             }
             (Type::Mut(inner), _) => self.pass_mut_argument(inner, &parameter, &argument, value),
@@ -1722,6 +1731,21 @@ impl TypeChecker {
             }
             _ => self.pass_types(&parameter, &argument, value.span),
         }
+    }
+
+    fn string_as_str_help(
+        &self,
+        expected: &Type,
+        found: &Type,
+        value: &TypedExpr,
+    ) -> Option<String> {
+        if !matches!(expected, Type::Primitive(PrimitiveType::Str))
+            || !matches!(found, Type::Primitive(PrimitiveType::String))
+        {
+            return None;
+        }
+        let place = self.local_place(value)?;
+        Some(format!("borrow it as a `str` with `(as-str {place})`"))
     }
 
     fn pass_mut_argument(

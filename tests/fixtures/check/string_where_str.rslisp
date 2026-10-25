@@ -1,0 +1,11 @@
+(type shout (fn ((ref str)) unit))
+
+(defn shout (word)
+  (println word))
+
+(defn from-local ()
+  (let name (to-string "x"))
+  (shout name))
+
+(defn from-call ()
+  (shout (to-string "y")))
