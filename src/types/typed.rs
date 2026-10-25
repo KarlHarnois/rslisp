@@ -270,6 +270,13 @@ pub struct TypedTraitImpl {
     pub methods: Vec<TypedImplMethod>,
 }
 
+#[derive(Clone)]
+pub struct TypedConversion {
+    pub enum_binding: BindingId,
+    pub variant: usize,
+    pub error: Type,
+}
+
 pub struct TypedProgram {
     pub modules: Vec<TypedModule>,
     pub entry: ModuleId,
@@ -281,6 +288,7 @@ pub struct TypedProgram {
     pub traits: TraitTable,
     pub trait_definitions: Vec<TypedTrait>,
     pub trait_impls: Vec<TypedTraitImpl>,
+    pub conversions: Vec<TypedConversion>,
     pub trait_methods: HashMap<BindingId, TraitMethodInfo>,
     pub synthetic_bindings: HashSet<BindingId>,
     pub generics: HashMap<GenericId, GenericParam>,

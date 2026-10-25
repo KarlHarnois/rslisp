@@ -14,8 +14,8 @@ use super::templates::TemplateBorrows;
 use super::traits::{Implementor, RustTrait, TraitTable};
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type, TypeVar};
 use super::typed::{
-    PendingModeCheck, ReceiverKind, TraitMethodInfo, TypedDefinition, TypedExpr, TypedExprKind,
-    TypedLeaf, TypedTrait, TypedTraitImpl, TypedTraitMethod,
+    PendingModeCheck, ReceiverKind, TraitMethodInfo, TypedConversion, TypedDefinition, TypedExpr,
+    TypedExprKind, TypedLeaf, TypedTrait, TypedTraitImpl, TypedTraitMethod,
 };
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
@@ -169,6 +169,7 @@ pub struct TypeChecker {
     pub(super) pending_mode_checks: Vec<PendingModeCheck>,
     pub(super) trait_definitions: Vec<TypedTrait>,
     pub(super) trait_impls: Vec<TypedTraitImpl>,
+    pub(super) conversions: Vec<TypedConversion>,
     pub(super) trait_methods: HashMap<BindingId, TraitMethodInfo>,
     pub(super) synthetic_bindings: HashSet<BindingId>,
 }
@@ -227,6 +228,7 @@ impl TypeChecker {
             pending_mode_checks: Vec::new(),
             trait_definitions: Vec::new(),
             trait_impls: Vec::new(),
+            conversions: Vec::new(),
             trait_methods: HashMap::new(),
             synthetic_bindings: HashSet::new(),
         }
@@ -1919,6 +1921,7 @@ impl TypeChecker {
             traits: self.traits,
             trait_definitions: self.trait_definitions,
             trait_impls: self.trait_impls,
+            conversions: self.conversions,
             trait_methods: self.trait_methods,
             synthetic_bindings: self.synthetic_bindings,
             generics: self.generics,

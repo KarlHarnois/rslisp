@@ -1,0 +1,19 @@
+(enum app-error
+  (io io-error)
+  (parse (parse-error i64)))
+
+(type read-number (fn ((ref str)) (result i64 app-error)))
+
+(defn read-number (path)
+  (let text (try (slurp path)))
+  (ok (try (parse (as-str text)))))
+
+(defn main ()
+  (match (read-number "number.txt")
+    ((ok number) (println number))
+    ((err (app-error/io _reason)) (println "cannot read"))
+    ((err (app-error/parse _reason)) (println "not a number")))
+  (match (read-number "missing.txt")
+    ((ok number) (println number))
+    ((err (app-error/io _reason)) (println "cannot read"))
+    ((err (app-error/parse _reason)) (println "not a number"))))

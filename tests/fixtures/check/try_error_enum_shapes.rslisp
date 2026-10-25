@@ -1,0 +1,16 @@
+(enum (generic-error a) (cause a))
+
+(enum shaped-error
+  (io io-error)
+  (unknown)
+  (pair io-error io-error)
+  (named (struct (detail string))))
+
+(type source (fn () (result i64 string)))
+(defn source () (ok 1))
+
+(type generic-consumer (fn () (result i64 (generic-error io-error))))
+(defn generic-consumer () (ok (try (source))))
+
+(type shaped-consumer (fn () (result i64 shaped-error)))
+(defn shaped-consumer () (ok (try (source))))
