@@ -2151,15 +2151,17 @@ impl TypeChecker {
     ) -> Diagnostic {
         let trait_name = self.bindings.get(bound.binding).name();
         let found = display.show(implementor);
+        let program_type = matches!(
+            implementor,
+            Type::Named(binding, _)
+                if self.structs.get(*binding).is_some() || self.enums.get(*binding).is_some()
+        );
         let diagnostic = match self.unimplemented_box(implementor, bound) {
             Some(boxed) => {
                 TypeProblems::missing_trait_on_box(trait_name, &display.show(&boxed), span)
             }
             None => match implementor {
-                Type::Named(binding, _)
-                    if self.structs.get(*binding).is_some()
-                        || self.enums.get(*binding).is_some() =>
-                {
+                Type::Named(binding, _) if program_type => {
                     TypeProblems::missing_trait_on_struct(trait_name, &found, span)
                 }
                 _ => {
@@ -2168,6 +2170,9 @@ impl TypeChecker {
                 }
             },
         };
+        if !program_type {
+            return diagnostic;
+        }
         match self
             .traits
             .get(bound.binding)
