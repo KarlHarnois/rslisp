@@ -1,0 +1,29 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/iter_collections.rslisp
+---
+fn main() {
+    let numbers: Vec<i64> = vec![1_i64, 2_i64, 3_i64];
+    let sorted: std::collections::BTreeMap<&str, i64> = {
+        let mut map = std::collections::BTreeMap::new();
+        map.insert("a", 1_i64);
+        map.insert("b", 2_i64);
+        map
+    };
+    let hashed: std::collections::HashMap<&str, i64> = {
+        let mut map = std::collections::HashMap::new();
+        map.insert("a", 1_i64);
+        map.insert("b", 2_i64);
+        map
+    };
+    numbers.iter().for_each(|n: &i64| println!("{}", n));
+    sorted.iter().for_each(|entry: (&&str, &i64)| {
+        let (key, value) = entry;
+        println!("{} {}", key, value)
+    });
+    hashed.iter().for_each(|entry: (&&str, &i64)| {
+        let (key, value) = entry;
+        println!("{} {}", key, value)
+    })
+}

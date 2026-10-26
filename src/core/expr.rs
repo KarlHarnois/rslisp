@@ -33,6 +33,7 @@ pub enum MapOperation {
     Keys,
     Vals,
     Entries,
+    Iter,
     Update,
 }
 
@@ -43,6 +44,7 @@ impl MapOperation {
             "keys" => Some(Self::Keys),
             "vals" => Some(Self::Vals),
             "entries" => Some(Self::Entries),
+            "iter" => Some(Self::Iter),
             "update" => Some(Self::Update),
             _ => None,
         }
@@ -54,6 +56,7 @@ impl MapOperation {
             Self::Keys => "keys",
             Self::Vals => "vals",
             Self::Entries => "entries",
+            Self::Iter => "iter",
             Self::Update => "update",
         }
     }
@@ -252,5 +255,17 @@ impl BodyItem {
         match self {
             BodyItem::Let(_, value) | BodyItem::Expr(value) => value,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MapOperation;
+
+    #[test]
+    fn every_operation_name_round_trips() {
+        assert_eq!(MapOperation::of("iter"), Some(MapOperation::Iter));
+        assert_eq!(MapOperation::Iter.keyword(), "iter");
+        assert_eq!(MapOperation::of("unknown"), None);
     }
 }

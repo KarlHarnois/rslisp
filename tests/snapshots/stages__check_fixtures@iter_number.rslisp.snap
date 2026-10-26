@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/iter_number.rslisp
+---
+error[L0401]: mismatched types
+ --> check/iter_number.rslisp:2:9
+  |
+2 |   (iter 5))
+  |         ^ expected a vector, a slice or a map, found an integer

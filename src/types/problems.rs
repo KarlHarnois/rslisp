@@ -132,6 +132,15 @@ impl TypeProblems {
         }
     }
 
+    pub fn iter_needs_collection(found: &str, span: Span) -> Diagnostic {
+        Self::mismatch(
+            "a vector, a slice or a map",
+            found,
+            span,
+            MismatchContext::Plain,
+        )
+    }
+
     pub fn generic_mismatch(generic: &str, found: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MISMATCHED_TYPES,

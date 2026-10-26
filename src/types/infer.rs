@@ -2394,21 +2394,72 @@ impl TypeChecker {
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
         let value = self.infer(value)?;
+        if operation == MapOperation::Iter {
+            return self.infer_iter(value, arguments, span);
+        }
         let collection = self.map_collection(&value)?;
         self.check_map_key(&collection, value.span);
         match operation {
             MapOperation::Lookup => self.infer_map_lookup(value, collection, arguments, span),
-            MapOperation::Keys => {
-                self.infer_map_iterator(value, collection, MapIterator::Keys, arguments, span)
-            }
-            MapOperation::Vals => {
-                self.infer_map_iterator(value, collection, MapIterator::Vals, arguments, span)
-            }
-            MapOperation::Entries => {
-                self.infer_map_iterator(value, collection, MapIterator::Entries, arguments, span)
-            }
             MapOperation::Update => self.infer_map_update(value, collection, arguments, span),
+            _ => self.infer_map_iterator_operation(operation, value, collection, arguments, span),
         }
+    }
+
+    fn infer_map_iterator_operation(
+        &mut self,
+        operation: MapOperation,
+        value: TypedExpr,
+        collection: Collection,
+        arguments: &[Expr],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let iterator = match operation {
+            MapOperation::Keys => MapIterator::Keys,
+            MapOperation::Vals => MapIterator::Vals,
+            _ => MapIterator::Entries,
+        };
+        self.infer_map_iterator(value, collection, iterator, arguments, span)
+    }
+
+    fn infer_iter(
+        &mut self,
+        value: TypedExpr,
+        arguments: &[Expr],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        if !arguments.is_empty() {
+            return Err(TypeProblems::wrong_argument_count(0, arguments.len(), span));
+        }
+        let Some((item, collection_type)) = self.collection_item(&value.ty) else {
+            let resolved = self.unifier.resolve(&value.ty);
+            if resolved.is_unknown() && !self.is_literal(&resolved) {
+                return self.infer_iter_slice(value, span);
+            }
+            return Err(TypeProblems::iter_needs_collection(
+                &self.describe(&resolved),
+                value.span,
+            ));
+        };
+        if let Some(collection) = Collection::of(&collection_type, &self.rust_types)
+            && collection.is_map()
+        {
+            self.check_map_key(&collection, value.span);
+        }
+        let result = self.iterator_type(item);
+        let parameters = vec![Type::shared(collection_type)];
+        self.synthetic_call_with_value("{0}.iter()", parameters, result, value, arguments, span)
+    }
+
+    fn infer_iter_slice(&mut self, value: TypedExpr, span: Span) -> Result<TypedExpr, Diagnostic> {
+        let element = self.unifier.fresh();
+        let slice = self
+            .rust_types
+            .binding_with_template(RustType::SLICE_TEMPLATE)
+            .expect("the prelude defines a slice type");
+        let parameter = Type::shared(Type::Named(slice, vec![element.clone()]));
+        let result = self.iterator_type(Type::shared(element));
+        self.synthetic_call_with_value("{0}.iter()", vec![parameter], result, value, &[], span)
     }
 
     fn map_collection(&self, value: &TypedExpr) -> Result<Collection, Diagnostic> {
