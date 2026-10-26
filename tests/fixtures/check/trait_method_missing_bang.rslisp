@@ -1,0 +1,9 @@
+(trait container
+  (put (fn ((mut self) i64) unit)))
+(struct bag (items (vec i64)))
+(impl container bag
+  (put (b value) (push! (mut (field b items)) value)))
+(defn main ()
+  (let b (new bag (items (vec))))
+  (put (mut b) 1)
+  (println (len (field b items))))
