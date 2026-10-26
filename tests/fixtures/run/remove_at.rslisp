@@ -1,0 +1,5 @@
+(defn main ()
+  (let items (vec 10 20 30))
+  (println (remove-at! items 1))
+  (println (len items))
+  (for-each (values items) (fn (item) (println item))))

@@ -1,0 +1,7 @@
+(defn drop-first! (items)
+  (remove-at! items 0))
+
+(defn main ()
+  (let items (vec 1 2 3))
+  (println (drop-first! items))
+  (println (len items)))

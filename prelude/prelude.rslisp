@@ -7,7 +7,7 @@
 (use prelude/map sorted-map hash-map lookup keys vals entries update into-sorted-map into-hash-map)
 (use prelude/sequence empty?)
 (use prelude/vec vec push! len iter values collect
-               get pop! sort! sort-by-key! windows at dedup!
+               get pop! remove-at! sort! sort-by-key! windows at dedup!
                first last reverse reverse! sort-descending!)
 (use prelude/iterator range map filter fold for-each enumerate zip
                       sum count max min max-by-key any all find take take-while)
@@ -43,7 +43,7 @@
         sorted-map hash-map lookup keys vals entries update into-sorted-map into-hash-map empty?
         pair let-pair let-fields assoc assoc-in
         vec option result iterator slice sequence box box-new push! len iter values collect
-        get pop! sort! sort-by-key! windows at dedup!
+        get pop! remove-at! sort! sort-by-key! windows at dedup!
         first last reverse reverse! sort-descending!
         range map filter fold for-each enumerate zip
         sum count max min max-by-key any all find take take-while
