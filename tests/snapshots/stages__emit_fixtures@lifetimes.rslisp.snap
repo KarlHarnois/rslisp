@@ -48,7 +48,7 @@ enum Tagged<'a> {
     Value(&'a str),
 }
 
-fn choose<'a, A>(x: A, y: A, s: &'a str, t: &'a str) -> &'a str {
+fn choose<'a, A>(x: A, y: A, s: &str, t: &'a str) -> &'a str {
     t
 }
 

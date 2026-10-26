@@ -15,8 +15,8 @@ use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
     Bound, GenericId, GenericParam, Lifetime, ReceiverKind, Type, TypedAssociatedType, TypedBinder,
-    TypedConversion, TypedDefinition, TypedExpr, TypedExprKind, TypedProgram, TypedTraitMethod,
-    VariantDefinition,
+    TypedBlock, TypedBodyItem, TypedControl, TypedConversion, TypedDefinition, TypedExpr,
+    TypedExprKind, TypedLambda, TypedLeaf, TypedProgram, TypedTraitMethod, VariantDefinition,
 };
 
 struct TraitHeader {
@@ -64,6 +64,89 @@ impl ModuleTree {
         let mut with_newline = vec![Fragment::Newline];
         with_newline.extend(fragments);
         with_newline
+    }
+}
+
+struct ResultBorrows<'a> {
+    program: &'a TypedProgram,
+    parameters: HashSet<BindingId>,
+    aliases: HashMap<BindingId, HashSet<BindingId>>,
+}
+
+impl<'a> ResultBorrows<'a> {
+    fn of(program: &'a TypedProgram, lambda: &TypedLambda) -> HashSet<BindingId> {
+        let parameters = lambda.params.iter().map(|param| param.binding).collect();
+        let mut borrows = Self {
+            program,
+            parameters,
+            aliases: HashMap::new(),
+        };
+        borrows.block(&lambda.body)
+    }
+
+    fn block(&mut self, block: &TypedBlock) -> HashSet<BindingId> {
+        for item in &block.items {
+            if let TypedBodyItem::Let(binder, value) = item {
+                let flows = self.value(value);
+                self.aliases.insert(binder.binding, flows);
+            }
+        }
+        match block.items.last() {
+            Some(TypedBodyItem::Expr(expr)) => self.value(expr),
+            _ => HashSet::new(),
+        }
+    }
+
+    fn value(&mut self, expr: &TypedExpr) -> HashSet<BindingId> {
+        if !self.carries_borrow(&expr.ty) {
+            return HashSet::new();
+        }
+        match &expr.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.local(*binding),
+            TypedExprKind::Control(control) => self.control(control),
+            _ => self.children(expr),
+        }
+    }
+
+    fn carries_borrow(&self, ty: &Type) -> bool {
+        self.program.type_holds_borrow(ty) || ty.is_unsized()
+    }
+
+    fn control(&mut self, control: &TypedControl) -> HashSet<BindingId> {
+        match control {
+            TypedControl::Block(block) => self.block(block),
+            TypedControl::If(_, then, otherwise) => self.branches(then, otherwise),
+            TypedControl::Match(matched) => self.matched(matched),
+        }
+    }
+
+    fn branches(&mut self, then: &TypedExpr, otherwise: &TypedExpr) -> HashSet<BindingId> {
+        let mut flows = self.value(then);
+        flows.extend(self.value(otherwise));
+        flows
+    }
+
+    fn matched(&mut self, matched: &crate::types::TypedMatch) -> HashSet<BindingId> {
+        let mut flows = self.value(&matched.value);
+        for arm in &matched.arms {
+            flows.extend(self.block(&arm.body));
+        }
+        flows
+    }
+
+    fn children(&mut self, expr: &TypedExpr) -> HashSet<BindingId> {
+        expr.children()
+            .into_iter()
+            .flat_map(|child| self.value(child))
+            .collect()
+    }
+
+    fn local(&self, binding: BindingId) -> HashSet<BindingId> {
+        if self.parameters.contains(&binding) {
+            HashSet::from([binding])
+        } else {
+            self.aliases.get(&binding).cloned().unwrap_or_default()
+        }
     }
 }
 
@@ -530,24 +613,35 @@ impl<'a> ItemEmitter<'a> {
             reserved_lifetime,
         );
         let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
+        let used = Self::used_written_lifetimes(&definition.value);
+        let flowing = ResultBorrows::of(self.program, lambda);
         let mut params = Vec::new();
         if let Some(kind) = receiver {
             let first = &lambda.params[0];
             emitter.locals.bind_receiver(first.binding);
             let receiver_lifetime = self.receiver_lifetime(first, &scope);
             params.push(Self::receiver_keyword(kind, receiver_lifetime.as_deref()));
-            params.extend(
-                lambda.params[1..]
-                    .iter()
-                    .map(|param| emitter.bind_parameter_in(param, TypePosition::Signature, &scope)),
-            );
+            params.extend(lambda.params[1..].iter().map(|param| {
+                self.bind_parameter_lifetime(
+                    &mut emitter,
+                    param,
+                    &definition.scheme.lifetimes,
+                    &used,
+                    inferred.as_deref(),
+                    &flowing,
+                )
+            }));
         } else {
-            params.extend(
-                lambda
-                    .params
-                    .iter()
-                    .map(|param| emitter.bind_parameter_in(param, TypePosition::Signature, &scope)),
-            );
+            params.extend(lambda.params.iter().map(|param| {
+                self.bind_parameter_lifetime(
+                    &mut emitter,
+                    param,
+                    &definition.scheme.lifetimes,
+                    &used,
+                    inferred.as_deref(),
+                    &flowing,
+                )
+            }));
         }
         let result = match &definition.value.ty {
             Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
@@ -618,6 +712,24 @@ impl<'a> ItemEmitter<'a> {
         )]
     }
 
+    fn bind_parameter_lifetime(
+        &self,
+        emitter: &mut ExpressionEmitter<'_>,
+        param: &TypedBinder,
+        lifetimes: &[BindingId],
+        used: &HashSet<BindingId>,
+        inferred: Option<&str>,
+        flowing: &HashSet<BindingId>,
+    ) -> String {
+        let elided = if flowing.contains(&param.binding) {
+            inferred
+        } else {
+            None
+        };
+        let scope = self.lifetime_scope_used(lifetimes, used, elided);
+        emitter.bind_parameter_in(param, TypePosition::Signature, &scope)
+    }
+
     fn function(&mut self, definition: &TypedDefinition, info: &ItemInfo) -> Vec<Fragment> {
         let TypedExprKind::Fn(lambda) = &definition.value.kind else {
             return Vec::new();
@@ -636,10 +748,20 @@ impl<'a> ItemEmitter<'a> {
             .copied()
             .filter(|binding| used.contains(binding))
             .collect();
+        let flowing = ResultBorrows::of(self.program, lambda);
         let params: Vec<String> = lambda
             .params
             .iter()
-            .map(|param| emitter.bind_parameter_in(param, TypePosition::Signature, &scope))
+            .map(|param| {
+                self.bind_parameter_lifetime(
+                    &mut emitter,
+                    param,
+                    &definition.scheme.lifetimes,
+                    &used,
+                    inferred.as_deref(),
+                    &flowing,
+                )
+            })
             .collect();
         let result = match &definition.value.ty {
             Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {

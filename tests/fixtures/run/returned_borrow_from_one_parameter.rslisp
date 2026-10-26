@@ -1,0 +1,15 @@
+(type tokenize (fn ((ref str)) (result (vec token) string)))
+
+(struct token (text (ref str)))
+
+(defn scan (line characters index)
+  (if (< index (len characters))
+      (ok (vec (new token (text (trim line)))))
+      (ok (vec))))
+
+(defn tokenize (line)
+  (scan line (collect (chars line)) 0))
+
+(defn main ()
+  (let tokens (unwrap-ok (tokenize " hi ")))
+  (println (field (unwrap (get tokens 0)) text)))

@@ -1,0 +1,30 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/impl_method_lifetimes.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Holder {
+    pub name: String,
+}
+
+fn main() {
+    let h = Holder {
+        name: "hi".to_string(),
+    };
+    println!("{}", h.label())
+}
+
+pub trait Picker {
+    fn label(&self) -> &String;
+    fn pick<'a>(_: &'a Holder, _: &'a Holder) -> &'a String;
+}
+
+impl Picker for Holder {
+    fn label(&self) -> &String {
+        &self.name
+    }
+    fn pick<'a>(someone: &'a Holder, _: &Holder) -> &'a String {
+        &someone.name
+    }
+}
