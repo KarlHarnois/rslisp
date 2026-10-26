@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 
 use super::copy::InferredCopies;
@@ -168,6 +168,7 @@ pub struct TypeChecker {
     macro_origins: HashMap<Span, Rc<str>>,
     copy_trait: Option<BindingId>,
     box_binding: Option<BindingId>,
+    inferred_boxes: BTreeSet<(BindingId, usize, usize)>,
     pub(super) written_parameters: HashMap<BindingId, Vec<bool>>,
     pub(super) pending_mode_checks: Vec<PendingModeCheck>,
     pub(super) trait_definitions: Vec<TypedTrait>,
@@ -243,6 +244,7 @@ impl TypeChecker {
             macro_origins: HashMap::new(),
             copy_trait: None,
             box_binding: None,
+            inferred_boxes: BTreeSet::new(),
             written_parameters: HashMap::new(),
             pending_mode_checks: Vec::new(),
             trait_definitions: Vec::new(),
@@ -269,7 +271,11 @@ impl TypeChecker {
         }
         self.box_binding = self.rust_types.box_binding();
         if let Some(box_binding) = self.box_binding {
-            super::boxes::BoxPlanner::add_boxes(&mut self.structs, &mut self.enums, box_binding);
+            self.inferred_boxes = super::boxes::BoxPlanner::add_boxes(
+                &mut self.structs,
+                &mut self.enums,
+                box_binding,
+            );
         }
         self.collect_trait_impls(modules);
         self.register_derived_traits(modules);
@@ -581,15 +587,8 @@ impl TypeChecker {
         matches!(ty, Type::Named(binding, arguments) if Some(*binding) == self.box_binding && arguments.len() == 1)
     }
 
-    pub(super) fn visible_payload(&self, ty: &Type) -> Type {
-        match ty {
-            Type::Named(binding, arguments)
-                if Some(*binding) == self.box_binding && arguments.len() == 1 =>
-            {
-                arguments[0].clone()
-            }
-            _ => ty.clone(),
-        }
+    pub(super) fn is_inferred_box(&self, owner: BindingId, variant: usize, payload: usize) -> bool {
+        self.inferred_boxes.contains(&(owner, variant, payload))
     }
 
     pub(super) fn visible_payloads(
@@ -603,8 +602,26 @@ impl TypeChecker {
             .and_then(|definition| definition.instantiated_payload(index, arguments))
             .unwrap_or_default()
             .into_iter()
-            .map(|payload| self.visible_payload(&payload))
+            .enumerate()
+            .map(|(payload, ty)| {
+                let unboxed = self.unboxed(&ty);
+                match self.is_inferred_box(owner, index, payload) {
+                    true => unboxed.expect("an inferred box has one type argument"),
+                    false => ty,
+                }
+            })
             .collect()
+    }
+
+    pub(super) fn unboxed(&self, ty: &Type) -> Option<Type> {
+        match ty {
+            Type::Named(binding, arguments)
+                if Some(*binding) == self.box_binding && arguments.len() == 1 =>
+            {
+                Some(arguments[0].clone())
+            }
+            _ => None,
+        }
     }
 
     pub(super) fn require_copy(&mut self, value: &Type) {

@@ -1,0 +1,42 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/box_trait_payload.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Circle {
+    radius: f64,
+}
+
+enum Outcome {
+    Made(Box<dyn Shape>),
+}
+
+fn make() -> Outcome {
+    Outcome::Made(Box::new(Circle { radius: 1.0 }) as Box<dyn Shape>)
+}
+
+fn parse(text: &str) -> Result<Box<dyn Shape>, String> {
+    Ok(Box::new(Circle { radius: 1.0 }) as Box<dyn Shape>)
+}
+
+fn main() {
+    {
+        let Outcome::Made(shape) = make();
+        println!("{}", shape.area())
+    }
+    match parse("c") {
+        Ok(shape) => println!("{}", shape.area()),
+        Err(message) => println!("{}", message),
+    }
+}
+
+trait Shape {
+    fn area(&self) -> f64;
+}
+
+impl Shape for Circle {
+    fn area(&self) -> f64 {
+        self.radius
+    }
+}

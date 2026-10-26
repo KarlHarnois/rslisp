@@ -1,0 +1,24 @@
+(trait shape
+  (area (fn ((ref self)) f64)))
+
+(struct circle (radius f64))
+(impl shape circle
+  (area (c) (field c radius)))
+
+(enum outcome
+  (made (box shape)))
+
+(type make (fn () outcome))
+(defn make ()
+  (outcome/made (box-new (new circle (radius 1.0)))))
+
+(type parse (fn (str) (result (box shape) string)))
+(defn parse (text)
+  (ok (box-new (new circle (radius 1.0)))))
+
+(defn main ()
+  (match (make)
+    ((made shape) (println (area shape))))
+  (match (parse "c")
+    ((ok shape) (println (area shape)))
+    ((err message) (println message))))
