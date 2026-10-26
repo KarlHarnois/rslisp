@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/unknown_associated_type.rslisp
+---
+error[L0447]: `container` does not declare the associated type `size`
+ --> check/unknown_associated_type.rslisp:7:9
+  |
+7 |   (type size a)
+  |         ^^^^ not an associated type of this trait
+  |
+  = help: declare it in the trait, or remove it from the impl

@@ -98,6 +98,13 @@ impl TypeChecker {
             }
             let name = self.bindings.get(binder.variable).name().to_string();
             let param = self.new_generic(&name, Vec::new());
+            if matches!(
+                self.bindings.get(binder.variable).kind(),
+                BindingKind::AssociatedType
+            ) {
+                self.associated_generics
+                    .insert(param.id, std::rc::Rc::from(name.as_str()));
+            }
             scope.insert(binder.variable, param.id);
             params.push(param);
         }
@@ -247,7 +254,9 @@ impl TypeChecker {
             .collect::<Result<Vec<Type>, Diagnostic>>()?;
         Ok(
             match (self.bindings.get(binding).kind(), scope.get(&binding)) {
-                (BindingKind::TypeVariable, Some(generic)) => Type::Generic(*generic),
+                (BindingKind::TypeVariable | BindingKind::AssociatedType, Some(generic)) => {
+                    Type::Generic(*generic)
+                }
                 (BindingKind::TypeVariable, None) => self.unifier.fresh(),
                 _ => Type::Named(binding, arguments),
             },

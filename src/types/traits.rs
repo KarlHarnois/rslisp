@@ -15,6 +15,7 @@ pub struct RustTrait {
     pub implementors: Vec<Implementor>,
     pub help: Option<Rc<str>>,
     pub supertraits: Vec<Bound>,
+    pub associated: Option<Rc<str>>,
 }
 
 impl RustTrait {
@@ -36,12 +37,23 @@ impl TraitTable {
     }
 
     pub fn select(&self, bound: &Bound, implementor: &Type) -> Selection {
-        self.traits
-            .get(&bound.binding)
-            .map_or(&[][..], |rust_trait| rust_trait.implementors.as_slice())
-            .iter()
-            .map(|known| ImplementorMatch::select(known, bound, implementor))
-            .fold(Selection::Missing, Selection::best)
+        self.traits.get(&bound.binding).map_or_else(
+            || Selection::Missing,
+            |rust_trait| {
+                rust_trait
+                    .implementors
+                    .iter()
+                    .map(|known| {
+                        ImplementorMatch::select(
+                            known,
+                            bound,
+                            implementor,
+                            rust_trait.associated.is_some(),
+                        )
+                    })
+                    .fold(Selection::Missing, Selection::best)
+            },
+        )
     }
 
     pub fn satisfies(
@@ -54,7 +66,7 @@ impl TraitTable {
             return generic_satisfies(*generic, bound);
         }
         match self.select(bound, candidate) {
-            Selection::Implemented(requirements) => requirements.iter().all(|requirement| {
+            Selection::Implemented { requirements, .. } => requirements.iter().all(|requirement| {
                 self.satisfies(
                     &requirement.bound,
                     &requirement.implementor,

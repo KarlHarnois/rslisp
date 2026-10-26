@@ -1358,7 +1358,7 @@ impl TypeChecker {
             ));
         }
         self.expect_call_result(expected, &result, span)?;
-        let shared = SharedVariables::of(&parameters, &self.unifier);
+        let shared = SharedVariables::of(&parameters, &self.unifier, &self.traits);
         let mut typed_arguments =
             self.infer_arguments(Some(&callee), &parameters, arguments, &shared)?;
         self.pass_shared_arguments(Some(&callee), &shared, &mut typed_arguments)?;
@@ -1390,7 +1390,7 @@ impl TypeChecker {
             .recur_target
             .clone()
             .expect("expansion checks that `recur` is inside a function");
-        let shared = SharedVariables::of(&target.parameters, &self.unifier);
+        let shared = SharedVariables::of(&target.parameters, &self.unifier, &self.traits);
         let mut typed_arguments =
             self.infer_arguments(None, &target.parameters, arguments, &shared)?;
         self.pass_shared_arguments(None, &shared, &mut typed_arguments)?;

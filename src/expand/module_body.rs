@@ -8,10 +8,10 @@ use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{
     BindingId, BindingInfo, BindingKind, ControlForm, CoreModule, DefinitionForm, Expr, ExprKind,
-    ExpressionForm, FieldLabel, ImplMethod, Item, ItemKind, KernelForm, Leaf, ModuleId, Namespace,
-    RUST_TRAIT_HELP_MARKER, RUST_TRAIT_METHOD_MARKER, RustTemplate, RustTraitDeclaration,
-    TraitMethod, TypeBinder, TypeBound, TypeExpr, TypeExprKind, VariantDeclaration, VariantInfo,
-    VariantPayload,
+    ExpressionForm, FieldLabel, ImplAssociatedType, ImplMethod, Item, ItemKind, KernelForm, Leaf,
+    ModuleId, Namespace, RUST_TRAIT_HELP_MARKER, RUST_TRAIT_METHOD_MARKER, RustTemplate,
+    RustTraitDeclaration, TraitAssociatedType, TraitMethod, TypeBinder, TypeBound, TypeExpr,
+    TypeExprKind, VariantDeclaration, VariantInfo, VariantPayload,
 };
 use crate::diagnostic::{Counted, Diagnostic};
 use crate::emit::mangle::NameMangler;
@@ -24,6 +24,7 @@ struct TraitLowering<'a, 'f> {
     self_variable: BindingId,
     rust_name: &'a Rc<str>,
     scope: crate::scope::Scope,
+    associated: &'a [(BindingId, Rc<str>)],
 }
 
 struct ImplLowering<'a, 'f> {
@@ -31,7 +32,11 @@ struct ImplLowering<'a, 'f> {
     trait_methods: &'a TraitMethods,
     trait_name: &'a str,
     implementor: &'a TypeExpr,
+    associated: &'a [(BindingId, Rc<str>, TypeExpr)],
 }
+
+type ImplAssociated = Vec<(BindingId, Rc<str>, TypeExpr)>;
+type ImplLoweringParts = (ImplAssociated, Vec<Form>);
 
 struct RustTraitEntries {
     methods: Vec<TraitMethod>,
@@ -368,6 +373,9 @@ impl Expander<'_> {
         let binding =
             self.define_global(name, Namespace::Type, BindingKind::Trait(module), context)?;
         for method in &items[2..] {
+            if Self::is_associated_entry(method) {
+                continue;
+            }
             let method_items = method.as_list().ok_or_else(|| shape.malformed(method))?;
             let [method_name, _, ..] = method_items else {
                 return Err(shape.malformed(method));
@@ -384,10 +392,13 @@ impl Expander<'_> {
     }
 
     fn register_impl(&mut self, form: Form) -> Result<Option<PendingItem>, Diagnostic> {
+        let mut form = form;
+        let scope = self.fresh_local_scope();
+        form.add_scope(scope);
         let shape = Shape::new(KernelForm::Definition(DefinitionForm::Impl), &form);
         let items = shape.at_least(3)?;
         let trait_binding = self.impl_trait(&shape, &items[1])?;
-        let implementor = self.impl_type(&shape, &items[2])?;
+        let implementor = self.impl_type(&shape, &items[2], scope)?;
         Ok(Some(PendingItem::Impl(trait_binding, implementor, form)))
     }
 
@@ -399,9 +410,14 @@ impl Expander<'_> {
         Err(shape.malformed_with_help(form, "write a visible trait"))
     }
 
-    fn impl_type(&mut self, shape: &Shape, form: &Form) -> Result<TypeExpr, Diagnostic> {
+    fn impl_type(
+        &mut self,
+        shape: &Shape,
+        form: &Form,
+        scope: crate::scope::Scope,
+    ) -> Result<TypeExpr, Diagnostic> {
         self.reject_bare_implementor(form)?;
-        let implementor = self.bind_implementor_variables(form)?;
+        let implementor = self.bind_implementor_variables(form, scope)?;
         if matches!(
             implementor.kind(),
             TypeExprKind::Named(..) | TypeExprKind::Primitive(_)
@@ -423,13 +439,16 @@ impl Expander<'_> {
         }
     }
 
-    fn bind_implementor_variables(&mut self, form: &Form) -> Result<TypeExpr, Diagnostic> {
+    fn bind_implementor_variables(
+        &mut self,
+        form: &Form,
+        scope: crate::scope::Scope,
+    ) -> Result<TypeExpr, Diagnostic> {
         let mut implementor = form.clone();
         let mut variables = self.unresolved_type_variables(&implementor);
         if variables.is_empty() {
             return self.lower_type(&implementor);
         }
-        let scope = self.fresh_local_scope();
         implementor.add_scope(scope);
         for variable in &mut variables {
             variable.add_scope(scope);
@@ -952,6 +971,7 @@ impl Expander<'_> {
         let supertraits = self.lower_supertraits(&shape, &items[1])?;
         let rust_name: Rc<str> = Rc::from(NameMangler::type_name(name.to_string().as_str()));
         let scope = self.fresh_local_scope();
+        let associated = self.define_associated_types(&shape, &items[1], &items[2..], scope)?;
         let mut self_symbol = Symbol::new("self");
         self_symbol.scopes_mut().add(scope);
         let self_form = Form::new(FormKind::Symbol(self_symbol), items[1].span());
@@ -962,13 +982,26 @@ impl Expander<'_> {
             self_variable,
             rust_name: &rust_name,
             scope,
+            associated: &associated,
         };
-        let methods = self.lower_trait_methods(&lowering, &items[2..], core)?;
+        let method_forms: Vec<&Form> = items[2..]
+            .iter()
+            .filter(|entry| !Self::is_associated_entry(entry))
+            .collect();
+        let methods = self.lower_trait_methods(&lowering, &method_forms, core)?;
+        let associated_core = associated
+            .iter()
+            .map(|(binding, name)| TraitAssociatedType {
+                binding: *binding,
+                name: Rc::clone(name),
+            })
+            .collect();
         self.trait_methods.insert(
             binding,
             TraitMethods {
                 rust_name: Rc::clone(&rust_name),
                 self_variable,
+                associated: associated.clone(),
                 methods: methods
                     .iter()
                     .map(|method| (method.binding, method.signature.clone()))
@@ -981,11 +1014,51 @@ impl Expander<'_> {
             },
         );
         core.items.push(Item {
-            kind: ItemKind::Trait(binding, rust_name, self_variable, supertraits, methods),
+            kind: ItemKind::Trait(
+                binding,
+                rust_name,
+                self_variable,
+                supertraits,
+                associated_core,
+                methods,
+            ),
             span: form.span(),
             hidden: false,
         });
         Ok(())
+    }
+
+    fn define_associated_types(
+        &mut self,
+        shape: &Shape<'_>,
+        head: &Form,
+        entries: &[Form],
+        scope: crate::scope::Scope,
+    ) -> Result<Vec<(BindingId, Rc<str>)>, Diagnostic> {
+        let _ = head;
+        entries
+            .iter()
+            .filter(|entry| Self::is_associated_entry(entry))
+            .map(|entry| {
+                let [_, name] = shape.list(entry)? else {
+                    return Err(shape.malformed(entry));
+                };
+                let symbol = shape.symbol(name)?;
+                let mut binder = name.clone();
+                binder.add_scope(scope);
+                let binding =
+                    self.define_local(&binder, Namespace::Type, BindingKind::AssociatedType, None)?;
+                Ok((binding, Rc::from(symbol.name())))
+            })
+            .collect()
+    }
+
+    fn is_associated_entry(entry: &Form) -> bool {
+        entry
+            .as_list()
+            .and_then(|items| items.first())
+            .and_then(Form::as_symbol)
+            .is_some_and(|symbol| symbol.name() == "type")
     }
 
     fn lower_supertraits(
@@ -1010,7 +1083,7 @@ impl Expander<'_> {
     fn lower_trait_methods(
         &mut self,
         lowering: &TraitLowering<'_, '_>,
-        forms: &[Form],
+        forms: &[&Form],
         core: &mut CoreModule,
     ) -> Result<Vec<TraitMethod>, Diagnostic> {
         let mut methods = Vec::new();
@@ -1043,6 +1116,7 @@ impl Expander<'_> {
         let scheme = Self::trait_method_scheme(
             lowering.self_variable,
             lowering.binding,
+            lowering.associated,
             &signature,
             method.span(),
         );
@@ -1140,22 +1214,30 @@ impl Expander<'_> {
     fn trait_method_scheme(
         self_variable: BindingId,
         trait_binding: BindingId,
+        associated: &[(BindingId, Rc<str>)],
         signature: &TypeExpr,
         span: Span,
     ) -> TypeExpr {
+        let argument = associated
+            .first()
+            .map(|(binding, _)| TypeExpr::new(TypeExprKind::Named(*binding, Vec::new()), span));
+        let mut binders = vec![TypeBinder {
+            variable: self_variable,
+            bounds: vec![TypeBound {
+                binding: trait_binding,
+                argument,
+            }],
+            span,
+            lifetime: false,
+        }];
+        binders.extend(associated.iter().map(|(binding, _)| TypeBinder {
+            variable: *binding,
+            bounds: Vec::new(),
+            span,
+            lifetime: false,
+        }));
         TypeExpr::new(
-            TypeExprKind::Where(
-                vec![TypeBinder {
-                    variable: self_variable,
-                    bounds: vec![TypeBound {
-                        binding: trait_binding,
-                        argument: None,
-                    }],
-                    span,
-                    lifetime: false,
-                }],
-                Box::new(signature.clone()),
-            ),
+            TypeExprKind::Where(binders, Box::new(signature.clone())),
             span,
         )
     }
@@ -1174,13 +1256,22 @@ impl Expander<'_> {
         };
         let trait_name = self.bindings.get(trait_binding).name().to_string();
         let type_name = items[2].to_string();
+        let (associated, method_forms) = self.lower_impl_associated(
+            &shape,
+            &items[3..],
+            &trait_methods,
+            &trait_name,
+            &type_name,
+            items[2].span(),
+        )?;
         let lowering = ImplLowering {
             shape: &shape,
             trait_methods: &trait_methods,
             trait_name: &trait_name,
             implementor: &implementor,
+            associated: &associated,
         };
-        let (methods, implemented) = self.lower_impl_methods(&lowering, &items[3..], core)?;
+        let (methods, implemented) = self.lower_impl_methods(&lowering, &method_forms, core)?;
         for (method, _) in &trait_methods.methods {
             if !implemented.contains(method) && !trait_methods.defaults.contains(method) {
                 let name = self.bindings.get(*method).name().to_string();
@@ -1192,12 +1283,97 @@ impl Expander<'_> {
                 ));
             }
         }
+        let associated = associated
+            .into_iter()
+            .map(|(trait_type, name, value)| ImplAssociatedType {
+                trait_type,
+                name,
+                value,
+            })
+            .collect();
         core.items.push(Item {
-            kind: ItemKind::Impl(trait_binding, implementor, methods),
+            kind: ItemKind::Impl(trait_binding, implementor, associated, methods),
             span: form.span(),
             hidden: false,
         });
         Ok(())
+    }
+
+    fn lower_impl_associated(
+        &mut self,
+        shape: &Shape<'_>,
+        entries: &[Form],
+        trait_methods: &TraitMethods,
+        trait_name: &str,
+        type_name: &str,
+        implementor_span: Span,
+    ) -> Result<ImplLoweringParts, Diagnostic> {
+        let mut associated = Vec::new();
+        let mut defined = std::collections::HashSet::new();
+        let mut method_forms = Vec::new();
+        for entry in entries {
+            if !Self::is_associated_entry(entry) {
+                method_forms.push(entry.clone());
+                continue;
+            }
+            let Some((trait_type, name, value)) =
+                self.lower_associated_entry(shape, entry, trait_methods, trait_name)?
+            else {
+                continue;
+            };
+            if !defined.insert(trait_type) {
+                self.diagnostics
+                    .push(ExpandProblems::duplicate_associated_type(
+                        &name,
+                        entry.span(),
+                    ));
+                continue;
+            }
+            associated.push((trait_type, name, value));
+        }
+        for (trait_type, name) in &trait_methods.associated {
+            if !defined.contains(trait_type) {
+                self.diagnostics
+                    .push(ExpandProblems::missing_associated_type(
+                        trait_name,
+                        name,
+                        type_name,
+                        implementor_span,
+                    ));
+            }
+        }
+        Ok((associated, method_forms))
+    }
+
+    fn lower_associated_entry(
+        &mut self,
+        shape: &Shape<'_>,
+        entry: &Form,
+        trait_methods: &TraitMethods,
+        trait_name: &str,
+    ) -> Result<Option<(BindingId, Rc<str>, TypeExpr)>, Diagnostic> {
+        let entry_items = entry.as_list().ok_or_else(|| shape.malformed(entry))?;
+        let [_, name, value] = entry_items else {
+            return Err(
+                shape.malformed_with_help(entry, "write an associated type as `(type item a)`")
+            );
+        };
+        let symbol = shape.symbol(name)?;
+        let Some((trait_type, _)) = trait_methods
+            .associated
+            .iter()
+            .find(|(_, declared)| declared.as_ref() == symbol.name())
+        else {
+            self.diagnostics
+                .push(ExpandProblems::unknown_associated_type(
+                    trait_name,
+                    symbol.name(),
+                    name.span(),
+                ));
+            return Ok(None);
+        };
+        let value = self.lower_type(value)?;
+        Ok(Some((*trait_type, Rc::from(symbol.name()), value)))
     }
 
     fn lower_impl_methods(
@@ -1256,6 +1432,12 @@ impl Expander<'_> {
         }
         let specialized =
             signature.replacing(lowering.trait_methods.self_variable, lowering.implementor);
+        let specialized = lowering
+            .associated
+            .iter()
+            .fold(specialized, |signature, (binding, _, value)| {
+                signature.replacing(*binding, value)
+            });
         let specialized = Self::wrap_implementor_binders(
             &specialized,
             &self.implementor_variables(lowering.implementor),
@@ -1347,6 +1529,7 @@ impl Expander<'_> {
             TraitMethods {
                 rust_name: Rc::clone(&path),
                 self_variable,
+                associated: Vec::new(),
                 methods: entries
                     .methods
                     .iter()

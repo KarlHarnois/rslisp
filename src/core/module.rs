@@ -74,15 +74,34 @@ pub enum ItemKind {
         Rc<str>,
         BindingId,
         Vec<TypeBound>,
+        Vec<TraitAssociatedType>,
         Vec<TraitMethod>,
     ),
-    Impl(BindingId, TypeExpr, Vec<ImplMethod>),
+    Impl(
+        BindingId,
+        TypeExpr,
+        Vec<ImplAssociatedType>,
+        Vec<ImplMethod>,
+    ),
     RustType(
         BindingId,
         Vec<TypeBinder>,
         Rc<ParsedTemplate>,
         Vec<(TypeExpr, Rc<ParsedTemplate>)>,
     ),
+}
+
+#[derive(Clone, Debug)]
+pub struct TraitAssociatedType {
+    pub binding: BindingId,
+    pub name: Rc<str>,
+}
+
+#[derive(Clone, Debug)]
+pub struct ImplAssociatedType {
+    pub trait_type: BindingId,
+    pub name: Rc<str>,
+    pub value: TypeExpr,
 }
 
 #[derive(Clone, Debug)]

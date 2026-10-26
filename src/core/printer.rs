@@ -110,7 +110,7 @@ impl<'a> CorePrinter<'a> {
             );
             return Self::list("rust-trait", parts);
         }
-        if let ItemKind::Trait(binding, _, _, supertraits, methods) = &item.kind {
+        if let ItemKind::Trait(binding, _, _, supertraits, associated, methods) = &item.kind {
             let head = if supertraits.is_empty() {
                 self.name(*binding)
             } else {
@@ -119,6 +119,11 @@ impl<'a> CorePrinter<'a> {
                 format!("({})", parts.join(" "))
             };
             let mut parts = vec![head];
+            parts.extend(
+                associated
+                    .iter()
+                    .map(|associated| format!("(type {})", self.name(associated.binding))),
+            );
             parts.extend(methods.iter().map(|method| {
                 format!(
                     "({} {})",
@@ -128,8 +133,15 @@ impl<'a> CorePrinter<'a> {
             }));
             return Self::list("trait", parts);
         }
-        if let ItemKind::Impl(trait_binding, implementor, methods) = &item.kind {
+        if let ItemKind::Impl(trait_binding, implementor, associated, methods) = &item.kind {
             let mut parts = vec![self.name(*trait_binding), self.type_expr(implementor)];
+            parts.extend(associated.iter().map(|associated| {
+                format!(
+                    "(type {} {})",
+                    associated.name,
+                    self.type_expr(&associated.value)
+                )
+            }));
             parts.extend(methods.iter().map(|method| self.impl_method(method)));
             return Self::list("impl", parts);
         }

@@ -34,6 +34,7 @@ pub enum BindingKind {
     Trait(ModuleId),
     RustType(ModuleId),
     TypeVariable,
+    AssociatedType,
     Lifetime,
 }
 

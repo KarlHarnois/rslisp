@@ -1,0 +1,18 @@
+(trait container
+  (type item)
+  (first (fn ((ref self)) (option (ref item)))))
+
+(impl container (vec a)
+  (type item a)
+  (first (items) (some (at items 0))))
+
+(type first-item
+  (where ((c (container item)) item)
+    (fn ((ref c)) (option (ref item)))))
+
+(defn first-item (c)
+  (first c))
+
+(defn main ()
+  (println (some? (first-item (vec 1 2))))
+  (println (some? (first-item (vec "a" "b")))))

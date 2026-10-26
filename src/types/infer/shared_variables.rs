@@ -74,7 +74,11 @@ impl VariableLinks {
 }
 
 impl SharedVariables {
-    pub(super) fn of(parameters: &[Type], unifier: &Unifier) -> Self {
+    pub(super) fn of(
+        parameters: &[Type],
+        unifier: &Unifier,
+        traits: &crate::types::TraitTable,
+    ) -> Self {
         let whole: Vec<Option<TypeVar>> = parameters
             .iter()
             .map(|parameter| match unifier.shallow(parameter) {
@@ -82,7 +86,7 @@ impl SharedVariables {
                 _ => None,
             })
             .collect();
-        let mut links = Self::links(&whole, unifier);
+        let mut links = Self::links(&whole, unifier, traits);
         let mut groups: Vec<SharedGroup> = Vec::new();
         for (position, whole) in whole.iter().enumerate() {
             let Some(var) = whole else {
@@ -96,10 +100,20 @@ impl SharedVariables {
         Self { groups }
     }
 
-    fn links(whole: &[Option<TypeVar>], unifier: &Unifier) -> VariableLinks {
+    fn links(
+        whole: &[Option<TypeVar>],
+        unifier: &Unifier,
+        traits: &crate::types::TraitTable,
+    ) -> VariableLinks {
         let mut links = VariableLinks::default();
         for var in whole.iter().flatten() {
             for bound in unifier.bounds(*var) {
+                if traits
+                    .get(bound.binding)
+                    .is_some_and(|rust_trait| rust_trait.associated.is_some())
+                {
+                    continue;
+                }
                 let argument = bound
                     .argument
                     .as_ref()

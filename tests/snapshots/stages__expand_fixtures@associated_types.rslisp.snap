@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/associated_types.rslisp
+---
+(trait container (type item) (first (fn ((ref self)) (option (ref item)))))
+(impl container (vec a) (type item a) (first (items) (option/some (at items 0))))

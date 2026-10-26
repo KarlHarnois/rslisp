@@ -14,14 +14,16 @@ use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Bound, GenericId, GenericParam, Lifetime, ReceiverKind, Type, TypedBinder, TypedConversion,
-    TypedDefinition, TypedExpr, TypedExprKind, TypedProgram, TypedTraitMethod, VariantDefinition,
+    Bound, GenericId, GenericParam, Lifetime, ReceiverKind, Type, TypedAssociatedType, TypedBinder,
+    TypedConversion, TypedDefinition, TypedExpr, TypedExprKind, TypedProgram, TypedTraitMethod,
+    VariantDefinition,
 };
 
 struct TraitHeader {
     binding: BindingId,
     rust_name: std::rc::Rc<str>,
     supertraits: Vec<Bound>,
+    associated: Vec<TypedAssociatedType>,
     methods: Vec<TypedTraitMethod>,
 }
 
@@ -233,6 +235,7 @@ impl<'a> ItemEmitter<'a> {
                 binding: trait_definition.binding,
                 rust_name: trait_definition.rust_name.clone(),
                 supertraits: trait_definition.supertraits.clone(),
+                associated: trait_definition.associated.clone(),
                 methods: trait_definition.methods.clone(),
             })
             .collect();
@@ -240,6 +243,13 @@ impl<'a> ItemEmitter<'a> {
             .into_iter()
             .map(|trait_definition| {
                 let mut methods = Vec::new();
+                for associated in &trait_definition.associated {
+                    methods.push(Fragment::Newline);
+                    methods.push(Fragment::Text(format!(
+                        "type {};",
+                        NameMangler::type_name(&associated.name)
+                    )));
+                }
                 for method in &trait_definition.methods {
                     methods.push(Fragment::Newline);
                     methods.extend(self.trait_method(module, method));
@@ -422,6 +432,7 @@ impl<'a> ItemEmitter<'a> {
             }
             let trait_binding = self.program.trait_impls[position].trait_binding;
             let implementor = self.program.trait_impls[position].implementor.clone();
+            let associated = self.program.trait_impls[position].associated.clone();
             let methods = self.program.trait_impls[position].methods.clone();
             let trait_path = self.plan.trait_path(trait_binding, module);
             let lifetime = self.implementor_lifetime(&implementor);
@@ -435,7 +446,26 @@ impl<'a> ItemEmitter<'a> {
                 let lifetimes: Vec<String> = lifetime.iter().cloned().collect();
                 (type_name, Self::with_lifetimes(&lifetimes, declared))
             };
+            let associated_lines: Vec<String> = {
+                let types =
+                    RustTypes::new(self.program, self.plan, self.unsized_parameters, module);
+                let scope = LifetimeScope::default().with_elided(lifetime.clone());
+                associated
+                    .iter()
+                    .map(|(_, name, value)| {
+                        format!(
+                            "type {} = {};",
+                            NameMangler::type_name(name),
+                            types.show_in(value, TypePosition::Signature, &scope)
+                        )
+                    })
+                    .collect()
+            };
             let mut body = Vec::new();
+            for line in associated_lines {
+                body.push(Fragment::Newline);
+                body.push(Fragment::Text(line));
+            }
             for method in &methods {
                 body.push(Fragment::Newline);
                 body.extend(self.impl_method(

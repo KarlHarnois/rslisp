@@ -140,6 +140,7 @@ mod tests {
                     }],
                     help: None,
                     supertraits: Vec::new(),
+                    associated: None,
                 },
             );
             Self {
