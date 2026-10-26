@@ -8,6 +8,14 @@ use super::typed::{
 };
 
 impl TypedExpr {
+    pub fn repeats(&self) -> bool {
+        match &self.kind {
+            TypedExprKind::Recur(_) => true,
+            TypedExprKind::Fn(_) => false,
+            _ => self.children().into_iter().any(Self::repeats),
+        }
+    }
+
     pub fn children(&self) -> Vec<&TypedExpr> {
         match &self.kind {
             TypedExprKind::Leaf(_) => Vec::new(),
@@ -181,6 +189,10 @@ impl TypedLambda {
 impl TypedBlock {
     pub fn expressions(&self) -> impl Iterator<Item = &TypedExpr> {
         self.items.iter().map(TypedBodyItem::expr)
+    }
+
+    pub fn repeats(&self) -> bool {
+        self.expressions().any(TypedExpr::repeats)
     }
 
     pub fn writes_local(&self, binding: BindingId) -> bool {
