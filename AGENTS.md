@@ -11,7 +11,7 @@ This file and the reference files it names are the living reference for working 
 | Prelude | The language's library under `prelude/`, written in the language and embedded in the compiler |
 | Stage | One step of the compiler, such as reading, expansion or emission |
 | Fixture | A source file under `tests/fixtures/` whose output an insta snapshot records |
-| The Commands | The five commands in the Commands section |
+| The Commands | The commands in the Commands section |
 
 ## Principles
 
@@ -124,15 +124,27 @@ The exceptions are:
 
 ## Commands
 
+**Run these commands while you work:**
+
 ```sh
 nix develop -c cargo fmt --all --check
 nix develop -c cargo clippy --workspace --all-targets -- -D warnings
+nix develop -c cargo test
 nix develop -c cargo xtask coverage
-nix build .#
+```
+
+**Run the gate once, before the last commit of a task:**
+
+```sh
+nix develop -c cargo fmt --all --check
+nix develop -c cargo clippy --workspace --all-targets -- -D warnings
 nix flake check
 ```
 
-**A change is done when the Commands pass.** CI runs them on Linux and macOS. If one of the Commands also fails without the change, stop and show its output to the project owner.
+- NEVER run `nix flake check` or `nix build` while you iterate: each run rebuilds the project and every dependency on all cores.
+- The gate leaves out `cargo xtask coverage` and `nix build .#` because `nix flake check` runs both.
+
+**A change is done when the gate passes.** CI runs it on Linux and macOS. If one of the gate's commands also fails without the change, stop and show its output to the project owner.
 
 ## Reference files
 
