@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/box_missing_object.rslisp
+---
+error[L0404]: `(box circle)` does not implement `shape`
+  --> check/box_missing_object.rslisp:12:19
+   |
+12 |   (println (total (vec (box-new (new circle (radius 1.0)))))))
+   |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `shape`
+   |
+   = help: write the type `(box shape)` where the box is made, such as `(let (shapes (vec (box shape))) ...)`

@@ -244,6 +244,17 @@ impl TypeProblems {
         )
     }
 
+    pub fn missing_trait_on_box(trait_name: &str, found: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MISSING_TRAIT,
+            format!("`{found}` does not implement `{trait_name}`"),
+            Label::new(span, format!("this needs `{trait_name}`")),
+        )
+        .with_help(format!(
+            "write the type `(box {trait_name})` where the box is made, such as `(let (shapes (vec (box {trait_name}))) ...)`"
+        ))
+    }
+
     pub fn order_not_inferred_note(trait_name: &str) -> String {
         format!(
             "`{trait_name}` is never inferred for a struct, so the struct needs a written `derive`"

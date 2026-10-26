@@ -2083,16 +2083,22 @@ impl TypeChecker {
     ) -> Diagnostic {
         let trait_name = self.bindings.get(bound.binding).name();
         let found = display.show(implementor);
-        let diagnostic = match implementor {
-            Type::Named(binding, _)
-                if self.structs.get(*binding).is_some() || self.enums.get(*binding).is_some() =>
-            {
-                TypeProblems::missing_trait_on_struct(trait_name, &found, span)
+        let diagnostic = match self.unimplemented_box(implementor, bound) {
+            Some(boxed) => {
+                TypeProblems::missing_trait_on_box(trait_name, &display.show(&boxed), span)
             }
-            _ => {
-                let implementors = self.implementor_names(bound.binding, display);
-                TypeProblems::missing_trait(trait_name, &found, span, implementors)
-            }
+            None => match implementor {
+                Type::Named(binding, _)
+                    if self.structs.get(*binding).is_some()
+                        || self.enums.get(*binding).is_some() =>
+                {
+                    TypeProblems::missing_trait_on_struct(trait_name, &found, span)
+                }
+                _ => {
+                    let implementors = self.implementor_names(bound.binding, display);
+                    TypeProblems::missing_trait(trait_name, &found, span, implementors)
+                }
+            },
         };
         match self
             .traits
@@ -2102,6 +2108,22 @@ impl TypeChecker {
             Some(help) => diagnostic.with_help(help),
             None => diagnostic,
         }
+    }
+
+    fn unimplemented_box(&self, implementor: &Type, bound: &Bound) -> Option<Type> {
+        let mut found = implementor;
+        while let Type::Ref(_, inner) | Type::Mut(_, inner) = found {
+            found = inner;
+        }
+        let Type::Named(binding, arguments) = found else {
+            return None;
+        };
+        if Some(*binding) != self.box_binding {
+            return None;
+        }
+        let argument = arguments.first()?;
+        let satisfied = self.traits.satisfies(bound, argument, &|_, _| false);
+        satisfied.then(|| found.clone())
     }
 
     fn implementor_names(
