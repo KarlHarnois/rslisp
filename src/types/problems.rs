@@ -51,6 +51,31 @@ impl TypeProblems {
         .with_help("write `try` around a result or an option value")
     }
 
+    pub fn try_needs_unknown_recursive(
+        called: &str,
+        group: &[String],
+        hides_prelude: bool,
+        span: Span,
+    ) -> Diagnostic {
+        let names: Vec<String> = group.iter().map(|name| format!("`{name}`")).collect();
+        let diagnostic = Diagnostic::error(
+            DiagnosticCode::TRY_NOT_RESULT_OR_OPTION,
+            "`try` needs a result or an option",
+            Label::new(span, "the type of this call is not known yet"),
+        )
+        .with_help(format!(
+            "write a `type` signature for one of: {}",
+            names.join(", ")
+        ));
+        if hides_prelude {
+            diagnostic.with_note(format!(
+                "this `{called}` is the program's own, and it hides the prelude's `{called}`"
+            ))
+        } else {
+            diagnostic
+        }
+    }
+
     pub fn try_cannot_return(needed: &str, found: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::TRY_TARGET,

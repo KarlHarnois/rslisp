@@ -1500,6 +1500,11 @@ impl TypeChecker {
         let value = self.infer(value)?;
         let operand = self.unifier.resolve(&value.ty);
         let Some(source) = self.try_source(&operand) else {
+            if operand.is_unknown()
+                && let Some(reported) = self.report_unknown_recursive_try(&value, span)
+            {
+                return reported;
+            }
             return Err(TypeProblems::try_needs_value(
                 &self.describe(&operand),
                 span,
@@ -1524,6 +1529,48 @@ impl TypeChecker {
             ty: source.value,
             span,
         })
+    }
+
+    fn report_unknown_recursive_try(
+        &mut self,
+        value: &TypedExpr,
+        span: Span,
+    ) -> Option<Result<TypedExpr, Diagnostic>> {
+        let called = self.recursive_try_callee(value)?;
+        let group = self.recursive_group.iter().copied().min()?;
+        if !self.reported_unknown_try_groups.insert(group) {
+            return Some(Ok(TypedExpr {
+                kind: TypedExprKind::Try {
+                    value: Box::new(value.clone()),
+                    conversion: TryErrorConversion::Identity,
+                },
+                ty: self.unifier.fresh(),
+                span,
+            }));
+        }
+        let called_name = self.bindings.get(called).name();
+        let names: Vec<String> = self
+            .recursive_group
+            .iter()
+            .map(|binding| self.bindings.get(*binding).name().to_string())
+            .collect();
+        let hides_prelude = self.prelude_value_names.contains(called_name);
+        Some(Err(TypeProblems::try_needs_unknown_recursive(
+            called_name,
+            &names,
+            hides_prelude,
+            span,
+        )))
+    }
+
+    fn recursive_try_callee(&self, value: &TypedExpr) -> Option<BindingId> {
+        let TypedExprKind::Call(callee, _) = &value.kind else {
+            return None;
+        };
+        let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = &callee.kind else {
+            return None;
+        };
+        self.recursive_group.contains(binding).then_some(*binding)
     }
 
     fn convert_try_error(

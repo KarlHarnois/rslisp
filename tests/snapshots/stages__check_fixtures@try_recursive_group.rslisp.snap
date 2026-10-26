@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/try_recursive_group.rslisp
+---
+error[L0429]: `try` needs a result or an option
+ --> check/try_recursive_group.rslisp:2:7
+  |
+2 |   (ok (try (parse text))))
+  |       ^^^^^^^^^^^^^^^^^^ the type of this call is not known yet
+  |
+  = note: this `parse` is the program's own, and it hides the prelude's `parse`
+  = help: write a `type` signature for one of: `parse-number`, `parse`, `parse-expression`
