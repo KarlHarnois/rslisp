@@ -1,0 +1,3 @@
+(trait convert
+  (to-number (fn (i64) i64) 0)
+  (label (fn ((ref self) i64) string) (to-string "value")))

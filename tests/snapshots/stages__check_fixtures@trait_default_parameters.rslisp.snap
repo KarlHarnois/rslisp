@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/trait_default_parameters.rslisp
+---
+

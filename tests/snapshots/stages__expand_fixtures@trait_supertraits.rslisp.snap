@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/trait_supertraits.rslisp
+---
+(trait (shape display) (area (fn ((ref self)) f64)))
+(trait (plain clone) (value (fn ((ref self_2)) i64)))
+(struct circle (radius f64))
+(impl shape circle (area (c) (mul (mul 3.0 (field c radius)) (field c radius))))

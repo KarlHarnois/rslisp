@@ -261,6 +261,7 @@ impl TypeChecker {
         }
         self.collect_trait_impls(modules);
         self.register_derived_traits(modules);
+        self.report_supertraits();
         self.check_trait_claims(modules);
         self.copy_trait = self.traits.with_paths(&[CopyTrait::PATH]).first().copied();
         self.record_written_parameters(modules);
@@ -337,8 +338,15 @@ impl TypeChecker {
         if let ItemKind::RustType(binding, binders, template, clauses) = kind {
             return self.collect_rust_type(*binding, binders, template, clauses);
         }
-        if let ItemKind::Trait(binding, rust_name, self_variable, methods) = kind {
-            return self.collect_user_trait(module, *binding, rust_name, *self_variable, methods);
+        if let ItemKind::Trait(binding, rust_name, self_variable, supertraits, methods) = kind {
+            return self.collect_user_trait(
+                module,
+                *binding,
+                rust_name,
+                *self_variable,
+                supertraits,
+                methods,
+            );
         }
         Ok(())
     }
@@ -1363,14 +1371,20 @@ impl TypeChecker {
         binding: BindingId,
         rust_name: &std::rc::Rc<str>,
         self_variable: BindingId,
+        supertraits: &[crate::core::TypeBound],
         methods: &[crate::core::TraitMethod],
     ) -> Result<(), Diagnostic> {
+        let supertraits = supertraits
+            .iter()
+            .map(|bound| self.lower_type_bound(bound, &HashMap::new()))
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
         self.traits.add(
             binding,
             RustTrait {
                 path: rust_name.clone(),
                 implementors: Vec::new(),
                 help: None,
+                supertraits: supertraits.clone(),
             },
         );
         let mut typed_methods = Vec::new();
@@ -1398,6 +1412,7 @@ impl TypeChecker {
             binding,
             module,
             rust_name: rust_name.clone(),
+            supertraits,
             methods: typed_methods,
         });
         Ok(())
@@ -1499,6 +1514,62 @@ impl TypeChecker {
                     methods: typed_methods,
                 });
             }
+        }
+    }
+
+    fn report_supertraits(&mut self) {
+        let implementations: Vec<(BindingId, Type, Span)> = self
+            .trait_impls
+            .iter()
+            .map(|implementation| {
+                (
+                    implementation.trait_binding,
+                    implementation.implementor.clone(),
+                    implementation.implementor_span,
+                )
+            })
+            .collect();
+        for (trait_binding, implementor, span) in implementations {
+            self.report_missing_supertraits(trait_binding, &implementor, span);
+        }
+    }
+
+    fn report_missing_supertraits(
+        &mut self,
+        trait_binding: BindingId,
+        implementor: &Type,
+        span: Span,
+    ) {
+        let Some(rust_trait) = self.traits.get(trait_binding) else {
+            return;
+        };
+        let supertraits = rust_trait.supertraits.clone();
+        if supertraits.is_empty() {
+            return;
+        }
+        let trait_name = self.bindings.get(trait_binding).name().to_string();
+        let implementor_name = self.display().show(implementor);
+        for supertrait in supertraits {
+            if self
+                .traits
+                .satisfies(&supertrait, implementor, &|generic, bound| {
+                    self.unifier.generic_bounds(generic).contains(bound)
+                })
+            {
+                continue;
+            }
+            let supertrait_name = self.bindings.get(supertrait.binding).name().to_string();
+            let help = self
+                .traits
+                .get(supertrait.binding)
+                .and_then(|known| known.help.clone());
+            self.diagnostics.push(TypeProblems::missing_supertrait(
+                &trait_name,
+                &supertrait_name,
+                &implementor_name,
+                span,
+                help,
+            ));
         }
     }
 
@@ -1621,6 +1692,7 @@ impl TypeChecker {
                 path: path.clone(),
                 implementors,
                 help,
+                supertraits: Vec::new(),
             },
         );
         Ok(())
@@ -1725,6 +1797,9 @@ impl TypeChecker {
             return;
         }
         if self.implies(generic, &bound) {
+            if self.declared_bound_implies(generic, &bound) {
+                return;
+            }
             let implied = self.implied_bounds.entry(generic).or_default();
             if !implied.contains(&bound) {
                 implied.push(bound);
@@ -1741,6 +1816,9 @@ impl TypeChecker {
     }
 
     fn implies(&self, generic: GenericId, bound: &Bound) -> bool {
+        if self.declared_bound_implies(generic, bound) {
+            return true;
+        }
         if bound.argument.is_some() {
             return false;
         }
@@ -1753,6 +1831,26 @@ impl TypeChecker {
             }
             Admissible::Unbounded | Admissible::Open(_) => false,
         }
+    }
+
+    fn declared_bound_implies(&self, generic: GenericId, bound: &Bound) -> bool {
+        self.unifier
+            .generic_bounds(generic)
+            .iter()
+            .any(|declared| self.bound_implies(declared, bound))
+    }
+
+    fn bound_implies(&self, declared: &Bound, required: &Bound) -> bool {
+        if declared == required {
+            return true;
+        }
+        let Some(rust_trait) = self.traits.get(declared.binding) else {
+            return false;
+        };
+        rust_trait
+            .supertraits
+            .iter()
+            .any(|supertrait| self.bound_implies(supertrait, required))
     }
 
     pub(super) fn report_missing_trait(&mut self, bound: &Bound, implementor: &Type, span: Span) {

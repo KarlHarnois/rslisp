@@ -369,12 +369,9 @@ impl Expander<'_> {
             self.define_global(name, Namespace::Type, BindingKind::Trait(module), context)?;
         for method in &items[2..] {
             let method_items = method.as_list().ok_or_else(|| shape.malformed(method))?;
-            let Some(method_name) = method_items.first() else {
+            let [method_name, _, ..] = method_items else {
                 return Err(shape.malformed(method));
             };
-            if method_items.len() < 2 {
-                return Err(shape.malformed(method));
-            }
             let method = self.define_global(
                 method_name,
                 Namespace::Value,
@@ -952,6 +949,7 @@ impl Expander<'_> {
         let shape = Shape::new(KernelForm::Definition(DefinitionForm::Trait), form);
         let items = shape.at_least(2)?;
         let name = self.head_name(&shape, &items[1])?;
+        let supertraits = self.lower_supertraits(&shape, &items[1])?;
         let rust_name: Rc<str> = Rc::from(NameMangler::type_name(name.to_string().as_str()));
         let scope = self.fresh_local_scope();
         let mut self_symbol = Symbol::new("self");
@@ -983,11 +981,30 @@ impl Expander<'_> {
             },
         );
         core.items.push(Item {
-            kind: ItemKind::Trait(binding, rust_name, self_variable, methods),
+            kind: ItemKind::Trait(binding, rust_name, self_variable, supertraits, methods),
             span: form.span(),
             hidden: false,
         });
         Ok(())
+    }
+
+    fn lower_supertraits(
+        &mut self,
+        shape: &Shape<'_>,
+        head: &Form,
+    ) -> Result<Vec<TypeBound>, Diagnostic> {
+        let Some([_, supertraits @ ..]) = head.as_list() else {
+            return Ok(Vec::new());
+        };
+        supertraits
+            .iter()
+            .map(|supertrait| match supertrait.as_list() {
+                Some([name]) => self.lower_bound(name),
+                Some(_) => Err(shape
+                    .malformed_with_help(supertrait, "write a trait name, such as `(display)`")),
+                None => self.lower_bound(supertrait),
+            })
+            .collect()
     }
 
     fn lower_trait_methods(
@@ -1020,7 +1037,7 @@ impl Expander<'_> {
         let mut signature_form = signature_form.clone();
         signature_form.add_scope(lowering.scope);
         let signature = self.lower_type(&signature_form)?;
-        let TypeExprKind::Function(_, _, _) = signature.kind() else {
+        let TypeExprKind::Function(_, parameters, _) = signature.kind() else {
             return Err(lowering.shape.malformed(&signature_form));
         };
         let scheme = Self::trait_method_scheme(
@@ -1049,7 +1066,7 @@ impl Expander<'_> {
         let default = if method_items.len() > 2 {
             Some(self.lower_trait_default(
                 lowering,
-                &signature,
+                parameters,
                 method,
                 &method_items[2..],
                 &scheme,
@@ -1068,15 +1085,12 @@ impl Expander<'_> {
     fn lower_trait_default(
         &mut self,
         lowering: &TraitLowering<'_, '_>,
-        signature: &TypeExpr,
+        parameters: &[TypeExpr],
         method: &Form,
         body: &[Form],
         scheme: &TypeExpr,
         core: &mut CoreModule,
     ) -> Result<BindingId, Diagnostic> {
-        let TypeExprKind::Function(_, parameters, _) = signature.kind() else {
-            return Err(lowering.shape.malformed(method));
-        };
         let parameter_forms = parameters
             .iter()
             .enumerate()

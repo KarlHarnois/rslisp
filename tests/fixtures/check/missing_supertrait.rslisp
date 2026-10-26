@@ -1,0 +1,6 @@
+(trait (shape (display))
+  (area (fn ((ref self)) f64)))
+
+(struct circle (radius f64))
+(impl shape circle
+  (area (c) (* 3.14 (field c radius) (field c radius))))

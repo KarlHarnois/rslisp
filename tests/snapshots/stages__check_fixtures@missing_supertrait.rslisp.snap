@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/missing_supertrait.rslisp
+---
+error[L0446]: `circle` does not implement `display`, a supertrait of `shape`
+ --> check/missing_supertrait.rslisp:5:13
+  |
+5 | (impl shape circle
+  |             ^^^^^^ `circle` does not implement `display`
+  |
+  = help: implement `display` with `(display type (value) ...)`, or print the data form with `prn`

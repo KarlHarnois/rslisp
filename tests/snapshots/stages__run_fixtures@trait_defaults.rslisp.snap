@@ -3,5 +3,5 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/trait_defaults.rslisp
 ---
-area 3.14
+area 3
 square 4

@@ -14,6 +14,7 @@ pub struct RustTrait {
     pub path: Rc<str>,
     pub implementors: Vec<Implementor>,
     pub help: Option<Rc<str>>,
+    pub supertraits: Vec<Bound>,
 }
 
 impl RustTrait {

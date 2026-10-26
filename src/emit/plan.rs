@@ -205,39 +205,40 @@ impl<'p> EmitPlan<'p> {
             .collect();
         for module in modules {
             let mut uses = BTreeSet::new();
-            for binding in self.items_of(module) {
-                if let Some(definition) = self.definition(binding) {
-                    Self::collect_expr_trait_uses(&definition.value, self.program, &mut uses);
-                }
-            }
-            let impl_methods: Vec<BindingId> = self
-                .program
-                .trait_impls
-                .iter()
-                .filter(|implementation| implementation.module == module)
-                .flat_map(|implementation| implementation.methods.iter())
-                .map(|method| method.binding)
-                .collect();
-            for binding in impl_methods {
-                if let Some(definition) = self.definition(binding) {
-                    Self::collect_expr_trait_uses(&definition.value, self.program, &mut uses);
-                }
-            }
-            let defaults: Vec<BindingId> = self
-                .program
-                .trait_definitions
-                .iter()
-                .filter(|trait_definition| trait_definition.module == module)
-                .flat_map(|trait_definition| trait_definition.methods.iter())
-                .filter_map(|method| method.default)
-                .collect();
-            for binding in defaults {
-                if let Some(definition) = self.definition(binding) {
-                    Self::collect_expr_trait_uses(&definition.value, self.program, &mut uses);
-                }
-            }
+            self.collect_module_trait_uses(module, &mut uses);
+            self.collect_hidden_trait_uses(module, &mut uses);
             if !uses.is_empty() {
                 self.trait_uses.insert(module, uses);
+            }
+        }
+    }
+
+    fn collect_module_trait_uses(&self, module: ModuleId, uses: &mut BTreeSet<BindingId>) {
+        for binding in self.items_of(module) {
+            if let Some(definition) = self.definition(binding) {
+                Self::collect_expr_trait_uses(&definition.value, self.program, uses);
+            }
+        }
+    }
+
+    fn collect_hidden_trait_uses(&self, module: ModuleId, uses: &mut BTreeSet<BindingId>) {
+        let impl_methods = self
+            .program
+            .trait_impls
+            .iter()
+            .filter(|implementation| implementation.module == module)
+            .flat_map(|implementation| implementation.methods.iter())
+            .map(|method| method.binding);
+        let defaults = self
+            .program
+            .trait_definitions
+            .iter()
+            .filter(|trait_definition| trait_definition.module == module)
+            .flat_map(|trait_definition| trait_definition.methods.iter())
+            .filter_map(|method| method.default);
+        for binding in impl_methods.chain(defaults) {
+            if let Some(definition) = self.definition(binding) {
+                Self::collect_expr_trait_uses(&definition.value, self.program, uses);
             }
         }
     }
