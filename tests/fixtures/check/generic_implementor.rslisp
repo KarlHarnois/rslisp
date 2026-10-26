@@ -1,5 +1,5 @@
 (trait labelled
   (label (fn ((ref self)) string)))
 
-(impl labelled (vec a)
+(impl labelled a
   (label (items) "items"))

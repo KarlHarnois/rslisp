@@ -1,0 +1,8 @@
+(trait sized
+  (size (fn ((ref self)) usize)))
+
+(impl sized (vec (ref a))
+  (size (items) 1))
+
+(impl sized (vec (fn (a) a))
+  (size (items) 2))

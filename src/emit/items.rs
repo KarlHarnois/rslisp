@@ -376,15 +376,15 @@ impl<'a> ItemEmitter<'a> {
             let methods = self.program.trait_impls[position].methods.clone();
             let trait_path = self.plan.trait_path(trait_binding, module);
             let lifetime = self.implementor_lifetime(&implementor);
+            let params = self.program.trait_impls[position].params.clone();
             let (type_name, generics) = {
                 let types =
                     RustTypes::new(self.program, self.plan, self.unsized_parameters, module);
                 let scope = LifetimeScope::default().with_elided(lifetime.clone());
                 let type_name = types.show_in(&implementor, TypePosition::Signature, &scope);
-                let generics = lifetime
-                    .as_ref()
-                    .map_or_else(String::new, |lifetime| format!("<{lifetime}>"));
-                (type_name, generics)
+                let declared = types.generics(&params, &implementor, &HashSet::new());
+                let lifetimes: Vec<String> = lifetime.iter().cloned().collect();
+                (type_name, Self::with_lifetimes(&lifetimes, declared))
             };
             let mut body = Vec::new();
             for method in &methods {

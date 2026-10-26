@@ -19,9 +19,10 @@ use super::typed::{
 };
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
-    BindingArena, BindingId, BodyItem, CopyTrait, CoreModule, Expr, ExprKind, Item, ItemKind, Leaf,
-    ModuleId, ParsedTemplate, PrimitiveType, ReferenceKind, StructDerives, StructExpr, TypeBinder,
-    TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload as CoreVariantPayload,
+    BindingArena, BindingId, BindingKind, BodyItem, CopyTrait, CoreModule, Expr, ExprKind, Item,
+    ItemKind, Leaf, ModuleId, ParsedTemplate, PrimitiveType, ReferenceKind, StructDerives,
+    StructExpr, TypeBinder, TypeExpr, TypeExprKind, VariantDeclaration,
+    VariantPayload as CoreVariantPayload,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::source::Span;
@@ -1442,7 +1443,7 @@ impl TypeChecker {
                     continue;
                 };
                 let implementor_span = implementor.span();
-                let implementor = match self.lower_type(implementor, &HashMap::new()) {
+                let (implementor, params) = match self.lower_impl_implementor(implementor) {
                     Ok(implementor) => implementor,
                     Err(diagnostic) => {
                         self.diagnostics.push(diagnostic);
@@ -1456,7 +1457,11 @@ impl TypeChecker {
                 self.traits.add_implementor(
                     *trait_binding,
                     Implementor {
-                        scheme: Scheme::monomorphic(implementor.clone()),
+                        scheme: Scheme {
+                            lifetimes: Vec::new(),
+                            params: params.clone(),
+                            body: implementor.clone(),
+                        },
                         argument: None,
                     },
                 );
@@ -1475,11 +1480,50 @@ impl TypeChecker {
                 self.trait_impls.push(TypedTraitImpl {
                     trait_binding: *trait_binding,
                     implementor,
+                    params,
                     implementor_span,
                     module: module.id,
                     methods: typed_methods,
                 });
             }
+        }
+    }
+
+    fn lower_impl_implementor(
+        &mut self,
+        implementor: &TypeExpr,
+    ) -> Result<(Type, Vec<GenericParam>), Diagnostic> {
+        let mut params = Vec::new();
+        let mut scope = HashMap::new();
+        for variable in self.implementor_variables(implementor) {
+            let name = self.bindings.get(variable).name().to_string();
+            let param = self.new_generic(&name, Vec::new());
+            scope.insert(variable, param.id);
+            params.push(param);
+        }
+        let body = self.lower_type(implementor, &scope)?;
+        Ok((body, params))
+    }
+
+    fn implementor_variables(&self, implementor: &TypeExpr) -> Vec<BindingId> {
+        let mut found = Vec::new();
+        self.collect_implementor_variables(implementor, &mut found);
+        found
+    }
+
+    fn collect_implementor_variables(&self, type_expr: &TypeExpr, found: &mut Vec<BindingId>) {
+        if let TypeExprKind::Named(binding, arguments) = type_expr.kind()
+            && arguments.is_empty()
+            && matches!(
+                self.bindings.get(*binding).kind(),
+                BindingKind::TypeVariable
+            )
+            && !found.contains(binding)
+        {
+            found.push(*binding);
+        }
+        for part in type_expr.parts() {
+            self.collect_implementor_variables(part, found);
         }
     }
 
