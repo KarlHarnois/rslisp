@@ -35,13 +35,6 @@ impl Lifetime {
     pub fn written(binding: BindingId) -> Self {
         Self::Written(binding)
     }
-
-    pub fn binding(self) -> Option<BindingId> {
-        match self {
-            Self::Elided => None,
-            Self::Written(binding) => Some(binding),
-        }
-    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -116,14 +109,6 @@ impl Type {
 
     pub fn holds_reference(&self) -> bool {
         self.any_part(&Type::is_reference)
-    }
-
-    pub fn stores_reference(&self) -> bool {
-        match self {
-            Type::Ref(..) | Type::Mut(..) => true,
-            Type::Function(..) => false,
-            _ => self.parts().into_iter().any(Type::stores_reference),
-        }
     }
 
     pub fn without_written_lifetimes(&self) -> Type {

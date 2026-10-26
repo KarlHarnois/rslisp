@@ -1,14 +1,33 @@
 (struct snippet (text (ref str)))
+(struct (label 'a) (text (ref 'a str)))
+(enum token (symbol (ref str)) (number (ref str)))
 
 (trait finder
   (find (fn ((ref self) (ref str)) (ref str)))
   (text (fn ((ref self)) (ref str))))
 
 (impl finder snippet
-  (find (s needle) (do (len needle) (field s text)))
+  (find (s needle) (if (> (len needle) 0) (field s text) (field s text)))
   (text (s) (field s text)))
+
+(impl finder label
+  (find (l needle) (if (> (len needle) 0) (field l text) (field l text)))
+  (text (l) (field l text)))
+
+(impl finder token
+  (find (t needle) (if (> (len needle) 0) (text t) (text t)))
+  (text (t) (match t ((symbol text) text) ((number text) text))))
 
 (defn main ()
   (let s (new snippet (text "hello there")))
   (println (find s "there"))
-  (println (text s)))
+  (println (text s))
+  (let l (new label (text "label")))
+  (println (find l "bel"))
+  (println (text l))
+  (let t (token/symbol "token"))
+  (println (find t "ken"))
+  (println (text t))
+  (let n (token/number "42"))
+  (println (find n "2"))
+  (println (text n)))

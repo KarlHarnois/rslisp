@@ -35,9 +35,7 @@ impl Expander<'_> {
                 binder.span,
             ));
         }
-        let [template_form] = parameterized.body.as_slice() else {
-            return Err(shape.malformed(&items[2]));
-        };
+        let template_form = &parameterized.body[0];
         let template = Self::type_template(&shape, template_form)?;
         Self::check_type_placeholders(
             &template,

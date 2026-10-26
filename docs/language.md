@@ -638,7 +638,7 @@ fn first<'a>(a: &'a str, b: &str) -> &'a str {
 }
 ```
 
-A lifetime is declared with the type variables, as `(where ('a 'b) ...)` does. A reference names it as its first part, `(ref 'a str)` or `(mut 'a point)`. A written lifetime is exact, and the compiler adds no shared lifetime to a type that writes one.
+A lifetime is declared with the type variables, as `(where ('a 'b) ...)` does. A reference names it as its first part, `(ref 'a str)` or `(mut 'a point)`. A written lifetime is exact, and the compiler adds no shared lifetime to a type that writes one. A lifetime that links positions, as `'a` links the first parameter and the result, stays named in the emitted Rust. One that appears once and nowhere in the result emits as Rust's elided form, so `b` in `first` above becomes `b: &str`.
 
 A struct whose field stores a borrow gets one inferred lifetime parameter before its type parameters. The source keeps writing the bare type name, and the compiler fills the lifetime at each use:
 

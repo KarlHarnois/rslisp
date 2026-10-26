@@ -19,6 +19,7 @@ pub enum TypePosition {
 pub struct LifetimeScope {
     names: HashMap<BindingId, String>,
     elided: Option<String>,
+    elided_written: HashSet<BindingId>,
 }
 
 impl LifetimeScope {
@@ -26,6 +27,7 @@ impl LifetimeScope {
         Self {
             names,
             elided: None,
+            elided_written: HashSet::new(),
         }
     }
 
@@ -34,8 +36,17 @@ impl LifetimeScope {
         self
     }
 
+    pub fn eliding(mut self, binding: BindingId) -> Self {
+        self.elided_written.insert(binding);
+        self
+    }
+
     pub fn name_of(&self, binding: BindingId) -> Option<String> {
         self.names.get(&binding).cloned()
+    }
+
+    pub fn is_elided(&self, binding: BindingId) -> bool {
+        self.elided_written.contains(&binding)
     }
 
     pub fn elided(&self) -> Option<&str> {
@@ -335,22 +346,24 @@ impl<'a> RustTypes<'a> {
     }
 
     fn lifetime_parameter_count(&self, binding: BindingId) -> usize {
-        if let Some(definition) = self.program.structs.get(binding) {
-            if !definition.lifetimes.is_empty() {
-                return definition.lifetimes.len();
+        let lifetimes = self
+            .program
+            .structs
+            .get(binding)
+            .map(|definition| &definition.lifetimes)
+            .or_else(|| {
+                self.program
+                    .enums
+                    .get(binding)
+                    .map(|definition| &definition.lifetimes)
+            });
+        lifetimes.map_or(0, |lifetimes| {
+            if lifetimes.is_empty() {
+                usize::from(self.program.definition_holds_borrow(binding))
+            } else {
+                lifetimes.len()
             }
-            return usize::from(self.program.definition_holds_borrow(binding));
-        }
-        if let Some(definition) = self.program.enums.get(binding) {
-            if definition.rust.is_some() {
-                return 0;
-            }
-            if !definition.lifetimes.is_empty() {
-                return definition.lifetimes.len();
-            }
-            return usize::from(self.program.definition_holds_borrow(binding));
-        }
-        0
+        })
     }
 
     fn lifetime_argument(position: TypePosition, scope: &LifetimeScope) -> String {
@@ -423,6 +436,7 @@ impl<'a> RustTypes<'a> {
                 Some("'static".to_string())
             }
             Lifetime::Elided => scope.elided().map(str::to_string),
+            Lifetime::Written(binding) if scope.is_elided(binding) => None,
             Lifetime::Written(binding) => Some(
                 scope
                     .name_of(binding)

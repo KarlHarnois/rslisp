@@ -73,25 +73,33 @@ impl<'a> ModeRewrite<'a> {
             Self::replace_parameters(&mut definition.value.ty, params);
             Self::replace_parameters(&mut definition.scheme.body, params);
         }
+        self.rewrite_value(definition, params.as_deref());
+        Self::carry_definition_lifetimes(definition);
+    }
+
+    fn rewrite_value(&mut self, definition: &mut TypedDefinition, params: Option<&[Type]>) {
         match &mut definition.value.kind {
             TypedExprKind::Fn(_) => {
                 self.rewrite_params(&mut definition.value);
-                let current = params.as_deref();
                 for child in definition.value.children_mut() {
-                    self.expr(child, current);
+                    self.expr(child, params);
                 }
             }
             _ => self.expr(&mut definition.value, None),
         }
+    }
+
+    fn carry_definition_lifetimes(definition: &mut TypedDefinition) {
         Self::carry_function_lifetimes(&definition.scheme.body, &mut definition.value.ty);
-        if let TypedExprKind::Fn(lambda) = &mut definition.value.kind {
-            let written = definition.scheme.body.clone();
-            if let Type::Function(_, parameters, _) = &written {
-                let lambda = Rc::make_mut(lambda);
-                for (param, written) in lambda.params.iter_mut().zip(parameters) {
-                    Self::carry_lifetimes(written, &mut param.ty);
-                }
-            }
+        let TypedExprKind::Fn(lambda) = &mut definition.value.kind else {
+            return;
+        };
+        let Type::Function(_, parameters, _) = &definition.scheme.body else {
+            return;
+        };
+        let lambda = Rc::make_mut(lambda);
+        for (param, written) in lambda.params.iter_mut().zip(parameters) {
+            Self::carry_type_lifetimes(written, &mut param.ty);
         }
     }
 
@@ -99,7 +107,7 @@ impl<'a> ModeRewrite<'a> {
         if let Type::Function(_, parameters, _) = function {
             let mut carried = params.to_vec();
             for (written, replacement) in parameters.iter().zip(&mut carried) {
-                Self::carry_lifetimes(written, replacement);
+                Self::carry_type_lifetimes(written, replacement);
             }
             *parameters = carried;
         }
@@ -112,35 +120,35 @@ impl<'a> ModeRewrite<'a> {
         ) = (written, value)
         {
             for (written, value) in written_parameters.iter().zip(parameters.iter_mut()) {
-                Self::carry_lifetimes(written, value);
+                Self::carry_type_lifetimes(written, value);
             }
-            Self::carry_lifetimes(written_result, result);
+            Self::carry_type_lifetimes(written_result, result);
         }
     }
 
-    fn carry_lifetimes(written: &Type, value: &mut Type) {
+    fn carry_type_lifetimes(written: &Type, value: &mut Type) {
         match (written, value) {
             (Type::Ref(written_lifetime, written), Type::Ref(lifetime, value))
             | (Type::Mut(written_lifetime, written), Type::Mut(lifetime, value)) => {
                 if matches!(written_lifetime, Lifetime::Written(_)) {
                     *lifetime = *written_lifetime;
                 }
-                Self::carry_lifetimes(written, value);
+                Self::carry_type_lifetimes(written, value);
             }
             (
                 Type::Function(_, written_parameters, written_result),
                 Type::Function(_, parameters, result),
             ) => {
                 for (written, value) in written_parameters.iter().zip(parameters.iter_mut()) {
-                    Self::carry_lifetimes(written, value);
+                    Self::carry_type_lifetimes(written, value);
                 }
-                Self::carry_lifetimes(written_result, result);
+                Self::carry_type_lifetimes(written_result, result);
             }
             (Type::Named(written_binding, written), Type::Named(binding, value))
                 if written_binding == binding =>
             {
                 for (written, value) in written.iter().zip(value.iter_mut()) {
-                    Self::carry_lifetimes(written, value);
+                    Self::carry_type_lifetimes(written, value);
                 }
             }
             _ => {}

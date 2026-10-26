@@ -105,9 +105,11 @@ impl OwnershipChecker {
                     .diagnostics
                     .into_iter()
                     .for_each(|diagnostic| diagnostics.push(diagnostic));
-                ReturnedBorrows::check(definition)
-                    .into_iter()
-                    .for_each(|diagnostic| diagnostics.push(diagnostic));
+                if let crate::types::Type::Function(_, _, result) = &definition.value.ty {
+                    ReturnedBorrows::check(lambda, result)
+                        .into_iter()
+                        .for_each(|diagnostic| diagnostics.push(diagnostic));
+                }
             }
             let needs = OwnershipNeeds::new(rewrite.function_params())
                 .check(definition.binding, &definition.value);

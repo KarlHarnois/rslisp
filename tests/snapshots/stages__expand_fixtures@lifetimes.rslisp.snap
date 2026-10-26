@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/lifetimes.rslisp
+---
+(def first (fn (a b) a))
+(type first (where ('a 'b) (fn ((ref 'a str) (ref 'b str)) (ref 'a str))))
+(struct (label 'a_2) (text (ref 'a_2 str)))
+(enum (tagged 'a_3) (value (ref 'a_3 str)))

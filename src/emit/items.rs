@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use super::expressions::ExpressionEmitter;
 use super::fragment::{Code, Fragment};
@@ -546,8 +546,17 @@ impl<'a> ItemEmitter<'a> {
         let mut emitter = self.expressions(info.module, &definition.value);
         emitter.prepare_tail_loop(definition.binding, lambda);
         let types = emitter.types();
+        let used = Self::used_written_lifetimes(&definition.value);
         let inferred = self.inferred_lifetime(&definition.scheme.lifetimes, &definition.value);
-        let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
+        let scope =
+            self.lifetime_scope_used(&definition.scheme.lifetimes, &used, inferred.as_deref());
+        let written: Vec<BindingId> = definition
+            .scheme
+            .lifetimes
+            .iter()
+            .copied()
+            .filter(|binding| used.contains(binding))
+            .collect();
         let params: Vec<String> = lambda
             .params
             .iter()
@@ -569,7 +578,7 @@ impl<'a> ItemEmitter<'a> {
         };
         let literal_generics = LiteralGenerics::of(&definition.value);
         let generics = Self::with_lifetimes(
-            &self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),
+            &self.declared_lifetimes(inferred.as_deref(), &written),
             types.generics(
                 &definition.scheme.params,
                 &definition.scheme.body,
@@ -881,19 +890,71 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn unused_lifetime_name_from(used: &[String]) -> String {
-        for position in 0.. {
-            let letter = u8::try_from(position)
-                .ok()
-                .and_then(|offset| b'a'.checked_add(offset))
-                .filter(|letter| letter.is_ascii_lowercase())
-                .map(char::from);
-            let name =
-                letter.map_or_else(|| format!("'a{position}"), |letter| format!("'{letter}"));
+        let mut position = 0;
+        loop {
+            let name = if position < 26 {
+                format!(
+                    "'{}",
+                    char::from(b'a' + u8::try_from(position).expect("fewer than 26"))
+                )
+            } else {
+                format!("'a{position}")
+            };
             if !used.contains(&name) {
                 return name;
             }
+            position += 1;
         }
-        unreachable!("a finite set of lifetimes leaves a name")
+    }
+
+    fn used_written_lifetimes(value: &TypedExpr) -> HashSet<BindingId> {
+        let mut counts: HashMap<BindingId, usize> = HashMap::new();
+        Self::count_written_lifetimes(&value.ty, &mut counts);
+        counts
+            .into_iter()
+            .filter(|(_, count)| *count > 1)
+            .map(|(binding, _)| binding)
+            .collect()
+    }
+
+    fn count_written_lifetimes(ty: &Type, counts: &mut HashMap<BindingId, usize>) {
+        match ty {
+            Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
+                if let Lifetime::Written(binding) = lifetime {
+                    *counts.entry(*binding).or_default() += 1;
+                }
+                Self::count_written_lifetimes(inner, counts);
+            }
+            Type::Named(_, arguments) => {
+                for argument in arguments {
+                    Self::count_written_lifetimes(argument, counts);
+                }
+            }
+            Type::Function(_, parameters, result) => {
+                for parameter in parameters {
+                    Self::count_written_lifetimes(parameter, counts);
+                }
+                Self::count_written_lifetimes(result, counts);
+            }
+            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => {}
+        }
+    }
+
+    fn lifetime_scope_used(
+        &self,
+        lifetimes: &[BindingId],
+        used: &HashSet<BindingId>,
+        elided: Option<&str>,
+    ) -> LifetimeScope {
+        lifetimes
+            .iter()
+            .fold(self.lifetime_scope(lifetimes, elided), |scope, binding| {
+                if used.contains(binding) {
+                    scope
+                } else {
+                    scope.eliding(*binding)
+                }
+            })
     }
 
     fn lifetime_scope(&self, lifetimes: &[BindingId], elided: Option<&str>) -> LifetimeScope {
@@ -972,12 +1033,7 @@ impl<'a> ItemEmitter<'a> {
     fn receiver_lifetime(&self, first: &TypedBinder, scope: &LifetimeScope) -> Option<String> {
         match first.ty.reference_lifetime() {
             Some(Lifetime::Elided) => scope.elided().map(str::to_string),
-            Some(Lifetime::Written(binding)) => Some(
-                scope
-                    .name_of(binding)
-                    .unwrap_or_else(|| RustTypes::binding_lifetime(self.program, binding)),
-            ),
-            None => None,
+            _ => None,
         }
     }
 

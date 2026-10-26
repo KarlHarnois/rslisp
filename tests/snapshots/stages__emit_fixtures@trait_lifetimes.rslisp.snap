@@ -8,12 +8,32 @@ struct Snippet<'a> {
     text: &'a str,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Label<'a> {
+    text: &'a str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Token<'a> {
+    Symbol(&'a str),
+    Number(&'a str),
+}
+
 fn main() {
     let s = Snippet {
         text: "hello there",
     };
     println!("{}", s.find("there"));
-    println!("{}", s.text())
+    println!("{}", s.text());
+    let l = Label { text: "label" };
+    println!("{}", l.find("bel"));
+    println!("{}", l.text());
+    let t = Token::Symbol("token");
+    println!("{}", t.find("ken"));
+    println!("{}", t.text());
+    let n = Token::Number("42");
+    println!("{}", n.find("2"));
+    println!("{}", n.text())
 }
 
 trait Finder {
@@ -23,10 +43,42 @@ trait Finder {
 
 impl<'a> Finder for Snippet<'a> {
     fn find(&self, needle: &str) -> &str {
-        needle.len();
-        self.text
+        if needle.len() > 0 {
+            self.text
+        } else {
+            self.text
+        }
     }
     fn text(&self) -> &str {
         self.text
+    }
+}
+
+impl<'a> Finder for Label<'a> {
+    fn find(&self, needle: &str) -> &str {
+        if needle.len() > 0 {
+            self.text
+        } else {
+            self.text
+        }
+    }
+    fn text(&self) -> &str {
+        self.text
+    }
+}
+
+impl<'a> Finder for Token<'a> {
+    fn find(&self, needle: &str) -> &str {
+        if needle.len() > 0 {
+            self.text()
+        } else {
+            self.text()
+        }
+    }
+    fn text(&self) -> &str {
+        match self {
+            Token::Symbol(text) => text,
+            Token::Number(text) => text,
+        }
     }
 }

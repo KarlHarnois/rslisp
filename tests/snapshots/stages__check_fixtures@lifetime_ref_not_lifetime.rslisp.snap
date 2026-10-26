@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/lifetime_ref_not_lifetime.rslisp
+---
+error[L0228]: malformed `ref` type
+ --> check/lifetime_ref_not_lifetime.rslisp:1:17
+  |
+1 | (type pick (fn ((ref i64 'a)) unit))
+  |                 ^^^^^^^^^^^^ this does not fit the shape of the type
+  |
+  = help: write it as `(ref type)`

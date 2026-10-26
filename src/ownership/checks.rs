@@ -5,20 +5,14 @@ use crate::core::{BindingId, ReferenceKind};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Borrow, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl,
-    TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf,
+    Borrow, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
+    TypedExprKind, TypedLambda, TypedLeaf,
 };
 
 pub struct ReturnedBorrows;
 
 impl ReturnedBorrows {
-    pub fn check(definition: &TypedDefinition) -> Option<Diagnostic> {
-        let TypedExprKind::Fn(lambda) = &definition.value.kind else {
-            return None;
-        };
-        let Type::Function(_, _, result) = &definition.value.ty else {
-            return None;
-        };
+    pub fn check(lambda: &TypedLambda, result: &Type) -> Option<Diagnostic> {
         if !result.holds_reference() {
             return None;
         }

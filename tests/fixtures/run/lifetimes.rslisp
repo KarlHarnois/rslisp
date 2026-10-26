@@ -8,11 +8,18 @@
 
 (struct snippet (text (ref str)))
 (defn snippet-of (source) (new snippet (text source)))
+(defn literal-snippet () (new snippet (text "hi")))
 
 (struct (label 'a) (text (ref 'a str)))
 (defn label-of (source) (new label (text source)))
 
 (enum token (symbol (ref str)) (number (ref str)))
+
+(enum (tagged 'a) (value (ref 'a str)))
+
+(type choose (where (a) (fn (a a (ref str) (ref str)) (ref str))))
+(defn choose (x y s t) t)
+
 (defn token-text (token)
   (match token
     ((symbol text) text)
@@ -25,6 +32,10 @@
   (let source "hello there")
   (let shorter (snippet-of source))
   (println (str "snippet " (field shorter text)))
+  (println (str "literal " (field (literal-snippet) text)))
   (let named (label-of source))
   (println (str "label " (field named text)))
-  (println (str "token " (token-text (token/symbol "hi")))))
+  (println (str "token " (token-text (token/symbol "hi"))))
+  (println (str "number " (token-text (token/number "42"))))
+  (println (match (tagged/value "tagged") ((value text) text)))
+  (println (choose 1 2 "hi" "there")))

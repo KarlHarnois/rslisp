@@ -1,0 +1,2 @@
+(type pick (fn ((ref i64 'a)) unit))
+(defn pick (value) (do))
