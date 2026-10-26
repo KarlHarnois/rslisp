@@ -1,0 +1,6 @@
+(defn report (line number)
+  (eprintln "bad line " number ": " line))
+
+(defn main ()
+  (eprintln "ready")
+  (report "oops" 3))
