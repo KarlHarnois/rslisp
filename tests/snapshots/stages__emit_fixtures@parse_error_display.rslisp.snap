@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/parse_error_display.rslisp
+---
+fn show_error(text: &str) {
+    let parsed: Result<i64, std::num::ParseIntError> = text.parse::<i64>();
+    let reason: std::num::ParseIntError = parsed.unwrap_err();
+    let message = reason.to_string();
+    println!("{}", message);
+    println!("{:?}", reason)
+}
+
+fn main() {
+    show_error("nope")
+}

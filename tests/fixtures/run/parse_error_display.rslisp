@@ -1,0 +1,6 @@
+(defn main ()
+  (let (parsed (result i64 _)) (parse "nope"))
+  (let reason (unwrap-err parsed))
+  (let message (to-string reason))
+  (println message)
+  (prn reason))
