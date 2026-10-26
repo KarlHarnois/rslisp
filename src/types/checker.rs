@@ -2008,6 +2008,9 @@ impl TypeChecker {
             }
             return;
         }
+        if self.apply_declared_bound(generic, &bound, span) {
+            return;
+        }
         if self.implies(generic, &bound) {
             if self.declared_bound_implies(generic, &bound) {
                 return;
@@ -2025,6 +2028,22 @@ impl TypeChecker {
             span,
         );
         self.diagnostics.push(diagnostic);
+    }
+
+    fn apply_declared_bound(&mut self, generic: GenericId, bound: &Bound, span: Span) -> bool {
+        let Some(required) = &bound.argument else {
+            return false;
+        };
+        let declared: Vec<Type> = self
+            .unifier
+            .generic_bounds(generic)
+            .iter()
+            .filter(|declared| declared.binding == bound.binding)
+            .filter_map(|declared| declared.argument.clone())
+            .collect();
+        declared
+            .into_iter()
+            .any(|declared| self.unifier.unify(&declared, required, span).is_ok())
     }
 
     fn implies(&self, generic: GenericId, bound: &Bound) -> bool {
