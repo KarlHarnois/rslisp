@@ -2016,7 +2016,9 @@ impl<'a> ExpressionEmitter<'a> {
         argument: &TypedArgument,
         context: TypeContext,
     ) -> Option<Code> {
-        if argument.borrow != Borrow::Deref(1) || !self.is_borrowed_index_call(&argument.value) {
+        if !matches!(argument.borrow, Borrow::Deref(1) | Borrow::Collapse(1))
+            || !self.is_borrowed_index_call(&argument.value)
+        {
             return None;
         }
         Some(

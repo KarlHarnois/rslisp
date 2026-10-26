@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/at_reference_element.rslisp
+---
+fn first_word(text: &str) -> &str {
+    text.trim()
+}
+
+fn main() {
+    let fields = "a b".split(" ").collect::<Vec<_>>();
+    println!("{}", first_word(fields[1]))
+}
