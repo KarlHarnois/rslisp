@@ -380,6 +380,7 @@ impl<'a> CorePrinter<'a> {
             }
             TypeExprKind::Hole => "_".to_string(),
             TypeExprKind::Where(binders, inner) => self.where_type(binders, inner),
+            TypeExprKind::Trait(binding) => self.name(*binding),
             TypeExprKind::With(implementor, argument) => Self::list(
                 "with",
                 vec![self.type_expr(implementor), self.type_expr(argument)],

@@ -58,6 +58,7 @@ pub enum TypeExprKind {
     Hole,
     Where(Vec<TypeBinder>, Box<TypeExpr>),
     With(Box<TypeExpr>, Box<TypeExpr>),
+    Trait(BindingId),
 }
 
 #[derive(Clone, Debug)]
@@ -94,7 +95,8 @@ impl TypeExpr {
             TypeExprKind::Primitive(_)
             | TypeExprKind::Hole
             | TypeExprKind::Where(..)
-            | TypeExprKind::With(..) => Vec::new(),
+            | TypeExprKind::With(..)
+            | TypeExprKind::Trait(_) => Vec::new(),
         }
     }
 

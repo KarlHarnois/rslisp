@@ -104,7 +104,7 @@ impl ParameterUsage {
                 self.visit(inner, enum_binding, variable, inside_self);
             }
             TypeExprKind::Primitive(_) | TypeExprKind::Hole => {}
-            TypeExprKind::Where(..) | TypeExprKind::With(..) => {}
+            TypeExprKind::Where(..) | TypeExprKind::With(..) | TypeExprKind::Trait(_) => {}
         }
     }
 
@@ -680,6 +680,9 @@ impl TypeChecker {
         span: Span,
         pass: ObligationPass,
     ) {
+        if self.is_boxed_trait(implementor, bound.binding) {
+            return;
+        }
         match self.traits.select(&bound, implementor) {
             Selection::Implemented {
                 requirements,
@@ -1602,6 +1605,18 @@ impl TypeChecker {
                 });
             }
         }
+    }
+
+    fn is_boxed_trait(&self, implementor: &Type, trait_binding: BindingId) -> bool {
+        let Some(box_binding) = self.box_binding else {
+            return false;
+        };
+        matches!(
+            implementor,
+            Type::Named(binding, arguments)
+                if *binding == box_binding
+                    && matches!(arguments.as_slice(), [Type::TraitObject(object)] if *object == trait_binding)
+        )
     }
 
     fn report_supertraits(&mut self) {

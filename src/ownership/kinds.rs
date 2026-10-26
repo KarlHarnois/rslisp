@@ -340,6 +340,7 @@ impl<'a> ClosureKinds<'a> {
             TypedExprKind::Try { .. } | TypedExprKind::Borrow(..) | TypedExprKind::Deref(_) => {
                 self.scan_written(expr, kind, own)
             }
+            TypedExprKind::TraitObject(value, _) => self.scan_expression(value, own, Usage::Move),
             _ => self.scan_value(kind, own),
         }
     }
@@ -899,7 +900,8 @@ impl<'a> ClosureKinds<'a> {
             }
             TypedExprKind::Try { value, .. }
             | TypedExprKind::Borrow(_, value)
-            | TypedExprKind::Deref(value) => {
+            | TypedExprKind::Deref(value)
+            | TypedExprKind::TraitObject(value, _) => {
                 self.require_expression(value, params, nested, calls, required)
             }
             TypedExprKind::Struct(_) | TypedExprKind::Variant(..) | TypedExprKind::Assoc(..) => {

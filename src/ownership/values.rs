@@ -98,6 +98,7 @@ impl<'a> FunctionValueModes<'a> {
             TypedExprKind::Struct(structure) => self.structure(structure, ty, current),
             TypedExprKind::Variant(_, arguments) => self.expressions(arguments, current),
             TypedExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item, current),
+            TypedExprKind::TraitObject(value, _) => self.expr(value, current),
             _ => self.value_kind(kind, current),
         }
     }

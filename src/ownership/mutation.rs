@@ -66,6 +66,7 @@ impl ChangedValues {
             TypedExprKind::Struct(structure) => self.structure(structure, enclosing),
             TypedExprKind::Variant(_, arguments) => self.expressions(arguments, enclosing),
             TypedExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item, enclosing),
+            TypedExprKind::TraitObject(value, _) => self.expr(value, enclosing),
             TypedExprKind::Fn(lambda) => self.block(&lambda.body, enclosing),
             _ => self.value_kind(expr, kind, enclosing),
         }

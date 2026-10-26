@@ -17,8 +17,8 @@ impl Template {
     const TEMPORARY_PREFIX: &str = "template_argument_";
     const UNARY_OPERATORS: [char; 4] = ['-', '!', '*', '&'];
     const POSTFIX_OPERATORS: [char; 4] = ['.', '[', '(', '?'];
-    const SEPARATORS_BEFORE: [char; 2] = ['(', ','];
-    const SEPARATORS_AFTER: [char; 2] = [',', ')'];
+    const SEPARATORS_BEFORE: [char; 3] = ['(', ',', '['];
+    const SEPARATORS_AFTER: [char; 3] = [',', ')', ']'];
 
     pub fn new(text: &str) -> Self {
         Self {

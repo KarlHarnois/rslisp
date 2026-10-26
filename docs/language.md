@@ -608,6 +608,8 @@ A trait emits in its own module's Rust `mod`, with the visibility the emitter gi
 
 A method is an ordinary function: `(area c)` is a call, and `(map shapes area)` passes the method as a value. A call on an unknown type adds the trait's bound, as `<` adds `ord`, and a written signature stays exact.
 
+In a type position, `(box shape)` where `shape` is a trait emits `Box<dyn Shape>`. A `(box-new value)` whose expected type is `(box shape)` emits the coercion to the trait object, and the only allocation is the `box-new` the source writes. A boxed value calls the trait's methods as any value does, as `(area shape)` does. A trait object needs the compiler because only the compiler knows a trait's implementors and emits the coercion.
+
 `trait` and `impl` are kernel forms. A macro returns a form and cannot emit a Rust `trait` or `impl` item, and only the compiler can add a trait and its implementors to the trait table. A method call needs no kernel form: each method is an ordinary generic function, so the existing call, inference and emission paths handle it.
 
 A `rust-trait` method needs no kernel form beyond the `impl` item it lets the program write. The prelude states the method's name and signature, and the compiler reads them from the `rust-trait` binding, so no Rust fact about the trait is restated in Rust. The `display` form is a prelude macro over `impl`, because a macro returns a form and cannot emit the Rust `impl` item itself.

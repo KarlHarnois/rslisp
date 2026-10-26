@@ -58,6 +58,7 @@ impl<'a> UsageCollector<'a> {
             TypedExprKind::Struct(structure) => self.structure(structure, context),
             TypedExprKind::Variant(_, arguments) => self.expressions(arguments),
             TypedExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item),
+            TypedExprKind::TraitObject(value, _) => self.expr(value, context),
             _ => self.value_kind(expr, kind),
         }
     }

@@ -46,6 +46,7 @@ pub enum Type {
     Function(ClosureKind, Vec<Type>, Box<Type>),
     Ref(Lifetime, Box<Type>),
     Mut(Lifetime, Box<Type>),
+    TraitObject(BindingId),
 }
 
 impl Type {
@@ -161,7 +162,7 @@ impl Type {
             Type::Mut(lifetime, inner) => {
                 Type::Mut(*lifetime, Box::new(inner.substitute_vars(replacements)))
             }
-            Type::Generic(_) | Type::Primitive(_) => self.clone(),
+            Type::Generic(_) | Type::Primitive(_) | Type::TraitObject(_) => self.clone(),
         }
     }
 
@@ -185,7 +186,7 @@ impl Type {
             Type::Mut(lifetime, inner) => {
                 Type::Mut(*lifetime, Box::new(inner.substitute(replacements)))
             }
-            Type::Var(_) | Type::Primitive(_) => self.clone(),
+            Type::Var(_) | Type::Primitive(_) | Type::TraitObject(_) => self.clone(),
         }
     }
 
@@ -204,14 +205,18 @@ impl Type {
                 .chain(std::iter::once(result.as_ref()))
                 .collect(),
             Type::Ref(_, inner) | Type::Mut(_, inner) => vec![inner],
-            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => Vec::new(),
+            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) | Type::TraitObject(_) => {
+                Vec::new()
+            }
         }
     }
 
     pub fn shares_head_with(&self, other: &Type) -> bool {
         let same_constructor = match (self, other) {
             (Type::Named(left, _), Type::Named(right, _)) => left == right,
-            (Type::Var(_) | Type::Generic(_) | Type::Primitive(_), _) => self == other,
+            (Type::Var(_) | Type::Generic(_) | Type::Primitive(_) | Type::TraitObject(_), _) => {
+                self == other
+            }
             _ => std::mem::discriminant(self) == std::mem::discriminant(other),
         };
         same_constructor && self.parts().len() == other.parts().len()

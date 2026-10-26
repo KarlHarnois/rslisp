@@ -28,6 +28,7 @@ impl<'a> TypeDisplay<'a> {
             Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
                 self.reference(shown, *lifetime, inner)
             }
+            Type::TraitObject(binding) => self.bindings.get(*binding).name().to_string(),
         }
     }
 
