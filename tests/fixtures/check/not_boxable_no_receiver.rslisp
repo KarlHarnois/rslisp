@@ -1,0 +1,5 @@
+(trait shape
+  (make (fn (i64) f64)))
+
+(type take (fn ((box shape)) unit))
+(defn take (value) (do))

@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/not_boxable_no_receiver.rslisp
+---
+error[L0448]: `shape` cannot be a trait object
+ --> check/not_boxable_no_receiver.rslisp:4:22
+  |
+4 | (type take (fn ((box shape)) unit))
+  |                      ^^^^^ `make` has no receiver
+  |
+  = help: give the method a `(ref self)` or `(mut self)` receiver

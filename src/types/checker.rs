@@ -687,22 +687,7 @@ impl TypeChecker {
             Selection::Implemented {
                 requirements,
                 argument,
-            } => {
-                if let (Some(argument), Some(expected)) = (argument, &bound.argument)
-                    && self.unifier.unify(expected, &argument, span).is_err()
-                {
-                    self.report_missing_trait(&bound, implementor, span);
-                    return;
-                }
-                for requirement in requirements {
-                    let required = Obligation {
-                        bound: requirement.bound,
-                        implementor: requirement.implementor,
-                        span,
-                    };
-                    self.discharge(required, pass);
-                }
-            }
+            } => self.adopt_selection(bound, implementor, requirements, argument, span, pass),
             Selection::Missing if !implementor.has_vars() => {
                 self.report_missing_trait(&bound, implementor, span)
             }
@@ -714,6 +699,31 @@ impl TypeChecker {
                 },
                 pass,
             ),
+        }
+    }
+
+    fn adopt_selection(
+        &mut self,
+        bound: Bound,
+        implementor: &Type,
+        requirements: Vec<super::selection::Requirement>,
+        argument: Option<Type>,
+        span: Span,
+        pass: ObligationPass,
+    ) {
+        if let (Some(argument), Some(expected)) = (argument, &bound.argument)
+            && self.unifier.unify(expected, &argument, span).is_err()
+        {
+            self.report_missing_trait(&bound, implementor, span);
+            return;
+        }
+        for requirement in requirements {
+            let required = Obligation {
+                bound: requirement.bound,
+                implementor: requirement.implementor,
+                span,
+            };
+            self.discharge(required, pass);
         }
     }
 
@@ -1453,6 +1463,7 @@ impl TypeChecker {
         let mut typed_methods = Vec::new();
         for method in methods {
             let receiver = Self::receiver_kind(&method.signature, self_variable);
+            let returns_self = Self::trait_method_returns_self(&method.signature, self_variable);
             self.synthetic_bindings.insert(method.binding);
             if let Some(default) = method.default {
                 self.synthetic_bindings.insert(default);
@@ -1469,6 +1480,7 @@ impl TypeChecker {
                 binding: method.binding,
                 receiver,
                 default: method.default,
+                returns_self,
             });
         }
         self.trait_definitions.push(TypedTrait {
@@ -1480,6 +1492,73 @@ impl TypeChecker {
             methods: typed_methods,
         });
         Ok(())
+    }
+
+    fn trait_method_returns_self(signature: &TypeExpr, self_variable: BindingId) -> bool {
+        let TypeExprKind::Function(_, _, result) = signature.kind() else {
+            return false;
+        };
+        matches!(
+            result.kind(),
+            TypeExprKind::Named(binding, arguments)
+                if *binding == self_variable && arguments.is_empty()
+        )
+    }
+
+    pub(super) fn check_boxable(&mut self, trait_binding: BindingId, span: Span) {
+        let trait_name = self.bindings.get(trait_binding).name().to_string();
+        let Some(definition) = self
+            .trait_definitions
+            .iter()
+            .find(|definition| definition.binding == trait_binding)
+        else {
+            return;
+        };
+        if let Some(associated) = self
+            .traits
+            .get(trait_binding)
+            .and_then(|rust_trait| rust_trait.associated.clone())
+        {
+            self.diagnostics.push(TypeProblems::not_boxable(
+                &trait_name,
+                format!("it declares the associated type `{associated}`"),
+                "a trait with an associated type cannot be a trait object",
+                span,
+            ));
+            return;
+        }
+        if let Some((blocker, help)) = self.box_blocker(definition) {
+            self.diagnostics
+                .push(TypeProblems::not_boxable(&trait_name, blocker, help, span));
+        }
+    }
+
+    fn box_blocker(&self, definition: &TypedTrait) -> Option<(String, &'static str)> {
+        for method in &definition.methods {
+            let name = self.bindings.get(method.binding).name().to_string();
+            if method.returns_self {
+                return Some((
+                    format!("`{name}` returns `self` by value"),
+                    "return a reference or another type, not the implementor's own type",
+                ));
+            }
+            match method.receiver {
+                Some(ReceiverKind::Shared | ReceiverKind::Mutable) => continue,
+                Some(ReceiverKind::Owned) => {
+                    return Some((
+                        format!("`{name}` takes `self` by value"),
+                        "take the receiver by reference, as `(ref self)` or `(mut self)`",
+                    ));
+                }
+                None => {
+                    return Some((
+                        format!("`{name}` has no receiver"),
+                        "give the method a `(ref self)` or `(mut self)` receiver",
+                    ));
+                }
+            }
+        }
+        None
     }
 
     fn receiver_kind(signature: &TypeExpr, self_variable: BindingId) -> Option<ReceiverKind> {
@@ -1540,6 +1619,9 @@ impl TypeChecker {
                         Ok(implementor) => implementor,
                         Err(diagnostic) => {
                             self.diagnostics.push(diagnostic);
+                            for method in methods {
+                                self.failed_bindings.insert(method.binding);
+                            }
                             continue;
                         }
                     };

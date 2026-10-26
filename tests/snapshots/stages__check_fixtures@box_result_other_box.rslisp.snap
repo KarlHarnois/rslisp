@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/box_result_other_box.rslisp
+---
+error[L0401]: mismatched types
+ --> check/box_result_other_box.rslisp:8:9
+  |
+8 |   (take (vec 1 2)))
+  |         ^^^^^^^^^ expected `(box shape)`, found `(vec _)`

@@ -751,9 +751,18 @@ impl TypeProblems {
         .with_help("write `(with type type)` as an entry of `rust-trait`")
     }
 
+    pub fn not_boxable(trait_name: &str, blocker: String, help: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::OBJECT_SAFETY,
+            format!("`{trait_name}` cannot be a trait object"),
+            Label::new(span, blocker),
+        )
+        .with_help(help)
+    }
+
     pub fn trait_outside_box(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::MISMATCHED_TYPES,
+            DiagnosticCode::TRAIT_OUTSIDE_BOX,
             "a trait is a type only inside `(box ...)`",
             Label::new(span, format!("`{name}` is a trait")),
         )

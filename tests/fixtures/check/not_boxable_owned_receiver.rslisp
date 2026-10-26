@@ -1,0 +1,5 @@
+(trait shape
+  (area (fn (self) f64)))
+
+(type take (fn ((box shape)) unit))
+(defn take (value) (do))

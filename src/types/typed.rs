@@ -251,6 +251,7 @@ pub struct TypedTraitMethod {
     pub binding: BindingId,
     pub receiver: Option<ReceiverKind>,
     pub default: Option<BindingId>,
+    pub returns_self: bool,
 }
 
 #[derive(Clone)]

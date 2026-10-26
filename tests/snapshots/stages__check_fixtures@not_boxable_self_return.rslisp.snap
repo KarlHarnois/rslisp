@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/not_boxable_self_return.rslisp
+---
+error[L0448]: `shape` cannot be a trait object
+ --> check/not_boxable_self_return.rslisp:4:22
+  |
+4 | (type take (fn ((box shape)) unit))
+  |                      ^^^^^ `copy` returns `self` by value
+  |
+  = help: return a reference or another type, not the implementor's own type

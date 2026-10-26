@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/trait_outside_box.rslisp
+---
+error[L0449]: a trait is a type only inside `(box ...)`
+ --> check/trait_outside_box.rslisp:4:17
+  |
+4 | (type take (fn (shape) unit))
+  |                 ^^^^^ `shape` is a trait
+  |
+  = help: write `(box shape)` to box it as a trait object

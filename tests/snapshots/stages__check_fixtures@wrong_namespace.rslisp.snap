@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/wrong_namespace.rslisp
+---
+error[L0449]: a trait is a type only inside `(box ...)`
+ --> check/wrong_namespace.rslisp:1:18
+  |
+1 | (type sized (fn (number) i64))
+  |                  ^^^^^^ `number` is a trait
+  |
+  = help: write `(box number)` to box it as a trait object

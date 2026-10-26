@@ -1,0 +1,2 @@
+(type show (fn ((box display)) string))
+(defn show (value) (to-string value))

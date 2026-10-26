@@ -371,6 +371,14 @@ impl<'a> CorePrinter<'a> {
     fn type_expr(&mut self, type_expr: &TypeExpr) -> String {
         match type_expr.kind() {
             TypeExprKind::Primitive(primitive) => primitive.name().to_string(),
+            TypeExprKind::Hole => "_".to_string(),
+            TypeExprKind::Trait(binding) => self.name(*binding),
+            _ => self.composite_type(type_expr),
+        }
+    }
+
+    fn composite_type(&mut self, type_expr: &TypeExpr) -> String {
+        match type_expr.kind() {
             TypeExprKind::Named(binding, arguments) => self.named_type(*binding, arguments),
             TypeExprKind::Function(kind, parameters, result) => {
                 self.function_type(*kind, parameters, result)
@@ -378,13 +386,12 @@ impl<'a> CorePrinter<'a> {
             TypeExprKind::Reference(kind, lifetime, inner) => {
                 self.reference_type(*kind, *lifetime, inner)
             }
-            TypeExprKind::Hole => "_".to_string(),
             TypeExprKind::Where(binders, inner) => self.where_type(binders, inner),
-            TypeExprKind::Trait(binding) => self.name(*binding),
             TypeExprKind::With(implementor, argument) => Self::list(
                 "with",
                 vec![self.type_expr(implementor), self.type_expr(argument)],
             ),
+            _ => unreachable!("the caller matches a composite type"),
         }
     }
 
