@@ -4,7 +4,7 @@
 (use prelude/ownership copy)
 (use code list prepend length empty? string number-add number-sub number-lt)
 
-(export vec push! len iter values collect get pop! sort! sort-by-key! windows at dedup!
+(export vec push! len iter values collect get pop! remove-at! sort! sort-by-key! windows at dedup!
         first last reverse reverse! sort-descending!)
 
 (def element-placeholders
@@ -41,6 +41,7 @@
 (def collect (rust "{0}.collect::<Vec<_>>()" (where (a) (fn ((iterator a)) (vec a)))))
 (def get (rust "{0}.get({1})" (where (a) (fn ((ref (slice a)) usize) (option (ref a))))))
 (def pop! (rust "{0}.pop()" (where (a) (fn ((mut (vec a))) (option a)))))
+(def remove-at! (rust "{0}.remove({1})" (where (a) (fn ((mut (vec a)) usize) a))))
 (def sort-ascending! (rust "{0}.sort()" (where ((a ord)) (fn ((mut (vec a))) unit))))
 (def sort-with! (rust "{0}.sort_by(|{!left}, {!right}| {1}({!left}, {!right}).cmp(&0))"
                      (where (a) (fn ((mut (vec a)) (fn ((ref a) (ref a)) i64)) unit))))
