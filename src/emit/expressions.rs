@@ -434,7 +434,7 @@ impl<'a> ExpressionEmitter<'a> {
     fn borrowed_index_template(&self, callee: &TypedExpr) -> Option<RustTemplate> {
         let template = self.called_template(callee)?;
         let place = template.template.strip_prefix('&')?;
-        if !ParsedTemplate::parse(place).ok()?.indexes(0) {
+        if !ParsedTemplate::parse(place).ok()?.is_single_index_place() {
             return None;
         }
         Some(RustTemplate {

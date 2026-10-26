@@ -231,6 +231,18 @@ impl ParsedTemplate {
         })
     }
 
+    pub fn is_single_index_place(&self) -> bool {
+        matches!(
+            self.pieces.as_slice(),
+            [
+                Piece::Placeholder { index: 0, .. },
+                Piece::Literal(open),
+                Piece::Placeholder { .. },
+                Piece::Literal(close),
+            ] if open.trim() == "[" && close.trim() == "]"
+        )
+    }
+
     pub fn dereferences(&self, argument: usize) -> bool {
         let mut found = false;
         for (position, piece) in self.pieces.iter().enumerate() {
@@ -309,6 +321,18 @@ mod tests {
         let parsed = ParsedTemplate::parse("{0} [{1}]").expect("a valid template");
         assert!(parsed.indexes(0));
         assert!(!parsed.indexes(1));
+    }
+
+    #[test]
+    fn accepts_an_element_place_with_one_index_argument() {
+        let parsed = ParsedTemplate::parse("{0}[{1}]").expect("a valid template");
+        assert!(parsed.is_single_index_place());
+    }
+
+    #[test]
+    fn rejects_a_range_index_as_an_element_place() {
+        let parsed = ParsedTemplate::parse("{0}[{1}..{2}]").expect("a valid template");
+        assert!(!parsed.is_single_index_place());
     }
 
     #[test]
