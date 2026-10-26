@@ -1,0 +1,4 @@
+(defn main ()
+  (println (subs "abcdefg" 2 5))
+  (let line "one two")
+  (println (subs line 4 7)))

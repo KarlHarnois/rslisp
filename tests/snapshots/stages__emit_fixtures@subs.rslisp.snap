@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/subs.rslisp
+---
+fn word_between(line: &str) -> &str {
+    &line[2..5]
+}
+
+fn main() {
+    println!("{}", word_between("abcdefg"));
+    println!("{}", &"0123456".to_string().as_str()[1..4])
+}

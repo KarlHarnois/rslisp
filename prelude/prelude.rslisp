@@ -17,7 +17,7 @@
                     add sub mul div rem neg sqrt lt le gt ge eq ne
                     + - * / < <= > >= = != ord)
 (use prelude/text display debug to-string print println prn pr-str str char
-                  chars lines split trim as-str parse parse-error from-str
+                  chars lines split trim subs as-str parse parse-error from-str
                   lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!)
 (use prelude/struct defstruct)
 (use prelude/ownership clone copy)
@@ -35,7 +35,7 @@
         add sub mul div rem neg sqrt lt le gt ge eq ne
         + - * / < <= > >= = !=
         display debug to-string print println prn pr-str str char
-        chars lines split trim as-str parse parse-error from-str
+        chars lines split trim subs as-str parse parse-error from-str
         lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!
         defstruct
         clone copy set!

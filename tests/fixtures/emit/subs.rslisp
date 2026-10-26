@@ -1,0 +1,6 @@
+(defn word-between (line)
+  (subs line 2 5))
+
+(defn main ()
+  (println (word-between "abcdefg"))
+  (println (subs (as-str (to-string "0123456")) 1 4)))

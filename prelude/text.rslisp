@@ -7,7 +7,7 @@
 (use prelude/types vec option result iterator box)
 (use prelude/io io-error)
 
-(export display debug to-string print println prn pr-str str char chars lines split trim as-str parse parse-error from-str lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!)
+(export display debug to-string print println prn pr-str str char chars lines split trim subs as-str parse parse-error from-str lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!)
 
 (rust-type formatter "std::fmt::Formatter<'_>")
 (rust-type fmt-result "std::fmt::Result")
@@ -313,3 +313,4 @@
 (def digit? (rust "{0}.is_ascii_digit()" (fn (char) bool)))
 (def append! (rust "{0}.push_str({1})" (fn ((mut string) (ref str)) unit)))
 (def append-char! (rust "{0}.push({1})" (fn ((mut string) char) unit)))
+(def subs (rust "&{0}[{1}..{2}]" (fn ((ref str) usize usize) (ref str))))
