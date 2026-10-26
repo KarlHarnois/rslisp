@@ -3,13 +3,13 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/rust_type_collision.rslisp
 ---
-error[L0602]: `boxed` and `box` both become `Box` in Rust
+error[L0602]: `wrapped` and `wrapper` both become `Wrapper` in Rust
  --> emit/rust_type_collision.rslisp:4:9
   |
-1 | (rust-type (boxed item) "Box<{0}>")
-  |             ----- this also becomes `Box`
+1 | (rust-type (wrapped item) "Wrapper<{0}>")
+  |             ------- this also becomes `Wrapper`
 ...
-4 | (struct box (value i64))
-  |         ^^^ this becomes `Box`
+4 | (struct wrapper (value i64))
+  |         ^^^^^^^ this becomes `Wrapper`
   |
   = help: rename one of them

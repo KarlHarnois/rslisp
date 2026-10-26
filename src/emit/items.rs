@@ -165,7 +165,7 @@ impl<'a> ItemEmitter<'a> {
             info.module,
         );
         let error = types.show(&conversion.error, TypePosition::Signature);
-        let variant_name = NameMangler::type_name(&variant.name);
+        let variant_name = NameMangler::variant_name(&variant.name);
         vec![
             Fragment::Text(format!("impl From<{error}> for {} {{", info.name)),
             Fragment::Indented(vec![
@@ -740,7 +740,7 @@ impl<'a> ItemEmitter<'a> {
         types: &RustTypes,
         scope: &LifetimeScope,
     ) -> Vec<Fragment> {
-        let mut fragments = vec![Fragment::Text(NameMangler::type_name(&variant.name))];
+        let mut fragments = vec![Fragment::Text(NameMangler::variant_name(&variant.name))];
         fragments.extend(Self::variant_payload(variant, types, scope));
         fragments.push(Fragment::Text(",".to_string()));
         fragments

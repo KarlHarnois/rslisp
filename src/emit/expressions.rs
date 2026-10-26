@@ -995,10 +995,10 @@ impl<'a> ExpressionEmitter<'a> {
         bare: bool,
     ) -> String {
         if bare {
-            return NameMangler::type_name(name);
+            return NameMangler::variant_name(name);
         }
         let owner = rust_path.map_or(owner_path, |path| path.to_string());
-        format!("{owner}::{}", NameMangler::type_name(name))
+        format!("{owner}::{}", NameMangler::variant_name(name))
     }
 
     fn positional_shape(

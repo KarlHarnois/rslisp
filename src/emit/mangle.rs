@@ -41,6 +41,43 @@ impl NameMangler {
         "unsized", "virtual", "yield",
     ];
     const NON_RAW_KEYWORDS: [&str; 4] = ["self", "Self", "super", "crate"];
+    const PRELUDE_NAMES: [&str; 34] = [
+        "AsMut",
+        "AsRef",
+        "Box",
+        "Clone",
+        "Copy",
+        "Default",
+        "DoubleEndedIterator",
+        "Drop",
+        "Eq",
+        "ExactSizeIterator",
+        "Extend",
+        "Fn",
+        "FnMut",
+        "FnOnce",
+        "From",
+        "FromIterator",
+        "Into",
+        "IntoIterator",
+        "Iterator",
+        "Option",
+        "Ord",
+        "PartialEq",
+        "PartialOrd",
+        "Result",
+        "Send",
+        "Sized",
+        "String",
+        "Sync",
+        "ToOwned",
+        "ToString",
+        "TryFrom",
+        "TryInto",
+        "Unpin",
+        "Vec",
+    ];
+    const PRELUDE_SUFFIX: char = '2';
 
     pub fn value(name: &str) -> String {
         Self::guard_keyword(Self::snake(Self::without_change_suffix(name)))
@@ -73,6 +110,15 @@ impl NameMangler {
     }
 
     pub fn type_name(name: &str) -> String {
+        let name = Self::variant_name(name);
+        if Self::PRELUDE_NAMES.contains(&name.as_str()) {
+            format!("{name}{}", Self::PRELUDE_SUFFIX)
+        } else {
+            name
+        }
+    }
+
+    pub fn variant_name(name: &str) -> String {
         Self::snake(name)
             .split('_')
             .filter(|word| !word.is_empty())
@@ -180,6 +226,13 @@ mod tests {
     #[test]
     fn types_become_pascal_case() {
         assert_eq!(NameMangler::type_name("bank-account"), "BankAccount");
+    }
+
+    #[test]
+    fn prelude_names_get_a_suffix() {
+        assert_eq!(NameMangler::type_name("sized"), "Sized2");
+        assert_eq!(NameMangler::type_name("send"), "Send2");
+        assert_eq!(NameMangler::type_name("iterator"), "Iterator2");
     }
 
     #[test]

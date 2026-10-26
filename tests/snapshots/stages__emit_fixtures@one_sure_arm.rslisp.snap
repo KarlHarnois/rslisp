@@ -4,36 +4,36 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/one_sure_arm.rslisp
 ---
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-enum Box {
+enum Box2 {
     Value(i64),
 }
 
-fn unbox(b: Box) -> i64 {
-    let Box::Value(n) = b;
+fn unbox(b: Box2) -> i64 {
+    let Box2::Value(n) = b;
     n + 1
 }
 
-fn ignore(b: Box) -> i64 {
+fn ignore(b: Box2) -> i64 {
     let _ = b;
     0
 }
 
-fn countdown(mut b: Box) -> i64 {
+fn countdown(mut b: Box2) -> i64 {
     loop {
-        let Box::Value(n) = b;
+        let Box2::Value(n) = b;
         if n == 0 {
             return n;
         } else {
-            b = Box::Value(n - 1);
+            b = Box2::Value(n - 1);
             continue;
         }
     }
 }
 
 fn main() {
-    println!("{}", unbox(Box::Value(41)));
-    println!("{}", ignore(Box::Value(5)));
-    println!("{}", countdown(Box::Value(3)));
-    let Box::Value(n) = Box::Value(7);
+    println!("{}", unbox(Box2::Value(41)));
+    println!("{}", ignore(Box2::Value(5)));
+    println!("{}", countdown(Box2::Value(3)));
+    let Box2::Value(n) = Box2::Value(7);
     println!("{}", n)
 }

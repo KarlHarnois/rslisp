@@ -1,0 +1,23 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/prelude_names.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Sized2 {
+    value: i64,
+}
+
+fn main() {
+    println!("{}", Sized2 { value: 1 }.send_value())
+}
+
+trait Send2 {
+    fn send_value(&self) -> i64;
+}
+
+impl Send2 for Sized2 {
+    fn send_value(&self) -> i64 {
+        self.value
+    }
+}
