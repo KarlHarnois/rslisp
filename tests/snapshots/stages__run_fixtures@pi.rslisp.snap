@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/pi.rslisp
+---
+3.141592653589793
+3.141592653589793

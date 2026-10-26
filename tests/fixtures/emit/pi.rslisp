@@ -1,0 +1,5 @@
+(defn circle-area (radius)
+  (* pi radius radius))
+
+(defn main ()
+  (println (circle-area 2.0)))
