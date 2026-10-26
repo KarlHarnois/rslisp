@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/pin_literal_from_call.rslisp
+---
+fn count_up(limit: usize) -> i64 {
+    (0..limit).fold(0, |total: i64, _: usize| total + 1)
+}
+
+fn main() {
+    println!("{}", count_up("abc".len()))
+}

@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use super::graph::DependencyGraph;
 use super::ty::{GenericId, Type};
 use super::typed::{TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
-use crate::core::{BindingId, Expr, ItemKind};
+use crate::core::{BindingId, Expr, ItemKind, PrimitiveType};
 use crate::expand::Program;
 
 struct UseTypes {
@@ -13,6 +13,7 @@ struct UseTypes {
 
 struct FunctionUses {
     params: Vec<GenericId>,
+    literal: Vec<(GenericId, PrimitiveType)>,
     body: Type,
     uses: Vec<UseTypes>,
     written: bool,
@@ -20,6 +21,7 @@ struct FunctionUses {
 
 struct Target {
     params: Vec<GenericId>,
+    literal: Vec<(GenericId, PrimitiveType)>,
     body: Type,
 }
 
@@ -96,6 +98,17 @@ impl InstantiationReport {
                         .iter()
                         .map(|param| param.id)
                         .collect(),
+                    literal: definition
+                        .scheme
+                        .params
+                        .iter()
+                        .filter_map(|param| {
+                            typed
+                                .literal_generics
+                                .get(&param.id)
+                                .map(|primitive| (param.id, *primitive))
+                        })
+                        .collect(),
                     body: definition.scheme.body.clone(),
                 };
                 (definition.binding, target)
@@ -112,6 +125,7 @@ impl InstantiationReport {
             .map(|(binding, target)| {
                 let entry = FunctionUses {
                     params: target.params.clone(),
+                    literal: target.literal.clone(),
                     body: target.body.clone(),
                     uses: Vec::new(),
                     written: written.contains(binding),
@@ -282,13 +296,30 @@ impl InstantiationReport {
         }
         let mut substitutions = HashMap::new();
         for members in members.values() {
-            if let Some(substitution) = Self::decide_group(members, entries) {
+            if let Some(substitution) = Self::decide_group(members, entries)
+                && !Self::only_literal_defaults(members, entries, &substitution)
+            {
                 for member in members {
                     substitutions.insert(*member, substitution.clone());
                 }
             }
         }
         substitutions
+    }
+
+    fn only_literal_defaults(
+        members: &[BindingId],
+        entries: &BTreeMap<BindingId, FunctionUses>,
+        substitution: &HashMap<GenericId, Type>,
+    ) -> bool {
+        substitution.iter().all(|(generic, ty)| {
+            members.iter().any(|member| {
+                entries[member]
+                    .literal
+                    .iter()
+                    .any(|(id, primitive)| id == generic && *ty == Type::Primitive(*primitive))
+            })
+        })
     }
 
     fn decide_group(
