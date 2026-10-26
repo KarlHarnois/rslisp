@@ -1,0 +1,5 @@
+(defn main ()
+  (let balances (sorted-map (str "alice") 10))
+  (let name (str "alice"))
+  (set! (at (mut balances) name) 25)
+  (println name))
