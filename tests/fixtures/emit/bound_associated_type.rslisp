@@ -1,0 +1,15 @@
+(trait container
+  (type item)
+  (size (fn ((ref self)) usize)))
+
+(struct (stack a) (items (vec a)))
+(impl container (stack a)
+  (type item a)
+  (size (s) (len (field s items))))
+
+(type count (where ((c (container item)) item) (fn ((ref c)) usize)))
+(defn count (c)
+  (size c))
+
+(defn main ()
+  (println (count (new stack (items (vec 1 2))))))

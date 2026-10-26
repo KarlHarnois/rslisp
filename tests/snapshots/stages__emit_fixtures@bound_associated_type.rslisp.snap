@@ -1,0 +1,34 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/bound_associated_type.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Stack<A> {
+    items: Vec<A>,
+}
+
+fn count<C: Container<Item = Item>, Item>(c: &C) -> usize {
+    c.size()
+}
+
+fn main() {
+    println!(
+        "{}",
+        count(&Stack {
+            items: vec![1_i64, 2_i64]
+        })
+    )
+}
+
+trait Container {
+    type Item;
+    fn size(&self) -> usize;
+}
+
+impl<A> Container for Stack<A> {
+    type Item = A;
+    fn size(&self) -> usize {
+        self.items.len()
+    }
+}
