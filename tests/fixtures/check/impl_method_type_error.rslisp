@@ -1,0 +1,5 @@
+(trait counter
+  (size (fn ((mut self)) usize)))
+
+(impl counter (vec a)
+  (size (items) (len items)))
