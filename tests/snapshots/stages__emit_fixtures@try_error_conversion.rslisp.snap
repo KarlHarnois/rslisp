@@ -3,6 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/try_error_conversion.rslisp
 ---
+#[derive(Debug)]
 enum AppError {
     Io(std::io::Error),
     Parse(std::num::ParseIntError),
