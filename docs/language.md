@@ -153,7 +153,8 @@ A type parameter satisfies a trait when its `where` names the trait, or when eve
 - An integer literal can become any number type, so `(make-point 1 2)` emits `make_point(1.0, 2.0)`.
 - A float literal can become `f32` or `f64`.
 - Every literal is checked against the range of its type.
-- A literal whose type is still open after inference defaults to `i64` or `f64`, and the emitted literal carries a suffix (`3_i64`).
+- A call pins a literal parameter the way it pins any inferred parameter, so a helper called once with a `usize` keeps `usize` in its parameter and its literals.
+- A literal whose type is still open after pinning defaults to `i64` or `f64`, and the emitted literal carries a suffix (`3_i64`).
 - Without a signature, a literal never makes a function generic: `(defn increment (x) (+ x 1))` has type `(fn (i64) i64)`.
 - A signature's type parameter opts in. A literal can take the parameter's type if it fits every type the parameter's traits allow, which are the implementors those traits share:
 

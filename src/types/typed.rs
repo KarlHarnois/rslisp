@@ -9,8 +9,8 @@ use super::templates::TemplateBorrows;
 use super::traits::TraitTable;
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
 use crate::core::{
-    BindingArena, BindingId, ClosureKind, FieldLabel, Literal, ModuleId, ModulePath, ReferenceKind,
-    RustTemplate,
+    BindingArena, BindingId, ClosureKind, FieldLabel, Literal, ModuleId, ModulePath, PrimitiveType,
+    ReferenceKind, RustTemplate,
 };
 use crate::diagnostic::Diagnostics;
 use crate::source::Span;
@@ -320,6 +320,7 @@ pub struct TypedProgram {
     pub pending_mode_checks: Vec<PendingModeCheck>,
     pub borrowed_parameters: HashSet<BindingId>,
     pub mutable_function_bindings: HashSet<BindingId>,
+    pub literal_generics: HashMap<GenericId, PrimitiveType>,
     pub warnings: Diagnostics,
 }
 
