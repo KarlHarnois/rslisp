@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/impl_method_type_error.rslisp
+---
+error[L0401]: mismatched types
+ --> check/impl_method_type_error.rslisp:5:22
+  |
+5 |   (size (items) (len items)))
+  |                      ^^^^^ expected `(ref _)`, found `(mut (vec a))`

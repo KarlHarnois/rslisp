@@ -1942,9 +1942,9 @@ impl TypeChecker {
             let params = self.trait_impls[position].params.clone();
             let mut found: Vec<Vec<Bound>> = vec![Vec::new(); params.len()];
             for method in &self.trait_impls[position].methods {
-                let definition = definitions
-                    .get(&method.binding)
-                    .expect("an impl method has a definition");
+                let Some(definition) = definitions.get(&method.binding) else {
+                    continue;
+                };
                 let replacements: HashMap<GenericId, Type> = definition
                     .scheme
                     .params
