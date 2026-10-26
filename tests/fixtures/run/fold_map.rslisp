@@ -1,0 +1,5 @@
+(defn main ()
+  (let m (sorted-map "a" 1 "b" 2))
+  (println (fold m 0 (fn (total entry)
+                       (let-pair (_ value) entry
+                         (+ total (deref value)))))))
