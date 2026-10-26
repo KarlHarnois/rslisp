@@ -92,4 +92,15 @@ impl TraitTable {
     pub fn get(&self, binding: BindingId) -> Option<&RustTrait> {
         self.traits.get(&binding)
     }
+
+    pub fn set_implementor_scheme(&mut self, binding: BindingId, body: &Type, scheme: Scheme) {
+        if let Some(rust_trait) = self.traits.get_mut(&binding)
+            && let Some(implementor) = rust_trait
+                .implementors
+                .iter_mut()
+                .find(|implementor| implementor.scheme.body == *body)
+        {
+            implementor.scheme = scheme;
+        }
+    }
 }

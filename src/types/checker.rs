@@ -172,6 +172,8 @@ pub struct TypeChecker {
     pub(super) trait_definitions: Vec<TypedTrait>,
     pub(super) rust_trait_paths: HashMap<BindingId, Rc<str>>,
     pub(super) trait_impls: Vec<TypedTraitImpl>,
+    impl_methods: HashSet<BindingId>,
+    impl_generics: HashSet<GenericId>,
     pub(super) conversions: Vec<TypedConversion>,
     pub(super) trait_methods: HashMap<BindingId, TraitMethodInfo>,
     pub(super) synthetic_bindings: HashSet<BindingId>,
@@ -234,6 +236,8 @@ impl TypeChecker {
             trait_definitions: Vec::new(),
             rust_trait_paths: HashMap::new(),
             trait_impls: Vec::new(),
+            impl_methods: HashSet::new(),
+            impl_generics: HashSet::new(),
             conversions: Vec::new(),
             trait_methods: HashMap::new(),
             synthetic_bindings: HashSet::new(),
@@ -815,6 +819,10 @@ impl TypeChecker {
         if let Some((signature, _)) = self.signatures.get(&member.binding).cloned() {
             return match self.lower_scheme(&signature) {
                 Ok(scheme) => {
+                    if self.impl_methods.contains(&member.binding) {
+                        self.impl_generics
+                            .extend(scheme.params.iter().map(|param| param.id));
+                    }
                     self.component.insert(member.binding, scheme.body.clone());
                     Some((member.binding, scheme))
                 }
@@ -1468,6 +1476,7 @@ impl TypeChecker {
                 let mut typed_methods = Vec::new();
                 for method in methods {
                     self.synthetic_bindings.insert(method.binding);
+                    self.impl_methods.insert(method.binding);
                     let receiver = self
                         .trait_methods
                         .get(&method.trait_method)
@@ -1640,8 +1649,75 @@ impl TypeChecker {
         Ok(())
     }
 
+    fn absorb_impl_bounds(&mut self, definitions: &HashMap<BindingId, TypedDefinition>) {
+        for position in 0..self.trait_impls.len() {
+            let params = self.trait_impls[position].params.clone();
+            let mut found: Vec<Vec<Bound>> = vec![Vec::new(); params.len()];
+            for method in &self.trait_impls[position].methods {
+                let definition = definitions
+                    .get(&method.binding)
+                    .expect("an impl method has a definition");
+                let replacements: HashMap<GenericId, Type> = definition
+                    .scheme
+                    .params
+                    .iter()
+                    .zip(&params)
+                    .map(|(method_param, implementation)| {
+                        (method_param.id, Type::Generic(implementation.id))
+                    })
+                    .collect();
+                for (bounds, method_param) in found.iter_mut().zip(&definition.scheme.params) {
+                    let declared = method_param.bounds.iter();
+                    let implied = self
+                        .implied_bounds
+                        .get(&method_param.id)
+                        .into_iter()
+                        .flatten();
+                    for bound in declared.chain(implied) {
+                        let bound = bound.substituted(&replacements);
+                        if !bounds.contains(&bound) {
+                            bounds.push(bound);
+                        }
+                    }
+                }
+            }
+            self.store_impl_bounds(position, found);
+        }
+    }
+
+    fn store_impl_bounds(&mut self, position: usize, bounds: Vec<Vec<Bound>>) {
+        let mut params = self.trait_impls[position].params.clone();
+        for (param, bounds) in params.iter_mut().zip(bounds) {
+            param.bounds = bounds;
+        }
+        for param in &params {
+            self.generics.insert(param.id, param.clone());
+            self.unifier
+                .register_generic(param.id, param.bounds.clone());
+        }
+        let trait_binding = self.trait_impls[position].trait_binding;
+        let implementor = self.trait_impls[position].implementor.clone();
+        self.trait_impls[position].params = params.clone();
+        self.traits.set_implementor_scheme(
+            trait_binding,
+            &implementor,
+            Scheme {
+                lifetimes: Vec::new(),
+                params,
+                body: implementor.clone(),
+            },
+        );
+    }
+
     fn check_generic_bound(&mut self, generic: GenericId, bound: Bound, span: Span) {
         if self.unifier.generic_bounds(generic).contains(&bound) {
+            return;
+        }
+        if self.impl_generics.contains(&generic) {
+            let implied = self.implied_bounds.entry(generic).or_default();
+            if !implied.contains(&bound) {
+                implied.push(bound);
+            }
             return;
         }
         if self.implies(generic, &bound) {
@@ -1988,6 +2064,7 @@ impl TypeChecker {
                 finalizer.definition(definition);
             }
         }
+        checker.absorb_impl_bounds(&definitions);
         checker.discharge_obligations(ObligationPass::Final);
         checker.resolve_missing_annotations();
         let typed_modules = program
