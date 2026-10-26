@@ -1,0 +1,29 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/box_annotation.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Circle {
+    radius: f64,
+}
+
+fn main() {
+    let boxed = {
+        let result: Box<dyn Shape> = Box::new(Circle { radius: 1.0 });
+        result
+    };
+    let other: Box<dyn Shape> = Box::new(Circle { radius: 2.0 });
+    println!("{}", boxed.area());
+    println!("{}", other.area())
+}
+
+trait Shape {
+    fn area(&self) -> f64;
+}
+
+impl Shape for Circle {
+    fn area(&self) -> f64 {
+        self.radius
+    }
+}

@@ -1332,7 +1332,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn let_statement(&mut self, binder: &TypedBinder, value: &TypedExpr) -> Code {
-        let value = self.expr(value);
+        let value = self.let_value(binder, value);
         let name = self.locals.bind(
             binder.binding,
             self.program.bindings.get(binder.binding).name(),
@@ -1353,6 +1353,16 @@ impl<'a> ExpressionEmitter<'a> {
             ],
             Precedence::Block,
         )
+    }
+
+    fn let_value(&mut self, binder: &TypedBinder, value: &TypedExpr) -> Code {
+        if !binder.annotated {
+            return self.expr(value);
+        }
+        match &value.kind {
+            TypedExprKind::TraitObject(boxed, _) => self.expr(boxed),
+            _ => self.expr(value),
+        }
     }
 
     fn declaration(&self, binder: &TypedBinder) -> &'static str {
