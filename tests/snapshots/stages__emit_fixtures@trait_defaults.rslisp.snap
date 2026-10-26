@@ -1,0 +1,41 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/trait_defaults.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Circle {
+    radius: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Square {
+    side: f64,
+}
+
+fn main() {
+    println!("{}", Circle { radius: 1.0 }.describe());
+    println!("{}", Square { side: 2.0 }.describe())
+}
+
+trait Shape {
+    fn area(&self) -> f64;
+    fn describe(&self) -> String {
+        format!("area {}", self.area())
+    }
+}
+
+impl Shape for Circle {
+    fn area(&self) -> f64 {
+        3.14 * self.radius * self.radius
+    }
+}
+
+impl Shape for Square {
+    fn area(&self) -> f64 {
+        self.side * self.side
+    }
+    fn describe(&self) -> String {
+        format!("square {}", self.area())
+    }
+}

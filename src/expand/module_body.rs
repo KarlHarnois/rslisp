@@ -369,9 +369,12 @@ impl Expander<'_> {
             self.define_global(name, Namespace::Type, BindingKind::Trait(module), context)?;
         for method in &items[2..] {
             let method_items = method.as_list().ok_or_else(|| shape.malformed(method))?;
-            let [method_name, _] = method_items else {
+            let Some(method_name) = method_items.first() else {
                 return Err(shape.malformed(method));
             };
+            if method_items.len() < 2 {
+                return Err(shape.malformed(method));
+            }
             let method = self.define_global(
                 method_name,
                 Namespace::Value,
@@ -972,6 +975,11 @@ impl Expander<'_> {
                     .iter()
                     .map(|method| (method.binding, method.signature.clone()))
                     .collect(),
+                defaults: methods
+                    .iter()
+                    .filter(|method| method.default.is_some())
+                    .map(|method| method.binding)
+                    .collect(),
             },
         );
         core.items.push(Item {
@@ -1015,18 +1023,19 @@ impl Expander<'_> {
         let TypeExprKind::Function(_, _, _) = signature.kind() else {
             return Err(lowering.shape.malformed(&signature_form));
         };
+        let scheme = Self::trait_method_scheme(
+            lowering.self_variable,
+            lowering.binding,
+            &signature,
+            method.span(),
+        );
         let template = RustTemplate {
             template: Rc::from(format!(
                 "{}::{}",
                 lowering.rust_name,
                 NameMangler::value(method_symbol.name())
             )),
-            type_expr: Self::trait_method_scheme(
-                lowering.self_variable,
-                lowering.binding,
-                &signature,
-                method.span(),
-            ),
+            type_expr: scheme.clone(),
         };
         let value = Expr::new(
             ExprKind::Leaf(Leaf::Rust(Rc::new(template))),
@@ -1037,10 +1046,81 @@ impl Expander<'_> {
             span: signature_form.span(),
             hidden: true,
         });
+        let default = if method_items.len() > 2 {
+            Some(self.lower_trait_default(
+                lowering,
+                &signature,
+                method,
+                &method_items[2..],
+                &scheme,
+                core,
+            )?)
+        } else {
+            None
+        };
         Ok(TraitMethod {
             binding: method_binding,
             signature,
+            default,
         })
+    }
+
+    fn lower_trait_default(
+        &mut self,
+        lowering: &TraitLowering<'_, '_>,
+        signature: &TypeExpr,
+        method: &Form,
+        body: &[Form],
+        scheme: &TypeExpr,
+        core: &mut CoreModule,
+    ) -> Result<BindingId, Diagnostic> {
+        let TypeExprKind::Function(_, parameters, _) = signature.kind() else {
+            return Err(lowering.shape.malformed(method));
+        };
+        let parameter_forms = parameters
+            .iter()
+            .enumerate()
+            .map(|(position, parameter)| {
+                let name = if position == 0 && Self::is_receiver(parameter, lowering.self_variable)
+                {
+                    "self".to_string()
+                } else {
+                    format!("argument-{position}")
+                };
+                Form::new(FormKind::Symbol(Symbol::new(name)), parameter.span())
+            })
+            .collect();
+        let params = Form::new(FormKind::List(parameter_forms), method.span());
+        let lambda = self.lower_lambda(lowering.shape, &params, body)?;
+        let binding = self.bindings.add(BindingInfo::new(
+            self.bindings.get(lowering.binding).name().into(),
+            BindingKind::Local,
+            Some(method.span()),
+        ));
+        core.items.push(Item {
+            kind: ItemKind::Signature(binding, scheme.clone()),
+            span: method.span(),
+            hidden: true,
+        });
+        core.items.push(Item {
+            kind: ItemKind::Def(
+                binding,
+                Expr::new(ExprKind::Fn(Rc::new(lambda)), method.span()),
+            ),
+            span: method.span(),
+            hidden: true,
+        });
+        Ok(binding)
+    }
+
+    fn is_receiver(parameter: &TypeExpr, self_variable: BindingId) -> bool {
+        match parameter.kind() {
+            TypeExprKind::Named(binding, arguments) => {
+                *binding == self_variable && arguments.is_empty()
+            }
+            TypeExprKind::Reference(_, _, inner) => Self::is_receiver(inner, self_variable),
+            _ => false,
+        }
     }
 
     fn trait_method_scheme(
@@ -1088,7 +1168,7 @@ impl Expander<'_> {
         };
         let (methods, implemented) = self.lower_impl_methods(&lowering, &items[3..], core)?;
         for (method, _) in &trait_methods.methods {
-            if !implemented.contains(method) {
+            if !implemented.contains(method) && !trait_methods.defaults.contains(method) {
                 let name = self.bindings.get(*method).name().to_string();
                 self.diagnostics.push(ExpandProblems::missing_method(
                     &name,
@@ -1258,6 +1338,7 @@ impl Expander<'_> {
                     .iter()
                     .map(|method| (method.binding, method.signature.clone()))
                     .collect(),
+                defaults: std::collections::HashSet::new(),
             },
         );
         self.trait_paths.insert(binding, path.clone());
@@ -1322,6 +1403,7 @@ impl Expander<'_> {
         Ok(TraitMethod {
             binding,
             signature: lowered,
+            default: None,
         })
     }
 

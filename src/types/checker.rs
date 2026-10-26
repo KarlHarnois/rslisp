@@ -1377,6 +1377,9 @@ impl TypeChecker {
         for method in methods {
             let receiver = Self::receiver_kind(&method.signature, self_variable);
             self.synthetic_bindings.insert(method.binding);
+            if let Some(default) = method.default {
+                self.synthetic_bindings.insert(default);
+            }
             self.trait_methods.insert(
                 method.binding,
                 TraitMethodInfo {
@@ -1388,6 +1391,7 @@ impl TypeChecker {
             typed_methods.push(TypedTraitMethod {
                 binding: method.binding,
                 receiver,
+                default: method.default,
             });
         }
         self.trait_definitions.push(TypedTrait {

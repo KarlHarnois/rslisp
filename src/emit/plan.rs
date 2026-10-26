@@ -93,6 +93,7 @@ impl<'p> EmitPlan<'p> {
         };
         plan.visit_definition(main);
         plan.reach_implementations();
+        plan.reach_trait_defaults();
         plan.main_body = plan.choose_main_body_name();
         plan.assign_items()?;
         plan.collect_trait_uses();
@@ -222,6 +223,19 @@ impl<'p> EmitPlan<'p> {
                     Self::collect_expr_trait_uses(&definition.value, self.program, &mut uses);
                 }
             }
+            let defaults: Vec<BindingId> = self
+                .program
+                .trait_definitions
+                .iter()
+                .filter(|trait_definition| trait_definition.module == module)
+                .flat_map(|trait_definition| trait_definition.methods.iter())
+                .filter_map(|method| method.default)
+                .collect();
+            for binding in defaults {
+                if let Some(definition) = self.definition(binding) {
+                    Self::collect_expr_trait_uses(&definition.value, self.program, &mut uses);
+                }
+            }
             if !uses.is_empty() {
                 self.trait_uses.insert(module, uses);
             }
@@ -296,6 +310,19 @@ impl<'p> EmitPlan<'p> {
                     .map(move |definition| (definition.binding, (definition, module.id)))
             })
             .collect()
+    }
+
+    fn reach_trait_defaults(&mut self) {
+        let defaults: Vec<BindingId> = self
+            .program
+            .trait_definitions
+            .iter()
+            .flat_map(|trait_definition| trait_definition.methods.iter())
+            .filter_map(|method| method.default)
+            .collect();
+        for binding in defaults {
+            self.visit_definition(binding);
+        }
     }
 
     fn reach_implementations(&mut self) {

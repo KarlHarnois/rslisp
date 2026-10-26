@@ -15,7 +15,7 @@ use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
     GenericId, GenericParam, Lifetime, ReceiverKind, Type, TypedBinder, TypedConversion,
-    TypedDefinition, TypedExpr, TypedExprKind, TypedProgram, VariantDefinition,
+    TypedDefinition, TypedExpr, TypedExprKind, TypedProgram, TypedTraitMethod, VariantDefinition,
 };
 
 #[derive(Default)]
@@ -216,23 +216,31 @@ impl<'a> ItemEmitter<'a> {
         }
     }
 
-    fn traits(&self, module: ModuleId) -> Vec<Vec<Fragment>> {
-        self.program
+    fn traits(&mut self, module: ModuleId) -> Vec<Vec<Fragment>> {
+        let definitions: Vec<(BindingId, std::rc::Rc<str>, Vec<TypedTraitMethod>)> = self
+            .program
             .trait_definitions
             .iter()
             .filter(|trait_definition| trait_definition.module == module)
             .map(|trait_definition| {
+                (
+                    trait_definition.binding,
+                    trait_definition.rust_name.clone(),
+                    trait_definition.methods.clone(),
+                )
+            })
+            .collect();
+        definitions
+            .into_iter()
+            .map(|(binding, rust_name, trait_methods)| {
                 let mut methods = Vec::new();
-                for method in &trait_definition.methods {
+                for method in &trait_methods {
                     methods.push(Fragment::Newline);
-                    methods.extend(self.trait_method(method.binding, method.receiver));
+                    methods.extend(self.trait_method(module, method));
                 }
-                let visibility = self.trait_visibility(module, trait_definition.binding);
+                let visibility = self.trait_visibility(module, binding);
                 vec![
-                    Fragment::Text(format!(
-                        "{visibility}trait {} {{",
-                        trait_definition.rust_name
-                    )),
+                    Fragment::Text(format!("{visibility}trait {rust_name} {{")),
                     Fragment::Indented(methods),
                     Fragment::Newline,
                     Fragment::Text("}".to_string()),
@@ -251,10 +259,11 @@ impl<'a> ItemEmitter<'a> {
         if exported { "pub " } else { "" }
     }
 
-    fn trait_method(&self, binding: BindingId, receiver: Option<ReceiverKind>) -> Vec<Fragment> {
+    fn trait_method(&mut self, module: ModuleId, method: &TypedTraitMethod) -> Vec<Fragment> {
+        let declaration = method.default.unwrap_or(method.binding);
         let definition = self
             .plan
-            .definition(binding)
+            .definition(declaration)
             .expect("a trait method has a definition");
         let Type::Function(_, parameters, result) = &definition.scheme.body else {
             unreachable!("a trait method has a function type")
@@ -269,17 +278,17 @@ impl<'a> ItemEmitter<'a> {
         let inferred = self.inferred_lifetime_for_method(
             &definition.scheme.lifetimes,
             &definition.value,
-            receiver.is_some(),
+            method.receiver.is_some(),
         );
         let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
         let mut rendered = Vec::new();
-        if let Some(kind) = receiver {
+        if let Some(kind) = method.receiver {
             let lifetime = parameters.first().and_then(|parameter| {
                 types.reference_lifetime_name(parameter, TypePosition::Signature, &scope)
             });
             rendered.push(Self::receiver_keyword(kind, lifetime.as_deref()));
         }
-        let first = usize::from(receiver.is_some());
+        let first = usize::from(method.receiver.is_some());
         rendered.extend(parameters.iter().skip(first).map(|parameter| {
             format!(
                 "_: {}",
@@ -306,15 +315,32 @@ impl<'a> ItemEmitter<'a> {
                 )
             )
         };
-        let name = NameMangler::value(self.program.bindings.get(binding).name());
+        let name = NameMangler::value(self.program.bindings.get(method.binding).name());
         let generics = Self::with_lifetimes(
             &self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),
             String::new(),
         );
-        vec![Fragment::Text(format!(
-            "fn {name}{generics}({}){result};",
-            rendered.join(", ")
-        ))]
+        let header = format!("fn {name}{generics}({}){result}", rendered.join(", "));
+        if method.default.is_none() {
+            return vec![Fragment::Text(format!("{header};"))];
+        }
+        let TypedExprKind::Fn(lambda) = &definition.value.kind else {
+            unreachable!("a default method has a function value")
+        };
+        let lambda = std::rc::Rc::clone(lambda);
+        let mut emitter = self.expressions(module, &definition.value);
+        emitter.prepare_tail_loop(declaration, &lambda);
+        if method.receiver.is_some() {
+            emitter.locals.bind_receiver(lambda.params[0].binding);
+        }
+        let body = emitter.function_body(&lambda.body);
+        self.absorb(emitter);
+        vec![
+            Fragment::Text(format!("{header} {{")),
+            Fragment::Indented(body),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ]
     }
 
     fn receiver_keyword(kind: ReceiverKind, lifetime: Option<&str>) -> String {
