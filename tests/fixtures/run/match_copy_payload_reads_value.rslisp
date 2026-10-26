@@ -1,0 +1,11 @@
+(enum failure (message string usize) (empty usize))
+
+(defn column (failure)
+  (match failure
+    ((failure/message _ column) column)
+    ((failure/empty column) column)))
+
+(defn main ()
+  (let failure (failure/message (str "bad") 3))
+  (println (column failure))
+  (println (column failure)))

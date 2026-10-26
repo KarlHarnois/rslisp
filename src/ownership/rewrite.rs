@@ -1,17 +1,18 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use super::functions::{FunctionTable, ParamMode};
 use crate::core::{BindingId, ReferenceKind};
 use crate::types::{
-    Borrow, Lifetime, Type, TypedArgument, TypedControl, TypedDefinition, TypedExpr, TypedExprKind,
-    TypedLeaf, TypedProgram,
+    Borrow, CopyRules, Lifetime, Type, TypedArgument, TypedBodyItem, TypedControl, TypedDefinition,
+    TypedExpr, TypedExprKind, TypedLeaf, TypedProgram,
 };
 
 pub struct ModeRewrite<'a> {
     param_types: HashMap<BindingId, Type>,
     binding_types: HashMap<BindingId, Type>,
-    added_references: std::collections::HashSet<BindingId>,
+    added_references: HashSet<BindingId>,
+    copy_binders: HashSet<BindingId>,
     function_params: HashMap<BindingId, Vec<Type>>,
     modes: &'a HashMap<BindingId, ParamMode>,
 }
@@ -21,6 +22,7 @@ impl<'a> ModeRewrite<'a> {
         functions: &FunctionTable,
         modes: &'a HashMap<BindingId, ParamMode>,
         slices: &'a HashMap<BindingId, Type>,
+        copy: &CopyRules,
     ) -> Self {
         let mut param_types = HashMap::new();
         let mut function_params = HashMap::new();
@@ -47,9 +49,35 @@ impl<'a> ModeRewrite<'a> {
         Self {
             param_types,
             binding_types: HashMap::new(),
-            added_references: std::collections::HashSet::new(),
+            added_references: HashSet::new(),
+            copy_binders: Self::copy_binders(functions, copy),
             function_params,
             modes,
+        }
+    }
+
+    fn copy_binders(functions: &FunctionTable, copy: &CopyRules) -> HashSet<BindingId> {
+        let mut binders = HashSet::new();
+        for (_, function) in functions.iter() {
+            for expr in function.lambda.body.expressions() {
+                Self::collect_copy_binders(expr, copy, &mut binders);
+            }
+        }
+        binders
+    }
+
+    fn collect_copy_binders(expr: &TypedExpr, copy: &CopyRules, binders: &mut HashSet<BindingId>) {
+        if let TypedExprKind::Control(TypedControl::Match(matched)) = &expr.kind {
+            for arm in &matched.arms {
+                for binder in arm.pattern.binders() {
+                    if copy.is_copy(&binder.ty) {
+                        binders.insert(binder.binding);
+                    }
+                }
+            }
+        }
+        for child in expr.children() {
+            Self::collect_copy_binders(child, copy, binders);
         }
     }
 
@@ -183,12 +211,60 @@ impl<'a> ModeRewrite<'a> {
         if original.is_reference() || !matched.value.ty.is_reference() {
             return;
         }
+        let copies = self.wrap_copy_binders(matched);
+        Self::copy_arm_references(matched, &copies);
+    }
+
+    fn wrap_copy_binders(
+        &mut self,
+        matched: &mut crate::types::TypedMatch,
+    ) -> HashMap<BindingId, Type> {
+        let mut copies = HashMap::new();
         for arm in &mut matched.arms {
             for binder in arm.pattern.binders_mut() {
+                if self.copy_binders.contains(&binder.binding) {
+                    copies.insert(binder.binding, binder.ty.clone());
+                }
                 binder.ty = Type::shared(binder.ty.clone());
                 self.binding_types.insert(binder.binding, binder.ty.clone());
                 self.added_references.insert(binder.binding);
             }
+        }
+        copies
+    }
+
+    fn copy_arm_references(
+        matched: &mut crate::types::TypedMatch,
+        copies: &HashMap<BindingId, Type>,
+    ) {
+        for arm in &mut matched.arms {
+            for item in &mut arm.body.items {
+                match item {
+                    TypedBodyItem::Let(_, value) => Self::copy_added_references(value, copies),
+                    TypedBodyItem::Expr(expr) => Self::copy_added_references(expr, copies),
+                }
+            }
+        }
+    }
+
+    fn copy_added_references(expr: &mut TypedExpr, copies: &HashMap<BindingId, Type>) {
+        if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &expr.kind
+            && let Some(owned) = copies.get(binding)
+        {
+            let leaf = TypedExpr {
+                kind: TypedExprKind::Leaf(TypedLeaf::Local(*binding)),
+                ty: expr.ty.clone(),
+                span: expr.span,
+            };
+            *expr = TypedExpr {
+                kind: TypedExprKind::Deref(Box::new(leaf)),
+                ty: owned.clone(),
+                span: expr.span,
+            };
+            return;
+        }
+        for child in expr.children_mut() {
+            Self::copy_added_references(child, copies);
         }
     }
 
