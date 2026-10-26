@@ -8,10 +8,7 @@ fn size_of(collection: &std::collections::BTreeMap<&str, i64>) -> usize {
 }
 
 fn main() {
-    let empty: std::collections::BTreeMap<String, i64> = {
-        let result: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::new();
-        result
-    };
+    let empty: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::new();
     let built: std::collections::BTreeMap<&str, i64> = {
         let mut map = std::collections::BTreeMap::new();
         map.insert("b", 2_i64);

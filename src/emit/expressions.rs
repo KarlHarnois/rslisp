@@ -1366,6 +1366,9 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn let_value(&mut self, binder: &TypedBinder, value: &TypedExpr) -> Code {
+        if let Some(inner) = Self::let_block_value(value) {
+            return self.let_value(binder, inner);
+        }
         if !binder.annotated {
             return self.expr(value);
         }
@@ -1373,6 +1376,23 @@ impl<'a> ExpressionEmitter<'a> {
             TypedExprKind::TraitObject(boxed, _) => self.expr(boxed),
             _ => self.expr(value),
         }
+    }
+
+    fn let_block_value(value: &TypedExpr) -> Option<&TypedExpr> {
+        let TypedExprKind::Control(TypedControl::Block(block)) = &value.kind else {
+            return None;
+        };
+        let [
+            TypedBodyItem::Let(binder, inner),
+            TypedBodyItem::Expr(result),
+        ] = block.items.as_slice()
+        else {
+            return None;
+        };
+        let TypedExprKind::Leaf(TypedLeaf::Local(result)) = &result.kind else {
+            return None;
+        };
+        (*result == binder.binding).then_some(inner)
     }
 
     fn declaration(&self, binder: &TypedBinder) -> &'static str {

@@ -5,10 +5,7 @@ input_file: tests/fixtures/emit/options.rslisp
 ---
 fn main() {
     let found: Option<i64> = Some(3);
-    let missing: Option<i64> = {
-        let result: Option<i64> = None;
-        result
-    };
+    let missing: Option<i64> = None;
     println!("{}", found.is_some());
     println!("{}", missing.is_none());
     println!("{}", found.unwrap_or(0));
