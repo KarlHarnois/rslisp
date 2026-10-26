@@ -83,6 +83,21 @@ impl TypeExpr {
         &self.kind
     }
 
+    pub fn parts(&self) -> Vec<&TypeExpr> {
+        match self.kind() {
+            TypeExprKind::Named(_, arguments) => arguments.iter().collect(),
+            TypeExprKind::Function(_, parameters, result) => parameters
+                .iter()
+                .chain(std::iter::once(result.as_ref()))
+                .collect(),
+            TypeExprKind::Reference(_, _, inner) => vec![inner.as_ref()],
+            TypeExprKind::Primitive(_)
+            | TypeExprKind::Hole
+            | TypeExprKind::Where(..)
+            | TypeExprKind::With(..) => Vec::new(),
+        }
+    }
+
     pub fn span(&self) -> Span {
         self.span
     }

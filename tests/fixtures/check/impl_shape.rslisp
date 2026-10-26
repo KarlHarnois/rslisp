@@ -1,0 +1,5 @@
+(trait labelled
+  (label (fn ((ref self)) string)))
+
+(impl labelled (ref i64)
+  (label (items) "items"))

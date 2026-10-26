@@ -400,11 +400,8 @@ impl Expander<'_> {
     }
 
     fn impl_type(&mut self, shape: &Shape, form: &Form) -> Result<TypeExpr, Diagnostic> {
-        if let Some(variable) = self.unresolved_type_name(form) {
-            let name = variable.as_symbol().map_or("", crate::reader::Symbol::name);
-            return Err(ExpandProblems::generic_implementor(name, variable.span()));
-        }
-        let implementor = self.lower_type(form)?;
+        self.reject_bare_implementor(form)?;
+        let implementor = self.bind_implementor_variables(form)?;
         if matches!(
             implementor.kind(),
             TypeExprKind::Named(..) | TypeExprKind::Primitive(_)
@@ -417,19 +414,71 @@ impl Expander<'_> {
         ))
     }
 
-    fn unresolved_type_name<'f>(&self, form: &'f Form) -> Option<&'f Form> {
-        match form.kind() {
-            FormKind::Symbol(symbol) => self.is_type_variable(symbol).then_some(form),
-            FormKind::List(items) => {
-                let (head, arguments) = items.split_first()?;
-                let symbol = head.as_symbol()?;
-                self.try_resolve(symbol, Namespace::Type)?;
-                arguments
-                    .iter()
-                    .find_map(|argument| self.unresolved_type_name(argument))
-            }
-            FormKind::String(_) | FormKind::Number(_) => None,
+    fn reject_bare_implementor(&self, form: &Form) -> Result<(), Diagnostic> {
+        match form.as_symbol() {
+            Some(symbol) if self.is_type_variable(symbol) => Err(
+                ExpandProblems::generic_implementor(symbol.name(), form.span()),
+            ),
+            _ => Ok(()),
         }
+    }
+
+    fn bind_implementor_variables(&mut self, form: &Form) -> Result<TypeExpr, Diagnostic> {
+        let mut implementor = form.clone();
+        let mut variables = self.unresolved_type_variables(&implementor);
+        if variables.is_empty() {
+            return self.lower_type(&implementor);
+        }
+        let scope = self.fresh_local_scope();
+        implementor.add_scope(scope);
+        for variable in &mut variables {
+            variable.add_scope(scope);
+        }
+        for variable in &variables {
+            self.define_binder_variable(variable)?;
+        }
+        self.lower_type(&implementor)
+    }
+
+    fn unresolved_type_variables(&self, form: &Form) -> Vec<Form> {
+        let mut found: Vec<Form> = Vec::new();
+        self.collect_unresolved_type_variables(form, &mut found);
+        found
+    }
+
+    fn collect_unresolved_type_variables(&self, form: &Form, found: &mut Vec<Form>) {
+        if let FormKind::Symbol(symbol) = form.kind() {
+            self.collect_unresolved_variable(form, symbol, found);
+            return;
+        }
+        let Some(arguments) = self.type_arguments(form) else {
+            return;
+        };
+        for argument in arguments {
+            self.collect_unresolved_type_variables(argument, found);
+        }
+    }
+
+    fn collect_unresolved_variable(&self, form: &Form, symbol: &Symbol, found: &mut Vec<Form>) {
+        if self.is_type_variable(symbol) && !Self::already_found(found, symbol) {
+            found.push(form.clone());
+        }
+    }
+
+    fn already_found(found: &[Form], symbol: &Symbol) -> bool {
+        found.iter().any(|existing| {
+            existing
+                .as_symbol()
+                .is_some_and(|existing| existing.name() == symbol.name())
+        })
+    }
+
+    fn type_arguments<'f>(&self, form: &'f Form) -> Option<&'f [Form]> {
+        let items = form.as_list()?;
+        let (head, arguments) = items.split_first()?;
+        let symbol = head.as_symbol()?;
+        self.try_resolve(symbol, Namespace::Type)?;
+        Some(arguments)
     }
 
     fn is_type_variable(&self, symbol: &Symbol) -> bool {
@@ -1113,6 +1162,10 @@ impl Expander<'_> {
         }
         let specialized =
             signature.replacing(lowering.trait_methods.self_variable, lowering.implementor);
+        let specialized = Self::wrap_implementor_binders(
+            &specialized,
+            &self.implementor_variables(lowering.implementor),
+        );
         let lambda = Rc::new(self.lower_lambda(lowering.shape, params, &method_items[2..])?);
         let synthetic = self.bindings.add(BindingInfo::new(
             self.bindings.get(*method_binding).name().into(),
@@ -1138,6 +1191,45 @@ impl Expander<'_> {
             name: self.bindings.get(*method_binding).name().into(),
             lambda,
         }))
+    }
+
+    fn implementor_variables(&self, implementor: &TypeExpr) -> Vec<BindingId> {
+        let mut found = Vec::new();
+        self.collect_implementor_variables(implementor, &mut found);
+        found
+    }
+
+    fn collect_implementor_variables(&self, type_expr: &TypeExpr, found: &mut Vec<BindingId>) {
+        if let TypeExprKind::Named(binding, arguments) = type_expr.kind()
+            && arguments.is_empty()
+            && matches!(self.kind(*binding), BindingKind::TypeVariable)
+            && !found.contains(binding)
+        {
+            found.push(*binding);
+        }
+        for part in type_expr.parts() {
+            self.collect_implementor_variables(part, found);
+        }
+    }
+
+    fn wrap_implementor_binders(signature: &TypeExpr, variables: &[BindingId]) -> TypeExpr {
+        if variables.is_empty() {
+            return signature.clone();
+        }
+        let span = signature.span();
+        let binders = variables
+            .iter()
+            .map(|variable| TypeBinder {
+                variable: *variable,
+                bounds: Vec::new(),
+                span,
+                lifetime: false,
+            })
+            .collect();
+        TypeExpr::new(
+            TypeExprKind::Where(binders, Box::new(signature.clone())),
+            span,
+        )
     }
 
     fn lower_rust_trait(

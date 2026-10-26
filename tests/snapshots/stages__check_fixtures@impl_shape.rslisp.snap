@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/impl_shape.rslisp
+---
+error[L0210]: malformed `impl`
+ --> check/impl_shape.rslisp:4:16
+  |
+4 | (impl labelled (ref i64)
+  |                ^^^^^^^^^ this does not fit the shape of `impl`
+  |
+  = help: write a concrete type such as `i64`, `string` or `(vec i64)`
