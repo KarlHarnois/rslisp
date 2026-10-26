@@ -1,0 +1,17 @@
+(trait shape
+  (area (fn ((ref self)) f64))
+  (describe (fn ((ref self)) string)
+    (str "area " (area self))))
+
+(struct circle (radius f64))
+(impl shape circle
+  (area (c) (* 3.14 (field c radius) (field c radius))))
+
+(struct square (side f64))
+(impl shape square
+  (area (s) (* (field s side) (field s side)))
+  (describe (s) (str "square " (area s))))
+
+(defn main ()
+  (println (describe (new circle (radius 1.0))))
+  (println (describe (new square (side 2.0)))))

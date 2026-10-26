@@ -245,9 +245,11 @@ pub enum ReceiverKind {
     Mutable,
 }
 
+#[derive(Clone)]
 pub struct TypedTraitMethod {
     pub binding: BindingId,
     pub receiver: Option<ReceiverKind>,
+    pub default: Option<BindingId>,
 }
 
 pub struct TypedTrait {

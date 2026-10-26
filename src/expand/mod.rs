@@ -52,6 +52,7 @@ pub struct TraitMethods {
     pub rust_name: Rc<str>,
     pub self_variable: crate::core::BindingId,
     pub methods: Vec<(crate::core::BindingId, crate::core::TypeExpr)>,
+    pub defaults: std::collections::HashSet<crate::core::BindingId>,
 }
 
 pub struct Expander<'s> {

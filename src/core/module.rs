@@ -83,6 +83,7 @@ pub enum ItemKind {
 pub struct TraitMethod {
     pub binding: BindingId,
     pub signature: TypeExpr,
+    pub default: Option<BindingId>,
 }
 
 #[derive(Clone, Debug)]

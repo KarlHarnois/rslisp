@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/default_unknown_method.rslisp
+---
+error[L0201]: cannot find `perimeter` in this scope
+ --> check/default_unknown_method.rslisp:4:6
+  |
+4 |     (perimeter self)))
+  |      ^^^^^^^^^ not found in this scope
