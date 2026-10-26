@@ -154,3 +154,4 @@ nix flake check
 | --- | --- |
 | `docs/language.md` | change the language or the Rust it emits |
 | `docs/diagnostics.md` | add or change an error or a warning |
+| `rfcs/README.md` | write a design, or change a rule that an RFC or decision records |
