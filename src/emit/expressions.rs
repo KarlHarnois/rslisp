@@ -445,6 +445,7 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn control(&mut self, control: &TypedControl) -> Code {
         match control {
+            TypedControl::Block(block) if block.items.is_empty() => Code::atom("()"),
             TypedControl::Block(block) => self.block(block),
             TypedControl::If(test, then, otherwise) => self.conditional(test, then, otherwise),
             TypedControl::Match(matched) => self.matching(matched),
@@ -1322,12 +1323,21 @@ impl<'a> ExpressionEmitter<'a> {
             TypedBodyItem::Let(binder, value) => self.let_statement(binder, value),
             TypedBodyItem::Expr(expr) if is_tail => self.expr(expr),
             TypedBodyItem::Expr(expr) => {
-                let code = self.expr(expr);
+                let code = self.statement_value(expr);
                 let ends_with_block =
                     code.precedence == Precedence::Block && Type::unit() == expr.ty;
                 let terminator = if ends_with_block { "" } else { ";" };
                 Code::joined(vec![code, Code::atom(terminator)], Precedence::Block)
             }
+        }
+    }
+
+    fn statement_value(&mut self, expr: &TypedExpr) -> Code {
+        match &expr.kind {
+            TypedExprKind::Control(TypedControl::Block(block)) if block.items.is_empty() => {
+                self.block(block).spanned(expr.span)
+            }
+            _ => self.expr(expr),
         }
     }
 

@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/do_unit_value.rslisp
+---
+fn check() -> Result<(), String> {
+    Ok(())
+}
+
+fn main() {
+    check().unwrap()
+}

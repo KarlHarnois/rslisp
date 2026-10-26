@@ -1,0 +1,3 @@
+(type check (fn () (result unit string)))
+(defn check () (ok (do)))
+(defn main () (unwrap-ok (check)))
