@@ -1,0 +1,15 @@
+(type known? (fn ((ref (sorted-map string i64)) (ref string)) bool))
+(defn known? (balances name)
+  (some? (lookup balances name)))
+
+(type credit! (fn ((mut (sorted-map string i64)) string i64) unit))
+(defn credit! (balances name amount)
+  (when (known? balances name)
+    (set! (at balances name) amount))
+  (println (some? (lookup balances "alice"))))
+
+(defn main ()
+  (let balances (sorted-map (str "alice") 10))
+  (credit! (mut balances) (str "alice") 25)
+  (println (known? balances (str "alice")))
+  (println (unwrap (lookup balances "alice"))))

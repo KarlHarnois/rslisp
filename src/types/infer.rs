@@ -1017,7 +1017,10 @@ impl TypeChecker {
                     .unify(&slice_arguments[0], &vector_arguments[0], span)
                     .is_ok()
             }
-            (Type::Ref(_, slice), Type::Ref(_, vector)) => self.coerces(&slice, &vector, span),
+            (Type::Ref(_, shared), Type::Ref(_, vector)) => self.coerces(&shared, &vector, span),
+            (Type::Ref(_, shared), Type::Mut(_, mutable)) => {
+                self.unifier.unify(&shared, &mutable, span).is_ok()
+            }
             _ => false,
         }
     }
@@ -2093,6 +2096,9 @@ impl TypeChecker {
             (Type::Mut(_, _), Type::Mut(_, _)) => {
                 self.pass(parameter, argument, span, Borrow::Reborrow)
             }
+            (Type::Ref(_, _), Type::Mut(_, _)) if self.coerces(parameter, argument, span) => {
+                self.pass(parameter, argument, span, Borrow::Reborrow)
+            }
             (expected, found) => self.pass_value(expected, found, span),
         }
     }
@@ -2469,7 +2475,7 @@ impl TypeChecker {
 
     fn map_collection(&self, value: &TypedExpr) -> Result<Collection, Diagnostic> {
         let resolved = self.unifier.resolve(&value.ty);
-        Collection::of(&resolved, &self.rust_types)
+        Collection::of_referent(&resolved, &self.rust_types)
             .filter(Collection::is_map)
             .ok_or_else(|| {
                 TypeProblems::mismatch(
@@ -2625,7 +2631,7 @@ impl TypeChecker {
     ) -> Result<TypedExpr, Diagnostic> {
         let value = self.infer(value)?;
         let resolved = self.unifier.resolve(&value.ty);
-        let Some(collection) = Collection::of(&resolved, &self.rust_types) else {
+        let Some(collection) = Collection::of_referent(&resolved, &self.rust_types) else {
             return Err(TypeProblems::mismatch(
                 "a collection",
                 &self.display().show(&resolved),
