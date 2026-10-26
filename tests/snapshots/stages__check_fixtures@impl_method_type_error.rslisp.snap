@@ -4,7 +4,9 @@ expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/impl_method_type_error.rslisp
 ---
 error[L0401]: mismatched types
- --> check/impl_method_type_error.rslisp:5:22
+ --> check/impl_method_type_error.rslisp:5:17
   |
-5 |   (size (items) (len items)))
-  |                      ^^^^^ expected `(ref _)`, found `(mut (vec a))`
+5 |   (size (items) items))
+  |    ----         ^^^^^ expected `usize`, found `(mut (vec a))`
+  |    |
+  |    expected because of this signature

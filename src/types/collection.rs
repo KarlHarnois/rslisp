@@ -17,6 +17,13 @@ pub struct Collection {
 }
 
 impl Collection {
+    pub fn of_referent(ty: &Type, rust_types: &RustTypeTable) -> Option<Self> {
+        match ty {
+            Type::Ref(_, inner) | Type::Mut(_, inner) => Self::of_referent(inner, rust_types),
+            _ => Self::of(ty, rust_types),
+        }
+    }
+
     pub fn of(ty: &Type, rust_types: &RustTypeTable) -> Option<Self> {
         let Type::Named(binding, arguments) = ty else {
             return None;

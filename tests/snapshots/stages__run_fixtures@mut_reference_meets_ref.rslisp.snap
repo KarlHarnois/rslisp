@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).run_report()"
+input_file: tests/fixtures/run/mut_reference_meets_ref.rslisp
+---
+true
+true
+25
