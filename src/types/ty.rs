@@ -211,6 +211,13 @@ impl Type {
         }
     }
 
+    pub fn parameters(&self) -> Option<&[Type]> {
+        match self {
+            Self::Function(_, parameters, _) => Some(parameters),
+            _ => None,
+        }
+    }
+
     pub fn shares_head_with(&self, other: &Type) -> bool {
         let same_constructor = match (self, other) {
             (Type::Named(left, _), Type::Named(right, _)) => left == right,
@@ -358,6 +365,14 @@ mod tests {
             fixture.substitute(&fixture.named()),
             Type::Named(fixture.binding, vec![replacement])
         );
+    }
+
+    #[test]
+    fn only_a_function_has_call_parameters() {
+        let parameters = vec![Type::Primitive(PrimitiveType::I64)];
+        let function = Type::Function(ClosureKind::Fn, parameters.clone(), Box::new(Type::unit()));
+        assert_eq!(function.parameters(), Some(parameters.as_slice()));
+        assert_eq!(Type::unit().parameters(), None);
     }
 
     #[test]

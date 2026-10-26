@@ -35,7 +35,8 @@
 
 (def push! (rust "{0}.push({1})" (where (a) (fn ((mut (vec a)) a) unit))))
 (def len (rust "{0}.len()" (where ((a sequence)) (fn ((ref a)) usize))))
-(def iter (rust "{0}.iter()" (where (a) (fn ((ref (slice a))) (iterator (ref a))))))
+(defrule iter
+  ((collection) (map-at iter collection)))
 (def values (rust "{0}.iter().copied()" (where ((a copy)) (fn ((ref (slice a))) (iterator a)))))
 (def collect (rust "{0}.collect::<Vec<_>>()" (where (a) (fn ((iterator a)) (vec a)))))
 (def get (rust "{0}.get({1})" (where (a) (fn ((ref (slice a)) usize) (option (ref a))))))

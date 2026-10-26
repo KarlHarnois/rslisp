@@ -1,0 +1,2 @@
+(defn main ()
+  (map-at iter (vec 1 2) "extra"))

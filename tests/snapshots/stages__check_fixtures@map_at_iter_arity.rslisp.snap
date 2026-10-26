@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/map_at_iter_arity.rslisp
+---
+error[L0402]: this function takes 0 arguments but 1 was given
+ --> check/map_at_iter_arity.rslisp:2:3
+  |
+2 |   (map-at iter (vec 1 2) "extra"))
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 0 arguments

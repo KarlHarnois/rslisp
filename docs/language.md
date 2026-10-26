@@ -58,7 +58,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `derive` | `(derive type trait...)` | `#[derive(...)]` | type: reference to a `struct` or `enum` of this module. traits: references to traits. |
 | `new` | `(new name (field value)...)` or `(new _ base (field value)...)` | struct literal or struct update | name: type, or `_` with a base expression. base: expression. fields: field labels with expressions. |
 | `assoc-at` | `(assoc-at value (key...) item)` | block | value: expression. keys: expressions. item: expression. |
-| `map-at` | `(map-at operation value argument...)` | method call or block | operation: `lookup`, `keys`, `vals`, `entries` or `update`. value: expression. arguments: expressions. |
+| `map-at` | `(map-at operation value argument...)` | method call or block | operation: `lookup`, `keys`, `vals`, `entries`, `iter` or `update`. value: expression. arguments: expressions. |
 | `set-at` | `(set-at value (key...) item)` | assignment | value: expression. keys: expressions. item: expression. |
 | `field` | `(field value name)` | `value.name` | value: expression. name: field label. |
 | `ref` | `(ref value)` | `&value` | value: expression. |
@@ -84,7 +84,7 @@ In expression positions, the kernel provides `ref`, `mut` and `deref`, and the c
 
 `assoc-at` is a kernel form because only the compiler knows a collection's inferred type. A prelude macro cannot choose between a vector and a map, so the `assoc-at` collection rule picks the emitted Rust by type. The rule knows `(vec a)`, `(sorted-map k v)` and `(hash-map k v)`.
 
-`map-at` and `set-at` are kernel forms for the same reason. Only the compiler knows a map's key and value types, so one rule picks the emitted Rust for `lookup`, `keys`, `vals`, `entries`, `update` and `set!` from the inferred map type. The prelude macros expand to these forms, and the collection rules for `assoc-at`, `map-at` and `set-at` share the map type test.
+`map-at` and `set-at` are kernel forms for the same reason. Only the compiler knows a map's key and value types, so one rule picks the emitted Rust for `lookup`, `keys`, `vals`, `entries`, `update` and `set!` from the inferred map type. `map-at` also carries `iter`: it accepts a vector, a slice or a map and emits `.iter()`, yielding `(ref a)` for a vector or a slice and `(pair (ref key) (ref value))` for a map. The prelude cannot express `iter` as a function, because one signature cannot accept both a slice and a map without an iterable trait, and only the compiler knows the collection's inferred type and the item type to yield. The prelude macros expand to these forms, and the collection rules for `assoc-at`, `map-at` and `set-at` share the map type test.
 
 ### Module bodies
 
@@ -175,7 +175,7 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 | Type | Rust | Functions |
 |---|---|---|
 | `(vec a)` | `Vec<A>` | `vec push! len iter values collect get pop! sort! sort-by-key! windows at dedup! first last empty? reverse reverse! sort-descending!` |
-| `(slice a)` | `[A]` | `windows at first last empty? reverse` |
+| `(slice a)` | `[A]` | `iter windows at first last empty? reverse` |
 | `(box a)` | `Box<A>` | `box-new` |
 | `(pair a b)` | `(A, B)` | `pair pair/pair let-pair` |
 | `(option a)` | `Option<A>` | `some none option/some option/none some? none? unwrap-or unwrap expect map-some then-some` |
@@ -183,8 +183,8 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 | `(iterator a)` | `impl Iterator<Item = A>` | `range map filter fold for-each enumerate zip sum count max min max-by-key any all find take take-while` |
 | `char` | `char` | `alphanumeric? whitespace? digit?` |
 | `str`, `string` | `&str`, `String` | `to-string display str char print println chars lines split trim as-str parse parse-error from-str lower-case upper-case split-when append! append-char! empty?` |
-| `(sorted-map key value)` | `std::collections::BTreeMap<K, V>` | `sorted-map lookup keys vals entries update into-sorted-map assoc set! len empty?` |
-| `(hash-map key value)` | `std::collections::HashMap<K, V>` | `hash-map lookup keys vals entries update into-hash-map assoc set! len empty?` |
+| `(sorted-map key value)` | `std::collections::BTreeMap<K, V>` | `sorted-map lookup keys vals entries iter update into-sorted-map assoc set! len empty?` |
+| `(hash-map key value)` | `std::collections::HashMap<K, V>` | `hash-map lookup keys vals entries iter update into-hash-map assoc set! len empty?` |
 
 `print` and `println` take any number of parts. Each string literal part folds into one format string, and each other part becomes a `{}` placeholder. `str` folds its literal parts the same way. A `print` whose last part ends in a newline emits `println!` without that newline. `prn` and `pr-str` print a value's data form. `(display type (value) parts...)` implements `display` for a struct or enum the program defines, and makes the type printable with `print`, `println`, `str` and `to-string`.
 
@@ -192,13 +192,13 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 
 An iterator is lazy, as in Rust, so `(fold (range 1 1000001) 0 (fn (total n) (+ total n)))` repeats work without recursion. `(vec 1 2 3)` emits `vec![1, 2, 3]`, and `(vec)` emits `Vec::new()`.
 
-`sorted-map` builds a `BTreeMap` from key and value pairs, and `(sorted-map)` is empty. Its keys implement `ord`, and its entries iterate in key order. `hash-map` builds a `HashMap` the same way; its keys implement `hash` and `eq`, and its iteration order is not fixed. `into-sorted-map` and `into-hash-map` collect a vector of pairs. `lookup` returns `(option (ref value))`, and a `str` may query a `string` key. `keys`, `vals` and `entries` return iterators of references. `update` removes the value or uses the default, applies its function, inserts the result and returns the map, so no value is copied. `assoc` inserts a key and returns the map. `set!` on `(at m k)` emits `*m.get_mut(&k).unwrap() = v`; it changes an existing key and panics on a missing one. `len` and `empty?` take a map through `sequence`. The `map-at`, `assoc-at` and `set-at` collection rules pick all of this from the inferred map type, so the prelude has one API for every map. A key that lacks its map's key traits is the existing missing-trait error.
+`sorted-map` builds a `BTreeMap` from key and value pairs, and `(sorted-map)` is empty. Its keys implement `ord`, and its entries iterate in key order. `hash-map` builds a `HashMap` the same way; its keys implement `hash` and `eq`, and its iteration order is not fixed. `into-sorted-map` and `into-hash-map` collect a vector of pairs. `lookup` returns `(option (ref value))`, and a `str` may query a `string` key. `keys`, `vals` and `entries` return iterators of references. `iter` on a map returns the same iterator as `entries`. `update` removes the value or uses the default, applies its function, inserts the result and returns the map, so no value is copied. `assoc` inserts a key and returns the map. `set!` on `(at m k)` emits `*m.get_mut(&k).unwrap() = v`; it changes an existing key and panics on a missing one. `len` and `empty?` take a map through `sequence`. The `map-at`, `assoc-at` and `set-at` collection rules pick all of this from the inferred map type, so the prelude has one API for every map. A key that lacks its map's key traits is the existing missing-trait error.
 
 Program input and output use Rust's standard library through the prelude. `slurp` reads a file, `slurp-stdin` reads all of standard input, and both return `(result string io-error)`. `read-line` returns `(result (option string) io-error)`, returns `none` at end of input, and drops a trailing newline and carriage return. `io-error` is Rust's `std::io::Error`, which implements `display` and `debug`. `command-line-args` returns the arguments after the program name. `exit` stops the process with an `i32` code.
 
 A `main` whose inferred type is a `result` emits an inner function for its body and a `fn main()` that prints its error with `display` to standard error and exits 1. The success path exits 0. The error type must implement `display`; a program's own enum implements it with `display`.
 
-- `iter` yields `(ref a)`. `values` yields copies, so its elements must be `copy`.
+- `iter` yields `(ref a)` for a vector or a slice, and `(pair (ref key) (ref value))` for a map. `values` yields copies, so its elements must be `copy`.
 - `filter` passes each element to its test as a reference, as Rust does.
 - `range` takes an `integer`, a prelude trait of the integer types.
 - An `iterator` cannot be a struct field.

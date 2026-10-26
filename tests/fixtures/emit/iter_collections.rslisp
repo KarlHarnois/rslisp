@@ -1,0 +1,13 @@
+(defn main ()
+  (let numbers (vec 1 2 3))
+  (let sorted (sorted-map "a" 1 "b" 2))
+  (let hashed (hash-map "a" 1 "b" 2))
+  (for-each (iter numbers) (fn (n) (println n)))
+  (for-each (iter sorted)
+            (fn (entry)
+              (let-pair (key value) entry
+                (println key " " value))))
+  (for-each (iter hashed)
+            (fn (entry)
+              (let-pair (key value) entry
+                (println key " " value)))))

@@ -145,20 +145,43 @@ impl<'a> ShrinkSelection<'a> {
         shrink: &Shrink,
         eligible: &HashSet<BindingId>,
     ) -> bool {
-        let TypedExprKind::Leaf(TypedLeaf::Global(function)) = &callee.kind else {
-            return false;
-        };
-        if let Some(info) = self.functions.get(*function)
+        match &callee.kind {
+            TypedExprKind::Leaf(TypedLeaf::Global(function)) => {
+                self.global_argument_accepts(*function, position, shrink, eligible)
+            }
+            TypedExprKind::Leaf(TypedLeaf::Rust(_)) => {
+                self.rust_argument_accepts(callee, position, shrink)
+            }
+            _ => false,
+        }
+    }
+
+    fn global_argument_accepts(
+        &self,
+        function: BindingId,
+        position: usize,
+        shrink: &Shrink,
+        eligible: &HashSet<BindingId>,
+    ) -> bool {
+        if let Some(info) = self.functions.get(function)
             && let Some(slot) = info.params.get(position)
             && eligible.contains(&slot.binding)
         {
             return true;
         }
-        self.declared.get(function).is_some_and(|parameters| {
+        self.declared.get(&function).is_some_and(|parameters| {
             parameters
                 .get(position)
                 .is_some_and(|parameter| self.accepts(parameter, shrink))
         })
+    }
+
+    fn rust_argument_accepts(&self, callee: &TypedExpr, position: usize, shrink: &Shrink) -> bool {
+        callee
+            .ty
+            .parameters()
+            .and_then(|parameters| parameters.get(position))
+            .is_some_and(|parameter| self.accepts(parameter, shrink))
     }
 
     fn recur_accepts(
