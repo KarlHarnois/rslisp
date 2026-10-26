@@ -63,7 +63,13 @@ impl OwnershipChecker {
         let slices = ShrinkSelection::of(program, &functions, &modes)
             .map(|selection| selection.run())
             .unwrap_or_default();
-        let mut rewrite = ModeRewrite::new(&functions, &modes, &slices);
+        let copy = CopyRules::new(
+            &program.traits,
+            &program.generics,
+            &program.structs,
+            &program.enums,
+        );
+        let mut rewrite = ModeRewrite::new(&functions, &modes, &slices, &copy);
         rewrite.apply(program);
         FunctionValueModes::apply(program, rewrite.function_params())
             .into_iter()

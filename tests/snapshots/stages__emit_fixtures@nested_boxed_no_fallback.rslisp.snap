@@ -9,15 +9,15 @@ enum Tree<A> {
     Leaf,
 }
 
-fn value_or_zero(tree: Tree<i64>) -> i64 {
+fn value_or_zero(tree: &Tree<i64>) -> i64 {
     match tree {
-        Tree::Node(inner, _, _) if matches!(&*inner, Tree::Node(_, _, _)) => {
-            let Tree::Node(_, value, _) = *inner else {
+        Tree::Node(inner, _, _) if matches!(&**inner, Tree::Node(_, _, _)) => {
+            let Tree::Node(_, value, _) = &**inner else {
                 unreachable!()
             };
-            value
+            *value
         }
-        Tree::Node(_, value, _) => value,
+        Tree::Node(_, value, _) => *value,
         Tree::Leaf => 0,
     }
 }
@@ -25,7 +25,7 @@ fn value_or_zero(tree: Tree<i64>) -> i64 {
 fn main() {
     println!(
         "{}",
-        value_or_zero(Tree::Node(
+        value_or_zero(&Tree::Node(
             Box::new(Tree::Node(Box::new(Tree::Leaf), 7, Box::new(Tree::Leaf))),
             1,
             Box::new(Tree::Leaf)
@@ -33,7 +33,7 @@ fn main() {
     );
     println!(
         "{}",
-        value_or_zero(Tree::Node(Box::new(Tree::Leaf), 2, Box::new(Tree::Leaf)))
+        value_or_zero(&Tree::Node(Box::new(Tree::Leaf), 2, Box::new(Tree::Leaf)))
     );
-    println!("{}", value_or_zero(Tree::Leaf))
+    println!("{}", value_or_zero(&Tree::Leaf))
 }

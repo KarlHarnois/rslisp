@@ -151,7 +151,7 @@ impl<'a> UsageCollector<'a> {
                 }
                 let moves = binders
                     .iter()
-                    .any(|(binding, ty)| self.binding_needs_move(*binding, ty, &matched.arms));
+                    .any(|(binding, ty)| self.binding_needs_move(*binding, ty));
                 self.expr(
                     &matched.value,
                     if moves {
@@ -246,12 +246,7 @@ impl<'a> UsageCollector<'a> {
             .collect()
     }
 
-    fn binding_needs_move(
-        &self,
-        binding: BindingId,
-        ty: &Type,
-        arms: &[crate::types::TypedArm],
-    ) -> bool {
+    fn binding_needs_move(&self, binding: BindingId, ty: &Type) -> bool {
         match self
             .pattern_required
             .get(&binding)
@@ -260,18 +255,8 @@ impl<'a> UsageCollector<'a> {
         {
             ParamMode::Copy | ParamMode::Ref => false,
             ParamMode::Mut => true,
-            ParamMode::Own => {
-                !self.copy.is_copy(ty) || arms.iter().any(|arm| Self::returns(arm, binding))
-            }
+            ParamMode::Own => !self.copy.is_copy(ty),
         }
-    }
-
-    fn returns(arm: &crate::types::TypedArm, binding: BindingId) -> bool {
-        matches!(
-            arm.body.items.last(),
-            Some(TypedBodyItem::Expr(expr))
-                if matches!(expr.kind, TypedExprKind::Leaf(TypedLeaf::Local(local)) if local == binding)
-        )
     }
 
     fn require(&mut self, binding: BindingId, mode: ParamMode) {
