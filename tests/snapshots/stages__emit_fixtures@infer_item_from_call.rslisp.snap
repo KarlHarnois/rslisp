@@ -1,0 +1,27 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/infer_item_from_call.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Stack<A> {
+    items: Vec<A>,
+}
+
+fn main() {
+    let mut words = Stack { items: Vec::new() };
+    words.put("alpha".to_string());
+    println!("{}", words.items.len())
+}
+
+trait Container {
+    type Item;
+    fn put(&mut self, _: Self::Item);
+}
+
+impl<A> Container for Stack<A> {
+    type Item = A;
+    fn put(&mut self, value: A) {
+        self.items.push(value)
+    }
+}

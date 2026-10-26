@@ -67,6 +67,7 @@ impl<'s> ImplementorMatch<'s> {
             .substitute(&self.bindings);
         if let Some(expected) = &bound.argument
             && !matches!(expected, Type::Var(_))
+            && !matches!(argument, Type::Var(_))
             && argument != *expected
         {
             return Selection::Missing;

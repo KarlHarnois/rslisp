@@ -1983,14 +1983,14 @@ impl<'a> ExpressionEmitter<'a> {
         context: TypeContext,
         role: ArgumentRole,
     ) -> Code {
-        if argument.borrow == Borrow::Deref(1) && self.is_borrowed_index_call(&argument.value) {
-            return self
-                .place(&argument.value, context)
-                .spanned(argument.value.span);
+        if let Some(value) = self.borrowed_index_argument(argument, context) {
+            return value;
         }
-        let value = self
-            .argument_value(&argument.value, context, role)
-            .spanned(argument.value.span);
+        let value = match (&argument.value.kind, role) {
+            (TypedExprKind::Borrow(_, place), ArgumentRole::Receiver) => self.place(place, context),
+            _ => self.argument_value(&argument.value, context, role),
+        }
+        .spanned(argument.value.span);
         let prefix = match role {
             ArgumentRole::MutPlace => None,
             _ => Self::borrow_prefix(argument, role),
@@ -1999,6 +1999,20 @@ impl<'a> ExpressionEmitter<'a> {
             Some(prefix) => Self::prefixed(&prefix, value).spanned(argument.value.span),
             None => value,
         }
+    }
+
+    fn borrowed_index_argument(
+        &mut self,
+        argument: &TypedArgument,
+        context: TypeContext,
+    ) -> Option<Code> {
+        if argument.borrow != Borrow::Deref(1) || !self.is_borrowed_index_call(&argument.value) {
+            return None;
+        }
+        Some(
+            self.place(&argument.value, context)
+                .spanned(argument.value.span),
+        )
     }
 
     fn argument_value(
