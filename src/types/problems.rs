@@ -23,6 +23,18 @@ pub enum MismatchContext {
 
 pub struct TypeProblems;
 
+#[derive(Default)]
+pub struct ImplementorList {
+    pub entries: Vec<String>,
+    pub groups: Vec<ImplementorGroup>,
+}
+
+pub struct ImplementorGroup {
+    pub constructor: String,
+    pub parameter: String,
+    pub arguments: Vec<String>,
+}
+
 impl TypeProblems {
     fn expansion_name(expanded_from: Option<Rc<str>>) -> String {
         expanded_from.map_or_else(|| "if".to_string(), |name| name.to_string())
@@ -210,17 +222,33 @@ impl TypeProblems {
         trait_name: &str,
         found: &str,
         span: Span,
-        implementors: Vec<String>,
+        implementors: ImplementorList,
     ) -> Diagnostic {
-        Diagnostic::error(
+        let diagnostic = Diagnostic::error(
             DiagnosticCode::MISSING_TRAIT,
             format!("`{found}` does not implement `{trait_name}`"),
             Label::new(span, format!("this needs `{trait_name}`")),
         )
         .with_note(format!(
             "`{trait_name}` is implemented for: {}",
-            implementors.join(", ")
-        ))
+            implementors.entries.join(", ")
+        ));
+        implementors
+            .groups
+            .into_iter()
+            .fold(diagnostic, |diagnostic, group| {
+                diagnostic.with_note(Self::implementor_group_note(trait_name, &group))
+            })
+    }
+
+    fn implementor_group_note(trait_name: &str, group: &ImplementorGroup) -> String {
+        format!(
+            "`{trait_name}` is implemented for `({} {})` for each `{}` in: {}",
+            group.constructor,
+            group.parameter,
+            group.parameter,
+            group.arguments.join(", ")
+        )
     }
 
     pub fn foreign_implementor(trait_name: &str, found: &str, span: Span) -> Diagnostic {
