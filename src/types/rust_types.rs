@@ -7,6 +7,7 @@ use crate::core::{BindingId, ParsedTemplate};
 pub struct RustType {
     pub template: Rc<ParsedTemplate>,
     pub clauses: Vec<(Type, Rc<ParsedTemplate>)>,
+    pub params: Vec<Rc<str>>,
 }
 
 impl RustType {

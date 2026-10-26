@@ -6,7 +6,7 @@ use super::display::TypeDisplay;
 use super::enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};
 use super::graph::DependencyGraph;
 use super::pending::PendingBorrow;
-use super::problems::{MismatchContext, TypeProblems};
+use super::problems::{ImplementorGroup, ImplementorList, MismatchContext, TypeProblems};
 use super::rust_types::{RustType, RustTypeTable};
 use super::selection::Selection;
 use super::structs::{StructDefinition, StructTable};
@@ -1337,6 +1337,7 @@ impl TypeChecker {
                 RustType {
                     template: rust.template.clone(),
                     clauses: Vec::new(),
+                    params: params.iter().map(|param| Rc::clone(&param.name)).collect(),
                 },
             );
         }
@@ -1455,6 +1456,11 @@ impl TypeChecker {
             RustType {
                 template: template.clone(),
                 clauses,
+                params: binders
+                    .iter()
+                    .filter(|binder| !binder.lifetime)
+                    .map(|binder| Rc::from(self.bindings.get(binder.variable).name()))
+                    .collect(),
             },
         );
         Ok(())
@@ -2227,17 +2233,72 @@ impl TypeChecker {
         &self,
         trait_binding: BindingId,
         display: &TypeDisplay<'_>,
-    ) -> Vec<String> {
+    ) -> ImplementorList {
         self.traits
             .get(trait_binding)
-            .map(|rust_trait| {
-                rust_trait
-                    .implementors
-                    .iter()
-                    .map(|known| Self::show_implementor(display, known))
-                    .collect()
-            })
+            .map(|rust_trait| self.group_implementors(rust_trait, display))
             .unwrap_or_default()
+    }
+
+    fn group_implementors(
+        &self,
+        rust_trait: &RustTrait,
+        display: &TypeDisplay<'_>,
+    ) -> ImplementorList {
+        let mut grouped: Vec<(BindingId, Vec<(usize, String)>)> = Vec::new();
+        for (position, known) in rust_trait.implementors.iter().enumerate() {
+            let Some((binding, argument)) = self.grouped_implementor(known) else {
+                continue;
+            };
+            let shown = display.show(argument);
+            match grouped.iter_mut().find(|(group, _)| *group == binding) {
+                Some((_, entries)) => entries.push((position, shown)),
+                None => grouped.push((binding, vec![(position, shown)])),
+            }
+        }
+        let groups: Vec<(BindingId, Vec<(usize, String)>)> = grouped
+            .into_iter()
+            .filter(|(_, entries)| entries.len() > 1)
+            .collect();
+        let grouped_positions: HashSet<usize> = groups
+            .iter()
+            .flat_map(|(_, entries)| entries.iter().map(|(position, _)| *position))
+            .collect();
+        let entries = rust_trait
+            .implementors
+            .iter()
+            .enumerate()
+            .filter(|(position, _)| !grouped_positions.contains(position))
+            .map(|(_, known)| Self::show_implementor(display, known))
+            .collect();
+        let groups = groups
+            .into_iter()
+            .map(|(binding, entries)| ImplementorGroup {
+                constructor: self.bindings.get(binding).name().to_string(),
+                parameter: self
+                    .rust_types
+                    .get(binding)
+                    .and_then(|rust_type| rust_type.params.first())
+                    .expect("a grouped implementor has a type parameter")
+                    .to_string(),
+                arguments: entries.into_iter().map(|(_, shown)| shown).collect(),
+            })
+            .collect();
+        ImplementorList { entries, groups }
+    }
+
+    fn grouped_implementor<'a>(&'a self, known: &'a Implementor) -> Option<(BindingId, &'a Type)> {
+        if known.argument.is_some() {
+            return None;
+        }
+        let Type::Named(binding, arguments) = &known.scheme.body else {
+            return None;
+        };
+        let [argument] = arguments.as_slice() else {
+            return None;
+        };
+        let params = &self.rust_types.get(*binding)?.params;
+        (params.len() == 1 && !argument.is_unknown()).then_some((*binding, argument))
     }
 
     fn type_trait_help(
