@@ -462,6 +462,7 @@ mod tests {
                         argument: None,
                     }],
                     help: None,
+                    supertraits: Vec::new(),
                 },
             );
             Self {

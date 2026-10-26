@@ -27,7 +27,7 @@ trait Shape {
 
 impl Shape for Circle {
     fn area(&self) -> f64 {
-        3.14 * self.radius * self.radius
+        3.0 * self.radius * self.radius
     }
 }
 

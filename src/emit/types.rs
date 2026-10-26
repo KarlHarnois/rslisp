@@ -187,19 +187,8 @@ impl<'a> RustTypes<'a> {
         converts_literals: bool,
     ) -> String {
         let name = Self::generic_name(param);
-        let declared = self.trait_paths(&param.bounds);
-        let mut bounds = declared.clone();
-        let implied = self
-            .program
-            .implied_bounds
-            .get(&param.id)
-            .map(|implied| self.trait_paths(implied))
-            .unwrap_or_default();
-        for path in implied {
-            if !Self::is_covered(&path, &bounds) {
-                bounds.push(path);
-            }
-        }
+        let mut bounds = self.declared_bounds(param);
+        self.add_implied_bounds(param, &mut bounds);
         if converts_literals && !Self::is_covered(Self::NUMBER_TRAIT, &bounds) {
             bounds.push(Self::NUMBER_TRAIT.to_string());
         }
@@ -249,19 +238,66 @@ impl<'a> RustTypes<'a> {
             })
     }
 
-    fn trait_paths(&self, bounds: &[Bound]) -> Vec<String> {
-        bounds
+    fn declared_bounds(&self, param: &GenericParam) -> Vec<String> {
+        param
+            .bounds
             .iter()
-            .filter_map(|bound| {
-                let path = self.program.traits.get(bound.binding)?.path.to_string();
-                Some(match &bound.argument {
-                    Some(argument) => {
-                        format!("{path}<{}>", self.show(argument, TypePosition::Value))
-                    }
-                    None => path,
-                })
+            .filter(|bound| {
+                !param
+                    .bounds
+                    .iter()
+                    .any(|other| other.binding != bound.binding && self.bound_implies(other, bound))
             })
+            .filter_map(|bound| self.trait_path(bound))
             .collect()
+    }
+
+    fn add_implied_bounds(&self, param: &GenericParam, bounds: &mut Vec<String>) {
+        let implied = self
+            .program
+            .implied_bounds
+            .get(&param.id)
+            .cloned()
+            .unwrap_or_default();
+        for implied in &implied {
+            if param
+                .bounds
+                .iter()
+                .any(|bound| self.bound_implies(bound, implied))
+            {
+                continue;
+            }
+            if let Some(path) = self.trait_path(implied)
+                && !Self::is_covered(&path, bounds)
+            {
+                bounds.push(path);
+            }
+        }
+    }
+
+    fn trait_path(&self, bound: &Bound) -> Option<String> {
+        let path = self.program.traits.get(bound.binding)?.path.to_string();
+        Some(match &bound.argument {
+            Some(argument) => {
+                format!("{path}<{}>", self.show(argument, TypePosition::Value))
+            }
+            None => path,
+        })
+    }
+
+    fn bound_implies(&self, declared: &Bound, required: &Bound) -> bool {
+        if declared == required {
+            return true;
+        }
+        self.program
+            .traits
+            .get(declared.binding)
+            .is_some_and(|rust_trait| {
+                rust_trait
+                    .supertraits
+                    .iter()
+                    .any(|supertrait| self.bound_implies(supertrait, required))
+            })
     }
 
     fn is_covered(path: &str, bounds: &[String]) -> bool {

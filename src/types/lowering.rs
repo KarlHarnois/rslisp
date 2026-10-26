@@ -5,7 +5,9 @@ use super::problems::TypeProblems;
 use super::traits::Implementor;
 use super::ty::{Bound, GenericId, GenericParam, Lifetime, Scheme, Type};
 use crate::core::ClosureKind;
-use crate::core::{BindingId, BindingKind, ReferenceKind, TypeBinder, TypeExpr, TypeExprKind};
+use crate::core::{
+    BindingId, BindingKind, ReferenceKind, TypeBinder, TypeBound, TypeExpr, TypeExprKind,
+};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 
@@ -122,18 +124,24 @@ impl TypeChecker {
         binder
             .bounds
             .iter()
-            .map(|bound| {
-                let Some(argument) = &bound.argument else {
-                    return Ok(Bound::plain(bound.binding));
-                };
-                self.check_trait_argument(bound.binding, argument.span())?;
-                let argument = self.lower_type(argument, scope)?;
-                Ok(Bound {
-                    binding: bound.binding,
-                    argument: Some(argument),
-                })
-            })
+            .map(|bound| self.lower_type_bound(bound, scope))
             .collect()
+    }
+
+    pub(super) fn lower_type_bound(
+        &mut self,
+        bound: &TypeBound,
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<Bound, Diagnostic> {
+        let Some(argument) = &bound.argument else {
+            return Ok(Bound::plain(bound.binding));
+        };
+        self.check_trait_argument(bound.binding, argument.span())?;
+        let argument = self.lower_type(argument, scope)?;
+        Ok(Bound {
+            binding: bound.binding,
+            argument: Some(argument),
+        })
     }
 
     fn check_trait_argument(&self, binding: BindingId, span: Span) -> Result<(), Diagnostic> {

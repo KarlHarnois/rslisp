@@ -256,6 +256,7 @@ pub struct TypedTrait {
     pub binding: BindingId,
     pub module: ModuleId,
     pub rust_name: Rc<str>,
+    pub supertraits: Vec<Bound>,
     pub methods: Vec<TypedTraitMethod>,
 }
 

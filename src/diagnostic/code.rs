@@ -117,6 +117,7 @@ impl DiagnosticCode {
     pub const UNUSED_ENUM_PARAMETER: Self = Self(Cow::Borrowed("L0443"));
     pub const UNSIZABLE_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0444"));
     pub const FOREIGN_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0445"));
+    pub const SUPERTRAIT: Self = Self(Cow::Borrowed("L0446"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const NEEDS_OWNERSHIP: Self = Self(Cow::Borrowed("L0503"));

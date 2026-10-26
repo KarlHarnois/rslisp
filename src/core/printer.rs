@@ -110,8 +110,15 @@ impl<'a> CorePrinter<'a> {
             );
             return Self::list("rust-trait", parts);
         }
-        if let ItemKind::Trait(binding, _, _, methods) = &item.kind {
-            let mut parts = vec![self.name(*binding)];
+        if let ItemKind::Trait(binding, _, _, supertraits, methods) = &item.kind {
+            let head = if supertraits.is_empty() {
+                self.name(*binding)
+            } else {
+                let mut parts = vec![self.name(*binding)];
+                parts.extend(supertraits.iter().map(|bound| self.bound(bound)));
+                format!("({})", parts.join(" "))
+            };
+            let mut parts = vec![head];
             parts.extend(methods.iter().map(|method| {
                 format!(
                     "({} {})",

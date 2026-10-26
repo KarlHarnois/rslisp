@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/missing_program_supertrait.rslisp
+---
+error[L0446]: `circle` does not implement `area-trait`, a supertrait of `shape`
+ --> check/missing_program_supertrait.rslisp:9:13
+  |
+9 | (impl shape circle)
+  |             ^^^^^^ `circle` does not implement `area-trait`
+  |
+  = help: implement `area-trait` for `circle`

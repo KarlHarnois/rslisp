@@ -215,7 +215,7 @@ impl Expander<'_> {
         })
     }
 
-    fn lower_bound(&mut self, bound: &Form) -> Result<TypeBound, Diagnostic> {
+    pub(super) fn lower_bound(&mut self, bound: &Form) -> Result<TypeBound, Diagnostic> {
         let (name, argument) = match bound.as_list() {
             Some([name, argument]) => (name, Some(argument)),
             _ => (bound, None),

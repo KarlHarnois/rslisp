@@ -202,6 +202,31 @@ impl TypeProblems {
         .with_help("implement it for a struct or enum this program defines")
     }
 
+    pub fn missing_supertrait(
+        trait_name: &str,
+        supertrait_name: &str,
+        implementor: &str,
+        span: Span,
+        help: Option<Rc<str>>,
+    ) -> Diagnostic {
+        let diagnostic = Diagnostic::error(
+            DiagnosticCode::SUPERTRAIT,
+            format!(
+                "`{implementor}` does not implement `{supertrait_name}`, a supertrait of `{trait_name}`"
+            ),
+            Label::new(
+                span,
+                format!("`{implementor}` does not implement `{supertrait_name}`"),
+            ),
+        );
+        match help {
+            Some(help) => diagnostic.with_help(help.to_string()),
+            None => {
+                diagnostic.with_help(format!("implement `{supertrait_name}` for `{implementor}`"))
+            }
+        }
+    }
+
     pub fn missing_trait_on_struct(trait_name: &str, found: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MISSING_TRAIT,

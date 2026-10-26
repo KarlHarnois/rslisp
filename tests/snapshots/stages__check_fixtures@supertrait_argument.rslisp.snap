@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/supertrait_argument.rslisp
+---
+error[L0210]: malformed `trait`
+ --> check/supertrait_argument.rslisp:1:15
+  |
+1 | (trait (shape (display i64))
+  |               ^^^^^^^^^^^^^ this does not fit the shape of `trait`
+  |
+  = help: write a trait name, such as `(display)`

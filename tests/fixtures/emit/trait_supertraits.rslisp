@@ -1,0 +1,19 @@
+(trait (shape (display) (clone))
+  (area (fn ((ref self)) f64)))
+
+(struct circle (radius f64))
+(display circle (c) "circle " (field c radius))
+(impl shape circle
+  (area (c) (* 3.0 (field c radius) (field c radius))))
+
+(struct square (side f64))
+(display square (s) "square " (field s side))
+(impl shape square
+  (area (s) (* (field s side) (field s side))))
+
+(defn show (s)
+  (do (area s) (to-string s)))
+
+(defn main ()
+  (println (show (new circle (radius 1.0))))
+  (println (show (new square (side 2.0)))))

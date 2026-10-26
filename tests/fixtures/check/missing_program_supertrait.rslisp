@@ -1,0 +1,9 @@
+(trait area-trait
+  (area (fn ((ref self)) f64)))
+
+(trait (shape (area-trait))
+  (describe (fn ((ref self)) string)
+    (str "area " (area self))))
+
+(struct circle (radius f64))
+(impl shape circle)

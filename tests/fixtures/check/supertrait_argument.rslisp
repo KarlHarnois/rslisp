@@ -1,0 +1,2 @@
+(trait (shape (display i64))
+  (area (fn ((ref self)) f64)))

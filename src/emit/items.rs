@@ -14,9 +14,16 @@ use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    GenericId, GenericParam, Lifetime, ReceiverKind, Type, TypedBinder, TypedConversion,
+    Bound, GenericId, GenericParam, Lifetime, ReceiverKind, Type, TypedBinder, TypedConversion,
     TypedDefinition, TypedExpr, TypedExprKind, TypedProgram, TypedTraitMethod, VariantDefinition,
 };
+
+struct TraitHeader {
+    binding: BindingId,
+    rust_name: std::rc::Rc<str>,
+    supertraits: Vec<Bound>,
+    methods: Vec<TypedTraitMethod>,
+}
 
 #[derive(Default)]
 struct ModuleTree {
@@ -217,35 +224,51 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn traits(&mut self, module: ModuleId) -> Vec<Vec<Fragment>> {
-        let definitions: Vec<(BindingId, std::rc::Rc<str>, Vec<TypedTraitMethod>)> = self
+        let definitions: Vec<TraitHeader> = self
             .program
             .trait_definitions
             .iter()
             .filter(|trait_definition| trait_definition.module == module)
-            .map(|trait_definition| {
-                (
-                    trait_definition.binding,
-                    trait_definition.rust_name.clone(),
-                    trait_definition.methods.clone(),
-                )
+            .map(|trait_definition| TraitHeader {
+                binding: trait_definition.binding,
+                rust_name: trait_definition.rust_name.clone(),
+                supertraits: trait_definition.supertraits.clone(),
+                methods: trait_definition.methods.clone(),
             })
             .collect();
         definitions
             .into_iter()
-            .map(|(binding, rust_name, trait_methods)| {
+            .map(|trait_definition| {
                 let mut methods = Vec::new();
-                for method in &trait_methods {
+                for method in &trait_definition.methods {
                     methods.push(Fragment::Newline);
                     methods.extend(self.trait_method(module, method));
                 }
-                let visibility = self.trait_visibility(module, binding);
+                let visibility = self.trait_visibility(module, trait_definition.binding);
+                let supertraits = self.supertrait_paths(&trait_definition.supertraits, module);
+                let header = if supertraits.is_empty() {
+                    format!("{visibility}trait {} {{", trait_definition.rust_name)
+                } else {
+                    format!(
+                        "{visibility}trait {}: {} {{",
+                        trait_definition.rust_name,
+                        supertraits.join(" + ")
+                    )
+                };
                 vec![
-                    Fragment::Text(format!("{visibility}trait {rust_name} {{")),
+                    Fragment::Text(header),
                     Fragment::Indented(methods),
                     Fragment::Newline,
                     Fragment::Text("}".to_string()),
                 ]
             })
+            .collect()
+    }
+
+    fn supertrait_paths(&self, supertraits: &[Bound], module: ModuleId) -> Vec<String> {
+        supertraits
+            .iter()
+            .map(|supertrait| self.plan.trait_path(supertrait.binding, module))
             .collect()
     }
 

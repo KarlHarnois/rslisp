@@ -1,0 +1,52 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/trait_supertraits.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Circle {
+    radius: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Square {
+    side: f64,
+}
+
+fn show<A: Shape>(s: A) -> String {
+    s.area();
+    s.to_string()
+}
+
+fn main() {
+    println!("{}", show(Circle { radius: 1.0 }));
+    println!("{}", show(Square { side: 2.0 }))
+}
+
+trait Shape: std::fmt::Display + Clone {
+    fn area(&self) -> f64;
+}
+
+impl std::fmt::Display for Circle {
+    fn fmt(&self, out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(out, "circle {}", self.radius)
+    }
+}
+
+impl Shape for Circle {
+    fn area(&self) -> f64 {
+        3.0 * self.radius * self.radius
+    }
+}
+
+impl std::fmt::Display for Square {
+    fn fmt(&self, out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(out, "square {}", self.side)
+    }
+}
+
+impl Shape for Square {
+    fn area(&self) -> f64 {
+        self.side * self.side
+    }
+}
