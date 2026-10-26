@@ -1,0 +1,25 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/associated_types.rslisp
+---
+fn first_item<C: Container<Item = Item>, Item>(c: &C) -> Option<&Item> {
+    c.first()
+}
+
+fn main() {
+    println!("{}", first_item(&vec![1_i64, 2_i64]).is_some());
+    println!("{}", first_item(&vec!["a", "b"]).is_some())
+}
+
+trait Container {
+    type Item;
+    fn first(&self) -> Option<&Self::Item>;
+}
+
+impl<A> Container for Vec<A> {
+    type Item = A;
+    fn first(&self) -> Option<&A> {
+        Some(&self[0])
+    }
+}

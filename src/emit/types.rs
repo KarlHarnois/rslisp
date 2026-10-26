@@ -115,14 +115,20 @@ impl<'a> RustTypes<'a> {
         self.show_in(shown, position, &LifetimeScope::default())
     }
 
+    fn generic(&self, generic: GenericId) -> String {
+        if let Some(name) = self.program.associated_generics.get(&generic) {
+            return format!("Self::{}", NameMangler::type_name(name));
+        }
+        self.program
+            .generics
+            .get(&generic)
+            .map_or_else(|| "_".to_string(), Self::generic_name)
+    }
+
     pub fn show_in(&self, shown: &Type, position: TypePosition, scope: &LifetimeScope) -> String {
         match shown {
             Type::Var(_) => "_".to_string(),
-            Type::Generic(generic) => self
-                .program
-                .generics
-                .get(generic)
-                .map_or_else(|| "_".to_string(), Self::generic_name),
+            Type::Generic(generic) => self.generic(*generic),
             Type::Primitive(primitive) => Self::primitive(*primitive).to_string(),
             Type::Named(binding, arguments) => self.named(*binding, arguments, position, scope),
             Type::Function(kind, parameters, result) => {
@@ -276,12 +282,18 @@ impl<'a> RustTypes<'a> {
     }
 
     fn trait_path(&self, bound: &Bound) -> Option<String> {
-        let path = self.program.traits.get(bound.binding)?.path.to_string();
-        Some(match &bound.argument {
-            Some(argument) => {
+        let rust_trait = self.program.traits.get(bound.binding)?;
+        let path = rust_trait.path.to_string();
+        Some(match (&bound.argument, &rust_trait.associated) {
+            (Some(argument), Some(associated)) => format!(
+                "{path}<{} = {}>",
+                NameMangler::type_name(associated),
+                self.show(argument, TypePosition::Value)
+            ),
+            (Some(argument), None) => {
                 format!("{path}<{}>", self.show(argument, TypePosition::Value))
             }
-            None => path,
+            (None, _) => path,
         })
     }
 

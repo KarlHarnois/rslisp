@@ -536,6 +536,41 @@ impl ExpandProblems {
         .with_help(format!("add the `{method}` method"))
     }
 
+    pub fn missing_associated_type(
+        trait_name: &str,
+        associated: &str,
+        type_name: &str,
+        span: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::ASSOCIATED_TYPE,
+            format!("`{type_name}` does not define the associated type `{associated}`"),
+            Label::new(
+                span,
+                format!("`{trait_name}` requires the associated type `{associated}`"),
+            ),
+        )
+        .with_help(format!("add `(type {associated} ...)` to the impl"))
+    }
+
+    pub fn unknown_associated_type(trait_name: &str, associated: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::ASSOCIATED_TYPE,
+            format!("`{trait_name}` does not declare the associated type `{associated}`"),
+            Label::new(span, "not an associated type of this trait"),
+        )
+        .with_help("declare it in the trait, or remove it from the impl")
+    }
+
+    pub fn duplicate_associated_type(associated: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::ASSOCIATED_TYPE,
+            format!("the associated type `{associated}` is defined more than once"),
+            Label::new(span, "defined again here"),
+        )
+        .with_help("remove one of the definitions")
+    }
+
     pub fn extra_method(method: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::EXTRA_METHOD,

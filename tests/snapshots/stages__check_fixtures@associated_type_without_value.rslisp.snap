@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/associated_type_without_value.rslisp
+---
+error[L0210]: malformed `impl`
+ --> check/associated_type_without_value.rslisp:6:3
+  |
+6 |   (type item)
+  |   ^^^^^^^^^^^ this does not fit the shape of `impl`
+  |
+  = help: write an associated type as `(type item a)`

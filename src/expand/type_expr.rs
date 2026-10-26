@@ -39,7 +39,8 @@ impl Expander<'_> {
             BindingKind::Struct(_)
             | BindingKind::Enum(_)
             | BindingKind::RustType(_)
-            | BindingKind::TypeVariable => Ok(TypeExprKind::Named(binding, Vec::new())),
+            | BindingKind::TypeVariable
+            | BindingKind::AssociatedType => Ok(TypeExprKind::Named(binding, Vec::new())),
             BindingKind::Lifetime => Err(ExpandProblems::wrong_namespace(
                 symbol.name(),
                 "a type",

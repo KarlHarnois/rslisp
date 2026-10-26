@@ -8,7 +8,10 @@ pub struct Requirement {
 }
 
 pub enum Selection {
-    Implemented(Vec<Requirement>),
+    Implemented {
+        requirements: Vec<Requirement>,
+        argument: Option<Type>,
+    },
     Undecided,
     Missing,
 }
@@ -16,8 +19,8 @@ pub enum Selection {
 impl Selection {
     pub fn best(self, other: Selection) -> Selection {
         match (self, other) {
-            (implemented @ Selection::Implemented(_), _)
-            | (_, implemented @ Selection::Implemented(_)) => implemented,
+            (implemented @ Selection::Implemented { .. }, _)
+            | (_, implemented @ Selection::Implemented { .. }) => implemented,
             (Selection::Undecided, _) | (_, Selection::Undecided) => Selection::Undecided,
             (Selection::Missing, Selection::Missing) => Selection::Missing,
         }
@@ -31,26 +34,66 @@ pub struct ImplementorMatch<'s> {
 }
 
 impl<'s> ImplementorMatch<'s> {
-    pub fn select(implementor: &'s Implementor, bound: &Bound, target: &Type) -> Selection {
+    pub fn select(
+        implementor: &'s Implementor,
+        bound: &Bound,
+        target: &Type,
+        associated: bool,
+    ) -> Selection {
         let mut matcher = Self {
             implementor,
             bindings: HashMap::new(),
             undecided: false,
         };
-        let pattern_argument = implementor
+        if !matcher.matches(&implementor.scheme.body, target) {
+            return Selection::Missing;
+        }
+        if associated {
+            matcher.associated(bound)
+        } else {
+            matcher.parameter(bound, target)
+        }
+    }
+
+    fn associated(&mut self, bound: &Bound) -> Selection {
+        if self.undecided {
+            return Selection::Undecided;
+        }
+        let argument = self
+            .implementor
             .argument
             .as_ref()
-            .unwrap_or(&implementor.scheme.body);
-        let target_argument = bound.argument.as_ref().unwrap_or(target);
-        if !matcher.matches(&implementor.scheme.body, target)
-            || !matcher.matches(pattern_argument, target_argument)
+            .unwrap_or(&self.implementor.scheme.body)
+            .substitute(&self.bindings);
+        if let Some(expected) = &bound.argument
+            && !matches!(expected, Type::Var(_))
+            && argument != *expected
         {
             return Selection::Missing;
         }
-        if matcher.undecided {
+        Selection::Implemented {
+            requirements: self.requirements(),
+            argument: Some(argument),
+        }
+    }
+
+    fn parameter(&mut self, bound: &Bound, target: &Type) -> Selection {
+        let pattern_argument = self
+            .implementor
+            .argument
+            .as_ref()
+            .unwrap_or(&self.implementor.scheme.body);
+        let target_argument = bound.argument.as_ref().unwrap_or(target);
+        if !self.matches(pattern_argument, target_argument) {
+            return Selection::Missing;
+        }
+        if self.undecided {
             return Selection::Undecided;
         }
-        Selection::Implemented(matcher.requirements())
+        Selection::Implemented {
+            requirements: self.requirements(),
+            argument: None,
+        }
     }
 
     fn matches(&mut self, pattern: &Type, target: &Type) -> bool {

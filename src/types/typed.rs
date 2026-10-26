@@ -252,11 +252,18 @@ pub struct TypedTraitMethod {
     pub default: Option<BindingId>,
 }
 
+#[derive(Clone)]
+pub struct TypedAssociatedType {
+    pub binding: BindingId,
+    pub name: Rc<str>,
+}
+
 pub struct TypedTrait {
     pub binding: BindingId,
     pub module: ModuleId,
     pub rust_name: Rc<str>,
     pub supertraits: Vec<Bound>,
+    pub associated: Vec<TypedAssociatedType>,
     pub methods: Vec<TypedTraitMethod>,
 }
 
@@ -276,6 +283,7 @@ pub struct TypedTraitImpl {
     pub trait_binding: BindingId,
     pub implementor: Type,
     pub params: Vec<GenericParam>,
+    pub associated: Vec<(BindingId, Rc<str>, Type)>,
     pub implementor_span: Span,
     pub module: ModuleId,
     pub methods: Vec<TypedImplMethod>,
@@ -305,6 +313,7 @@ pub struct TypedProgram {
     pub synthetic_bindings: HashSet<BindingId>,
     pub generics: HashMap<GenericId, GenericParam>,
     pub implied_bounds: HashMap<GenericId, Vec<Bound>>,
+    pub associated_generics: HashMap<GenericId, Rc<str>>,
     pub template_borrows: TemplateBorrows,
     pub pending_mode_checks: Vec<PendingModeCheck>,
     pub borrowed_parameters: HashSet<BindingId>,

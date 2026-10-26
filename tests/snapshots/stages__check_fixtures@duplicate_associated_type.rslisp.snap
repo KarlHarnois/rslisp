@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/duplicate_associated_type.rslisp
+---
+error[L0447]: the associated type `item` is defined more than once
+ --> check/duplicate_associated_type.rslisp:7:3
+  |
+7 |   (type item a)
+  |   ^^^^^^^^^^^^^ defined again here
+  |
+  = help: remove one of the definitions

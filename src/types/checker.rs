@@ -157,6 +157,7 @@ pub struct TypeChecker {
     signatures: HashMap<BindingId, (TypeExpr, Span)>,
     monomorphic: Vec<Type>,
     implied_bounds: HashMap<GenericId, Vec<Bound>>,
+    pub(super) associated_generics: HashMap<GenericId, std::rc::Rc<str>>,
     pub(super) field_accessors: HashMap<BindingId, Rc<str>>,
     pub(super) pending_borrows: Vec<PendingBorrow>,
     pub(super) template_borrows: TemplateBorrows,
@@ -186,7 +187,17 @@ struct Definition<'p> {
     span: Span,
 }
 
+struct UserTrait<'a> {
+    binding: BindingId,
+    rust_name: &'a std::rc::Rc<str>,
+    self_variable: BindingId,
+    supertraits: &'a [crate::core::TypeBound],
+    associated: &'a [crate::core::TraitAssociatedType],
+    methods: &'a [crate::core::TraitMethod],
+}
+
 type LoweredFields = Vec<(Rc<str>, Type)>;
+type LoweredImplementor = (Type, Vec<GenericParam>, Vec<(BindingId, Type)>);
 
 #[derive(Clone, Copy)]
 pub(super) struct VariantArmReference {
@@ -221,6 +232,7 @@ impl TypeChecker {
             signatures: HashMap::new(),
             monomorphic: Vec::new(),
             implied_bounds: HashMap::new(),
+            associated_generics: HashMap::new(),
             field_accessors: HashMap::new(),
             pending_borrows: Vec::new(),
             template_borrows: TemplateBorrows::default(),
@@ -338,14 +350,25 @@ impl TypeChecker {
         if let ItemKind::RustType(binding, binders, template, clauses) = kind {
             return self.collect_rust_type(*binding, binders, template, clauses);
         }
-        if let ItemKind::Trait(binding, rust_name, self_variable, supertraits, methods) = kind {
+        if let ItemKind::Trait(
+            binding,
+            rust_name,
+            self_variable,
+            supertraits,
+            associated,
+            methods,
+        ) = kind
+        {
             return self.collect_user_trait(
                 module,
-                *binding,
-                rust_name,
-                *self_variable,
-                supertraits,
-                methods,
+                UserTrait {
+                    binding: *binding,
+                    rust_name,
+                    self_variable: *self_variable,
+                    supertraits,
+                    associated,
+                    methods,
+                },
             );
         }
         Ok(())
@@ -658,7 +681,16 @@ impl TypeChecker {
         pass: ObligationPass,
     ) {
         match self.traits.select(&bound, implementor) {
-            Selection::Implemented(requirements) => {
+            Selection::Implemented {
+                requirements,
+                argument,
+            } => {
+                if let (Some(argument), Some(expected)) = (argument, &bound.argument)
+                    && self.unifier.unify(expected, &argument, span).is_err()
+                {
+                    self.report_missing_trait(&bound, implementor, span);
+                    return;
+                }
                 for requirement in requirements {
                     let required = Obligation {
                         bound: requirement.bound,
@@ -891,7 +923,15 @@ impl TypeChecker {
             };
         }
         if matches!(value.kind, TypedExprKind::Fn(_)) {
-            let params = self.mentioned_generics(&inferred);
+            let mut params = self.mentioned_generics(&inferred);
+            for param in &mut params {
+                for bound in &mut param.bounds {
+                    bound.argument = bound
+                        .argument
+                        .as_ref()
+                        .map(|argument| self.unifier.resolve(argument));
+                }
+            }
             return Scheme {
                 lifetimes: Vec::new(),
                 params,
@@ -984,6 +1024,11 @@ impl TypeChecker {
         self.unifier
             .bounds(var)
             .iter()
+            .filter(|bound| {
+                self.traits
+                    .get(bound.binding)
+                    .is_none_or(|rust_trait| rust_trait.associated.is_none())
+            })
             .filter_map(|bound| {
                 let argument = bound
                     .argument
@@ -1368,12 +1413,26 @@ impl TypeChecker {
     fn collect_user_trait(
         &mut self,
         module: ModuleId,
-        binding: BindingId,
-        rust_name: &std::rc::Rc<str>,
-        self_variable: BindingId,
-        supertraits: &[crate::core::TypeBound],
-        methods: &[crate::core::TraitMethod],
+        declaration: UserTrait<'_>,
     ) -> Result<(), Diagnostic> {
+        let UserTrait {
+            binding,
+            rust_name,
+            self_variable,
+            supertraits,
+            associated,
+            methods,
+        } = declaration;
+        let associated: Vec<super::typed::TypedAssociatedType> = associated
+            .iter()
+            .map(|associated| super::typed::TypedAssociatedType {
+                binding: associated.binding,
+                name: associated.name.clone(),
+            })
+            .collect();
+        if !associated.is_empty() {
+            self.trait_arguments.insert(binding);
+        }
         let supertraits = supertraits
             .iter()
             .map(|bound| self.lower_type_bound(bound, &HashMap::new()))
@@ -1385,6 +1444,7 @@ impl TypeChecker {
                 implementors: Vec::new(),
                 help: None,
                 supertraits: supertraits.clone(),
+                associated: associated.first().map(|associated| associated.name.clone()),
             },
         );
         let mut typed_methods = Vec::new();
@@ -1413,6 +1473,7 @@ impl TypeChecker {
             module,
             rust_name: rust_name.clone(),
             supertraits,
+            associated,
             methods: typed_methods,
         });
         Ok(())
@@ -1466,21 +1527,29 @@ impl TypeChecker {
     fn collect_trait_impls(&mut self, modules: &[CoreModule]) {
         for module in modules {
             for item in &module.items {
-                let ItemKind::Impl(trait_binding, implementor, methods) = &item.kind else {
+                let ItemKind::Impl(trait_binding, implementor, associated, methods) = &item.kind
+                else {
                     continue;
                 };
                 let implementor_span = implementor.span();
-                let (implementor, params) = match self.lower_impl_implementor(implementor) {
-                    Ok(implementor) => implementor,
-                    Err(diagnostic) => {
-                        self.diagnostics.push(diagnostic);
-                        continue;
-                    }
-                };
+                let (implementor, params, associated_values) =
+                    match self.lower_impl_implementor(implementor, associated) {
+                        Ok(implementor) => implementor,
+                        Err(diagnostic) => {
+                            self.diagnostics.push(diagnostic);
+                            continue;
+                        }
+                    };
                 if self.report_foreign_implementor(*trait_binding, &implementor, implementor_span) {
                     continue;
                 }
                 self.report_unsized_implementor(&implementor, implementor_span, methods);
+                let argument = self
+                    .traits
+                    .get(*trait_binding)
+                    .is_some_and(|rust_trait| rust_trait.associated.is_some())
+                    .then(|| associated_values.first().map(|(_, value)| value.clone()))
+                    .flatten();
                 self.traits.add_implementor(
                     *trait_binding,
                     Implementor {
@@ -1489,7 +1558,7 @@ impl TypeChecker {
                             params: params.clone(),
                             body: implementor.clone(),
                         },
-                        argument: None,
+                        argument,
                     },
                 );
                 let mut typed_methods = Vec::new();
@@ -1505,10 +1574,28 @@ impl TypeChecker {
                         receiver,
                     });
                 }
+                let associated = associated_values
+                    .into_iter()
+                    .map(|(binding, value)| {
+                        let name = self
+                            .trait_definitions
+                            .iter()
+                            .find(|trait_definition| trait_definition.binding == *trait_binding)
+                            .and_then(|trait_definition| {
+                                trait_definition
+                                    .associated
+                                    .iter()
+                                    .find(|associated| associated.binding == binding)
+                            })
+                            .map_or_else(|| Rc::from(""), |associated| associated.name.clone());
+                        (binding, name, value)
+                    })
+                    .collect();
                 self.trait_impls.push(TypedTraitImpl {
                     trait_binding: *trait_binding,
                     implementor,
                     params,
+                    associated,
                     implementor_span,
                     module: module.id,
                     methods: typed_methods,
@@ -1576,7 +1663,8 @@ impl TypeChecker {
     fn lower_impl_implementor(
         &mut self,
         implementor: &TypeExpr,
-    ) -> Result<(Type, Vec<GenericParam>), Diagnostic> {
+        associated: &[crate::core::ImplAssociatedType],
+    ) -> Result<LoweredImplementor, Diagnostic> {
         let mut params = Vec::new();
         let mut scope = HashMap::new();
         for variable in self.implementor_variables(implementor) {
@@ -1586,7 +1674,16 @@ impl TypeChecker {
             params.push(param);
         }
         let body = self.lower_type(implementor, &scope)?;
-        Ok((body, params))
+        let values = associated
+            .iter()
+            .map(|associated| {
+                Ok((
+                    associated.trait_type,
+                    self.lower_type(&associated.value, &scope)?,
+                ))
+            })
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
+        Ok((body, params, values))
     }
 
     fn implementor_variables(&self, implementor: &TypeExpr) -> Vec<BindingId> {
@@ -1693,6 +1790,7 @@ impl TypeChecker {
                 implementors,
                 help,
                 supertraits: Vec::new(),
+                associated: None,
             },
         );
         Ok(())
@@ -2239,6 +2337,7 @@ impl TypeChecker {
             trait_definitions: self.trait_definitions,
             rust_trait_paths: self.rust_trait_paths,
             trait_impls: self.trait_impls,
+            associated_generics: self.associated_generics,
             conversions: self.conversions,
             trait_methods: self.trait_methods,
             synthetic_bindings: self.synthetic_bindings,

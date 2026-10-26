@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/missing_associated_type.rslisp
+---
+error[L0447]: `(vec a)` does not define the associated type `item`
+ --> check/missing_associated_type.rslisp:5:17
+  |
+5 | (impl container (vec a)
+  |                 ^^^^^^^ `container` requires the associated type `item`
+  |
+  = help: add `(type item ...)` to the impl
