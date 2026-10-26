@@ -1,3 +1,5 @@
+(defn forward ((text (ref str))) text)
+
 (defn make ()
   (let text (to-string "hi"))
   (ref text))

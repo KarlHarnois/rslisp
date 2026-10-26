@@ -11,7 +11,7 @@ fn longer<'a>(a: &'a str, b: &'a str) -> &'a str {
     if a.len() > b.len() { a } else { b }
 }
 
-fn first<'a, 'b>(a: &'a str, b: &'b str) -> &'a str {
+fn first<'a>(a: &'a str, b: &str) -> &'a str {
     a
 }
 
@@ -22,6 +22,10 @@ struct Snippet<'a> {
 
 fn snippet_of(source: &str) -> Snippet<'_> {
     Snippet { text: source }
+}
+
+fn literal_snippet() -> Snippet<'static> {
+    Snippet { text: "hi" }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -39,6 +43,15 @@ enum Token<'a> {
     Number(&'a str),
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Tagged<'a> {
+    Value(&'a str),
+}
+
+fn choose<'a, A>(x: A, y: A, s: &'a str, t: &'a str) -> &'a str {
+    t
+}
+
 fn token_text(token: Token<'_>) -> &str {
     match token {
         Token::Symbol(text) => text,
@@ -53,7 +66,14 @@ fn main() {
     let source = "hello there";
     let shorter = snippet_of(source);
     println!("snippet {}", shorter.text);
+    println!("literal {}", literal_snippet().text);
     let named = label_of(source);
     println!("label {}", named.text);
-    println!("token {}", token_text(Token::Symbol("hi")))
+    println!("token {}", token_text(Token::Symbol("hi")));
+    println!("number {}", token_text(Token::Number("42")));
+    println!("{}", {
+        let Tagged::Value(text) = Tagged::Value("tagged");
+        text
+    });
+    println!("{}", choose(1, 2, "hi", "there"))
 }

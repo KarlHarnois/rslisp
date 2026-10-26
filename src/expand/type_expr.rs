@@ -139,15 +139,10 @@ impl Expander<'_> {
                 if !symbol.name().starts_with(Self::LIFETIME_PREFIX) {
                     return Err(malformed());
                 }
-                let binding = self.resolve(symbol, Namespace::Type, lifetime.span())?;
-                if !matches!(self.kind(binding), BindingKind::Lifetime) {
-                    return Err(ExpandProblems::wrong_namespace(
-                        symbol.name(),
-                        "a lifetime",
-                        lifetime.span(),
-                    ));
-                }
-                (Some(binding), inner)
+                (
+                    Some(self.resolve(symbol, Namespace::Type, lifetime.span())?),
+                    inner,
+                )
             }
             _ => return Err(malformed()),
         };

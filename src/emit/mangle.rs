@@ -172,6 +172,12 @@ mod tests {
     }
 
     #[test]
+    fn lifetimes_named_like_keywords_get_a_suffix() {
+        assert_eq!(NameMangler::lifetime("'type"), "'type_");
+        assert_eq!(NameMangler::lifetime("'static"), "'static_");
+    }
+
+    #[test]
     fn types_become_pascal_case() {
         assert_eq!(NameMangler::type_name("bank-account"), "BankAccount");
     }

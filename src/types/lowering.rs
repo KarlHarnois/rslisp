@@ -91,12 +91,6 @@ impl TypeChecker {
         let mut scope = HashMap::new();
         for binder in binders {
             if binder.lifetime {
-                if !binder.bounds.is_empty() {
-                    return Err(TypeProblems::bounded_type_parameter(
-                        self.bindings.get(binder.variable).name(),
-                        binder.span,
-                    ));
-                }
                 lifetimes.push(binder.variable);
                 continue;
             }

@@ -357,12 +357,7 @@ impl<'a> CorePrinter<'a> {
                 self.function_type(*kind, parameters, result)
             }
             TypeExprKind::Reference(kind, lifetime, inner) => {
-                let mut parts = Vec::new();
-                if let Some(lifetime) = lifetime {
-                    parts.push(self.name(*lifetime));
-                }
-                parts.push(self.type_expr(inner));
-                Self::list(kind.keyword(), parts)
+                self.reference_type(*kind, *lifetime, inner)
             }
             TypeExprKind::Hole => "_".to_string(),
             TypeExprKind::Where(binders, inner) => self.where_type(binders, inner),
@@ -371,6 +366,20 @@ impl<'a> CorePrinter<'a> {
                 vec![self.type_expr(implementor), self.type_expr(argument)],
             ),
         }
+    }
+
+    fn reference_type(
+        &mut self,
+        kind: crate::core::ReferenceKind,
+        lifetime: Option<BindingId>,
+        inner: &TypeExpr,
+    ) -> String {
+        let mut parts = Vec::new();
+        if let Some(lifetime) = lifetime {
+            parts.push(self.name(lifetime));
+        }
+        parts.push(self.type_expr(inner));
+        Self::list(kind.keyword(), parts)
     }
 
     fn named_type(&mut self, binding: BindingId, arguments: &[TypeExpr]) -> String {

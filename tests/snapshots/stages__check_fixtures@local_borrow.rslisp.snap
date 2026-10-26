@@ -4,42 +4,42 @@ expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/local_borrow.rslisp
 ---
 error[L0510]: cannot return a borrow of a local value
- --> check/local_borrow.rslisp:3:3
+ --> check/local_borrow.rslisp:5:3
   |
-2 |   (let text (to-string "hi"))
+4 |   (let text (to-string "hi"))
   |        ---- this local is dropped when the function returns
-3 |   (ref text))
+5 |   (ref text))
   |   ^^^^^^^^^^ this borrows a local value
   |
   = help: return an owned value with `(clone ...)`, or borrow from a parameter
 
 error[L0510]: cannot return a borrow of a local value
- --> check/local_borrow.rslisp:7:12
+ --> check/local_borrow.rslisp:9:12
   |
-6 |   (let text (to-string "hi"))
+8 |   (let text (to-string "hi"))
   |        ---- this local is dropped when the function returns
-7 |   (if flag (ref text) (ref text)))
+9 |   (if flag (ref text) (ref text)))
   |            ^^^^^^^^^^ this borrows a local value
   |
   = help: return an owned value with `(clone ...)`, or borrow from a parameter
 
 error[L0510]: cannot return a borrow of a local value
-  --> check/local_borrow.rslisp:11:7
+  --> check/local_borrow.rslisp:13:7
    |
-10 |   (let text (to-string "hi"))
+12 |   (let text (to-string "hi"))
    |        ---- this local is dropped when the function returns
-11 |   (do (ref text)))
+13 |   (do (ref text)))
    |       ^^^^^^^^^^ this borrows a local value
    |
    = help: return an owned value with `(clone ...)`, or borrow from a parameter
 
 error[L0510]: cannot return a borrow of a local value
-  --> check/local_borrow.rslisp:18:10
+  --> check/local_borrow.rslisp:20:10
    |
-16 |   (let text (to-string "hi"))
+18 |   (let text (to-string "hi"))
    |        ---- this local is dropped when the function returns
-17 |   (match value
-18 |     (yes (ref text))
+19 |   (match value
+20 |     (yes (ref text))
    |          ^^^^^^^^^^ this borrows a local value
    |
    = help: return an owned value with `(clone ...)`, or borrow from a parameter

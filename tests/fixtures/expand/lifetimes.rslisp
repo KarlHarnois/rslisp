@@ -1,0 +1,4 @@
+(def first (fn (a b) a))
+(type first (where ('a 'b) (fn ((ref 'a str) (ref 'b str)) (ref 'a str))))
+(struct (label 'a) (text (ref 'a str)))
+(enum (tagged 'a) (value (ref 'a str)))

@@ -5,3 +5,9 @@ input_file: tests/fixtures/run/trait_lifetimes.rslisp
 ---
 hello there
 hello there
+label
+label
+token
+token
+42
+42

@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/lifetime_ref_without_type.rslisp
+---
+error[L0212]: expected a type, found `'a`
+ --> check/lifetime_ref_without_type.rslisp:1:34
+  |
+1 | (type pick (where ('a) (fn ((ref 'a)) unit)))
+  |                                  ^^ not a type
