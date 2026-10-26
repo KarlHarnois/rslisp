@@ -729,6 +729,9 @@ impl<'a> ClosureKinds<'a> {
         let mut calls: HashMap<BindingId, usize> = HashMap::new();
         let mut required: HashMap<BindingId, ClosureKind> = HashMap::new();
         self.require_block(&lambda.body, &params, None, &mut calls, &mut required);
+        if lambda.body.repeats() {
+            Self::count_added_calls(&mut calls, &HashMap::new());
+        }
         for param in params {
             if self.written_parameter_kinds.contains_key(&param) {
                 continue;
@@ -774,7 +777,11 @@ impl<'a> ClosureKinds<'a> {
     ) {
         match &expr.kind {
             TypedExprKind::Fn(lambda) => {
-                self.require_block(&lambda.body, params, Some(lambda.kind), calls, required)
+                let before = calls.clone();
+                self.require_block(&lambda.body, params, Some(lambda.kind), calls, required);
+                if lambda.body.repeats() {
+                    Self::count_added_calls(calls, &before);
+                }
             }
             TypedExprKind::Call(callee, arguments) => {
                 self.require_call(callee, arguments, params, nested, calls, required)
@@ -975,6 +982,16 @@ impl<'a> ClosureKinds<'a> {
         };
         for value in values {
             self.require_expression(value, params, nested, calls, required);
+        }
+    }
+
+    fn count_added_calls(
+        calls: &mut HashMap<BindingId, usize>,
+        before: &HashMap<BindingId, usize>,
+    ) {
+        for (binding, count) in calls.iter_mut() {
+            let added = count.saturating_sub(before.get(binding).copied().unwrap_or(0));
+            *count += added;
         }
     }
 

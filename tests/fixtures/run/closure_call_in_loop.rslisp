@@ -1,0 +1,25 @@
+(trait container
+  (type item)
+  (put (fn ((mut self) item) unit))
+  (take (fn ((mut self)) (option item))))
+
+(struct (queue a) (items (vec a)))
+(impl container (queue a)
+  (type item a)
+  (put (q value) (push! (mut (field q items)) value))
+  (take (q) (pop! (mut (field q items)))))
+
+(type move!
+  (where ((source (container item)) (target (container item)) item)
+    (fn ((mut source) (mut target) (fn ((ref item)) unit)) unit)))
+(defn move! (source target observe)
+  (loop ()
+    (let next (take source))
+    (match next
+      ((some item) (do (observe item) (put target item) (recur)))
+      (none (do)))))
+
+(defn main ()
+  (let source (new queue (items (vec 1))))
+  (let target (new queue (items (vec))))
+  (move! (mut source) (mut target) (fn (item) (println item))))

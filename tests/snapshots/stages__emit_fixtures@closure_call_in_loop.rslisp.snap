@@ -1,0 +1,51 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/closure_call_in_loop.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Queue<A> {
+    items: Vec<A>,
+}
+
+fn r#move<Source: Container<Item = Item>, Target: Container<Item = Item>, Item>(
+    source: &mut Source,
+    target: &mut Target,
+    mut observe: impl FnMut(&Item),
+) {
+    loop {
+        let next = source.take();
+        match next {
+            Some(item) => {
+                observe(&item);
+                target.put(item);
+                continue;
+            }
+            None => {
+                break;
+            }
+        }
+    }
+}
+
+fn main() {
+    let mut source: Queue<i64> = Queue { items: vec![1_i64] };
+    let mut target: Queue<i64> = Queue { items: Vec::new() };
+    r#move(&mut source, &mut target, |item: &i64| println!("{}", item))
+}
+
+trait Container {
+    type Item;
+    fn put(&mut self, _: Self::Item);
+    fn take(&mut self) -> Option<Self::Item>;
+}
+
+impl<A> Container for Queue<A> {
+    type Item = A;
+    fn put(&mut self, value: A) {
+        self.items.push(value)
+    }
+    fn take(&mut self) -> Option<A> {
+        self.items.pop()
+    }
+}
