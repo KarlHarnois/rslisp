@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/set_map_key.rslisp
+---
+fn main() {
+    let mut balances: std::collections::BTreeMap<String, i64> = {
+        let mut map = std::collections::BTreeMap::new();
+        map.insert("alice".to_string(), 10);
+        map
+    };
+    let name = "alice".to_string();
+    *balances.get_mut(&name).unwrap() = 25;
+    println!("{}", name)
+}

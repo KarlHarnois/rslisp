@@ -21,7 +21,7 @@ fn main() {
         added.insert("a", 10);
         added
     };
-    *changed.get_mut(&"b").unwrap() = 20;
+    *changed.get_mut("b").unwrap() = 20;
     let pairs: Vec<(&str, i64)> = vec![("x", 1_i64), ("y", 2_i64)];
     let collected: std::collections::HashMap<&str, i64> = pairs
         .into_iter()

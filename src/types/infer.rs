@@ -2640,37 +2640,56 @@ impl TypeChecker {
             ));
         };
         if collection.is_map() {
-            self.check_map_key(&collection, value.span);
+            return self.infer_set_at_map(value, collection, keys, item, span);
         }
-        let (parameters, template) = if collection.is_map() {
-            if keys.len() != 1 {
-                return Err(TypeProblems::wrong_argument_count(1, keys.len(), span));
-            }
-            (
-                vec![
-                    Type::mutable(collection.ty().clone()),
-                    collection.key().clone(),
-                    collection.value().clone(),
-                ],
-                "*{0}.get_mut(&{1}).unwrap() = {2}".to_string(),
-            )
-        } else {
-            let depth = keys.len();
-            let item_type = self.assoc_element(depth, &value)?;
-            let mut parameters = vec![Type::mutable(collection.ty().clone())];
-            parameters.extend((0..depth).map(|_| Type::Primitive(PrimitiveType::Usize)));
-            parameters.push(item_type);
-            let mut template = "{0}".to_string();
-            for index in 1..=depth {
-                template.push_str(&format!("[{{{index}}}]"));
-            }
-            template.push_str(&format!(" = {{{}}}", depth + 1));
-            (parameters, template)
-        };
+        let depth = keys.len();
+        let item_type = self.assoc_element(depth, &value)?;
+        let mut parameters = vec![Type::mutable(collection.ty().clone())];
+        parameters.extend((0..depth).map(|_| Type::Primitive(PrimitiveType::Usize)));
+        parameters.push(item_type);
+        let mut template = "{0}".to_string();
+        for index in 1..=depth {
+            template.push_str(&format!("[{{{index}}}]"));
+        }
+        template.push_str(&format!(" = {{{}}}", depth + 1));
         let mut arguments = Vec::with_capacity(keys.len() + 1);
         arguments.extend(keys.iter().cloned());
         arguments.push(item.clone());
         self.synthetic_call_with_value(&template, parameters, Type::unit(), value, &arguments, span)
+    }
+
+    fn infer_set_at_map(
+        &mut self,
+        value: TypedExpr,
+        collection: Collection,
+        keys: &[Expr],
+        item: &Expr,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        self.check_map_key(&collection, value.span);
+        if keys.len() != 1 {
+            return Err(TypeProblems::wrong_argument_count(1, keys.len(), span));
+        }
+        let query_type = self.unifier.fresh();
+        let parameters = vec![
+            Type::mutable(collection.ty().clone()),
+            Type::shared(query_type.clone()),
+            collection.value().clone(),
+        ];
+        let mut arguments = Vec::with_capacity(keys.len() + 1);
+        arguments.extend(keys.iter().cloned());
+        arguments.push(item.clone());
+        let call = self.synthetic_call_with_value(
+            "*{0}.get_mut({1}).unwrap() = {2}",
+            parameters,
+            Type::unit(),
+            value,
+            &arguments,
+            span,
+        )?;
+        let query = self.unifier.resolve(&query_type);
+        self.check_borrow(&collection, &query, keys[0].span());
+        Ok(call)
     }
 
     fn synthetic_call_with_value(
