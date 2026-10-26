@@ -1,0 +1,13 @@
+(trait container
+  (type item)
+  (put (fn ((mut self) item) unit)))
+
+(struct (stack a) (items (vec a)))
+(impl container (stack a)
+  (type item a)
+  (put (s value) (push! (mut (field s items)) value)))
+
+(defn main ()
+  (let words (new stack (items (vec))))
+  (put (mut words) (to-string "alpha"))
+  (println (len (field words items))))
