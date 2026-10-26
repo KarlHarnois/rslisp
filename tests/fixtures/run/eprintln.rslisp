@@ -1,0 +1,4 @@
+(defn main ()
+  (println "before")
+  (eprintln "bad line " 3)
+  (println "after"))

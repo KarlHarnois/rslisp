@@ -7,7 +7,7 @@
 (use prelude/types vec option result iterator box)
 (use prelude/io io-error)
 
-(export display debug to-string print println prn pr-str str char chars lines split trim subs as-str parse parse-error from-str lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!)
+(export display debug to-string print println eprintln prn pr-str str char chars lines split trim subs as-str parse parse-error from-str lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!)
 
 (rust-type formatter "std::fmt::Formatter<'_>")
 (rust-type fmt-result "std::fmt::Result")
@@ -177,15 +177,15 @@
             (format-type (quote unit) (nth formatted 2)))
       (nth formatted 1))))
 
-(def println-call
-  (fn (pieces)
+(def line-call
+  (fn (function pieces)
     (let formatted (format-pieces pieces 0 escape-format))
     (let variables (nth formatted 2))
     (prepend
       (list (quote rust)
             (if (value-eq (nth formatted 0) "")
-                "println!()"
-                (format-template "println!" (nth formatted 0) (length variables)))
+                (string function "()")
+                (format-template function (nth formatted 0) (length variables)))
             (format-type (quote unit) variables))
       (nth formatted 1))))
 
@@ -212,11 +212,14 @@
 (defmacro print (parts ...)
   (let pieces (flatten-parts parts))
   (if (ends-with-newline? pieces)
-      (println-call (without-trailing-newline pieces))
+      (line-call "println!" (without-trailing-newline pieces))
       (print-call pieces)))
 
 (defmacro println (parts ...)
-  (println-call (flatten-parts parts)))
+  (line-call "println!" (flatten-parts parts)))
+
+(defmacro eprintln (parts ...)
+  (line-call "eprintln!" (flatten-parts parts)))
 
 (def display-type
   (fn (variables)

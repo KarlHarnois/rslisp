@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/eprintln.rslisp
+---
+fn report(line: &str, number: i64) {
+    eprintln!("bad line {}: {}", number, line)
+}
+
+fn main() {
+    eprintln!("ready");
+    report("oops", 3)
+}
