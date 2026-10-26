@@ -1,0 +1,17 @@
+(trait first-match
+  (first-match (fn ((ref self)) bool))
+  (also-first (fn ((ref self)) bool)))
+
+(impl first-match (vec a)
+  (first-match (items)
+    (let item (at items 0))
+    (let first (clone item))
+    (do (let _first first) true))
+  (also-first (items)
+    (let item (at items 0))
+    (let first (clone item))
+    (do (let _first first) true)))
+
+(defn main ()
+  (println (first-match (vec 1 2)))
+  (println (also-first (vec 3 4))))

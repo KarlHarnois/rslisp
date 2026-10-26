@@ -1,0 +1,29 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/generic_impl_bounds.rslisp
+---
+fn main() {
+    println!("{}", vec![1_i64, 2_i64].first_match());
+    println!("{}", vec![3_i64, 4_i64].also_first())
+}
+
+trait FirstMatch {
+    fn first_match(&self) -> bool;
+    fn also_first(&self) -> bool;
+}
+
+impl<A: Clone> FirstMatch for Vec<A> {
+    fn first_match(&self) -> bool {
+        let item = &self[0];
+        let first = item.clone();
+        let _first = first;
+        true
+    }
+    fn also_first(&self) -> bool {
+        let item = &self[0];
+        let first = item.clone();
+        let _first = first;
+        true
+    }
+}
