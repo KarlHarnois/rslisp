@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use super::{ArgumentRole, BoxPosition, ExpressionEmitter, LoopExit, TypeContext};
 use crate::core::BindingId;
-use crate::emit::fragment::Fragment;
+use crate::emit::fragment::{Code, Fragment};
 use crate::types::{
     Type, TypedArgument, TypedArm, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
     TypedExprKind, TypedLambda, TypedLeaf, TypedMatch,
@@ -117,6 +117,11 @@ impl ExpressionEmitter<'_> {
     const COMPOUND_OPERATORS: [&'static str; 5] = ["+", "-", "*", "/", "%"];
 
     pub(super) fn loop_expression(&mut self, block: &TypedBlock, exit: LoopExit) -> Vec<Fragment> {
+        if exit == LoopExit::Break
+            && let Some(fragments) = self.while_let_loop(block)
+        {
+            return fragments;
+        }
         let previous = std::mem::replace(&mut self.loop_exit, exit);
         let fragments = vec![
             Fragment::Text("loop {".to_string()),
@@ -125,6 +130,117 @@ impl ExpressionEmitter<'_> {
             Fragment::Text("}".to_string()),
         ];
         self.loop_exit = previous;
+        fragments
+    }
+
+    fn while_let_loop(&mut self, block: &TypedBlock) -> Option<Vec<Fragment>> {
+        if !self.tail_loop.as_ref()?.params.is_empty() {
+            return None;
+        }
+        let matched = Self::body_match(block)?;
+        self.while_let_match(matched)
+    }
+
+    fn body_match(block: &TypedBlock) -> Option<&TypedMatch> {
+        let [
+            TypedBodyItem::Expr(TypedExpr {
+                kind: TypedExprKind::Control(TypedControl::Match(matched)),
+                ..
+            }),
+        ] = block.items.as_slice()
+        else {
+            return None;
+        };
+        Some(matched)
+    }
+
+    fn while_let_match(&mut self, matched: &TypedMatch) -> Option<Vec<Fragment>> {
+        if matched.arms.len() != 2 || !matched.unguarded_exhaustive {
+            return None;
+        }
+        let repeating = self.repeating_arm(matched)?;
+        let ending = 1 - repeating;
+        if !Self::is_empty_do(&matched.arms[ending].body) {
+            return None;
+        }
+        let arm = &matched.arms[repeating];
+        let position = BoxPosition::of(&matched.value.ty);
+        let value = self.expr(&matched.value);
+        self.locals.enter();
+        let pattern = self.pattern(&arm.pattern, position);
+        if !pattern.guards.is_empty() || !pattern.prologue.is_empty() {
+            self.locals.leave();
+            return None;
+        }
+        let body = self.repeating_body(arm);
+        self.locals.leave();
+        Some(Self::while_let_fragments(pattern.code, value, body))
+    }
+
+    fn repeating_arm(&self, matched: &TypedMatch) -> Option<usize> {
+        match matched
+            .arms
+            .iter()
+            .map(|arm| self.repeats(arm))
+            .collect::<Vec<_>>()
+            .as_slice()
+        {
+            [true, false] => Some(0),
+            [false, true] => Some(1),
+            _ => None,
+        }
+    }
+
+    fn repeats(&self, arm: &TypedArm) -> bool {
+        self.recurring_block(arm).is_some()
+    }
+
+    fn recurring_block<'e>(&self, arm: &'e TypedArm) -> Option<Option<&'e TypedBlock>> {
+        let [TypedBodyItem::Expr(only)] = arm.body.items.as_slice() else {
+            return None;
+        };
+        let TypedExprKind::Control(TypedControl::Block(block)) = &only.kind else {
+            return self.recurres(only).then_some(None);
+        };
+        let Some(TypedBodyItem::Expr(tail)) = block.items.last() else {
+            return None;
+        };
+        self.recurres(tail).then_some(Some(block))
+    }
+
+    fn recurres(&self, tail: &TypedExpr) -> bool {
+        self.tail_loop
+            .as_ref()
+            .is_some_and(|tail_loop| tail_loop.recurrence(tail).is_some())
+    }
+
+    fn is_empty_do(body: &TypedBlock) -> bool {
+        matches!(
+            body.items.as_slice(),
+            [TypedBodyItem::Expr(TypedExpr {
+                kind: TypedExprKind::Control(TypedControl::Block(block)),
+                ..
+            })] if block.items.is_empty()
+        )
+    }
+
+    fn repeating_body(&mut self, arm: &TypedArm) -> Vec<Fragment> {
+        let Some(Some(block)) = self.recurring_block(arm) else {
+            return Vec::new();
+        };
+        let leading = block.items.len().saturating_sub(1);
+        self.leading_statements(&block.items[..leading])
+    }
+
+    fn while_let_fragments(pattern: Code, value: Code, body: Vec<Fragment>) -> Vec<Fragment> {
+        let mut fragments = vec![Fragment::Text("while let ".to_string())];
+        fragments.extend(pattern.fragments);
+        fragments.push(Fragment::Text(" = ".to_string()));
+        fragments.extend(value.fragments);
+        fragments.push(Fragment::Text(" {".to_string()));
+        fragments.push(Fragment::Indented(body));
+        fragments.push(Fragment::Newline);
+        fragments.push(Fragment::Text("}".to_string()));
         fragments
     }
 
