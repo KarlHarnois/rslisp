@@ -9,10 +9,7 @@ struct Circle {
 }
 
 fn main() {
-    let boxed = {
-        let result: Box<dyn Shape> = Box::new(Circle { radius: 1.0 });
-        result
-    };
+    let boxed = Box::new(Circle { radius: 1.0 }) as Box<dyn Shape>;
     let other: Box<dyn Shape> = Box::new(Circle { radius: 2.0 });
     println!("{}", boxed.area());
     println!("{}", other.area())

@@ -4,10 +4,7 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/hash_map.rslisp
 ---
 fn main() {
-    let empty: std::collections::HashMap<String, i64> = {
-        let result: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
-        result
-    };
+    let empty: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
     let built: std::collections::HashMap<&str, i64> = {
         let mut map = std::collections::HashMap::new();
         map.insert("b", 2_i64);

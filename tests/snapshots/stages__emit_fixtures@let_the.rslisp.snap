@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/let_the.rslisp
+---
+fn main() {
+    let n: i64 = 3;
+    println!("{}", n)
+}
