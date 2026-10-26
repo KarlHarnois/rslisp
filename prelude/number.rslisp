@@ -4,7 +4,7 @@
 (use prelude/types vec option result box)
 
 (export number signed float integer partial-eq hash partial-ord
-        add sub mul div rem neg sqrt lt le gt ge eq ne
+        add sub mul div rem neg sqrt pi lt le gt ge eq ne
         + - * / < <= > >= = != ord)
 
 (rust-trait number "crate::rt::Number" i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
@@ -50,6 +50,7 @@
 (def rem (rust "{0} % {1}" (where ((n number)) (fn (n n) n))))
 (def neg (rust "-{0}" (where ((n number signed)) (fn (n) n))))
 (def sqrt (rust "{0}.sqrt()" (fn (f64) f64)))
+(def pi (rust "std::f64::consts::PI" f64))
 
 (def lt (rust "{&0} < {&1}" (where ((a partial-ord)) (fn (a a) bool))))
 (def le (rust "{&0} <= {&1}" (where ((a partial-ord)) (fn (a a) bool))))

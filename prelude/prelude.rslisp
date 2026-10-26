@@ -14,7 +14,7 @@
 (use prelude/option some none some? none? unwrap-or unwrap expect map-some then-some)
 (use prelude/result ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
 (use prelude/number number signed float integer partial-eq hash partial-ord
-                    add sub mul div rem neg sqrt lt le gt ge eq ne
+                    add sub mul div rem neg sqrt pi lt le gt ge eq ne
                     + - * / < <= > >= = != ord)
 (use prelude/text display debug to-string print println prn pr-str str char
                   chars lines split trim subs as-str parse parse-error from-str
@@ -32,7 +32,7 @@
         true false not when unless and or cond
         defn the -> ->> try-> let-try loop
         number signed float integer partial-eq hash partial-ord ord
-        add sub mul div rem neg sqrt lt le gt ge eq ne
+        add sub mul div rem neg sqrt pi lt le gt ge eq ne
         + - * / < <= > >= = !=
         display debug to-string print println prn pr-str str char
         chars lines split trim subs as-str parse parse-error from-str

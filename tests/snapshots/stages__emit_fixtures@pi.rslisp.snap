@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/pi.rslisp
+---
+fn circle_area(radius: f64) -> f64 {
+    std::f64::consts::PI * radius * radius
+}
+
+fn main() {
+    println!("{}", circle_area(2.0))
+}
