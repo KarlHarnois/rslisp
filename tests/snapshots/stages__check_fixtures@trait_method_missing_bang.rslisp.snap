@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/trait_method_missing_bang.rslisp
+---
+warning[L0504]: `put` changes an argument, so its name should end with `!`
+ --> check/trait_method_missing_bang.rslisp:2:4
+  |
+2 |   (put (fn ((mut self) i64) unit)))
+  |    ^^^ this function changes an argument
+  |
+  = help: rename it `put!`
+
+(derive bag clone debug partial-eq eq hash)
+(type main (fn () unit))
