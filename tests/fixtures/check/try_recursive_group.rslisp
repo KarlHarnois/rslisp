@@ -1,0 +1,12 @@
+(defn parse-number (text)
+  (ok (try (parse text))))
+
+(defn parse-expression (text)
+  (let parsed (try (parse-number text)))
+  (ok (pair parsed 0)))
+
+(defn parse (text)
+  (ok (try (parse-expression text))))
+
+(defn main ()
+  (println (unwrap-ok (parse "42"))))

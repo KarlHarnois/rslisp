@@ -25,6 +25,7 @@ use crate::core::{
     VariantPayload as CoreVariantPayload,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
+use crate::modules::ModuleSources;
 use crate::source::Span;
 
 pub(super) enum Admissible {
@@ -182,6 +183,9 @@ pub struct TypeChecker {
     pub(super) pinned: HashMap<BindingId, Type>,
     pub(super) literal_generics: HashMap<GenericId, PrimitiveType>,
     default_literal_parameters: bool,
+    pub(super) recursive_group: Vec<BindingId>,
+    pub(super) reported_unknown_try_groups: HashSet<BindingId>,
+    pub(super) prelude_value_names: HashSet<String>,
 }
 
 struct Definition<'p> {
@@ -260,10 +264,14 @@ impl TypeChecker {
             pinned: HashMap::new(),
             literal_generics: HashMap::new(),
             default_literal_parameters: false,
+            recursive_group: Vec::new(),
+            reported_unknown_try_groups: HashSet::new(),
+            prelude_value_names: HashSet::new(),
         }
     }
 
     pub(super) fn collect_declarations(&mut self, modules: &[CoreModule]) {
+        self.record_prelude_value_names(modules);
         self.record_type_arities(modules);
         self.record_trait_arguments(modules);
         for module in modules {
@@ -287,6 +295,20 @@ impl TypeChecker {
         self.check_trait_claims(modules);
         self.copy_trait = self.traits.with_paths(&[CopyTrait::PATH]).first().copied();
         self.record_written_parameters(modules);
+    }
+
+    fn record_prelude_value_names(&mut self, modules: &[CoreModule]) {
+        for module in modules
+            .iter()
+            .filter(|module| ModuleSources::is_prelude(&module.path))
+        {
+            for item in &module.items {
+                if let ItemKind::Def(binding, _) = &item.kind {
+                    self.prelude_value_names
+                        .insert(self.bindings.get(*binding).name().to_string());
+                }
+            }
+        }
     }
 
     fn record_written_parameters(&mut self, modules: &[CoreModule]) {
@@ -767,6 +789,7 @@ impl TypeChecker {
             .iter()
             .filter_map(|member| self.prepare_member(member))
             .collect();
+        self.recursive_group = members.iter().map(|member| member.binding).collect();
         let mut typed: Vec<(BindingId, TypedExpr)> = Vec::new();
         for member in &inferred {
             match self.infer_member(member) {
@@ -824,6 +847,7 @@ impl TypeChecker {
                 .filter_map(|member| self.rust_definition(member)),
         );
         self.component.clear();
+        self.recursive_group.clear();
         results
     }
 
