@@ -1626,7 +1626,8 @@ impl TypeChecker {
         let span = argument.span();
         let ExprKind::Fn(lambda) = argument.kind() else {
             let value = self.infer(argument)?;
-            return self.wrap_function_value(parameter, value);
+            let value = self.wrap_function_value(parameter, value)?;
+            return self.iterate_collection(parameter, value);
         };
         match self.unifier.shallow(parameter) {
             Type::Function(_, parameters, result) if parameters.len() == lambda.params.len() => {
@@ -1641,6 +1642,39 @@ impl TypeChecker {
             }
             _ => self.infer(argument),
         }
+    }
+
+    fn iterate_collection(
+        &mut self,
+        parameter: &Type,
+        value: TypedExpr,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let expected = self.unifier.resolve(parameter);
+        if value.is_written_form() || !self.is_iterator(&expected) {
+            return Ok(value);
+        }
+        let Some(collection) = Collection::of(&self.unifier.resolve(&value.ty), &self.rust_types)
+        else {
+            return Ok(value);
+        };
+        let item = if collection.is_map() {
+            let key = self.unifier.resolve(collection.key());
+            let entry = self.unifier.resolve(collection.value());
+            self.pair_type(Type::shared(key), Type::shared(entry))
+        } else {
+            Type::shared(self.unifier.resolve(collection.value()))
+        };
+        let result = self.iterator_type(item);
+        let parameters = vec![Type::shared(collection.ty().clone())];
+        let span = value.span;
+        let call =
+            self.synthetic_call_with_value("{0}.iter()", parameters, result, value, &[], span)?;
+        self.expect(&expected, &call.ty, span, MismatchContext::Plain)?;
+        Ok(call)
+    }
+
+    fn is_iterator(&self, ty: &Type) -> bool {
+        matches!(ty, Type::Named(binding, _) if self.rust_types.is_iterator(*binding))
     }
 
     fn wrap_function_value(

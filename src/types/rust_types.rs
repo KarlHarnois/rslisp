@@ -13,6 +13,7 @@ impl RustType {
     pub const SLICE_TEMPLATE: &'static str = "[{0}]";
     pub const VECTOR_TEMPLATE: &'static str = "Vec<{0}>";
     pub const BOX_TEMPLATE: &'static str = "Box<{0}>";
+    pub const ITERATOR_TEMPLATE: &'static str = "impl Iterator<Item = {0}>";
     const OPAQUE_PREFIX: &'static str = "impl ";
 
     pub fn template_for(&self, argument: Option<&Type>) -> &Rc<ParsedTemplate> {
@@ -84,12 +85,16 @@ impl RustTypeTable {
         self.has_template(binding, "std::collections::HashMap<{0}, {1}>")
     }
 
+    pub fn is_iterator(&self, binding: BindingId) -> bool {
+        self.has_template(binding, RustType::ITERATOR_TEMPLATE)
+    }
+
     pub fn option_binding(&self) -> Option<BindingId> {
         self.binding_with_template("Option<{0}>")
     }
 
     pub fn iterator_binding(&self) -> Option<BindingId> {
-        self.binding_with_template("impl Iterator<Item = {0}>")
+        self.binding_with_template(RustType::ITERATOR_TEMPLATE)
     }
 
     pub fn pair_binding(&self) -> Option<BindingId> {

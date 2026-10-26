@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/fold_collection.rslisp
+---
+fn main() {
+    let items: Vec<i64> = vec![1_i64, 2_i64, 3_i64];
+    println!(
+        "{}",
+        items
+            .iter()
+            .fold(0, |argument: i64, argument_2: &i64| argument + argument_2)
+    )
+}
