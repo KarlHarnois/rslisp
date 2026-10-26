@@ -24,8 +24,8 @@ use crate::core::{
     Lambda, Leaf, Literal, MapOperation, Pattern, PatternKind, PrimitiveType, ReferenceKind,
     RustTemplate, StructExpr, TypeExpr, TypeExprKind, VariantInfo,
 };
-use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::reader::NumberValue;
 use crate::source::Span;
 use shared_variables::SharedVariables;
@@ -1958,6 +1958,33 @@ impl TypeChecker {
             return Ok(Borrow::None);
         }
         self.pass_argument(parameter, value)
+            .map_err(|diagnostic| self.explain_literal_default(call, position, diagnostic))
+    }
+
+    fn explain_literal_default(
+        &self,
+        callee: BindingId,
+        position: usize,
+        diagnostic: Diagnostic,
+    ) -> Diagnostic {
+        if *diagnostic.code() != DiagnosticCode::MISMATCHED_TYPES {
+            return diagnostic;
+        }
+        let Some(default) = self.literal_defaults.get(callee, position) else {
+            return diagnostic;
+        };
+        let function = self.bindings.get(callee).name();
+        diagnostic
+            .with_note(TypeProblems::literal_default_note(
+                &default.parameter,
+                &default.default,
+                function,
+                &default.calls,
+            ))
+            .with_help(TypeProblems::literal_default_help(
+                function,
+                &default.signature,
+            ))
     }
 
     fn parameter_is_written(&self, callee: BindingId, position: usize) -> bool {

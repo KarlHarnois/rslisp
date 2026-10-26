@@ -1,8 +1,9 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
+use super::display::TypeDisplay;
 use super::graph::DependencyGraph;
 use super::ty::{GenericId, Type};
-use super::typed::{TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
+use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
 use crate::core::{BindingId, Expr, ItemKind, PrimitiveType};
 use crate::expand::Program;
 
@@ -380,6 +381,151 @@ impl InstantiationReport {
             .params
             .iter()
             .all(|param| combined.contains_key(param))
+    }
+}
+
+#[derive(Clone, Default)]
+pub struct LiteralDefaults {
+    entries: HashMap<(BindingId, usize), LiteralDefault>,
+}
+
+#[derive(Clone)]
+pub struct LiteralDefault {
+    pub parameter: String,
+    pub default: String,
+    pub calls: Vec<String>,
+    pub signature: String,
+}
+
+impl LiteralDefaults {
+    pub fn of(report: &InstantiationReport, typed: &TypedProgram) -> Self {
+        let display = TypeDisplay::new(&typed.bindings, &typed.generics);
+        let mut defaults = Self::default();
+        for definition in typed.modules.iter().flat_map(|module| &module.definitions) {
+            defaults.collect(report, typed, definition, &display);
+        }
+        defaults
+    }
+
+    pub fn get(&self, binding: BindingId, position: usize) -> Option<&LiteralDefault> {
+        self.entries.get(&(binding, position))
+    }
+
+    fn collect(
+        &mut self,
+        report: &InstantiationReport,
+        typed: &TypedProgram,
+        definition: &TypedDefinition,
+        display: &TypeDisplay<'_>,
+    ) {
+        let TypedExprKind::Fn(lambda) = &definition.value.kind else {
+            return;
+        };
+        let Type::Function(_, parameters, result) = &definition.scheme.body else {
+            return;
+        };
+        let Some(entry) = report.entries.get(&definition.binding) else {
+            return;
+        };
+        if entry.written {
+            return;
+        }
+        for (position, parameter) in parameters.iter().enumerate() {
+            let Type::Generic(generic) = parameter else {
+                continue;
+            };
+            let Some(default) = typed.literal_generics.get(generic) else {
+                continue;
+            };
+            let Some(generic_index) = Self::generic_index(definition, *generic) else {
+                continue;
+            };
+            let calls = Self::call_types(entry, generic_index, display);
+            if calls.len() < 2 {
+                continue;
+            }
+            let Some(binder) = lambda.params.get(position) else {
+                continue;
+            };
+            self.entries.insert(
+                (definition.binding, position),
+                LiteralDefault {
+                    parameter: typed.bindings.get(binder.binding).name().to_string(),
+                    default: default.name().to_string(),
+                    calls,
+                    signature: Self::signature(
+                        definition, entry, typed, parameters, result, display,
+                    ),
+                },
+            );
+        }
+    }
+
+    fn generic_index(definition: &TypedDefinition, generic: GenericId) -> Option<usize> {
+        definition
+            .scheme
+            .params
+            .iter()
+            .position(|param| param.id == generic)
+    }
+
+    fn call_types(
+        entry: &FunctionUses,
+        generic_index: usize,
+        display: &TypeDisplay<'_>,
+    ) -> Vec<String> {
+        let mut calls = Vec::new();
+        for used in &entry.uses {
+            let Some(Some(call)) = used.types.get(generic_index) else {
+                continue;
+            };
+            let shown = display.show(call);
+            if !calls.contains(&shown) {
+                calls.push(shown);
+            }
+        }
+        calls
+    }
+
+    fn signature(
+        definition: &TypedDefinition,
+        entry: &FunctionUses,
+        typed: &TypedProgram,
+        parameters: &[Type],
+        result: &Type,
+        display: &TypeDisplay<'_>,
+    ) -> String {
+        let parameters: Vec<String> = parameters
+            .iter()
+            .map(|parameter| Self::shown_type(definition, entry, typed, parameter, display))
+            .collect();
+        format!(
+            "(fn ({}) {})",
+            parameters.join(" "),
+            Self::shown_type(definition, entry, typed, result, display)
+        )
+    }
+
+    fn shown_type(
+        definition: &TypedDefinition,
+        entry: &FunctionUses,
+        typed: &TypedProgram,
+        shown: &Type,
+        display: &TypeDisplay<'_>,
+    ) -> String {
+        let Type::Generic(generic) = shown else {
+            return display.show(shown);
+        };
+        let Some(default) = typed.literal_generics.get(generic) else {
+            return display.show(shown);
+        };
+        let Some(generic_index) = Self::generic_index(definition, *generic) else {
+            return display.show(shown);
+        };
+        Self::call_types(entry, generic_index, display)
+            .first()
+            .cloned()
+            .unwrap_or_else(|| default.name().to_string())
     }
 }
 
