@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/box_plain.rslisp
+---
+(type take (fn ((box i64)) unit))
+(type main (fn () unit))

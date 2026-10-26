@@ -998,26 +998,31 @@ impl<'a> ItemEmitter<'a> {
 
     fn count_written_lifetimes(ty: &Type, counts: &mut HashMap<BindingId, usize>) {
         match ty {
-            Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
-                if let Lifetime::Written(binding) = lifetime {
-                    *counts.entry(*binding).or_default() += 1;
-                }
-                Self::count_written_lifetimes(inner, counts);
-            }
+            Type::Ref(..) | Type::Mut(..) => Self::count_reference_lifetime(ty, counts),
             Type::Named(_, arguments) => {
                 for argument in arguments {
                     Self::count_written_lifetimes(argument, counts);
                 }
             }
-            Type::TraitObject(_) => {}
             Type::Function(_, parameters, result) => {
                 for parameter in parameters {
                     Self::count_written_lifetimes(parameter, counts);
                 }
                 Self::count_written_lifetimes(result, counts);
             }
-            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => {}
+            _ => {}
         }
+    }
+
+    fn count_reference_lifetime(ty: &Type, counts: &mut HashMap<BindingId, usize>) {
+        let (lifetime, inner) = match ty {
+            Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => (lifetime, inner),
+            _ => unreachable!("the caller matches a reference"),
+        };
+        if let Lifetime::Written(binding) = lifetime {
+            *counts.entry(*binding).or_default() += 1;
+        }
+        Self::count_written_lifetimes(inner, counts);
     }
 
     fn lifetime_scope_used(

@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/trait_object.rslisp
+---
+(trait shape (area (fn ((ref self)) f64)))
+(struct circle (radius f64))
+(type total (fn ((vec (box shape))) f64))
+(def total (fn (shapes) 0.0))
+(impl shape circle (area (c) (mul (mul 3.0 (field c radius)) (field c radius))))

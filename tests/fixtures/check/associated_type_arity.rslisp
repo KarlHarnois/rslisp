@@ -1,0 +1,7 @@
+(trait container
+  (type item)
+  (first (fn ((ref self)) (option (ref item)))))
+
+(impl container (vec a)
+  (type item (vec))
+  (first (items) (some (at items 0))))

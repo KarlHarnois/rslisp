@@ -28,6 +28,15 @@ impl Expander<'_> {
 
     fn lower_type_name(&self, symbol: &Symbol, span: Span) -> Result<TypeExprKind, Diagnostic> {
         let binding = self.resolve(symbol, Namespace::Type, span)?;
+        self.lower_type_binding(binding, symbol.name(), span)
+    }
+
+    fn lower_type_binding(
+        &self,
+        binding: BindingId,
+        name: &str,
+        span: Span,
+    ) -> Result<TypeExprKind, Diagnostic> {
         match self.kind(binding) {
             BindingKind::KernelType(KernelType::Primitive(primitive)) => {
                 Ok(TypeExprKind::Primitive(primitive))
@@ -36,22 +45,24 @@ impl Expander<'_> {
             BindingKind::KernelType(constructor) => {
                 Err(ExpandProblems::malformed_type(constructor, span))
             }
+            _ => self.named_type_binding(binding, name, span),
+        }
+    }
+
+    fn named_type_binding(
+        &self,
+        binding: BindingId,
+        name: &str,
+        span: Span,
+    ) -> Result<TypeExprKind, Diagnostic> {
+        match self.kind(binding) {
             BindingKind::Struct(_)
             | BindingKind::Enum(_)
             | BindingKind::RustType(_)
             | BindingKind::TypeVariable
             | BindingKind::AssociatedType => Ok(TypeExprKind::Named(binding, Vec::new())),
             BindingKind::Trait(_) => Ok(TypeExprKind::Trait(binding)),
-            BindingKind::Lifetime => Err(ExpandProblems::wrong_namespace(
-                symbol.name(),
-                "a type",
-                span,
-            )),
-            _ => Err(ExpandProblems::wrong_namespace(
-                symbol.name(),
-                "a type",
-                span,
-            )),
+            _ => Err(ExpandProblems::wrong_namespace(name, "a type", span)),
         }
     }
 

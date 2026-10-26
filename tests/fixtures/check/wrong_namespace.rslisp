@@ -1,0 +1,2 @@
+(type sized (fn (number) i64))
+(def sized (fn (n) 1))

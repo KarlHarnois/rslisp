@@ -1,0 +1,5 @@
+(type take (fn ((box i64)) unit))
+(defn take (value) (do))
+
+(defn main ()
+  (take (box-new 1)))

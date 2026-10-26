@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/associated_type_arity.rslisp
+---
+error[L0415]: `vec` takes 1 type argument but 0 were given
+ --> check/associated_type_arity.rslisp:6:14
+  |
+6 |   (type item (vec))
+  |              ^^^^^ expected 1 type argument

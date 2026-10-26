@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/not_boxable_associated_type.rslisp
+---
+error[L0448]: `shape` cannot be a trait object
+ --> check/not_boxable_associated_type.rslisp:5:22
+  |
+5 | (type take (fn ((box shape)) unit))
+  |                      ^^^^^ it declares the associated type `item`
+  |
+  = help: a trait with an associated type cannot be a trait object

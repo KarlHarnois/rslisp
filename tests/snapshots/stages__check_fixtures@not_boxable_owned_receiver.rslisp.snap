@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/not_boxable_owned_receiver.rslisp
+---
+error[L0448]: `shape` cannot be a trait object
+ --> check/not_boxable_owned_receiver.rslisp:4:22
+  |
+4 | (type take (fn ((box shape)) unit))
+  |                      ^^^^^ `area` takes `self` by value
+  |
+  = help: take the receiver by reference, as `(ref self)` or `(mut self)`

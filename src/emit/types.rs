@@ -132,6 +132,12 @@ impl<'a> RustTypes<'a> {
             Type::TraitObject(binding) => {
                 format!("dyn {}", self.plan.trait_path(*binding, self.module))
             }
+            _ => self.composite(shown, position, scope),
+        }
+    }
+
+    fn composite(&self, shown: &Type, position: TypePosition, scope: &LifetimeScope) -> String {
+        match shown {
             Type::Primitive(primitive) => Self::primitive(*primitive).to_string(),
             Type::Named(binding, arguments) => self.named(*binding, arguments, position, scope),
             Type::Function(kind, parameters, result) => {
@@ -140,6 +146,7 @@ impl<'a> RustTypes<'a> {
             Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
                 self.reference(shown, *lifetime, inner, position, scope)
             }
+            _ => unreachable!("the caller matches a composite type"),
         }
     }
 

@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/box_result_not_box.rslisp
+---
+error[L0401]: mismatched types
+  --> check/box_result_not_box.rslisp:10:9
+   |
+10 |   (take (number)))
+   |         ^^^^^^^^ expected `(box shape)`, found `i64`

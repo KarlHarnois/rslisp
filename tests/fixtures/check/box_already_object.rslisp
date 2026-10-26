@@ -1,0 +1,15 @@
+(trait shape
+  (area (fn ((ref self)) f64)))
+
+(struct circle (radius f64))
+(impl shape circle
+  (area (c) (* 3.0 (field c radius) (field c radius))))
+
+(type identity (fn ((box shape)) (box shape)))
+(defn identity (value) value)
+
+(type take (fn ((box shape)) unit))
+(defn take (value) (do))
+
+(defn main ()
+  (take (identity (box-new (new circle (radius 1.0))))))

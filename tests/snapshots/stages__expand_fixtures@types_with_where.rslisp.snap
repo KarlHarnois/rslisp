@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/types_with_where.rslisp
+---
+(type identity (where (a) (fn (a) a)))
+(def identity (fn (value) value))

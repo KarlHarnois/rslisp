@@ -1,0 +1,2 @@
+(type identity (where (a) (fn (a) a)))
+(defn identity (value) value)

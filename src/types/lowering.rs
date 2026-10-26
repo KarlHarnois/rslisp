@@ -172,7 +172,30 @@ impl TypeChecker {
         type_expr: &TypeExpr,
         scope: &HashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
-        match type_expr.kind() {
+        self.lower_type_kind(type_expr.kind(), type_expr, scope)
+    }
+
+    fn lower_type_kind(
+        &mut self,
+        kind: &TypeExprKind,
+        type_expr: &TypeExpr,
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<Type, Diagnostic> {
+        match kind {
+            TypeExprKind::Where(..) | TypeExprKind::With(..) | TypeExprKind::Trait(_) => {
+                self.lower_invalid_type(kind, type_expr)
+            }
+            _ => self.lower_plain_type(kind, type_expr, scope),
+        }
+    }
+
+    fn lower_plain_type(
+        &mut self,
+        kind: &TypeExprKind,
+        type_expr: &TypeExpr,
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<Type, Diagnostic> {
+        match kind {
             TypeExprKind::Primitive(primitive) => Ok(Type::Primitive(*primitive)),
             TypeExprKind::Named(binding, arguments) => {
                 self.lower_named(*binding, arguments, type_expr.span(), scope)
@@ -184,12 +207,23 @@ impl TypeChecker {
                 self.lower_reference(*kind, *lifetime, inner, scope)
             }
             TypeExprKind::Hole => Ok(self.unifier.fresh()),
+            _ => unreachable!("the caller matches a plain type"),
+        }
+    }
+
+    fn lower_invalid_type(
+        &mut self,
+        kind: &TypeExprKind,
+        type_expr: &TypeExpr,
+    ) -> Result<Type, Diagnostic> {
+        match kind {
             TypeExprKind::Where(..) => Err(TypeProblems::misplaced_where(type_expr.span())),
             TypeExprKind::With(..) => Err(TypeProblems::misplaced_with(type_expr.span())),
             TypeExprKind::Trait(binding) => Err(TypeProblems::trait_outside_box(
                 self.bindings.get(*binding).name(),
                 type_expr.span(),
             )),
+            _ => unreachable!("the caller matches an invalid type"),
         }
     }
 
@@ -252,26 +286,41 @@ impl TypeChecker {
         scope: &HashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
         self.check_type_argument_count(binding, arguments.len(), span)?;
-        let arguments = if self.rust_types.is_box(binding) {
-            arguments
-                .iter()
-                .map(|argument| self.lower_box_argument(argument, scope))
-                .collect::<Result<Vec<Type>, Diagnostic>>()?
-        } else {
-            arguments
-                .iter()
-                .map(|argument| self.lower_type(argument, scope))
-                .collect::<Result<Vec<Type>, Diagnostic>>()?
-        };
-        Ok(
-            match (self.bindings.get(binding).kind(), scope.get(&binding)) {
-                (BindingKind::TypeVariable | BindingKind::AssociatedType, Some(generic)) => {
-                    Type::Generic(*generic)
+        let arguments = self.lower_named_arguments(binding, arguments, scope)?;
+        Ok(self.apply_named(binding, arguments, scope))
+    }
+
+    fn lower_named_arguments(
+        &mut self,
+        binding: BindingId,
+        arguments: &[TypeExpr],
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<Vec<Type>, Diagnostic> {
+        arguments
+            .iter()
+            .map(|argument| {
+                if self.rust_types.is_box(binding) {
+                    self.lower_box_argument(argument, scope)
+                } else {
+                    self.lower_type(argument, scope)
                 }
-                (BindingKind::TypeVariable, None) => self.unifier.fresh(),
-                _ => Type::Named(binding, arguments),
-            },
-        )
+            })
+            .collect()
+    }
+
+    fn apply_named(
+        &mut self,
+        binding: BindingId,
+        arguments: Vec<Type>,
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Type {
+        match (self.bindings.get(binding).kind(), scope.get(&binding)) {
+            (BindingKind::TypeVariable | BindingKind::AssociatedType, Some(generic)) => {
+                Type::Generic(*generic)
+            }
+            (BindingKind::TypeVariable, None) => self.unifier.fresh(),
+            _ => Type::Named(binding, arguments),
+        }
     }
 
     fn lower_box_argument(
@@ -280,7 +329,10 @@ impl TypeChecker {
         scope: &HashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
         match argument.kind() {
-            TypeExprKind::Trait(binding) => Ok(Type::TraitObject(*binding)),
+            TypeExprKind::Trait(binding) => {
+                self.check_boxable(*binding, argument.span());
+                Ok(Type::TraitObject(*binding))
+            }
             _ => self.lower_type(argument, scope),
         }
     }

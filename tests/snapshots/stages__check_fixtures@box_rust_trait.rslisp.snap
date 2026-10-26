@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/box_rust_trait.rslisp
+---
+(type show (fn ((box display)) string))
