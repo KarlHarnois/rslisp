@@ -1314,8 +1314,20 @@ impl TypeChecker {
         binder: &Binder,
         value: &Expr,
     ) -> Result<(TypedBodyItem, Type), Diagnostic> {
-        let value = self.infer(value)?;
-        let ty = self.binder_type(binder, &value)?;
+        let (value, ty) = match &binder.annotation {
+            Some(annotation) => {
+                let ty = self.lower_type(annotation, &HashMap::new())?;
+                let context = MismatchContext::Annotation {
+                    annotation: annotation.span(),
+                };
+                (self.infer_against(value, &ty, context)?, ty)
+            }
+            None => {
+                let value = self.infer(value)?;
+                let ty = value.ty.clone();
+                (value, ty)
+            }
+        };
         self.locals.insert(binder.binding, ty.clone());
         let binder = TypedBinder {
             binding: binder.binding,
@@ -1324,18 +1336,6 @@ impl TypeChecker {
             annotated: binder.annotation.is_some(),
         };
         Ok((TypedBodyItem::Let(binder, value), Type::unit()))
-    }
-
-    fn binder_type(&mut self, binder: &Binder, value: &TypedExpr) -> Result<Type, Diagnostic> {
-        let Some(annotation) = &binder.annotation else {
-            return Ok(value.ty.clone());
-        };
-        let annotated = self.lower_type(annotation, &HashMap::new())?;
-        let context = MismatchContext::Annotation {
-            annotation: annotation.span(),
-        };
-        self.expect(&annotated, &value.ty, value.span, context)?;
-        Ok(annotated)
     }
 
     fn infer_call(
