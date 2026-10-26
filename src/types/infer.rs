@@ -2113,7 +2113,6 @@ impl TypeChecker {
     fn collapses(&self, parameter: &Type, argument: &Type) -> bool {
         let parameter = self.unifier.resolve(parameter);
         Self::reference_depth(argument) > Self::reference_depth(&parameter)
-            && !matches!(Self::innermost_referent(&parameter), Type::Var(_))
     }
 
     fn reference_depth(value: &Type) -> usize {
