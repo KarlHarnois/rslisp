@@ -1009,6 +1009,7 @@ impl<'a> ItemEmitter<'a> {
                     Self::count_written_lifetimes(argument, counts);
                 }
             }
+            Type::TraitObject(_) => {}
             Type::Function(_, parameters, result) => {
                 for parameter in parameters {
                     Self::count_written_lifetimes(parameter, counts);
@@ -1073,6 +1074,7 @@ impl<'a> ItemEmitter<'a> {
                         .map(|argument| self.borrow_lifetimes(argument))
                         .sum::<usize>()
             }
+            Type::TraitObject(_) => 0,
             Type::Function(..) | Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => 0,
         }
     }

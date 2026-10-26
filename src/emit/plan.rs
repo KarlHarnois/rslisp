@@ -417,7 +417,7 @@ impl<'p> EmitPlan<'p> {
                 self.visit_type(result, module);
             }
             Type::Ref(_, inner) | Type::Mut(_, inner) => self.visit_type(inner, module),
-            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => {}
+            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) | Type::TraitObject(_) => {}
         }
     }
 

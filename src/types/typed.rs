@@ -67,6 +67,7 @@ pub enum TypedExprKind {
     Struct(TypedStructExpr),
     Variant(BindingId, Vec<TypedExpr>),
     Assoc(Box<TypedExpr>, Vec<TypedExpr>, Box<TypedExpr>),
+    TraitObject(Box<TypedExpr>, BindingId),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -358,7 +359,7 @@ impl TypedProgram {
                     .any(|argument| self.type_holds_borrow_with(argument, visiting))
                     || self.definition_holds_borrow_with(*binding, visiting)
             }
-            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => false,
+            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) | Type::TraitObject(_) => false,
         }
     }
 

@@ -369,6 +369,9 @@ impl<'a> ExpressionEmitter<'a> {
             TypedExprKind::Struct(structure) => self.structure(structure, &expr.ty),
             TypedExprKind::Variant(binding, arguments) => self.variant(*binding, arguments),
             TypedExprKind::Assoc(value, keys, item) => self.assoc_block(value, keys, item),
+            TypedExprKind::TraitObject(value, trait_binding) => {
+                self.trait_object(value, *trait_binding)
+            }
             _ => unreachable!("the caller matches a value form"),
         }
     }
@@ -1194,6 +1197,25 @@ impl<'a> ExpressionEmitter<'a> {
         } else {
             value
         }
+    }
+
+    fn trait_object(&mut self, value: &TypedExpr, trait_binding: BindingId) -> Code {
+        let box_binding = self
+            .program
+            .box_binding
+            .expect("a trait object names the prelude's box type");
+        let shown = {
+            let types = self.types();
+            types.show(
+                &Type::Named(box_binding, vec![Type::TraitObject(trait_binding)]),
+                TypePosition::Value,
+            )
+        };
+        let value = self.expr_in(value, TypeContext::Known);
+        Code::joined(
+            vec![value, Code::atom(format!(" as {shown}"))],
+            Precedence::Operator,
+        )
     }
 
     fn box_new(&self, argument: Code) -> Code {
@@ -2046,10 +2068,23 @@ impl<'a> ExpressionEmitter<'a> {
         let annotated = Self::contains_try(&lambda.body);
         let previous = std::mem::replace(&mut self.tail_loop, TailLoop::of_closure(lambda));
         self.locals.enter();
+        let inferred = lambda
+            .params
+            .iter()
+            .any(|param| self.is_boxed_object_reference(&param.ty));
         let params: Vec<String> = lambda
             .params
             .iter()
-            .map(|param| self.bind_parameter(param, TypePosition::Value))
+            .map(|param| {
+                if inferred {
+                    self.locals.bind(
+                        param.binding,
+                        self.program.bindings.get(param.binding).name(),
+                    )
+                } else {
+                    self.bind_parameter(param, TypePosition::Value)
+                }
+            })
             .collect();
         let body = self.closure_body(lambda, annotated);
         self.locals.leave();
@@ -2062,6 +2097,21 @@ impl<'a> ExpressionEmitter<'a> {
             _ => Code::atom(format!("|{}| ", params.join(", "))),
         };
         Code::joined(vec![head, body], Precedence::Operator)
+    }
+
+    fn is_boxed_object_reference(&self, ty: &Type) -> bool {
+        let Some(box_binding) = self.program.box_binding else {
+            return false;
+        };
+        match ty {
+            Type::Ref(_, inner) | Type::Mut(_, inner) => matches!(
+                inner.as_ref(),
+                Type::Named(binding, arguments)
+                    if *binding == box_binding
+                        && matches!(arguments.as_slice(), [Type::TraitObject(_)])
+            ),
+            _ => false,
+        }
     }
 
     fn closure_body(&mut self, lambda: &TypedLambda, annotated: bool) -> Code {

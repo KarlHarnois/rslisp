@@ -129,6 +129,9 @@ impl<'a> RustTypes<'a> {
         match shown {
             Type::Var(_) => "_".to_string(),
             Type::Generic(generic) => self.generic(*generic),
+            Type::TraitObject(binding) => {
+                format!("dyn {}", self.plan.trait_path(*binding, self.module))
+            }
             Type::Primitive(primitive) => Self::primitive(*primitive).to_string(),
             Type::Named(binding, arguments) => self.named(*binding, arguments, position, scope),
             Type::Function(kind, parameters, result) => {
@@ -342,7 +345,7 @@ impl<'a> RustTypes<'a> {
                 .iter()
                 .chain(std::iter::once(result.as_ref()))
                 .all(|part| Self::only_behind_references(part, generic, false)),
-            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => true,
+            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) | Type::TraitObject(_) => true,
         }
     }
 

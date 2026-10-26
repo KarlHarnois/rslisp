@@ -751,6 +751,15 @@ impl TypeProblems {
         .with_help("write `(with type type)` as an entry of `rust-trait`")
     }
 
+    pub fn trait_outside_box(name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MISMATCHED_TYPES,
+            "a trait is a type only inside `(box ...)`",
+            Label::new(span, format!("`{name}` is a trait")),
+        )
+        .with_help(format!("write `(box {name})` to box it as a trait object"))
+    }
+
     pub fn misplaced_where(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MISPLACED_WHERE,

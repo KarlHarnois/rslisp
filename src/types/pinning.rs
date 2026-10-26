@@ -226,7 +226,7 @@ impl InstantiationReport {
             Type::Primitive(primitive) => {
                 matches!(actual, Type::Primitive(other) if primitive == other)
             }
-            Type::Var(_) => false,
+            Type::Var(_) | Type::TraitObject(_) => false,
         }
     }
 

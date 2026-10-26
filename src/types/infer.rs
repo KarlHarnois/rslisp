@@ -1357,14 +1357,78 @@ impl TypeChecker {
                 span,
             ));
         }
-        self.expect_call_result(expected, &result, span)?;
+        let boxed = self.box_object(expected, &result);
+        if boxed.is_none() {
+            self.expect_call_result(expected, &result, span)?;
+        }
         let shared = SharedVariables::of(&parameters, &self.unifier, &self.traits);
         let mut typed_arguments =
             self.infer_arguments(Some(&callee), &parameters, arguments, &shared)?;
         self.pass_shared_arguments(Some(&callee), &shared, &mut typed_arguments)?;
-        Ok(TypedExpr {
+        let call = TypedExpr {
             kind: TypedExprKind::Call(Box::new(callee), typed_arguments),
             ty: result,
+            span,
+        };
+        match (boxed, expected) {
+            (Some(trait_binding), Some(expected)) => {
+                self.coerce_box(call, trait_binding, expected, span)
+            }
+            _ => Ok(call),
+        }
+    }
+
+    fn box_object(&self, expected: Option<&Type>, result: &Type) -> Option<BindingId> {
+        let expected = expected?;
+        let Type::Named(expected_box, expected_arguments) = self.unifier.resolve(expected) else {
+            return None;
+        };
+        if !self.rust_types.is_box(expected_box) {
+            return None;
+        }
+        let [Type::TraitObject(trait_binding)] = expected_arguments.as_slice() else {
+            return None;
+        };
+        let Type::Named(result_box, result_arguments) = self.unifier.resolve(result) else {
+            return None;
+        };
+        if result_box != expected_box || result_arguments.len() != 1 {
+            return None;
+        }
+        Some(*trait_binding)
+    }
+
+    fn coerce_box(
+        &mut self,
+        call: TypedExpr,
+        trait_binding: BindingId,
+        expected: &Type,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let Type::Named(_, arguments) = self.unifier.resolve(&call.ty) else {
+            return Ok(call);
+        };
+        let Some(argument) = arguments.first() else {
+            return Ok(call);
+        };
+        if matches!(argument, Type::TraitObject(object) if *object == trait_binding) {
+            return Ok(TypedExpr {
+                ty: expected.clone(),
+                ..call
+            });
+        }
+        let bound = Bound::plain(trait_binding);
+        let satisfied = self
+            .traits
+            .satisfies(&bound, argument, &|generic, required| {
+                self.unifier.generic_bounds(generic).contains(required)
+            });
+        if !satisfied {
+            self.report_missing_trait(&bound, argument, span);
+        }
+        Ok(TypedExpr {
+            kind: TypedExprKind::TraitObject(Box::new(call), trait_binding),
+            ty: expected.clone(),
             span,
         })
     }
@@ -1379,7 +1443,11 @@ impl TypeChecker {
             return Ok(());
         };
         let resolved = self.unifier.resolve(result);
-        if resolved.has_vars() && resolved.shares_head_with(&self.unifier.resolve(expected)) {
+        let expected_resolved = self.unifier.resolve(expected);
+        if resolved.has_vars()
+            && (resolved.shares_head_with(&expected_resolved)
+                || self.coerces(&expected_resolved, &resolved, span))
+        {
             self.expect(expected, result, span, MismatchContext::Plain)?;
         }
         Ok(())
@@ -1625,7 +1693,12 @@ impl TypeChecker {
     ) -> Result<TypedExpr, Diagnostic> {
         let span = argument.span();
         let ExprKind::Fn(lambda) = argument.kind() else {
-            let value = self.infer(argument)?;
+            let expected = parameter.clone().without_reference();
+            let value = if self.contains_box_object(&expected) {
+                self.infer_expecting(argument, &expected, &MismatchContext::Plain)?
+            } else {
+                self.infer(argument)?
+            };
             let value = self.wrap_function_value(parameter, value)?;
             return self.iterate_collection(parameter, value);
         };
@@ -1653,24 +1726,62 @@ impl TypeChecker {
         if value.is_written_form() || !self.is_iterator(&expected) {
             return Ok(value);
         }
-        let Some(collection) = Collection::of(&self.unifier.resolve(&value.ty), &self.rust_types)
-        else {
-            return Ok(value);
+        let resolved = self.unifier.resolve(&value.ty);
+        let collection_type = match &resolved {
+            Type::Ref(_, inner) | Type::Mut(_, inner) => self.unifier.resolve(inner),
+            _ => resolved.clone(),
         };
-        let item = if collection.is_map() {
-            let key = self.unifier.resolve(collection.key());
-            let entry = self.unifier.resolve(collection.value());
-            self.pair_type(Type::shared(key), Type::shared(entry))
-        } else {
-            Type::shared(self.unifier.resolve(collection.value()))
+        let (item, collection_type) = match &collection_type {
+            Type::Named(binding, arguments) if self.rust_types.is_slice(*binding) => {
+                let [element] = arguments.as_slice() else {
+                    return Ok(value);
+                };
+                (
+                    Type::shared(self.unifier.resolve(element)),
+                    collection_type.clone(),
+                )
+            }
+            _ => {
+                let Some(collection) = Collection::of(&collection_type, &self.rust_types) else {
+                    return Ok(value);
+                };
+                let item = if collection.is_map() {
+                    let key = self.unifier.resolve(collection.key());
+                    let entry = self.unifier.resolve(collection.value());
+                    self.pair_type(Type::shared(key), Type::shared(entry))
+                } else {
+                    Type::shared(self.unifier.resolve(collection.value()))
+                };
+                (item, collection.ty().clone())
+            }
         };
         let result = self.iterator_type(item);
-        let parameters = vec![Type::shared(collection.ty().clone())];
+        let parameters = vec![Type::shared(collection_type)];
         let span = value.span;
         let call =
             self.synthetic_call_with_value("{0}.iter()", parameters, result, value, &[], span)?;
         self.expect(&expected, &call.ty, span, MismatchContext::Plain)?;
         Ok(call)
+    }
+
+    fn contains_box_object(&self, ty: &Type) -> bool {
+        match self.unifier.resolve(ty) {
+            Type::TraitObject(_) => true,
+            Type::Named(binding, arguments) if self.rust_types.is_box(binding) => {
+                matches!(arguments.as_slice(), [Type::TraitObject(_)])
+            }
+            Type::Named(_, arguments) => arguments
+                .iter()
+                .any(|argument| self.contains_box_object(argument)),
+            Type::Ref(_, inner) | Type::Mut(_, inner) => self.contains_box_object(&inner),
+            Type::Function(_, parameters, result) => {
+                parameters
+                    .iter()
+                    .any(|parameter| self.contains_box_object(parameter))
+                    || self.contains_box_object(&result)
+            }
+            Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => false,
+        }
     }
 
     fn is_iterator(&self, ty: &Type) -> bool {

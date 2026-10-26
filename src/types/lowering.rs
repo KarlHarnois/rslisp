@@ -186,6 +186,10 @@ impl TypeChecker {
             TypeExprKind::Hole => Ok(self.unifier.fresh()),
             TypeExprKind::Where(..) => Err(TypeProblems::misplaced_where(type_expr.span())),
             TypeExprKind::With(..) => Err(TypeProblems::misplaced_with(type_expr.span())),
+            TypeExprKind::Trait(binding) => Err(TypeProblems::trait_outside_box(
+                self.bindings.get(*binding).name(),
+                type_expr.span(),
+            )),
         }
     }
 
@@ -248,10 +252,17 @@ impl TypeChecker {
         scope: &HashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
         self.check_type_argument_count(binding, arguments.len(), span)?;
-        let arguments = arguments
-            .iter()
-            .map(|argument| self.lower_type(argument, scope))
-            .collect::<Result<Vec<Type>, Diagnostic>>()?;
+        let arguments = if self.rust_types.is_box(binding) {
+            arguments
+                .iter()
+                .map(|argument| self.lower_box_argument(argument, scope))
+                .collect::<Result<Vec<Type>, Diagnostic>>()?
+        } else {
+            arguments
+                .iter()
+                .map(|argument| self.lower_type(argument, scope))
+                .collect::<Result<Vec<Type>, Diagnostic>>()?
+        };
         Ok(
             match (self.bindings.get(binding).kind(), scope.get(&binding)) {
                 (BindingKind::TypeVariable | BindingKind::AssociatedType, Some(generic)) => {
@@ -261,6 +272,17 @@ impl TypeChecker {
                 _ => Type::Named(binding, arguments),
             },
         )
+    }
+
+    fn lower_box_argument(
+        &mut self,
+        argument: &TypeExpr,
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<Type, Diagnostic> {
+        match argument.kind() {
+            TypeExprKind::Trait(binding) => Ok(Type::TraitObject(*binding)),
+            _ => self.lower_type(argument, scope),
+        }
     }
 
     fn check_type_argument_count(

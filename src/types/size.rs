@@ -70,7 +70,7 @@ impl<'a> TypeSizes<'a> {
                     self.enumeration(*binding, arguments, visiting)
                 }
             }
-            Type::Var(_) | Type::Generic(_) | Type::Function(..) => None,
+            Type::Var(_) | Type::Generic(_) | Type::Function(..) | Type::TraitObject(_) => None,
         }
     }
 
