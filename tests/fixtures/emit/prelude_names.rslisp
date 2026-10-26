@@ -1,0 +1,10 @@
+(struct sized (value i64))
+
+(trait send
+  (send-value (fn ((ref self)) i64)))
+
+(impl send sized
+  (send-value (s) (field s value)))
+
+(defn main ()
+  (println (send-value (new sized (value 1)))))

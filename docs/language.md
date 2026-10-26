@@ -375,7 +375,13 @@ The emitted Rust is formatted by `rustfmt` when `rslisp emit` or `rslisp build` 
 | constant `admin?` | `IS_ADMIN` |
 | other punctuation | spelled out, so `+` becomes `plus` |
 | a Rust keyword | a raw identifier, so `type` becomes `r#type` |
+| a program type or trait that hides a Rust prelude name | suffixed with `2`, so `sized` becomes `Sized2` |
 | a local whose name a binding still in scope uses | numbered, so `n` becomes `n_2` |
+
+A program type or trait that mangles to a name Rust's 2021 prelude brings into
+scope takes the suffix `2`, so the emitted name never hides `Sized`, `Clone`,
+`Iterator`, `Vec` or another prelude name. A `rust-type` or `rust-trait` path is
+never renamed.
 
 ## Status
 

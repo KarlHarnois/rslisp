@@ -4,7 +4,7 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/sure_arm_positions.rslisp
 ---
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-enum Box {
+enum Box2 {
     Value(i64),
 }
 
@@ -15,7 +15,7 @@ fn plus_one(n: i64) -> i64 {
 fn choose(flag: bool) -> i64 {
     match flag {
         true => {
-            let Box::Value(n) = Box::Value(1);
+            let Box2::Value(n) = Box2::Value(1);
             plus_one(n)
         }
         false => 0,
@@ -24,7 +24,7 @@ fn choose(flag: bool) -> i64 {
 
 fn main() {
     println!("{}", {
-        let Box::Value(n) = Box::Value(2);
+        let Box2::Value(n) = Box2::Value(2);
         plus_one(n)
     });
     println!("{}", choose(true));
