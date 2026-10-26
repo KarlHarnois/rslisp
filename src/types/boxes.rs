@@ -46,8 +46,9 @@ impl BoxPlanner {
         structs: &mut StructTable,
         enums: &mut EnumTable,
         box_binding: BindingId,
-    ) {
+    ) -> BTreeSet<(BindingId, usize, usize)> {
         let plan = Self::new(structs.clone(), enums.clone(), box_binding).plan();
+        let mut boxed = BTreeSet::new();
         for target in plan {
             let definition = enums
                 .get_mut(target.binding)
@@ -59,7 +60,9 @@ impl BoxPlanner {
             if let VariantPayload::Named(fields) = payload {
                 fields[target.payload].1 = target.ty;
             }
+            boxed.insert((target.binding, target.variant, target.payload));
         }
+        boxed
     }
 
     fn new(structs: StructTable, enums: EnumTable, box_binding: BindingId) -> Self {

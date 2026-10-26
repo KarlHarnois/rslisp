@@ -762,7 +762,7 @@ impl TypeChecker {
             patterns.len(),
             span,
         )?;
-        let typed = self.lower_payload_patterns(patterns, &storage, mode)?;
+        let typed = self.lower_payload_patterns(owner, index, patterns, &storage, mode)?;
         Ok(TypedPatternKind::Variant(binding, typed))
     }
 
@@ -830,26 +830,32 @@ impl TypeChecker {
             .unwrap_or_default();
         let binding = self.candidate_binding(candidates, owner, index);
         self.check_pattern_count(name, storage.len(), arguments.len(), span)?;
-        let typed = self.lower_payload_patterns(arguments, &storage, mode)?;
+        let typed = self.lower_payload_patterns(owner, index, arguments, &storage, mode)?;
         Ok(TypedPatternKind::Variant(binding, typed))
     }
 
     fn lower_payload_patterns(
         &mut self,
+        owner: BindingId,
+        variant: usize,
         patterns: &[Pattern],
         storage: &[Type],
         mode: Option<ReferenceKind>,
     ) -> Result<Vec<TypedPattern>, Diagnostic> {
-        patterns
-            .iter()
-            .zip(storage)
-            .map(|(pattern, storage)| {
-                let payload = self.visible_payload(storage);
-                let mut typed = self.lower_pattern(pattern, &payload, mode)?;
-                typed.boxed = self.is_box(storage);
-                Ok(typed)
-            })
-            .collect()
+        let mut typed = Vec::with_capacity(patterns.len());
+        for (payload, (pattern, storage)) in patterns.iter().zip(storage).enumerate() {
+            let inferred = self.is_inferred_box(owner, variant, payload);
+            let payload = match inferred {
+                true => self
+                    .unboxed(storage)
+                    .expect("an inferred box has one type argument"),
+                false => storage.clone(),
+            };
+            let mut value = self.lower_pattern(pattern, &payload, mode)?;
+            value.boxed = inferred;
+            typed.push(value);
+        }
+        Ok(typed)
     }
 
     fn short_pattern_owner(

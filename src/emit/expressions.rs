@@ -1192,7 +1192,7 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn payload_argument(&mut self, argument: &TypedExpr, payload: &Type) -> Code {
         let value = self.expr(argument);
-        if self.program.is_box(payload) {
+        if self.program.is_box(payload) && !self.program.is_box(&argument.ty) {
             self.box_new(value)
         } else {
             value
