@@ -6,6 +6,7 @@ use super::display::TypeDisplay;
 use super::enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};
 use super::graph::DependencyGraph;
 use super::pending::PendingBorrow;
+use super::pinning::LiteralDefaults;
 use super::problems::{ImplementorGroup, ImplementorList, MismatchContext, TypeProblems};
 use super::rust_types::{RustType, RustTypeTable};
 use super::selection::Selection;
@@ -181,6 +182,7 @@ pub struct TypeChecker {
     pub(super) trait_methods: HashMap<BindingId, TraitMethodInfo>,
     pub(super) synthetic_bindings: HashSet<BindingId>,
     pub(super) pinned: HashMap<BindingId, Type>,
+    pub(super) literal_defaults: LiteralDefaults,
     pub(super) literal_generics: HashMap<GenericId, PrimitiveType>,
     default_literal_parameters: bool,
     pub(super) recursive_group: Vec<BindingId>,
@@ -262,6 +264,7 @@ impl TypeChecker {
             trait_methods: HashMap::new(),
             synthetic_bindings: HashSet::new(),
             pinned: HashMap::new(),
+            literal_defaults: LiteralDefaults::default(),
             literal_generics: HashMap::new(),
             default_literal_parameters: false,
             recursive_group: Vec::new(),
@@ -2539,12 +2542,14 @@ impl TypeChecker {
         changed_structs: &HashSet<BindingId>,
         inferred_copies: &InferredCopies,
         pinned: &HashMap<BindingId, Type>,
+        literal_defaults: LiteralDefaults,
         default_literal_parameters: bool,
     ) -> Result<super::typed::TypedProgram, Diagnostics> {
         let mut checker = Self::new(program.bindings.clone());
         checker.changed_structs = changed_structs.clone();
         checker.inferred_copies = inferred_copies.clone();
         checker.pinned = pinned.clone();
+        checker.literal_defaults = literal_defaults;
         checker.default_literal_parameters = default_literal_parameters;
         checker.macro_origins = program
             .macro_origins

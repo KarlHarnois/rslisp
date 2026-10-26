@@ -4,7 +4,9 @@ use crate::core::{BindingId, StructDerives};
 use crate::diagnostic::Diagnostics;
 use crate::expand::Program;
 use crate::ownership::{InPlaceChanges, OwnershipChecker};
-use crate::types::{InferredCopies, InstantiationReport, Pinning, Type, TypeChecker, TypedProgram};
+use crate::types::{
+    InferredCopies, InstantiationReport, LiteralDefaults, Pinning, Type, TypeChecker, TypedProgram,
+};
 
 pub struct ProgramChecker;
 
@@ -21,6 +23,7 @@ impl ProgramChecker {
             &HashSet::new(),
             &InferredCopies::default(),
             &HashMap::new(),
+            LiteralDefaults::default(),
             false,
         )?;
         Self::finish(program, first)
@@ -36,8 +39,23 @@ impl ProgramChecker {
         {
             return Ok(first.program);
         }
-        let checked = Self::checked(program, &blocked, &first.inferred_copies, &pins, true)?;
-        Self::pin_until_stable(program, first.inferred_copies, blocked, pins, checked)
+        let literal_defaults = LiteralDefaults::of(&first.instantiations, &first.program);
+        let checked = Self::checked(
+            program,
+            &blocked,
+            &first.inferred_copies,
+            &pins,
+            literal_defaults.clone(),
+            true,
+        )?;
+        Self::pin_until_stable(
+            program,
+            first.inferred_copies,
+            blocked,
+            pins,
+            literal_defaults,
+            checked,
+        )
     }
 
     fn pin_until_stable(
@@ -45,6 +63,7 @@ impl ProgramChecker {
         inferred_copies: InferredCopies,
         blocked: HashSet<BindingId>,
         mut pins: HashMap<BindingId, Type>,
+        literal_defaults: LiteralDefaults,
         mut checked: CheckedProgram,
     ) -> Result<TypedProgram, Diagnostics> {
         loop {
@@ -56,7 +75,14 @@ impl ProgramChecker {
                 return Ok(checked.program);
             }
             pins.extend(next);
-            checked = Self::checked(program, &blocked, &inferred_copies, &pins, true)?;
+            checked = Self::checked(
+                program,
+                &blocked,
+                &inferred_copies,
+                &pins,
+                literal_defaults.clone(),
+                true,
+            )?;
         }
     }
 
@@ -69,6 +95,7 @@ impl ProgramChecker {
         changed_structs: &HashSet<BindingId>,
         inferred_copies: &InferredCopies,
         pinned: &HashMap<BindingId, Type>,
+        literal_defaults: LiteralDefaults,
         default_literal_parameters: bool,
     ) -> Result<CheckedProgram, Diagnostics> {
         match Self::typed_and_owned(
@@ -76,6 +103,7 @@ impl ProgramChecker {
             changed_structs,
             inferred_copies,
             pinned,
+            literal_defaults,
             default_literal_parameters,
         ) {
             Ok(mut checked) => {
@@ -94,6 +122,7 @@ impl ProgramChecker {
         changed_structs: &HashSet<BindingId>,
         inferred_copies: &InferredCopies,
         pinned: &HashMap<BindingId, Type>,
+        literal_defaults: LiteralDefaults,
         default_literal_parameters: bool,
     ) -> Result<CheckedProgram, Diagnostics> {
         let mut typed = TypeChecker::check(
@@ -101,6 +130,7 @@ impl ProgramChecker {
             changed_structs,
             inferred_copies,
             pinned,
+            literal_defaults,
             default_literal_parameters,
         )?;
         let instantiations = InstantiationReport::of(program, &typed);

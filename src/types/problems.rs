@@ -189,6 +189,32 @@ impl TypeProblems {
         ))
     }
 
+    pub fn literal_default_note(
+        parameter: &str,
+        default: &str,
+        function: &str,
+        calls: &[String],
+    ) -> String {
+        format!(
+            "`{parameter}` defaulted to `{default}`, because `{function}` is called with {}",
+            Self::literal_calls(calls)
+        )
+    }
+
+    fn literal_calls(calls: &[String]) -> String {
+        calls
+            .iter()
+            .map(|call| format!("`{call}`"))
+            .collect::<Vec<_>>()
+            .join(" and with ")
+    }
+
+    pub fn literal_default_help(function: &str, signature: &str) -> String {
+        format!(
+            "give `{function}` one parameter type with a `type` signature, such as `(type {function} {signature})`, and pass that type at every call"
+        )
+    }
+
     pub fn infinite(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::INFINITE_TYPE,

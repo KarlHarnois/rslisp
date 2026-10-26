@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/literal_default_calls.rslisp
+---
+error[L0401]: mismatched types
+ --> check/literal_default_calls.rslisp:5:22
+  |
+5 |   (println (count-up (len "abc")))
+  |                      ^^^^^^^^^^^ expected `i64`, found `usize`
+  |
+  = note: `limit` defaulted to `i64`, because `count-up` is called with `usize` and with `i32`
+  = help: give `count-up` one parameter type with a `type` signature, such as `(type count-up (fn (usize) i64))`, and pass that type at every call
