@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/loop_while_let.rslisp
+---
+fn drain(items: &mut Vec<i64>) {
+    while let Some(item) = items.pop() {
+        println!("{}", item);
+    }
+}
+
+fn main() {
+    let mut items: Vec<i64> = vec![1_i64, 2_i64];
+    drain(&mut items)
+}
