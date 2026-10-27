@@ -3024,7 +3024,7 @@ impl TypeChecker {
                     SimilarName::closest(&label.name, &names),
                 ));
             };
-            let typed = self.infer(value)?;
+            let typed = self.infer_expecting(value, field_type, &MismatchContext::Plain)?;
             self.expect(field_type, &typed.ty, typed.span, MismatchContext::Plain)?;
             typed_fields.push((label.clone(), typed));
         }
