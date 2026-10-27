@@ -6,9 +6,9 @@ use std::process::{Command, Output, Stdio};
 
 use rslisp::language::Language;
 
-use super::failure::BenchFailure;
 use super::profile::ProfileReader;
 use super::results::ProgramResult;
+use crate::failure::TaskFailure;
 
 pub struct Callgrind {
     compiler: PathBuf,
@@ -42,12 +42,12 @@ impl Callgrind {
         }
     }
 
-    pub fn measure(&self, program: &Path) -> Result<ProgramResult, BenchFailure> {
+    pub fn measure(&self, program: &Path) -> Result<ProgramResult, TaskFailure> {
         let profile = self.profile_path(program);
         Self::remove_stale(&profile)?;
         let output = self.run(program, &profile)?;
         let text = fs::read_to_string(&profile)
-            .map_err(|_| BenchFailure::profile_missing(program, &output.stderr))?;
+            .map_err(|_| TaskFailure::profile_missing(program, &output.stderr))?;
         let measurement = match output.status.success() {
             true => Some(ProfileReader::new(Language::NAME).read(&text)?),
             false => None,
@@ -58,9 +58,9 @@ impl Callgrind {
         })
     }
 
-    fn run(&self, program: &Path, profile: &Path) -> Result<Output, BenchFailure> {
+    fn run(&self, program: &Path, profile: &Path) -> Result<Output, TaskFailure> {
         fs::create_dir_all(&self.profiles)
-            .map_err(|error| BenchFailure::unwritable(&self.profiles, error))?;
+            .map_err(|error| TaskFailure::unwritable(&self.profiles, error))?;
         Command::new(Self::VALGRIND)
             .env_clear()
             .env(
@@ -77,7 +77,7 @@ impl Callgrind {
             .current_dir(program.parent().unwrap_or(Path::new(".")))
             .stdout(Stdio::null())
             .output()
-            .map_err(|error| BenchFailure::tool_missing(Self::VALGRIND, error))
+            .map_err(TaskFailure::valgrind_missing)
     }
 
     fn profile_path(&self, program: &Path) -> PathBuf {
@@ -86,10 +86,10 @@ impl Callgrind {
             .with_extension(Self::PROFILE_EXTENSION)
     }
 
-    fn remove_stale(profile: &Path) -> Result<(), BenchFailure> {
+    fn remove_stale(profile: &Path) -> Result<(), TaskFailure> {
         match fs::remove_file(profile) {
             Err(error) if error.kind() != ErrorKind::NotFound => {
-                Err(BenchFailure::unwritable(profile, error))
+                Err(TaskFailure::unwritable(profile, error))
             }
             _ => Ok(()),
         }

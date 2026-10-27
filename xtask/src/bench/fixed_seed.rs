@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use super::failure::BenchFailure;
+use crate::failure::TaskFailure;
 
 pub struct FixedSeedLibrary<'a> {
     root: &'a Path,
@@ -18,7 +18,7 @@ impl<'a> FixedSeedLibrary<'a> {
         Self { root }
     }
 
-    pub fn build(&self) -> Result<PathBuf, BenchFailure> {
+    pub fn build(&self) -> Result<PathBuf, TaskFailure> {
         let library = self.root.join(Self::LIBRARY);
         Self::create_parent(&library)?;
         let output = Command::new(Self::C_COMPILER)
@@ -26,9 +26,9 @@ impl<'a> FixedSeedLibrary<'a> {
             .arg(&library)
             .arg(self.root.join(Self::SOURCE))
             .output()
-            .map_err(|error| BenchFailure::tool_missing(Self::C_COMPILER, error))?;
+            .map_err(|error| TaskFailure::tool_missing(Self::C_COMPILER, error))?;
         if !output.status.success() {
-            return Err(BenchFailure::build_failed(
+            return Err(TaskFailure::build_failed(
                 "the fixed-seed library",
                 &output.stderr,
             ));
@@ -36,8 +36,8 @@ impl<'a> FixedSeedLibrary<'a> {
         Ok(library)
     }
 
-    fn create_parent(library: &Path) -> Result<(), BenchFailure> {
+    fn create_parent(library: &Path) -> Result<(), TaskFailure> {
         let directory = library.parent().unwrap_or(library);
-        fs::create_dir_all(directory).map_err(|error| BenchFailure::unwritable(directory, error))
+        fs::create_dir_all(directory).map_err(|error| TaskFailure::unwritable(directory, error))
     }
 }

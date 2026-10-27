@@ -4,9 +4,9 @@ use std::fs;
 use std::path::Path;
 
 use super::cost::Cost;
-use super::failure::BenchFailure;
 use super::measurement::Measurement;
 use super::table::{GroupedCount, MarkdownTable};
+use crate::failure::TaskFailure;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ProgramResult {
@@ -27,20 +27,20 @@ impl ResultSet {
         Self { programs }
     }
 
-    pub fn load(path: &Path) -> Result<Self, BenchFailure> {
+    pub fn load(path: &Path) -> Result<Self, TaskFailure> {
         let text =
-            fs::read_to_string(path).map_err(|error| BenchFailure::unreadable(path, error))?;
+            fs::read_to_string(path).map_err(|error| TaskFailure::unreadable(path, error))?;
         let programs = text
             .lines()
             .map(|line| {
-                Self::parse_program(line).ok_or_else(|| BenchFailure::malformed_results(path, line))
+                Self::parse_program(line).ok_or_else(|| TaskFailure::malformed_results(path, line))
             })
             .collect::<Result<_, _>>()?;
         Ok(Self { programs })
     }
 
-    pub fn save(&self, path: &Path) -> Result<(), BenchFailure> {
-        fs::write(path, self.serialize()).map_err(|error| BenchFailure::unwritable(path, error))
+    pub fn save(&self, path: &Path) -> Result<(), TaskFailure> {
+        fs::write(path, self.serialize()).map_err(|error| TaskFailure::unwritable(path, error))
     }
 
     pub fn programs(&self) -> &[ProgramResult] {

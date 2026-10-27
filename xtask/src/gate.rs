@@ -5,7 +5,7 @@ use std::process::ExitCode;
 use crate::checks::{BadgeFreshness, Check, CleanEmittedRust, CoverageFloor, CrapLimit};
 use crate::crap::ScoredFunction;
 use crate::emitted_lints::{EmittedLints, LintedProgram};
-use crate::failure::GateFailure;
+use crate::failure::TaskFailure;
 use crate::functions::{SourceFunction, SourceTree};
 use crate::instrumented_tests::InstrumentedTests;
 use crate::lcov::LcovReport;
@@ -39,12 +39,12 @@ impl QualityGate {
         }
     }
 
-    fn measure(&self) -> Result<Measurement, GateFailure> {
+    fn measure(&self) -> Result<Measurement, TaskFailure> {
         let report = InstrumentedTests::new(&self.root).run()?;
         let functions = SourceTree::new(&self.root).functions()?;
         let readme_path = self.root.join(Self::README);
         let readme = fs::read_to_string(&readme_path)
-            .map_err(|error| GateFailure::unreadable(&readme_path, error))?;
+            .map_err(|error| TaskFailure::unreadable(&readme_path, error))?;
         let linted = EmittedLints::new(&self.root).run()?;
         Ok(Measurement {
             report,
