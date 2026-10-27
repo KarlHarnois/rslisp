@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/pin_float_literal_result.rslisp
+---
+fn ratio() -> f32 {
+    0.5
+}
+
+fn half(value: f32) -> f32 {
+    value
+}
+
+fn main() {
+    println!("{}", half(ratio()))
+}

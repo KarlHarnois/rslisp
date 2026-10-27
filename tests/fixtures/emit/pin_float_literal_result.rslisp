@@ -1,0 +1,6 @@
+(defn ratio () 0.5)
+
+(defn half ((value f32)) value)
+
+(defn main ()
+  (println (half (ratio))))
