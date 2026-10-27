@@ -1,0 +1,4 @@
+(defrule old-pair
+  (() (struct pair (where (a b) (first a) (second b)))))
+
+(old-pair)

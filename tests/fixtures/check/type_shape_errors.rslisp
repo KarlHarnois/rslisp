@@ -1,5 +1,5 @@
-(defstruct point (x f64) (y f64))
-(defstruct pixel (x i64) (y i64))
+(defstruct point :x f64 :y f64)
+(defstruct pixel :x i64 :y i64)
 
 (defn read-x (thing) (field thing x))
 

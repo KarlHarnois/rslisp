@@ -1,5 +1,5 @@
 (struct (pair a b) (first a) (second b))
 
-(defstruct (crate item) (content item) (count i64))
+(defstruct (crate item) :content item :count i64)
 
 (struct query (where string))

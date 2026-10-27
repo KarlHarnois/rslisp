@@ -1,4 +1,4 @@
-(defstruct (pair a b) (first a) (second b))
+(defstruct (pair a b) :first a :second b)
 
 (type swap (where ((a clone) (b clone)) (fn ((ref (pair a b))) (pair b a))))
 (defn swap (p) (new pair (first (clone (field p second))) (second (clone (field p first)))))

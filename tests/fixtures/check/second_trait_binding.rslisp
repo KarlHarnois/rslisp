@@ -1,4 +1,4 @@
-(defstruct point (x i64) (y i64))
+(defstruct point :x i64 :y i64)
 (rust-trait partial-eq "PartialEq" point)
 (defn main ()
   (println (= (make-point 1 2) (make-point 1 2))))

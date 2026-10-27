@@ -1,4 +1,4 @@
-(defstruct counter (value i64))
+(defstruct counter :value i64)
 
 (defn read-counter (c)
   (field c value))

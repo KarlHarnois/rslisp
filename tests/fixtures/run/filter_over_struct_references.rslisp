@@ -1,4 +1,4 @@
-(defstruct person (name string) (age u32))
+(defstruct person :name string :age u32)
 
 (defn adults (people)
   (collect (filter (iter people) (fn (p) (>= (person-age p) 18)))))

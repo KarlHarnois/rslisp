@@ -1,4 +1,4 @@
-(defstruct ticket (id u32))
+(defstruct ticket :id u32)
 (derive ticket string)
 
 (defn main () (do))

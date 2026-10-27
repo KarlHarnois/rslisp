@@ -3,7 +3,7 @@
 (defn square (x) (* x x))
 (def admin? true)
 (defn greeting () (str "hello" " " "world"))
-(defstruct point (x f64) (y f64))
+(defstruct point :x f64 :y f64)
 (def origin (make-point 1 2))
 (defn distance-squared (a b)
   (let dx (- (point-x a) (point-x b)))

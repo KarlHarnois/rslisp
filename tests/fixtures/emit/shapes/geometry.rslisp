@@ -1,6 +1,6 @@
 (export point make-point point-x point-y distance)
 
-(defstruct point (x f64) (y f64))
+(defstruct point :x f64 :y f64)
 
 (defn distance (a b)
   (let dx (- (point-x a) (point-x b)))

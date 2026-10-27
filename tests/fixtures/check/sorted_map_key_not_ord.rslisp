@@ -1,4 +1,4 @@
-(defstruct not-a-key (name string))
+(defstruct not-a-key :name string)
 
 (defn main ()
   (let items (sorted-map (new not-a-key (name (to-string "x"))) 1))

@@ -1,4 +1,4 @@
-(defstruct person (name string))
+(defstruct person :name string)
 
 (defn main ()
   (let p (make-person (to-string "Ana")))

@@ -1,5 +1,5 @@
 (def bump! (rust "*{0} += 1" (fn ((mut i64)) unit)))
-(defstruct counter (count i64))
+(defstruct counter :count i64)
 
 (defn bump-field! (c) (bump! (field c count)))
 (defn bump-reference! ((t (mut i64))) (bump! t))

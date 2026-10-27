@@ -1,5 +1,5 @@
 (def bump (rust "*{0} += 1" (fn ((mut i64)) unit)))
-(defstruct counter (count i64))
+(defstruct counter :count i64)
 
 (defn main ()
   (let c (make-counter 0))

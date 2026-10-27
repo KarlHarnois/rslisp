@@ -1,4 +1,4 @@
-(defstruct pair (left string) (right f64))
+(defstruct pair :left string :right f64)
 
 (defn main ()
   (let first-pair (make-pair (to-string "one") 2))

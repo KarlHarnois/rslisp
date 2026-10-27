@@ -2,7 +2,7 @@
 (use prelude/logic and)
 (use prelude/syntax defn)
 (use code first rest list nth drop length empty? list? symbol? symbol symbol-name same-binding?
-          value-eq number-lt)
+          value-eq number-lt prepend string fail keyword? keyword-name)
 
 (export defstruct)
 
@@ -31,11 +31,29 @@
       (do (type (unquote accessor-name) (unquote (accessor-type name params)))
           (defn (unquote accessor-name) (instance) (field instance (unquote (first field))))))))
 
+(def field-groups
+  (fn (body)
+    (if (empty? body)
+        (list)
+        (prepend (field-group (first body) (rest body))
+                 (field-groups (drop 2 body))))))
+
+(def field-group
+  (fn (keyword more)
+    (if (keyword? keyword)
+        (if (empty? more)
+            (fail "this field has no type" keyword
+                  (string "write a type after it, as in " (symbol-name keyword) " i64"))
+            (list (symbol keyword (keyword-name keyword)) (first more)))
+        (fail "a field must start with `:`" keyword
+              "write each field as `:name type`, as in (defstruct point :x f64 :y f64)"))))
+
 (defmacro defstruct (head body ...)
   (let name (head-name head))
   (let params (head-params head))
+  (let fields (field-groups body))
   (template
-    (do (struct (unquote head) (splice body))
-        (defn (unquote (symbol name "make-" name)) (unquote (map-list first body))
-          (new (unquote name) (splice (map-list field-initializer body))))
-        (splice (map-list (fn (field) (accessor name params field)) body)))))
+    (do (struct (unquote head) (splice fields))
+        (defn (unquote (symbol name "make-" name)) (unquote (map-list first fields))
+          (new (unquote name) (splice (map-list field-initializer fields))))
+        (splice (map-list (fn (field) (accessor name params field)) fields)))))

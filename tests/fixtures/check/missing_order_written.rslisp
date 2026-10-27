@@ -1,4 +1,4 @@
-(defstruct score (points i64) (name string))
+(defstruct score :points i64 :name string)
 (derive score debug)
 
 (defn main ()

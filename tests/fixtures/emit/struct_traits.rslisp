@@ -1,5 +1,5 @@
-(defstruct point (x f64) (y f64))
-(defstruct person (name string) (age u32))
+(defstruct point :x f64 :y f64)
+(defstruct person :name string :age u32)
 
 (defn main ()
   (let origin (make-point 0 0))
