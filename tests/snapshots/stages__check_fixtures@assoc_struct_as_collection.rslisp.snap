@@ -9,4 +9,4 @@ error[L0401]: mismatched types
 5 |   (assoc speeds (max 130) (min 40)))
   |          ^^^^^^ expected `(vec _)`, found `limits`
   |
-  = help: update a field with a keyword, as in (assoc value :field new)
+  = help: a struct is not a collection, so update a field with a keyword key, such as `:field`

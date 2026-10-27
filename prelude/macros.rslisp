@@ -2,7 +2,7 @@
           symbol? list? symbol-name string same-binding? fail
           value-eq number-add number-sub number-lt)
 
-(export defrule defmacro template map-list)
+(export defrule defmacro template map-list whole-pairs?)
 
 (def map-list
   (fn (function items)
@@ -258,3 +258,9 @@
                               (list (quote match-or-fail) (list (quote quote) pattern) (quote macro-form))))
                   (pattern-lets pattern)
                   (drop 3 form)))))
+
+(def whole-pairs?
+  (fn (arguments)
+    (if (empty? arguments)
+        true
+        (if (empty? (rest arguments)) false (whole-pairs? (drop 2 arguments))))))

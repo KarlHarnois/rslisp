@@ -1,4 +1,4 @@
-(use prelude/macros defmacro template map-list)
+(use prelude/macros defmacro template map-list whole-pairs?)
 (use prelude/syntax defn)
 (use code first rest list nth take drop length empty? list? symbol? symbol symbol-name value-eq prepend
           concat string fail keyword? keyword-name keyword-field number-sub)
@@ -243,12 +243,6 @@
     (if (whole-pairs? arguments)
         (keys-name-distinct-fields? (pair-keys arguments) fields)
         false)))
-
-(def whole-pairs?
-  (fn (arguments)
-    (if (empty? arguments)
-        true
-        (if (empty? (rest arguments)) false (whole-pairs? (drop 2 arguments))))))
 
 (def keys-name-distinct-fields?
   (fn (keys fields)

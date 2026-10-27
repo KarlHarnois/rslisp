@@ -47,11 +47,11 @@ error[L0408]: `point` has no field `z`
 7 | (defn unknown-field (p) (field (the point p) z))
   |                                              ^ unknown field
 
-error[L0409]: missing fields `y` in `point`
+error[L0409]: missing field `y` in `point`
  --> check/type_errors.rslisp:8:25
   |
 8 | (defn missing-fields () (new point (x 1)))
-  |                         ^^^^^^^^^^^^^^^^^ every field needs a value
+  |                         ^^^^^^^^^^^^^^^^^ each missing field needs a value
 
 error[L0414]: `1` cannot have type `a`
   --> check/type_errors.rslisp:10:21

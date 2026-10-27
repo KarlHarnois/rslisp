@@ -1,4 +1,4 @@
-(use prelude/macros defmacro defrule)
+(use prelude/macros defmacro defrule whole-pairs?)
 (use code first rest list prepend concat length empty? list? nth drop number-sub symbol? symbol
           symbol-name string string-strip-suffix fail keyword? keyword-name value-eq
           bool-not)
@@ -9,7 +9,7 @@
   (let arguments (prepend key more))
   (if (keyword? key)
       (struct-update value arguments)
-      (if (paired? arguments)
+      (if (whole-pairs? arguments)
           (collection-updates value arguments)
           (unpaired-key-error value arguments))))
 
@@ -34,12 +34,6 @@
         (fail "a struct update takes only `:field value` pairs" key
               "update the collection in a separate `assoc`"))))
 
-(def paired?
-  (fn (arguments)
-    (if (empty? arguments)
-        true
-        (if (empty? (rest arguments)) false (paired? (drop 2 arguments))))))
-
 (def collection-updates
   (fn (value pairs)
     (if (empty? pairs)
@@ -51,17 +45,17 @@
   (fn (value arguments)
     (let message "a collection update takes keys and values in pairs")
     (let unpaired-key (nth arguments (number-sub (length arguments) 1)))
-    (if (any-field-group? arguments)
+    (if (every-field-group? arguments)
         (fail message unpaired-key
               (string "to update a field, write "
                       (concat (list (quote assoc) value) (keyword-arguments arguments))))
         (fail message unpaired-key))))
 
-(def any-field-group?
+(def every-field-group?
   (fn (arguments)
     (if (empty? arguments)
-        false
-        (if (field-group? (first arguments)) true (any-field-group? (rest arguments))))))
+        true
+        (if (field-group? (first arguments)) (every-field-group? (rest arguments)) false))))
 
 (def field-group?
   (fn (form)
