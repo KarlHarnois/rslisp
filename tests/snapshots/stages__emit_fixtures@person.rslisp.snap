@@ -13,28 +13,20 @@ fn make_person(name: String, age: i64) -> Person {
     Person { name, age }
 }
 
-fn person_name(instance: &Person) -> &String {
-    &instance.name
-}
-
-fn person_age(instance: &Person) -> i64 {
-    instance.age
-}
-
 fn introduce(someone: &Person) -> String {
-    format!("{} is {}", person_name(someone), person_age(someone))
+    format!("{} is {}", someone.name, someone.age)
 }
 
 fn rename(someone: &Person, new_name: String) -> Person {
-    make_person(new_name, person_age(someone))
+    make_person(new_name, someone.age)
 }
 
 fn main() {
     let ada = make_person("Ada".to_string(), 36);
-    println!("{}", person_name(&ada));
-    println!("{}", person_name(&ada));
+    println!("{}", ada.name);
+    println!("{}", ada.name);
     println!("{}", introduce(&ada));
-    let copy = person_name(&ada).clone();
+    let copy = ada.name.clone();
     let renamed = rename(&ada, copy);
     println!("{}", introduce(&renamed))
 }

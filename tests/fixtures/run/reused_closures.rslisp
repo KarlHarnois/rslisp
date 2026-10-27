@@ -16,5 +16,5 @@
   (println name)
   (let ada (->person (duplicate name) 36))
   (let twin (duplicate ada))
-  (println (person-name twin))
+  (println (:name twin))
   (println (duplicate 7)))

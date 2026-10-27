@@ -10,4 +10,4 @@
   (prn early)
   (prn same)
   (println (< early (->ticket 2 1)))
-  (println (tag-label (->tag (to-string "vip")))))
+  (println (:label (->tag (to-string "vip")))))

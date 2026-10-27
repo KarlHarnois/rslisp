@@ -13,17 +13,9 @@ fn make_point(x: f64, y: f64) -> Point {
     Point { x, y }
 }
 
-fn point_x(instance: &Point) -> f64 {
-    instance.x
-}
-
-fn point_y(instance: &Point) -> f64 {
-    instance.y
-}
-
 fn distance_squared(a: Point, b: Point) -> f64 {
-    let dx = point_x(&a) - point_x(&b);
-    let dy = point_y(&a) - point_y(&b);
+    let dx = a.x - b.x;
+    let dy = a.y - b.y;
     dx * dx + dy * dy
 }
 

@@ -10,4 +10,4 @@
 (def origin (->pair 1 (to-string "one")))
 (def copied (clone origin))
 
-(defn main () (println (pair-first copied)))
+(defn main () (println (:first copied)))

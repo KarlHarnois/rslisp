@@ -8,16 +8,16 @@
   (then-ok (parse-expression tokens 0) (fn (result) (expect-end tokens result))))
 
 (defn expect-end (tokens result)
-  (if (= (parsed-next result) (len tokens))
-      (ok (parsed-value result))
-      (err (str "unexpected token at " (parsed-next result)))))
+  (if (= (:next result) (len tokens))
+      (ok (:value result))
+      (err (str "unexpected token at " (:next result)))))
 
 (type parse-expression (fn ((ref (vec token)) usize) (result parsed string)))
 (defn parse-expression (tokens position)
   (then-ok (parse-term tokens position) (fn (left) (parse-sums tokens left))))
 
 (defn parse-sums (tokens left)
-  (let next (parsed-next left))
+  (let next (:next left))
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
@@ -30,7 +30,7 @@
   (then-ok (parse-factor tokens position) (fn (left) (parse-products tokens left))))
 
 (defn parse-products (tokens left)
-  (let next (parsed-next left))
+  (let next (:next left))
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
@@ -40,7 +40,7 @@
     (_ (ok left))))
 
 (defn divide (tokens left right)
-  (if (= (parsed-value right) 0)
+  (if (= (:value right) 0)
       (err (to-string "division by zero"))
       (parse-products tokens (combine left right div))))
 
@@ -54,16 +54,16 @@
     (none (err (str "expected a number at token " position)))))
 
 (defn expect-close (tokens inner)
-  (let next (parsed-next inner))
+  (let next (:next inner))
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
-       (")" (ok (->parsed (parsed-value inner) (+ next 1))))
+       (")" (ok (->parsed (:value inner) (+ next 1))))
        (_ (err (str "expected `)` at token " next)))))
     (_ (err (str "expected `)` at token " next)))))
 
 (defn combine (left right operator)
-  (->parsed (operator (parsed-value left) (parsed-value right)) (parsed-next right)))
+  (->parsed (operator (:value left) (:value right)) (:next right)))
 
 (defn number-value (text)
   (let (parsed (result i64 _)) (parse (as-str text)))

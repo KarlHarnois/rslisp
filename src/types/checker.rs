@@ -160,7 +160,7 @@ pub struct TypeChecker {
     monomorphic: Vec<Type>,
     pub(super) implied_bounds: HashMap<GenericId, Vec<Bound>>,
     pub(super) associated_generics: HashMap<GenericId, std::rc::Rc<str>>,
-    pub(super) field_accessors: HashMap<BindingId, Rc<str>>,
+    pub(super) single_field_readers: HashMap<BindingId, Rc<str>>,
     pub(super) pending_borrows: Vec<PendingBorrow>,
     pub(super) template_borrows: TemplateBorrows,
     pub(super) recur_target: Option<super::infer::RecurTarget>,
@@ -242,7 +242,7 @@ impl TypeChecker {
             monomorphic: Vec::new(),
             implied_bounds: HashMap::new(),
             associated_generics: HashMap::new(),
-            field_accessors: HashMap::new(),
+            single_field_readers: HashMap::new(),
             pending_borrows: Vec::new(),
             template_borrows: TemplateBorrows::default(),
             recur_target: None,
@@ -366,7 +366,7 @@ impl TypeChecker {
             return Ok(());
         }
         if let ItemKind::Def(binding, value) = &item.kind {
-            self.record_field_accessor(*binding, value);
+            self.record_single_field_reader(*binding, value);
         }
         Ok(())
     }
@@ -473,7 +473,7 @@ impl TypeChecker {
         }
     }
 
-    fn record_field_accessor(&mut self, binding: BindingId, value: &Expr) {
+    fn record_single_field_reader(&mut self, binding: BindingId, value: &Expr) {
         let ExprKind::Fn(lambda) = value.kind() else {
             return;
         };
@@ -490,7 +490,8 @@ impl TypeChecker {
             return;
         };
         if *owner_binding == parameter.binding {
-            self.field_accessors.insert(binding, label.name.clone());
+            self.single_field_readers
+                .insert(binding, label.name.clone());
         }
     }
 
@@ -2479,7 +2480,7 @@ impl TypeChecker {
                     &display.show(&field_type),
                     trait_name,
                 ))
-                .with_help(TypeProblems::sort_by_key_help(struct_name, sortable)),
+                .with_help(TypeProblems::sort_by_key_help(sortable)),
             None => {
                 let fields: Vec<Rc<str>> = definition
                     .fields
@@ -2498,7 +2499,7 @@ impl TypeChecker {
                         &derives,
                         &fields,
                     ))
-                    .with_help(TypeProblems::sort_by_key_help(struct_name, sortable))
+                    .with_help(TypeProblems::sort_by_key_help(sortable))
             }
         }
     }

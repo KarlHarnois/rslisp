@@ -12,18 +12,14 @@ fn make_person(name: String) -> Person {
     Person { name }
 }
 
-fn person_name(instance: &Person) -> &String {
-    &instance.name
-}
-
 fn is_same_name(a: &Person, b: &Person) -> bool {
-    person_name(a) == person_name(b)
+    a.name == b.name
 }
 
 fn main() {
     let ana = make_person("Ana".to_string());
     let bo = make_person("Bo".to_string());
     println!("{}", is_same_name(&ana, &bo));
-    println!("{}", person_name(&ana) < person_name(&bo));
-    println!("{}", person_name(&ana) != person_name(&bo))
+    println!("{}", ana.name < bo.name);
+    println!("{}", ana.name != bo.name)
 }

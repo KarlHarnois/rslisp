@@ -14,18 +14,6 @@ fn make_point(x: i64, y: i64, label: String) -> Point {
     Point { x, y, label }
 }
 
-fn point_x(instance: &Point) -> i64 {
-    instance.x
-}
-
-fn point_y(instance: &Point) -> i64 {
-    instance.y
-}
-
-fn point_label(instance: &Point) -> &String {
-    &instance.label
-}
-
 fn bump_x(p: Point) -> Point {
     Point { x: 1, ..p }
 }
@@ -33,15 +21,15 @@ fn bump_x(p: Point) -> Point {
 fn main() {
     let p = make_point(7, 8, "seed".to_string());
     let one = Point { x: 3, ..p };
-    println!("{} {} {}", point_x(&one), point_y(&one), point_label(&one));
+    println!("{} {} {}", one.x, one.y, one.label);
     let p2 = make_point(4, 5, "base".to_string());
     let two = Point {
         x: 6,
         label: "two".to_string(),
         ..p2
     };
-    println!("{} {} {}", point_x(&two), point_y(&two), point_label(&two));
-    println!("{}", point_x(&bump_x(make_point(9, 10, "tmp".to_string()))));
+    println!("{} {} {}", two.x, two.y, two.label);
+    println!("{}", bump_x(make_point(9, 10, "tmp".to_string())).x);
     let grid: Vec<i64> = vec![1_i64, 2_i64, 3_i64];
     let next: Vec<i64> = {
         let mut grid = grid;

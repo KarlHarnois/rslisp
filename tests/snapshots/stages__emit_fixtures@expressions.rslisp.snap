@@ -12,10 +12,6 @@ fn make_counter(count: i64) -> Counter {
     Counter { count }
 }
 
-fn counter_count(instance: &Counter) -> i64 {
-    instance.count
-}
-
 fn is_in_range(a: i64) -> bool {
     a > 1 && a < 5
 }
@@ -47,7 +43,7 @@ fn total(a: i64, b: i64, c: i64) -> i64 {
 }
 
 fn counter_to_text(c: &Counter) -> String {
-    counter_count(c).to_string()
+    c.count.to_string()
 }
 
 fn main() {

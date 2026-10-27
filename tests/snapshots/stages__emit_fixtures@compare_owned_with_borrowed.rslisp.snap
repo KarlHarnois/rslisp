@@ -12,14 +12,10 @@ fn make_person(name: String) -> Person {
     Person { name }
 }
 
-fn person_name(instance: &Person) -> &String {
-    &instance.name
-}
-
 fn main() {
     let ana = make_person("Ana".to_string());
     let name = "Ana".to_string();
-    println!("{}", *person_name(&ana) == name);
-    println!("{}", name == *person_name(&ana));
-    println!("{}", name < *person_name(&ana))
+    println!("{}", ana.name == name);
+    println!("{}", name == ana.name);
+    println!("{}", name < ana.name)
 }

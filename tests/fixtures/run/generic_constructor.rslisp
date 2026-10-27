@@ -2,5 +2,5 @@
 
 (defn main ()
   (let labelled (->pair :first 1 :second "a"))
-  (println (pair-first labelled))
-  (println (pair-second labelled)))
+  (println (:first labelled))
+  (println (:second labelled)))

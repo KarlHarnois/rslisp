@@ -5,14 +5,14 @@
 (defstruct parsed :value i64 :next usize)
 
 (defn evaluate (tokens)
-  (parsed-value (parse-expression tokens 0)))
+  (:value (parse-expression tokens 0)))
 
 (type parse-expression (fn ((ref (vec token)) usize) parsed))
 (defn parse-expression (tokens position)
   (parse-sums tokens (parse-term tokens position)))
 
 (defn parse-sums (tokens left)
-  (let next (parsed-next left))
+  (let next (:next left))
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
@@ -25,7 +25,7 @@
   (parse-products tokens (parse-factor tokens position)))
 
 (defn parse-products (tokens left)
-  (let next (parsed-next left))
+  (let next (:next left))
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
@@ -44,10 +44,10 @@
     (none (->parsed 0 (+ position 1)))))
 
 (defn skip-close-paren (inner)
-  (->parsed (parsed-value inner) (+ (parsed-next inner) 1)))
+  (->parsed (:value inner) (+ (:next inner) 1)))
 
 (defn combine (left right operator)
-  (->parsed (operator (parsed-value left) (parsed-value right)) (parsed-next right)))
+  (->parsed (operator (:value left) (:value right)) (:next right)))
 
 (defn number-value (text)
   (let (parsed (result i64 _)) (parse (as-str text)))

@@ -4,12 +4,12 @@ expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/rustc_error.rslisp
 ---
 error[L0501]: use of moved value `first-pair`
- --> run/rustc_error.rslisp:6:23
+ --> run/rustc_error.rslisp:6:19
   |
 5 |   (let moved first-pair)
   |              ---------- value moved here
-6 |   (println (pair-left first-pair)))
-  |                       ^^^^^^^^^^ value used here after it moved
+6 |   (println (:left first-pair)))
+  |                   ^^^^^^^^^^ value used here after it moved
   |
 help: clone the value if both places need it
   |

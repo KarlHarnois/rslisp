@@ -12,10 +12,6 @@ fn make_counter(count: i64) -> Counter {
     Counter { count }
 }
 
-fn counter_count(instance: &Counter) -> i64 {
-    instance.count
-}
-
 fn bump_field(c: &mut Counter) {
     c.count += 1
 }
@@ -30,6 +26,6 @@ fn main() {
     let mut n: i64 = 1;
     let r = &mut n;
     bump_reference(r);
-    println!("{}", counter_count(&c));
+    println!("{}", c.count);
     println!("{}", n)
 }

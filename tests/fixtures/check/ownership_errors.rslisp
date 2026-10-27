@@ -6,10 +6,10 @@
   (store name)
   (store name))
 
-(defn steal (someone) (store (person-name someone)))
+(defn steal (someone) (store (:name someone)))
 
 (defn pick-name (first second)
-  (if true (person-name first) (person-name second)))
+  (if true (:name first) (:name second)))
 
 (defn branches (flag name)
   (if flag (store name) (store name))

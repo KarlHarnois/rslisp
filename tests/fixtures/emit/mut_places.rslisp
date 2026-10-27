@@ -10,5 +10,5 @@
   (let n 1)
   (let r (mut n))
   (bump-reference! r)
-  (println (counter-count c))
+  (println (:count c))
   (println n))

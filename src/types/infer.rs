@@ -21,8 +21,8 @@ use super::unifier::{LiteralKind, UnifyError};
 use super::wrapper::FunctionValueWrapper;
 use crate::core::{
     Arm, Binder, BindingId, BindingKind, Block, BodyItem, Control, Expr, ExprKind, FieldLabel,
-    Lambda, Leaf, Literal, MapOperation, Pattern, PatternKind, PrimitiveType, ReferenceKind,
-    RustTemplate, StructExpr, TypeExpr, TypeExprKind, VariantInfo,
+    Keyword, Lambda, Leaf, Literal, MapOperation, Pattern, PatternKind, PrimitiveType,
+    ReferenceKind, RustTemplate, StructExpr, TypeExpr, TypeExprKind, VariantInfo,
 };
 use crate::diagnostic::SimilarName;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
@@ -2223,12 +2223,12 @@ impl TypeChecker {
         let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = callee.kind else {
             return None;
         };
-        let label = self.field_accessors.get(&binding)?;
+        let label = self.single_field_readers.get(&binding)?;
         let [argument] = arguments.as_slice() else {
             return None;
         };
         let place = self.local_place(&argument.value)?;
-        Some(format!("(field {place} {label})"))
+        Some(format!("({}{label} {place})", Keyword::MARKER))
     }
 
     fn local_place(&self, value: &TypedExpr) -> Option<String> {

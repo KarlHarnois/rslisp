@@ -16,8 +16,6 @@ warning[L0217]: `shown` binds a Rust path that `display` already binds
 (type describe (where ((a shown)) (fn ((ref a)) string)))
 (type twice-borrowed (fn ((ref (ref i64))) string))
 (type ->pair (fn (i64 string) (pair i64 string)))
-(type pair-first (where (a b) (fn ((ref (pair a b))) (ref a))))
-(type pair-second (where (a b) (fn ((ref (pair a b))) (ref b))))
 (type origin (pair i64 string))
 (type copied (pair i64 string))
 (type main (fn () unit))

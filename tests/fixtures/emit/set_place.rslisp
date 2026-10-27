@@ -18,7 +18,7 @@
   (let cell (->cell false (to-string "seed")))
   (revive! cell)
   (rename! cell (to-string "grown"))
-  (println (cell-alive cell) " " (cell-label cell))
+  (println (:alive cell) " " (:label cell))
   (let total 0)
   (let add! (fn (n) (do (set! total (if (> n total) n total)))))
   (add! 1)

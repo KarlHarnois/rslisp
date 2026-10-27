@@ -5,6 +5,4 @@ input_file: tests/fixtures/check/struct_equality.rslisp
 ---
 (derive point clone copy debug partial-eq eq hash)
 (type ->point (fn (i64 i64) point))
-(type point-x (fn ((ref point)) i64))
-(type point-y (fn ((ref point)) i64))
 (type main (fn () unit))

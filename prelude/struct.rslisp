@@ -1,8 +1,7 @@
 (use prelude/macros defmacro template map-list)
-(use prelude/logic and)
 (use prelude/syntax defn)
-(use code first rest list nth drop length empty? list? symbol? symbol symbol-name same-binding?
-          value-eq number-lt prepend concat string fail keyword? keyword-name)
+(use code first rest list nth drop length empty? list? symbol? symbol symbol-name value-eq prepend
+          concat string fail keyword? keyword-name)
 
 (export defstruct)
 
@@ -10,26 +9,9 @@
   (fn (head)
     (if (list? head) (first head) head)))
 
-(def head-params
-  (fn (head)
-    (if (list? head) (rest head) (list))))
-
 (def field-initializer
   (fn (field)
     (list (first field) (first field))))
-
-(def accessor-type
-  (fn (name params)
-    (if (empty? params)
-        (template (fn ((ref (unquote name))) _))
-        (template (where (unquote params) (fn ((ref ((unquote name) (splice params)))) _))))))
-
-(def accessor
-  (fn (name params field)
-    (let accessor-name (symbol name (symbol-name name) "-" (first field)))
-    (template
-      (do (type (unquote accessor-name) (unquote (accessor-type name params)))
-          (defn (unquote accessor-name) (instance) (field instance (unquote (first field))))))))
 
 (def field-groups
   (fn (body)
@@ -115,7 +97,6 @@
 
 (defmacro defstruct (head body ...)
   (let name (head-name head))
-  (let params (head-params head))
   (let fields (field-groups body))
   (let field-names (map-list first fields))
   (let hidden (symbol (quote make) "make-" name))
@@ -126,5 +107,4 @@
         (def (unquote (symbol name "->" name))
           (macro (form)
             (constructor-expansion form (quote (unquote hidden)) (quote (unquote name))
-                                   (quote (unquote field-names)))))
-        (splice (map-list (fn (field) (accessor name params field)) fields)))))
+                                   (quote (unquote field-names))))))))

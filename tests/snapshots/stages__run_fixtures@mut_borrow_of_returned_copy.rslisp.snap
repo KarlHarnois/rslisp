@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/mut_borrow_of_returned_copy.rslisp
+---
+error[L0419]: this argument is a copy, so changing it changes nothing
+ --> run/mut_borrow_of_returned_copy.rslisp:8:9
+  |
+8 |   (bump (count-of c))
+  |         ^^^^^^^^^^^^ this is a copy, not a place
+  |
+  = help: pass the field as a place: `(:count c)`

@@ -5,8 +5,6 @@ input_file: tests/fixtures/check/ownership_modes.rslisp
 ---
 (derive person clone debug partial-eq eq hash)
 (type ->person (fn (string i64) person))
-(type person-name (fn ((ref person)) (ref string)))
-(type person-age (fn ((ref person)) i64))
 (type label (fn ((ref person)) string))
 (type forward (fn ((ref person)) string))
 (type keep (fn (person) person))

@@ -9,19 +9,11 @@ struct Pair<A, B> {
     second: B,
 }
 
-fn pair_first<A, B>(instance: &Pair<A, B>) -> &A {
-    &instance.first
-}
-
-fn pair_second<A, B>(instance: &Pair<A, B>) -> &B {
-    &instance.second
-}
-
 fn main() {
     let labelled: Pair<i64, &str> = Pair {
         first: 1,
         second: "a",
     };
-    println!("{}", pair_first(&labelled));
-    println!("{}", pair_second(&labelled))
+    println!("{}", labelled.first);
+    println!("{}", labelled.second)
 }

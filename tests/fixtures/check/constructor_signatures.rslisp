@@ -4,4 +4,4 @@
   (->car make "Custom" 2024 false))
 
 (defn main ()
-  (println (car-model (make-car "Rivian"))))
+  (println (:model (make-car "Rivian"))))

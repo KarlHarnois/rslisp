@@ -13,14 +13,6 @@ fn make_tag<'a>(name: &'a str, scores: &'a [i64]) -> Tag<'a> {
     Tag { name, scores }
 }
 
-fn tag_name<'a>(instance: &'a Tag<'a>) -> &'a str {
-    instance.name
-}
-
-fn tag_scores<'a>(instance: &'a Tag<'a>) -> &'a [i64] {
-    instance.scores
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 enum Label<'a> {
     Named(&'a str),
@@ -37,7 +29,7 @@ fn describe(item: Label<'_>) -> &str {
 fn main() {
     let numbers: Vec<i64> = vec![3_i64, 4_i64];
     let fruit = make_tag("fruit", &numbers);
-    println!("{} {}", tag_name(&fruit), tag_scores(&fruit).len());
+    println!("{} {}", fruit.name, fruit.scores.len());
     println!(
         "{} {}",
         describe(Label::Named("apple")),

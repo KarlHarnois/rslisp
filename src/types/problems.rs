@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::core::FieldLabel;
+use crate::core::{FieldLabel, Keyword};
 use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
 
@@ -358,10 +358,11 @@ impl TypeProblems {
         format!("`{struct_name}` cannot derive `{trait_name}`: field `{field}` is `{field_type}`")
     }
 
-    pub fn sort_by_key_help(struct_name: &str, field: Option<&str>) -> String {
+    pub fn sort_by_key_help(field: Option<&str>) -> String {
         match field {
             Some(field) => format!(
-                "to sort by one field instead, use `sort-by-key!` with the accessor `{struct_name}-{field}`"
+                "to sort by one field instead, use `sort-by-key!` with the field keyword `{}{field}`",
+                Keyword::MARKER
             ),
             None => "to sort by one field instead, use `sort-by-key!`".to_string(),
         }
