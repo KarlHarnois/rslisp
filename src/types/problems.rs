@@ -653,7 +653,10 @@ impl TypeProblems {
             Label::new(label.span, "given again here"),
         )
         .with_label(Label::new(first, "first given here"))
-        .with_help("give each field once")
+        .with_help(format!(
+            "remove the second `{}` and its value",
+            label.spelled(&label.name)
+        ))
     }
 
     pub fn missing_fields(struct_name: &str, missing: &[Rc<str>], span: Span) -> Diagnostic {

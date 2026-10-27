@@ -11,7 +11,7 @@ error[L0454]: `:year` is given twice in `car`
   |               |
   |               first given here
   |
-  = help: give each field once
+  = help: remove the second `:year` and its value
 
 error[L0454]: `year` is given twice in `car`
  --> check/repeated_field.rslisp:7:35
@@ -21,4 +21,4 @@ error[L0454]: `year` is given twice in `car`
   |                          |
   |                          first given here
   |
-  = help: give each field once
+  = help: remove the second `year` and its value
