@@ -1,5 +1,5 @@
 (use code first rest list prepend concat length empty? nth symbol symbol-name string number-add
-          symbol? same-binding? value-eq)
+          symbol? same-binding? value-eq field-keyword)
 (use prelude/macros map-list)
 
 (export assert-eq dotimes case defenum defrecord if-some)
@@ -68,16 +68,16 @@
   (fn (fields)
     (if (empty? fields)
         (list)
-        (prepend (field-keyword (first fields))
+        (prepend (read-keyword (first fields))
                  (prepend (nth (first fields) 1) (flat-fields (rest fields)))))))
 
-(def field-keyword
+(def read-keyword
   (fn (field)
-    (symbol (first field) ":" (first field))))
+    (field-keyword (first field))))
 
 (def field-equality
   (fn (field left right)
-    (let read (field-keyword field))
+    (let read (read-keyword field))
     (template ((unquote (equality-for field)) ((unquote read) (unquote left)) ((unquote read) (unquote right))))))
 
 (def equality-for
@@ -97,7 +97,7 @@
     (if (empty? fields)
         (list)
         (concat (list (string " " (first (first fields)) "=")
-                      (list (field-keyword (first fields)) record))
+                      (list (read-keyword (first fields)) record))
                 (field-texts (rest fields) record)))))
 
 (defrule if-some

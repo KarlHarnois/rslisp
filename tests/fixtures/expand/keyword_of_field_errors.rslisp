@@ -1,0 +1,7 @@
+(use code field-keyword)
+
+(def keyword-of-keyword (macro (form) (field-keyword (quote :year))))
+(def keyword-of-string (macro (form) (field-keyword "year")))
+
+(keyword-of-keyword)
+(keyword-of-string)

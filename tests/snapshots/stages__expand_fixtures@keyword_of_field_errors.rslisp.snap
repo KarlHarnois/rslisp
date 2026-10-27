@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/keyword_of_field_errors.rslisp
+---
+error[L0303]: `field-keyword` expects a field name as argument 1, found a keyword
+ --> expand/keyword_of_field_errors.rslisp:3:39
+  |
+3 | (def keyword-of-keyword (macro (form) (field-keyword (quote :year))))
+  |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ a keyword given here
+...
+6 | (keyword-of-keyword)
+  | -------------------- in this macro call
+
+error[L0303]: `field-keyword` expects a field name as argument 1, found a string
+ --> expand/keyword_of_field_errors.rslisp:4:38
+  |
+4 | (def keyword-of-string (macro (form) (field-keyword "year")))
+  |                                      ^^^^^^^^^^^^^^^^^^^^^^ a string given here
+...
+7 | (keyword-of-string)
+  | ------------------- in this macro call

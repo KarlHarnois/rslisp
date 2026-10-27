@@ -1,0 +1,9 @@
+(use code list field-keyword)
+
+(def field-keywords
+  (macro (form)
+    (list (quote quote)
+          (list (field-keyword (quote year))
+                (field-keyword (quote electric?))))))
+
+(def answers (fn () (field-keywords)))

@@ -24,6 +24,7 @@ impl Value {
 
     fn describe_form(form: &Form) -> &'static str {
         match form.kind() {
+            FormKind::Symbol(symbol) if Keyword::field_name(symbol.name()).is_some() => "a keyword",
             FormKind::Symbol(_) => "a symbol",
             FormKind::String(_) => "a string",
             FormKind::Number(number) => match number.value() {
@@ -53,6 +54,14 @@ impl Value {
         let field_name = Keyword::field_name(keyword.name())?;
         let field = Symbol::with_scopes(field_name, keyword.scopes().clone());
         Some(Form::new(FormKind::Symbol(field), form.span()))
+    }
+
+    pub fn field_keyword(&self) -> Option<Form> {
+        let form = self.as_form()?;
+        let field = form.as_symbol()?;
+        let keyword_name = Keyword::of_field(field.name())?;
+        let keyword = Symbol::with_scopes(keyword_name, field.scopes().clone());
+        Some(Form::new(FormKind::Symbol(keyword), form.span()))
     }
 }
 

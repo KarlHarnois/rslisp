@@ -1,6 +1,6 @@
 (use prelude/macros defmacro defrule whole-pairs?)
-(use code first rest list prepend concat length empty? list? nth drop number-sub symbol? symbol
-          symbol-name string string-strip-suffix fail keyword? keyword-name value-eq
+(use code first rest list prepend concat length empty? list? nth drop number-sub symbol?
+          string fail keyword? field-keyword value-eq
           bool-not)
 
 (export assoc assoc-in)
@@ -78,14 +78,6 @@
     (if (field-group? argument)
         (list (field-keyword (first argument)) (nth argument 1))
         (list argument))))
-
-(def field-keyword
-  (fn (field)
-    (symbol field (keyword-marker) (symbol-name field))))
-
-(def keyword-marker
-  (fn ()
-    (string-strip-suffix (symbol-name (quote :field)) (keyword-name (quote :field)))))
 
 (defrule assoc-in
   ((value (key ...) item)
