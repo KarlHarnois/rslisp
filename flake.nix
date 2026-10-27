@@ -1,10 +1,17 @@
 {
   description = "rslisp (placeholder name), a minimal Lisp that compiles to Rust";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    crane.url = "github:ipetkov/crane";
+  };
 
   outputs =
-    { self, nixpkgs }:
+    {
+      self,
+      nixpkgs,
+      crane,
+    }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -42,7 +49,11 @@
             version = crateVersion;
             src = self;
             cargoLock.lockFile = ./Cargo.lock;
-            nativeBuildInputs = [ pkgs.cargo-llvm-cov pkgs.clippy pkgs.rustfmt ];
+            nativeBuildInputs = [
+              pkgs.cargo-llvm-cov
+              pkgs.clippy
+              pkgs.rustfmt
+            ];
             buildPhase = ''
               runHook preBuild
               cargo xtask coverage
@@ -104,23 +115,37 @@
     in
     {
       packages = forEachSystem (pkgs: {
-        default = pkgs.rustPlatform.buildRustPackage {
-          pname = "rslisp";
-          version = crateVersion;
-          src = self;
-          cargoLock.lockFile = ./Cargo.lock;
-          nativeBuildInputs = [ pkgs.makeWrapper ];
-          doCheck = false;
-          postInstall = ''
-            wrapProgram $out/bin/rslisp --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.rustc pkgs.rustfmt ]}
-          '';
-          meta = {
-            description = cratePackage.description;
-            mainProgram = "rslisp";
-            license = pkgs.lib.getLicenseFromSpdxId cratePackage.license;
-            platforms = supportedSystems;
-          };
-        };
+        default =
+          let
+            craneLib = crane.mkLib pkgs;
+            emittedRustTools = pkgs.lib.makeBinPath [
+              pkgs.rustc
+              pkgs.rustfmt
+            ];
+            buildArgs = {
+              pname = "rslisp";
+              version = crateVersion;
+              src = self;
+              cargoExtraArgs = "--locked --package rslisp";
+              doCheck = false;
+            };
+          in
+          craneLib.buildPackage (
+            buildArgs
+            // {
+              cargoArtifacts = craneLib.buildDepsOnly (buildArgs // { cargoCheckCommand = "true"; });
+              nativeBuildInputs = [ pkgs.makeWrapper ];
+              postInstall = ''
+                wrapProgram $out/bin/rslisp --prefix PATH : ${emittedRustTools}
+              '';
+              meta = {
+                description = cratePackage.description;
+                mainProgram = "rslisp";
+                license = pkgs.lib.getLicenseFromSpdxId cratePackage.license;
+                platforms = supportedSystems;
+              };
+            }
+          );
       });
 
       devShells = forEachSystem (pkgs: {
