@@ -517,9 +517,19 @@ impl Expander<'_> {
             return Err(shape.malformed(field));
         };
         Ok((
-            self.field_label(shape, label)?,
+            self.initializer_label(shape, label)?,
             self.lower_recovered(value)?,
         ))
+    }
+
+    fn initializer_label(&self, shape: &Shape, label: &Form) -> Result<FieldLabel, Diagnostic> {
+        match label
+            .as_symbol()
+            .and_then(|symbol| Keyword::field_name(symbol.name()))
+        {
+            Some(field_name) => Ok(Self::keyword_label(field_name, label.span())),
+            None => self.field_label(shape, label),
+        }
     }
 
     fn lower_field_access(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {

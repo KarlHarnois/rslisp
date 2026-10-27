@@ -62,7 +62,7 @@ impl Expander<'_> {
         }
     }
 
-    fn keyword_label(field_name: &str, span: Span) -> FieldLabel {
+    pub(super) fn keyword_label(field_name: &str, span: Span) -> FieldLabel {
         FieldLabel {
             name: field_name.into(),
             span,

@@ -261,15 +261,15 @@
         false)))
 
 (def named-initializers
-  (fn (arguments fields)
+  (fn (arguments)
     (if (empty? arguments)
         (list)
-        (prepend (list (field-of-key (first arguments) fields) (nth arguments 1))
-                 (named-initializers (drop 2 arguments) fields)))))
+        (prepend (list (first arguments) (nth arguments 1))
+                 (named-initializers (drop 2 arguments))))))
 
 (def named-construction
   (fn (arguments shape)
-    (let written (named-initializers arguments (shape-fields shape)))
+    (let written (named-initializers arguments))
     (let omitted (defaults-without-key (shape-defaults shape) (pair-keys arguments)))
     (prepend (quote new) (prepend (shape-name shape) (concat written omitted)))))
 
