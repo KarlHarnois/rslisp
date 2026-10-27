@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env;
 use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -9,6 +10,8 @@ pub struct FixtureReports {
 }
 
 impl FixtureReports {
+    const JOB_LIMIT: &str = "CARGO_BUILD_JOBS";
+
     pub fn compute(paths: Vec<PathBuf>, report: impl Fn(&Path) -> String + Sync) -> Self {
         let pending = Mutex::new(paths);
         let finished = Mutex::new(HashMap::new());
@@ -29,7 +32,10 @@ impl FixtureReports {
     }
 
     fn workers() -> usize {
-        thread::available_parallelism().map_or(1, NonZeroUsize::get)
+        env::var(Self::JOB_LIMIT)
+            .ok()
+            .and_then(|limit| limit.parse().ok())
+            .unwrap_or_else(|| thread::available_parallelism().map_or(1, NonZeroUsize::get))
     }
 
     fn drain(
