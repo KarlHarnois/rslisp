@@ -1,0 +1,6 @@
+(defn show (x) (println x) 0)
+(defn apply-one (f a) (f a))
+(defn main ()
+  (let name (to-string "Leaf"))
+  (println (apply-one show (as-str name)))
+  (println (apply-one show 7)))

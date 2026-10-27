@@ -1,4 +1,5 @@
 mod associated;
+mod binding;
 mod boxes;
 mod checker;
 mod collection;
@@ -29,6 +30,7 @@ mod walk;
 mod wrapper;
 
 pub use crate::core::ClosureKind;
+pub use binding::GenericBinding;
 pub use checker::TypeChecker;
 pub use collection::{Collection, CollectionKind};
 pub use copy::{CopyRules, InferredCopies};

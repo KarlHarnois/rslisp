@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use super::instantiation::UseInstantiation;
 use super::problems::OwnershipProblems;
 use crate::core::{BindingArena, BindingId, FieldLabel};
 use crate::diagnostic::Diagnostic;
 use crate::types::{
-    Borrow, CopyRules, FunctionValueWrapper, GenericId, GenericParam, StructTable, Type,
-    TypeDisplay, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedDefinition,
+    Borrow, CopyRules, FunctionValueWrapper, GenericBinding, GenericId, GenericParam, StructTable,
+    Type, TypeDisplay, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedDefinition,
     TypedExpr, TypedExprKind, TypedLeaf, TypedProgram, TypedStructExpr,
 };
 
@@ -228,23 +227,21 @@ impl<'a> FunctionValueModes<'a> {
     }
 
     fn expected_params(&self, callee: &TypedExpr) -> Option<Vec<Type>> {
-        if let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = &callee.kind
-            && let Some(parameters) = self.used_params(*binding, &callee.ty)
-        {
-            return Some(parameters);
-        }
-        match &callee.ty {
-            Type::Function(_, parameters, _) => Some(parameters.clone()),
+        let Type::Function(_, parameters, _) = &callee.ty else {
+            return None;
+        };
+        let used = match &callee.kind {
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
+                self.used_params(*binding, parameters)
+            }
             _ => None,
-        }
+        };
+        Some(used.unwrap_or_else(|| parameters.clone()))
     }
 
-    fn used_params(&self, binding: BindingId, used: &Type) -> Option<Vec<Type>> {
+    fn used_params(&self, binding: BindingId, used: &[Type]) -> Option<Vec<Type>> {
         let declared = self.function_params.get(&binding)?;
-        let Type::Function(_, used_parameters, _) = used else {
-            return Some(declared.clone());
-        };
-        Some(UseInstantiation::of(declared, used_parameters).apply(declared))
+        Some(GenericBinding::of_each(declared, used).substitute(declared))
     }
 
     fn field_types(&self, binding: BindingId, ty: &Type) -> Vec<(std::rc::Rc<str>, Type)> {
@@ -367,10 +364,10 @@ impl<'a> FunctionValueModes<'a> {
             TypedExprKind::Fn(lambda) => lambda.wraps?,
             _ => return None,
         };
-        let parameters = self.used_params(binding, &value.ty)?;
-        let Type::Function(_, _, result) = &value.ty else {
+        let Type::Function(_, used, result) = &value.ty else {
             return None;
         };
+        let parameters = self.used_params(binding, used)?;
         Some((
             binding,
             Type::Function(crate::types::ClosureKind::Fn, parameters, result.clone()),

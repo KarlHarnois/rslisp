@@ -1,10 +1,11 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use super::plan::EmitPlan;
 use super::types::RustTypes;
 use crate::core::{BindingId, PrimitiveType};
 use crate::types::{
-    GenericId, Type, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram,
+    GenericBinding, GenericId, Type, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf,
+    TypedProgram,
 };
 
 pub struct UnsizedParameters {
@@ -62,55 +63,7 @@ impl UnsizedParameters {
         if !matches!(definition.value.kind, TypedExprKind::Fn(_)) {
             return;
         }
-        let mut bound = HashMap::new();
-        if Self::bind(&definition.scheme.body, actual, &mut bound) {
-            instances.extend(bound);
-        }
-    }
-
-    fn bind(scheme: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
-        match scheme {
-            Type::Generic(generic) => {
-                bound.insert(*generic, actual.clone());
-                true
-            }
-            Type::Ref(_, inner) | Type::Mut(_, inner) => Self::bind_reference(inner, actual, bound),
-            _ => Self::bind_compound(scheme, actual, bound),
-        }
-    }
-
-    fn bind_reference(inner: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
-        let actual = match actual {
-            Type::Ref(_, actual) | Type::Mut(_, actual) => actual,
-            actual => actual,
-        };
-        Self::bind(inner, actual, bound)
-    }
-
-    fn bind_compound(scheme: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
-        match (scheme, actual) {
-            (Type::Named(scheme, scheme_parts), Type::Named(actual, actual_parts))
-                if scheme == actual && scheme_parts.len() == actual_parts.len() =>
-            {
-                Self::bind_all(scheme_parts, actual_parts, bound)
-            }
-            (
-                Type::Function(_, scheme_parameters, scheme_result),
-                Type::Function(_, actual_parameters, actual_result),
-            ) if scheme_parameters.len() == actual_parameters.len() => {
-                Self::bind_all(scheme_parameters, actual_parameters, bound)
-                    && Self::bind(scheme_result, actual_result, bound)
-            }
-            (Type::Primitive(scheme), Type::Primitive(actual)) => scheme == actual,
-            _ => false,
-        }
-    }
-
-    fn bind_all(scheme: &[Type], actual: &[Type], bound: &mut HashMap<GenericId, Type>) -> bool {
-        scheme
-            .iter()
-            .zip(actual)
-            .all(|(scheme, actual)| Self::bind(scheme, actual, bound))
+        instances.extend(GenericBinding::of(&definition.scheme.body, actual).into_bound());
     }
 
     fn solve(program: &TypedProgram, instances: Vec<(GenericId, Type)>) -> HashSet<GenericId> {
