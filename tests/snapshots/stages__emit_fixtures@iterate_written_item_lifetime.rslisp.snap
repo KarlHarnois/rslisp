@@ -8,6 +8,6 @@ fn count_long<'a>(names: impl Iterator<Item = &'a str>) -> usize {
 }
 
 fn main() {
-    let models = vec!["Leaf", "Ariya", "Sakura"];
+    let models: Vec<&str> = vec!["Leaf", "Ariya", "Sakura"];
     println!("{}", count_long(models.iter().copied()))
 }
