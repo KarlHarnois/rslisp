@@ -1,0 +1,43 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_field_borrowed_result.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct User<'a> {
+    name: &'a str,
+    age: u16,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Sorter<'a> {
+    key: for<'b> fn(&'b User<'b>) -> &'b str,
+    label: &'a str,
+}
+
+fn make_sorter(key: for<'a> fn(&'a User<'a>) -> &'a str, label: &str) -> Sorter<'_> {
+    Sorter { key, label }
+}
+
+fn name_of<'a>(someone: &'a User<'a>) -> &'a str {
+    someone.name
+}
+
+fn apply_key<'a>(key: impl FnOnce(&'a User<'a>) -> &'a str, someone: &'a User<'a>) -> &'a str {
+    key(someone)
+}
+
+fn main() {
+    let by_name = make_sorter(|value: &User<'_>| value.name, "by name");
+    let by_name_again = make_sorter(name_of, "by name again");
+    let ana = User {
+        name: "ana",
+        age: 34,
+    };
+    println!(
+        "{}{}{}",
+        by_name.label,
+        by_name_again.label,
+        apply_key(|value: &User<'_>| value.name, &ana)
+    )
+}

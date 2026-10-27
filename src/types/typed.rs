@@ -7,7 +7,7 @@ use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
 use super::templates::TemplateBorrows;
 use super::traits::TraitTable;
-use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
+use super::ty::{Bound, GenericId, GenericParam, Lifetime, Scheme, Type};
 use super::unifier::LiteralKind;
 use crate::core::{
     BindingArena, BindingId, ClosureKind, FieldLabel, Literal, ModuleId, ModulePath, ReferenceKind,
@@ -346,6 +346,31 @@ impl TypedProgram {
                 && (!definition.lifetimes.is_empty() || self.definition_holds_borrow(binding));
         }
         false
+    }
+
+    pub fn needs_shared_lifetime(&self, parameters: &[Type], result: &Type) -> bool {
+        let parameter_lifetimes: usize = parameters
+            .iter()
+            .map(|parameter| self.borrow_lifetimes(parameter))
+            .sum();
+        self.borrow_lifetimes(result) > 0 && parameter_lifetimes > 1
+    }
+
+    pub fn borrow_lifetimes(&self, ty: &Type) -> usize {
+        match ty {
+            Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
+                usize::from(*lifetime == Lifetime::Elided) + self.borrow_lifetimes(inner)
+            }
+            Type::Named(binding, arguments) => {
+                usize::from(self.has_lifetime_parameter(*binding))
+                    + arguments
+                        .iter()
+                        .map(|argument| self.borrow_lifetimes(argument))
+                        .sum::<usize>()
+            }
+            Type::TraitObject(_) => 0,
+            Type::Function(..) | Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => 0,
+        }
     }
 
     pub fn type_holds_borrow(&self, ty: &Type) -> bool {

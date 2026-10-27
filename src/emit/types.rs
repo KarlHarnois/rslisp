@@ -25,6 +25,7 @@ pub struct LifetimeScope {
     elided: Option<String>,
     elided_written: HashSet<BindingId>,
     opaque_lifetimes: Option<Rc<FreshLifetimes>>,
+    reserved: Option<String>,
 }
 
 impl LifetimeScope {
@@ -34,6 +35,7 @@ impl LifetimeScope {
             elided: None,
             elided_written: HashSet::new(),
             opaque_lifetimes: None,
+            reserved: None,
         }
     }
 
@@ -55,6 +57,11 @@ impl LifetimeScope {
         self
     }
 
+    pub fn reserving(mut self, declared: Option<&str>) -> Self {
+        self.reserved = declared.map(str::to_string);
+        self
+    }
+
     pub fn eliding(mut self, binding: BindingId) -> Self {
         self.elided_written.insert(binding);
         self
@@ -70,6 +77,20 @@ impl LifetimeScope {
 
     pub fn elided(&self) -> Option<&str> {
         self.elided.as_deref()
+    }
+
+    pub fn taken_names(&self) -> Vec<String> {
+        let mut names: Vec<String> = self
+            .names
+            .values()
+            .chain(&self.elided)
+            .chain(&self.reserved)
+            .cloned()
+            .collect();
+        if let Some(fresh) = &self.opaque_lifetimes {
+            names.extend(fresh.issued());
+        }
+        names
     }
 }
 
@@ -573,7 +594,11 @@ impl<'a> RustTypes<'a> {
         position: TypePosition,
         scope: &LifetimeScope,
     ) -> String {
-        let inner_scope = Self::function_scope(position, scope);
+        let (inner_scope, binder) = Self::function_scope(
+            position,
+            scope,
+            self.program.needs_shared_lifetime(parameters, result),
+        );
         let parameters: Vec<String> = parameters
             .iter()
             .map(|parameter| self.show_in(parameter, TypePosition::Value, &inner_scope))
@@ -586,21 +611,36 @@ impl<'a> RustTypes<'a> {
                 self.show_in(result, TypePosition::Value, &inner_scope)
             )
         };
+        let binder = binder.map_or_else(String::new, |lifetime| format!("for<{lifetime}> "));
         let keyword = match position {
             TypePosition::Signature | TypePosition::StaticResult => {
-                format!("impl {}", kind.keyword())
+                format!("impl {binder}{}", kind.keyword())
             }
-            TypePosition::Value => "fn".to_string(),
+            TypePosition::Value => format!("{binder}fn"),
         };
         format!("{keyword}({}){result}", parameters.join(", "))
     }
 
-    fn function_scope(position: TypePosition, scope: &LifetimeScope) -> LifetimeScope {
-        let shared = match position {
+    fn function_scope(
+        position: TypePosition,
+        scope: &LifetimeScope,
+        needs_binder: bool,
+    ) -> (LifetimeScope, Option<String>) {
+        let inherited = match position {
             TypePosition::Signature => scope.elided().map(str::to_string),
             TypePosition::StaticResult | TypePosition::Value => None,
         };
-        LifetimeScope::default().with_elided(shared)
+        let binder = if inherited.is_none() && needs_binder {
+            Some(Self::fresh_binder(scope))
+        } else {
+            None
+        };
+        let shared = inherited.or_else(|| binder.clone());
+        (LifetimeScope::default().with_elided(shared), binder)
+    }
+
+    fn fresh_binder(scope: &LifetimeScope) -> String {
+        FreshLifetimes::unused_name(&scope.taken_names())
     }
 
     fn lifetime(
