@@ -77,4 +77,4 @@ A type parameter and a keyword parameter with no written type do not count as a 
 
 ## Rule
 
-[docs/language.md: Structs](../docs/language.md#structs)
+[docs/language.md: Structs](../docs/language.md#structs), [docs/language.md: Keyword parameters](../docs/language.md#keyword-parameters)
