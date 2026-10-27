@@ -1,147 +1,165 @@
 use std::borrow::Cow;
+use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DiagnosticCode(Cow<'static, str>);
 
+macro_rules! diagnostic_codes {
+    ($($constant:ident = $code:literal,)*) => {
+        impl DiagnosticCode {
+            $(pub const $constant: Self = Self(Cow::Borrowed($code));)*
+
+            const NAMED: &[(&str, &str)] = &[$((stringify!($constant), $code)),*];
+        }
+    };
+}
+
+diagnostic_codes! {
+    UNCLOSED_LIST = "L0101",
+    UNMATCHED_CLOSE = "L0102",
+    UNTERMINATED_STRING = "L0103",
+    UNKNOWN_ESCAPE = "L0104",
+    MALFORMED_NUMBER = "L0105",
+    RESERVED_CHARACTER = "L0106",
+    NUMBER_TOO_LARGE = "L0107",
+
+    UNBOUND_NAME = "L0201",
+    AMBIGUOUS_NAME = "L0202",
+    DUPLICATE_DEFINITION = "L0203",
+    UNKNOWN_MODULE = "L0204",
+    MISSING_EXPORT = "L0205",
+    IMPORT_CYCLE = "L0206",
+    NOT_A_DEFINITION = "L0207",
+    MODULE_LEVEL_ONLY = "L0208",
+    EMPTY_CALL = "L0209",
+    MALFORMED_FORM = "L0210",
+    FORM_AS_VALUE = "L0211",
+    WRONG_NAMESPACE = "L0212",
+    BAD_TYPE_TEMPLATE = "L0213",
+    RECUR_OUTSIDE_TAIL = "L0214",
+    RECUR_ARGUMENT_COUNT = "L0215",
+    RECUR_OUTSIDE_FN = "L0216",
+    SECOND_TRAIT_PATH = "L0217",
+    MALFORMED_TEMPLATE = "L0218",
+    TYPE_PARAMETERS_ON_NAME = "L0219",
+    TRY_OUTSIDE_FN = "L0220",
+    TYPE_PARAMETER_PLACEHOLDER = "L0221",
+    TYPE_PLACEHOLDER_IN_RUST_TYPE = "L0222",
+    RUST_TYPE_CLAUSES_NEED_ONE_PARAMETER = "L0223",
+    BORROWED_TYPE_PLACEHOLDER = "L0224",
+    PLACEHOLDER_WITHOUT_PARAMETER = "L0225",
+    UNUSED_TYPE_PLACEHOLDER = "L0226",
+    LET_OUTSIDE_BODY = "L0227",
+    MALFORMED_TYPE = "L0228",
+    MACRO_OUTSIDE_DEF = "L0229",
+    MIXED_VARIANT_PAYLOAD = "L0230",
+    NOT_A_PATTERN = "L0231",
+    ARM_BODY = "L0232",
+    VARIANT_AS_VALUE = "L0233",
+    NOT_A_TYPE = "L0234",
+    NOT_A_NAME = "L0235",
+    SIGNATURE_TARGET = "L0236",
+    DERIVE_TARGET = "L0237",
+    DERIVE_TRAIT = "L0238",
+    MISSING_METHOD = "L0239",
+    EXTRA_METHOD = "L0240",
+    UNDECLARED_METHOD = "L0241",
+    GENERIC_IMPLEMENTOR = "L0242",
+    FIELD_KEYWORD_ARITY = "L0243",
+    KEYWORD_BINDER = "L0244",
+
+    MACRO_FAILED = "L0301",
+    MACRO_RESULT_NOT_FORM = "L0302",
+    COMPILE_TIME_ERROR = "L0303",
+    MACRO_AS_VALUE = "L0304",
+    EXPANSION_TOO_DEEP = "L0305",
+    PROGRAM_ONLY = "L0306",
+    COMPILE_TIME_CYCLE = "L0307",
+    BROKEN_DEFINITION = "L0308",
+    BROKEN_MACRO = "L0309",
+    NOT_AT_COMPILE_TIME = "L0310",
+    COMPILE_TIME_ARGUMENT_COUNT = "L0311",
+    NOT_CALLABLE = "L0312",
+    NOT_A_BOOLEAN = "L0313",
+    INDEX_OUT_OF_RANGE = "L0314",
+    ARITHMETIC_OVERFLOW = "L0315",
+    RUNTIME_ONLY = "L0316",
+    MATCH_AT_RUNTIME = "L0317",
+    COMPILE_TIME_RECURSION = "L0318",
+    RUST_CODE_PROGRAM_ONLY = "L0319",
+    REPEATED_PARAMETER = "L0320",
+    FAILURE_PART = "L0321",
+    UNKNOWN_FAILURE_CODE = "L0322",
+
+    MISMATCHED_TYPES = "L0401",
+    WRONG_ARGUMENT_COUNT = "L0402",
+    NOT_A_FUNCTION = "L0403",
+    MISSING_TRAIT = "L0404",
+    LITERAL_OUT_OF_RANGE = "L0406",
+    CANNOT_INFER = "L0407",
+    UNKNOWN_FIELD = "L0408",
+    MISSING_FIELDS = "L0409",
+    NO_FIELDS = "L0410",
+    INFINITE_TYPE = "L0411",
+    COMPILE_TIME_ONLY = "L0412",
+    MISPLACED_WHERE = "L0413",
+    LITERAL_TYPE_PARAMETER = "L0414",
+    WRONG_TYPE_ARGUMENT_COUNT = "L0415",
+    UNUSED_TYPE_PARAMETER = "L0416",
+    BOUNDED_TYPE_PARAMETER = "L0417",
+    BARE_IMPLEMENTOR = "L0418",
+    MUT_BORROW_OF_COPY = "L0419",
+    TRAIT_CLAIM_ON_STRUCT = "L0421",
+    NOT_DERIVABLE = "L0422",
+    BLOCKED_DERIVE = "L0423",
+    DUPLICATE_DERIVE = "L0424",
+    TRAIT_NO_SECOND_TYPE = "L0425",
+    MISPLACED_WITH = "L0426",
+    TRY_TARGET = "L0428",
+    TRY_NOT_RESULT_OR_OPTION = "L0429",
+    TRY_NO_CONVERSION = "L0437",
+    AMBIGUOUS_VARIANT = "L0430",
+    UNKNOWN_VARIANT = "L0431",
+    WRONG_PATTERN_COUNT = "L0432",
+    NON_EXHAUSTIVE_MATCH = "L0433",
+    UNREACHABLE_ARM = "L0434",
+    DERIVE_ON_RUST_TYPE = "L0435",
+    VARIANT_ARM_VALUE = "L0436",
+    ENUM_RUST_TEMPLATE = "L0438",
+    RECURSIVELY_USED_TYPE_PARAMETER = "L0439",
+    MISSING_BOUND = "L0440",
+    LITERAL_MISFIT = "L0441",
+    QUOTE_AT_RUNTIME = "L0442",
+    UNUSED_ENUM_PARAMETER = "L0443",
+    UNSIZABLE_IMPLEMENTOR = "L0444",
+    FOREIGN_IMPLEMENTOR = "L0445",
+    SUPERTRAIT = "L0446",
+    ASSOCIATED_TYPE = "L0447",
+    OBJECT_SAFETY = "L0448",
+    TRAIT_OUTSIDE_BOX = "L0449",
+    MISSING_ASSOCIATED_VALUE = "L0450",
+    PROJECTION_WITHOUT_IMPLEMENTOR = "L0451",
+    UNDECLARED_ASSOCIATED_VALUE = "L0452",
+    PROJECTION_WITHOUT_BOUND = "L0453",
+    REPEATED_FIELD = "L0454",
+
+    USE_AFTER_MOVE = "L0501",
+    NEEDS_OWNERSHIP = "L0503",
+    MISSING_BANG = "L0504",
+    MISSING_COPY_BOUND = "L0505",
+    WRITTEN_MODE_MISMATCH = "L0506",
+    FUNCTION_VALUE_MISMATCH = "L0507",
+    CLOSURE_KIND_MISMATCH = "L0509",
+    LOCAL_BORROW = "L0510",
+
+    MISSING_MAIN = "L0601",
+    NAME_COLLISION = "L0602",
+    BAD_TEMPLATE = "L0603",
+    RUST_ERROR = "L0604",
+}
+
 impl DiagnosticCode {
-    pub const UNCLOSED_LIST: Self = Self(Cow::Borrowed("L0101"));
-    pub const UNMATCHED_CLOSE: Self = Self(Cow::Borrowed("L0102"));
-    pub const UNTERMINATED_STRING: Self = Self(Cow::Borrowed("L0103"));
-    pub const UNKNOWN_ESCAPE: Self = Self(Cow::Borrowed("L0104"));
-    pub const MALFORMED_NUMBER: Self = Self(Cow::Borrowed("L0105"));
-    pub const RESERVED_CHARACTER: Self = Self(Cow::Borrowed("L0106"));
-    pub const NUMBER_TOO_LARGE: Self = Self(Cow::Borrowed("L0107"));
-
-    pub const UNBOUND_NAME: Self = Self(Cow::Borrowed("L0201"));
-    pub const AMBIGUOUS_NAME: Self = Self(Cow::Borrowed("L0202"));
-    pub const DUPLICATE_DEFINITION: Self = Self(Cow::Borrowed("L0203"));
-    pub const UNKNOWN_MODULE: Self = Self(Cow::Borrowed("L0204"));
-    pub const MISSING_EXPORT: Self = Self(Cow::Borrowed("L0205"));
-    pub const IMPORT_CYCLE: Self = Self(Cow::Borrowed("L0206"));
-    pub const NOT_A_DEFINITION: Self = Self(Cow::Borrowed("L0207"));
-    pub const MODULE_LEVEL_ONLY: Self = Self(Cow::Borrowed("L0208"));
-    pub const EMPTY_CALL: Self = Self(Cow::Borrowed("L0209"));
-    pub const MALFORMED_FORM: Self = Self(Cow::Borrowed("L0210"));
-    pub const FORM_AS_VALUE: Self = Self(Cow::Borrowed("L0211"));
-    pub const WRONG_NAMESPACE: Self = Self(Cow::Borrowed("L0212"));
-    pub const BAD_TYPE_TEMPLATE: Self = Self(Cow::Borrowed("L0213"));
-    pub const RECUR_OUTSIDE_TAIL: Self = Self(Cow::Borrowed("L0214"));
-    pub const RECUR_ARGUMENT_COUNT: Self = Self(Cow::Borrowed("L0215"));
-    pub const RECUR_OUTSIDE_FN: Self = Self(Cow::Borrowed("L0216"));
-    pub const SECOND_TRAIT_PATH: Self = Self(Cow::Borrowed("L0217"));
-    pub const MALFORMED_TEMPLATE: Self = Self(Cow::Borrowed("L0218"));
-    pub const TYPE_PARAMETERS_ON_NAME: Self = Self(Cow::Borrowed("L0219"));
-    pub const TRY_OUTSIDE_FN: Self = Self(Cow::Borrowed("L0220"));
-    pub const TYPE_PARAMETER_PLACEHOLDER: Self = Self(Cow::Borrowed("L0221"));
-    pub const TYPE_PLACEHOLDER_IN_RUST_TYPE: Self = Self(Cow::Borrowed("L0222"));
-    pub const RUST_TYPE_CLAUSES_NEED_ONE_PARAMETER: Self = Self(Cow::Borrowed("L0223"));
-    pub const BORROWED_TYPE_PLACEHOLDER: Self = Self(Cow::Borrowed("L0224"));
-    pub const PLACEHOLDER_WITHOUT_PARAMETER: Self = Self(Cow::Borrowed("L0225"));
-    pub const UNUSED_TYPE_PLACEHOLDER: Self = Self(Cow::Borrowed("L0226"));
-    pub const LET_OUTSIDE_BODY: Self = Self(Cow::Borrowed("L0227"));
-    pub const MALFORMED_TYPE: Self = Self(Cow::Borrowed("L0228"));
-    pub const MACRO_OUTSIDE_DEF: Self = Self(Cow::Borrowed("L0229"));
-    pub const MIXED_VARIANT_PAYLOAD: Self = Self(Cow::Borrowed("L0230"));
-    pub const NOT_A_PATTERN: Self = Self(Cow::Borrowed("L0231"));
-    pub const ARM_BODY: Self = Self(Cow::Borrowed("L0232"));
-    pub const VARIANT_AS_VALUE: Self = Self(Cow::Borrowed("L0233"));
-    pub const NOT_A_TYPE: Self = Self(Cow::Borrowed("L0234"));
-    pub const NOT_A_NAME: Self = Self(Cow::Borrowed("L0235"));
-    pub const SIGNATURE_TARGET: Self = Self(Cow::Borrowed("L0236"));
-    pub const DERIVE_TARGET: Self = Self(Cow::Borrowed("L0237"));
-    pub const DERIVE_TRAIT: Self = Self(Cow::Borrowed("L0238"));
-    pub const MISSING_METHOD: Self = Self(Cow::Borrowed("L0239"));
-    pub const EXTRA_METHOD: Self = Self(Cow::Borrowed("L0240"));
-    pub const UNDECLARED_METHOD: Self = Self(Cow::Borrowed("L0241"));
-    pub const GENERIC_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0242"));
-    pub const FIELD_KEYWORD_ARITY: Self = Self(Cow::Borrowed("L0243"));
-    pub const KEYWORD_BINDER: Self = Self(Cow::Borrowed("L0244"));
-
-    pub const MACRO_FAILED: Self = Self(Cow::Borrowed("L0301"));
-    pub const MACRO_RESULT_NOT_FORM: Self = Self(Cow::Borrowed("L0302"));
-    pub const COMPILE_TIME_ERROR: Self = Self(Cow::Borrowed("L0303"));
-    pub const MACRO_AS_VALUE: Self = Self(Cow::Borrowed("L0304"));
-    pub const EXPANSION_TOO_DEEP: Self = Self(Cow::Borrowed("L0305"));
-    pub const PROGRAM_ONLY: Self = Self(Cow::Borrowed("L0306"));
-    pub const COMPILE_TIME_CYCLE: Self = Self(Cow::Borrowed("L0307"));
-    pub const BROKEN_DEFINITION: Self = Self(Cow::Borrowed("L0308"));
-    pub const BROKEN_MACRO: Self = Self(Cow::Borrowed("L0309"));
-    pub const NOT_AT_COMPILE_TIME: Self = Self(Cow::Borrowed("L0310"));
-    pub const COMPILE_TIME_ARGUMENT_COUNT: Self = Self(Cow::Borrowed("L0311"));
-    pub const NOT_CALLABLE: Self = Self(Cow::Borrowed("L0312"));
-    pub const NOT_A_BOOLEAN: Self = Self(Cow::Borrowed("L0313"));
-    pub const INDEX_OUT_OF_RANGE: Self = Self(Cow::Borrowed("L0314"));
-    pub const ARITHMETIC_OVERFLOW: Self = Self(Cow::Borrowed("L0315"));
-    pub const RUNTIME_ONLY: Self = Self(Cow::Borrowed("L0316"));
-    pub const MATCH_AT_RUNTIME: Self = Self(Cow::Borrowed("L0317"));
-    pub const COMPILE_TIME_RECURSION: Self = Self(Cow::Borrowed("L0318"));
-    pub const RUST_CODE_PROGRAM_ONLY: Self = Self(Cow::Borrowed("L0319"));
-
-    pub const MISMATCHED_TYPES: Self = Self(Cow::Borrowed("L0401"));
-    pub const WRONG_ARGUMENT_COUNT: Self = Self(Cow::Borrowed("L0402"));
-    pub const NOT_A_FUNCTION: Self = Self(Cow::Borrowed("L0403"));
-    pub const MISSING_TRAIT: Self = Self(Cow::Borrowed("L0404"));
-    pub const LITERAL_OUT_OF_RANGE: Self = Self(Cow::Borrowed("L0406"));
-    pub const CANNOT_INFER: Self = Self(Cow::Borrowed("L0407"));
-    pub const UNKNOWN_FIELD: Self = Self(Cow::Borrowed("L0408"));
-    pub const MISSING_FIELDS: Self = Self(Cow::Borrowed("L0409"));
-    pub const NO_FIELDS: Self = Self(Cow::Borrowed("L0410"));
-    pub const INFINITE_TYPE: Self = Self(Cow::Borrowed("L0411"));
-    pub const COMPILE_TIME_ONLY: Self = Self(Cow::Borrowed("L0412"));
-    pub const MISPLACED_WHERE: Self = Self(Cow::Borrowed("L0413"));
-    pub const LITERAL_TYPE_PARAMETER: Self = Self(Cow::Borrowed("L0414"));
-    pub const WRONG_TYPE_ARGUMENT_COUNT: Self = Self(Cow::Borrowed("L0415"));
-    pub const UNUSED_TYPE_PARAMETER: Self = Self(Cow::Borrowed("L0416"));
-    pub const BOUNDED_TYPE_PARAMETER: Self = Self(Cow::Borrowed("L0417"));
-    pub const BARE_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0418"));
-    pub const MUT_BORROW_OF_COPY: Self = Self(Cow::Borrowed("L0419"));
-    pub const TRAIT_CLAIM_ON_STRUCT: Self = Self(Cow::Borrowed("L0421"));
-    pub const NOT_DERIVABLE: Self = Self(Cow::Borrowed("L0422"));
-    pub const BLOCKED_DERIVE: Self = Self(Cow::Borrowed("L0423"));
-    pub const DUPLICATE_DERIVE: Self = Self(Cow::Borrowed("L0424"));
-    pub const TRAIT_NO_SECOND_TYPE: Self = Self(Cow::Borrowed("L0425"));
-    pub const MISPLACED_WITH: Self = Self(Cow::Borrowed("L0426"));
-    pub const TRY_TARGET: Self = Self(Cow::Borrowed("L0428"));
-    pub const TRY_NOT_RESULT_OR_OPTION: Self = Self(Cow::Borrowed("L0429"));
-    pub const TRY_NO_CONVERSION: Self = Self(Cow::Borrowed("L0437"));
-    pub const AMBIGUOUS_VARIANT: Self = Self(Cow::Borrowed("L0430"));
-    pub const UNKNOWN_VARIANT: Self = Self(Cow::Borrowed("L0431"));
-    pub const WRONG_PATTERN_COUNT: Self = Self(Cow::Borrowed("L0432"));
-    pub const NON_EXHAUSTIVE_MATCH: Self = Self(Cow::Borrowed("L0433"));
-    pub const UNREACHABLE_ARM: Self = Self(Cow::Borrowed("L0434"));
-    pub const DERIVE_ON_RUST_TYPE: Self = Self(Cow::Borrowed("L0435"));
-    pub const VARIANT_ARM_VALUE: Self = Self(Cow::Borrowed("L0436"));
-    pub const ENUM_RUST_TEMPLATE: Self = Self(Cow::Borrowed("L0438"));
-    pub const RECURSIVELY_USED_TYPE_PARAMETER: Self = Self(Cow::Borrowed("L0439"));
-    pub const MISSING_BOUND: Self = Self(Cow::Borrowed("L0440"));
-    pub const LITERAL_MISFIT: Self = Self(Cow::Borrowed("L0441"));
-    pub const QUOTE_AT_RUNTIME: Self = Self(Cow::Borrowed("L0442"));
-    pub const UNUSED_ENUM_PARAMETER: Self = Self(Cow::Borrowed("L0443"));
-    pub const UNSIZABLE_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0444"));
-    pub const FOREIGN_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0445"));
-    pub const SUPERTRAIT: Self = Self(Cow::Borrowed("L0446"));
-    pub const ASSOCIATED_TYPE: Self = Self(Cow::Borrowed("L0447"));
-    pub const OBJECT_SAFETY: Self = Self(Cow::Borrowed("L0448"));
-    pub const TRAIT_OUTSIDE_BOX: Self = Self(Cow::Borrowed("L0449"));
-    pub const MISSING_ASSOCIATED_VALUE: Self = Self(Cow::Borrowed("L0450"));
-    pub const PROJECTION_WITHOUT_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0451"));
-    pub const UNDECLARED_ASSOCIATED_VALUE: Self = Self(Cow::Borrowed("L0452"));
-    pub const PROJECTION_WITHOUT_BOUND: Self = Self(Cow::Borrowed("L0453"));
-    pub const REPEATED_FIELD: Self = Self(Cow::Borrowed("L0454"));
-
-    pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
-    pub const NEEDS_OWNERSHIP: Self = Self(Cow::Borrowed("L0503"));
-    pub const MISSING_BANG: Self = Self(Cow::Borrowed("L0504"));
-    pub const MISSING_COPY_BOUND: Self = Self(Cow::Borrowed("L0505"));
-    pub const WRITTEN_MODE_MISMATCH: Self = Self(Cow::Borrowed("L0506"));
-    pub const FUNCTION_VALUE_MISMATCH: Self = Self(Cow::Borrowed("L0507"));
-    pub const CLOSURE_KIND_MISMATCH: Self = Self(Cow::Borrowed("L0509"));
-    pub const LOCAL_BORROW: Self = Self(Cow::Borrowed("L0510"));
-
-    pub const MISSING_MAIN: Self = Self(Cow::Borrowed("L0601"));
-    pub const NAME_COLLISION: Self = Self(Cow::Borrowed("L0602"));
-    pub const BAD_TEMPLATE: Self = Self(Cow::Borrowed("L0603"));
-    pub const RUST_ERROR: Self = Self(Cow::Borrowed("L0604"));
+    const STAGE_PREFIX_LENGTH: usize = 3;
 
     pub fn from_rustc(code: String) -> Self {
         Self(Cow::Owned(code))
@@ -149,5 +167,32 @@ impl DiagnosticCode {
 
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+
+    pub fn macro_stage_named(name: &str) -> Option<Self> {
+        Self::macro_stage_codes()
+            .find(|(source_name, _)| source_name == name)
+            .map(|(_, code)| code)
+    }
+
+    pub fn macro_stage_names() -> Vec<Rc<str>> {
+        Self::macro_stage_codes()
+            .map(|(source_name, _)| Rc::from(source_name))
+            .collect()
+    }
+
+    fn macro_stage_codes() -> impl Iterator<Item = (String, Self)> {
+        Self::NAMED
+            .iter()
+            .map(|(constant, code)| (Self::source_name(constant), Self(Cow::Borrowed(code))))
+            .filter(|(_, code)| code.stage() == Self::MACRO_FAILED.stage())
+    }
+
+    fn source_name(constant: &str) -> String {
+        constant.replace('_', "-").to_lowercase()
+    }
+
+    fn stage(&self) -> &str {
+        &self.0[..Self::STAGE_PREFIX_LENGTH]
     }
 }

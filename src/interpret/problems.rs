@@ -1,5 +1,8 @@
+use std::rc::Rc;
+
 use super::Value;
-use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label};
+use super::builtins::FailureDescription;
+use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
 
 pub struct InterpretProblems;
@@ -117,14 +120,44 @@ impl InterpretProblems {
         )
     }
 
-    pub fn failed(message: String, span: Span, help: Option<String>) -> Diagnostic {
+    pub fn failed(code: DiagnosticCode, message: String, span: Span) -> Diagnostic {
+        Diagnostic::error(code, message, Label::new(span, "here"))
+    }
+
+    pub fn failed_again(
+        code: DiagnosticCode,
+        message: String,
+        span: Span,
+        earlier: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(code, message, Label::new(span, "given again here"))
+            .with_label(Label::new(earlier, "first given here"))
+    }
+
+    pub fn malformed_failure_part(span: Span) -> Diagnostic {
+        let parts: Vec<String> = FailureDescription::PARTS
+            .iter()
+            .map(|part| format!("`:{part}`"))
+            .collect();
+        Diagnostic::error(
+            DiagnosticCode::FAILURE_PART,
+            "a failure description takes `:part value` pairs",
+            Label::new(span, "not a `:part value` pair"),
+        )
+        .with_help(format!("the parts are {}", parts.join(", ")))
+    }
+
+    pub fn unknown_failure_code(name: &str, span: Span, similar: Option<Rc<str>>) -> Diagnostic {
         let diagnostic = Diagnostic::error(
-            DiagnosticCode::MACRO_FAILED,
-            message,
-            Label::new(span, "here"),
+            DiagnosticCode::UNKNOWN_FAILURE_CODE,
+            format!("no macro diagnostic is named `{name}`"),
+            Label::new(span, "unknown diagnostic"),
         );
-        match help {
-            Some(help) => diagnostic.with_help(help),
+        match similar {
+            Some(similar) => diagnostic.with_suggestion(
+                "a diagnostic with a similar name exists",
+                Suggestion::new(span, similar.as_ref()),
+            ),
             None => diagnostic,
         }
     }

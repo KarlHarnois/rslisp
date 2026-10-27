@@ -1,0 +1,17 @@
+(use code fail)
+
+(def unknown-part (macro (form) (fail "bad call" form "fix it" (quote (:cod repeated-parameter)))))
+(def part-without-value (macro (form) (fail "bad call" form "fix it" (quote (:code)))))
+(def misspelled-code (macro (form) (fail "bad call" form "fix it" (quote (:code repeated-parametr)))))
+(def type-stage-code (macro (form) (fail "bad call" form "fix it" (quote (:code repeated-field)))))
+(def string-code (macro (form) (fail "bad call" form "fix it" (quote (:code "L0320")))))
+(def too-many (macro (form) (fail "bad call" form "fix it" (quote ()) form)))
+(def coded (macro (form) (fail "the leaf is parked" form "drive it" (quote (:code repeated-parameter)))))
+
+(unknown-part)
+(part-without-value)
+(misspelled-code)
+(type-stage-code)
+(string-code)
+(too-many)
+(coded)

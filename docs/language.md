@@ -340,11 +340,13 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 | `symbol-name`, `keyword-name`, `keyword-field`, `field-keyword`, `(symbol context part...)`, `(string part...)` | Read and build names and strings. |
 | `escape-string`, `escape-char`, `escape-format`, `string-strip-suffix`, `string-strip-prefix` | Escape a string for a Rust string literal, a Rust character literal or a format string in a template, and drop a suffix or a prefix. |
 | `(same-binding? left right)` | Test whether two symbols refer to the same binding. |
-| `(fail "message" form)`, `(fail "message" form "help")` | Stop expansion with an error at `form`, and an optional help line that says how to fix the call. |
+| `(fail "message" form)`, `(fail "message" form "help")`, `(fail "message" form "help" description)` | Stop expansion with an error at `form`, an optional help line that says how to fix the call, and an optional description of the error. |
 | `number-add number-sub number-lt number-le number-gt number-ge` | Count and compare positions in code. They take integers. |
 | `value-eq bool-not` | Compare forms and negate booleans. |
 
 A keyword is a symbol whose name is `:` followed by at least one character, such as `:year`. `keyword?` tests for one, and `keyword-name` returns its name without the `:`, so `(keyword-name (quote :year))` is `"year"`. `keyword-field` returns the field symbol, so `(keyword-field (quote :year))` is `year`, with the keyword's location and hygiene, so an error about the field points at the keyword the user wrote. `field-keyword` is its inverse: `(field-keyword (quote year))` is `:year`, with the field's location and hygiene. The compiler states the `:` marker once, so macro code never compares names with it.
+
+A `fail` error takes the code `L0301` unless its description names another. The description is a list of `:part value` pairs, as in `(template (:code repeated-parameter :earlier (unquote first)))`. `:code` names a macro-stage diagnostic by its name in `src/diagnostic/code.rs`, lowercased with `-` for `_`, so a prelude error gets its own code without restating the code list. A code of another stage is an error, because a code's first digit names the stage that reports it. `:earlier` marks `form` as a repeat of an earlier form: the error labels the earlier form "first given here" and `form` "given again here". The message and the help line are the macro's own words.
 
 Macro code that maps a function over a list of forms imports `map-list` with `(use prelude/macros map-list)`.
 
