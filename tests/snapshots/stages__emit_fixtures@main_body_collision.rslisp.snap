@@ -1,0 +1,31 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).emit_report()"
+input_file: tests/fixtures/emit/main_body_collision.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum AppError {
+    Missing,
+}
+
+fn main_body() -> i64 {
+    1
+}
+
+fn main_body_() -> Result<(), AppError> {
+    println!("{}", main_body());
+    Err(AppError::Missing)
+}
+
+fn main() {
+    if let Err(error) = main_body_() {
+        eprintln!("{}", error);
+        std::process::exit(1);
+    }
+}
+
+impl std::fmt::Display for AppError {
+    fn fmt(&self, out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(out, "missing")
+    }
+}

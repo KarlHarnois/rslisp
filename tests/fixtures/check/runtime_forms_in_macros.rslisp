@@ -1,0 +1,12 @@
+(struct point (x i64) (y i64))
+(enum flag on off)
+
+(def make-point (macro (form) (new point (x 1) (y 2))))
+(def try-form (macro (form) (try form)))
+(def call-rust (macro (form) (rust "1" i64)))
+(def read-flag (macro (form) (match form ((on) 1) (off 0))))
+
+(def origin (make-point 1))
+(def tried (try-form 1))
+(def ported (call-rust 1))
+(def flagged (read-flag on))
