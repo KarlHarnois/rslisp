@@ -1,0 +1,37 @@
+(defstruct car :make str :year u16)
+
+(type build-either (fn ((fn ((ref str) u16) car) bool) car))
+(defn build-either (constructor fresh) (constructor (if fresh "Leaf" "Nissan") 2025))
+
+(type build-matched (fn ((fn ((ref str) u16) car) (option u16)) car))
+(defn build-matched (constructor year)
+  (constructor (match year ((some found) "Leaf") (none "Nissan")) 2024))
+
+(type build-alias (fn ((fn ((ref str) u16) car)) car))
+(defn build-alias (constructor)
+  (let build constructor)
+  (build "Nissan" 2023))
+
+(type first-word (fn ((ref str)) (ref str)))
+(defn first-word (text) text)
+
+(type pick-alias (fn ((fn ((ref str)) (ref str)) (ref str)) (ref str)))
+(defn pick-alias (pick text)
+  (let chosen pick)
+  (chosen text))
+
+(type measure-alias (fn ((fn ((ref str)) (ref str))) u16))
+(defn measure-alias (pick)
+  (let chosen pick)
+  (let model (to-string "Leaf"))
+  (if (= (chosen (as-str model)) "Leaf") 4 0))
+
+(defn main ()
+  (let model (to-string "Leaf"))
+  (let borrowing (fn (make year) (->car :make (as-str model) :year year)))
+  (println (:make (build-either borrowing true)))
+  (println (:make (build-matched borrowing (some 2024))))
+  (println (:make (build-alias borrowing)))
+  (let words (to-string "Nissan Leaf"))
+  (println (pick-alias first-word (as-str words)))
+  (println (measure-alias first-word)))

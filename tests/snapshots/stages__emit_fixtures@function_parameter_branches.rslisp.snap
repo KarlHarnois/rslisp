@@ -1,0 +1,65 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_parameter_branches.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn build_either<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>, fresh: bool) -> Car<'a> {
+    constructor(if fresh { "Leaf" } else { "Nissan" }, 2025)
+}
+
+fn build_matched<'a>(
+    constructor: impl FnOnce(&'a str, u16) -> Car<'a>,
+    year: Option<u16>,
+) -> Car<'a> {
+    constructor(
+        match year {
+            Some(found) => "Leaf",
+            None => "Nissan",
+        },
+        2024,
+    )
+}
+
+fn build_alias<'a>(constructor: impl Fn(&'a str, u16) -> Car<'a>) -> Car<'a> {
+    let build = constructor;
+    build("Nissan", 2023)
+}
+
+fn first_word(text: &str) -> &str {
+    text
+}
+
+fn pick_alias<'a>(pick: impl Fn(&'a str) -> &'a str, text: &'a str) -> &'a str {
+    let chosen = pick;
+    chosen(text)
+}
+
+fn measure_alias(pick: impl Fn(&str) -> &str) -> u16 {
+    let chosen = pick;
+    let model = "Leaf".to_string();
+    if chosen(model.as_str()) == "Leaf" {
+        4
+    } else {
+        0
+    }
+}
+
+fn main() {
+    let model = "Leaf".to_string();
+    let borrowing = |make: &str, year: u16| Car {
+        make: model.as_str(),
+        year,
+    };
+    println!("{}", build_either(borrowing, true).make);
+    println!("{}", build_matched(borrowing, Some(2024)).make);
+    println!("{}", build_alias(borrowing).make);
+    let words = "Nissan Leaf".to_string();
+    println!("{}", pick_alias(first_word, words.as_str()));
+    println!("{}", measure_alias(first_word))
+}

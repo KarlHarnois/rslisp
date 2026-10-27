@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_parameter_branches.rslisp
+---
+Leaf
+Leaf
+Leaf
+Nissan Leaf
+4
