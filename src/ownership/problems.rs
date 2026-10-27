@@ -15,7 +15,16 @@ pub enum BorrowedStorage {
         variant: String,
         owner: String,
         owned: String,
+        declared: Span,
     },
+}
+
+impl BorrowedStorage {
+    fn declared(&self) -> Span {
+        match self {
+            Self::Field { declared, .. } | Self::Payload { declared, .. } => *declared,
+        }
+    }
 }
 
 pub struct OwnershipProblems;
@@ -195,14 +204,9 @@ impl OwnershipProblems {
         defined: Span,
         storage: &BorrowedStorage,
     ) -> Diagnostic {
-        let diagnostic =
-            Self::returned_local_borrow(borrowed, defined).with_help(Self::owned_storage(storage));
-        match storage {
-            BorrowedStorage::Field { declared, .. } => {
-                diagnostic.with_label(Label::new(*declared, "declared as a borrow here"))
-            }
-            BorrowedStorage::Payload { .. } => diagnostic,
-        }
+        Self::returned_local_borrow(borrowed, defined)
+            .with_help(Self::owned_storage(storage))
+            .with_label(Label::new(storage.declared(), "declared as a borrow here"))
     }
 
     fn owned_storage(storage: &BorrowedStorage) -> String {
@@ -219,6 +223,7 @@ impl OwnershipProblems {
                 variant,
                 owner,
                 owned,
+                ..
             } => format!(
                 "the `{variant}` payload of `{owner}` borrows its data, so give it the owned type `{owned}`"
             ),

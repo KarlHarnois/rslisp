@@ -6,6 +6,9 @@ input_file: tests/fixtures/check/returned_payload_borrow.rslisp
 error[L0510]: cannot return a borrow of a local value
  --> check/returned_payload_borrow.rslisp:5:16
   |
+1 | (enum label (named str) blank)
+  |                    --- declared as a borrow here
+...
 4 |   (let text (to-string "Leaf"))
   |        ---- this local is dropped when the function returns
 5 |   (label/named (as-str text)))

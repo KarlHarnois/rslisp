@@ -32,6 +32,9 @@ error[L0510]: cannot return a borrow of a local value
 error[L0510]: cannot return a borrow of a local value
   --> check/returned_borrow_forms.rslisp:23:17
    |
+ 9 | (enum badge (titled str u16) plain)
+   |                     --- declared as a borrow here
+...
 22 |   (let title (to-string "Leaf"))
    |        ----- this local is dropped when the function returns
 23 |   (badge/titled (as-str title) year))
