@@ -1,0 +1,9 @@
+(defstruct car :make str :model str :year u16)
+(enum rule (keep (fn ((ref car)) bool)) skip)
+
+(defn main ()
+  (let cutoff 2020)
+  (let recent (rule/keep (fn ((vehicle (ref car))) (> (:year vehicle) cutoff))))
+  (match recent
+    ((keep test) (println (test (->car "Nissan" "Leaf" 2024))))
+    (skip (println "skipped"))))

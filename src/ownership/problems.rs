@@ -1,8 +1,15 @@
+use std::rc::Rc;
+
 use super::functions::ParamMode;
 use crate::core::ReferenceKind;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
 use crate::types::ClosureKind;
+
+pub enum FunctionStorage {
+    Field(Rc<str>),
+    Payload(Rc<str>),
+}
 
 pub enum BorrowedStorage {
     Field {
@@ -115,6 +122,27 @@ impl OwnershipProblems {
 
     pub fn closure_move_help(diagnostic: Diagnostic) -> Diagnostic {
         diagnostic.with_help("this closure moves a captured value, so it cannot be copied")
+    }
+
+    pub fn capturing_function_field(
+        closure: Span,
+        capture: &str,
+        storage: &FunctionStorage,
+        declared: Span,
+    ) -> Diagnostic {
+        let (place, holder) = match storage {
+            FunctionStorage::Field(field) => (format!("the field `{field}`"), "field"),
+            FunctionStorage::Payload(variant) => (format!("the `{variant}` payload"), "payload"),
+        };
+        Diagnostic::error(
+            DiagnosticCode::CAPTURING_FUNCTION_FIELD,
+            format!("cannot store a capturing closure in {place}"),
+            Label::new(closure, format!("this closure captures `{capture}`")),
+        )
+        .with_label(Label::new(declared, "declared with a function type here"))
+        .with_help(format!(
+            "a {holder} declared with a function type holds only a named function or a closure that captures nothing"
+        ))
     }
 
     pub fn closure_kind_mismatch(

@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/capturing_closure_unannotated_new.rslisp
+---
+error[L0511]: cannot store a capturing closure in the field `key`
+ --> check/capturing_closure_unannotated_new.rslisp:8:13
+  |
+2 | (defstruct sorter :key (fn ((ref user)) u16) :label str)
+  |                        --------------------- declared with a function type here
+...
+8 |       (:key (fn (someone) (+ (:age someone) bonus)))
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this closure captures `bonus`
+  |
+  = help: a field declared with a function type holds only a named function or a closure that captures nothing

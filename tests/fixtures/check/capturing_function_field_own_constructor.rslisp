@@ -1,0 +1,9 @@
+(defstruct car :make str :model str :year u16)
+(defstruct ranking :score (fn ((ref car)) u16) :label str)
+
+(defn by-score (score) (->ranking score "custom"))
+
+(defn main ()
+  (let base-year 2000)
+  (let newest (by-score (fn (vehicle) (- (:year vehicle) base-year))))
+  (println (:label newest)))
