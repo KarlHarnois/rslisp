@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/associated_two_values.rslisp
+---
+fn main() {
+    println!("{}", vec![7_i64, 8_i64].into_iter().next().unwrap());
+    let rest: std::vec::IntoIter<i64> = vec![5_i64, 6_i64, 9_i64].into_iter();
+    println!("{}", rest.len())
+}

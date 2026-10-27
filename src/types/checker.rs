@@ -155,6 +155,7 @@ pub struct TypeChecker {
     pub(super) warnings: Diagnostics,
     missing_annotations: Diagnostics,
     pub(super) type_arities: HashMap<BindingId, usize>,
+    pub(super) written_projections: Vec<super::associated::WrittenProjection>,
     trait_arguments: HashSet<BindingId>,
     signatures: HashMap<BindingId, (TypeExpr, Span)>,
     monomorphic: Vec<Type>,
@@ -237,6 +238,7 @@ impl TypeChecker {
             warnings: Diagnostics::default(),
             missing_annotations: Diagnostics::default(),
             type_arities: HashMap::new(),
+            written_projections: Vec::new(),
             trait_arguments: HashSet::new(),
             signatures: HashMap::new(),
             monomorphic: Vec::new(),
@@ -276,6 +278,7 @@ impl TypeChecker {
     pub(super) fn collect_declarations(&mut self, modules: &[CoreModule]) {
         self.record_prelude_value_names(modules);
         self.record_type_arities(modules);
+        self.record_projections(modules);
         self.record_trait_arguments(modules);
         for module in modules {
             for item in &module.items {
@@ -284,6 +287,8 @@ impl TypeChecker {
                 }
             }
         }
+        self.share_projections();
+        self.check_written_projections();
         self.box_binding = self.rust_types.box_binding();
         if let Some(box_binding) = self.box_binding {
             self.inferred_boxes = super::boxes::BoxPlanner::add_boxes(
@@ -414,7 +419,11 @@ impl TypeChecker {
             let ItemKind::RustTrait(declaration) = &item.kind else {
                 continue;
             };
-            if declaration.implementors.iter().any(Self::entry_uses_with) {
+            if declaration
+                .implementors
+                .iter()
+                .any(|entry| Self::entry_uses_with(&entry.implementor))
+            {
                 self.trait_arguments.insert(declaration.binding);
             }
         }
@@ -440,7 +449,7 @@ impl TypeChecker {
             let trait_binding = &declaration.binding;
             let path = &declaration.path;
             for implementor in &declaration.implementors {
-                let implementor = Self::implemented_type(implementor);
+                let implementor = Self::implemented_type(&implementor.implementor);
                 let TypeExprKind::Named(binding, _) = implementor.kind() else {
                     continue;
                 };
@@ -664,7 +673,7 @@ impl TypeChecker {
     }
 
     pub(super) fn display(&self) -> TypeDisplay<'_> {
-        TypeDisplay::new(&self.bindings, &self.generics)
+        TypeDisplay::new(&self.bindings, &self.generics).with_projections(self.traits.projections())
     }
 
     pub(super) fn defer_missing_annotation(&mut self, diagnostic: Diagnostic) {
@@ -695,6 +704,7 @@ impl TypeChecker {
     }
 
     pub(super) fn discharge_obligations(&mut self, pass: ObligationPass) {
+        self.recheck_deferred_equalities();
         for obligation in self.unifier.take_obligations() {
             self.discharge(obligation, pass);
         }
@@ -1987,41 +1997,21 @@ impl TypeChecker {
         }
     }
 
-    fn collect_trait(
-        &mut self,
-        binding: BindingId,
-        path: &std::rc::Rc<str>,
-        implementors: &[TypeExpr],
-        help: Option<Rc<str>>,
-    ) -> Result<(), Diagnostic> {
-        let trait_name = self.bindings.get(binding).name().to_string();
-        let implementors = implementors
-            .iter()
-            .map(|implementor| self.lower_implementor(implementor, &trait_name))
-            .collect::<Result<Vec<Implementor>, Diagnostic>>()?;
-        self.traits.add(
-            binding,
-            RustTrait {
-                path: path.clone(),
-                implementors,
-                help,
-                supertraits: Vec::new(),
-                associated: None,
-            },
-        );
-        Ok(())
-    }
-
     fn collect_rust_trait(
         &mut self,
         declaration: &crate::core::RustTraitDeclaration,
     ) -> Result<(), Diagnostic> {
-        self.collect_trait(
+        let implementors = self.lower_rust_trait_implementors(declaration)?;
+        self.traits.add(
             declaration.binding,
-            &declaration.path,
-            &declaration.implementors,
-            declaration.help.clone(),
-        )?;
+            RustTrait {
+                path: declaration.path.clone(),
+                implementors,
+                help: declaration.help.clone(),
+                supertraits: Vec::new(),
+                associated: None,
+            },
+        );
         self.rust_trait_paths
             .insert(declaration.binding, Rc::clone(&declaration.path));
         for method in &declaration.methods {
@@ -2298,16 +2288,27 @@ impl TypeChecker {
             .into_iter()
             .map(|(binding, entries)| ImplementorGroup {
                 constructor: self.bindings.get(binding).name().to_string(),
-                parameter: self
-                    .rust_types
-                    .get(binding)
-                    .and_then(|rust_type| rust_type.params.first())
-                    .expect("a grouped implementor has a type parameter")
-                    .to_string(),
+                parameter: self.group_parameter(binding),
                 arguments: entries.into_iter().map(|(_, shown)| shown).collect(),
             })
             .collect();
         ImplementorList { entries, groups }
+    }
+
+    fn group_parameter(&self, binding: BindingId) -> String {
+        let projected = self
+            .traits
+            .projections()
+            .associated(binding)
+            .map(|associated| associated.parameter.to_string());
+        projected
+            .or_else(|| {
+                self.rust_types
+                    .get(binding)
+                    .and_then(|rust_type| rust_type.params.first())
+                    .map(ToString::to_string)
+            })
+            .expect("a grouped implementor has a type parameter")
     }
 
     fn grouped_implementor<'a>(&'a self, known: &'a Implementor) -> Option<(BindingId, &'a Type)> {
@@ -2320,8 +2321,12 @@ impl TypeChecker {
         let [argument] = arguments.as_slice() else {
             return None;
         };
-        let params = &self.rust_types.get(*binding)?.params;
-        (params.len() == 1 && !argument.is_unknown()).then_some((*binding, argument))
+        let single_parameter = self.traits.projections().is_projection(*binding)
+            || self
+                .rust_types
+                .get(*binding)
+                .is_some_and(|rust_type| rust_type.params.len() == 1);
+        (single_parameter && !argument.is_unknown()).then_some((*binding, argument))
     }
 
     fn type_trait_help(
@@ -2587,6 +2592,7 @@ impl TypeChecker {
         }
         checker.absorb_impl_bounds(&definitions);
         checker.discharge_obligations(ObligationPass::Final);
+        checker.check_written_projections();
         checker.resolve_missing_annotations();
         let typed_modules = program
             .modules

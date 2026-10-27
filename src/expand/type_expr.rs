@@ -1,8 +1,8 @@
 use super::Expander;
 use super::problems::ExpandProblems;
 use crate::core::{
-    BindingId, BindingKind, ClosureKind, KernelType, Namespace, ReferenceKind, TypeBinder,
-    TypeBound, TypeExpr, TypeExprKind,
+    AssociatedValue, BindingId, BindingKind, ClosureKind, KernelType, Namespace, ReferenceKind,
+    RustTraitImplementor, TypeBinder, TypeBound, TypeExpr, TypeExprKind,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -173,6 +173,62 @@ impl Expander<'_> {
             parameterized.binders,
             Box::new(self.lower_type(&parameterized.body[0])?),
         ))
+    }
+
+    pub(super) fn lower_rust_trait_implementor(
+        &mut self,
+        entry: &Form,
+    ) -> Result<RustTraitImplementor, Diagnostic> {
+        match entry.as_list() {
+            Some(items) if items.len() > Self::WHERE_PARTS && self.is_where(&items[0]) => {
+                self.lower_valued_implementor(entry, items)
+            }
+            _ => Ok(RustTraitImplementor {
+                implementor: self.lower_type(entry)?,
+                associated: Vec::new(),
+            }),
+        }
+    }
+
+    fn lower_valued_implementor(
+        &mut self,
+        entry: &Form,
+        items: &[Form],
+    ) -> Result<RustTraitImplementor, Diagnostic> {
+        let malformed = || ExpandProblems::malformed_type(KernelType::Where, entry.span());
+        let parameterized = self.lower_parameters(items, malformed)?;
+        let (implemented, values) = parameterized
+            .body
+            .split_first()
+            .expect("a valued implementor has a body");
+        let implemented = self.lower_type(implemented)?;
+        let associated = values
+            .iter()
+            .map(|value| self.lower_associated_value(value, malformed))
+            .collect::<Result<Vec<AssociatedValue>, Diagnostic>>()?;
+        Ok(RustTraitImplementor {
+            implementor: TypeExpr::new(
+                TypeExprKind::Where(parameterized.binders, Box::new(implemented)),
+                entry.span(),
+            ),
+            associated,
+        })
+    }
+
+    fn lower_associated_value(
+        &mut self,
+        clause: &Form,
+        malformed: impl Fn() -> Diagnostic,
+    ) -> Result<AssociatedValue, Diagnostic> {
+        let Some([name, value]) = clause.as_list() else {
+            return Err(malformed());
+        };
+        let symbol = name.as_symbol().ok_or_else(&malformed)?;
+        Ok(AssociatedValue {
+            binding: self.resolve(symbol, Namespace::Type, name.span())?,
+            value: self.lower_type(value)?,
+            span: clause.span(),
+        })
     }
 
     fn lower_with_type(&mut self, form: &Form, items: &[Form]) -> Result<TypeExprKind, Diagnostic> {

@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/projection_without_implementor.rslisp
+---
+error[L0451]: `str` does not implement `from-str`
+ --> check/projection_without_implementor.rslisp:1:45
+  |
+1 | (type read-name (fn ((ref str)) (result i64 (parse-error str))))
+  |                                             ^^^^^^^^^^^^^^^^^ `(parse-error str)` needs `str` to implement `from-str`
+  |
+  = note: `parse-error` is an associated type of `from-str`
+
+error[L0401]: mismatched types
+ --> check/projection_without_implementor.rslisp:4:3
+  |
+4 |   (parse text))
+  |   ^^^^^^^^^^^^ expected `(result i64 (parse-error str))`, found `(result i64 parse-int-error)`

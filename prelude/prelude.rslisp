@@ -18,6 +18,7 @@
                     + - * / < <= > >= = != ord)
 (use prelude/text display debug to-string print println eprintln prn pr-str str char
                   chars lines split trim subs as-str parse parse-error from-str
+                  parse-int-error parse-bool-error parse-char-error parse-float-error infallible
                   lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!)
 (use prelude/struct defstruct)
 (use prelude/ownership clone copy)
@@ -36,6 +37,7 @@
         + - * / < <= > >= = !=
         display debug to-string print println eprintln prn pr-str str char
         chars lines split trim subs as-str parse parse-error from-str
+        parse-int-error parse-bool-error parse-char-error parse-float-error infallible
         lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!
         defstruct
         clone copy set!

@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/projection_arity.rslisp
+---
+error[L0415]: `parse-error` takes 1 type argument but 2 were given
+ --> check/projection_arity.rslisp:1:45
+  |
+1 | (type read-pair (fn ((ref str)) (result i64 (parse-error i64 bool))))
+  |                                             ^^^^^^^^^^^^^^^^^^^^^^ expected 1 type argument

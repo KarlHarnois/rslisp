@@ -1,0 +1,8 @@
+(defn read-count (text)
+  (let (count (result i64 _)) (parse text))
+  count)
+
+(defn main ()
+  (match (read-count "42")
+    ((ok count) (println "count: " count))
+    ((err reason) (println "not a count: " reason))))

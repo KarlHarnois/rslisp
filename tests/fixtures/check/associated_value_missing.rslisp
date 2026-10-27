@@ -1,0 +1,7 @@
+(rust-trait addable "std::ops::Add"
+  (associated (output left) "Output")
+  (where () (with i64 i64) (output i64))
+  (with f64 f64))
+
+(defn main ()
+  (println 1))

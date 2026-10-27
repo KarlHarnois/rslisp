@@ -391,6 +391,9 @@ impl<'a> RustTypes<'a> {
         position: TypePosition,
         scope: &LifetimeScope,
     ) -> String {
+        if self.program.traits.projections().is_projection(binding) {
+            return self.projection(binding, arguments, position, scope);
+        }
         match self.program.rust_types.get(binding) {
             Some(rust_type) => self.rust_type(rust_type, arguments, position, scope),
             None => {
@@ -405,6 +408,29 @@ impl<'a> RustTypes<'a> {
                 Self::applied(self.struct_path(binding), &arguments)
             }
         }
+    }
+
+    fn projection(
+        &self,
+        binding: BindingId,
+        arguments: &[Type],
+        position: TypePosition,
+        scope: &LifetimeScope,
+    ) -> String {
+        let projections = self.program.traits.projections();
+        let projected = Type::Named(binding, arguments.to_vec());
+        if let Some(normalized) = projections.normalize(&projected) {
+            return self.show_in(&normalized, position, scope);
+        }
+        let associated = projections
+            .associated(binding)
+            .expect("a projection names a declared associated type");
+        format!(
+            "<{} as {}>::{}",
+            self.show_in(&arguments[0], Self::inner(position), scope),
+            self.plan.trait_path(associated.trait_binding, self.module),
+            associated.rust_name
+        )
     }
 
     fn rust_type(

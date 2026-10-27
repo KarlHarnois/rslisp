@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/associated_parse_int.rslisp
+---
+(type read-count (fn ((ref str)) (result i64 parse-int-error)))
+(type main (fn () unit))

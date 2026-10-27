@@ -27,6 +27,12 @@ impl Selection {
     }
 }
 
+pub enum PatternMatch {
+    Matched(HashMap<GenericId, Type>),
+    Undecided,
+    Missing,
+}
+
 pub struct ImplementorMatch<'s> {
     implementor: &'s Implementor,
     bindings: HashMap<GenericId, Type>,
@@ -52,6 +58,23 @@ impl<'s> ImplementorMatch<'s> {
             matcher.associated(bound)
         } else {
             matcher.parameter(bound, target)
+        }
+    }
+
+    pub fn match_pattern(
+        implementor: &'s Implementor,
+        pattern: &Type,
+        target: &Type,
+    ) -> PatternMatch {
+        let mut matcher = Self {
+            implementor,
+            bindings: HashMap::new(),
+            undecided: false,
+        };
+        match (matcher.matches(pattern, target), matcher.undecided) {
+            (false, _) => PatternMatch::Missing,
+            (true, true) => PatternMatch::Undecided,
+            (true, false) => PatternMatch::Matched(matcher.bindings),
         }
     }
 

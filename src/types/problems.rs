@@ -278,6 +278,57 @@ impl TypeProblems {
         )
     }
 
+    pub fn missing_associated_value(trait_name: &str, projection: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MISSING_ASSOCIATED_VALUE,
+            format!("this entry of `{trait_name}` does not give `{projection}`"),
+            Label::new(
+                span,
+                format!("`{trait_name}` declares the associated type `{projection}`"),
+            ),
+        )
+        .with_help(format!(
+            "end the entry with `({projection} type)`, as in `(where () i64 ({projection} type))`"
+        ))
+    }
+
+    pub fn undeclared_associated_value(
+        trait_name: &str,
+        projection: &str,
+        span: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::UNDECLARED_ASSOCIATED_VALUE,
+            format!("`{trait_name}` does not declare `{projection}`"),
+            Label::new(
+                span,
+                format!("`{projection}` is not an associated type of `{trait_name}`"),
+            ),
+        )
+        .with_help(format!(
+            "remove the clause, or declare it with `(associated ({projection} owner) \"Name\")`"
+        ))
+    }
+
+    pub fn projection_without_implementor(
+        projection: &str,
+        trait_name: &str,
+        owner: &str,
+        span: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::PROJECTION_WITHOUT_IMPLEMENTOR,
+            format!("`{owner}` does not implement `{trait_name}`"),
+            Label::new(
+                span,
+                format!("`({projection} {owner})` needs `{owner}` to implement `{trait_name}`"),
+            ),
+        )
+        .with_note(format!(
+            "`{projection}` is an associated type of `{trait_name}`"
+        ))
+    }
+
     pub fn foreign_implementor(trait_name: &str, found: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::FOREIGN_IMPLEMENTOR,

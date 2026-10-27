@@ -189,7 +189,7 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 
 `print`, `println` and `eprintln` take any number of parts. Each string literal part folds into one format string, and each other part becomes a `{}` placeholder. `eprintln` writes to standard error. `str` folds its literal parts the same way. A `print` whose last part ends in a newline emits `println!` without that newline. `prn` and `pr-str` print a value's data form. `(display type (value) parts...)` implements `display` for a struct or enum the program defines, and makes the type printable with `print`, `println`, `str` and `to-string`. `subs` takes a `str`, a start and an end, and returns the `str` between them, so `(subs line 2 5)` emits `&line[2..5]`. `pi` is Rust's `std::f64::consts::PI`, an `f64`. `remove-at!` removes the element at an index and returns it, so `(remove-at! items 0)` emits `items.remove(0)`.
 
-`len` takes any `sequence`, a trait backed by `Sequence` in the runtime and implemented for `String`, `str`, `(vec a)`, `(slice a)`, `(sorted-map k v)` and `(hash-map k v)`. `empty?` tests the same trait. `sort!`, `sort-by-key!`, `max`, `min` and `max-by-key` take the `ord` trait, which lists the same implementors as `partial-ord`, except `f32` and `f64`. A two-argument `sort!` takes a comparator of type `(fn ((ref a) (ref a)) i64)`, which sorts as in Clojure: a negative result puts the left value first. `parse` takes a `from-str` target and returns `(result target (parse-error target))`, and emits `text.parse::<target>()`. `parse-error` names the target's Rust error from the prelude's clauses, so `(parse-error i64)` emits `std::num::ParseIntError` and a target the prelude does not state emits `<target as std::str::FromStr>::Err`. Every `parse-error` a target names implements `display` and `debug`, so `(to-string reason)` and `(prn reason)` print it.
+`len` takes any `sequence`, a trait backed by `Sequence` in the runtime and implemented for `String`, `str`, `(vec a)`, `(slice a)`, `(sorted-map k v)` and `(hash-map k v)`. `empty?` tests the same trait. `sort!`, `sort-by-key!`, `max`, `min` and `max-by-key` take the `ord` trait, which lists the same implementors as `partial-ord`, except `f32` and `f64`. A two-argument `sort!` takes a comparator of type `(fn ((ref a) (ref a)) i64)`, which sorts as in Clojure: a negative result puts the left value first. `parse` takes a `from-str` target and returns `(result target (parse-error target))`, and emits `text.parse::<target>()`. `parse-error` is the associated type `Err` of `from-str`, so `(parse-error i64)` is `parse-int-error` and emits `std::num::ParseIntError`, and `(parse-error target)` on a type parameter emits `<Target as std::str::FromStr>::Err`. The prelude exports each value of `parse-error`: `parse-bool-error`, `parse-char-error`, `infallible`, `parse-int-error` and `parse-float-error`. Every `parse-error` a target names implements `display` and `debug`, so `(to-string reason)` and `(prn reason)` print it.
 
 An iterator is lazy, as in Rust, so `(fold (range 1 1000001) 0 (fn (total n) (+ total n)))` repeats work without recursion. `(vec 1 2 3)` emits `vec![1, 2, 3]`, and `(vec)` emits `Vec::new()`.
 
@@ -367,9 +367,9 @@ A `rust` template names a type parameter of its `where` by name, as `{target}` i
 (rust-type (boxed item) "Box<{0}>")
 (def box-new (rust "Box::new({0})" (where (a) (fn (a) (boxed a)))))
 
-(rust-type (parse-error target)
-  "<{0} as std::str::FromStr>::Err"
-  (i64 "std::num::ParseIntError"))
+(rust-type (non-zero n)
+  "std::num::NonZero<{0}>"
+  (u8 "std::num::NonZeroU8"))
 ```
 
 `rust-type` is a kernel form: only `struct` creates a type, and it cannot name a type that Rust defines. A template that starts with `impl ` is opaque. A closure parameter or a `let` writes an opaque type as `_`. A `const`, a `static` or a function-type parameter cannot hold one, and rustc reports it. A struct whose Rust name equals the first name in a used Rust type's template is a name collision.
@@ -377,6 +377,21 @@ A `rust` template names a type parameter of its `where` by name, as `{target}` i
 A `rust-trait` implementor can take type parameters from a `where`. `(where ((a shown)) (ref a))` implements the trait for a reference to any type that implements it. An entry `(with type type)` gives the trait's second type: `(with string str)` means `String: PartialEq<str>`. A type parameter alone cannot be an implementor, because it would match every type. A struct can appear in a `rust-trait` only for a trait its emitted `derive` lists.
 
 A `rust-trait` path that holds `{0}` is a Rust `where` predicate, not a trait path. `(rust-trait step "std::ops::Range<{0}>: Iterator<Item = {0}>" i64 ...)` makes a bound `(n step)` emit `where std::ops::Range<N>: Iterator<Item = N>` on the function, with the type parameter in place of `{0}`. A generic caller inherits the bound. The predicate reaches function items only, not trait or impl methods.
+
+A `rust-trait` declares an associated type with `(associated (name owner) "RustName")`, and may declare several. The clause names its one parameter, the implementor, on its name, as a type definition does. Each entry then ends with one `(name type)` clause per associated type, inside a `where` whose parameters the type may use:
+
+```lisp
+(rust-type parse-int-error "std::num::ParseIntError")
+(rust-trait from-str "std::str::FromStr"
+  (associated (parse-error target) "Err")
+  (where () i64 (parse-error parse-int-error)))
+
+(rust-trait add "std::ops::Add"
+  (associated (output left) "Output")
+  (where () (with i64 i64) (output i64)))
+```
+
+The associated type is a type constructor of one argument, the implementor: `(parse-error i64)` is `parse-int-error` wherever it appears, in inference, in diagnostics and in the emitted Rust. A projection whose argument is not yet known stays a projection until inference learns it. An entry that leaves out a declared associated type, a clause that names a type the trait does not declare, and a projection on a type that does not implement the trait are errors. An associated type needs the compiler because only the compiler can replace a projection by its type during inference.
 
 | Template rule | Effect |
 |---|---|
