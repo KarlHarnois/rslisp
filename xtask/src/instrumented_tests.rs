@@ -1,9 +1,8 @@
-use std::env;
-use std::ffi::OsString;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
 
+use crate::cargo::Cargo;
 use crate::failure::GateFailure;
 use crate::lcov::LcovReport;
 
@@ -14,7 +13,6 @@ pub struct InstrumentedTests<'a> {
 impl<'a> InstrumentedTests<'a> {
     const REPORT: &'static str = "target/coverage/lcov.info";
     const UNMEASURED_PACKAGE: &'static str = "xtask";
-    const DEFAULT_CARGO: &'static str = "cargo";
     const FORGET_PREVIOUS_RUNS: [&'static str; 3] = ["llvm-cov", "clean", "--workspace"];
     const KEEP_BUILD_ARTIFACTS: &'static str = "--no-clean";
 
@@ -51,7 +49,7 @@ impl<'a> InstrumentedTests<'a> {
         &self,
         arguments: impl FnOnce(&mut Command) -> &mut Command,
     ) -> Result<(), GateFailure> {
-        let mut command = Command::new(Self::cargo_program());
+        let mut command = Cargo::command();
         command.current_dir(self.root);
         let output = arguments(&mut command)
             .output()
@@ -61,9 +59,5 @@ impl<'a> InstrumentedTests<'a> {
         } else {
             Err(GateFailure::tests_failed(&output))
         }
-    }
-
-    fn cargo_program() -> OsString {
-        env::var_os("CARGO").unwrap_or_else(|| Self::DEFAULT_CARGO.into())
     }
 }

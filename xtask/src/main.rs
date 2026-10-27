@@ -1,4 +1,5 @@
 mod badge;
+mod cargo;
 mod checks;
 mod complexity;
 mod coverage;
