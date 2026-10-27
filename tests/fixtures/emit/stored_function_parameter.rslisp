@@ -1,0 +1,18 @@
+(defstruct user :name string :age u16)
+(defstruct sorter :key (fn ((ref user)) u16) :label str)
+(enum order (ascending (fn ((ref user)) u16)) unordered)
+
+(defn age-of ((someone (ref user))) (:age someone))
+
+(defn by-key (key label) (new sorter (:key key) (:label label)))
+
+(defn rekeyed (chosen key) (assoc chosen :key key))
+
+(defn ascending (key) (order/ascending key))
+
+(defn main ()
+  (let by-age (->sorter age-of "by age"))
+  (let by-next-age (->sorter (fn (someone) (+ (:age someone) 1)) "by next age"))
+  (let by-age-again (rekeyed (by-key age-of "by age again") age-of))
+  (let oldest-last (ascending age-of))
+  (println (:label by-age) (:label by-next-age) (:label by-age-again)))

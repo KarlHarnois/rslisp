@@ -7,6 +7,7 @@ use super::mangle::NameMangler;
 use super::operator::{RustOperator, Side};
 use super::plan::{EmitPlan, ItemKind};
 use super::problems::EmitProblems;
+use super::stored_functions::StoredFunctions;
 use super::template::{Template, TemplateError};
 use super::types::{LifetimeScope, RustTypes, TypePosition};
 use super::unsized_parameters::UnsizedParameters;
@@ -169,6 +170,7 @@ pub struct ExpressionEmitter<'a> {
     pub locals: LocalNames,
     pub problems: Vec<Diagnostic>,
     mutable_locals: HashSet<BindingId>,
+    stored_functions: HashSet<BindingId>,
     tail_loop: Option<TailLoop>,
     loop_exit: LoopExit,
 }
@@ -198,6 +200,7 @@ impl<'a> ExpressionEmitter<'a> {
             locals,
             problems: Vec::new(),
             mutable_locals: HashSet::new(),
+            stored_functions: HashSet::new(),
             tail_loop: None,
             loop_exit: LoopExit::Return,
         }
@@ -205,6 +208,10 @@ impl<'a> ExpressionEmitter<'a> {
 
     pub fn prepare_tail_loop(&mut self, function: BindingId, lambda: &TypedLambda) {
         self.tail_loop = TailLoop::of(function, lambda);
+    }
+
+    pub fn prepare_stored_functions(&mut self, lambda: &TypedLambda) {
+        self.stored_functions = StoredFunctions::of(lambda);
     }
 
     pub fn with_mutable_locals(mut self, mutable_locals: HashSet<BindingId>) -> Self {
@@ -245,6 +252,11 @@ impl<'a> ExpressionEmitter<'a> {
             "mut "
         } else {
             ""
+        };
+        let position = if self.stored_functions.contains(&param.binding) {
+            TypePosition::Value
+        } else {
+            position
         };
         format!(
             "{mutable}{name}: {}",

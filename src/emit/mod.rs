@@ -12,6 +12,7 @@ mod plan;
 mod problems;
 mod runtime;
 mod signature_borrows;
+mod stored_functions;
 mod template;
 mod types;
 mod unsized_parameters;
