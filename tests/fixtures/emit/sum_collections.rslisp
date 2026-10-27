@@ -1,0 +1,10 @@
+(defstruct user :name str :age u16)
+
+(defn main ()
+  (let scores (vec 3 1 2))
+  (println (sum scores))
+  (let (prices (vec f64)) (vec 1.5 2.25 4.0))
+  (println (sum prices))
+  (let (users (vec user)) (vec (->user "ana" 34) (->user "bo" 27)))
+  (println (sum (map users :age)))
+  (println (sum (values scores))))

@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/sum_collections.rslisp
+---
+6
+7.75
+61
+6

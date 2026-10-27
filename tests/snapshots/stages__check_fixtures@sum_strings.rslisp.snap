@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/sum_strings.rslisp
+---
+error[L0404]: `string` does not implement `number`
+ --> check/sum_strings.rslisp:3:17
+  |
+3 |   (println (sum names)))
+  |                 ^^^^^ this needs `number`
+  |
+  = note: `number` is implemented for: i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64

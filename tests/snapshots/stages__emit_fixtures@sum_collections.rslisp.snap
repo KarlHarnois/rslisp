@@ -1,0 +1,70 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/sum_collections.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct User<'a> {
+    name: &'a str,
+    age: u16,
+}
+
+fn make_user(name: &str, age: u16) -> User<'_> {
+    User { name, age }
+}
+
+fn main() {
+    let scores: Vec<i64> = vec![3_i64, 1_i64, 2_i64];
+    println!("{}", crate::prelude::iterator::sum(scores.iter().copied()));
+    let prices: Vec<f64> = vec![1.5_f64, 2.25_f64, 4.0_f64];
+    println!("{}", crate::prelude::iterator::sum(prices.iter().copied()));
+    let users: Vec<User<'_>> = vec![make_user("ana", 34), make_user("bo", 27)];
+    println!(
+        "{}",
+        crate::prelude::iterator::sum(users.iter().map(|value: &User<'_>| value.age))
+    );
+    println!("{}", crate::prelude::iterator::sum(scores.iter().copied()))
+}
+
+mod prelude {
+
+    pub(crate) mod iterator {
+        pub fn sum<N: crate::rt::Number>(values: impl Iterator<Item = N>) -> N {
+            values.fold(N::from_literal(0), |argument_0: N, argument_1: N| {
+                argument_0 + argument_1
+            })
+        }
+    }
+}
+
+mod rt {
+    use std::ops::{Add, Div, Mul, Rem, Sub};
+
+    pub trait Number:
+        Copy
+        + PartialOrd
+        + Add<Output = Self>
+        + Sub<Output = Self>
+        + Mul<Output = Self>
+        + Div<Output = Self>
+        + Rem<Output = Self>
+    {
+        fn from_literal(value: i128) -> Self;
+    }
+
+    macro_rules! numbers {
+        ($($number:ty),*) => {
+            $(
+                impl Number for $number {
+                    fn from_literal(value: i128) -> Self {
+                        value as Self
+                    }
+                }
+            )*
+        };
+    }
+
+    numbers!(
+        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+    );
+}
