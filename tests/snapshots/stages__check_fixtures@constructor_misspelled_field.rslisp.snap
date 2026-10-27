@@ -3,10 +3,13 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/constructor_misspelled_field.rslisp
 ---
-error[L0301]: `->car` takes 4 arguments, one per field, or a `:field value` pair for each field without a default
- --> check/constructor_misspelled_field.rslisp:4:13
+error[L0408]: `car` has no field `:mak`
+ --> check/constructor_misspelled_field.rslisp:4:20
   |
 4 |   (let leaf (->car :mak "Nissan" :model "Leaf" :year 2024 :electric? true))
-  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+  |                    ^^^^ unknown field
   |
-  = help: write it as `(->car make model year electric?)`
+help: a field with a similar name exists
+  |
+4 |   (let leaf (->car :make "Nissan" :model "Leaf" :year 2024 :electric? true))
+  |                        +

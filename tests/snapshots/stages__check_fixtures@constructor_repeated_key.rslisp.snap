@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/constructor_repeated_key.rslisp
+---
+error[L0301]: `->user` takes 3 arguments, one per field, or a `:field value` pair for each field without a default
+ --> check/constructor_repeated_key.rslisp:4:12
+  |
+4 |   (let ana (->user :name "ana" :name "bea" :email "ana@example.com"))
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+  |
+  = help: write it as `(->user name email admin?)`
