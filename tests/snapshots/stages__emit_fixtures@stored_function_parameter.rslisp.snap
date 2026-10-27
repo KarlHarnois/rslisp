@@ -1,0 +1,53 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/stored_function_parameter.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct User {
+    name: String,
+    age: u16,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Sorter<'a> {
+    key: fn(&User) -> u16,
+    label: &'a str,
+}
+
+fn make_sorter(key: fn(&User) -> u16, label: &str) -> Sorter<'_> {
+    Sorter { key, label }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Order {
+    Ascending(fn(&User) -> u16),
+    Unordered,
+}
+
+fn age_of(someone: &User) -> u16 {
+    someone.age
+}
+
+fn by_key(key: fn(&User) -> u16, label: &str) -> Sorter<'_> {
+    Sorter { key, label }
+}
+
+fn rekeyed(chosen: Sorter<'_>, key: fn(&User) -> u16) -> Sorter<'_> {
+    Sorter { key, ..chosen }
+}
+
+fn ascending(key: fn(&User) -> u16) -> Order {
+    Order::Ascending(key)
+}
+
+fn main() {
+    let by_age = make_sorter(age_of, "by age");
+    let by_next_age = make_sorter(|someone: &User| someone.age + 1, "by next age");
+    let by_age_again = rekeyed(by_key(age_of, "by age again"), age_of);
+    let oldest_last = ascending(age_of);
+    println!(
+        "{}{}{}",
+        by_age.label, by_next_age.label, by_age_again.label
+    )
+}
