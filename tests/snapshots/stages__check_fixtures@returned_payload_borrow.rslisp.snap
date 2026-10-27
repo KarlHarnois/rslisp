@@ -11,4 +11,4 @@ error[L0510]: cannot return a borrow of a local value
 5 |   (label/named (as-str text)))
   |                ^^^^^^^^^^^^^ this borrows a local value
   |
-  = help: the `named` payload of `label` borrows its data, so declare it `(named string)` to own it
+  = help: the `named` payload of `label` borrows its data, so give it the owned type `string`

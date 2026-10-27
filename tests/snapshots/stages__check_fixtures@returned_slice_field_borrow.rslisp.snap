@@ -6,9 +6,12 @@ input_file: tests/fixtures/check/returned_slice_field_borrow.rslisp
 error[L0510]: cannot return a borrow of a local value
  --> check/returned_slice_field_borrow.rslisp:5:34
   |
+1 | (defstruct report :title (ref str) :scores (slice i64))
+  |                                            ----------- declared as a borrow here
+...
 4 |   (let scores (vec 3 1 2))
   |        ------ this local is dropped when the function returns
 5 |   (->report :title title :scores (ref scores)))
   |                                  ^^^^^^^^^^^^ this borrows a local value
   |
-  = help: the field `:scores` of `report` borrows its data, so declare it `:scores (vec i64)` to own it
+  = help: the field `scores` of `report` borrows its data, so give it the owned type `(vec i64)`

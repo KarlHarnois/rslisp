@@ -1,11 +1,11 @@
 use super::problems::{BorrowedStorage, OwnershipProblems};
-use crate::core::{BindingId, BindingKind, FieldLabel, FieldSpelling, PrimitiveType, VariantInfo};
+use crate::core::{BindingId, BindingKind, FieldLabel, PrimitiveType, VariantInfo};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
     Borrow, Lifetime, RustType, Type, TypeDisplay, TypedArgument, TypedBinder, TypedBlock,
     TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedProgram,
-    TypedStructExpr, VariantDefinition, VariantPayload,
+    TypedStructExpr, VariantPayload,
 };
 
 pub struct ReturnedBorrows<'p> {
@@ -35,20 +35,18 @@ impl<'p> ReturnedBorrows<'p> {
     }
 
     fn field_storage(&self, owner: BindingId, label: &FieldLabel) -> Option<BorrowedStorage> {
-        let declared = self.program.structs.get(owner)?.field(&label.name)?;
-        let owned = self.owned(declared)?;
+        let definition = self.program.structs.get(owner)?;
+        let index = definition
+            .fields
+            .iter()
+            .position(|(name, _)| name.as_ref() == label.name.as_ref())?;
+        let owned = self.owned(&definition.fields[index].1)?;
         Some(BorrowedStorage::Field {
-            field: label.spelled(&label.name),
+            field: label.name.to_string(),
             owner: self.name(owner),
-            declaration: Self::field_declaration(label, &owned),
+            owned,
+            declared: *definition.field_spans.get(index)?,
         })
-    }
-
-    fn field_declaration(label: &FieldLabel, owned: &str) -> String {
-        match label.spelling {
-            FieldSpelling::Bare => format!("({} {owned})", label.name),
-            FieldSpelling::Keyword => format!("{} {owned}", label.spelled(&label.name)),
-        }
     }
 
     fn payload_storage(&self, variant: BindingId, position: usize) -> Option<BorrowedStorage> {
@@ -58,30 +56,15 @@ impl<'p> ReturnedBorrows<'p> {
             return None;
         };
         let definition = self.program.enums.get(owner)?.variants.get(index)?;
-        Some(BorrowedStorage::Payload {
-            variant: definition.name.to_string(),
-            owner: self.name(owner),
-            declaration: self.payload_declaration(definition, position)?,
-        })
-    }
-
-    fn payload_declaration(&self, variant: &VariantDefinition, position: usize) -> Option<String> {
-        let VariantPayload::Positional(payloads) = &variant.payload else {
+        let VariantPayload::Positional(payloads) = &definition.payload else {
             return None;
         };
         let owned = self.owned(payloads.get(position)?)?;
-        let shown: Vec<String> = payloads
-            .iter()
-            .enumerate()
-            .map(|(each, payload)| {
-                if each == position {
-                    owned.clone()
-                } else {
-                    self.display().show(payload)
-                }
-            })
-            .collect();
-        Some(format!("({} {})", variant.name, shown.join(" ")))
+        Some(BorrowedStorage::Payload {
+            variant: definition.name.to_string(),
+            owner: self.name(owner),
+            owned,
+        })
     }
 
     fn owned(&self, declared: &Type) -> Option<String> {
