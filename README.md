@@ -1,5 +1,8 @@
 # rslisp
 
+> [!WARNING]
+> **`rslisp` is a placeholder name.** The language has no name yet. The name `rslisp` and the `.rslisp` extension will change. The language is experimental: expect breaking changes to the syntax, the prelude and the command line in any commit.
+
 ![line coverage](https://img.shields.io/badge/line%20coverage-99%25-brightgreen)
 
 rslisp is a small Lisp that compiles to Rust. The syntax has few rules, and the compiler infers types and ownership. Most features live in a prelude written in the language itself. The generated Rust has no hidden clones or allocations. [docs/language.md](docs/language.md) describes the language.
@@ -8,10 +11,6 @@ rslisp is a small Lisp that compiles to Rust. The syntax has few rules, and the 
 (defn main ()
   (println (str "hello" " " "world")))
 ```
-
-## Status
-
-The language is experimental and has no name yet. The name `rslisp` and the `.rslisp` extension are placeholders, and both will change. Expect breaking changes to the syntax, the prelude and the command line in any commit.
 
 ## Set up
 
