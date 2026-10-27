@@ -5,7 +5,7 @@
 
 (type build-matched (fn ((fn ((ref str) u16) car) (option u16)) car))
 (defn build-matched (constructor year)
-  (constructor (match year ((some found) "Leaf") (none "Nissan")) 2024))
+  (constructor (match year ((some _) "Leaf") (none "Nissan")) 2024))
 
 (type build-alias (fn ((fn ((ref str) u16) car)) car))
 (defn build-alias (constructor)
