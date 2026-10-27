@@ -1,5 +1,4 @@
 use std::collections::BTreeSet;
-use std::fmt;
 
 use super::cost::Cost;
 use super::measurement::Measurement;
@@ -22,6 +21,8 @@ impl<'a> Comparison<'a> {
         "Estimated cycles after",
         "Change",
     ];
+
+    const LARGEST_CHANGES: usize = 20;
 
     pub fn new(baseline: &'a ResultSet, candidate: &'a ResultSet) -> Self {
         Self {
@@ -66,48 +67,80 @@ impl<'a> Comparison<'a> {
         }
     }
 
-    fn write_summary(
-        formatter: &mut fmt::Formatter<'_>,
-        programs: &[ProgramComparison],
-    ) -> fmt::Result {
-        let notes: Vec<String> = programs.iter().flat_map(ProgramComparison::notes).collect();
-        if notes.is_empty() {
-            return writeln!(
-                formatter,
-                "No stage of any program rose by more than {}%.",
-                Change::NOTABLE_RISE_PERCENT
-            );
-        }
-        writeln!(
-            formatter,
-            "These stages rose by more than {}%, or could not be compared:\n",
-            Change::NOTABLE_RISE_PERCENT
-        )?;
-        notes
-            .iter()
-            .try_for_each(|note| writeln!(formatter, "- {note}"))
-    }
-
-    fn table(programs: &[ProgramComparison]) -> MarkdownTable {
-        let mut table = MarkdownTable::new(&Self::HEADER);
-        programs
-            .iter()
-            .flat_map(ProgramComparison::rows)
-            .for_each(|row| table.push(row));
-        table
-    }
-}
-
-impl fmt::Display for Comparison<'_> {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+    pub fn full_report(&self) -> String {
         let programs = self.programs();
-        Self::write_summary(formatter, &programs)?;
-        write!(
-            formatter,
-            "\n<details><summary>Every stage of every program</summary>\n\n{}\n</details>\n\n{}",
-            Self::table(&programs),
+        let rows = programs.iter().flat_map(ProgramComparison::rows);
+        format!(
+            "{}\n<details><summary>Every stage of every program</summary>\n\n{}\n</details>\n\n{}",
+            Self::list_notes(&programs),
+            Self::table(rows),
             Measurement::method()
         )
+    }
+
+    pub fn brief_report(&self) -> String {
+        let programs = self.programs();
+        format!(
+            "{}\n{}\n{}",
+            Self::count_notes(&programs),
+            Self::largest_changes(&programs),
+            Measurement::method()
+        )
+    }
+
+    fn list_notes(programs: &[ProgramComparison]) -> String {
+        let notes: Vec<String> = programs.iter().flat_map(ProgramComparison::notes).collect();
+        if notes.is_empty() {
+            return Self::no_notable_rise();
+        }
+        let list: String = notes.iter().map(|note| format!("- {note}\n")).collect();
+        format!(
+            "These stages rose by more than {}%, or could not be compared:\n\n{list}",
+            Change::NOTABLE_RISE_PERCENT
+        )
+    }
+
+    fn count_notes(programs: &[ProgramComparison]) -> String {
+        let count: usize = programs.iter().map(|program| program.notes().len()).sum();
+        if count == 0 {
+            return Self::no_notable_rise();
+        }
+        format!(
+            "{count} stages rose by more than {}%, or could not be compared.\n",
+            Change::NOTABLE_RISE_PERCENT
+        )
+    }
+
+    fn no_notable_rise() -> String {
+        format!(
+            "No stage of any program rose by more than {}%.\n",
+            Change::NOTABLE_RISE_PERCENT
+        )
+    }
+
+    fn largest_changes(programs: &[ProgramComparison]) -> String {
+        let mut changed: Vec<&StageChange> = programs
+            .iter()
+            .flat_map(ProgramComparison::stages)
+            .filter(|stage| stage.magnitude() > 0.0)
+            .collect();
+        if changed.is_empty() {
+            return "No count changed.\n".to_string();
+        }
+        changed.sort_by(|left, right| right.magnitude().total_cmp(&left.magnitude()));
+        let shown = changed.len().min(Self::LARGEST_CHANGES);
+        let rows = changed.iter().take(shown).map(|stage| stage.row());
+        format!(
+            "The {shown} largest of {} changes:\n\n{}",
+            changed.len(),
+            Self::table(rows)
+        )
+    }
+
+    fn table(rows: impl Iterator<Item = Vec<String>>) -> MarkdownTable {
+        let mut table = MarkdownTable::new(&Self::HEADER);
+        rows.for_each(|row| table.push(row));
+        table
     }
 }
 
@@ -130,6 +163,13 @@ impl ProgramComparison<'_> {
             Self::Unmeasured { program, side } => {
                 vec![format!("`{program}` was not measured {side}")]
             }
+        }
+    }
+
+    fn stages(&self) -> &[StageChange<'_>] {
+        match self {
+            Self::Measured(stages) => stages,
+            Self::Unmeasured { .. } => &[],
         }
     }
 
@@ -175,6 +215,12 @@ impl<'a> StageChange<'a> {
 
     fn rises_notably(&self) -> bool {
         self.instructions.rises_notably() || self.estimated_cycles.rises_notably()
+    }
+
+    fn magnitude(&self) -> f64 {
+        self.instructions
+            .magnitude()
+            .max(self.estimated_cycles.magnitude())
     }
 
     fn note(&self) -> String {
@@ -226,6 +272,14 @@ impl Change {
             .is_some_and(|percent| percent > Self::NOTABLE_RISE_PERCENT)
     }
 
+    fn magnitude(&self) -> f64 {
+        match self.ratio() {
+            Some(percent) => percent.abs(),
+            None if self.after == 0 => 0.0,
+            None => f64::INFINITY,
+        }
+    }
+
     fn percent(&self) -> String {
         match self.ratio() {
             Some(percent) => format!("{percent:+.2}%"),
@@ -264,7 +318,11 @@ mod tests {
         }
 
         fn report(before: &ResultSet, after: &ResultSet) -> String {
-            Comparison::new(before, after).to_string()
+            Comparison::new(before, after).full_report()
+        }
+
+        fn brief(before: &ResultSet, after: &ResultSet) -> String {
+            Comparison::new(before, after).brief_report()
         }
     }
 
@@ -297,6 +355,28 @@ mod tests {
         let results = ResultSet::new(vec![]);
         let report = ComparisonFixture::report(&results, &results);
         assert!(report.starts_with("No stage of any program rose by more than 1%."));
+    }
+
+    #[test]
+    fn brief_report_counts_the_notes_and_ranks_the_changes() {
+        let before = ComparisonFixture::results(1000, 2000);
+        let after = ComparisonFixture::results(1020, 2010);
+        let report = ComparisonFixture::brief(&before, &after);
+        assert!(report.starts_with(
+            "2 stages rose by more than 1%, or could not be compared.\n\n\
+             The 3 largest of 3 changes:\n"
+        ));
+        let expand = report.find("| inventory | expand |").unwrap();
+        let total = report.find("| inventory | total |").unwrap();
+        assert!(expand < total);
+        assert!(!report.contains("orders"));
+    }
+
+    #[test]
+    fn brief_report_says_when_no_count_changed() {
+        let results = ComparisonFixture::results(1000, 2000);
+        let report = ComparisonFixture::brief(&results, &results);
+        assert!(report.contains("No count changed.\n"));
     }
 
     #[test]
