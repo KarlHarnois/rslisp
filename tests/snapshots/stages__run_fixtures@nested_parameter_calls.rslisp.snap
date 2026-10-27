@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/nested_parameter_calls.rslisp
+---
+3
+4
+3
+3
+21
+true
+3
+5

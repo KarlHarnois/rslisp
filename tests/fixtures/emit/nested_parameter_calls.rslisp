@@ -1,0 +1,23 @@
+(type twice (fn ((fn (i64) i64) i64) i64))
+(defn twice (f x) (f (f x)))
+
+(type around (fn ((fn (i64) i64) (fn (i64) i64) i64) i64))
+(defn around (f g x) (f (g (f x))))
+
+(type both-positive? (fn ((fn (i64) bool) i64) bool))
+(defn both-positive? (f x) (f (if (and (f x) (f (+ x 1))) 1 0)))
+
+(type inc (fn (i64) i64))
+(defn inc (n) (+ n 1))
+
+(defn main ()
+  (println (twice inc 1))
+  (println (twice (fn (n) (* n 2)) 1))
+  (let calls (vec 1))
+  (println (twice (fn (n) (do (push! calls n) (+ n 1))) 1))
+  (println (len calls))
+  (println (around inc (fn (n) (* n 10)) 1))
+  (println (both-positive? (fn (n) (> n 0)) 1))
+  (let record (fn (n) (do (push! calls n) (+ n 1))))
+  (println (record (record 1)))
+  (println (len calls)))
