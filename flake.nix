@@ -38,6 +38,7 @@
           pkgs.cargo-insta
           pkgs.nixfmt
           pkgs.rust-analyzer
+          pkgs.sccache
         ];
 
       cratePackage = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package;
@@ -133,6 +134,7 @@
         default = pkgs.mkShell (
           {
             packages = developmentPackages pkgs;
+            RUSTC_WRAPPER = pkgs.lib.getExe pkgs.sccache;
             shellHook = ''
               if [[ -z ''${CI:-} ]]; then
                 export CARGO_BUILD_JOBS=''${CARGO_BUILD_JOBS:-2}
