@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::core::{BindingId, Builtin, Lambda};
+use crate::core::{BindingId, Builtin, Keyword, Lambda};
 use crate::reader::{Form, FormKind, NumberValue};
 
 #[derive(Clone, Debug)]
@@ -39,6 +39,12 @@ impl Value {
             Value::Form(form) => Some(form),
             _ => None,
         }
+    }
+
+    pub fn keyword_name(&self) -> Option<&str> {
+        self.as_form()
+            .and_then(Form::as_symbol)
+            .and_then(|symbol| Keyword::field_name(symbol.name()))
     }
 }
 
