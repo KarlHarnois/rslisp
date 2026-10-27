@@ -159,6 +159,11 @@
         default = pkgs.mkShell (
           {
             packages = developmentPackages pkgs;
+            shellHook = ''
+              if [[ -z ''${CI:-} ]]; then
+                export CARGO_BUILD_JOBS=''${CARGO_BUILD_JOBS:-2}
+              fi
+            '';
           }
           // coverageTools pkgs
         );
