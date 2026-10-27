@@ -18,6 +18,6 @@ fn main() {
         callback: |value: i64| value,
         tag: 1,
     };
-    keep(&handler.callback);
+    keep(handler.callback);
     keep(handler.tag);
 }

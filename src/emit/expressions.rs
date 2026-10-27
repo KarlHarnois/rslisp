@@ -1655,8 +1655,12 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn call_code(&mut self, callee: &TypedExpr, arguments: Vec<Code>) -> Code {
+        let reads_field = matches!(
+            callee.kind,
+            TypedExprKind::Struct(TypedStructExpr::Field(..))
+        );
         let callee = self.expr(callee);
-        let callee = if callee.is_atomic() {
+        let callee = if callee.is_atomic() && !reads_field {
             callee
         } else {
             callee.parenthesized()
