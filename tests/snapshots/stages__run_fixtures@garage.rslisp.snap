@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/garage.rslisp
+---
+karl's garage:
+2024 Nissan Leaf (electric)
+2019 Honda Civic
+2021 Volkswagen Golf
+2020 Honda Civic
+newest: 2024

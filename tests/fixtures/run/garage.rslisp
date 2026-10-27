@@ -1,0 +1,25 @@
+(defstruct car
+  (make (ref str))
+  (model (ref str))
+  (year u16)
+  (electric? bool))
+
+(defstruct garage
+  (owner (ref str))
+  (cars (vec car)))
+
+(defn describe (vehicle)
+  (str (car-year vehicle) " " (car-make vehicle) " " (car-model vehicle)
+       (if (car-electric? vehicle) " (electric)" "")))
+
+(defn main ()
+  (let leaf (make-car "Nissan" "Leaf" 2024 true))
+  (let civic (make-car "Honda" "Civic" 2019 false))
+  (let build make-car)
+  (let golf (build "Volkswagen" "Golf" 2021 false))
+  (let mine (make-garage "karl" (vec leaf civic golf)))
+  (println (garage-owner mine) "'s garage:")
+  (for-each (iter (garage-cars mine)) (fn (vehicle) (println (describe vehicle))))
+  (println (describe (assoc civic (year 2020))))
+  (let newest (max (map (iter (garage-cars mine)) car-year)))
+  (println "newest: " (unwrap newest)))
