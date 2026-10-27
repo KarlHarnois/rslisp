@@ -391,7 +391,7 @@ A `rust-trait` declares an associated type with `(associated (name owner) "RustN
   (where () (with i64 i64) (output i64)))
 ```
 
-The associated type is a type constructor of one argument, the implementor: `(parse-error i64)` is `parse-int-error` wherever it appears, in inference, in diagnostics and in the emitted Rust. A projection whose argument is not yet known stays a projection until inference learns it. An entry that leaves out a declared associated type, a clause that names a type the trait does not declare, and a projection on a type that does not implement the trait are errors. An associated type needs the compiler because only the compiler can replace a projection by its type during inference.
+The associated type is a type constructor of one argument, the implementor: `(parse-error i64)` is `parse-int-error` wherever it appears, in inference, in diagnostics and in the emitted Rust. A projection whose argument is not yet known stays a projection until inference learns it. A projection on a type parameter stays a projection and emits Rust's qualified form with the parameter's bound, so `(output a)` under `(a (add i64))` emits `<A as std::ops::Add<i64>>::Output`. The parameter's `where` must bind the trait. An entry that leaves out a declared associated type, a clause that names a type the trait does not declare, and a projection on a type that does not implement the trait are errors. An associated type needs the compiler because only the compiler can replace a projection by its type during inference.
 
 | Template rule | Effect |
 |---|---|

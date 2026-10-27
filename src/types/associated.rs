@@ -1,8 +1,8 @@
 use super::checker::TypeChecker;
-use super::problems::{MismatchContext, TypeProblems};
+use super::problems::{MismatchContext, ProjectionNames, TypeProblems};
 use super::projection::AssociatedType;
 use super::traits::Implementor;
-use super::ty::Type;
+use super::ty::{GenericId, Type};
 use super::unifier::DeferredEquality;
 use crate::core::{BindingId, CoreModule, ItemKind, RustTraitDeclaration, RustTraitImplementor};
 use crate::diagnostic::Diagnostic;
@@ -134,19 +134,34 @@ impl TypeChecker {
         };
         let owner = &arguments[0];
         let projections = self.traits.projections();
-        if owner.is_unknown() || projections.normalize(&written.projected).is_some() {
-            return Ok(());
-        }
         let trait_binding = projections
             .associated(*projection)
             .expect("a written projection names a declared associated type")
             .trait_binding;
-        Err(TypeProblems::projection_without_implementor(
-            self.bindings.get(*projection).name(),
-            self.bindings.get(trait_binding).name(),
-            &self.display().show(owner),
-            written.span,
-        ))
+        let names = ProjectionNames {
+            projection: self.bindings.get(*projection).name(),
+            trait_name: self.bindings.get(trait_binding).name(),
+            owner: &self.display().show(owner),
+        };
+        match owner {
+            Type::Generic(generic) if !self.generic_implements(*generic, trait_binding) => {
+                Err(TypeProblems::projection_without_bound(&names, written.span))
+            }
+            _ if owner.is_unknown() || projections.normalize(&written.projected).is_some() => {
+                Ok(())
+            }
+            _ => Err(TypeProblems::projection_without_implementor(
+                &names,
+                written.span,
+            )),
+        }
+    }
+
+    fn generic_implements(&self, generic: GenericId, trait_binding: BindingId) -> bool {
+        self.unifier
+            .generic_bounds(generic)
+            .iter()
+            .any(|bound| bound.binding == trait_binding)
     }
 
     pub(super) fn recheck_deferred_equalities(&mut self) {

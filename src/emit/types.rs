@@ -425,12 +425,28 @@ impl<'a> RustTypes<'a> {
         let associated = projections
             .associated(binding)
             .expect("a projection names a declared associated type");
+        let owner = &arguments[0];
+        let trait_path = self
+            .owner_bound(owner, associated.trait_binding)
+            .and_then(|bound| self.trait_path(bound))
+            .unwrap_or_else(|| self.plan.trait_path(associated.trait_binding, self.module));
         format!(
-            "<{} as {}>::{}",
-            self.show_in(&arguments[0], Self::inner(position), scope),
-            self.plan.trait_path(associated.trait_binding, self.module),
+            "<{} as {trait_path}>::{}",
+            self.show_in(owner, Self::inner(position), scope),
             associated.rust_name
         )
+    }
+
+    fn owner_bound(&self, owner: &Type, trait_binding: BindingId) -> Option<&Bound> {
+        let Type::Generic(generic) = owner else {
+            return None;
+        };
+        self.program
+            .generics
+            .get(generic)?
+            .bounds
+            .iter()
+            .find(|bound| bound.binding == trait_binding)
     }
 
     fn rust_type(
