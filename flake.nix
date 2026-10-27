@@ -26,7 +26,8 @@
         pkgs.nixfmt
       ];
 
-      crateVersion = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package.version;
+      cratePackage = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package;
+      crateVersion = cratePackage.version;
 
       coverageTools = pkgs: {
         LLVM_COV = "${pkgs.rustc.llvmPackages.llvm}/bin/llvm-cov";
@@ -116,6 +117,7 @@
           meta = {
             description = "A minimal Lisp that compiles to Rust";
             mainProgram = "rslisp";
+            license = pkgs.lib.getLicenseFromSpdxId cratePackage.license;
             platforms = supportedSystems;
           };
         };
