@@ -1,0 +1,46 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/view_fields.rslisp
+---
+#[derive(Clone, Copy)]
+struct Tag<'a> {
+    name: &'a str,
+    scores: &'a [i64],
+}
+
+fn make_tag<'a>(name: &'a str, scores: &'a [i64]) -> Tag<'a> {
+    Tag { name, scores }
+}
+
+fn tag_name<'a>(instance: &'a Tag<'a>) -> &'a str {
+    instance.name
+}
+
+fn tag_scores<'a>(instance: &'a Tag<'a>) -> &'a [i64] {
+    instance.scores
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Label<'a> {
+    Named(&'a str),
+    Blank,
+}
+
+fn describe(item: Label<'_>) -> &str {
+    match item {
+        Label::Named(text) => text,
+        Label::Blank => "blank",
+    }
+}
+
+fn main() {
+    let numbers: Vec<i64> = vec![3_i64, 4_i64];
+    let fruit = make_tag("fruit", &numbers);
+    println!("{} {}", tag_name(&fruit), tag_scores(&fruit).len());
+    println!(
+        "{} {}",
+        describe(Label::Named("apple")),
+        describe(Label::Blank)
+    )
+}

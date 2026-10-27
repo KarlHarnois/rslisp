@@ -1371,7 +1371,7 @@ impl TypeChecker {
                 VariantPayload::Positional(
                     types
                         .iter()
-                        .map(|payload| self.lower_type(payload, scope))
+                        .map(|payload| self.lower_stored_type(payload, scope))
                         .collect::<Result<Vec<_>, Diagnostic>>()?,
                 ),
                 types.iter().map(TypeExpr::span).collect(),
@@ -1381,7 +1381,10 @@ impl TypeChecker {
                     fields
                         .iter()
                         .map(|(label, field_type)| {
-                            Ok((label.name.clone(), self.lower_type(field_type, scope)?))
+                            Ok((
+                                label.name.clone(),
+                                self.lower_stored_type(field_type, scope)?,
+                            ))
                         })
                         .collect::<Result<Vec<_>, Diagnostic>>()?,
                 ),
@@ -1434,10 +1437,26 @@ impl TypeChecker {
         let mut lowered = Vec::new();
         let mut spans = Vec::new();
         for (label, field_type) in fields {
-            lowered.push((label.name.clone(), self.lower_type(field_type, scope)?));
+            lowered.push((
+                label.name.clone(),
+                self.lower_stored_type(field_type, scope)?,
+            ));
             spans.push(field_type.span());
         }
         Ok((lowered, spans))
+    }
+
+    fn lower_stored_type(
+        &mut self,
+        stored_type: &TypeExpr,
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<Type, Diagnostic> {
+        let lowered = self.lower_type(stored_type, scope)?;
+        Ok(if Self::is_unsized_type(&self.rust_types, &lowered) {
+            Type::shared(lowered)
+        } else {
+            lowered
+        })
     }
 
     fn collect_rust_type(
@@ -1910,7 +1929,7 @@ impl TypeChecker {
         span: Span,
         methods: &[crate::core::ImplMethod],
     ) {
-        if !Self::is_unsized_implementor(&self.rust_types, implementor) {
+        if !Self::is_unsized_type(&self.rust_types, implementor) {
             return;
         }
         for method in methods {
@@ -1959,7 +1978,7 @@ impl TypeChecker {
         )
     }
 
-    fn is_unsized_implementor(rust_types: &RustTypeTable, implementor: &Type) -> bool {
+    fn is_unsized_type(rust_types: &RustTypeTable, implementor: &Type) -> bool {
         match implementor {
             Type::Primitive(PrimitiveType::Str) => true,
             Type::Named(binding, _) => rust_types.is_slice(*binding),
