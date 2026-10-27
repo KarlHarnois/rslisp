@@ -644,11 +644,16 @@ impl TypeProblems {
     }
 
     pub fn missing_fields(struct_name: &str, missing: &[Rc<str>], span: Span) -> Diagnostic {
+        let noun = if missing.len() == 1 {
+            "field"
+        } else {
+            "fields"
+        };
         let names: Vec<String> = missing.iter().map(|field| format!("`{field}`")).collect();
         Diagnostic::error(
             DiagnosticCode::MISSING_FIELDS,
-            format!("missing fields {} in `{struct_name}`", names.join(", ")),
-            Label::new(span, "every field needs a value"),
+            format!("missing {noun} {} in `{struct_name}`", names.join(", ")),
+            Label::new(span, "each missing field needs a value"),
         )
     }
 
@@ -662,7 +667,7 @@ impl TypeProblems {
 
     pub fn struct_base_help() -> String {
         format!(
-            "update a field with a keyword, as in (assoc value {}field new)",
+            "a struct is not a collection, so update a field with a keyword key, such as `{}field`",
             Keyword::MARKER
         )
     }

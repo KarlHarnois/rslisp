@@ -3,14 +3,13 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/keyword_field_span.rslisp
 ---
-error[L0408]: `car` has no field `yer`
-  --> check/keyword_field_span.rslisp:11:36
+error[L0408]: `car` has no field `:yer`
+  --> check/keyword_field_span.rslisp:10:36
    |
-11 |   (println (:year (with-field leaf :yer 2025))))
+10 |   (println (:year (with-field leaf :yer 2025))))
    |                                    ^^^^ unknown field
    |
 help: a field with a similar name exists
    |
-11 -   (println (:year (with-field leaf :yer 2025))))
-11 +   (println (:year (with-field leaf year 2025))))
-   |
+10 |   (println (:year (with-field leaf :year 2025))))
+   |                                       +

@@ -1,10 +1,9 @@
 (use prelude/macros defmacro template)
-(use code keyword-field)
 
 (defstruct car :model str :year u16)
 
 (defmacro with-field (value key item)
-  (template (new _ (unquote value) ((unquote (keyword-field key)) (unquote item)))))
+  (template (new _ (unquote value) ((unquote key) (unquote item)))))
 
 (defn main ()
   (let leaf (->car "Leaf" 2024))
