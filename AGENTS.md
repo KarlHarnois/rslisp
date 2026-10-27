@@ -149,6 +149,8 @@ nix develop -c cargo test <narrowest test>
 
 - To run one fixture of a stage, prefix the stage's command with `INSTA_GLOB_FILTER='**/<fixture file name>'`.
 
+**If a change can alter the compiler's speed, measure the front end on Linux with `nix develop -c cargo xtask bench measure`.** To compare two checkouts, measure each with `--workspace <checkout> --save <file>`, then run `nix develop -c cargo xtask bench compare <before> <after>`.
+
 **NEVER run these commands locally:** each compiles the whole suite or rebuilds everything on all cores, and CI runs them.
 
 - `cargo test` without a test target
