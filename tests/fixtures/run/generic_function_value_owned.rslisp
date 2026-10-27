@@ -1,0 +1,5 @@
+(defn label ((name string) (count u16)) (str name count))
+(defn apply-two (f a b) (f a b))
+(defn main ()
+  (let count 3)
+  (println (apply-two label (to-string "Leaf") count)))

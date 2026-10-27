@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/generic_function_value_changed.rslisp
+---
+fn change(items: &mut Vec<i64>) -> usize {
+    items.push(1);
+    items.len()
+}
+
+fn apply_one(f: impl FnOnce(Vec<i64>) -> usize, a: Vec<i64>) -> usize {
+    f(a)
+}
+
+fn main() {
+    println!(
+        "{}",
+        apply_one(|mut argument: Vec<i64>| change(&mut argument), Vec::new())
+    )
+}

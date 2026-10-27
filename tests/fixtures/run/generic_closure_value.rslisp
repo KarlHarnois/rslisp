@@ -1,0 +1,2 @@
+(defn apply-one (f a) (f a))
+(defn main () (println (apply-one (fn (x) (+ x 1)) 41)))
