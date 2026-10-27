@@ -1,16 +1,19 @@
 use std::collections::HashMap;
 
+use super::associated::LoweredAssociatedValue;
 use super::checker::TypeChecker;
 use super::problems::TypeProblems;
 use super::traits::Implementor;
 use super::ty::{Bound, GenericId, GenericParam, Lifetime, Scheme, Type};
 use crate::core::ClosureKind;
 use crate::core::{
-    BindingId, BindingKind, ReferenceKind, TypeBinder, TypeBound, TypeExpr, TypeExprKind,
+    AssociatedValue, BindingId, BindingKind, ReferenceKind, RustTraitImplementor, TypeBinder,
+    TypeBound, TypeExpr, TypeExprKind,
 };
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 
+#[derive(Default)]
 struct LoweredBinders {
     lifetimes: Vec<BindingId>,
     params: Vec<GenericParam>,
@@ -34,32 +37,51 @@ impl TypeChecker {
 
     pub(super) fn lower_implementor(
         &mut self,
-        implementor: &TypeExpr,
+        entry: &RustTraitImplementor,
         trait_name: &str,
-    ) -> Result<Implementor, Diagnostic> {
+    ) -> Result<(Implementor, Vec<LoweredAssociatedValue>), Diagnostic> {
+        let implementor = &entry.implementor;
+        let binders = match implementor.kind() {
+            TypeExprKind::Where(binders, _) => self.lower_binders(binders)?,
+            _ => LoweredBinders::default(),
+        };
+        let (body, argument) =
+            self.lower_implementor_body(Self::where_body(implementor), &binders.scope)?;
+        Self::reject_bare_implementor(&body, implementor.span(), trait_name)?;
+        let values = self.lower_associated_values(&entry.associated, &binders.scope)?;
+        let lowered = Implementor {
+            scheme: Scheme {
+                lifetimes: binders.lifetimes,
+                params: binders.params,
+                body,
+            },
+            argument,
+        };
+        Ok((lowered, values))
+    }
+
+    fn where_body(implementor: &TypeExpr) -> &TypeExpr {
         match implementor.kind() {
-            TypeExprKind::Where(binders, inner) => {
-                let binders = self.lower_binders(binders)?;
-                let (body, argument) = self.lower_implementor_body(inner, &binders.scope)?;
-                Self::reject_bare_implementor(&body, implementor.span(), trait_name)?;
-                Ok(Implementor {
-                    scheme: Scheme {
-                        lifetimes: binders.lifetimes,
-                        params: binders.params,
-                        body,
-                    },
-                    argument,
-                })
-            }
-            _ => {
-                let (body, argument) = self.lower_implementor_body(implementor, &HashMap::new())?;
-                Self::reject_bare_implementor(&body, implementor.span(), trait_name)?;
-                Ok(Implementor {
-                    scheme: Scheme::monomorphic(body),
-                    argument,
-                })
-            }
+            TypeExprKind::Where(_, inner) => inner,
+            _ => implementor,
         }
+    }
+
+    fn lower_associated_values(
+        &mut self,
+        values: &[AssociatedValue],
+        scope: &HashMap<BindingId, GenericId>,
+    ) -> Result<Vec<LoweredAssociatedValue>, Diagnostic> {
+        values
+            .iter()
+            .map(|associated| {
+                Ok(LoweredAssociatedValue {
+                    projection: associated.binding,
+                    value: self.lower_type(&associated.value, scope)?,
+                    span: associated.span,
+                })
+            })
+            .collect()
     }
 
     fn lower_implementor_body(
@@ -289,7 +311,9 @@ impl TypeChecker {
     ) -> Result<Type, Diagnostic> {
         self.check_type_argument_count(binding, arguments.len(), span)?;
         let arguments = self.lower_named_arguments(binding, arguments, scope)?;
-        Ok(self.apply_named(binding, arguments, scope))
+        let lowered = self.apply_named(binding, arguments, scope);
+        self.record_written_projection(&lowered, span);
+        Ok(lowered)
     }
 
     fn lower_named_arguments(

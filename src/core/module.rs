@@ -45,6 +45,27 @@ pub struct Item {
 
 pub const RUST_TRAIT_METHOD_MARKER: &str = "method";
 pub const RUST_TRAIT_HELP_MARKER: &str = "help";
+pub const RUST_TRAIT_ASSOCIATED_MARKER: &str = "associated";
+
+#[derive(Clone, Debug)]
+pub struct RustTraitAssociatedType {
+    pub binding: BindingId,
+    pub parameter: Rc<str>,
+    pub rust_name: Rc<str>,
+}
+
+#[derive(Clone, Debug)]
+pub struct AssociatedValue {
+    pub binding: BindingId,
+    pub value: TypeExpr,
+    pub span: Span,
+}
+
+#[derive(Clone, Debug)]
+pub struct RustTraitImplementor {
+    pub implementor: TypeExpr,
+    pub associated: Vec<AssociatedValue>,
+}
 
 #[derive(Clone, Debug)]
 pub struct RustTraitDeclaration {
@@ -53,7 +74,8 @@ pub struct RustTraitDeclaration {
     pub self_variable: BindingId,
     pub methods: Vec<TraitMethod>,
     pub help: Option<Rc<str>>,
-    pub implementors: Vec<TypeExpr>,
+    pub associated: Vec<RustTraitAssociatedType>,
+    pub implementors: Vec<RustTraitImplementor>,
 }
 
 #[derive(Clone, Debug)]

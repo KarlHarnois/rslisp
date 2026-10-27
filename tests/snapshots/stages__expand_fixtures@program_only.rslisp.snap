@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/program_only.rslisp
 ---
 error[L0306]: `to-string` belongs to the program, so macro code cannot run it
@@ -79,9 +79,9 @@ error[L0306]: `print` belongs to the program, so macro code cannot run it
  29 | (def never-called (macro (form) (print "unused")))
     |                                 ^^^^^^^^^^^^^^^^ macro code runs this
     |
-   ::: prelude/text.rslisp:212:11
+   ::: prelude/text.rslisp:215:11
     |
-212 | (defmacro print (parts ...)
+215 | (defmacro print (parts ...)
     |           ----- `print` expands to Rust code that runs in the program
     |
     = help: to compute this in the program, return it as code from the macro, for example with `quote`

@@ -123,6 +123,9 @@ impl DiagnosticCode {
     pub const ASSOCIATED_TYPE: Self = Self(Cow::Borrowed("L0447"));
     pub const OBJECT_SAFETY: Self = Self(Cow::Borrowed("L0448"));
     pub const TRAIT_OUTSIDE_BOX: Self = Self(Cow::Borrowed("L0449"));
+    pub const MISSING_ASSOCIATED_VALUE: Self = Self(Cow::Borrowed("L0450"));
+    pub const PROJECTION_WITHOUT_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0451"));
+    pub const UNDECLARED_ASSOCIATED_VALUE: Self = Self(Cow::Borrowed("L0452"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const NEEDS_OWNERSHIP: Self = Self(Cow::Borrowed("L0503"));

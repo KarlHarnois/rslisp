@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/associated_parse_int.rslisp
+---
+fn read_count(text: &str) -> Result<i64, std::num::ParseIntError> {
+    let count: Result<i64, std::num::ParseIntError> = text.parse::<i64>();
+    count
+}
+
+fn main() {
+    match read_count("42") {
+        Ok(count) => println!("count: {}", count),
+        Err(reason) => println!("not a count: {}", reason),
+    }
+}

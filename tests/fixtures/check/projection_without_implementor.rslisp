@@ -1,0 +1,7 @@
+(type read-name (fn ((ref str)) (result i64 (parse-error str))))
+
+(defn read-name (text)
+  (parse text))
+
+(defn main ()
+  (println (unwrap-ok (read-name "7"))))

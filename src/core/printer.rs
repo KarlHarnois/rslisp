@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use super::{
     Arm, Binder, BindingArena, BindingId, Block, BodyItem, ClosureKind, Control, CoreModule, Expr,
     ExprKind, FieldLabel, Item, ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal,
-    MapOperation, ParsedTemplate, Pattern, PatternKind, RustTemplate, StructExpr, TypeBinder,
-    TypeBound, TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload,
+    MapOperation, ParsedTemplate, Pattern, PatternKind, RustTemplate, RustTraitImplementor,
+    StructExpr, TypeBinder, TypeBound, TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload,
 };
 
 pub struct CorePrinter<'a> {
@@ -102,11 +102,20 @@ impl<'a> CorePrinter<'a> {
                     crate::core::RUST_TRAIT_HELP_MARKER
                 ));
             }
+            parts.extend(declaration.associated.iter().map(|associated| {
+                format!(
+                    "({} ({} {}) {:?})",
+                    crate::core::RUST_TRAIT_ASSOCIATED_MARKER,
+                    self.name(associated.binding),
+                    associated.parameter,
+                    associated.rust_name
+                )
+            }));
             parts.extend(
                 declaration
                     .implementors
                     .iter()
-                    .map(|implementor| self.type_expr(implementor)),
+                    .map(|implementor| self.rust_trait_implementor(implementor)),
             );
             return Self::list("rust-trait", parts);
         }
@@ -522,6 +531,22 @@ impl<'a> CorePrinter<'a> {
         }
         let binders = self.type_binders(params);
         format!("({name} {})", binders.join(" "))
+    }
+
+    fn rust_trait_implementor(&mut self, entry: &RustTraitImplementor) -> String {
+        let TypeExprKind::Where(binders, inner) = entry.implementor.kind() else {
+            return self.type_expr(&entry.implementor);
+        };
+        let binders = self.type_binders(binders);
+        let mut body = vec![self.type_expr(inner)];
+        body.extend(entry.associated.iter().map(|associated| {
+            format!(
+                "({} {})",
+                self.name(associated.binding),
+                self.type_expr(&associated.value)
+            )
+        }));
+        Self::where_list(binders, body)
     }
 
     fn where_type(&mut self, binders: &[TypeBinder], inner: &TypeExpr) -> String {

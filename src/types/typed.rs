@@ -395,7 +395,8 @@ impl TypedProgram {
     }
 
     pub fn entry_signatures(&self) -> String {
-        let display = TypeDisplay::new(&self.bindings, &self.generics);
+        let display = TypeDisplay::new(&self.bindings, &self.generics)
+            .with_projections(self.traits.projections());
         let structs = self
             .entry_module()
             .structs
@@ -446,7 +447,8 @@ impl TypedProgram {
         {
             return None;
         }
-        let display = TypeDisplay::new(&self.bindings, &self.generics);
+        let display = TypeDisplay::new(&self.bindings, &self.generics)
+            .with_projections(self.traits.projections());
         let name = self.bindings.get(binding).name();
         let head = if definition.params.is_empty() {
             name.to_string()

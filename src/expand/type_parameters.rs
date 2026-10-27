@@ -112,7 +112,7 @@ impl Expander<'_> {
         }
     }
 
-    fn is_where(&self, head: &Form) -> bool {
+    pub(super) fn is_where(&self, head: &Form) -> bool {
         head.as_symbol()
             .and_then(|symbol| self.try_resolve(symbol, Namespace::Type))
             .is_some_and(|binding| self.kind(binding) == BindingKind::KernelType(KernelType::Where))

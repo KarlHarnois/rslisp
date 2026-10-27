@@ -1,0 +1,3 @@
+(defn main ()
+  (let (answer (result bool _)) (parse "maybe"))
+  (println (to-string (unwrap-err answer))))

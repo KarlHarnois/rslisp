@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/associated_value_undeclared.rslisp
+---
+error[L0452]: `addable` does not declare `parse-error`
+ --> check/associated_value_undeclared.rslisp:3:41
+  |
+3 |   (where () (with i64 i64) (output i64) (parse-error i64)))
+  |                                         ^^^^^^^^^^^^^^^^^ `parse-error` is not an associated type of `addable`
+  |
+  = help: remove the clause, or declare it with `(associated (parse-error owner) "Name")`

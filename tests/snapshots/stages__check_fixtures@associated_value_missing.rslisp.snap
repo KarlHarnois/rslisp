@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/associated_value_missing.rslisp
+---
+error[L0450]: this entry of `addable` does not give `output`
+ --> check/associated_value_missing.rslisp:4:3
+  |
+4 |   (with f64 f64))
+  |   ^^^^^^^^^^^^^^ `addable` declares the associated type `output`
+  |
+  = help: end the entry with `(output type)`, as in `(where () i64 (output type))`

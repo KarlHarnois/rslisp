@@ -9,8 +9,9 @@ use super::shape::Shape;
 use crate::core::{
     BindingId, BindingInfo, BindingKind, ControlForm, CoreModule, DefinitionForm, Expr, ExprKind,
     ExpressionForm, FieldLabel, ImplAssociatedType, ImplMethod, Item, ItemKind, KernelForm, Leaf,
-    ModuleId, Namespace, RUST_TRAIT_HELP_MARKER, RUST_TRAIT_METHOD_MARKER, RustTemplate,
-    RustTraitDeclaration, TraitAssociatedType, TraitMethod, TypeBinder, TypeBound, TypeExpr,
+    ModuleId, Namespace, RUST_TRAIT_ASSOCIATED_MARKER, RUST_TRAIT_HELP_MARKER,
+    RUST_TRAIT_METHOD_MARKER, RustTemplate, RustTraitAssociatedType, RustTraitDeclaration,
+    RustTraitImplementor, TraitAssociatedType, TraitMethod, TypeBinder, TypeBound, TypeExpr,
     TypeExprKind, VariantDeclaration, VariantInfo, VariantPayload,
 };
 use crate::diagnostic::{Counted, Diagnostic};
@@ -41,7 +42,8 @@ type ImplLoweringParts = (ImplAssociated, Vec<Form>);
 struct RustTraitEntries {
     methods: Vec<TraitMethod>,
     help: Option<Rc<str>>,
-    implementors: Vec<TypeExpr>,
+    associated: Vec<RustTraitAssociatedType>,
+    implementors: Vec<RustTraitImplementor>,
 }
 
 enum PendingItem {
@@ -320,13 +322,20 @@ impl Expander<'_> {
             context,
         )?;
         for entry in shape.items().iter().skip(3) {
-            if !Self::is_rust_trait_method(entry) {
-                continue;
-            }
             let Some([_, name, ..]) = entry.as_list() else {
                 continue;
             };
-            self.define_global(name, Namespace::Value, BindingKind::Global(module), context)?;
+            if Self::is_rust_trait_method(entry) {
+                self.define_global(name, Namespace::Value, BindingKind::Global(module), context)?;
+            } else if Self::is_rust_trait_associated(entry) {
+                let associated = name.as_list().and_then(<[Form]>::first).unwrap_or(name);
+                self.define_global(
+                    associated,
+                    Namespace::Type,
+                    BindingKind::RustType(module),
+                    context,
+                )?;
+            }
         }
         Ok(Some(PendingItem::RustTrait(binding, form)))
     }
@@ -345,6 +354,10 @@ impl Expander<'_> {
 
     fn is_rust_trait_help(entry: &Form) -> bool {
         Self::rust_trait_marker(entry) == Some(RUST_TRAIT_HELP_MARKER)
+    }
+
+    fn is_rust_trait_associated(entry: &Form) -> bool {
+        Self::rust_trait_marker(entry) == Some(RUST_TRAIT_ASSOCIATED_MARKER)
     }
 
     fn register_rust_type(
@@ -1547,6 +1560,7 @@ impl Expander<'_> {
                 self_variable,
                 methods: entries.methods,
                 help: entries.help,
+                associated: entries.associated,
                 implementors: entries.implementors,
             }),
             span: form.span(),
@@ -1563,20 +1577,43 @@ impl Expander<'_> {
     ) -> Result<RustTraitEntries, Diagnostic> {
         let mut methods = Vec::new();
         let mut help = None;
+        let mut associated = Vec::new();
         let mut implementors = Vec::new();
         for entry in entries {
             if Self::is_rust_trait_method(entry) {
                 methods.push(self.lower_rust_trait_method(shape, scope, entry)?);
             } else if Self::is_rust_trait_help(entry) {
                 help = Some(self.lower_rust_trait_help(shape, entry)?);
+            } else if Self::is_rust_trait_associated(entry) {
+                associated.push(self.lower_rust_trait_associated(shape, entry)?);
             } else {
-                implementors.push(self.lower_type(entry)?);
+                implementors.push(self.lower_rust_trait_implementor(entry)?);
             }
         }
         Ok(RustTraitEntries {
             methods,
             help,
+            associated,
             implementors,
+        })
+    }
+
+    fn lower_rust_trait_associated(
+        &mut self,
+        shape: &Shape<'_>,
+        entry: &Form,
+    ) -> Result<RustTraitAssociatedType, Diagnostic> {
+        let [_, head, rust_name] = shape.list(entry)? else {
+            return Err(shape.malformed(entry));
+        };
+        let [name, parameter] = shape.list(head)? else {
+            return Err(shape.malformed(head));
+        };
+        let symbol = shape.symbol(name)?;
+        Ok(RustTraitAssociatedType {
+            binding: self.resolve(symbol, Namespace::Type, name.span())?,
+            parameter: shape.symbol(parameter)?.name().into(),
+            rust_name: shape.string(rust_name)?.into(),
         })
     }
 

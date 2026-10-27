@@ -1,5 +1,7 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
+use super::projection::ProjectionTable;
 use super::ty::{Bound, GenericId, Type, TypeVar};
 use crate::core::PrimitiveType;
 use crate::source::Span;
@@ -43,6 +45,12 @@ pub struct Obligation {
     pub span: Span,
 }
 
+pub struct DeferredEquality {
+    pub projected: Type,
+    pub other: Type,
+    pub span: Span,
+}
+
 #[derive(Default)]
 struct VarState {
     binding: Option<Type>,
@@ -55,9 +63,19 @@ pub struct Unifier {
     vars: Vec<VarState>,
     obligations: Vec<Obligation>,
     generic_bounds: HashMap<GenericId, Vec<Bound>>,
+    projections: Rc<ProjectionTable>,
+    deferred: Vec<DeferredEquality>,
 }
 
 impl Unifier {
+    pub fn adopt_projections(&mut self, projections: Rc<ProjectionTable>) {
+        self.projections = projections;
+    }
+
+    pub fn take_deferred(&mut self) -> Vec<DeferredEquality> {
+        std::mem::take(&mut self.deferred)
+    }
+
     pub fn fresh(&mut self) -> Type {
         self.fresh_with(None, Vec::new())
     }
@@ -163,6 +181,9 @@ impl Unifier {
     }
 
     fn unify_rigid(&mut self, left: &Type, right: &Type, span: Span) -> Result<(), UnifyError> {
+        if let Some((left, right)) = self.normalized_pair(left, right) {
+            return self.unify(&left, &right, span);
+        }
         match (left, right) {
             (Type::Named(left, left_arguments), Type::Named(right, right_arguments))
                 if left == right =>
@@ -170,8 +191,52 @@ impl Unifier {
                 self.unify_pairwise(left_arguments, right_arguments, span)
             }
             _ if left == right => Ok(()),
-            _ => Err(UnifyError::Mismatch),
+            _ => self.defer_projection(left, right, span),
         }
+    }
+
+    fn normalized_pair(&self, left: &Type, right: &Type) -> Option<(Type, Type)> {
+        let open = self.resolve(left).has_vars() || self.resolve(right).has_vars();
+        if open && left.shares_head_with(right) {
+            return None;
+        }
+        match (self.normalized(left), self.normalized(right)) {
+            (None, None) => None,
+            (normalized_left, normalized_right) => Some((
+                normalized_left.unwrap_or_else(|| left.clone()),
+                normalized_right.unwrap_or_else(|| right.clone()),
+            )),
+        }
+    }
+
+    fn normalized(&self, value: &Type) -> Option<Type> {
+        self.projections.normalize(&self.resolve(value))
+    }
+
+    fn defer_projection(
+        &mut self,
+        left: &Type,
+        right: &Type,
+        span: Span,
+    ) -> Result<(), UnifyError> {
+        let (projected, other) = if self.awaits_owner(left, right) {
+            (left, right)
+        } else if self.awaits_owner(right, left) {
+            (right, left)
+        } else {
+            return Err(UnifyError::Mismatch);
+        };
+        self.deferred.push(DeferredEquality {
+            projected: projected.clone(),
+            other: other.clone(),
+            span,
+        });
+        Ok(())
+    }
+
+    fn awaits_owner(&self, projected: &Type, other: &Type) -> bool {
+        self.projections
+            .awaits_owner(&self.resolve(projected), &self.resolve(other))
     }
 
     fn unify_pairwise(

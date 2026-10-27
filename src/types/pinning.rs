@@ -399,7 +399,8 @@ pub struct LiteralDefault {
 
 impl LiteralDefaults {
     pub fn of(report: &InstantiationReport, typed: &TypedProgram) -> Self {
-        let display = TypeDisplay::new(&typed.bindings, &typed.generics);
+        let display = TypeDisplay::new(&typed.bindings, &typed.generics)
+            .with_projections(typed.traits.projections());
         let mut defaults = Self::default();
         for definition in typed.modules.iter().flat_map(|module| &module.definitions) {
             defaults.collect(report, typed, definition, &display);

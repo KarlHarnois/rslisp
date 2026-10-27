@@ -1,21 +1,40 @@
 use std::collections::HashMap;
 
+use super::projection::ProjectionTable;
 use super::ty::{Bound, GenericId, GenericParam, Lifetime, Scheme, Type};
 use crate::core::{BindingArena, BindingId};
 
 pub struct TypeDisplay<'a> {
     bindings: &'a BindingArena,
     generics: &'a HashMap<GenericId, GenericParam>,
+    projections: Option<&'a ProjectionTable>,
 }
 
 impl<'a> TypeDisplay<'a> {
     const UNKNOWN: &'static str = "_";
 
     pub fn new(bindings: &'a BindingArena, generics: &'a HashMap<GenericId, GenericParam>) -> Self {
-        Self { bindings, generics }
+        Self {
+            bindings,
+            generics,
+            projections: None,
+        }
+    }
+
+    pub fn with_projections(self, projections: &'a ProjectionTable) -> Self {
+        Self {
+            projections: Some(projections),
+            ..self
+        }
     }
 
     pub fn show(&self, shown: &Type) -> String {
+        if let Some(normalized) = self
+            .projections
+            .and_then(|projections| projections.normalize(shown))
+        {
+            return self.show(&normalized);
+        }
         match shown {
             Type::Var(_) => Self::UNKNOWN.to_string(),
             Type::Generic(generic) => self
