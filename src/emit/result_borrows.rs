@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
 use super::plan::EmitPlan;
@@ -10,40 +11,74 @@ use crate::types::{
 pub struct ResultBorrows<'a> {
     program: &'a TypedProgram,
     plan: &'a EmitPlan<'a>,
-    parameters: HashSet<BindingId>,
-    aliases: HashMap<BindingId, HashSet<BindingId>>,
-    enclosing: HashSet<BindingId>,
+    sharing_by_callee: RefCell<HashMap<BindingId, Vec<bool>>>,
 }
 
 impl<'a> ResultBorrows<'a> {
-    pub fn of(
-        program: &'a TypedProgram,
-        plan: &'a EmitPlan<'a>,
-        lambda: &TypedLambda,
-    ) -> HashSet<BindingId> {
-        Self::within(program, plan, lambda, HashSet::new())
-    }
-
-    fn within(
-        program: &'a TypedProgram,
-        plan: &'a EmitPlan<'a>,
-        lambda: &TypedLambda,
-        enclosing: HashSet<BindingId>,
-    ) -> HashSet<BindingId> {
-        let mut borrows = Self {
+    pub fn new(program: &'a TypedProgram, plan: &'a EmitPlan<'a>) -> Self {
+        Self {
             program,
             plan,
+            sharing_by_callee: RefCell::new(HashMap::new()),
+        }
+    }
+
+    pub fn of(&self, lambda: &TypedLambda) -> HashSet<BindingId> {
+        BodyFlows::of(self, lambda, HashSet::new()).flows
+    }
+
+    fn cached_sharing(&self, callee: BindingId) -> Option<Vec<bool>> {
+        self.sharing_by_callee.borrow().get(&callee).cloned()
+    }
+
+    fn cache_sharing(&self, callee: BindingId, sharing: Vec<bool>) {
+        self.sharing_by_callee.borrow_mut().insert(callee, sharing);
+    }
+
+    fn callee_lambda(&self, callee: BindingId) -> Option<&'a TypedLambda> {
+        match &self.plan.definition(callee)?.value.kind {
+            TypedExprKind::Fn(lambda) => Some(lambda),
+            _ => None,
+        }
+    }
+}
+
+struct BodyFlows<'r, 'a> {
+    rules: &'r ResultBorrows<'a>,
+    parameters: HashSet<BindingId>,
+    aliases: HashMap<BindingId, HashSet<BindingId>>,
+    enclosing: HashSet<BindingId>,
+    reached_recursion: bool,
+}
+
+struct LambdaFlows {
+    flows: HashSet<BindingId>,
+    reached_recursion: bool,
+}
+
+impl<'r, 'a> BodyFlows<'r, 'a> {
+    fn of(
+        rules: &'r ResultBorrows<'a>,
+        lambda: &TypedLambda,
+        enclosing: HashSet<BindingId>,
+    ) -> LambdaFlows {
+        let mut borrows = Self {
+            rules,
             parameters: lambda.params.iter().map(|param| param.binding).collect(),
             aliases: HashMap::new(),
             enclosing,
+            reached_recursion: false,
         };
         let mut flows = borrows.block(&lambda.body);
-        let local_borrow_callees: HashSet<BindingId> = LocalBorrowCalls::of(program, lambda)
+        let local_borrow_callees: HashSet<BindingId> = LocalBorrowCalls::of(rules.program, lambda)
             .into_iter()
             .flat_map(|callee| borrows.local(callee))
             .collect();
         flows.retain(|binding| !local_borrow_callees.contains(binding));
-        flows
+        LambdaFlows {
+            flows,
+            reached_recursion: borrows.reached_recursion,
+        }
     }
 
     fn block(&mut self, block: &TypedBlock) -> HashSet<BindingId> {
@@ -79,7 +114,7 @@ impl<'a> ResultBorrows<'a> {
     }
 
     fn carries_borrow(&self, ty: &Type) -> bool {
-        self.program.type_holds_borrow(ty) || ty.is_unsized()
+        self.rules.program.type_holds_borrow(ty) || ty.is_unsized()
     }
 
     fn call(
@@ -111,28 +146,34 @@ impl<'a> ResultBorrows<'a> {
             .collect()
     }
 
-    fn sharing_parameters(&self, callee: BindingId) -> Vec<bool> {
-        let Some(lambda) = self.callee_lambda(callee) else {
+    fn sharing_parameters(&mut self, callee: BindingId) -> Vec<bool> {
+        if self.enclosing.contains(&callee) {
+            self.reached_recursion = true;
+            return Vec::new();
+        }
+        self.rules
+            .cached_sharing(callee)
+            .unwrap_or_else(|| self.analysed_sharing(callee))
+    }
+
+    fn analysed_sharing(&mut self, callee: BindingId) -> Vec<bool> {
+        let Some(lambda) = self.rules.callee_lambda(callee) else {
             return Vec::new();
         };
         let mut enclosing = self.enclosing.clone();
         enclosing.insert(callee);
-        let flows = Self::within(self.program, self.plan, lambda, enclosing);
-        lambda
+        let analysed = BodyFlows::of(self.rules, lambda, enclosing);
+        let sharing: Vec<bool> = lambda
             .params
             .iter()
-            .map(|param| flows.contains(&param.binding))
-            .collect()
-    }
-
-    fn callee_lambda(&self, callee: BindingId) -> Option<&'a TypedLambda> {
-        if self.enclosing.contains(&callee) {
-            return None;
+            .map(|param| analysed.flows.contains(&param.binding))
+            .collect();
+        if analysed.reached_recursion {
+            self.reached_recursion = true;
+        } else {
+            self.rules.cache_sharing(callee, sharing.clone());
         }
-        match &self.plan.definition(callee)?.value.kind {
-            TypedExprKind::Fn(lambda) => Some(lambda),
-            _ => None,
-        }
+        sharing
     }
 
     fn control(&mut self, control: &TypedControl) -> HashSet<BindingId> {
