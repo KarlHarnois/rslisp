@@ -64,6 +64,7 @@ impl<'p> ReturnedBorrows<'p> {
             variant: definition.name.to_string(),
             owner: self.name(owner),
             owned,
+            declared: *definition.payload_spans.get(position)?,
         })
     }
 
