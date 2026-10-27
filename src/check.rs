@@ -10,79 +10,87 @@ use crate::types::{
 
 pub struct ProgramChecker;
 
+impl ProgramChecker {
+    pub fn check(program: &Program) -> Result<TypedProgram, Diagnostics> {
+        CheckRuns::new(program).typed()
+    }
+}
+
+struct CheckRuns<'a> {
+    program: &'a Program,
+    blocked: HashSet<BindingId>,
+    inferred_copies: InferredCopies,
+    pins: HashMap<BindingId, Type>,
+}
+
 struct CheckedProgram {
     program: TypedProgram,
     inferred_copies: InferredCopies,
     instantiations: InstantiationReport,
 }
 
-impl ProgramChecker {
-    pub fn check(program: &Program) -> Result<TypedProgram, Diagnostics> {
-        let first = Self::checked(
+impl<'a> CheckRuns<'a> {
+    fn new(program: &'a Program) -> Self {
+        Self {
             program,
-            &HashSet::new(),
-            &InferredCopies::default(),
-            &HashMap::new(),
-            LiteralDefaults::default(),
-            false,
-        )?;
-        Self::finish(program, first)
+            blocked: HashSet::new(),
+            inferred_copies: InferredCopies::default(),
+            pins: HashMap::new(),
+        }
     }
 
-    fn finish(program: &Program, first: CheckedProgram) -> Result<TypedProgram, Diagnostics> {
-        let blocked = Self::inferred_copy_changed(&first.program);
-        let pins = Self::pins(&first.instantiations);
-        if blocked.is_empty()
-            && first.inferred_copies.is_empty()
-            && pins.is_empty()
-            && first.program.literal_generics.is_empty()
-        {
+    fn typed(mut self) -> Result<TypedProgram, Diagnostics> {
+        let first = self.open_run()?;
+        self.finish(first)
+    }
+
+    fn finish(&mut self, first: CheckedProgram) -> Result<TypedProgram, Diagnostics> {
+        self.blocked = Self::inferred_copy_changed(&first.program);
+        self.inferred_copies = first.inferred_copies.clone();
+        self.pins.extend(Self::pins(&first.instantiations));
+        if self.is_settled(&first) {
             return Ok(first.program);
         }
-        let literal_defaults = LiteralDefaults::of(&first.instantiations, &first.program);
-        let checked = Self::checked(
-            program,
-            &blocked,
-            &first.inferred_copies,
-            &pins,
-            literal_defaults.clone(),
-            true,
-        )?;
-        Self::pin_until_stable(
-            program,
-            first.inferred_copies,
-            blocked,
-            pins,
-            literal_defaults,
-            checked,
-        )
+        let latest = match self.pin_open_literals()? {
+            Some(open) if open.program.literal_generics.is_empty() => return Ok(open.program),
+            Some(open) => open,
+            None => first,
+        };
+        self.pin_until_stable(LiteralDefaults::of(&latest.instantiations, &latest.program))
+    }
+
+    fn is_settled(&self, first: &CheckedProgram) -> bool {
+        self.blocked.is_empty()
+            && self.inferred_copies.is_empty()
+            && self.pins.is_empty()
+            && first.program.literal_generics.is_empty()
+    }
+
+    fn pin_open_literals(&mut self) -> Result<Option<CheckedProgram>, Diagnostics> {
+        if self.pins.is_empty() {
+            return Ok(None);
+        }
+        loop {
+            let open = self.open_run()?;
+            let next = self.new_pins(&open.instantiations);
+            if next.is_empty() {
+                return Ok(Some(open));
+            }
+            self.pins.extend(next);
+        }
     }
 
     fn pin_until_stable(
-        program: &Program,
-        inferred_copies: InferredCopies,
-        blocked: HashSet<BindingId>,
-        mut pins: HashMap<BindingId, Type>,
+        &mut self,
         literal_defaults: LiteralDefaults,
-        mut checked: CheckedProgram,
     ) -> Result<TypedProgram, Diagnostics> {
         loop {
-            let next: HashMap<BindingId, Type> = Self::pins(&checked.instantiations)
-                .into_iter()
-                .filter(|(binding, _)| !pins.contains_key(binding))
-                .collect();
+            let checked = self.defaulting_run(literal_defaults.clone())?;
+            let next = self.new_pins(&checked.instantiations);
             if next.is_empty() {
                 return Ok(checked.program);
             }
-            pins.extend(next);
-            checked = Self::checked(
-                program,
-                &blocked,
-                &inferred_copies,
-                &pins,
-                literal_defaults.clone(),
-                true,
-            )?;
+            self.pins.extend(next);
         }
     }
 
@@ -90,50 +98,58 @@ impl ProgramChecker {
         Pinning::of(report).pins().iter().cloned().collect()
     }
 
-    fn checked(
-        program: &Program,
-        changed_structs: &HashSet<BindingId>,
-        inferred_copies: &InferredCopies,
-        pinned: &HashMap<BindingId, Type>,
+    fn new_pins(&self, report: &InstantiationReport) -> HashMap<BindingId, Type> {
+        Self::pins(report)
+            .into_iter()
+            .filter(|(binding, _)| !self.pins.contains_key(binding))
+            .collect()
+    }
+
+    fn open_run(&self) -> Result<CheckedProgram, Diagnostics> {
+        self.attempt(LiteralDefaults::default(), false)
+    }
+
+    fn defaulting_run(
+        &self,
+        literal_defaults: LiteralDefaults,
+    ) -> Result<CheckedProgram, Diagnostics> {
+        self.attempt(literal_defaults, true)
+    }
+
+    fn attempt(
+        &self,
         literal_defaults: LiteralDefaults,
         default_literal_parameters: bool,
     ) -> Result<CheckedProgram, Diagnostics> {
-        match Self::typed_and_owned(
-            program,
-            changed_structs,
-            inferred_copies,
-            pinned,
-            literal_defaults,
-            default_literal_parameters,
-        ) {
+        match self.typed_and_owned(literal_defaults, default_literal_parameters) {
             Ok(mut checked) => {
-                checked.program.warnings.extend(program.warnings.clone());
+                checked
+                    .program
+                    .warnings
+                    .extend(self.program.warnings.clone());
                 Ok(checked)
             }
             Err(mut diagnostics) => {
-                diagnostics.extend(program.warnings.clone());
+                diagnostics.extend(self.program.warnings.clone());
                 Err(diagnostics)
             }
         }
     }
 
     fn typed_and_owned(
-        program: &Program,
-        changed_structs: &HashSet<BindingId>,
-        inferred_copies: &InferredCopies,
-        pinned: &HashMap<BindingId, Type>,
+        &self,
         literal_defaults: LiteralDefaults,
         default_literal_parameters: bool,
     ) -> Result<CheckedProgram, Diagnostics> {
         let mut typed = TypeChecker::check(
-            program,
-            changed_structs,
-            inferred_copies,
-            pinned,
+            self.program,
+            &self.blocked,
+            &self.inferred_copies,
+            &self.pins,
             literal_defaults,
             default_literal_parameters,
         )?;
-        let instantiations = InstantiationReport::of(program, &typed);
+        let instantiations = InstantiationReport::of(self.program, &typed);
         let inferred_copies = OwnershipChecker::check(&mut typed)?;
         Ok(CheckedProgram {
             program: typed,

@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/literal_result_chain_default.rslisp
+---
+fn answer() -> i64 {
+    42
+}
+
+fn other() -> i64 {
+    answer()
+}
+
+fn main() {
+    println!("{}", other())
+}

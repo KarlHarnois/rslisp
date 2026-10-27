@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/pin_literal_through_function_parameter.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn make_car(make: &str, year: u16) -> Car<'_> {
+    Car { make, year }
+}
+
+fn build_with<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>) -> Car<'a> {
+    constructor("Nissan", 2025)
+}
+
+fn main() {
+    println!("{}", build_with(make_car).year)
+}
