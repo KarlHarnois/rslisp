@@ -68,6 +68,7 @@ impl<'a> RustTypes<'a> {
     const INFERRED: &'static str = "_";
     const ELIDED_LIFETIME_ARGUMENT: &'static str = "'_";
     const NUMBER_TRAIT: &'static str = "crate::rt::Number";
+    const PREDICATE_SUBJECT: &'static str = "{0}";
     const RUNTIME_SUPERTRAITS: [(&'static str, &'static [&'static str]); 4] = [
         ("crate::rt::Number", &["Copy", "PartialOrd", "PartialEq"]),
         (
@@ -188,6 +189,23 @@ impl<'a> RustTypes<'a> {
         format!("<{}>", declared.join(", "))
     }
 
+    pub fn where_clause(&self, params: &[GenericParam]) -> String {
+        let predicates: Vec<String> = params
+            .iter()
+            .flat_map(|param| {
+                let name = Self::generic_name(param);
+                self.bound_paths(param)
+                    .into_iter()
+                    .filter(|path| Self::is_predicate(path))
+                    .map(move |predicate| predicate.replace(Self::PREDICATE_SUBJECT, &name))
+            })
+            .collect();
+        if predicates.is_empty() {
+            return String::new();
+        }
+        format!(" where {}", predicates.join(", "))
+    }
+
     pub fn is_unit(shown: &Type) -> bool {
         *shown == Type::unit()
     }
@@ -203,8 +221,8 @@ impl<'a> RustTypes<'a> {
         converts_literals: bool,
     ) -> String {
         let name = Self::generic_name(param);
-        let mut bounds = self.declared_bounds(param);
-        self.add_implied_bounds(param, &mut bounds);
+        let mut bounds = self.bound_paths(param);
+        bounds.retain(|path| !Self::is_predicate(path));
         if converts_literals && !Self::is_covered(Self::NUMBER_TRAIT, &bounds) {
             bounds.push(Self::NUMBER_TRAIT.to_string());
         }
@@ -216,6 +234,16 @@ impl<'a> RustTypes<'a> {
         } else {
             format!("{name}: {}", bounds.join(" + "))
         }
+    }
+
+    fn bound_paths(&self, param: &GenericParam) -> Vec<String> {
+        let mut bounds = self.declared_bounds(param);
+        self.add_implied_bounds(param, &mut bounds);
+        bounds
+    }
+
+    fn is_predicate(path: &str) -> bool {
+        path.contains(Self::PREDICATE_SUBJECT)
     }
 
     fn needs_maybe_unsized(

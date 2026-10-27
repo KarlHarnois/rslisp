@@ -1,0 +1,74 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/range_over_generic_integer.rslisp
+---
+fn count_to<N: crate::rt::Integer>(n: N) -> usize
+where
+    std::ops::Range<N>: Iterator<Item = N>,
+{
+    (N::from_literal(0)..n).count()
+}
+
+fn main() {
+    println!(
+        "{}",
+        count_to({
+            let result: i64 = 4;
+            result
+        })
+    );
+    println!(
+        "{}",
+        count_to({
+            let result: u8 = 3;
+            result
+        })
+    )
+}
+
+mod rt {
+    use std::ops::{Add, Div, Mul, Rem, Sub};
+
+    pub trait Number:
+        Copy
+        + PartialOrd
+        + Add<Output = Self>
+        + Sub<Output = Self>
+        + Mul<Output = Self>
+        + Div<Output = Self>
+        + Rem<Output = Self>
+    {
+        fn from_literal(value: i128) -> Self;
+    }
+
+    macro_rules! numbers {
+        ($($number:ty),*) => {
+            $(
+                impl Number for $number {
+                    fn from_literal(value: i128) -> Self {
+                        value as Self
+                    }
+                }
+            )*
+        };
+    }
+
+    numbers!(
+        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+    );
+
+    pub trait Integer: Number {}
+
+    macro_rules! integers {
+        ($($integer:ty),*) => {
+            $(
+                impl Integer for $integer {}
+            )*
+        };
+    }
+
+    integers!(
+        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize
+    );
+}

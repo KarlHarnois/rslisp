@@ -1,0 +1,4 @@
+(defn count-to (n) (count (range 0 n)))
+
+(defn main ()
+  (println (count-to (the i64 4))))

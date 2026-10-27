@@ -1,0 +1,9 @@
+(type count-to (where ((n integer)) (fn (n) usize)))
+(defn count-to (n) (count (range 0 n)))
+
+(type count-twice (where ((n integer)) (fn (n) usize)))
+(defn count-twice (n) (+ (count-to n) (count-to n)))
+
+(defn main ()
+  (println (count-twice (the i64 4)))
+  (println (count-twice (the u8 3))))

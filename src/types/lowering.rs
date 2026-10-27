@@ -267,9 +267,11 @@ impl TypeChecker {
             .collect();
         for (param, value) in scheme.params.iter().zip(&fresh) {
             if let Type::Var(var) = value {
+                let implied = self.implied_bounds.get(&param.id).into_iter().flatten();
                 let bounds = param
                     .bounds
                     .iter()
+                    .chain(implied)
                     .map(|bound| bound.substituted(&replacements))
                     .collect();
                 self.unifier.set_bounds(*var, bounds);
