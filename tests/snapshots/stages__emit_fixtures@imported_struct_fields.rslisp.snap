@@ -1,0 +1,46 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/imported_struct_fields.rslisp
+---
+fn main() {
+    let leaf = crate::cars::cars::make_car("Nissan", "Leaf", 2024, true);
+    let civic = crate::cars::cars::Car {
+        make: "Honda",
+        model: "Civic",
+        year: 2019,
+        is_electric: false,
+    };
+    let newer = crate::cars::cars::Car {
+        year: 2021,
+        ..civic
+    };
+    println!("{} {} {}", leaf.year, civic.make, newer.year)
+}
+
+mod cars {
+
+    pub(crate) mod cars {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+        pub struct Car<'a> {
+            pub make: &'a str,
+            pub model: &'a str,
+            pub year: u16,
+            pub is_electric: bool,
+        }
+
+        pub(crate) fn make_car<'a>(
+            make: &'a str,
+            model: &'a str,
+            year: u16,
+            is_electric: bool,
+        ) -> Car<'a> {
+            Car {
+                make,
+                model,
+                year,
+                is_electric,
+            }
+        }
+    }
+}
