@@ -1,13 +1,18 @@
 (use prelude/macros defmacro template map-list whole-pairs?)
 (use prelude/syntax defn)
 (use code first rest list nth take drop length empty? list? symbol? symbol symbol-name value-eq prepend
-          concat string fail keyword? keyword-name keyword-field number-sub)
+          concat string fail keyword? keyword-name keyword-field number-sub
+          bool-not)
 
 (export defstruct)
 
 (def head-name
   (fn (head)
     (if (list? head) (first head) head)))
+
+(def field-type-form
+  (fn (field)
+    (nth field 1)))
 
 (def field-initializer
   (fn (field)
@@ -203,8 +208,8 @@
         (if (same-keyword? key (first later-keys)) true (repeated-key? key (rest later-keys))))))
 
 (def struct-shape
-  (fn (name fields defaults)
-    (list name fields defaults)))
+  (fn (name fields defaults types)
+    (list name fields defaults types)))
 
 (def shape-name
   (fn (shape)
@@ -217,6 +222,10 @@
 (def shape-defaults
   (fn (shape)
     (nth shape 2)))
+
+(def shape-types
+  (fn (shape)
+    (nth shape 3)))
 
 (def required-fields
   (fn (shape)
@@ -274,19 +283,26 @@
           form
           (string "write it as `" (prepend (first form) fields) "`"))))
 
-(def unmatched-call
-  (fn (form shape)
-    (if (distinct-keyword-pairs? (rest form))
-        (named-construction (rest form) shape)
-        (constructor-arity-error form (shape-fields shape)))))
+(def constructor-call
+  (fn (form hidden shape)
+    (let arguments (rest form))
+    (if (reads-by-name? arguments shape)
+        (named-construction arguments shape)
+        (if (value-eq (length arguments) (length (shape-fields shape)))
+            (prepend hidden arguments)
+            (constructor-arity-error form (shape-fields shape))))))
 
-(def distinct-keyword-pairs?
+(def reads-by-name?
+  (fn (arguments shape)
+    (if (keyword-pairs? arguments)
+        (if (names-every-required-field? arguments shape)
+            true
+            (bool-not (keywords-land-on-functions? arguments (shape-types shape))))
+        false)))
+
+(def keyword-pairs?
   (fn (arguments)
-    (if (whole-pairs? arguments) (distinct-keywords? (pair-keys arguments)) false)))
-
-(def distinct-keywords?
-  (fn (keys)
-    (if (every-keyword? keys) (distinct-keys? keys) false)))
+    (if (whole-pairs? arguments) (every-keyword? (pair-keys arguments)) false)))
 
 (def every-keyword?
   (fn (forms)
@@ -294,14 +310,33 @@
         true
         (if (keyword? (first forms)) (every-keyword? (rest forms)) false))))
 
-(def constructor-call
-  (fn (form hidden shape)
-    (let arguments (rest form))
-    (if (names-every-required-field? arguments shape)
-        (named-construction arguments shape)
-        (if (value-eq (length arguments) (length (shape-fields shape)))
-            (prepend hidden arguments)
-            (unmatched-call form shape)))))
+(def keywords-land-on-functions?
+  (fn (arguments types)
+    (if (value-eq (length arguments) (length types))
+        (every-function-type? (pair-keys types))
+        false)))
+
+(def every-function-type?
+  (fn (types)
+    (if (empty? types)
+        true
+        (if (function-type? (first types)) (every-function-type? (rest types)) false))))
+
+(def function-type?
+  (fn (type)
+    (if (list? type)
+        (if (empty? type) false (function-type-head? (first type)))
+        false)))
+
+(def function-type-head?
+  (fn (head)
+    (if (symbol? head) (function-kind? (symbol-name head)) false)))
+
+(def function-kind?
+  (fn (name)
+    (if (value-eq name "fn")
+        true
+        (if (value-eq name "fn-mut") true (value-eq name "fn-once")))))
 
 (def constructor-expansion
   (fn (form hidden shape)
@@ -313,6 +348,7 @@
   (let name (head-name head))
   (let fields (field-groups (field-forms body)))
   (let field-names (map-list first fields))
+  (let field-types (map-list field-type-form fields))
   (let defaults (default-initializers (default-pairs body) name field-names))
   (let hidden (symbol (quote make) "make-" name))
   (template
@@ -322,4 +358,4 @@
         (def (unquote (symbol name "->" name))
           (macro (form)
             (constructor-expansion form (quote (unquote hidden))
-                                   (quote (unquote (struct-shape name field-names defaults)))))))))
+                                   (quote (unquote (struct-shape name field-names defaults field-types)))))))))

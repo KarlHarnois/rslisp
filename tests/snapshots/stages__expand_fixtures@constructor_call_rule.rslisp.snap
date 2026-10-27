@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/constructor_call_rule.rslisp
+---
+(struct car (make str) (year u16))
+(def make-car (fn (make year) (new car (make make) (year year))))
+(struct user (name str))
+(def make-user (fn (name) (new user (name name))))
+(struct sorter (key (fn ((ref user)) (ref str))) (label str))
+(def make-sorter (fn (key label) (new sorter (key key) (label label))))
+(struct (pair a b) (left a) (right b))
+(def make-pair (fn (left right) (new pair (left left) (right right))))
+(def missing (fn () (new car (make "Nissan"))))
+(def misspelled (fn () (new car (mak "Nissan"))))
+(def repeated (fn () (new car (make "Nissan") (make "Leaf"))))
+(def keyword-on-function (fn () (make-sorter (fn (value) (field value name)) "by name")))
+(def positional (fn () (make-car "Nissan" 2025)))
+(def half-pair (fn () (new pair (left 1))))
+(def defaulted-label (fn () (new sorter (key (fn (value_2) (field value_2 name))) (label "all"))))

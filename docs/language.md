@@ -212,9 +212,10 @@ Programs write structs with the prelude's `defstruct`, which takes flat fields. 
 
 The constructor `->point` is a macro, and it reads a call in this order:
 
-1. If the arguments read as `:field value` pairs that name distinct fields and every field without a default, the call is by name. `(->point :y 2.0 :x 1.0)` expands to `(new point (:y 2.0) (:x 1.0))`, in the order written.
-2. Otherwise, if the call has exactly one argument per field, the call is positional. `(->point 1.0 2.0)` calls a positional function that `defstruct` defines under a hygienic name, which no source code can refer to. It emits as `make_point(1.0, 2.0)`.
-3. Otherwise, if the arguments are `:key value` pairs with distinct keys, the call expands to `new` as a call by name does, with the defaults of the omitted fields. `new` then reports an unknown key in the user's spelling with the closest field, as `(->car :mak "Nissan" ...)` suggests `:make`, or names the missing fields that have no default. Any other call is an error that names the field count.
+1. If the arguments are `:field value` pairs that name distinct fields and every field without a default, the call is by name. `(->point :y 2.0 :x 1.0)` expands to `(new point (:y 2.0) (:x 1.0))`, in the order written.
+2. Otherwise, if the arguments are `:key value` pairs, the call is positional only when it has one argument per field and every keyword at an even position lands on a field whose written type is a function type, `fn`, `fn-mut` or `fn-once`. With `(defstruct sorter :key (fn ((ref user)) (ref str)) :label str)`, `(->sorter :name "by name")` is positional. A type parameter does not count as a function type.
+3. Otherwise, `:key value` pairs are a call by name. The call expands to `new` with the defaults of the omitted fields, and `new` reports an unknown key in the user's spelling with the closest field, as `(->car :mak "Nissan")` suggests `:make`, a repeated key, or the missing fields that have no default.
+4. Any other call with exactly one argument per field is positional. `(->point 1.0 2.0)` calls a positional function that `defstruct` defines under a hygienic name, which no source code can refer to. It emits as `make_point(1.0, 2.0)`. Any other call is an error that names the field count.
 
 In value position, `->point` expands to the positional function, so `(let build ->point)` emits `let build = make_point;`. A program may define its own `make-point`, because no source name refers to the positional function.
 
