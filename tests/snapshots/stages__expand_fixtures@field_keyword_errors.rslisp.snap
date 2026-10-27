@@ -12,10 +12,10 @@ error[L0244]: a name cannot start with `:`
   = help: names starting with `:` read struct fields; choose another name
 
 error[L0244]: a name cannot start with `:`
- --> expand/field_keyword_errors.rslisp:5:15
+ --> expand/field_keyword_errors.rslisp:5:18
   |
-5 | (defn rename (:make) :make)
-  |               ^^^^^ this is a field keyword
+5 | (def rename (fn (:make) :make))
+  |                  ^^^^^ this is a field keyword
   |
   = help: names starting with `:` read struct fields; choose another name
 

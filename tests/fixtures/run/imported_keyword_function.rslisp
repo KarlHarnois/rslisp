@@ -1,0 +1,6 @@
+(use arithmetic/arithmetic add)
+
+(defn main ()
+  (println (add :y 7 :x 6))
+  (println (add :x 2))
+  (println (add 6 7)))

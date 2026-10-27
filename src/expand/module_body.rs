@@ -653,13 +653,7 @@ impl Expander<'_> {
     ) -> Result<(), Diagnostic> {
         let shape = Shape::new(KernelForm::Definition(DefinitionForm::Type), form);
         let items = shape.exactly(3)?;
-        let binding = self.resolve(shape.symbol(&items[1])?, Namespace::Value, items[1].span())?;
-        if self.kind(binding) != BindingKind::Global(module) {
-            return Err(ExpandProblems::signature_target(
-                self.bindings.get(binding).name(),
-                items[1].span(),
-            ));
-        }
+        let binding = self.signature_binding(module, &shape, &items[1])?;
         let signature = self.lower_type(&items[2])?;
         core.items.push(Item {
             kind: ItemKind::Signature(binding, signature),
@@ -667,6 +661,25 @@ impl Expander<'_> {
             hidden: false,
         });
         Ok(())
+    }
+
+    fn signature_binding(
+        &mut self,
+        module: ModuleId,
+        shape: &Shape,
+        name: &Form,
+    ) -> Result<BindingId, Diagnostic> {
+        let written = self.resolve(shape.symbol(name)?, Namespace::Value, name.span())?;
+        let binding = self
+            .answered_global(module, written, name)
+            .unwrap_or(written);
+        if self.kind(binding) != BindingKind::Global(module) {
+            return Err(ExpandProblems::signature_target(
+                self.bindings.get(binding).name(),
+                name.span(),
+            ));
+        }
+        Ok(binding)
     }
 
     fn lower_struct(

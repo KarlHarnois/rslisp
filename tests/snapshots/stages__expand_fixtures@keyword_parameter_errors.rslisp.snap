@@ -1,0 +1,76 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/keyword_parameter_errors.rslisp
+---
+error[L0301]: `x` is declared twice
+ --> expand/keyword_parameter_errors.rslisp:2:21
+  |
+2 | (defn twice (:x i64 :x i64) (+ x x))
+  |                     ^^ here
+  |
+  = help: give each parameter its own name
+
+error[L0301]: a parameter must start with `:`
+ --> expand/keyword_parameter_errors.rslisp:3:29
+  |
+3 | (defn untyped-start (:x i64 i64) x)
+  |                             ^^^ here
+  |
+  = help: write each parameter as `:name type` or `:name`, as in (defn add (:x i64 :y i64) (+ x y))
+
+error[L0301]: a function takes one `defaults` clause, after its parameters
+ --> expand/keyword_parameter_errors.rslisp:4:17
+  |
+4 | (defn early (:x (defaults :x 1) :y) x)
+  |                 ^^^^^^^^^^^^^^^ here
+  |
+  = help: move the defaults to the end
+
+error[L0301]: `misspelled` has no parameter `z`
+ --> expand/keyword_parameter_errors.rslisp:5:32
+  |
+5 | (defn misspelled (:x (defaults :z 1)) x)
+  |                                ^^ here
+  |
+  = help: the parameters of `misspelled` are x
+
+error[L0301]: missing parameter `y` in `add`
+ --> expand/keyword_parameter_errors.rslisp:8:3
+  |
+8 |   (add :x 6)
+  |   ^^^^^^^^^^ here
+  |
+  = help: name every parameter without a default: y
+
+error[L0301]: `add` has no parameter `:z`
+ --> expand/keyword_parameter_errors.rslisp:9:8
+  |
+9 |   (add :z 6 :y 7)
+  |        ^^ here
+  |
+  = help: the parameters of `add` are :x, :y
+
+error[L0301]: `:x` is given twice in `add`
+  --> expand/keyword_parameter_errors.rslisp:10:13
+   |
+10 |   (add :x 6 :x 7)
+   |             ^^ here
+   |
+   = help: remove the second `:x` and its value
+
+error[L0301]: `add` takes 2 arguments, one per parameter, or a `:name value` pair for each parameter without a default
+  --> expand/keyword_parameter_errors.rslisp:11:3
+   |
+11 |   (add 1 2 3))
+   |   ^^^^^^^^^^^ here
+   |
+   = help: write it as `(add x y)`
+
+error[L0301]: `apply-key` has no parameter `:name`
+  --> expand/keyword_parameter_errors.rslisp:16:14
+   |
+16 |   (apply-key :name "x"))
+   |              ^^^^^ here
+   |
+   = help: the parameters of `apply-key` are :key, :label

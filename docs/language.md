@@ -51,7 +51,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `let` | `(let name value)` | `let` | name: binder. value: expression. |
 | `do` | `(do form...)` | block | forms: expressions. At module level: definitions. |
 | `if` | `(if test then else)` | `if`/`else` | all: expressions. |
-| `type` | `(type name type)` | signature | name: reference to a `def`. type: type. |
+| `type` | `(type name type)` | signature | name: reference to a `def`, or to a macro whose value position expands to a function the macro introduced in this module. type: type. |
 | `struct` | `(struct name (field type)...)` or `(struct (name param...) (field type)...)` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
 | `enum` | `(enum name (rust "Path")? variant...)` or `(enum (name param...) (rust "Path")? variant...)` | `enum`, or the named Rust type | name: type binder. params: type binders. `rust`: an optional Rust path. variants: a name, `(name type...)`, or `(name (struct (field type)...))`. |
 | `match` | `(match value (pattern body)...)` | `match` | value: expression. patterns: a wildcard, a literal, a bare name, `(variant pattern...)` or `(type-name pattern...)`. arms: one body expression. |
@@ -276,7 +276,35 @@ The compiler checks every macro body and the functions it reaches, even a macro 
 
 A macro also answers for its name in value position. When a program uses a macro's name as a value, as in `(let build ->car)`, the expander calls the macro with the bare symbol as its form. If the macro returns a form, the expander uses that form in place of the name. If the macro fails, the program gets the error `is a macro, not a value`. A macro that handles value position tests its form with `symbol?`. A macro that takes its form apart with `first`, `rest` or `nth` fails on a symbol, so it keeps the error. The prelude cannot provide this, because a macro runs only at the head of a list, and only the expander sees a macro's name standing alone.
 
-The prelude also provides `defn` for a function definition, `the` for a typed value, `->` and `->>` for threading a value through calls, `let-try` and `try->` for propagating errors, and `assoc` and `assoc-in` for changing a value. `defn` expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
+The prelude also provides `defn` for a function definition, `the` for a typed value, `->` and `->>` for threading a value through calls, `let-try` and `try->` for propagating errors, and `assoc` and `assoc-in` for changing a value. `defn` with a plain parameter list expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
+
+### Keyword parameters
+
+A `defn` parameter list whose first element is a keyword declares keyword parameters, read like `defstruct` fields. Each `:name` takes an optional type, so `(:x :y)`, `(:x i64 :y i64)` and a mix declare two parameters. A type is never a keyword. The body names each parameter without the `:`. A list headed by `defaults` is always the defaults clause, even right after a keyword, and it comes last, as in `defstruct`. Any other parameter list keeps its plain meaning.
+
+```lisp
+(defn add (:x i64 :y i64) (+ x y))
+
+(defn greet (:name str :greeting (defaults :greeting "hello"))
+  (str greeting ", " name))
+```
+
+```rust
+fn add(x: i64, y: i64) -> i64 {
+    x + y
+}
+```
+
+`defn` defines a positional function under a hygienic name, and a macro `add` that reads each call with the constructor's rule, with parameters in place of fields:
+
+1. `:key value` pairs that name distinct parameters and every parameter without a default are a call by name. `(add :y 7 :x 6)` emits `add(6, 7)`, and `(greet :name "ana")` emits `greet("ana", "hello")`.
+2. Other `:key value` pairs are positional only when the call has one argument per parameter and every keyword at an even position lands on a parameter whose written type is a function type. With `(defn sort-users (:key (fn ((ref user)) (ref str)) :label str) ...)`, `(sort-users :name "by name")` passes the `:name` closure as `key`. A parameter with no written type does not count as a function type.
+3. Any other `:key value` pairs are a call by name, and the call is an error that names the missing, unknown or repeated parameter: `(add :x 6)` is "missing parameter `y` in `add`", `(add :z 6 :y 7)` is "`add` has no parameter `:z`", and `(add :x 6 :x 7)` is "`:x` is given twice in `add`".
+4. Any other call with exactly one argument per parameter is positional. `(add 6 7)` emits `add(6, 7)`. Any other call is an error that names the parameter count.
+
+A call by name always passes the arguments in parameter order. When it reorders the arguments, each argument that is a list binds to a temporary first, in the order written, so `(add :y (next-y) :x (next-x))` emits `{ let y: i64 = next_y(); let x: i64 = next_x(); add(x, y) }`. A literal or a name passes as written. A default is inlined at each call that omits it.
+
+In value position, `add` expands to the positional function, so `(let plus add)` emits `let plus = add;`. The positional function takes the function's own Rust name, because the macro emits no item. A call to `add` in its own body expands like any other call, so a call in tail position still emits a `loop`. `(export add)` exports the macro, and an importing module calls `add` by name or by position. A `(type add ...)` signature names the positional function's type, with the parameters in declared order.
 
 The prelude builds three tools on top of `macro`:
 

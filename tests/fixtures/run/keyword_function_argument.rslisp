@@ -1,0 +1,8 @@
+(defstruct user :name string)
+
+(defn sort-users (:key (fn ((ref user)) (ref string)) :label str)
+  (let ana (->user (to-string "ana")))
+  (println label ": " (key (ref ana))))
+
+(defn main ()
+  (sort-users :name "by name"))

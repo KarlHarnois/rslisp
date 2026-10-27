@@ -2,7 +2,7 @@
 
 (def :model "Leaf")
 
-(defn rename (:make) :make)
+(def rename (fn (:make) :make))
 
 (defn describe (vehicle)
   (match vehicle

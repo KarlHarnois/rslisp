@@ -1,0 +1,68 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/keyword_parameters.rslisp
+---
+fn add(x: i64, y: i64) -> i64 {
+    x + y
+}
+
+fn scale(factor: f32, value: f32) -> f32 {
+    factor * value
+}
+
+fn greet(name: &str, greeting: &str) -> String {
+    format!("{}, {}", greeting, name)
+}
+
+fn count_down(mut n: i64, mut total: i64) -> i64 {
+    loop {
+        if n == 0 {
+            return total;
+        } else {
+            (n, total) = (n - 1, total + n);
+            continue;
+        }
+    }
+}
+
+fn sum_down(mut n: i64, mut total: i64) -> i64 {
+    loop {
+        if n == 0 {
+            return total;
+        } else {
+            let total_2: i64 = total + n;
+            let n_2: i64 = n - 1;
+            (n, total) = (n_2, total_2);
+            continue;
+        }
+    }
+}
+
+fn next_y() -> i64 {
+    println!("y");
+    7
+}
+
+fn next_x() -> i64 {
+    println!("x");
+    6
+}
+
+fn main() {
+    println!("{}", add(6, 7));
+    println!("{}", add(6, 7));
+    println!("{}", add(6, 7));
+    let plus = add;
+    println!("{}", plus(1, 2));
+    println!("{}", scale(1.5, 2.0));
+    println!("{}", greet("ana", "hello"));
+    println!("{}", greet("bo", "hi"));
+    println!("{}", count_down(4, 0));
+    println!("{}", sum_down(4, 0));
+    println!("{}", {
+        let y: i64 = next_y();
+        let x: i64 = next_x();
+        add(x, y)
+    })
+}

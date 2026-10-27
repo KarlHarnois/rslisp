@@ -32,6 +32,18 @@ impl Expander<'_> {
         })
     }
 
+    pub(super) fn answered_global(
+        &mut self,
+        module: ModuleId,
+        binding: BindingId,
+        name: &Form,
+    ) -> Option<BindingId> {
+        if self.kind(binding) != BindingKind::Macro(module) {
+            return None;
+        }
+        self.answered_function(binding, name.clone())
+    }
+
     fn answered_function(&mut self, answering: BindingId, name: Form) -> Option<BindingId> {
         let expansion = self.trial_expansion(answering, name)?;
         let function = self.try_resolve(expansion.as_symbol()?, Namespace::Value)?;

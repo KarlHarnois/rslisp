@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/keyword_call_rule.rslisp
+---
+(struct user (name str))
+(def make-user (fn (name) (new user (name name))))
+(def sort-users (fn ((key (fn ((ref user)) (ref str))) (label str)) (let ana (make-user "ana")) ((rust "println!(\"{{}}: {{}}\", {&0}, {&1})" (where ((part-type-0 display) (part-type-1 display)) (fn ((ref part-type-0) (ref part-type-1)) unit))) label (key (ref ana)))))
+(def sort-everyone (fn () (sort-users (fn (value) (field value name)) "by name")))
