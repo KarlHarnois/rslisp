@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/imported_keyword_function.rslisp
+---
+13
+3
+13

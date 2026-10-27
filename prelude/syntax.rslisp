@@ -1,9 +1,499 @@
-(use prelude/macros defrule)
+(use prelude/macros defrule defmacro template map-list whole-pairs?)
+(use code first rest list nth take drop length empty? list? symbol? symbol symbol-name value-eq prepend
+          concat string fail keyword? keyword-name keyword-field field-keyword number-sub bool-not)
 
-(export defn the -> ->> try-> let-try loop)
+(export defn the -> ->> try-> let-try loop
+        definition declared-forms default-pairs type-missing? defaults-clause? default-bindings
+        call-signature signature-name signature-names signature-defaults signature-types
+        reads-by-name? has-argument? pair-keys joined-names)
 
-(defrule defn
-  ((name params body ...) (def name (fn params body ...))))
+(defmacro defn (name parameters body ...)
+  (if (keyword-parameters? parameters)
+      (keyword-function name parameters body)
+      (template (def (unquote name) (fn (unquote parameters) (splice body))))))
+
+(def keyword-parameters?
+  (fn (parameters)
+    (if (list? parameters)
+        (if (empty? parameters) false (keyword? (first parameters)))
+        false)))
+
+(def keyword-function
+  (fn (name parameters body)
+    (let declared (declared-forms parameters))
+    (let binders (parameter-binders declared))
+    (let names (map-list binder-name binders))
+    (check-distinct-parameters (parameter-keywords declared))
+    (let defaults (default-bindings (default-pairs parameters) (definition name "parameter") names))
+    (let signature (call-signature name names defaults (map-list binder-type binders)))
+    (let positional (symbol (quote function) (symbol-name name)))
+    (template
+      (do (def (unquote positional) (fn (unquote binders) (splice body)))
+          (def (unquote name)
+            (macro (form)
+              (keyword-call-expansion form (quote (unquote positional)) (quote (unquote signature)))))))))
+
+(def definition
+  (fn (name noun)
+    (list name noun)))
+
+(def definition-name
+  (fn (owner)
+    (first owner)))
+
+(def definition-noun
+  (fn (owner)
+    (nth owner 1)))
+
+(def call-signature
+  (fn (name names defaults types)
+    (list name names defaults types)))
+
+(def signature-name
+  (fn (signature)
+    (first signature)))
+
+(def signature-names
+  (fn (signature)
+    (nth signature 1)))
+
+(def signature-defaults
+  (fn (signature)
+    (nth signature 2)))
+
+(def signature-types
+  (fn (signature)
+    (nth signature 3)))
+
+(def ends-with-defaults?
+  (fn (forms)
+    (if (empty? forms)
+        false
+        (defaults-clause? (nth forms (number-sub (length forms) 1))))))
+
+(def defaults-clause?
+  (fn (form)
+    (if (list? form)
+        (if (empty? form) false (defaults-head? (first form)))
+        false)))
+
+(def defaults-head?
+  (fn (head)
+    (if (symbol? head) (value-eq (symbol-name head) "defaults") false)))
+
+(def declared-forms
+  (fn (forms)
+    (if (ends-with-defaults? forms)
+        (take (number-sub (length forms) 1) forms)
+        forms)))
+
+(def default-pairs
+  (fn (forms)
+    (if (ends-with-defaults? forms)
+        (rest (nth forms (number-sub (length forms) 1)))
+        (list))))
+
+(def type-missing?
+  (fn (more)
+    (if (empty? more)
+        true
+        (if (keyword? (first more)) true (defaults-clause? (first more))))))
+
+(def parameter-binders
+  (fn (forms)
+    (if (empty? forms)
+        (list)
+        (prepend (parameter-binder (first forms) (rest forms))
+                 (parameter-binders (drop (parameter-width (rest forms)) forms))))))
+
+(def parameter-binder
+  (fn (keyword more)
+    (let name (parameter-name keyword))
+    (if (type-missing? more) name (list name (first more)))))
+
+(def parameter-name
+  (fn (keyword)
+    (if (keyword? keyword)
+        (keyword-field keyword)
+        (parameter-start-error keyword))))
+
+(def parameter-start-error
+  (fn (form)
+    (if (defaults-clause? form)
+        (fail "a function takes one `defaults` clause, after its parameters" form
+              "move the defaults to the end")
+        (fail "a parameter must start with `:`" form
+              "write each parameter as `:name type` or `:name`, as in (defn add (:x i64 :y i64) (+ x y))"))))
+
+(def parameter-width
+  (fn (more)
+    (if (type-missing? more) 1 2)))
+
+(def binder-name
+  (fn (binder)
+    (if (list? binder) (first binder) binder)))
+
+(def binder-type
+  (fn (binder)
+    (if (list? binder) (nth binder 1) (quote _))))
+
+(def parameter-keywords
+  (fn (forms)
+    (if (empty? forms)
+        (list)
+        (prepend (first forms) (parameter-keywords (drop (parameter-width (rest forms)) forms))))))
+
+(def check-distinct-parameters
+  (fn (keywords)
+    (if (empty? keywords)
+        keywords
+        (do (check-declared-once (first keywords) (rest keywords))
+            (check-distinct-parameters (rest keywords))))))
+
+(def check-declared-once
+  (fn (keyword later-keywords)
+    (let repeated (find-keyword keyword later-keywords))
+    (if (empty? repeated)
+        keyword
+        (fail (string "`" (keyword-name keyword) "` is declared twice") (first repeated)
+              "give each parameter its own name"))))
+
+(def find-keyword
+  (fn (keyword keywords)
+    (if (empty? keywords)
+        keywords
+        (if (same-keyword? keyword (first keywords))
+            keywords
+            (find-keyword keyword (rest keywords))))))
+
+(def same-keyword?
+  (fn (left right)
+    (if (keyword? right)
+        (value-eq (keyword-name left) (keyword-name right))
+        false)))
+
+(def default-bindings
+  (fn (pairs owner names)
+    (if (empty? pairs)
+        (list)
+        (prepend (default-binding pairs owner names)
+                 (default-bindings (drop 2 pairs) owner names)))))
+
+(def default-binding
+  (fn (pairs owner names)
+    (let key (first pairs))
+    (check-default-key key owner names)
+    (check-default-value pairs)
+    (check-single-default key (pair-keys (drop 2 pairs)))
+    (list (name-of-key key names) (nth pairs 1))))
+
+(def check-default-key
+  (fn (key owner names)
+    (if (keyword? key)
+        (if (key-names-one-of? key names) key (unknown-default-error key owner names))
+        (fail "a default must start with `:`" key
+              (string "write each default as `:" (definition-noun owner)
+                      " value`, as in (defaults :admin? false)")))))
+
+(def unknown-default-error
+  (fn (key owner names)
+    (let noun (definition-noun owner))
+    (let name (definition-name owner))
+    (fail (string "`" name "` has no " noun " `" (keyword-name key) "`") key
+          (if (empty? names)
+              (string "`" name "` has no " noun "s")
+              (string "the " noun "s of `" name "` are " (joined-names names ""))))))
+
+(def check-default-value
+  (fn (pairs)
+    (if (empty? (rest pairs))
+        (fail "this default has no value" (first pairs)
+              (string "write a value after it, as in " (symbol-name (first pairs)) " false"))
+        pairs)))
+
+(def check-single-default
+  (fn (key later-keys)
+    (let repeated (find-keyword key later-keys))
+    (if (empty? repeated)
+        key
+        (fail (string "`" (keyword-name key) "` has two defaults") (first repeated) "keep one"))))
+
+(def joined-names
+  (fn (names quote-mark)
+    (if (empty? names)
+        ""
+        (joined-nonempty-names names quote-mark))))
+
+(def joined-nonempty-names
+  (fn (names quote-mark)
+    (let quoted (string quote-mark (symbol-name (first names)) quote-mark))
+    (if (empty? (rest names))
+        quoted
+        (string quoted ", " (joined-nonempty-names (rest names) quote-mark)))))
+
+(def keyword-of?
+  (fn (key name)
+    (if (keyword? key)
+        (value-eq (keyword-name key) (symbol-name name))
+        false)))
+
+(def key-names-one-of?
+  (fn (key names)
+    (if (empty? names)
+        false
+        (if (keyword-of? key (first names)) true (key-names-one-of? key (rest names))))))
+
+(def name-of-key
+  (fn (key names)
+    (if (keyword-of? key (first names))
+        (first names)
+        (name-of-key key (rest names)))))
+
+(def pair-keys
+  (fn (arguments)
+    (if (empty? arguments)
+        (list)
+        (prepend (first arguments) (pair-keys (drop 2 arguments))))))
+
+(def has-argument?
+  (fn (name keys)
+    (if (empty? keys)
+        false
+        (if (keyword-of? (first keys) name) true (has-argument? name (rest keys))))))
+
+(def reads-by-name?
+  (fn (arguments signature)
+    (if (keyword-pairs? arguments)
+        (if (valid-call-by-name? arguments signature)
+            true
+            (bool-not (keywords-land-on-functions? arguments (signature-types signature))))
+        false)))
+
+(def keyword-pairs?
+  (fn (arguments)
+    (if (whole-pairs? arguments) (every-keyword? (pair-keys arguments)) false)))
+
+(def every-keyword?
+  (fn (forms)
+    (if (empty? forms)
+        true
+        (if (keyword? (first forms)) (every-keyword? (rest forms)) false))))
+
+(def valid-call-by-name?
+  (fn (arguments signature)
+    (let keys (pair-keys arguments))
+    (if (keys-name-distinct? keys (signature-names signature))
+        (empty? (names-without-argument (required-names signature) keys))
+        false)))
+
+(def keys-name-distinct?
+  (fn (keys names)
+    (if (every-key-names-one-of? keys names) (distinct-keys? keys) false)))
+
+(def every-key-names-one-of?
+  (fn (keys names)
+    (if (empty? keys)
+        true
+        (if (key-names-one-of? (first keys) names) (every-key-names-one-of? (rest keys) names) false))))
+
+(def distinct-keys?
+  (fn (keys)
+    (if (empty? keys)
+        true
+        (if (empty? (find-keyword (first keys) (rest keys))) (distinct-keys? (rest keys)) false))))
+
+(def keywords-land-on-functions?
+  (fn (arguments types)
+    (if (value-eq (length arguments) (length types))
+        (every-function-type? (pair-keys types))
+        false)))
+
+(def every-function-type?
+  (fn (types)
+    (if (empty? types)
+        true
+        (if (function-type? (first types)) (every-function-type? (rest types)) false))))
+
+(def function-type?
+  (fn (type)
+    (if (list? type)
+        (if (empty? type) false (function-type-head? (first type)))
+        false)))
+
+(def function-type-head?
+  (fn (head)
+    (if (symbol? head) (function-kind? (symbol-name head)) false)))
+
+(def function-kind?
+  (fn (name)
+    (if (value-eq name "fn")
+        true
+        (if (value-eq name "fn-mut") true (value-eq name "fn-once")))))
+
+(def required-names
+  (fn (signature)
+    (names-without-default (signature-names signature) (signature-defaults signature))))
+
+(def names-without-default
+  (fn (names defaults)
+    (if (empty? names)
+        (list)
+        (if (empty? (default-of (first names) defaults))
+            (prepend (first names) (names-without-default (rest names) defaults))
+            (names-without-default (rest names) defaults)))))
+
+(def names-without-argument
+  (fn (names keys)
+    (if (empty? names)
+        (list)
+        (if (has-argument? (first names) keys)
+            (names-without-argument (rest names) keys)
+            (prepend (first names) (names-without-argument (rest names) keys))))))
+
+(def default-of
+  (fn (name defaults)
+    (if (empty? defaults)
+        defaults
+        (if (value-eq (symbol-name (first (first defaults))) (symbol-name name))
+            (first defaults)
+            (default-of name (rest defaults))))))
+
+(def keyword-call-expansion
+  (fn (form positional signature)
+    (if (symbol? form)
+        positional
+        (keyword-call form positional signature))))
+
+(def keyword-call
+  (fn (form positional signature)
+    (let arguments (rest form))
+    (if (reads-by-name? arguments signature)
+        (named-call form positional signature)
+        (if (value-eq (length arguments) (length (signature-names signature)))
+            (prepend positional arguments)
+            (call-arity-error form signature)))))
+
+(def call-arity-error
+  (fn (form signature)
+    (fail (string "`" (symbol-name (first form)) "` takes " (length (signature-names signature))
+                  " arguments, one per parameter, or a `:name value` pair for each parameter without a default")
+          form
+          (string "write it as `" (prepend (first form) (signature-names signature)) "`"))))
+
+(def named-call
+  (fn (form positional signature)
+    (let pairs (rest form))
+    (let keys (pair-keys pairs))
+    (check-call-keys keys signature)
+    (check-required-parameters form keys signature)
+    (if (needs-temporaries? pairs (signature-names signature))
+        (call-through-temporaries pairs positional signature)
+        (prepend positional (positional-arguments pairs signature)))))
+
+(def check-call-keys
+  (fn (keys signature)
+    (if (empty? keys)
+        keys
+        (do (check-call-key (first keys) signature)
+            (check-given-once (first keys) (rest keys) signature)
+            (check-call-keys (rest keys) signature)))))
+
+(def check-call-key
+  (fn (key signature)
+    (let name (signature-name signature))
+    (let names (signature-names signature))
+    (if (key-names-one-of? key names)
+        key
+        (fail (string "`" name "` has no parameter `" (symbol-name key) "`") key
+              (string "the parameters of `" name "` are " (joined-names (map-list field-keyword names) ""))))))
+
+(def check-given-once
+  (fn (key later-keys signature)
+    (let repeated (find-keyword key later-keys))
+    (if (empty? repeated)
+        key
+        (fail (string "`" (symbol-name key) "` is given twice in `" (signature-name signature) "`")
+              (first repeated)
+              (string "remove the second `" (symbol-name key) "` and its value")))))
+
+(def check-required-parameters
+  (fn (form keys signature)
+    (let missing (names-without-argument (required-names signature) keys))
+    (if (empty? missing)
+        missing
+        (fail (string (if (value-eq (length missing) 1) "missing parameter " "missing parameters ")
+                      (joined-names missing "`") " in `" (signature-name signature) "`")
+              form
+              (string "name every parameter without a default: " (joined-names missing ""))))))
+
+(def positional-arguments
+  (fn (pairs signature)
+    (map-list (fn (name) (argument-for name pairs (signature-defaults signature)))
+              (signature-names signature))))
+
+(def argument-for
+  (fn (name pairs defaults)
+    (let given (pair-of name pairs))
+    (if (empty? given)
+        (nth (default-of name defaults) 1)
+        (nth given 1))))
+
+(def pair-of
+  (fn (name pairs)
+    (if (empty? pairs)
+        pairs
+        (if (keyword-of? (first pairs) name) pairs (pair-of name (drop 2 pairs))))))
+
+(def needs-temporaries?
+  (fn (pairs names)
+    (if (keys-in-order? (pair-keys pairs) names)
+        false
+        (any-compound-value? pairs))))
+
+(def keys-in-order?
+  (fn (keys names)
+    (if (empty? keys)
+        true
+        (if (empty? names)
+            false
+            (if (keyword-of? (first keys) (first names))
+                (keys-in-order? (rest keys) (rest names))
+                (keys-in-order? keys (rest names)))))))
+
+(def any-compound-value?
+  (fn (pairs)
+    (if (empty? pairs)
+        false
+        (if (list? (nth pairs 1)) true (any-compound-value? (drop 2 pairs))))))
+
+(def call-through-temporaries
+  (fn (pairs positional signature)
+    (let call (prepend positional (positional-arguments (bound-pairs pairs) signature)))
+    (prepend (quote do) (concat (temporary-bindings pairs) (list call)))))
+
+(def bound-pairs
+  (fn (pairs)
+    (if (empty? pairs)
+        (list)
+        (prepend (first pairs)
+                 (prepend (bound-value pairs) (bound-pairs (drop 2 pairs)))))))
+
+(def bound-value
+  (fn (pairs)
+    (if (list? (nth pairs 1)) (temporary (first pairs)) (nth pairs 1))))
+
+(def temporary
+  (fn (key)
+    (symbol (quote temporary) (keyword-name key))))
+
+(def temporary-bindings
+  (fn (pairs)
+    (if (empty? pairs)
+        (list)
+        (if (list? (nth pairs 1))
+            (prepend (list (quote let) (temporary (first pairs)) (nth pairs 1))
+                     (temporary-bindings (drop 2 pairs)))
+            (temporary-bindings (drop 2 pairs))))))
 
 (defrule loop
   ((((name value) ...) body ...)

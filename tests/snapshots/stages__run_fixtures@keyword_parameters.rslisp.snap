@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/keyword_parameters.rslisp
+---
+13
+13
+13
+3
+3
+hello, ana
+hi, bo
+10
+10
+y
+x
+13

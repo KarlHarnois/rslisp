@@ -1,8 +1,9 @@
-(use prelude/macros defmacro template map-list whole-pairs?)
-(use prelude/syntax defn)
-(use code first rest list nth take drop length empty? list? symbol? symbol symbol-name value-eq prepend
-          concat string fail keyword? keyword-name keyword-field number-sub
-          bool-not)
+(use prelude/macros defmacro template map-list)
+(use prelude/syntax defn definition declared-forms default-pairs type-missing? defaults-clause?
+                    default-bindings call-signature signature-name signature-names signature-defaults
+                    reads-by-name? has-argument? pair-keys)
+(use code first rest list nth drop length empty? list? symbol? symbol symbol-name value-eq prepend
+          concat string fail keyword? keyword-field)
 
 (export defstruct)
 
@@ -17,34 +18,6 @@
 (def field-initializer
   (fn (field)
     (list (first field) (first field))))
-
-(def ends-with-defaults?
-  (fn (body)
-    (if (empty? body)
-        false
-        (defaults-clause? (nth body (number-sub (length body) 1))))))
-
-(def defaults-clause?
-  (fn (form)
-    (if (list? form)
-        (if (empty? form) false (defaults-head? (first form)))
-        false)))
-
-(def defaults-head?
-  (fn (head)
-    (if (symbol? head) (value-eq (symbol-name head) "defaults") false)))
-
-(def field-forms
-  (fn (body)
-    (if (ends-with-defaults? body)
-        (take (number-sub (length body) 1) body)
-        body)))
-
-(def default-pairs
-  (fn (body)
-    (if (ends-with-defaults? body)
-        (rest (nth body (number-sub (length body) 1)))
-        (list))))
 
 (def field-groups
   (fn (body)
@@ -66,12 +39,6 @@
               (string "write a type after it, as in " (symbol-name keyword) " i64"))
         (first more))))
 
-(def type-missing?
-  (fn (more)
-    (if (empty? more)
-        true
-        (if (keyword? (first more)) true (defaults-clause? (first more))))))
-
 (def field-start-error
   (fn (form)
     (if (defaults-clause? form)
@@ -80,188 +47,13 @@
         (fail "a field must start with `:`" form
               "write each field as `:name type`, as in (defstruct point :x f64 :y f64)"))))
 
-(def default-initializers
-  (fn (pairs name fields)
-    (if (empty? pairs)
-        (list)
-        (prepend (default-initializer pairs name fields)
-                 (default-initializers (drop 2 pairs) name fields)))))
-
-(def default-initializer
-  (fn (pairs name fields)
-    (let key (first pairs))
-    (check-default-key key name fields)
-    (check-default-value pairs)
-    (check-single-default key (pair-keys (drop 2 pairs)))
-    (list (field-of-key key fields) (nth pairs 1))))
-
-(def check-default-key
-  (fn (key name fields)
-    (if (keyword? key)
-        (if (key-names-field? key fields) key (unknown-default-error key name fields))
-        (fail "a default must start with `:`" key
-              "write each default as `:field value`, as in (defaults :admin? false)"))))
-
-(def unknown-default-error
-  (fn (key name fields)
-    (fail (string "`" name "` has no field `" (keyword-name key) "`") key
-          (if (empty? fields)
-              (string "`" name "` has no fields")
-              (string "the fields of `" name "` are " (joined-names fields ""))))))
-
-(def check-default-value
-  (fn (pairs)
-    (if (empty? (rest pairs))
-        (fail "this default has no value" (first pairs)
-              (string "write a value after it, as in " (symbol-name (first pairs)) " false"))
-        pairs)))
-
-(def check-single-default
-  (fn (key later-keys)
-    (if (empty? later-keys)
-        key
-        (if (same-keyword? key (first later-keys))
-            (fail (string "`" (keyword-name key) "` has two defaults") (first later-keys) "keep one")
-            (check-single-default key (rest later-keys))))))
-
-(def joined-names
-  (fn (names quote-mark)
-    (if (empty? names)
-        ""
-        (joined-nonempty-names names quote-mark))))
-
-(def joined-nonempty-names
-  (fn (names quote-mark)
-    (let quoted (string quote-mark (symbol-name (first names)) quote-mark))
-    (if (empty? (rest names))
-        quoted
-        (string quoted ", " (joined-nonempty-names (rest names) quote-mark)))))
-
-(def same-keyword?
-  (fn (left right)
-    (if (keyword? right)
-        (value-eq (keyword-name left) (keyword-name right))
-        false)))
-
-(def keyword-of?
-  (fn (key field)
-    (if (keyword? key)
-        (value-eq (keyword-name key) (symbol-name field))
-        false)))
-
-(def field-of-key
-  (fn (key fields)
-    (if (keyword-of? key (first fields))
-        (first fields)
-        (field-of-key key (rest fields)))))
-
-(def key-names-field?
-  (fn (key fields)
-    (if (empty? fields)
-        false
-        (if (keyword-of? key (first fields)) true (key-names-field? key (rest fields))))))
-
-(def pair-keys
-  (fn (arguments)
-    (if (empty? arguments)
-        (list)
-        (prepend (first arguments) (pair-keys (drop 2 arguments))))))
-
-(def field-has-key?
-  (fn (field keys)
-    (if (empty? keys)
-        false
-        (if (keyword-of? (first keys) field) true (field-has-key? field (rest keys))))))
-
-(def fields-without-key
-  (fn (fields keys)
-    (if (empty? fields)
-        (list)
-        (if (field-has-key? (first fields) keys)
-            (fields-without-key (rest fields) keys)
-            (prepend (first fields) (fields-without-key (rest fields) keys))))))
-
 (def defaults-without-key
   (fn (defaults keys)
     (if (empty? defaults)
         (list)
-        (if (field-has-key? (first (first defaults)) keys)
+        (if (has-argument? (first (first defaults)) keys)
             (defaults-without-key (rest defaults) keys)
             (prepend (first defaults) (defaults-without-key (rest defaults) keys))))))
-
-(def every-key-names-field?
-  (fn (keys fields)
-    (if (empty? keys)
-        true
-        (if (key-names-field? (first keys) fields) (every-key-names-field? (rest keys) fields) false))))
-
-(def distinct-keys?
-  (fn (keys)
-    (if (empty? keys)
-        true
-        (if (repeated-key? (first keys) (rest keys)) false (distinct-keys? (rest keys))))))
-
-(def repeated-key?
-  (fn (key later-keys)
-    (if (empty? later-keys)
-        false
-        (if (same-keyword? key (first later-keys)) true (repeated-key? key (rest later-keys))))))
-
-(def struct-shape
-  (fn (name fields defaults types)
-    (list name fields defaults types)))
-
-(def shape-name
-  (fn (shape)
-    (first shape)))
-
-(def shape-fields
-  (fn (shape)
-    (nth shape 1)))
-
-(def shape-defaults
-  (fn (shape)
-    (nth shape 2)))
-
-(def shape-types
-  (fn (shape)
-    (nth shape 3)))
-
-(def required-fields
-  (fn (shape)
-    (fields-without-default (shape-fields shape) (map-list first (shape-defaults shape)))))
-
-(def fields-without-default
-  (fn (fields defaulted)
-    (if (empty? fields)
-        (list)
-        (if (same-name-in? (first fields) defaulted)
-            (fields-without-default (rest fields) defaulted)
-            (prepend (first fields) (fields-without-default (rest fields) defaulted))))))
-
-(def same-name-in?
-  (fn (field names)
-    (if (empty? names)
-        false
-        (if (value-eq (symbol-name field) (symbol-name (first names)))
-            true
-            (same-name-in? field (rest names))))))
-
-(def reads-as-names?
-  (fn (arguments fields)
-    (if (whole-pairs? arguments)
-        (keys-name-distinct-fields? (pair-keys arguments) fields)
-        false)))
-
-(def keys-name-distinct-fields?
-  (fn (keys fields)
-    (if (every-key-names-field? keys fields) (distinct-keys? keys) false)))
-
-(def names-every-required-field?
-  (fn (arguments shape)
-    (if (reads-as-names? arguments (shape-fields shape))
-        (empty? (fields-without-key (required-fields shape) (pair-keys arguments)))
-        false)))
 
 (def named-initializers
   (fn (arguments)
@@ -273,8 +65,8 @@
 (def named-construction
   (fn (arguments shape)
     (let written (named-initializers arguments))
-    (let omitted (defaults-without-key (shape-defaults shape) (pair-keys arguments)))
-    (prepend (quote new) (prepend (shape-name shape) (concat written omitted)))))
+    (let omitted (defaults-without-key (signature-defaults shape) (pair-keys arguments)))
+    (prepend (quote new) (prepend (signature-name shape) (concat written omitted)))))
 
 (def constructor-arity-error
   (fn (form fields)
@@ -288,55 +80,9 @@
     (let arguments (rest form))
     (if (reads-by-name? arguments shape)
         (named-construction arguments shape)
-        (if (value-eq (length arguments) (length (shape-fields shape)))
+        (if (value-eq (length arguments) (length (signature-names shape)))
             (prepend hidden arguments)
-            (constructor-arity-error form (shape-fields shape))))))
-
-(def reads-by-name?
-  (fn (arguments shape)
-    (if (keyword-pairs? arguments)
-        (if (names-every-required-field? arguments shape)
-            true
-            (bool-not (keywords-land-on-functions? arguments (shape-types shape))))
-        false)))
-
-(def keyword-pairs?
-  (fn (arguments)
-    (if (whole-pairs? arguments) (every-keyword? (pair-keys arguments)) false)))
-
-(def every-keyword?
-  (fn (forms)
-    (if (empty? forms)
-        true
-        (if (keyword? (first forms)) (every-keyword? (rest forms)) false))))
-
-(def keywords-land-on-functions?
-  (fn (arguments types)
-    (if (value-eq (length arguments) (length types))
-        (every-function-type? (pair-keys types))
-        false)))
-
-(def every-function-type?
-  (fn (types)
-    (if (empty? types)
-        true
-        (if (function-type? (first types)) (every-function-type? (rest types)) false))))
-
-(def function-type?
-  (fn (type)
-    (if (list? type)
-        (if (empty? type) false (function-type-head? (first type)))
-        false)))
-
-(def function-type-head?
-  (fn (head)
-    (if (symbol? head) (function-kind? (symbol-name head)) false)))
-
-(def function-kind?
-  (fn (name)
-    (if (value-eq name "fn")
-        true
-        (if (value-eq name "fn-mut") true (value-eq name "fn-once")))))
+            (constructor-arity-error form (signature-names shape))))))
 
 (def constructor-expansion
   (fn (form hidden shape)
@@ -346,10 +92,10 @@
 
 (defmacro defstruct (head body ...)
   (let name (head-name head))
-  (let fields (field-groups (field-forms body)))
+  (let fields (field-groups (declared-forms body)))
   (let field-names (map-list first fields))
   (let field-types (map-list field-type-form fields))
-  (let defaults (default-initializers (default-pairs body) name field-names))
+  (let defaults (default-bindings (default-pairs body) (definition name "field") field-names))
   (let hidden (symbol (quote make) "make-" name))
   (template
     (do (struct (unquote head) (splice fields))
@@ -358,4 +104,4 @@
         (def (unquote (symbol name "->" name))
           (macro (form)
             (constructor-expansion form (quote (unquote hidden))
-                                   (quote (unquote (struct-shape name field-names defaults field-types)))))))))
+                                   (quote (unquote (call-signature name field-names defaults field-types)))))))))
