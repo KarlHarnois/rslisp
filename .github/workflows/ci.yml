@@ -19,11 +19,16 @@ env:
 
 jobs:
   cargo:
+    name: cargo (${{ matrix.os }})
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            tests: cargo xtask coverage
+          - os: macos-latest
+            tests: cargo test --workspace
     runs-on: ${{ matrix.os }}
     timeout-minutes: ${{ matrix.os == 'macos-latest' && 25 || 15 }}
     steps:
@@ -49,11 +54,11 @@ jobs:
         run: nix develop .#ci -c cargo fmt --all --check
       - name: Lint
         run: nix develop .#ci -c cargo clippy --workspace --all-targets -- -D warnings
-      - name: Test with the coverage and CRAP gate
-        id: coverage
-        run: nix develop .#ci -c cargo xtask coverage
+      - name: Test
+        id: tests
+        run: nix develop .#ci -c ${{ matrix.tests }}
       - name: Save cargo cache
-        if: ${{ !cancelled() && steps.coverage.outcome != 'skipped' && steps.cargo-cache.outputs.cache-hit != 'true' }}
+        if: ${{ !cancelled() && steps.tests.outcome != 'skipped' && steps.cargo-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |

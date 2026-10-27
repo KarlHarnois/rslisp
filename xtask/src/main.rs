@@ -9,7 +9,6 @@ mod functions;
 mod gate;
 mod instrumented_tests;
 mod lcov;
-mod platform;
 
 use std::path::Path;
 use std::process::ExitCode;
@@ -17,7 +16,6 @@ use std::process::ExitCode;
 use clap::{Parser, Subcommand};
 
 use gate::QualityGate;
-use platform::Platform;
 
 #[derive(Parser)]
 #[command(about = "Development tasks for this repository")]
@@ -39,7 +37,7 @@ impl Task {
         let manifest_directory = Path::new(env!("CARGO_MANIFEST_DIR"));
         let workspace_root = manifest_directory.parent().unwrap_or(manifest_directory);
         match self {
-            Task::Coverage => QualityGate::new(workspace_root, Platform::current()).run(),
+            Task::Coverage => QualityGate::new(workspace_root).run(),
         }
     }
 }
