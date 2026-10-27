@@ -11,7 +11,7 @@
 
 rslisp is a small Lisp that compiles to Rust. The syntax has few rules, and the compiler infers types and ownership. Most features live in a prelude written in the language itself. The generated Rust has no hidden clones or allocations. [docs/language.md](docs/language.md) describes the language.
 
-```lisp
+```clojure
 (defn main ()
   (println (str "hello" " " "world")))
 ```
