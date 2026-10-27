@@ -1,0 +1,7 @@
+(defstruct window (title (ref str)) (samples (ref (slice i64))))
+
+(defn main ()
+  (let readings (vec 7 9 4))
+  (let first (make-window "morning" readings))
+  (let second first)
+  (println (window-title first) " " (len (window-samples second))))
