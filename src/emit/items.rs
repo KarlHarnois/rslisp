@@ -76,6 +76,7 @@ pub struct ItemEmitter<'a> {
     program: &'a TypedProgram,
     plan: &'a EmitPlan<'a>,
     unsized_parameters: &'a UnsizedParameters,
+    result_borrows: ResultBorrows<'a>,
     pub problems: Vec<Diagnostic>,
     pub names: Vec<(String, String)>,
 }
@@ -92,6 +93,7 @@ impl<'a> ItemEmitter<'a> {
             program,
             plan,
             unsized_parameters,
+            result_borrows: ResultBorrows::new(program, plan),
             problems: Vec::new(),
             names: Vec::new(),
         }
@@ -536,7 +538,7 @@ impl<'a> ItemEmitter<'a> {
         );
         let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
         let used = self.used_written_lifetimes(&definition.value);
-        let flowing = ResultBorrows::of(self.program, self.plan, lambda);
+        let flowing = self.result_borrows.of(lambda);
         let mut params = Vec::new();
         if let Some(kind) = receiver {
             let first = &lambda.params[0];
@@ -676,7 +678,7 @@ impl<'a> ItemEmitter<'a> {
             .copied()
             .filter(|binding| used.contains(binding))
             .collect();
-        let flowing = ResultBorrows::of(self.program, self.plan, lambda);
+        let flowing = self.result_borrows.of(lambda);
         let opaque_lifetimes = Rc::new(FreshLifetimes::new(
             self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),
         ));
@@ -982,7 +984,7 @@ impl<'a> ItemEmitter<'a> {
         let TypedExprKind::Fn(lambda) = &value.kind else {
             return false;
         };
-        let flowing = ResultBorrows::of(self.program, self.plan, lambda);
+        let flowing = self.result_borrows.of(lambda);
         lambda.params.iter().any(|param| {
             flowing.contains(&param.binding) && self.hides_borrow_from_elision(&param.ty)
         })
