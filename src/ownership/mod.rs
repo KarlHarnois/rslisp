@@ -2,6 +2,7 @@ mod changes;
 mod checks;
 mod definitions;
 mod functions;
+mod instantiation;
 mod kinds;
 mod modes;
 mod moves;

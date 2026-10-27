@@ -1,0 +1,3 @@
+(defn identity (x) x)
+(defn apply-one (f a) (f a))
+(defn main () (println (apply-one identity 5)))

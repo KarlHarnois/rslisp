@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/generic_function_value_no_adjustment.rslisp
+---
+error[L0507]: mismatched function type
+ --> check/generic_function_value_no_adjustment.rslisp:3:37
+  |
+3 | (defn main () (println (apply-first change! (vec (vec 1)))))
+  |                                     ^^^^^^^ expected `(fn ((ref (vec i64))) usize)`, found `(fn ((mut (vec i64))) usize)`
+  |
+  = note: no adjustment makes parameter 1 match
+  = help: change the parameter's ownership in a `type` signature, or pass a function that matches

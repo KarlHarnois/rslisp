@@ -1,0 +1,3 @@
+(defn change! (items) (push! items 1) (len items))
+(defn apply-first (f rows) (f (at rows 0)))
+(defn main () (println (apply-first change! (vec (vec 1)))))

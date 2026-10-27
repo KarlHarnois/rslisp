@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/generic_function_value_borrowed.rslisp
+---
+fn label(name: &str, count: u16) -> String {
+    format!("{}{}", name, count)
+}
+
+fn apply_two(f: impl FnOnce(&str, u16) -> String, a: &str, b: u16) -> String {
+    f(a, b)
+}
+
+fn main() {
+    let name = "Leaf".to_string();
+    let count: u16 = 3;
+    println!("{}", apply_two(label, name.as_str(), count))
+}

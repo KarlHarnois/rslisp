@@ -1,0 +1,26 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/generic_function_value_two_types.rslisp
+---
+fn increment(x: i64) -> i64 {
+    x + 1
+}
+
+fn size(items: Vec<i64>) -> usize {
+    items.len()
+}
+
+fn shout(word: String) -> String {
+    format!("{}!", word)
+}
+
+fn apply_one<A, B>(f: impl FnOnce(A) -> B, a: A) -> B {
+    f(a)
+}
+
+fn main() {
+    println!("{}", apply_one(increment, 41));
+    println!("{}", apply_one(size, vec![1_i64, 2_i64]));
+    println!("{}", apply_one(shout, "Leaf".to_string()))
+}
