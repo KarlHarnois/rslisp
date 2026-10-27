@@ -1812,21 +1812,39 @@ impl TypeChecker {
 
     fn iteration(&self, expected: &Type, item: Type) -> (&'static str, Type) {
         match item {
-            Type::Ref(_, element) if self.expects_copied_items(expected) => {
+            Type::Ref(_, element) if self.expects_copied_items(expected, &element) => {
                 ("{0}.iter().copied()", *element)
             }
             item => ("{0}.iter()", item),
         }
     }
 
-    fn expects_copied_items(&self, expected: &Type) -> bool {
+    fn expects_copied_items(&self, expected: &Type, element: &Type) -> bool {
         let Type::Named(_, arguments) = expected else {
             return false;
         };
         let [item] = arguments.as_slice() else {
             return false;
         };
-        matches!(self.unifier.shallow(item), Type::Var(var) if self.allows_only_copy_values(var))
+        match self.unifier.shallow(item) {
+            Type::Var(var) => self.allows_only_copy_values(var),
+            item => self.is_copy_element(&item, element),
+        }
+    }
+
+    fn is_copy_element(&self, item: &Type, element: &Type) -> bool {
+        let item = self.unifier.resolve(item).without_written_lifetimes();
+        self.copy_rules().is_copy(&item) && self.element_is(element, &item)
+    }
+
+    fn element_is(&self, element: &Type, item: &Type) -> bool {
+        match (self.unifier.shallow(element), item) {
+            (Type::Var(var), Type::Primitive(primitive)) => self
+                .unifier
+                .literal_kind(var)
+                .is_some_and(|kind| kind.accepts(*primitive)),
+            (element, item) => &self.unifier.resolve(&element).without_written_lifetimes() == item,
+        }
     }
 
     fn collection_item(&self, ty: &Type) -> Option<(Type, Type)> {

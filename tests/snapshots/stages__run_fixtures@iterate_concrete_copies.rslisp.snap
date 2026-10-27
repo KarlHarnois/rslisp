@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/iterate_concrete_copies.rslisp
+---
+200
+620
