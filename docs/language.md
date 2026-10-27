@@ -248,6 +248,8 @@ Macro bodies run in the compiler's interpreter. They use the kernel forms, the b
 
 The compiler checks every macro body and the functions it reaches, even a macro nothing calls. A mistake is reported where the macro is defined, even in a branch that never runs.
 
+A macro also answers for its name in value position. When a program uses a macro's name as a value, as in `(let build ->car)`, the expander calls the macro with the bare symbol as its form. If the macro returns a form, the expander uses that form in place of the name. If the macro fails, the program gets the error `is a macro, not a value`. A macro that handles value position tests its form with `symbol?`. A macro that takes its form apart with `first`, `rest` or `nth` fails on a symbol, so it keeps the error. The prelude cannot provide this, because a macro runs only at the head of a list, and only the expander sees a macro's name standing alone.
+
 The prelude also provides `defn` for a function definition, `the` for a typed value, `->` and `->>` for threading a value through calls, `let-try` and `try->` for propagating errors, and `assoc` and `assoc-in` for changing a value. `defn` expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
 
 The prelude builds three tools on top of `macro`:
