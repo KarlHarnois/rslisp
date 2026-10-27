@@ -9,10 +9,10 @@ error[L0321]: a failure description takes `:part value` pairs
  3 | (def unknown-part (macro (form) (fail "bad call" form "fix it" (quote (:cod repeated-parameter)))))
    |                                                                        ^^^^ not a `:part value` pair
 ...
-11 | (unknown-part)
+12 | (unknown-part)
    | -------------- in this macro call
    |
-   = help: the parts are `:code`, `:earlier`
+   = help: the parts are `:code`, `:earlier`, `:suggest`
 
 error[L0321]: a failure description takes `:part value` pairs
   --> expand/failure_descriptions.rslisp:4:78
@@ -20,10 +20,10 @@ error[L0321]: a failure description takes `:part value` pairs
  4 | (def part-without-value (macro (form) (fail "bad call" form "fix it" (quote (:code)))))
    |                                                                              ^^^^^ not a `:part value` pair
 ...
-12 | (part-without-value)
+13 | (part-without-value)
    | -------------------- in this macro call
    |
-   = help: the parts are `:code`, `:earlier`
+   = help: the parts are `:code`, `:earlier`, `:suggest`
 
 error[L0322]: no macro diagnostic is named `repeated-parametr`
   --> expand/failure_descriptions.rslisp:5:81
@@ -31,7 +31,7 @@ error[L0322]: no macro diagnostic is named `repeated-parametr`
  5 | (def misspelled-code (macro (form) (fail "bad call" form "fix it" (quote (:code repeated-parametr)))))
    |                                                                                 ^^^^^^^^^^^^^^^^^ unknown diagnostic
 ...
-13 | (misspelled-code)
+14 | (misspelled-code)
    | ----------------- in this macro call
    |
 help: a diagnostic with a similar name exists
@@ -45,7 +45,7 @@ error[L0322]: no macro diagnostic is named `repeated-field`
  6 | (def type-stage-code (macro (form) (fail "bad call" form "fix it" (quote (:code repeated-field)))))
    |                                                                                 ^^^^^^^^^^^^^^ unknown diagnostic
 ...
-14 | (type-stage-code)
+15 | (type-stage-code)
    | ----------------- in this macro call
 
 error[L0321]: a failure description takes `:part value` pairs
@@ -54,10 +54,10 @@ error[L0321]: a failure description takes `:part value` pairs
  7 | (def string-code (macro (form) (fail "bad call" form "fix it" (quote (:code "L0320")))))
    |                                                                             ^^^^^^^ not a `:part value` pair
 ...
-15 | (string-code)
+16 | (string-code)
    | ------------- in this macro call
    |
-   = help: the parts are `:code`, `:earlier`
+   = help: the parts are `:code`, `:earlier`, `:suggest`
 
 error[L0311]: `fail` takes 4 arguments but 5 were given
   --> expand/failure_descriptions.rslisp:8:29
@@ -65,13 +65,24 @@ error[L0311]: `fail` takes 4 arguments but 5 were given
  8 | (def too-many (macro (form) (fail "bad call" form "fix it" (quote ()) form)))
    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 5 arguments given
 ...
-16 | (too-many)
+17 | (too-many)
    | ---------- in this macro call
 
-error[L0320]: the leaf is parked
-  --> expand/failure_descriptions.rslisp:17:1
+error[L0321]: a failure description takes `:part value` pairs
+  --> expand/failure_descriptions.rslisp:9:86
    |
-17 | (coded)
+ 9 | (def string-suggestion (macro (form) (fail "bad call" form "fix it" (quote (:suggest "leaf")))))
+   |                                                                                      ^^^^^^ not a `:part value` pair
+...
+18 | (string-suggestion)
+   | ------------------- in this macro call
+   |
+   = help: the parts are `:code`, `:earlier`, `:suggest`
+
+error[L0320]: the leaf is parked
+  --> expand/failure_descriptions.rslisp:19:1
+   |
+19 | (coded)
    | ^^^^^^^ here
    |
    = help: drive it

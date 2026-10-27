@@ -1,5 +1,5 @@
 use crate::core::Keyword;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, SimilarName};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, SimilarName, Suggestion};
 use crate::interpret::arguments::Arguments;
 use crate::interpret::problems::InterpretProblems;
 use crate::reader::Form;
@@ -31,8 +31,8 @@ impl<'a> FailCall<'a> {
         self.expect_count_in_range()?;
         let message = self.arguments.string(Self::MESSAGE)?.to_string();
         let culprit = self.arguments.form(Self::CULPRIT)?.span();
-        let failure = self.description()?.diagnostic(message, culprit);
-        self.with_help(failure)
+        let help = self.help()?;
+        Ok(self.description()?.diagnostic(message, culprit, help))
     }
 
     fn expect_count_in_range(&self) -> Result<(), Diagnostic> {
@@ -49,11 +49,11 @@ impl<'a> FailCall<'a> {
         }
     }
 
-    fn with_help(&self, failure: Diagnostic) -> Result<Diagnostic, Diagnostic> {
+    fn help(&self) -> Result<Option<String>, Diagnostic> {
         if self.has_argument(Self::HELP) {
-            Ok(failure.with_help(self.arguments.string(Self::HELP)?))
+            Ok(Some(self.arguments.string(Self::HELP)?.to_string()))
         } else {
-            Ok(failure)
+            Ok(None)
         }
     }
 
@@ -65,12 +65,14 @@ impl<'a> FailCall<'a> {
 pub struct FailureDescription {
     code: DiagnosticCode,
     earlier: Option<Span>,
+    replacement: Option<String>,
 }
 
 impl FailureDescription {
-    pub const PARTS: [&'static str; 2] = [Self::CODE, Self::EARLIER];
+    pub const PARTS: [&'static str; 3] = [Self::CODE, Self::EARLIER, Self::SUGGEST];
     const CODE: &'static str = "code";
     const EARLIER: &'static str = "earlier";
+    const SUGGEST: &'static str = "suggest";
 
     fn read(parts: &[Form]) -> Result<Self, Diagnostic> {
         parts
@@ -98,6 +100,10 @@ impl FailureDescription {
                 earlier: Some(value.span()),
                 ..self
             }),
+            Some(Self::SUGGEST) => Ok(Self {
+                replacement: Some(Self::symbol_name(value)?.to_string()),
+                ..self
+            }),
             _ => Err(InterpretProblems::malformed_failure_part(part.span())),
         }
     }
@@ -108,17 +114,33 @@ impl FailureDescription {
     }
 
     fn code(value: &Form) -> Result<DiagnosticCode, Diagnostic> {
-        let name = value
-            .as_symbol()
-            .ok_or_else(|| InterpretProblems::malformed_failure_part(value.span()))?
-            .name();
+        let name = Self::symbol_name(value)?;
         DiagnosticCode::macro_stage_named(name).ok_or_else(|| {
             let similar = SimilarName::closest(name, &DiagnosticCode::macro_stage_names());
             InterpretProblems::unknown_failure_code(name, value.span(), similar)
         })
     }
 
-    fn diagnostic(self, message: String, culprit: Span) -> Diagnostic {
+    fn symbol_name(value: &Form) -> Result<&str, Diagnostic> {
+        value
+            .as_symbol()
+            .map(|symbol| symbol.name())
+            .ok_or_else(|| InterpretProblems::malformed_failure_part(value.span()))
+    }
+
+    fn diagnostic(mut self, message: String, culprit: Span, help: Option<String>) -> Diagnostic {
+        let replacement = self.replacement.take();
+        let failure = self.labelled(message, culprit);
+        match (help, replacement) {
+            (Some(help), Some(replacement)) => {
+                failure.with_suggestion(help, Suggestion::new(culprit, replacement))
+            }
+            (Some(help), None) => failure.with_help(help),
+            (None, _) => failure,
+        }
+    }
+
+    fn labelled(self, message: String, culprit: Span) -> Diagnostic {
         match self.earlier {
             Some(earlier) => InterpretProblems::failed_again(self.code, message, culprit, earlier),
             None => InterpretProblems::failed(self.code, message, culprit),
@@ -131,6 +153,7 @@ impl Default for FailureDescription {
         Self {
             code: DiagnosticCode::MACRO_FAILED,
             earlier: None,
+            replacement: None,
         }
     }
 }

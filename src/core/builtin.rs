@@ -22,6 +22,7 @@ pub enum Builtin {
     MakeSymbol,
     MakeString,
     SameBinding,
+    ClosestName,
     Fail,
     NumberAdd,
     NumberSub,
@@ -39,7 +40,7 @@ pub enum Builtin {
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 36] = [
+    const NAMES: [(Builtin, &'static str); 37] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -62,6 +63,7 @@ impl Builtin {
         (Builtin::MakeSymbol, "symbol"),
         (Builtin::MakeString, "string"),
         (Builtin::SameBinding, "same-binding?"),
+        (Builtin::ClosestName, "closest-name"),
         (Builtin::Fail, "fail"),
         (Builtin::NumberAdd, "number-add"),
         (Builtin::NumberSub, "number-sub"),

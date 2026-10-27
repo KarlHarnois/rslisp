@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/closest_name.rslisp
+---
+(def model-guesses (fn () (quote ((leaf) ()))))

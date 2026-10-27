@@ -66,6 +66,14 @@ impl Arguments {
             .ok_or_else(|| self.wrong(index, "a symbol"))
     }
 
+    pub fn symbols(&self, index: usize) -> Result<Vec<&Symbol>, Diagnostic> {
+        self.list(index)?
+            .iter()
+            .map(Form::as_symbol)
+            .collect::<Option<Vec<&Symbol>>>()
+            .ok_or_else(|| self.wrong(index, "a list of symbols"))
+    }
+
     pub fn keyword_name(&self, index: usize) -> Result<&str, Diagnostic> {
         self.values[index]
             .keyword_name()
