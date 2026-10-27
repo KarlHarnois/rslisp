@@ -22,7 +22,7 @@ impl Expander<'_> {
         let [keyword, value] = items else {
             return Err(Self::field_keyword_arity(form, items));
         };
-        let value = self.lower_expr(value)?;
+        let value = self.lower_recovered(value)?;
         let label = Self::keyword_label(field_name, keyword.span());
         Ok(Self::field_read(value, label, form.span()))
     }

@@ -156,10 +156,7 @@ impl Expander<'_> {
             return self.lower_variant_call(binding, form, items);
         }
         let callee = self.lower_recovered(&items[0])?;
-        let arguments = items[1..]
-            .iter()
-            .map(|argument| self.lower_recovered(argument))
-            .collect::<Result<Vec<Expr>, Diagnostic>>()?;
+        let arguments = self.lower_arguments(&items[1..])?;
         Ok(Expr::new(
             ExprKind::Call(Box::new(callee), arguments),
             form.span(),
@@ -172,14 +169,18 @@ impl Expander<'_> {
         form: &Form,
         items: &[Form],
     ) -> Result<Expr, Diagnostic> {
-        let arguments = items[1..]
-            .iter()
-            .map(|argument| self.lower_recovered(argument))
-            .collect::<Result<Vec<Expr>, Diagnostic>>()?;
+        let arguments = self.lower_arguments(&items[1..])?;
         Ok(Expr::new(
             ExprKind::Variant(binding, arguments),
             form.span(),
         ))
+    }
+
+    fn lower_arguments(&mut self, arguments: &[Form]) -> Result<Vec<Expr>, Diagnostic> {
+        arguments
+            .iter()
+            .map(|argument| self.lower_recovered(argument))
+            .collect()
     }
 
     fn variant_head(&self, form: &Form) -> Option<BindingId> {
@@ -192,7 +193,7 @@ impl Expander<'_> {
         .then_some(binding)
     }
 
-    fn lower_recovered(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
+    pub(super) fn lower_recovered(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
         match self.lower_expr(form) {
             Ok(expr) => Ok(expr),
             Err(diagnostic) => self.recover(diagnostic, form.span()),
