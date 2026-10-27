@@ -1,6 +1,6 @@
 # RFC 0038: Field keywords
 
-**Status:** Accepted
+**Status:** Accepted. Its construction call rule is superseded by 0039.
 **Date:** 2026-10-26
 
 ## Problem
