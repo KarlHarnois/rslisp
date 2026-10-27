@@ -24,7 +24,7 @@
     (let binders (parameter-binders declared))
     (let names (map-list binder-name binders))
     (check-distinct-parameters (parameter-keywords declared))
-    (let defaults (default-bindings (default-pairs parameters) (definition name "parameter") names))
+    (let defaults (default-bindings (default-pairs parameters) (definition name "parameter" field-keyword) names))
     (let signature (call-signature name names defaults (map-list binder-type binders)))
     (let positional (symbol (quote function) (symbol-name name)))
     (template
@@ -34,16 +34,20 @@
               (keyword-call-expansion form (quote (unquote positional)) (quote (unquote signature)))))))))
 
 (def definition
-  (fn (name noun)
-    (list name noun)))
+  (fn (name noun spell)
+    (fn (read) (read name noun spell))))
 
 (def definition-name
   (fn (owner)
-    (first owner)))
+    (owner (fn (name noun spell) name))))
 
 (def definition-noun
   (fn (owner)
-    (nth owner 1)))
+    (owner (fn (name noun spell) noun))))
+
+(def definition-spelling
+  (fn (owner)
+    (owner (fn (name noun spell) spell))))
 
 (def call-signature
   (fn (name names defaults types)
@@ -199,14 +203,13 @@
   (fn (key owner names)
     (let noun (definition-noun owner))
     (let name (definition-name owner))
-    (let parameter? (value-eq noun "parameter"))
     (fail (string "`" name "` has no " noun " `"
-                  (if parameter? (symbol-name key) (keyword-name key)) "`")
+                  (symbol-name ((definition-spelling owner) (keyword-field key))) "`")
           key
           (if (empty? names)
               (string "`" name "` has no " noun "s")
               (string "the " noun "s of `" name "` are "
-                      (joined-names (if parameter? (map-list field-keyword names) names) ""))))))
+                      (joined-names (map-list (definition-spelling owner) names) ""))))))
 
 (def check-default-value
   (fn (pairs)
@@ -371,7 +374,7 @@
 (def keyword-call
   (fn (form positional signature)
     (read-call form positional signature
-               (definition (signature-name signature) "parameter")
+               (definition (signature-name signature) "parameter" field-keyword)
                (fn (form) (named-call form positional signature)))))
 
 (def read-call
