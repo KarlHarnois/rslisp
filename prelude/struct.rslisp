@@ -100,7 +100,9 @@
 (def unknown-default-error
   (fn (key name fields)
     (fail (string "`" name "` has no field `" (keyword-name key) "`") key
-          (string "the fields of `" name "` are " (joined-names fields "")))))
+          (if (empty? fields)
+              (string "`" name "` has no fields")
+              (string "the fields of `" name "` are " (joined-names fields ""))))))
 
 (def check-default-value
   (fn (pairs)
@@ -119,10 +121,16 @@
 
 (def joined-names
   (fn (names quote-mark)
+    (if (empty? names)
+        ""
+        (joined-nonempty-names names quote-mark))))
+
+(def joined-nonempty-names
+  (fn (names quote-mark)
     (let quoted (string quote-mark (symbol-name (first names)) quote-mark))
     (if (empty? (rest names))
         quoted
-        (string quoted ", " (joined-names (rest names) quote-mark)))))
+        (string quoted ", " (joined-nonempty-names (rest names) quote-mark)))))
 
 (def same-keyword?
   (fn (left right)
@@ -268,14 +276,15 @@
 (def constructor-arity-error
   (fn (form fields)
     (fail (string "`" (symbol-name (first form)) "` takes " (length fields)
-                  " arguments, one per field, or a `:field value` pair for each field")
+                  " arguments, one per field, or a `:field value` pair for each field without a default")
           form
           (string "write it as `" (prepend (first form) fields) "`"))))
 
 (def missing-fields-error
   (fn (form shape)
     (let missing (fields-without-key (required-fields shape) (pair-keys (rest form))))
-    (fail (string "missing fields " (joined-names missing "`") " in `" (shape-name shape) "`")
+    (fail (string (if (value-eq (length missing) 1) "missing field " "missing fields ")
+                  (joined-names missing "`") " in `" (shape-name shape) "`")
           form
           (string "name every field without a default: " (joined-names missing "")))))
 
