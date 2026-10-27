@@ -10,4 +10,4 @@
   (let by-name (->sorter :name "by name"))
   (let by-name-again (->sorter name-of "by name again"))
   (let ana (->user :name "ana" :age 34))
-  (println (:label by-name) (:label by-name-again) (apply-key :name ana)))
+  (println (:label by-name) (:label by-name-again) (apply-key (:key by-name) ana)))

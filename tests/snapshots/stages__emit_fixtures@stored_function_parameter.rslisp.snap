@@ -46,8 +46,24 @@ fn main() {
     let by_next_age = make_sorter(|someone: &User| someone.age + 1, "by next age");
     let by_age_again = rekeyed(by_key(age_of, "by age again"), age_of);
     let oldest_last = ascending(age_of);
+    let oldest_first = Order::Unordered;
+    let ana = User {
+        name: "ana".to_string(),
+        age: 34,
+    };
     println!(
-        "{}{}{}",
-        by_age.label, by_next_age.label, by_age_again.label
+        "{}{}{}{}{}{}",
+        by_age.label,
+        by_next_age.label,
+        by_age_again.label,
+        (by_age.key)(&ana),
+        match oldest_last {
+            Order::Ascending(key) => key(&ana),
+            Order::Unordered => 0,
+        },
+        match oldest_first {
+            Order::Ascending(key) => key(&ana),
+            Order::Unordered => 0,
+        }
     )
 }
