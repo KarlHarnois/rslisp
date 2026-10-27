@@ -51,10 +51,18 @@ error[L0301]: a default must start with `:`
   |
   = help: write each default as `:field value`, as in (defaults :admin? false)
 
-error[L0301]: missing fields `email` in `user`
-  --> expand/defaults_errors.rslisp:10:3
+error[L0301]: `blank` has no field `x`
+ --> expand/defaults_errors.rslisp:8:28
+  |
+8 | (defstruct blank (defaults :x 1))
+  |                            ^^ here
+  |
+  = help: `blank` has no fields
+
+error[L0301]: missing field `email` in `user`
+  --> expand/defaults_errors.rslisp:11:3
    |
-10 |   (->user :name "ana"))
+11 |   (->user :name "ana"))
    |   ^^^^^^^^^^^^^^^^^^^^ here
    |
    = help: name every field without a default: email

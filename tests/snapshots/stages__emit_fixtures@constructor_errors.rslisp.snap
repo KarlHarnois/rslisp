@@ -11,7 +11,7 @@ error[L0304]: `unless` is a macro, not a value
   |
   = help: a macro can only be called; pass a function instead
 
-error[L0301]: `->car` takes 4 arguments, one per field, or a `:field value` pair for each field
+error[L0301]: `->car` takes 4 arguments, one per field, or a `:field value` pair for each field without a default
  --> emit/constructor_errors.rslisp:6:3
   |
 6 |   (->car "Honda" "Civic"))
