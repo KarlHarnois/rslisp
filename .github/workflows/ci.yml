@@ -27,8 +27,10 @@ jobs:
         include:
           - os: ubuntu-latest
             tests: cargo xtask coverage
+            build: coverage
           - os: macos-latest
             tests: cargo test --workspace
+            build: test
     runs-on: ${{ matrix.os }}
     timeout-minutes: ${{ matrix.os == 'macos-latest' && 25 || 15 }}
     steps:
@@ -51,8 +53,8 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-${{ hashFiles('flake.lock') }}-
+          key: ${{ runner.os }}-cargo-${{ matrix.build }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-${{ matrix.build }}-${{ hashFiles('flake.lock') }}-
       - name: Format
         if: runner.os == 'Linux'
         run: nix develop .#ci -c cargo fmt --all --check
@@ -70,7 +72,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ matrix.build }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
 
   flake:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
