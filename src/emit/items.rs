@@ -1,7 +1,9 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::rc::Rc;
 
 use super::expressions::ExpressionEmitter;
 use super::fragment::{Code, Fragment};
+use super::fresh_lifetimes::FreshLifetimes;
 use super::literal_generics::LiteralGenerics;
 use super::locals::LocalNames;
 use super::mangle::NameMangler;
@@ -822,13 +824,24 @@ impl<'a> ItemEmitter<'a> {
         inferred: Option<&str>,
         flowing: &HashSet<BindingId>,
     ) -> String {
+        let scope = self.parameter_scope(param, lifetimes, used, inferred, flowing);
+        emitter.bind_parameter_in(param, TypePosition::Signature, &scope)
+    }
+
+    fn parameter_scope(
+        &self,
+        param: &TypedBinder,
+        lifetimes: &[BindingId],
+        used: &HashSet<BindingId>,
+        inferred: Option<&str>,
+        flowing: &HashSet<BindingId>,
+    ) -> LifetimeScope {
         let elided = if flowing.contains(&param.binding) {
             inferred
         } else {
             None
         };
-        let scope = self.lifetime_scope_used(lifetimes, used, elided);
-        emitter.bind_parameter_in(param, TypePosition::Signature, &scope)
+        self.lifetime_scope_used(lifetimes, used, elided)
     }
 
     fn function(&mut self, definition: &TypedDefinition, info: &ItemInfo) -> Vec<Fragment> {
@@ -850,18 +863,23 @@ impl<'a> ItemEmitter<'a> {
             .filter(|binding| used.contains(binding))
             .collect();
         let flowing = ResultBorrows::of(self.program, lambda);
+        let opaque_lifetimes = Rc::new(FreshLifetimes::new(
+            self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),
+        ));
         let params: Vec<String> = lambda
             .params
             .iter()
             .map(|param| {
-                self.bind_parameter_lifetime(
-                    &mut emitter,
-                    param,
-                    &definition.scheme.lifetimes,
-                    &used,
-                    inferred.as_deref(),
-                    &flowing,
-                )
+                let scope = self
+                    .parameter_scope(
+                        param,
+                        &definition.scheme.lifetimes,
+                        &used,
+                        inferred.as_deref(),
+                        &flowing,
+                    )
+                    .naming_opaque_lifetimes(&opaque_lifetimes);
+                emitter.bind_parameter_in(param, TypePosition::Signature, &scope)
             })
             .collect();
         let result = match &definition.value.ty {
@@ -872,8 +890,10 @@ impl<'a> ItemEmitter<'a> {
             _ => String::new(),
         };
         let literal_generics = LiteralGenerics::of(&definition.value);
+        let mut lifetimes = self.declared_lifetimes(inferred.as_deref(), &written);
+        lifetimes.extend(opaque_lifetimes.issued());
         let generics = Self::with_lifetimes(
-            &self.declared_lifetimes(inferred.as_deref(), &written),
+            &lifetimes,
             types.generics(
                 &definition.scheme.params,
                 &definition.scheme.body,
@@ -1144,18 +1164,22 @@ impl<'a> ItemEmitter<'a> {
             .iter()
             .map(|parameter| self.borrow_lifetimes(parameter))
             .sum();
-        result_lifetimes > 0 && (parameter_lifetimes > 1 || self.result_flows_from_function(value))
+        result_lifetimes > 0 && (parameter_lifetimes > 1 || self.result_flows_past_elision(value))
     }
 
-    fn result_flows_from_function(&self, value: &TypedExpr) -> bool {
+    fn result_flows_past_elision(&self, value: &TypedExpr) -> bool {
         let TypedExprKind::Fn(lambda) = &value.kind else {
             return false;
         };
         let flowing = ResultBorrows::of(self.program, lambda);
-        let borrows = SignatureBorrows::new(self.program);
         lambda.params.iter().any(|param| {
-            flowing.contains(&param.binding) && borrows.is_borrowing_function(&param.ty)
+            flowing.contains(&param.binding) && self.hides_borrow_from_elision(&param.ty)
         })
+    }
+
+    fn hides_borrow_from_elision(&self, ty: &Type) -> bool {
+        SignatureBorrows::new(self.program).is_borrowing_function(ty)
+            || OpaqueBorrows::new(self.program).holds_borrow(ty)
     }
 
     fn inferred_lifetime(&self, lifetimes: &[BindingId], value: &TypedExpr) -> Option<String> {
@@ -1196,7 +1220,7 @@ impl<'a> ItemEmitter<'a> {
                 .map(|binding| RustTypes::binding_lifetime(self.program, *binding))
                 .collect();
             used.extend(reserved.map(str::to_string));
-            Self::unused_lifetime_name_from(&used)
+            FreshLifetimes::unused_name(&used)
         })
     }
 
@@ -1205,25 +1229,7 @@ impl<'a> ItemEmitter<'a> {
             .iter()
             .map(|binding| RustTypes::binding_lifetime(program, *binding))
             .collect();
-        Self::unused_lifetime_name_from(&used)
-    }
-
-    fn unused_lifetime_name_from(used: &[String]) -> String {
-        let mut position = 0;
-        loop {
-            let name = if position < 26 {
-                format!(
-                    "'{}",
-                    char::from(b'a' + u8::try_from(position).expect("fewer than 26"))
-                )
-            } else {
-                format!("'a{position}")
-            };
-            if !used.contains(&name) {
-                return name;
-            }
-            position += 1;
-        }
+        FreshLifetimes::unused_name(&used)
     }
 
     fn used_written_lifetimes(&self, value: &TypedExpr) -> HashSet<BindingId> {

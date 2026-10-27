@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/iterate_elided_item_lifetime.rslisp
+---
+2
+2
+1
+4
+Some("Sakura")

@@ -7,11 +7,11 @@ fn total(values: impl Iterator<Item = i64>) -> i64 {
     crate::prelude::iterator::sum(values)
 }
 
-fn count_long(names: impl Iterator<Item = &str>) -> usize {
+fn count_long<'a>(names: impl Iterator<Item = &'a str>) -> usize {
     names.filter(|name: &&str| name.len() > 4).count()
 }
 
-fn count_big(values: impl Iterator<Item = &i64>) -> usize {
+fn count_big<'a>(values: impl Iterator<Item = &'a i64>) -> usize {
     values.filter(|value: &&i64| **value > 50).count()
 }
 

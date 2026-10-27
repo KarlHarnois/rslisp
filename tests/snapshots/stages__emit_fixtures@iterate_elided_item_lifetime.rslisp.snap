@@ -1,0 +1,51 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/iterate_elided_item_lifetime.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    model: &'a str,
+    year: u16,
+}
+
+fn make_car(model: &str, year: u16) -> Car<'_> {
+    Car { model, year }
+}
+
+fn count_long<'a>(names: impl Iterator<Item = &'a str>) -> usize {
+    names.filter(|name: &&str| name.len() > 4).count()
+}
+
+fn count_big<'a>(values: impl Iterator<Item = &'a i64>) -> usize {
+    values.filter(|value: &&i64| **value > 50).count()
+}
+
+fn count_new<'a>(cars: impl Iterator<Item = &'a Car<'a>>) -> usize {
+    cars.filter(|car: &&Car<'_>| car.year > 2020).count()
+}
+
+fn count_both<'a, 'b>(
+    models: impl Iterator<Item = &'a str>,
+    makers: impl Iterator<Item = &'b str>,
+) -> usize {
+    models.count() + makers.count()
+}
+
+fn last_name<'a>(names: impl Iterator<Item = &'a str>) -> Option<&'a str> {
+    names.max()
+}
+
+fn main() {
+    let names = vec!["Leaf", "Ariya", "Sakura"];
+    let scores: Vec<i64> = vec![70_i64, 40_i64, 90_i64];
+    let cars = vec![make_car("Leaf", 2024), make_car("Micra", 2017)];
+    println!("{}", count_long(names.iter().copied()));
+    println!("{}", count_big(scores.iter()));
+    println!("{}", count_new(cars.iter()));
+    println!(
+        "{}",
+        count_both(names.iter().copied(), vec!["Nissan"].iter().copied())
+    );
+    println!("{:?}", last_name(names.iter().copied()))
+}
