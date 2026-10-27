@@ -1,0 +1,10 @@
+(enum label (named str) blank)
+
+(defn build ()
+  (let text (to-string "Leaf"))
+  (label/named (as-str text)))
+
+(defn main ()
+  (match (build)
+    ((named text) (println text))
+    (blank (println "blank"))))

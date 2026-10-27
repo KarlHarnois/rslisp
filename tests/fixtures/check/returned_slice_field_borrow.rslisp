@@ -1,0 +1,8 @@
+(defstruct report :title (ref str) :scores (slice i64))
+
+(defn build ((title (ref str)))
+  (let scores (vec 3 1 2))
+  (->report :title title :scores (ref scores)))
+
+(defn main ()
+  (println (:title (build "Leaf"))))

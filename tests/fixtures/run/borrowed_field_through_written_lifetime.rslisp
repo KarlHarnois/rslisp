@@ -1,0 +1,11 @@
+(defstruct car :make str :year u16)
+
+(type first (where ('a 'b) (fn ((ref 'a str) (ref 'b str)) (ref 'a str))))
+(defn first (a b) a)
+
+(defn build ((make (ref str)) year)
+  (let other (to-string "Leaf"))
+  (->car :make (first make (as-str other)) :year year))
+
+(defn main ()
+  (println (:make (build "Nissan" 2024))))

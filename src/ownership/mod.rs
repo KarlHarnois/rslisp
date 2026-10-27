@@ -8,6 +8,7 @@ mod moves;
 mod mutation;
 mod names;
 mod problems;
+mod returned;
 mod rewrite;
 mod slices;
 mod usage;
@@ -18,13 +19,14 @@ use std::collections::HashMap;
 use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostics;
 use crate::types::{CopyRules, InferredCopies, PendingModeCheck, TypedExprKind, TypedProgram};
-use checks::{OwnershipNeeds, ReturnedBorrows};
+use checks::OwnershipNeeds;
 use functions::{FunctionTable, ParamMode};
 use kinds::{ClosureKinds, KindReport, KindSources};
 use modes::ModeInference;
 use moves::MoveChecker;
 use names::ChangingFunctionNames;
 use problems::OwnershipProblems;
+use returned::ReturnedBorrows;
 use rewrite::ModeRewrite;
 use slices::ShrinkSelection;
 use values::FunctionValueModes;
@@ -111,11 +113,10 @@ impl OwnershipChecker {
                     .diagnostics
                     .into_iter()
                     .for_each(|diagnostic| diagnostics.push(diagnostic));
-                if let crate::types::Type::Function(_, _, result) = &definition.value.ty {
-                    ReturnedBorrows::check(lambda, result)
-                        .into_iter()
-                        .for_each(|diagnostic| diagnostics.push(diagnostic));
-                }
+                ReturnedBorrows::new(program)
+                    .check(lambda)
+                    .into_iter()
+                    .for_each(|diagnostic| diagnostics.push(diagnostic));
             }
             let needs = OwnershipNeeds::new(rewrite.function_params())
                 .check(definition.binding, &definition.value);
