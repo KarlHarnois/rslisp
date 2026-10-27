@@ -4,14 +4,13 @@ use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
-use rslisp::language::Language;
-
+use super::compiler::BuiltCompiler;
 use super::profile::ProfileReader;
 use super::results::ProgramResult;
 use crate::failure::TaskFailure;
 
 pub struct Callgrind {
-    compiler: PathBuf,
+    compiler: BuiltCompiler,
     fixed_seed: PathBuf,
     profiles: PathBuf,
 }
@@ -34,7 +33,7 @@ impl Callgrind {
     const FRONT_END_COMMAND: &'static str = "emit";
     const PROFILE_EXTENSION: &'static str = "callgrind";
 
-    pub fn new(compiler: PathBuf, fixed_seed: PathBuf, profiles: PathBuf) -> Self {
+    pub fn new(compiler: BuiltCompiler, fixed_seed: PathBuf, profiles: PathBuf) -> Self {
         Self {
             compiler,
             fixed_seed,
@@ -49,7 +48,7 @@ impl Callgrind {
         let text = fs::read_to_string(&profile)
             .map_err(|_| TaskFailure::profile_missing(program, &output.stderr))?;
         let measurement = match output.status.success() {
-            true => Some(ProfileReader::new(Language::NAME).read(&text)?),
+            true => Some(ProfileReader::new(&self.compiler.crate_name).read(&text)?),
             false => None,
         };
         Ok(ProgramResult {
@@ -71,7 +70,7 @@ impl Callgrind {
             .args(Self::OPTIONS)
             .args(Self::FIXED_CACHE_MODEL)
             .arg(format!("--callgrind-out-file={}", profile.display()))
-            .arg(&self.compiler)
+            .arg(&self.compiler.executable)
             .arg(Self::FRONT_END_COMMAND)
             .arg(program)
             .current_dir(program.parent().unwrap_or(Path::new(".")))

@@ -17,6 +17,13 @@ impl TaskFailure {
         ))
     }
 
+    pub fn compiler_missing(workspace: &Path) -> Self {
+        Self::new(format!(
+            "the release build of `{}` produced no binary of its root package",
+            workspace.display()
+        ))
+    }
+
     pub fn profile_missing(program: &Path, stderr: &[u8]) -> Self {
         Self::new(format!(
             "callgrind wrote no profile for `{}`\n{}",
