@@ -1,0 +1,6 @@
+(type shout-all (fn ((iterator string)) usize))
+(defn shout-all (models) (count models))
+
+(defn main ()
+  (let models (vec (to-string "Leaf") (to-string "Ariya")))
+  (println (shout-all models)))

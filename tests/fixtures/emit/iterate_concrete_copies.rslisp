@@ -1,0 +1,15 @@
+(type total (fn ((iterator i64)) i64))
+(defn total (values) (sum values))
+
+(type count-long (fn ((iterator (ref str))) usize))
+(defn count-long (names) (count (filter names (fn (name) (> (len name) 4)))))
+
+(type count-big (fn ((iterator (ref i64))) usize))
+(defn count-big (values) (count (filter values (fn (value) (> value 50)))))
+
+(defn main ()
+  (let scores (vec 70 40 90))
+  (println (total scores))
+  (let (names (vec (ref str))) (vec "Leaf" "Ariya" "Bolt"))
+  (println (count-long names))
+  (println (count-big scores)))

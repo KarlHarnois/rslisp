@@ -20,7 +20,7 @@ impl LiteralKind {
         }
     }
 
-    fn accepts(self, primitive: PrimitiveType) -> bool {
+    pub fn accepts(self, primitive: PrimitiveType) -> bool {
         match self {
             LiteralKind::Integer => primitive.is_integer() || primitive.is_float(),
             LiteralKind::Float => primitive.is_float(),

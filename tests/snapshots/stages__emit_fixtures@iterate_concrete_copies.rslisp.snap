@@ -1,0 +1,67 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/iterate_concrete_copies.rslisp
+---
+fn total(values: impl Iterator<Item = i64>) -> i64 {
+    crate::prelude::iterator::sum(values)
+}
+
+fn count_long(names: impl Iterator<Item = &str>) -> usize {
+    names.filter(|name: &&str| name.len() > 4).count()
+}
+
+fn count_big(values: impl Iterator<Item = &i64>) -> usize {
+    values.filter(|value: &&i64| **value > 50).count()
+}
+
+fn main() {
+    let scores: Vec<i64> = vec![70_i64, 40_i64, 90_i64];
+    println!("{}", total(scores.iter().copied()));
+    let names: Vec<&str> = vec!["Leaf", "Ariya", "Bolt"];
+    println!("{}", count_long(names.iter().copied()));
+    println!("{}", count_big(scores.iter()))
+}
+
+mod prelude {
+
+    pub(crate) mod iterator {
+        pub fn sum<N: crate::rt::Number>(values: impl Iterator<Item = N>) -> N {
+            values.fold(N::from_literal(0), |argument_0: N, argument_1: N| {
+                argument_0 + argument_1
+            })
+        }
+    }
+}
+
+mod rt {
+    use std::ops::{Add, Div, Mul, Rem, Sub};
+
+    pub trait Number:
+        Copy
+        + PartialOrd
+        + Add<Output = Self>
+        + Sub<Output = Self>
+        + Mul<Output = Self>
+        + Div<Output = Self>
+        + Rem<Output = Self>
+    {
+        fn from_literal(value: i128) -> Self;
+    }
+
+    macro_rules! numbers {
+        ($($number:ty),*) => {
+            $(
+                impl Number for $number {
+                    fn from_literal(value: i128) -> Self {
+                        value as Self
+                    }
+                }
+            )*
+        };
+    }
+
+    numbers!(
+        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+    );
+}

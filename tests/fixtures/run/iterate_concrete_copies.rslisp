@@ -1,0 +1,8 @@
+(type total (fn ((iterator i64)) i64))
+(defn total (values) (sum values))
+
+(defn main ()
+  (let scores (vec 70 40 90))
+  (println (total scores))
+  (let (ranges (vec i64)) (vec 240 380))
+  (println (total ranges)))
