@@ -434,6 +434,18 @@ impl ExpandProblems {
         .with_help(format!("write it as `{}`", constructor.shape()))
     }
 
+    pub fn malformed_associated_value(name: Option<&str>, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_TYPE,
+            "malformed associated value",
+            Label::new(span, "this does not fit the shape of a value clause"),
+        )
+        .with_help(format!(
+            "write each value as `({} type)`",
+            name.unwrap_or("name")
+        ))
+    }
+
     pub fn parameters_on_name(kind: &str, replacement: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::TYPE_PARAMETERS_ON_NAME,

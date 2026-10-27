@@ -123,19 +123,38 @@ impl TypeChecker {
     }
 
     pub(super) fn check_written_projections(&mut self) {
-        for written in std::mem::take(&mut self.written_projections) {
-            if let Err(diagnostic) = self.check_written_projection(&written) {
+        let unchecked = self.checked_projections..self.written_projections.len();
+        self.checked_projections = self.written_projections.len();
+        for index in unchecked {
+            if let Err(diagnostic) = self.check_written_projection(&self.written_projections[index])
+            {
                 self.diagnostics.push(diagnostic);
             }
         }
     }
 
+    pub(super) fn has_written_projection_on(
+        &self,
+        generic: GenericId,
+        trait_binding: BindingId,
+    ) -> bool {
+        self.written_projections.iter().any(|written| {
+            written.owner == Type::Generic(generic)
+                && self.projection_trait(written.projection) == trait_binding
+        })
+    }
+
+    fn projection_trait(&self, projection: BindingId) -> BindingId {
+        self.traits
+            .projections()
+            .associated(projection)
+            .expect("a written projection names a declared associated type")
+            .trait_binding
+    }
+
     fn check_written_projection(&self, written: &WrittenProjection) -> Result<(), Diagnostic> {
         let projections = self.traits.projections();
-        let trait_binding = projections
-            .associated(written.projection)
-            .expect("a written projection names a declared associated type")
-            .trait_binding;
+        let trait_binding = self.projection_trait(written.projection);
         let names = ProjectionNames {
             projection: self.bindings.get(written.projection).name(),
             trait_name: self.bindings.get(trait_binding).name(),
@@ -179,8 +198,8 @@ impl TypeChecker {
             .unify(&deferred.other, &deferred.projected, deferred.span)
             .map_err(|_| {
                 TypeProblems::mismatch(
-                    &self.describe(&deferred.other),
-                    &self.describe(&deferred.projected),
+                    &self.describe(&self.unifier.resolve(&deferred.other)),
+                    &self.describe(&self.unifier.resolve(&deferred.projected)),
                     deferred.span,
                     MismatchContext::Plain,
                 )

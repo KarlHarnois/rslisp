@@ -7,4 +7,4 @@ error[L0401]: mismatched types
  --> check/associated_deferred_value.rslisp:2:45
   |
 2 |   (let (answer (result _ parse-bool-error)) (parse "4"))
-  |                                             ^^^^^^^^^^^ expected `parse-bool-error`, found `(parse-error _)`
+  |                                             ^^^^^^^^^^^ expected `parse-bool-error`, found `parse-int-error`

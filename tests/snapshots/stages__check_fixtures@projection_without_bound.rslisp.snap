@@ -10,11 +10,3 @@ error[L0453]: `target` might not implement `from-str`
   |                                                                 ^^^^^^^^^^^^^^^^^^^^ `(parse-error target)` needs `target` to implement `from-str`
   |
   = help: add the trait to the `where` that binds `target`: `(target from-str)`
-
-error[L0440]: `target` might not implement `from-str`
- --> check/projection_without_bound.rslisp:4:3
-  |
-4 |   (parse text))
-  |   ^^^^^^^^^^^^ this needs `from-str`
-  |
-  = help: add the trait to the signature's `where`: `(target from-str)`
