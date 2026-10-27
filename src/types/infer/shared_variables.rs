@@ -108,10 +108,7 @@ impl SharedVariables {
         let mut links = VariableLinks::default();
         for var in whole.iter().flatten() {
             for bound in unifier.bounds(*var) {
-                if traits
-                    .get(bound.binding)
-                    .is_some_and(|rust_trait| rust_trait.associated.is_some())
-                {
+                if traits.has_associated_type(bound.binding) {
                     continue;
                 }
                 let argument = bound

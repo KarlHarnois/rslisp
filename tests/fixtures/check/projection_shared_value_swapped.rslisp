@@ -1,0 +1,13 @@
+(type show-count (fn (i32) unit))
+(defn show-count (count)
+  (println count))
+
+(type show-error (fn ((parse-error i64)) string))
+
+(defn show-error (reason)
+  (to-string reason))
+
+(defn main ()
+  (match (parse "4")
+    ((ok count) (show-count count))
+    ((err reason) (println (show-error reason)))))
