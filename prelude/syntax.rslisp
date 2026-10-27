@@ -4,8 +4,8 @@
 
 (export defn the -> ->> try-> let-try loop
         definition declared-forms default-pairs type-missing? defaults-clause? default-bindings
-        call-signature signature-name signature-names signature-defaults
-        reads-by-name? has-argument? pair-keys read-call)
+        call-signature signature-name signature-defaults
+        has-argument? pair-keys read-call)
 
 (defmacro defn (name parameters body ...)
   (if (keyword-parameters? parameters)
