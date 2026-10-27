@@ -1,0 +1,64 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/field_defaults.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct User<'a> {
+    name: &'a str,
+    email: &'a str,
+    is_admin: bool,
+}
+
+fn make_user<'a>(name: &'a str, email: &'a str, is_admin: bool) -> User<'a> {
+    User {
+        name,
+        email,
+        is_admin,
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Client<'a> {
+    host: &'a str,
+    retries: u8,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Basket<'a> {
+    owner: &'a str,
+    items: Vec<i64>,
+}
+
+fn main() {
+    let ana = User {
+        name: "ana",
+        email: "ana@example.org",
+        is_admin: false,
+    };
+    let root = User {
+        name: "root",
+        email: "root@example.org",
+        is_admin: true,
+    };
+    let sam = make_user("sam", "sam@example.org", false);
+    let local = Client {
+        host: "localhost",
+        retries: 3,
+    };
+    let mut first_basket = Basket {
+        owner: "ana",
+        items: Vec::new(),
+    };
+    let second_basket = Basket {
+        owner: "sam",
+        items: Vec::new(),
+    };
+    first_basket.items.push(7);
+    println!("{}", ana.is_admin);
+    println!("{}", root.is_admin);
+    println!("{}", sam.name);
+    println!("{}", local.retries);
+    println!("{}", first_basket.items.len());
+    println!("{}", second_basket.items.len())
+}

@@ -1,2 +1,3 @@
 (defstruct car :make str :year)
 (defstruct bike make str)
+(defstruct van :seats :doors i64)

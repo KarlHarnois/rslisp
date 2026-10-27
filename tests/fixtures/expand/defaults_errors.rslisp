@@ -1,0 +1,10 @@
+(defstruct misspelled :name str :admin? bool (defaults :admn? false))
+(defstruct repeated :name str :admin? bool (defaults :admin? false :admin? true))
+(defstruct twice :name str :admin? bool (defaults :admin? false) (defaults :name "ana"))
+(defstruct early (defaults :admin? false) :name str :admin? bool)
+(defstruct unvalued :name str :admin? bool (defaults :admin?))
+(defstruct unmarked :name str :admin? bool (defaults admin? false))
+(defstruct user :name str :email str :admin? bool (defaults :admin? false))
+
+(defn main ()
+  (->user :name "ana"))
