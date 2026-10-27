@@ -115,7 +115,7 @@ impl<'a> ResultBorrows<'a> {
     }
 
     fn carries_borrow(&self, ty: &Type) -> bool {
-        SignatureBorrows::new(self.program).holds_borrow(ty) || ty.is_unsized()
+        self.program.type_holds_borrow(ty) || ty.is_unsized()
     }
 
     fn call(&mut self, callee: &TypedExpr, call: &TypedExpr) -> HashSet<BindingId> {
@@ -1123,11 +1123,11 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn result_position(&self, parameters: &[Type], inferred: Option<&str>) -> TypePosition {
-        let borrows = SignatureBorrows::new(self.program);
         let holds_borrow = parameters
             .iter()
-            .any(|parameter| borrows.holds_borrow(parameter));
-        if holds_borrow || inferred.is_some() {
+            .any(|parameter| self.program.type_holds_borrow(parameter));
+        let shares_lifetime = inferred.is_some();
+        if holds_borrow || shares_lifetime {
             TypePosition::Signature
         } else {
             TypePosition::StaticResult
