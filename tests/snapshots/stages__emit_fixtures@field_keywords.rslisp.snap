@@ -33,7 +33,8 @@ fn make_user(name: &str, tags: Vec<String>) -> User<'_> {
 fn main() {
     let leaf = make_car("Nissan", "Leaf", 2024, true);
     let civic = make_car("Honda", "Civic", 2019, false);
-    let cars = vec![leaf, civic];
+    let mut cars = vec![leaf];
+    cars.push(civic);
     println!("{}", leaf.year);
     println!(
         "{:?}",
@@ -41,10 +42,8 @@ fn main() {
             .map(|value: &Car<'_>| value.year)
             .collect::<Vec<_>>()
     );
-    let users = vec![
-        make_user("ana", vec!["admin".to_string()]),
-        make_user("bo", Vec::new()),
-    ];
+    let mut users = vec![make_user("ana", vec!["admin".to_string()])];
+    users.push(make_user("bo", Vec::new()));
     println!(
         "{:?}",
         users
