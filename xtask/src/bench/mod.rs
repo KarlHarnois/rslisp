@@ -14,7 +14,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use clap::{Args, Subcommand};
+use clap::{Args, Subcommand, ValueEnum};
 
 use crate::failure::TaskFailure;
 use callgrind::Callgrind;
@@ -34,7 +34,28 @@ pub enum BenchTask {
     Compare {
         baseline: PathBuf,
         candidate: PathBuf,
+        #[arg(long, value_enum, default_value_t = ReportLength::Full)]
+        length: ReportLength,
     },
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+pub enum ReportLength {
+    #[value(help = "Every stage of every program")]
+    Full,
+    #[value(
+        help = "The number of notable rises and the largest changes, short enough for a comment"
+    )]
+    Brief,
+}
+
+impl ReportLength {
+    fn render(self, comparison: &Comparison) -> String {
+        match self {
+            Self::Full => comparison.full_report(),
+            Self::Brief => comparison.brief_report(),
+        }
+    }
 }
 
 #[derive(Args)]
@@ -60,7 +81,8 @@ impl BenchTask {
             Self::Compare {
                 baseline,
                 candidate,
-            } => Self::compare(&baseline, &candidate),
+                length,
+            } => Self::compare(&baseline, &candidate, length),
         };
         match report {
             Ok(report) => {
@@ -71,10 +93,14 @@ impl BenchTask {
         }
     }
 
-    fn compare(baseline: &Path, candidate: &Path) -> Result<String, TaskFailure> {
+    fn compare(
+        baseline: &Path,
+        candidate: &Path,
+        length: ReportLength,
+    ) -> Result<String, TaskFailure> {
         let baseline = ResultSet::load(baseline)?;
         let candidate = ResultSet::load(candidate)?;
-        Ok(Comparison::new(&baseline, &candidate).to_string())
+        Ok(length.render(&Comparison::new(&baseline, &candidate)))
     }
 }
 
