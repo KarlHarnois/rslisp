@@ -48,32 +48,6 @@
         LLVM_PROFDATA = "${pkgs.rustc.llvmPackages.llvm}/bin/llvm-profdata";
       };
 
-      qualityGate =
-        pkgs:
-        pkgs.rustPlatform.buildRustPackage (
-          {
-            pname = "rslisp-quality-gate";
-            version = crateVersion;
-            src = self;
-            cargoLock.lockFile = ./Cargo.lock;
-            nativeBuildInputs = [
-              pkgs.cargo-llvm-cov
-              pkgs.clippy
-              pkgs.rustfmt
-            ];
-            buildPhase = ''
-              runHook preBuild
-              cargo xtask coverage
-              runHook postBuild
-            '';
-            doCheck = false;
-            installPhase = ''
-              touch $out
-            '';
-          }
-          // coverageTools pkgs
-        );
-
       agentDocs =
         pkgs:
         pkgs.runCommand "agent-docs" { } ''
@@ -179,7 +153,6 @@
 
       checks = nixpkgs.lib.genAttrs supportedSystems (system: {
         default = self.packages.${system}.default;
-        quality-gate = qualityGate nixpkgs.legacyPackages.${system};
         agent-docs = agentDocs nixpkgs.legacyPackages.${system};
         dev-shell-tools = devShellTools nixpkgs.legacyPackages.${system} self.devShells.${system}.default;
       });

@@ -40,7 +40,7 @@ The project uses a [Nix](https://nixos.org/download/) flake.
 
    The binary is `result/bin/rslisp`.
 
-Run `nix fmt` to format the Nix files, and `nix flake check` to run every check that CI runs.
+Run `nix fmt` to format the Nix files, and `nix flake check` to build the package and run the checks that `cargo xtask coverage` leaves out.
 
 ## Use
 
