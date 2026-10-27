@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/iterate_written_item_lifetime.rslisp
+---
+fn count_long<'a>(names: impl Iterator<Item = &'a str>) -> usize {
+    names.filter(|name: &&'a str| name.len() > 4).count()
+}
+
+fn main() {
+    let models = vec!["Leaf", "Ariya", "Sakura"];
+    println!("{}", count_long(models.iter().copied()))
+}
