@@ -1,3 +1,5 @@
+mod reports;
+
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -11,6 +13,8 @@ use rslisp::modules::ModuleSources;
 use rslisp::reader::Reader;
 use rslisp::source::{SourceId, SourceMap, Span};
 use rslisp::types::TypedProgram;
+
+pub use reports::FixtureReports;
 
 pub struct Fixture {
     sources: SourceMap,
