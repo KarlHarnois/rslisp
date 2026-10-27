@@ -37,15 +37,16 @@ fn last_name<'a>(names: impl Iterator<Item = &'a str>) -> Option<&'a str> {
 }
 
 fn main() {
-    let names = vec!["Leaf", "Ariya", "Sakura"];
+    let names: Vec<&str> = vec!["Leaf", "Ariya", "Sakura"];
     let scores: Vec<i64> = vec![70_i64, 40_i64, 90_i64];
-    let cars = vec![make_car("Leaf", 2024), make_car("Micra", 2017)];
+    let cars: Vec<Car<'_>> = vec![make_car("Leaf", 2024), make_car("Micra", 2017)];
     println!("{}", count_long(names.iter().copied()));
     println!("{}", count_big(scores.iter()));
     println!("{}", count_new(cars.iter()));
+    let makers: Vec<&str> = vec!["Nissan"];
     println!(
         "{}",
-        count_both(names.iter().copied(), vec!["Nissan"].iter().copied())
+        count_both(names.iter().copied(), makers.iter().copied())
     );
     println!("{:?}", last_name(names.iter().copied()))
 }

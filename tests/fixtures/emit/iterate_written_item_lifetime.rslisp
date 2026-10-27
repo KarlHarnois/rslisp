@@ -2,5 +2,5 @@
 (defn count-long (names) (count (filter names (fn (name) (> (len name) 4)))))
 
 (defn main ()
-  (let models (vec "Leaf" "Ariya" "Sakura"))
+  (let (models (vec (ref str))) (vec "Leaf" "Ariya" "Sakura"))
   (println (count-long models)))
