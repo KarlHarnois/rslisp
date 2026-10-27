@@ -215,8 +215,8 @@ impl Change {
             false => percent,
         };
         [
-            GroupedCount(self.before).to_string(),
-            GroupedCount(self.after).to_string(),
+            GroupedCount::new(self.before).to_string(),
+            GroupedCount::new(self.after).to_string(),
             emphasized,
         ]
     }

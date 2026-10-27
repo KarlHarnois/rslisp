@@ -130,8 +130,8 @@ impl ResultSet {
                 vec![
                     result.program.clone(),
                     stage.to_string(),
-                    GroupedCount(cost.instructions).to_string(),
-                    GroupedCount(cost.estimated_cycles).to_string(),
+                    GroupedCount::new(cost.instructions).to_string(),
+                    GroupedCount::new(cost.estimated_cycles).to_string(),
                 ]
             })
             .collect()

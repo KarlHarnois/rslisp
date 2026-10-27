@@ -43,10 +43,14 @@ impl fmt::Display for MarkdownTable {
     }
 }
 
-pub struct GroupedCount(pub u64);
+pub struct GroupedCount(u64);
 
 impl GroupedCount {
     const GROUP: usize = 3;
+
+    pub fn new(count: u64) -> Self {
+        Self(count)
+    }
 }
 
 impl fmt::Display for GroupedCount {
@@ -69,9 +73,9 @@ mod tests {
 
     #[test]
     fn groups_digits_in_thousands() {
-        assert_eq!(GroupedCount(0).to_string(), "0");
-        assert_eq!(GroupedCount(999).to_string(), "999");
-        assert_eq!(GroupedCount(1_234_567).to_string(), "1,234,567");
+        assert_eq!(GroupedCount::new(0).to_string(), "0");
+        assert_eq!(GroupedCount::new(999).to_string(), "999");
+        assert_eq!(GroupedCount::new(1_234_567).to_string(), "1,234,567");
     }
 
     #[test]
