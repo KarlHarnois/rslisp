@@ -1,0 +1,2000 @@
+(defn main ()
+  (println (str "chain of 400 from 0: " (bold-lantern 0)))
+  (println (str "chain of 400 from 500: " (bold-lantern 500))))
+
+(defn bold-lantern (n)
+  (if (> n 0)
+      (swift-geyser (- n 1))
+      (swift-geyser (+ n 1))))
+
+(defn swift-geyser (n)
+  (if (> n 37)
+      (swift-otter (- n 2))
+      (swift-otter (+ n 2))))
+
+(defn swift-otter (n)
+  (if (> n 74)
+      (rustic-falcon (- n 3))
+      (rustic-falcon (+ n 3))))
+
+(defn rustic-falcon (n)
+  (if (> n 111)
+      (fierce-falcon (- n 4))
+      (fierce-falcon (+ n 4))))
+
+(defn fierce-falcon (n)
+  (if (> n 148)
+      (olive-meadow (- n 5))
+      (olive-meadow (+ n 5))))
+
+(defn olive-meadow (n)
+  (if (> n 185)
+      (lively-fern (- n 6))
+      (lively-fern (+ n 6))))
+
+(defn lively-fern (n)
+  (if (> n 222)
+      (tender-beacon (- n 7))
+      (tender-beacon (+ n 7))))
+
+(defn tender-beacon (n)
+  (if (> n 259)
+      (jolly-thistle (- n 1))
+      (jolly-thistle (+ n 1))))
+
+(defn jolly-thistle (n)
+  (if (> n 296)
+      (vivid-lantern (- n 2))
+      (vivid-lantern (+ n 2))))
+
+(defn vivid-lantern (n)
+  (if (> n 333)
+      (wary-falcon (- n 3))
+      (wary-falcon (+ n 3))))
+
+(defn wary-falcon (n)
+  (if (> n 370)
+      (dusky-pebble (- n 4))
+      (dusky-pebble (+ n 4))))
+
+(defn dusky-pebble (n)
+  (if (> n 7)
+      (stark-fern (- n 5))
+      (stark-fern (+ n 5))))
+
+(defn stark-fern (n)
+  (if (> n 44)
+      (stark-falcon (- n 6))
+      (stark-falcon (+ n 6))))
+
+(defn stark-falcon (n)
+  (if (> n 81)
+      (keen-tundra (- n 7))
+      (keen-tundra (+ n 7))))
+
+(defn keen-tundra (n)
+  (if (> n 118)
+      (sunny-beacon (- n 1))
+      (sunny-beacon (+ n 1))))
+
+(defn sunny-beacon (n)
+  (if (> n 155)
+      (witty-meadow (- n 2))
+      (witty-meadow (+ n 2))))
+
+(defn witty-meadow (n)
+  (if (> n 192)
+      (zesty-walrus (- n 3))
+      (zesty-walrus (+ n 3))))
+
+(defn zesty-walrus (n)
+  (if (> n 229)
+      (lively-zephyr (- n 4))
+      (lively-zephyr (+ n 4))))
+
+(defn lively-zephyr (n)
+  (if (> n 266)
+      (solemn-quarry (- n 5))
+      (solemn-quarry (+ n 5))))
+
+(defn solemn-quarry (n)
+  (if (> n 303)
+      (zesty-willow (- n 6))
+      (zesty-willow (+ n 6))))
+
+(defn zesty-willow (n)
+  (if (> n 340)
+      (gilded-bison (- n 7))
+      (gilded-bison (+ n 7))))
+
+(defn gilded-bison (n)
+  (if (> n 377)
+      (brisk-jackal (- n 1))
+      (brisk-jackal (+ n 1))))
+
+(defn brisk-jackal (n)
+  (if (> n 14)
+      (rustic-heron (- n 2))
+      (rustic-heron (+ n 2))))
+
+(defn rustic-heron (n)
+  (if (> n 51)
+      (olive-kestrel (- n 3))
+      (olive-kestrel (+ n 3))))
+
+(defn olive-kestrel (n)
+  (if (> n 88)
+      (zesty-delta (- n 4))
+      (zesty-delta (+ n 4))))
+
+(defn zesty-delta (n)
+  (if (> n 125)
+      (dusky-geyser (- n 5))
+      (dusky-geyser (+ n 5))))
+
+(defn dusky-geyser (n)
+  (if (> n 162)
+      (fierce-nebula (- n 6))
+      (fierce-nebula (+ n 6))))
+
+(defn fierce-nebula (n)
+  (if (> n 199)
+      (gilded-comet (- n 7))
+      (gilded-comet (+ n 7))))
+
+(defn gilded-comet (n)
+  (if (> n 236)
+      (young-pine (- n 1))
+      (young-pine (+ n 1))))
+
+(defn young-pine (n)
+  (if (> n 273)
+      (sleek-otter (- n 2))
+      (sleek-otter (+ n 2))))
+
+(defn sleek-otter (n)
+  (if (> n 310)
+      (vivid-pebble (- n 3))
+      (vivid-pebble (+ n 3))))
+
+(defn vivid-pebble (n)
+  (if (> n 347)
+      (brisk-heron (- n 4))
+      (brisk-heron (+ n 4))))
+
+(defn brisk-heron (n)
+  (if (> n 384)
+      (wary-cedar (- n 5))
+      (wary-cedar (+ n 5))))
+
+(defn wary-cedar (n)
+  (if (> n 21)
+      (mellow-zephyr (- n 6))
+      (mellow-zephyr (+ n 6))))
+
+(defn mellow-zephyr (n)
+  (if (> n 58)
+      (vivid-otter (- n 7))
+      (vivid-otter (+ n 7))))
+
+(defn vivid-otter (n)
+  (if (> n 95)
+      (misty-heron (- n 1))
+      (misty-heron (+ n 1))))
+
+(defn misty-heron (n)
+  (if (> n 132)
+      (solemn-sparrow (- n 2))
+      (solemn-sparrow (+ n 2))))
+
+(defn solemn-sparrow (n)
+  (if (> n 169)
+      (noble-tundra (- n 3))
+      (noble-tundra (+ n 3))))
+
+(defn noble-tundra (n)
+  (if (> n 206)
+      (mellow-island (- n 4))
+      (mellow-island (+ n 4))))
+
+(defn mellow-island (n)
+  (if (> n 243)
+      (umber-condor (- n 5))
+      (umber-condor (+ n 5))))
+
+(defn umber-condor (n)
+  (if (> n 280)
+      (rustic-tundra (- n 6))
+      (rustic-tundra (+ n 6))))
+
+(defn rustic-tundra (n)
+  (if (> n 317)
+      (olive-marten (- n 7))
+      (olive-marten (+ n 7))))
+
+(defn olive-marten (n)
+  (if (> n 354)
+      (young-falcon (- n 1))
+      (young-falcon (+ n 1))))
+
+(defn young-falcon (n)
+  (if (> n 391)
+      (placid-tundra (- n 2))
+      (placid-tundra (+ n 2))))
+
+(defn placid-tundra (n)
+  (if (> n 28)
+      (eager-falcon (- n 3))
+      (eager-falcon (+ n 3))))
+
+(defn eager-falcon (n)
+  (if (> n 65)
+      (sleek-condor (- n 4))
+      (sleek-condor (+ n 4))))
+
+(defn sleek-condor (n)
+  (if (> n 102)
+      (mellow-lagoon (- n 5))
+      (mellow-lagoon (+ n 5))))
+
+(defn mellow-lagoon (n)
+  (if (> n 139)
+      (quiet-valley (- n 6))
+      (quiet-valley (+ n 6))))
+
+(defn quiet-valley (n)
+  (if (> n 176)
+      (silver-heron (- n 7))
+      (silver-heron (+ n 7))))
+
+(defn silver-heron (n)
+  (if (> n 213)
+      (misty-island (- n 1))
+      (misty-island (+ n 1))))
+
+(defn misty-island (n)
+  (if (> n 250)
+      (eager-badger (- n 2))
+      (eager-badger (+ n 2))))
+
+(defn eager-badger (n)
+  (if (> n 287)
+      (stark-heron (- n 3))
+      (stark-heron (+ n 3))))
+
+(defn stark-heron (n)
+  (if (> n 324)
+      (hollow-sparrow (- n 4))
+      (hollow-sparrow (+ n 4))))
+
+(defn hollow-sparrow (n)
+  (if (> n 361)
+      (lively-yarrow (- n 5))
+      (lively-yarrow (+ n 5))))
+
+(defn lively-yarrow (n)
+  (if (> n 398)
+      (tender-harbor (- n 6))
+      (tender-harbor (+ n 6))))
+
+(defn tender-harbor (n)
+  (if (> n 35)
+      (rustic-bison (- n 7))
+      (rustic-bison (+ n 7))))
+
+(defn rustic-bison (n)
+  (if (> n 72)
+      (rapid-willow (- n 1))
+      (rapid-willow (+ n 1))))
+
+(defn rapid-willow (n)
+  (if (> n 109)
+      (gentle-falcon (- n 2))
+      (gentle-falcon (+ n 2))))
+
+(defn gentle-falcon (n)
+  (if (> n 146)
+      (rustic-yarrow (- n 3))
+      (rustic-yarrow (+ n 3))))
+
+(defn rustic-yarrow (n)
+  (if (> n 183)
+      (rustic-meadow (- n 4))
+      (rustic-meadow (+ n 4))))
+
+(defn rustic-meadow (n)
+  (if (> n 220)
+      (swift-tundra (- n 5))
+      (swift-tundra (+ n 5))))
+
+(defn swift-tundra (n)
+  (if (> n 257)
+      (keen-reef (- n 6))
+      (keen-reef (+ n 6))))
+
+(defn keen-reef (n)
+  (if (> n 294)
+      (lively-orchid (- n 7))
+      (lively-orchid (+ n 7))))
+
+(defn lively-orchid (n)
+  (if (> n 331)
+      (zesty-jackal (- n 1))
+      (zesty-jackal (+ n 1))))
+
+(defn zesty-jackal (n)
+  (if (> n 368)
+      (dusky-meadow (- n 2))
+      (dusky-meadow (+ n 2))))
+
+(defn dusky-meadow (n)
+  (if (> n 5)
+      (gentle-zephyr (- n 3))
+      (gentle-zephyr (+ n 3))))
+
+(defn gentle-zephyr (n)
+  (if (> n 42)
+      (dusky-jackal (- n 4))
+      (dusky-jackal (+ n 4))))
+
+(defn dusky-jackal (n)
+  (if (> n 79)
+      (mellow-meadow (- n 5))
+      (mellow-meadow (+ n 5))))
+
+(defn mellow-meadow (n)
+  (if (> n 116)
+      (ivory-zephyr (- n 6))
+      (ivory-zephyr (+ n 6))))
+
+(defn ivory-zephyr (n)
+  (if (> n 153)
+      (umber-cedar (- n 7))
+      (umber-cedar (+ n 7))))
+
+(defn umber-cedar (n)
+  (if (> n 190)
+      (solemn-pine (- n 1))
+      (solemn-pine (+ n 1))))
+
+(defn solemn-pine (n)
+  (if (> n 227)
+      (misty-condor (- n 2))
+      (misty-condor (+ n 2))))
+
+(defn misty-condor (n)
+  (if (> n 264)
+      (rapid-yarrow (- n 3))
+      (rapid-yarrow (+ n 3))))
+
+(defn rapid-yarrow (n)
+  (if (> n 301)
+      (gilded-walrus (- n 4))
+      (gilded-walrus (+ n 4))))
+
+(defn gilded-walrus (n)
+  (if (> n 338)
+      (sleek-walrus (- n 5))
+      (sleek-walrus (+ n 5))))
+
+(defn sleek-walrus (n)
+  (if (> n 375)
+      (rapid-raven (- n 6))
+      (rapid-raven (+ n 6))))
+
+(defn rapid-raven (n)
+  (if (> n 12)
+      (keen-walrus (- n 7))
+      (keen-walrus (+ n 7))))
+
+(defn keen-walrus (n)
+  (if (> n 49)
+      (mellow-beacon (- n 1))
+      (mellow-beacon (+ n 1))))
+
+(defn mellow-beacon (n)
+  (if (> n 86)
+      (wary-otter (- n 2))
+      (wary-otter (+ n 2))))
+
+(defn wary-otter (n)
+  (if (> n 123)
+      (eager-otter (- n 3))
+      (eager-otter (+ n 3))))
+
+(defn eager-otter (n)
+  (if (> n 160)
+      (silver-tundra (- n 4))
+      (silver-tundra (+ n 4))))
+
+(defn silver-tundra (n)
+  (if (> n 197)
+      (quiet-ember (- n 5))
+      (quiet-ember (+ n 5))))
+
+(defn quiet-ember (n)
+  (if (> n 234)
+      (humble-valley (- n 6))
+      (humble-valley (+ n 6))))
+
+(defn humble-valley (n)
+  (if (> n 271)
+      (umber-valley (- n 7))
+      (umber-valley (+ n 7))))
+
+(defn umber-valley (n)
+  (if (> n 308)
+      (coral-thistle (- n 1))
+      (coral-thistle (+ n 1))))
+
+(defn coral-thistle (n)
+  (if (> n 345)
+      (gentle-marten (- n 2))
+      (gentle-marten (+ n 2))))
+
+(defn gentle-marten (n)
+  (if (> n 382)
+      (solemn-badger (- n 3))
+      (solemn-badger (+ n 3))))
+
+(defn solemn-badger (n)
+  (if (> n 19)
+      (wary-walrus (- n 4))
+      (wary-walrus (+ n 4))))
+
+(defn wary-walrus (n)
+  (if (> n 56)
+      (olive-badger (- n 5))
+      (olive-badger (+ n 5))))
+
+(defn olive-badger (n)
+  (if (> n 93)
+      (swift-thistle (- n 6))
+      (swift-thistle (+ n 6))))
+
+(defn swift-thistle (n)
+  (if (> n 130)
+      (hollow-willow (- n 7))
+      (hollow-willow (+ n 7))))
+
+(defn hollow-willow (n)
+  (if (> n 167)
+      (humble-geyser (- n 1))
+      (humble-geyser (+ n 1))))
+
+(defn humble-geyser (n)
+  (if (> n 204)
+      (bold-willow (- n 2))
+      (bold-willow (+ n 2))))
+
+(defn bold-willow (n)
+  (if (> n 241)
+      (lucid-tundra (- n 3))
+      (lucid-tundra (+ n 3))))
+
+(defn lucid-tundra (n)
+  (if (> n 278)
+      (noble-summit (- n 4))
+      (noble-summit (+ n 4))))
+
+(defn noble-summit (n)
+  (if (> n 315)
+      (lively-condor (- n 5))
+      (lively-condor (+ n 5))))
+
+(defn lively-condor (n)
+  (if (> n 352)
+      (brisk-yarrow (- n 6))
+      (brisk-yarrow (+ n 6))))
+
+(defn brisk-yarrow (n)
+  (if (> n 389)
+      (jolly-sparrow (- n 7))
+      (jolly-sparrow (+ n 7))))
+
+(defn jolly-sparrow (n)
+  (if (> n 26)
+      (zesty-falcon (- n 1))
+      (zesty-falcon (+ n 1))))
+
+(defn zesty-falcon (n)
+  (if (> n 63)
+      (sunny-raven (- n 2))
+      (sunny-raven (+ n 2))))
+
+(defn sunny-raven (n)
+  (if (> n 100)
+      (gentle-reef (- n 3))
+      (gentle-reef (+ n 3))))
+
+(defn gentle-reef (n)
+  (if (> n 137)
+      (gentle-meadow (- n 4))
+      (gentle-meadow (+ n 4))))
+
+(defn gentle-meadow (n)
+  (if (> n 174)
+      (fierce-beacon (- n 5))
+      (fierce-beacon (+ n 5))))
+
+(defn fierce-beacon (n)
+  (if (> n 211)
+      (olive-summit (- n 6))
+      (olive-summit (+ n 6))))
+
+(defn olive-summit (n)
+  (if (> n 248)
+      (bold-falcon (- n 7))
+      (bold-falcon (+ n 7))))
+
+(defn bold-falcon (n)
+  (if (> n 285)
+      (tawny-island (- n 1))
+      (tawny-island (+ n 1))))
+
+(defn tawny-island (n)
+  (if (> n 322)
+      (tender-bison (- n 2))
+      (tender-bison (+ n 2))))
+
+(defn tender-bison (n)
+  (if (> n 359)
+      (ivory-reef (- n 3))
+      (ivory-reef (+ n 3))))
+
+(defn ivory-reef (n)
+  (if (> n 396)
+      (gentle-nebula (- n 4))
+      (gentle-nebula (+ n 4))))
+
+(defn gentle-nebula (n)
+  (if (> n 33)
+      (fierce-kestrel (- n 5))
+      (fierce-kestrel (+ n 5))))
+
+(defn fierce-kestrel (n)
+  (if (> n 70)
+      (humble-jackal (- n 6))
+      (humble-jackal (+ n 6))))
+
+(defn humble-jackal (n)
+  (if (> n 107)
+      (keen-summit (- n 7))
+      (keen-summit (+ n 7))))
+
+(defn keen-summit (n)
+  (if (> n 144)
+      (noble-comet (- n 1))
+      (noble-comet (+ n 1))))
+
+(defn noble-comet (n)
+  (if (> n 181)
+      (witty-quarry (- n 2))
+      (witty-quarry (+ n 2))))
+
+(defn witty-quarry (n)
+  (if (> n 218)
+      (bold-quarry (- n 3))
+      (bold-quarry (+ n 3))))
+
+(defn bold-quarry (n)
+  (if (> n 255)
+      (young-glacier (- n 4))
+      (young-glacier (+ n 4))))
+
+(defn young-glacier (n)
+  (if (> n 292)
+      (lively-geyser (- n 5))
+      (lively-geyser (+ n 5))))
+
+(defn lively-geyser (n)
+  (if (> n 329)
+      (quiet-summit (- n 6))
+      (quiet-summit (+ n 6))))
+
+(defn quiet-summit (n)
+  (if (> n 366)
+      (rustic-beacon (- n 7))
+      (rustic-beacon (+ n 7))))
+
+(defn rustic-beacon (n)
+  (if (> n 3)
+      (rapid-beacon (- n 1))
+      (rapid-beacon (+ n 1))))
+
+(defn rapid-beacon (n)
+  (if (> n 40)
+      (silver-summit (- n 2))
+      (silver-summit (+ n 2))))
+
+(defn silver-summit (n)
+  (if (> n 77)
+      (humble-reef (- n 3))
+      (humble-reef (+ n 3))))
+
+(defn humble-reef (n)
+  (if (> n 114)
+      (clever-orchid (- n 4))
+      (clever-orchid (+ n 4))))
+
+(defn clever-orchid (n)
+  (if (> n 151)
+      (coral-yarrow (- n 5))
+      (coral-yarrow (+ n 5))))
+
+(defn coral-yarrow (n)
+  (if (> n 188)
+      (umber-glacier (- n 6))
+      (umber-glacier (+ n 6))))
+
+(defn umber-glacier (n)
+  (if (> n 225)
+      (tender-raven (- n 7))
+      (tender-raven (+ n 7))))
+
+(defn tender-raven (n)
+  (if (> n 262)
+      (eager-lagoon (- n 1))
+      (eager-lagoon (+ n 1))))
+
+(defn eager-lagoon (n)
+  (if (> n 299)
+      (dusky-heron (- n 2))
+      (dusky-heron (+ n 2))))
+
+(defn dusky-heron (n)
+  (if (> n 336)
+      (ivory-island (- n 3))
+      (ivory-island (+ n 3))))
+
+(defn ivory-island (n)
+  (if (> n 373)
+      (gentle-lagoon (- n 4))
+      (gentle-lagoon (+ n 4))))
+
+(defn gentle-lagoon (n)
+  (if (> n 10)
+      (brisk-raven (- n 5))
+      (brisk-raven (+ n 5))))
+
+(defn brisk-raven (n)
+  (if (> n 47)
+      (swift-cedar (- n 6))
+      (swift-cedar (+ n 6))))
+
+(defn swift-cedar (n)
+  (if (> n 84)
+      (tender-marten (- n 7))
+      (tender-marten (+ n 7))))
+
+(defn tender-marten (n)
+  (if (> n 121)
+      (rustic-jackal (- n 1))
+      (rustic-jackal (+ n 1))))
+
+(defn rustic-jackal (n)
+  (if (> n 158)
+      (noble-beacon (- n 2))
+      (noble-beacon (+ n 2))))
+
+(defn noble-beacon (n)
+  (if (> n 195)
+      (olive-ember (- n 3))
+      (olive-ember (+ n 3))))
+
+(defn olive-ember (n)
+  (if (> n 232)
+      (vivid-comet (- n 4))
+      (vivid-comet (+ n 4))))
+
+(defn vivid-comet (n)
+  (if (> n 269)
+      (zesty-meadow (- n 5))
+      (zesty-meadow (+ n 5))))
+
+(defn zesty-meadow (n)
+  (if (> n 306)
+      (coral-glacier (- n 6))
+      (coral-glacier (+ n 6))))
+
+(defn coral-glacier (n)
+  (if (> n 343)
+      (coral-beacon (- n 7))
+      (coral-beacon (+ n 7))))
+
+(defn coral-beacon (n)
+  (if (> n 380)
+      (tawny-bison (- n 1))
+      (tawny-bison (+ n 1))))
+
+(defn tawny-bison (n)
+  (if (> n 17)
+      (stark-otter (- n 2))
+      (stark-otter (+ n 2))))
+
+(defn stark-otter (n)
+  (if (> n 54)
+      (lively-island (- n 3))
+      (lively-island (+ n 3))))
+
+(defn lively-island (n)
+  (if (> n 91)
+      (wary-quarry (- n 4))
+      (wary-quarry (+ n 4))))
+
+(defn wary-quarry (n)
+  (if (> n 128)
+      (silver-orchid (- n 5))
+      (silver-orchid (+ n 5))))
+
+(defn silver-orchid (n)
+  (if (> n 165)
+      (swift-pine (- n 6))
+      (swift-pine (+ n 6))))
+
+(defn swift-pine (n)
+  (if (> n 202)
+      (keen-harbor (- n 7))
+      (keen-harbor (+ n 7))))
+
+(defn keen-harbor (n)
+  (if (> n 239)
+      (bold-heron (- n 1))
+      (bold-heron (+ n 1))))
+
+(defn bold-heron (n)
+  (if (> n 276)
+      (rustic-nebula (- n 2))
+      (rustic-nebula (+ n 2))))
+
+(defn rustic-nebula (n)
+  (if (> n 313)
+      (bold-geyser (- n 3))
+      (bold-geyser (+ n 3))))
+
+(defn bold-geyser (n)
+  (if (> n 350)
+      (ivory-walrus (- n 4))
+      (ivory-walrus (+ n 4))))
+
+(defn ivory-walrus (n)
+  (if (> n 387)
+      (stark-valley (- n 5))
+      (stark-valley (+ n 5))))
+
+(defn stark-valley (n)
+  (if (> n 24)
+      (rapid-comet (- n 6))
+      (rapid-comet (+ n 6))))
+
+(defn rapid-comet (n)
+  (if (> n 61)
+      (placid-harbor (- n 7))
+      (placid-harbor (+ n 7))))
+
+(defn placid-harbor (n)
+  (if (> n 98)
+      (dusky-willow (- n 1))
+      (dusky-willow (+ n 1))))
+
+(defn dusky-willow (n)
+  (if (> n 135)
+      (gentle-badger (- n 2))
+      (gentle-badger (+ n 2))))
+
+(defn gentle-badger (n)
+  (if (> n 172)
+      (amber-pebble (- n 3))
+      (amber-pebble (+ n 3))))
+
+(defn amber-pebble (n)
+  (if (> n 209)
+      (gentle-harbor (- n 4))
+      (gentle-harbor (+ n 4))))
+
+(defn gentle-harbor (n)
+  (if (> n 246)
+      (mellow-lantern (- n 5))
+      (mellow-lantern (+ n 5))))
+
+(defn mellow-lantern (n)
+  (if (> n 283)
+      (keen-kestrel (- n 6))
+      (keen-kestrel (+ n 6))))
+
+(defn keen-kestrel (n)
+  (if (> n 320)
+      (brisk-falcon (- n 7))
+      (brisk-falcon (+ n 7))))
+
+(defn brisk-falcon (n)
+  (if (> n 357)
+      (zesty-kestrel (- n 1))
+      (zesty-kestrel (+ n 1))))
+
+(defn zesty-kestrel (n)
+  (if (> n 394)
+      (coral-otter (- n 2))
+      (coral-otter (+ n 2))))
+
+(defn coral-otter (n)
+  (if (> n 31)
+      (jolly-orchid (- n 3))
+      (jolly-orchid (+ n 3))))
+
+(defn jolly-orchid (n)
+  (if (> n 68)
+      (coral-raven (- n 4))
+      (coral-raven (+ n 4))))
+
+(defn coral-raven (n)
+  (if (> n 105)
+      (swift-pebble (- n 5))
+      (swift-pebble (+ n 5))))
+
+(defn swift-pebble (n)
+  (if (> n 142)
+      (placid-bison (- n 6))
+      (placid-bison (+ n 6))))
+
+(defn placid-bison (n)
+  (if (> n 179)
+      (dusky-island (- n 7))
+      (dusky-island (+ n 7))))
+
+(defn dusky-island (n)
+  (if (> n 216)
+      (lucid-kestrel (- n 1))
+      (lucid-kestrel (+ n 1))))
+
+(defn lucid-kestrel (n)
+  (if (> n 253)
+      (sleek-nebula (- n 2))
+      (sleek-nebula (+ n 2))))
+
+(defn sleek-nebula (n)
+  (if (> n 290)
+      (calm-nebula (- n 3))
+      (calm-nebula (+ n 3))))
+
+(defn calm-nebula (n)
+  (if (> n 327)
+      (quiet-marten (- n 4))
+      (quiet-marten (+ n 4))))
+
+(defn quiet-marten (n)
+  (if (> n 364)
+      (rapid-marten (- n 5))
+      (rapid-marten (+ n 5))))
+
+(defn rapid-marten (n)
+  (if (> n 1)
+      (coral-kestrel (- n 6))
+      (coral-kestrel (+ n 6))))
+
+(defn coral-kestrel (n)
+  (if (> n 38)
+      (lively-kestrel (- n 7))
+      (lively-kestrel (+ n 7))))
+
+(defn lively-kestrel (n)
+  (if (> n 75)
+      (noble-thistle (- n 1))
+      (noble-thistle (+ n 1))))
+
+(defn noble-thistle (n)
+  (if (> n 112)
+      (hollow-walrus (- n 2))
+      (hollow-walrus (+ n 2))))
+
+(defn hollow-walrus (n)
+  (if (> n 149)
+      (sunny-jackal (- n 3))
+      (sunny-jackal (+ n 3))))
+
+(defn sunny-jackal (n)
+  (if (> n 186)
+      (noble-harbor (- n 4))
+      (noble-harbor (+ n 4))))
+
+(defn noble-harbor (n)
+  (if (> n 223)
+      (rustic-zephyr (- n 5))
+      (rustic-zephyr (+ n 5))))
+
+(defn rustic-zephyr (n)
+  (if (> n 260)
+      (fierce-tundra (- n 6))
+      (fierce-tundra (+ n 6))))
+
+(defn fierce-tundra (n)
+  (if (> n 297)
+      (solemn-raven (- n 7))
+      (solemn-raven (+ n 7))))
+
+(defn solemn-raven (n)
+  (if (> n 334)
+      (swift-yarrow (- n 1))
+      (swift-yarrow (+ n 1))))
+
+(defn swift-yarrow (n)
+  (if (> n 371)
+      (amber-walrus (- n 2))
+      (amber-walrus (+ n 2))))
+
+(defn amber-walrus (n)
+  (if (> n 8)
+      (rapid-reef (- n 3))
+      (rapid-reef (+ n 3))))
+
+(defn rapid-reef (n)
+  (if (> n 45)
+      (sleek-yarrow (- n 4))
+      (sleek-yarrow (+ n 4))))
+
+(defn sleek-yarrow (n)
+  (if (> n 82)
+      (bold-sparrow (- n 5))
+      (bold-sparrow (+ n 5))))
+
+(defn bold-sparrow (n)
+  (if (> n 119)
+      (rustic-walrus (- n 6))
+      (rustic-walrus (+ n 6))))
+
+(defn rustic-walrus (n)
+  (if (> n 156)
+      (keen-lantern (- n 7))
+      (keen-lantern (+ n 7))))
+
+(defn keen-lantern (n)
+  (if (> n 193)
+      (hollow-badger (- n 1))
+      (hollow-badger (+ n 1))))
+
+(defn hollow-badger (n)
+  (if (> n 230)
+      (witty-orchid (- n 2))
+      (witty-orchid (+ n 2))))
+
+(defn witty-orchid (n)
+  (if (> n 267)
+      (tawny-tundra (- n 3))
+      (tawny-tundra (+ n 3))))
+
+(defn tawny-tundra (n)
+  (if (> n 304)
+      (umber-fern (- n 4))
+      (umber-fern (+ n 4))))
+
+(defn umber-fern (n)
+  (if (> n 341)
+      (hollow-harbor (- n 5))
+      (hollow-harbor (+ n 5))))
+
+(defn hollow-harbor (n)
+  (if (> n 378)
+      (solemn-yarrow (- n 6))
+      (solemn-yarrow (+ n 6))))
+
+(defn solemn-yarrow (n)
+  (if (> n 15)
+      (calm-glacier (- n 7))
+      (calm-glacier (+ n 7))))
+
+(defn calm-glacier (n)
+  (if (> n 52)
+      (sleek-badger (- n 1))
+      (sleek-badger (+ n 1))))
+
+(defn sleek-badger (n)
+  (if (> n 89)
+      (tawny-otter (- n 2))
+      (tawny-otter (+ n 2))))
+
+(defn tawny-otter (n)
+  (if (> n 126)
+      (tender-walrus (- n 3))
+      (tender-walrus (+ n 3))))
+
+(defn tender-walrus (n)
+  (if (> n 163)
+      (hollow-ember (- n 4))
+      (hollow-ember (+ n 4))))
+
+(defn hollow-ember (n)
+  (if (> n 200)
+      (rapid-meadow (- n 5))
+      (rapid-meadow (+ n 5))))
+
+(defn rapid-meadow (n)
+  (if (> n 237)
+      (calm-ember (- n 6))
+      (calm-ember (+ n 6))))
+
+(defn calm-ember (n)
+  (if (> n 274)
+      (gentle-bison (- n 7))
+      (gentle-bison (+ n 7))))
+
+(defn gentle-bison (n)
+  (if (> n 311)
+      (vivid-sparrow (- n 1))
+      (vivid-sparrow (+ n 1))))
+
+(defn vivid-sparrow (n)
+  (if (> n 348)
+      (quiet-fern (- n 2))
+      (quiet-fern (+ n 2))))
+
+(defn quiet-fern (n)
+  (if (> n 385)
+      (stark-reef (- n 3))
+      (stark-reef (+ n 3))))
+
+(defn stark-reef (n)
+  (if (> n 22)
+      (keen-lagoon (- n 4))
+      (keen-lagoon (+ n 4))))
+
+(defn keen-lagoon (n)
+  (if (> n 59)
+      (tender-delta (- n 5))
+      (tender-delta (+ n 5))))
+
+(defn tender-delta (n)
+  (if (> n 96)
+      (silver-lagoon (- n 6))
+      (silver-lagoon (+ n 6))))
+
+(defn silver-lagoon (n)
+  (if (> n 133)
+      (silver-cedar (- n 7))
+      (silver-cedar (+ n 7))))
+
+(defn silver-cedar (n)
+  (if (> n 170)
+      (rapid-tundra (- n 1))
+      (rapid-tundra (+ n 1))))
+
+(defn rapid-tundra (n)
+  (if (> n 207)
+      (clever-quarry (- n 2))
+      (clever-quarry (+ n 2))))
+
+(defn clever-quarry (n)
+  (if (> n 244)
+      (witty-jackal (- n 3))
+      (witty-jackal (+ n 3))))
+
+(defn witty-jackal (n)
+  (if (> n 281)
+      (brisk-harbor (- n 4))
+      (brisk-harbor (+ n 4))))
+
+(defn brisk-harbor (n)
+  (if (> n 318)
+      (witty-falcon (- n 5))
+      (witty-falcon (+ n 5))))
+
+(defn witty-falcon (n)
+  (if (> n 355)
+      (noble-raven (- n 6))
+      (noble-raven (+ n 6))))
+
+(defn noble-raven (n)
+  (if (> n 392)
+      (rapid-summit (- n 7))
+      (rapid-summit (+ n 7))))
+
+(defn rapid-summit (n)
+  (if (> n 29)
+      (keen-falcon (- n 1))
+      (keen-falcon (+ n 1))))
+
+(defn keen-falcon (n)
+  (if (> n 66)
+      (umber-pebble (- n 2))
+      (umber-pebble (+ n 2))))
+
+(defn umber-pebble (n)
+  (if (> n 103)
+      (humble-willow (- n 3))
+      (humble-willow (+ n 3))))
+
+(defn humble-willow (n)
+  (if (> n 140)
+      (olive-pine (- n 4))
+      (olive-pine (+ n 4))))
+
+(defn olive-pine (n)
+  (if (> n 177)
+      (silver-quarry (- n 5))
+      (silver-quarry (+ n 5))))
+
+(defn silver-quarry (n)
+  (if (> n 214)
+      (witty-heron (- n 6))
+      (witty-heron (+ n 6))))
+
+(defn witty-heron (n)
+  (if (> n 251)
+      (ivory-otter (- n 7))
+      (ivory-otter (+ n 7))))
+
+(defn ivory-otter (n)
+  (if (> n 288)
+      (umber-willow (- n 1))
+      (umber-willow (+ n 1))))
+
+(defn umber-willow (n)
+  (if (> n 325)
+      (gilded-yarrow (- n 2))
+      (gilded-yarrow (+ n 2))))
+
+(defn gilded-yarrow (n)
+  (if (> n 362)
+      (wary-geyser (- n 3))
+      (wary-geyser (+ n 3))))
+
+(defn wary-geyser (n)
+  (if (> n 399)
+      (vivid-heron (- n 4))
+      (vivid-heron (+ n 4))))
+
+(defn vivid-heron (n)
+  (if (> n 36)
+      (noble-pine (- n 5))
+      (noble-pine (+ n 5))))
+
+(defn noble-pine (n)
+  (if (> n 73)
+      (jolly-fern (- n 6))
+      (jolly-fern (+ n 6))))
+
+(defn jolly-fern (n)
+  (if (> n 110)
+      (clever-yarrow (- n 7))
+      (clever-yarrow (+ n 7))))
+
+(defn clever-yarrow (n)
+  (if (> n 147)
+      (placid-raven (- n 1))
+      (placid-raven (+ n 1))))
+
+(defn placid-raven (n)
+  (if (> n 184)
+      (tawny-jackal (- n 2))
+      (tawny-jackal (+ n 2))))
+
+(defn tawny-jackal (n)
+  (if (> n 221)
+      (rapid-orchid (- n 3))
+      (rapid-orchid (+ n 3))))
+
+(defn rapid-orchid (n)
+  (if (> n 258)
+      (brisk-quarry (- n 4))
+      (brisk-quarry (+ n 4))))
+
+(defn brisk-quarry (n)
+  (if (> n 295)
+      (rapid-pebble (- n 5))
+      (rapid-pebble (+ n 5))))
+
+(defn rapid-pebble (n)
+  (if (> n 332)
+      (wary-valley (- n 6))
+      (wary-valley (+ n 6))))
+
+(defn wary-valley (n)
+  (if (> n 369)
+      (clever-lagoon (- n 7))
+      (clever-lagoon (+ n 7))))
+
+(defn clever-lagoon (n)
+  (if (> n 6)
+      (dusky-thistle (- n 1))
+      (dusky-thistle (+ n 1))))
+
+(defn dusky-thistle (n)
+  (if (> n 43)
+      (sleek-fern (- n 2))
+      (sleek-fern (+ n 2))))
+
+(defn sleek-fern (n)
+  (if (> n 80)
+      (solemn-marten (- n 3))
+      (solemn-marten (+ n 3))))
+
+(defn solemn-marten (n)
+  (if (> n 117)
+      (fierce-sparrow (- n 4))
+      (fierce-sparrow (+ n 4))))
+
+(defn fierce-sparrow (n)
+  (if (> n 154)
+      (humble-heron (- n 5))
+      (humble-heron (+ n 5))))
+
+(defn humble-heron (n)
+  (if (> n 191)
+      (amber-valley (- n 6))
+      (amber-valley (+ n 6))))
+
+(defn amber-valley (n)
+  (if (> n 228)
+      (coral-lagoon (- n 7))
+      (coral-lagoon (+ n 7))))
+
+(defn coral-lagoon (n)
+  (if (> n 265)
+      (gilded-lagoon (- n 1))
+      (gilded-lagoon (+ n 1))))
+
+(defn gilded-lagoon (n)
+  (if (> n 302)
+      (keen-pebble (- n 2))
+      (keen-pebble (+ n 2))))
+
+(defn keen-pebble (n)
+  (if (> n 339)
+      (tender-glacier (- n 3))
+      (tender-glacier (+ n 3))))
+
+(defn tender-glacier (n)
+  (if (> n 376)
+      (lively-delta (- n 4))
+      (lively-delta (+ n 4))))
+
+(defn lively-delta (n)
+  (if (> n 13)
+      (umber-delta (- n 5))
+      (umber-delta (+ n 5))))
+
+(defn umber-delta (n)
+  (if (> n 50)
+      (quiet-thistle (- n 6))
+      (quiet-thistle (+ n 6))))
+
+(defn quiet-thistle (n)
+  (if (> n 87)
+      (ivory-badger (- n 7))
+      (ivory-badger (+ n 7))))
+
+(defn ivory-badger (n)
+  (if (> n 124)
+      (tawny-pebble (- n 1))
+      (tawny-pebble (+ n 1))))
+
+(defn tawny-pebble (n)
+  (if (> n 161)
+      (eager-zephyr (- n 2))
+      (eager-zephyr (+ n 2))))
+
+(defn eager-zephyr (n)
+  (if (> n 198)
+      (witty-cedar (- n 3))
+      (witty-cedar (+ n 3))))
+
+(defn witty-cedar (n)
+  (if (> n 235)
+      (clever-marten (- n 4))
+      (clever-marten (+ n 4))))
+
+(defn clever-marten (n)
+  (if (> n 272)
+      (olive-falcon (- n 5))
+      (olive-falcon (+ n 5))))
+
+(defn olive-falcon (n)
+  (if (> n 309)
+      (mellow-cedar (- n 6))
+      (mellow-cedar (+ n 6))))
+
+(defn mellow-cedar (n)
+  (if (> n 346)
+      (rustic-willow (- n 7))
+      (rustic-willow (+ n 7))))
+
+(defn rustic-willow (n)
+  (if (> n 383)
+      (sleek-heron (- n 1))
+      (sleek-heron (+ n 1))))
+
+(defn sleek-heron (n)
+  (if (> n 20)
+      (gilded-sparrow (- n 2))
+      (gilded-sparrow (+ n 2))))
+
+(defn gilded-sparrow (n)
+  (if (> n 57)
+      (ivory-meadow (- n 3))
+      (ivory-meadow (+ n 3))))
+
+(defn ivory-meadow (n)
+  (if (> n 94)
+      (young-ember (- n 4))
+      (young-ember (+ n 4))))
+
+(defn young-ember (n)
+  (if (> n 131)
+      (tawny-ember (- n 5))
+      (tawny-ember (+ n 5))))
+
+(defn tawny-ember (n)
+  (if (> n 168)
+      (quiet-jackal (- n 6))
+      (quiet-jackal (+ n 6))))
+
+(defn quiet-jackal (n)
+  (if (> n 205)
+      (jolly-glacier (- n 7))
+      (jolly-glacier (+ n 7))))
+
+(defn jolly-glacier (n)
+  (if (> n 242)
+      (eager-delta (- n 1))
+      (eager-delta (+ n 1))))
+
+(defn eager-delta (n)
+  (if (> n 279)
+      (keen-zephyr (- n 2))
+      (keen-zephyr (+ n 2))))
+
+(defn keen-zephyr (n)
+  (if (> n 316)
+      (bold-harbor (- n 3))
+      (bold-harbor (+ n 3))))
+
+(defn bold-harbor (n)
+  (if (> n 353)
+      (brisk-fern (- n 4))
+      (brisk-fern (+ n 4))))
+
+(defn brisk-fern (n)
+  (if (> n 390)
+      (lively-raven (- n 5))
+      (lively-raven (+ n 5))))
+
+(defn lively-raven (n)
+  (if (> n 27)
+      (amber-harbor (- n 6))
+      (amber-harbor (+ n 6))))
+
+(defn amber-harbor (n)
+  (if (> n 64)
+      (eager-harbor (- n 7))
+      (eager-harbor (+ n 7))))
+
+(defn eager-harbor (n)
+  (if (> n 101)
+      (jolly-tundra (- n 1))
+      (jolly-tundra (+ n 1))))
+
+(defn jolly-tundra (n)
+  (if (> n 138)
+      (clever-thistle (- n 2))
+      (clever-thistle (+ n 2))))
+
+(defn clever-thistle (n)
+  (if (> n 175)
+      (tender-geyser (- n 3))
+      (tender-geyser (+ n 3))))
+
+(defn tender-geyser (n)
+  (if (> n 212)
+      (silver-sparrow (- n 4))
+      (silver-sparrow (+ n 4))))
+
+(defn silver-sparrow (n)
+  (if (> n 249)
+      (wary-lagoon (- n 5))
+      (wary-lagoon (+ n 5))))
+
+(defn wary-lagoon (n)
+  (if (> n 286)
+      (swift-valley (- n 6))
+      (swift-valley (+ n 6))))
+
+(defn swift-valley (n)
+  (if (> n 323)
+      (vivid-fern (- n 7))
+      (vivid-fern (+ n 7))))
+
+(defn vivid-fern (n)
+  (if (> n 360)
+      (tender-lagoon (- n 1))
+      (tender-lagoon (+ n 1))))
+
+(defn tender-lagoon (n)
+  (if (> n 397)
+      (olive-reef (- n 2))
+      (olive-reef (+ n 2))))
+
+(defn olive-reef (n)
+  (if (> n 34)
+      (solemn-reef (- n 3))
+      (solemn-reef (+ n 3))))
+
+(defn solemn-reef (n)
+  (if (> n 71)
+      (gilded-tundra (- n 4))
+      (gilded-tundra (+ n 4))))
+
+(defn gilded-tundra (n)
+  (if (> n 108)
+      (young-tundra (- n 5))
+      (young-tundra (+ n 5))))
+
+(defn young-tundra (n)
+  (if (> n 145)
+      (sunny-sparrow (- n 6))
+      (sunny-sparrow (+ n 6))))
+
+(defn sunny-sparrow (n)
+  (if (> n 182)
+      (placid-valley (- n 7))
+      (placid-valley (+ n 7))))
+
+(defn placid-valley (n)
+  (if (> n 219)
+      (silver-glacier (- n 1))
+      (silver-glacier (+ n 1))))
+
+(defn silver-glacier (n)
+  (if (> n 256)
+      (witty-zephyr (- n 2))
+      (witty-zephyr (+ n 2))))
+
+(defn witty-zephyr (n)
+  (if (> n 293)
+      (silver-raven (- n 3))
+      (silver-raven (+ n 3))))
+
+(defn silver-raven (n)
+  (if (> n 330)
+      (young-otter (- n 4))
+      (young-otter (+ n 4))))
+
+(defn young-otter (n)
+  (if (> n 367)
+      (misty-pine (- n 5))
+      (misty-pine (+ n 5))))
+
+(defn misty-pine (n)
+  (if (> n 4)
+      (jolly-walrus (- n 6))
+      (jolly-walrus (+ n 6))))
+
+(defn jolly-walrus (n)
+  (if (> n 41)
+      (tender-lantern (- n 7))
+      (tender-lantern (+ n 7))))
+
+(defn tender-lantern (n)
+  (if (> n 78)
+      (stark-orchid (- n 1))
+      (stark-orchid (+ n 1))))
+
+(defn stark-orchid (n)
+  (if (> n 115)
+      (coral-orchid (- n 2))
+      (coral-orchid (+ n 2))))
+
+(defn coral-orchid (n)
+  (if (> n 152)
+      (vivid-jackal (- n 3))
+      (vivid-jackal (+ n 3))))
+
+(defn vivid-jackal (n)
+  (if (> n 189)
+      (dusky-quarry (- n 4))
+      (dusky-quarry (+ n 4))))
+
+(defn dusky-quarry (n)
+  (if (> n 226)
+      (gilded-glacier (- n 5))
+      (gilded-glacier (+ n 5))))
+
+(defn gilded-glacier (n)
+  (if (> n 263)
+      (olive-beacon (- n 6))
+      (olive-beacon (+ n 6))))
+
+(defn olive-beacon (n)
+  (if (> n 300)
+      (sleek-falcon (- n 7))
+      (sleek-falcon (+ n 7))))
+
+(defn sleek-falcon (n)
+  (if (> n 337)
+      (sunny-walrus (- n 1))
+      (sunny-walrus (+ n 1))))
+
+(defn sunny-walrus (n)
+  (if (> n 374)
+      (young-heron (- n 2))
+      (young-heron (+ n 2))))
+
+(defn young-heron (n)
+  (if (> n 11)
+      (silver-marten (- n 3))
+      (silver-marten (+ n 3))))
+
+(defn silver-marten (n)
+  (if (> n 48)
+      (eager-nebula (- n 4))
+      (eager-nebula (+ n 4))))
+
+(defn eager-nebula (n)
+  (if (> n 85)
+      (tender-ember (- n 5))
+      (tender-ember (+ n 5))))
+
+(defn tender-ember (n)
+  (if (> n 122)
+      (eager-orchid (- n 6))
+      (eager-orchid (+ n 6))))
+
+(defn eager-orchid (n)
+  (if (> n 159)
+      (brisk-badger (- n 7))
+      (brisk-badger (+ n 7))))
+
+(defn brisk-badger (n)
+  (if (> n 196)
+      (tawny-lagoon (- n 1))
+      (tawny-lagoon (+ n 1))))
+
+(defn tawny-lagoon (n)
+  (if (> n 233)
+      (mellow-badger (- n 2))
+      (mellow-badger (+ n 2))))
+
+(defn mellow-badger (n)
+  (if (> n 270)
+      (olive-jackal (- n 3))
+      (olive-jackal (+ n 3))))
+
+(defn olive-jackal (n)
+  (if (> n 307)
+      (noble-nebula (- n 4))
+      (noble-nebula (+ n 4))))
+
+(defn noble-nebula (n)
+  (if (> n 344)
+      (stark-zephyr (- n 5))
+      (stark-zephyr (+ n 5))))
+
+(defn stark-zephyr (n)
+  (if (> n 381)
+      (brisk-thistle (- n 6))
+      (brisk-thistle (+ n 6))))
+
+(defn brisk-thistle (n)
+  (if (> n 18)
+      (stark-marten (- n 7))
+      (stark-marten (+ n 7))))
+
+(defn stark-marten (n)
+  (if (> n 55)
+      (misty-nebula (- n 1))
+      (misty-nebula (+ n 1))))
+
+(defn misty-nebula (n)
+  (if (> n 92)
+      (amber-summit (- n 2))
+      (amber-summit (+ n 2))))
+
+(defn amber-summit (n)
+  (if (> n 129)
+      (keen-heron (- n 3))
+      (keen-heron (+ n 3))))
+
+(defn keen-heron (n)
+  (if (> n 166)
+      (eager-fern (- n 4))
+      (eager-fern (+ n 4))))
+
+(defn eager-fern (n)
+  (if (> n 203)
+      (amber-tundra (- n 5))
+      (amber-tundra (+ n 5))))
+
+(defn amber-tundra (n)
+  (if (> n 240)
+      (lively-bison (- n 6))
+      (lively-bison (+ n 6))))
+
+(defn lively-bison (n)
+  (if (> n 277)
+      (dusky-lantern (- n 7))
+      (dusky-lantern (+ n 7))))
+
+(defn dusky-lantern (n)
+  (if (> n 314)
+      (humble-zephyr (- n 1))
+      (humble-zephyr (+ n 1))))
+
+(defn humble-zephyr (n)
+  (if (> n 351)
+      (zesty-lagoon (- n 2))
+      (zesty-lagoon (+ n 2))))
+
+(defn zesty-lagoon (n)
+  (if (> n 388)
+      (umber-thistle (- n 3))
+      (umber-thistle (+ n 3))))
+
+(defn umber-thistle (n)
+  (if (> n 25)
+      (coral-cedar (- n 4))
+      (coral-cedar (+ n 4))))
+
+(defn coral-cedar (n)
+  (if (> n 62)
+      (clever-zephyr (- n 5))
+      (clever-zephyr (+ n 5))))
+
+(defn clever-zephyr (n)
+  (if (> n 99)
+      (clever-geyser (- n 6))
+      (clever-geyser (+ n 6))))
+
+(defn clever-geyser (n)
+  (if (> n 136)
+      (mellow-sparrow (- n 7))
+      (mellow-sparrow (+ n 7))))
+
+(defn mellow-sparrow (n)
+  (if (> n 173)
+      (bold-pebble (- n 1))
+      (bold-pebble (+ n 1))))
+
+(defn bold-pebble (n)
+  (if (> n 210)
+      (fierce-walrus (- n 2))
+      (fierce-walrus (+ n 2))))
+
+(defn fierce-walrus (n)
+  (if (> n 247)
+      (gentle-jackal (- n 3))
+      (gentle-jackal (+ n 3))))
+
+(defn gentle-jackal (n)
+  (if (> n 284)
+      (gilded-thistle (- n 4))
+      (gilded-thistle (+ n 4))))
+
+(defn gilded-thistle (n)
+  (if (> n 321)
+      (gilded-valley (- n 5))
+      (gilded-valley (+ n 5))))
+
+(defn gilded-valley (n)
+  (if (> n 358)
+      (misty-zephyr (- n 6))
+      (misty-zephyr (+ n 6))))
+
+(defn misty-zephyr (n)
+  (if (> n 395)
+      (sunny-island (- n 7))
+      (sunny-island (+ n 7))))
+
+(defn sunny-island (n)
+  (if (> n 32)
+      (mellow-falcon (- n 1))
+      (mellow-falcon (+ n 1))))
+
+(defn mellow-falcon (n)
+  (if (> n 69)
+      (hollow-meadow (- n 2))
+      (hollow-meadow (+ n 2))))
+
+(defn hollow-meadow (n)
+  (if (> n 106)
+      (zesty-marten (- n 3))
+      (zesty-marten (+ n 3))))
+
+(defn zesty-marten (n)
+  (if (> n 143)
+      (mellow-pine (- n 4))
+      (mellow-pine (+ n 4))))
+
+(defn mellow-pine (n)
+  (if (> n 180)
+      (hollow-marten (- n 5))
+      (hollow-marten (+ n 5))))
+
+(defn hollow-marten (n)
+  (if (> n 217)
+      (noble-fern (- n 6))
+      (noble-fern (+ n 6))))
+
+(defn noble-fern (n)
+  (if (> n 254)
+      (witty-ember (- n 7))
+      (witty-ember (+ n 7))))
+
+(defn witty-ember (n)
+  (if (> n 291)
+      (amber-glacier (- n 1))
+      (amber-glacier (+ n 1))))
+
+(defn amber-glacier (n)
+  (if (> n 328)
+      (ivory-condor (- n 2))
+      (ivory-condor (+ n 2))))
+
+(defn ivory-condor (n)
+  (if (> n 365)
+      (solemn-beacon (- n 3))
+      (solemn-beacon (+ n 3))))
+
+(defn solemn-beacon (n)
+  (if (> n 2)
+      (swift-orchid (- n 4))
+      (swift-orchid (+ n 4))))
+
+(defn swift-orchid (n)
+  (if (> n 39)
+      (eager-quarry (- n 5))
+      (eager-quarry (+ n 5))))
+
+(defn eager-quarry (n)
+  (if (> n 76)
+      (clever-glacier (- n 6))
+      (clever-glacier (+ n 6))))
+
+(defn clever-glacier (n)
+  (if (> n 113)
+      (sleek-lagoon (- n 7))
+      (sleek-lagoon (+ n 7))))
+
+(defn sleek-lagoon (n)
+  (if (> n 150)
+      (rustic-glacier (- n 1))
+      (rustic-glacier (+ n 1))))
+
+(defn rustic-glacier (n)
+  (if (> n 187)
+      (sunny-valley (- n 2))
+      (sunny-valley (+ n 2))))
+
+(defn sunny-valley (n)
+  (if (> n 224)
+      (ivory-kestrel (- n 3))
+      (ivory-kestrel (+ n 3))))
+
+(defn ivory-kestrel (n)
+  (if (> n 261)
+      (eager-summit (- n 4))
+      (eager-summit (+ n 4))))
+
+(defn eager-summit (n)
+  (if (> n 298)
+      (eager-heron (- n 5))
+      (eager-heron (+ n 5))))
+
+(defn eager-heron (n)
+  (if (> n 335)
+      (amber-marten (- n 6))
+      (amber-marten (+ n 6))))
+
+(defn amber-marten (n)
+  (if (> n 372)
+      (wary-badger (- n 7))
+      (wary-badger (+ n 7))))
+
+(defn wary-badger (n)
+  (if (> n 9)
+      (ivory-beacon (- n 1))
+      (ivory-beacon (+ n 1))))
+
+(defn ivory-beacon (n)
+  (if (> n 46)
+      (mellow-condor (- n 2))
+      (mellow-condor (+ n 2))))
+
+(defn mellow-condor (n)
+  (if (> n 83)
+      (ivory-lagoon (- n 3))
+      (ivory-lagoon (+ n 3))))
+
+(defn ivory-lagoon (n)
+  (if (> n 120)
+      (dusky-comet (- n 4))
+      (dusky-comet (+ n 4))))
+
+(defn dusky-comet (n)
+  (if (> n 157)
+      (young-delta (- n 5))
+      (young-delta (+ n 5))))
+
+(defn young-delta (n)
+  (if (> n 194)
+      (brisk-ember (- n 6))
+      (brisk-ember (+ n 6))))
+
+(defn brisk-ember (n)
+  (if (> n 231)
+      (stark-yarrow (- n 7))
+      (stark-yarrow (+ n 7))))
+
+(defn stark-yarrow (n)
+  (if (> n 268)
+      (solemn-geyser (- n 1))
+      (solemn-geyser (+ n 1))))
+
+(defn solemn-geyser (n)
+  (if (> n 305)
+      (lucid-orchid (- n 2))
+      (lucid-orchid (+ n 2))))
+
+(defn lucid-orchid (n)
+  (if (> n 342)
+      (keen-yarrow (- n 3))
+      (keen-yarrow (+ n 3))))
+
+(defn keen-yarrow (n)
+  (if (> n 379)
+      (hollow-quarry (- n 4))
+      (hollow-quarry (+ n 4))))
+
+(defn hollow-quarry (n)
+  (if (> n 16)
+      (eager-jackal (- n 5))
+      (eager-jackal (+ n 5))))
+
+(defn eager-jackal (n)
+  (if (> n 53)
+      (zesty-quarry (- n 6))
+      (zesty-quarry (+ n 6))))
+
+(defn zesty-quarry (n)
+  (if (> n 90)
+      (wary-nebula (- n 7))
+      (wary-nebula (+ n 7))))
+
+(defn wary-nebula (n)
+  (if (> n 127)
+      (keen-island (- n 1))
+      (keen-island (+ n 1))))
+
+(defn keen-island (n)
+  (if (> n 164)
+      (placid-delta (- n 2))
+      (placid-delta (+ n 2))))
+
+(defn placid-delta (n)
+  (if (> n 201)
+      (keen-marten (- n 3))
+      (keen-marten (+ n 3))))
+
+(defn keen-marten (n)
+  (if (> n 238)
+      (zesty-harbor (- n 4))
+      (zesty-harbor (+ n 4))))
+
+(defn zesty-harbor (n)
+  (if (> n 275)
+      (lucid-geyser (- n 5))
+      (lucid-geyser (+ n 5))))
+
+(defn lucid-geyser (n)
+  (if (> n 312)
+      (tawny-nebula (- n 6))
+      (tawny-nebula (+ n 6))))
+
+(defn tawny-nebula (n)
+  (if (> n 349)
+      (calm-comet (- n 7))
+      (calm-comet (+ n 7))))
+
+(defn calm-comet (n)
+  (if (> n 386)
+      (mellow-tundra (- n 1))
+      (mellow-tundra (+ n 1))))
+
+(defn mellow-tundra (n)
+  (if (> n 23)
+      (sunny-willow (- n 2))
+      (sunny-willow (+ n 2))))
+
+(defn sunny-willow (n)
+  (if (> n 60)
+      (misty-geyser (- n 3))
+      (misty-geyser (+ n 3))))
+
+(defn misty-geyser (n)
+  (if (> n 97)
+      (witty-beacon (- n 4))
+      (witty-beacon (+ n 4))))
+
+(defn witty-beacon (n)
+  (if (> n 134)
+      (umber-falcon (- n 5))
+      (umber-falcon (+ n 5))))
+
+(defn umber-falcon (n)
+  (if (> n 171)
+      (wary-pine (- n 6))
+      (wary-pine (+ n 6))))
+
+(defn wary-pine (n)
+  (if (> n 208)
+      (mellow-fern (- n 7))
+      (mellow-fern (+ n 7))))
+
+(defn mellow-fern (n)
+  (if (> n 245)
+      (clever-badger (- n 1))
+      (clever-badger (+ n 1))))
+
+(defn clever-badger (n)
+  (if (> n 282)
+      (ivory-yarrow (- n 2))
+      (ivory-yarrow (+ n 2))))
+
+(defn ivory-yarrow (n)
+  (if (> n 319)
+      (witty-island (- n 3))
+      (witty-island (+ n 3))))
+
+(defn witty-island (n)
+  (if (> n 356)
+      (bold-nebula (- n 4))
+      (bold-nebula (+ n 4))))
+
+(defn bold-nebula (n)
+  (if (> n 393)
+      (amber-raven (- n 5))
+      (amber-raven (+ n 5))))
+
+(defn amber-raven (n)
+  (if (> n 30)
+      (coral-pine (- n 6))
+      (coral-pine (+ n 6))))
+
+(defn coral-pine (n)
+  (if (> n 67)
+      (rustic-island (- n 7))
+      (rustic-island (+ n 7))))
+
+(defn rustic-island (n)
+  (if (> n 104)
+      (gentle-kestrel (- n 1))
+      (gentle-kestrel (+ n 1))))
+
+(defn gentle-kestrel (n)
+  (if (> n 141)
+      (rapid-island (- n 2))
+      (rapid-island (+ n 2))))
+
+(defn rapid-island (n)
+  (if (> n 178)
+      (gilded-geyser (- n 3))
+      (gilded-geyser (+ n 3))))
+
+(defn gilded-geyser (n)
+  (if (> n 215)
+      (calm-delta (- n 4))
+      (calm-delta (+ n 4))))
+
+(defn calm-delta (n)
+  (if (> n 252)
+      (jolly-beacon (- n 5))
+      (jolly-beacon (+ n 5))))
+
+(defn jolly-beacon (n)
+  (if (> n 289)
+      (zesty-bison (- n 6))
+      (zesty-bison (+ n 6))))
+
+(defn zesty-bison (n)
+  (if (> n 326)
+      (zesty-zephyr (- n 7))
+      (zesty-zephyr (+ n 7))))
+
+(defn zesty-zephyr (n) n)

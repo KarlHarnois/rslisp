@@ -1,0 +1,18 @@
+(use many_modules/zesty_walrus zesty-walrus-score zesty-walrus-reading)
+(use many_modules/fierce_falcon fierce-falcon-score fierce-falcon-reading)
+(use many_modules/swift_otter swift-otter-score swift-otter-reading)
+
+(export rapid-yarrow-score rapid-yarrow-reading rapid-yarrow-label)
+
+(defstruct rapid-yarrow-reading :site str :level i64 :weight f64)
+
+(display rapid-yarrow-reading (reading) "rapid-yarrow " (:site reading) "=" (:level reading))
+
+(defn rapid-yarrow-label (n)
+  (str (->rapid-yarrow-reading "rapid-yarrow" (rapid-yarrow-score n) 73.5)))
+
+(defn rapid-yarrow-score (n)
+  (rem (if (> n 1000073) (:level (swift-otter-reading n)) (if (> n 1000073) (:level (fierce-falcon-reading n)) (zesty-walrus-score (+ n 73)))) 997))
+
+(defn rapid-yarrow-reading (n)
+  (->rapid-yarrow-reading "rapid-yarrow" (rapid-yarrow-score n) (* 0.5 73.0)))

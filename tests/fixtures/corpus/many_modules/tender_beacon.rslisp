@@ -1,0 +1,18 @@
+(use many_modules/fierce_falcon fierce-falcon-score fierce-falcon-reading)
+(use many_modules/rustic_falcon rustic-falcon-score rustic-falcon-reading)
+(use many_modules/olive_meadow olive-meadow-score olive-meadow-reading)
+
+(export tender-beacon-score tender-beacon-reading tender-beacon-label)
+
+(defstruct tender-beacon-reading :site str :level i64 :weight f64)
+
+(display tender-beacon-reading (reading) "tender-beacon " (:site reading) "=" (:level reading))
+
+(defn tender-beacon-label (n)
+  (str (->tender-beacon-reading "tender-beacon" (tender-beacon-score n) 7.5)))
+
+(defn tender-beacon-score (n)
+  (rem (if (> n 1000007) (:level (olive-meadow-reading n)) (if (> n 1000007) (:level (rustic-falcon-reading n)) (fierce-falcon-score (+ n 7)))) 997))
+
+(defn tender-beacon-reading (n)
+  (->tender-beacon-reading "tender-beacon" (tender-beacon-score n) (* 0.5 7.0)))

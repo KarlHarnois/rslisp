@@ -1,0 +1,18 @@
+(use many_modules/keen_tundra keen-tundra-score keen-tundra-reading)
+(use many_modules/wary_falcon wary-falcon-score wary-falcon-reading)
+(use many_modules/fierce_falcon fierce-falcon-score fierce-falcon-reading)
+
+(export witty-meadow-score witty-meadow-reading witty-meadow-label)
+
+(defstruct witty-meadow-reading :site str :level i64 :weight f64)
+
+(display witty-meadow-reading (reading) "witty-meadow " (:site reading) "=" (:level reading))
+
+(defn witty-meadow-label (n)
+  (str (->witty-meadow-reading "witty-meadow" (witty-meadow-score n) 16.5)))
+
+(defn witty-meadow-score (n)
+  (rem (if (> n 1000016) (:level (fierce-falcon-reading n)) (if (> n 1000016) (:level (wary-falcon-reading n)) (keen-tundra-score (+ n 16)))) 997))
+
+(defn witty-meadow-reading (n)
+  (->witty-meadow-reading "witty-meadow" (witty-meadow-score n) (* 0.5 16.0)))

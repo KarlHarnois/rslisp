@@ -1,0 +1,18 @@
+(use many_modules/dusky_geyser dusky-geyser-score dusky-geyser-reading)
+(use many_modules/stark_falcon stark-falcon-score stark-falcon-reading)
+(use many_modules/bold_lantern bold-lantern-score bold-lantern-reading)
+
+(export solemn-sparrow-score solemn-sparrow-reading solemn-sparrow-label)
+
+(defstruct solemn-sparrow-reading :site str :level i64 :weight f64)
+
+(display solemn-sparrow-reading (reading) "solemn-sparrow " (:site reading) "=" (:level reading))
+
+(defn solemn-sparrow-label (n)
+  (str (->solemn-sparrow-reading "solemn-sparrow" (solemn-sparrow-score n) 37.5)))
+
+(defn solemn-sparrow-score (n)
+  (rem (if (> n 1000037) (:level (bold-lantern-reading n)) (if (> n 1000037) (:level (stark-falcon-reading n)) (dusky-geyser-score (+ n 37)))) 997))
+
+(defn solemn-sparrow-reading (n)
+  (->solemn-sparrow-reading "solemn-sparrow" (solemn-sparrow-score n) (* 0.5 37.0)))

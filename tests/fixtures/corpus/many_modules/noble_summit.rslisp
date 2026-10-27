@@ -1,0 +1,18 @@
+(use many_modules/keen_reef keen-reef-score keen-reef-reading)
+(use many_modules/brisk_heron brisk-heron-score brisk-heron-reading)
+(use many_modules/swift_geyser swift-geyser-score swift-geyser-reading)
+
+(export noble-summit-score noble-summit-reading noble-summit-label)
+
+(defstruct noble-summit-reading :site str :level i64 :weight f64)
+
+(display noble-summit-reading (reading) "noble-summit " (:site reading) "=" (:level reading))
+
+(defn noble-summit-label (n)
+  (str (->noble-summit-reading "noble-summit" (noble-summit-score n) 95.5)))
+
+(defn noble-summit-score (n)
+  (rem (if (> n 1000095) (:level (swift-geyser-reading n)) (if (> n 1000095) (:level (brisk-heron-reading n)) (keen-reef-score (+ n 95)))) 997))
+
+(defn noble-summit-reading (n)
+  (->noble-summit-reading "noble-summit" (noble-summit-score n) (* 0.5 95.0)))

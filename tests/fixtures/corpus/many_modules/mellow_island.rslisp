@@ -1,0 +1,18 @@
+(use many_modules/swift_geyser swift-geyser-score swift-geyser-reading)
+(use many_modules/stark_falcon stark-falcon-score stark-falcon-reading)
+(use many_modules/dusky_pebble dusky-pebble-score dusky-pebble-reading)
+
+(export mellow-island-score mellow-island-reading mellow-island-label)
+
+(defstruct mellow-island-reading :site str :level i64 :weight f64)
+
+(display mellow-island-reading (reading) "mellow-island " (:site reading) "=" (:level reading))
+
+(defn mellow-island-label (n)
+  (str (->mellow-island-reading "mellow-island" (mellow-island-score n) 39.5)))
+
+(defn mellow-island-score (n)
+  (rem (if (> n 1000039) (:level (dusky-pebble-reading n)) (if (> n 1000039) (:level (stark-falcon-reading n)) (swift-geyser-score (+ n 39)))) 997))
+
+(defn mellow-island-reading (n)
+  (->mellow-island-reading "mellow-island" (mellow-island-score n) (* 0.5 39.0)))

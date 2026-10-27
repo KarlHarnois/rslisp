@@ -1,0 +1,18 @@
+(use many_modules/olive_meadow olive-meadow-score olive-meadow-reading)
+(use many_modules/dusky_geyser dusky-geyser-score dusky-geyser-reading)
+(use many_modules/rustic_falcon rustic-falcon-score rustic-falcon-reading)
+
+(export rapid-willow-score rapid-willow-reading rapid-willow-label)
+
+(defstruct rapid-willow-reading :site str :level i64 :weight f64)
+
+(display rapid-willow-reading (reading) "rapid-willow " (:site reading) "=" (:level reading))
+
+(defn rapid-willow-label (n)
+  (str (->rapid-willow-reading "rapid-willow" (rapid-willow-score n) 57.5)))
+
+(defn rapid-willow-score (n)
+  (rem (if (> n 1000057) (:level (rustic-falcon-reading n)) (if (> n 1000057) (:level (dusky-geyser-reading n)) (olive-meadow-score (+ n 57)))) 997))
+
+(defn rapid-willow-reading (n)
+  (->rapid-willow-reading "rapid-willow" (rapid-willow-score n) (* 0.5 57.0)))

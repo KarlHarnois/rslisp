@@ -1,0 +1,12 @@
+(use many_modules/bold_quarry bold-quarry-label)
+(use many_modules/young_glacier young-glacier-label)
+(use many_modules/lively_geyser lively-geyser-label)
+(use many_modules/quiet_summit quiet-summit-label)
+(use many_modules/rustic_beacon rustic-beacon-label)
+
+(defn main ()
+  (println (bold-quarry-label 1))
+  (println (young-glacier-label 1))
+  (println (lively-geyser-label 1))
+  (println (quiet-summit-label 1))
+  (println (rustic-beacon-label 1)))

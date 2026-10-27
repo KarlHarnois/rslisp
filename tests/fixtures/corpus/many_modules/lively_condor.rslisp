@@ -1,0 +1,18 @@
+(use many_modules/mellow_lagoon mellow-lagoon-score mellow-lagoon-reading)
+(use many_modules/noble_tundra noble-tundra-score noble-tundra-reading)
+(use many_modules/lively_zephyr lively-zephyr-score lively-zephyr-reading)
+
+(export lively-condor-score lively-condor-reading lively-condor-label)
+
+(defstruct lively-condor-reading :site str :level i64 :weight f64)
+
+(display lively-condor-reading (reading) "lively-condor " (:site reading) "=" (:level reading))
+
+(defn lively-condor-label (n)
+  (str (->lively-condor-reading "lively-condor" (lively-condor-score n) 96.5)))
+
+(defn lively-condor-score (n)
+  (rem (if (> n 1000096) (:level (lively-zephyr-reading n)) (if (> n 1000096) (:level (noble-tundra-reading n)) (mellow-lagoon-score (+ n 96)))) 997))
+
+(defn lively-condor-reading (n)
+  (->lively-condor-reading "lively-condor" (lively-condor-score n) (* 0.5 96.0)))

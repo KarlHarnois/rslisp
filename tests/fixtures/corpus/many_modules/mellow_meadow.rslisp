@@ -1,0 +1,18 @@
+(use many_modules/rapid_willow rapid-willow-score rapid-willow-reading)
+(use many_modules/vivid_pebble vivid-pebble-score vivid-pebble-reading)
+(use many_modules/tender_beacon tender-beacon-score tender-beacon-reading)
+
+(export mellow-meadow-score mellow-meadow-reading mellow-meadow-label)
+
+(defstruct mellow-meadow-reading :site str :level i64 :weight f64)
+
+(display mellow-meadow-reading (reading) "mellow-meadow " (:site reading) "=" (:level reading))
+
+(defn mellow-meadow-label (n)
+  (str (->mellow-meadow-reading "mellow-meadow" (mellow-meadow-score n) 68.5)))
+
+(defn mellow-meadow-score (n)
+  (rem (if (> n 1000068) (:level (tender-beacon-reading n)) (if (> n 1000068) (:level (vivid-pebble-reading n)) (rapid-willow-score (+ n 68)))) 997))
+
+(defn mellow-meadow-reading (n)
+  (->mellow-meadow-reading "mellow-meadow" (mellow-meadow-score n) (* 0.5 68.0)))

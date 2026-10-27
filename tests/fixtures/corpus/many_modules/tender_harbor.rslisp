@@ -1,0 +1,18 @@
+(use many_modules/vivid_otter vivid-otter-score vivid-otter-reading)
+(use many_modules/stark_fern stark-fern-score stark-fern-reading)
+(use many_modules/young_falcon young-falcon-score young-falcon-reading)
+
+(export tender-harbor-score tender-harbor-reading tender-harbor-label)
+
+(defstruct tender-harbor-reading :site str :level i64 :weight f64)
+
+(display tender-harbor-reading (reading) "tender-harbor " (:site reading) "=" (:level reading))
+
+(defn tender-harbor-label (n)
+  (str (->tender-harbor-reading "tender-harbor" (tender-harbor-score n) 55.5)))
+
+(defn tender-harbor-score (n)
+  (rem (if (> n 1000055) (:level (young-falcon-reading n)) (if (> n 1000055) (:level (stark-fern-reading n)) (vivid-otter-score (+ n 55)))) 997))
+
+(defn tender-harbor-reading (n)
+  (->tender-harbor-reading "tender-harbor" (tender-harbor-score n) (* 0.5 55.0)))

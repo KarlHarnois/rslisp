@@ -1,0 +1,18 @@
+(use many_modules/rustic_meadow rustic-meadow-score rustic-meadow-reading)
+(use many_modules/vivid_lantern vivid-lantern-score vivid-lantern-reading)
+(use many_modules/hollow_sparrow hollow-sparrow-score hollow-sparrow-reading)
+
+(export silver-tundra-score silver-tundra-reading silver-tundra-label)
+
+(defstruct silver-tundra-reading :site str :level i64 :weight f64)
+
+(display silver-tundra-reading (reading) "silver-tundra " (:site reading) "=" (:level reading))
+
+(defn silver-tundra-label (n)
+  (str (->silver-tundra-reading "silver-tundra" (silver-tundra-score n) 81.5)))
+
+(defn silver-tundra-score (n)
+  (rem (if (> n 1000081) (:level (hollow-sparrow-reading n)) (if (> n 1000081) (:level (vivid-lantern-reading n)) (rustic-meadow-score (+ n 81)))) 997))
+
+(defn silver-tundra-reading (n)
+  (->silver-tundra-reading "silver-tundra" (silver-tundra-score n) (* 0.5 81.0)))

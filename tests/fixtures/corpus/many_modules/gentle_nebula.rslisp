@@ -1,0 +1,18 @@
+(use many_modules/keen_tundra keen-tundra-score keen-tundra-reading)
+(use many_modules/rapid_willow rapid-willow-score rapid-willow-reading)
+(use many_modules/rustic_meadow rustic-meadow-score rustic-meadow-reading)
+
+(export gentle-nebula-score gentle-nebula-reading gentle-nebula-label)
+
+(defstruct gentle-nebula-reading :site str :level i64 :weight f64)
+
+(display gentle-nebula-reading (reading) "gentle-nebula " (:site reading) "=" (:level reading))
+
+(defn gentle-nebula-label (n)
+  (str (->gentle-nebula-reading "gentle-nebula" (gentle-nebula-score n) 109.5)))
+
+(defn gentle-nebula-score (n)
+  (rem (if (> n 1000109) (:level (rustic-meadow-reading n)) (if (> n 1000109) (:level (rapid-willow-reading n)) (keen-tundra-score (+ n 109)))) 997))
+
+(defn gentle-nebula-reading (n)
+  (->gentle-nebula-reading "gentle-nebula" (gentle-nebula-score n) (* 0.5 109.0)))

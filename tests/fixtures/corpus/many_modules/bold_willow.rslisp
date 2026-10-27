@@ -1,0 +1,18 @@
+(use many_modules/young_pine young-pine-score young-pine-reading)
+(use many_modules/olive_badger olive-badger-score olive-badger-reading)
+(use many_modules/keen_tundra keen-tundra-score keen-tundra-reading)
+
+(export bold-willow-score bold-willow-reading bold-willow-label)
+
+(defstruct bold-willow-reading :site str :level i64 :weight f64)
+
+(display bold-willow-reading (reading) "bold-willow " (:site reading) "=" (:level reading))
+
+(defn bold-willow-label (n)
+  (str (->bold-willow-reading "bold-willow" (bold-willow-score n) 93.5)))
+
+(defn bold-willow-score (n)
+  (rem (if (> n 1000093) (:level (keen-tundra-reading n)) (if (> n 1000093) (:level (olive-badger-reading n)) (young-pine-score (+ n 93)))) 997))
+
+(defn bold-willow-reading (n)
+  (->bold-willow-reading "bold-willow" (bold-willow-score n) (* 0.5 93.0)))

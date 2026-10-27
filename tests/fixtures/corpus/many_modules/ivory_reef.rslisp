@@ -1,0 +1,18 @@
+(use many_modules/vivid_otter vivid-otter-score vivid-otter-reading)
+(use many_modules/bold_falcon bold-falcon-score bold-falcon-reading)
+(use many_modules/gilded_bison gilded-bison-score gilded-bison-reading)
+
+(export ivory-reef-score ivory-reef-reading ivory-reef-label)
+
+(defstruct ivory-reef-reading :site str :level i64 :weight f64)
+
+(display ivory-reef-reading (reading) "ivory-reef " (:site reading) "=" (:level reading))
+
+(defn ivory-reef-label (n)
+  (str (->ivory-reef-reading "ivory-reef" (ivory-reef-score n) 108.5)))
+
+(defn ivory-reef-score (n)
+  (rem (if (> n 1000108) (:level (gilded-bison-reading n)) (if (> n 1000108) (:level (bold-falcon-reading n)) (vivid-otter-score (+ n 108)))) 997))
+
+(defn ivory-reef-reading (n)
+  (->ivory-reef-reading "ivory-reef" (ivory-reef-score n) (* 0.5 108.0)))

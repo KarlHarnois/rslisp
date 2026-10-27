@@ -1,0 +1,18 @@
+(use many_modules/stark_falcon stark-falcon-score stark-falcon-reading)
+(use many_modules/olive_kestrel olive-kestrel-score olive-kestrel-reading)
+(use many_modules/young_pine young-pine-score young-pine-reading)
+
+(export sleek-otter-score sleek-otter-reading sleek-otter-label)
+
+(defstruct sleek-otter-reading :site str :level i64 :weight f64)
+
+(display sleek-otter-reading (reading) "sleek-otter " (:site reading) "=" (:level reading))
+
+(defn sleek-otter-label (n)
+  (str (->sleek-otter-reading "sleek-otter" (sleek-otter-score n) 30.5)))
+
+(defn sleek-otter-score (n)
+  (rem (if (> n 1000030) (:level (young-pine-reading n)) (if (> n 1000030) (:level (olive-kestrel-reading n)) (stark-falcon-score (+ n 30)))) 997))
+
+(defn sleek-otter-reading (n)
+  (->sleek-otter-reading "sleek-otter" (sleek-otter-score n) (* 0.5 30.0)))

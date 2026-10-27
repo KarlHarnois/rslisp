@@ -1,0 +1,18 @@
+(use many_modules/stark_fern stark-fern-score stark-fern-reading)
+(use many_modules/brisk_jackal brisk-jackal-score brisk-jackal-reading)
+(use many_modules/stark_falcon stark-falcon-score stark-falcon-reading)
+
+(export zesty-delta-score zesty-delta-reading zesty-delta-label)
+
+(defstruct zesty-delta-reading :site str :level i64 :weight f64)
+
+(display zesty-delta-reading (reading) "zesty-delta " (:site reading) "=" (:level reading))
+
+(defn zesty-delta-label (n)
+  (str (->zesty-delta-reading "zesty-delta" (zesty-delta-score n) 25.5)))
+
+(defn zesty-delta-score (n)
+  (rem (if (> n 1000025) (:level (stark-falcon-reading n)) (if (> n 1000025) (:level (brisk-jackal-reading n)) (stark-fern-score (+ n 25)))) 997))
+
+(defn zesty-delta-reading (n)
+  (->zesty-delta-reading "zesty-delta" (zesty-delta-score n) (* 0.5 25.0)))

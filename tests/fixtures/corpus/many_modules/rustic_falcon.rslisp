@@ -1,0 +1,18 @@
+(use many_modules/swift_otter swift-otter-score swift-otter-reading)
+(use many_modules/bold_lantern bold-lantern-score bold-lantern-reading)
+(use many_modules/swift_geyser swift-geyser-score swift-geyser-reading)
+
+(export rustic-falcon-score rustic-falcon-reading rustic-falcon-label)
+
+(defstruct rustic-falcon-reading :site str :level i64 :weight f64)
+
+(display rustic-falcon-reading (reading) "rustic-falcon " (:site reading) "=" (:level reading))
+
+(defn rustic-falcon-label (n)
+  (str (->rustic-falcon-reading "rustic-falcon" (rustic-falcon-score n) 3.5)))
+
+(defn rustic-falcon-score (n)
+  (rem (if (> n 1000003) (:level (swift-geyser-reading n)) (if (> n 1000003) (:level (bold-lantern-reading n)) (swift-otter-score (+ n 3)))) 997))
+
+(defn rustic-falcon-reading (n)
+  (->rustic-falcon-reading "rustic-falcon" (rustic-falcon-score n) (* 0.5 3.0)))

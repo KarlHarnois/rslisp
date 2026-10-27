@@ -1,0 +1,18 @@
+(use many_modules/fierce_falcon fierce-falcon-score fierce-falcon-reading)
+(use many_modules/vivid_otter vivid-otter-score vivid-otter-reading)
+(use many_modules/humble_jackal humble-jackal-score humble-jackal-reading)
+
+(export young-glacier-score young-glacier-reading young-glacier-label)
+
+(defstruct young-glacier-reading :site str :level i64 :weight f64)
+
+(display young-glacier-reading (reading) "young-glacier " (:site reading) "=" (:level reading))
+
+(defn young-glacier-label (n)
+  (str (->young-glacier-reading "young-glacier" (young-glacier-score n) 116.5)))
+
+(defn young-glacier-score (n)
+  (rem (if (> n 1000116) (:level (humble-jackal-reading n)) (if (> n 1000116) (:level (vivid-otter-reading n)) (fierce-falcon-score (+ n 116)))) 997))
+
+(defn young-glacier-reading (n)
+  (->young-glacier-reading "young-glacier" (young-glacier-score n) (* 0.5 116.0)))

@@ -1,0 +1,18 @@
+(use many_modules/umber_condor umber-condor-score umber-condor-reading)
+(use many_modules/hollow_willow hollow-willow-score hollow-willow-reading)
+(use many_modules/tender_bison tender-bison-score tender-bison-reading)
+
+(export noble-comet-score noble-comet-reading noble-comet-label)
+
+(defstruct noble-comet-reading :site str :level i64 :weight f64)
+
+(display noble-comet-reading (reading) "noble-comet " (:site reading) "=" (:level reading))
+
+(defn noble-comet-label (n)
+  (str (->noble-comet-reading "noble-comet" (noble-comet-score n) 113.5)))
+
+(defn noble-comet-score (n)
+  (rem (if (> n 1000113) (:level (tender-bison-reading n)) (if (> n 1000113) (:level (hollow-willow-reading n)) (umber-condor-score (+ n 113)))) 997))
+
+(defn noble-comet-reading (n)
+  (->noble-comet-reading "noble-comet" (noble-comet-score n) (* 0.5 113.0)))

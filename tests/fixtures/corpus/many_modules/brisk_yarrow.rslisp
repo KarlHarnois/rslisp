@@ -1,0 +1,18 @@
+(use many_modules/gentle_marten gentle-marten-score gentle-marten-reading)
+(use many_modules/mellow_beacon mellow-beacon-score mellow-beacon-reading)
+(use many_modules/zesty_delta zesty-delta-score zesty-delta-reading)
+
+(export brisk-yarrow-score brisk-yarrow-reading brisk-yarrow-label)
+
+(defstruct brisk-yarrow-reading :site str :level i64 :weight f64)
+
+(display brisk-yarrow-reading (reading) "brisk-yarrow " (:site reading) "=" (:level reading))
+
+(defn brisk-yarrow-label (n)
+  (str (->brisk-yarrow-reading "brisk-yarrow" (brisk-yarrow-score n) 97.5)))
+
+(defn brisk-yarrow-score (n)
+  (rem (if (> n 1000097) (:level (zesty-delta-reading n)) (if (> n 1000097) (:level (mellow-beacon-reading n)) (gentle-marten-score (+ n 97)))) 997))
+
+(defn brisk-yarrow-reading (n)
+  (->brisk-yarrow-reading "brisk-yarrow" (brisk-yarrow-score n) (* 0.5 97.0)))

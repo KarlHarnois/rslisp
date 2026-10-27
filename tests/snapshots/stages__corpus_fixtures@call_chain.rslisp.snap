@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/corpus/call_chain.rslisp
+---
+chain of 400 from 0: 230
+chain of 400 from 500: 228

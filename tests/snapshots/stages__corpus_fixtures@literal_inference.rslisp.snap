@@ -1,0 +1,19 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/corpus/literal_inference.rslisp
+---
+byte chain: 21
+byte pins: 2 0 1 20 0 10 2 0 1 20 0 10 2 0 1
+port chain: 21
+port pins: 2 0 1 20 0 10 2 0 1 20 0 10 2 0 1
+count chain: 21
+count pins: 2 0 1 20 0 10 2 0 1 20 0 10 2 0 1
+offset chain: 21
+offset pins: 2 0 1 20 0 10 2 0 1 20 0 10 2 0 1
+index chain: 21
+index pins: 2 0 1 20 0 10 2 0 1 20 0 10 2 0 1
+ratio chain: 41.5
+ratio pins: 2.5 0.5 1.5 2.5 0.5 1.5 2.5 0.5 1.5 2.5 0.5 1.5 2.5 0.5 1.5
+local: 91
+checksum: 13980

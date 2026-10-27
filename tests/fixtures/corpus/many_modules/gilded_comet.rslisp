@@ -1,0 +1,18 @@
+(use many_modules/jolly_thistle jolly-thistle-score jolly-thistle-reading)
+(use many_modules/wary_falcon wary-falcon-score wary-falcon-reading)
+(use many_modules/swift_otter swift-otter-score swift-otter-reading)
+
+(export gilded-comet-score gilded-comet-reading gilded-comet-label)
+
+(defstruct gilded-comet-reading :site str :level i64 :weight f64)
+
+(display gilded-comet-reading (reading) "gilded-comet " (:site reading) "=" (:level reading))
+
+(defn gilded-comet-label (n)
+  (str (->gilded-comet-reading "gilded-comet" (gilded-comet-score n) 28.5)))
+
+(defn gilded-comet-score (n)
+  (rem (if (> n 1000028) (:level (swift-otter-reading n)) (if (> n 1000028) (:level (wary-falcon-reading n)) (jolly-thistle-score (+ n 28)))) 997))
+
+(defn gilded-comet-reading (n)
+  (->gilded-comet-reading "gilded-comet" (gilded-comet-score n) (* 0.5 28.0)))

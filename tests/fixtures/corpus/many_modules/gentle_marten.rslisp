@@ -1,0 +1,18 @@
+(use many_modules/dusky_pebble dusky-pebble-score dusky-pebble-reading)
+(use many_modules/silver_tundra silver-tundra-score silver-tundra-reading)
+(use many_modules/keen_tundra keen-tundra-score keen-tundra-reading)
+
+(export gentle-marten-score gentle-marten-reading gentle-marten-label)
+
+(defstruct gentle-marten-reading :site str :level i64 :weight f64)
+
+(display gentle-marten-reading (reading) "gentle-marten " (:site reading) "=" (:level reading))
+
+(defn gentle-marten-label (n)
+  (str (->gentle-marten-reading "gentle-marten" (gentle-marten-score n) 86.5)))
+
+(defn gentle-marten-score (n)
+  (rem (if (> n 1000086) (:level (keen-tundra-reading n)) (if (> n 1000086) (:level (silver-tundra-reading n)) (dusky-pebble-score (+ n 86)))) 997))
+
+(defn gentle-marten-reading (n)
+  (->gentle-marten-reading "gentle-marten" (gentle-marten-score n) (* 0.5 86.0)))

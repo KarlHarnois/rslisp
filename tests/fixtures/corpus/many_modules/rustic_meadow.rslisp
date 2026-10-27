@@ -1,0 +1,18 @@
+(use many_modules/eager_falcon eager-falcon-score eager-falcon-reading)
+(use many_modules/zesty_delta zesty-delta-score zesty-delta-reading)
+(use many_modules/witty_meadow witty-meadow-score witty-meadow-reading)
+
+(export rustic-meadow-score rustic-meadow-reading rustic-meadow-label)
+
+(defstruct rustic-meadow-reading :site str :level i64 :weight f64)
+
+(display rustic-meadow-reading (reading) "rustic-meadow " (:site reading) "=" (:level reading))
+
+(defn rustic-meadow-label (n)
+  (str (->rustic-meadow-reading "rustic-meadow" (rustic-meadow-score n) 60.5)))
+
+(defn rustic-meadow-score (n)
+  (rem (if (> n 1000060) (:level (witty-meadow-reading n)) (if (> n 1000060) (:level (zesty-delta-reading n)) (eager-falcon-score (+ n 60)))) 997))
+
+(defn rustic-meadow-reading (n)
+  (->rustic-meadow-reading "rustic-meadow" (rustic-meadow-score n) (* 0.5 60.0)))

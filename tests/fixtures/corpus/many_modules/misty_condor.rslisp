@@ -1,0 +1,18 @@
+(use many_modules/rapid_willow rapid-willow-score rapid-willow-reading)
+(use many_modules/olive_marten olive-marten-score olive-marten-reading)
+(use many_modules/gentle_zephyr gentle-zephyr-score gentle-zephyr-reading)
+
+(export misty-condor-score misty-condor-reading misty-condor-label)
+
+(defstruct misty-condor-reading :site str :level i64 :weight f64)
+
+(display misty-condor-reading (reading) "misty-condor " (:site reading) "=" (:level reading))
+
+(defn misty-condor-label (n)
+  (str (->misty-condor-reading "misty-condor" (misty-condor-score n) 72.5)))
+
+(defn misty-condor-score (n)
+  (rem (if (> n 1000072) (:level (gentle-zephyr-reading n)) (if (> n 1000072) (:level (olive-marten-reading n)) (rapid-willow-score (+ n 72)))) 997))
+
+(defn misty-condor-reading (n)
+  (->misty-condor-reading "misty-condor" (misty-condor-score n) (* 0.5 72.0)))

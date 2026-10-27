@@ -1,0 +1,18 @@
+(use many_modules/bold_lantern bold-lantern-score bold-lantern-reading)
+(use many_modules/noble_tundra noble-tundra-score noble-tundra-reading)
+(use many_modules/rustic_heron rustic-heron-score rustic-heron-reading)
+
+(export mellow-lagoon-score mellow-lagoon-reading mellow-lagoon-label)
+
+(defstruct mellow-lagoon-reading :site str :level i64 :weight f64)
+
+(display mellow-lagoon-reading (reading) "mellow-lagoon " (:site reading) "=" (:level reading))
+
+(defn mellow-lagoon-label (n)
+  (str (->mellow-lagoon-reading "mellow-lagoon" (mellow-lagoon-score n) 47.5)))
+
+(defn mellow-lagoon-score (n)
+  (rem (if (> n 1000047) (:level (rustic-heron-reading n)) (if (> n 1000047) (:level (noble-tundra-reading n)) (bold-lantern-score (+ n 47)))) 997))
+
+(defn mellow-lagoon-reading (n)
+  (->mellow-lagoon-reading "mellow-lagoon" (mellow-lagoon-score n) (* 0.5 47.0)))

@@ -1,0 +1,18 @@
+(use many_modules/gilded_bison gilded-bison-score gilded-bison-reading)
+(use many_modules/bold_lantern bold-lantern-score bold-lantern-reading)
+(use many_modules/lively_fern lively-fern-score lively-fern-reading)
+
+(export rustic-heron-score rustic-heron-reading rustic-heron-label)
+
+(defstruct rustic-heron-reading :site str :level i64 :weight f64)
+
+(display rustic-heron-reading (reading) "rustic-heron " (:site reading) "=" (:level reading))
+
+(defn rustic-heron-label (n)
+  (str (->rustic-heron-reading "rustic-heron" (rustic-heron-score n) 23.5)))
+
+(defn rustic-heron-score (n)
+  (rem (if (> n 1000023) (:level (lively-fern-reading n)) (if (> n 1000023) (:level (bold-lantern-reading n)) (gilded-bison-score (+ n 23)))) 997))
+
+(defn rustic-heron-reading (n)
+  (->rustic-heron-reading "rustic-heron" (rustic-heron-score n) (* 0.5 23.0)))

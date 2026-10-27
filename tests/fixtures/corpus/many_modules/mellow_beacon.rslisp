@@ -1,0 +1,18 @@
+(use many_modules/vivid_lantern vivid-lantern-score vivid-lantern-reading)
+(use many_modules/rapid_willow rapid-willow-score rapid-willow-reading)
+(use many_modules/ivory_zephyr ivory-zephyr-score ivory-zephyr-reading)
+
+(export mellow-beacon-score mellow-beacon-reading mellow-beacon-label)
+
+(defstruct mellow-beacon-reading :site str :level i64 :weight f64)
+
+(display mellow-beacon-reading (reading) "mellow-beacon " (:site reading) "=" (:level reading))
+
+(defn mellow-beacon-label (n)
+  (str (->mellow-beacon-reading "mellow-beacon" (mellow-beacon-score n) 78.5)))
+
+(defn mellow-beacon-score (n)
+  (rem (if (> n 1000078) (:level (ivory-zephyr-reading n)) (if (> n 1000078) (:level (rapid-willow-reading n)) (vivid-lantern-score (+ n 78)))) 997))
+
+(defn mellow-beacon-reading (n)
+  (->mellow-beacon-reading "mellow-beacon" (mellow-beacon-score n) (* 0.5 78.0)))
