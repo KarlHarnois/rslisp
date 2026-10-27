@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/corpus/many_modules.rslisp
+---
+bold-quarry bold-quarry=154
+young-glacier young-glacier=892
+lively-geyser lively-geyser=945
+quiet-summit quiet-summit=539
+rustic-beacon rustic-beacon=231

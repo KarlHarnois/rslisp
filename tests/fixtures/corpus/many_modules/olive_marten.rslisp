@@ -1,0 +1,18 @@
+(use many_modules/stark_falcon stark-falcon-score stark-falcon-reading)
+(use many_modules/gilded_comet gilded-comet-score gilded-comet-reading)
+(use many_modules/witty_meadow witty-meadow-score witty-meadow-reading)
+
+(export olive-marten-score olive-marten-reading olive-marten-label)
+
+(defstruct olive-marten-reading :site str :level i64 :weight f64)
+
+(display olive-marten-reading (reading) "olive-marten " (:site reading) "=" (:level reading))
+
+(defn olive-marten-label (n)
+  (str (->olive-marten-reading "olive-marten" (olive-marten-score n) 42.5)))
+
+(defn olive-marten-score (n)
+  (rem (if (> n 1000042) (:level (witty-meadow-reading n)) (if (> n 1000042) (:level (gilded-comet-reading n)) (stark-falcon-score (+ n 42)))) 997))
+
+(defn olive-marten-reading (n)
+  (->olive-marten-reading "olive-marten" (olive-marten-score n) (* 0.5 42.0)))

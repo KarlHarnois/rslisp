@@ -1,0 +1,18 @@
+(use many_modules/olive_meadow olive-meadow-score olive-meadow-reading)
+(use many_modules/brisk_jackal brisk-jackal-score brisk-jackal-reading)
+(use many_modules/misty_heron misty-heron-score misty-heron-reading)
+
+(export ivory-zephyr-score ivory-zephyr-reading ivory-zephyr-label)
+
+(defstruct ivory-zephyr-reading :site str :level i64 :weight f64)
+
+(display ivory-zephyr-reading (reading) "ivory-zephyr " (:site reading) "=" (:level reading))
+
+(defn ivory-zephyr-label (n)
+  (str (->ivory-zephyr-reading "ivory-zephyr" (ivory-zephyr-score n) 69.5)))
+
+(defn ivory-zephyr-score (n)
+  (rem (if (> n 1000069) (:level (misty-heron-reading n)) (if (> n 1000069) (:level (brisk-jackal-reading n)) (olive-meadow-score (+ n 69)))) 997))
+
+(defn ivory-zephyr-reading (n)
+  (->ivory-zephyr-reading "ivory-zephyr" (ivory-zephyr-score n) (* 0.5 69.0)))

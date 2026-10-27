@@ -1,0 +1,18 @@
+(use many_modules/wary_falcon wary-falcon-score wary-falcon-reading)
+(use many_modules/gentle_zephyr gentle-zephyr-score gentle-zephyr-reading)
+(use many_modules/dusky_meadow dusky-meadow-score dusky-meadow-reading)
+
+(export swift-thistle-score swift-thistle-reading swift-thistle-label)
+
+(defstruct swift-thistle-reading :site str :level i64 :weight f64)
+
+(display swift-thistle-reading (reading) "swift-thistle " (:site reading) "=" (:level reading))
+
+(defn swift-thistle-label (n)
+  (str (->swift-thistle-reading "swift-thistle" (swift-thistle-score n) 90.5)))
+
+(defn swift-thistle-score (n)
+  (rem (if (> n 1000090) (:level (dusky-meadow-reading n)) (if (> n 1000090) (:level (gentle-zephyr-reading n)) (wary-falcon-score (+ n 90)))) 997))
+
+(defn swift-thistle-reading (n)
+  (->swift-thistle-reading "swift-thistle" (swift-thistle-score n) (* 0.5 90.0)))

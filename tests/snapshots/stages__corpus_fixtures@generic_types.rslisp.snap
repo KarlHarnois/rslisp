@@ -1,0 +1,126 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/corpus/generic_types.rslisp
+---
+bold-lantern crate: 4 items, 8 kg, 2 fragile, heaviest bold-lantern #3
+swift-geyser crate: 4 items, 24 kg, 2 fragile, heaviest swift-geyser #4
+swift-otter crate: 4 items, 48 kg, 2 fragile, heaviest swift-otter #5
+rustic-falcon crate: 4 items, 80 kg, 2 fragile, heaviest rustic-falcon #6
+fierce-falcon crate: 4 items, 120 kg, 2 fragile, heaviest fierce-falcon #7
+olive-meadow crate: 4 items, 168 kg, 2 fragile, heaviest olive-meadow #8
+lively-fern crate: 4 items, 161 kg, 1 fragile, heaviest lively-fern #8
+tender-beacon crate: 4 items, 18 kg, 1 fragile, heaviest tender-beacon #8
+jolly-thistle crate: 4 items, 26 kg, 0 fragile, heaviest jolly-thistle #8
+vivid-lantern crate: 4 items, 24 kg, 0 fragile, heaviest vivid-lantern #12
+wary-falcon crate: 4 items, 48 kg, 2 fragile, heaviest wary-falcon #13
+dusky-pebble crate: 4 items, 80 kg, 2 fragile, heaviest dusky-pebble #14
+stark-fern crate: 4 items, 120 kg, 2 fragile, heaviest stark-fern #15
+stark-falcon crate: 4 items, 168 kg, 2 fragile, heaviest stark-falcon #16
+keen-tundra crate: 4 items, 28 kg, 2 fragile, heaviest keen-tundra #17
+sunny-beacon crate: 4 items, 46 kg, 2 fragile, heaviest sunny-beacon #17
+witty-meadow crate: 4 items, 54 kg, 2 fragile, heaviest witty-meadow #17
+zesty-walrus crate: 4 items, 52 kg, 1 fragile, heaviest zesty-walrus #17
+lively-zephyr crate: 4 items, 40 kg, 1 fragile, heaviest lively-zephyr #21
+solemn-quarry crate: 4 items, 72 kg, 0 fragile, heaviest solemn-quarry #22
+zesty-willow crate: 4 items, 112 kg, 2 fragile, heaviest zesty-willow #23
+gilded-bison crate: 4 items, 20 kg, 2 fragile, heaviest gilded-bison #24
+brisk-jackal crate: 4 items, 48 kg, 2 fragile, heaviest brisk-jackal #25
+rustic-heron crate: 4 items, 84 kg, 2 fragile, heaviest rustic-heron #26
+olive-kestrel crate: 4 items, 92 kg, 1 fragile, heaviest olive-kestrel #26
+zesty-delta crate: 4 items, 90 kg, 2 fragile, heaviest zesty-delta #26
+dusky-geyser crate: 4 items, 78 kg, 1 fragile, heaviest dusky-geyser #26
+fierce-nebula crate: 4 items, 56 kg, 1 fragile, heaviest fierce-nebula #30
+gilded-comet crate: 4 items, 12 kg, 1 fragile, heaviest gilded-comet #31
+young-pine crate: 4 items, 32 kg, 1 fragile, heaviest young-pine #32
+sleek-otter crate: 4 items, 60 kg, 2 fragile, heaviest sleek-otter #33
+vivid-pebble crate: 4 items, 96 kg, 2 fragile, heaviest vivid-pebble #34
+brisk-heron crate: 4 items, 140 kg, 2 fragile, heaviest brisk-heron #35
+wary-cedar crate: 4 items, 138 kg, 2 fragile, heaviest wary-cedar #35
+mellow-zephyr crate: 4 items, 126 kg, 1 fragile, heaviest mellow-zephyr #35
+vivid-otter crate: 4 items, 13 kg, 2 fragile, heaviest vivid-otter #35
+misty-heron crate: 4 items, 16 kg, 2 fragile, heaviest misty-heron #39
+solemn-sparrow crate: 4 items, 36 kg, 1 fragile, heaviest solemn-sparrow #40
+noble-tundra crate: 4 items, 64 kg, 2 fragile, heaviest noble-tundra #41
+mellow-island crate: 4 items, 100 kg, 1 fragile, heaviest mellow-island #42
+umber-condor crate: 4 items, 144 kg, 2 fragile, heaviest umber-condor #43
+rustic-tundra crate: 4 items, 196 kg, 2 fragile, heaviest rustic-tundra #44
+olive-marten crate: 4 items, 23 kg, 1 fragile, heaviest olive-marten #44
+young-falcon crate: 4 items, 36 kg, 1 fragile, heaviest young-falcon #44
+placid-tundra crate: 4 items, 39 kg, 0 fragile, heaviest placid-tundra #44
+eager-falcon crate: 4 items, 32 kg, 2 fragile, heaviest eager-falcon #48
+sleek-condor crate: 4 items, 60 kg, 2 fragile, heaviest sleek-condor #49
+mellow-lagoon crate: 4 items, 96 kg, 2 fragile, heaviest mellow-lagoon #50
+quiet-valley crate: 4 items, 140 kg, 2 fragile, heaviest quiet-valley #51
+silver-heron crate: 4 items, 24 kg, 2 fragile, heaviest silver-heron #52
+misty-island crate: 4 items, 56 kg, 2 fragile, heaviest misty-island #53
+eager-badger crate: 4 items, 69 kg, 2 fragile, heaviest eager-badger #53
+stark-heron crate: 4 items, 72 kg, 1 fragile, heaviest stark-heron #53
+hollow-sparrow crate: 4 items, 65 kg, 1 fragile, heaviest hollow-sparrow #53
+lively-yarrow crate: 4 items, 48 kg, 0 fragile, heaviest lively-yarrow #57
+tender-harbor crate: 4 items, 84 kg, 2 fragile, heaviest tender-harbor #58
+rustic-bison crate: 4 items, 16 kg, 2 fragile, heaviest rustic-bison #59
+rapid-willow crate: 4 items, 40 kg, 2 fragile, heaviest rapid-willow #60
+gentle-falcon crate: 4 items, 72 kg, 2 fragile, heaviest gentle-falcon #61
+rustic-yarrow crate: 4 items, 112 kg, 2 fragile, heaviest rustic-yarrow #62
+group BOLD-LANTERN #0
+group SWIFT-GEYSER #0
+group SWIFT-OTTER #0
+group RUSTIC-FALCON #0
+group FIERCE-FALCON #4
+group OLIVE-MEADOW #4
+group LIVELY-FERN #4
+group TENDER-BEACON #4
+group JOLLY-THISTLE #8
+group VIVID-LANTERN #8
+group WARY-FALCON #8
+group DUSKY-PEBBLE #8
+group STARK-FERN #12
+group STARK-FALCON #12
+group KEEN-TUNDRA #12
+group SUNNY-BEACON #12
+group WITTY-MEADOW #16
+group ZESTY-WALRUS #16
+group LIVELY-ZEPHYR #16
+group SOLEMN-QUARRY #16
+group ZESTY-WILLOW #20
+group GILDED-BISON #20
+group BRISK-JACKAL #20
+group RUSTIC-HERON #20
+group OLIVE-KESTREL #24
+group ZESTY-DELTA #24
+group DUSKY-GEYSER #24
+group FIERCE-NEBULA #24
+group GILDED-COMET #28
+group YOUNG-PINE #28
+group SLEEK-OTTER #28
+group VIVID-PEBBLE #28
+group BRISK-HERON #32
+group WARY-CEDAR #32
+group MELLOW-ZEPHYR #32
+group VIVID-OTTER #32
+group MISTY-HERON #36
+group SOLEMN-SPARROW #36
+group NOBLE-TUNDRA #36
+group MELLOW-ISLAND #36
+group UMBER-CONDOR #40
+group RUSTIC-TUNDRA #40
+group OLIVE-MARTEN #40
+group YOUNG-FALCON #40
+group PLACID-TUNDRA #44
+group EAGER-FALCON #44
+group SLEEK-CONDOR #44
+group MELLOW-LAGOON #44
+group QUIET-VALLEY #48
+group SILVER-HERON #48
+group MISTY-ISLAND #48
+group EAGER-BADGER #48
+group STARK-HERON #52
+group HOLLOW-SPARROW #52
+group LIVELY-YARROW #52
+group TENDER-HARBOR #52
+group RUSTIC-BISON #56
+group RAPID-WILLOW #56
+group GENTLE-FALCON #56
+group RUSTIC-YARROW #56
+boxed total: 351

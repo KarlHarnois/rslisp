@@ -11,6 +11,7 @@ This file and the reference files it names are the living reference for working 
 | Prelude | The language's library under `prelude/`, written in the language and embedded in the compiler |
 | Stage | One step of the compiler, such as reading, expansion or emission |
 | Fixture | A source file under `tests/fixtures/` whose output an insta snapshot records |
+| Corpus entry | A top-level fixture under `tests/fixtures/corpus/`, sized to measure the compiler's performance |
 | Working commands | The three commands at the top of the Commands section |
 
 ## Principles
@@ -104,6 +105,7 @@ The exceptions are:
 - The harness runs the compiled fixture with those arguments in the fixture's directory.
 - When a fixture writes to standard error or exits nonzero, its snapshot appends the standard error and exit code after the standard output.
 - Create or update snapshots with `INSTA_UPDATE=always`.
+- Keep the front end of each corpus entry at one second or less in a release build.
 - NEVER commit a snapshot that you have not read.
 - NEVER lower `MINIMUM_LINE_COVERAGE` or raise `MAXIMUM_CRAP` in `xtask/src/gate.rs` without the project owner's approval.
 - NEVER hide code from `cargo xtask coverage`, such as by moving branches into a macro: the gate cannot see inside a macro.
@@ -138,6 +140,7 @@ nix develop -c cargo test <narrowest test>
 | --- | --- |
 | a unit test in `src/` | `--lib <module::path>` |
 | one stage's fixtures | `--test stages <stage>_fixtures` |
+| a corpus entry | `--test stages corpus_fixtures` |
 | a CLI command | `--test cli <test name>` |
 | a diagnostic code | `--test diagnostic_codes --test diagnostic_snapshots` |
 | `xtask/` | `-p xtask` |

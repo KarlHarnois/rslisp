@@ -1,0 +1,1570 @@
+(defn main ()
+  (println (str "byte chain: " (bold-lantern 1)))
+  (println (str "byte pins: " (keep-byte (rustic-meadow)) " "
+         (keep-byte (swift-tundra)) " "
+         (keep-byte (keen-reef)) " "
+         (keep-byte (lively-orchid)) " "
+         (keep-byte (zesty-jackal)) " "
+         (keep-byte (dusky-meadow)) " "
+         (keep-byte (gentle-zephyr)) " "
+         (keep-byte (dusky-jackal)) " "
+         (keep-byte (mellow-meadow)) " "
+         (keep-byte (ivory-zephyr)) " "
+         (keep-byte (umber-cedar)) " "
+         (keep-byte (solemn-pine)) " "
+         (keep-byte (misty-condor)) " "
+         (keep-byte (rapid-yarrow)) " "
+         (keep-byte (gilded-walrus))))
+  (println (str "port chain: " (sleek-walrus 1)))
+  (println (str "port pins: " (keep-port (noble-beacon)) " "
+         (keep-port (olive-ember)) " "
+         (keep-port (vivid-comet)) " "
+         (keep-port (zesty-meadow)) " "
+         (keep-port (coral-glacier)) " "
+         (keep-port (coral-beacon)) " "
+         (keep-port (tawny-bison)) " "
+         (keep-port (stark-otter)) " "
+         (keep-port (lively-island)) " "
+         (keep-port (wary-quarry)) " "
+         (keep-port (silver-orchid)) " "
+         (keep-port (swift-pine)) " "
+         (keep-port (keen-harbor)) " "
+         (keep-port (bold-heron)) " "
+         (keep-port (rustic-nebula))))
+  (println (str "count chain: " (bold-geyser 1)))
+  (println (str "count pins: " (keep-count (silver-cedar)) " "
+         (keep-count (rapid-tundra)) " "
+         (keep-count (clever-quarry)) " "
+         (keep-count (witty-jackal)) " "
+         (keep-count (brisk-harbor)) " "
+         (keep-count (witty-falcon)) " "
+         (keep-count (noble-raven)) " "
+         (keep-count (rapid-summit)) " "
+         (keep-count (keen-falcon)) " "
+         (keep-count (umber-pebble)) " "
+         (keep-count (humble-willow)) " "
+         (keep-count (olive-pine)) " "
+         (keep-count (silver-quarry)) " "
+         (keep-count (witty-heron)) " "
+         (keep-count (ivory-otter))))
+  (println (str "offset chain: " (umber-willow 1)))
+  (println (str "offset pins: " (keep-offset (young-tundra)) " "
+         (keep-offset (sunny-sparrow)) " "
+         (keep-offset (placid-valley)) " "
+         (keep-offset (silver-glacier)) " "
+         (keep-offset (witty-zephyr)) " "
+         (keep-offset (silver-raven)) " "
+         (keep-offset (young-otter)) " "
+         (keep-offset (misty-pine)) " "
+         (keep-offset (jolly-walrus)) " "
+         (keep-offset (tender-lantern)) " "
+         (keep-offset (stark-orchid)) " "
+         (keep-offset (coral-orchid)) " "
+         (keep-offset (vivid-jackal)) " "
+         (keep-offset (dusky-quarry)) " "
+         (keep-offset (gilded-glacier))))
+  (println (str "index chain: " (olive-beacon 1)))
+  (println (str "index pins: " (keep-index (ivory-lagoon)) " "
+         (keep-index (dusky-comet)) " "
+         (keep-index (young-delta)) " "
+         (keep-index (brisk-ember)) " "
+         (keep-index (stark-yarrow)) " "
+         (keep-index (solemn-geyser)) " "
+         (keep-index (lucid-orchid)) " "
+         (keep-index (keen-yarrow)) " "
+         (keep-index (hollow-quarry)) " "
+         (keep-index (eager-jackal)) " "
+         (keep-index (zesty-quarry)) " "
+         (keep-index (wary-nebula)) " "
+         (keep-index (keen-island)) " "
+         (keep-index (placid-delta)) " "
+         (keep-index (keen-marten))))
+  (println (str "ratio chain: " (zesty-harbor 1.5)))
+  (println (str "ratio pins: " (keep-ratio (eager-sparrow)) " "
+         (keep-ratio (ivory-thistle)) " "
+         (keep-ratio (bold-island)) " "
+         (keep-ratio (keen-badger)) " "
+         (keep-ratio (fierce-glacier)) " "
+         (keep-ratio (brisk-sparrow)) " "
+         (keep-ratio (young-thistle)) " "
+         (keep-ratio (placid-kestrel)) " "
+         (keep-ratio (vivid-zephyr)) " "
+         (keep-ratio (gilded-orchid)) " "
+         (keep-ratio (zesty-lantern)) " "
+         (keep-ratio (sunny-comet)) " "
+         (keep-ratio (noble-bison)) " "
+         (keep-ratio (brisk-delta)) " "
+         (keep-ratio (bold-fern))))
+  (println (str "local: " (local-chain)))
+  (println (str "checksum: " (checksum (packet)))))
+
+(type keep-byte (fn (u8) u8))
+(defn keep-byte (value) value)
+
+(defn bold-lantern (x) (swift-geyser (+ x 0)))
+
+(defn swift-geyser (x)
+  (let step 1)
+  (let next (+ x step))
+  (swift-otter next))
+
+(defn swift-otter (x)
+  (if (> x 0) (rustic-falcon x) (rustic-falcon (+ x 2))))
+
+(defn rustic-falcon (x) (fierce-falcon (+ x 0)))
+
+(defn fierce-falcon (x)
+  (let step 1)
+  (let next (+ x step))
+  (olive-meadow next))
+
+(defn olive-meadow (x)
+  (if (> x 0) (lively-fern x) (lively-fern (+ x 2))))
+
+(defn lively-fern (x) (tender-beacon (+ x 0)))
+
+(defn tender-beacon (x)
+  (let step 1)
+  (let next (+ x step))
+  (jolly-thistle next))
+
+(defn jolly-thistle (x)
+  (if (> x 0) (vivid-lantern x) (vivid-lantern (+ x 2))))
+
+(defn vivid-lantern (x) (wary-falcon (+ x 0)))
+
+(defn wary-falcon (x)
+  (let step 1)
+  (let next (+ x step))
+  (dusky-pebble next))
+
+(defn dusky-pebble (x)
+  (if (> x 0) (stark-fern x) (stark-fern (+ x 2))))
+
+(defn stark-fern (x) (stark-falcon (+ x 0)))
+
+(defn stark-falcon (x)
+  (let step 1)
+  (let next (+ x step))
+  (keen-tundra next))
+
+(defn keen-tundra (x)
+  (if (> x 0) (sunny-beacon x) (sunny-beacon (+ x 2))))
+
+(defn sunny-beacon (x) (witty-meadow (+ x 0)))
+
+(defn witty-meadow (x)
+  (let step 1)
+  (let next (+ x step))
+  (zesty-walrus next))
+
+(defn zesty-walrus (x)
+  (if (> x 0) (lively-zephyr x) (lively-zephyr (+ x 2))))
+
+(defn lively-zephyr (x) (solemn-quarry (+ x 0)))
+
+(defn solemn-quarry (x)
+  (let step 1)
+  (let next (+ x step))
+  (zesty-willow next))
+
+(defn zesty-willow (x)
+  (if (> x 0) (gilded-bison x) (gilded-bison (+ x 2))))
+
+(defn gilded-bison (x) (brisk-jackal (+ x 0)))
+
+(defn brisk-jackal (x)
+  (let step 1)
+  (let next (+ x step))
+  (rustic-heron next))
+
+(defn rustic-heron (x)
+  (if (> x 0) (olive-kestrel x) (olive-kestrel (+ x 2))))
+
+(defn olive-kestrel (x) (zesty-delta (+ x 0)))
+
+(defn zesty-delta (x)
+  (let step 1)
+  (let next (+ x step))
+  (dusky-geyser next))
+
+(defn dusky-geyser (x)
+  (if (> x 0) (fierce-nebula x) (fierce-nebula (+ x 2))))
+
+(defn fierce-nebula (x) (gilded-comet (+ x 0)))
+
+(defn gilded-comet (x)
+  (let step 1)
+  (let next (+ x step))
+  (young-pine next))
+
+(defn young-pine (x)
+  (if (> x 0) (sleek-otter x) (sleek-otter (+ x 2))))
+
+(defn sleek-otter (x) (vivid-pebble (+ x 0)))
+
+(defn vivid-pebble (x)
+  (let step 1)
+  (let next (+ x step))
+  (brisk-heron next))
+
+(defn brisk-heron (x)
+  (if (> x 0) (wary-cedar x) (wary-cedar (+ x 2))))
+
+(defn wary-cedar (x) (mellow-zephyr (+ x 0)))
+
+(defn mellow-zephyr (x)
+  (let step 1)
+  (let next (+ x step))
+  (vivid-otter next))
+
+(defn vivid-otter (x)
+  (if (> x 0) (misty-heron x) (misty-heron (+ x 2))))
+
+(defn misty-heron (x) (solemn-sparrow (+ x 0)))
+
+(defn solemn-sparrow (x)
+  (let step 1)
+  (let next (+ x step))
+  (noble-tundra next))
+
+(defn noble-tundra (x)
+  (if (> x 0) (mellow-island x) (mellow-island (+ x 2))))
+
+(defn mellow-island (x) (umber-condor (+ x 0)))
+
+(defn umber-condor (x)
+  (let step 1)
+  (let next (+ x step))
+  (rustic-tundra next))
+
+(defn rustic-tundra (x)
+  (if (> x 0) (olive-marten x) (olive-marten (+ x 2))))
+
+(defn olive-marten (x) (young-falcon (+ x 0)))
+
+(defn young-falcon (x)
+  (let step 1)
+  (let next (+ x step))
+  (placid-tundra next))
+
+(defn placid-tundra (x)
+  (if (> x 0) (eager-falcon x) (eager-falcon (+ x 2))))
+
+(defn eager-falcon (x) (sleek-condor (+ x 0)))
+
+(defn sleek-condor (x)
+  (let step 1)
+  (let next (+ x step))
+  (mellow-lagoon next))
+
+(defn mellow-lagoon (x)
+  (if (> x 0) (quiet-valley x) (quiet-valley (+ x 2))))
+
+(defn quiet-valley (x) (silver-heron (+ x 0)))
+
+(defn silver-heron (x)
+  (let step 1)
+  (let next (+ x step))
+  (misty-island next))
+
+(defn misty-island (x)
+  (if (> x 0) (eager-badger x) (eager-badger (+ x 2))))
+
+(defn eager-badger (x) (stark-heron (+ x 0)))
+
+(defn stark-heron (x)
+  (let step 1)
+  (let next (+ x step))
+  (hollow-sparrow next))
+
+(defn hollow-sparrow (x)
+  (if (> x 0) (lively-yarrow x) (lively-yarrow (+ x 2))))
+
+(defn lively-yarrow (x) (tender-harbor (+ x 0)))
+
+(defn tender-harbor (x)
+  (let step 1)
+  (let next (+ x step))
+  (rustic-bison next))
+
+(defn rustic-bison (x)
+  (if (> x 0) (rapid-willow x) (rapid-willow (+ x 2))))
+
+(defn rapid-willow (x) (gentle-falcon (+ x 0)))
+
+(defn gentle-falcon (x)
+  (let step 1)
+  (let next (+ x step))
+  (rustic-yarrow next))
+
+(defn rustic-yarrow (x)
+  (if (> x 0) (keep-byte x) (keep-byte (+ x 2))))
+
+(defn rustic-meadow () 2)
+
+(defn swift-tundra () 00)
+
+(defn keen-reef () 1)
+
+(defn lively-orchid () 20)
+
+(defn zesty-jackal () 0)
+
+(defn dusky-meadow () 10)
+
+(defn gentle-zephyr () 2)
+
+(defn dusky-jackal () 00)
+
+(defn mellow-meadow () 1)
+
+(defn ivory-zephyr () 20)
+
+(defn umber-cedar () 0)
+
+(defn solemn-pine () 10)
+
+(defn misty-condor () 2)
+
+(defn rapid-yarrow () 00)
+
+(defn gilded-walrus () 1)
+
+(type keep-port (fn (u16) u16))
+(defn keep-port (value) value)
+
+(defn sleek-walrus (x) (rapid-raven (+ x 0)))
+
+(defn rapid-raven (x)
+  (let step 1)
+  (let next (+ x step))
+  (keen-walrus next))
+
+(defn keen-walrus (x)
+  (if (> x 0) (mellow-beacon x) (mellow-beacon (+ x 2))))
+
+(defn mellow-beacon (x) (wary-otter (+ x 0)))
+
+(defn wary-otter (x)
+  (let step 1)
+  (let next (+ x step))
+  (eager-otter next))
+
+(defn eager-otter (x)
+  (if (> x 0) (silver-tundra x) (silver-tundra (+ x 2))))
+
+(defn silver-tundra (x) (quiet-ember (+ x 0)))
+
+(defn quiet-ember (x)
+  (let step 1)
+  (let next (+ x step))
+  (humble-valley next))
+
+(defn humble-valley (x)
+  (if (> x 0) (umber-valley x) (umber-valley (+ x 2))))
+
+(defn umber-valley (x) (coral-thistle (+ x 0)))
+
+(defn coral-thistle (x)
+  (let step 1)
+  (let next (+ x step))
+  (gentle-marten next))
+
+(defn gentle-marten (x)
+  (if (> x 0) (solemn-badger x) (solemn-badger (+ x 2))))
+
+(defn solemn-badger (x) (wary-walrus (+ x 0)))
+
+(defn wary-walrus (x)
+  (let step 1)
+  (let next (+ x step))
+  (olive-badger next))
+
+(defn olive-badger (x)
+  (if (> x 0) (swift-thistle x) (swift-thistle (+ x 2))))
+
+(defn swift-thistle (x) (hollow-willow (+ x 0)))
+
+(defn hollow-willow (x)
+  (let step 1)
+  (let next (+ x step))
+  (humble-geyser next))
+
+(defn humble-geyser (x)
+  (if (> x 0) (bold-willow x) (bold-willow (+ x 2))))
+
+(defn bold-willow (x) (lucid-tundra (+ x 0)))
+
+(defn lucid-tundra (x)
+  (let step 1)
+  (let next (+ x step))
+  (noble-summit next))
+
+(defn noble-summit (x)
+  (if (> x 0) (lively-condor x) (lively-condor (+ x 2))))
+
+(defn lively-condor (x) (brisk-yarrow (+ x 0)))
+
+(defn brisk-yarrow (x)
+  (let step 1)
+  (let next (+ x step))
+  (jolly-sparrow next))
+
+(defn jolly-sparrow (x)
+  (if (> x 0) (zesty-falcon x) (zesty-falcon (+ x 2))))
+
+(defn zesty-falcon (x) (sunny-raven (+ x 0)))
+
+(defn sunny-raven (x)
+  (let step 1)
+  (let next (+ x step))
+  (gentle-reef next))
+
+(defn gentle-reef (x)
+  (if (> x 0) (gentle-meadow x) (gentle-meadow (+ x 2))))
+
+(defn gentle-meadow (x) (fierce-beacon (+ x 0)))
+
+(defn fierce-beacon (x)
+  (let step 1)
+  (let next (+ x step))
+  (olive-summit next))
+
+(defn olive-summit (x)
+  (if (> x 0) (bold-falcon x) (bold-falcon (+ x 2))))
+
+(defn bold-falcon (x) (tawny-island (+ x 0)))
+
+(defn tawny-island (x)
+  (let step 1)
+  (let next (+ x step))
+  (tender-bison next))
+
+(defn tender-bison (x)
+  (if (> x 0) (ivory-reef x) (ivory-reef (+ x 2))))
+
+(defn ivory-reef (x) (gentle-nebula (+ x 0)))
+
+(defn gentle-nebula (x)
+  (let step 1)
+  (let next (+ x step))
+  (fierce-kestrel next))
+
+(defn fierce-kestrel (x)
+  (if (> x 0) (humble-jackal x) (humble-jackal (+ x 2))))
+
+(defn humble-jackal (x) (keen-summit (+ x 0)))
+
+(defn keen-summit (x)
+  (let step 1)
+  (let next (+ x step))
+  (noble-comet next))
+
+(defn noble-comet (x)
+  (if (> x 0) (witty-quarry x) (witty-quarry (+ x 2))))
+
+(defn witty-quarry (x) (bold-quarry (+ x 0)))
+
+(defn bold-quarry (x)
+  (let step 1)
+  (let next (+ x step))
+  (young-glacier next))
+
+(defn young-glacier (x)
+  (if (> x 0) (lively-geyser x) (lively-geyser (+ x 2))))
+
+(defn lively-geyser (x) (quiet-summit (+ x 0)))
+
+(defn quiet-summit (x)
+  (let step 1)
+  (let next (+ x step))
+  (rustic-beacon next))
+
+(defn rustic-beacon (x)
+  (if (> x 0) (rapid-beacon x) (rapid-beacon (+ x 2))))
+
+(defn rapid-beacon (x) (silver-summit (+ x 0)))
+
+(defn silver-summit (x)
+  (let step 1)
+  (let next (+ x step))
+  (humble-reef next))
+
+(defn humble-reef (x)
+  (if (> x 0) (clever-orchid x) (clever-orchid (+ x 2))))
+
+(defn clever-orchid (x) (coral-yarrow (+ x 0)))
+
+(defn coral-yarrow (x)
+  (let step 1)
+  (let next (+ x step))
+  (umber-glacier next))
+
+(defn umber-glacier (x)
+  (if (> x 0) (tender-raven x) (tender-raven (+ x 2))))
+
+(defn tender-raven (x) (eager-lagoon (+ x 0)))
+
+(defn eager-lagoon (x)
+  (let step 1)
+  (let next (+ x step))
+  (dusky-heron next))
+
+(defn dusky-heron (x)
+  (if (> x 0) (ivory-island x) (ivory-island (+ x 2))))
+
+(defn ivory-island (x) (gentle-lagoon (+ x 0)))
+
+(defn gentle-lagoon (x)
+  (let step 1)
+  (let next (+ x step))
+  (brisk-raven next))
+
+(defn brisk-raven (x)
+  (if (> x 0) (swift-cedar x) (swift-cedar (+ x 2))))
+
+(defn swift-cedar (x) (tender-marten (+ x 0)))
+
+(defn tender-marten (x)
+  (let step 1)
+  (let next (+ x step))
+  (rustic-jackal next))
+
+(defn rustic-jackal (x)
+  (if (> x 0) (keep-port x) (keep-port (+ x 2))))
+
+(defn noble-beacon () 2)
+
+(defn olive-ember () 00)
+
+(defn vivid-comet () 1)
+
+(defn zesty-meadow () 20)
+
+(defn coral-glacier () 0)
+
+(defn coral-beacon () 10)
+
+(defn tawny-bison () 2)
+
+(defn stark-otter () 00)
+
+(defn lively-island () 1)
+
+(defn wary-quarry () 20)
+
+(defn silver-orchid () 0)
+
+(defn swift-pine () 10)
+
+(defn keen-harbor () 2)
+
+(defn bold-heron () 00)
+
+(defn rustic-nebula () 1)
+
+(type keep-count (fn (u32) u32))
+(defn keep-count (value) value)
+
+(defn bold-geyser (x) (ivory-walrus (+ x 0)))
+
+(defn ivory-walrus (x)
+  (let step 1)
+  (let next (+ x step))
+  (stark-valley next))
+
+(defn stark-valley (x)
+  (if (> x 0) (rapid-comet x) (rapid-comet (+ x 2))))
+
+(defn rapid-comet (x) (placid-harbor (+ x 0)))
+
+(defn placid-harbor (x)
+  (let step 1)
+  (let next (+ x step))
+  (dusky-willow next))
+
+(defn dusky-willow (x)
+  (if (> x 0) (gentle-badger x) (gentle-badger (+ x 2))))
+
+(defn gentle-badger (x) (amber-pebble (+ x 0)))
+
+(defn amber-pebble (x)
+  (let step 1)
+  (let next (+ x step))
+  (gentle-harbor next))
+
+(defn gentle-harbor (x)
+  (if (> x 0) (mellow-lantern x) (mellow-lantern (+ x 2))))
+
+(defn mellow-lantern (x) (keen-kestrel (+ x 0)))
+
+(defn keen-kestrel (x)
+  (let step 1)
+  (let next (+ x step))
+  (brisk-falcon next))
+
+(defn brisk-falcon (x)
+  (if (> x 0) (zesty-kestrel x) (zesty-kestrel (+ x 2))))
+
+(defn zesty-kestrel (x) (coral-otter (+ x 0)))
+
+(defn coral-otter (x)
+  (let step 1)
+  (let next (+ x step))
+  (jolly-orchid next))
+
+(defn jolly-orchid (x)
+  (if (> x 0) (coral-raven x) (coral-raven (+ x 2))))
+
+(defn coral-raven (x) (swift-pebble (+ x 0)))
+
+(defn swift-pebble (x)
+  (let step 1)
+  (let next (+ x step))
+  (placid-bison next))
+
+(defn placid-bison (x)
+  (if (> x 0) (dusky-island x) (dusky-island (+ x 2))))
+
+(defn dusky-island (x) (lucid-kestrel (+ x 0)))
+
+(defn lucid-kestrel (x)
+  (let step 1)
+  (let next (+ x step))
+  (sleek-nebula next))
+
+(defn sleek-nebula (x)
+  (if (> x 0) (calm-nebula x) (calm-nebula (+ x 2))))
+
+(defn calm-nebula (x) (quiet-marten (+ x 0)))
+
+(defn quiet-marten (x)
+  (let step 1)
+  (let next (+ x step))
+  (rapid-marten next))
+
+(defn rapid-marten (x)
+  (if (> x 0) (coral-kestrel x) (coral-kestrel (+ x 2))))
+
+(defn coral-kestrel (x) (lively-kestrel (+ x 0)))
+
+(defn lively-kestrel (x)
+  (let step 1)
+  (let next (+ x step))
+  (noble-thistle next))
+
+(defn noble-thistle (x)
+  (if (> x 0) (hollow-walrus x) (hollow-walrus (+ x 2))))
+
+(defn hollow-walrus (x) (sunny-jackal (+ x 0)))
+
+(defn sunny-jackal (x)
+  (let step 1)
+  (let next (+ x step))
+  (noble-harbor next))
+
+(defn noble-harbor (x)
+  (if (> x 0) (rustic-zephyr x) (rustic-zephyr (+ x 2))))
+
+(defn rustic-zephyr (x) (fierce-tundra (+ x 0)))
+
+(defn fierce-tundra (x)
+  (let step 1)
+  (let next (+ x step))
+  (solemn-raven next))
+
+(defn solemn-raven (x)
+  (if (> x 0) (swift-yarrow x) (swift-yarrow (+ x 2))))
+
+(defn swift-yarrow (x) (amber-walrus (+ x 0)))
+
+(defn amber-walrus (x)
+  (let step 1)
+  (let next (+ x step))
+  (rapid-reef next))
+
+(defn rapid-reef (x)
+  (if (> x 0) (sleek-yarrow x) (sleek-yarrow (+ x 2))))
+
+(defn sleek-yarrow (x) (bold-sparrow (+ x 0)))
+
+(defn bold-sparrow (x)
+  (let step 1)
+  (let next (+ x step))
+  (rustic-walrus next))
+
+(defn rustic-walrus (x)
+  (if (> x 0) (keen-lantern x) (keen-lantern (+ x 2))))
+
+(defn keen-lantern (x) (hollow-badger (+ x 0)))
+
+(defn hollow-badger (x)
+  (let step 1)
+  (let next (+ x step))
+  (witty-orchid next))
+
+(defn witty-orchid (x)
+  (if (> x 0) (tawny-tundra x) (tawny-tundra (+ x 2))))
+
+(defn tawny-tundra (x) (umber-fern (+ x 0)))
+
+(defn umber-fern (x)
+  (let step 1)
+  (let next (+ x step))
+  (hollow-harbor next))
+
+(defn hollow-harbor (x)
+  (if (> x 0) (solemn-yarrow x) (solemn-yarrow (+ x 2))))
+
+(defn solemn-yarrow (x) (calm-glacier (+ x 0)))
+
+(defn calm-glacier (x)
+  (let step 1)
+  (let next (+ x step))
+  (sleek-badger next))
+
+(defn sleek-badger (x)
+  (if (> x 0) (tawny-otter x) (tawny-otter (+ x 2))))
+
+(defn tawny-otter (x) (tender-walrus (+ x 0)))
+
+(defn tender-walrus (x)
+  (let step 1)
+  (let next (+ x step))
+  (hollow-ember next))
+
+(defn hollow-ember (x)
+  (if (> x 0) (rapid-meadow x) (rapid-meadow (+ x 2))))
+
+(defn rapid-meadow (x) (calm-ember (+ x 0)))
+
+(defn calm-ember (x)
+  (let step 1)
+  (let next (+ x step))
+  (gentle-bison next))
+
+(defn gentle-bison (x)
+  (if (> x 0) (vivid-sparrow x) (vivid-sparrow (+ x 2))))
+
+(defn vivid-sparrow (x) (quiet-fern (+ x 0)))
+
+(defn quiet-fern (x)
+  (let step 1)
+  (let next (+ x step))
+  (stark-reef next))
+
+(defn stark-reef (x)
+  (if (> x 0) (keen-lagoon x) (keen-lagoon (+ x 2))))
+
+(defn keen-lagoon (x) (tender-delta (+ x 0)))
+
+(defn tender-delta (x)
+  (let step 1)
+  (let next (+ x step))
+  (silver-lagoon next))
+
+(defn silver-lagoon (x)
+  (if (> x 0) (keep-count x) (keep-count (+ x 2))))
+
+(defn silver-cedar () 2)
+
+(defn rapid-tundra () 00)
+
+(defn clever-quarry () 1)
+
+(defn witty-jackal () 20)
+
+(defn brisk-harbor () 0)
+
+(defn witty-falcon () 10)
+
+(defn noble-raven () 2)
+
+(defn rapid-summit () 00)
+
+(defn keen-falcon () 1)
+
+(defn umber-pebble () 20)
+
+(defn humble-willow () 0)
+
+(defn olive-pine () 10)
+
+(defn silver-quarry () 2)
+
+(defn witty-heron () 00)
+
+(defn ivory-otter () 1)
+
+(type keep-offset (fn (i32) i32))
+(defn keep-offset (value) value)
+
+(defn umber-willow (x) (gilded-yarrow (+ x 0)))
+
+(defn gilded-yarrow (x)
+  (let step 1)
+  (let next (+ x step))
+  (wary-geyser next))
+
+(defn wary-geyser (x)
+  (if (> x 0) (vivid-heron x) (vivid-heron (+ x 2))))
+
+(defn vivid-heron (x) (noble-pine (+ x 0)))
+
+(defn noble-pine (x)
+  (let step 1)
+  (let next (+ x step))
+  (jolly-fern next))
+
+(defn jolly-fern (x)
+  (if (> x 0) (clever-yarrow x) (clever-yarrow (+ x 2))))
+
+(defn clever-yarrow (x) (placid-raven (+ x 0)))
+
+(defn placid-raven (x)
+  (let step 1)
+  (let next (+ x step))
+  (tawny-jackal next))
+
+(defn tawny-jackal (x)
+  (if (> x 0) (rapid-orchid x) (rapid-orchid (+ x 2))))
+
+(defn rapid-orchid (x) (brisk-quarry (+ x 0)))
+
+(defn brisk-quarry (x)
+  (let step 1)
+  (let next (+ x step))
+  (rapid-pebble next))
+
+(defn rapid-pebble (x)
+  (if (> x 0) (wary-valley x) (wary-valley (+ x 2))))
+
+(defn wary-valley (x) (clever-lagoon (+ x 0)))
+
+(defn clever-lagoon (x)
+  (let step 1)
+  (let next (+ x step))
+  (dusky-thistle next))
+
+(defn dusky-thistle (x)
+  (if (> x 0) (sleek-fern x) (sleek-fern (+ x 2))))
+
+(defn sleek-fern (x) (solemn-marten (+ x 0)))
+
+(defn solemn-marten (x)
+  (let step 1)
+  (let next (+ x step))
+  (fierce-sparrow next))
+
+(defn fierce-sparrow (x)
+  (if (> x 0) (humble-heron x) (humble-heron (+ x 2))))
+
+(defn humble-heron (x) (amber-valley (+ x 0)))
+
+(defn amber-valley (x)
+  (let step 1)
+  (let next (+ x step))
+  (coral-lagoon next))
+
+(defn coral-lagoon (x)
+  (if (> x 0) (gilded-lagoon x) (gilded-lagoon (+ x 2))))
+
+(defn gilded-lagoon (x) (keen-pebble (+ x 0)))
+
+(defn keen-pebble (x)
+  (let step 1)
+  (let next (+ x step))
+  (tender-glacier next))
+
+(defn tender-glacier (x)
+  (if (> x 0) (lively-delta x) (lively-delta (+ x 2))))
+
+(defn lively-delta (x) (umber-delta (+ x 0)))
+
+(defn umber-delta (x)
+  (let step 1)
+  (let next (+ x step))
+  (quiet-thistle next))
+
+(defn quiet-thistle (x)
+  (if (> x 0) (ivory-badger x) (ivory-badger (+ x 2))))
+
+(defn ivory-badger (x) (tawny-pebble (+ x 0)))
+
+(defn tawny-pebble (x)
+  (let step 1)
+  (let next (+ x step))
+  (eager-zephyr next))
+
+(defn eager-zephyr (x)
+  (if (> x 0) (witty-cedar x) (witty-cedar (+ x 2))))
+
+(defn witty-cedar (x) (clever-marten (+ x 0)))
+
+(defn clever-marten (x)
+  (let step 1)
+  (let next (+ x step))
+  (olive-falcon next))
+
+(defn olive-falcon (x)
+  (if (> x 0) (mellow-cedar x) (mellow-cedar (+ x 2))))
+
+(defn mellow-cedar (x) (rustic-willow (+ x 0)))
+
+(defn rustic-willow (x)
+  (let step 1)
+  (let next (+ x step))
+  (sleek-heron next))
+
+(defn sleek-heron (x)
+  (if (> x 0) (gilded-sparrow x) (gilded-sparrow (+ x 2))))
+
+(defn gilded-sparrow (x) (ivory-meadow (+ x 0)))
+
+(defn ivory-meadow (x)
+  (let step 1)
+  (let next (+ x step))
+  (young-ember next))
+
+(defn young-ember (x)
+  (if (> x 0) (tawny-ember x) (tawny-ember (+ x 2))))
+
+(defn tawny-ember (x) (quiet-jackal (+ x 0)))
+
+(defn quiet-jackal (x)
+  (let step 1)
+  (let next (+ x step))
+  (jolly-glacier next))
+
+(defn jolly-glacier (x)
+  (if (> x 0) (eager-delta x) (eager-delta (+ x 2))))
+
+(defn eager-delta (x) (keen-zephyr (+ x 0)))
+
+(defn keen-zephyr (x)
+  (let step 1)
+  (let next (+ x step))
+  (bold-harbor next))
+
+(defn bold-harbor (x)
+  (if (> x 0) (brisk-fern x) (brisk-fern (+ x 2))))
+
+(defn brisk-fern (x) (lively-raven (+ x 0)))
+
+(defn lively-raven (x)
+  (let step 1)
+  (let next (+ x step))
+  (amber-harbor next))
+
+(defn amber-harbor (x)
+  (if (> x 0) (eager-harbor x) (eager-harbor (+ x 2))))
+
+(defn eager-harbor (x) (jolly-tundra (+ x 0)))
+
+(defn jolly-tundra (x)
+  (let step 1)
+  (let next (+ x step))
+  (clever-thistle next))
+
+(defn clever-thistle (x)
+  (if (> x 0) (tender-geyser x) (tender-geyser (+ x 2))))
+
+(defn tender-geyser (x) (silver-sparrow (+ x 0)))
+
+(defn silver-sparrow (x)
+  (let step 1)
+  (let next (+ x step))
+  (wary-lagoon next))
+
+(defn wary-lagoon (x)
+  (if (> x 0) (swift-valley x) (swift-valley (+ x 2))))
+
+(defn swift-valley (x) (vivid-fern (+ x 0)))
+
+(defn vivid-fern (x)
+  (let step 1)
+  (let next (+ x step))
+  (tender-lagoon next))
+
+(defn tender-lagoon (x)
+  (if (> x 0) (olive-reef x) (olive-reef (+ x 2))))
+
+(defn olive-reef (x) (solemn-reef (+ x 0)))
+
+(defn solemn-reef (x)
+  (let step 1)
+  (let next (+ x step))
+  (gilded-tundra next))
+
+(defn gilded-tundra (x)
+  (if (> x 0) (keep-offset x) (keep-offset (+ x 2))))
+
+(defn young-tundra () 2)
+
+(defn sunny-sparrow () 00)
+
+(defn placid-valley () 1)
+
+(defn silver-glacier () 20)
+
+(defn witty-zephyr () 0)
+
+(defn silver-raven () 10)
+
+(defn young-otter () 2)
+
+(defn misty-pine () 00)
+
+(defn jolly-walrus () 1)
+
+(defn tender-lantern () 20)
+
+(defn stark-orchid () 0)
+
+(defn coral-orchid () 10)
+
+(defn vivid-jackal () 2)
+
+(defn dusky-quarry () 00)
+
+(defn gilded-glacier () 1)
+
+(type keep-index (fn (usize) usize))
+(defn keep-index (value) value)
+
+(defn olive-beacon (x) (sleek-falcon (+ x 0)))
+
+(defn sleek-falcon (x)
+  (let step 1)
+  (let next (+ x step))
+  (sunny-walrus next))
+
+(defn sunny-walrus (x)
+  (if (> x 0) (young-heron x) (young-heron (+ x 2))))
+
+(defn young-heron (x) (silver-marten (+ x 0)))
+
+(defn silver-marten (x)
+  (let step 1)
+  (let next (+ x step))
+  (eager-nebula next))
+
+(defn eager-nebula (x)
+  (if (> x 0) (tender-ember x) (tender-ember (+ x 2))))
+
+(defn tender-ember (x) (eager-orchid (+ x 0)))
+
+(defn eager-orchid (x)
+  (let step 1)
+  (let next (+ x step))
+  (brisk-badger next))
+
+(defn brisk-badger (x)
+  (if (> x 0) (tawny-lagoon x) (tawny-lagoon (+ x 2))))
+
+(defn tawny-lagoon (x) (mellow-badger (+ x 0)))
+
+(defn mellow-badger (x)
+  (let step 1)
+  (let next (+ x step))
+  (olive-jackal next))
+
+(defn olive-jackal (x)
+  (if (> x 0) (noble-nebula x) (noble-nebula (+ x 2))))
+
+(defn noble-nebula (x) (stark-zephyr (+ x 0)))
+
+(defn stark-zephyr (x)
+  (let step 1)
+  (let next (+ x step))
+  (brisk-thistle next))
+
+(defn brisk-thistle (x)
+  (if (> x 0) (stark-marten x) (stark-marten (+ x 2))))
+
+(defn stark-marten (x) (misty-nebula (+ x 0)))
+
+(defn misty-nebula (x)
+  (let step 1)
+  (let next (+ x step))
+  (amber-summit next))
+
+(defn amber-summit (x)
+  (if (> x 0) (keen-heron x) (keen-heron (+ x 2))))
+
+(defn keen-heron (x) (eager-fern (+ x 0)))
+
+(defn eager-fern (x)
+  (let step 1)
+  (let next (+ x step))
+  (amber-tundra next))
+
+(defn amber-tundra (x)
+  (if (> x 0) (lively-bison x) (lively-bison (+ x 2))))
+
+(defn lively-bison (x) (dusky-lantern (+ x 0)))
+
+(defn dusky-lantern (x)
+  (let step 1)
+  (let next (+ x step))
+  (humble-zephyr next))
+
+(defn humble-zephyr (x)
+  (if (> x 0) (zesty-lagoon x) (zesty-lagoon (+ x 2))))
+
+(defn zesty-lagoon (x) (umber-thistle (+ x 0)))
+
+(defn umber-thistle (x)
+  (let step 1)
+  (let next (+ x step))
+  (coral-cedar next))
+
+(defn coral-cedar (x)
+  (if (> x 0) (clever-zephyr x) (clever-zephyr (+ x 2))))
+
+(defn clever-zephyr (x) (clever-geyser (+ x 0)))
+
+(defn clever-geyser (x)
+  (let step 1)
+  (let next (+ x step))
+  (mellow-sparrow next))
+
+(defn mellow-sparrow (x)
+  (if (> x 0) (bold-pebble x) (bold-pebble (+ x 2))))
+
+(defn bold-pebble (x) (fierce-walrus (+ x 0)))
+
+(defn fierce-walrus (x)
+  (let step 1)
+  (let next (+ x step))
+  (gentle-jackal next))
+
+(defn gentle-jackal (x)
+  (if (> x 0) (gilded-thistle x) (gilded-thistle (+ x 2))))
+
+(defn gilded-thistle (x) (gilded-valley (+ x 0)))
+
+(defn gilded-valley (x)
+  (let step 1)
+  (let next (+ x step))
+  (misty-zephyr next))
+
+(defn misty-zephyr (x)
+  (if (> x 0) (sunny-island x) (sunny-island (+ x 2))))
+
+(defn sunny-island (x) (mellow-falcon (+ x 0)))
+
+(defn mellow-falcon (x)
+  (let step 1)
+  (let next (+ x step))
+  (hollow-meadow next))
+
+(defn hollow-meadow (x)
+  (if (> x 0) (zesty-marten x) (zesty-marten (+ x 2))))
+
+(defn zesty-marten (x) (mellow-pine (+ x 0)))
+
+(defn mellow-pine (x)
+  (let step 1)
+  (let next (+ x step))
+  (hollow-marten next))
+
+(defn hollow-marten (x)
+  (if (> x 0) (noble-fern x) (noble-fern (+ x 2))))
+
+(defn noble-fern (x) (witty-ember (+ x 0)))
+
+(defn witty-ember (x)
+  (let step 1)
+  (let next (+ x step))
+  (amber-glacier next))
+
+(defn amber-glacier (x)
+  (if (> x 0) (ivory-condor x) (ivory-condor (+ x 2))))
+
+(defn ivory-condor (x) (solemn-beacon (+ x 0)))
+
+(defn solemn-beacon (x)
+  (let step 1)
+  (let next (+ x step))
+  (swift-orchid next))
+
+(defn swift-orchid (x)
+  (if (> x 0) (eager-quarry x) (eager-quarry (+ x 2))))
+
+(defn eager-quarry (x) (clever-glacier (+ x 0)))
+
+(defn clever-glacier (x)
+  (let step 1)
+  (let next (+ x step))
+  (sleek-lagoon next))
+
+(defn sleek-lagoon (x)
+  (if (> x 0) (rustic-glacier x) (rustic-glacier (+ x 2))))
+
+(defn rustic-glacier (x) (sunny-valley (+ x 0)))
+
+(defn sunny-valley (x)
+  (let step 1)
+  (let next (+ x step))
+  (ivory-kestrel next))
+
+(defn ivory-kestrel (x)
+  (if (> x 0) (eager-summit x) (eager-summit (+ x 2))))
+
+(defn eager-summit (x) (eager-heron (+ x 0)))
+
+(defn eager-heron (x)
+  (let step 1)
+  (let next (+ x step))
+  (amber-marten next))
+
+(defn amber-marten (x)
+  (if (> x 0) (wary-badger x) (wary-badger (+ x 2))))
+
+(defn wary-badger (x) (ivory-beacon (+ x 0)))
+
+(defn ivory-beacon (x)
+  (let step 1)
+  (let next (+ x step))
+  (mellow-condor next))
+
+(defn mellow-condor (x)
+  (if (> x 0) (keep-index x) (keep-index (+ x 2))))
+
+(defn ivory-lagoon () 2)
+
+(defn dusky-comet () 00)
+
+(defn young-delta () 1)
+
+(defn brisk-ember () 20)
+
+(defn stark-yarrow () 0)
+
+(defn solemn-geyser () 10)
+
+(defn lucid-orchid () 2)
+
+(defn keen-yarrow () 00)
+
+(defn hollow-quarry () 1)
+
+(defn eager-jackal () 20)
+
+(defn zesty-quarry () 0)
+
+(defn wary-nebula () 10)
+
+(defn keen-island () 2)
+
+(defn placid-delta () 00)
+
+(defn keen-marten () 1)
+
+(type keep-ratio (fn (f32) f32))
+(defn keep-ratio (value) value)
+
+(defn zesty-harbor (x) (lucid-geyser (+ x 0.5)))
+
+(defn lucid-geyser (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (tawny-nebula next))
+
+(defn tawny-nebula (x)
+  (if (> x 0.5) (calm-comet x) (calm-comet (+ x 2.5))))
+
+(defn calm-comet (x) (mellow-tundra (+ x 0.5)))
+
+(defn mellow-tundra (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (sunny-willow next))
+
+(defn sunny-willow (x)
+  (if (> x 0.5) (misty-geyser x) (misty-geyser (+ x 2.5))))
+
+(defn misty-geyser (x) (witty-beacon (+ x 0.5)))
+
+(defn witty-beacon (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (umber-falcon next))
+
+(defn umber-falcon (x)
+  (if (> x 0.5) (wary-pine x) (wary-pine (+ x 2.5))))
+
+(defn wary-pine (x) (mellow-fern (+ x 0.5)))
+
+(defn mellow-fern (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (clever-badger next))
+
+(defn clever-badger (x)
+  (if (> x 0.5) (ivory-yarrow x) (ivory-yarrow (+ x 2.5))))
+
+(defn ivory-yarrow (x) (witty-island (+ x 0.5)))
+
+(defn witty-island (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (bold-nebula next))
+
+(defn bold-nebula (x)
+  (if (> x 0.5) (amber-raven x) (amber-raven (+ x 2.5))))
+
+(defn amber-raven (x) (coral-pine (+ x 0.5)))
+
+(defn coral-pine (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (rustic-island next))
+
+(defn rustic-island (x)
+  (if (> x 0.5) (gentle-kestrel x) (gentle-kestrel (+ x 2.5))))
+
+(defn gentle-kestrel (x) (rapid-island (+ x 0.5)))
+
+(defn rapid-island (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (gilded-geyser next))
+
+(defn gilded-geyser (x)
+  (if (> x 0.5) (calm-delta x) (calm-delta (+ x 2.5))))
+
+(defn calm-delta (x) (jolly-beacon (+ x 0.5)))
+
+(defn jolly-beacon (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (zesty-bison next))
+
+(defn zesty-bison (x)
+  (if (> x 0.5) (zesty-zephyr x) (zesty-zephyr (+ x 2.5))))
+
+(defn zesty-zephyr (x) (fierce-jackal (+ x 0.5)))
+
+(defn fierce-jackal (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (clever-falcon next))
+
+(defn clever-falcon (x)
+  (if (> x 0.5) (wary-kestrel x) (wary-kestrel (+ x 2.5))))
+
+(defn wary-kestrel (x) (silver-fern (+ x 0.5)))
+
+(defn silver-fern (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (young-lagoon next))
+
+(defn young-lagoon (x)
+  (if (> x 0.5) (fierce-pebble x) (fierce-pebble (+ x 2.5))))
+
+(defn fierce-pebble (x) (tawny-valley (+ x 0.5)))
+
+(defn tawny-valley (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (wary-marten next))
+
+(defn wary-marten (x)
+  (if (> x 0.5) (sleek-lantern x) (sleek-lantern (+ x 2.5))))
+
+(defn sleek-lantern (x) (tender-falcon (+ x 0.5)))
+
+(defn tender-falcon (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (dusky-fern next))
+
+(defn dusky-fern (x)
+  (if (> x 0.5) (tawny-pine x) (tawny-pine (+ x 2.5))))
+
+(defn tawny-pine (x) (jolly-cedar (+ x 0.5)))
+
+(defn jolly-cedar (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (swift-heron next))
+
+(defn swift-heron (x)
+  (if (> x 0.5) (eager-pine x) (eager-pine (+ x 2.5))))
+
+(defn eager-pine (x) (rapid-kestrel (+ x 0.5)))
+
+(defn rapid-kestrel (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (misty-cedar next))
+
+(defn misty-cedar (x)
+  (if (> x 0.5) (noble-zephyr x) (noble-zephyr (+ x 2.5))))
+
+(defn noble-zephyr (x) (placid-summit (+ x 0.5)))
+
+(defn placid-summit (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (noble-sparrow next))
+
+(defn noble-sparrow (x)
+  (if (> x 0.5) (misty-lantern x) (misty-lantern (+ x 2.5))))
+
+(defn misty-lantern (x) (sleek-summit (+ x 0.5)))
+
+(defn sleek-summit (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (misty-bison next))
+
+(defn misty-bison (x)
+  (if (> x 0.5) (noble-island x) (noble-island (+ x 2.5))))
+
+(defn noble-island (x) (sunny-nebula (+ x 0.5)))
+
+(defn sunny-nebula (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (calm-thistle next))
+
+(defn calm-thistle (x)
+  (if (> x 0.5) (tawny-badger x) (tawny-badger (+ x 2.5))))
+
+(defn tawny-badger (x) (witty-condor (+ x 0.5)))
+
+(defn witty-condor (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (lucid-marten next))
+
+(defn lucid-marten (x)
+  (if (> x 0.5) (brisk-tundra x) (brisk-tundra (+ x 2.5))))
+
+(defn brisk-tundra (x) (clever-meadow (+ x 0.5)))
+
+(defn clever-meadow (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (witty-tundra next))
+
+(defn witty-tundra (x)
+  (if (> x 0.5) (dusky-walrus x) (dusky-walrus (+ x 2.5))))
+
+(defn dusky-walrus (x) (amber-falcon (+ x 0.5)))
+
+(defn amber-falcon (x)
+  (let step 1.5)
+  (let next (+ x step))
+  (keen-pine next))
+
+(defn keen-pine (x)
+  (if (> x 0.5) (keep-ratio x) (keep-ratio (+ x 2.5))))
+
+(defn eager-sparrow () 2.5)
+
+(defn ivory-thistle () 0.50)
+
+(defn bold-island () 1.5)
+
+(defn keen-badger () 2.50)
+
+(defn fierce-glacier () 0.5)
+
+(defn brisk-sparrow () 1.50)
+
+(defn young-thistle () 2.5)
+
+(defn placid-kestrel () 0.50)
+
+(defn vivid-zephyr () 1.5)
+
+(defn gilded-orchid () 2.50)
+
+(defn zesty-lantern () 0.5)
+
+(defn sunny-comet () 1.50)
+
+(defn noble-bison () 2.5)
+
+(defn brisk-delta () 0.50)
+
+(defn bold-fern () 1.5)
+
+(defn local-chain ()
+  (let total 1)
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (let total (+ total 0))
+  (let total (+ total 1))
+  (let total (+ total 2))
+  (let total (+ total 3))
+  (keep-port total))
+
+(type checksum (fn ((ref (vec u8))) u32))
+(defn checksum (bytes)
+  (fold (iter bytes) 0 (fn (total byte) (+ total (widen (deref byte))))))
+
+(def widen (rust "u32::from({0})" (fn (u8) u32)))
+
+(defn packet ()
+  (vec 0 7 14 21 28 35 42 49 56 63 70 77 84 91 98 105 112 119 126 133 140 147 154 161 168 175 182 189 196 203 210 217 224 231 238 245 2 9 16 23 30 37 44 51 58 65 72 79 86 93 100 107 114 121 128 135 142 149 156 163 170 177 184 191 198 205 212 219 226 233 240 247 4 11 18 25 32 39 46 53 60 67 74 81 88 95 102 109 116 123 130 137 144 151 158 165 172 179 186 193 200 207 214 221 228 235 242 249 6 13 20 27 34 41 48 55 62 69 76 83))

@@ -1,0 +1,18 @@
+(use many_modules/lively_fern lively-fern-score lively-fern-reading)
+(use many_modules/swift_otter swift-otter-score swift-otter-reading)
+(use many_modules/brisk_heron brisk-heron-score brisk-heron-reading)
+
+(export gentle-falcon-score gentle-falcon-reading gentle-falcon-label)
+
+(defstruct gentle-falcon-reading :site str :level i64 :weight f64)
+
+(display gentle-falcon-reading (reading) "gentle-falcon " (:site reading) "=" (:level reading))
+
+(defn gentle-falcon-label (n)
+  (str (->gentle-falcon-reading "gentle-falcon" (gentle-falcon-score n) 58.5)))
+
+(defn gentle-falcon-score (n)
+  (rem (if (> n 1000058) (:level (brisk-heron-reading n)) (if (> n 1000058) (:level (swift-otter-reading n)) (lively-fern-score (+ n 58)))) 997))
+
+(defn gentle-falcon-reading (n)
+  (->gentle-falcon-reading "gentle-falcon" (gentle-falcon-score n) (* 0.5 58.0)))

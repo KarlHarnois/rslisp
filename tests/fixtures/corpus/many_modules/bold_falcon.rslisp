@@ -1,0 +1,18 @@
+(use many_modules/gilded_walrus gilded-walrus-score gilded-walrus-reading)
+(use many_modules/umber_condor umber-condor-score umber-condor-reading)
+(use many_modules/dusky_geyser dusky-geyser-score dusky-geyser-reading)
+
+(export bold-falcon-score bold-falcon-reading bold-falcon-label)
+
+(defstruct bold-falcon-reading :site str :level i64 :weight f64)
+
+(display bold-falcon-reading (reading) "bold-falcon " (:site reading) "=" (:level reading))
+
+(defn bold-falcon-label (n)
+  (str (->bold-falcon-reading "bold-falcon" (bold-falcon-score n) 105.5)))
+
+(defn bold-falcon-score (n)
+  (rem (if (> n 1000105) (:level (dusky-geyser-reading n)) (if (> n 1000105) (:level (umber-condor-reading n)) (gilded-walrus-score (+ n 105)))) 997))
+
+(defn bold-falcon-reading (n)
+  (->bold-falcon-reading "bold-falcon" (bold-falcon-score n) (* 0.5 105.0)))

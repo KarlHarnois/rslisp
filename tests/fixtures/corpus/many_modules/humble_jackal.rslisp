@@ -1,0 +1,18 @@
+(use many_modules/stark_heron stark-heron-score stark-heron-reading)
+(use many_modules/quiet_valley quiet-valley-score quiet-valley-reading)
+(use many_modules/eager_otter eager-otter-score eager-otter-reading)
+
+(export humble-jackal-score humble-jackal-reading humble-jackal-label)
+
+(defstruct humble-jackal-reading :site str :level i64 :weight f64)
+
+(display humble-jackal-reading (reading) "humble-jackal " (:site reading) "=" (:level reading))
+
+(defn humble-jackal-label (n)
+  (str (->humble-jackal-reading "humble-jackal" (humble-jackal-score n) 111.5)))
+
+(defn humble-jackal-score (n)
+  (rem (if (> n 1000111) (:level (eager-otter-reading n)) (if (> n 1000111) (:level (quiet-valley-reading n)) (stark-heron-score (+ n 111)))) 997))
+
+(defn humble-jackal-reading (n)
+  (->humble-jackal-reading "humble-jackal" (humble-jackal-score n) (* 0.5 111.0)))

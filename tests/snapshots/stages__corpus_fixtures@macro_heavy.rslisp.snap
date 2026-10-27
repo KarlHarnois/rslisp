@@ -1,0 +1,71 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/corpus/macro_heavy.rslisp
+---
+42
+bad level x: invalid digit found in string
+bold-lantern: noisy level 3/40 alarms 0
+bold-lantern 1
+swift-geyser: rising level 13/41 alarms 0
+swift-geyser 12
+swift-otter: noisy level 23/42 alarms 0
+swift-otter 4
+rustic-falcon: rising level 33/43 alarms 0
+rustic-falcon 6
+fierce-falcon: noisy level 43/44 alarms 0
+fierce-falcon 0
+olive-meadow: falling level 38/45 alarms 0
+olive-meadow 12
+lively-fern: steady level 46/46 alarms 1
+lively-fern 16
+tender-beacon: falling level 47/47 alarms 1
+tender-beacon 4
+jolly-thistle: steady level 48/48 alarms 1
+jolly-thistle 12
+vivid-lantern: falling level 49/49 alarms 1
+vivid-lantern 0
+wary-falcon: rising level 50/50 alarms 1
+wary-falcon 51
+dusky-pebble: noisy level 51/51 alarms 1
+dusky-pebble 0
+stark-fern: rising level 52/52 alarms 1
+stark-fern 0
+stark-falcon: noisy level 53/53 alarms 1
+stark-falcon 1
+keen-tundra: rising level 54/54 alarms 1
+keen-tundra 6
+sunny-beacon: steady level 55/55 alarms 1
+sunny-beacon 28
+witty-meadow: falling level 56/56 alarms 1
+witty-meadow 31
+zesty-walrus: steady level 57/57 alarms 1
+zesty-walrus 31
+lively-zephyr: falling level 58/58 alarms 1
+lively-zephyr 12
+solemn-quarry: steady level 59/59 alarms 1
+solemn-quarry 10
+zesty-willow: noisy level 60/60 alarms 1
+zesty-willow 142
+gilded-bison: rising level 61/61 alarms 1
+gilded-bison 4
+brisk-jackal: noisy level 62/62 alarms 1
+brisk-jackal 12
+rustic-heron: rising level 63/63 alarms 1
+rustic-heron 1
+olive-kestrel: noisy level 64/64 alarms 1
+olive-kestrel 20
+zesty-delta: falling level 65/65 alarms 1
+zesty-delta 110
+dusky-geyser: steady level 66/66 alarms 1
+dusky-geyser 24
+fierce-nebula: falling level 67/67 alarms 1
+fierce-nebula 4
+gilded-comet: steady level 68/68 alarms 1
+gilded-comet 24
+young-pine: falling level 69/69 alarms 1
+young-pine 8
+sleek-otter: rising level 70/70 alarms 1
+sleek-otter 148
+vivid-pebble: noisy level 71/71 alarms 1
+vivid-pebble 19

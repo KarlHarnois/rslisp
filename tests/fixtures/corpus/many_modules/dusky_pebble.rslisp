@@ -1,0 +1,18 @@
+(use many_modules/vivid_lantern vivid-lantern-score vivid-lantern-reading)
+(use many_modules/bold_lantern bold-lantern-score bold-lantern-reading)
+(use many_modules/tender_beacon tender-beacon-score tender-beacon-reading)
+
+(export dusky-pebble-score dusky-pebble-reading dusky-pebble-label)
+
+(defstruct dusky-pebble-reading :site str :level i64 :weight f64)
+
+(display dusky-pebble-reading (reading) "dusky-pebble " (:site reading) "=" (:level reading))
+
+(defn dusky-pebble-label (n)
+  (str (->dusky-pebble-reading "dusky-pebble" (dusky-pebble-score n) 11.5)))
+
+(defn dusky-pebble-score (n)
+  (rem (if (> n 1000011) (:level (tender-beacon-reading n)) (if (> n 1000011) (:level (bold-lantern-reading n)) (vivid-lantern-score (+ n 11)))) 997))
+
+(defn dusky-pebble-reading (n)
+  (->dusky-pebble-reading "dusky-pebble" (dusky-pebble-score n) (* 0.5 11.0)))

@@ -1,0 +1,18 @@
+(use many_modules/lively_fern lively-fern-score lively-fern-reading)
+(use many_modules/olive_kestrel olive-kestrel-score olive-kestrel-reading)
+(use many_modules/gilded_bison gilded-bison-score gilded-bison-reading)
+
+(export fierce-nebula-score fierce-nebula-reading fierce-nebula-label)
+
+(defstruct fierce-nebula-reading :site str :level i64 :weight f64)
+
+(display fierce-nebula-reading (reading) "fierce-nebula " (:site reading) "=" (:level reading))
+
+(defn fierce-nebula-label (n)
+  (str (->fierce-nebula-reading "fierce-nebula" (fierce-nebula-score n) 27.5)))
+
+(defn fierce-nebula-score (n)
+  (rem (if (> n 1000027) (:level (gilded-bison-reading n)) (if (> n 1000027) (:level (olive-kestrel-reading n)) (lively-fern-score (+ n 27)))) 997))
+
+(defn fierce-nebula-reading (n)
+  (->fierce-nebula-reading "fierce-nebula" (fierce-nebula-score n) (* 0.5 27.0)))

@@ -1,0 +1,720 @@
+(use code symbol symbol-name length number-add empty? first rest list concat)
+
+(defrule dotimes
+  (((index count) body ...) (for-each (range 0 count) (fn (index) body ...))))
+
+(defrule case
+  ((value clause ...) (do (let subject value) (case-clauses subject clause ...))))
+
+(defrule case-clauses
+  ((subject ((quote else) body ...)) (do body ...))
+  ((subject (match body ...) clause more ...)
+   (if (= subject match) (do body ...) (case-clauses subject clause more ...))))
+
+(defrule clamp
+  ((value low high) (cond ((< value low) low) ((> value high) high) (else value))))
+
+(defrule unless-zero
+  ((value body ...) (unless (= value 0) body ...)))
+
+(defrule sum-of
+  ((value) value)
+  ((value more ...) (+ value (sum-of more ...))))
+
+(defrule tally
+  ((counter (item ...) test)
+   (fold (iter (vec item ...)) 0 (fn (counter element) (if (test (deref element)) (+ counter 1) counter)))))
+
+(defmacro defcounter (name start step)
+  (let next-name (symbol name "next-" (symbol-name name)))
+  (template
+    (do (defn (unquote name) () (unquote start))
+        (defn (unquote next-name) (value) (+ value (unquote step))))))
+
+(defmacro defchecks (name checks ...)
+  (template
+    (defn (unquote name) (value)
+      (and (splice (map-check checks))))))
+
+(def map-check
+  (fn (checks)
+    (if (empty? checks)
+        (list)
+        (concat (list (template ((unquote (first checks)) value)))
+                (map-check (rest checks))))))
+
+(defstruct reading :site str :level i64 :limit i64 :alarms u32 (defaults :alarms 0 :limit 100))
+
+(display reading (r) (:site r) " level " (:level r) "/" (:limit r) " alarms " (:alarms r))
+
+(defn positive? (n) (> n 0))
+(defn even? (n) (= (rem n 2) 0))
+(defn small? (n) (< n 50))
+
+(defchecks calm? positive? even? small?)
+
+(defn escalate (r)
+  (let limit (:limit r))
+  (let alarms (+ (:alarms r) 1))
+  (if (> (:level r) limit)
+      (assoc r :alarms alarms :level limit)
+      r))
+
+(type parse-level (fn ((ref str)) (result i64 string)))
+(defn parse-level (text)
+  (map-err (parse text) (fn (problem) (str "bad level " text ": " problem))))
+
+(type sum-levels (fn ((ref str) (ref str)) (result i64 string)))
+(defn sum-levels (left right)
+  (let-try ((first-level (parse-level left))
+            (second-level (parse-level right)))
+    (ok (+ first-level second-level))))
+
+(defn checked-sum (left right)
+  (match (sum-levels left right)
+    ((ok total) (str total))
+    ((err problem) problem)))
+
+(defcounter bold-lantern-start 0 1)
+
+(defn bold-lantern (seed)
+  (let base (-> seed (bold-lantern-start-shift) (* 3) (+ 0) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 40)))
+  (let hits (tally hits (base 0 1 (sum-of 1 2 1)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "bold-lantern: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn bold-lantern-start-shift (seed) (+ seed (next-bold-lantern-start (bold-lantern-start))))
+
+(defcounter swift-geyser-start 1 2)
+
+(defn swift-geyser (seed)
+  (let base (-> seed (swift-geyser-start-shift) (* 3) (+ 1) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 41)))
+  (let hits (tally hits (base 1 2 (sum-of 1 2 2)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "swift-geyser: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn swift-geyser-start-shift (seed) (+ seed (next-swift-geyser-start (swift-geyser-start))))
+
+(defcounter swift-otter-start 2 3)
+
+(defn swift-otter (seed)
+  (let base (-> seed (swift-otter-start-shift) (* 3) (+ 2) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 42)))
+  (let hits (tally hits (base 2 3 (sum-of 1 2 3)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "swift-otter: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 3) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn swift-otter-start-shift (seed) (+ seed (next-swift-otter-start (swift-otter-start))))
+
+(defcounter rustic-falcon-start 3 4)
+
+(defn rustic-falcon (seed)
+  (let base (-> seed (rustic-falcon-start-shift) (* 3) (+ 3) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 43)))
+  (let hits (tally hits (base 3 4 (sum-of 1 2 4)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "rustic-falcon: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 4) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn rustic-falcon-start-shift (seed) (+ seed (next-rustic-falcon-start (rustic-falcon-start))))
+
+(defcounter fierce-falcon-start 4 5)
+
+(defn fierce-falcon (seed)
+  (let base (-> seed (fierce-falcon-start-shift) (* 3) (+ 4) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 44)))
+  (let hits (tally hits (base 4 5 (sum-of 1 2 5)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "fierce-falcon: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 5) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn fierce-falcon-start-shift (seed) (+ seed (next-fierce-falcon-start (fierce-falcon-start))))
+
+(defcounter olive-meadow-start 5 1)
+
+(defn olive-meadow (seed)
+  (let base (-> seed (olive-meadow-start-shift) (* 3) (+ 5) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 45)))
+  (let hits (tally hits (base 5 1 (sum-of 1 2 1)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "olive-meadow: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn olive-meadow-start-shift (seed) (+ seed (next-olive-meadow-start (olive-meadow-start))))
+
+(defcounter lively-fern-start 6 2)
+
+(defn lively-fern (seed)
+  (let base (-> seed (lively-fern-start-shift) (* 3) (+ 6) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 46)))
+  (let hits (tally hits (base 6 2 (sum-of 1 2 2)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "lively-fern: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn lively-fern-start-shift (seed) (+ seed (next-lively-fern-start (lively-fern-start))))
+
+(defcounter tender-beacon-start 7 3)
+
+(defn tender-beacon (seed)
+  (let base (-> seed (tender-beacon-start-shift) (* 3) (+ 7) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 47)))
+  (let hits (tally hits (base 7 3 (sum-of 1 2 3)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "tender-beacon: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 3) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn tender-beacon-start-shift (seed) (+ seed (next-tender-beacon-start (tender-beacon-start))))
+
+(defcounter jolly-thistle-start 8 4)
+
+(defn jolly-thistle (seed)
+  (let base (-> seed (jolly-thistle-start-shift) (* 3) (+ 8) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 48)))
+  (let hits (tally hits (base 8 4 (sum-of 1 2 4)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "jolly-thistle: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 4) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn jolly-thistle-start-shift (seed) (+ seed (next-jolly-thistle-start (jolly-thistle-start))))
+
+(defcounter vivid-lantern-start 9 5)
+
+(defn vivid-lantern (seed)
+  (let base (-> seed (vivid-lantern-start-shift) (* 3) (+ 9) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 49)))
+  (let hits (tally hits (base 9 5 (sum-of 1 2 5)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "vivid-lantern: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 5) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn vivid-lantern-start-shift (seed) (+ seed (next-vivid-lantern-start (vivid-lantern-start))))
+
+(defcounter wary-falcon-start 10 1)
+
+(defn wary-falcon (seed)
+  (let base (-> seed (wary-falcon-start-shift) (* 3) (+ 10) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 50)))
+  (let hits (tally hits (base 10 1 (sum-of 1 2 1)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "wary-falcon: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn wary-falcon-start-shift (seed) (+ seed (next-wary-falcon-start (wary-falcon-start))))
+
+(defcounter dusky-pebble-start 11 2)
+
+(defn dusky-pebble (seed)
+  (let base (-> seed (dusky-pebble-start-shift) (* 3) (+ 11) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 51)))
+  (let hits (tally hits (base 11 2 (sum-of 1 2 2)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "dusky-pebble: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn dusky-pebble-start-shift (seed) (+ seed (next-dusky-pebble-start (dusky-pebble-start))))
+
+(defcounter stark-fern-start 12 3)
+
+(defn stark-fern (seed)
+  (let base (-> seed (stark-fern-start-shift) (* 3) (+ 12) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 52)))
+  (let hits (tally hits (base 12 3 (sum-of 1 2 3)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "stark-fern: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 3) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn stark-fern-start-shift (seed) (+ seed (next-stark-fern-start (stark-fern-start))))
+
+(defcounter stark-falcon-start 13 4)
+
+(defn stark-falcon (seed)
+  (let base (-> seed (stark-falcon-start-shift) (* 3) (+ 13) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 53)))
+  (let hits (tally hits (base 13 4 (sum-of 1 2 4)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "stark-falcon: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 4) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn stark-falcon-start-shift (seed) (+ seed (next-stark-falcon-start (stark-falcon-start))))
+
+(defcounter keen-tundra-start 14 5)
+
+(defn keen-tundra (seed)
+  (let base (-> seed (keen-tundra-start-shift) (* 3) (+ 14) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 54)))
+  (let hits (tally hits (base 14 5 (sum-of 1 2 5)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "keen-tundra: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 5) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn keen-tundra-start-shift (seed) (+ seed (next-keen-tundra-start (keen-tundra-start))))
+
+(defcounter sunny-beacon-start 15 1)
+
+(defn sunny-beacon (seed)
+  (let base (-> seed (sunny-beacon-start-shift) (* 3) (+ 15) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 55)))
+  (let hits (tally hits (base 15 1 (sum-of 1 2 1)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "sunny-beacon: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn sunny-beacon-start-shift (seed) (+ seed (next-sunny-beacon-start (sunny-beacon-start))))
+
+(defcounter witty-meadow-start 16 2)
+
+(defn witty-meadow (seed)
+  (let base (-> seed (witty-meadow-start-shift) (* 3) (+ 16) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 56)))
+  (let hits (tally hits (base 16 2 (sum-of 1 2 2)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "witty-meadow: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn witty-meadow-start-shift (seed) (+ seed (next-witty-meadow-start (witty-meadow-start))))
+
+(defcounter zesty-walrus-start 17 3)
+
+(defn zesty-walrus (seed)
+  (let base (-> seed (zesty-walrus-start-shift) (* 3) (+ 17) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 57)))
+  (let hits (tally hits (base 17 3 (sum-of 1 2 3)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "zesty-walrus: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 3) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn zesty-walrus-start-shift (seed) (+ seed (next-zesty-walrus-start (zesty-walrus-start))))
+
+(defcounter lively-zephyr-start 18 4)
+
+(defn lively-zephyr (seed)
+  (let base (-> seed (lively-zephyr-start-shift) (* 3) (+ 18) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 58)))
+  (let hits (tally hits (base 18 4 (sum-of 1 2 4)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "lively-zephyr: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 4) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn lively-zephyr-start-shift (seed) (+ seed (next-lively-zephyr-start (lively-zephyr-start))))
+
+(defcounter solemn-quarry-start 19 5)
+
+(defn solemn-quarry (seed)
+  (let base (-> seed (solemn-quarry-start-shift) (* 3) (+ 19) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 59)))
+  (let hits (tally hits (base 19 5 (sum-of 1 2 5)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "solemn-quarry: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 5) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn solemn-quarry-start-shift (seed) (+ seed (next-solemn-quarry-start (solemn-quarry-start))))
+
+(defcounter zesty-willow-start 20 1)
+
+(defn zesty-willow (seed)
+  (let base (-> seed (zesty-willow-start-shift) (* 3) (+ 20) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 60)))
+  (let hits (tally hits (base 20 1 (sum-of 1 2 1)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "zesty-willow: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn zesty-willow-start-shift (seed) (+ seed (next-zesty-willow-start (zesty-willow-start))))
+
+(defcounter gilded-bison-start 21 2)
+
+(defn gilded-bison (seed)
+  (let base (-> seed (gilded-bison-start-shift) (* 3) (+ 21) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 61)))
+  (let hits (tally hits (base 21 2 (sum-of 1 2 2)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "gilded-bison: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn gilded-bison-start-shift (seed) (+ seed (next-gilded-bison-start (gilded-bison-start))))
+
+(defcounter brisk-jackal-start 22 3)
+
+(defn brisk-jackal (seed)
+  (let base (-> seed (brisk-jackal-start-shift) (* 3) (+ 22) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 62)))
+  (let hits (tally hits (base 22 3 (sum-of 1 2 3)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "brisk-jackal: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 3) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn brisk-jackal-start-shift (seed) (+ seed (next-brisk-jackal-start (brisk-jackal-start))))
+
+(defcounter rustic-heron-start 23 4)
+
+(defn rustic-heron (seed)
+  (let base (-> seed (rustic-heron-start-shift) (* 3) (+ 23) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 63)))
+  (let hits (tally hits (base 23 4 (sum-of 1 2 4)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "rustic-heron: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 4) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn rustic-heron-start-shift (seed) (+ seed (next-rustic-heron-start (rustic-heron-start))))
+
+(defcounter olive-kestrel-start 24 5)
+
+(defn olive-kestrel (seed)
+  (let base (-> seed (olive-kestrel-start-shift) (* 3) (+ 24) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 64)))
+  (let hits (tally hits (base 24 5 (sum-of 1 2 5)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "olive-kestrel: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 5) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn olive-kestrel-start-shift (seed) (+ seed (next-olive-kestrel-start (olive-kestrel-start))))
+
+(defcounter zesty-delta-start 25 1)
+
+(defn zesty-delta (seed)
+  (let base (-> seed (zesty-delta-start-shift) (* 3) (+ 25) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 65)))
+  (let hits (tally hits (base 25 1 (sum-of 1 2 1)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "zesty-delta: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn zesty-delta-start-shift (seed) (+ seed (next-zesty-delta-start (zesty-delta-start))))
+
+(defcounter dusky-geyser-start 26 2)
+
+(defn dusky-geyser (seed)
+  (let base (-> seed (dusky-geyser-start-shift) (* 3) (+ 26) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 66)))
+  (let hits (tally hits (base 26 2 (sum-of 1 2 2)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "dusky-geyser: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn dusky-geyser-start-shift (seed) (+ seed (next-dusky-geyser-start (dusky-geyser-start))))
+
+(defcounter fierce-nebula-start 27 3)
+
+(defn fierce-nebula (seed)
+  (let base (-> seed (fierce-nebula-start-shift) (* 3) (+ 27) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 67)))
+  (let hits (tally hits (base 27 3 (sum-of 1 2 3)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "fierce-nebula: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 3) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn fierce-nebula-start-shift (seed) (+ seed (next-fierce-nebula-start (fierce-nebula-start))))
+
+(defcounter gilded-comet-start 28 4)
+
+(defn gilded-comet (seed)
+  (let base (-> seed (gilded-comet-start-shift) (* 3) (+ 28) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 68)))
+  (let hits (tally hits (base 28 4 (sum-of 1 2 4)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "gilded-comet: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 4) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn gilded-comet-start-shift (seed) (+ seed (next-gilded-comet-start (gilded-comet-start))))
+
+(defcounter young-pine-start 29 5)
+
+(defn young-pine (seed)
+  (let base (-> seed (young-pine-start-shift) (* 3) (+ 29) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 69)))
+  (let hits (tally hits (base 29 5 (sum-of 1 2 5)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "young-pine: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 5) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn young-pine-start-shift (seed) (+ seed (next-young-pine-start (young-pine-start))))
+
+(defcounter sleek-otter-start 30 1)
+
+(defn sleek-otter (seed)
+  (let base (-> seed (sleek-otter-start-shift) (* 3) (+ 30) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 70)))
+  (let hits (tally hits (base 30 1 (sum-of 1 2 1)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "sleek-otter: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn sleek-otter-start-shift (seed) (+ seed (next-sleek-otter-start (sleek-otter-start))))
+
+(defcounter vivid-pebble-start 31 2)
+
+(defn vivid-pebble (seed)
+  (let base (-> seed (vivid-pebble-start-shift) (* 3) (+ 31) (clamp 0 500)))
+  (let label (case (rem base 4)
+               (0 "steady")
+               (1 "rising")
+               (2 "falling")
+               (else "noisy")))
+  (let r (escalate (->reading :site label :level base :limit 71)))
+  (let hits (tally hits (base 31 2 (sum-of 1 2 2)) calm?))
+  (unless-zero hits
+    (dotimes (pass (clamp hits 0 2))
+      (when (= pass 0) (println (str "vivid-pebble: " r)))))
+  (loop ((k 0) (acc base))
+    (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
+
+(defn vivid-pebble-start-shift (seed) (+ seed (next-vivid-pebble-start (vivid-pebble-start))))
+
+(defn main ()
+  (println (checked-sum "12" "30"))
+  (println (checked-sum "12" "x"))
+  (println (str "bold-lantern " (bold-lantern 0)))
+  (println (str "swift-geyser " (swift-geyser 1)))
+  (println (str "swift-otter " (swift-otter 2)))
+  (println (str "rustic-falcon " (rustic-falcon 3)))
+  (println (str "fierce-falcon " (fierce-falcon 4)))
+  (println (str "olive-meadow " (olive-meadow 5)))
+  (println (str "lively-fern " (lively-fern 6)))
+  (println (str "tender-beacon " (tender-beacon 7)))
+  (println (str "jolly-thistle " (jolly-thistle 8)))
+  (println (str "vivid-lantern " (vivid-lantern 9)))
+  (println (str "wary-falcon " (wary-falcon 10)))
+  (println (str "dusky-pebble " (dusky-pebble 11)))
+  (println (str "stark-fern " (stark-fern 12)))
+  (println (str "stark-falcon " (stark-falcon 13)))
+  (println (str "keen-tundra " (keen-tundra 14)))
+  (println (str "sunny-beacon " (sunny-beacon 15)))
+  (println (str "witty-meadow " (witty-meadow 16)))
+  (println (str "zesty-walrus " (zesty-walrus 17)))
+  (println (str "lively-zephyr " (lively-zephyr 18)))
+  (println (str "solemn-quarry " (solemn-quarry 19)))
+  (println (str "zesty-willow " (zesty-willow 20)))
+  (println (str "gilded-bison " (gilded-bison 21)))
+  (println (str "brisk-jackal " (brisk-jackal 22)))
+  (println (str "rustic-heron " (rustic-heron 23)))
+  (println (str "olive-kestrel " (olive-kestrel 24)))
+  (println (str "zesty-delta " (zesty-delta 25)))
+  (println (str "dusky-geyser " (dusky-geyser 26)))
+  (println (str "fierce-nebula " (fierce-nebula 27)))
+  (println (str "gilded-comet " (gilded-comet 28)))
+  (println (str "young-pine " (young-pine 29)))
+  (println (str "sleek-otter " (sleek-otter 30)))
+  (println (str "vivid-pebble " (vivid-pebble 31))))

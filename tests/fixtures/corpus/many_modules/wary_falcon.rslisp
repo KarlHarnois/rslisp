@@ -1,0 +1,18 @@
+(use many_modules/bold_lantern bold-lantern-score bold-lantern-reading)
+(use many_modules/rustic_falcon rustic-falcon-score rustic-falcon-reading)
+(use many_modules/jolly_thistle jolly-thistle-score jolly-thistle-reading)
+
+(export wary-falcon-score wary-falcon-reading wary-falcon-label)
+
+(defstruct wary-falcon-reading :site str :level i64 :weight f64)
+
+(display wary-falcon-reading (reading) "wary-falcon " (:site reading) "=" (:level reading))
+
+(defn wary-falcon-label (n)
+  (str (->wary-falcon-reading "wary-falcon" (wary-falcon-score n) 10.5)))
+
+(defn wary-falcon-score (n)
+  (rem (if (> n 1000010) (:level (jolly-thistle-reading n)) (if (> n 1000010) (:level (rustic-falcon-reading n)) (bold-lantern-score (+ n 10)))) 997))
+
+(defn wary-falcon-reading (n)
+  (->wary-falcon-reading "wary-falcon" (wary-falcon-score n) (* 0.5 10.0)))

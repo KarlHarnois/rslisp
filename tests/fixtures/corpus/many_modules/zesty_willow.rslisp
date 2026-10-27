@@ -1,0 +1,18 @@
+(use many_modules/swift_otter swift-otter-score swift-otter-reading)
+(use many_modules/lively_zephyr lively-zephyr-score lively-zephyr-reading)
+(use many_modules/rustic_falcon rustic-falcon-score rustic-falcon-reading)
+
+(export zesty-willow-score zesty-willow-reading zesty-willow-label)
+
+(defstruct zesty-willow-reading :site str :level i64 :weight f64)
+
+(display zesty-willow-reading (reading) "zesty-willow " (:site reading) "=" (:level reading))
+
+(defn zesty-willow-label (n)
+  (str (->zesty-willow-reading "zesty-willow" (zesty-willow-score n) 20.5)))
+
+(defn zesty-willow-score (n)
+  (rem (if (> n 1000020) (:level (rustic-falcon-reading n)) (if (> n 1000020) (:level (lively-zephyr-reading n)) (swift-otter-score (+ n 20)))) 997))
+
+(defn zesty-willow-reading (n)
+  (->zesty-willow-reading "zesty-willow" (zesty-willow-score n) (* 0.5 20.0)))

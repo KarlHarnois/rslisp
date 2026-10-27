@@ -1,0 +1,18 @@
+(use many_modules/lively_orchid lively-orchid-score lively-orchid-reading)
+(use many_modules/mellow_beacon mellow-beacon-score mellow-beacon-reading)
+(use many_modules/umber_valley umber-valley-score umber-valley-reading)
+
+(export lucid-tundra-score lucid-tundra-reading lucid-tundra-label)
+
+(defstruct lucid-tundra-reading :site str :level i64 :weight f64)
+
+(display lucid-tundra-reading (reading) "lucid-tundra " (:site reading) "=" (:level reading))
+
+(defn lucid-tundra-label (n)
+  (str (->lucid-tundra-reading "lucid-tundra" (lucid-tundra-score n) 94.5)))
+
+(defn lucid-tundra-score (n)
+  (rem (if (> n 1000094) (:level (umber-valley-reading n)) (if (> n 1000094) (:level (mellow-beacon-reading n)) (lively-orchid-score (+ n 94)))) 997))
+
+(defn lucid-tundra-reading (n)
+  (->lucid-tundra-reading "lucid-tundra" (lucid-tundra-score n) (* 0.5 94.0)))

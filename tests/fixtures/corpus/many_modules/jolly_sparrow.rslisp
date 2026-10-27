@@ -1,0 +1,18 @@
+(use many_modules/gentle_zephyr gentle-zephyr-score gentle-zephyr-reading)
+(use many_modules/gilded_bison gilded-bison-score gilded-bison-reading)
+(use many_modules/lively_condor lively-condor-score lively-condor-reading)
+
+(export jolly-sparrow-score jolly-sparrow-reading jolly-sparrow-label)
+
+(defstruct jolly-sparrow-reading :site str :level i64 :weight f64)
+
+(display jolly-sparrow-reading (reading) "jolly-sparrow " (:site reading) "=" (:level reading))
+
+(defn jolly-sparrow-label (n)
+  (str (->jolly-sparrow-reading "jolly-sparrow" (jolly-sparrow-score n) 98.5)))
+
+(defn jolly-sparrow-score (n)
+  (rem (if (> n 1000098) (:level (lively-condor-reading n)) (if (> n 1000098) (:level (gilded-bison-reading n)) (gentle-zephyr-score (+ n 98)))) 997))
+
+(defn jolly-sparrow-reading (n)
+  (->jolly-sparrow-reading "jolly-sparrow" (jolly-sparrow-score n) (* 0.5 98.0)))

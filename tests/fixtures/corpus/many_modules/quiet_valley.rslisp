@@ -1,0 +1,18 @@
+(use many_modules/rustic_heron rustic-heron-score rustic-heron-reading)
+(use many_modules/mellow_island mellow-island-score mellow-island-reading)
+(use many_modules/young_pine young-pine-score young-pine-reading)
+
+(export quiet-valley-score quiet-valley-reading quiet-valley-label)
+
+(defstruct quiet-valley-reading :site str :level i64 :weight f64)
+
+(display quiet-valley-reading (reading) "quiet-valley " (:site reading) "=" (:level reading))
+
+(defn quiet-valley-label (n)
+  (str (->quiet-valley-reading "quiet-valley" (quiet-valley-score n) 48.5)))
+
+(defn quiet-valley-score (n)
+  (rem (if (> n 1000048) (:level (young-pine-reading n)) (if (> n 1000048) (:level (mellow-island-reading n)) (rustic-heron-score (+ n 48)))) 997))
+
+(defn quiet-valley-reading (n)
+  (->quiet-valley-reading "quiet-valley" (quiet-valley-score n) (* 0.5 48.0)))

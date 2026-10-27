@@ -1,0 +1,18 @@
+(use many_modules/dusky_pebble dusky-pebble-score dusky-pebble-reading)
+(use many_modules/swift_tundra swift-tundra-score swift-tundra-reading)
+(use many_modules/swift_otter swift-otter-score swift-otter-reading)
+
+(export humble-geyser-score humble-geyser-reading humble-geyser-label)
+
+(defstruct humble-geyser-reading :site str :level i64 :weight f64)
+
+(display humble-geyser-reading (reading) "humble-geyser " (:site reading) "=" (:level reading))
+
+(defn humble-geyser-label (n)
+  (str (->humble-geyser-reading "humble-geyser" (humble-geyser-score n) 92.5)))
+
+(defn humble-geyser-score (n)
+  (rem (if (> n 1000092) (:level (swift-otter-reading n)) (if (> n 1000092) (:level (swift-tundra-reading n)) (dusky-pebble-score (+ n 92)))) 997))
+
+(defn humble-geyser-reading (n)
+  (->humble-geyser-reading "humble-geyser" (humble-geyser-score n) (* 0.5 92.0)))

@@ -1,0 +1,18 @@
+(use many_modules/mellow_lagoon mellow-lagoon-score mellow-lagoon-reading)
+(use many_modules/dusky_jackal dusky-jackal-score dusky-jackal-reading)
+(use many_modules/witty_meadow witty-meadow-score witty-meadow-reading)
+
+(export umber-cedar-score umber-cedar-reading umber-cedar-label)
+
+(defstruct umber-cedar-reading :site str :level i64 :weight f64)
+
+(display umber-cedar-reading (reading) "umber-cedar " (:site reading) "=" (:level reading))
+
+(defn umber-cedar-label (n)
+  (str (->umber-cedar-reading "umber-cedar" (umber-cedar-score n) 70.5)))
+
+(defn umber-cedar-score (n)
+  (rem (if (> n 1000070) (:level (witty-meadow-reading n)) (if (> n 1000070) (:level (dusky-jackal-reading n)) (mellow-lagoon-score (+ n 70)))) 997))
+
+(defn umber-cedar-reading (n)
+  (->umber-cedar-reading "umber-cedar" (umber-cedar-score n) (* 0.5 70.0)))

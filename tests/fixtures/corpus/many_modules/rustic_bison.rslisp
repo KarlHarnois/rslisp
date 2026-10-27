@@ -1,0 +1,18 @@
+(use many_modules/olive_kestrel olive-kestrel-score olive-kestrel-reading)
+(use many_modules/sleek_otter sleek-otter-score sleek-otter-reading)
+(use many_modules/noble_tundra noble-tundra-score noble-tundra-reading)
+
+(export rustic-bison-score rustic-bison-reading rustic-bison-label)
+
+(defstruct rustic-bison-reading :site str :level i64 :weight f64)
+
+(display rustic-bison-reading (reading) "rustic-bison " (:site reading) "=" (:level reading))
+
+(defn rustic-bison-label (n)
+  (str (->rustic-bison-reading "rustic-bison" (rustic-bison-score n) 56.5)))
+
+(defn rustic-bison-score (n)
+  (rem (if (> n 1000056) (:level (noble-tundra-reading n)) (if (> n 1000056) (:level (sleek-otter-reading n)) (olive-kestrel-score (+ n 56)))) 997))
+
+(defn rustic-bison-reading (n)
+  (->rustic-bison-reading "rustic-bison" (rustic-bison-score n) (* 0.5 56.0)))

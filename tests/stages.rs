@@ -58,3 +58,14 @@ fn run_fixtures() {
         insta::assert_snapshot!(reports.report(path));
     });
 }
+
+#[test]
+fn corpus_fixtures() {
+    let fixtures = "fixtures/corpus/*.rslisp";
+    let mut paths = Vec::new();
+    insta::glob!(fixtures, |path| paths.push(PathBuf::from(path)));
+    let reports = FixtureReports::compute(paths, |path| Fixture::load(path).run_report());
+    insta::glob!(fixtures, |path| {
+        insta::assert_snapshot!(reports.report(path));
+    });
+}

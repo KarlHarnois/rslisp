@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/corpus/deep_nesting.rslisp
+---
+arithmetic: 30
+calls: 954
+conditions: -191 599
+blocks: 600
+closures: 100
+matches: 20 24

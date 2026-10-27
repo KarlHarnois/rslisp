@@ -1,0 +1,18 @@
+(use many_modules/jolly_thistle jolly-thistle-score jolly-thistle-reading)
+(use many_modules/wary_falcon wary-falcon-score wary-falcon-reading)
+(use many_modules/tender_beacon tender-beacon-score tender-beacon-reading)
+
+(export lively-zephyr-score lively-zephyr-reading lively-zephyr-label)
+
+(defstruct lively-zephyr-reading :site str :level i64 :weight f64)
+
+(display lively-zephyr-reading (reading) "lively-zephyr " (:site reading) "=" (:level reading))
+
+(defn lively-zephyr-label (n)
+  (str (->lively-zephyr-reading "lively-zephyr" (lively-zephyr-score n) 18.5)))
+
+(defn lively-zephyr-score (n)
+  (rem (if (> n 1000018) (:level (tender-beacon-reading n)) (if (> n 1000018) (:level (wary-falcon-reading n)) (jolly-thistle-score (+ n 18)))) 997))
+
+(defn lively-zephyr-reading (n)
+  (->lively-zephyr-reading "lively-zephyr" (lively-zephyr-score n) (* 0.5 18.0)))

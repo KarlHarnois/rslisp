@@ -1,0 +1,15 @@
+
+(export bold-lantern-score bold-lantern-reading bold-lantern-label)
+
+(defstruct bold-lantern-reading :site str :level i64 :weight f64)
+
+(display bold-lantern-reading (reading) "bold-lantern " (:site reading) "=" (:level reading))
+
+(defn bold-lantern-label (n)
+  (str (->bold-lantern-reading "bold-lantern" (bold-lantern-score n) 0.5)))
+
+(defn bold-lantern-score (n)
+  (rem (+ (* n 7) 3) 997))
+
+(defn bold-lantern-reading (n)
+  (->bold-lantern-reading "bold-lantern" (bold-lantern-score n) (* 0.5 0.0)))

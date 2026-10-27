@@ -1,0 +1,18 @@
+(use many_modules/dusky_pebble dusky-pebble-score dusky-pebble-reading)
+(use many_modules/sleek_condor sleek-condor-score sleek-condor-reading)
+(use many_modules/zesty_walrus zesty-walrus-score zesty-walrus-reading)
+
+(export solemn-pine-score solemn-pine-reading solemn-pine-label)
+
+(defstruct solemn-pine-reading :site str :level i64 :weight f64)
+
+(display solemn-pine-reading (reading) "solemn-pine " (:site reading) "=" (:level reading))
+
+(defn solemn-pine-label (n)
+  (str (->solemn-pine-reading "solemn-pine" (solemn-pine-score n) 71.5)))
+
+(defn solemn-pine-score (n)
+  (rem (if (> n 1000071) (:level (zesty-walrus-reading n)) (if (> n 1000071) (:level (sleek-condor-reading n)) (dusky-pebble-score (+ n 71)))) 997))
+
+(defn solemn-pine-reading (n)
+  (->solemn-pine-reading "solemn-pine" (solemn-pine-score n) (* 0.5 71.0)))
