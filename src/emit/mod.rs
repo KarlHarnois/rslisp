@@ -10,6 +10,7 @@ mod opaque_borrows;
 mod operator;
 mod plan;
 mod problems;
+mod result_borrows;
 mod runtime;
 mod signature_borrows;
 mod stored_functions;
