@@ -1,17 +1,12 @@
-use std::fmt;
 use std::io;
 use std::path::Path;
-use std::process::ExitCode;
 
-#[derive(Debug)]
-pub struct BenchFailure {
-    message: String,
-}
+use crate::failure::TaskFailure;
 
-impl BenchFailure {
-    pub fn tool_missing(tool: &str, error: io::Error) -> Self {
+impl TaskFailure {
+    pub fn valgrind_missing(error: io::Error) -> Self {
         Self::new(format!(
-            "cannot run `{tool}`: {error}. Run the benchmark inside `nix develop` on Linux."
+            "cannot run `valgrind`: {error}. Run the benchmark inside `nix develop` on Linux."
         ))
     }
 
@@ -39,28 +34,5 @@ impl BenchFailure {
             "cannot read the line `{line}` of `{}`",
             path.display()
         ))
-    }
-
-    pub fn unreadable(path: &Path, error: io::Error) -> Self {
-        Self::new(format!("cannot read `{}`: {error}", path.display()))
-    }
-
-    pub fn unwritable(path: &Path, error: io::Error) -> Self {
-        Self::new(format!("cannot write `{}`: {error}", path.display()))
-    }
-
-    pub fn report(&self) -> ExitCode {
-        eprintln!("error: {self}");
-        ExitCode::FAILURE
-    }
-
-    fn new(message: String) -> Self {
-        Self { message }
-    }
-}
-
-impl fmt::Display for BenchFailure {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.message)
     }
 }

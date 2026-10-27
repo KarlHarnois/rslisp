@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-use crate::failure::GateFailure;
+use crate::failure::TaskFailure;
 
 pub struct EmittedLints<'a> {
     root: &'a Path,
@@ -40,10 +40,10 @@ impl<'a> EmittedLints<'a> {
         Self { root }
     }
 
-    pub fn run(&self) -> Result<Vec<LintedProgram>, GateFailure> {
+    pub fn run(&self) -> Result<Vec<LintedProgram>, TaskFailure> {
         let directory = self.root.join(Self::WORK_DIRECTORY);
         fs::create_dir_all(&directory)
-            .map_err(|error| GateFailure::unwritable(&directory, error))?;
+            .map_err(|error| TaskFailure::unwritable(&directory, error))?;
         let mut linted = Vec::new();
         for (fixture, program) in self.emitted_programs()? {
             if let Some(warnings) = Self::lint(&directory, &fixture, &program)? {
@@ -53,20 +53,20 @@ impl<'a> EmittedLints<'a> {
         Ok(linted)
     }
 
-    fn emitted_programs(&self) -> Result<Vec<(String, String)>, GateFailure> {
+    fn emitted_programs(&self) -> Result<Vec<(String, String)>, TaskFailure> {
         let snapshots = self.root.join(Self::SNAPSHOTS);
         let entries =
-            fs::read_dir(&snapshots).map_err(|error| GateFailure::unreadable(&snapshots, error))?;
+            fs::read_dir(&snapshots).map_err(|error| TaskFailure::unreadable(&snapshots, error))?;
         let mut programs = Vec::new();
         for entry in entries {
             let path = entry
-                .map_err(|error| GateFailure::unreadable(&snapshots, error))?
+                .map_err(|error| TaskFailure::unreadable(&snapshots, error))?
                 .path();
             let Some(fixture) = Self::emit_fixture(&path) else {
                 continue;
             };
             let text =
-                fs::read_to_string(&path).map_err(|error| GateFailure::unreadable(&path, error))?;
+                fs::read_to_string(&path).map_err(|error| TaskFailure::unreadable(&path, error))?;
             if let Some(program) = Self::program(&text) {
                 programs.push((fixture, program.to_string()));
             }
@@ -90,12 +90,12 @@ impl<'a> EmittedLints<'a> {
             .filter(|body| !body.starts_with(Self::DIAGNOSTIC_START))
     }
 
-    fn lint(directory: &Path, fixture: &str, program: &str) -> Result<Option<String>, GateFailure> {
+    fn lint(directory: &Path, fixture: &str, program: &str) -> Result<Option<String>, TaskFailure> {
         let source = directory.join(format!("{fixture}.rs"));
-        fs::write(&source, program).map_err(|error| GateFailure::unwritable(&source, error))?;
+        fs::write(&source, program).map_err(|error| TaskFailure::unwritable(&source, error))?;
         let output = Self::clippy(directory, &source)
             .output()
-            .map_err(GateFailure::clippy_missing)?;
+            .map_err(|error| TaskFailure::tool_missing(Self::CLIPPY, error))?;
         if output.status.success() {
             return Ok(None);
         }

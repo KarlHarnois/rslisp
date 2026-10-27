@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use rslisp::language::Language;
 
-use super::failure::BenchFailure;
+use crate::failure::TaskFailure;
 
 pub struct Corpus {
     directory: PathBuf,
@@ -16,9 +16,9 @@ impl Corpus {
         Self { directory }
     }
 
-    pub fn programs(&self) -> Result<Vec<PathBuf>, BenchFailure> {
+    pub fn programs(&self) -> Result<Vec<PathBuf>, TaskFailure> {
         let entries = fs::read_dir(&self.directory)
-            .map_err(|error| BenchFailure::unreadable(&self.directory, error))?;
+            .map_err(|error| TaskFailure::unreadable(&self.directory, error))?;
         let mut programs: Vec<PathBuf> = entries
             .filter_map(|entry| entry.ok().map(|entry| entry.path()))
             .filter(|path| Self::is_program(path))

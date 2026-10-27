@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use super::cost::{Cost, EventLayout};
-use super::failure::BenchFailure;
 use super::measurement::Measurement;
+use crate::failure::TaskFailure;
 
 pub struct ProfileReader<'a> {
     crate_name: &'a str,
@@ -15,7 +15,7 @@ impl<'a> ProfileReader<'a> {
         Self { crate_name }
     }
 
-    pub fn read(&self, profile: &str) -> Result<Measurement, BenchFailure> {
+    pub fn read(&self, profile: &str) -> Result<Measurement, TaskFailure> {
         let mut scan = ProfileScan::new(self);
         profile.lines().for_each(|line| scan.consume(line));
         scan.finish()
@@ -118,13 +118,13 @@ impl<'reader, 'text> ProfileScan<'reader, 'text> {
         *self.stages.entry(stage).or_default() += cost;
     }
 
-    fn finish(self) -> Result<Measurement, BenchFailure> {
+    fn finish(self) -> Result<Measurement, TaskFailure> {
         let layout = self
             .layout
-            .ok_or(BenchFailure::malformed_profile("events"))?;
+            .ok_or(TaskFailure::malformed_profile("events"))?;
         let summary = self
             .summary
-            .ok_or(BenchFailure::malformed_profile("summary"))?;
+            .ok_or(TaskFailure::malformed_profile("summary"))?;
         Ok(Measurement::new(self.stages, layout.cost(&summary)))
     }
 

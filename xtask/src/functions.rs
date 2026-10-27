@@ -7,7 +7,7 @@ use syn::visit::{self, Visit};
 use syn::{Block, Ident, ImplItemFn, ItemFn, ItemImpl, ItemMod, ItemTrait, Signature, TraitItemFn};
 
 use crate::complexity::ComplexityCounter;
-use crate::failure::GateFailure;
+use crate::failure::TaskFailure;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LineSpan {
@@ -56,11 +56,11 @@ impl SourceTree {
         }
     }
 
-    pub fn functions(&self) -> Result<Vec<SourceFunction>, GateFailure> {
+    pub fn functions(&self) -> Result<Vec<SourceFunction>, TaskFailure> {
         let directory = self.root.join(Self::DIRECTORY);
         let mut files = Vec::new();
         Self::collect_files(&directory, &mut files)
-            .map_err(|error| GateFailure::unreadable(&directory, error))?;
+            .map_err(|error| TaskFailure::unreadable(&directory, error))?;
         files.sort();
         let mut functions = Vec::new();
         for file in files {
@@ -84,11 +84,11 @@ impl SourceTree {
         Ok(())
     }
 
-    fn functions_in(&self, path: &Path) -> Result<Vec<SourceFunction>, GateFailure> {
+    fn functions_in(&self, path: &Path) -> Result<Vec<SourceFunction>, TaskFailure> {
         let text =
-            fs::read_to_string(path).map_err(|error| GateFailure::unreadable(path, error))?;
+            fs::read_to_string(path).map_err(|error| TaskFailure::unreadable(path, error))?;
         let syntax =
-            syn::parse_file(&text).map_err(|error| GateFailure::unparsable(path, &error))?;
+            syn::parse_file(&text).map_err(|error| TaskFailure::unparsable(path, &error))?;
         Ok(FunctionCollector::collect(self.relative(path), &syntax))
     }
 

@@ -17,10 +17,10 @@ use clap::Subcommand;
 use rslisp::language::Language;
 
 use crate::cargo::Cargo;
+use crate::failure::TaskFailure;
 use callgrind::Callgrind;
 use comparison::Comparison;
 use corpus::Corpus;
-use failure::BenchFailure;
 use fixed_seed::FixedSeedLibrary;
 use results::ResultSet;
 
@@ -69,7 +69,7 @@ impl BenchTask {
         }
     }
 
-    fn compare(baseline: &Path, candidate: &Path) -> Result<String, BenchFailure> {
+    fn compare(baseline: &Path, candidate: &Path) -> Result<String, TaskFailure> {
         let baseline = ResultSet::load(baseline)?;
         let candidate = ResultSet::load(candidate)?;
         Ok(Comparison::new(&baseline, &candidate).to_string())
@@ -99,7 +99,7 @@ impl<'a> FrontEndBenchmark<'a> {
         &self,
         workspace: Option<PathBuf>,
         save: Option<PathBuf>,
-    ) -> Result<String, BenchFailure> {
+    ) -> Result<String, TaskFailure> {
         let workspace = Self::absolute(&workspace.unwrap_or_else(|| self.root.to_path_buf()))?;
         let compiler = self.place_at_fixed_path(&Self::build_compiler(&workspace)?)?;
         let fixed_seed = FixedSeedLibrary::new(self.root).build()?;
@@ -111,7 +111,7 @@ impl<'a> FrontEndBenchmark<'a> {
         Ok(results.to_string())
     }
 
-    fn profile_corpus(&self, callgrind: &Callgrind) -> Result<ResultSet, BenchFailure> {
+    fn profile_corpus(&self, callgrind: &Callgrind) -> Result<ResultSet, TaskFailure> {
         let results = self
             .corpus
             .programs()?
@@ -121,7 +121,7 @@ impl<'a> FrontEndBenchmark<'a> {
         Ok(ResultSet::new(results))
     }
 
-    fn build_compiler(workspace: &Path) -> Result<PathBuf, BenchFailure> {
+    fn build_compiler(workspace: &Path) -> Result<PathBuf, TaskFailure> {
         let target = workspace.join(Self::TARGET_DIRECTORY);
         let output = Cargo::command()
             .args(Self::RELEASE_BUILD)
@@ -130,24 +130,24 @@ impl<'a> FrontEndBenchmark<'a> {
             .arg(&target)
             .current_dir(workspace)
             .output()
-            .map_err(|error| BenchFailure::tool_missing("cargo", error))?;
+            .map_err(|error| TaskFailure::tool_missing("cargo", error))?;
         if !output.status.success() {
-            return Err(BenchFailure::build_failed("the compiler", &output.stderr));
+            return Err(TaskFailure::build_failed("the compiler", &output.stderr));
         }
         Ok(target.join(Self::RELEASE_PROFILE).join(Language::NAME))
     }
 
-    fn place_at_fixed_path(&self, compiler: &Path) -> Result<PathBuf, BenchFailure> {
+    fn place_at_fixed_path(&self, compiler: &Path) -> Result<PathBuf, TaskFailure> {
         let directory = self.root.join(Self::FIXED_COMPILER_DIRECTORY);
         fs::create_dir_all(&directory)
-            .map_err(|error| BenchFailure::unwritable(&directory, error))?;
+            .map_err(|error| TaskFailure::unwritable(&directory, error))?;
         let placed = directory.join(Language::NAME);
-        fs::copy(compiler, &placed).map_err(|error| BenchFailure::unwritable(&placed, error))?;
+        fs::copy(compiler, &placed).map_err(|error| TaskFailure::unwritable(&placed, error))?;
         Ok(placed)
     }
 
-    fn absolute(path: &Path) -> Result<PathBuf, BenchFailure> {
+    fn absolute(path: &Path) -> Result<PathBuf, TaskFailure> {
         path.canonicalize()
-            .map_err(|error| BenchFailure::unreadable(path, error))
+            .map_err(|error| TaskFailure::unreadable(path, error))
     }
 }
