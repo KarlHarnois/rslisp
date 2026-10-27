@@ -15,7 +15,8 @@ pub(super) struct LoweredAssociatedValue {
 }
 
 pub(super) struct WrittenProjection {
-    projected: Type,
+    projection: BindingId,
+    owner: Type,
     span: Span,
 }
 
@@ -105,11 +106,12 @@ impl TypeChecker {
     }
 
     pub(super) fn record_written_projection(&mut self, lowered: &Type, span: Span) {
-        if let Type::Named(binding, _) = lowered
+        if let Type::Named(binding, arguments) = lowered
             && self.traits.projections().is_projection(*binding)
         {
             self.written_projections.push(WrittenProjection {
-                projected: lowered.clone(),
+                projection: *binding,
+                owner: arguments[0].clone(),
                 span,
             });
         }
@@ -129,25 +131,25 @@ impl TypeChecker {
     }
 
     fn check_written_projection(&self, written: &WrittenProjection) -> Result<(), Diagnostic> {
-        let Type::Named(projection, arguments) = &written.projected else {
-            return Ok(());
-        };
-        let owner = &arguments[0];
         let projections = self.traits.projections();
         let trait_binding = projections
-            .associated(*projection)
+            .associated(written.projection)
             .expect("a written projection names a declared associated type")
             .trait_binding;
         let names = ProjectionNames {
-            projection: self.bindings.get(*projection).name(),
+            projection: self.bindings.get(written.projection).name(),
             trait_name: self.bindings.get(trait_binding).name(),
-            owner: &self.display().show(owner),
+            owner: &self.display().show(&written.owner),
         };
-        match owner {
+        match &written.owner {
             Type::Generic(generic) if !self.generic_implements(*generic, trait_binding) => {
                 Err(TypeProblems::projection_without_bound(&names, written.span))
             }
-            _ if owner.is_unknown() || projections.normalize(&written.projected).is_some() => {
+            _ if written.owner.is_unknown()
+                || projections
+                    .normalize_projection(written.projection, &written.owner)
+                    .is_some() =>
+            {
                 Ok(())
             }
             _ => Err(TypeProblems::projection_without_implementor(
