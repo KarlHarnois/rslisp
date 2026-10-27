@@ -11,7 +11,7 @@ This file and the reference files it names are the living reference for working 
 | Prelude | The language's library under `prelude/`, written in the language and embedded in the compiler |
 | Stage | One step of the compiler, such as reading, expansion or emission |
 | Fixture | A source file under `tests/fixtures/` whose output an insta snapshot records |
-| The Commands | The commands in the Commands section |
+| Working commands | The three commands at the top of the Commands section |
 
 ## Principles
 
@@ -113,7 +113,7 @@ The exceptions are:
 **Build, test and run every tool inside `nix develop`.** The host `PATH` can carry other versions of `cargo` and `rustc`.
 
 - If `direnv allow` has run in this repository, `.envrc` loads the same dev shell through direnv.
-- Run the Commands as written. Their `nix develop -c` prefix makes them work without direnv.
+- Run the working commands as written. Their `nix develop -c` prefix makes them work without direnv.
 - Stage each new file by path with `git add` before any `nix` command: flake commands ignore files outside the git index.
 
 ### Commits
@@ -124,7 +124,7 @@ The exceptions are:
 
 ## Commands
 
-**The working commands are the three commands below.** Run them while you work.
+**Run the working commands while you work.**
 
 ```sh
 nix develop -c cargo fmt --all --check
