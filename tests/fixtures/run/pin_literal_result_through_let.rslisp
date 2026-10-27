@@ -1,0 +1,8 @@
+(defn status () (pair 200 "ok"))
+
+(defn code ((value (pair u16 (ref str))))
+  (let-pair (number text) value number))
+
+(defn main ()
+  (let reply (status))
+  (println (code reply)))

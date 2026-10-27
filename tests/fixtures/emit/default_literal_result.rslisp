@@ -1,0 +1,4 @@
+(defn answer () 42)
+
+(defn main ()
+  (println (answer)))

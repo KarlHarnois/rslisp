@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/literal_result_two_uses.rslisp
+---
+error[L0401]: mismatched types
+ --> check/literal_result_two_uses.rslisp:8:18
+  |
+8 |   (println (code (port)))
+  |                  ^^^^^^ expected `u16`, found `i64`

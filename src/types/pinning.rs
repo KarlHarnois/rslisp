@@ -107,7 +107,7 @@ impl InstantiationReport {
                             typed
                                 .literal_generics
                                 .get(&param.id)
-                                .map(|primitive| (param.id, *primitive))
+                                .map(|literal| (param.id, literal.default_type()))
                         })
                         .collect(),
                     body: definition.scheme.body.clone(),
@@ -435,9 +435,10 @@ impl LiteralDefaults {
             let Type::Generic(generic) = parameter else {
                 continue;
             };
-            let Some(default) = typed.literal_generics.get(generic) else {
+            let Some(literal) = typed.literal_generics.get(generic) else {
                 continue;
             };
+            let default = literal.default_type();
             let Some(generic_index) = Self::generic_index(definition, *generic) else {
                 continue;
             };
@@ -517,7 +518,7 @@ impl LiteralDefaults {
         let Type::Generic(generic) = shown else {
             return display.show(shown);
         };
-        let Some(default) = typed.literal_generics.get(generic) else {
+        let Some(literal) = typed.literal_generics.get(generic) else {
             return display.show(shown);
         };
         let Some(generic_index) = Self::generic_index(definition, *generic) else {
@@ -526,7 +527,7 @@ impl LiteralDefaults {
         Self::call_types(entry, generic_index, display)
             .first()
             .cloned()
-            .unwrap_or_else(|| default.name().to_string())
+            .unwrap_or_else(|| literal.default_type().name().to_string())
     }
 }
 

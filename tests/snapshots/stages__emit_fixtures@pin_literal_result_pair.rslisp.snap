@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/pin_literal_result_pair.rslisp
+---
+fn status() -> (u16, &'static str) {
+    (200_u16, "ok")
+}
+
+fn code(value: (u16, &str)) -> String {
+    let (number, text) = value;
+    format!("{} {}", number, text)
+}
+
+fn main() {
+    println!("{}", code(status()))
+}

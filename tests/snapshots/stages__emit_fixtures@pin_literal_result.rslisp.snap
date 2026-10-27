@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/pin_literal_result.rslisp
+---
+fn port() -> u16 {
+    8080
+}
+
+fn code(value: u16) -> u16 {
+    value
+}
+
+fn main() {
+    println!("{}", code(port()))
+}
