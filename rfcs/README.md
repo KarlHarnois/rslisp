@@ -5,7 +5,7 @@
 ## Names
 
 - **Name each RFC `rfcs/NNNN-short-name.md`.** Use four digits and a short name in lower case with hyphens between words.
-- **Number each RFC with four digits.** Numbers continue after `0037`, so the next RFC is `0038`.
+- **Number each RFC with four digits.** `D1` to `D37` take the numbers up to `0037`. Give a new RFC the number after the highest RFC file in this folder.
 
 ## Lifecycle
 
