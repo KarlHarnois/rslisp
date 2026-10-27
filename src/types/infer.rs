@@ -80,6 +80,7 @@ struct TrySource {
 struct TryConversion {
     enum_binding: BindingId,
     variant: usize,
+    payload: Type,
 }
 
 impl TrySourceKind {
@@ -1592,7 +1593,7 @@ impl TypeChecker {
             .expect("a result source carries an error type");
         let target_error = target.error.expect("a result target carries an error type");
         let conversion = self.conversion_variant(&target_error, &source_error, span)?;
-        self.record_conversion(conversion, self.unifier.resolve(&source_error));
+        self.record_conversion(conversion);
         Ok(())
     }
 
@@ -1656,6 +1657,7 @@ impl TypeChecker {
         Ok(TryConversion {
             enum_binding: *binding,
             variant: *variant,
+            payload: payload.clone(),
         })
     }
 
@@ -1681,16 +1683,15 @@ impl TypeChecker {
         }
     }
 
-    fn record_conversion(&mut self, conversion: TryConversion, error: Type) {
-        let known = self
-            .conversions
-            .iter()
-            .any(|known| known.enum_binding == conversion.enum_binding && known.error == error);
+    fn record_conversion(&mut self, conversion: TryConversion) {
+        let known = self.conversions.iter().any(|known| {
+            known.enum_binding == conversion.enum_binding && known.error == conversion.payload
+        });
         if !known {
             self.conversions.push(TypedConversion {
                 enum_binding: conversion.enum_binding,
                 variant: conversion.variant,
-                error,
+                error: conversion.payload,
             });
         }
     }

@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/projection_shared_value.rslisp
+---
+(type show-count (fn (i32) unit))
+(type show-error (fn (parse-int-error) string))
+(type main (fn () unit))

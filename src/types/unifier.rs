@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use super::projection::ProjectionTable;
 use super::ty::{Bound, GenericId, Type, TypeVar};
-use crate::core::PrimitiveType;
+use crate::core::{BindingId, PrimitiveType};
 use crate::source::Span;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -185,6 +185,12 @@ impl Unifier {
             return self.unify(&left, &right, span);
         }
         match (left, right) {
+            (Type::Named(projection, _), Type::Named(other, _))
+                if projection == other && self.awaits_shared_owner(*projection, left, right) =>
+            {
+                self.defer_once(left, right, span);
+                Ok(())
+            }
             (Type::Named(left, left_arguments), Type::Named(right, right_arguments))
                 if left == right =>
             {
@@ -196,8 +202,7 @@ impl Unifier {
     }
 
     fn normalized_pair(&self, left: &Type, right: &Type) -> Option<(Type, Type)> {
-        let open = self.resolve(left).has_vars() || self.resolve(right).has_vars();
-        if open && left.shares_head_with(right) {
+        if self.is_open_pair(left, right) && self.shares_rigid_head(left, right) {
             return None;
         }
         match (self.normalized(left), self.normalized(right)) {
@@ -207,6 +212,20 @@ impl Unifier {
                 normalized_right.unwrap_or_else(|| right.clone()),
             )),
         }
+    }
+
+    fn awaits_shared_owner(&self, projection: BindingId, left: &Type, right: &Type) -> bool {
+        self.projections.is_projection(projection) && self.is_open_pair(left, right)
+    }
+
+    fn is_open_pair(&self, left: &Type, right: &Type) -> bool {
+        self.resolve(left).has_vars() || self.resolve(right).has_vars()
+    }
+
+    fn shares_rigid_head(&self, left: &Type, right: &Type) -> bool {
+        let projected =
+            matches!(left, Type::Named(binding, _) if self.projections.is_projection(*binding));
+        left.shares_head_with(right) && !projected
     }
 
     fn normalized(&self, value: &Type) -> Option<Type> {

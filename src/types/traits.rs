@@ -151,6 +151,14 @@ impl TraitTable {
         self.traits.get(&binding)
     }
 
+    pub fn has_associated_type(&self, binding: BindingId) -> bool {
+        let declares_projection = !self.projections.declared_by(binding).is_empty();
+        declares_projection
+            || self
+                .get(binding)
+                .is_some_and(|rust_trait| rust_trait.associated.is_some())
+    }
+
     pub fn set_implementor_scheme(&mut self, binding: BindingId, body: &Type, scheme: Scheme) {
         if let Some(rust_trait) = self.traits.get_mut(&binding)
             && let Some(implementor) = rust_trait
