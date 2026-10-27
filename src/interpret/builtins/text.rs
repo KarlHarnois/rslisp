@@ -128,6 +128,13 @@ impl<'a> TextOperations<'a> {
         Ok(self.string_value(text.strip_suffix(suffix).unwrap_or(text).to_string()))
     }
 
+    pub fn string_strip_prefix(&self) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(2)?;
+        let text = self.arguments.string(0)?;
+        let prefix = self.arguments.string(1)?;
+        Ok(self.string_value(text.strip_prefix(prefix).unwrap_or(text).to_string()))
+    }
+
     fn escape(&self, braces: &[(char, &'static str); 2]) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(1)?;
         let text = self.arguments.string(0)?;

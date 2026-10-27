@@ -21,7 +21,7 @@ pub struct BuiltinCall {
 }
 
 impl BuiltinCall {
-    const IMPLEMENTATIONS: [(Builtin, Implementation); 31] = [
+    const IMPLEMENTATIONS: [(Builtin, Implementation); 32] = [
         (Builtin::First, |operations, _| operations.lists.first()),
         (Builtin::Rest, |operations, _| operations.lists.rest()),
         (Builtin::List, |operations, _| operations.lists.list()),
@@ -96,6 +96,9 @@ impl BuiltinCall {
         }),
         (Builtin::StringStripSuffix, |operations, _| {
             operations.text.string_strip_suffix()
+        }),
+        (Builtin::StringStripPrefix, |operations, _| {
+            operations.text.string_strip_prefix()
         }),
     ];
 
