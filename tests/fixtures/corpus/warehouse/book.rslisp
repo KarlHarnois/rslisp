@@ -1,0 +1,78 @@
+(use warehouse/model item event ledger-error entry ->entry)
+
+(export book ->book apply-all)
+
+(defstruct book :stock (sorted-map string item) :entries (vec entry) :rejected (vec string))
+
+(type apply-all (fn ((sorted-map string item) (ref (vec event))) book))
+(defn apply-all (stock events)
+  (fold (iter events) (->book stock (vec) (vec)) apply-event))
+
+(type apply-event (fn (book (ref event)) book))
+(defn apply-event (current event)
+  (match (step (:stock current) event)
+    ((ok changed) (record current changed))
+    ((err problem) (reject current problem))))
+
+(type record (fn (book item) book))
+(defn record (current changed)
+  (let-fields (book (stock entries rejected)) current
+    (let before (quantity-of (ref stock) (:sku changed)))
+    (let growing entries)
+    (push! growing (->entry (+ (len growing) 1)
+                            (clone (:sku changed))
+                            (- (signed (:quantity changed)) (signed before))
+                            (:quantity changed)))
+    (let sku (clone (:sku changed)))
+    (->book (assoc stock sku changed) growing rejected)))
+
+(type reject (fn (book ledger-error) book))
+(defn reject (current problem)
+  (let-fields (book (stock entries rejected)) current
+    (let growing rejected)
+    (push! growing (to-string problem))
+    (->book stock entries growing)))
+
+(type step (fn ((ref (sorted-map string item)) (ref event)) (result item ledger-error)))
+(defn step (stock event)
+  (match event
+    ((receive sku amount) (map-ok (find-item stock sku) (fn (current) (restock current (deref amount)))))
+    ((ship sku amount) (then-ok (find-item stock sku) (fn (current) (ship current (deref amount)))))
+    ((adjust sku delta) (then-ok (find-item stock sku) (fn (current) (adjust current (deref delta)))))
+    ((reprice sku cents) (map-ok (find-item stock sku) (fn (current) (reprice current (deref cents)))))))
+
+(type find-item (fn ((ref (sorted-map string item)) (ref string)) (result (ref item) ledger-error)))
+(defn find-item (stock sku)
+  (ok-or (lookup stock (as-str sku)) (ledger-error/unknown-sku (clone sku))))
+
+(type quantity-of (fn ((ref (sorted-map string item)) (ref string)) u32))
+(defn quantity-of (stock sku)
+  (match (lookup stock (as-str sku))
+    ((some current) (:quantity current))
+    (none 0)))
+
+(type restock (fn ((ref item) u32) item))
+(defn restock (current amount)
+  (let quantity (+ (:quantity current) amount))
+  (assoc (clone current) :quantity quantity))
+
+(type ship (fn ((ref item) u32) (result item ledger-error)))
+(defn ship (current amount)
+  (let available (:quantity current))
+  (if (> amount available)
+      (err (ledger-error/short-stock (clone (:sku current)) amount available))
+      (ok (assoc (clone current) :quantity (- available amount)))))
+
+(type adjust (fn ((ref item) i64) (result item ledger-error)))
+(defn adjust (current delta)
+  (let counted (+ (signed (:quantity current)) delta))
+  (if (< counted 0)
+      (err (ledger-error/short-stock (clone (:sku current)) (narrow (- 0 delta)) (:quantity current)))
+      (ok (assoc (clone current) :quantity (narrow counted)))))
+
+(type reprice (fn ((ref item) u64) item))
+(defn reprice (current cents)
+  (assoc (clone current) :unit-cents cents))
+
+(def signed (rust "i64::from({0})" (fn (u32) i64)))
+(def narrow (rust "{0} as u32" (fn (i64) u32)))

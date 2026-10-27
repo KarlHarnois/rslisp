@@ -1,0 +1,171 @@
+(use warehouse/model item event ledger-error entry)
+(use warehouse/parsing parse-stock parse-events)
+(use warehouse/book book apply-all)
+(use warehouse/reports print-summary print-low-stock print-categories print-top-value print-activity)
+
+(def stock-text
+  (str "BOLT-01,short bolt,32,3043,25\n"
+       "BOLT-02,short bolt,3,3447,40\n"
+       "BOLT-03,medium bolt,83,217,20\n"
+       "BOLT-04,small bolt,47,1926,20\n"
+       "BOLT-05,long bolt,69,422,20\n"
+       "NUT-01,small nut,93,892,40\n"
+       "NUT-02,large nut,23,3758,40\n"
+       "NUT-03,medium nut,97,3270,10\n"
+       "NUT-04,medium nut,79,2534,40\n"
+       "NUT-05,medium nut,16,12,10\n"
+       "GEAR-01,medium gear,99,887,20\n"
+       "GEAR-02,medium gear,37,1289,20\n"
+       "GEAR-03,short gear,112,2781,20\n"
+       "GEAR-04,medium gear,120,3972,20\n"
+       "GEAR-05,long gear,38,93,25\n"
+       "PIPE-01,long pipe,21,3838,20\n"
+       "PIPE-02,large pipe,8,1364,25\n"
+       "PIPE-03,short pipe,75,18,25\n"
+       "PIPE-04,small pipe,39,1460,25\n"
+       "PIPE-05,long pipe,89,1298,20\n"
+       "VALVE-01,long valve,60,2891,20\n"
+       "VALVE-02,small valve,32,3999,10\n"
+       "VALVE-03,large valve,108,1660,10\n"
+       "VALVE-04,short valve,100,1720,25\n"
+       "VALVE-05,long valve,74,3450,10\n"
+       "HOSE-01,long hose,5,2903,20\n"
+       "HOSE-02,short hose,25,492,20\n"
+       "HOSE-03,long hose,44,2104,25\n"
+       "HOSE-04,short hose,32,3181,40\n"
+       "HOSE-05,small hose,75,3070,25"))
+
+(def morning-events
+  (str "receive HOSE-03 32\n"
+       "ship PIPE-02 22\n"
+       "ship VALVE-03 44\n"
+       "ship NUT-01 10\n"
+       "reprice NUT-05 336\n"
+       "ship PIPE-05 3\n"
+       "ship PIPE-05 30\n"
+       "receive BOLT-05 45\n"
+       "adjust GEAR-01 1\n"
+       "ship BOLT-05 27\n"
+       "ship GEAR-04 27\n"
+       "reprice GEAR-05 1862\n"
+       "ship PIPE-01 31\n"
+       "ship PIPE-01 8\n"
+       "reprice PIPE-03 742\n"
+       "ship BOLT-03 36\n"
+       "ship BOLT-03 23\n"
+       "ship WIDGET-99 4\n"
+       "receive VALVE-02 24\n"
+       "receive VALVE-02 36\n"
+       "receive VALVE-03 26\n"
+       "receive HOSE-03 40\n"
+       "receive VALVE-02 23\n"
+       "ship HOSE-01 42\n"
+       "ship HOSE-02 12\n"
+       "reprice GEAR-02 685\n"
+       "adjust NUT-02 -4\n"
+       "ship BOLT-03 27\n"
+       "reprice VALVE-05 1244\n"
+       "ship PIPE-05 41\n"
+       "receive BOLT-01 42\n"
+       "receive NUT-01 48\n"
+       "reprice BOLT-02 3657\n"
+       "receive BOLT-05 16\n"
+       "ship BOLT-02 25\n"
+       "ship BOLT-03 46\n"
+       "ship GEAR-02 27\n"
+       "ship HOSE-02 36\n"
+       "receive BOLT-04 37\n"
+       "adjust GEAR-02 1"))
+
+(def afternoon-events
+  (str "ship PIPE-03 11\n"
+       "ship PIPE-04 9\n"
+       "adjust GEAR-02 -2\n"
+       "ship GEAR-01 35\n"
+       "adjust VALVE-01 -2\n"
+       "ship NUT-03 46\n"
+       "reprice HOSE-03 3040\n"
+       "ship NUT-05 2\n"
+       "ship NUT-05 10\n"
+       "ship BOLT-04 16\n"
+       "receive HOSE-01 30\n"
+       "receive PIPE-03 35\n"
+       "adjust NUT-04 -4\n"
+       "reprice PIPE-05 3612\n"
+       "adjust VALVE-04 -6\n"
+       "ship NUT-05 40\n"
+       "receive PIPE-02 27\n"
+       "ship HOSE-02 1\n"
+       "ship GEAR-05 44\n"
+       "ship BOLT-01 28\n"
+       "ship VALVE-03 42\n"
+       "adjust HOSE-05 2\n"
+       "receive VALVE-04 23\n"
+       "adjust NUT-05 -2\n"
+       "ship NUT-05 20\n"
+       "ship PIPE-01 22\n"
+       "ship GEAR-04 4\n"
+       "receive NUT-03 10\n"
+       "ship BOLT-01 5\n"
+       "receive PIPE-01 58\n"
+       "adjust VALVE-01 -6\n"
+       "reprice VALVE-03 763\n"
+       "adjust GEAR-04 -5\n"
+       "receive PIPE-03 29\n"
+       "ship BOLT-02 48\n"
+       "receive PIPE-05 32\n"
+       "ship PIPE-05 42\n"
+       "receive BOLT-02 23\n"
+       "ship VALVE-02 36\n"
+       "receive NUT-04 20\n"
+       "reprice PIPE-02 1861\n"
+       "ship VALVE-04 46\n"
+       "receive GEAR-01 47\n"
+       "ship BOLT-04 16\n"
+       "ship GEAR-05 7\n"
+       "ship BOLT-01 4\n"
+       "ship GEAR-04 48\n"
+       "ship HOSE-05 14\n"
+       "ship PIPE-05 16\n"
+       "ship HOSE-05 25\n"
+       "adjust VALVE-04 4"))
+
+(def broken-events
+  (str "receive BOLT-01 12\n"
+       "receive BOLT-01 lots"))
+
+(def broken-stock
+  (str "BOLT-01,bolt,12,40,10\n"
+       "NUT-01,nut,8"))
+
+(type load (fn ((ref str) (ref str)) (result book ledger-error)))
+(defn load (stock-source event-source)
+  (let stock (try (parse-stock stock-source)))
+  (let events (try (parse-events event-source)))
+  (ok (apply-all stock (ref events))))
+
+(defn main ()
+  (report "morning" (load (as-str stock-text) (as-str morning-events)))
+  (report "full day" (load (as-str stock-text) (as-str (str morning-events "\n" afternoon-events))))
+  (report "broken events" (load (as-str stock-text) (as-str broken-events)))
+  (report "broken stock" (load (as-str broken-stock) (as-str morning-events))))
+
+(type report (fn ((ref str) (result book ledger-error)) unit))
+(defn report (title outcome)
+  (println (str "== " title))
+  (match outcome
+    ((ok finished) (print-book (ref finished)))
+    ((err problem) (println (str "failed: " problem)))))
+
+(type print-book (fn ((ref book)) unit))
+(defn print-book (finished)
+  (println (str "entries: " (len (:entries finished)) ", rejected: " (len (:rejected finished))))
+  (for-each (iter (:rejected finished)) (fn (problem) (println (str "  rejected: " problem))))
+  (for-each (take (iter (:entries finished)) 5) (fn (moved) (println (str "  " moved))))
+  (print-summary (:stock finished))
+  (print-low-stock (:stock finished))
+  (println "by category:")
+  (print-categories (:stock finished))
+  (println "top value:")
+  (print-top-value (:stock finished) 3)
+  (print-activity (:entries finished)))

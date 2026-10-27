@@ -1,0 +1,97 @@
+(export matrix ->matrix identity multiply transpose determinant solve apply-to rounded)
+
+(defstruct matrix :rows (vec (vec f64)))
+
+(display matrix (m) (matrix-text m))
+
+(type matrix-text (fn ((ref matrix)) string))
+(defn matrix-text (m)
+  (fold (iter (:rows m)) (to-string "")
+        (fn (text row) (str text "[" (row-text row) "]"))))
+
+(type row-text (fn ((ref (vec f64))) string))
+(defn row-text (row)
+  (fold (enumerate (iter row)) (to-string "")
+        (fn (text entry)
+          (let-pair (index value) entry
+            (if (= index 0) (str (rounded (deref value))) (str text " " (rounded (deref value))))))))
+
+(type size (fn ((ref matrix)) usize))
+(defn size (m) (len (:rows m)))
+
+(type cell (fn ((ref matrix) usize usize) f64))
+(defn cell (m row column)
+  (at (at (:rows m) row) column))
+
+(type identity (fn (usize) matrix))
+(defn identity (n)
+  (->matrix (collect (map (range 0 n)
+                          (fn (row) (collect (map (range 0 n) (fn (column) (if (= row column) 1.0 0.0)))))))))
+
+(type multiply (fn ((ref matrix) (ref matrix)) matrix))
+(defn multiply (left right)
+  (let n (size left))
+  (->matrix (collect (map (range 0 n)
+                          (fn (row)
+                            (collect (map (range 0 n)
+                                          (fn (column) (dot-at left right row column)))))))))
+
+(type dot-at (fn ((ref matrix) (ref matrix) usize usize) f64))
+(defn dot-at (left right row column)
+  (fold (range 0 (size left)) 0.0
+        (fn (total k) (+ total (* (cell left row k) (cell right k column))))))
+
+(type transpose (fn ((ref matrix)) matrix))
+(defn transpose (m)
+  (let n (size m))
+  (->matrix (collect (map (range 0 n)
+                          (fn (row) (collect (map (range 0 n) (fn (column) (cell m column row)))))))))
+
+(type minor (fn ((ref matrix) usize) matrix))
+(defn minor (m skipped)
+  (let n (size m))
+  (->matrix (collect (map (range 1 n)
+                          (fn (row)
+                            (collect (map (filter (range 0 n) (fn (column) (!= (deref column) skipped)))
+                                          (fn (column) (cell m row column)))))))))
+
+(type determinant (fn ((ref matrix)) f64))
+(defn determinant (m)
+  (if (= (size m) 1)
+      (cell m 0 0)
+      (fold (range 0 (size m)) 0.0
+            (fn (total column)
+              (+ total (* (sign-of column) (cell m 0 column) (determinant (ref (minor m column)))))))))
+
+(type sign-of (fn (usize) f64))
+(defn sign-of (column)
+  (if (= (rem column 2) 0) 1.0 -1.0))
+
+(type solve (fn ((ref matrix) (ref (vec f64))) (option (vec f64))))
+(defn solve (m targets)
+  (let whole (determinant m))
+  (if (< (magnitude whole) 0.000001)
+      none
+      (some (collect (map (range 0 (size m))
+                          (fn (column) (/ (determinant (ref (replace-column m column targets))) whole)))))))
+
+(type replace-column (fn ((ref matrix) usize (ref (vec f64))) matrix))
+(defn replace-column (m replaced targets)
+  (let n (size m))
+  (->matrix (collect (map (range 0 n)
+                          (fn (row)
+                            (collect (map (range 0 n)
+                                          (fn (column)
+                                            (if (= column replaced) (deref (at targets row)) (cell m row column))))))))))
+
+(type apply-to (fn ((ref matrix) (ref (vec f64))) (vec f64)))
+(defn apply-to (m point)
+  (collect (map (range 0 (size m))
+                (fn (row)
+                  (fold (enumerate (iter point)) 0.0
+                        (fn (total entry)
+                          (let-pair (column value) entry
+                            (+ total (* (cell m row column) (deref value))))))))))
+
+(def magnitude (rust "{0}.abs()" (fn (f64) f64)))
+(def rounded (rust "({0} * 1000.0).round() / 1000.0" (fn (f64) f64)))

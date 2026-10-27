@@ -1,0 +1,54 @@
+(export item ->item event ledger-error entry ->entry valued value-cents category)
+
+(defstruct item :sku string :name string :quantity u32 :unit-cents u64 :reorder-at u32 (defaults :reorder-at 10))
+
+(defstruct entry :sequence usize :sku string :delta i64 :balance u32)
+
+(enum event
+  (receive string u32)
+  (ship string u32)
+  (adjust string i64)
+  (reprice string u64))
+
+(enum ledger-error
+  (unknown-sku string)
+  (short-stock (struct (sku string) (wanted u32) (available u32)))
+  (bad-line (struct (line usize) (reason string)))
+  (bad-number parse-int-error))
+
+(trait valued
+  (value-cents (fn ((ref self)) u64)))
+
+(impl valued item
+  (value-cents (i) (* (widen (:quantity i)) (:unit-cents i))))
+
+(def widen (rust "u64::from({0})" (fn (u32) u64)))
+
+(display item (i)
+  (:sku i) " " (:name i) " x" (:quantity i) " @ " (dollars (:unit-cents i)))
+
+(display entry (e)
+  "#" (:sequence e) " " (:sku e) " " (signed (:delta e)) " -> " (:balance e))
+
+(display ledger-error (problem)
+  (match problem
+    ((unknown-sku sku) (str "unknown sku " sku))
+    ((short-stock sku wanted available) (str "cannot ship " wanted " of " sku ", only " available " left"))
+    ((bad-line line reason) (str "line " line ": " reason))
+    ((bad-number reason) (str "bad number: " reason))))
+
+(defn dollars (cents)
+  (str "$" (/ cents 100) "." (pad-cents (rem cents 100))))
+
+(type pad-cents (fn (u64) string))
+(defn pad-cents (cents)
+  (if (< cents 10) (str "0" cents) (str cents)))
+
+(defn signed (delta)
+  (if (> delta 0) (str "+" delta) (str delta)))
+
+(type category (fn ((ref str)) string))
+(defn category (sku)
+  (match (first (collect (split sku "-")))
+    ((some prefix) (to-string prefix))
+    (none (to-string "misc"))))

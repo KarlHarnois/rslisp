@@ -1,0 +1,22 @@
+(export expr statement)
+
+(enum expr
+  (literal i64)
+  (variable string)
+  (binary string expr expr)
+  (negate expr)
+  (choice expr expr expr)
+  (call string (vec expr)))
+
+(enum statement
+  (binding string expr)
+  (show expr))
+
+(display expr (e)
+  (match e
+    ((literal value) (str value))
+    ((variable name) (str name))
+    ((binary operator left right) (str "(" left " " operator " " right ")"))
+    ((negate inner) (str "-" inner))
+    ((choice test then otherwise) (str "if " test " then " then " else " otherwise))
+    ((call name arguments) (str name "/" (len arguments)))))

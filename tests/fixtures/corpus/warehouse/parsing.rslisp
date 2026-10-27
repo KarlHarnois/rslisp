@@ -1,0 +1,71 @@
+(use warehouse/model item ->item event ledger-error)
+
+(export parse-stock parse-events)
+
+(type parse-stock (fn ((ref str)) (result (sorted-map string item) ledger-error)))
+(defn parse-stock (text)
+  (parse-stock-lines (collect (lines text)) 0 (sorted-map)))
+
+(type parse-stock-lines (fn ((ref (vec (ref str))) usize (sorted-map string item))
+                            (result (sorted-map string item) ledger-error)))
+(defn parse-stock-lines (rows index stock)
+  (match (get rows index)
+    ((some row)
+     (do (let parsed (try (parse-item index row)))
+         (let sku (clone (:sku parsed)))
+         (parse-stock-lines rows (+ index 1) (assoc stock sku parsed))))
+    (none (ok stock))))
+
+(type parse-item (fn (usize (ref str)) (result item ledger-error)))
+(defn parse-item (index row)
+  (let fields (collect (map (split row ",") trim)))
+  (if (= (len fields) 5)
+      (ok (->item :sku (to-string (field-at fields 0))
+                  :name (to-string (field-at fields 1))
+                  :quantity (try (parse-count (field-at fields 2)))
+                  :unit-cents (try (parse-cents (field-at fields 3)))
+                  :reorder-at (try (parse-count (field-at fields 4)))))
+      (err (ledger-error/bad-line index (str "expected 5 fields, found " (len fields))))))
+
+(type parse-events (fn ((ref str)) (result (vec event) ledger-error)))
+(defn parse-events (text)
+  (parse-event-lines (collect (lines text)) 0 (vec)))
+
+(type parse-event-lines (fn ((ref (vec (ref str))) usize (vec event)) (result (vec event) ledger-error)))
+(defn parse-event-lines (rows index events)
+  (match (get rows index)
+    ((some row)
+     (do (let parsed (try (parse-event index row)))
+         (let growing events)
+         (push! growing parsed)
+         (parse-event-lines rows (+ index 1) growing)))
+    (none (ok events))))
+
+(type parse-event (fn (usize (ref str)) (result event ledger-error)))
+(defn parse-event (index row)
+  (let words (collect (split (trim row) " ")))
+  (if (= (len words) 3)
+      (event-of index (field-at words 0) (to-string (field-at words 1)) (field-at words 2))
+      (err (ledger-error/bad-line index (str "expected 3 words in `" row "`")))))
+
+(type event-of (fn (usize (ref str) string (ref str)) (result event ledger-error)))
+(defn event-of (index verb sku amount)
+  (match verb
+    ("receive" (ok (event/receive sku (try (parse-count amount)))))
+    ("ship" (ok (event/ship sku (try (parse-count amount)))))
+    ("adjust" (ok (event/adjust sku (try (parse-delta amount)))))
+    ("reprice" (ok (event/reprice sku (try (parse-cents amount)))))
+    (_ (err (ledger-error/bad-line index (str "unknown verb `" verb "`"))))))
+
+(type field-at (fn ((ref (vec (ref str))) usize) (ref str)))
+(defn field-at (fields index)
+  (unwrap (get fields index)))
+
+(type parse-count (fn ((ref str)) (result u32 parse-int-error)))
+(defn parse-count (text) (parse text))
+
+(type parse-cents (fn ((ref str)) (result u64 parse-int-error)))
+(defn parse-cents (text) (parse text))
+
+(type parse-delta (fn ((ref str)) (result i64 parse-int-error)))
+(defn parse-delta (text) (parse text))

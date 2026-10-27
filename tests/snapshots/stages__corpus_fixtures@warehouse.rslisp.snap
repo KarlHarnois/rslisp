@@ -1,0 +1,89 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/corpus/warehouse.rslisp
+---
+== morning
+entries: 32, rejected: 8
+  rejected: cannot ship 22 of PIPE-02, only 8 left
+  rejected: cannot ship 31 of PIPE-01, only 21 left
+  rejected: unknown sku WIDGET-99
+  rejected: cannot ship 42 of HOSE-01, only 5 left
+  rejected: cannot ship 27 of BOLT-03, only 24 left
+  rejected: cannot ship 25 of BOLT-02, only 3 left
+  rejected: cannot ship 46 of BOLT-03, only 24 left
+  rejected: cannot ship 36 of HOSE-02, only 13 left
+  #1 HOSE-03 +32 -> 76
+  #2 VALVE-03 -44 -> 64
+  #3 NUT-01 -10 -> 83
+  #4 NUT-05 0 -> 16
+  #5 PIPE-05 -3 -> 86
+items: 30, units: 1814, value: $38421.60
+low stock: 9
+  BOLT-02 has 3, reorder at 40
+  HOSE-01 has 5, reorder at 20
+  PIPE-02 has 8, reorder at 25
+  GEAR-02 has 11, reorder at 20
+  HOSE-02 has 13, reorder at 20
+  PIPE-01 has 13, reorder at 20
+  PIPE-05 has 15, reorder at 20
+  NUT-02 has 19, reorder at 40
+  HOSE-04 has 32, reorder at 40
+by category:
+  BOLT: $4466.11
+  GEAR: $8478.59
+  HOSE: $5970.17
+  NUT: $7110.06
+  PIPE: $1928.66
+  VALVE: $10468.01
+top value:
+  VALVE-02 small valve x115 @ $39.99 = $4598.85
+  GEAR-04 medium gear x93 @ $39.72 = $3693.96
+  NUT-03 medium nut x97 @ $32.70 = $3171.90
+busiest: VALVE-02 with 3 moves
+== full day
+entries: 77, rejected: 14
+  rejected: cannot ship 22 of PIPE-02, only 8 left
+  rejected: cannot ship 31 of PIPE-01, only 21 left
+  rejected: unknown sku WIDGET-99
+  rejected: cannot ship 42 of HOSE-01, only 5 left
+  rejected: cannot ship 27 of BOLT-03, only 24 left
+  rejected: cannot ship 25 of BOLT-02, only 3 left
+  rejected: cannot ship 46 of BOLT-03, only 24 left
+  rejected: cannot ship 36 of HOSE-02, only 13 left
+  rejected: cannot ship 40 of NUT-05, only 4 left
+  rejected: cannot ship 44 of GEAR-05, only 38 left
+  rejected: cannot ship 20 of NUT-05, only 2 left
+  rejected: cannot ship 22 of PIPE-01, only 13 left
+  rejected: cannot ship 48 of BOLT-02, only 3 left
+  rejected: cannot ship 16 of PIPE-05, only 5 left
+  #1 HOSE-03 +32 -> 76
+  #2 VALVE-03 -44 -> 64
+  #3 NUT-01 -10 -> 83
+  #4 NUT-05 0 -> 16
+  #5 PIPE-05 -3 -> 86
+items: 30, units: 1680, value: $35003.23
+low stock: 7
+  NUT-05 has 2, reorder at 10
+  PIPE-05 has 5, reorder at 20
+  GEAR-02 has 9, reorder at 20
+  HOSE-02 has 12, reorder at 20
+  NUT-02 has 19, reorder at 40
+  BOLT-02 has 26, reorder at 40
+  HOSE-04 has 32, reorder at 40
+by category:
+  BOLT: $3564.99
+  GEAR: $6176.95
+  HOSE: $6786.01
+  NUT: $6291.26
+  PIPE: $4944.69
+  VALVE: $7239.33
+top value:
+  HOSE-03 long hose x116 @ $30.40 = $3526.40
+  VALVE-02 small valve x79 @ $39.99 = $3159.21
+  GEAR-03 short gear x112 @ $27.81 = $3114.72
+busiest: PIPE-05 with 6 moves
+== broken events
+failed: bad number: invalid digit found in string
+== broken stock
+failed: line 1: expected 5 fields, found 3
