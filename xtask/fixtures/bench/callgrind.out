@@ -1,0 +1,39 @@
+# callgrind format
+version: 1
+creator: callgrind-3.26.0
+cmd:  compiler emit fake.lisp
+positions: line
+events: Ir Dr Dw I1mr D1mr D1mw ILmr DLmr DLmw
+summary: 1000 0 0 0 0 0 0 0 0
+
+ob=/fake/compiler
+fl=???
+fn=compiler::cli::Terminal::emit
+0 40
+cfn=compiler::cli::Terminal::check
+calls=1 0
+0 900
+cfn=compiler::check::Checker::check
+calls=1 0
+0 200
+cfn=core::ptr::drop_in_place<compiler::expand::Program>
+calls=1 0
+0 60
+
+fn=compiler::cli::Terminal::check
+0 100
+cfn=compiler::expand::Expander::expand
+calls=1 0
+0 500
+
+fn=<compiler::cli::Terminal as core::ops::Drop>::drop
+0 0
+cfn=compiler::check::module::<impl compiler::check::Checker>::finish
+calls=2 0
+0 100
+
+fn=compiler::expand::Expander::expand
+0 400
+cfn=compiler::check::Checker::check
+calls=1 0
+0 100
