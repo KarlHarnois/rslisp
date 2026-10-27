@@ -1,5 +1,6 @@
 mod callgrind;
 mod comparison;
+mod compiler;
 mod corpus;
 mod cost;
 mod failure;
@@ -14,12 +15,11 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::{Args, Subcommand};
-use rslisp::language::Language;
 
-use crate::cargo::Cargo;
 use crate::failure::TaskFailure;
 use callgrind::Callgrind;
 use comparison::Comparison;
+use compiler::{BuiltCompiler, CompilerBuild};
 use corpus::Corpus;
 use fixed_seed::FixedSeedLibrary;
 use results::ResultSet;
@@ -85,17 +85,14 @@ struct FrontEndBenchmark<'a> {
 
 impl<'a> FrontEndBenchmark<'a> {
     const PROFILES: &'static str = "target/bench";
-    const FIXED_COMPILER_DIRECTORY: &'static str = "target/bench/compiler";
-    const RELEASE_BUILD: [&'static str; 4] = ["build", "--release", "--quiet", "--package"];
-    const TARGET_DIRECTORY: &'static str = "target";
-    const RELEASE_PROFILE: &'static str = "release";
+    const FIXED_COMPILER: &'static str = "target/bench/compiler/front-end";
 
     fn new(root: &'a Path, options: MeasureOptions) -> Self {
         Self { root, options }
     }
 
     fn measure(&self) -> Result<String, TaskFailure> {
-        let compiler = self.place_at_fixed_path(&Self::build_compiler(&self.workspace()?)?)?;
+        let compiler = self.place_at_fixed_path(CompilerBuild::new(&self.workspace()?).run()?)?;
         let fixed_seed = FixedSeedLibrary::new(self.root).build()?;
         let callgrind = Callgrind::new(compiler, fixed_seed, self.root.join(Self::PROFILES));
         let results = self.profile_corpus(&callgrind)?;
@@ -108,7 +105,7 @@ impl<'a> FrontEndBenchmark<'a> {
     fn workspace(&self) -> Result<PathBuf, TaskFailure> {
         match &self.options.workspace {
             Some(workspace) => Self::absolute(workspace),
-            None => Ok(self.root.to_path_buf()),
+            None => Self::absolute(self.root),
         }
     }
 
@@ -130,29 +127,16 @@ impl<'a> FrontEndBenchmark<'a> {
         Ok(ResultSet::new(results))
     }
 
-    fn build_compiler(workspace: &Path) -> Result<PathBuf, TaskFailure> {
-        let target = workspace.join(Self::TARGET_DIRECTORY);
-        let output = Cargo::command()
-            .args(Self::RELEASE_BUILD)
-            .arg(Language::NAME)
-            .arg("--target-dir")
-            .arg(&target)
-            .current_dir(workspace)
-            .output()
-            .map_err(|error| TaskFailure::tool_missing("cargo", error))?;
-        if !output.status.success() {
-            return Err(TaskFailure::build_failed("the compiler", &output.stderr));
-        }
-        Ok(target.join(Self::RELEASE_PROFILE).join(Language::NAME))
-    }
-
-    fn place_at_fixed_path(&self, compiler: &Path) -> Result<PathBuf, TaskFailure> {
-        let directory = self.root.join(Self::FIXED_COMPILER_DIRECTORY);
-        fs::create_dir_all(&directory)
-            .map_err(|error| TaskFailure::unwritable(&directory, error))?;
-        let placed = directory.join(Language::NAME);
-        fs::copy(compiler, &placed).map_err(|error| TaskFailure::unwritable(&placed, error))?;
-        Ok(placed)
+    fn place_at_fixed_path(&self, compiler: BuiltCompiler) -> Result<BuiltCompiler, TaskFailure> {
+        let placed = self.root.join(Self::FIXED_COMPILER);
+        let directory = placed.parent().unwrap_or(self.root);
+        fs::create_dir_all(directory).map_err(|error| TaskFailure::unwritable(directory, error))?;
+        fs::copy(&compiler.executable, &placed)
+            .map_err(|error| TaskFailure::unwritable(&placed, error))?;
+        Ok(BuiltCompiler {
+            executable: placed,
+            ..compiler
+        })
     }
 
     fn absolute(path: &Path) -> Result<PathBuf, TaskFailure> {

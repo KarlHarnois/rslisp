@@ -1,0 +1,4 @@
+{"reason":"compiler-artifact","package_id":"registry+https://github.com/rust-lang/crates.io-index#clap@4.6.7","manifest_path":"/registry/clap/Cargo.toml","target":{"kind":["lib"],"crate_types":["lib"],"name":"clap"},"executable":null,"fresh":true}
+{"reason":"compiler-artifact","package_id":"path+file:///checkout#ledger-lang@0.1.0","manifest_path":"/checkout/Cargo.toml","target":{"kind":["lib"],"crate_types":["lib"],"name":"ledger_lang"},"executable":null,"fresh":false}
+{"reason":"compiler-artifact","package_id":"path+file:///checkout#ledger-lang@0.1.0","manifest_path":"/checkout/Cargo.toml","target":{"kind":["bin"],"crate_types":["bin"],"name":"ledger-lang"},"executable":"/checkout/target/release/ledger-lang","fresh":false}
+{"reason":"build-finished","success":true}

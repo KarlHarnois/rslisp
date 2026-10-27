@@ -540,6 +540,7 @@ dependencies = [
  "clap",
  "proc-macro2",
  "rslisp",
+ "serde_json",
  "syn",
 ]
 
