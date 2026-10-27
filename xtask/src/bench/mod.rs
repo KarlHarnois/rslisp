@@ -13,7 +13,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use clap::Subcommand;
+use clap::{Args, Subcommand};
 use rslisp::language::Language;
 
 use crate::cargo::Cargo;
@@ -29,17 +29,7 @@ pub enum BenchTask {
     #[command(
         about = "Count the instructions the compiler's front end runs on each corpus program, under callgrind"
     )]
-    Measure {
-        #[arg(
-            long,
-            help = "The checkout whose compiler to build and measure [default: this workspace]"
-        )]
-        workspace: Option<PathBuf>,
-        #[arg(long, default_value = Corpus::DIRECTORY)]
-        corpus: PathBuf,
-        #[arg(long, help = "Write the results to this file for `compare`")]
-        save: Option<PathBuf>,
-    },
+    Measure(MeasureOptions),
     #[command(about = "Print a Markdown table of the change between two saved results")]
     Compare {
         baseline: PathBuf,
@@ -47,14 +37,26 @@ pub enum BenchTask {
     },
 }
 
+#[derive(Args)]
+pub struct MeasureOptions {
+    #[arg(
+        long,
+        help = "The checkout whose compiler to build and measure [default: this workspace]"
+    )]
+    workspace: Option<PathBuf>,
+    #[arg(
+        long,
+        help = "The directory of programs to measure [default: this workspace's tests/fixtures/corpus]"
+    )]
+    corpus: Option<PathBuf>,
+    #[arg(long, help = "Write the results to this file for `compare`")]
+    save: Option<PathBuf>,
+}
+
 impl BenchTask {
     pub fn run(self, root: &Path) -> ExitCode {
         let report = match self {
-            Self::Measure {
-                workspace,
-                corpus,
-                save,
-            } => FrontEndBenchmark::new(root, corpus).measure(workspace, save),
+            Self::Measure(options) => FrontEndBenchmark::new(root, options).measure(),
             Self::Compare {
                 baseline,
                 candidate,
@@ -78,7 +80,7 @@ impl BenchTask {
 
 struct FrontEndBenchmark<'a> {
     root: &'a Path,
-    corpus: Corpus,
+    options: MeasureOptions,
 }
 
 impl<'a> FrontEndBenchmark<'a> {
@@ -88,32 +90,39 @@ impl<'a> FrontEndBenchmark<'a> {
     const TARGET_DIRECTORY: &'static str = "target";
     const RELEASE_PROFILE: &'static str = "release";
 
-    fn new(root: &'a Path, corpus: PathBuf) -> Self {
-        Self {
-            root,
-            corpus: Corpus::new(root.join(corpus)),
-        }
+    fn new(root: &'a Path, options: MeasureOptions) -> Self {
+        Self { root, options }
     }
 
-    fn measure(
-        &self,
-        workspace: Option<PathBuf>,
-        save: Option<PathBuf>,
-    ) -> Result<String, TaskFailure> {
-        let workspace = Self::absolute(&workspace.unwrap_or_else(|| self.root.to_path_buf()))?;
-        let compiler = self.place_at_fixed_path(&Self::build_compiler(&workspace)?)?;
+    fn measure(&self) -> Result<String, TaskFailure> {
+        let compiler = self.place_at_fixed_path(&Self::build_compiler(&self.workspace()?)?)?;
         let fixed_seed = FixedSeedLibrary::new(self.root).build()?;
         let callgrind = Callgrind::new(compiler, fixed_seed, self.root.join(Self::PROFILES));
         let results = self.profile_corpus(&callgrind)?;
-        if let Some(path) = save {
-            results.save(&path)?;
+        if let Some(path) = &self.options.save {
+            results.save(path)?;
         }
         Ok(results.to_string())
     }
 
+    fn workspace(&self) -> Result<PathBuf, TaskFailure> {
+        match &self.options.workspace {
+            Some(workspace) => Self::absolute(workspace),
+            None => Ok(self.root.to_path_buf()),
+        }
+    }
+
+    fn corpus(&self) -> Result<Corpus, TaskFailure> {
+        let directory = match &self.options.corpus {
+            Some(corpus) => Self::absolute(corpus)?,
+            None => self.root.join(Corpus::DIRECTORY),
+        };
+        Ok(Corpus::new(directory))
+    }
+
     fn profile_corpus(&self, callgrind: &Callgrind) -> Result<ResultSet, TaskFailure> {
         let results = self
-            .corpus
+            .corpus()?
             .programs()?
             .iter()
             .map(|program| callgrind.measure(program))
