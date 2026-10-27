@@ -1,0 +1,13 @@
+(defstruct tag (name str) (scores (slice i64)))
+(enum label (named str) blank)
+
+(defn describe (item)
+  (match item
+    ((named text) text)
+    (blank "blank")))
+
+(defn main ()
+  (let numbers (vec 3 4))
+  (let fruit (make-tag "fruit" numbers))
+  (println (tag-name fruit) " " (len (tag-scores fruit)))
+  (println (describe (label/named "apple")) " " (describe label/blank)))

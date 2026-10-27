@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/view_fields.rslisp
+---
+fruit 2
+apple blank
