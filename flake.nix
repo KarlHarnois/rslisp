@@ -134,7 +134,11 @@
         default = pkgs.mkShell (
           {
             packages = developmentPackages pkgs;
-            RUSTC_WRAPPER = pkgs.lib.getExe pkgs.sccache;
+            RUSTC_WRAPPER = pkgs.writeShellScript "sccache-with-stable-tmpdir" ''
+              export TMPDIR="$HOME/.cache/sccache-tmp"
+              mkdir -p "$TMPDIR"
+              exec ${pkgs.lib.getExe pkgs.sccache} "$@"
+            '';
             shellHook = ''
               if [[ -z ''${CI:-} ]]; then
                 export CARGO_BUILD_JOBS=''${CARGO_BUILD_JOBS:-2}
