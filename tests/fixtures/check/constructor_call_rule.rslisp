@@ -1,0 +1,7 @@
+(defstruct car :make str :year u16)
+(defstruct (pair a b) :left a :right b)
+
+(defn missing () (->car :make "Nissan"))
+(defn misspelled () (->car :mak "Nissan"))
+(defn repeated () (->car :make "Nissan" :make "Leaf"))
+(defn half-pair () (->pair :left 1))

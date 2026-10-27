@@ -1,0 +1,12 @@
+(defstruct car :make str :year u16)
+(defstruct user :name str)
+(defstruct sorter :key (fn ((ref user)) (ref str)) :label str (defaults :label "all"))
+(defstruct (pair a b) :left a :right b)
+
+(defn missing () (->car :make "Nissan"))
+(defn misspelled () (->car :mak "Nissan"))
+(defn repeated () (->car :make "Nissan" :make "Leaf"))
+(defn keyword-on-function () (->sorter :name "by name"))
+(defn positional () (->car "Nissan" 2025))
+(defn half-pair () (->pair :left 1))
+(defn defaulted-label () (->sorter :key :name))
