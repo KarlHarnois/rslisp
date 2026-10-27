@@ -1,0 +1,27 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/generic_constructor.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Pair<A, B> {
+    first: A,
+    second: B,
+}
+
+fn pair_first<A, B>(instance: &Pair<A, B>) -> &A {
+    &instance.first
+}
+
+fn pair_second<A, B>(instance: &Pair<A, B>) -> &B {
+    &instance.second
+}
+
+fn main() {
+    let labelled: Pair<i64, &str> = Pair {
+        first: 1,
+        second: "a",
+    };
+    println!("{}", pair_first(&labelled));
+    println!("{}", pair_second(&labelled))
+}

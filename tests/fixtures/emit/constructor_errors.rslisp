@@ -1,0 +1,6 @@
+(defstruct car :make str :model str :year u16 :electric? bool)
+
+(def ordinary unless)
+
+(defn main ()
+  (->car "Honda" "Civic"))

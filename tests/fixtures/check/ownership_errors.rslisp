@@ -1,6 +1,6 @@
 (defstruct person :name string :age i64)
 
-(defn store (name) (make-person name 3))
+(defn store (name) (->person name 3))
 
 (defn twice (name)
   (store name)

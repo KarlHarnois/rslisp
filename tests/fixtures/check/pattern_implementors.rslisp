@@ -7,7 +7,7 @@
 
 (defstruct (pair a b) :first a :second b)
 
-(def origin (make-pair 1 (to-string "one")))
+(def origin (->pair 1 (to-string "one")))
 (def copied (clone origin))
 
 (defn main () (println (pair-first copied)))

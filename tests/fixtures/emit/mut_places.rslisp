@@ -5,7 +5,7 @@
 (defn bump-reference! ((t (mut i64))) (bump! t))
 
 (defn main ()
-  (let c (make-counter 0))
+  (let c (->counter 0))
   (bump-field! c)
   (let n 1)
   (let r (mut n))

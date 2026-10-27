@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/constructor_macro.rslisp
+---
+Honda
+Leaf
+2019
+Golf
+2018

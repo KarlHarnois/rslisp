@@ -2,6 +2,6 @@
 (def same-record? (rust "{0} == {1}" (where ((a record-eq)) (fn ((ref a) (ref a)) bool))))
 (defstruct employee :name string :score u32)
 (defn main ()
-  (let first-hire (make-employee (to-string "Ada") 91))
-  (let second-hire (make-employee (to-string "Bram") 78))
+  (let first-hire (->employee (to-string "Ada") 91))
+  (let second-hire (->employee (to-string "Bram") 78))
   (println (same-record? first-hire second-hire)))

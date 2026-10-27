@@ -39,15 +39,15 @@
     ((some (symbol text))
      (match (as-str text)
        ("(" (skip-close-paren (parse-expression tokens (+ position 1))))
-       (_ (make-parsed 0 (+ position 1)))))
-    ((some (number text)) (make-parsed (number-value text) (+ position 1)))
-    (none (make-parsed 0 (+ position 1)))))
+       (_ (->parsed 0 (+ position 1)))))
+    ((some (number text)) (->parsed (number-value text) (+ position 1)))
+    (none (->parsed 0 (+ position 1)))))
 
 (defn skip-close-paren (inner)
-  (make-parsed (parsed-value inner) (+ (parsed-next inner) 1)))
+  (->parsed (parsed-value inner) (+ (parsed-next inner) 1)))
 
 (defn combine (left right operator)
-  (make-parsed (operator (parsed-value left) (parsed-value right)) (parsed-next right)))
+  (->parsed (operator (parsed-value left) (parsed-value right)) (parsed-next right)))
 
 (defn number-value (text)
   (let (parsed (result i64 _)) (parse (as-str text)))

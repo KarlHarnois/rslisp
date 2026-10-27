@@ -3,4 +3,4 @@
 (defn ana? (p) (= (person-name p) "Ana"))
 
 (defn main ()
-  (println (ana? (make-person (to-string "Ana") 30))))
+  (println (ana? (->person (to-string "Ana") 30))))

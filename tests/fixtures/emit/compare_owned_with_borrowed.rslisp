@@ -1,7 +1,7 @@
 (defstruct person :name string)
 
 (defn main ()
-  (let ana (make-person (to-string "Ana")))
+  (let ana (->person (to-string "Ana")))
   (let name (to-string "Ana"))
   (println (= (person-name ana) name))
   (println (= name (person-name ana)))

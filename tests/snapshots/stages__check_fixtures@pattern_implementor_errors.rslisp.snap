@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/pattern_implementor_errors.rslisp
 ---
 warning[L0217]: `shown` binds a Rust path that `display` already binds
@@ -23,8 +23,8 @@ error[L0404]: `str` does not implement `shown`
 error[L0404]: `unit` does not implement `clone`
  --> check/pattern_implementor_errors.rslisp:9:29
   |
-9 | (defn clone-units () (clone (make-pair (do) 1)))
-  |                             ^^^^^^^^^^^^^^^^^^ this needs `clone`
+9 | (defn clone-units () (clone (->pair (do) 1)))
+  |                             ^^^^^^^^^^^^^^^ this needs `clone`
   |
   = note: `clone` is implemented for: bool, char, string, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where (a) (ref a)), (where ((a clone)) (vec a)), (where ((a clone)) (option a)), (where ((a clone) (b clone)) (result a b)), (where ((a clone)) (box a)), (where ((a clone) (b clone)) (pair a b)), (where ((a clone) (b clone)) (pair a b))
 

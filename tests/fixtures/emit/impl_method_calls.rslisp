@@ -10,4 +10,4 @@
   (read-value (c) (read-counter c)))
 
 (defn main ()
-  (println (read-value (make-counter 1))))
+  (println (read-value (->counter 1))))

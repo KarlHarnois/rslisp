@@ -2,8 +2,8 @@
 (defstruct person :name string :age u32)
 
 (defn main ()
-  (let origin (make-point 0 0))
+  (let origin (->point 0 0))
   (prn origin)
-  (println (= origin (make-point 0 0)))
-  (prn (make-person (to-string "Ada") 36))
-  (println (pr-str (make-person (to-string "Bo") 7))))
+  (println (= origin (->point 0 0)))
+  (prn (->person (to-string "Ada") 36))
+  (println (pr-str (->person (to-string "Bo") 7))))

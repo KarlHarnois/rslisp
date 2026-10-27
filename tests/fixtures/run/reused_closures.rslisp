@@ -14,7 +14,7 @@
   (println (greet-with greet))
   (println (greet-with greet))
   (println name)
-  (let ada (make-person (duplicate name) 36))
+  (let ada (->person (duplicate name) 36))
   (let twin (duplicate ada))
   (println (person-name twin))
   (println (duplicate 7)))

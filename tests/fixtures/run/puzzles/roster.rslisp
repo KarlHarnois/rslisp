@@ -20,7 +20,7 @@
 
 (defn parse-employee (line)
   (let fields (collect (split line ",")))
-  (make-employee (to-string (unwrap (get fields 0)))
+  (->employee (to-string (unwrap (get fields 0)))
                  (to-string (unwrap (get fields 1)))
                  (parse-score (unwrap (get fields 2)))))
 

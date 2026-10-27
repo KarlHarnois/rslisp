@@ -8,4 +8,4 @@
   (let next (assoc grid 1 9))
   (let rows (vec (vec 1 2) (vec 3 4)))
   (let changed (assoc-in rows (1 0) 9))
-  (println (point-x (bump (make-point 1 2))) (at next 0) (len changed)))
+  (println (point-x (bump (->point 1 2))) (at next 0) (len changed)))

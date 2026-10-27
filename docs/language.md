@@ -80,7 +80,15 @@ In type positions, the kernel provides `fn`, `fn-mut`, `fn-once`, `ref`, `mut`, 
 
 In expression positions, the kernel provides `ref`, `mut` and `deref`, and the constants `true` and `false`. The constants are kernel constants, not prelude definitions. Macro code and program code then see the same booleans, so `if`, `and` and `or` work in both.
 
-Programs write structs with the prelude's `defstruct`, which takes flat fields. `(defstruct point :x f64 :y f64)` declares each field as a keyword followed by one type form, so `:tags (vec str)` is one field. It expands to the kernel `struct` form and also defines `make-point`, `point-x` and `point-y`.
+Programs write structs with the prelude's `defstruct`, which takes flat fields. `(defstruct point :x f64 :y f64)` declares each field as a keyword followed by one type form, so `:tags (vec str)` is one field. It expands to the kernel `struct` form and also defines the constructor `->point` and the accessors `point-x` and `point-y`.
+
+The constructor `->point` is a macro, and it reads a call in this order:
+
+1. If the arguments read as `:field value` pairs that name every field once, the call is by name. `(->point :y 2.0 :x 1.0)` expands to `(new point (y 2.0) (x 1.0))`, in the order written.
+2. Otherwise, if the call has exactly one argument per field, the call is positional. `(->point 1.0 2.0)` calls a positional function that `defstruct` defines under a hygienic name, which no source code can refer to. It emits as `make_point(1.0, 2.0)`.
+3. Otherwise, the call is an error that names the field count.
+
+In value position, `->point` expands to the positional function, so `(let build ->point)` emits `let build = make_point;`.
 
 `ref`, `mut` and `deref` are kernel forms because a prelude function cannot mark its result as written. The compiler must see the written form to know that the value came from a written borrow or dereference.
 
@@ -152,7 +160,7 @@ A type parameter satisfies a trait when its `where` names the trait, or when eve
 
 ### Literals
 
-- An integer literal can become any number type, so `(make-point 1 2)` emits `make_point(1.0, 2.0)`.
+- An integer literal can become any number type, so `(->point 1 2)` emits `make_point(1.0, 2.0)`.
 - A float literal can become `f32` or `f64`.
 - Every literal is checked against the range of its type.
 - A call pins a literal parameter the way it pins any inferred parameter, so a helper called once with a `usize` keeps `usize` in its parameter and its literals.
@@ -315,7 +323,7 @@ A `rust` template's own binders are hygienic too. A name written as `{!name}` ta
 `(symbol context part...)` builds a symbol with the scopes of `context`. It is the one deliberate way to introduce a name the user can see:
 
 ```lisp
-(defstruct point :x f64 :y f64)   ; defines make-point, point-x and point-y
+(defstruct point :x f64 :y f64)   ; defines ->point, point-x and point-y
 ```
 
 Field names are not hygienic. They are looked up through the struct type.
