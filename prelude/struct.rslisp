@@ -1,8 +1,8 @@
 (use prelude/macros defmacro template map-list)
 (use prelude/syntax defn definition declared-forms default-pairs type-missing? defaults-clause?
-                    default-bindings call-signature signature-name signature-names signature-defaults
-                    reads-by-name? has-argument? pair-keys)
-(use code first rest list nth drop length empty? list? symbol? symbol symbol-name value-eq prepend
+                    default-bindings call-signature signature-name signature-defaults
+                    read-call has-argument? pair-keys)
+(use code first rest list nth drop empty? list? symbol? symbol symbol-name prepend
           concat string fail keyword? keyword-field)
 
 (export defstruct)
@@ -68,21 +68,11 @@
     (let omitted (defaults-without-key (signature-defaults shape) (pair-keys arguments)))
     (prepend (quote new) (prepend (signature-name shape) (concat written omitted)))))
 
-(def constructor-arity-error
-  (fn (form fields)
-    (fail (string "`" (symbol-name (first form)) "` takes " (length fields)
-                  " arguments, one per field, or a `:field value` pair for each field without a default")
-          form
-          (string "write it as `" (prepend (first form) fields) "`"))))
-
 (def constructor-call
   (fn (form hidden shape)
-    (let arguments (rest form))
-    (if (reads-by-name? arguments shape)
-        (named-construction arguments shape)
-        (if (value-eq (length arguments) (length (signature-names shape)))
-            (prepend hidden arguments)
-            (constructor-arity-error form (signature-names shape))))))
+    (read-call form hidden shape
+               (definition (signature-name shape) "field")
+               (fn (form) (named-construction (rest form) shape)))))
 
 (def constructor-expansion
   (fn (form hidden shape)

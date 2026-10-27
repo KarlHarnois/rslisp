@@ -4,8 +4,8 @@
 
 (export defn the -> ->> try-> let-try loop
         definition declared-forms default-pairs type-missing? defaults-clause? default-bindings
-        call-signature signature-name signature-names signature-defaults signature-types
-        reads-by-name? has-argument? pair-keys joined-names)
+        call-signature signature-name signature-names signature-defaults
+        reads-by-name? has-argument? pair-keys read-call)
 
 (defmacro defn (name parameters body ...)
   (if (keyword-parameters? parameters)
@@ -199,10 +199,14 @@
   (fn (key owner names)
     (let noun (definition-noun owner))
     (let name (definition-name owner))
-    (fail (string "`" name "` has no " noun " `" (keyword-name key) "`") key
+    (let parameter? (value-eq noun "parameter"))
+    (fail (string "`" name "` has no " noun " `"
+                  (if parameter? (symbol-name key) (keyword-name key)) "`")
+          key
           (if (empty? names)
               (string "`" name "` has no " noun "s")
-              (string "the " noun "s of `" name "` are " (joined-names names ""))))))
+              (string "the " noun "s of `" name "` are "
+                      (joined-names (if parameter? (map-list field-keyword names) names) ""))))))
 
 (def check-default-value
   (fn (pairs)
@@ -366,17 +370,24 @@
 
 (def keyword-call
   (fn (form positional signature)
+    (read-call form positional signature
+               (definition (signature-name signature) "parameter")
+               (fn (form) (named-call form positional signature)))))
+
+(def read-call
+  (fn (form positional signature owner by-name)
     (let arguments (rest form))
     (if (reads-by-name? arguments signature)
-        (named-call form positional signature)
+        (by-name form)
         (if (value-eq (length arguments) (length (signature-names signature)))
             (prepend positional arguments)
-            (call-arity-error form signature)))))
+            (call-arity-error form signature owner)))))
 
 (def call-arity-error
-  (fn (form signature)
+  (fn (form signature owner)
+    (let noun (definition-noun owner))
     (fail (string "`" (symbol-name (first form)) "` takes " (length (signature-names signature))
-                  " arguments, one per parameter, or a `:name value` pair for each parameter without a default")
+                  " arguments, one per " noun ", or a `:" noun " value` pair for each " noun " without a default")
           form
           (string "write it as `" (prepend (first form) (signature-names signature)) "`"))))
 
