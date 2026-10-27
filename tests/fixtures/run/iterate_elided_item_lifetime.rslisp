@@ -1,0 +1,26 @@
+(defstruct car :model str :year u16)
+
+(type count-long (fn ((iterator (ref str))) usize))
+(defn count-long (names) (count (filter names (fn (name) (> (len name) 4)))))
+
+(type count-big (fn ((iterator (ref i64))) usize))
+(defn count-big (values) (count (filter values (fn (value) (> value 50)))))
+
+(type count-new (fn ((iterator (ref car))) usize))
+(defn count-new (cars) (count (filter cars (fn (car) (> (:year car) 2020)))))
+
+(type count-both (fn ((iterator (ref str)) (iterator (ref str))) usize))
+(defn count-both (models makers) (+ (count models) (count makers)))
+
+(type last-name (fn ((iterator (ref str))) (option (ref str))))
+(defn last-name (names) (max names))
+
+(defn main ()
+  (let names (vec "Leaf" "Ariya" "Sakura"))
+  (let scores (vec 70 40 90))
+  (let cars (vec (->car "Leaf" 2024) (->car "Micra" 2017)))
+  (println (count-long names))
+  (println (count-big scores))
+  (println (count-new cars))
+  (println (count-both names (vec "Nissan")))
+  (prn (last-name names)))

@@ -1,5 +1,6 @@
 mod expressions;
 mod fragment;
+mod fresh_lifetimes;
 mod items;
 mod literal_generics;
 mod locals;

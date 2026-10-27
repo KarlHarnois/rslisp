@@ -1,6 +1,10 @@
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
+use super::fresh_lifetimes::FreshLifetimes;
 use super::mangle::NameMangler;
+use super::opaque_borrows::OpaqueBorrows;
 use super::plan::EmitPlan;
 use super::unsized_parameters::UnsizedParameters;
 use crate::core::{BindingId, ModuleId, Piece, PrimitiveType};
@@ -15,11 +19,12 @@ pub enum TypePosition {
     Value,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct LifetimeScope {
     names: HashMap<BindingId, String>,
     elided: Option<String>,
     elided_written: HashSet<BindingId>,
+    opaque_lifetimes: Option<Rc<FreshLifetimes>>,
 }
 
 impl LifetimeScope {
@@ -28,7 +33,21 @@ impl LifetimeScope {
             names,
             elided: None,
             elided_written: HashSet::new(),
+            opaque_lifetimes: None,
         }
+    }
+
+    pub fn naming_opaque_lifetimes(mut self, fresh: &Rc<FreshLifetimes>) -> Self {
+        self.opaque_lifetimes = Some(Rc::clone(fresh));
+        self
+    }
+
+    fn entering_opaque(&self) -> Option<Self> {
+        let fresh = self
+            .opaque_lifetimes
+            .as_ref()
+            .filter(|_| self.elided.is_none())?;
+        Some(self.clone().with_elided(Some(fresh.issue())))
     }
 
     pub fn with_elided(mut self, elided: Option<String>) -> Self {
@@ -460,17 +479,45 @@ impl<'a> RustTypes<'a> {
             return Self::INFERRED.to_string();
         }
         let template = rust_type.template_for(arguments.first());
+        let argument_scope = self.argument_scope(rust_type, arguments, position, scope);
         template
             .pieces()
             .iter()
             .map(|piece| match piece {
                 Piece::Literal(text) => text.to_string(),
                 Piece::Placeholder { index, .. } => {
-                    self.show_in(&arguments[*index], Self::inner(position), scope)
+                    self.show_in(&arguments[*index], Self::inner(position), &argument_scope)
                 }
                 Piece::TypePlaceholder { .. } | Piece::BinderPlaceholder { .. } => "_".to_string(),
             })
             .collect()
+    }
+
+    fn argument_scope<'scope>(
+        &self,
+        rust_type: &RustType,
+        arguments: &[Type],
+        position: TypePosition,
+        scope: &'scope LifetimeScope,
+    ) -> Cow<'scope, LifetimeScope> {
+        self.hides_elided_borrow(rust_type, arguments, position)
+            .then(|| scope.entering_opaque())
+            .flatten()
+            .map_or(Cow::Borrowed(scope), Cow::Owned)
+    }
+
+    fn hides_elided_borrow(
+        &self,
+        rust_type: &RustType,
+        arguments: &[Type],
+        position: TypePosition,
+    ) -> bool {
+        let borrows = OpaqueBorrows::new(self.program);
+        rust_type.is_opaque()
+            && position == TypePosition::Signature
+            && arguments
+                .iter()
+                .any(|argument| borrows.holds_elided_borrow(argument))
     }
 
     fn lifetime_parameter_count(&self, binding: BindingId) -> usize {
