@@ -1,0 +1,57 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/nested_parameter_calls.rslisp
+---
+fn twice(mut f: impl FnMut(i64) -> i64, x: i64) -> i64 {
+    {
+        let call_argument_0 = f(x);
+        f(call_argument_0)
+    }
+}
+
+fn around(mut f: impl FnMut(i64) -> i64, g: impl FnOnce(i64) -> i64, x: i64) -> i64 {
+    {
+        let call_argument_0 = g(f(x));
+        f(call_argument_0)
+    }
+}
+
+fn is_both_positive(mut f: impl FnMut(i64) -> bool, x: i64) -> bool {
+    {
+        let call_argument_0 = if f(x) && f(x + 1) { 1 } else { 0 };
+        f(call_argument_0)
+    }
+}
+
+fn inc(n: i64) -> i64 {
+    n + 1
+}
+
+fn main() {
+    println!("{}", twice(inc, 1));
+    println!("{}", twice(|n: i64| n * 2, 1));
+    let mut calls: Vec<i64> = vec![1_i64];
+    println!(
+        "{}",
+        twice(
+            |n: i64| {
+                calls.push(n);
+                n + 1
+            },
+            1
+        )
+    );
+    println!("{}", calls.len());
+    println!("{}", around(inc, |n: i64| n * 10, 1));
+    println!("{}", is_both_positive(|n: i64| n > 0, 1));
+    let mut record = |n: i64| {
+        calls.push(n);
+        n + 1
+    };
+    println!("{}", {
+        let call_argument_0 = record(1);
+        record(call_argument_0)
+    });
+    println!("{}", calls.len())
+}

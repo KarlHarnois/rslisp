@@ -1607,7 +1607,10 @@ impl<'a> ExpressionEmitter<'a> {
             let types = self.callee_type_arguments(callee);
             return self.template_call(&template, arguments, types, span);
         }
-        if let Some(last) = Self::last_conflicting_argument(arguments) {
+        if let Some(last) = self
+            .last_argument_mentioning_mutable_callee(callee, arguments)
+            .max(Self::last_conflicting_argument(arguments))
+        {
             return self.call_with_temporaries(callee, arguments, last);
         }
         let arguments = arguments
@@ -1736,6 +1739,22 @@ impl<'a> ExpressionEmitter<'a> {
                     .iter()
                     .any(|binding| argument.value.mentions_local(*binding))
         })
+    }
+
+    fn last_argument_mentioning_mutable_callee(
+        &self,
+        callee: &TypedExpr,
+        arguments: &[TypedArgument],
+    ) -> Option<usize> {
+        let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = callee.kind else {
+            return None;
+        };
+        if !self.mutable_locals.contains(&binding) {
+            return None;
+        }
+        arguments
+            .iter()
+            .rposition(|argument| argument.value.mentions_local(binding))
     }
 
     fn called_template(&self, callee: &TypedExpr) -> Option<Rc<RustTemplate>> {
