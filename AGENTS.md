@@ -138,13 +138,14 @@ nix develop -c cargo xtask coverage
 ```sh
 nix develop -c cargo fmt --all --check
 nix develop -c cargo clippy --workspace --all-targets -- -D warnings
+nix develop -c cargo xtask coverage
 nix flake check
 ```
 
 - NEVER run `nix flake check` or `nix build` while you work: each run rebuilds the project and every dependency on all cores.
-- The gate leaves out `cargo xtask coverage` and `nix build .#` because `nix flake check` runs both.
+- The gate leaves out `nix build .#` because `nix flake check` runs it.
 
-**A change is done when the gate passes.** CI runs the gate on Linux and macOS, except on pull requests. If one of the gate's commands also fails without the change, stop and show its output to the project owner.
+**A change is done when the gate passes.** CI runs the gate on Linux and macOS. If one of the gate's commands also fails without the change, stop and show its output to the project owner.
 
 ## Reference files
 
