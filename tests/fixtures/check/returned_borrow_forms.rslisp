@@ -8,6 +8,8 @@
 
 (enum badge (titled str u16) plain)
 
+(enum plaque (engraved (struct (text str) (count u16))) empty)
+
 (defn grouped (year)
   (let make (to-string "Nissan"))
   (new car (make (as-str make)) (year year)))
@@ -23,6 +25,10 @@
 (defn held ()
   (let make (to-string "Nissan"))
   (new holder (held (as-str make))))
+
+(defn stamped (year)
+  (let make (to-string "Nissan"))
+  (plaque/engraved (as-str make) year))
 
 (defn main ()
   (println (:year (grouped 2024))))
