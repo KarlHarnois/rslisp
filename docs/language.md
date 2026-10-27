@@ -211,13 +211,13 @@ Programs write structs with the prelude's `defstruct`, which takes flat fields. 
 
 The constructor `->point` is a macro, and it reads a call in this order:
 
-1. If the arguments read as `:field value` pairs that name distinct fields and every field without a default, the call is by name. `(->point :y 2.0 :x 1.0)` expands to `(new point (y 2.0) (x 1.0))`, in the order written.
+1. If the arguments read as `:field value` pairs that name distinct fields and every field without a default, the call is by name. `(->point :y 2.0 :x 1.0)` expands to `(new point (:y 2.0) (:x 1.0))`, in the order written.
 2. Otherwise, if the call has exactly one argument per field, the call is positional. `(->point 1.0 2.0)` calls a positional function that `defstruct` defines under a hygienic name, which no source code can refer to. It emits as `make_point(1.0, 2.0)`.
-3. Otherwise, if the arguments read as such pairs, the call is an error that names the missing fields. Any other call is an error that names the field count.
+3. Otherwise, if the arguments are `:key value` pairs with distinct keys, the call expands to `new` as a call by name does, with the defaults of the omitted fields. `new` then reports an unknown key in the user's spelling with the closest field, as `(->car :mak "Nissan" ...)` suggests `:make`, or names the missing fields that have no default. Any other call is an error that names the field count.
 
 In value position, `->point` expands to the positional function, so `(let build ->point)` emits `let build = make_point;`. A program may define its own `make-point`, because no source name refers to the positional function.
 
-A `defstruct` may end with one `(defaults :field value ...)` clause, recognized by its `defaults` head, in a place where a field keyword would go. Each key names a declared field at most once. `(defstruct user :name str :email str :admin? bool (defaults :admin? false))` lets a call by name omit `:admin?`, and `(->user :name "ana" :email "ana@example.org")` expands to `(new user (name "ana") (email "ana@example.org") (admin? false))`, which emits `User { name: "ana", email: "ana@example.org", is_admin: false }`. The default is inlined at each construction that omits it, so it takes its field's type there, and a default such as `(vec)` builds a new value at each construction. A default cannot refer to other fields. A positional call and `->user` in value position still take every field.
+A `defstruct` may end with one `(defaults :field value ...)` clause, recognized by its `defaults` head, in a place where a field keyword would go. Each key names a declared field at most once. `(defstruct user :name str :email str :admin? bool (defaults :admin? false))` lets a call by name omit `:admin?`, and `(->user :name "ana" :email "ana@example.org")` expands to `(new user (:name "ana") (:email "ana@example.org") (admin? false))`, which emits `User { name: "ana", email: "ana@example.org", is_admin: false }`. The default is inlined at each construction that omits it, so it takes its field's type there, and a default such as `(vec)` builds a new value at each construction. A default cannot refer to other fields. A positional call and `->user` in value position still take every field.
 
 ### Field keywords
 

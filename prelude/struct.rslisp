@@ -280,19 +280,25 @@
           form
           (string "write it as `" (prepend (first form) fields) "`"))))
 
-(def missing-fields-error
+(def unmatched-call
   (fn (form shape)
-    (let missing (fields-without-key (required-fields shape) (pair-keys (rest form))))
-    (fail (string (if (value-eq (length missing) 1) "missing field " "missing fields ")
-                  (joined-names missing "`") " in `" (shape-name shape) "`")
-          form
-          (string "name every field without a default: " (joined-names missing "")))))
-
-(def constructor-call-error
-  (fn (form shape)
-    (if (reads-as-names? (rest form) (shape-fields shape))
-        (missing-fields-error form shape)
+    (if (distinct-keyword-pairs? (rest form))
+        (named-construction (rest form) shape)
         (constructor-arity-error form (shape-fields shape)))))
+
+(def distinct-keyword-pairs?
+  (fn (arguments)
+    (if (whole-pairs? arguments) (distinct-keywords? (pair-keys arguments)) false)))
+
+(def distinct-keywords?
+  (fn (keys)
+    (if (every-keyword? keys) (distinct-keys? keys) false)))
+
+(def every-keyword?
+  (fn (forms)
+    (if (empty? forms)
+        true
+        (if (keyword? (first forms)) (every-keyword? (rest forms)) false))))
 
 (def constructor-call
   (fn (form hidden shape)
@@ -301,7 +307,7 @@
         (named-construction arguments shape)
         (if (value-eq (length arguments) (length (shape-fields shape)))
             (prepend hidden arguments)
-            (constructor-call-error form shape)))))
+            (unmatched-call form shape)))))
 
 (def constructor-expansion
   (fn (form hidden shape)

@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/constructor_unknown_key_with_default.rslisp
+---
+error[L0408]: `user` has no field `:emial`
+ --> check/constructor_unknown_key_with_default.rslisp:4:32
+  |
+4 |   (let ana (->user :name "ana" :emial "ana@example.com"))
+  |                                ^^^^^^ unknown field
+  |
+help: a field with a similar name exists
+  |
+4 -   (let ana (->user :name "ana" :emial "ana@example.com"))
+4 +   (let ana (->user :name "ana" :email "ana@example.com"))
+  |

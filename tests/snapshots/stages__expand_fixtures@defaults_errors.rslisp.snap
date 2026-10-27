@@ -58,11 +58,3 @@ error[L0301]: `blank` has no field `x`
   |                            ^^ here
   |
   = help: `blank` has no fields
-
-error[L0301]: missing field `email` in `user`
-  --> expand/defaults_errors.rslisp:11:3
-   |
-11 |   (->user :name "ana"))
-   |   ^^^^^^^^^^^^^^^^^^^^ here
-   |
-   = help: name every field without a default: email
