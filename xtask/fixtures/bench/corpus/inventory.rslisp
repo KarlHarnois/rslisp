@@ -1,0 +1,5 @@
+(use library/stock restock)
+
+(defn main ()
+  (println (str "widgets: " (restock 3)))
+  (println (str "gadgets: " (restock 40))))

@@ -1,0 +1,6 @@
+(defn total (net tax)
+  (+ net tax))
+
+(defn main ()
+  (println (str "invoice A-100: " (total 95 5)))
+  (println (str "invoice A-101: " (total 200 20))))

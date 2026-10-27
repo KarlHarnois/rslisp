@@ -1,0 +1,6 @@
+(export restock)
+
+(def minimum-shelf 12)
+
+(defn restock (count)
+  (if (< count minimum-shelf) (+ count 24) count))
