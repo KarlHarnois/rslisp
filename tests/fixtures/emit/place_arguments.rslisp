@@ -1,4 +1,4 @@
-(defstruct person (name string) (age i64))
+(defstruct person :name string :age i64)
 
 (def origin (vec 1 2))
 

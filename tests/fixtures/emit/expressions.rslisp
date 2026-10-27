@@ -1,5 +1,5 @@
 (def bump! (rust "*{0} += 1" (fn ((mut i64)) unit)))
-(defstruct counter (count i64))
+(defstruct counter :count i64)
 
 (defn in-range? (a) (and (> a 1) (< a 5)))
 (defn small? (a) (or (= a 1) (= a 2) (= a 3)))

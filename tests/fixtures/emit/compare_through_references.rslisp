@@ -1,4 +1,4 @@
-(defstruct person (name string))
+(defstruct person :name string)
 
 (defn same-name? (a b) (= (person-name a) (person-name b)))
 

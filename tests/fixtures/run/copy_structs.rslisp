@@ -1,6 +1,6 @@
-(defstruct point (x i64) (y i64))
-(defstruct cube (x i64) (y i64) (z i64))
-(defstruct (pair a) (left a) (right a))
+(defstruct point :x i64 :y i64)
+(defstruct cube :x i64 :y i64 :z i64)
+(defstruct (pair a) :left a :right a)
 
 (defn shift (p) (make-point (+ (point-x p) 1) (point-y p)))
 (defn volume (c) (* (cube-x c) (* (cube-y c) (cube-z c))))

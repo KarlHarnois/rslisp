@@ -1,0 +1,2 @@
+(defstruct car :make str :year)
+(defstruct bike make str)

@@ -1,4 +1,4 @@
-(defstruct person (name string) (age i64))
+(defstruct person :name string :age i64)
 
 (defn apply-to-ten (f) (f 10))
 (defn greet-with (f) (f "hello"))

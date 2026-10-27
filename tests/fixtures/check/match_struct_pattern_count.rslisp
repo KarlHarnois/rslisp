@@ -1,5 +1,5 @@
 (enum tree leaf (branch tree))
-(defstruct parsed (node tree) (next usize))
+(defstruct parsed :node tree :next usize)
 
 (defn missing (p)
   (match p

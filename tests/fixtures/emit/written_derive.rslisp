@@ -1,7 +1,7 @@
-(defstruct ticket (id u32) (seat u32))
+(defstruct ticket :id u32 :seat u32)
 (derive ticket copy ord hash debug)
 
-(defstruct tag (label string))
+(defstruct tag :label string)
 (derive tag)
 
 (defn main ()

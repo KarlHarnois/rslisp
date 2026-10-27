@@ -56,13 +56,24 @@
   (let right (quote right))
   (let record (quote record))
   (template
-    (do (defstruct (unquote name) (splice fields))
+    (do (defstruct (unquote name) (splice (flat-fields fields)))
         (defn (unquote (symbol name (symbol-name name) "-equal?")) ((unquote left) (unquote right))
           (and (splice (map-list (fn (field) (field-equality name field left right)) fields))))
         (defn (unquote (symbol name (symbol-name name) "->string")) ((unquote record))
           (str (unquote (string "(" name))
                (splice (field-texts name fields record))
                ")")))))
+
+(def flat-fields
+  (fn (fields)
+    (if (empty? fields)
+        (list)
+        (prepend (field-keyword (first fields))
+                 (prepend (nth (first fields) 1) (flat-fields (rest fields)))))))
+
+(def field-keyword
+  (fn (field)
+    (symbol (first field) ":" (first field))))
 
 (def accessor
   (fn (name field)

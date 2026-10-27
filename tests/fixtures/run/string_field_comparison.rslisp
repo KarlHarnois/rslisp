@@ -1,4 +1,4 @@
-(defstruct box (name string))
+(defstruct box :name string)
 
 (type same-name (fn ((ref box) (ref string)) bool))
 (defn same-name (b name)

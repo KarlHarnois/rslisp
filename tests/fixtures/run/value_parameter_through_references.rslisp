@@ -1,4 +1,4 @@
-(defstruct employee (name string) (score u32))
+(defstruct employee :name string :score u32)
 
 (defn high? (person) (> (employee-score person) 80))
 (defn big? (n) (> n 2))

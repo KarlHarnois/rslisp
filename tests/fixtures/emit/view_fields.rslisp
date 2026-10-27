@@ -1,4 +1,4 @@
-(defstruct tag (name str) (scores (slice i64)))
+(defstruct tag :name str :scores (slice i64))
 (enum label (named str) blank)
 
 (defn describe (item)

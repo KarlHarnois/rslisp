@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).read_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/read/language_tour.rslisp
 ---
 (fn (x y) (+ x y))
@@ -8,7 +8,7 @@ input_file: tests/fixtures/read/language_tour.rslisp
 (defn some-function (x) (* x x))
 (use geometry make-point point-x)
 (export make-point point-x)
-(defstruct point (x f64) (y f64))
+(defstruct point :x f64 :y f64)
 (make-point 1 2)
 (str "hello" " " "world")
 (def admin? true)

@@ -1,12 +1,12 @@
 (defstruct car
-  (make (ref str))
-  (model (ref str))
-  (year u16)
-  (electric? bool))
+  :make (ref str)
+  :model (ref str)
+  :year u16
+  :electric? bool)
 
 (defstruct garage
-  (owner (ref str))
-  (cars (vec car)))
+  :owner (ref str)
+  :cars (vec car))
 
 (defn describe (vehicle)
   (str (car-year vehicle) " " (car-make vehicle) " " (car-model vehicle)

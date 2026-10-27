@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/defstruct_parameters_in_where.rslisp
 ---
-error[L0219]: `defstruct` names its type parameters on its name
- --> check/defstruct_parameters_in_where.rslisp:1:18
+error[L0301]: a field must start with `:`
+ --> check/defstruct_parameters_in_where.rslisp:1:17
   |
 1 | (defstruct pair (where (a b) (first a) (second b)))
-  |                  ^^^^^ this `where` names them in the body
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
   |
-  = help: write `(defstruct (pair a b) (first a) (second b))`
+  = help: write each field as `:name type`, as in (defstruct point :x f64 :y f64)

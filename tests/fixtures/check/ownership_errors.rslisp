@@ -1,4 +1,4 @@
-(defstruct person (name string) (age i64))
+(defstruct person :name string :age i64)
 
 (defn store (name) (make-person name 3))
 

@@ -1,5 +1,5 @@
-(defstruct point (x i64))
-(defstruct spot (x i64))
+(defstruct point :x i64)
+(defstruct spot :x i64)
 
 (defn bump (p)
   (assoc p (x 2)))

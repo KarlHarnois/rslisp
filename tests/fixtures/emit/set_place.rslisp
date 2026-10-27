@@ -1,4 +1,4 @@
-(defstruct cell (alive bool) (label string))
+(defstruct cell :alive bool :label string)
 
 (defn revive! (cell)
   (set! (field cell alive) true))

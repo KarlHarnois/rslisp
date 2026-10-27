@@ -1,5 +1,5 @@
 (def bump! (rust "*{0} += 1" (fn ((mut i64)) unit)))
-(defstruct tally (count i64) (label string))
+(defstruct tally :count i64 :label string)
 
 (defn bump-count! (t) (bump! (field t count)))
 

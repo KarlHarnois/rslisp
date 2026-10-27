@@ -1,4 +1,4 @@
-(defstruct float-key (value f64))
+(defstruct float-key :value f64)
 
 (defn main ()
   (let items (hash-map (new float-key (value 1.5)) 1))

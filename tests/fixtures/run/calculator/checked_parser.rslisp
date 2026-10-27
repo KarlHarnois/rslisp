@@ -2,7 +2,7 @@
 
 (export evaluate)
 
-(defstruct parsed (value i64) (next usize))
+(defstruct parsed :value i64 :next usize)
 
 (defn evaluate (tokens)
   (then-ok (parse-expression tokens 0) (fn (result) (expect-end tokens result))))

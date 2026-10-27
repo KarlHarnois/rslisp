@@ -3,7 +3,7 @@
 (defn too-many () (not true false))
 (defn calls-number () (5 1))
 (defn adds-text () (+ "a" "b"))
-(defstruct point (x f64) (y f64))
+(defstruct point :x f64 :y f64)
 (defn unknown-field (p) (field (the point p) z))
 (defn missing-fields () (new point (x 1)))
 (type keeps (where (a) (fn (a) a)))

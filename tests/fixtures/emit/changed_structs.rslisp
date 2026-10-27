@@ -1,11 +1,11 @@
 (def add-one! (rust "std::ops::AddAssign::add_assign({0}, 1)" (fn ((mut i64)) unit)))
 (def assign! (rust "{0}.clone_from({1})" (where ((a clone)) (fn ((mut a) (ref a)) unit))))
 
-(defstruct counter (count i64))
-(defstruct tally (total i64))
-(defstruct mark (x i64))
-(defstruct spot (x i64))
-(defstruct pin (x i64))
+(defstruct counter :count i64)
+(defstruct tally :total i64)
+(defstruct mark :x i64)
+(defstruct spot :x i64)
+(defstruct pin :x i64)
 (derive pin clone debug)
 
 (defn bump-tally! (t) (add-one! (field t total)))

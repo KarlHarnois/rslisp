@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/macro_struct_parameters_in_where.rslisp
+---
+error[L0219]: `old-pair` names its type parameters on its name
+ --> check/macro_struct_parameters_in_where.rslisp:4:1
+  |
+4 | (old-pair)
+  | ^^^^^^^^^^ this `where` names them in the body
+  |
+  = help: write `(old-pair (pair a b) (first a) (second b))`

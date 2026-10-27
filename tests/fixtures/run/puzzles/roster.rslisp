@@ -2,7 +2,7 @@
 
 (export solve-roster)
 
-(defstruct employee (name string) (dept string) (score u32))
+(defstruct employee :name string :dept string :score u32)
 
 (def roster "Ada,research,91\nBram,sales,78\nCleo,research,85\nDev,sales,93\nEsme,support,70\nFinn,support,88")
 

@@ -5,7 +5,7 @@
 (type twice-borrowed (fn ((ref (ref i64))) string))
 (defn twice-borrowed (number) (describe number))
 
-(defstruct (pair a b) (first a) (second b))
+(defstruct (pair a b) :first a :second b)
 
 (def origin (make-pair 1 (to-string "one")))
 (def copied (clone origin))

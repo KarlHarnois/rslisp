@@ -16,8 +16,8 @@ const SILENT_RUSTC: &str = "#!/bin/sh\nexit 0\n";
 const PASSTHROUGH_RUSTFMT: &str =
     "#!/bin/sh\nwhile IFS= read -r line; do printf '%s\\n' \"$line\"; done\n";
 const FAILING_RUSTFMT: &str = "#!/bin/sh\nprintf 'rustfmt failed in the sandbox\\n' >&2\nexit 1\n";
-const BOUND_MODULE: &str = "(export person)\n\n(defstruct person (name string))\n";
-const STRUCTS: &str = "(defstruct person (name string) (age i64))\n(defstruct ticket (id u32))\n(derive ticket debug)\n\n(defn main () (do))\n";
+const BOUND_MODULE: &str = "(export person)\n\n(defstruct person :name string)\n";
+const STRUCTS: &str = "(defstruct person :name string :age i64)\n(defstruct ticket :id u32)\n(derive ticket debug)\n\n(defn main () (do))\n";
 const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::ops::Add\" i64 (with i64 person))\n\n(type matches (where ((a (same person))) (fn (a) bool)))\n(defn matches (x) true)\n\n(defn main () (println (matches 1)))\n";
 
 struct Sandbox {
