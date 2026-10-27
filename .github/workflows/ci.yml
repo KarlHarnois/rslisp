@@ -153,6 +153,7 @@ jobs:
       - name: Measure the pull request
         run: nix develop .#ci -c cargo xtask bench measure --save target/bench/candidate.tsv
       - name: Compare
+        shell: bash
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -171,6 +172,7 @@ jobs:
             "$REPORT_MARKER" "$heading" "$versions" "$run_summary" "$brief" > "$REPORT"
       - name: Post the report on the pull request
         if: github.event.pull_request.head.repo.full_name == github.repository
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           COMMENTS: repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments
