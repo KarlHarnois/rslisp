@@ -643,6 +643,19 @@ impl TypeProblems {
         }
     }
 
+    pub fn repeated_field(struct_name: &str, label: &FieldLabel, first: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::REPEATED_FIELD,
+            format!(
+                "`{}` is given twice in `{struct_name}`",
+                label.spelled(&label.name)
+            ),
+            Label::new(label.span, "given again here"),
+        )
+        .with_label(Label::new(first, "first given here"))
+        .with_help("give each field once")
+    }
+
     pub fn missing_fields(struct_name: &str, missing: &[Rc<str>], span: Span) -> Diagnostic {
         let noun = if missing.len() == 1 {
             "field"

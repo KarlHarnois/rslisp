@@ -127,6 +127,7 @@ impl DiagnosticCode {
     pub const PROJECTION_WITHOUT_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0451"));
     pub const UNDECLARED_ASSOCIATED_VALUE: Self = Self(Cow::Borrowed("L0452"));
     pub const PROJECTION_WITHOUT_BOUND: Self = Self(Cow::Borrowed("L0453"));
+    pub const REPEATED_FIELD: Self = Self(Cow::Borrowed("L0454"));
 
     pub const USE_AFTER_MOVE: Self = Self(Cow::Borrowed("L0501"));
     pub const NEEDS_OWNERSHIP: Self = Self(Cow::Borrowed("L0503"));

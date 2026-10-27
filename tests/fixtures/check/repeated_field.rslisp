@@ -1,0 +1,10 @@
+(defstruct car :make str :year u16)
+
+(defn newer (leaf)
+  (assoc leaf :year 2025 :year 2026))
+
+(defn kia ()
+  (new car (make "Kia") (year 1) (year 2)))
+
+(defn main ()
+  (println (:year (newer (kia)))))

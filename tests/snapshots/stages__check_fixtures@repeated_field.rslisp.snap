@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/repeated_field.rslisp
+---
+error[L0454]: `:year` is given twice in `car`
+ --> check/repeated_field.rslisp:4:26
+  |
+4 |   (assoc leaf :year 2025 :year 2026))
+  |               -----      ^^^^^ given again here
+  |               |
+  |               first given here
+  |
+  = help: give each field once
+
+error[L0454]: `year` is given twice in `car`
+ --> check/repeated_field.rslisp:7:35
+  |
+7 |   (new car (make "Kia") (year 1) (year 2)))
+  |                          ----     ^^^^ given again here
+  |                          |
+  |                          first given here
+  |
+  = help: give each field once

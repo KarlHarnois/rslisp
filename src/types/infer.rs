@@ -2962,8 +2962,18 @@ impl TypeChecker {
     ) -> Result<Vec<(FieldLabel, TypedExpr)>, Diagnostic> {
         let struct_name = self.bindings.get(binding).name().to_string();
         let declared = self.instantiated_fields(binding, arguments);
-        let mut typed_fields = Vec::new();
+        let mut typed_fields: Vec<(FieldLabel, TypedExpr)> = Vec::new();
         for (label, value) in fields {
+            if let Some((first, _)) = typed_fields
+                .iter()
+                .find(|(earlier, _)| earlier.name == label.name)
+            {
+                return Err(TypeProblems::repeated_field(
+                    &struct_name,
+                    label,
+                    first.span,
+                ));
+            }
             let Some((_, field_type)) = declared.iter().find(|(name, _)| *name == label.name)
             else {
                 let names: Vec<Rc<str>> = declared.iter().map(|(name, _)| name.clone()).collect();
