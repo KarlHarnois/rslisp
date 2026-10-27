@@ -304,14 +304,14 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 |---|---|
 | `first rest list prepend concat length empty? nth take drop` | Build and take apart lists of forms. |
 | `symbol? keyword? list? string? number?` | Test what kind of form a value is. |
-| `symbol-name`, `keyword-name`, `(symbol context part...)`, `(string part...)` | Read and build names and strings. |
+| `symbol-name`, `keyword-name`, `keyword-field`, `(symbol context part...)`, `(string part...)` | Read and build names and strings. |
 | `escape-string`, `escape-char`, `escape-format`, `string-strip-suffix`, `string-strip-prefix` | Escape a string for a Rust string literal, a Rust character literal or a format string in a template, and drop a suffix or a prefix. |
 | `(same-binding? left right)` | Test whether two symbols refer to the same binding. |
 | `(fail "message" form)`, `(fail "message" form "help")` | Stop expansion with an error at `form`, and an optional help line that says how to fix the call. |
 | `number-add number-sub number-lt number-le number-gt number-ge` | Count and compare positions in code. They take integers. |
 | `value-eq bool-not` | Compare forms and negate booleans. |
 
-A keyword is a symbol whose name is `:` followed by at least one character, such as `:year`. `keyword?` tests for one, and `keyword-name` returns its name without the `:`, so `(keyword-name (quote :year))` is `"year"`. The compiler states the `:` marker once, so macro code never compares names with it.
+A keyword is a symbol whose name is `:` followed by at least one character, such as `:year`. `keyword?` tests for one, and `keyword-name` returns its name without the `:`, so `(keyword-name (quote :year))` is `"year"`. `keyword-field` returns the field symbol, so `(keyword-field (quote :year))` is `year`, with the keyword's location and hygiene, so an error about the field points at the keyword the user wrote. The compiler states the `:` marker once, so macro code never compares names with it.
 
 Macro code that maps a function over a list of forms imports `map-list` with `(use prelude/macros map-list)`.
 

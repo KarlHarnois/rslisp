@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::core::{BindingId, Builtin, Keyword, Lambda};
-use crate::reader::{Form, FormKind, NumberValue};
+use crate::reader::{Form, FormKind, NumberValue, Symbol};
 
 #[derive(Clone, Debug)]
 pub enum Value {
@@ -45,6 +45,14 @@ impl Value {
         self.as_form()
             .and_then(Form::as_symbol)
             .and_then(|symbol| Keyword::field_name(symbol.name()))
+    }
+
+    pub fn keyword_field(&self) -> Option<Form> {
+        let form = self.as_form()?;
+        let keyword = form.as_symbol()?;
+        let field_name = Keyword::field_name(keyword.name())?;
+        let field = Symbol::with_scopes(field_name, keyword.scopes().clone());
+        Some(Form::new(FormKind::Symbol(field), form.span()))
     }
 }
 
