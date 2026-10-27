@@ -50,7 +50,7 @@
      (match (as-str text)
        ("(" (then-ok (parse-expression tokens (+ position 1)) (fn (inner) (expect-close tokens inner))))
        (_ (err (str "expected a number at token " position)))))
-    ((some (number text)) (ok (make-parsed (number-value text) (+ position 1))))
+    ((some (number text)) (ok (->parsed (number-value text) (+ position 1))))
     (none (err (str "expected a number at token " position)))))
 
 (defn expect-close (tokens inner)
@@ -58,12 +58,12 @@
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
-       (")" (ok (make-parsed (parsed-value inner) (+ next 1))))
+       (")" (ok (->parsed (parsed-value inner) (+ next 1))))
        (_ (err (str "expected `)` at token " next)))))
     (_ (err (str "expected `)` at token " next)))))
 
 (defn combine (left right operator)
-  (make-parsed (operator (parsed-value left) (parsed-value right)) (parsed-next right)))
+  (->parsed (operator (parsed-value left) (parsed-value right)) (parsed-next right)))
 
 (defn number-value (text)
   (let (parsed (result i64 _)) (parse (as-str text)))

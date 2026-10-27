@@ -5,9 +5,9 @@
 (derive tag)
 
 (defn main ()
-  (let early (make-ticket 1 4))
+  (let early (->ticket 1 4))
   (let same early)
   (prn early)
   (prn same)
-  (println (< early (make-ticket 2 1)))
-  (println (tag-label (make-tag (to-string "vip")))))
+  (println (< early (->ticket 2 1)))
+  (println (tag-label (->tag (to-string "vip")))))

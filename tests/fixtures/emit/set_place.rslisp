@@ -15,7 +15,7 @@
                ((some row) (at row 0))
                (none false)))
   (println alive)
-  (let cell (make-cell false (to-string "seed")))
+  (let cell (->cell false (to-string "seed")))
   (revive! cell)
   (rename! cell (to-string "grown"))
   (println (cell-alive cell) " " (cell-label cell))

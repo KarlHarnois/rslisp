@@ -3,8 +3,8 @@
 (defn same-name? (a b) (= (person-name a) (person-name b)))
 
 (defn main ()
-  (let ana (make-person (to-string "Ana")))
-  (let bo (make-person (to-string "Bo")))
+  (let ana (->person (to-string "Ana")))
+  (let bo (->person (to-string "Bo")))
   (println (same-name? ana bo))
   (println (< (person-name ana) (person-name bo)))
   (println (!= (person-name ana) (person-name bo))))

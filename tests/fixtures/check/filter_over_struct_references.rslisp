@@ -4,5 +4,5 @@
   (collect (filter (iter people) (fn (p) (>= (person-age p) 18)))))
 
 (defn main ()
-  (let people (vec (make-person (to-string "Ana") 30) (make-person (to-string "Ben") 12)))
+  (let people (vec (->person (to-string "Ana") 30) (->person (to-string "Ben") 12)))
   (println (len (adults people))))

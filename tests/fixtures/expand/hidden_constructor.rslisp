@@ -1,0 +1,4 @@
+(defstruct car :make str :model str :year u16 :electric? bool)
+
+(defn main ()
+  (println (car-year (make-car "Honda" "Civic" 2019 false))))

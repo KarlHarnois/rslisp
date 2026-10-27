@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).emit_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/emit/geometry.rslisp
 ---
 fn main() {
@@ -22,7 +22,7 @@ mod shapes {
             pub y: f64,
         }
 
-        pub fn make_point(x: f64, y: f64) -> Point {
+        pub(crate) fn make_point(x: f64, y: f64) -> Point {
             Point { x, y }
         }
 

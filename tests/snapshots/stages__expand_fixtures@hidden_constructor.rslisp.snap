@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/hidden_constructor.rslisp
+---
+error[L0201]: cannot find `make-car` in this scope
+ --> expand/hidden_constructor.rslisp:4:23
+  |
+4 |   (println (car-year (make-car "Honda" "Civic" 2019 false))))
+  |                       ^^^^^^^^ not found in this scope

@@ -5,4 +5,4 @@
   (= (field b name) name))
 
 (defn main ()
-  (println (same-name (make-box (to-string "x")) (to-string "x"))))
+  (println (same-name (->box (to-string "x")) (to-string "x"))))

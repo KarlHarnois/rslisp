@@ -4,7 +4,7 @@
 (def admin? true)
 (defn greeting () (str "hello" " " "world"))
 (defstruct point :x f64 :y f64)
-(def origin (make-point 1 2))
+(def origin (->point 1 2))
 (defn distance-squared (a b)
   (let dx (- (point-x a) (point-x b)))
   (let dy (- (point-y a) (point-y b)))

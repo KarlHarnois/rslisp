@@ -3,7 +3,7 @@
 (defn label (someone) (str (person-name someone)))
 (defn forward (someone) (label someone))
 (defn keep (value) value)
-(defn store (name) (make-person name 3))
+(defn store (name) (->person name 3))
 (defn first-name (someone) (person-name someone))
 (defn print-then-keep (someone) (println (person-name someone)) (keep someone))
 (defn add-one (n) (+ n 1))

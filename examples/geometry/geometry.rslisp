@@ -1,4 +1,4 @@
-(export point make-point point-x point-y distance)
+(export point ->point point-x point-y distance)
 
 (defstruct point :x f64 :y f64)
 

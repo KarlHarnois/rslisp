@@ -1,6 +1,6 @@
 (defstruct pair :left string :right f64)
 
 (defn main ()
-  (let first-pair (make-pair (to-string "one") 2))
+  (let first-pair (->pair (to-string "one") 2))
   (let moved first-pair)
   (println (pair-left first-pair)))

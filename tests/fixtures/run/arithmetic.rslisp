@@ -12,4 +12,4 @@
   (println (rem 17 5))
   (println (< 1 2 3))
   (println (< 3 2 1))
-  (println (distance-squared (make-point 0 0) (make-point 3 4))))
+  (println (distance-squared (->point 0 0) (->point 3 4))))

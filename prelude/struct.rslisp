@@ -2,7 +2,7 @@
 (use prelude/logic and)
 (use prelude/syntax defn)
 (use code first rest list nth drop length empty? list? symbol? symbol symbol-name same-binding?
-          value-eq number-lt prepend string fail keyword? keyword-name)
+          value-eq number-lt prepend concat string fail keyword? keyword-name)
 
 (export defstruct)
 
@@ -48,12 +48,83 @@
         (fail "a field must start with `:`" keyword
               "write each field as `:name type`, as in (defstruct point :x f64 :y f64)"))))
 
+(def keyword-of?
+  (fn (key field)
+    (if (keyword? key)
+        (value-eq (keyword-name key) (symbol-name field))
+        false)))
+
+(def field-of-key
+  (fn (key fields)
+    (if (keyword-of? key (first fields))
+        (first fields)
+        (field-of-key key (rest fields)))))
+
+(def pair-keys
+  (fn (arguments)
+    (if (empty? arguments)
+        (list)
+        (prepend (first arguments) (pair-keys (drop 2 arguments))))))
+
+(def field-has-key?
+  (fn (field keys)
+    (if (empty? keys)
+        false
+        (if (keyword-of? (first keys) field) true (field-has-key? field (rest keys))))))
+
+(def every-field-has-key?
+  (fn (fields keys)
+    (if (empty? fields)
+        true
+        (if (field-has-key? (first fields) keys) (every-field-has-key? (rest fields) keys) false))))
+
+(def names-every-field?
+  (fn (arguments fields)
+    (if (value-eq (length arguments) (length (concat fields fields)))
+        (every-field-has-key? fields (pair-keys arguments))
+        false)))
+
+(def named-initializers
+  (fn (arguments fields)
+    (if (empty? arguments)
+        (list)
+        (prepend (list (field-of-key (first arguments) fields) (nth arguments 1))
+                 (named-initializers (drop 2 arguments) fields)))))
+
+(def constructor-arity-error
+  (fn (form fields)
+    (fail (string "`" (symbol-name (first form)) "` takes " (length fields)
+                  " arguments, one per field, or a `:field value` pair for each field")
+          form
+          (string "write it as `" (prepend (first form) fields) "`"))))
+
+(def constructor-call
+  (fn (form hidden name fields)
+    (let arguments (rest form))
+    (if (names-every-field? arguments fields)
+        (prepend (quote new) (prepend name (named-initializers arguments fields)))
+        (if (value-eq (length arguments) (length fields))
+            (prepend hidden arguments)
+            (constructor-arity-error form fields)))))
+
+(def constructor-expansion
+  (fn (form hidden name fields)
+    (if (symbol? form)
+        hidden
+        (constructor-call form hidden name fields))))
+
 (defmacro defstruct (head body ...)
   (let name (head-name head))
   (let params (head-params head))
   (let fields (field-groups body))
+  (let field-names (map-list first fields))
+  (let hidden (symbol (quote make) "make-" name))
   (template
     (do (struct (unquote head) (splice fields))
-        (defn (unquote (symbol name "make-" name)) (unquote (map-list first fields))
+        (defn (unquote hidden) (unquote field-names)
           (new (unquote name) (splice (map-list field-initializer fields))))
+        (def (unquote (symbol name "->" name))
+          (macro (form)
+            (constructor-expansion form (quote (unquote hidden)) (quote (unquote name))
+                                   (quote (unquote field-names)))))
         (splice (map-list (fn (field) (accessor name params field)) fields)))))

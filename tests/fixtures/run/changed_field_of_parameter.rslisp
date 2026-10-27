@@ -4,6 +4,6 @@
 (defn bump-count! (t) (bump! (field t count)))
 
 (defn main ()
-  (let t (make-tally 5 (to-string "fake")))
+  (let t (->tally 5 (to-string "fake")))
   (bump-count! t)
   (println (tally-count t)))

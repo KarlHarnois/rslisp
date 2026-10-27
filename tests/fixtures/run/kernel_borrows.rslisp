@@ -11,7 +11,7 @@
   (let m (mut n))
   (bump! m)
   (println n)
-  (let c (make-counter 3))
+  (let c (->counter 3))
   (println (peek (ref (field c count))))
   (let r (ref c))
   (println (peek (ref (field r count)))))

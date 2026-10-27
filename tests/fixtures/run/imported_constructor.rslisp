@@ -1,0 +1,7 @@
+(use cars/cars car ->car car-model car-year)
+
+(defn main ()
+  (let by-name (->car :make "Nissan" :model "Leaf" :year 2024 :electric? true))
+  (let by-position (->car "Honda" "Civic" 2019 false))
+  (println (car-model by-name))
+  (println (car-year by-position)))

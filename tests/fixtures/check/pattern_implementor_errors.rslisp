@@ -6,7 +6,7 @@
 (defn borrowed-text (text) (describe text))
 
 (defstruct (pair a b) :first a :second b)
-(defn clone-units () (clone (make-pair (do) 1)))
+(defn clone-units () (clone (->pair (do) 1)))
 
 (type one (where ((n shown)) (fn (n) n)))
 (defn one (value) 1)

@@ -2,5 +2,5 @@
 (derive ticket debug)
 
 (defn main ()
-  (let early (make-ticket 1))
+  (let early (->ticket 1))
   (prn (clone early)))

@@ -1,0 +1,60 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/constructor_macro.rslisp
+---
+fn describe_early() -> u16 {
+    car_year(&make_car("Toyota", "Corolla", 2018, false))
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+    year: u16,
+    is_electric: bool,
+}
+
+fn make_car<'a>(make: &'a str, model: &'a str, year: u16, is_electric: bool) -> Car<'a> {
+    Car {
+        make,
+        model,
+        year,
+        is_electric,
+    }
+}
+
+fn car_make<'a>(instance: &'a Car<'a>) -> &'a str {
+    instance.make
+}
+
+fn car_model<'a>(instance: &'a Car<'a>) -> &'a str {
+    instance.model
+}
+
+fn car_year(instance: &Car<'_>) -> u16 {
+    instance.year
+}
+
+fn main() {
+    let by_position = make_car("Honda", "Civic", 2019, false);
+    let by_name = Car {
+        make: "Nissan",
+        model: "Leaf",
+        year: 2024,
+        is_electric: true,
+    };
+    let reordered = Car {
+        year: 2019,
+        is_electric: false,
+        make: "Honda",
+        model: "Civic",
+    };
+    let build = make_car;
+    let built = build("Volkswagen", "Golf", 2021, false);
+    println!("{}", car_make(&by_position));
+    println!("{}", car_model(&by_name));
+    println!("{}", car_year(&reordered));
+    println!("{}", car_model(&built));
+    println!("{}", describe_early())
+}

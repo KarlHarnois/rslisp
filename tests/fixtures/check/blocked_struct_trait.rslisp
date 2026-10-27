@@ -3,4 +3,4 @@
 (defstruct point :x f64 :y f64)
 
 (defn main ()
-  (println (same? (make-point 0 0) (make-point 1 1))))
+  (println (same? (->point 0 0) (->point 1 1))))

@@ -1,5 +1,5 @@
 (defstruct score :points i64 :name string)
 (defn main ()
-  (let scores (vec (make-score 3 (to-string "Ana")) (make-score 1 (to-string "Bo"))))
+  (let scores (vec (->score 3 (to-string "Ana")) (->score 1 (to-string "Bo"))))
   (sort! scores)
   (println (len scores)))
