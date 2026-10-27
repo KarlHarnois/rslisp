@@ -1,0 +1,65 @@
+(use matrix_geometry/linear rounded)
+
+(export point ->point shape area perimeter title circle ->circle rect ->rect polygon ->polygon
+        cross distance)
+
+(defstruct point :x f64 :y f64)
+
+(display point (p) "(" (rounded (:x p)) ", " (rounded (:y p)) ")")
+
+(trait shape
+  (area (fn ((ref self)) f64))
+  (perimeter (fn ((ref self)) f64))
+  (title (fn ((ref self)) string)))
+
+(defstruct circle :center point :radius f64)
+(defstruct rect :corner point :width f64 :height f64)
+(defstruct polygon :name str :corners (vec point))
+
+(impl shape circle
+  (area (c) (* pi (:radius c) (:radius c)))
+  (perimeter (c) (* 2.0 pi (:radius c)))
+  (title (c) (str "circle at " (:center c))))
+
+(impl shape rect
+  (area (r) (* (:width r) (:height r)))
+  (perimeter (r) (* 2.0 (+ (:width r) (:height r))))
+  (title (r) (str "rect at " (:corner r))))
+
+(impl shape polygon
+  (area (p) (magnitude (/ (shoelace (:corners p)) 2.0)))
+  (perimeter (p) (edge-length (:corners p)))
+  (title (p) (str (:name p) " with " (len (:corners p)) " corners")))
+
+(type shoelace (fn ((ref (vec point))) f64))
+(defn shoelace (corners)
+  (fold (edges corners) 0.0
+        (fn (total edge)
+          (let-pair (from to) edge
+            (+ total (- (* (:x from) (:y to)) (* (:x to) (:y from))))))))
+
+(type edge-length (fn ((ref (vec point))) f64))
+(defn edge-length (corners)
+  (fold (edges corners) 0.0
+        (fn (total edge)
+          (let-pair (from to) edge
+            (+ total (distance from to))))))
+
+(type edges (fn ((ref (vec point))) (vec (pair point point))))
+(defn edges (corners)
+  (let count (len corners))
+  (collect (map (range 0 count)
+                (fn (index) (pair (deref (at corners index)) (deref (at corners (rem (+ index 1) count))))))))
+
+(type distance (fn (point point) f64))
+(defn distance (from to)
+  (let dx (- (:x to) (:x from)))
+  (let dy (- (:y to) (:y from)))
+  (sqrt (+ (* dx dx) (* dy dy))))
+
+(type cross (fn (point point point) f64))
+(defn cross (origin a b)
+  (- (* (- (:x a) (:x origin)) (- (:y b) (:y origin)))
+     (* (- (:y a) (:y origin)) (- (:x b) (:x origin)))))
+
+(def magnitude (rust "{0}.abs()" (fn (f64) f64)))

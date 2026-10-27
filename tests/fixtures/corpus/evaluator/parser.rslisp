@@ -1,0 +1,188 @@
+(use evaluator/lexer token)
+(use evaluator/syntax expr statement)
+
+(export parse-program)
+
+(defstruct parsed :node expr :next usize)
+(defstruct parsed-statement :statement statement :next usize)
+
+(def comparison-operators (vec "<" ">" "<=" ">=" "==" "!="))
+
+(type parse-program (fn ((ref (vec token))) (result (vec statement) string)))
+(defn parse-program (tokens)
+  (parse-statements tokens 0 (vec)))
+
+(type parse-statements (fn ((ref (vec token)) usize (vec statement)) (result (vec statement) string)))
+(defn parse-statements (tokens position statements)
+  (if (>= position (len tokens))
+      (ok statements)
+      (do (let parsed (try (parse-statement tokens position)))
+          (let after (try (skip-separator tokens (:next parsed))))
+          (let-fields (parsed-statement (statement _)) parsed
+            (parse-statements tokens after (append statements statement))))))
+
+(type skip-separator (fn ((ref (vec token)) usize) (result usize string)))
+(defn skip-separator (tokens position)
+  (cond ((>= position (len tokens)) (ok position))
+        ((symbol-at? tokens position ";") (ok (+ position 1)))
+        (else (err (str "expected `;` at token " position)))))
+
+(type parse-statement (fn ((ref (vec token)) usize) (result parsed-statement string)))
+(defn parse-statement (tokens position)
+  (if (name-at? tokens position "let")
+      (parse-binding tokens (+ position 1))
+      (do (let value (try (parse-expression tokens position)))
+          (let-fields (parsed (node next)) value
+            (ok (->parsed-statement (statement/show node) next))))))
+
+(type parse-binding (fn ((ref (vec token)) usize) (result parsed-statement string)))
+(defn parse-binding (tokens position)
+  (let name (try (expect-name tokens position)))
+  (try (expect-symbol tokens (+ position 1) "="))
+  (let value (try (parse-expression tokens (+ position 2))))
+  (let-fields (parsed (node next)) value
+    (ok (->parsed-statement (statement/binding name node) next))))
+
+(type parse-expression (fn ((ref (vec token)) usize) (result parsed string)))
+(defn parse-expression (tokens position)
+  (if (name-at? tokens position "if")
+      (parse-choice tokens (+ position 1))
+      (parse-comparison tokens position)))
+
+(type parse-choice (fn ((ref (vec token)) usize) (result parsed string)))
+(defn parse-choice (tokens position)
+  (let test (try (parse-expression tokens position)))
+  (try (expect-keyword tokens (:next test) "then"))
+  (let then (try (parse-expression tokens (+ (:next test) 1))))
+  (try (expect-keyword tokens (:next then) "else"))
+  (let otherwise (try (parse-expression tokens (+ (:next then) 1))))
+  (let next (:next otherwise))
+  (let-fields (parsed (test-node _)) test
+    (let-fields (parsed (then-node _)) then
+      (let-fields (parsed (otherwise-node _)) otherwise
+        (ok (->parsed (expr/choice test-node then-node otherwise-node) next))))))
+
+(type parse-comparison (fn ((ref (vec token)) usize) (result parsed string)))
+(defn parse-comparison (tokens position)
+  (let left (try (parse-sum tokens position)))
+  (match (operator-at tokens (:next left) comparison-operators)
+    ((some operator)
+     (do (let right (try (parse-sum tokens (+ (:next left) 1))))
+         (ok (combine operator left right))))
+    (none (ok left))))
+
+(type parse-sum (fn ((ref (vec token)) usize) (result parsed string)))
+(defn parse-sum (tokens position)
+  (let left (try (parse-product tokens position)))
+  (parse-sums tokens left))
+
+(type parse-sums (fn ((ref (vec token)) parsed) (result parsed string)))
+(defn parse-sums (tokens left)
+  (match (operator-at tokens (:next left) (vec "+" "-"))
+    ((some operator)
+     (do (let right (try (parse-product tokens (+ (:next left) 1))))
+         (parse-sums tokens (combine operator left right))))
+    (none (ok left))))
+
+(type parse-product (fn ((ref (vec token)) usize) (result parsed string)))
+(defn parse-product (tokens position)
+  (let left (try (parse-unary tokens position)))
+  (parse-products tokens left))
+
+(type parse-products (fn ((ref (vec token)) parsed) (result parsed string)))
+(defn parse-products (tokens left)
+  (match (operator-at tokens (:next left) (vec "*" "/" "%"))
+    ((some operator)
+     (do (let right (try (parse-unary tokens (+ (:next left) 1))))
+         (parse-products tokens (combine operator left right))))
+    (none (ok left))))
+
+(type parse-unary (fn ((ref (vec token)) usize) (result parsed string)))
+(defn parse-unary (tokens position)
+  (if (symbol-at? tokens position "-")
+      (do (let inner (try (parse-unary tokens (+ position 1))))
+          (let-fields (parsed (node next)) inner
+            (ok (->parsed (expr/negate node) next))))
+      (parse-primary tokens position)))
+
+(type parse-primary (fn ((ref (vec token)) usize) (result parsed string)))
+(defn parse-primary (tokens position)
+  (match (get tokens position)
+    ((some (number value)) (ok (->parsed (expr/literal (deref value)) (+ position 1))))
+    ((some (name text)) (parse-name tokens position (clone text)))
+    ((some (symbol text))
+     (if (= (as-str text) "(")
+         (parse-group tokens (+ position 1))
+         (err (str "unexpected `" text "` at token " position))))
+    (none (err (str "unexpected end of input at token " position)))))
+
+(type parse-name (fn ((ref (vec token)) usize string) (result parsed string)))
+(defn parse-name (tokens position text)
+  (let next (+ position 1))
+  (if (symbol-at? tokens next "(")
+      (parse-arguments tokens (+ next 1) text (vec))
+      (ok (->parsed (expr/variable text) next))))
+
+(type parse-arguments (fn ((ref (vec token)) usize string (vec expr)) (result parsed string)))
+(defn parse-arguments (tokens position function arguments)
+  (if (symbol-at? tokens position ")")
+      (ok (->parsed (expr/call function arguments) (+ position 1)))
+      (do (let argument (try (parse-expression tokens position)))
+          (let next (:next argument))
+          (let after (if (symbol-at? tokens next ",") (+ next 1) next))
+          (let-fields (parsed (node _)) argument
+            (parse-arguments tokens after function (append arguments node))))))
+
+(type parse-group (fn ((ref (vec token)) usize) (result parsed string)))
+(defn parse-group (tokens position)
+  (let inner (try (parse-expression tokens position)))
+  (try (expect-symbol tokens (:next inner) ")"))
+  (let-fields (parsed (node next)) inner
+    (ok (->parsed node (+ next 1)))))
+
+(defn combine (operator left right)
+  (let-fields (parsed (left-node _)) left
+    (let-fields (parsed (right-node next)) right
+      (->parsed (expr/binary operator left-node right-node) next))))
+
+(type operator-at (fn ((ref (vec token)) usize (ref (vec (ref str)))) (option string)))
+(defn operator-at (tokens position operators)
+  (match (get tokens position)
+    ((some (symbol text))
+     (if (any (iter operators) (fn (operator) (= (deref operator) (as-str text))))
+         (some (clone text))
+         none))
+    (_ none)))
+
+(type expect-name (fn ((ref (vec token)) usize) (result string string)))
+(defn expect-name (tokens position)
+  (match (get tokens position)
+    ((some (name text)) (ok (clone text)))
+    (_ (err (str "expected a name at token " position)))))
+
+(type expect-symbol (fn ((ref (vec token)) usize (ref str)) (result unit string)))
+(defn expect-symbol (tokens position expected)
+  (if (symbol-at? tokens position expected)
+      (ok (do))
+      (err (str "expected `" expected "` at token " position))))
+
+(type expect-keyword (fn ((ref (vec token)) usize (ref str)) (result unit string)))
+(defn expect-keyword (tokens position expected)
+  (if (name-at? tokens position expected)
+      (ok (do))
+      (err (str "expected `" expected "` at token " position))))
+
+(defn symbol-at? (tokens position expected)
+  (match (get tokens position)
+    ((some (symbol text)) (= (as-str text) expected))
+    (_ false)))
+
+(defn name-at? (tokens position expected)
+  (match (get tokens position)
+    ((some (name text)) (= (as-str text) expected))
+    (_ false)))
+
+(defn append (items item)
+  (let growing items)
+  (push! growing item)
+  growing)

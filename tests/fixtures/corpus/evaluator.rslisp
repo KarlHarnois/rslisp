@@ -1,0 +1,43 @@
+(use evaluator/lexer token tokenize)
+(use evaluator/parser parse-program)
+(use evaluator/machine execute)
+
+(def scripts
+  (vec "let width = 12; let height = 7; width * height; width % 5 + height / 2"
+       "let a = 3; let b = -a * (4 - 9); if a < b then b - a else a - b"
+       "let total = sum(1, 2, 3, 4, 5); max(total, 10, -20); min(total, abs(-30))"
+       "let x = 10; let y = x * x - 2 * x + 1; y == 81; y != 81; x >= 10"
+       "let rate = 7; let days = 365; rate * days / 100; if rate > 5 then 1 else 0"
+       "let n = 4; let fact = n * (n - 1) * (n - 2) * (n - 3); fact; -fact + 30"
+       "let z = 0; 10 / z"
+       "let q = 5; q + missing"
+       "let r = 4 +; r"
+       "let s = 3 $ 4"
+       "if 1 then 2"
+       "let p = 2; mystery(p)"))
+
+(defn main ()
+  (for-each (enumerate (iter scripts))
+            (fn (entry)
+              (let-pair (index script) entry
+                (run index script)))))
+
+(type run (fn (usize (ref str)) unit))
+(defn run (index script)
+  (println (str "script " index ": " script))
+  (match (evaluate-script script)
+    ((ok names) (report-names names))
+    ((err problem) (println (str "  error: " problem)))))
+
+(type evaluate-script (fn ((ref str)) (result (sorted-map string i64) string)))
+(defn evaluate-script (source)
+  (let tokens (try (tokenize source)))
+  (let statements (try (parse-program (ref tokens))))
+  (execute (ref statements)))
+
+(type report-names (fn ((ref (sorted-map string i64))) unit))
+(defn report-names (names)
+  (for-each (entries names)
+            (fn (entry)
+              (let-pair (name value) entry
+                (println (str "  " name " = " value))))))

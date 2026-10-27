@@ -1,0 +1,81 @@
+(export token tokenize)
+
+(enum token
+  (number i64)
+  (name string)
+  (symbol string))
+
+(display token (t)
+  (match t
+    ((number value) (str "number " value))
+    ((name text) (str "name " text))
+    ((symbol text) (str "symbol " text))))
+
+(type tokenize (fn ((ref str)) (result (vec token) string)))
+(defn tokenize (source)
+  (scan (collect (chars source)) 0 (vec)))
+
+(type scan (fn ((ref (vec char)) usize (vec token)) (result (vec token) string)))
+(defn scan (characters position tokens)
+  (if (>= position (len characters))
+      (ok tokens)
+      (scan-character characters position tokens (char-at characters position))))
+
+(defn scan-character (characters position tokens c)
+  (cond ((whitespace? c) (scan characters (+ position 1) tokens))
+        ((digit? c) (scan-number characters position tokens))
+        ((name-start? c) (scan-name characters position tokens))
+        ((two-character-symbol? characters position)
+         (scan characters (+ position 2)
+               (append tokens (token/symbol (slice-text characters position (+ position 2))))))
+        ((symbol-character? c)
+         (scan characters (+ position 1) (append tokens (token/symbol (to-string c)))))
+        (else (err (str "unexpected character `" c "` at " position)))))
+
+(defn scan-number (characters start tokens)
+  (let end (span-end characters start digit?))
+  (let text (slice-text characters start end))
+  (match (parse (as-str text))
+    ((ok value) (scan characters end (append tokens (token/number value))))
+    ((err problem) (err (str "bad number " text ": " problem)))))
+
+(defn scan-name (characters start tokens)
+  (let end (span-end characters start name-part?))
+  (scan characters end (append tokens (token/name (slice-text characters start end)))))
+
+(type span-end (fn ((ref (vec char)) usize (fn-mut (char) bool)) usize))
+(defn span-end (characters position accepts)
+  (if (and (< position (len characters)) (accepts (char-at characters position)))
+      (span-end characters (+ position 1) accepts)
+      position))
+
+(defn two-character-symbol? (characters position)
+  (let next (+ position 1))
+  (and (< next (len characters))
+       (= (char-at characters next) (char "="))
+       (comparison-start? (char-at characters position))))
+
+(defn comparison-start? (c)
+  (or (= c (char "<")) (= c (char ">")) (= c (char "=")) (= c (char "!"))))
+
+(defn symbol-character? (c)
+  (or (= c (char "+")) (= c (char "-")) (= c (char "*")) (= c (char "/"))
+      (= c (char "%")) (= c (char "(")) (= c (char ")")) (= c (char ";"))
+      (= c (char "<")) (= c (char ">")) (= c (char "=")) (= c (char ","))))
+
+(defn name-start? (c)
+  (and (alphanumeric? c) (not (digit? c))))
+
+(defn name-part? (c)
+  (or (alphanumeric? c) (= c (char "_"))))
+
+(defn append (items item)
+  (let growing items)
+  (push! growing item)
+  growing)
+
+(defn char-at (items position)
+  (deref (unwrap (get items position))))
+
+(def slice-text (rust "{0}[{1}..{2}].iter().collect::<String>()"
+                      (fn ((ref (vec char)) usize usize) string)))
