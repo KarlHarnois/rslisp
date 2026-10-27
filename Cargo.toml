@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 description = "A minimal Lisp that compiles to Rust (placeholder name)"
 license = "MIT"
+publish = false
 
 [workspace]
 members = ["xtask"]
