@@ -22,16 +22,23 @@
       forEachSystem =
         build: nixpkgs.lib.genAttrs supportedSystems (system: build nixpkgs.legacyPackages.${system});
 
-      developmentPackages = pkgs: [
+      ciPackages = pkgs: [
         pkgs.rustc
         pkgs.cargo
         pkgs.clippy
         pkgs.rustfmt
-        pkgs.cargo-insta
         pkgs.cargo-llvm-cov
         pkgs.git
-        pkgs.nixfmt
       ];
+
+      developmentPackages =
+        pkgs:
+        ciPackages pkgs
+        ++ [
+          pkgs.cargo-insta
+          pkgs.nixfmt
+          pkgs.rust-analyzer
+        ];
 
       cratePackage = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package;
       crateVersion = cratePackage.version;
@@ -151,7 +158,13 @@
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell (
           {
-            packages = developmentPackages pkgs ++ [ pkgs.rust-analyzer ];
+            packages = developmentPackages pkgs;
+          }
+          // coverageTools pkgs
+        );
+        ci = pkgs.mkShell (
+          {
+            packages = ciPackages pkgs;
           }
           // coverageTools pkgs
         );
