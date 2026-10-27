@@ -56,7 +56,9 @@ impl Expander<'_> {
         kind: BindingKind,
         context: &DefinitionContext,
     ) -> Result<BindingId, Diagnostic> {
-        self.define(binder, namespace, kind, Phase::Runtime, Some(context))
+        let binding = self.define(binder, namespace, kind, Phase::Runtime, Some(context))?;
+        self.note_global(binding, binder);
+        Ok(binding)
     }
 
     pub(super) fn bind_import(

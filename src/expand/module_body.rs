@@ -81,6 +81,7 @@ impl Expander<'_> {
         self.lower_pending_group(module, impls, &mut core);
         self.lower_pending_group(module, exports, &mut core);
         self.compile_pending_macros();
+        self.record_answering_macros(module);
         self.order.push(module);
         self.expanded.insert(module, core);
         self.current_module = outer_module;

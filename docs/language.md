@@ -88,7 +88,7 @@ The constructor `->point` is a macro, and it reads a call in this order:
 2. Otherwise, if the call has exactly one argument per field, the call is positional. `(->point 1.0 2.0)` calls a positional function that `defstruct` defines under a hygienic name, which no source code can refer to. It emits as `make_point(1.0, 2.0)`.
 3. Otherwise, the call is an error that names the field count.
 
-In value position, `->point` expands to the positional function, so `(let build ->point)` emits `let build = make_point;`.
+In value position, `->point` expands to the positional function, so `(let build ->point)` emits `let build = make_point;`. A program may define its own `make-point`, because no source name refers to the positional function.
 
 `ref`, `mut` and `deref` are kernel forms because a prelude function cannot mark its result as written. The compiler must see the written form to know that the value came from a written borrow or dereference.
 
@@ -394,11 +394,14 @@ The emitted Rust is formatted by `rustfmt` when `rslisp emit` or `rslisp build` 
 | a Rust keyword | a raw identifier, so `type` becomes `r#type` |
 | a program type or trait that hides a Rust prelude name | suffixed with `2`, so `sized` becomes `Sized2` |
 | a local whose name a binding still in scope uses | numbered, so `n` becomes `n_2` |
+| an item a macro introduced whose name a written item takes | the next free number, so the positional function of `car` becomes `make_car_2` beside a program's own `make-car` |
 
 A program type or trait that mangles to a name Rust's 2021 prelude brings into
 scope takes the suffix `2`, so the emitted name never hides `Sized`, `Clone`,
 `Iterator`, `Vec` or another prelude name. A `rust-type` or `rust-trait` path is
 never renamed.
+
+An item a macro introduced yields its Rust name to an item the program wrote, whatever the order of their uses. The introduced item takes the next number that no other item of its module takes. `rslisp check` and `rslisp signatures` print an introduced function under the name of the macro whose value position expands to it, so the positional function of `car` prints as `->car`. They leave out an introduced function that no such macro names.
 
 ## Status
 

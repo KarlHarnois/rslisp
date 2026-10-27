@@ -159,6 +159,7 @@ impl Expander<'_> {
         context: Option<&mut DefinitionContext>,
     ) -> (Form, Scope) {
         let introduction = self.scopes.fresh();
+        self.introduction_scopes.insert(introduction);
         form.flip_scope(introduction);
         if let Some(context) = context {
             let use_site = self.scopes.fresh();

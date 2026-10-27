@@ -1,10 +1,10 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/filter_over_struct_references.rslisp
 ---
 (derive person clone debug partial-eq eq hash)
-(type make-person (fn (string u32) person))
+(type ->person (fn (string u32) person))
 (type person-name (fn ((ref person)) (ref string)))
 (type person-age (fn ((ref person)) u32))
 (type adults (fn ((ref (slice person))) (vec (ref person))))

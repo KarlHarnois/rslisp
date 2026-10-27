@@ -60,6 +60,7 @@ impl<'p> EmitPlan<'p> {
     const MAIN: &'static str = "main";
     const MODULE_SEPARATOR: char = '/';
     const MACRO_CALLS: [&'static str; 3] = ["!(", "![", "!{"];
+    const FIRST_RENAME_SUFFIX: usize = 2;
 
     pub fn build(program: &'p TypedProgram, entry_span: Span) -> Result<Self, Diagnostics> {
         let main = Self::find_main(program)
@@ -493,10 +494,7 @@ impl<'p> EmitPlan<'p> {
     fn assign_items(&mut self) -> Result<(), Diagnostics> {
         let mut taken: HashMap<(ModuleId, String), BindingId> = HashMap::new();
         let mut diagnostics = Diagnostics::default();
-        for binding in self.reached.clone() {
-            if self.program.synthetic_bindings.contains(&binding) {
-                continue;
-            }
+        for binding in self.written_items_first() {
             let info = self.item_info(binding);
             let key = (info.module, info.name.clone());
             match taken
@@ -504,14 +502,43 @@ impl<'p> EmitPlan<'p> {
                 .copied()
                 .or_else(|| self.shadowed_rust_type(&info))
             {
-                Some(other) => diagnostics.push(self.collision(&info.name, other, binding)),
-                None => {
-                    taken.insert(key, binding);
-                    self.items.insert(binding, info);
+                Some(_) if self.program.bindings.is_introduced(binding) => {
+                    let renamed = Self::next_free_name(info, &taken);
+                    self.claim(&mut taken, binding, renamed);
                 }
+                Some(other) => diagnostics.push(self.collision(&info.name, other, binding)),
+                None => self.claim(&mut taken, binding, info),
             }
         }
         diagnostics.into_result(())
+    }
+
+    fn written_items_first(&self) -> Vec<BindingId> {
+        let (introduced, written): (Vec<BindingId>, Vec<BindingId>) = self
+            .reached
+            .iter()
+            .copied()
+            .filter(|binding| !self.program.synthetic_bindings.contains(binding))
+            .partition(|binding| self.program.bindings.is_introduced(*binding));
+        written.into_iter().chain(introduced).collect()
+    }
+
+    fn claim(
+        &mut self,
+        taken: &mut HashMap<(ModuleId, String), BindingId>,
+        binding: BindingId,
+        info: ItemInfo,
+    ) {
+        taken.insert((info.module, info.name.clone()), binding);
+        self.items.insert(binding, info);
+    }
+
+    fn next_free_name(info: ItemInfo, taken: &HashMap<(ModuleId, String), BindingId>) -> ItemInfo {
+        let name = (Self::FIRST_RENAME_SUFFIX..)
+            .map(|suffix| format!("{}_{suffix}", info.name))
+            .find(|candidate| !taken.contains_key(&(info.module, candidate.clone())))
+            .expect("an unbounded range holds a free name");
+        ItemInfo { name, ..info }
     }
 
     fn shadowed_rust_type(&self, info: &ItemInfo) -> Option<BindingId> {
