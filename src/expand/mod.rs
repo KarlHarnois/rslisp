@@ -3,6 +3,7 @@ mod context;
 mod expression;
 mod globals;
 mod host;
+mod introduced;
 mod macro_call;
 mod macro_function;
 mod module_body;
@@ -68,6 +69,8 @@ pub struct Expander<'s> {
     macros: MacroTable,
     macro_origins: HashMap<Span, MacroOrigin>,
     introduced_names: HashMap<(Span, String), Span>,
+    introduction_scopes: HashSet<Scope>,
+    global_macros: Vec<(crate::core::BindingId, Form)>,
     trait_paths: HashMap<crate::core::BindingId, Rc<str>>,
     enum_variants: HashMap<crate::core::BindingId, Vec<crate::core::BindingId>>,
     trait_methods: HashMap<crate::core::BindingId, TraitMethods>,
@@ -96,6 +99,8 @@ impl<'s> Expander<'s> {
             macros: MacroTable::default(),
             macro_origins: HashMap::new(),
             introduced_names: HashMap::new(),
+            introduction_scopes: HashSet::new(),
+            global_macros: Vec::new(),
             trait_paths: HashMap::new(),
             enum_variants: HashMap::new(),
             trait_methods: HashMap::new(),

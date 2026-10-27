@@ -1,10 +1,10 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/ownership_modes.rslisp
 ---
 (derive person clone debug partial-eq eq hash)
-(type make-person (fn (string i64) person))
+(type ->person (fn (string i64) person))
 (type person-name (fn ((ref person)) (ref string)))
 (type person-age (fn ((ref person)) i64))
 (type label (fn ((ref person)) string))

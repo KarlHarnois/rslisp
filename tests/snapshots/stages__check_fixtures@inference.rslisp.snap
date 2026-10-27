@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/inference.rslisp
 ---
 (derive point clone copy debug partial-eq)
@@ -9,7 +9,7 @@ input_file: tests/fixtures/check/inference.rslisp
 (type square (where ((a number)) (fn (a) a)))
 (type admin? bool)
 (type greeting (fn () string))
-(type make-point (fn (f64 f64) point))
+(type ->point (fn (f64 f64) point))
 (type point-x (fn ((ref point)) f64))
 (type point-y (fn ((ref point)) f64))
 (type origin point)

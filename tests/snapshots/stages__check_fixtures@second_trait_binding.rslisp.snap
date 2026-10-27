@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/second_trait_binding.rslisp
 ---
 warning[L0217]: `partial-eq` binds `PartialEq` again
@@ -13,7 +13,7 @@ warning[L0217]: `partial-eq` binds `PartialEq` again
   = help: remove the second `partial-eq`, or give it a different Rust path
 
 (derive point clone copy debug partial-eq eq hash)
-(type make-point (fn (i64 i64) point))
+(type ->point (fn (i64 i64) point))
 (type point-x (fn ((ref point)) i64))
 (type point-y (fn ((ref point)) i64))
 (type main (fn () unit))

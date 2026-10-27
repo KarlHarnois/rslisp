@@ -1,0 +1,34 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/own_make_function.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+    year: u16,
+    is_electric: bool,
+}
+
+fn make_car_2<'a>(make: &'a str, model: &'a str, year: u16, is_electric: bool) -> Car<'a> {
+    Car {
+        make,
+        model,
+        year,
+        is_electric,
+    }
+}
+
+fn car_model<'a>(instance: &'a Car<'a>) -> &'a str {
+    instance.model
+}
+
+fn make_car(make: &str) -> Car<'_> {
+    make_car_2(make, "Custom", 2024, false)
+}
+
+fn main() {
+    println!("{}", car_model(&make_car("Rivian")));
+    println!("{}", car_model(&make_car_2("Honda", "Civic", 2019, false)))
+}

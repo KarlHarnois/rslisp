@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/constructor_signatures.rslisp
+---
+(derive car clone copy debug partial-eq eq hash)
+(type ->car (fn ((ref str) (ref str) u16 bool) car))
+(type car-make (fn ((ref car)) (ref str)))
+(type car-model (fn ((ref car)) (ref str)))
+(type car-year (fn ((ref car)) u16))
+(type car-electric? (fn ((ref car)) bool))
+(type make-car (fn ((ref str)) car))
+(type main (fn () unit))

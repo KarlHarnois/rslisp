@@ -419,12 +419,23 @@ impl TypedProgram {
             .definitions
             .iter()
             .filter(|definition| !self.synthetic_bindings.contains(&definition.binding))
-            .map(|definition| {
-                let name = self.bindings.get(definition.binding).name();
-                format!("(type {name} {})\n", display.scheme(&definition.scheme))
+            .filter_map(|definition| {
+                let name = self.writable_name(definition.binding)?;
+                Some(format!(
+                    "(type {name} {})\n",
+                    display.scheme(&definition.scheme)
+                ))
             })
             .collect();
         format!("{structs}{definitions}")
+    }
+
+    fn writable_name(&self, binding: BindingId) -> Option<&str> {
+        if !self.bindings.is_introduced(binding) {
+            return Some(self.bindings.get(binding).name());
+        }
+        let answering = self.bindings.answering_macro(binding)?;
+        Some(self.bindings.get(answering).name())
     }
 
     fn inferred_enum_box_line(&self, binding: BindingId) -> Option<String> {

@@ -1,3 +1,4 @@
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use super::{Builtin, KernelForm, KernelType, ModuleId};
@@ -66,6 +67,8 @@ impl BindingInfo {
 #[derive(Clone, Default)]
 pub struct BindingArena {
     infos: Vec<BindingInfo>,
+    introduced: HashSet<BindingId>,
+    answering_macros: HashMap<BindingId, BindingId>,
 }
 
 impl BindingArena {
@@ -77,5 +80,21 @@ impl BindingArena {
 
     pub fn get(&self, id: BindingId) -> &BindingInfo {
         &self.infos[id.0 as usize]
+    }
+
+    pub fn mark_introduced(&mut self, id: BindingId) {
+        self.introduced.insert(id);
+    }
+
+    pub fn is_introduced(&self, id: BindingId) -> bool {
+        self.introduced.contains(&id)
+    }
+
+    pub fn record_answering_macro(&mut self, function: BindingId, answering: BindingId) {
+        self.answering_macros.insert(function, answering);
+    }
+
+    pub fn answering_macro(&self, function: BindingId) -> Option<BindingId> {
+        self.answering_macros.get(&function).copied()
     }
 }
