@@ -1,0 +1,6 @@
+(defn pick (x y) (println x) (println (= (ref x) (ref y))) y)
+(defn apply-two (f a b) (f a b))
+(defn main ()
+  (let name (to-string "Leaf"))
+  (println (apply-two pick (as-str name) (as-str name)))
+  (println (apply-two pick 1 2)))

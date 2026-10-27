@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/generic_function_value_bound_twice.rslisp
+---
+error[L0507]: mismatched function type
+ --> check/generic_function_value_bound_twice.rslisp:5:23
+  |
+5 |   (println (apply-two pick (as-str name) (as-str name)))
+  |                       ^^^^ expected `(fn ((ref str) (ref str)) (ref str))`, found `(fn ((ref (ref str)) (ref str)) (ref str))`
+  |
+  = note: no adjustment makes parameter 1 match
+  = help: change the parameter's ownership in a `type` signature, or pass a function that matches

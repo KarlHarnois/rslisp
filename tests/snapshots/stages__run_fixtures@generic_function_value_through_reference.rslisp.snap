@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/generic_function_value_through_reference.rslisp
+---
+Leaf
+0
+7
+0
