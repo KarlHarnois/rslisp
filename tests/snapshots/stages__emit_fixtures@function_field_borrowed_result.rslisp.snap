@@ -38,6 +38,6 @@ fn main() {
         "{}{}{}",
         by_name.label,
         by_name_again.label,
-        apply_key(|value: &User<'_>| value.name, &ana)
+        apply_key(by_name.key, &ana)
     )
 }
