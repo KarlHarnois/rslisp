@@ -124,28 +124,36 @@ The exceptions are:
 
 ## Commands
 
-**Run these commands while you work:**
+**The working commands are the three commands below.** Run them while you work.
 
 ```sh
 nix develop -c cargo fmt --all --check
 nix develop -c cargo clippy --workspace --all-targets -- -D warnings
-nix develop -c cargo test
-nix develop -c cargo xtask coverage
+nix develop -c cargo test <narrowest test>
 ```
 
-**Run the gate once, before the last commit of a task.** The gate is these commands:
+**Replace `<narrowest test>` with the narrowest row of this table that covers the change:**
 
-```sh
-nix develop -c cargo fmt --all --check
-nix develop -c cargo clippy --workspace --all-targets -- -D warnings
-nix develop -c cargo xtask coverage
-nix flake check
-```
+| The change touches | `<narrowest test>` |
+| --- | --- |
+| a unit test in `src/` | `--lib <module::path>` |
+| one stage's fixtures | `--test stages <stage>_fixtures` |
+| a CLI command | `--test cli <test name>` |
+| a diagnostic code | `--test diagnostic_codes --test diagnostic_snapshots` |
+| `xtask/` | `-p xtask` |
 
-- NEVER run `nix flake check` or `nix build` while you work: each run rebuilds the project and every dependency on all cores.
-- The gate leaves out `nix build .#` because `nix flake check` runs it.
+- To run one fixture of a stage, prefix the stage's command with `INSTA_GLOB_FILTER='**/<fixture file name>'`.
 
-**A change is done when the gate passes.** CI runs the gate on Linux and macOS. If one of the gate's commands also fails without the change, stop and show its output to the project owner.
+**NEVER run these commands locally:** each compiles the whole suite or rebuilds everything on all cores, and CI runs them.
+
+- `cargo test` without a test target
+- `cargo xtask coverage`
+- `nix flake check`
+- `nix build`, except the command below
+
+**If a change touches what a small flake check checks, build that check alone with `nix build --no-link .#checks.<system>.<name>`.** Every flake check except `default` is small.
+
+**A change is done when CI passes on Linux and macOS.**
 
 ## Reference files
 
@@ -155,4 +163,5 @@ nix flake check
 | --- | --- |
 | `docs/language.md` | change the language or the Rust it emits |
 | `docs/diagnostics.md` | add or change an error or a warning |
+| `docs/pull-requests.md` | open a pull request, push to one, or fix a CI failure |
 | `rfcs/README.md` | write a design, or change a rule that an RFC or decision records |
