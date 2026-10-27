@@ -2,6 +2,7 @@ mod binding;
 mod builtin;
 mod expr;
 mod kernel;
+mod keyword;
 mod module;
 mod printer;
 mod template;
@@ -18,6 +19,7 @@ pub use kernel::{
     KernelForm, KernelType, LeafForm, OrderTrait, PrimitiveType, ReferenceKind, StructDerives,
     StructForm,
 };
+pub use keyword::Keyword;
 pub use module::{
     CoreModule, EnumRust, ImplAssociatedType, ImplMethod, Item, ItemKind, ModuleId, ModulePath,
     RUST_TRAIT_HELP_MARKER, RUST_TRAIT_METHOD_MARKER, RustTraitDeclaration, TraitAssociatedType,

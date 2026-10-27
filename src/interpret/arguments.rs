@@ -1,5 +1,6 @@
 use super::Value;
 use super::problems::InterpretProblems;
+use crate::core::Keyword;
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, NumberValue, Symbol};
 use crate::source::Span;
@@ -64,6 +65,13 @@ impl Arguments {
         self.form(index)?
             .as_symbol()
             .ok_or_else(|| self.wrong(index, "a symbol"))
+    }
+
+    pub fn keyword_name(&self, index: usize) -> Result<&str, Diagnostic> {
+        self.symbol(index)
+            .ok()
+            .and_then(|symbol| Keyword::field_name(symbol.name()))
+            .ok_or_else(|| self.wrong(index, "a keyword"))
     }
 
     pub fn string(&self, index: usize) -> Result<&str, Diagnostic> {

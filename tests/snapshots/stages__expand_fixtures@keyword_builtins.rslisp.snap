@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/keyword_builtins.rslisp
+---
+(def yes-or-no (fn (test) (if test (quote yes) (quote no))))
+(def answers (fn () (quote (yes yes no no no no "year" "electric?"))))

@@ -1,0 +1,31 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/keyword_name_errors.rslisp
+---
+error[L0303]: `keyword-name` expects a keyword as argument 1, found a symbol
+ --> expand/keyword_name_errors.rslisp:3:35
+  |
+3 | (def name-of-symbol (macro (form) (keyword-name (quote year))))
+  |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^ a symbol given here
+...
+7 | (name-of-symbol)
+  | ---------------- in this macro call
+
+error[L0303]: `keyword-name` expects a keyword as argument 1, found a symbol
+ --> expand/keyword_name_errors.rslisp:4:34
+  |
+4 | (def name-of-colon (macro (form) (keyword-name (quote :))))
+  |                                  ^^^^^^^^^^^^^^^^^^^^^^^^ a symbol given here
+...
+8 | (name-of-colon)
+  | --------------- in this macro call
+
+error[L0303]: `keyword-name` expects a keyword as argument 1, found a string
+ --> expand/keyword_name_errors.rslisp:5:35
+  |
+5 | (def name-of-string (macro (form) (keyword-name ":year")))
+  |                                   ^^^^^^^^^^^^^^^^^^^^^^ a string given here
+...
+9 | (name-of-string)
+  | ---------------- in this macro call
