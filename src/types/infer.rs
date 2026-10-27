@@ -3096,8 +3096,8 @@ impl TypeChecker {
 mod tests {
     use super::TypeChecker;
     use crate::core::{
-        BindingArena, BindingInfo, BindingKind, Expr, ExprKind, FieldLabel, Leaf, Literal,
-        ModuleId, PrimitiveType,
+        BindingArena, BindingInfo, BindingKind, Expr, ExprKind, FieldLabel, FieldSpelling, Leaf,
+        Literal, ModuleId, PrimitiveType,
     };
     use crate::source::{SourceId, Span};
     use crate::types::typed::{TypedExpr, TypedExprKind, TypedLeaf, TypedStructExpr};
@@ -3138,7 +3138,7 @@ mod tests {
                     FieldLabel {
                         name: "field".into(),
                         span: self.span,
-                        marker: "",
+                        spelling: FieldSpelling::Bare,
                     },
                 )),
                 ty: Type::Primitive(PrimitiveType::I64),

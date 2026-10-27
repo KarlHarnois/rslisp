@@ -3,8 +3,8 @@ use std::rc::Rc;
 use super::Expander;
 use super::problems::ExpandProblems;
 use crate::core::{
-    Binder, BindingInfo, BindingKind, Block, BodyItem, Expr, ExprKind, FieldLabel, Keyword, Lambda,
-    Leaf, StructExpr,
+    Binder, BindingInfo, BindingKind, Block, BodyItem, Expr, ExprKind, FieldLabel, FieldSpelling,
+    Keyword, Lambda, Leaf, StructExpr,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::Form;
@@ -66,7 +66,7 @@ impl Expander<'_> {
         FieldLabel {
             name: field_name.into(),
             span,
-            marker: Keyword::MARKER,
+            spelling: FieldSpelling::Keyword,
         }
     }
 

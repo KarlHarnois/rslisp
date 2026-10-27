@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::{BindingId, ReferenceKind, TypeExpr};
+use super::{BindingId, Keyword, ReferenceKind, TypeExpr};
 use crate::reader::{Form, Number};
 use crate::source::Span;
 
@@ -134,13 +134,22 @@ pub enum Literal {
 pub struct FieldLabel {
     pub name: Rc<str>,
     pub span: Span,
-    pub marker: &'static str,
+    pub spelling: FieldSpelling,
 }
 
 impl FieldLabel {
     pub fn spelled(&self, field_name: &str) -> String {
-        format!("{}{field_name}", self.marker)
+        match self.spelling {
+            FieldSpelling::Bare => field_name.to_string(),
+            FieldSpelling::Keyword => format!("{}{field_name}", Keyword::MARKER),
+        }
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FieldSpelling {
+    Bare,
+    Keyword,
 }
 
 #[derive(Clone, Debug)]

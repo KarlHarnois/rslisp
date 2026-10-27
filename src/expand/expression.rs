@@ -9,9 +9,9 @@ use super::shape::Shape;
 use super::try_check::TryCheck;
 use crate::core::{
     Arm, Binder, BindingId, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind,
-    ExpressionForm, FieldLabel, KernelForm, Keyword, Lambda, Leaf, LeafForm, Literal, MapOperation,
-    Namespace, ParsedTemplate, Pattern, PatternKind, ReferenceKind, RustTemplate, StructExpr,
-    StructForm, TypeExpr, TypeExprKind, VariantInfo,
+    ExpressionForm, FieldLabel, FieldSpelling, KernelForm, Keyword, Lambda, Leaf, LeafForm,
+    Literal, MapOperation, Namespace, ParsedTemplate, Pattern, PatternKind, ReferenceKind,
+    RustTemplate, StructExpr, StructForm, TypeExpr, TypeExprKind, VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -70,7 +70,7 @@ impl Expander<'_> {
         Ok(FieldLabel {
             name: shape.symbol(form)?.shared_name(),
             span: form.span(),
-            marker: "",
+            spelling: FieldSpelling::Bare,
         })
     }
 
