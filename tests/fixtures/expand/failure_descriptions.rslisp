@@ -6,6 +6,7 @@
 (def type-stage-code (macro (form) (fail "bad call" form "fix it" (quote (:code repeated-field)))))
 (def string-code (macro (form) (fail "bad call" form "fix it" (quote (:code "L0320")))))
 (def too-many (macro (form) (fail "bad call" form "fix it" (quote ()) form)))
+(def string-suggestion (macro (form) (fail "bad call" form "fix it" (quote (:suggest "leaf")))))
 (def coded (macro (form) (fail "the leaf is parked" form "drive it" (quote (:code repeated-parameter)))))
 
 (unknown-part)
@@ -14,4 +15,5 @@
 (type-stage-code)
 (string-code)
 (too-many)
+(string-suggestion)
 (coded)

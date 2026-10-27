@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/closest_name_errors.rslisp
+---
+error[L0303]: `closest-name` expects a list of symbols as argument 2, found a list
+ --> expand/closest_name_errors.rslisp:3:39
+  |
+3 | (def closest-in-strings (macro (form) (closest-name (quote leef) (quote ("leaf" "ariya")))))
+  |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ a list given here
+4 |
+5 | (closest-in-strings)
+  | -------------------- in this macro call

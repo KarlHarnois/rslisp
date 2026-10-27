@@ -1,6 +1,6 @@
 (use prelude/macros defrule defmacro template map-list whole-pairs?)
 (use code first rest list nth take drop length empty? list? symbol? symbol symbol-name value-eq prepend
-          concat string fail keyword? keyword-name keyword-field field-keyword number-sub bool-not)
+          concat string fail closest-name keyword? keyword-name keyword-field field-keyword number-sub bool-not)
 
 (export defn the -> ->> try-> let-try loop
         definition declared-forms default-pairs type-missing? defaults-clause? default-bindings
@@ -414,12 +414,22 @@
 
 (def check-call-key
   (fn (key signature)
+    (if (key-names-one-of? key (signature-names signature))
+        key
+        (unknown-parameter-error key signature))))
+
+(def unknown-parameter-error
+  (fn (key signature)
     (let name (signature-name signature))
     (let names (signature-names signature))
-    (if (key-names-one-of? key names)
-        key
-        (fail (string "`" name "` has no parameter `" (symbol-name key) "`") key
-              (string "the parameters of `" name "` are " (joined-names (map-list field-keyword names) ""))))))
+    (let message (string "`" name "` has no parameter `" (symbol-name key) "`"))
+    (let closest (closest-name (keyword-field key) names))
+    (if (empty? closest)
+        (fail message key
+              (string "the parameters of `" name "` are " (joined-names (map-list field-keyword names) ""))
+              (template (:code unknown-parameter)))
+        (fail message key "a parameter with a similar name exists"
+              (template (:code unknown-parameter :suggest (unquote (field-keyword (first closest)))))))))
 
 (def check-given-once
   (fn (key later-keys signature)

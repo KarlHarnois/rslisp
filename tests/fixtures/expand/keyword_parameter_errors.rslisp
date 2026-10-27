@@ -8,6 +8,7 @@
   (add :x 6)
   (add :z 6 :y 7)
   (add :x 6 :x 7)
+  (add :xx 6 :y 7)
   (add 1 2 3))
 
 (defn apply-key (:key :label) (key label))

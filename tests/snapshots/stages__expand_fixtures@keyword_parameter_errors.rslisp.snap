@@ -43,7 +43,7 @@ error[L0301]: missing parameter `y` in `add`
   |
   = help: name every parameter without a default: y
 
-error[L0301]: `add` has no parameter `:z`
+error[L0323]: `add` has no parameter `:z`
  --> expand/keyword_parameter_errors.rslisp:9:8
   |
 9 |   (add :z 6 :y 7)
@@ -61,18 +61,30 @@ error[L0320]: `:x` is given twice in `add`
    |
    = help: remove the second `:x` and its value
 
-error[L0301]: `add` takes 2 arguments, one per parameter, or a `:parameter value` pair for each parameter without a default
-  --> expand/keyword_parameter_errors.rslisp:11:3
+error[L0323]: `add` has no parameter `:xx`
+  --> expand/keyword_parameter_errors.rslisp:11:8
    |
-11 |   (add 1 2 3))
+11 |   (add :xx 6 :y 7)
+   |        ^^^ here
+   |
+help: a parameter with a similar name exists
+   |
+11 -   (add :xx 6 :y 7)
+11 +   (add :x 6 :y 7)
+   |
+
+error[L0301]: `add` takes 2 arguments, one per parameter, or a `:parameter value` pair for each parameter without a default
+  --> expand/keyword_parameter_errors.rslisp:12:3
+   |
+12 |   (add 1 2 3))
    |   ^^^^^^^^^^^ here
    |
    = help: write it as `(add x y)`
 
-error[L0301]: `apply-key` has no parameter `:name`
-  --> expand/keyword_parameter_errors.rslisp:16:14
+error[L0323]: `apply-key` has no parameter `:name`
+  --> expand/keyword_parameter_errors.rslisp:17:14
    |
-16 |   (apply-key :name "x"))
+17 |   (apply-key :name "x"))
    |              ^^^^^ here
    |
    = help: the parameters of `apply-key` are :key, :label

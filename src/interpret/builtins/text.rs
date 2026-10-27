@@ -1,5 +1,8 @@
+use std::rc::Rc;
+
+use super::Forms;
 use super::failure::FailCall;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, SimilarName};
 use crate::interpret::arguments::Arguments;
 use crate::interpret::{CompileTimeHost, Value};
 use crate::reader::{Form, FormKind, Symbol};
@@ -87,6 +90,26 @@ impl<'a> TextOperations<'a> {
         let left = self.arguments.symbol(0)?;
         let right = self.arguments.symbol(1)?;
         Ok(Value::Bool(host.same_binding(left, right)))
+    }
+
+    pub fn closest_name(&self) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(2)?;
+        let name = self.arguments.symbol(0)?.name();
+        let candidates = self.arguments.symbols(1)?;
+        let names: Vec<Rc<str>> = candidates
+            .iter()
+            .map(|symbol| Rc::from(symbol.name()))
+            .collect();
+        let closest = SimilarName::closest(name, &names);
+        let found = self
+            .arguments
+            .list(1)?
+            .iter()
+            .filter(|candidate| candidate.as_symbol().map(Symbol::name) == closest.as_deref())
+            .take(1)
+            .cloned()
+            .collect();
+        Ok(Forms::list(found, self.call_site))
     }
 
     pub fn fail(&self) -> Result<Value, Diagnostic> {
