@@ -144,27 +144,40 @@ impl Expander<'_> {
         if let Some(kernel) = self.kernel_head(form) {
             return self.lower_kernel(kernel, form);
         }
+        self.lower_call(form, items)
+    }
+
+    fn lower_call(&mut self, form: &Form, items: &[Form]) -> Result<Expr, Diagnostic> {
         if let Some(binding) = self.macro_head(form) {
             let expanded = self.apply_macro(binding, form.clone(), None)?;
             return self.lower_expansion(&expanded);
         }
         if let Some(binding) = self.variant_head(form) {
-            let arguments = items[1..]
-                .iter()
-                .map(|argument| self.lower_recovered(argument))
-                .collect::<Result<Vec<Expr>, Diagnostic>>()?;
-            return Ok(Expr::new(
-                ExprKind::Variant(binding, arguments),
-                form.span(),
-            ));
+            return self.lower_variant_call(binding, form, items);
         }
-        let callee = self.lower_recovered(head)?;
+        let callee = self.lower_recovered(&items[0])?;
         let arguments = items[1..]
             .iter()
             .map(|argument| self.lower_recovered(argument))
             .collect::<Result<Vec<Expr>, Diagnostic>>()?;
         Ok(Expr::new(
             ExprKind::Call(Box::new(callee), arguments),
+            form.span(),
+        ))
+    }
+
+    fn lower_variant_call(
+        &mut self,
+        binding: BindingId,
+        form: &Form,
+        items: &[Form],
+    ) -> Result<Expr, Diagnostic> {
+        let arguments = items[1..]
+            .iter()
+            .map(|argument| self.lower_recovered(argument))
+            .collect::<Result<Vec<Expr>, Diagnostic>>()?;
+        Ok(Expr::new(
+            ExprKind::Variant(binding, arguments),
             form.span(),
         ))
     }

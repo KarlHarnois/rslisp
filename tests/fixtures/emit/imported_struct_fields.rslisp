@@ -1,4 +1,4 @@
-(use cars/cars car ->car)
+(use garage/cars car ->car)
 
 (defn main ()
   (let leaf (->car "Nissan" "Leaf" 2024 true))
