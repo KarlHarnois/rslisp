@@ -16,14 +16,20 @@ impl TemplateBorrows {
     }
 
     pub fn borrows(&self, callee: &TypedExpr, position: usize) -> bool {
+        self.holds(callee, |parsed| parsed.borrows(position))
+    }
+
+    pub fn advances(&self, callee: &TypedExpr, position: usize) -> bool {
+        self.holds(callee, |parsed| parsed.advances_receiver(position))
+    }
+
+    fn holds(&self, callee: &TypedExpr, fact: impl Fn(&ParsedTemplate) -> bool) -> bool {
         match &callee.kind {
-            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => self
-                .templates
-                .get(binding)
-                .is_some_and(|parsed| parsed.borrows(position)),
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
+                self.templates.get(binding).is_some_and(fact)
+            }
             TypedExprKind::Leaf(TypedLeaf::Rust(template)) => {
-                ParsedTemplate::parse(&template.template)
-                    .is_ok_and(|parsed| parsed.borrows(position))
+                ParsedTemplate::parse(&template.template).is_ok_and(|parsed| fact(&parsed))
             }
             _ => false,
         }

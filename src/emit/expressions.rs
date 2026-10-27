@@ -181,6 +181,7 @@ impl<'a> ExpressionEmitter<'a> {
     const BOX_BINDING: &'static str = "inner";
     const RECEIVER: &'static str = "{0}.";
     const DEREF_RECEIVER: &'static str = "*{0}.";
+    const ADVANCED_RECEIVER: &'static str = "{&mut 0}.";
     const MAP_UPDATE_TEMPLATE: &'static str = "@map-update";
     const INTEGER_CONVERSION: &'static str = "from_literal";
     const FLOAT_CONVERSION: &'static str = "from_float_literal";
@@ -2010,7 +2011,8 @@ impl<'a> ExpressionEmitter<'a> {
     ) -> ArgumentRole {
         if position == 0
             && (template.template.starts_with(Self::RECEIVER)
-                || template.template.starts_with(Self::DEREF_RECEIVER))
+                || template.template.starts_with(Self::DEREF_RECEIVER)
+                || template.template.starts_with(Self::ADVANCED_RECEIVER))
         {
             ArgumentRole::Receiver
         } else if parsed.indexes(position) {

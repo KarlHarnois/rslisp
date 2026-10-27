@@ -1177,7 +1177,7 @@ impl<'a> ItemEmitter<'a> {
             .into_iter()
             .filter_map(|binding| self.plan.item(binding))
             .map(|item| item.name.clone());
-        let mut mutable = MutableLocals::of(value);
+        let mut mutable = MutableLocals::of(value, &self.program.template_borrows);
         mutable.extend(self.program.mutable_function_bindings.iter().copied());
         ExpressionEmitter::new(
             self.program,
