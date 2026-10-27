@@ -1,7 +1,7 @@
 (use prelude/macros defmacro template map-list)
 (use prelude/syntax defn)
 (use code first rest list nth take drop length empty? list? symbol? symbol symbol-name value-eq prepend
-          concat string fail keyword? keyword-name number-sub)
+          concat string fail keyword? keyword-name keyword-field number-sub)
 
 (export defstruct)
 
@@ -51,7 +51,7 @@
 (def field-group
   (fn (keyword more)
     (if (keyword? keyword)
-        (list (symbol keyword (keyword-name keyword)) (field-type keyword more))
+        (list (keyword-field keyword) (field-type keyword more))
         (field-start-error keyword))))
 
 (def field-type

@@ -1,0 +1,31 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/keyword_field_errors.rslisp
+---
+error[L0303]: `keyword-field` expects a keyword as argument 1, found a symbol
+ --> expand/keyword_field_errors.rslisp:3:36
+  |
+3 | (def field-of-symbol (macro (form) (keyword-field (quote year))))
+  |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ a symbol given here
+...
+7 | (field-of-symbol)
+  | ----------------- in this macro call
+
+error[L0303]: `keyword-field` expects a keyword as argument 1, found a symbol
+ --> expand/keyword_field_errors.rslisp:4:35
+  |
+4 | (def field-of-colon (macro (form) (keyword-field (quote :))))
+  |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^ a symbol given here
+...
+8 | (field-of-colon)
+  | ---------------- in this macro call
+
+error[L0303]: `keyword-field` expects a keyword as argument 1, found a string
+ --> expand/keyword_field_errors.rslisp:5:36
+  |
+5 | (def field-of-string (macro (form) (keyword-field ":year")))
+  |                                    ^^^^^^^^^^^^^^^^^^^^^^^ a string given here
+...
+9 | (field-of-string)
+  | ----------------- in this macro call

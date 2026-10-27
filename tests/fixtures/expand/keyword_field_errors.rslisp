@@ -1,0 +1,9 @@
+(use code keyword-field)
+
+(def field-of-symbol (macro (form) (keyword-field (quote year))))
+(def field-of-colon (macro (form) (keyword-field (quote :))))
+(def field-of-string (macro (form) (keyword-field ":year")))
+
+(field-of-symbol)
+(field-of-colon)
+(field-of-string)
