@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/field_keywords.rslisp
+---
+2024
+[2024, 2019]
+["ana", "bo"]
+2
+cy

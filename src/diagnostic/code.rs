@@ -54,6 +54,8 @@ impl DiagnosticCode {
     pub const EXTRA_METHOD: Self = Self(Cow::Borrowed("L0240"));
     pub const UNDECLARED_METHOD: Self = Self(Cow::Borrowed("L0241"));
     pub const GENERIC_IMPLEMENTOR: Self = Self(Cow::Borrowed("L0242"));
+    pub const FIELD_KEYWORD_ARITY: Self = Self(Cow::Borrowed("L0243"));
+    pub const KEYWORD_BINDER: Self = Self(Cow::Borrowed("L0244"));
 
     pub const MACRO_FAILED: Self = Self(Cow::Borrowed("L0301"));
     pub const MACRO_RESULT_NOT_FORM: Self = Self(Cow::Borrowed("L0302"));

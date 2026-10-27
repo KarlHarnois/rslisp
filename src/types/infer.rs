@@ -2955,8 +2955,7 @@ impl TypeChecker {
                 let names: Vec<Rc<str>> = declared.iter().map(|(name, _)| name.clone()).collect();
                 return Err(TypeProblems::unknown_field(
                     &struct_name,
-                    &label.name,
-                    label.span,
+                    label,
                     SimilarName::closest(&label.name, &names),
                 ));
             };
@@ -3006,8 +3005,7 @@ impl TypeChecker {
                 .unwrap_or_default();
             return Err(TypeProblems::unknown_field(
                 &struct_name,
-                &label.name,
-                label.span,
+                label,
                 SimilarName::closest(&label.name, &names),
             ));
         };
@@ -3116,6 +3114,7 @@ mod tests {
                     FieldLabel {
                         name: "field".into(),
                         span: self.span,
+                        marker: "",
                     },
                 )),
                 ty: Type::Primitive(PrimitiveType::I64),
