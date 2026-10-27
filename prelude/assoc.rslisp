@@ -1,12 +1,97 @@
-(use prelude/macros defrule)
+(use prelude/macros defmacro defrule)
+(use code first rest list prepend concat length empty? list? nth drop number-sub symbol? symbol
+          symbol-name string string-strip-suffix fail keyword? keyword-name keyword-field value-eq
+          bool-not)
 
 (export assoc assoc-in)
 
-(defrule assoc
-  ((value (field expression) more ...)
-   (new _ value (field expression) more ...))
-  ((value key item)
-   (assoc-at value (key) item)))
+(defmacro assoc (value key more ...)
+  (let arguments (prepend key more))
+  (if (keyword? key)
+      (struct-update value arguments)
+      (if (paired? arguments)
+          (collection-updates value arguments)
+          (unpaired-key-error value arguments))))
+
+(def struct-update
+  (fn (value pairs)
+    (concat (list (quote new) (quote _) value) (field-initializers pairs))))
+
+(def field-initializers
+  (fn (pairs)
+    (if (empty? pairs)
+        (list)
+        (prepend (field-initializer (first pairs) (rest pairs))
+                 (field-initializers (drop 2 pairs))))))
+
+(def field-initializer
+  (fn (key more)
+    (if (keyword? key)
+        (if (empty? more)
+            (fail "this field has no value" key
+                  "write `:field value` pairs, as in (assoc leaf :year 2025)")
+            (list (keyword-field key) (first more)))
+        (fail "a struct update takes only `:field value` pairs" key
+              "update the collection in a separate `assoc`"))))
+
+(def paired?
+  (fn (arguments)
+    (if (empty? arguments)
+        true
+        (if (empty? (rest arguments)) false (paired? (drop 2 arguments))))))
+
+(def collection-updates
+  (fn (value pairs)
+    (if (empty? pairs)
+        value
+        (collection-updates (list (quote assoc-at) value (list (first pairs)) (nth pairs 1))
+                            (drop 2 pairs)))))
+
+(def unpaired-key-error
+  (fn (value arguments)
+    (let message "a collection update takes keys and values in pairs")
+    (let unpaired-key (nth arguments (number-sub (length arguments) 1)))
+    (if (any-field-group? arguments)
+        (fail message unpaired-key
+              (string "to update a field, write "
+                      (concat (list (quote assoc) value) (keyword-arguments arguments))))
+        (fail message unpaired-key))))
+
+(def any-field-group?
+  (fn (arguments)
+    (if (empty? arguments)
+        false
+        (if (field-group? (first arguments)) true (any-field-group? (rest arguments))))))
+
+(def field-group?
+  (fn (form)
+    (if (list? form)
+        (if (value-eq (length form) 2) (field-name? (first form)) false)
+        false)))
+
+(def field-name?
+  (fn (form)
+    (if (symbol? form) (bool-not (keyword? form)) false)))
+
+(def keyword-arguments
+  (fn (arguments)
+    (if (empty? arguments)
+        (list)
+        (concat (keyword-pair (first arguments)) (keyword-arguments (rest arguments))))))
+
+(def keyword-pair
+  (fn (argument)
+    (if (field-group? argument)
+        (list (field-keyword (first argument)) (nth argument 1))
+        (list argument))))
+
+(def field-keyword
+  (fn (field)
+    (symbol field (keyword-marker) (symbol-name field))))
+
+(def keyword-marker
+  (fn ()
+    (string-strip-suffix (symbol-name (quote :field)) (keyword-name (quote :field)))))
 
 (defrule assoc-in
   ((value (key ...) item)

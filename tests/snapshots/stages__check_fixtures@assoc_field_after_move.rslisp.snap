@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/assoc_field_after_move.rslisp
+---
+error[L0501]: use of moved value `leaf`
+ --> check/assoc_field_after_move.rslisp:6:38
+  |
+5 |   (let newer (assoc leaf :year 2025))
+  |                     ---- value moved here
+6 |   (println (:year newer) " " (:model leaf)))
+  |                                      ^^^^ value used here after it moved
+  |
+help: clone the value if both places need it
+  |
+5 -   (let newer (assoc leaf :year 2025))
+5 +   (let newer (assoc (clone leaf) :year 2025))
+  |

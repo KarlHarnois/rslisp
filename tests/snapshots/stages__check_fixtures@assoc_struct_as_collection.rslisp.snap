@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/assoc_struct_as_collection.rslisp
+---
+error[L0401]: mismatched types
+ --> check/assoc_struct_as_collection.rslisp:5:10
+  |
+5 |   (assoc speeds (max 130) (min 40)))
+  |          ^^^^^^ expected `(vec _)`, found `limits`
+  |
+  = help: update a field with a keyword, as in (assoc value :field new)

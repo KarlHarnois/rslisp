@@ -1,0 +1,6 @@
+(defstruct car :model string :year u16)
+
+(defn main ()
+  (let leaf (->car :model (to-string "Leaf") :year 2024))
+  (let newer (assoc leaf :year 2025))
+  (println (:year newer) " " (:model leaf)))

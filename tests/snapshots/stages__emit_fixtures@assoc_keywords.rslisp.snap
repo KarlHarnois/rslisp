@@ -1,0 +1,60 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/assoc_keywords.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+    year: u16,
+    is_electric: bool,
+}
+
+fn describe(vehicle: &Car<'_>) -> String {
+    format!(
+        "{} {} {}{}",
+        vehicle.year,
+        vehicle.make,
+        vehicle.model,
+        if vehicle.is_electric {
+            " (electric)"
+        } else {
+            ""
+        }
+    )
+}
+
+fn main() {
+    let leaf = Car {
+        make: "Nissan",
+        model: "Leaf",
+        year: 2024,
+        is_electric: true,
+    };
+    let newer = Car { year: 2025, ..leaf };
+    println!("{}", describe(&newer));
+    let petrol = Car {
+        year: 2026,
+        is_electric: false,
+        ..newer
+    };
+    println!("{}", describe(&petrol));
+    let grid: Vec<i64> = vec![1_i64, 2_i64, 3_i64];
+    let changed: Vec<i64> = {
+        let mut grid = grid;
+        grid[1] = 9;
+        grid
+    };
+    println!("{} {} {}", changed[0], changed[1], changed[2]);
+    let both: Vec<i64> = {
+        let mut value = {
+            let mut changed = changed;
+            changed[0] = 7;
+            changed
+        };
+        value[2] = 8;
+        value
+    };
+    println!("{} {} {}", both[0], both[1], both[2])
+}

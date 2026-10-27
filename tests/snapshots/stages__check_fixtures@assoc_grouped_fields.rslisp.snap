@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/assoc_grouped_fields.rslisp
+---
+error[L0201]: cannot find `year` in this scope
+ --> check/assoc_grouped_fields.rslisp:5:16
+  |
+5 |   (assoc leaf (year 2025) (make "Kia")))
+  |                ^^^^ not found in this scope
+
+error[L0201]: cannot find `make` in this scope
+ --> check/assoc_grouped_fields.rslisp:5:28
+  |
+5 |   (assoc leaf (year 2025) (make "Kia")))
+  |                            ^^^^ not found in this scope
+  |
+help: a name with a similar spelling exists
+  |
+5 -   (assoc leaf (year 2025) (make "Kia")))
+5 +   (assoc leaf (year 2025) (take "Kia")))
+  |

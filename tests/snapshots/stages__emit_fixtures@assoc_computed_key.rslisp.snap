@@ -1,0 +1,38 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/assoc_computed_key.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct User<'a> {
+    name: &'a str,
+    is_admin: bool,
+}
+
+fn initial(name: &str) -> String {
+    let letter = &name[0..1];
+    letter.to_uppercase()
+}
+
+fn main() {
+    let counts: std::collections::BTreeMap<String, i64> = {
+        let mut map = std::collections::BTreeMap::new();
+        map.insert("A".to_string(), 0);
+        map
+    };
+    let counted: std::collections::BTreeMap<String, i64> = {
+        let mut counts = counts;
+        counts.insert(initial("ana"), 1);
+        counts
+    };
+    println!("{}", counted.get("A").unwrap());
+    let user = User {
+        name: "ana",
+        is_admin: false,
+    };
+    let renamed = User {
+        name: "karl",
+        ..user
+    };
+    println!("{} {}", renamed.name, renamed.is_admin)
+}

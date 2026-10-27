@@ -4,9 +4,9 @@ expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/assoc_ambiguous.rslisp
 ---
 error[L0407]: type annotations needed
- --> check/assoc_ambiguous.rslisp:5:13
+ --> check/assoc_ambiguous.rslisp:5:12
   |
-5 |   (assoc p (x 2)))
-  |             ^ cannot tell which struct's `x` this is
+5 |   (assoc p :x 2))
+  |            ^^ cannot tell which struct's `x` this is
   |
   = help: name the struct in a signature, as in `(fn ((ref point)) _)`

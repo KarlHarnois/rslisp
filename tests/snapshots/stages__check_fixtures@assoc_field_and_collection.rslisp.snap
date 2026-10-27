@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/assoc_field_and_collection.rslisp
+---
+error[L0301]: a struct update takes only `:field value` pairs
+ --> check/assoc_field_and_collection.rslisp:5:26
+  |
+5 |   (assoc leaf :year 2025 1 2))
+  |                          ^ here
+  |
+  = help: update the collection in a separate `assoc`

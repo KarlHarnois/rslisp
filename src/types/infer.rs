@@ -2844,8 +2844,21 @@ impl TypeChecker {
     fn assoc_element(&mut self, depth: usize, value: &TypedExpr) -> Result<Type, Diagnostic> {
         let element = self.unifier.fresh();
         let expected = self.nested_vector_type(depth, &element);
-        self.expect(&expected, &value.ty, value.span, MismatchContext::Plain)?;
+        self.expect(&expected, &value.ty, value.span, MismatchContext::Plain)
+            .map_err(|error| self.point_struct_base_to_fields(error, &value.ty))?;
         Ok(element)
+    }
+
+    fn point_struct_base_to_fields(&self, error: Diagnostic, base: &Type) -> Diagnostic {
+        if self.names_struct(base) {
+            error.with_help(TypeProblems::struct_base_help())
+        } else {
+            error
+        }
+    }
+
+    fn names_struct(&self, ty: &Type) -> bool {
+        matches!(self.unifier.shallow(ty), Type::Named(binding, _) if self.structs.get(binding).is_some())
     }
 
     fn assoc_keys(&mut self, keys: &[Expr]) -> Result<Vec<TypedExpr>, Diagnostic> {

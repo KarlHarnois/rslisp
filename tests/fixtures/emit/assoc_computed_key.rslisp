@@ -1,0 +1,13 @@
+(defstruct user :name str :admin? bool)
+
+(defn initial (name)
+  (let letter (subs name 0 1))
+  (upper-case letter))
+
+(defn main ()
+  (let counts (sorted-map (to-string "A") 0))
+  (let counted (assoc counts (initial "ana") 1))
+  (println (unwrap (lookup counted "A")))
+  (let user (->user :name "ana" :admin? false))
+  (let renamed (assoc user :name "karl"))
+  (println (:name renamed) " " (:admin? renamed)))

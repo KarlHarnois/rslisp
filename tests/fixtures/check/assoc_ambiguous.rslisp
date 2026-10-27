@@ -2,7 +2,7 @@
 (defstruct spot :x i64)
 
 (defn bump (p)
-  (assoc p (x 2)))
+  (assoc p :x 2))
 
 (defn main ()
   (do))
