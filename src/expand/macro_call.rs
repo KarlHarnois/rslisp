@@ -90,12 +90,22 @@ impl Expander<'_> {
         context: Option<&mut DefinitionContext>,
     ) -> Result<Form, Diagnostic> {
         let call_site = form.span();
-        let mut form = self.run_macro(binding, form, context)?;
+        let expanded = self.run_macro(binding, form, context)?;
+        Ok(self.place_expansion(binding, call_site, expanded))
+    }
+
+    pub(super) fn value_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
+        let call_site = form.span();
+        let expanded = self.trial_expansion(binding, form)?;
+        Some(self.place_expansion(binding, call_site, expanded))
+    }
+
+    fn place_expansion(&mut self, binding: BindingId, call_site: Span, mut form: Form) -> Form {
         let origin = self.macro_origin(binding, call_site);
         self.record_introduced_names(&form, &origin);
         form.relocate_outside(call_site);
         self.macro_origins.entry(call_site).or_insert(origin);
-        Ok(form)
+        form
     }
 
     pub(super) fn trial_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {

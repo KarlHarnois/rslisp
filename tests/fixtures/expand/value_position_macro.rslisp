@@ -1,0 +1,13 @@
+(use code symbol? list nth)
+
+(defn add-one (value) (+ value 1))
+
+(def increment
+  (macro (form)
+    (if (symbol? form)
+        (quote add-one)
+        (list (quote add-one) (nth form 1)))))
+
+(def by-call (increment 2))
+(def by-value increment)
+(def ordinary unless)

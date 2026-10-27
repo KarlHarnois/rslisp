@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/value_position_macro.rslisp
+---
+error[L0304]: `unless` is a macro, not a value
+  --> expand/value_position_macro.rslisp:13:15
+   |
+13 | (def ordinary unless)
+   |               ^^^^^^ used as a value here
+   |
+   = help: a macro can only be called; pass a function instead

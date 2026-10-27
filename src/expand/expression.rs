@@ -27,7 +27,7 @@ impl Expander<'_> {
     fn lower_form(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
         let span = form.span();
         let kind = match form.kind() {
-            FormKind::Symbol(symbol) => self.lower_reference(symbol, span)?,
+            FormKind::Symbol(symbol) => return self.lower_symbol(symbol, form),
             FormKind::String(text) => {
                 ExprKind::Leaf(Leaf::Literal(Literal::String(Rc::clone(text))))
             }
@@ -81,16 +81,39 @@ impl Expander<'_> {
         }
     }
 
-    fn lower_reference(&mut self, symbol: &Symbol, span: Span) -> Result<ExprKind, Diagnostic> {
+    fn lower_symbol(&mut self, symbol: &Symbol, form: &Form) -> Result<Expr, Diagnostic> {
+        let span = form.span();
         let binding = self.resolve(symbol, Namespace::Value, span)?;
+        if matches!(self.kind(binding), BindingKind::Macro(_)) {
+            return self.lower_macro_value(binding, symbol, form);
+        }
+        Ok(Expr::new(self.lower_reference(binding, span)?, span))
+    }
+
+    fn lower_macro_value(
+        &mut self,
+        binding: BindingId,
+        symbol: &Symbol,
+        form: &Form,
+    ) -> Result<Expr, Diagnostic> {
+        match self.value_expansion(binding, form.clone()) {
+            Some(expanded) => self.lower_expansion(&expanded),
+            None => Err(self.macro_as_value(binding, symbol, form.span())),
+        }
+    }
+
+    fn macro_as_value(&mut self, binding: BindingId, symbol: &Symbol, span: Span) -> Diagnostic {
+        ExpandProblems::macro_as_value(
+            symbol.name(),
+            span,
+            self.macro_function(binding, symbol, span)
+                .map(|function| Rc::from(self.bindings.get(function).name())),
+        )
+    }
+
+    fn lower_reference(&mut self, binding: BindingId, span: Span) -> Result<ExprKind, Diagnostic> {
         match self.kind(binding) {
             BindingKind::KernelForm(kernel) => Err(ExpandProblems::form_as_value(kernel, span)),
-            BindingKind::Macro(_) => Err(ExpandProblems::macro_as_value(
-                symbol.name(),
-                span,
-                self.macro_function(binding, symbol, span)
-                    .map(|function| Rc::from(self.bindings.get(function).name())),
-            )),
             BindingKind::Boolean(value) => Ok(ExprKind::Leaf(Leaf::Literal(Literal::Bool(value)))),
             BindingKind::Variant(_, info) if info.arity == 0 => {
                 Ok(ExprKind::Variant(binding, Vec::new()))
