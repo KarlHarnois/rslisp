@@ -51,8 +51,10 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-${{ hashFiles('flake.lock') }}-
       - name: Format
+        if: runner.os == 'Linux'
         run: nix develop .#ci -c cargo fmt --all --check
       - name: Lint
+        if: runner.os == 'Linux'
         run: nix develop .#ci -c cargo clippy --workspace --all-targets -- -D warnings
       - name: Test
         id: tests
