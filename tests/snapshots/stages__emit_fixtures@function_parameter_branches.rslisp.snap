@@ -19,7 +19,7 @@ fn build_matched<'a>(
 ) -> Car<'a> {
     constructor(
         match year {
-            Some(found) => "Leaf",
+            Some(_) => "Leaf",
             None => "Nissan",
         },
         2024,
