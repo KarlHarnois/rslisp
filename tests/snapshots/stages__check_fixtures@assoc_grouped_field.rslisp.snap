@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/assoc_grouped_field.rslisp
+---
+error[L0301]: a collection update takes keys and values in pairs
+ --> check/assoc_grouped_field.rslisp:5:15
+  |
+5 |   (assoc leaf (year 2025)))
+  |               ^^^^^^^^^^^ here
+  |
+  = help: to update a field, write (assoc leaf :year 2025)

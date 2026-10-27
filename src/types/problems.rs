@@ -660,6 +660,13 @@ impl TypeProblems {
         )
     }
 
+    pub fn struct_base_help() -> String {
+        format!(
+            "update a field with a keyword, as in (assoc value {}field new)",
+            Keyword::MARKER
+        )
+    }
+
     pub fn ambiguous_field(field: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::CANNOT_INFER,

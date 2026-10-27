@@ -1,7 +1,7 @@
 (defstruct point :x i64 :y i64)
 
 (defn bump (p)
-  (assoc p (x 1)))
+  (assoc p :x 1))
 
 (defn main ()
   (let grid (vec 1 2 3))

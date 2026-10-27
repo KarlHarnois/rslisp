@@ -1,0 +1,21 @@
+(defstruct car
+  :make str
+  :model str
+  :year u16
+  :electric? bool)
+
+(defn describe (vehicle)
+  (str (:year vehicle) " " (:make vehicle) " " (:model vehicle)
+       (if (:electric? vehicle) " (electric)" "")))
+
+(defn main ()
+  (let leaf (->car :make "Nissan" :model "Leaf" :year 2024 :electric? true))
+  (let newer (assoc leaf :year 2025))
+  (println (describe newer))
+  (let petrol (assoc newer :year 2026 :electric? false))
+  (println (describe petrol))
+  (let grid (vec 1 2 3))
+  (let changed (assoc grid 1 9))
+  (println (at changed 0) " " (at changed 1) " " (at changed 2))
+  (let both (assoc changed 0 7 2 8))
+  (println (at both 0) " " (at both 1) " " (at both 2)))

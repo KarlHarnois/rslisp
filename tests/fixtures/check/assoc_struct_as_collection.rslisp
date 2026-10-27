@@ -1,0 +1,5 @@
+(defstruct limits :max i64 :min i64)
+
+(defn main ()
+  (let speeds (->limits :max 120 :min 30))
+  (assoc speeds (max 130) (min 40)))

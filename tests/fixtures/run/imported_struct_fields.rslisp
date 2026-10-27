@@ -3,5 +3,5 @@
 (defn main ()
   (let leaf (->car "Nissan" "Leaf" 2024 true))
   (let civic (new car (make "Honda") (model "Civic") (year 2019) (electric? false)))
-  (let newer (assoc civic (year 2021)))
+  (let newer (assoc civic :year 2021))
   (println (:year leaf) " " (:make civic) " " (:year newer)))

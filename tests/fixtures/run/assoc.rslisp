@@ -1,14 +1,14 @@
 (defstruct point :x i64 :y i64 :label string)
 
 (defn bump-x (p)
-  (assoc p (x 1)))
+  (assoc p :x 1))
 
 (defn main ()
   (let p (->point 7 8 (to-string "seed")))
-  (let one (assoc p (x 3)))
+  (let one (assoc p :x 3))
   (println (:x one) " " (:y one) " " (:label one))
   (let p2 (->point 4 5 (to-string "base")))
-  (let two (assoc p2 (x 6) (label (to-string "two"))))
+  (let two (assoc p2 :x 6 :label (to-string "two")))
   (println (:x two) " " (:y two) " " (:label two))
   (println (:x (bump-x (->point 9 10 (to-string "tmp")))))
   (let grid (vec 1 2 3))

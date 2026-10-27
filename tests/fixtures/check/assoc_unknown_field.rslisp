@@ -1,0 +1,5 @@
+(defstruct car :make str :model str :year u16 :electric? bool)
+
+(defn main ()
+  (let leaf (->car :make "Nissan" :model "Leaf" :year 2024 :electric? true))
+  (assoc leaf :yer 2025))

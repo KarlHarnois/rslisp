@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/assoc_field_without_value.rslisp
+---
+error[L0301]: this field has no value
+ --> check/assoc_field_without_value.rslisp:5:15
+  |
+5 |   (assoc leaf :year))
+  |               ^^^^^ here
+  |
+  = help: write `:field value` pairs, as in (assoc leaf :year 2025)

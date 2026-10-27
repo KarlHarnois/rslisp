@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/assoc_keywords.rslisp
+---
+2025 Nissan Leaf (electric)
+2026 Nissan Leaf
+1 9 3
+7 9 8
