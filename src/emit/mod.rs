@@ -9,6 +9,7 @@ mod operator;
 mod plan;
 mod problems;
 mod runtime;
+mod signature_borrows;
 mod template;
 mod types;
 mod unsized_parameters;

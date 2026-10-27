@@ -8,6 +8,7 @@ use super::mangle::NameMangler;
 use super::mutable_locals::MutableLocals;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
 use super::runtime::RuntimeModule;
+use super::signature_borrows::SignatureBorrows;
 use super::types::{LifetimeScope, RustTypes, TypePosition};
 use super::unsized_parameters::UnsizedParameters;
 use crate::core::{BindingId, ModuleId};
@@ -109,7 +110,7 @@ impl<'a> ResultBorrows<'a> {
     }
 
     fn carries_borrow(&self, ty: &Type) -> bool {
-        self.program.type_holds_borrow(ty) || ty.is_unsized()
+        SignatureBorrows::new(self.program).holds_borrow(ty) || ty.is_unsized()
     }
 
     fn control(&mut self, control: &TypedControl) -> HashSet<BindingId> {
@@ -645,14 +646,7 @@ impl<'a> ItemEmitter<'a> {
         }
         let result = match &definition.value.ty {
             Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
-                let position = if parameters
-                    .iter()
-                    .any(|parameter| self.program.type_holds_borrow(parameter))
-                {
-                    TypePosition::Signature
-                } else {
-                    TypePosition::StaticResult
-                };
+                let position = self.result_position(parameters, inferred.as_deref());
                 format!(" -> {}", types.show_in(result, position, &scope))
             }
             _ => String::new(),
@@ -765,14 +759,7 @@ impl<'a> ItemEmitter<'a> {
             .collect();
         let result = match &definition.value.ty {
             Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
-                let position = if parameters
-                    .iter()
-                    .any(|parameter| self.program.type_holds_borrow(parameter))
-                {
-                    TypePosition::Signature
-                } else {
-                    TypePosition::StaticResult
-                };
+                let position = self.result_position(parameters, inferred.as_deref());
                 format!(" -> {}", types.show_in(result, position, &scope))
             }
             _ => String::new(),
@@ -1029,6 +1016,17 @@ impl<'a> ItemEmitter<'a> {
         format!("<{}>", names.join(", "))
     }
 
+    fn result_position(&self, parameters: &[Type], inferred: Option<&str>) -> TypePosition {
+        let holds_borrow = parameters
+            .iter()
+            .any(|parameter| self.program.type_holds_borrow(parameter));
+        if holds_borrow || inferred.is_some() {
+            TypePosition::Signature
+        } else {
+            TypePosition::StaticResult
+        }
+    }
+
     fn needs_shared_lifetime(&self, value: &TypedExpr) -> bool {
         let Type::Function(_, parameters, result) = &value.ty else {
             return false;
@@ -1038,7 +1036,18 @@ impl<'a> ItemEmitter<'a> {
             .iter()
             .map(|parameter| self.borrow_lifetimes(parameter))
             .sum();
-        result_lifetimes > 0 && parameter_lifetimes > 1
+        result_lifetimes > 0 && (parameter_lifetimes > 1 || self.result_flows_from_function(value))
+    }
+
+    fn result_flows_from_function(&self, value: &TypedExpr) -> bool {
+        let TypedExprKind::Fn(lambda) = &value.kind else {
+            return false;
+        };
+        let flowing = ResultBorrows::of(self.program, lambda);
+        let borrows = SignatureBorrows::new(self.program);
+        lambda.params.iter().any(|param| {
+            flowing.contains(&param.binding) && borrows.is_borrowing_function(&param.ty)
+        })
     }
 
     fn inferred_lifetime(&self, lifetimes: &[BindingId], value: &TypedExpr) -> Option<String> {

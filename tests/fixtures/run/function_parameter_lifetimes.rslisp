@@ -1,0 +1,37 @@
+(defstruct car :make str :year u16)
+
+(type build-with (fn ((fn ((ref str) u16) car)) car))
+(defn build-with (constructor) (constructor "Nissan" 2025))
+
+(type build-with-make (fn ((fn ((ref str) u16) car) (ref str)) car))
+(defn build-with-make (constructor make) (constructor make 2024))
+
+(type build-default (fn ((fn () car)) car))
+(defn build-default (constructor) (constructor))
+
+(type count-make (fn ((fn ((ref str)) u16) (ref str)) (ref str)))
+(defn count-make (counter make) (if (> (counter make) 0) make "none"))
+
+(type label (fn ((fn ((ref str)) u16)) (ref str)))
+(defn label (counter) (if (> (counter "Leaf") 0) "Nissan" "none"))
+
+(type first-word (fn ((ref str)) (ref str)))
+(defn first-word (text) text)
+
+(type measure (fn ((fn ((ref str)) (ref str))) u16))
+(defn measure (pick)
+  (let model (to-string "Leaf"))
+  (let picked (pick (as-str model)))
+  (if (= picked "Leaf") 4 0))
+
+(defn main ()
+  (println (:year (build-with ->car)))
+  (let model (to-string "Leaf"))
+  (let built (build-with (fn (make year) (->car :make (as-str model) :year year))))
+  (println (:make built))
+  (let make (to-string "Nissan"))
+  (println (:make (build-with-make ->car (as-str make))))
+  (println (:year (build-default (fn () (->car "Nissan" 2023)))))
+  (println (count-make (fn (text) 3) "Leaf"))
+  (println (label (fn (text) 3)))
+  (println (measure first-word)))
