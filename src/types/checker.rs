@@ -158,7 +158,7 @@ pub struct TypeChecker {
     trait_arguments: HashSet<BindingId>,
     signatures: HashMap<BindingId, (TypeExpr, Span)>,
     monomorphic: Vec<Type>,
-    implied_bounds: HashMap<GenericId, Vec<Bound>>,
+    pub(super) implied_bounds: HashMap<GenericId, Vec<Bound>>,
     pub(super) associated_generics: HashMap<GenericId, std::rc::Rc<str>>,
     pub(super) field_accessors: HashMap<BindingId, Rc<str>>,
     pub(super) pending_borrows: Vec<PendingBorrow>,

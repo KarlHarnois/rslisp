@@ -1,0 +1,6 @@
+(defn count-between (start end) (count (range start end)))
+
+(defn main ()
+  (println (count-between 2 5))
+  (let low (the u8 1))
+  (println (count-between low (the u8 3))))

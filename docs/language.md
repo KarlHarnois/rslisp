@@ -205,7 +205,7 @@ A `main` whose inferred type is a `result` emits an inner function for its body 
 - `filter` passes each element to its test as a reference, as Rust does.
 - `range` takes an `integer`, a prelude trait of the integer types.
 - An `iterator` cannot be a struct field.
-- A function generic over `integer` cannot call `range`, because Rust's `Range` is an iterator only for concrete integer types. rustc reports the error.
+- A function generic over `integer` can call `range`: the prelude's `step` trait states Rust's requirement `Range<N>: Iterator<Item = N>`, and the function's emitted signature carries it as a `where` predicate.
 
 ## Ownership
 
@@ -352,6 +352,8 @@ A `rust` template names a type parameter of its `where` by name, as `{target}` i
 `rust-type` is a kernel form: only `struct` creates a type, and it cannot name a type that Rust defines. A template that starts with `impl ` is opaque. A closure parameter or a `let` writes an opaque type as `_`. A `const`, a `static` or a function-type parameter cannot hold one, and rustc reports it. A struct whose Rust name equals the first name in a used Rust type's template is a name collision.
 
 A `rust-trait` implementor can take type parameters from a `where`. `(where ((a shown)) (ref a))` implements the trait for a reference to any type that implements it. An entry `(with type type)` gives the trait's second type: `(with string str)` means `String: PartialEq<str>`. A type parameter alone cannot be an implementor, because it would match every type. A struct can appear in a `rust-trait` only for a trait its emitted `derive` lists.
+
+A `rust-trait` path that holds `{0}` is a Rust `where` predicate, not a trait path. `(rust-trait step "std::ops::Range<{0}>: Iterator<Item = {0}>" i64 ...)` makes a bound `(n step)` emit `where std::ops::Range<N>: Iterator<Item = N>` on the function, with the type parameter in place of `{0}`. A generic caller inherits the bound. The predicate reaches function items only, not trait or impl methods.
 
 | Template rule | Effect |
 |---|---|

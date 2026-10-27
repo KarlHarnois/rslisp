@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/range_over_inferred_integer.rslisp
+---
+fn count_to(n: i64) -> usize {
+    (0..n).count()
+}
+
+fn main() {
+    println!(
+        "{}",
+        count_to({
+            let result: i64 = 4;
+            result
+        })
+    )
+}

@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/range_over_concrete_integer.rslisp
+---
+fn main() {
+    println!("{}", (0_i64..5_i64).count())
+}

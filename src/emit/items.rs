@@ -786,8 +786,9 @@ impl<'a> ItemEmitter<'a> {
                 &literal_generics,
             ),
         );
+        let where_clause = types.where_clause(&definition.scheme.params);
         let header = format!(
-            "{}fn {}{generics}({}){result} {{",
+            "{}fn {}{generics}({}){result}{where_clause} {{",
             info.visibility.keyword(),
             info.name,
             params.join(", ")
