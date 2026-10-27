@@ -9,6 +9,8 @@
 
 ## CI failures
 
+**The `front-end instruction counts` job posts a comparison of instruction counts and NEVER fails on a rise in a count.** If the job fails, its tooling broke: treat the failure as a CI failure.
+
 **If CI fails, run these steps:**
 
 1. Check whether `main` fails the same check, as the next section says. If it does, stop and show the failing output to the project owner.

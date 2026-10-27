@@ -109,3 +109,86 @@ jobs:
       - name: Check flake
         if: steps.scope.outputs.build == 'true'
         run: nix flake check
+
+  bench:
+    name: front-end instruction counts
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      BASELINE: bench-baseline
+      REPORT: target/bench/report.md
+      REPORT_MARKER: "<!-- front-end-instruction-counts -->"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: ${{ env.BASELINE }}
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Restore cargo cache
+        id: cargo-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+            ${{ env.BASELINE }}/target
+          key: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-
+      - name: Measure the base branch
+        id: measure
+        run: nix develop .#ci -c cargo xtask bench measure --workspace "$BASELINE" --save target/bench/baseline.tsv
+      - name: Measure the pull request
+        run: nix develop .#ci -c cargo xtask bench measure --save target/bench/candidate.tsv
+      - name: Compare
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          comparison=$(nix develop .#ci -c cargo xtask bench compare target/bench/baseline.tsv target/bench/candidate.tsv)
+          {
+            echo "$REPORT_MARKER"
+            echo "## Front-end instruction counts"
+            echo
+            echo "Before: \`$BASE_REF\` at ${BASE_SHA::7}. After: ${HEAD_SHA::7} merged into it. This report never fails CI."
+            echo
+            echo "$comparison"
+          } > "$REPORT"
+          cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+      - name: Post the report on the pull request
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMENTS: repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments
+          EDITS: repos/${{ github.repository }}/issues/comments
+        run: |
+          existing=$(gh api --paginate "$COMMENTS" \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$REPORT_MARKER\"))) | .id" | head -n 1)
+          if [ -n "$existing" ]; then
+            gh api --method PATCH "$EDITS/$existing" -F body=@"$REPORT" --silent
+          else
+            gh api --method POST "$COMMENTS" -F body=@"$REPORT" --silent
+          fi
+      - name: Save cargo cache
+        if: ${{ !cancelled() && steps.measure.outcome != 'skipped' && steps.cargo-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+            ${{ env.BASELINE }}/target
+          key: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
