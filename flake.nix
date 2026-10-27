@@ -115,7 +115,7 @@
             wrapProgram $out/bin/rslisp --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.rustc pkgs.rustfmt ]}
           '';
           meta = {
-            description = "A minimal Lisp that compiles to Rust";
+            description = cratePackage.description;
             mainProgram = "rslisp";
             license = pkgs.lib.getLicenseFromSpdxId cratePackage.license;
             platforms = supportedSystems;
