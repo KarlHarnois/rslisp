@@ -1,0 +1,62 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_parameter_passed_on.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn make_car(make: &str, year: u16) -> Car<'_> {
+    Car { make, year }
+}
+
+fn build_with<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>) -> Car<'a> {
+    constructor("Nissan", 2025)
+}
+
+fn build_through<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>) -> Car<'a> {
+    build_with(constructor)
+}
+
+fn build_further<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>) -> Car<'a> {
+    build_through(constructor)
+}
+
+fn build_down<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>, mut count: u16) -> Car<'a> {
+    loop {
+        if count == 0 {
+            return constructor("Leaf", 2024);
+        } else {
+            count -= 1;
+            continue;
+        }
+    }
+}
+
+fn first_word(text: &str) -> &str {
+    text
+}
+
+fn measure(pick: impl FnOnce(&str) -> &str) -> u16 {
+    let model = "Leaf".to_string();
+    if pick(model.as_str()) == "Leaf" { 4 } else { 0 }
+}
+
+fn measure_through(pick: impl FnOnce(&str) -> &str) -> u16 {
+    measure(pick)
+}
+
+fn main() {
+    let model = "Leaf".to_string();
+    let borrowing = |make: &str, year: u16| Car {
+        make: model.as_str(),
+        year,
+    };
+    println!("{}", build_through(borrowing).make);
+    println!("{}", build_further(borrowing).make);
+    println!("{}", build_down(make_car, 2).year);
+    println!("{}", measure_through(first_word))
+}
