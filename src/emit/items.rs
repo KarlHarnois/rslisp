@@ -6,6 +6,7 @@ use super::literal_generics::LiteralGenerics;
 use super::locals::LocalNames;
 use super::mangle::NameMangler;
 use super::mutable_locals::MutableLocals;
+use super::opaque_borrows::OpaqueBorrows;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
 use super::runtime::RuntimeModule;
 use super::signature_borrows::SignatureBorrows;
@@ -720,7 +721,7 @@ impl<'a> ItemEmitter<'a> {
             reserved_lifetime,
         );
         let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
-        let used = Self::used_written_lifetimes(&definition.value);
+        let used = self.used_written_lifetimes(&definition.value);
         let flowing = ResultBorrows::of(self.program, lambda);
         let mut params = Vec::new();
         if let Some(kind) = receiver {
@@ -837,7 +838,7 @@ impl<'a> ItemEmitter<'a> {
         let mut emitter = self.expressions(info.module, &definition.value);
         emitter.prepare_tail_loop(definition.binding, lambda);
         let types = emitter.types();
-        let used = Self::used_written_lifetimes(&definition.value);
+        let used = self.used_written_lifetimes(&definition.value);
         let inferred = self.inferred_lifetime(&definition.scheme.lifetimes, &definition.value);
         let scope =
             self.lifetime_scope_used(&definition.scheme.lifetimes, &used, inferred.as_deref());
@@ -1225,9 +1226,15 @@ impl<'a> ItemEmitter<'a> {
         }
     }
 
-    fn used_written_lifetimes(value: &TypedExpr) -> HashSet<BindingId> {
+    fn used_written_lifetimes(&self, value: &TypedExpr) -> HashSet<BindingId> {
+        let mut used = Self::linking_written_lifetimes(&value.ty);
+        used.extend(OpaqueBorrows::new(self.program).written_lifetimes(&value.ty));
+        used
+    }
+
+    fn linking_written_lifetimes(ty: &Type) -> HashSet<BindingId> {
         let mut counts: HashMap<BindingId, usize> = HashMap::new();
-        Self::count_written_lifetimes(&value.ty, &mut counts);
+        Self::count_written_lifetimes(ty, &mut counts);
         counts
             .into_iter()
             .filter(|(_, count)| *count > 1)

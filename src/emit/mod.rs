@@ -5,6 +5,7 @@ mod literal_generics;
 mod locals;
 pub(crate) mod mangle;
 mod mutable_locals;
+mod opaque_borrows;
 mod operator;
 mod plan;
 mod problems;
