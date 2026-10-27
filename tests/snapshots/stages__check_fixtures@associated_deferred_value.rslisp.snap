@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/associated_deferred_value.rslisp
+---
+error[L0401]: mismatched types
+ --> check/associated_deferred_value.rslisp:2:45
+  |
+2 |   (let (answer (result _ parse-bool-error)) (parse "4"))
+  |                                             ^^^^^^^^^^^ expected `parse-bool-error`, found `(parse-error _)`

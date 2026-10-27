@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/associated_deferred_argument.rslisp
+---
+(type describe-error (where ((target display from-str)) (fn ((parse-error target) target) string)))
+(type main (fn () unit))

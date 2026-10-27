@@ -80,6 +80,10 @@ impl ProjectionTable {
 
     pub fn normalize(&self, projected: &Type) -> Option<Type> {
         let (projection, owner) = Self::projection_parts(projected)?;
+        self.normalize_projection(projection, owner)
+    }
+
+    pub fn normalize_projection(&self, projection: BindingId, owner: &Type) -> Option<Type> {
         self.rules
             .get(&projection)?
             .iter()

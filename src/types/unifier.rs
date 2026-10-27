@@ -226,12 +226,21 @@ impl Unifier {
         } else {
             return Err(UnifyError::Mismatch);
         };
-        self.deferred.push(DeferredEquality {
-            projected: projected.clone(),
-            other: other.clone(),
-            span,
-        });
+        self.defer_once(projected, other, span);
         Ok(())
+    }
+
+    fn defer_once(&mut self, projected: &Type, other: &Type, span: Span) {
+        let known = self.deferred.iter().any(|deferred| {
+            deferred.projected == *projected && deferred.other == *other && deferred.span == span
+        });
+        if !known {
+            self.deferred.push(DeferredEquality {
+                projected: projected.clone(),
+                other: other.clone(),
+                span,
+            });
+        }
     }
 
     fn awaits_owner(&self, projected: &Type, other: &Type) -> bool {

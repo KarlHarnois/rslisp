@@ -35,6 +35,10 @@ impl<'a> TypeDisplay<'a> {
         {
             return self.show(&normalized);
         }
+        self.show_unprojected(shown)
+    }
+
+    fn show_unprojected(&self, shown: &Type) -> String {
         match shown {
             Type::Var(_) => Self::UNKNOWN.to_string(),
             Type::Generic(generic) => self

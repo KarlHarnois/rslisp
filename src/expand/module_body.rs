@@ -1575,27 +1575,41 @@ impl Expander<'_> {
         scope: crate::scope::Scope,
         entries: &[Form],
     ) -> Result<RustTraitEntries, Diagnostic> {
-        let mut methods = Vec::new();
-        let mut help = None;
-        let mut associated = Vec::new();
-        let mut implementors = Vec::new();
+        let mut lowered = RustTraitEntries {
+            methods: Vec::new(),
+            help: None,
+            associated: Vec::new(),
+            implementors: Vec::new(),
+        };
         for entry in entries {
-            if Self::is_rust_trait_method(entry) {
-                methods.push(self.lower_rust_trait_method(shape, scope, entry)?);
-            } else if Self::is_rust_trait_help(entry) {
-                help = Some(self.lower_rust_trait_help(shape, entry)?);
-            } else if Self::is_rust_trait_associated(entry) {
-                associated.push(self.lower_rust_trait_associated(shape, entry)?);
-            } else {
-                implementors.push(self.lower_rust_trait_implementor(entry)?);
-            }
+            self.lower_rust_trait_entry(shape, scope, entry, &mut lowered)?;
         }
-        Ok(RustTraitEntries {
-            methods,
-            help,
-            associated,
-            implementors,
-        })
+        Ok(lowered)
+    }
+
+    fn lower_rust_trait_entry(
+        &mut self,
+        shape: &Shape<'_>,
+        scope: crate::scope::Scope,
+        entry: &Form,
+        lowered: &mut RustTraitEntries,
+    ) -> Result<(), Diagnostic> {
+        if Self::is_rust_trait_method(entry) {
+            lowered
+                .methods
+                .push(self.lower_rust_trait_method(shape, scope, entry)?);
+        } else if Self::is_rust_trait_help(entry) {
+            lowered.help = Some(self.lower_rust_trait_help(shape, entry)?);
+        } else if Self::is_rust_trait_associated(entry) {
+            lowered
+                .associated
+                .push(self.lower_rust_trait_associated(shape, entry)?);
+        } else {
+            lowered
+                .implementors
+                .push(self.lower_rust_trait_implementor(entry)?);
+        }
+        Ok(())
     }
 
     fn lower_rust_trait_associated(
