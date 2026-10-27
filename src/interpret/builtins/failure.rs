@@ -75,18 +75,14 @@ impl FailureDescription {
     const SUGGEST: &'static str = "suggest";
 
     fn read(parts: &[Form]) -> Result<Self, Diagnostic> {
-        parts
-            .chunks(2)
-            .try_fold(Self::default(), |description, pair| {
-                description.with_pair(pair)
-            })
-    }
-
-    fn with_pair(self, pair: &[Form]) -> Result<Self, Diagnostic> {
-        match pair {
-            [part, value] => self.with_part(part, value),
-            [part] => Err(InterpretProblems::malformed_failure_part(part.span())),
-            _ => unreachable!("`chunks(2)` yields one or two forms"),
+        let mut pairs = parts.chunks_exact(2);
+        let lone_part = pairs.remainder().first();
+        let description = pairs.try_fold(Self::default(), |description, pair| {
+            description.with_part(&pair[0], &pair[1])
+        })?;
+        match lone_part {
+            Some(part) => Err(InterpretProblems::malformed_failure_part(part.span())),
+            None => Ok(description),
         }
     }
 
