@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_parameter_passed_on.rslisp
+---
+Leaf
+Leaf
+2024
+4

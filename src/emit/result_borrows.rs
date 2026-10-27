@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use super::plan::EmitPlan;
 use crate::core::BindingId;
 use crate::types::{
     Borrow, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
@@ -8,17 +9,33 @@ use crate::types::{
 
 pub struct ResultBorrows<'a> {
     program: &'a TypedProgram,
+    plan: &'a EmitPlan<'a>,
     parameters: HashSet<BindingId>,
     aliases: HashMap<BindingId, HashSet<BindingId>>,
+    enclosing: HashSet<BindingId>,
 }
 
 impl<'a> ResultBorrows<'a> {
-    pub fn of(program: &'a TypedProgram, lambda: &TypedLambda) -> HashSet<BindingId> {
-        let parameters = lambda.params.iter().map(|param| param.binding).collect();
+    pub fn of(
+        program: &'a TypedProgram,
+        plan: &'a EmitPlan<'a>,
+        lambda: &TypedLambda,
+    ) -> HashSet<BindingId> {
+        Self::within(program, plan, lambda, HashSet::new())
+    }
+
+    fn within(
+        program: &'a TypedProgram,
+        plan: &'a EmitPlan<'a>,
+        lambda: &TypedLambda,
+        enclosing: HashSet<BindingId>,
+    ) -> HashSet<BindingId> {
         let mut borrows = Self {
             program,
-            parameters,
+            plan,
+            parameters: lambda.params.iter().map(|param| param.binding).collect(),
             aliases: HashMap::new(),
+            enclosing,
         };
         let mut flows = borrows.block(&lambda.body);
         let local_borrow_callees: HashSet<BindingId> = LocalBorrowCalls::of(program, lambda)
@@ -56,7 +73,7 @@ impl<'a> ResultBorrows<'a> {
         match &expr.kind {
             TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.local(*binding),
             TypedExprKind::Control(control) => self.control(control),
-            TypedExprKind::Call(callee, _) => self.call(callee, expr),
+            TypedExprKind::Call(callee, arguments) => self.call(callee, arguments, expr),
             _ => self.children(expr),
         }
     }
@@ -65,12 +82,57 @@ impl<'a> ResultBorrows<'a> {
         self.program.type_holds_borrow(ty) || ty.is_unsized()
     }
 
-    fn call(&mut self, callee: &TypedExpr, call: &TypedExpr) -> HashSet<BindingId> {
+    fn call(
+        &mut self,
+        callee: &TypedExpr,
+        arguments: &[TypedArgument],
+        call: &TypedExpr,
+    ) -> HashSet<BindingId> {
         let mut flows = self.children(call);
-        if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = callee.kind {
-            flows.extend(self.local(binding));
-        }
+        flows.extend(self.callee(callee, arguments));
         flows
+    }
+
+    fn callee(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) -> HashSet<BindingId> {
+        match callee.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.local(binding),
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => self.passed_on(binding, arguments),
+            _ => HashSet::new(),
+        }
+    }
+
+    fn passed_on(&mut self, callee: BindingId, arguments: &[TypedArgument]) -> HashSet<BindingId> {
+        let sharing = self.sharing_parameters(callee);
+        arguments
+            .iter()
+            .zip(sharing)
+            .filter(|(_, shares)| *shares)
+            .flat_map(|(argument, _)| self.bound(&argument.value))
+            .collect()
+    }
+
+    fn sharing_parameters(&self, callee: BindingId) -> Vec<bool> {
+        let Some(lambda) = self.callee_lambda(callee) else {
+            return Vec::new();
+        };
+        let mut enclosing = self.enclosing.clone();
+        enclosing.insert(callee);
+        let flows = Self::within(self.program, self.plan, lambda, enclosing);
+        lambda
+            .params
+            .iter()
+            .map(|param| flows.contains(&param.binding))
+            .collect()
+    }
+
+    fn callee_lambda(&self, callee: BindingId) -> Option<&'a TypedLambda> {
+        if self.enclosing.contains(&callee) {
+            return None;
+        }
+        match &self.plan.definition(callee)?.value.kind {
+            TypedExprKind::Fn(lambda) => Some(lambda),
+            _ => None,
+        }
     }
 
     fn control(&mut self, control: &TypedControl) -> HashSet<BindingId> {

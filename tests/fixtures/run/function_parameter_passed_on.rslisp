@@ -1,0 +1,33 @@
+(defstruct car :make str :year u16)
+
+(type build-with (fn ((fn ((ref str) u16) car)) car))
+(defn build-with (constructor) (constructor "Nissan" 2025))
+
+(type build-through (fn ((fn ((ref str) u16) car)) car))
+(defn build-through (constructor) (build-with constructor))
+
+(type build-further (fn ((fn ((ref str) u16) car)) car))
+(defn build-further (constructor) (build-through constructor))
+
+(type build-down (fn ((fn ((ref str) u16) car) u16) car))
+(defn build-down (constructor count)
+  (if (= count 0) (constructor "Leaf" 2024) (build-down constructor (- count 1))))
+
+(type first-word (fn ((ref str)) (ref str)))
+(defn first-word (text) text)
+
+(type measure (fn ((fn ((ref str)) (ref str))) u16))
+(defn measure (pick)
+  (let model (to-string "Leaf"))
+  (if (= (pick (as-str model)) "Leaf") 4 0))
+
+(type measure-through (fn ((fn ((ref str)) (ref str))) u16))
+(defn measure-through (pick) (measure pick))
+
+(defn main ()
+  (let model (to-string "Leaf"))
+  (let borrowing (fn (make year) (->car :make (as-str model) :year year)))
+  (println (:make (build-through borrowing)))
+  (println (:make (build-further borrowing)))
+  (println (:year (build-down ->car 2)))
+  (println (measure-through first-word)))
