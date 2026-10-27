@@ -27,6 +27,6 @@ fn main() {
         callback: |argument: Person| is_adult(&argument),
         tag: std::cell::Cell::new(0),
     };
-    keep(&handler.callback);
+    keep(handler.callback);
     keep(&handler.tag);
 }
