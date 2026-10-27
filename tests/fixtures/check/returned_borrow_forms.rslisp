@@ -1,0 +1,28 @@
+(defstruct car :make str :year u16)
+
+(defstruct point :x i64 :y i64)
+
+(defstruct pin :at (ref point))
+
+(struct (holder a) (held a))
+
+(enum badge (titled str u16) plain)
+
+(defn grouped (year)
+  (let make (to-string "Nissan"))
+  (new car (make (as-str make)) (year year)))
+
+(defn pinned ()
+  (let origin (->point 0 0))
+  (->pin :at (ref origin)))
+
+(defn titled (year)
+  (let title (to-string "Leaf"))
+  (badge/titled (as-str title) year))
+
+(defn held ()
+  (let make (to-string "Nissan"))
+  (new holder (held (as-str make))))
+
+(defn main ()
+  (println (:year (grouped 2024))))

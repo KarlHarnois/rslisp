@@ -4,6 +4,19 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
 use crate::types::ClosureKind;
 
+pub enum BorrowedStorage {
+    Field {
+        field: String,
+        owner: String,
+        declaration: String,
+    },
+    Payload {
+        variant: String,
+        owner: String,
+        declaration: String,
+    },
+}
+
 pub struct OwnershipProblems;
 
 impl OwnershipProblems {
@@ -172,6 +185,38 @@ impl OwnershipProblems {
     }
 
     pub fn local_borrow(borrowed: Span, defined: Span) -> Diagnostic {
+        Self::returned_local_borrow(borrowed, defined)
+            .with_help("return an owned value with `(clone ...)`, or borrow from a parameter")
+    }
+
+    pub fn stored_local_borrow(
+        borrowed: Span,
+        defined: Span,
+        storage: &BorrowedStorage,
+    ) -> Diagnostic {
+        Self::returned_local_borrow(borrowed, defined).with_help(Self::owned_storage(storage))
+    }
+
+    fn owned_storage(storage: &BorrowedStorage) -> String {
+        match storage {
+            BorrowedStorage::Field {
+                field,
+                owner,
+                declaration,
+            } => format!(
+                "the field `{field}` of `{owner}` borrows its data, so declare it `{declaration}` to own it"
+            ),
+            BorrowedStorage::Payload {
+                variant,
+                owner,
+                declaration,
+            } => format!(
+                "the `{variant}` payload of `{owner}` borrows its data, so declare it `{declaration}` to own it"
+            ),
+        }
+    }
+
+    fn returned_local_borrow(borrowed: Span, defined: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::LOCAL_BORROW,
             "cannot return a borrow of a local value",
@@ -181,7 +226,6 @@ impl OwnershipProblems {
             defined,
             "this local is dropped when the function returns",
         ))
-        .with_help("return an owned value with `(clone ...)`, or borrow from a parameter")
     }
 
     pub fn needs_ownership(span: Span) -> Diagnostic {
