@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_field_without_captures.rslisp
+---
+by age
+30
+by bonus
+32
+Ana

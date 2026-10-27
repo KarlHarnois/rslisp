@@ -11,6 +11,7 @@ mod problems;
 mod returned;
 mod rewrite;
 mod slices;
+mod stored;
 mod usage;
 mod values;
 
@@ -29,6 +30,7 @@ use problems::OwnershipProblems;
 use returned::ReturnedBorrows;
 use rewrite::ModeRewrite;
 use slices::ShrinkSelection;
+use stored::StoredClosures;
 use values::FunctionValueModes;
 
 pub use changes::InPlaceChanges;
@@ -88,6 +90,9 @@ impl OwnershipChecker {
         });
         let report = kinds.run(&mut program.modules);
         Self::apply_kinds(program, report, &mut diagnostics);
+        StoredClosures::check(program)
+            .into_iter()
+            .for_each(|diagnostic| diagnostics.push(diagnostic));
         let mut inferred_copies = InferredCopies::default();
         for definition in program
             .modules

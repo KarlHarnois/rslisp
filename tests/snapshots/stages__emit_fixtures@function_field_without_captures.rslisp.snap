@@ -1,0 +1,41 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_field_without_captures.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct User<'a> {
+    name: &'a str,
+    age: u16,
+}
+
+fn make_user(name: &str, age_2: u16) -> User<'_> {
+    User { name, age: age_2 }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Sorter<'a> {
+    key: fn(&User<'_>) -> u16,
+    label: &'a str,
+}
+
+fn age(someone: &User<'_>) -> u16 {
+    someone.age
+}
+
+fn main() {
+    let ana = make_user("Ana", 30);
+    let by_age = Sorter {
+        key: age,
+        label: "by age",
+    };
+    let by_bonus = Sorter {
+        key: |someone: &User<'_>| someone.age + 2,
+        label: "by bonus",
+    };
+    println!("{}", by_age.label);
+    println!("{}", (by_age.key)(&ana));
+    println!("{}", by_bonus.label);
+    println!("{}", (by_bonus.key)(&ana));
+    println!("{}", ana.name)
+}
