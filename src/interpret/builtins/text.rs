@@ -65,6 +65,11 @@ impl<'a> TextOperations<'a> {
         Ok(Value::Form(self.arguments.keyword_field(0)?))
     }
 
+    pub fn field_keyword(&self) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(1)?;
+        Ok(Value::Form(self.arguments.field_keyword(0)?))
+    }
+
     pub fn make_symbol(&self) -> Result<Value, Diagnostic> {
         let context = self.arguments.symbol(0)?;
         let name = self.joined_parts(1)?;

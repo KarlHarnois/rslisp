@@ -78,6 +78,12 @@ impl Arguments {
             .ok_or_else(|| self.wrong(index, "a keyword"))
     }
 
+    pub fn field_keyword(&self, index: usize) -> Result<Form, Diagnostic> {
+        self.values[index]
+            .field_keyword()
+            .ok_or_else(|| self.wrong(index, "a field name"))
+    }
+
     pub fn string(&self, index: usize) -> Result<&str, Diagnostic> {
         match self.form(index)?.kind() {
             FormKind::String(text) => Ok(text),

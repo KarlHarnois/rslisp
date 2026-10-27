@@ -8,4 +8,8 @@ impl Keyword {
             .strip_prefix(Self::MARKER)
             .filter(|field_name| !field_name.is_empty())
     }
+
+    pub fn of_field(field_name: &str) -> Option<String> {
+        (!field_name.starts_with(Self::MARKER)).then(|| format!("{}{field_name}", Self::MARKER))
+    }
 }

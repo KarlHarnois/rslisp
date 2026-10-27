@@ -18,6 +18,7 @@ pub enum Builtin {
     SymbolName,
     KeywordName,
     KeywordField,
+    FieldKeyword,
     MakeSymbol,
     MakeString,
     SameBinding,
@@ -38,7 +39,7 @@ pub enum Builtin {
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 35] = [
+    const NAMES: [(Builtin, &'static str); 36] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -57,6 +58,7 @@ impl Builtin {
         (Builtin::SymbolName, "symbol-name"),
         (Builtin::KeywordName, "keyword-name"),
         (Builtin::KeywordField, "keyword-field"),
+        (Builtin::FieldKeyword, "field-keyword"),
         (Builtin::MakeSymbol, "symbol"),
         (Builtin::MakeString, "string"),
         (Builtin::SameBinding, "same-binding?"),

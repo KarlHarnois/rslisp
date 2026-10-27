@@ -21,7 +21,7 @@ pub struct BuiltinCall {
 }
 
 impl BuiltinCall {
-    const IMPLEMENTATIONS: [(Builtin, Implementation); 35] = [
+    const IMPLEMENTATIONS: [(Builtin, Implementation); 36] = [
         (Builtin::First, |operations, _| operations.lists.first()),
         (Builtin::Rest, |operations, _| operations.lists.rest()),
         (Builtin::List, |operations, _| operations.lists.list()),
@@ -65,6 +65,9 @@ impl BuiltinCall {
         }),
         (Builtin::KeywordField, |operations, _| {
             operations.text.keyword_field()
+        }),
+        (Builtin::FieldKeyword, |operations, _| {
+            operations.text.field_keyword()
         }),
         (Builtin::MakeSymbol, |operations, _| {
             operations.text.make_symbol()
