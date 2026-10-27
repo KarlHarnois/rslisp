@@ -394,7 +394,7 @@ The emitted Rust is formatted by `rustfmt` when `rslisp emit` or `rslisp build` 
 | a Rust keyword | a raw identifier, so `type` becomes `r#type` |
 | a program type or trait that hides a Rust prelude name | suffixed with `2`, so `sized` becomes `Sized2` |
 | a local whose name a binding still in scope uses | numbered, so `n` becomes `n_2` |
-| an item a macro introduced whose name a written item takes | the next free number, so the positional function of `car` becomes `make_car_2` beside a program's own `make-car` |
+| an item a macro introduced whose name a written item takes | the next free number, so the positional function of `car` becomes `make_car_2` beside a program's own `make-car`, and a struct or enum takes the number with no underscore, as `Point2` |
 
 A program type or trait that mangles to a name Rust's 2021 prelude brings into
 scope takes the suffix `2`, so the emitted name never hides `Sized`, `Clone`,

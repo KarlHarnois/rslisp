@@ -1,0 +1,26 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/macro_type_collision.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Point2 {
+    x: i64,
+}
+
+fn old_x() -> i64 {
+    Point2 { x: 3 }.x
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Point {
+    y: i64,
+}
+
+fn make_point(y: i64) -> Point {
+    Point { y }
+}
+
+fn main() {
+    println!("{} {}", old_x(), make_point(7).y)
+}

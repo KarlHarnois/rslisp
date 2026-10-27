@@ -534,11 +534,20 @@ impl<'p> EmitPlan<'p> {
     }
 
     fn next_free_name(info: ItemInfo, taken: &HashMap<(ModuleId, String), BindingId>) -> ItemInfo {
+        let separator = Self::rename_separator(&info);
         let name = (Self::FIRST_RENAME_SUFFIX..)
-            .map(|suffix| format!("{}_{suffix}", info.name))
+            .map(|suffix| format!("{}{separator}{suffix}", info.name))
             .find(|candidate| !taken.contains_key(&(info.module, candidate.clone())))
             .expect("an unbounded range holds a free name");
         ItemInfo { name, ..info }
+    }
+
+    fn rename_separator(info: &ItemInfo) -> &'static str {
+        if matches!(info.kind, ItemKind::Struct | ItemKind::Enum) {
+            ""
+        } else {
+            "_"
+        }
     }
 
     fn shadowed_rust_type(&self, info: &ItemInfo) -> Option<BindingId> {
