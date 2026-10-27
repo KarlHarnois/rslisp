@@ -21,7 +21,10 @@ impl<'a> ResultBorrows<'a> {
             aliases: HashMap::new(),
         };
         let mut flows = borrows.block(&lambda.body);
-        let local_borrow_callees = LocalBorrowCalls::of(program, lambda);
+        let local_borrow_callees: HashSet<BindingId> = LocalBorrowCalls::of(program, lambda)
+            .into_iter()
+            .flat_map(|callee| borrows.local(callee))
+            .collect();
         flows.retain(|binding| !local_borrow_callees.contains(binding));
         flows
     }
@@ -29,13 +32,20 @@ impl<'a> ResultBorrows<'a> {
     fn block(&mut self, block: &TypedBlock) -> HashSet<BindingId> {
         for item in &block.items {
             if let TypedBodyItem::Let(binder, value) = item {
-                let flows = self.value(value);
+                let flows = self.bound(value);
                 self.aliases.insert(binder.binding, flows);
             }
         }
         match block.items.last() {
             Some(TypedBodyItem::Expr(expr)) => self.value(expr),
             _ => HashSet::new(),
+        }
+    }
+
+    fn bound(&mut self, value: &TypedExpr) -> HashSet<BindingId> {
+        match value.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.local(binding),
+            _ => self.value(value),
         }
     }
 
@@ -189,7 +199,25 @@ impl<'a> LocalBorrowCalls<'a> {
             TypedExprKind::Leaf(TypedLeaf::Literal(_) | TypedLeaf::Global(_)) => true,
             TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.outliving.contains(binding),
             TypedExprKind::Call(_, arguments) => self.arguments_outlive_body(arguments),
+            TypedExprKind::Control(control) => self.control_outlives_body(control),
             _ => false,
         }
+    }
+
+    fn control_outlives_body(&self, control: &TypedControl) -> bool {
+        match control {
+            TypedControl::If(_, then, otherwise) => {
+                self.outlives_body(then) && self.outlives_body(otherwise)
+            }
+            TypedControl::Match(matched) => matched
+                .arms
+                .iter()
+                .all(|arm| self.block_outlives_body(&arm.body)),
+            TypedControl::Block(block) => self.block_outlives_body(block),
+        }
+    }
+
+    fn block_outlives_body(&self, block: &TypedBlock) -> bool {
+        matches!(block.items.last(), Some(TypedBodyItem::Expr(tail)) if self.outlives_body(tail))
     }
 }
