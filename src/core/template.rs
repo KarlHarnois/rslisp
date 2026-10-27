@@ -4,9 +4,16 @@ pub struct MalformedPlaceholder;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Piece {
     Literal(String),
-    Placeholder { index: usize, borrowed: bool },
+    Placeholder { index: usize, access: Access },
     TypePlaceholder { name: String },
     BinderPlaceholder { name: String },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Access {
+    Passed,
+    Borrowed,
+    MutableReceiver,
 }
 
 #[derive(Clone, Debug)]
@@ -17,6 +24,7 @@ pub struct ParsedTemplate {
 
 impl ParsedTemplate {
     const BORROW: char = '&';
+    const MUTABLE: &'static str = "mut ";
     const BINDER: char = '!';
 
     pub fn parse(text: &str) -> Result<Self, MalformedPlaceholder> {
@@ -50,6 +58,7 @@ impl ParsedTemplate {
     ) -> Result<Piece, MalformedPlaceholder> {
         let borrowed = characters.next_if_eq(&Self::BORROW).is_some();
         let name = Self::placeholder_name(characters)?;
+        let (access, name) = Self::access(borrowed, &name);
         if let Some(binder) = name.strip_prefix(Self::BINDER) {
             return if borrowed || binder.is_empty() {
                 Err(MalformedPlaceholder)
@@ -60,9 +69,19 @@ impl ParsedTemplate {
             };
         }
         match name.parse::<usize>() {
-            Ok(index) => Ok(Piece::Placeholder { index, borrowed }),
+            Ok(index) => Ok(Piece::Placeholder { index, access }),
             Err(_) if borrowed => Err(MalformedPlaceholder),
-            Err(_) => Ok(Piece::TypePlaceholder { name }),
+            Err(_) => Ok(Piece::TypePlaceholder {
+                name: name.to_string(),
+            }),
+        }
+    }
+
+    fn access(borrowed: bool, name: &str) -> (Access, &str) {
+        match name.strip_prefix(Self::MUTABLE) {
+            Some(receiver) if borrowed => (Access::MutableReceiver, receiver),
+            _ if borrowed => (Access::Borrowed, name),
+            _ => (Access::Passed, name),
         }
     }
 
@@ -158,13 +177,13 @@ impl ParsedTemplate {
     fn rendered_piece(piece: &Piece) -> String {
         match piece {
             Piece::Literal(literal) => literal.replace('{', "{{").replace('}', "}}"),
-            Piece::Placeholder { index, borrowed } => {
-                let borrow = if *borrowed {
-                    Self::BORROW.to_string()
-                } else {
-                    String::new()
+            Piece::Placeholder { index, access } => {
+                let marker = match access {
+                    Access::Passed => String::new(),
+                    Access::Borrowed => Self::BORROW.to_string(),
+                    Access::MutableReceiver => format!("{}{}", Self::BORROW, Self::MUTABLE),
                 };
-                format!("{{{borrow}{index}}}")
+                format!("{{{marker}{index}}}")
             }
             Piece::TypePlaceholder { name } => format!("{{{name}}}"),
             Piece::BinderPlaceholder { name } => format!("{{!{name}}}"),
@@ -172,21 +191,28 @@ impl ParsedTemplate {
     }
 
     pub fn borrows(&self, argument: usize) -> bool {
-        let uses: Vec<bool> = self
-            .pieces
+        let uses = self.accesses(argument);
+        !uses.is_empty() && uses.iter().all(|access| *access == Access::Borrowed)
+    }
+
+    pub fn advances_receiver(&self, argument: usize) -> bool {
+        self.accesses(argument).contains(&Access::MutableReceiver)
+    }
+
+    fn accesses(&self, argument: usize) -> Vec<Access> {
+        self.pieces
             .iter()
             .filter_map(|piece| match piece {
-                Piece::Placeholder { index, borrowed } if *index == argument => Some(*borrowed),
+                Piece::Placeholder { index, access } if *index == argument => Some(*access),
                 _ => None,
             })
-            .collect();
-        !uses.is_empty() && uses.iter().all(|borrowed| *borrowed)
+            .collect()
     }
 
     pub fn borrows_any(&self) -> bool {
-        self.pieces
-            .iter()
-            .any(|piece| matches!(piece, Piece::Placeholder { borrowed: true, .. }))
+        self.pieces.iter().any(
+            |piece| matches!(piece, Piece::Placeholder { access, .. } if *access != Access::Passed),
+        )
     }
 
     pub fn called_arguments(&self, argument: usize) -> Option<Vec<&str>> {
@@ -291,7 +317,7 @@ impl ParsedTemplate {
 
 #[cfg(test)]
 mod tests {
-    use super::{MalformedPlaceholder, ParsedTemplate, Piece};
+    use super::{Access, MalformedPlaceholder, ParsedTemplate, Piece};
 
     #[test]
     fn splits_literals_from_placeholders() {
@@ -302,7 +328,7 @@ mod tests {
                 Piece::Literal("Vec<".to_string()),
                 Piece::Placeholder {
                     index: 0,
-                    borrowed: false
+                    access: Access::Passed
                 },
                 Piece::Literal(">".to_string())
             ]
@@ -314,6 +340,16 @@ mod tests {
         let parsed = ParsedTemplate::parse("println!(\"{{}}\", {&0})").expect("a valid template");
         assert!(parsed.borrows(0));
         assert!(parsed.borrows_any());
+    }
+
+    #[test]
+    fn marks_a_placeholder_that_a_method_advances() {
+        let parsed = ParsedTemplate::parse("{&mut 0}.find({1})").expect("a valid template");
+        assert!(parsed.advances_receiver(0));
+        assert!(!parsed.advances_receiver(1));
+        assert!(!parsed.borrows(0));
+        assert!(parsed.borrows_any());
+        assert_eq!(parsed.text(), "{&mut 0}.find({1})");
     }
 
     #[test]

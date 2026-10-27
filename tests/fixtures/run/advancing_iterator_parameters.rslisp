@@ -1,0 +1,23 @@
+(type first-big (fn ((iterator i64)) (option i64)))
+(defn first-big (values) (find values (fn (value) (> (deref value) 50))))
+
+(type has-big? (fn ((iterator i64)) bool))
+(defn has-big? (values) (any values (fn (value) (> value 50))))
+
+(type all-small? (fn ((iterator i64)) bool))
+(defn all-small? (values) (all values (fn (value) (< value 50))))
+
+(type how-many (fn ((iterator i64)) usize))
+(defn how-many (values) (count values))
+
+(defn first-even (values) (find values (fn (value) (= (rem (deref value) 2) 0))))
+
+(defn even-year (years) (find (values years) (fn (year) (= (rem year 2) 0))))
+
+(defn main ()
+  (prn (first-big (range 1 100)))
+  (prn (has-big? (range 1 100)))
+  (prn (all-small? (range 1 100)))
+  (prn (how-many (range 1 100)))
+  (prn (first-even (range 2041 2045)))
+  (prn (even-year (vec 2017 2018 2019))))

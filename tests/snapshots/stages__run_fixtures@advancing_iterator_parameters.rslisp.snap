@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/advancing_iterator_parameters.rslisp
+---
+Some(51)
+true
+false
+99
+Some(2042)
+Some(2018)

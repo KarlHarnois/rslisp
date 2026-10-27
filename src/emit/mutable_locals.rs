@@ -3,20 +3,25 @@ use std::collections::HashSet;
 use crate::core::{BindingId, ReferenceKind};
 use crate::ownership::ChangedValues;
 use crate::types::{
-    Borrow, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind,
-    TypedLeaf,
+    Borrow, TemplateBorrows, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
+    TypedExprKind, TypedLeaf,
 };
 
-#[derive(Default)]
-pub struct MutableLocals {
+pub struct MutableLocals<'a> {
+    templates: &'a TemplateBorrows,
     bindings: HashSet<BindingId>,
     mutating_closures: HashSet<BindingId>,
     called_closures: HashSet<BindingId>,
 }
 
-impl MutableLocals {
-    pub fn of(value: &TypedExpr) -> Self {
-        let mut found = Self::default();
+impl<'a> MutableLocals<'a> {
+    pub fn of(value: &TypedExpr, templates: &'a TemplateBorrows) -> Self {
+        let mut found = Self {
+            templates,
+            bindings: HashSet::new(),
+            mutating_closures: HashSet::new(),
+            called_closures: HashSet::new(),
+        };
         found.expr(value);
         let called_closures: Vec<BindingId> = found
             .mutating_closures
@@ -76,6 +81,7 @@ impl MutableLocals {
 
     fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) {
         self.record_call(callee);
+        self.record_advanced_locals(callee, arguments);
         self.arguments(arguments);
         self.expr(callee);
     }
@@ -96,6 +102,17 @@ impl MutableLocals {
     fn record_call(&mut self, callee: &TypedExpr) {
         if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = callee.kind {
             self.called_closures.insert(binding);
+        }
+    }
+
+    fn record_advanced_locals(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) {
+        for (position, argument) in arguments.iter().enumerate() {
+            if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = argument.value.kind
+                && !argument.value.ty.is_reference()
+                && self.templates.advances(callee, position)
+            {
+                self.bindings.insert(binding);
+            }
         }
     }
 
