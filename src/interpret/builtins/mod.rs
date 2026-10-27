@@ -1,6 +1,9 @@
+mod failure;
 mod lists;
 mod numbers;
 mod text;
+
+pub use failure::FailureDescription;
 
 use std::cmp::Ordering;
 

@@ -51,11 +51,13 @@ error[L0301]: `add` has no parameter `:z`
   |
   = help: the parameters of `add` are :x, :y
 
-error[L0301]: `:x` is given twice in `add`
+error[L0320]: `:x` is given twice in `add`
   --> expand/keyword_parameter_errors.rslisp:10:13
    |
 10 |   (add :x 6 :x 7)
-   |             ^^ here
+   |        --   ^^ given again here
+   |        |
+   |        first given here
    |
    = help: remove the second `:x` and its value
 

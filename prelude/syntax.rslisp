@@ -428,7 +428,8 @@
         key
         (fail (string "`" (symbol-name key) "` is given twice in `" (signature-name signature) "`")
               (first repeated)
-              (string "remove the second `" (symbol-name key) "` and its value")))))
+              (string "remove the second `" (symbol-name key) "` and its value")
+              (template (:code repeated-parameter :earlier (unquote key)))))))
 
 (def check-required-parameters
   (fn (form keys signature)

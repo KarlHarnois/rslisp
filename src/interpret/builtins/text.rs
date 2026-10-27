@@ -1,6 +1,6 @@
+use super::failure::FailCall;
 use crate::diagnostic::Diagnostic;
 use crate::interpret::arguments::Arguments;
-use crate::interpret::problems::InterpretProblems;
 use crate::interpret::{CompileTimeHost, Value};
 use crate::reader::{Form, FormKind, Symbol};
 use crate::source::Span;
@@ -11,8 +11,6 @@ pub struct TextOperations<'a> {
 }
 
 impl<'a> TextOperations<'a> {
-    const FAIL_ARGUMENTS: usize = 2;
-    const FAIL_WITH_HELP_ARGUMENTS: usize = 3;
     const ESCAPES: [(char, &'static str); 6] = [
         ('"', "\\\""),
         ('\\', "\\\\"),
@@ -92,18 +90,7 @@ impl<'a> TextOperations<'a> {
     }
 
     pub fn fail(&self) -> Result<Value, Diagnostic> {
-        let help = self.fail_help()?;
-        let message = self.arguments.string(0)?.to_string();
-        let culprit = self.arguments.form(1)?;
-        Err(InterpretProblems::failed(message, culprit.span(), help))
-    }
-
-    fn fail_help(&self) -> Result<Option<String>, Diagnostic> {
-        if self.arguments.values().len() == Self::FAIL_WITH_HELP_ARGUMENTS {
-            return Ok(Some(self.arguments.string(2)?.to_string()));
-        }
-        self.arguments.expect_count(Self::FAIL_ARGUMENTS)?;
-        Ok(None)
+        Err(FailCall::new(self.arguments).failure())
     }
 
     pub fn value_eq(&self) -> Result<Value, Diagnostic> {

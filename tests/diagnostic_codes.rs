@@ -6,7 +6,7 @@ struct DiagnosticCoverage {
 
 impl DiagnosticCoverage {
     const CODE_DEFINITIONS: &str = include_str!("../src/diagnostic/code.rs");
-    const CODE_OPENING: &str = "Cow::Borrowed(\"";
+    const CODE_OPENING: &str = " = \"";
     const CODE_CLOSING: char = '"';
     const SNAPSHOT_DIRECTORY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/snapshots");
 
