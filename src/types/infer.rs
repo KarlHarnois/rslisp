@@ -1800,13 +1800,33 @@ impl TypeChecker {
         let Some((item, collection_type)) = self.collection_item(&value.ty) else {
             return Ok(value);
         };
+        let (template, item) = self.iteration(&expected, item);
         let result = self.iterator_type(item);
         let parameters = vec![Type::shared(collection_type)];
         let span = value.span;
         let call =
-            self.synthetic_call_with_value("{0}.iter()", parameters, result, value, &[], span)?;
+            self.synthetic_call_with_value(template, parameters, result, value, &[], span)?;
         self.expect(&expected, &call.ty, span, MismatchContext::Plain)?;
         Ok(call)
+    }
+
+    fn iteration(&self, expected: &Type, item: Type) -> (&'static str, Type) {
+        match item {
+            Type::Ref(_, element) if self.expects_copied_items(expected) => {
+                ("{0}.iter().copied()", *element)
+            }
+            item => ("{0}.iter()", item),
+        }
+    }
+
+    fn expects_copied_items(&self, expected: &Type) -> bool {
+        let Type::Named(_, arguments) = expected else {
+            return false;
+        };
+        let [item] = arguments.as_slice() else {
+            return false;
+        };
+        matches!(self.unifier.shallow(item), Type::Var(var) if self.allows_only_copy_values(var))
     }
 
     fn collection_item(&self, ty: &Type) -> Option<(Type, Type)> {
@@ -2141,11 +2161,14 @@ impl TypeChecker {
     }
 
     fn needs_value(&self, var: TypeVar) -> bool {
-        self.unifier.literal_kind(var).is_some()
-            || self.unifier.bounds(var).iter().any(|bound| {
-                self.copy_rules()
-                    .bound_allows_only_copy_values(bound.binding)
-            })
+        self.unifier.literal_kind(var).is_some() || self.allows_only_copy_values(var)
+    }
+
+    fn allows_only_copy_values(&self, var: TypeVar) -> bool {
+        self.unifier.bounds(var).iter().any(|bound| {
+            self.copy_rules()
+                .bound_allows_only_copy_values(bound.binding)
+        })
     }
 
     fn pass_types(
