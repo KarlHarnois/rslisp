@@ -1,0 +1,52 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/field_keyword_errors.rslisp
+---
+error[L0244]: a name cannot start with `:`
+ --> expand/field_keyword_errors.rslisp:3:6
+  |
+3 | (def :model "Leaf")
+  |      ^^^^^^ this is a field keyword
+  |
+  = help: names starting with `:` read struct fields; choose another name
+
+error[L0244]: a name cannot start with `:`
+ --> expand/field_keyword_errors.rslisp:5:15
+  |
+5 | (defn rename (:make) :make)
+  |               ^^^^^ this is a field keyword
+  |
+  = help: names starting with `:` read struct fields; choose another name
+
+error[L0244]: a name cannot start with `:`
+ --> expand/field_keyword_errors.rslisp:9:6
+  |
+9 |     (:year 0)))
+  |      ^^^^^ this is a field keyword
+  |
+  = help: names starting with `:` read struct fields; choose another name
+
+error[L0243]: a field keyword takes one value
+  --> expand/field_keyword_errors.rslisp:14:24
+   |
+14 |   (println (:year leaf civic))
+   |                        ^^^^^ this value is extra
+   |
+   = help: write (:year value)
+
+error[L0243]: a field keyword takes one value
+  --> expand/field_keyword_errors.rslisp:15:12
+   |
+15 |   (println (:year))
+   |            ^^^^^^^ this call has no value
+   |
+   = help: write (:year value)
+
+error[L0244]: a name cannot start with `:`
+  --> expand/field_keyword_errors.rslisp:16:8
+   |
+16 |   (let :year 3)
+   |        ^^^^^ this is a field keyword
+   |
+   = help: names starting with `:` read struct fields; choose another name

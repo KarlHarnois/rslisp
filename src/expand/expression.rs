@@ -9,7 +9,7 @@ use super::shape::Shape;
 use super::try_check::TryCheck;
 use crate::core::{
     Arm, Binder, BindingId, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind,
-    ExpressionForm, FieldLabel, KernelForm, Lambda, Leaf, LeafForm, Literal, MapOperation,
+    ExpressionForm, FieldLabel, KernelForm, Keyword, Lambda, Leaf, LeafForm, Literal, MapOperation,
     Namespace, ParsedTemplate, Pattern, PatternKind, ReferenceKind, RustTemplate, StructExpr,
     StructForm, TypeExpr, TypeExprKind, VariantInfo,
 };
@@ -70,6 +70,7 @@ impl Expander<'_> {
         Ok(FieldLabel {
             name: shape.symbol(form)?.shared_name(),
             span: form.span(),
+            marker: "",
         })
     }
 
@@ -83,6 +84,9 @@ impl Expander<'_> {
 
     fn lower_symbol(&mut self, symbol: &Symbol, form: &Form) -> Result<Expr, Diagnostic> {
         let span = form.span();
+        if let Some(field_name) = Keyword::field_name(symbol.name()) {
+            return Ok(Expr::new(self.lower_field_reader(field_name, span), span));
+        }
         let binding = self.resolve(symbol, Namespace::Value, span)?;
         if matches!(self.kind(binding), BindingKind::Macro(_)) {
             return self.lower_macro_value(binding, symbol, form);
@@ -131,6 +135,12 @@ impl Expander<'_> {
         let Some(head) = items.first() else {
             return Err(ExpandProblems::empty_call(form.span()));
         };
+        if let Some(field_name) = head
+            .as_symbol()
+            .and_then(|symbol| Keyword::field_name(symbol.name()))
+        {
+            return self.lower_field_keyword_call(form, field_name);
+        }
         if let Some(kernel) = self.kernel_head(form) {
             return self.lower_kernel(kernel, form);
         }

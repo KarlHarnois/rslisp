@@ -134,6 +134,13 @@ pub enum Literal {
 pub struct FieldLabel {
     pub name: Rc<str>,
     pub span: Span,
+    pub marker: &'static str,
+}
+
+impl FieldLabel {
+    pub fn spelled(&self, field_name: &str) -> String {
+        format!("{}{field_name}", self.marker)
+    }
 }
 
 #[derive(Clone, Debug)]

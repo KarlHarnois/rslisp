@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/unknown_field_keyword.rslisp
+---
+error[L0408]: `car` has no field `:yer`
+ --> check/unknown_field_keyword.rslisp:5:13
+  |
+5 |   (println (:yer leaf)))
+  |             ^^^^ unknown field
+  |
+help: a field with a similar name exists
+  |
+5 |   (println (:year leaf)))
+  |                +

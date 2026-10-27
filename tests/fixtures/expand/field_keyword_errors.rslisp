@@ -1,0 +1,17 @@
+(defstruct car :make str :model str :year u16 :electric? bool)
+
+(def :model "Leaf")
+
+(defn rename (:make) :make)
+
+(defn describe (vehicle)
+  (match vehicle
+    (:year 0)))
+
+(defn main ()
+  (let leaf (->car "Nissan" "Leaf" 2024 true))
+  (let civic (->car "Honda" "Civic" 2019 false))
+  (println (:year leaf civic))
+  (println (:year))
+  (let :year 3)
+  (println :year))

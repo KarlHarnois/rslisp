@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use crate::core::FieldLabel;
 use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
 
@@ -544,19 +545,21 @@ impl TypeProblems {
 
     pub fn unknown_field(
         struct_name: &str,
-        field: &str,
-        span: Span,
+        label: &FieldLabel,
         similar: Option<Rc<str>>,
     ) -> Diagnostic {
         let diagnostic = Diagnostic::error(
             DiagnosticCode::UNKNOWN_FIELD,
-            format!("`{struct_name}` has no field `{field}`"),
-            Label::new(span, "unknown field"),
+            format!(
+                "`{struct_name}` has no field `{}`",
+                label.spelled(&label.name)
+            ),
+            Label::new(label.span, "unknown field"),
         );
         match similar {
             Some(similar) => diagnostic.with_suggestion(
                 "a field with a similar name exists",
-                Suggestion::new(span, similar.to_string()),
+                Suggestion::new(label.span, label.spelled(&similar)),
             ),
             None => diagnostic,
         }

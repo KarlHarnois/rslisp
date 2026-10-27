@@ -1,0 +1,58 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/field_keywords.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+    year: u16,
+    is_electric: bool,
+}
+
+fn make_car<'a>(make: &'a str, model: &'a str, year: u16, is_electric: bool) -> Car<'a> {
+    Car {
+        make,
+        model,
+        year,
+        is_electric,
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct User<'a> {
+    name: &'a str,
+    tags: Vec<String>,
+}
+
+fn make_user(name: &str, tags: Vec<String>) -> User<'_> {
+    User { name, tags }
+}
+
+fn main() {
+    let leaf = make_car("Nissan", "Leaf", 2024, true);
+    let civic = make_car("Honda", "Civic", 2019, false);
+    let cars = vec![leaf, civic];
+    println!("{}", leaf.year);
+    println!(
+        "{:?}",
+        cars.iter()
+            .map(|value: &Car<'_>| value.year)
+            .collect::<Vec<_>>()
+    );
+    let users = vec![
+        make_user("ana", vec!["admin".to_string()]),
+        make_user("bo", Vec::new()),
+    ];
+    println!(
+        "{:?}",
+        users
+            .iter()
+            .map(|value: &User<'_>| value.name)
+            .collect::<Vec<_>>()
+    );
+    let someone = make_user("cy", vec!["ops".to_string(), "dev".to_string()]);
+    println!("{}", someone.tags.len());
+    println!("{}", someone.name)
+}

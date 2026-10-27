@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::core::{KernelForm, KernelType, ModulePath, Namespace};
+use crate::core::{KernelForm, KernelType, Keyword, ModulePath, Namespace};
 use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::interpret::InterpretProblems;
 use crate::source::Span;
@@ -460,6 +460,35 @@ impl ExpandProblems {
             "expected a name",
             Label::new(span, "this is not a name"),
         )
+    }
+
+    pub fn extra_field_keyword_value(keyword: &str, span: Span) -> Diagnostic {
+        Self::field_keyword_arity(keyword, Label::new(span, "this value is extra"))
+    }
+
+    pub fn missing_field_keyword_value(keyword: &str, span: Span) -> Diagnostic {
+        Self::field_keyword_arity(keyword, Label::new(span, "this call has no value"))
+    }
+
+    fn field_keyword_arity(keyword: &str, label: Label) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::FIELD_KEYWORD_ARITY,
+            "a field keyword takes one value",
+            label,
+        )
+        .with_help(format!("write ({keyword} value)"))
+    }
+
+    pub fn keyword_binder(span: Span) -> Diagnostic {
+        let marker = Keyword::MARKER;
+        Diagnostic::error(
+            DiagnosticCode::KEYWORD_BINDER,
+            format!("a name cannot start with `{marker}`"),
+            Label::new(span, "this is a field keyword"),
+        )
+        .with_help(format!(
+            "names starting with `{marker}` read struct fields; choose another name"
+        ))
     }
 
     pub fn not_a_pattern(span: Span) -> Diagnostic {

@@ -1,0 +1,5 @@
+(defstruct car :make str :model str :year u16 :electric? bool)
+
+(defn main ()
+  (let leaf (->car "Nissan" "Leaf" 2024 true))
+  (println (:yer leaf)))
