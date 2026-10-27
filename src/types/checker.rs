@@ -1978,8 +1978,8 @@ impl TypeChecker {
         )
     }
 
-    fn is_unsized_type(rust_types: &RustTypeTable, implementor: &Type) -> bool {
-        match implementor {
+    fn is_unsized_type(rust_types: &RustTypeTable, candidate: &Type) -> bool {
+        match candidate {
             Type::Primitive(PrimitiveType::Str) => true,
             Type::Named(binding, _) => rust_types.is_slice(*binding),
             _ => false,
