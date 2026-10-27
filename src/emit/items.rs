@@ -842,6 +842,7 @@ impl<'a> ItemEmitter<'a> {
             None
         };
         self.lifetime_scope_used(lifetimes, used, elided)
+            .reserving(inferred)
     }
 
     fn function(&mut self, definition: &TypedDefinition, info: &ItemInfo) -> Vec<Fragment> {
@@ -1160,12 +1161,8 @@ impl<'a> ItemEmitter<'a> {
         let Type::Function(_, parameters, result) = &value.ty else {
             return false;
         };
-        let result_lifetimes = self.borrow_lifetimes(result);
-        let parameter_lifetimes: usize = parameters
-            .iter()
-            .map(|parameter| self.borrow_lifetimes(parameter))
-            .sum();
-        result_lifetimes > 0 && (parameter_lifetimes > 1 || self.result_flows_past_elision(value))
+        self.program.needs_shared_lifetime(parameters, result)
+            || (self.program.borrow_lifetimes(result) > 0 && self.result_flows_past_elision(value))
     }
 
     fn result_flows_past_elision(&self, value: &TypedExpr) -> bool {
@@ -1318,23 +1315,6 @@ impl<'a> ItemEmitter<'a> {
                 .map(|binding| RustTypes::binding_lifetime(self.program, *binding)),
         );
         lifetimes
-    }
-
-    fn borrow_lifetimes(&self, ty: &Type) -> usize {
-        match ty {
-            Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
-                usize::from(*lifetime == Lifetime::Elided) + self.borrow_lifetimes(inner)
-            }
-            Type::Named(binding, arguments) => {
-                usize::from(self.program.has_lifetime_parameter(*binding))
-                    + arguments
-                        .iter()
-                        .map(|argument| self.borrow_lifetimes(argument))
-                        .sum::<usize>()
-            }
-            Type::TraitObject(_) => 0,
-            Type::Function(..) | Type::Var(_) | Type::Generic(_) | Type::Primitive(_) => 0,
-        }
     }
 
     fn with_lifetimes(lifetimes: &[String], generics: String) -> String {

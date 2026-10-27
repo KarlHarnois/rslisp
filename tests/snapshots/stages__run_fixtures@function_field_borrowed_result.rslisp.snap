@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_field_borrowed_result.rslisp
+---
+by name
