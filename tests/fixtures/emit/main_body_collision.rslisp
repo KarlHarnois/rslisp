@@ -1,0 +1,10 @@
+(enum app-error (missing))
+
+(display app-error (error) "missing")
+
+(defn main_body () 1)
+
+(type main (fn () (result unit app-error)))
+(defn main ()
+  (println (main_body))
+  (err app-error/missing))

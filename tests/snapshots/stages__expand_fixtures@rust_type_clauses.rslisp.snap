@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).expand_report()"
+input_file: tests/fixtures/expand/rust_type_clauses.rslisp
+---
+(rust-type (parse-error target) "<{0} as std::str::FromStr>::Err" (i64 "std::num::ParseIntError"))

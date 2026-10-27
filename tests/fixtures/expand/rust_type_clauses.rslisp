@@ -1,0 +1,3 @@
+(rust-type (parse-error target)
+  "<{0} as std::str::FromStr>::Err"
+  (i64 "std::num::ParseIntError"))

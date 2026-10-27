@@ -1,0 +1,30 @@
+---
+source: tests/stages.rs
+expression: "Fixture::load(path).check_report()"
+input_file: tests/fixtures/check/runtime_forms_in_macros.rslisp
+---
+error[L0316]: structs only exist at runtime
+ --> check/runtime_forms_in_macros.rslisp:4:31
+  |
+4 | (def make-point (macro (form) (new point (x 1) (y 2))))
+  |                               ^^^^^^^^^^^^^^^^^^^^^^^ used at compile time here
+
+error[L0316]: `try` forms only exist at runtime
+ --> check/runtime_forms_in_macros.rslisp:5:29
+  |
+5 | (def try-form (macro (form) (try form)))
+  |                             ^^^^^^^^^^ used at compile time here
+
+error[L0319]: this Rust code belongs to the program, so macro code cannot run it
+ --> check/runtime_forms_in_macros.rslisp:6:30
+  |
+6 | (def call-rust (macro (form) (rust "1" i64)))
+  |                              ^^^^^^^^^^^^^^ macro code runs this
+  |
+  = help: to compute this in the program, return it as code from the macro, for example with `quote`
+
+error[L0317]: a `match` only exists at runtime
+ --> check/runtime_forms_in_macros.rslisp:7:30
+  |
+7 | (def read-flag (macro (form) (match form ((on) 1) (off 0))))
+  |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ used at compile time here
