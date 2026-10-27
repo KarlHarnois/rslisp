@@ -1,0 +1,13 @@
+(rust-trait addable "std::ops::Add"
+  (associated (output left) "Output")
+  (where () (with i64 i64) (output i64)))
+
+(def add-values (rust "{0} + {1}" (where ((a (addable b)) b) (fn (a b) (output a)))))
+
+(type add-one (where ((a (addable i64))) (fn (a) (output a))))
+
+(defn add-one (value)
+  (add-values value 1))
+
+(defn main ()
+  (println (add-one 41)))

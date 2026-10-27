@@ -1,0 +1,8 @@
+(type read-value (where (target) (fn ((ref str)) (result target (parse-error target)))))
+
+(defn read-value (text)
+  (parse text))
+
+(defn main ()
+  (let (count (result i64 _)) (read-value "4"))
+  (println (unwrap-ok count)))

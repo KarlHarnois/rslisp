@@ -1,0 +1,23 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/generic_projection.rslisp
+---
+fn read_value<Target: std::str::FromStr>(
+    text: &str,
+) -> Result<Target, <Target as std::str::FromStr>::Err> {
+    text.parse::<Target>()
+}
+
+fn read_inferred<A: std::str::FromStr>(text: &str) -> Result<A, <A as std::str::FromStr>::Err> {
+    text.parse::<A>()
+}
+
+fn main() {
+    let count: Result<i64, std::num::ParseIntError> = read_value("4");
+    println!("{}", count.unwrap());
+    let flag: Result<bool, std::str::ParseBoolError> = read_inferred("true");
+    println!("{}", flag.unwrap());
+    let ratio: Result<f64, std::num::ParseFloatError> = read_inferred("0.5");
+    println!("{}", ratio.unwrap())
+}

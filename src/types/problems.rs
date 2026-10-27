@@ -30,6 +30,21 @@ pub struct ImplementorList {
     pub groups: Vec<ImplementorGroup>,
 }
 
+pub struct ProjectionNames<'a> {
+    pub projection: &'a str,
+    pub trait_name: &'a str,
+    pub owner: &'a str,
+}
+
+impl ProjectionNames<'_> {
+    fn needs(&self) -> String {
+        format!(
+            "`({} {})` needs `{}` to implement `{}`",
+            self.projection, self.owner, self.owner, self.trait_name
+        )
+    }
+}
+
 pub struct ImplementorGroup {
     pub constructor: String,
     pub parameter: String,
@@ -310,22 +325,33 @@ impl TypeProblems {
         ))
     }
 
-    pub fn projection_without_implementor(
-        projection: &str,
-        trait_name: &str,
-        owner: &str,
-        span: Span,
-    ) -> Diagnostic {
+    pub fn projection_without_implementor(names: &ProjectionNames<'_>, span: Span) -> Diagnostic {
+        let ProjectionNames {
+            projection,
+            trait_name,
+            owner,
+        } = names;
         Diagnostic::error(
             DiagnosticCode::PROJECTION_WITHOUT_IMPLEMENTOR,
             format!("`{owner}` does not implement `{trait_name}`"),
-            Label::new(
-                span,
-                format!("`({projection} {owner})` needs `{owner}` to implement `{trait_name}`"),
-            ),
+            Label::new(span, names.needs()),
         )
         .with_note(format!(
             "`{projection}` is an associated type of `{trait_name}`"
+        ))
+    }
+
+    pub fn projection_without_bound(names: &ProjectionNames<'_>, span: Span) -> Diagnostic {
+        let ProjectionNames {
+            trait_name, owner, ..
+        } = names;
+        Diagnostic::error(
+            DiagnosticCode::PROJECTION_WITHOUT_BOUND,
+            format!("`{owner}` might not implement `{trait_name}`"),
+            Label::new(span, names.needs()),
+        )
+        .with_help(format!(
+            "add the trait to the `where` that binds `{owner}`: `({owner} {trait_name})`"
         ))
     }
 

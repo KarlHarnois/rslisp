@@ -1,0 +1,15 @@
+(type read-value (where ((target from-str)) (fn ((ref str)) (result target (parse-error target)))))
+
+(defn read-value (text)
+  (parse text))
+
+(defn read-inferred (text)
+  (parse text))
+
+(defn main ()
+  (let (count (result i64 _)) (read-value "4"))
+  (println (unwrap-ok count))
+  (let (flag (result bool _)) (read-inferred "true"))
+  (println (unwrap-ok flag))
+  (let (ratio (result f64 _)) (read-inferred "0.5"))
+  (println (unwrap-ok ratio)))

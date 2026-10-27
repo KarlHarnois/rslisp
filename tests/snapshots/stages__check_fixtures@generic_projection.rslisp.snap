@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/generic_projection.rslisp
+---
+(type read-value (where ((target from-str)) (fn ((ref str)) (result target (parse-error target)))))
+(type read-inferred (where ((a from-str)) (fn ((ref str)) (result a (parse-error a)))))
+(type main (fn () unit))
