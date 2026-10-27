@@ -22,14 +22,17 @@
       forEachSystem =
         build: nixpkgs.lib.genAttrs supportedSystems (system: build nixpkgs.legacyPackages.${system});
 
-      ciPackages = pkgs: [
-        pkgs.rustc
-        pkgs.cargo
-        pkgs.clippy
-        pkgs.rustfmt
-        pkgs.cargo-llvm-cov
-        pkgs.git
-      ];
+      ciPackages =
+        pkgs:
+        [
+          pkgs.rustc
+          pkgs.cargo
+          pkgs.clippy
+          pkgs.rustfmt
+          pkgs.cargo-llvm-cov
+          pkgs.git
+        ]
+        ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.valgrind ];
 
       developmentPackages =
         pkgs:
@@ -78,6 +81,12 @@
 
       devShellTools =
         pkgs: defaultShell:
+        let
+          installedOutputs = map (input: input.out or input) defaultShell.nativeBuildInputs;
+          benchmarkToolsCheck = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
+            check_benchmark_tools ${pkgs.lib.makeBinPath installedOutputs}
+          '';
+        in
         pkgs.runCommand "dev-shell-tools" { } ''
           fail() {
             echo "$1" >&2
@@ -91,7 +100,11 @@
             [[ -f ''${BASH_REMATCH[1]}/core/src/lib.rs ]] || fail "RUST_SRC_PATH holds no core sources"
             ! (PATH=$1 && command -v rustup) || fail "a dev shell provides rustup"
           }
+          check_benchmark_tools() {
+            (PATH=$1 && command -v valgrind) >/dev/null || fail "a Linux dev shell has no valgrind"
+          }
           check_shell ${pkgs.lib.makeBinPath defaultShell.nativeBuildInputs}
+          ${benchmarkToolsCheck}
           touch $out
         '';
     in
