@@ -2096,10 +2096,7 @@ impl TypeChecker {
             return;
         }
         if self.impl_generics.contains(&generic) {
-            let implied = self.implied_bounds.entry(generic).or_default();
-            if !implied.contains(&bound) {
-                implied.push(bound);
-            }
+            self.record_implied_bound(generic, bound);
             return;
         }
         if self.apply_declared_bound(generic, &bound, span) {
@@ -2109,10 +2106,7 @@ impl TypeChecker {
             if self.declared_bound_implies(generic, &bound) {
                 return;
             }
-            let implied = self.implied_bounds.entry(generic).or_default();
-            if !implied.contains(&bound) {
-                implied.push(bound);
-            }
+            self.record_implied_bound(generic, bound);
             return;
         }
         if self.has_written_projection_on(generic, bound.binding) {
@@ -2125,6 +2119,13 @@ impl TypeChecker {
             span,
         );
         self.diagnostics.push(diagnostic);
+    }
+
+    fn record_implied_bound(&mut self, generic: GenericId, bound: Bound) {
+        let implied = self.implied_bounds.entry(generic).or_default();
+        if !implied.contains(&bound) {
+            implied.push(bound);
+        }
     }
 
     fn apply_declared_bound(&mut self, generic: GenericId, bound: &Bound, span: Span) -> bool {
