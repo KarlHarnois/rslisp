@@ -1,0 +1,4 @@
+(use garage/cars car leaf)
+
+(defn main ()
+  (println (:year (leaf))))

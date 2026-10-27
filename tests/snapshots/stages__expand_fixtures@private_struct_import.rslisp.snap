@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/private_struct_import.rslisp
+---
+error[L0205]: module `garage/cars` does not export `car`
+ --> expand/private_struct_import.rslisp:1:18
+  |
+1 | (use garage/cars car leaf)
+  |                  ^^^ not exported
+  |
+  = help: add `car` to the `export` list of `garage/cars`
