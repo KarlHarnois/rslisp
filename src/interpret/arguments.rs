@@ -1,6 +1,5 @@
 use super::Value;
 use super::problems::InterpretProblems;
-use crate::core::Keyword;
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, NumberValue, Symbol};
 use crate::source::Span;
@@ -68,9 +67,8 @@ impl Arguments {
     }
 
     pub fn keyword_name(&self, index: usize) -> Result<&str, Diagnostic> {
-        self.symbol(index)
-            .ok()
-            .and_then(|symbol| Keyword::field_name(symbol.name()))
+        self.values[index]
+            .keyword_name()
             .ok_or_else(|| self.wrong(index, "a keyword"))
     }
 

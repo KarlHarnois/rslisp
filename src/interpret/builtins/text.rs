@@ -1,4 +1,3 @@
-use crate::core::Keyword;
 use crate::diagnostic::Diagnostic;
 use crate::interpret::arguments::Arguments;
 use crate::interpret::problems::InterpretProblems;
@@ -50,13 +49,9 @@ impl<'a> TextOperations<'a> {
 
     pub fn is_keyword(&self) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(1)?;
-        let is_keyword = self
-            .arguments
-            .value(0)
-            .as_form()
-            .and_then(Form::as_symbol)
-            .is_some_and(|symbol| Keyword::field_name(symbol.name()).is_some());
-        Ok(Value::Bool(is_keyword))
+        Ok(Value::Bool(
+            self.arguments.value(0).keyword_name().is_some(),
+        ))
     }
 
     pub fn keyword_name(&self) -> Result<Value, Diagnostic> {
