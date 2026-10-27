@@ -1,0 +1,4 @@
+(defn main ()
+  (let scores (vec 3 9 4))
+  (println (unwrap (max scores)))
+  (println (unwrap (min scores))))
