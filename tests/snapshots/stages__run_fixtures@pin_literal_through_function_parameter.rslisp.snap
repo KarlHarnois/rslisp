@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/pin_literal_through_function_parameter.rslisp
+---
+2025

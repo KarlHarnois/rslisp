@@ -1,0 +1,6 @@
+(defn answer () 42)
+
+(defn other () (answer))
+
+(defn main ()
+  (println (other)))

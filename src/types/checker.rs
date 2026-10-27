@@ -1037,11 +1037,16 @@ impl TypeChecker {
     fn parameter_vars(&self, members: &[(BindingId, &TypedExpr)]) -> HashSet<TypeVar> {
         Self::parameter_types(members)
             .iter()
-            .filter_map(|parameter| match self.unifier.shallow(parameter) {
-                Type::Var(var) => Some(var),
-                _ => None,
-            })
+            .flat_map(|parameter| self.pinnable_parameter_vars(parameter))
             .collect()
+    }
+
+    fn pinnable_parameter_vars(&self, parameter: &Type) -> Vec<TypeVar> {
+        match self.unifier.shallow(parameter) {
+            Type::Var(var) => vec![var],
+            function @ Type::Function(..) => self.free_vars(&function),
+            _ => Vec::new(),
+        }
     }
 
     fn parameter_types(members: &[(BindingId, &TypedExpr)]) -> Vec<Type> {

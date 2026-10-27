@@ -155,6 +155,7 @@ A type parameter satisfies a trait when its `where` names the trait, or when eve
 - Every literal is checked against the range of its type.
 - A call pins a literal parameter the way it pins any inferred parameter, so a helper called once with a `usize` keeps `usize` in its parameter and its literals.
 - A use pins a literal in a function's result the same way, so `(defn port () 8080)` passed only where a `u16` is expected emits `fn port() -> u16`.
+- A pin passes through other unannotated functions. `(defn other () (port))` used only where a `u16` is expected pins both `other` and `port`, a wrapper `(defn wrap (y) (build y))` takes the `u16` that `build` gives `y`, and `(build-with ->car)` pins the `2025` that `(defn build-with (constructor) (constructor "Nissan" 2025))` passes to its function parameter. Two uses that want different types leave the literal open, and the default then fails at the first use that disagrees.
 - A literal whose type is still open after pinning defaults to `i64` or `f64`, and the emitted literal carries a suffix (`3_i64`).
 - Without a signature, a literal never makes a function generic: `(defn increment (x) (+ x 1))` has type `(fn (i64) i64)`.
 - A signature's type parameter opts in. A literal can take the parameter's type if it fits every type the parameter's traits allow, which are the implementors those traits share:
