@@ -15,9 +15,10 @@ use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Bound, GenericId, GenericParam, Lifetime, ReceiverKind, Type, TypedAssociatedType, TypedBinder,
-    TypedBlock, TypedBodyItem, TypedControl, TypedConversion, TypedDefinition, TypedExpr,
-    TypedExprKind, TypedLambda, TypedLeaf, TypedProgram, TypedTraitMethod, VariantDefinition,
+    Borrow, Bound, GenericId, GenericParam, Lifetime, ReceiverKind, Type, TypedArgument,
+    TypedAssociatedType, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedConversion,
+    TypedDefinition, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedProgram,
+    TypedTraitMethod, VariantDefinition,
 };
 
 struct TraitHeader {
@@ -82,7 +83,10 @@ impl<'a> ResultBorrows<'a> {
             parameters,
             aliases: HashMap::new(),
         };
-        borrows.block(&lambda.body)
+        let mut flows = borrows.block(&lambda.body);
+        let local_borrow_callees = LocalBorrowCalls::of(program, lambda);
+        flows.retain(|binding| !local_borrow_callees.contains(binding));
+        flows
     }
 
     fn block(&mut self, block: &TypedBlock) -> HashSet<BindingId> {
@@ -105,12 +109,21 @@ impl<'a> ResultBorrows<'a> {
         match &expr.kind {
             TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.local(*binding),
             TypedExprKind::Control(control) => self.control(control),
+            TypedExprKind::Call(callee, _) => self.call(callee, expr),
             _ => self.children(expr),
         }
     }
 
     fn carries_borrow(&self, ty: &Type) -> bool {
         SignatureBorrows::new(self.program).holds_borrow(ty) || ty.is_unsized()
+    }
+
+    fn call(&mut self, callee: &TypedExpr, call: &TypedExpr) -> HashSet<BindingId> {
+        let mut flows = self.children(call);
+        if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = callee.kind {
+            flows.extend(self.local(binding));
+        }
+        flows
     }
 
     fn control(&mut self, control: &TypedControl) -> HashSet<BindingId> {
@@ -147,6 +160,99 @@ impl<'a> ResultBorrows<'a> {
             HashSet::from([binding])
         } else {
             self.aliases.get(&binding).cloned().unwrap_or_default()
+        }
+    }
+}
+
+struct LocalBorrowCalls<'a> {
+    program: &'a TypedProgram,
+    outliving: HashSet<BindingId>,
+    callees: HashSet<BindingId>,
+}
+
+impl<'a> LocalBorrowCalls<'a> {
+    fn of(program: &'a TypedProgram, lambda: &TypedLambda) -> HashSet<BindingId> {
+        let outliving = lambda
+            .params
+            .iter()
+            .filter(|param| program.type_holds_borrow(&param.ty))
+            .map(|param| param.binding)
+            .collect();
+        let mut calls = Self {
+            program,
+            outliving,
+            callees: HashSet::new(),
+        };
+        calls.block(&lambda.body);
+        calls.callees
+    }
+
+    fn block(&mut self, block: &TypedBlock) {
+        for item in &block.items {
+            match item {
+                TypedBodyItem::Let(binder, value) => self.binding(binder, value),
+                TypedBodyItem::Expr(expr) => self.expr(expr),
+            }
+        }
+    }
+
+    fn binding(&mut self, binder: &TypedBinder, value: &TypedExpr) {
+        self.expr(value);
+        if self.program.type_holds_borrow(&binder.ty) && self.outlives_body(value) {
+            self.outliving.insert(binder.binding);
+        }
+    }
+
+    fn expr(&mut self, expr: &TypedExpr) {
+        if let TypedExprKind::Call(callee, arguments) = &expr.kind {
+            self.call(callee, arguments);
+        }
+        match &expr.kind {
+            TypedExprKind::Fn(lambda) => self.block(&lambda.body),
+            TypedExprKind::Control(TypedControl::Block(block)) => self.block(block),
+            TypedExprKind::Control(TypedControl::Match(matched)) => self.matched(matched),
+            _ => expr
+                .children()
+                .into_iter()
+                .for_each(|child| self.expr(child)),
+        }
+    }
+
+    fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) {
+        if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = callee.kind
+            && !self.arguments_outlive_body(arguments)
+        {
+            self.callees.insert(binding);
+        }
+    }
+
+    fn matched(&mut self, matched: &crate::types::TypedMatch) {
+        self.expr(&matched.value);
+        for arm in &matched.arms {
+            self.block(&arm.body);
+        }
+    }
+
+    fn arguments_outlive_body(&self, arguments: &[TypedArgument]) -> bool {
+        arguments
+            .iter()
+            .all(|argument| self.argument_outlives_body(argument))
+    }
+
+    fn argument_outlives_body(&self, argument: &TypedArgument) -> bool {
+        if self.program.type_holds_borrow(&argument.value.ty) {
+            self.outlives_body(&argument.value)
+        } else {
+            argument.borrow == Borrow::None
+        }
+    }
+
+    fn outlives_body(&self, expr: &TypedExpr) -> bool {
+        match &expr.kind {
+            TypedExprKind::Leaf(TypedLeaf::Literal(_) | TypedLeaf::Global(_)) => true,
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.outliving.contains(binding),
+            TypedExprKind::Call(_, arguments) => self.arguments_outlive_body(arguments),
+            _ => false,
         }
     }
 }
@@ -1017,9 +1123,10 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn result_position(&self, parameters: &[Type], inferred: Option<&str>) -> TypePosition {
+        let borrows = SignatureBorrows::new(self.program);
         let holds_borrow = parameters
             .iter()
-            .any(|parameter| self.program.type_holds_borrow(parameter));
+            .any(|parameter| borrows.holds_borrow(parameter));
         if holds_borrow || inferred.is_some() {
             TypePosition::Signature
         } else {

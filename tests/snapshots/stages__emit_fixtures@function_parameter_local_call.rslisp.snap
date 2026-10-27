@@ -1,0 +1,21 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_parameter_local_call.rslisp
+---
+fn apply(mut pick: impl FnMut(&str) -> &str, text: &str) -> &str {
+    let local = "Leaf".to_string();
+    if pick(local.as_str()) == "Leaf" {
+        pick(text)
+    } else {
+        text
+    }
+}
+
+fn first_word(text: &str) -> &str {
+    text
+}
+
+fn main() {
+    println!("{}", apply(first_word, "Nissan"))
+}
