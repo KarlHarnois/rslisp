@@ -185,7 +185,7 @@ pub struct TypeChecker {
     pub(super) synthetic_bindings: HashSet<BindingId>,
     pub(super) pinned: HashMap<BindingId, Type>,
     pub(super) literal_defaults: LiteralDefaults,
-    pub(super) literal_generics: HashMap<GenericId, PrimitiveType>,
+    pub(super) literal_generics: HashMap<GenericId, LiteralKind>,
     default_literal_parameters: bool,
     pub(super) recursive_group: Vec<BindingId>,
     pub(super) reported_unknown_try_groups: HashSet<BindingId>,
@@ -1022,9 +1022,26 @@ impl TypeChecker {
             .first()
             .map(|(_, value)| value.span)
             .expect("a recursive group has at least one member");
-        let parameter_types = Self::parameter_types(members);
-        self.generalize_vars(vars, start, span, &parameter_types);
+        self.link_bounded_vars(&vars, span);
+        let pinnable_vars = self.pinnable_vars(members);
+        self.generalize_vars(vars, start, span, &pinnable_vars);
         self.discharge_obligations(ObligationPass::Deferring);
+    }
+
+    fn pinnable_vars(&self, members: &[(BindingId, &TypedExpr)]) -> HashSet<TypeVar> {
+        let mut pinnable = self.parameter_vars(members);
+        pinnable.extend(self.result_vars(members));
+        pinnable
+    }
+
+    fn parameter_vars(&self, members: &[(BindingId, &TypedExpr)]) -> HashSet<TypeVar> {
+        Self::parameter_types(members)
+            .iter()
+            .filter_map(|parameter| match self.unifier.shallow(parameter) {
+                Type::Var(var) => Some(var),
+                _ => None,
+            })
+            .collect()
     }
 
     fn parameter_types(members: &[(BindingId, &TypedExpr)]) -> Vec<Type> {
@@ -1036,6 +1053,17 @@ impl TypeChecker {
                 }
                 _ => Vec::new(),
             })
+            .collect()
+    }
+
+    fn result_vars(&self, members: &[(BindingId, &TypedExpr)]) -> Vec<TypeVar> {
+        members
+            .iter()
+            .filter_map(|(_, value)| match self.unifier.resolve(&value.ty) {
+                Type::Function(_, _, result) => Some(result),
+                _ => None,
+            })
+            .flat_map(|result| self.free_vars(&result))
             .collect()
     }
 
@@ -1072,20 +1100,12 @@ impl TypeChecker {
         vars: Vec<TypeVar>,
         start: usize,
         span: Span,
-        parameter_types: &[Type],
+        pinnable_vars: &HashSet<TypeVar>,
     ) {
-        self.link_bounded_vars(&vars, span);
-        let parameter_vars: HashSet<TypeVar> = parameter_types
-            .iter()
-            .filter_map(|parameter| match self.unifier.shallow(parameter) {
-                Type::Var(var) => Some(var),
-                _ => None,
-            })
-            .collect();
         let mut position = start;
         for var in vars {
             if self
-                .generalize_var(var, position, span, &parameter_vars)
+                .generalize_var(var, position, span, pinnable_vars)
                 .is_some()
             {
                 position += 1;
@@ -1176,14 +1196,14 @@ impl TypeChecker {
         var: TypeVar,
         position: usize,
         span: Span,
-        parameter_vars: &HashSet<TypeVar>,
+        pinnable_vars: &HashSet<TypeVar>,
     ) -> Option<GenericParam> {
         if !self.is_unbound(var) {
             return None;
         }
         let literal = self.unifier.literal_kind(var);
         if let Some(literal) = literal
-            && (self.default_literal_parameters || !parameter_vars.contains(&var))
+            && (self.default_literal_parameters || !pinnable_vars.contains(&var))
         {
             self.default_literal(var, literal, span);
             return None;
@@ -1193,8 +1213,7 @@ impl TypeChecker {
         let param = self.new_generic(&name, bounds);
         self.unifier.bind(var, Type::Generic(param.id));
         if let Some(literal) = literal {
-            self.literal_generics
-                .insert(param.id, Self::literal_default(literal));
+            self.literal_generics.insert(param.id, literal);
         }
         Some(param)
     }
@@ -1202,20 +1221,13 @@ impl TypeChecker {
     fn default_literal(&mut self, var: TypeVar, literal: LiteralKind, span: Span) {
         let defaulted = self.unifier.unify(
             &Type::Var(var),
-            &Type::Primitive(Self::literal_default(literal)),
+            &Type::Primitive(literal.default_type()),
             span,
         );
         debug_assert!(
             defaulted.is_ok(),
             "a literal variable accepts its default type"
         );
-    }
-
-    fn literal_default(literal: LiteralKind) -> PrimitiveType {
-        match literal {
-            LiteralKind::Float => PrimitiveType::F64,
-            LiteralKind::Integer => PrimitiveType::I64,
-        }
     }
 
     fn self_plain_bounds(&self, var: TypeVar) -> Vec<Bound> {

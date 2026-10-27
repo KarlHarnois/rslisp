@@ -280,7 +280,11 @@ impl TypeChecker {
     }
 
     pub(super) fn instantiate(&mut self, scheme: &Scheme) -> Type {
-        let fresh: Vec<Type> = scheme.params.iter().map(|_| self.unifier.fresh()).collect();
+        let fresh: Vec<Type> = scheme
+            .params
+            .iter()
+            .map(|param| self.fresh_instance(param.id))
+            .collect();
         let replacements: HashMap<GenericId, Type> = scheme
             .params
             .iter()
@@ -300,6 +304,13 @@ impl TypeChecker {
             }
         }
         scheme.body.substitute(&replacements)
+    }
+
+    fn fresh_instance(&mut self, generic: GenericId) -> Type {
+        match self.literal_generics.get(&generic) {
+            Some(literal) => self.unifier.fresh_literal(*literal),
+            None => self.unifier.fresh(),
+        }
     }
 
     fn lower_named(

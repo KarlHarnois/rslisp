@@ -1,0 +1,6 @@
+(defn port () 8080)
+
+(defn code ((value u16)) value)
+
+(defn main ()
+  (println (code (port))))

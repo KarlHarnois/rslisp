@@ -1,0 +1,6 @@
+(defstruct car :make (ref str) :year u16)
+
+(defn build (year) (->car :make "Nissan" :year year))
+
+(defn main ()
+  (println (:year (build 2025))))

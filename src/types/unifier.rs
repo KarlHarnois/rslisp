@@ -13,6 +13,13 @@ pub enum LiteralKind {
 }
 
 impl LiteralKind {
+    pub fn default_type(self) -> PrimitiveType {
+        match self {
+            LiteralKind::Float => PrimitiveType::F64,
+            LiteralKind::Integer => PrimitiveType::I64,
+        }
+    }
+
     fn accepts(self, primitive: PrimitiveType) -> bool {
         match self {
             LiteralKind::Integer => primitive.is_integer() || primitive.is_float(),
