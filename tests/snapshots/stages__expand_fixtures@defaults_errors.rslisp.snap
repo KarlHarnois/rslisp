@@ -1,0 +1,60 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/defaults_errors.rslisp
+---
+error[L0301]: `misspelled` has no field `admn?`
+ --> expand/defaults_errors.rslisp:1:56
+  |
+1 | (defstruct misspelled :name str :admin? bool (defaults :admn? false))
+  |                                                        ^^^^^^ here
+  |
+  = help: the fields of `misspelled` are name, admin?
+
+error[L0301]: `admin?` has two defaults
+ --> expand/defaults_errors.rslisp:2:68
+  |
+2 | (defstruct repeated :name str :admin? bool (defaults :admin? false :admin? true))
+  |                                                                    ^^^^^^^ here
+  |
+  = help: keep one
+
+error[L0301]: a struct takes one `defaults` clause, after its fields
+ --> expand/defaults_errors.rslisp:3:41
+  |
+3 | (defstruct twice :name str :admin? bool (defaults :admin? false) (defaults :name "ana"))
+  |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ here
+  |
+  = help: move the defaults to the end
+
+error[L0301]: a struct takes one `defaults` clause, after its fields
+ --> expand/defaults_errors.rslisp:4:18
+  |
+4 | (defstruct early (defaults :admin? false) :name str :admin? bool)
+  |                  ^^^^^^^^^^^^^^^^^^^^^^^^ here
+  |
+  = help: move the defaults to the end
+
+error[L0301]: this default has no value
+ --> expand/defaults_errors.rslisp:5:54
+  |
+5 | (defstruct unvalued :name str :admin? bool (defaults :admin?))
+  |                                                      ^^^^^^^ here
+  |
+  = help: write a value after it, as in :admin? false
+
+error[L0301]: a default must start with `:`
+ --> expand/defaults_errors.rslisp:6:54
+  |
+6 | (defstruct unmarked :name str :admin? bool (defaults admin? false))
+  |                                                      ^^^^^^ here
+  |
+  = help: write each default as `:field value`, as in (defaults :admin? false)
+
+error[L0301]: missing fields `email` in `user`
+  --> expand/defaults_errors.rslisp:10:3
+   |
+10 |   (->user :name "ana"))
+   |   ^^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: name every field without a default: email

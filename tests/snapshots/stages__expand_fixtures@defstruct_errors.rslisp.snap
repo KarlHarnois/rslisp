@@ -18,3 +18,11 @@ error[L0301]: a field must start with `:`
   |                 ^^^^ here
   |
   = help: write each field as `:name type`, as in (defstruct point :x f64 :y f64)
+
+error[L0301]: this field has no type
+ --> expand/defstruct_errors.rslisp:3:16
+  |
+3 | (defstruct van :seats :doors i64)
+  |                ^^^^^^ here
+  |
+  = help: write a type after it, as in :seats i64

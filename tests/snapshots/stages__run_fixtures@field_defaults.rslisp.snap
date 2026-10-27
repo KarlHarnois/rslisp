@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/field_defaults.rslisp
+---
+false
+true
+sam
+3
+1
+0
