@@ -1,0 +1,67 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_parameter_lifetimes.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn make_car(make: &str, year: u16) -> Car<'_> {
+    Car { make, year }
+}
+
+fn build_with<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>) -> Car<'a> {
+    constructor("Nissan", 2025)
+}
+
+fn build_with_make<'a>(
+    constructor: impl FnOnce(&'a str, u16) -> Car<'a>,
+    make: &'a str,
+) -> Car<'a> {
+    constructor(make, 2024)
+}
+
+fn build_default<'a>(constructor: impl FnOnce() -> Car<'a>) -> Car<'a> {
+    constructor()
+}
+
+fn count_make(counter: impl FnOnce(&str) -> u16, make: &str) -> &str {
+    if counter(make) > 0 { make } else { "none" }
+}
+
+fn label(counter: impl FnOnce(&str) -> u16) -> &'static str {
+    if counter("Leaf") > 0 {
+        "Nissan"
+    } else {
+        "none"
+    }
+}
+
+fn first_word(text: &str) -> &str {
+    text
+}
+
+fn measure(pick: impl FnOnce(&str) -> &str) -> u16 {
+    let model = "Leaf".to_string();
+    let picked = pick(model.as_str());
+    if picked == "Leaf" { 4 } else { 0 }
+}
+
+fn main() {
+    println!("{}", build_with(make_car).year);
+    let model = "Leaf".to_string();
+    let built = build_with(|make: &str, year: u16| Car {
+        make: model.as_str(),
+        year,
+    });
+    println!("{}", built.make);
+    let make = "Nissan".to_string();
+    println!("{}", build_with_make(make_car, make.as_str()).make);
+    println!("{}", build_default(|| make_car("Nissan", 2023)).year);
+    println!("{}", count_make(|text: &str| 3, "Leaf"));
+    println!("{}", label(|text: &str| 3));
+    println!("{}", measure(first_word))
+}

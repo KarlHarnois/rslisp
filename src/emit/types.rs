@@ -142,7 +142,7 @@ impl<'a> RustTypes<'a> {
             Type::Primitive(primitive) => Self::primitive(*primitive).to_string(),
             Type::Named(binding, arguments) => self.named(*binding, arguments, position, scope),
             Type::Function(kind, parameters, result) => {
-                self.function(*kind, parameters, result, position)
+                self.function(*kind, parameters, result, position, scope)
             }
             Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
                 self.reference(shown, *lifetime, inner, position, scope)
@@ -524,15 +524,20 @@ impl<'a> RustTypes<'a> {
         parameters: &[Type],
         result: &Type,
         position: TypePosition,
+        scope: &LifetimeScope,
     ) -> String {
+        let inner_scope = Self::function_scope(position, scope);
         let parameters: Vec<String> = parameters
             .iter()
-            .map(|parameter| self.show(parameter, TypePosition::Value))
+            .map(|parameter| self.show_in(parameter, TypePosition::Value, &inner_scope))
             .collect();
         let result = if Self::is_unit(result) {
             String::new()
         } else {
-            format!(" -> {}", self.show(result, TypePosition::Value))
+            format!(
+                " -> {}",
+                self.show_in(result, TypePosition::Value, &inner_scope)
+            )
         };
         let keyword = match position {
             TypePosition::Signature | TypePosition::StaticResult => {
@@ -541,6 +546,14 @@ impl<'a> RustTypes<'a> {
             TypePosition::Value => "fn".to_string(),
         };
         format!("{keyword}({}){result}", parameters.join(", "))
+    }
+
+    fn function_scope(position: TypePosition, scope: &LifetimeScope) -> LifetimeScope {
+        let shared = match position {
+            TypePosition::Signature => scope.elided().map(str::to_string),
+            TypePosition::StaticResult | TypePosition::Value => None,
+        };
+        LifetimeScope::default().with_elided(shared)
     }
 
     fn lifetime(

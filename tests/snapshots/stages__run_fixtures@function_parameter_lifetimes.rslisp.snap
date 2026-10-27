@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_parameter_lifetimes.rslisp
+---
+2025
+Leaf
+Nissan
+2023
+Leaf
+Nissan
+4
