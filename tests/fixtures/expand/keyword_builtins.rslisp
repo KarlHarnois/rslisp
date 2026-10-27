@@ -1,0 +1,17 @@
+(use code list keyword? keyword-name)
+
+(def yes-or-no (fn (test) (if test (quote yes) (quote no))))
+
+(def keyword-facts
+  (macro (form)
+    (list (quote quote)
+          (list (yes-or-no (keyword? (quote :year)))
+                (yes-or-no (keyword? (quote :electric?)))
+                (yes-or-no (keyword? (quote year)))
+                (yes-or-no (keyword? (quote :)))
+                (yes-or-no (keyword? ":year"))
+                (yes-or-no (keyword? (quote (:year))))
+                (keyword-name (quote :year))
+                (keyword-name (quote :electric?))))))
+
+(def answers (fn () (keyword-facts)))

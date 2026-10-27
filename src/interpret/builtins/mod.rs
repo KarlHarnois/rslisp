@@ -21,7 +21,7 @@ pub struct BuiltinCall {
 }
 
 impl BuiltinCall {
-    const IMPLEMENTATIONS: [(Builtin, Implementation); 32] = [
+    const IMPLEMENTATIONS: [(Builtin, Implementation); 34] = [
         (Builtin::First, |operations, _| operations.lists.first()),
         (Builtin::Rest, |operations, _| operations.lists.rest()),
         (Builtin::List, |operations, _| operations.lists.list()),
@@ -38,6 +38,9 @@ impl BuiltinCall {
             operations
                 .text
                 .is_kind(|kind| matches!(kind, FormKind::Symbol(_)))
+        }),
+        (Builtin::IsKeyword, |operations, _| {
+            operations.text.is_keyword()
         }),
         (Builtin::IsList, |operations, _| {
             operations
@@ -56,6 +59,9 @@ impl BuiltinCall {
         }),
         (Builtin::SymbolName, |operations, _| {
             operations.text.symbol_name()
+        }),
+        (Builtin::KeywordName, |operations, _| {
+            operations.text.keyword_name()
         }),
         (Builtin::MakeSymbol, |operations, _| {
             operations.text.make_symbol()

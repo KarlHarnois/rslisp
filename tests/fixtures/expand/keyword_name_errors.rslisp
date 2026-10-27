@@ -1,0 +1,9 @@
+(use code keyword-name)
+
+(def name-of-symbol (macro (form) (keyword-name (quote year))))
+(def name-of-colon (macro (form) (keyword-name (quote :))))
+(def name-of-string (macro (form) (keyword-name ":year")))
+
+(name-of-symbol)
+(name-of-colon)
+(name-of-string)

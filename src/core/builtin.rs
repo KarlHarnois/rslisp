@@ -11,10 +11,12 @@ pub enum Builtin {
     Take,
     Drop,
     IsSymbol,
+    IsKeyword,
     IsList,
     IsString,
     IsNumber,
     SymbolName,
+    KeywordName,
     MakeSymbol,
     MakeString,
     SameBinding,
@@ -35,7 +37,7 @@ pub enum Builtin {
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 32] = [
+    const NAMES: [(Builtin, &'static str); 34] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -47,10 +49,12 @@ impl Builtin {
         (Builtin::Take, "take"),
         (Builtin::Drop, "drop"),
         (Builtin::IsSymbol, "symbol?"),
+        (Builtin::IsKeyword, "keyword?"),
         (Builtin::IsList, "list?"),
         (Builtin::IsString, "string?"),
         (Builtin::IsNumber, "number?"),
         (Builtin::SymbolName, "symbol-name"),
+        (Builtin::KeywordName, "keyword-name"),
         (Builtin::MakeSymbol, "symbol"),
         (Builtin::MakeString, "string"),
         (Builtin::SameBinding, "same-binding?"),
