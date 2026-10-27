@@ -5,7 +5,5 @@ input_file: tests/fixtures/check/string_field_equality.rslisp
 ---
 (derive person clone debug partial-eq eq hash)
 (type ->person (fn (string u32) person))
-(type person-name (fn ((ref person)) (ref string)))
-(type person-age (fn ((ref person)) u32))
 (type ana? (fn ((ref person)) bool))
 (type main (fn () unit))

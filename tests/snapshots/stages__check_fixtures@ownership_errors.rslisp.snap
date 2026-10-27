@@ -20,8 +20,8 @@ help: clone the value if both places need it
 error[L0503]: this value is borrowed, but the call needs to own it
  --> check/ownership_errors.rslisp:9:30
   |
-9 | (defn steal (someone) (store (person-name someone)))
-  |                              ^^^^^^^^^^^^^^^^^^^^^ only a borrow is available here
+9 | (defn steal (someone) (store (:name someone)))
+  |                              ^^^^^^^^^^^^^^^ only a borrow is available here
   |
   = help: pass a copy with `(clone ...)`
 

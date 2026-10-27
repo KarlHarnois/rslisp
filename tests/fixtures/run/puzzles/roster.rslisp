@@ -12,8 +12,8 @@
   (for-each (values (departments people)) (fn (dept) (print-top-scorer people dept)))
   (println (str "Cleo present: " (present? people "Cleo")))
   (println (str "first two equal: " (same-employee? (unwrap (get people 0)) (unwrap (get people 1)))))
-  (sort-by-key! people employee-score)
-  (for-each (iter people) (fn (person) (println (employee-name person)))))
+  (sort-by-key! people :score)
+  (for-each (iter people) (fn (person) (println (:name person)))))
 
 (defn parse-roster (text)
   (collect (map (lines text) (fn (line) (parse-employee line)))))
@@ -25,26 +25,26 @@
                  (parse-score (unwrap (get fields 2)))))
 
 (defn describe (person)
-  (str (employee-name person) " (" (employee-dept person) "): " (employee-score person)))
+  (str (:name person) " (" (:dept person) "): " (:score person)))
 
 (defn departments (people)
-  (let names (collect (map (iter people) (fn (person) (as-str (employee-dept person))))))
+  (let names (collect (map (iter people) (fn (person) (as-str (:dept person))))))
   (sort! names)
   (dedup! names)
   names)
 
 (defn print-top-scorer (people dept)
   (let best (max-by-key (filter (iter people) (fn (person) (in-dept? person dept)))
-                        (fn (person) (employee-score person))))
-  (println (str dept " top scorer: " (employee-name (expect best "every department has a member")))))
+                        (fn (person) (:score person))))
+  (println (str dept " top scorer: " (:name (expect best "every department has a member")))))
 
 (defn in-dept? (person dept)
-  (= (as-str (employee-dept person)) dept))
+  (= (as-str (:dept person)) dept))
 
 (defn present? (people name)
-  (any (iter people) (fn (person) (= (as-str (employee-name person)) name))))
+  (any (iter people) (fn (person) (= (as-str (:name person)) name))))
 
 (defn same-employee? (left right)
-  (and (= (as-str (employee-name left)) (as-str (employee-name right)))
-       (= (as-str (employee-dept left)) (as-str (employee-dept right)))
-       (= (employee-score left) (employee-score right))))
+  (and (= (as-str (:name left)) (as-str (:name right)))
+       (= (as-str (:dept left)) (as-str (:dept right)))
+       (= (:score left) (:score right))))

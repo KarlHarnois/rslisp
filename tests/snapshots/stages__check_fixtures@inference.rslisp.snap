@@ -10,8 +10,6 @@ input_file: tests/fixtures/check/inference.rslisp
 (type admin? bool)
 (type greeting (fn () string))
 (type ->point (fn (f64 f64) point))
-(type point-x (fn ((ref point)) f64))
-(type point-y (fn ((ref point)) f64))
 (type origin point)
 (type distance-squared (fn (point point) f64))
 (type identity (where (a) (fn (a) a)))

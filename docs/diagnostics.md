@@ -18,21 +18,21 @@ This guide covers every error the compiler prints. A diagnostic uses rustc's lay
 A warning does not stop the build: the compiler prints it and continues.
 
 ```text
-error[L0201]: cannot find `pointx` in this scope
+error[L0201]: cannot find `distnce` in this scope
  --> src/main.rslisp:4:10
   |
-4 |   (print (pointx origin))
-  |           ^^^^^^ not found in this scope
+4 |   (print (distnce origin target))
+  |           ^^^^^^^ not found in this scope
   |
 help: a function with a similar name exists
   |
-4 |   (print (point-x origin))
-  |           ~~~~~~~
+4 |   (print (distance origin target))
+  |           ~~~~~~~~
 ```
 
 ## Tone
 
-**Write the title as a plain statement of what is wrong.** Write "cannot find `pointx` in this scope", not "unresolved symbol".
+**Write the title as a plain statement of what is wrong.** Write "cannot find `distnce` in this scope", not "unresolved symbol".
 
 **Point the primary label at the smallest form that is wrong.** A label on a whole function hides the fault.
 

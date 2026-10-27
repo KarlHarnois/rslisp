@@ -3,4 +3,4 @@
 (defn main ()
   (let first-pair (->pair (to-string "one") 2))
   (let moved first-pair)
-  (println (pair-left first-pair)))
+  (println (:left first-pair)))

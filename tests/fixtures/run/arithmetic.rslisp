@@ -1,8 +1,8 @@
 (defstruct point :x f64 :y f64)
 
 (defn distance-squared (a b)
-  (let dx (- (point-x a) (point-x b)))
-  (let dy (- (point-y a) (point-y b)))
+  (let dx (- (:x a) (:x b)))
+  (let dy (- (:y a) (:y b)))
   (+ (* dx dx) (* dy dy)))
 
 (defn main ()

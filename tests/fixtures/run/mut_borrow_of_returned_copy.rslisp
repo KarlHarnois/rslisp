@@ -1,7 +1,9 @@
 (def bump (rust "*{0} += 1" (fn ((mut i64)) unit)))
 (defstruct counter :count i64)
 
+(defn count-of (c) (:count c))
+
 (defn main ()
   (let c (->counter 0))
-  (bump (counter-count c))
-  (println (counter-count c)))
+  (bump (count-of c))
+  (println (:count c)))

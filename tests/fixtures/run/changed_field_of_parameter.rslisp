@@ -6,4 +6,4 @@
 (defn main ()
   (let t (->tally 5 (to-string "fake")))
   (bump-count! t)
-  (println (tally-count t)))
+  (println (:count t)))

@@ -1,16 +1,16 @@
 (defstruct person :name string :age i64)
 
 (defn introduce (someone)
-  (str (person-name someone) " is " (person-age someone)))
+  (str (:name someone) " is " (:age someone)))
 
 (defn rename (someone new-name)
-  (->person new-name (person-age someone)))
+  (->person new-name (:age someone)))
 
 (defn main ()
   (let ada (->person (to-string "Ada") 36))
-  (println (person-name ada))
-  (println (person-name ada))
+  (println (:name ada))
+  (println (:name ada))
   (println (introduce ada))
-  (let copy (clone (person-name ada)))
+  (let copy (clone (:name ada)))
   (let renamed (rename ada copy))
   (println (introduce renamed)))

@@ -2,8 +2,8 @@
 (def some-function (fn (x) (* x x)))
 (defn some-function (x) (* x x)) ; a comment after a form
 
-(use geometry ->point point-x)
-(export ->point point-x)
+(use geometry ->point)
+(export ->point)
 
 (defstruct point :x f64 :y f64)
 (->point 1 2)

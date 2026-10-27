@@ -1,10 +1,10 @@
 (defstruct person :name string)
 
-(defn same-name? (a b) (= (person-name a) (person-name b)))
+(defn same-name? (a b) (= (:name a) (:name b)))
 
 (defn main ()
   (let ana (->person (to-string "Ana")))
   (let bo (->person (to-string "Bo")))
   (println (same-name? ana bo))
-  (println (< (person-name ana) (person-name bo)))
-  (println (!= (person-name ana) (person-name bo))))
+  (println (< (:name ana) (:name bo)))
+  (println (!= (:name ana) (:name bo))))

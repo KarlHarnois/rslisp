@@ -6,7 +6,7 @@
 (defn twice-next (x) (do (let y (+ x 1)) (* y 2)))
 (defn sum-to (limit) (loop ((i 0) (total 0)) (if (> i limit) total (recur (+ i 1) (+ total i)))))
 (defn total (a b c) (+ a b c))
-(defn counter->text (c) (to-string (counter-count c)))
+(defn counter->text (c) (to-string (:count c)))
 
 (defn main ()
   (let c (->counter 0))

@@ -11,4 +11,4 @@ error[L0404]: `not-a-key` does not implement `ord`
   |
   = note: `ord` is never inferred for a struct, so the struct needs a written `derive`
   = help: add `(derive not-a-key clone debug partial-eq eq hash ord)` to compare fields in this order: `name`
-  = help: to sort by one field instead, use `sort-by-key!` with the accessor `not-a-key-name`
+  = help: to sort by one field instead, use `sort-by-key!` with the field keyword `:name`

@@ -1,4 +1,4 @@
 (defstruct instruction :opcode (ref str) :argument i64)
 (defn main ()
   (let i (->instruction "push" 3))
-  (println (instruction-opcode i)))
+  (println (:opcode i)))

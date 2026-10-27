@@ -13,4 +13,4 @@ error[L0404]: `score` does not implement `ord`
   |          ^^^^^^ this needs `ord`
   |
   = help: add `(derive score debug ord)` to compare fields in this order: `points`, then `name`
-  = help: to sort by one field instead, use `sort-by-key!` with the accessor `score-points`
+  = help: to sort by one field instead, use `sort-by-key!` with the field keyword `:points`

@@ -21,15 +21,11 @@ fn make_tag(label: String) -> Tag {
     Tag { label }
 }
 
-fn tag_label(instance: &Tag) -> &String {
-    &instance.label
-}
-
 fn main() {
     let early = make_ticket(1, 4);
     let same = early;
     println!("{:?}", early);
     println!("{:?}", same);
     println!("{}", early < make_ticket(2, 1));
-    println!("{}", tag_label(&make_tag("vip".to_string())))
+    println!("{}", make_tag("vip".to_string()).label)
 }

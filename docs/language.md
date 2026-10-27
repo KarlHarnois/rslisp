@@ -80,16 +80,6 @@ In type positions, the kernel provides `fn`, `fn-mut`, `fn-once`, `ref`, `mut`, 
 
 In expression positions, the kernel provides `ref`, `mut` and `deref`, and the constants `true` and `false`. The constants are kernel constants, not prelude definitions. Macro code and program code then see the same booleans, so `if`, `and` and `or` work in both.
 
-Programs write structs with the prelude's `defstruct`, which takes flat fields. `(defstruct point :x f64 :y f64)` declares each field as a keyword followed by one type form, so `:tags (vec str)` is one field. It expands to the kernel `struct` form and also defines the constructor `->point` and the accessors `point-x` and `point-y`.
-
-The constructor `->point` is a macro, and it reads a call in this order:
-
-1. If the arguments read as `:field value` pairs that name every field once, the call is by name. `(->point :y 2.0 :x 1.0)` expands to `(new point (y 2.0) (x 1.0))`, in the order written.
-2. Otherwise, if the call has exactly one argument per field, the call is positional. `(->point 1.0 2.0)` calls a positional function that `defstruct` defines under a hygienic name, which no source code can refer to. It emits as `make_point(1.0, 2.0)`.
-3. Otherwise, the call is an error that names the field count.
-
-In value position, `->point` expands to the positional function, so `(let build ->point)` emits `let build = make_point;`. A program may define its own `make-point`, because no source name refers to the positional function.
-
 `ref`, `mut` and `deref` are kernel forms because a prelude function cannot mark its result as written. The compiler must see the written form to know that the value came from a written borrow or dereference.
 
 `assoc-at` is a kernel form because only the compiler knows a collection's inferred type. A prelude macro cannot choose between a vector and a map, so the `assoc-at` collection rule picks the emitted Rust by type. The rule knows `(vec a)`, `(sorted-map k v)` and `(hash-map k v)`.
@@ -215,6 +205,28 @@ A `main` whose inferred type is a `result` emits an inner function for its body 
 - An `iterator` cannot be a struct field.
 - A function generic over `integer` can call `range`: the prelude's `step` trait states Rust's requirement `Range<N>: Iterator<Item = N>`, and the function's emitted signature carries it as a `where` predicate.
 
+## Structs
+
+Programs write structs with the prelude's `defstruct`, which takes flat fields. `(defstruct point :x f64 :y f64)` declares each field as a keyword followed by one type form, so `:tags (vec str)` is one field. It expands to the kernel `struct` form and defines one constructor, `->point`.
+
+The constructor `->point` is a macro, and it reads a call in this order:
+
+1. If the arguments read as `:field value` pairs that name every field once, the call is by name. `(->point :y 2.0 :x 1.0)` expands to `(new point (y 2.0) (x 1.0))`, in the order written.
+2. Otherwise, if the call has exactly one argument per field, the call is positional. `(->point 1.0 2.0)` calls a positional function that `defstruct` defines under a hygienic name, which no source code can refer to. It emits as `make_point(1.0, 2.0)`.
+3. Otherwise, the call is an error that names the field count.
+
+In value position, `->point` expands to the positional function, so `(let build ->point)` emits `let build = make_point;`. A program may define its own `make-point`, because no source name refers to the positional function.
+
+### Field keywords
+
+A keyword reads a field. A list whose head is a keyword and that has one argument expands to the kernel `field` form: `(:x origin)` is `(field origin x)`, and it borrows, moves and reports an unknown field exactly as that form does. A keyword in value position expands to a closure that reads the field, so `(map (iter points) :x)` emits `points.iter().map(|value: &Point| value.x)`. Each such closure is typed where it is used.
+
+A keyword call with no value or with more than one value is an error. `let`, `def`, `fn` parameters and patterns reject a keyword as a name. The rule runs on the expanded program, so a macro receives a keyword unchanged, as `defstruct` does.
+
+A field read names its struct only through the value's type. When two structs share a field name, a function that reads that field from an unannotated parameter needs a signature, as `(type volume (fn ((ref cube)) i64))` gives.
+
+The expander carries keyword reads because a prelude macro per field would clash between two structs that share a field name.
+
 ## Ownership
 
 Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&mut T`. Type inference ignores ownership except where it is written, and a separate pass decides how each parameter is passed.
@@ -225,7 +237,7 @@ Ownership is part of the type, as in Rust. `(ref t)` is `&T` and `(mut t)` is `&
 - **Adjustment.** Wherever a value meets an expected type, the compiler adds one borrow, removes extra borrows, copies a Copy value of 16 bytes or less out of a borrow, or shrinks a shared borrow's referent from a vector to its slice or from `string` to `str`. A vector or map where the expected type is `(iterator a)` is iterated: the compiler writes `.iter()`, yielding `(ref a)` for a vector and `(pair (ref key) (ref value))` for a map. It never clones. The compiler writes each adjustment in the emitted Rust, except the slice and `str` ones: Rust's deref coercion already makes `&Vec<T>` meet `&[T]` and `&String` meet `&str`, so no syntax changes. The slice adjustment lets a read-only vector parameter take a slice, and the `str` adjustment lets a read-only `string` parameter take `&str`. `(add x 2)` with `x : (ref i64)` passes where Rust's generic `add(x, 2)` fails, because the compiler writes the `*`. The Call sites and Dereferences bullets give the details. A written `ref`, `mut` or `deref` is not adjusted: it meets a parameter with a written type as written, and a parameter with no written type as the mode its body infers.
 - **Call sites.** An argument is borrowed automatically when the parameter is a reference. A method-style template such as `"{0}.clone()"` borrows its receiver the way Rust's method calls do. A receiver or a `{&0}` argument is written without `&`, even when it reads a field, because Rust borrows it. A `{&0}` argument stays usable after the call: `(if (> a b) a b)` moves neither `a` nor `b` until it returns one of them. A receiver that names a static is written without `*`, because a method call dereferences it.
 - **Dereferences.** A borrowed Copy argument of 16 bytes or less is dereferenced when the parameter's type is a type variable whose traits the reference lacks. `(> x 2)` with `x : (ref i64)` emits `*x > 2`. A `fn` passed as an argument takes its parameter types from the parameter's function type, so its body sees them. An argument with more reference layers than its reference parameter passes with the extra layers removed, as Rust's deref coercion does, even when the parameter's referent is still unknown. If an argument's referent type is still unknown at a call, the compiler decides its borrow after it infers the definition. A borrowed non-Copy argument passes as is when the parameter's type is a type variable whose traits the referent has and the reference lacks: `(size-of (as-str word))` emits `size_of(word.as_str())`.
-- **Shared parameters.** When one type variable is the whole type of several parameters, as in `(= a b)`, the compiler decides their borrows together after it infers every argument, so the order of the arguments never changes the result. Two type variables linked by a two-type bound form one group. The compiler first tries the arguments exactly as written: if the bound holds with each variable bound to its argument's type, every argument passes with no borrow. Otherwise it applies the shared rule. A Copy value of 16 bytes or less is copied out of every borrow. Arguments with the same number of references pass as they are. Otherwise, each argument gets one reference, or none where Rust borrows the argument by itself: `(= (person-name p) name)` emits `*person_name(&p) == name`. `partial-eq`, `partial-ord` and `display` hold for a reference to any type that has them, as in Rust: `(< (person-name ana) (person-name bo))` emits `person_name(&ana) < person_name(&bo)`.
+- **Shared parameters.** When one type variable is the whole type of several parameters, as in `(= a b)`, the compiler decides their borrows together after it infers every argument, so the order of the arguments never changes the result. Two type variables linked by a two-type bound form one group. The compiler first tries the arguments exactly as written: if the bound holds with each variable bound to its argument's type, every argument passes with no borrow. Otherwise it applies the shared rule. A Copy value of 16 bytes or less is copied out of every borrow. Arguments with the same number of references pass as they are. Otherwise, each argument gets one reference, or none where Rust borrows the argument by itself: `(= (:name p) name)` emits `p.name == name`. `partial-eq`, `partial-ord` and `display` hold for a reference to any type that has them, as in Rust: `(< (:name ana) (:name bo))` emits `ana.name < bo.name`.
 - **Fields.** Reading a Copy field of 16 bytes or less copies it. Reading any other field borrows it: `(field person name)` has type `(ref string)`.
 - **Unsized values.** Rust never owns a `str`. A `str` parameter is always borrowed, and a function whose result is a `str` returns `(ref str)`.
 - **No hidden copies.** Copying heap data is always written `(clone x)`, which needs the `clone` trait. The one inferred allocation is the `Box` a recursive enum payload requires. A struct implements it when its fields do, as the Struct traits bullet says. `(ref x)` and `(mut x)` force a borrow.
@@ -323,7 +335,7 @@ A `rust` template's own binders are hygienic too. A name written as `{!name}` ta
 `(symbol context part...)` builds a symbol with the scopes of `context`. It is the one deliberate way to introduce a name the user can see:
 
 ```lisp
-(defstruct point :x f64 :y f64)   ; defines ->point, point-x and point-y
+(defstruct point :x f64 :y f64)   ; defines ->point
 ```
 
 Field names are not hygienic. They are looked up through the struct type.
@@ -332,6 +344,7 @@ Field names are not hygienic. They are looked up through the struct type.
 
 - One file is one module. `(use text/format pad-left)` loads `text/format.rslisp` relative to the entry file's directory and binds `pad-left`.
 - A name is private to its file until an `(export ...)` lists it. `export` can list imported names, which re-exports them.
+- Exporting a struct makes all its fields public: every module that imports it can read, build and update it, and its emitted Rust fields are `pub`.
 - Every user module imports the prelude. An explicit `use` shadows a prelude name.
 - Every prelude module imports the kernel.
 - Import cycles are an error.

@@ -1,5 +1,5 @@
 (defn describe-early ()
-  (car-year (->car "Toyota" "Corolla" 2018 false)))
+  (:year (->car "Toyota" "Corolla" 2018 false)))
 
 (defstruct car :make str :model str :year u16 :electric? bool)
 
@@ -9,8 +9,8 @@
   (let reordered (->car :year 2019 :electric? false :make "Honda" :model "Civic"))
   (let build ->car)
   (let built (build "Volkswagen" "Golf" 2021 false))
-  (println (car-make by-position))
-  (println (car-model by-name))
-  (println (car-year reordered))
-  (println (car-model built))
+  (println (:make by-position))
+  (println (:model by-name))
+  (println (:year reordered))
+  (println (:model built))
   (println (describe-early)))

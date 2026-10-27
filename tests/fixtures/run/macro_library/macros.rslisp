@@ -58,10 +58,10 @@
   (template
     (do (defstruct (unquote name) (splice (flat-fields fields)))
         (defn (unquote (symbol name (symbol-name name) "-equal?")) ((unquote left) (unquote right))
-          (and (splice (map-list (fn (field) (field-equality name field left right)) fields))))
+          (and (splice (map-list (fn (field) (field-equality field left right)) fields))))
         (defn (unquote (symbol name (symbol-name name) "->string")) ((unquote record))
           (str (unquote (string "(" name))
-               (splice (field-texts name fields record))
+               (splice (field-texts fields record))
                ")")))))
 
 (def flat-fields
@@ -75,13 +75,9 @@
   (fn (field)
     (symbol (first field) ":" (first field))))
 
-(def accessor
-  (fn (name field)
-    (symbol name (symbol-name name) "-" (first field))))
-
 (def field-equality
-  (fn (name field left right)
-    (let read (accessor name field))
+  (fn (field left right)
+    (let read (field-keyword field))
     (template ((unquote (equality-for field)) ((unquote read) (unquote left)) ((unquote read) (unquote right))))))
 
 (def equality-for
@@ -97,12 +93,12 @@
   (= (as-str left) (as-str right)))
 
 (def field-texts
-  (fn (name fields record)
+  (fn (fields record)
     (if (empty? fields)
         (list)
         (concat (list (string " " (first (first fields)) "=")
-                      (list (accessor name (first fields)) record))
-                (field-texts name (rest fields) record)))))
+                      (list (field-keyword (first fields)) record))
+                (field-texts (rest fields) record)))))
 
 (defrule if-some
   (((name option) then else)

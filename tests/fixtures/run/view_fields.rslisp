@@ -9,5 +9,5 @@
 (defn main ()
   (let numbers (vec 3 4))
   (let fruit (->tag "fruit" numbers))
-  (println (tag-name fruit) " " (len (tag-scores fruit)))
+  (println (:name fruit) " " (len (:scores fruit)))
   (println (describe (label/named "apple")) " " (describe label/blank)))

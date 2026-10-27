@@ -2,7 +2,7 @@
 
 (defn dangling-name ()
   (let someone (->person (to-string "Grace") 85))
-  (person-name someone))
+  (:name someone))
 
 (defn main ()
   (println (dangling-name)))

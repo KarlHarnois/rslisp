@@ -13,14 +13,6 @@ fn make_cell(alive: bool, label: String) -> Cell {
     Cell { alive, label }
 }
 
-fn cell_alive(instance: &Cell) -> bool {
-    instance.alive
-}
-
-fn cell_label(instance: &Cell) -> &String {
-    &instance.label
-}
-
 fn revive(cell: &mut Cell) {
     cell.alive = true
 }
@@ -42,7 +34,7 @@ fn main() {
     let mut cell = make_cell(false, "seed".to_string());
     revive(&mut cell);
     rename(&mut cell, "grown".to_string());
-    println!("{} {}", cell_alive(&cell), cell_label(&cell));
+    println!("{} {}", cell.alive, cell.label);
     let mut total: i64 = 0;
     let mut add = |n: i64| total = if n > total { n } else { total };
     add(1);

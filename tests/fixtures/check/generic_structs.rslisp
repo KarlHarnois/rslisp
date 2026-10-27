@@ -6,4 +6,4 @@
 
 (defn swap (p) (new pair (first (clone (field p second))) (second (clone (field p first)))))
 
-(defn main () (println (pair-first origin)))
+(defn main () (println (:first origin)))

@@ -1,6 +1,6 @@
 (defstruct person :name string :age u32)
 
-(defn ana? (p) (= (person-name p) "Ana"))
+(defn ana? (p) (= (:name p) "Ana"))
 
 (defn main ()
   (println (ana? (->person (to-string "Ana") 30))))

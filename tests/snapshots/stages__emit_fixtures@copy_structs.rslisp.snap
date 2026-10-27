@@ -13,14 +13,6 @@ fn make_point(x: i64, y: i64) -> Point {
     Point { x, y }
 }
 
-fn point_x(instance: &Point) -> i64 {
-    instance.x
-}
-
-fn point_y(instance: &Point) -> i64 {
-    instance.y
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 struct Cube {
     x: i64,
@@ -30,18 +22,6 @@ struct Cube {
 
 fn make_cube(x: i64, y: i64, z: i64) -> Cube {
     Cube { x, y, z }
-}
-
-fn cube_x(instance: &Cube) -> i64 {
-    instance.x
-}
-
-fn cube_y(instance: &Cube) -> i64 {
-    instance.y
-}
-
-fn cube_z(instance: &Cube) -> i64 {
-    instance.z
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -54,20 +34,12 @@ fn make_pair<A>(left: A, right: A) -> Pair<A> {
     Pair { left, right }
 }
 
-fn pair_left<A>(instance: &Pair<A>) -> &A {
-    &instance.left
-}
-
-fn pair_right<A>(instance: &Pair<A>) -> &A {
-    &instance.right
-}
-
 fn shift(p: Point) -> Point {
-    make_point(point_x(&p) + 1, point_y(&p))
+    make_point(p.x + 1, p.y)
 }
 
 fn volume(c: &Cube) -> i64 {
-    cube_x(c) * (cube_y(c) * cube_z(c))
+    c.x * (c.y * c.z)
 }
 
 fn is_same_shape<A: PartialEq>(a: A, b: A) -> bool {
@@ -76,17 +48,17 @@ fn is_same_shape<A: PartialEq>(a: A, b: A) -> bool {
 
 fn main() {
     let p = make_point(1, 2);
-    println!("{}", point_x(&shift(p)));
-    println!("{}", point_x(&shift(p)));
+    println!("{}", shift(p).x);
+    println!("{}", shift(p).x);
     println!("{}", volume(&make_cube(2, 3, 4)));
     let numbers: Pair<i64> = make_pair(1, 2);
     let words = make_pair("a".to_string(), "b".to_string());
-    println!("{}", pair_left(&numbers));
-    println!("{}", pair_right(&words));
+    println!("{}", numbers.left);
+    println!("{}", words.right);
     let mut kept = vec![p];
     kept.push(p);
     println!("{}", kept.len());
-    println!("{}", point_y(&p));
+    println!("{}", p.y);
     println!("{}", is_same_shape(p, make_point(1, 2)));
     println!("{}", is_same_shape(make_cube(1, 2, 3), make_cube(3, 2, 1)))
 }

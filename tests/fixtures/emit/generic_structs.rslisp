@@ -5,8 +5,8 @@
 
 (defn main ()
   (let counted (->pair 7 (to-string "seven")))
-  (println (pair-first counted))
-  (println (pair-first (swap counted)))
+  (println (:first counted))
+  (println (:first (swap counted)))
   (let named (->pair "pear" 3))
   (println (field named first))
-  (println (pair-second named)))
+  (println (:second named)))

@@ -4,8 +4,5 @@ expression: signatures.assert_exit_code(0).stdout()
 ---
 (derive person clone debug partial-eq eq hash)
 (type ->person (fn (string i64) person))
-(type person-name (fn ((ref person)) (ref string)))
-(type person-age (fn ((ref person)) i64))
 (type ->ticket (fn (u32) ticket))
-(type ticket-id (fn ((ref ticket)) u32))
 (type main (fn () unit))

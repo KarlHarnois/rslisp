@@ -2,4 +2,4 @@
 
 (defn main ()
   (let p (->person (to-string "Ana")))
-  (println (= "Ana" (person-name p))))
+  (println (= "Ana" (:name p))))

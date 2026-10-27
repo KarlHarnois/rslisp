@@ -1,6 +1,6 @@
 (defstruct employee :name string :score u32)
 
-(defn high? (person) (> (employee-score person) 80))
+(defn high? (person) (> (:score person) 80))
 (defn big? (n) (> n 2))
 
 (defn main ()

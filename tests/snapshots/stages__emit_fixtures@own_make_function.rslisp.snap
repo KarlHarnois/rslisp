@@ -20,15 +20,11 @@ fn make_car_2<'a>(make: &'a str, model: &'a str, year: u16, is_electric: bool) -
     }
 }
 
-fn car_model<'a>(instance: &'a Car<'a>) -> &'a str {
-    instance.model
-}
-
 fn make_car(make: &str) -> Car<'_> {
     make_car_2(make, "Custom", 2024, false)
 }
 
 fn main() {
-    println!("{}", car_model(&make_car("Rivian")));
-    println!("{}", car_model(&make_car_2("Honda", "Civic", 2019, false)))
+    println!("{}", make_car("Rivian").model);
+    println!("{}", make_car_2("Honda", "Civic", 2019, false).model)
 }

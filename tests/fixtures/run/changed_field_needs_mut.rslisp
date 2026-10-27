@@ -4,4 +4,4 @@
 (defn main ()
   (let c (->counter 0))
   (bump (field c count))
-  (println (counter-count c)))
+  (println (:count c)))
