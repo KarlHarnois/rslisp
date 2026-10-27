@@ -3,10 +3,10 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/expand/associated_value_malformed.rslisp
 ---
-error[L0228]: malformed `where` type
- --> expand/associated_value_malformed.rslisp:3:3
+error[L0228]: malformed associated value
+ --> expand/associated_value_malformed.rslisp:3:28
   |
 3 |   (where () (with i64 i64) (output)))
-  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of the type
+  |                            ^^^^^^^^ this does not fit the shape of a value clause
   |
-  = help: write it as `(where (variable (variable trait ...) ...) type)`
+  = help: write each value as `(output type)`

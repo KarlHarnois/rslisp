@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/associated_value_unnamed.rslisp
+---
+error[L0228]: malformed associated value
+ --> expand/associated_value_unnamed.rslisp:3:28
+  |
+3 |   (where () (with i64 i64) ("output" i64)))
+  |                            ^^^^^^^^^^^^^^ this does not fit the shape of a value clause
+  |
+  = help: write each value as `(name type)`

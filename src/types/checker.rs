@@ -156,6 +156,7 @@ pub struct TypeChecker {
     missing_annotations: Diagnostics,
     pub(super) type_arities: HashMap<BindingId, usize>,
     pub(super) written_projections: Vec<super::associated::WrittenProjection>,
+    pub(super) checked_projections: usize,
     trait_arguments: HashSet<BindingId>,
     signatures: HashMap<BindingId, (TypeExpr, Span)>,
     monomorphic: Vec<Type>,
@@ -239,6 +240,7 @@ impl TypeChecker {
             missing_annotations: Diagnostics::default(),
             type_arities: HashMap::new(),
             written_projections: Vec::new(),
+            checked_projections: 0,
             trait_arguments: HashSet::new(),
             signatures: HashMap::new(),
             monomorphic: Vec::new(),
@@ -2111,6 +2113,9 @@ impl TypeChecker {
             if !implied.contains(&bound) {
                 implied.push(bound);
             }
+            return;
+        }
+        if self.has_written_projection_on(generic, bound.binding) {
             return;
         }
         let generic_name = self.display().show(&Type::Generic(generic));

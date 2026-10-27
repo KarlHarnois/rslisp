@@ -204,7 +204,7 @@ impl Expander<'_> {
         let implemented = self.lower_type(implemented)?;
         let associated = values
             .iter()
-            .map(|value| self.lower_associated_value(value, malformed))
+            .map(|value| self.lower_associated_value(value))
             .collect::<Result<Vec<AssociatedValue>, Diagnostic>>()?;
         Ok(RustTraitImplementor {
             implementor: TypeExpr::new(
@@ -215,20 +215,27 @@ impl Expander<'_> {
         })
     }
 
-    fn lower_associated_value(
-        &mut self,
-        clause: &Form,
-        malformed: impl Fn() -> Diagnostic,
-    ) -> Result<AssociatedValue, Diagnostic> {
+    fn lower_associated_value(&mut self, clause: &Form) -> Result<AssociatedValue, Diagnostic> {
         let Some([name, value]) = clause.as_list() else {
-            return Err(malformed());
+            return Err(Self::malformed_associated_value(clause));
         };
-        let symbol = name.as_symbol().ok_or_else(&malformed)?;
+        let symbol = name
+            .as_symbol()
+            .ok_or_else(|| Self::malformed_associated_value(clause))?;
         Ok(AssociatedValue {
             binding: self.resolve(symbol, Namespace::Type, name.span())?,
             value: self.lower_type(value)?,
             span: clause.span(),
         })
+    }
+
+    fn malformed_associated_value(clause: &Form) -> Diagnostic {
+        let name = clause
+            .as_list()
+            .and_then(|items| items.first())
+            .and_then(Form::as_symbol)
+            .map(Symbol::name);
+        ExpandProblems::malformed_associated_value(name, clause.span())
     }
 
     fn lower_with_type(&mut self, form: &Form, items: &[Form]) -> Result<TypeExprKind, Diagnostic> {
