@@ -148,11 +148,7 @@ impl<'a> FrontEndBenchmark<'a> {
     fn profile_corpus(&self, callgrind: &Callgrind) -> Result<ResultSet, TaskFailure> {
         let mut programs = self.corpus()?.programs()?;
         programs.push(self.empty_program());
-        let results = programs
-            .iter()
-            .map(|program| callgrind.measure(program))
-            .collect::<Result<_, _>>()?;
-        Ok(ResultSet::new(results))
+        Ok(ResultSet::new(callgrind.measure_all(&programs)?))
     }
 
     fn empty_program(&self) -> PathBuf {

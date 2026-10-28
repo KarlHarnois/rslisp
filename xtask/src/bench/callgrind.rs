@@ -1,8 +1,12 @@
 use std::env;
 use std::fs;
 use std::io::ErrorKind;
+use std::num::NonZeroUsize;
+use std::panic;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::thread;
 
 use super::compiler::BuiltCompiler;
 use super::profile::ProfileReader;
@@ -41,7 +45,46 @@ impl Callgrind {
         }
     }
 
-    pub fn measure(&self, program: &Path) -> Result<ProgramResult, TaskFailure> {
+    pub fn measure_all(&self, programs: &[PathBuf]) -> Result<Vec<ProgramResult>, TaskFailure> {
+        let next = AtomicUsize::new(0);
+        let mut measured: Vec<(usize, Result<ProgramResult, TaskFailure>)> =
+            thread::scope(|scope| {
+                let workers: Vec<_> = (0..Self::worker_count())
+                    .map(|_| scope.spawn(|| self.measure_until_done(programs, &next)))
+                    .collect();
+                workers
+                    .into_iter()
+                    .flat_map(|worker| {
+                        worker
+                            .join()
+                            .unwrap_or_else(|panic| panic::resume_unwind(panic))
+                    })
+                    .collect()
+            });
+        measured.sort_by_key(|(index, _)| *index);
+        measured.into_iter().map(|(_, result)| result).collect()
+    }
+
+    fn measure_until_done(
+        &self,
+        programs: &[PathBuf],
+        next: &AtomicUsize,
+    ) -> Vec<(usize, Result<ProgramResult, TaskFailure>)> {
+        let mut measured = Vec::new();
+        loop {
+            let index = next.fetch_add(1, Ordering::Relaxed);
+            let Some(program) = programs.get(index) else {
+                return measured;
+            };
+            measured.push((index, self.measure(program)));
+        }
+    }
+
+    fn worker_count() -> usize {
+        thread::available_parallelism().map_or(1, NonZeroUsize::get)
+    }
+
+    fn measure(&self, program: &Path) -> Result<ProgramResult, TaskFailure> {
         let profile = self.profile_path(program);
         Self::remove_stale(&profile)?;
         let output = self.run(program, &profile)?;
