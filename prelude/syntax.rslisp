@@ -408,22 +408,22 @@
   (fn (keys signature)
     (if (empty? keys)
         keys
-        (do (check-call-key (first keys) signature)
+        (do (check-call-key (first keys) keys signature)
             (check-given-once (first keys) (rest keys) signature)
             (check-call-keys (rest keys) signature)))))
 
 (def check-call-key
-  (fn (key signature)
+  (fn (key keys signature)
     (if (key-names-one-of? key (signature-names signature))
         key
-        (unknown-parameter-error key signature))))
+        (unknown-parameter-error key keys signature))))
 
 (def unknown-parameter-error
-  (fn (key signature)
+  (fn (key keys signature)
     (let name (signature-name signature))
     (let names (signature-names signature))
     (let message (string "`" name "` has no parameter `" (symbol-name key) "`"))
-    (let closest (closest-name (keyword-field key) names))
+    (let closest (closest-name (keyword-field key) (names-without-argument names keys)))
     (if (empty? closest)
         (fail message key
               (string "the parameters of `" name "` are " (joined-names (map-list field-keyword names) ""))

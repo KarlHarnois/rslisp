@@ -88,3 +88,15 @@ error[L0323]: `apply-key` has no parameter `:name`
    |              ^^^^^ here
    |
    = help: the parameters of `apply-key` are :key, :label
+
+error[L0323]: `pair-reversed` has no parameter `:ax`
+  --> expand/keyword_parameter_errors.rslisp:22:18
+   |
+22 |   (pair-reversed :ax 1 :ab 2))
+   |                  ^^^ here
+   |
+help: a parameter with a similar name exists
+   |
+22 -   (pair-reversed :ax 1 :ab 2))
+22 +   (pair-reversed :ac 1 :ab 2))
+   |
