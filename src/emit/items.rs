@@ -678,6 +678,7 @@ impl<'a> ItemEmitter<'a> {
             .filter(|binding| used.contains(binding))
             .collect();
         let flowing = self.result_borrows.of(lambda);
+        let higher_ranked = self.result_borrows.higher_ranked(lambda);
         let opaque_lifetimes = Rc::new(FreshLifetimes::new(
             self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),
         ));
@@ -694,6 +695,11 @@ impl<'a> ItemEmitter<'a> {
                         &flowing,
                     )
                     .naming_opaque_lifetimes(&opaque_lifetimes);
+                let scope = if higher_ranked.contains(&param.binding) {
+                    scope
+                } else {
+                    scope.naming_function_lifetime()
+                };
                 emitter.bind_parameter_in(param, TypePosition::Signature, &scope)
             })
             .collect();

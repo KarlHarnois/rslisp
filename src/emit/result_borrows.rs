@@ -11,7 +11,13 @@ use crate::types::{
 pub struct ResultBorrows<'a> {
     program: &'a TypedProgram,
     plan: &'a EmitPlan<'a>,
-    sharing_by_callee: RefCell<HashMap<BindingId, Vec<bool>>>,
+    parameters_by_callee: RefCell<HashMap<BindingId, CalleeParameters>>,
+}
+
+#[derive(Clone, Default)]
+struct CalleeParameters {
+    sharing: Vec<bool>,
+    higher_ranked: Vec<bool>,
 }
 
 impl<'a> ResultBorrows<'a> {
@@ -19,7 +25,7 @@ impl<'a> ResultBorrows<'a> {
         Self {
             program,
             plan,
-            sharing_by_callee: RefCell::new(HashMap::new()),
+            parameters_by_callee: RefCell::new(HashMap::new()),
         }
     }
 
@@ -27,12 +33,18 @@ impl<'a> ResultBorrows<'a> {
         BodyFlows::of(self, lambda, HashSet::new()).flows
     }
 
-    fn cached_sharing(&self, callee: BindingId) -> Option<Vec<bool>> {
-        self.sharing_by_callee.borrow().get(&callee).cloned()
+    pub fn higher_ranked(&self, lambda: &TypedLambda) -> HashSet<BindingId> {
+        BodyFlows::of(self, lambda, HashSet::new()).higher_ranked
     }
 
-    fn cache_sharing(&self, callee: BindingId, sharing: Vec<bool>) {
-        self.sharing_by_callee.borrow_mut().insert(callee, sharing);
+    fn cached_parameters(&self, callee: BindingId) -> Option<CalleeParameters> {
+        self.parameters_by_callee.borrow().get(&callee).cloned()
+    }
+
+    fn cache_parameters(&self, callee: BindingId, parameters: CalleeParameters) {
+        self.parameters_by_callee
+            .borrow_mut()
+            .insert(callee, parameters);
     }
 
     fn callee_lambda(&self, callee: BindingId) -> Option<&'a TypedLambda> {
@@ -53,6 +65,7 @@ struct BodyFlows<'r, 'a> {
 
 struct LambdaFlows {
     flows: HashSet<BindingId>,
+    higher_ranked: HashSet<BindingId>,
     reached_recursion: bool,
 }
 
@@ -70,15 +83,37 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
             reached_recursion: false,
         };
         let mut flows = borrows.block(&lambda.body);
-        let local_borrow_callees: HashSet<BindingId> = LocalBorrowCalls::of(rules.program, lambda)
-            .into_iter()
-            .flat_map(|callee| borrows.local(callee))
+        let calls = LocalBorrowCalls::of(rules.program, lambda);
+        let mut higher_ranked: HashSet<BindingId> = calls
+            .callees
+            .iter()
+            .flat_map(|callee| borrows.local(*callee))
             .collect();
-        flows.retain(|binding| !local_borrow_callees.contains(binding));
+        flows.retain(|binding| !higher_ranked.contains(binding));
+        higher_ranked.extend(borrows.passed_to_higher_ranked(&calls.passed));
         LambdaFlows {
             flows,
+            higher_ranked,
             reached_recursion: borrows.reached_recursion,
         }
+    }
+
+    fn passed_to_higher_ranked(&mut self, passed: &[PassedLocal]) -> HashSet<BindingId> {
+        let higher_ranked: Vec<&PassedLocal> = passed
+            .iter()
+            .filter(|passed| self.reaches_higher_ranked(passed))
+            .collect();
+        higher_ranked
+            .into_iter()
+            .flat_map(|passed| self.local(passed.local))
+            .collect()
+    }
+
+    fn reaches_higher_ranked(&mut self, passed: &PassedLocal) -> bool {
+        self.callee_parameters(passed.callee)
+            .higher_ranked
+            .get(passed.position)
+            .is_some_and(|higher_ranked| *higher_ranked)
     }
 
     fn block(&mut self, block: &TypedBlock) -> HashSet<BindingId> {
@@ -137,7 +172,7 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
     }
 
     fn passed_on(&mut self, callee: BindingId, arguments: &[TypedArgument]) -> HashSet<BindingId> {
-        let sharing = self.sharing_parameters(callee);
+        let sharing = self.callee_parameters(callee).sharing;
         arguments
             .iter()
             .zip(sharing)
@@ -146,34 +181,41 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
             .collect()
     }
 
-    fn sharing_parameters(&mut self, callee: BindingId) -> Vec<bool> {
+    fn callee_parameters(&mut self, callee: BindingId) -> CalleeParameters {
         if self.enclosing.contains(&callee) {
             self.reached_recursion = true;
-            return Vec::new();
+            return CalleeParameters::default();
         }
         self.rules
-            .cached_sharing(callee)
-            .unwrap_or_else(|| self.analysed_sharing(callee))
+            .cached_parameters(callee)
+            .unwrap_or_else(|| self.analysed_parameters(callee))
     }
 
-    fn analysed_sharing(&mut self, callee: BindingId) -> Vec<bool> {
+    fn analysed_parameters(&mut self, callee: BindingId) -> CalleeParameters {
         let Some(lambda) = self.rules.callee_lambda(callee) else {
-            return Vec::new();
+            return CalleeParameters::default();
         };
         let mut enclosing = self.enclosing.clone();
         enclosing.insert(callee);
         let analysed = BodyFlows::of(self.rules, lambda, enclosing);
-        let sharing: Vec<bool> = lambda
-            .params
-            .iter()
-            .map(|param| analysed.flows.contains(&param.binding))
-            .collect();
+        let parameters = CalleeParameters {
+            sharing: Self::marked(lambda, &analysed.flows),
+            higher_ranked: Self::marked(lambda, &analysed.higher_ranked),
+        };
         if analysed.reached_recursion {
             self.reached_recursion = true;
         } else {
-            self.rules.cache_sharing(callee, sharing.clone());
+            self.rules.cache_parameters(callee, parameters.clone());
         }
-        sharing
+        parameters
+    }
+
+    fn marked(lambda: &TypedLambda, bindings: &HashSet<BindingId>) -> Vec<bool> {
+        lambda
+            .params
+            .iter()
+            .map(|param| bindings.contains(&param.binding))
+            .collect()
     }
 
     fn control(&mut self, control: &TypedControl) -> HashSet<BindingId> {
@@ -214,14 +256,21 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
     }
 }
 
+struct PassedLocal {
+    callee: BindingId,
+    position: usize,
+    local: BindingId,
+}
+
 struct LocalBorrowCalls<'a> {
     program: &'a TypedProgram,
     outliving: HashSet<BindingId>,
     callees: HashSet<BindingId>,
+    passed: Vec<PassedLocal>,
 }
 
 impl<'a> LocalBorrowCalls<'a> {
-    fn of(program: &'a TypedProgram, lambda: &TypedLambda) -> HashSet<BindingId> {
+    fn of(program: &'a TypedProgram, lambda: &TypedLambda) -> Self {
         let outliving = lambda
             .params
             .iter()
@@ -232,9 +281,10 @@ impl<'a> LocalBorrowCalls<'a> {
             program,
             outliving,
             callees: HashSet::new(),
+            passed: Vec::new(),
         };
         calls.block(&lambda.body);
-        calls.callees
+        calls
     }
 
     fn block(&mut self, block: &TypedBlock) {
@@ -269,10 +319,26 @@ impl<'a> LocalBorrowCalls<'a> {
     }
 
     fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) {
-        if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = callee.kind
-            && !self.arguments_outlive_body(arguments)
-        {
-            self.callees.insert(binding);
+        match callee.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(binding))
+                if !self.arguments_outlive_body(arguments) =>
+            {
+                self.callees.insert(binding);
+            }
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => self.pass(binding, arguments),
+            _ => {}
+        }
+    }
+
+    fn pass(&mut self, callee: BindingId, arguments: &[TypedArgument]) {
+        for (position, argument) in arguments.iter().enumerate() {
+            if let TypedExprKind::Leaf(TypedLeaf::Local(local)) = argument.value.kind {
+                self.passed.push(PassedLocal {
+                    callee,
+                    position,
+                    local,
+                });
+            }
         }
     }
 
