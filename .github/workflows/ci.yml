@@ -120,6 +120,8 @@ jobs:
       pull-requests: write
     env:
       BASELINE: bench-baseline
+      NOTES: refs/notes/bench
+      ACCEPTED_TAG: bench-baseline
       REPORT: target/bench/report.md
       REPORT_MARKER: "<!-- front-end-instruction-counts -->"
     steps:
@@ -130,11 +132,15 @@ jobs:
       - name: Find the commit the pull request merges into
         id: base
         run: echo "sha=$(git rev-parse HEAD^1)" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-          ref: ${{ steps.base.outputs.sha }}
-          path: ${{ env.BASELINE }}
+      - name: Fetch the history and the accepted baseline
+        shell: bash
+        run: |
+          if git ls-remote --exit-code origin "$NOTES" > /dev/null; then
+            git fetch origin "$NOTES:$NOTES"
+          fi
+          if git ls-remote --exit-code origin "refs/tags/$ACCEPTED_TAG" > /dev/null; then
+            git fetch origin tag "$ACCEPTED_TAG"
+          fi
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
@@ -151,29 +157,84 @@ jobs:
             ${{ env.BASELINE }}/target
           key: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-
+      - name: Recall the base branch from the history
+        id: recall-base
+        env:
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+        run: |
+          if nix develop .#ci -c cargo xtask bench recall "$BASE_SHA" --save target/bench/baseline.tsv; then
+            echo "recalled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "recalled=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.recall-base.outputs.recalled == 'false'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ steps.base.outputs.sha }}
+          path: ${{ env.BASELINE }}
       - name: Measure the base branch
-        id: measure
+        if: steps.recall-base.outputs.recalled == 'false'
         run: nix develop .#ci -c cargo xtask bench measure --workspace "$BASELINE" --save target/bench/baseline.tsv
       - name: Measure the pull request
+        id: measure
         run: nix develop .#ci -c cargo xtask bench measure --save target/bench/candidate.tsv
+      - name: Recall the accepted baseline from the history
+        id: accepted
+        shell: bash
+        run: |
+          if ! sha=$(git rev-parse -q --verify "refs/tags/$ACCEPTED_TAG^{commit}"); then
+            echo "found=tag-missing" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          if nix develop .#ci -c cargo xtask bench recall "$sha" --save target/bench/accepted.tsv; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=note-missing" >> "$GITHUB_OUTPUT"
+          fi
       - name: Compare
         shell: bash
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           BASE_SHA: ${{ steps.base.outputs.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_RECALLED: ${{ steps.recall-base.outputs.recalled }}
+          ACCEPTED_FOUND: ${{ steps.accepted.outputs.found }}
+          ACCEPTED_SHA: ${{ steps.accepted.outputs.sha }}
         run: |
           compare() {
-            nix develop .#ci -c cargo xtask bench compare --length "$1" target/bench/baseline.tsv target/bench/candidate.tsv
+            nix develop .#ci -c cargo xtask bench compare --length "$1" "$2" target/bench/candidate.tsv
           }
-          full=$(compare full)
-          brief=$(compare brief)
+          full=$(compare full target/bench/baseline.tsv)
+          brief=$(compare brief target/bench/baseline.tsv)
+          if [ "$BASE_RECALLED" = true ]; then
+            base_source="The base counts come from the history."
+          else
+            base_source="The base counts come from a new measurement."
+          fi
+          accepted_heading="### Since the accepted baseline"
+          case "$ACCEPTED_FOUND" in
+            true)
+              accepted_versions="\`$ACCEPTED_TAG\` at ${ACCEPTED_SHA::7} against ${HEAD_SHA::7} merged into \`$BASE_REF\`."
+              accepted_full=$(compare full target/bench/accepted.tsv)
+              accepted_brief=$(compare brief target/bench/accepted.tsv)
+              ;;
+            tag-missing)
+              accepted_versions="No commit carries the tag \`$ACCEPTED_TAG\`, so there is no accepted baseline to compare with."
+              ;;
+            *)
+              accepted_versions="The history has no note of \`$ACCEPTED_TAG\` at ${ACCEPTED_SHA::7} measured by this method, so there is nothing to compare with."
+              ;;
+          esac
           run_summary="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           heading="## Front-end instruction counts"
-          versions="\`$BASE_REF\` at ${BASE_SHA::7} against ${HEAD_SHA::7} merged into it."
-          printf '%s\n\n%s\n\n%s\n' "$heading" "$versions" "$full" >> "$GITHUB_STEP_SUMMARY"
-          printf '%s\n%s\n\n%s [Every stage](%s).\n\n%s\n' \
-            "$REPORT_MARKER" "$heading" "$versions" "$run_summary" "$brief" > "$REPORT"
+          versions="\`$BASE_REF\` at ${BASE_SHA::7} against ${HEAD_SHA::7} merged into it. $base_source"
+          printf '%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s\n' \
+            "$heading" "$versions" "$full" "$accepted_heading" "$accepted_versions" "${accepted_full:-}" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n%s\n\n%s [Every stage](%s).\n\n%s\n\n%s\n\n%s\n\n%s\n' \
+            "$REPORT_MARKER" "$heading" "$versions" "$run_summary" "$brief" \
+            "$accepted_heading" "$accepted_versions" "${accepted_brief:-}" > "$REPORT"
       - name: Post the report on the pull request
         if: github.event.pull_request.head.repo.full_name == github.repository
         shell: bash
