@@ -24,7 +24,7 @@
     (let binders (parameter-binders declared))
     (let names (map-list binder-name binders))
     (check-distinct-parameters (parameter-keywords declared))
-    (let defaults (default-bindings (default-pairs parameters) (definition name "parameter" field-keyword) names))
+    (let defaults (default-bindings (default-pairs parameters) (parameter-definition name) names))
     (let signature (call-signature name names defaults (map-list binder-type binders)))
     (let positional (symbol (quote function) (symbol-name name)))
     (template
@@ -34,20 +34,28 @@
               (keyword-call-expansion form (quote (unquote positional)) (quote (unquote signature)))))))))
 
 (def definition
-  (fn (name noun spell)
-    (fn (read) (read name noun spell))))
+  (fn (name noun spell code)
+    (fn (read) (read name noun spell code))))
 
 (def definition-name
   (fn (owner)
-    (owner (fn (name noun spell) name))))
+    (owner (fn (name noun spell code) name))))
 
 (def definition-noun
   (fn (owner)
-    (owner (fn (name noun spell) noun))))
+    (owner (fn (name noun spell code) noun))))
 
 (def definition-spelling
   (fn (owner)
-    (owner (fn (name noun spell) spell))))
+    (owner (fn (name noun spell code) spell))))
+
+(def definition-code
+  (fn (owner)
+    (owner (fn (name noun spell code) code))))
+
+(def parameter-definition
+  (fn (name)
+    (definition name "parameter" field-keyword (quote unknown-parameter))))
 
 (def call-signature
   (fn (name names defaults types)
@@ -201,15 +209,29 @@
 
 (def unknown-default-error
   (fn (key owner names)
+    (unknown-key-error key owner names (list))))
+
+(def unknown-key-error
+  (fn (key owner names given-keys)
     (let noun (definition-noun owner))
     (let name (definition-name owner))
-    (fail (string "`" name "` has no " noun " `"
-                  (symbol-name ((definition-spelling owner) (keyword-field key))) "`")
-          key
-          (if (empty? names)
-              (string "`" name "` has no " noun "s")
-              (string "the " noun "s of `" name "` are "
-                      (joined-names (map-list (definition-spelling owner) names) ""))))))
+    (let spelling (definition-spelling owner))
+    (let code (definition-code owner))
+    (let closest (closest-name (keyword-field key)
+                               (names-without-argument names given-keys)))
+    (let message (string "`" name "` has no " noun " `"
+                         (symbol-name (spelling (keyword-field key))) "`"))
+    (if (empty? closest)
+        (fail message key
+              (if (empty? names)
+                  (string "`" name "` has no " noun "s")
+                  (string "the " noun "s of `" name "` are "
+                          (joined-names (map-list spelling names) "")))
+              (template (:code (unquote code))))
+        (fail message key
+              (string "a " noun " with a similar name exists")
+              (template (:code (unquote code)
+                         :suggest (unquote (field-keyword (first closest)))))))))
 
 (def check-default-value
   (fn (pairs)
@@ -373,9 +395,9 @@
 
 (def keyword-call
   (fn (form positional signature)
-    (read-call form positional signature
-               (definition (signature-name signature) "parameter" field-keyword)
-               (fn (form) (named-call form positional signature)))))
+    (let owner (parameter-definition (signature-name signature)))
+    (read-call form positional signature owner
+               (fn (form) (named-call form positional signature owner)))))
 
 (def read-call
   (fn (form positional signature owner by-name)
@@ -395,41 +417,32 @@
           (string "write it as `" (prepend (first form) (signature-names signature)) "`"))))
 
 (def named-call
-  (fn (form positional signature)
+  (fn (form positional signature owner)
     (let pairs (rest form))
     (let keys (pair-keys pairs))
-    (check-call-keys keys keys signature)
+    (check-call-keys keys keys signature owner)
     (check-required-parameters form keys signature)
     (if (needs-temporaries? pairs (signature-names signature))
         (call-through-temporaries pairs positional signature)
         (prepend positional (positional-arguments pairs signature)))))
 
 (def check-call-keys
-  (fn (keys given-keys signature)
+  (fn (keys given-keys signature owner)
     (if (empty? keys)
         keys
-        (do (check-call-key (first keys) given-keys signature)
+        (do (check-call-key (first keys) given-keys signature owner)
             (check-given-once (first keys) (rest keys) signature)
-            (check-call-keys (rest keys) given-keys signature)))))
+            (check-call-keys (rest keys) given-keys signature owner)))))
 
 (def check-call-key
-  (fn (key keys signature)
+  (fn (key keys signature owner)
     (if (key-names-one-of? key (signature-names signature))
         key
-        (unknown-parameter-error key keys signature))))
+        (unknown-parameter-error key keys signature owner))))
 
 (def unknown-parameter-error
-  (fn (key keys signature)
-    (let name (signature-name signature))
-    (let names (signature-names signature))
-    (let message (string "`" name "` has no parameter `" (symbol-name key) "`"))
-    (let closest (closest-name (keyword-field key) (names-without-argument names keys)))
-    (if (empty? closest)
-        (fail message key
-              (string "the parameters of `" name "` are " (joined-names (map-list field-keyword names) ""))
-              (template (:code unknown-parameter)))
-        (fail message key "a parameter with a similar name exists"
-              (template (:code unknown-parameter :suggest (unquote (field-keyword (first closest)))))))))
+  (fn (key keys signature owner)
+    (unknown-key-error key owner (signature-names signature) keys)))
 
 (def check-given-once
   (fn (key later-keys signature)

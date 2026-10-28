@@ -3,13 +3,16 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/expand/defaults_errors.rslisp
 ---
-error[L0301]: `misspelled` has no field `admn?`
+error[L0324]: `misspelled` has no field `admn?`
  --> expand/defaults_errors.rslisp:1:56
   |
 1 | (defstruct misspelled :name str :admin? bool (defaults :admn? false))
   |                                                        ^^^^^^ here
   |
-  = help: the fields of `misspelled` are name, admin?
+help: a field with a similar name exists
+  |
+1 | (defstruct misspelled :name str :admin? bool (defaults :admin? false))
+  |                                                            +
 
 error[L0301]: `admin?` has two defaults
  --> expand/defaults_errors.rslisp:2:68
@@ -51,10 +54,34 @@ error[L0301]: a default must start with `:`
   |
   = help: write each default as `:field value`, as in (defaults :admin? false)
 
-error[L0301]: `blank` has no field `x`
+error[L0324]: `blank` has no field `x`
  --> expand/defaults_errors.rslisp:8:28
   |
 8 | (defstruct blank (defaults :x 1))
   |                            ^^ here
   |
   = help: `blank` has no fields
+
+error[L0324]: `close` has no field `nmae`
+ --> expand/defaults_errors.rslisp:9:38
+  |
+9 | (defstruct close :name str (defaults :nmae "ana"))
+  |                                      ^^^^^ here
+  |
+help: a field with a similar name exists
+  |
+9 - (defstruct close :name str (defaults :nmae "ana"))
+9 + (defstruct close :name str (defaults :name "ana"))
+  |
+
+error[L0323]: `close-parameter` has no parameter `:nmae`
+  --> expand/defaults_errors.rslisp:10:44
+   |
+10 | (defn close-parameter (:name str (defaults :nmae "ana")) name)
+   |                                            ^^^^^ here
+   |
+help: a parameter with a similar name exists
+   |
+10 - (defn close-parameter (:name str (defaults :nmae "ana")) name)
+10 + (defn close-parameter (:name str (defaults :name "ana")) name)
+   |
