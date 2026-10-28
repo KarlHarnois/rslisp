@@ -528,12 +528,7 @@ impl<'a> CorePrinter<'a> {
     }
 
     fn type_head(&mut self, binding: BindingId, params: &[TypeBinder]) -> String {
-        let name = self.name(binding);
-        if params.is_empty() {
-            return name;
-        }
-        let binders = self.type_binders(params);
-        format!("({name} {})", binders.join(" "))
+        self.type_head_with_unsized(binding, params, &[])
     }
 
     fn type_head_with_unsized(
