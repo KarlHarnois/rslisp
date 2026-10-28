@@ -8,7 +8,7 @@ fn ping(mut f: impl FnMut(i64), n: i64) -> i64 {
     if n > 0 { pong(f, n - 1) } else { 0 }
 }
 
-fn pong(mut f: impl FnMut(i64), n: i64) -> i64 {
+fn pong(f: impl FnMut(i64), n: i64) -> i64 {
     if n > 0 { ping(f, n - 1) } else { 0 }
 }
 
