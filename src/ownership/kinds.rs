@@ -248,13 +248,7 @@ impl<'a> ClosureKinds<'a> {
             self.parameter_kinds = kinds;
         }
         let diagnostics = self.check_calls(modules);
-        let mut mutable_bindings: HashSet<BindingId> = self
-            .parameter_kinds
-            .iter()
-            .filter(|(_, kind)| **kind == ClosureKind::FnMut)
-            .map(|(binding, _)| *binding)
-            .collect();
-        mutable_bindings.extend(self.called_mutable_bindings(modules));
+        let mutable_bindings = self.called_mutable_bindings(modules);
         self.patch_types(modules);
         KindReport {
             mutable_bindings,
