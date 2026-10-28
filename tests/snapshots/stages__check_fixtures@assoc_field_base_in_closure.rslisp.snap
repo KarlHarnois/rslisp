@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/assoc_field_base_in_closure.rslisp
+---
+error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
+  --> check/assoc_field_base_in_closure.rslisp:9:21
+   |
+ 8 | /     (fn (i)
+ 9 | |       (let b (assoc (:badge g) :size 14))
+   | |                     ^^^^^^^^^^ `g` moves here
+10 | |       (println i " " (:size b)))))
+   | |________________________________- this closure is passed here
+   |
+   = help: clone `g`, or borrow it with `(ref g)`
