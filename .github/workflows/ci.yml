@@ -136,7 +136,7 @@ jobs:
         shell: bash
         run: |
           git fetch --no-tags origin "+$NOTES:$NOTES" || echo "::notice::No history fetched, so the job measures instead."
-          git fetch --no-tags origin "+refs/tags/$ACCEPTED_TAG:refs/tags/$ACCEPTED_TAG" || echo "::notice::No accepted baseline fetched."
+          git fetch --no-tags --depth=1 origin "+refs/tags/$ACCEPTED_TAG:refs/tags/$ACCEPTED_TAG" || echo "::notice::No accepted baseline fetched."
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
@@ -296,13 +296,13 @@ jobs:
             local status=0
             git ls-remote --exit-code origin "$1" > /dev/null || status=$?
             case "$status" in
-              0) git fetch --no-tags origin "+$1:$1" ;;
+              0) git fetch --no-tags "${@:2}" origin "+$1:$1" ;;
               2) echo "::notice::Origin has no $1." ;;
               *) exit "$status" ;;
             esac
           }
           fetch_when_present "$NOTES"
-          fetch_when_present "refs/tags/$ACCEPTED_TAG"
+          fetch_when_present "refs/tags/$ACCEPTED_TAG" --depth=1
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Record the counts of this commit
