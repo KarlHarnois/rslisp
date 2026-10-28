@@ -63,9 +63,11 @@ impl<'p> StoredClosures<'p> {
     }
 
     fn capturing_stores(&self, definition: &DefinitionTree) -> Vec<Diagnostic> {
+        let mut reported_closures = HashSet::new();
         definition
             .stores(&self.slots, &self.storing)
             .into_iter()
+            .filter(|store| reported_closures.insert(store.value.span))
             .filter_map(|store| self.capturing_store(store))
             .collect()
     }
