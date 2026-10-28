@@ -1,0 +1,4 @@
+(defn twice (action) (action) (action))
+(type later (fn (string) unit))
+(defn later (name) (twice (fn () (prn (eq name (to-string "x"))))))
+(defn main () (later (to-string "y")))

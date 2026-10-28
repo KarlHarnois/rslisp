@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/closure_borrows_capture_through_template.rslisp
+---
+(type twice (fn ((fn () unit)) unit))
+(type later (fn (string) unit))
+(type main (fn () unit))
