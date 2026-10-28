@@ -78,10 +78,7 @@ pub struct MeasureOptions {
 impl BenchTask {
     pub fn run(self, root: &Path) -> ExitCode {
         let report = match self {
-            Self::Measure(options) => {
-                let entry_point_check = options.entry_point_check();
-                FrontEndBenchmark::new(root, options, entry_point_check).measure()
-            }
+            Self::Measure(options) => FrontEndBenchmark::new(root, options).measure(),
             Self::Compare {
                 baseline,
                 candidate,
@@ -120,7 +117,6 @@ impl MeasureOptions {
 struct FrontEndBenchmark<'a> {
     root: &'a Path,
     options: MeasureOptions,
-    entry_point_check: EntryPointCheck,
 }
 
 impl<'a> FrontEndBenchmark<'a> {
@@ -128,12 +124,8 @@ impl<'a> FrontEndBenchmark<'a> {
     const EXTENSION_CONSTANT: &'static str = "EXTENSION";
     const FIXED_COMPILER: &'static str = "target/bench/compiler/front-end";
 
-    fn new(root: &'a Path, options: MeasureOptions, entry_point_check: EntryPointCheck) -> Self {
-        Self {
-            root,
-            options,
-            entry_point_check,
-        }
+    fn new(root: &'a Path, options: MeasureOptions) -> Self {
+        Self { root, options }
     }
 
     fn measure(&self) -> Result<String, TaskFailure> {
@@ -141,7 +133,7 @@ impl<'a> FrontEndBenchmark<'a> {
         let fixed_seed = FixedSeedLibrary::new(self.root).build()?;
         let callgrind = Callgrind::new(
             compiler,
-            self.entry_point_check,
+            self.options.entry_point_check(),
             fixed_seed,
             self.root.join(Self::PROFILES),
         );
