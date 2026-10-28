@@ -63,4 +63,4 @@ error[L0510]: cannot return a borrow of a local value
 31 |   (plaque/engraved (as-str make) year))
    |                    ^^^^^^^^^^^^^ this borrows a local value
    |
-   = help: the `engraved` payload of `plaque` borrows its data, so give it the owned type `string`
+   = help: the field `text` of `plaque/engraved` borrows its data, so give it the owned type `string`

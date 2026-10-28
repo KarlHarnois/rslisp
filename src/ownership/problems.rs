@@ -25,12 +25,21 @@ pub enum BorrowedStorage {
         owned: String,
         declared: Span,
     },
+    NamedPayload {
+        field: String,
+        variant: String,
+        owner: String,
+        owned: String,
+        declared: Span,
+    },
 }
 
 impl BorrowedStorage {
     fn declared(&self) -> Span {
         match self {
-            Self::Field { declared, .. } | Self::Payload { declared, .. } => *declared,
+            Self::Field { declared, .. }
+            | Self::Payload { declared, .. }
+            | Self::NamedPayload { declared, .. } => *declared,
         }
     }
 }
@@ -291,6 +300,15 @@ impl OwnershipProblems {
                 ..
             } => format!(
                 "the `{variant}` payload of `{owner}` borrows its data, so give it the owned type `{owned}`"
+            ),
+            BorrowedStorage::NamedPayload {
+                field,
+                variant,
+                owner,
+                owned,
+                ..
+            } => format!(
+                "the field `{field}` of `{owner}/{variant}` borrows its data, so give it the owned type `{owned}`"
             ),
         }
     }

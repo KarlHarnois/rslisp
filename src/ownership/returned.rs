@@ -52,11 +52,22 @@ impl<'p> ReturnedBorrows<'p> {
 
     fn payload_storage(&self, variant: BindingId, position: usize) -> Option<BorrowedStorage> {
         let slot = self.slots.payload(variant, position)?;
-        Some(BorrowedStorage::Payload {
-            variant: slot.name.to_string(),
-            owner: self.name(slot.owner),
-            owned: self.owned(slot.declared)?,
-            declared: slot.span,
+        let owner = self.name(slot.owner);
+        let owned = self.owned(slot.declared)?;
+        Some(match self.slots.payload_label(variant, position) {
+            Some(field) => BorrowedStorage::NamedPayload {
+                field: field.to_string(),
+                variant: slot.name.to_string(),
+                owner,
+                owned,
+                declared: slot.span,
+            },
+            None => BorrowedStorage::Payload {
+                variant: slot.name.to_string(),
+                owner,
+                owned,
+                declared: slot.span,
+            },
         })
     }
 
