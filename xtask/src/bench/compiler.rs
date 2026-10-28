@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use serde_json::Value;
 
@@ -17,13 +18,12 @@ pub struct CompilerBuild<'a> {
 }
 
 impl<'a> CompilerBuild<'a> {
-    const RELEASE_BUILD: [&'static str; 5] = [
-        "build",
-        "--release",
-        "--quiet",
-        "--message-format=json",
-        "--target-dir",
-    ];
+    const RELEASE_BUILD: [&'static str; 4] =
+        ["build", "--release", "--quiet", "--message-format=json"];
+    const RELEASE_CLEAN: [&'static str; 3] = ["clean", "--release", "--quiet"];
+    const PACKAGE_FLAG: &'static str = "--package";
+    const PACKAGE_ID_COMMAND: &'static str = "pkgid";
+    const TARGET_DIRECTORY_FLAG: &'static str = "--target-dir";
     const MANIFEST: &'static str = "Cargo.toml";
 
     pub fn new(workspace: &'a Path, target_directory: &'a Path) -> Self {
@@ -34,17 +34,71 @@ impl<'a> CompilerBuild<'a> {
     }
 
     pub fn run(&self) -> Result<BuiltCompiler, TaskFailure> {
-        let output = Cargo::command()
-            .args(Self::RELEASE_BUILD)
-            .arg(self.target_directory)
-            .current_dir(self.workspace)
+        self.clean_root_package()?;
+        let messages = self.build_release()?;
+        self.read_artifacts(&messages)
+            .ok_or_else(|| TaskFailure::compiler_missing(self.workspace))
+    }
+
+    fn clean_root_package(&self) -> Result<(), TaskFailure> {
+        let spec = self.read_root_package_spec()?;
+        let arguments = Self::RELEASE_CLEAN
+            .into_iter()
+            .chain([Self::PACKAGE_FLAG, spec.as_str()]);
+        let mut clean = self.cargo_in_target(arguments);
+        Self::run_cargo(&mut clean, |stderr| {
+            TaskFailure::tool_failed("cargo clean", stderr)
+        })?;
+        Ok(())
+    }
+
+    fn read_root_package_spec(&self) -> Result<String, TaskFailure> {
+        let mut pkgid = self.cargo_in_checkout();
+        pkgid.arg(Self::PACKAGE_ID_COMMAND);
+        let stdout = Self::run_cargo(&mut pkgid, |stderr| {
+            TaskFailure::tool_failed("cargo pkgid", stderr)
+        })?;
+        Ok(Self::package_spec(&stdout))
+    }
+
+    fn package_spec(stdout: &[u8]) -> String {
+        String::from_utf8_lossy(stdout).trim().to_string()
+    }
+
+    fn build_release(&self) -> Result<String, TaskFailure> {
+        let mut build = self.cargo_in_target(Self::RELEASE_BUILD);
+        let stdout = Self::run_cargo(&mut build, |stderr| {
+            TaskFailure::build_failed("the compiler", stderr)
+        })?;
+        Ok(String::from_utf8_lossy(&stdout).into_owned())
+    }
+
+    fn cargo_in_target<'b>(&self, arguments: impl IntoIterator<Item = &'b str>) -> Command {
+        let mut command = self.cargo_in_checkout();
+        command
+            .args(arguments)
+            .arg(Self::TARGET_DIRECTORY_FLAG)
+            .arg(self.target_directory);
+        command
+    }
+
+    fn cargo_in_checkout(&self) -> Command {
+        let mut command = Cargo::command();
+        command.current_dir(self.workspace);
+        command
+    }
+
+    fn run_cargo(
+        command: &mut Command,
+        failure: impl FnOnce(&[u8]) -> TaskFailure,
+    ) -> Result<Vec<u8>, TaskFailure> {
+        let output = command
             .output()
             .map_err(|error| TaskFailure::tool_missing("cargo", error))?;
         if !output.status.success() {
-            return Err(TaskFailure::build_failed("the compiler", &output.stderr));
+            return Err(failure(&output.stderr));
         }
-        self.read_artifacts(&String::from_utf8_lossy(&output.stdout))
-            .ok_or_else(|| TaskFailure::compiler_missing(self.workspace))
+        Ok(output.stdout)
     }
 
     fn read_artifacts(&self, messages: &str) -> Option<BuiltCompiler> {
@@ -127,6 +181,15 @@ mod tests {
                 executable: PathBuf::from("/checkout/target/release/ledger-lang"),
                 crate_name: "ledger_lang".to_string(),
             })
+        );
+    }
+
+    #[test]
+    fn reads_the_package_spec_without_its_line_break() {
+        let stdout = b"path+file:///checkout#ledger-lang@0.1.0\n";
+        assert_eq!(
+            CompilerBuild::package_spec(stdout),
+            "path+file:///checkout#ledger-lang@0.1.0"
         );
     }
 
