@@ -31,7 +31,6 @@ impl ResultHeader {
         Self { fields }
     }
 
-    #[cfg(test)]
     pub fn method_key(&self) -> Option<&str> {
         self.fields
             .iter()

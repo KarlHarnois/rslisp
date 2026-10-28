@@ -63,6 +63,23 @@ impl TaskFailure {
         Self::new(format!("the callgrind profile has no `{missing}` line"))
     }
 
+    pub fn note_missing(commit: &str) -> Self {
+        Self::new(format!("`{commit}` has no note of saved results"))
+    }
+
+    pub fn note_malformed(commit: &str, line: &str) -> Self {
+        Self::new(format!(
+            "cannot read the line `{line}` of the note of `{commit}`"
+        ))
+    }
+
+    pub fn method_differs(commit: &str, noted: Option<&str>, current: &str) -> Self {
+        Self::new(format!(
+            "the note of `{commit}` was measured by the method `{}`, not by this workspace's `{current}`",
+            noted.unwrap_or("unknown")
+        ))
+    }
+
     pub fn malformed_results(path: &Path, line: &str) -> Self {
         Self::new(format!(
             "cannot read the line `{line}` of `{}`",
