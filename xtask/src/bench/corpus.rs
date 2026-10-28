@@ -1,19 +1,21 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use rslisp::language::Language;
-
 use crate::failure::TaskFailure;
 
 pub struct Corpus {
     directory: PathBuf,
+    extension: String,
 }
 
 impl Corpus {
     pub const DIRECTORY: &'static str = "tests/fixtures/corpus";
 
-    pub fn new(directory: PathBuf) -> Self {
-        Self { directory }
+    pub fn new(directory: PathBuf, extension: String) -> Self {
+        Self {
+            directory,
+            extension,
+        }
     }
 
     pub fn programs(&self) -> Result<Vec<PathBuf>, TaskFailure> {
@@ -21,28 +23,32 @@ impl Corpus {
             .map_err(|error| TaskFailure::unreadable(&self.directory, error))?;
         let mut programs: Vec<PathBuf> = entries
             .filter_map(|entry| entry.ok().map(|entry| entry.path()))
-            .filter(|path| Self::is_program(path))
+            .filter(|path| self.is_program(path))
             .collect();
         programs.sort();
         Ok(programs)
     }
 
-    fn is_program(path: &Path) -> bool {
+    fn is_program(&self, path: &Path) -> bool {
         path.is_file()
             && path
                 .extension()
-                .is_some_and(|extension| extension == Language::EXTENSION)
+                .is_some_and(|extension| extension == self.extension.as_str())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::language::LanguageSource;
 
     #[test]
     fn lists_the_entry_programs_but_not_their_modules() {
-        let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/bench/corpus");
-        let names: Vec<String> = Corpus::new(directory)
+        let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let extension = LanguageSource::new(manifest.parent().unwrap())
+            .constant("EXTENSION")
+            .unwrap();
+        let names: Vec<String> = Corpus::new(manifest.join("fixtures/bench/corpus"), extension)
             .programs()
             .unwrap()
             .iter()

@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 
-use rslisp::language::Language;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Measurement {
     stages: BTreeMap<String, u64>,
@@ -17,7 +16,7 @@ impl Measurement {
 
     pub fn method() -> String {
         format!(
-            "Callgrind counts each corpus program under `{name} emit`, which reads, expands, checks, \
+            "Callgrind counts each corpus program under the compiler's `emit` command, which reads, expands, checks, \
              emits and formats the program but never runs `rustc`.\n\n\
              A stage is the inclusive cost of the calls the command-line module makes into one \
              compiler module. `{other}` holds the rest: process startup, argument parsing, \
@@ -29,7 +28,6 @@ impl Measurement {
              The compiler runs with a fixed random seed, so its hash maps lay out the same way \
              and identical runs give identical counts, except that the `build` stage can vary \
              by a few hundred instructions with the number of reads from `rustfmt`'s output.\n",
-            name = Language::NAME,
             other = Self::OTHER,
         )
     }

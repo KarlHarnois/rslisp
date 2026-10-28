@@ -10,6 +10,7 @@ mod failure;
 mod functions;
 mod gate;
 mod instrumented_tests;
+mod language;
 mod lcov;
 
 use std::path::Path;
