@@ -3,8 +3,13 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/corpus/many_modules.rslisp
 ---
-layer-12-module-6 layer-12-module-6=464
-layer-12-module-7 layer-12-module-7=113
-layer-12-module-8 layer-12-module-8=957
-layer-12-module-9 layer-12-module-9=722
-layer-12-module-10 layer-12-module-10=81
+layer-12-module-1 layer-12-module-1=918
+layer-12-module-2 layer-12-module-2=566
+layer-12-module-3 layer-12-module-3=508
+layer-12-module-4 layer-12-module-4=785
+layer-12-module-5 layer-12-module-5=358
+layer-12-module-6 layer-12-module-6=411
+layer-12-module-7 layer-12-module-7=817
+layer-12-module-8 layer-12-module-8=719
+layer-12-module-9 layer-12-module-9=214
+layer-12-module-10 layer-12-module-10=951

@@ -6,10 +6,10 @@
 (display layer-1-module-6-reading (reading) "layer-1-module-6 " (:site reading) "=" (:level reading))
 
 (defn layer-1-module-6-label (n)
-  (str (->layer-1-module-6-reading "layer-1-module-6" (layer-1-module-6-score n) 5.5)))
+  (str (->layer-1-module-6-reading "layer-1-module-6" (layer-1-module-6-score n) 6.5)))
 
 (defn layer-1-module-6-score (n)
-  (rem (+ (* n 7) 8) 997))
+  (rem (+ (* n 7) 9) 997))
 
 (defn layer-1-module-6-reading (n)
-  (->layer-1-module-6-reading "layer-1-module-6" (layer-1-module-6-score n) (* 0.5 5.0)))
+  (->layer-1-module-6-reading "layer-1-module-6" (layer-1-module-6-score n) (* 0.5 6.0)))

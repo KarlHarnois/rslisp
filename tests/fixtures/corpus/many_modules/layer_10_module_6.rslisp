@@ -1,6 +1,6 @@
-(use many_modules/layer_2_module_1 layer-2-module-1-score layer-2-module-1-reading)
-(use many_modules/layer_2_module_2 layer-2-module-2-score layer-2-module-2-reading)
-(use many_modules/layer_9_module_2 layer-9-module-2-score layer-9-module-2-reading)
+(use many_modules/layer_9_module_6 layer-9-module-6-score layer-9-module-6-reading)
+(use many_modules/layer_2_module_7 layer-2-module-7-score layer-2-module-7-reading)
+(use many_modules/layer_3_module_10 layer-3-module-10-score layer-3-module-10-reading)
 
 (export layer-10-module-6-score layer-10-module-6-reading layer-10-module-6-label)
 
@@ -9,10 +9,10 @@
 (display layer-10-module-6-reading (reading) "layer-10-module-6 " (:site reading) "=" (:level reading))
 
 (defn layer-10-module-6-label (n)
-  (str (->layer-10-module-6-reading "layer-10-module-6" (layer-10-module-6-score n) 95.5)))
+  (str (->layer-10-module-6-reading "layer-10-module-6" (layer-10-module-6-score n) 96.5)))
 
 (defn layer-10-module-6-score (n)
-  (rem (if (> n 1000095) (:level (layer-9-module-2-reading n)) (if (> n 1000095) (:level (layer-2-module-2-reading n)) (layer-2-module-1-score (+ n 95)))) 997))
+  (rem (+ (layer-9-module-6-score (+ n 2)) (:level (layer-2-module-7-reading n)) (:level (layer-3-module-10-reading n))) 997))
 
 (defn layer-10-module-6-reading (n)
-  (->layer-10-module-6-reading "layer-10-module-6" (layer-10-module-6-score n) (* 0.5 95.0)))
+  (->layer-10-module-6-reading "layer-10-module-6" (layer-10-module-6-score n) (* 0.5 96.0)))
