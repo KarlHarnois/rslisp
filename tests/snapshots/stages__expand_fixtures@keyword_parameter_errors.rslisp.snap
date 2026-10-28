@@ -27,7 +27,7 @@ error[L0301]: a function takes one `defaults` clause, after its parameters
   |
   = help: move the defaults to the end
 
-error[L0301]: `misspelled` has no parameter `:z`
+error[L0323]: `misspelled` has no parameter `:z`
  --> expand/keyword_parameter_errors.rslisp:5:32
   |
 5 | (defn misspelled (:x (defaults :z 1)) x)

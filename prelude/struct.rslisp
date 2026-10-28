@@ -68,10 +68,14 @@
     (let omitted (defaults-without-key (signature-defaults shape) (pair-keys arguments)))
     (prepend (quote new) (prepend (signature-name shape) (concat written omitted)))))
 
+(def field-definition
+  (fn (name)
+    (definition name "field" (fn (name) name) (quote unknown-key-field))))
+
 (def constructor-call
   (fn (form hidden shape)
     (read-call form hidden shape
-               (definition (signature-name shape) "field" (fn (name) name))
+               (field-definition (signature-name shape))
                (fn (form) (named-construction (rest form) shape)))))
 
 (def constructor-expansion
@@ -85,7 +89,7 @@
   (let fields (field-groups (declared-forms body)))
   (let field-names (map-list first fields))
   (let field-types (map-list field-type-form fields))
-  (let defaults (default-bindings (default-pairs body) (definition name "field" (fn (name) name)) field-names))
+  (let defaults (default-bindings (default-pairs body) (field-definition name) field-names))
   (let hidden (symbol (quote make) "make-" name))
   (template
     (do (struct (unquote head) (splice fields))
