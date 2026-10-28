@@ -1,0 +1,8 @@
+(defstruct (holder a) :value a :label str)
+(defn wrap (f) (new holder (:value f) (:label "wrapped")))
+(defn main ()
+  (let offset 3)
+  (let direct (new holder (:value (fn (x) (+ x offset))) (:label "direct")))
+  (let held (wrap (fn (x) (+ x offset))))
+  (let peek (:value direct))
+  (println (:label held) (:label direct)))

@@ -170,7 +170,7 @@ pub struct ExpressionEmitter<'a> {
     pub locals: LocalNames,
     pub problems: Vec<Diagnostic>,
     mutable_locals: HashSet<BindingId>,
-    stored_functions: StoredFunctions,
+    stored_functions: StoredFunctions<'a>,
     tail_loop: Option<TailLoop>,
     loop_exit: LoopExit,
 }
@@ -200,7 +200,7 @@ impl<'a> ExpressionEmitter<'a> {
             locals,
             problems: Vec::new(),
             mutable_locals: HashSet::new(),
-            stored_functions: StoredFunctions::default(),
+            stored_functions: StoredFunctions::empty(program),
             tail_loop: None,
             loop_exit: LoopExit::Return,
         }
@@ -211,7 +211,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     pub fn prepare_stored_functions(&mut self, lambda: &TypedLambda) {
-        self.stored_functions = StoredFunctions::of(lambda);
+        self.stored_functions = StoredFunctions::of(self.program, lambda);
     }
 
     pub fn with_mutable_locals(mut self, mutable_locals: HashSet<BindingId>) -> Self {

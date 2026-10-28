@@ -1,0 +1,6 @@
+(defn maybe (f) (some f))
+(defn main ()
+  (let offset 3)
+  (match (maybe (fn (x) (+ x offset)))
+    ((some g) (println (g 4)))
+    (none (println "none"))))
