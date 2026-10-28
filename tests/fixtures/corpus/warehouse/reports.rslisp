@@ -1,4 +1,4 @@
-(use warehouse/model item entry valued value-cents category)
+(use warehouse/model item entry valued value-cents category dollars widen)
 
 (export print-summary print-low-stock print-categories print-top-value print-activity)
 
@@ -49,12 +49,4 @@
     ((some found) (let-pair (sku count) found (println (str "busiest: " sku " with " count " moves"))))
     (none (println "no moves"))))
 
-(defn dollars (cents)
-  (str "$" (/ cents 100) "." (pad-cents (rem cents 100))))
-
-(type pad-cents (fn (u64) string))
-(defn pad-cents (cents)
-  (if (< cents 10) (str "0" cents) (str cents)))
-
-(def widen (rust "u64::from({0})" (fn (u32) u64)))
 (def second-of (rust "{0}.1" (where (a b) (fn ((ref (pair a b))) (ref b)))))

@@ -1,4 +1,4 @@
-(use warehouse/model item event ledger-error entry)
+(use warehouse/model ledger-error)
 (use warehouse/parsing parse-stock parse-events)
 (use warehouse/book book apply-all)
 (use warehouse/reports print-summary print-low-stock print-categories print-top-value print-activity)

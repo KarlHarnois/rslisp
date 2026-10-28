@@ -1,6 +1,5 @@
 (use matrix_geometry/linear matrix ->matrix identity multiply transpose determinant solve apply-to rounded)
-(use matrix_geometry/shapes point ->point shape area perimeter title circle ->circle rect ->rect
-     polygon ->polygon distance)
+(use matrix_geometry/shapes point ->point shape area perimeter title ->circle ->rect ->polygon distance)
 (use matrix_geometry/hull convex-hull)
 
 (def point-count 40)

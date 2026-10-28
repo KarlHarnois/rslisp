@@ -1,4 +1,4 @@
-(use evaluator/lexer token)
+(use evaluator/lexer token append)
 (use evaluator/syntax expr statement)
 
 (export parse-program)
@@ -181,8 +181,3 @@
   (match (get tokens position)
     ((some (name text)) (= (as-str text) expected))
     (_ false)))
-
-(defn append (items item)
-  (let growing items)
-  (push! growing item)
-  growing)
