@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/assoc_field_base_moves_owner.rslisp
+---
+error[L0501]: use of moved value `garage`
+ --> check/assoc_field_base_moves_owner.rslisp:8:14
+  |
+7 |   (let bigger (assoc (:badge garage) :size 14))
+  |                      --------------- value moved here
+8 |   (let again garage)
+  |              ^^^^^^ value used here after it moved
+  |
+help: clone the value if both places need it
+  |
+7 -   (let bigger (assoc (:badge garage) :size 14))
+7 +   (let bigger (assoc (clone (:badge garage)) :size 14))
+  |
