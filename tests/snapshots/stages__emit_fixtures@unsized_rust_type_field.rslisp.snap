@@ -13,5 +13,6 @@ fn make_tag(name: std::rc::Rc<str>) -> Tag {
 
 fn main() {
     let tag = make_tag(std::rc::Rc::from("Leaf"));
+    let name = &tag.name;
     println!("Leaf")
 }
