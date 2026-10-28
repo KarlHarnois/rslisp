@@ -1,0 +1,39 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/string_field_views.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct User {
+    name: String,
+    age: u16,
+}
+
+fn make_user(name: String, age: u16) -> User {
+    User { name, age }
+}
+
+fn adult_names<'a>(users: impl Iterator<Item = &'a User>) -> impl Iterator<Item = &'a str> {
+    users
+        .filter(|u: &&User| u.age > 17)
+        .map(|value: &User| value.name.as_str())
+}
+
+fn name_of(someone: &User) -> &str {
+    &someone.name
+}
+
+fn name_length(name: &str) -> usize {
+    name.len()
+}
+
+fn main() {
+    let users = vec![
+        make_user("Ana".to_string(), 34),
+        make_user("Ben".to_string(), 12),
+    ];
+    adult_names(users.iter()).for_each(|name: &str| println!("{}", name));
+    let ana = make_user("Ana".to_string(), 34);
+    println!("{}", name_of(&ana));
+    println!("{}", name_length(&ana.name))
+}

@@ -1,0 +1,18 @@
+(defstruct user :name string :age u16)
+
+(type adult-names (fn ((iterator (ref user))) (iterator (ref str))))
+(defn adult-names (users)
+  (map (filter users (fn (u) (> (:age u) 17))) :name))
+
+(type name-of (fn ((ref user)) (ref str)))
+(defn name-of (someone) (:name someone))
+
+(type name-length (fn ((ref str)) usize))
+(defn name-length (name) (len name))
+
+(defn main ()
+  (let users (vec (->user (to-string "Ana") 34) (->user (to-string "Ben") 12)))
+  (for-each (adult-names users) (fn (name) (println name)))
+  (let ana (->user (to-string "Ana") 34))
+  (println (name-of ana))
+  (println (name-length (:name ana))))
