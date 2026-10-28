@@ -1,0 +1,54 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/assoc_in_mixed_path.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: String,
+    year: u16,
+}
+
+fn make_car(make: &str, model: String, year: u16) -> Car<'_> {
+    Car { make, model, year }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Garage<'a> {
+    name: String,
+    bays: Vec<Car<'a>>,
+    levels: Vec<Vec<u16>>,
+}
+
+fn make_garage(name: String, bays: Vec<Car<'_>>, levels: Vec<Vec<u16>>) -> Garage<'_> {
+    Garage { name, bays, levels }
+}
+
+fn main() {
+    let garage = make_garage(
+        "North".to_string(),
+        vec![make_car("Honda", "Civic".to_string(), 2019)],
+        vec![vec![1_u16, 2_u16], vec![3_u16, 4_u16]],
+    );
+    let parked = {
+        let bays = {
+            let mut value = garage.bays;
+            value[0] = make_car("Nissan", "Leaf".to_string(), 2024);
+            value
+        };
+        Garage { bays, ..garage }
+    };
+    let renumbered = {
+        let levels: Vec<Vec<u16>> = {
+            let mut value = parked.levels;
+            value[1][0] = 7;
+            value
+        };
+        Garage { levels, ..parked }
+    };
+    println!(
+        "{} {} {}",
+        renumbered.name, renumbered.bays[0].make, renumbered.levels[1][0]
+    )
+}

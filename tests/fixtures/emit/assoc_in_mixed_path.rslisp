@@ -1,0 +1,13 @@
+(defstruct car :make str :model string :year u16)
+
+(defstruct garage :name string :bays (vec car) :levels (vec (vec u16)))
+
+(defn main ()
+  (let garage
+    (->garage (to-string "North")
+              (vec (->car "Honda" (to-string "Civic") 2019))
+              (vec (vec 1 2) (vec 3 4))))
+  (let parked (assoc-in garage (:bays 0) (->car "Nissan" (to-string "Leaf") 2024)))
+  (let renumbered (assoc-in parked (:levels 1 0) 7))
+  (println (:name renumbered) " " (:make (at (:bays renumbered) 0)) " "
+           (at (at (:levels renumbered) 1) 0)))

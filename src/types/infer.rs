@@ -2456,6 +2456,7 @@ impl TypeChecker {
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
         let value = self.infer(value)?;
+        let value = self.moved_field_base(value);
         let resolved = self.unifier.resolve(&value.ty);
         if let Some(collection) =
             Collection::of(&resolved, &self.rust_types).filter(Collection::is_map)
