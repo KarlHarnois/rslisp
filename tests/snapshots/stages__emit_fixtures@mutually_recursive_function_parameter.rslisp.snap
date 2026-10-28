@@ -1,0 +1,90 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/mutually_recursive_function_parameter.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn build_at_dealer<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>, count: u16) -> Car<'a> {
+    if count == 0 {
+        constructor("Nissan", 2024)
+    } else if count % 4 == 1 {
+        build_at_depot(constructor, count - 1)
+    } else if count % 4 == 2 {
+        build_at_factory(constructor, count - 1)
+    } else if count % 4 == 3 {
+        build_at_port(constructor, count - 1)
+    } else {
+        build_at_yard(constructor, count - 1)
+    }
+}
+
+fn build_at_depot<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>, count: u16) -> Car<'a> {
+    if count == 0 {
+        constructor("Nissan", 2024)
+    } else if count % 4 == 1 {
+        build_at_dealer(constructor, count - 1)
+    } else if count % 4 == 2 {
+        build_at_factory(constructor, count - 1)
+    } else if count % 4 == 3 {
+        build_at_port(constructor, count - 1)
+    } else {
+        build_at_yard(constructor, count - 1)
+    }
+}
+
+fn build_at_factory<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>, count: u16) -> Car<'a> {
+    if count == 0 {
+        constructor("Nissan", 2024)
+    } else if count % 4 == 1 {
+        build_at_dealer(constructor, count - 1)
+    } else if count % 4 == 2 {
+        build_at_depot(constructor, count - 1)
+    } else if count % 4 == 3 {
+        build_at_port(constructor, count - 1)
+    } else {
+        build_at_yard(constructor, count - 1)
+    }
+}
+
+fn build_at_port<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>, count: u16) -> Car<'a> {
+    if count == 0 {
+        constructor("Nissan", 2024)
+    } else if count % 4 == 1 {
+        build_at_dealer(constructor, count - 1)
+    } else if count % 4 == 2 {
+        build_at_depot(constructor, count - 1)
+    } else if count % 4 == 3 {
+        build_at_factory(constructor, count - 1)
+    } else {
+        build_at_yard(constructor, count - 1)
+    }
+}
+
+fn build_at_yard<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>, count: u16) -> Car<'a> {
+    if count == 0 {
+        constructor("Nissan", 2024)
+    } else if count % 4 == 1 {
+        build_at_dealer(constructor, count - 1)
+    } else if count % 4 == 2 {
+        build_at_depot(constructor, count - 1)
+    } else if count % 4 == 3 {
+        build_at_factory(constructor, count - 1)
+    } else {
+        build_at_port(constructor, count - 1)
+    }
+}
+
+fn main() {
+    let model = "Leaf".to_string();
+    let borrowing = |make: &str, year: u16| Car {
+        make: model.as_str(),
+        year,
+    };
+    let built = build_at_dealer(borrowing, 7);
+    println!("{} {}", built.make, built.year)
+}

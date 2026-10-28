@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
+use super::callee_parameters::{CalleeParameters, OpenCallees};
 use super::plan::EmitPlan;
 use crate::core::BindingId;
 use crate::types::{
@@ -12,12 +13,12 @@ pub struct ResultBorrows<'a> {
     program: &'a TypedProgram,
     plan: &'a EmitPlan<'a>,
     parameters_by_callee: RefCell<HashMap<BindingId, CalleeParameters>>,
+    open_callees: RefCell<OpenCallees>,
 }
 
-#[derive(Clone, Default)]
-struct CalleeParameters {
-    sharing: Vec<bool>,
-    higher_ranked: Vec<bool>,
+struct Visit {
+    parameters: CalleeParameters,
+    earliest_reached: usize,
 }
 
 impl<'a> ResultBorrows<'a> {
@@ -26,21 +27,83 @@ impl<'a> ResultBorrows<'a> {
             program,
             plan,
             parameters_by_callee: RefCell::new(HashMap::new()),
+            open_callees: RefCell::new(OpenCallees::default()),
         }
     }
 
     pub fn analyse(&self, lambda: &TypedLambda) -> LambdaFlows {
-        BodyFlows::of(self, lambda, HashSet::new())
+        BodyFlows::of(self, lambda, OpenCallees::NONE_REACHED)
     }
 
     fn cached_parameters(&self, callee: BindingId) -> Option<CalleeParameters> {
         self.parameters_by_callee.borrow().get(&callee).cloned()
     }
 
-    fn cache_parameters(&self, callee: BindingId, parameters: CalleeParameters) {
-        self.parameters_by_callee
+    fn open_order(&self, callee: BindingId) -> Option<usize> {
+        self.open_callees.borrow().order(callee)
+    }
+
+    fn provisional_parameters(&self, callee: BindingId) -> CalleeParameters {
+        self.open_callees.borrow_mut().assumed(callee)
+    }
+
+    fn visit(&self, callee: BindingId, lambda: &TypedLambda) -> Visit {
+        let order = self.open_callees.borrow_mut().open(callee);
+        let visit = self.proposed_visit(callee, lambda, order);
+        if visit.earliest_reached == order {
+            self.settle_group(order);
+            return self.settled_visit(callee);
+        }
+        visit
+    }
+
+    fn proposed_visit(&self, callee: BindingId, lambda: &TypedLambda, order: usize) -> Visit {
+        let analysed = BodyFlows::of(self, lambda, order);
+        let parameters = analysed.parameters(lambda);
+        self.open_callees
             .borrow_mut()
-            .insert(callee, parameters);
+            .propose(callee, parameters.clone());
+        Visit {
+            parameters,
+            earliest_reached: analysed.earliest_reached,
+        }
+    }
+
+    fn settled_visit(&self, callee: BindingId) -> Visit {
+        Visit {
+            parameters: self.cached_parameters(callee).unwrap_or_default(),
+            earliest_reached: OpenCallees::NONE_REACHED,
+        }
+    }
+
+    fn settle_group(&self, order: usize) {
+        let group = self.open_callees.borrow().group_from(order);
+        if self.open_callees.borrow().any_assumed(&group) {
+            self.reach_fixed_point(&group);
+        }
+        let settled = self.open_callees.borrow_mut().close(&group);
+        self.parameters_by_callee.borrow_mut().extend(settled);
+    }
+
+    fn reach_fixed_point(&self, group: &[BindingId]) {
+        while self.widen_group(group) {}
+    }
+
+    fn widen_group(&self, group: &[BindingId]) -> bool {
+        let grown: Vec<bool> = group
+            .iter()
+            .map(|callee| self.widen_member(*callee))
+            .collect();
+        grown.contains(&true)
+    }
+
+    fn widen_member(&self, callee: BindingId) -> bool {
+        let Some(lambda) = self.callee_lambda(callee) else {
+            return false;
+        };
+        let analysed = BodyFlows::of(self, lambda, OpenCallees::NONE_REACHED);
+        let parameters = analysed.parameters(lambda);
+        self.open_callees.borrow_mut().widen(callee, &parameters)
     }
 
     fn callee_lambda(&self, callee: BindingId) -> Option<&'a TypedLambda> {
@@ -55,28 +118,39 @@ struct BodyFlows<'r, 'a> {
     rules: &'r ResultBorrows<'a>,
     parameters: HashSet<BindingId>,
     aliases: HashMap<BindingId, HashSet<BindingId>>,
-    enclosing: HashSet<BindingId>,
-    reached_recursion: bool,
+    earliest_reached: usize,
 }
 
 pub struct LambdaFlows {
     pub flows: HashSet<BindingId>,
     pub higher_ranked: HashSet<BindingId>,
-    reached_recursion: bool,
+    earliest_reached: usize,
+}
+
+impl LambdaFlows {
+    fn parameters(&self, lambda: &TypedLambda) -> CalleeParameters {
+        CalleeParameters {
+            sharing: Self::marked(lambda, &self.flows),
+            higher_ranked: Self::marked(lambda, &self.higher_ranked),
+        }
+    }
+
+    fn marked(lambda: &TypedLambda, bindings: &HashSet<BindingId>) -> Vec<bool> {
+        lambda
+            .params
+            .iter()
+            .map(|param| bindings.contains(&param.binding))
+            .collect()
+    }
 }
 
 impl<'r, 'a> BodyFlows<'r, 'a> {
-    fn of(
-        rules: &'r ResultBorrows<'a>,
-        lambda: &TypedLambda,
-        enclosing: HashSet<BindingId>,
-    ) -> LambdaFlows {
+    fn of(rules: &'r ResultBorrows<'a>, lambda: &TypedLambda, order: usize) -> LambdaFlows {
         let mut borrows = Self {
             rules,
             parameters: lambda.params.iter().map(|param| param.binding).collect(),
             aliases: HashMap::new(),
-            enclosing,
-            reached_recursion: false,
+            earliest_reached: order,
         };
         let mut flows = borrows.block(&lambda.body);
         let calls = LocalBorrowCalls::of(rules.program, lambda);
@@ -90,7 +164,7 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
         LambdaFlows {
             flows,
             higher_ranked,
-            reached_recursion: borrows.reached_recursion,
+            earliest_reached: borrows.earliest_reached,
         }
     }
 
@@ -178,40 +252,31 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
     }
 
     fn callee_parameters(&mut self, callee: BindingId) -> CalleeParameters {
-        if self.enclosing.contains(&callee) {
-            self.reached_recursion = true;
-            return CalleeParameters::default();
+        if let Some(cached) = self.rules.cached_parameters(callee) {
+            return cached;
         }
-        self.rules
-            .cached_parameters(callee)
-            .unwrap_or_else(|| self.analysed_parameters(callee))
+        match self.rules.open_order(callee) {
+            Some(order) => self.assumed_parameters(callee, order),
+            None => self.visited_parameters(callee),
+        }
     }
 
-    fn analysed_parameters(&mut self, callee: BindingId) -> CalleeParameters {
+    fn assumed_parameters(&mut self, callee: BindingId, order: usize) -> CalleeParameters {
+        self.reach(order);
+        self.rules.provisional_parameters(callee)
+    }
+
+    fn visited_parameters(&mut self, callee: BindingId) -> CalleeParameters {
         let Some(lambda) = self.rules.callee_lambda(callee) else {
             return CalleeParameters::default();
         };
-        let mut enclosing = self.enclosing.clone();
-        enclosing.insert(callee);
-        let analysed = BodyFlows::of(self.rules, lambda, enclosing);
-        let parameters = CalleeParameters {
-            sharing: Self::marked(lambda, &analysed.flows),
-            higher_ranked: Self::marked(lambda, &analysed.higher_ranked),
-        };
-        if analysed.reached_recursion {
-            self.reached_recursion = true;
-        } else {
-            self.rules.cache_parameters(callee, parameters.clone());
-        }
-        parameters
+        let visit = self.rules.visit(callee, lambda);
+        self.reach(visit.earliest_reached);
+        visit.parameters
     }
 
-    fn marked(lambda: &TypedLambda, bindings: &HashSet<BindingId>) -> Vec<bool> {
-        lambda
-            .params
-            .iter()
-            .map(|param| bindings.contains(&param.binding))
-            .collect()
+    fn reach(&mut self, order: usize) {
+        self.earliest_reached = self.earliest_reached.min(order);
     }
 
     fn control(&mut self, control: &TypedControl) -> HashSet<BindingId> {
