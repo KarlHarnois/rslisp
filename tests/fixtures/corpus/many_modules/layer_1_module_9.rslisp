@@ -1,0 +1,15 @@
+
+(export layer-1-module-9-score layer-1-module-9-reading layer-1-module-9-label)
+
+(defstruct layer-1-module-9-reading :site str :level i64 :weight f64)
+
+(display layer-1-module-9-reading (reading) "layer-1-module-9 " (:site reading) "=" (:level reading))
+
+(defn layer-1-module-9-label (n)
+  (str (->layer-1-module-9-reading "layer-1-module-9" (layer-1-module-9-score n) 8.5)))
+
+(defn layer-1-module-9-score (n)
+  (rem (+ (* n 7) 11) 997))
+
+(defn layer-1-module-9-reading (n)
+  (->layer-1-module-9-reading "layer-1-module-9" (layer-1-module-9-score n) (* 0.5 8.0)))

@@ -75,10 +75,10 @@
     ((ok total) (str total))
     ((err problem) problem)))
 
-(defcounter bold-lantern-start 0 1)
+(defcounter rule-1-start 0 1)
 
-(defn bold-lantern (seed)
-  (let base (-> seed (bold-lantern-start-shift) (* 3) (+ 0) (clamp 0 500)))
+(defn rule-1 (seed)
+  (let base (-> seed (rule-1-start-shift) (* 3) (+ 0) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -88,16 +88,16 @@
   (let hits (tally hits (base 0 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "bold-lantern: " r)))))
+      (when (= pass 0) (println (str "rule-1: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn bold-lantern-start-shift (seed) (+ seed (next-bold-lantern-start (bold-lantern-start))))
+(defn rule-1-start-shift (seed) (+ seed (next-rule-1-start (rule-1-start))))
 
-(defcounter swift-geyser-start 1 2)
+(defcounter rule-2-start 1 2)
 
-(defn swift-geyser (seed)
-  (let base (-> seed (swift-geyser-start-shift) (* 3) (+ 1) (clamp 0 500)))
+(defn rule-2 (seed)
+  (let base (-> seed (rule-2-start-shift) (* 3) (+ 1) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -107,16 +107,16 @@
   (let hits (tally hits (base 1 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "swift-geyser: " r)))))
+      (when (= pass 0) (println (str "rule-2: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn swift-geyser-start-shift (seed) (+ seed (next-swift-geyser-start (swift-geyser-start))))
+(defn rule-2-start-shift (seed) (+ seed (next-rule-2-start (rule-2-start))))
 
-(defcounter swift-otter-start 2 3)
+(defcounter rule-3-start 2 3)
 
-(defn swift-otter (seed)
-  (let base (-> seed (swift-otter-start-shift) (* 3) (+ 2) (clamp 0 500)))
+(defn rule-3 (seed)
+  (let base (-> seed (rule-3-start-shift) (* 3) (+ 2) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -126,16 +126,16 @@
   (let hits (tally hits (base 2 3 (sum-of 1 2 3)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "swift-otter: " r)))))
+      (when (= pass 0) (println (str "rule-3: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 3) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn swift-otter-start-shift (seed) (+ seed (next-swift-otter-start (swift-otter-start))))
+(defn rule-3-start-shift (seed) (+ seed (next-rule-3-start (rule-3-start))))
 
-(defcounter rustic-falcon-start 3 4)
+(defcounter rule-4-start 3 4)
 
-(defn rustic-falcon (seed)
-  (let base (-> seed (rustic-falcon-start-shift) (* 3) (+ 3) (clamp 0 500)))
+(defn rule-4 (seed)
+  (let base (-> seed (rule-4-start-shift) (* 3) (+ 3) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -145,16 +145,16 @@
   (let hits (tally hits (base 3 4 (sum-of 1 2 4)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "rustic-falcon: " r)))))
+      (when (= pass 0) (println (str "rule-4: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 4) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn rustic-falcon-start-shift (seed) (+ seed (next-rustic-falcon-start (rustic-falcon-start))))
+(defn rule-4-start-shift (seed) (+ seed (next-rule-4-start (rule-4-start))))
 
-(defcounter fierce-falcon-start 4 5)
+(defcounter rule-5-start 4 5)
 
-(defn fierce-falcon (seed)
-  (let base (-> seed (fierce-falcon-start-shift) (* 3) (+ 4) (clamp 0 500)))
+(defn rule-5 (seed)
+  (let base (-> seed (rule-5-start-shift) (* 3) (+ 4) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -164,16 +164,16 @@
   (let hits (tally hits (base 4 5 (sum-of 1 2 5)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "fierce-falcon: " r)))))
+      (when (= pass 0) (println (str "rule-5: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 5) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn fierce-falcon-start-shift (seed) (+ seed (next-fierce-falcon-start (fierce-falcon-start))))
+(defn rule-5-start-shift (seed) (+ seed (next-rule-5-start (rule-5-start))))
 
-(defcounter olive-meadow-start 5 1)
+(defcounter rule-6-start 5 1)
 
-(defn olive-meadow (seed)
-  (let base (-> seed (olive-meadow-start-shift) (* 3) (+ 5) (clamp 0 500)))
+(defn rule-6 (seed)
+  (let base (-> seed (rule-6-start-shift) (* 3) (+ 5) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -183,16 +183,16 @@
   (let hits (tally hits (base 5 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "olive-meadow: " r)))))
+      (when (= pass 0) (println (str "rule-6: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn olive-meadow-start-shift (seed) (+ seed (next-olive-meadow-start (olive-meadow-start))))
+(defn rule-6-start-shift (seed) (+ seed (next-rule-6-start (rule-6-start))))
 
-(defcounter lively-fern-start 6 2)
+(defcounter rule-7-start 6 2)
 
-(defn lively-fern (seed)
-  (let base (-> seed (lively-fern-start-shift) (* 3) (+ 6) (clamp 0 500)))
+(defn rule-7 (seed)
+  (let base (-> seed (rule-7-start-shift) (* 3) (+ 6) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -202,16 +202,16 @@
   (let hits (tally hits (base 6 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "lively-fern: " r)))))
+      (when (= pass 0) (println (str "rule-7: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn lively-fern-start-shift (seed) (+ seed (next-lively-fern-start (lively-fern-start))))
+(defn rule-7-start-shift (seed) (+ seed (next-rule-7-start (rule-7-start))))
 
-(defcounter tender-beacon-start 7 3)
+(defcounter rule-8-start 7 3)
 
-(defn tender-beacon (seed)
-  (let base (-> seed (tender-beacon-start-shift) (* 3) (+ 7) (clamp 0 500)))
+(defn rule-8 (seed)
+  (let base (-> seed (rule-8-start-shift) (* 3) (+ 7) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -221,16 +221,16 @@
   (let hits (tally hits (base 7 3 (sum-of 1 2 3)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "tender-beacon: " r)))))
+      (when (= pass 0) (println (str "rule-8: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 3) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn tender-beacon-start-shift (seed) (+ seed (next-tender-beacon-start (tender-beacon-start))))
+(defn rule-8-start-shift (seed) (+ seed (next-rule-8-start (rule-8-start))))
 
-(defcounter jolly-thistle-start 8 4)
+(defcounter rule-9-start 8 4)
 
-(defn jolly-thistle (seed)
-  (let base (-> seed (jolly-thistle-start-shift) (* 3) (+ 8) (clamp 0 500)))
+(defn rule-9 (seed)
+  (let base (-> seed (rule-9-start-shift) (* 3) (+ 8) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -240,16 +240,16 @@
   (let hits (tally hits (base 8 4 (sum-of 1 2 4)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "jolly-thistle: " r)))))
+      (when (= pass 0) (println (str "rule-9: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 4) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn jolly-thistle-start-shift (seed) (+ seed (next-jolly-thistle-start (jolly-thistle-start))))
+(defn rule-9-start-shift (seed) (+ seed (next-rule-9-start (rule-9-start))))
 
-(defcounter vivid-lantern-start 9 5)
+(defcounter rule-10-start 9 5)
 
-(defn vivid-lantern (seed)
-  (let base (-> seed (vivid-lantern-start-shift) (* 3) (+ 9) (clamp 0 500)))
+(defn rule-10 (seed)
+  (let base (-> seed (rule-10-start-shift) (* 3) (+ 9) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -259,16 +259,16 @@
   (let hits (tally hits (base 9 5 (sum-of 1 2 5)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "vivid-lantern: " r)))))
+      (when (= pass 0) (println (str "rule-10: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 5) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn vivid-lantern-start-shift (seed) (+ seed (next-vivid-lantern-start (vivid-lantern-start))))
+(defn rule-10-start-shift (seed) (+ seed (next-rule-10-start (rule-10-start))))
 
-(defcounter wary-falcon-start 10 1)
+(defcounter rule-11-start 10 1)
 
-(defn wary-falcon (seed)
-  (let base (-> seed (wary-falcon-start-shift) (* 3) (+ 10) (clamp 0 500)))
+(defn rule-11 (seed)
+  (let base (-> seed (rule-11-start-shift) (* 3) (+ 10) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -278,16 +278,16 @@
   (let hits (tally hits (base 10 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "wary-falcon: " r)))))
+      (when (= pass 0) (println (str "rule-11: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn wary-falcon-start-shift (seed) (+ seed (next-wary-falcon-start (wary-falcon-start))))
+(defn rule-11-start-shift (seed) (+ seed (next-rule-11-start (rule-11-start))))
 
-(defcounter dusky-pebble-start 11 2)
+(defcounter rule-12-start 11 2)
 
-(defn dusky-pebble (seed)
-  (let base (-> seed (dusky-pebble-start-shift) (* 3) (+ 11) (clamp 0 500)))
+(defn rule-12 (seed)
+  (let base (-> seed (rule-12-start-shift) (* 3) (+ 11) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -297,16 +297,16 @@
   (let hits (tally hits (base 11 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "dusky-pebble: " r)))))
+      (when (= pass 0) (println (str "rule-12: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn dusky-pebble-start-shift (seed) (+ seed (next-dusky-pebble-start (dusky-pebble-start))))
+(defn rule-12-start-shift (seed) (+ seed (next-rule-12-start (rule-12-start))))
 
-(defcounter stark-fern-start 12 3)
+(defcounter rule-13-start 12 3)
 
-(defn stark-fern (seed)
-  (let base (-> seed (stark-fern-start-shift) (* 3) (+ 12) (clamp 0 500)))
+(defn rule-13 (seed)
+  (let base (-> seed (rule-13-start-shift) (* 3) (+ 12) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -316,16 +316,16 @@
   (let hits (tally hits (base 12 3 (sum-of 1 2 3)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "stark-fern: " r)))))
+      (when (= pass 0) (println (str "rule-13: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 3) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn stark-fern-start-shift (seed) (+ seed (next-stark-fern-start (stark-fern-start))))
+(defn rule-13-start-shift (seed) (+ seed (next-rule-13-start (rule-13-start))))
 
-(defcounter stark-falcon-start 13 4)
+(defcounter rule-14-start 13 4)
 
-(defn stark-falcon (seed)
-  (let base (-> seed (stark-falcon-start-shift) (* 3) (+ 13) (clamp 0 500)))
+(defn rule-14 (seed)
+  (let base (-> seed (rule-14-start-shift) (* 3) (+ 13) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -335,16 +335,16 @@
   (let hits (tally hits (base 13 4 (sum-of 1 2 4)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "stark-falcon: " r)))))
+      (when (= pass 0) (println (str "rule-14: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 4) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn stark-falcon-start-shift (seed) (+ seed (next-stark-falcon-start (stark-falcon-start))))
+(defn rule-14-start-shift (seed) (+ seed (next-rule-14-start (rule-14-start))))
 
-(defcounter keen-tundra-start 14 5)
+(defcounter rule-15-start 14 5)
 
-(defn keen-tundra (seed)
-  (let base (-> seed (keen-tundra-start-shift) (* 3) (+ 14) (clamp 0 500)))
+(defn rule-15 (seed)
+  (let base (-> seed (rule-15-start-shift) (* 3) (+ 14) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -354,16 +354,16 @@
   (let hits (tally hits (base 14 5 (sum-of 1 2 5)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "keen-tundra: " r)))))
+      (when (= pass 0) (println (str "rule-15: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 5) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn keen-tundra-start-shift (seed) (+ seed (next-keen-tundra-start (keen-tundra-start))))
+(defn rule-15-start-shift (seed) (+ seed (next-rule-15-start (rule-15-start))))
 
-(defcounter sunny-beacon-start 15 1)
+(defcounter rule-16-start 15 1)
 
-(defn sunny-beacon (seed)
-  (let base (-> seed (sunny-beacon-start-shift) (* 3) (+ 15) (clamp 0 500)))
+(defn rule-16 (seed)
+  (let base (-> seed (rule-16-start-shift) (* 3) (+ 15) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -373,16 +373,16 @@
   (let hits (tally hits (base 15 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "sunny-beacon: " r)))))
+      (when (= pass 0) (println (str "rule-16: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn sunny-beacon-start-shift (seed) (+ seed (next-sunny-beacon-start (sunny-beacon-start))))
+(defn rule-16-start-shift (seed) (+ seed (next-rule-16-start (rule-16-start))))
 
-(defcounter witty-meadow-start 16 2)
+(defcounter rule-17-start 16 2)
 
-(defn witty-meadow (seed)
-  (let base (-> seed (witty-meadow-start-shift) (* 3) (+ 16) (clamp 0 500)))
+(defn rule-17 (seed)
+  (let base (-> seed (rule-17-start-shift) (* 3) (+ 16) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -392,16 +392,16 @@
   (let hits (tally hits (base 16 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "witty-meadow: " r)))))
+      (when (= pass 0) (println (str "rule-17: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn witty-meadow-start-shift (seed) (+ seed (next-witty-meadow-start (witty-meadow-start))))
+(defn rule-17-start-shift (seed) (+ seed (next-rule-17-start (rule-17-start))))
 
-(defcounter zesty-walrus-start 17 3)
+(defcounter rule-18-start 17 3)
 
-(defn zesty-walrus (seed)
-  (let base (-> seed (zesty-walrus-start-shift) (* 3) (+ 17) (clamp 0 500)))
+(defn rule-18 (seed)
+  (let base (-> seed (rule-18-start-shift) (* 3) (+ 17) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -411,16 +411,16 @@
   (let hits (tally hits (base 17 3 (sum-of 1 2 3)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "zesty-walrus: " r)))))
+      (when (= pass 0) (println (str "rule-18: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 3) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn zesty-walrus-start-shift (seed) (+ seed (next-zesty-walrus-start (zesty-walrus-start))))
+(defn rule-18-start-shift (seed) (+ seed (next-rule-18-start (rule-18-start))))
 
-(defcounter lively-zephyr-start 18 4)
+(defcounter rule-19-start 18 4)
 
-(defn lively-zephyr (seed)
-  (let base (-> seed (lively-zephyr-start-shift) (* 3) (+ 18) (clamp 0 500)))
+(defn rule-19 (seed)
+  (let base (-> seed (rule-19-start-shift) (* 3) (+ 18) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -430,16 +430,16 @@
   (let hits (tally hits (base 18 4 (sum-of 1 2 4)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "lively-zephyr: " r)))))
+      (when (= pass 0) (println (str "rule-19: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 4) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn lively-zephyr-start-shift (seed) (+ seed (next-lively-zephyr-start (lively-zephyr-start))))
+(defn rule-19-start-shift (seed) (+ seed (next-rule-19-start (rule-19-start))))
 
-(defcounter solemn-quarry-start 19 5)
+(defcounter rule-20-start 19 5)
 
-(defn solemn-quarry (seed)
-  (let base (-> seed (solemn-quarry-start-shift) (* 3) (+ 19) (clamp 0 500)))
+(defn rule-20 (seed)
+  (let base (-> seed (rule-20-start-shift) (* 3) (+ 19) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -449,16 +449,16 @@
   (let hits (tally hits (base 19 5 (sum-of 1 2 5)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "solemn-quarry: " r)))))
+      (when (= pass 0) (println (str "rule-20: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 5) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn solemn-quarry-start-shift (seed) (+ seed (next-solemn-quarry-start (solemn-quarry-start))))
+(defn rule-20-start-shift (seed) (+ seed (next-rule-20-start (rule-20-start))))
 
-(defcounter zesty-willow-start 20 1)
+(defcounter rule-21-start 20 1)
 
-(defn zesty-willow (seed)
-  (let base (-> seed (zesty-willow-start-shift) (* 3) (+ 20) (clamp 0 500)))
+(defn rule-21 (seed)
+  (let base (-> seed (rule-21-start-shift) (* 3) (+ 20) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -468,16 +468,16 @@
   (let hits (tally hits (base 20 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "zesty-willow: " r)))))
+      (when (= pass 0) (println (str "rule-21: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn zesty-willow-start-shift (seed) (+ seed (next-zesty-willow-start (zesty-willow-start))))
+(defn rule-21-start-shift (seed) (+ seed (next-rule-21-start (rule-21-start))))
 
-(defcounter gilded-bison-start 21 2)
+(defcounter rule-22-start 21 2)
 
-(defn gilded-bison (seed)
-  (let base (-> seed (gilded-bison-start-shift) (* 3) (+ 21) (clamp 0 500)))
+(defn rule-22 (seed)
+  (let base (-> seed (rule-22-start-shift) (* 3) (+ 21) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -487,16 +487,16 @@
   (let hits (tally hits (base 21 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "gilded-bison: " r)))))
+      (when (= pass 0) (println (str "rule-22: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn gilded-bison-start-shift (seed) (+ seed (next-gilded-bison-start (gilded-bison-start))))
+(defn rule-22-start-shift (seed) (+ seed (next-rule-22-start (rule-22-start))))
 
-(defcounter brisk-jackal-start 22 3)
+(defcounter rule-23-start 22 3)
 
-(defn brisk-jackal (seed)
-  (let base (-> seed (brisk-jackal-start-shift) (* 3) (+ 22) (clamp 0 500)))
+(defn rule-23 (seed)
+  (let base (-> seed (rule-23-start-shift) (* 3) (+ 22) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -506,16 +506,16 @@
   (let hits (tally hits (base 22 3 (sum-of 1 2 3)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "brisk-jackal: " r)))))
+      (when (= pass 0) (println (str "rule-23: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 3) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn brisk-jackal-start-shift (seed) (+ seed (next-brisk-jackal-start (brisk-jackal-start))))
+(defn rule-23-start-shift (seed) (+ seed (next-rule-23-start (rule-23-start))))
 
-(defcounter rustic-heron-start 23 4)
+(defcounter rule-24-start 23 4)
 
-(defn rustic-heron (seed)
-  (let base (-> seed (rustic-heron-start-shift) (* 3) (+ 23) (clamp 0 500)))
+(defn rule-24 (seed)
+  (let base (-> seed (rule-24-start-shift) (* 3) (+ 23) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -525,16 +525,16 @@
   (let hits (tally hits (base 23 4 (sum-of 1 2 4)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "rustic-heron: " r)))))
+      (when (= pass 0) (println (str "rule-24: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 4) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn rustic-heron-start-shift (seed) (+ seed (next-rustic-heron-start (rustic-heron-start))))
+(defn rule-24-start-shift (seed) (+ seed (next-rule-24-start (rule-24-start))))
 
-(defcounter olive-kestrel-start 24 5)
+(defcounter rule-25-start 24 5)
 
-(defn olive-kestrel (seed)
-  (let base (-> seed (olive-kestrel-start-shift) (* 3) (+ 24) (clamp 0 500)))
+(defn rule-25 (seed)
+  (let base (-> seed (rule-25-start-shift) (* 3) (+ 24) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -544,16 +544,16 @@
   (let hits (tally hits (base 24 5 (sum-of 1 2 5)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "olive-kestrel: " r)))))
+      (when (= pass 0) (println (str "rule-25: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 5) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn olive-kestrel-start-shift (seed) (+ seed (next-olive-kestrel-start (olive-kestrel-start))))
+(defn rule-25-start-shift (seed) (+ seed (next-rule-25-start (rule-25-start))))
 
-(defcounter zesty-delta-start 25 1)
+(defcounter rule-26-start 25 1)
 
-(defn zesty-delta (seed)
-  (let base (-> seed (zesty-delta-start-shift) (* 3) (+ 25) (clamp 0 500)))
+(defn rule-26 (seed)
+  (let base (-> seed (rule-26-start-shift) (* 3) (+ 25) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -563,16 +563,16 @@
   (let hits (tally hits (base 25 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "zesty-delta: " r)))))
+      (when (= pass 0) (println (str "rule-26: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn zesty-delta-start-shift (seed) (+ seed (next-zesty-delta-start (zesty-delta-start))))
+(defn rule-26-start-shift (seed) (+ seed (next-rule-26-start (rule-26-start))))
 
-(defcounter dusky-geyser-start 26 2)
+(defcounter rule-27-start 26 2)
 
-(defn dusky-geyser (seed)
-  (let base (-> seed (dusky-geyser-start-shift) (* 3) (+ 26) (clamp 0 500)))
+(defn rule-27 (seed)
+  (let base (-> seed (rule-27-start-shift) (* 3) (+ 26) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -582,16 +582,16 @@
   (let hits (tally hits (base 26 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "dusky-geyser: " r)))))
+      (when (= pass 0) (println (str "rule-27: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn dusky-geyser-start-shift (seed) (+ seed (next-dusky-geyser-start (dusky-geyser-start))))
+(defn rule-27-start-shift (seed) (+ seed (next-rule-27-start (rule-27-start))))
 
-(defcounter fierce-nebula-start 27 3)
+(defcounter rule-28-start 27 3)
 
-(defn fierce-nebula (seed)
-  (let base (-> seed (fierce-nebula-start-shift) (* 3) (+ 27) (clamp 0 500)))
+(defn rule-28 (seed)
+  (let base (-> seed (rule-28-start-shift) (* 3) (+ 27) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -601,16 +601,16 @@
   (let hits (tally hits (base 27 3 (sum-of 1 2 3)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "fierce-nebula: " r)))))
+      (when (= pass 0) (println (str "rule-28: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 3) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn fierce-nebula-start-shift (seed) (+ seed (next-fierce-nebula-start (fierce-nebula-start))))
+(defn rule-28-start-shift (seed) (+ seed (next-rule-28-start (rule-28-start))))
 
-(defcounter gilded-comet-start 28 4)
+(defcounter rule-29-start 28 4)
 
-(defn gilded-comet (seed)
-  (let base (-> seed (gilded-comet-start-shift) (* 3) (+ 28) (clamp 0 500)))
+(defn rule-29 (seed)
+  (let base (-> seed (rule-29-start-shift) (* 3) (+ 28) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -620,16 +620,16 @@
   (let hits (tally hits (base 28 4 (sum-of 1 2 4)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "gilded-comet: " r)))))
+      (when (= pass 0) (println (str "rule-29: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 4) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn gilded-comet-start-shift (seed) (+ seed (next-gilded-comet-start (gilded-comet-start))))
+(defn rule-29-start-shift (seed) (+ seed (next-rule-29-start (rule-29-start))))
 
-(defcounter young-pine-start 29 5)
+(defcounter rule-30-start 29 5)
 
-(defn young-pine (seed)
-  (let base (-> seed (young-pine-start-shift) (* 3) (+ 29) (clamp 0 500)))
+(defn rule-30 (seed)
+  (let base (-> seed (rule-30-start-shift) (* 3) (+ 29) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -639,16 +639,16 @@
   (let hits (tally hits (base 29 5 (sum-of 1 2 5)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "young-pine: " r)))))
+      (when (= pass 0) (println (str "rule-30: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 5) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn young-pine-start-shift (seed) (+ seed (next-young-pine-start (young-pine-start))))
+(defn rule-30-start-shift (seed) (+ seed (next-rule-30-start (rule-30-start))))
 
-(defcounter sleek-otter-start 30 1)
+(defcounter rule-31-start 30 1)
 
-(defn sleek-otter (seed)
-  (let base (-> seed (sleek-otter-start-shift) (* 3) (+ 30) (clamp 0 500)))
+(defn rule-31 (seed)
+  (let base (-> seed (rule-31-start-shift) (* 3) (+ 30) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -658,16 +658,16 @@
   (let hits (tally hits (base 30 1 (sum-of 1 2 1)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "sleek-otter: " r)))))
+      (when (= pass 0) (println (str "rule-31: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 1) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn sleek-otter-start-shift (seed) (+ seed (next-sleek-otter-start (sleek-otter-start))))
+(defn rule-31-start-shift (seed) (+ seed (next-rule-31-start (rule-31-start))))
 
-(defcounter vivid-pebble-start 31 2)
+(defcounter rule-32-start 31 2)
 
-(defn vivid-pebble (seed)
-  (let base (-> seed (vivid-pebble-start-shift) (* 3) (+ 31) (clamp 0 500)))
+(defn rule-32 (seed)
+  (let base (-> seed (rule-32-start-shift) (* 3) (+ 31) (clamp 0 500)))
   (let label (case (rem base 4)
                (0 "steady")
                (1 "rising")
@@ -677,44 +677,44 @@
   (let hits (tally hits (base 31 2 (sum-of 1 2 2)) calm?))
   (unless-zero hits
     (dotimes (pass (clamp hits 0 2))
-      (when (= pass 0) (println (str "vivid-pebble: " r)))))
+      (when (= pass 0) (println (str "rule-32: " r)))))
   (loop ((k 0) (acc base))
     (if (< k 2) (recur (+ k 1) (->> acc (+ k) (rem 1000))) acc)))
 
-(defn vivid-pebble-start-shift (seed) (+ seed (next-vivid-pebble-start (vivid-pebble-start))))
+(defn rule-32-start-shift (seed) (+ seed (next-rule-32-start (rule-32-start))))
 
 (defn main ()
   (println (checked-sum "12" "30"))
   (println (checked-sum "12" "x"))
-  (println (str "bold-lantern " (bold-lantern 0)))
-  (println (str "swift-geyser " (swift-geyser 1)))
-  (println (str "swift-otter " (swift-otter 2)))
-  (println (str "rustic-falcon " (rustic-falcon 3)))
-  (println (str "fierce-falcon " (fierce-falcon 4)))
-  (println (str "olive-meadow " (olive-meadow 5)))
-  (println (str "lively-fern " (lively-fern 6)))
-  (println (str "tender-beacon " (tender-beacon 7)))
-  (println (str "jolly-thistle " (jolly-thistle 8)))
-  (println (str "vivid-lantern " (vivid-lantern 9)))
-  (println (str "wary-falcon " (wary-falcon 10)))
-  (println (str "dusky-pebble " (dusky-pebble 11)))
-  (println (str "stark-fern " (stark-fern 12)))
-  (println (str "stark-falcon " (stark-falcon 13)))
-  (println (str "keen-tundra " (keen-tundra 14)))
-  (println (str "sunny-beacon " (sunny-beacon 15)))
-  (println (str "witty-meadow " (witty-meadow 16)))
-  (println (str "zesty-walrus " (zesty-walrus 17)))
-  (println (str "lively-zephyr " (lively-zephyr 18)))
-  (println (str "solemn-quarry " (solemn-quarry 19)))
-  (println (str "zesty-willow " (zesty-willow 20)))
-  (println (str "gilded-bison " (gilded-bison 21)))
-  (println (str "brisk-jackal " (brisk-jackal 22)))
-  (println (str "rustic-heron " (rustic-heron 23)))
-  (println (str "olive-kestrel " (olive-kestrel 24)))
-  (println (str "zesty-delta " (zesty-delta 25)))
-  (println (str "dusky-geyser " (dusky-geyser 26)))
-  (println (str "fierce-nebula " (fierce-nebula 27)))
-  (println (str "gilded-comet " (gilded-comet 28)))
-  (println (str "young-pine " (young-pine 29)))
-  (println (str "sleek-otter " (sleek-otter 30)))
-  (println (str "vivid-pebble " (vivid-pebble 31))))
+  (println (str "rule-1 " (rule-1 0)))
+  (println (str "rule-2 " (rule-2 1)))
+  (println (str "rule-3 " (rule-3 2)))
+  (println (str "rule-4 " (rule-4 3)))
+  (println (str "rule-5 " (rule-5 4)))
+  (println (str "rule-6 " (rule-6 5)))
+  (println (str "rule-7 " (rule-7 6)))
+  (println (str "rule-8 " (rule-8 7)))
+  (println (str "rule-9 " (rule-9 8)))
+  (println (str "rule-10 " (rule-10 9)))
+  (println (str "rule-11 " (rule-11 10)))
+  (println (str "rule-12 " (rule-12 11)))
+  (println (str "rule-13 " (rule-13 12)))
+  (println (str "rule-14 " (rule-14 13)))
+  (println (str "rule-15 " (rule-15 14)))
+  (println (str "rule-16 " (rule-16 15)))
+  (println (str "rule-17 " (rule-17 16)))
+  (println (str "rule-18 " (rule-18 17)))
+  (println (str "rule-19 " (rule-19 18)))
+  (println (str "rule-20 " (rule-20 19)))
+  (println (str "rule-21 " (rule-21 20)))
+  (println (str "rule-22 " (rule-22 21)))
+  (println (str "rule-23 " (rule-23 22)))
+  (println (str "rule-24 " (rule-24 23)))
+  (println (str "rule-25 " (rule-25 24)))
+  (println (str "rule-26 " (rule-26 25)))
+  (println (str "rule-27 " (rule-27 26)))
+  (println (str "rule-28 " (rule-28 27)))
+  (println (str "rule-29 " (rule-29 28)))
+  (println (str "rule-30 " (rule-30 29)))
+  (println (str "rule-31 " (rule-31 30)))
+  (println (str "rule-32 " (rule-32 31))))

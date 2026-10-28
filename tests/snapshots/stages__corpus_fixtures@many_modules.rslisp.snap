@@ -3,8 +3,8 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/corpus/many_modules.rslisp
 ---
-bold-quarry bold-quarry=154
-young-glacier young-glacier=892
-lively-geyser lively-geyser=945
-quiet-summit quiet-summit=539
-rustic-beacon rustic-beacon=231
+layer-12-module-6 layer-12-module-6=464
+layer-12-module-7 layer-12-module-7=113
+layer-12-module-8 layer-12-module-8=957
+layer-12-module-9 layer-12-module-9=722
+layer-12-module-10 layer-12-module-10=81

@@ -1,0 +1,18 @@
+(use many_modules/layer_4_module_7 layer-4-module-7-score layer-4-module-7-reading)
+(use many_modules/layer_1_module_9 layer-1-module-9-score layer-1-module-9-reading)
+(use many_modules/layer_3_module_5 layer-3-module-5-score layer-3-module-5-reading)
+
+(export layer-6-module-10-score layer-6-module-10-reading layer-6-module-10-label)
+
+(defstruct layer-6-module-10-reading :site str :level i64 :weight f64)
+
+(display layer-6-module-10-reading (reading) "layer-6-module-10 " (:site reading) "=" (:level reading))
+
+(defn layer-6-module-10-label (n)
+  (str (->layer-6-module-10-reading "layer-6-module-10" (layer-6-module-10-score n) 59.5)))
+
+(defn layer-6-module-10-score (n)
+  (rem (if (> n 1000059) (:level (layer-3-module-5-reading n)) (if (> n 1000059) (:level (layer-1-module-9-reading n)) (layer-4-module-7-score (+ n 59)))) 997))
+
+(defn layer-6-module-10-reading (n)
+  (->layer-6-module-10-reading "layer-6-module-10" (layer-6-module-10-score n) (* 0.5 59.0)))

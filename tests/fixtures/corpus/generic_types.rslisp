@@ -1,139 +1,139 @@
 (defn main ()
-  (println (describe (->crate "bold-lantern crate" (vec (->bold-lantern 0 0.5 false) (->bold-lantern 1 1.5 true) (->bold-lantern 2 2.5 false) (->bold-lantern 3 3.5 true)))))
-  (println (describe (->crate "swift-geyser crate" (vec (->swift-geyser 1 1.5 true) (->swift-geyser 2 2.5 false) (->swift-geyser 3 3.5 true) (->swift-geyser 4 4.5 false)))))
-  (println (describe (->crate "swift-otter crate" (vec (->swift-otter 2 2.5 false) (->swift-otter 3 3.5 true) (->swift-otter 4 4.5 false) (->swift-otter 5 5.5 true)))))
-  (println (describe (->crate "rustic-falcon crate" (vec (->rustic-falcon 3 3.5 true) (->rustic-falcon 4 4.5 false) (->rustic-falcon 5 5.5 true) (->rustic-falcon 6 6.5 false)))))
-  (println (describe (->crate "fierce-falcon crate" (vec (->fierce-falcon 4 4.5 false) (->fierce-falcon 5 5.5 true) (->fierce-falcon 6 6.5 false) (->fierce-falcon 7 7.5 true)))))
-  (println (describe (->crate "olive-meadow crate" (vec (->olive-meadow 5 5.5 true) (->olive-meadow 6 6.5 false) (->olive-meadow 7 7.5 true) (->olive-meadow 8 8.5 false)))))
-  (println (describe (->crate "lively-fern crate" (vec (->lively-fern 6 6.5 false) (->lively-fern 7 7.5 true) (->lively-fern 8 8.5 false) (->lively-fern 9 0.5 true)))))
-  (println (describe (->crate "tender-beacon crate" (vec (->tender-beacon 7 7.5 true) (->tender-beacon 8 8.5 false) (->tender-beacon 9 0.5 true) (->tender-beacon 10 1.5 false)))))
-  (println (describe (->crate "jolly-thistle crate" (vec (->jolly-thistle 8 8.5 false) (->jolly-thistle 9 0.5 true) (->jolly-thistle 10 1.5 false) (->jolly-thistle 11 2.5 true)))))
-  (println (describe (->crate "vivid-lantern crate" (vec (->vivid-lantern 9 0.5 true) (->vivid-lantern 10 1.5 false) (->vivid-lantern 11 2.5 true) (->vivid-lantern 12 3.5 false)))))
-  (println (describe (->crate "wary-falcon crate" (vec (->wary-falcon 10 1.5 false) (->wary-falcon 11 2.5 true) (->wary-falcon 12 3.5 false) (->wary-falcon 13 4.5 true)))))
-  (println (describe (->crate "dusky-pebble crate" (vec (->dusky-pebble 11 2.5 true) (->dusky-pebble 12 3.5 false) (->dusky-pebble 13 4.5 true) (->dusky-pebble 14 5.5 false)))))
-  (println (describe (->crate "stark-fern crate" (vec (->stark-fern 12 3.5 false) (->stark-fern 13 4.5 true) (->stark-fern 14 5.5 false) (->stark-fern 15 6.5 true)))))
-  (println (describe (->crate "stark-falcon crate" (vec (->stark-falcon 13 4.5 true) (->stark-falcon 14 5.5 false) (->stark-falcon 15 6.5 true) (->stark-falcon 16 7.5 false)))))
-  (println (describe (->crate "keen-tundra crate" (vec (->keen-tundra 14 5.5 false) (->keen-tundra 15 6.5 true) (->keen-tundra 16 7.5 false) (->keen-tundra 17 8.5 true)))))
-  (println (describe (->crate "sunny-beacon crate" (vec (->sunny-beacon 15 6.5 true) (->sunny-beacon 16 7.5 false) (->sunny-beacon 17 8.5 true) (->sunny-beacon 18 0.5 false)))))
-  (println (describe (->crate "witty-meadow crate" (vec (->witty-meadow 16 7.5 false) (->witty-meadow 17 8.5 true) (->witty-meadow 18 0.5 false) (->witty-meadow 19 1.5 true)))))
-  (println (describe (->crate "zesty-walrus crate" (vec (->zesty-walrus 17 8.5 true) (->zesty-walrus 18 0.5 false) (->zesty-walrus 19 1.5 true) (->zesty-walrus 20 2.5 false)))))
-  (println (describe (->crate "lively-zephyr crate" (vec (->lively-zephyr 18 0.5 false) (->lively-zephyr 19 1.5 true) (->lively-zephyr 20 2.5 false) (->lively-zephyr 21 3.5 true)))))
-  (println (describe (->crate "solemn-quarry crate" (vec (->solemn-quarry 19 1.5 true) (->solemn-quarry 20 2.5 false) (->solemn-quarry 21 3.5 true) (->solemn-quarry 22 4.5 false)))))
-  (println (describe (->crate "zesty-willow crate" (vec (->zesty-willow 20 2.5 false) (->zesty-willow 21 3.5 true) (->zesty-willow 22 4.5 false) (->zesty-willow 23 5.5 true)))))
-  (println (describe (->crate "gilded-bison crate" (vec (->gilded-bison 21 3.5 true) (->gilded-bison 22 4.5 false) (->gilded-bison 23 5.5 true) (->gilded-bison 24 6.5 false)))))
-  (println (describe (->crate "brisk-jackal crate" (vec (->brisk-jackal 22 4.5 false) (->brisk-jackal 23 5.5 true) (->brisk-jackal 24 6.5 false) (->brisk-jackal 25 7.5 true)))))
-  (println (describe (->crate "rustic-heron crate" (vec (->rustic-heron 23 5.5 true) (->rustic-heron 24 6.5 false) (->rustic-heron 25 7.5 true) (->rustic-heron 26 8.5 false)))))
-  (println (describe (->crate "olive-kestrel crate" (vec (->olive-kestrel 24 6.5 false) (->olive-kestrel 25 7.5 true) (->olive-kestrel 26 8.5 false) (->olive-kestrel 27 0.5 true)))))
-  (println (describe (->crate "zesty-delta crate" (vec (->zesty-delta 25 7.5 true) (->zesty-delta 26 8.5 false) (->zesty-delta 27 0.5 true) (->zesty-delta 28 1.5 false)))))
-  (println (describe (->crate "dusky-geyser crate" (vec (->dusky-geyser 26 8.5 false) (->dusky-geyser 27 0.5 true) (->dusky-geyser 28 1.5 false) (->dusky-geyser 29 2.5 true)))))
-  (println (describe (->crate "fierce-nebula crate" (vec (->fierce-nebula 27 0.5 true) (->fierce-nebula 28 1.5 false) (->fierce-nebula 29 2.5 true) (->fierce-nebula 30 3.5 false)))))
-  (println (describe (->crate "gilded-comet crate" (vec (->gilded-comet 28 1.5 false) (->gilded-comet 29 2.5 true) (->gilded-comet 30 3.5 false) (->gilded-comet 31 4.5 true)))))
-  (println (describe (->crate "young-pine crate" (vec (->young-pine 29 2.5 true) (->young-pine 30 3.5 false) (->young-pine 31 4.5 true) (->young-pine 32 5.5 false)))))
-  (println (describe (->crate "sleek-otter crate" (vec (->sleek-otter 30 3.5 false) (->sleek-otter 31 4.5 true) (->sleek-otter 32 5.5 false) (->sleek-otter 33 6.5 true)))))
-  (println (describe (->crate "vivid-pebble crate" (vec (->vivid-pebble 31 4.5 true) (->vivid-pebble 32 5.5 false) (->vivid-pebble 33 6.5 true) (->vivid-pebble 34 7.5 false)))))
-  (println (describe (->crate "brisk-heron crate" (vec (->brisk-heron 32 5.5 false) (->brisk-heron 33 6.5 true) (->brisk-heron 34 7.5 false) (->brisk-heron 35 8.5 true)))))
-  (println (describe (->crate "wary-cedar crate" (vec (->wary-cedar 33 6.5 true) (->wary-cedar 34 7.5 false) (->wary-cedar 35 8.5 true) (->wary-cedar 36 0.5 false)))))
-  (println (describe (->crate "mellow-zephyr crate" (vec (->mellow-zephyr 34 7.5 false) (->mellow-zephyr 35 8.5 true) (->mellow-zephyr 36 0.5 false) (->mellow-zephyr 37 1.5 true)))))
-  (println (describe (->crate "vivid-otter crate" (vec (->vivid-otter 35 8.5 true) (->vivid-otter 36 0.5 false) (->vivid-otter 37 1.5 true) (->vivid-otter 38 2.5 false)))))
-  (println (describe (->crate "misty-heron crate" (vec (->misty-heron 36 0.5 false) (->misty-heron 37 1.5 true) (->misty-heron 38 2.5 false) (->misty-heron 39 3.5 true)))))
-  (println (describe (->crate "solemn-sparrow crate" (vec (->solemn-sparrow 37 1.5 true) (->solemn-sparrow 38 2.5 false) (->solemn-sparrow 39 3.5 true) (->solemn-sparrow 40 4.5 false)))))
-  (println (describe (->crate "noble-tundra crate" (vec (->noble-tundra 38 2.5 false) (->noble-tundra 39 3.5 true) (->noble-tundra 40 4.5 false) (->noble-tundra 41 5.5 true)))))
-  (println (describe (->crate "mellow-island crate" (vec (->mellow-island 39 3.5 true) (->mellow-island 40 4.5 false) (->mellow-island 41 5.5 true) (->mellow-island 42 6.5 false)))))
-  (println (describe (->crate "umber-condor crate" (vec (->umber-condor 40 4.5 false) (->umber-condor 41 5.5 true) (->umber-condor 42 6.5 false) (->umber-condor 43 7.5 true)))))
-  (println (describe (->crate "rustic-tundra crate" (vec (->rustic-tundra 41 5.5 true) (->rustic-tundra 42 6.5 false) (->rustic-tundra 43 7.5 true) (->rustic-tundra 44 8.5 false)))))
-  (println (describe (->crate "olive-marten crate" (vec (->olive-marten 42 6.5 false) (->olive-marten 43 7.5 true) (->olive-marten 44 8.5 false) (->olive-marten 45 0.5 true)))))
-  (println (describe (->crate "young-falcon crate" (vec (->young-falcon 43 7.5 true) (->young-falcon 44 8.5 false) (->young-falcon 45 0.5 true) (->young-falcon 46 1.5 false)))))
-  (println (describe (->crate "placid-tundra crate" (vec (->placid-tundra 44 8.5 false) (->placid-tundra 45 0.5 true) (->placid-tundra 46 1.5 false) (->placid-tundra 47 2.5 true)))))
-  (println (describe (->crate "eager-falcon crate" (vec (->eager-falcon 45 0.5 true) (->eager-falcon 46 1.5 false) (->eager-falcon 47 2.5 true) (->eager-falcon 48 3.5 false)))))
-  (println (describe (->crate "sleek-condor crate" (vec (->sleek-condor 46 1.5 false) (->sleek-condor 47 2.5 true) (->sleek-condor 48 3.5 false) (->sleek-condor 49 4.5 true)))))
-  (println (describe (->crate "mellow-lagoon crate" (vec (->mellow-lagoon 47 2.5 true) (->mellow-lagoon 48 3.5 false) (->mellow-lagoon 49 4.5 true) (->mellow-lagoon 50 5.5 false)))))
-  (println (describe (->crate "quiet-valley crate" (vec (->quiet-valley 48 3.5 false) (->quiet-valley 49 4.5 true) (->quiet-valley 50 5.5 false) (->quiet-valley 51 6.5 true)))))
-  (println (describe (->crate "silver-heron crate" (vec (->silver-heron 49 4.5 true) (->silver-heron 50 5.5 false) (->silver-heron 51 6.5 true) (->silver-heron 52 7.5 false)))))
-  (println (describe (->crate "misty-island crate" (vec (->misty-island 50 5.5 false) (->misty-island 51 6.5 true) (->misty-island 52 7.5 false) (->misty-island 53 8.5 true)))))
-  (println (describe (->crate "eager-badger crate" (vec (->eager-badger 51 6.5 true) (->eager-badger 52 7.5 false) (->eager-badger 53 8.5 true) (->eager-badger 54 0.5 false)))))
-  (println (describe (->crate "stark-heron crate" (vec (->stark-heron 52 7.5 false) (->stark-heron 53 8.5 true) (->stark-heron 54 0.5 false) (->stark-heron 55 1.5 true)))))
-  (println (describe (->crate "hollow-sparrow crate" (vec (->hollow-sparrow 53 8.5 true) (->hollow-sparrow 54 0.5 false) (->hollow-sparrow 55 1.5 true) (->hollow-sparrow 56 2.5 false)))))
-  (println (describe (->crate "lively-yarrow crate" (vec (->lively-yarrow 54 0.5 false) (->lively-yarrow 55 1.5 true) (->lively-yarrow 56 2.5 false) (->lively-yarrow 57 3.5 true)))))
-  (println (describe (->crate "tender-harbor crate" (vec (->tender-harbor 55 1.5 true) (->tender-harbor 56 2.5 false) (->tender-harbor 57 3.5 true) (->tender-harbor 58 4.5 false)))))
-  (println (describe (->crate "rustic-bison crate" (vec (->rustic-bison 56 2.5 false) (->rustic-bison 57 3.5 true) (->rustic-bison 58 4.5 false) (->rustic-bison 59 5.5 true)))))
-  (println (describe (->crate "rapid-willow crate" (vec (->rapid-willow 57 3.5 true) (->rapid-willow 58 4.5 false) (->rapid-willow 59 5.5 true) (->rapid-willow 60 6.5 false)))))
-  (println (describe (->crate "gentle-falcon crate" (vec (->gentle-falcon 58 4.5 false) (->gentle-falcon 59 5.5 true) (->gentle-falcon 60 6.5 false) (->gentle-falcon 61 7.5 true)))))
-  (println (describe (->crate "rustic-yarrow crate" (vec (->rustic-yarrow 59 5.5 true) (->rustic-yarrow 60 6.5 false) (->rustic-yarrow 61 7.5 true) (->rustic-yarrow 62 8.5 false)))))
-  (for-each (iter (vec (bold-lantern-group/bold-lantern (->bold-lantern 0 2.0 true)) (bold-lantern-group/swift-geyser (->swift-geyser 0 2.0 true)) (bold-lantern-group/swift-otter (->swift-otter 0 2.0 true)) (bold-lantern-group/rustic-falcon (->rustic-falcon 0 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (fierce-falcon-group/fierce-falcon (->fierce-falcon 4 2.0 true)) (fierce-falcon-group/olive-meadow (->olive-meadow 4 2.0 true)) (fierce-falcon-group/lively-fern (->lively-fern 4 2.0 true)) (fierce-falcon-group/tender-beacon (->tender-beacon 4 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (jolly-thistle-group/jolly-thistle (->jolly-thistle 8 2.0 true)) (jolly-thistle-group/vivid-lantern (->vivid-lantern 8 2.0 true)) (jolly-thistle-group/wary-falcon (->wary-falcon 8 2.0 true)) (jolly-thistle-group/dusky-pebble (->dusky-pebble 8 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (stark-fern-group/stark-fern (->stark-fern 12 2.0 true)) (stark-fern-group/stark-falcon (->stark-falcon 12 2.0 true)) (stark-fern-group/keen-tundra (->keen-tundra 12 2.0 true)) (stark-fern-group/sunny-beacon (->sunny-beacon 12 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (witty-meadow-group/witty-meadow (->witty-meadow 16 2.0 true)) (witty-meadow-group/zesty-walrus (->zesty-walrus 16 2.0 true)) (witty-meadow-group/lively-zephyr (->lively-zephyr 16 2.0 true)) (witty-meadow-group/solemn-quarry (->solemn-quarry 16 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (zesty-willow-group/zesty-willow (->zesty-willow 20 2.0 true)) (zesty-willow-group/gilded-bison (->gilded-bison 20 2.0 true)) (zesty-willow-group/brisk-jackal (->brisk-jackal 20 2.0 true)) (zesty-willow-group/rustic-heron (->rustic-heron 20 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (olive-kestrel-group/olive-kestrel (->olive-kestrel 24 2.0 true)) (olive-kestrel-group/zesty-delta (->zesty-delta 24 2.0 true)) (olive-kestrel-group/dusky-geyser (->dusky-geyser 24 2.0 true)) (olive-kestrel-group/fierce-nebula (->fierce-nebula 24 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (gilded-comet-group/gilded-comet (->gilded-comet 28 2.0 true)) (gilded-comet-group/young-pine (->young-pine 28 2.0 true)) (gilded-comet-group/sleek-otter (->sleek-otter 28 2.0 true)) (gilded-comet-group/vivid-pebble (->vivid-pebble 28 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (brisk-heron-group/brisk-heron (->brisk-heron 32 2.0 true)) (brisk-heron-group/wary-cedar (->wary-cedar 32 2.0 true)) (brisk-heron-group/mellow-zephyr (->mellow-zephyr 32 2.0 true)) (brisk-heron-group/vivid-otter (->vivid-otter 32 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (misty-heron-group/misty-heron (->misty-heron 36 2.0 true)) (misty-heron-group/solemn-sparrow (->solemn-sparrow 36 2.0 true)) (misty-heron-group/noble-tundra (->noble-tundra 36 2.0 true)) (misty-heron-group/mellow-island (->mellow-island 36 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (umber-condor-group/umber-condor (->umber-condor 40 2.0 true)) (umber-condor-group/rustic-tundra (->rustic-tundra 40 2.0 true)) (umber-condor-group/olive-marten (->olive-marten 40 2.0 true)) (umber-condor-group/young-falcon (->young-falcon 40 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (placid-tundra-group/placid-tundra (->placid-tundra 44 2.0 true)) (placid-tundra-group/eager-falcon (->eager-falcon 44 2.0 true)) (placid-tundra-group/sleek-condor (->sleek-condor 44 2.0 true)) (placid-tundra-group/mellow-lagoon (->mellow-lagoon 44 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (quiet-valley-group/quiet-valley (->quiet-valley 48 2.0 true)) (quiet-valley-group/silver-heron (->silver-heron 48 2.0 true)) (quiet-valley-group/misty-island (->misty-island 48 2.0 true)) (quiet-valley-group/eager-badger (->eager-badger 48 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (stark-heron-group/stark-heron (->stark-heron 52 2.0 true)) (stark-heron-group/hollow-sparrow (->hollow-sparrow 52 2.0 true)) (stark-heron-group/lively-yarrow (->lively-yarrow 52 2.0 true)) (stark-heron-group/tender-harbor (->tender-harbor 52 2.0 true)))) (fn (entry) (println (headline entry))))
-  (for-each (iter (vec (rustic-bison-group/rustic-bison (->rustic-bison 56 2.0 true)) (rustic-bison-group/rapid-willow (->rapid-willow 56 2.0 true)) (rustic-bison-group/gentle-falcon (->gentle-falcon 56 2.0 true)) (rustic-bison-group/rustic-yarrow (->rustic-yarrow 56 2.0 true)))) (fn (entry) (println (headline entry))))
-  (println (str "boxed total: " (total-weight (vec (box-new (->bold-lantern 0 1.5 false))
-    (box-new (->swift-geyser 1 1.5 false))
-    (box-new (->swift-otter 2 1.5 false))
-    (box-new (->rustic-falcon 3 1.5 false))
-    (box-new (->fierce-falcon 4 1.5 false))
-    (box-new (->olive-meadow 5 1.5 false))
-    (box-new (->lively-fern 6 1.5 false))
-    (box-new (->tender-beacon 7 1.5 false))
-    (box-new (->jolly-thistle 8 1.5 false))
-    (box-new (->vivid-lantern 9 1.5 false))
-    (box-new (->wary-falcon 10 1.5 false))
-    (box-new (->dusky-pebble 11 1.5 false))
-    (box-new (->stark-fern 12 1.5 false))
-    (box-new (->stark-falcon 13 1.5 false))
-    (box-new (->keen-tundra 14 1.5 false))
-    (box-new (->sunny-beacon 15 1.5 false))
-    (box-new (->witty-meadow 16 1.5 false))
-    (box-new (->zesty-walrus 17 1.5 false))
-    (box-new (->lively-zephyr 18 1.5 false))
-    (box-new (->solemn-quarry 19 1.5 false))
-    (box-new (->zesty-willow 20 1.5 false))
-    (box-new (->gilded-bison 21 1.5 false))
-    (box-new (->brisk-jackal 22 1.5 false))
-    (box-new (->rustic-heron 23 1.5 false))
-    (box-new (->olive-kestrel 24 1.5 false))
-    (box-new (->zesty-delta 25 1.5 false))
-    (box-new (->dusky-geyser 26 1.5 false))
-    (box-new (->fierce-nebula 27 1.5 false))
-    (box-new (->gilded-comet 28 1.5 false))
-    (box-new (->young-pine 29 1.5 false))
-    (box-new (->sleek-otter 30 1.5 false))
-    (box-new (->vivid-pebble 31 1.5 false))
-    (box-new (->brisk-heron 32 1.5 false))
-    (box-new (->wary-cedar 33 1.5 false))
-    (box-new (->mellow-zephyr 34 1.5 false))
-    (box-new (->vivid-otter 35 1.5 false))
-    (box-new (->misty-heron 36 1.5 false))
-    (box-new (->solemn-sparrow 37 1.5 false))
-    (box-new (->noble-tundra 38 1.5 false))
-    (box-new (->mellow-island 39 1.5 false))
-    (box-new (->umber-condor 40 1.5 false))
-    (box-new (->rustic-tundra 41 1.5 false))
-    (box-new (->olive-marten 42 1.5 false))
-    (box-new (->young-falcon 43 1.5 false))
-    (box-new (->placid-tundra 44 1.5 false))
-    (box-new (->eager-falcon 45 1.5 false))
-    (box-new (->sleek-condor 46 1.5 false))
-    (box-new (->mellow-lagoon 47 1.5 false))
-    (box-new (->quiet-valley 48 1.5 false))
-    (box-new (->silver-heron 49 1.5 false))
-    (box-new (->misty-island 50 1.5 false))
-    (box-new (->eager-badger 51 1.5 false))
-    (box-new (->stark-heron 52 1.5 false))
-    (box-new (->hollow-sparrow 53 1.5 false))
-    (box-new (->lively-yarrow 54 1.5 false))
-    (box-new (->tender-harbor 55 1.5 false))
-    (box-new (->rustic-bison 56 1.5 false))
-    (box-new (->rapid-willow 57 1.5 false))
-    (box-new (->gentle-falcon 58 1.5 false))
-    (box-new (->rustic-yarrow 59 1.5 false)))))))
+  (println (describe (->crate "parcel-1 crate" (vec (->parcel-1 0 0.5 false) (->parcel-1 1 1.5 true) (->parcel-1 2 2.5 false) (->parcel-1 3 3.5 true)))))
+  (println (describe (->crate "parcel-2 crate" (vec (->parcel-2 1 1.5 true) (->parcel-2 2 2.5 false) (->parcel-2 3 3.5 true) (->parcel-2 4 4.5 false)))))
+  (println (describe (->crate "parcel-3 crate" (vec (->parcel-3 2 2.5 false) (->parcel-3 3 3.5 true) (->parcel-3 4 4.5 false) (->parcel-3 5 5.5 true)))))
+  (println (describe (->crate "parcel-4 crate" (vec (->parcel-4 3 3.5 true) (->parcel-4 4 4.5 false) (->parcel-4 5 5.5 true) (->parcel-4 6 6.5 false)))))
+  (println (describe (->crate "parcel-5 crate" (vec (->parcel-5 4 4.5 false) (->parcel-5 5 5.5 true) (->parcel-5 6 6.5 false) (->parcel-5 7 7.5 true)))))
+  (println (describe (->crate "parcel-6 crate" (vec (->parcel-6 5 5.5 true) (->parcel-6 6 6.5 false) (->parcel-6 7 7.5 true) (->parcel-6 8 8.5 false)))))
+  (println (describe (->crate "parcel-7 crate" (vec (->parcel-7 6 6.5 false) (->parcel-7 7 7.5 true) (->parcel-7 8 8.5 false) (->parcel-7 9 0.5 true)))))
+  (println (describe (->crate "parcel-8 crate" (vec (->parcel-8 7 7.5 true) (->parcel-8 8 8.5 false) (->parcel-8 9 0.5 true) (->parcel-8 10 1.5 false)))))
+  (println (describe (->crate "parcel-9 crate" (vec (->parcel-9 8 8.5 false) (->parcel-9 9 0.5 true) (->parcel-9 10 1.5 false) (->parcel-9 11 2.5 true)))))
+  (println (describe (->crate "parcel-10 crate" (vec (->parcel-10 9 0.5 true) (->parcel-10 10 1.5 false) (->parcel-10 11 2.5 true) (->parcel-10 12 3.5 false)))))
+  (println (describe (->crate "parcel-11 crate" (vec (->parcel-11 10 1.5 false) (->parcel-11 11 2.5 true) (->parcel-11 12 3.5 false) (->parcel-11 13 4.5 true)))))
+  (println (describe (->crate "parcel-12 crate" (vec (->parcel-12 11 2.5 true) (->parcel-12 12 3.5 false) (->parcel-12 13 4.5 true) (->parcel-12 14 5.5 false)))))
+  (println (describe (->crate "parcel-13 crate" (vec (->parcel-13 12 3.5 false) (->parcel-13 13 4.5 true) (->parcel-13 14 5.5 false) (->parcel-13 15 6.5 true)))))
+  (println (describe (->crate "parcel-14 crate" (vec (->parcel-14 13 4.5 true) (->parcel-14 14 5.5 false) (->parcel-14 15 6.5 true) (->parcel-14 16 7.5 false)))))
+  (println (describe (->crate "parcel-15 crate" (vec (->parcel-15 14 5.5 false) (->parcel-15 15 6.5 true) (->parcel-15 16 7.5 false) (->parcel-15 17 8.5 true)))))
+  (println (describe (->crate "parcel-16 crate" (vec (->parcel-16 15 6.5 true) (->parcel-16 16 7.5 false) (->parcel-16 17 8.5 true) (->parcel-16 18 0.5 false)))))
+  (println (describe (->crate "parcel-17 crate" (vec (->parcel-17 16 7.5 false) (->parcel-17 17 8.5 true) (->parcel-17 18 0.5 false) (->parcel-17 19 1.5 true)))))
+  (println (describe (->crate "parcel-18 crate" (vec (->parcel-18 17 8.5 true) (->parcel-18 18 0.5 false) (->parcel-18 19 1.5 true) (->parcel-18 20 2.5 false)))))
+  (println (describe (->crate "parcel-19 crate" (vec (->parcel-19 18 0.5 false) (->parcel-19 19 1.5 true) (->parcel-19 20 2.5 false) (->parcel-19 21 3.5 true)))))
+  (println (describe (->crate "parcel-20 crate" (vec (->parcel-20 19 1.5 true) (->parcel-20 20 2.5 false) (->parcel-20 21 3.5 true) (->parcel-20 22 4.5 false)))))
+  (println (describe (->crate "parcel-21 crate" (vec (->parcel-21 20 2.5 false) (->parcel-21 21 3.5 true) (->parcel-21 22 4.5 false) (->parcel-21 23 5.5 true)))))
+  (println (describe (->crate "parcel-22 crate" (vec (->parcel-22 21 3.5 true) (->parcel-22 22 4.5 false) (->parcel-22 23 5.5 true) (->parcel-22 24 6.5 false)))))
+  (println (describe (->crate "parcel-23 crate" (vec (->parcel-23 22 4.5 false) (->parcel-23 23 5.5 true) (->parcel-23 24 6.5 false) (->parcel-23 25 7.5 true)))))
+  (println (describe (->crate "parcel-24 crate" (vec (->parcel-24 23 5.5 true) (->parcel-24 24 6.5 false) (->parcel-24 25 7.5 true) (->parcel-24 26 8.5 false)))))
+  (println (describe (->crate "parcel-25 crate" (vec (->parcel-25 24 6.5 false) (->parcel-25 25 7.5 true) (->parcel-25 26 8.5 false) (->parcel-25 27 0.5 true)))))
+  (println (describe (->crate "parcel-26 crate" (vec (->parcel-26 25 7.5 true) (->parcel-26 26 8.5 false) (->parcel-26 27 0.5 true) (->parcel-26 28 1.5 false)))))
+  (println (describe (->crate "parcel-27 crate" (vec (->parcel-27 26 8.5 false) (->parcel-27 27 0.5 true) (->parcel-27 28 1.5 false) (->parcel-27 29 2.5 true)))))
+  (println (describe (->crate "parcel-28 crate" (vec (->parcel-28 27 0.5 true) (->parcel-28 28 1.5 false) (->parcel-28 29 2.5 true) (->parcel-28 30 3.5 false)))))
+  (println (describe (->crate "parcel-29 crate" (vec (->parcel-29 28 1.5 false) (->parcel-29 29 2.5 true) (->parcel-29 30 3.5 false) (->parcel-29 31 4.5 true)))))
+  (println (describe (->crate "parcel-30 crate" (vec (->parcel-30 29 2.5 true) (->parcel-30 30 3.5 false) (->parcel-30 31 4.5 true) (->parcel-30 32 5.5 false)))))
+  (println (describe (->crate "parcel-31 crate" (vec (->parcel-31 30 3.5 false) (->parcel-31 31 4.5 true) (->parcel-31 32 5.5 false) (->parcel-31 33 6.5 true)))))
+  (println (describe (->crate "parcel-32 crate" (vec (->parcel-32 31 4.5 true) (->parcel-32 32 5.5 false) (->parcel-32 33 6.5 true) (->parcel-32 34 7.5 false)))))
+  (println (describe (->crate "parcel-33 crate" (vec (->parcel-33 32 5.5 false) (->parcel-33 33 6.5 true) (->parcel-33 34 7.5 false) (->parcel-33 35 8.5 true)))))
+  (println (describe (->crate "parcel-34 crate" (vec (->parcel-34 33 6.5 true) (->parcel-34 34 7.5 false) (->parcel-34 35 8.5 true) (->parcel-34 36 0.5 false)))))
+  (println (describe (->crate "parcel-35 crate" (vec (->parcel-35 34 7.5 false) (->parcel-35 35 8.5 true) (->parcel-35 36 0.5 false) (->parcel-35 37 1.5 true)))))
+  (println (describe (->crate "parcel-36 crate" (vec (->parcel-36 35 8.5 true) (->parcel-36 36 0.5 false) (->parcel-36 37 1.5 true) (->parcel-36 38 2.5 false)))))
+  (println (describe (->crate "parcel-37 crate" (vec (->parcel-37 36 0.5 false) (->parcel-37 37 1.5 true) (->parcel-37 38 2.5 false) (->parcel-37 39 3.5 true)))))
+  (println (describe (->crate "parcel-38 crate" (vec (->parcel-38 37 1.5 true) (->parcel-38 38 2.5 false) (->parcel-38 39 3.5 true) (->parcel-38 40 4.5 false)))))
+  (println (describe (->crate "parcel-39 crate" (vec (->parcel-39 38 2.5 false) (->parcel-39 39 3.5 true) (->parcel-39 40 4.5 false) (->parcel-39 41 5.5 true)))))
+  (println (describe (->crate "parcel-40 crate" (vec (->parcel-40 39 3.5 true) (->parcel-40 40 4.5 false) (->parcel-40 41 5.5 true) (->parcel-40 42 6.5 false)))))
+  (println (describe (->crate "parcel-41 crate" (vec (->parcel-41 40 4.5 false) (->parcel-41 41 5.5 true) (->parcel-41 42 6.5 false) (->parcel-41 43 7.5 true)))))
+  (println (describe (->crate "parcel-42 crate" (vec (->parcel-42 41 5.5 true) (->parcel-42 42 6.5 false) (->parcel-42 43 7.5 true) (->parcel-42 44 8.5 false)))))
+  (println (describe (->crate "parcel-43 crate" (vec (->parcel-43 42 6.5 false) (->parcel-43 43 7.5 true) (->parcel-43 44 8.5 false) (->parcel-43 45 0.5 true)))))
+  (println (describe (->crate "parcel-44 crate" (vec (->parcel-44 43 7.5 true) (->parcel-44 44 8.5 false) (->parcel-44 45 0.5 true) (->parcel-44 46 1.5 false)))))
+  (println (describe (->crate "parcel-45 crate" (vec (->parcel-45 44 8.5 false) (->parcel-45 45 0.5 true) (->parcel-45 46 1.5 false) (->parcel-45 47 2.5 true)))))
+  (println (describe (->crate "parcel-46 crate" (vec (->parcel-46 45 0.5 true) (->parcel-46 46 1.5 false) (->parcel-46 47 2.5 true) (->parcel-46 48 3.5 false)))))
+  (println (describe (->crate "parcel-47 crate" (vec (->parcel-47 46 1.5 false) (->parcel-47 47 2.5 true) (->parcel-47 48 3.5 false) (->parcel-47 49 4.5 true)))))
+  (println (describe (->crate "parcel-48 crate" (vec (->parcel-48 47 2.5 true) (->parcel-48 48 3.5 false) (->parcel-48 49 4.5 true) (->parcel-48 50 5.5 false)))))
+  (println (describe (->crate "parcel-49 crate" (vec (->parcel-49 48 3.5 false) (->parcel-49 49 4.5 true) (->parcel-49 50 5.5 false) (->parcel-49 51 6.5 true)))))
+  (println (describe (->crate "parcel-50 crate" (vec (->parcel-50 49 4.5 true) (->parcel-50 50 5.5 false) (->parcel-50 51 6.5 true) (->parcel-50 52 7.5 false)))))
+  (println (describe (->crate "parcel-51 crate" (vec (->parcel-51 50 5.5 false) (->parcel-51 51 6.5 true) (->parcel-51 52 7.5 false) (->parcel-51 53 8.5 true)))))
+  (println (describe (->crate "parcel-52 crate" (vec (->parcel-52 51 6.5 true) (->parcel-52 52 7.5 false) (->parcel-52 53 8.5 true) (->parcel-52 54 0.5 false)))))
+  (println (describe (->crate "parcel-53 crate" (vec (->parcel-53 52 7.5 false) (->parcel-53 53 8.5 true) (->parcel-53 54 0.5 false) (->parcel-53 55 1.5 true)))))
+  (println (describe (->crate "parcel-54 crate" (vec (->parcel-54 53 8.5 true) (->parcel-54 54 0.5 false) (->parcel-54 55 1.5 true) (->parcel-54 56 2.5 false)))))
+  (println (describe (->crate "parcel-55 crate" (vec (->parcel-55 54 0.5 false) (->parcel-55 55 1.5 true) (->parcel-55 56 2.5 false) (->parcel-55 57 3.5 true)))))
+  (println (describe (->crate "parcel-56 crate" (vec (->parcel-56 55 1.5 true) (->parcel-56 56 2.5 false) (->parcel-56 57 3.5 true) (->parcel-56 58 4.5 false)))))
+  (println (describe (->crate "parcel-57 crate" (vec (->parcel-57 56 2.5 false) (->parcel-57 57 3.5 true) (->parcel-57 58 4.5 false) (->parcel-57 59 5.5 true)))))
+  (println (describe (->crate "parcel-58 crate" (vec (->parcel-58 57 3.5 true) (->parcel-58 58 4.5 false) (->parcel-58 59 5.5 true) (->parcel-58 60 6.5 false)))))
+  (println (describe (->crate "parcel-59 crate" (vec (->parcel-59 58 4.5 false) (->parcel-59 59 5.5 true) (->parcel-59 60 6.5 false) (->parcel-59 61 7.5 true)))))
+  (println (describe (->crate "parcel-60 crate" (vec (->parcel-60 59 5.5 true) (->parcel-60 60 6.5 false) (->parcel-60 61 7.5 true) (->parcel-60 62 8.5 false)))))
+  (for-each (iter (vec (parcel-1-group/parcel-1 (->parcel-1 0 2.0 true)) (parcel-1-group/parcel-2 (->parcel-2 0 2.0 true)) (parcel-1-group/parcel-3 (->parcel-3 0 2.0 true)) (parcel-1-group/parcel-4 (->parcel-4 0 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-5-group/parcel-5 (->parcel-5 4 2.0 true)) (parcel-5-group/parcel-6 (->parcel-6 4 2.0 true)) (parcel-5-group/parcel-7 (->parcel-7 4 2.0 true)) (parcel-5-group/parcel-8 (->parcel-8 4 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-9-group/parcel-9 (->parcel-9 8 2.0 true)) (parcel-9-group/parcel-10 (->parcel-10 8 2.0 true)) (parcel-9-group/parcel-11 (->parcel-11 8 2.0 true)) (parcel-9-group/parcel-12 (->parcel-12 8 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-13-group/parcel-13 (->parcel-13 12 2.0 true)) (parcel-13-group/parcel-14 (->parcel-14 12 2.0 true)) (parcel-13-group/parcel-15 (->parcel-15 12 2.0 true)) (parcel-13-group/parcel-16 (->parcel-16 12 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-17-group/parcel-17 (->parcel-17 16 2.0 true)) (parcel-17-group/parcel-18 (->parcel-18 16 2.0 true)) (parcel-17-group/parcel-19 (->parcel-19 16 2.0 true)) (parcel-17-group/parcel-20 (->parcel-20 16 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-21-group/parcel-21 (->parcel-21 20 2.0 true)) (parcel-21-group/parcel-22 (->parcel-22 20 2.0 true)) (parcel-21-group/parcel-23 (->parcel-23 20 2.0 true)) (parcel-21-group/parcel-24 (->parcel-24 20 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-25-group/parcel-25 (->parcel-25 24 2.0 true)) (parcel-25-group/parcel-26 (->parcel-26 24 2.0 true)) (parcel-25-group/parcel-27 (->parcel-27 24 2.0 true)) (parcel-25-group/parcel-28 (->parcel-28 24 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-29-group/parcel-29 (->parcel-29 28 2.0 true)) (parcel-29-group/parcel-30 (->parcel-30 28 2.0 true)) (parcel-29-group/parcel-31 (->parcel-31 28 2.0 true)) (parcel-29-group/parcel-32 (->parcel-32 28 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-33-group/parcel-33 (->parcel-33 32 2.0 true)) (parcel-33-group/parcel-34 (->parcel-34 32 2.0 true)) (parcel-33-group/parcel-35 (->parcel-35 32 2.0 true)) (parcel-33-group/parcel-36 (->parcel-36 32 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-37-group/parcel-37 (->parcel-37 36 2.0 true)) (parcel-37-group/parcel-38 (->parcel-38 36 2.0 true)) (parcel-37-group/parcel-39 (->parcel-39 36 2.0 true)) (parcel-37-group/parcel-40 (->parcel-40 36 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-41-group/parcel-41 (->parcel-41 40 2.0 true)) (parcel-41-group/parcel-42 (->parcel-42 40 2.0 true)) (parcel-41-group/parcel-43 (->parcel-43 40 2.0 true)) (parcel-41-group/parcel-44 (->parcel-44 40 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-45-group/parcel-45 (->parcel-45 44 2.0 true)) (parcel-45-group/parcel-46 (->parcel-46 44 2.0 true)) (parcel-45-group/parcel-47 (->parcel-47 44 2.0 true)) (parcel-45-group/parcel-48 (->parcel-48 44 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-49-group/parcel-49 (->parcel-49 48 2.0 true)) (parcel-49-group/parcel-50 (->parcel-50 48 2.0 true)) (parcel-49-group/parcel-51 (->parcel-51 48 2.0 true)) (parcel-49-group/parcel-52 (->parcel-52 48 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-53-group/parcel-53 (->parcel-53 52 2.0 true)) (parcel-53-group/parcel-54 (->parcel-54 52 2.0 true)) (parcel-53-group/parcel-55 (->parcel-55 52 2.0 true)) (parcel-53-group/parcel-56 (->parcel-56 52 2.0 true)))) (fn (entry) (println (headline entry))))
+  (for-each (iter (vec (parcel-57-group/parcel-57 (->parcel-57 56 2.0 true)) (parcel-57-group/parcel-58 (->parcel-58 56 2.0 true)) (parcel-57-group/parcel-59 (->parcel-59 56 2.0 true)) (parcel-57-group/parcel-60 (->parcel-60 56 2.0 true)))) (fn (entry) (println (headline entry))))
+  (println (str "boxed total: " (total-weight (vec (box-new (->parcel-1 0 1.5 false))
+    (box-new (->parcel-2 1 1.5 false))
+    (box-new (->parcel-3 2 1.5 false))
+    (box-new (->parcel-4 3 1.5 false))
+    (box-new (->parcel-5 4 1.5 false))
+    (box-new (->parcel-6 5 1.5 false))
+    (box-new (->parcel-7 6 1.5 false))
+    (box-new (->parcel-8 7 1.5 false))
+    (box-new (->parcel-9 8 1.5 false))
+    (box-new (->parcel-10 9 1.5 false))
+    (box-new (->parcel-11 10 1.5 false))
+    (box-new (->parcel-12 11 1.5 false))
+    (box-new (->parcel-13 12 1.5 false))
+    (box-new (->parcel-14 13 1.5 false))
+    (box-new (->parcel-15 14 1.5 false))
+    (box-new (->parcel-16 15 1.5 false))
+    (box-new (->parcel-17 16 1.5 false))
+    (box-new (->parcel-18 17 1.5 false))
+    (box-new (->parcel-19 18 1.5 false))
+    (box-new (->parcel-20 19 1.5 false))
+    (box-new (->parcel-21 20 1.5 false))
+    (box-new (->parcel-22 21 1.5 false))
+    (box-new (->parcel-23 22 1.5 false))
+    (box-new (->parcel-24 23 1.5 false))
+    (box-new (->parcel-25 24 1.5 false))
+    (box-new (->parcel-26 25 1.5 false))
+    (box-new (->parcel-27 26 1.5 false))
+    (box-new (->parcel-28 27 1.5 false))
+    (box-new (->parcel-29 28 1.5 false))
+    (box-new (->parcel-30 29 1.5 false))
+    (box-new (->parcel-31 30 1.5 false))
+    (box-new (->parcel-32 31 1.5 false))
+    (box-new (->parcel-33 32 1.5 false))
+    (box-new (->parcel-34 33 1.5 false))
+    (box-new (->parcel-35 34 1.5 false))
+    (box-new (->parcel-36 35 1.5 false))
+    (box-new (->parcel-37 36 1.5 false))
+    (box-new (->parcel-38 37 1.5 false))
+    (box-new (->parcel-39 38 1.5 false))
+    (box-new (->parcel-40 39 1.5 false))
+    (box-new (->parcel-41 40 1.5 false))
+    (box-new (->parcel-42 41 1.5 false))
+    (box-new (->parcel-43 42 1.5 false))
+    (box-new (->parcel-44 43 1.5 false))
+    (box-new (->parcel-45 44 1.5 false))
+    (box-new (->parcel-46 45 1.5 false))
+    (box-new (->parcel-47 46 1.5 false))
+    (box-new (->parcel-48 47 1.5 false))
+    (box-new (->parcel-49 48 1.5 false))
+    (box-new (->parcel-50 49 1.5 false))
+    (box-new (->parcel-51 50 1.5 false))
+    (box-new (->parcel-52 51 1.5 false))
+    (box-new (->parcel-53 52 1.5 false))
+    (box-new (->parcel-54 53 1.5 false))
+    (box-new (->parcel-55 54 1.5 false))
+    (box-new (->parcel-56 55 1.5 false))
+    (box-new (->parcel-57 56 1.5 false))
+    (box-new (->parcel-58 57 1.5 false))
+    (box-new (->parcel-59 58 1.5 false))
+    (box-new (->parcel-60 59 1.5 false)))))))
 
 (trait measured
   (weight (fn ((ref self)) f64)))
@@ -174,919 +174,919 @@
 (trait (summary (labeled))
   (headline (fn ((ref self)) string)))
 
-(defstruct bold-lantern :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-1 :serial u32 :mass f64 :sealed bool)
 
-(impl measured bold-lantern
+(impl measured parcel-1
   (weight (item) (* (:mass item) 1.0)))
 
-(impl labeled bold-lantern
-  (label (item) (str "bold-lantern #" (:serial item))))
+(impl labeled parcel-1
+  (label (item) (str "parcel-1 #" (:serial item))))
 
-(impl cargo bold-lantern
+(impl cargo parcel-1
   (fragile? (item) (and (:sealed item) (> (:mass item) 0.0))))
 
-(defstruct swift-geyser :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-2 :serial u32 :mass f64 :sealed bool)
 
-(impl measured swift-geyser
+(impl measured parcel-2
   (weight (item) (* (:mass item) 2.0)))
 
-(impl labeled swift-geyser
-  (label (item) (str "swift-geyser #" (:serial item))))
+(impl labeled parcel-2
+  (label (item) (str "parcel-2 #" (:serial item))))
 
-(impl cargo swift-geyser
+(impl cargo parcel-2
   (fragile? (item) (and (:sealed item) (> (:mass item) 1.0))))
 
-(defstruct swift-otter :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-3 :serial u32 :mass f64 :sealed bool)
 
-(impl measured swift-otter
+(impl measured parcel-3
   (weight (item) (* (:mass item) 3.0)))
 
-(impl labeled swift-otter
-  (label (item) (str "swift-otter #" (:serial item))))
+(impl labeled parcel-3
+  (label (item) (str "parcel-3 #" (:serial item))))
 
-(impl cargo swift-otter
+(impl cargo parcel-3
   (fragile? (item) (and (:sealed item) (> (:mass item) 2.0))))
 
-(defstruct rustic-falcon :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-4 :serial u32 :mass f64 :sealed bool)
 
-(impl measured rustic-falcon
+(impl measured parcel-4
   (weight (item) (* (:mass item) 4.0)))
 
-(impl labeled rustic-falcon
-  (label (item) (str "rustic-falcon #" (:serial item))))
+(impl labeled parcel-4
+  (label (item) (str "parcel-4 #" (:serial item))))
 
-(impl cargo rustic-falcon
+(impl cargo parcel-4
   (fragile? (item) (and (:sealed item) (> (:mass item) 3.0))))
 
-(defstruct fierce-falcon :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-5 :serial u32 :mass f64 :sealed bool)
 
-(impl measured fierce-falcon
+(impl measured parcel-5
   (weight (item) (* (:mass item) 5.0)))
 
-(impl labeled fierce-falcon
-  (label (item) (str "fierce-falcon #" (:serial item))))
+(impl labeled parcel-5
+  (label (item) (str "parcel-5 #" (:serial item))))
 
-(impl cargo fierce-falcon
+(impl cargo parcel-5
   (fragile? (item) (and (:sealed item) (> (:mass item) 4.0))))
 
-(defstruct olive-meadow :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-6 :serial u32 :mass f64 :sealed bool)
 
-(impl measured olive-meadow
+(impl measured parcel-6
   (weight (item) (* (:mass item) 6.0)))
 
-(impl labeled olive-meadow
-  (label (item) (str "olive-meadow #" (:serial item))))
+(impl labeled parcel-6
+  (label (item) (str "parcel-6 #" (:serial item))))
 
-(impl cargo olive-meadow
+(impl cargo parcel-6
   (fragile? (item) (and (:sealed item) (> (:mass item) 0.0))))
 
-(defstruct lively-fern :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-7 :serial u32 :mass f64 :sealed bool)
 
-(impl measured lively-fern
+(impl measured parcel-7
   (weight (item) (* (:mass item) 7.0)))
 
-(impl labeled lively-fern
-  (label (item) (str "lively-fern #" (:serial item))))
+(impl labeled parcel-7
+  (label (item) (str "parcel-7 #" (:serial item))))
 
-(impl cargo lively-fern
+(impl cargo parcel-7
   (fragile? (item) (and (:sealed item) (> (:mass item) 1.0))))
 
-(defstruct tender-beacon :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-8 :serial u32 :mass f64 :sealed bool)
 
-(impl measured tender-beacon
+(impl measured parcel-8
   (weight (item) (* (:mass item) 1.0)))
 
-(impl labeled tender-beacon
-  (label (item) (str "tender-beacon #" (:serial item))))
+(impl labeled parcel-8
+  (label (item) (str "parcel-8 #" (:serial item))))
 
-(impl cargo tender-beacon
+(impl cargo parcel-8
   (fragile? (item) (and (:sealed item) (> (:mass item) 2.0))))
 
-(defstruct jolly-thistle :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-9 :serial u32 :mass f64 :sealed bool)
 
-(impl measured jolly-thistle
+(impl measured parcel-9
   (weight (item) (* (:mass item) 2.0)))
 
-(impl labeled jolly-thistle
-  (label (item) (str "jolly-thistle #" (:serial item))))
+(impl labeled parcel-9
+  (label (item) (str "parcel-9 #" (:serial item))))
 
-(impl cargo jolly-thistle
+(impl cargo parcel-9
   (fragile? (item) (and (:sealed item) (> (:mass item) 3.0))))
 
-(defstruct vivid-lantern :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-10 :serial u32 :mass f64 :sealed bool)
 
-(impl measured vivid-lantern
+(impl measured parcel-10
   (weight (item) (* (:mass item) 3.0)))
 
-(impl labeled vivid-lantern
-  (label (item) (str "vivid-lantern #" (:serial item))))
+(impl labeled parcel-10
+  (label (item) (str "parcel-10 #" (:serial item))))
 
-(impl cargo vivid-lantern
+(impl cargo parcel-10
   (fragile? (item) (and (:sealed item) (> (:mass item) 4.0))))
 
-(defstruct wary-falcon :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-11 :serial u32 :mass f64 :sealed bool)
 
-(impl measured wary-falcon
+(impl measured parcel-11
   (weight (item) (* (:mass item) 4.0)))
 
-(impl labeled wary-falcon
-  (label (item) (str "wary-falcon #" (:serial item))))
+(impl labeled parcel-11
+  (label (item) (str "parcel-11 #" (:serial item))))
 
-(impl cargo wary-falcon
+(impl cargo parcel-11
   (fragile? (item) (and (:sealed item) (> (:mass item) 0.0))))
 
-(defstruct dusky-pebble :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-12 :serial u32 :mass f64 :sealed bool)
 
-(impl measured dusky-pebble
+(impl measured parcel-12
   (weight (item) (* (:mass item) 5.0)))
 
-(impl labeled dusky-pebble
-  (label (item) (str "dusky-pebble #" (:serial item))))
+(impl labeled parcel-12
+  (label (item) (str "parcel-12 #" (:serial item))))
 
-(impl cargo dusky-pebble
+(impl cargo parcel-12
   (fragile? (item) (and (:sealed item) (> (:mass item) 1.0))))
 
-(defstruct stark-fern :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-13 :serial u32 :mass f64 :sealed bool)
 
-(impl measured stark-fern
+(impl measured parcel-13
   (weight (item) (* (:mass item) 6.0)))
 
-(impl labeled stark-fern
-  (label (item) (str "stark-fern #" (:serial item))))
+(impl labeled parcel-13
+  (label (item) (str "parcel-13 #" (:serial item))))
 
-(impl cargo stark-fern
+(impl cargo parcel-13
   (fragile? (item) (and (:sealed item) (> (:mass item) 2.0))))
 
-(defstruct stark-falcon :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-14 :serial u32 :mass f64 :sealed bool)
 
-(impl measured stark-falcon
+(impl measured parcel-14
   (weight (item) (* (:mass item) 7.0)))
 
-(impl labeled stark-falcon
-  (label (item) (str "stark-falcon #" (:serial item))))
+(impl labeled parcel-14
+  (label (item) (str "parcel-14 #" (:serial item))))
 
-(impl cargo stark-falcon
+(impl cargo parcel-14
   (fragile? (item) (and (:sealed item) (> (:mass item) 3.0))))
 
-(defstruct keen-tundra :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-15 :serial u32 :mass f64 :sealed bool)
 
-(impl measured keen-tundra
+(impl measured parcel-15
   (weight (item) (* (:mass item) 1.0)))
 
-(impl labeled keen-tundra
-  (label (item) (str "keen-tundra #" (:serial item))))
+(impl labeled parcel-15
+  (label (item) (str "parcel-15 #" (:serial item))))
 
-(impl cargo keen-tundra
+(impl cargo parcel-15
   (fragile? (item) (and (:sealed item) (> (:mass item) 4.0))))
 
-(defstruct sunny-beacon :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-16 :serial u32 :mass f64 :sealed bool)
 
-(impl measured sunny-beacon
+(impl measured parcel-16
   (weight (item) (* (:mass item) 2.0)))
 
-(impl labeled sunny-beacon
-  (label (item) (str "sunny-beacon #" (:serial item))))
+(impl labeled parcel-16
+  (label (item) (str "parcel-16 #" (:serial item))))
 
-(impl cargo sunny-beacon
+(impl cargo parcel-16
   (fragile? (item) (and (:sealed item) (> (:mass item) 0.0))))
 
-(defstruct witty-meadow :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-17 :serial u32 :mass f64 :sealed bool)
 
-(impl measured witty-meadow
+(impl measured parcel-17
   (weight (item) (* (:mass item) 3.0)))
 
-(impl labeled witty-meadow
-  (label (item) (str "witty-meadow #" (:serial item))))
+(impl labeled parcel-17
+  (label (item) (str "parcel-17 #" (:serial item))))
 
-(impl cargo witty-meadow
+(impl cargo parcel-17
   (fragile? (item) (and (:sealed item) (> (:mass item) 1.0))))
 
-(defstruct zesty-walrus :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-18 :serial u32 :mass f64 :sealed bool)
 
-(impl measured zesty-walrus
+(impl measured parcel-18
   (weight (item) (* (:mass item) 4.0)))
 
-(impl labeled zesty-walrus
-  (label (item) (str "zesty-walrus #" (:serial item))))
+(impl labeled parcel-18
+  (label (item) (str "parcel-18 #" (:serial item))))
 
-(impl cargo zesty-walrus
+(impl cargo parcel-18
   (fragile? (item) (and (:sealed item) (> (:mass item) 2.0))))
 
-(defstruct lively-zephyr :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-19 :serial u32 :mass f64 :sealed bool)
 
-(impl measured lively-zephyr
+(impl measured parcel-19
   (weight (item) (* (:mass item) 5.0)))
 
-(impl labeled lively-zephyr
-  (label (item) (str "lively-zephyr #" (:serial item))))
+(impl labeled parcel-19
+  (label (item) (str "parcel-19 #" (:serial item))))
 
-(impl cargo lively-zephyr
+(impl cargo parcel-19
   (fragile? (item) (and (:sealed item) (> (:mass item) 3.0))))
 
-(defstruct solemn-quarry :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-20 :serial u32 :mass f64 :sealed bool)
 
-(impl measured solemn-quarry
+(impl measured parcel-20
   (weight (item) (* (:mass item) 6.0)))
 
-(impl labeled solemn-quarry
-  (label (item) (str "solemn-quarry #" (:serial item))))
+(impl labeled parcel-20
+  (label (item) (str "parcel-20 #" (:serial item))))
 
-(impl cargo solemn-quarry
+(impl cargo parcel-20
   (fragile? (item) (and (:sealed item) (> (:mass item) 4.0))))
 
-(defstruct zesty-willow :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-21 :serial u32 :mass f64 :sealed bool)
 
-(impl measured zesty-willow
+(impl measured parcel-21
   (weight (item) (* (:mass item) 7.0)))
 
-(impl labeled zesty-willow
-  (label (item) (str "zesty-willow #" (:serial item))))
+(impl labeled parcel-21
+  (label (item) (str "parcel-21 #" (:serial item))))
 
-(impl cargo zesty-willow
+(impl cargo parcel-21
   (fragile? (item) (and (:sealed item) (> (:mass item) 0.0))))
 
-(defstruct gilded-bison :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-22 :serial u32 :mass f64 :sealed bool)
 
-(impl measured gilded-bison
+(impl measured parcel-22
   (weight (item) (* (:mass item) 1.0)))
 
-(impl labeled gilded-bison
-  (label (item) (str "gilded-bison #" (:serial item))))
+(impl labeled parcel-22
+  (label (item) (str "parcel-22 #" (:serial item))))
 
-(impl cargo gilded-bison
+(impl cargo parcel-22
   (fragile? (item) (and (:sealed item) (> (:mass item) 1.0))))
 
-(defstruct brisk-jackal :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-23 :serial u32 :mass f64 :sealed bool)
 
-(impl measured brisk-jackal
+(impl measured parcel-23
   (weight (item) (* (:mass item) 2.0)))
 
-(impl labeled brisk-jackal
-  (label (item) (str "brisk-jackal #" (:serial item))))
+(impl labeled parcel-23
+  (label (item) (str "parcel-23 #" (:serial item))))
 
-(impl cargo brisk-jackal
+(impl cargo parcel-23
   (fragile? (item) (and (:sealed item) (> (:mass item) 2.0))))
 
-(defstruct rustic-heron :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-24 :serial u32 :mass f64 :sealed bool)
 
-(impl measured rustic-heron
+(impl measured parcel-24
   (weight (item) (* (:mass item) 3.0)))
 
-(impl labeled rustic-heron
-  (label (item) (str "rustic-heron #" (:serial item))))
+(impl labeled parcel-24
+  (label (item) (str "parcel-24 #" (:serial item))))
 
-(impl cargo rustic-heron
+(impl cargo parcel-24
   (fragile? (item) (and (:sealed item) (> (:mass item) 3.0))))
 
-(defstruct olive-kestrel :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-25 :serial u32 :mass f64 :sealed bool)
 
-(impl measured olive-kestrel
+(impl measured parcel-25
   (weight (item) (* (:mass item) 4.0)))
 
-(impl labeled olive-kestrel
-  (label (item) (str "olive-kestrel #" (:serial item))))
+(impl labeled parcel-25
+  (label (item) (str "parcel-25 #" (:serial item))))
 
-(impl cargo olive-kestrel
+(impl cargo parcel-25
   (fragile? (item) (and (:sealed item) (> (:mass item) 4.0))))
 
-(defstruct zesty-delta :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-26 :serial u32 :mass f64 :sealed bool)
 
-(impl measured zesty-delta
+(impl measured parcel-26
   (weight (item) (* (:mass item) 5.0)))
 
-(impl labeled zesty-delta
-  (label (item) (str "zesty-delta #" (:serial item))))
+(impl labeled parcel-26
+  (label (item) (str "parcel-26 #" (:serial item))))
 
-(impl cargo zesty-delta
+(impl cargo parcel-26
   (fragile? (item) (and (:sealed item) (> (:mass item) 0.0))))
 
-(defstruct dusky-geyser :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-27 :serial u32 :mass f64 :sealed bool)
 
-(impl measured dusky-geyser
+(impl measured parcel-27
   (weight (item) (* (:mass item) 6.0)))
 
-(impl labeled dusky-geyser
-  (label (item) (str "dusky-geyser #" (:serial item))))
+(impl labeled parcel-27
+  (label (item) (str "parcel-27 #" (:serial item))))
 
-(impl cargo dusky-geyser
+(impl cargo parcel-27
   (fragile? (item) (and (:sealed item) (> (:mass item) 1.0))))
 
-(defstruct fierce-nebula :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-28 :serial u32 :mass f64 :sealed bool)
 
-(impl measured fierce-nebula
+(impl measured parcel-28
   (weight (item) (* (:mass item) 7.0)))
 
-(impl labeled fierce-nebula
-  (label (item) (str "fierce-nebula #" (:serial item))))
+(impl labeled parcel-28
+  (label (item) (str "parcel-28 #" (:serial item))))
 
-(impl cargo fierce-nebula
+(impl cargo parcel-28
   (fragile? (item) (and (:sealed item) (> (:mass item) 2.0))))
 
-(defstruct gilded-comet :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-29 :serial u32 :mass f64 :sealed bool)
 
-(impl measured gilded-comet
+(impl measured parcel-29
   (weight (item) (* (:mass item) 1.0)))
 
-(impl labeled gilded-comet
-  (label (item) (str "gilded-comet #" (:serial item))))
+(impl labeled parcel-29
+  (label (item) (str "parcel-29 #" (:serial item))))
 
-(impl cargo gilded-comet
+(impl cargo parcel-29
   (fragile? (item) (and (:sealed item) (> (:mass item) 3.0))))
 
-(defstruct young-pine :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-30 :serial u32 :mass f64 :sealed bool)
 
-(impl measured young-pine
+(impl measured parcel-30
   (weight (item) (* (:mass item) 2.0)))
 
-(impl labeled young-pine
-  (label (item) (str "young-pine #" (:serial item))))
+(impl labeled parcel-30
+  (label (item) (str "parcel-30 #" (:serial item))))
 
-(impl cargo young-pine
+(impl cargo parcel-30
   (fragile? (item) (and (:sealed item) (> (:mass item) 4.0))))
 
-(defstruct sleek-otter :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-31 :serial u32 :mass f64 :sealed bool)
 
-(impl measured sleek-otter
+(impl measured parcel-31
   (weight (item) (* (:mass item) 3.0)))
 
-(impl labeled sleek-otter
-  (label (item) (str "sleek-otter #" (:serial item))))
+(impl labeled parcel-31
+  (label (item) (str "parcel-31 #" (:serial item))))
 
-(impl cargo sleek-otter
+(impl cargo parcel-31
   (fragile? (item) (and (:sealed item) (> (:mass item) 0.0))))
 
-(defstruct vivid-pebble :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-32 :serial u32 :mass f64 :sealed bool)
 
-(impl measured vivid-pebble
+(impl measured parcel-32
   (weight (item) (* (:mass item) 4.0)))
 
-(impl labeled vivid-pebble
-  (label (item) (str "vivid-pebble #" (:serial item))))
+(impl labeled parcel-32
+  (label (item) (str "parcel-32 #" (:serial item))))
 
-(impl cargo vivid-pebble
+(impl cargo parcel-32
   (fragile? (item) (and (:sealed item) (> (:mass item) 1.0))))
 
-(defstruct brisk-heron :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-33 :serial u32 :mass f64 :sealed bool)
 
-(impl measured brisk-heron
+(impl measured parcel-33
   (weight (item) (* (:mass item) 5.0)))
 
-(impl labeled brisk-heron
-  (label (item) (str "brisk-heron #" (:serial item))))
+(impl labeled parcel-33
+  (label (item) (str "parcel-33 #" (:serial item))))
 
-(impl cargo brisk-heron
+(impl cargo parcel-33
   (fragile? (item) (and (:sealed item) (> (:mass item) 2.0))))
 
-(defstruct wary-cedar :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-34 :serial u32 :mass f64 :sealed bool)
 
-(impl measured wary-cedar
+(impl measured parcel-34
   (weight (item) (* (:mass item) 6.0)))
 
-(impl labeled wary-cedar
-  (label (item) (str "wary-cedar #" (:serial item))))
+(impl labeled parcel-34
+  (label (item) (str "parcel-34 #" (:serial item))))
 
-(impl cargo wary-cedar
+(impl cargo parcel-34
   (fragile? (item) (and (:sealed item) (> (:mass item) 3.0))))
 
-(defstruct mellow-zephyr :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-35 :serial u32 :mass f64 :sealed bool)
 
-(impl measured mellow-zephyr
+(impl measured parcel-35
   (weight (item) (* (:mass item) 7.0)))
 
-(impl labeled mellow-zephyr
-  (label (item) (str "mellow-zephyr #" (:serial item))))
+(impl labeled parcel-35
+  (label (item) (str "parcel-35 #" (:serial item))))
 
-(impl cargo mellow-zephyr
+(impl cargo parcel-35
   (fragile? (item) (and (:sealed item) (> (:mass item) 4.0))))
 
-(defstruct vivid-otter :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-36 :serial u32 :mass f64 :sealed bool)
 
-(impl measured vivid-otter
+(impl measured parcel-36
   (weight (item) (* (:mass item) 1.0)))
 
-(impl labeled vivid-otter
-  (label (item) (str "vivid-otter #" (:serial item))))
+(impl labeled parcel-36
+  (label (item) (str "parcel-36 #" (:serial item))))
 
-(impl cargo vivid-otter
+(impl cargo parcel-36
   (fragile? (item) (and (:sealed item) (> (:mass item) 0.0))))
 
-(defstruct misty-heron :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-37 :serial u32 :mass f64 :sealed bool)
 
-(impl measured misty-heron
+(impl measured parcel-37
   (weight (item) (* (:mass item) 2.0)))
 
-(impl labeled misty-heron
-  (label (item) (str "misty-heron #" (:serial item))))
+(impl labeled parcel-37
+  (label (item) (str "parcel-37 #" (:serial item))))
 
-(impl cargo misty-heron
+(impl cargo parcel-37
   (fragile? (item) (and (:sealed item) (> (:mass item) 1.0))))
 
-(defstruct solemn-sparrow :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-38 :serial u32 :mass f64 :sealed bool)
 
-(impl measured solemn-sparrow
+(impl measured parcel-38
   (weight (item) (* (:mass item) 3.0)))
 
-(impl labeled solemn-sparrow
-  (label (item) (str "solemn-sparrow #" (:serial item))))
+(impl labeled parcel-38
+  (label (item) (str "parcel-38 #" (:serial item))))
 
-(impl cargo solemn-sparrow
+(impl cargo parcel-38
   (fragile? (item) (and (:sealed item) (> (:mass item) 2.0))))
 
-(defstruct noble-tundra :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-39 :serial u32 :mass f64 :sealed bool)
 
-(impl measured noble-tundra
+(impl measured parcel-39
   (weight (item) (* (:mass item) 4.0)))
 
-(impl labeled noble-tundra
-  (label (item) (str "noble-tundra #" (:serial item))))
+(impl labeled parcel-39
+  (label (item) (str "parcel-39 #" (:serial item))))
 
-(impl cargo noble-tundra
+(impl cargo parcel-39
   (fragile? (item) (and (:sealed item) (> (:mass item) 3.0))))
 
-(defstruct mellow-island :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-40 :serial u32 :mass f64 :sealed bool)
 
-(impl measured mellow-island
+(impl measured parcel-40
   (weight (item) (* (:mass item) 5.0)))
 
-(impl labeled mellow-island
-  (label (item) (str "mellow-island #" (:serial item))))
+(impl labeled parcel-40
+  (label (item) (str "parcel-40 #" (:serial item))))
 
-(impl cargo mellow-island
+(impl cargo parcel-40
   (fragile? (item) (and (:sealed item) (> (:mass item) 4.0))))
 
-(defstruct umber-condor :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-41 :serial u32 :mass f64 :sealed bool)
 
-(impl measured umber-condor
+(impl measured parcel-41
   (weight (item) (* (:mass item) 6.0)))
 
-(impl labeled umber-condor
-  (label (item) (str "umber-condor #" (:serial item))))
+(impl labeled parcel-41
+  (label (item) (str "parcel-41 #" (:serial item))))
 
-(impl cargo umber-condor
+(impl cargo parcel-41
   (fragile? (item) (and (:sealed item) (> (:mass item) 0.0))))
 
-(defstruct rustic-tundra :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-42 :serial u32 :mass f64 :sealed bool)
 
-(impl measured rustic-tundra
+(impl measured parcel-42
   (weight (item) (* (:mass item) 7.0)))
 
-(impl labeled rustic-tundra
-  (label (item) (str "rustic-tundra #" (:serial item))))
+(impl labeled parcel-42
+  (label (item) (str "parcel-42 #" (:serial item))))
 
-(impl cargo rustic-tundra
+(impl cargo parcel-42
   (fragile? (item) (and (:sealed item) (> (:mass item) 1.0))))
 
-(defstruct olive-marten :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-43 :serial u32 :mass f64 :sealed bool)
 
-(impl measured olive-marten
+(impl measured parcel-43
   (weight (item) (* (:mass item) 1.0)))
 
-(impl labeled olive-marten
-  (label (item) (str "olive-marten #" (:serial item))))
+(impl labeled parcel-43
+  (label (item) (str "parcel-43 #" (:serial item))))
 
-(impl cargo olive-marten
+(impl cargo parcel-43
   (fragile? (item) (and (:sealed item) (> (:mass item) 2.0))))
 
-(defstruct young-falcon :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-44 :serial u32 :mass f64 :sealed bool)
 
-(impl measured young-falcon
+(impl measured parcel-44
   (weight (item) (* (:mass item) 2.0)))
 
-(impl labeled young-falcon
-  (label (item) (str "young-falcon #" (:serial item))))
+(impl labeled parcel-44
+  (label (item) (str "parcel-44 #" (:serial item))))
 
-(impl cargo young-falcon
+(impl cargo parcel-44
   (fragile? (item) (and (:sealed item) (> (:mass item) 3.0))))
 
-(defstruct placid-tundra :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-45 :serial u32 :mass f64 :sealed bool)
 
-(impl measured placid-tundra
+(impl measured parcel-45
   (weight (item) (* (:mass item) 3.0)))
 
-(impl labeled placid-tundra
-  (label (item) (str "placid-tundra #" (:serial item))))
+(impl labeled parcel-45
+  (label (item) (str "parcel-45 #" (:serial item))))
 
-(impl cargo placid-tundra
+(impl cargo parcel-45
   (fragile? (item) (and (:sealed item) (> (:mass item) 4.0))))
 
-(defstruct eager-falcon :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-46 :serial u32 :mass f64 :sealed bool)
 
-(impl measured eager-falcon
+(impl measured parcel-46
   (weight (item) (* (:mass item) 4.0)))
 
-(impl labeled eager-falcon
-  (label (item) (str "eager-falcon #" (:serial item))))
+(impl labeled parcel-46
+  (label (item) (str "parcel-46 #" (:serial item))))
 
-(impl cargo eager-falcon
+(impl cargo parcel-46
   (fragile? (item) (and (:sealed item) (> (:mass item) 0.0))))
 
-(defstruct sleek-condor :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-47 :serial u32 :mass f64 :sealed bool)
 
-(impl measured sleek-condor
+(impl measured parcel-47
   (weight (item) (* (:mass item) 5.0)))
 
-(impl labeled sleek-condor
-  (label (item) (str "sleek-condor #" (:serial item))))
+(impl labeled parcel-47
+  (label (item) (str "parcel-47 #" (:serial item))))
 
-(impl cargo sleek-condor
+(impl cargo parcel-47
   (fragile? (item) (and (:sealed item) (> (:mass item) 1.0))))
 
-(defstruct mellow-lagoon :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-48 :serial u32 :mass f64 :sealed bool)
 
-(impl measured mellow-lagoon
+(impl measured parcel-48
   (weight (item) (* (:mass item) 6.0)))
 
-(impl labeled mellow-lagoon
-  (label (item) (str "mellow-lagoon #" (:serial item))))
+(impl labeled parcel-48
+  (label (item) (str "parcel-48 #" (:serial item))))
 
-(impl cargo mellow-lagoon
+(impl cargo parcel-48
   (fragile? (item) (and (:sealed item) (> (:mass item) 2.0))))
 
-(defstruct quiet-valley :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-49 :serial u32 :mass f64 :sealed bool)
 
-(impl measured quiet-valley
+(impl measured parcel-49
   (weight (item) (* (:mass item) 7.0)))
 
-(impl labeled quiet-valley
-  (label (item) (str "quiet-valley #" (:serial item))))
+(impl labeled parcel-49
+  (label (item) (str "parcel-49 #" (:serial item))))
 
-(impl cargo quiet-valley
+(impl cargo parcel-49
   (fragile? (item) (and (:sealed item) (> (:mass item) 3.0))))
 
-(defstruct silver-heron :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-50 :serial u32 :mass f64 :sealed bool)
 
-(impl measured silver-heron
+(impl measured parcel-50
   (weight (item) (* (:mass item) 1.0)))
 
-(impl labeled silver-heron
-  (label (item) (str "silver-heron #" (:serial item))))
+(impl labeled parcel-50
+  (label (item) (str "parcel-50 #" (:serial item))))
 
-(impl cargo silver-heron
+(impl cargo parcel-50
   (fragile? (item) (and (:sealed item) (> (:mass item) 4.0))))
 
-(defstruct misty-island :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-51 :serial u32 :mass f64 :sealed bool)
 
-(impl measured misty-island
+(impl measured parcel-51
   (weight (item) (* (:mass item) 2.0)))
 
-(impl labeled misty-island
-  (label (item) (str "misty-island #" (:serial item))))
+(impl labeled parcel-51
+  (label (item) (str "parcel-51 #" (:serial item))))
 
-(impl cargo misty-island
+(impl cargo parcel-51
   (fragile? (item) (and (:sealed item) (> (:mass item) 0.0))))
 
-(defstruct eager-badger :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-52 :serial u32 :mass f64 :sealed bool)
 
-(impl measured eager-badger
+(impl measured parcel-52
   (weight (item) (* (:mass item) 3.0)))
 
-(impl labeled eager-badger
-  (label (item) (str "eager-badger #" (:serial item))))
+(impl labeled parcel-52
+  (label (item) (str "parcel-52 #" (:serial item))))
 
-(impl cargo eager-badger
+(impl cargo parcel-52
   (fragile? (item) (and (:sealed item) (> (:mass item) 1.0))))
 
-(defstruct stark-heron :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-53 :serial u32 :mass f64 :sealed bool)
 
-(impl measured stark-heron
+(impl measured parcel-53
   (weight (item) (* (:mass item) 4.0)))
 
-(impl labeled stark-heron
-  (label (item) (str "stark-heron #" (:serial item))))
+(impl labeled parcel-53
+  (label (item) (str "parcel-53 #" (:serial item))))
 
-(impl cargo stark-heron
+(impl cargo parcel-53
   (fragile? (item) (and (:sealed item) (> (:mass item) 2.0))))
 
-(defstruct hollow-sparrow :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-54 :serial u32 :mass f64 :sealed bool)
 
-(impl measured hollow-sparrow
+(impl measured parcel-54
   (weight (item) (* (:mass item) 5.0)))
 
-(impl labeled hollow-sparrow
-  (label (item) (str "hollow-sparrow #" (:serial item))))
+(impl labeled parcel-54
+  (label (item) (str "parcel-54 #" (:serial item))))
 
-(impl cargo hollow-sparrow
+(impl cargo parcel-54
   (fragile? (item) (and (:sealed item) (> (:mass item) 3.0))))
 
-(defstruct lively-yarrow :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-55 :serial u32 :mass f64 :sealed bool)
 
-(impl measured lively-yarrow
+(impl measured parcel-55
   (weight (item) (* (:mass item) 6.0)))
 
-(impl labeled lively-yarrow
-  (label (item) (str "lively-yarrow #" (:serial item))))
+(impl labeled parcel-55
+  (label (item) (str "parcel-55 #" (:serial item))))
 
-(impl cargo lively-yarrow
+(impl cargo parcel-55
   (fragile? (item) (and (:sealed item) (> (:mass item) 4.0))))
 
-(defstruct tender-harbor :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-56 :serial u32 :mass f64 :sealed bool)
 
-(impl measured tender-harbor
+(impl measured parcel-56
   (weight (item) (* (:mass item) 7.0)))
 
-(impl labeled tender-harbor
-  (label (item) (str "tender-harbor #" (:serial item))))
+(impl labeled parcel-56
+  (label (item) (str "parcel-56 #" (:serial item))))
 
-(impl cargo tender-harbor
+(impl cargo parcel-56
   (fragile? (item) (and (:sealed item) (> (:mass item) 0.0))))
 
-(defstruct rustic-bison :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-57 :serial u32 :mass f64 :sealed bool)
 
-(impl measured rustic-bison
+(impl measured parcel-57
   (weight (item) (* (:mass item) 1.0)))
 
-(impl labeled rustic-bison
-  (label (item) (str "rustic-bison #" (:serial item))))
+(impl labeled parcel-57
+  (label (item) (str "parcel-57 #" (:serial item))))
 
-(impl cargo rustic-bison
+(impl cargo parcel-57
   (fragile? (item) (and (:sealed item) (> (:mass item) 1.0))))
 
-(defstruct rapid-willow :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-58 :serial u32 :mass f64 :sealed bool)
 
-(impl measured rapid-willow
+(impl measured parcel-58
   (weight (item) (* (:mass item) 2.0)))
 
-(impl labeled rapid-willow
-  (label (item) (str "rapid-willow #" (:serial item))))
+(impl labeled parcel-58
+  (label (item) (str "parcel-58 #" (:serial item))))
 
-(impl cargo rapid-willow
+(impl cargo parcel-58
   (fragile? (item) (and (:sealed item) (> (:mass item) 2.0))))
 
-(defstruct gentle-falcon :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-59 :serial u32 :mass f64 :sealed bool)
 
-(impl measured gentle-falcon
+(impl measured parcel-59
   (weight (item) (* (:mass item) 3.0)))
 
-(impl labeled gentle-falcon
-  (label (item) (str "gentle-falcon #" (:serial item))))
+(impl labeled parcel-59
+  (label (item) (str "parcel-59 #" (:serial item))))
 
-(impl cargo gentle-falcon
+(impl cargo parcel-59
   (fragile? (item) (and (:sealed item) (> (:mass item) 3.0))))
 
-(defstruct rustic-yarrow :serial u32 :mass f64 :sealed bool)
+(defstruct parcel-60 :serial u32 :mass f64 :sealed bool)
 
-(impl measured rustic-yarrow
+(impl measured parcel-60
   (weight (item) (* (:mass item) 4.0)))
 
-(impl labeled rustic-yarrow
-  (label (item) (str "rustic-yarrow #" (:serial item))))
+(impl labeled parcel-60
+  (label (item) (str "parcel-60 #" (:serial item))))
 
-(impl cargo rustic-yarrow
+(impl cargo parcel-60
   (fragile? (item) (and (:sealed item) (> (:mass item) 4.0))))
 
-(enum bold-lantern-group
-  (bold-lantern bold-lantern)
-  (swift-geyser swift-geyser)
-  (swift-otter swift-otter)
-  (rustic-falcon rustic-falcon))
+(enum parcel-1-group
+  (parcel-1 parcel-1)
+  (parcel-2 parcel-2)
+  (parcel-3 parcel-3)
+  (parcel-4 parcel-4))
 
-(impl labeled bold-lantern-group
+(impl labeled parcel-1-group
   (label (entry)
     (match entry
-      ((bold-lantern-group/bold-lantern item) (label item))
-      ((bold-lantern-group/swift-geyser item) (label item))
-      ((bold-lantern-group/swift-otter item) (label item))
-      ((bold-lantern-group/rustic-falcon item) (label item)))))
+      ((parcel-1-group/parcel-1 item) (label item))
+      ((parcel-1-group/parcel-2 item) (label item))
+      ((parcel-1-group/parcel-3 item) (label item))
+      ((parcel-1-group/parcel-4 item) (label item)))))
 
-(impl summary bold-lantern-group
+(impl summary parcel-1-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum fierce-falcon-group
-  (fierce-falcon fierce-falcon)
-  (olive-meadow olive-meadow)
-  (lively-fern lively-fern)
-  (tender-beacon tender-beacon))
+(enum parcel-5-group
+  (parcel-5 parcel-5)
+  (parcel-6 parcel-6)
+  (parcel-7 parcel-7)
+  (parcel-8 parcel-8))
 
-(impl labeled fierce-falcon-group
+(impl labeled parcel-5-group
   (label (entry)
     (match entry
-      ((fierce-falcon-group/fierce-falcon item) (label item))
-      ((fierce-falcon-group/olive-meadow item) (label item))
-      ((fierce-falcon-group/lively-fern item) (label item))
-      ((fierce-falcon-group/tender-beacon item) (label item)))))
+      ((parcel-5-group/parcel-5 item) (label item))
+      ((parcel-5-group/parcel-6 item) (label item))
+      ((parcel-5-group/parcel-7 item) (label item))
+      ((parcel-5-group/parcel-8 item) (label item)))))
 
-(impl summary fierce-falcon-group
+(impl summary parcel-5-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum jolly-thistle-group
-  (jolly-thistle jolly-thistle)
-  (vivid-lantern vivid-lantern)
-  (wary-falcon wary-falcon)
-  (dusky-pebble dusky-pebble))
+(enum parcel-9-group
+  (parcel-9 parcel-9)
+  (parcel-10 parcel-10)
+  (parcel-11 parcel-11)
+  (parcel-12 parcel-12))
 
-(impl labeled jolly-thistle-group
+(impl labeled parcel-9-group
   (label (entry)
     (match entry
-      ((jolly-thistle-group/jolly-thistle item) (label item))
-      ((jolly-thistle-group/vivid-lantern item) (label item))
-      ((jolly-thistle-group/wary-falcon item) (label item))
-      ((jolly-thistle-group/dusky-pebble item) (label item)))))
+      ((parcel-9-group/parcel-9 item) (label item))
+      ((parcel-9-group/parcel-10 item) (label item))
+      ((parcel-9-group/parcel-11 item) (label item))
+      ((parcel-9-group/parcel-12 item) (label item)))))
 
-(impl summary jolly-thistle-group
+(impl summary parcel-9-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum stark-fern-group
-  (stark-fern stark-fern)
-  (stark-falcon stark-falcon)
-  (keen-tundra keen-tundra)
-  (sunny-beacon sunny-beacon))
+(enum parcel-13-group
+  (parcel-13 parcel-13)
+  (parcel-14 parcel-14)
+  (parcel-15 parcel-15)
+  (parcel-16 parcel-16))
 
-(impl labeled stark-fern-group
+(impl labeled parcel-13-group
   (label (entry)
     (match entry
-      ((stark-fern-group/stark-fern item) (label item))
-      ((stark-fern-group/stark-falcon item) (label item))
-      ((stark-fern-group/keen-tundra item) (label item))
-      ((stark-fern-group/sunny-beacon item) (label item)))))
+      ((parcel-13-group/parcel-13 item) (label item))
+      ((parcel-13-group/parcel-14 item) (label item))
+      ((parcel-13-group/parcel-15 item) (label item))
+      ((parcel-13-group/parcel-16 item) (label item)))))
 
-(impl summary stark-fern-group
+(impl summary parcel-13-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum witty-meadow-group
-  (witty-meadow witty-meadow)
-  (zesty-walrus zesty-walrus)
-  (lively-zephyr lively-zephyr)
-  (solemn-quarry solemn-quarry))
+(enum parcel-17-group
+  (parcel-17 parcel-17)
+  (parcel-18 parcel-18)
+  (parcel-19 parcel-19)
+  (parcel-20 parcel-20))
 
-(impl labeled witty-meadow-group
+(impl labeled parcel-17-group
   (label (entry)
     (match entry
-      ((witty-meadow-group/witty-meadow item) (label item))
-      ((witty-meadow-group/zesty-walrus item) (label item))
-      ((witty-meadow-group/lively-zephyr item) (label item))
-      ((witty-meadow-group/solemn-quarry item) (label item)))))
+      ((parcel-17-group/parcel-17 item) (label item))
+      ((parcel-17-group/parcel-18 item) (label item))
+      ((parcel-17-group/parcel-19 item) (label item))
+      ((parcel-17-group/parcel-20 item) (label item)))))
 
-(impl summary witty-meadow-group
+(impl summary parcel-17-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum zesty-willow-group
-  (zesty-willow zesty-willow)
-  (gilded-bison gilded-bison)
-  (brisk-jackal brisk-jackal)
-  (rustic-heron rustic-heron))
+(enum parcel-21-group
+  (parcel-21 parcel-21)
+  (parcel-22 parcel-22)
+  (parcel-23 parcel-23)
+  (parcel-24 parcel-24))
 
-(impl labeled zesty-willow-group
+(impl labeled parcel-21-group
   (label (entry)
     (match entry
-      ((zesty-willow-group/zesty-willow item) (label item))
-      ((zesty-willow-group/gilded-bison item) (label item))
-      ((zesty-willow-group/brisk-jackal item) (label item))
-      ((zesty-willow-group/rustic-heron item) (label item)))))
+      ((parcel-21-group/parcel-21 item) (label item))
+      ((parcel-21-group/parcel-22 item) (label item))
+      ((parcel-21-group/parcel-23 item) (label item))
+      ((parcel-21-group/parcel-24 item) (label item)))))
 
-(impl summary zesty-willow-group
+(impl summary parcel-21-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum olive-kestrel-group
-  (olive-kestrel olive-kestrel)
-  (zesty-delta zesty-delta)
-  (dusky-geyser dusky-geyser)
-  (fierce-nebula fierce-nebula))
+(enum parcel-25-group
+  (parcel-25 parcel-25)
+  (parcel-26 parcel-26)
+  (parcel-27 parcel-27)
+  (parcel-28 parcel-28))
 
-(impl labeled olive-kestrel-group
+(impl labeled parcel-25-group
   (label (entry)
     (match entry
-      ((olive-kestrel-group/olive-kestrel item) (label item))
-      ((olive-kestrel-group/zesty-delta item) (label item))
-      ((olive-kestrel-group/dusky-geyser item) (label item))
-      ((olive-kestrel-group/fierce-nebula item) (label item)))))
+      ((parcel-25-group/parcel-25 item) (label item))
+      ((parcel-25-group/parcel-26 item) (label item))
+      ((parcel-25-group/parcel-27 item) (label item))
+      ((parcel-25-group/parcel-28 item) (label item)))))
 
-(impl summary olive-kestrel-group
+(impl summary parcel-25-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum gilded-comet-group
-  (gilded-comet gilded-comet)
-  (young-pine young-pine)
-  (sleek-otter sleek-otter)
-  (vivid-pebble vivid-pebble))
+(enum parcel-29-group
+  (parcel-29 parcel-29)
+  (parcel-30 parcel-30)
+  (parcel-31 parcel-31)
+  (parcel-32 parcel-32))
 
-(impl labeled gilded-comet-group
+(impl labeled parcel-29-group
   (label (entry)
     (match entry
-      ((gilded-comet-group/gilded-comet item) (label item))
-      ((gilded-comet-group/young-pine item) (label item))
-      ((gilded-comet-group/sleek-otter item) (label item))
-      ((gilded-comet-group/vivid-pebble item) (label item)))))
+      ((parcel-29-group/parcel-29 item) (label item))
+      ((parcel-29-group/parcel-30 item) (label item))
+      ((parcel-29-group/parcel-31 item) (label item))
+      ((parcel-29-group/parcel-32 item) (label item)))))
 
-(impl summary gilded-comet-group
+(impl summary parcel-29-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum brisk-heron-group
-  (brisk-heron brisk-heron)
-  (wary-cedar wary-cedar)
-  (mellow-zephyr mellow-zephyr)
-  (vivid-otter vivid-otter))
+(enum parcel-33-group
+  (parcel-33 parcel-33)
+  (parcel-34 parcel-34)
+  (parcel-35 parcel-35)
+  (parcel-36 parcel-36))
 
-(impl labeled brisk-heron-group
+(impl labeled parcel-33-group
   (label (entry)
     (match entry
-      ((brisk-heron-group/brisk-heron item) (label item))
-      ((brisk-heron-group/wary-cedar item) (label item))
-      ((brisk-heron-group/mellow-zephyr item) (label item))
-      ((brisk-heron-group/vivid-otter item) (label item)))))
+      ((parcel-33-group/parcel-33 item) (label item))
+      ((parcel-33-group/parcel-34 item) (label item))
+      ((parcel-33-group/parcel-35 item) (label item))
+      ((parcel-33-group/parcel-36 item) (label item)))))
 
-(impl summary brisk-heron-group
+(impl summary parcel-33-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum misty-heron-group
-  (misty-heron misty-heron)
-  (solemn-sparrow solemn-sparrow)
-  (noble-tundra noble-tundra)
-  (mellow-island mellow-island))
+(enum parcel-37-group
+  (parcel-37 parcel-37)
+  (parcel-38 parcel-38)
+  (parcel-39 parcel-39)
+  (parcel-40 parcel-40))
 
-(impl labeled misty-heron-group
+(impl labeled parcel-37-group
   (label (entry)
     (match entry
-      ((misty-heron-group/misty-heron item) (label item))
-      ((misty-heron-group/solemn-sparrow item) (label item))
-      ((misty-heron-group/noble-tundra item) (label item))
-      ((misty-heron-group/mellow-island item) (label item)))))
+      ((parcel-37-group/parcel-37 item) (label item))
+      ((parcel-37-group/parcel-38 item) (label item))
+      ((parcel-37-group/parcel-39 item) (label item))
+      ((parcel-37-group/parcel-40 item) (label item)))))
 
-(impl summary misty-heron-group
+(impl summary parcel-37-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum umber-condor-group
-  (umber-condor umber-condor)
-  (rustic-tundra rustic-tundra)
-  (olive-marten olive-marten)
-  (young-falcon young-falcon))
+(enum parcel-41-group
+  (parcel-41 parcel-41)
+  (parcel-42 parcel-42)
+  (parcel-43 parcel-43)
+  (parcel-44 parcel-44))
 
-(impl labeled umber-condor-group
+(impl labeled parcel-41-group
   (label (entry)
     (match entry
-      ((umber-condor-group/umber-condor item) (label item))
-      ((umber-condor-group/rustic-tundra item) (label item))
-      ((umber-condor-group/olive-marten item) (label item))
-      ((umber-condor-group/young-falcon item) (label item)))))
+      ((parcel-41-group/parcel-41 item) (label item))
+      ((parcel-41-group/parcel-42 item) (label item))
+      ((parcel-41-group/parcel-43 item) (label item))
+      ((parcel-41-group/parcel-44 item) (label item)))))
 
-(impl summary umber-condor-group
+(impl summary parcel-41-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum placid-tundra-group
-  (placid-tundra placid-tundra)
-  (eager-falcon eager-falcon)
-  (sleek-condor sleek-condor)
-  (mellow-lagoon mellow-lagoon))
+(enum parcel-45-group
+  (parcel-45 parcel-45)
+  (parcel-46 parcel-46)
+  (parcel-47 parcel-47)
+  (parcel-48 parcel-48))
 
-(impl labeled placid-tundra-group
+(impl labeled parcel-45-group
   (label (entry)
     (match entry
-      ((placid-tundra-group/placid-tundra item) (label item))
-      ((placid-tundra-group/eager-falcon item) (label item))
-      ((placid-tundra-group/sleek-condor item) (label item))
-      ((placid-tundra-group/mellow-lagoon item) (label item)))))
+      ((parcel-45-group/parcel-45 item) (label item))
+      ((parcel-45-group/parcel-46 item) (label item))
+      ((parcel-45-group/parcel-47 item) (label item))
+      ((parcel-45-group/parcel-48 item) (label item)))))
 
-(impl summary placid-tundra-group
+(impl summary parcel-45-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum quiet-valley-group
-  (quiet-valley quiet-valley)
-  (silver-heron silver-heron)
-  (misty-island misty-island)
-  (eager-badger eager-badger))
+(enum parcel-49-group
+  (parcel-49 parcel-49)
+  (parcel-50 parcel-50)
+  (parcel-51 parcel-51)
+  (parcel-52 parcel-52))
 
-(impl labeled quiet-valley-group
+(impl labeled parcel-49-group
   (label (entry)
     (match entry
-      ((quiet-valley-group/quiet-valley item) (label item))
-      ((quiet-valley-group/silver-heron item) (label item))
-      ((quiet-valley-group/misty-island item) (label item))
-      ((quiet-valley-group/eager-badger item) (label item)))))
+      ((parcel-49-group/parcel-49 item) (label item))
+      ((parcel-49-group/parcel-50 item) (label item))
+      ((parcel-49-group/parcel-51 item) (label item))
+      ((parcel-49-group/parcel-52 item) (label item)))))
 
-(impl summary quiet-valley-group
+(impl summary parcel-49-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum stark-heron-group
-  (stark-heron stark-heron)
-  (hollow-sparrow hollow-sparrow)
-  (lively-yarrow lively-yarrow)
-  (tender-harbor tender-harbor))
+(enum parcel-53-group
+  (parcel-53 parcel-53)
+  (parcel-54 parcel-54)
+  (parcel-55 parcel-55)
+  (parcel-56 parcel-56))
 
-(impl labeled stark-heron-group
+(impl labeled parcel-53-group
   (label (entry)
     (match entry
-      ((stark-heron-group/stark-heron item) (label item))
-      ((stark-heron-group/hollow-sparrow item) (label item))
-      ((stark-heron-group/lively-yarrow item) (label item))
-      ((stark-heron-group/tender-harbor item) (label item)))))
+      ((parcel-53-group/parcel-53 item) (label item))
+      ((parcel-53-group/parcel-54 item) (label item))
+      ((parcel-53-group/parcel-55 item) (label item))
+      ((parcel-53-group/parcel-56 item) (label item)))))
 
-(impl summary stark-heron-group
+(impl summary parcel-53-group
   (headline (entry) (str "group " (shout entry))))
 
-(enum rustic-bison-group
-  (rustic-bison rustic-bison)
-  (rapid-willow rapid-willow)
-  (gentle-falcon gentle-falcon)
-  (rustic-yarrow rustic-yarrow))
+(enum parcel-57-group
+  (parcel-57 parcel-57)
+  (parcel-58 parcel-58)
+  (parcel-59 parcel-59)
+  (parcel-60 parcel-60))
 
-(impl labeled rustic-bison-group
+(impl labeled parcel-57-group
   (label (entry)
     (match entry
-      ((rustic-bison-group/rustic-bison item) (label item))
-      ((rustic-bison-group/rapid-willow item) (label item))
-      ((rustic-bison-group/gentle-falcon item) (label item))
-      ((rustic-bison-group/rustic-yarrow item) (label item)))))
+      ((parcel-57-group/parcel-57 item) (label item))
+      ((parcel-57-group/parcel-58 item) (label item))
+      ((parcel-57-group/parcel-59 item) (label item))
+      ((parcel-57-group/parcel-60 item) (label item)))))
 
-(impl summary rustic-bison-group
+(impl summary parcel-57-group
   (headline (entry) (str "group " (shout entry))))
 
 (type total-weight (fn ((ref (vec (box measured)))) f64))

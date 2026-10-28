@@ -1,1500 +1,1500 @@
 (defn main ()
-  (println (str "byte chain: " (bold-lantern 1)))
-  (println (str "byte pins: " (keep-byte (rustic-meadow)) " "
-         (keep-byte (swift-tundra)) " "
-         (keep-byte (keen-reef)) " "
-         (keep-byte (lively-orchid)) " "
-         (keep-byte (zesty-jackal)) " "
-         (keep-byte (dusky-meadow)) " "
-         (keep-byte (gentle-zephyr)) " "
-         (keep-byte (dusky-jackal)) " "
-         (keep-byte (mellow-meadow)) " "
-         (keep-byte (ivory-zephyr)) " "
-         (keep-byte (umber-cedar)) " "
-         (keep-byte (solemn-pine)) " "
-         (keep-byte (misty-condor)) " "
-         (keep-byte (rapid-yarrow)) " "
-         (keep-byte (gilded-walrus))))
-  (println (str "port chain: " (sleek-walrus 1)))
-  (println (str "port pins: " (keep-port (noble-beacon)) " "
-         (keep-port (olive-ember)) " "
-         (keep-port (vivid-comet)) " "
-         (keep-port (zesty-meadow)) " "
-         (keep-port (coral-glacier)) " "
-         (keep-port (coral-beacon)) " "
-         (keep-port (tawny-bison)) " "
-         (keep-port (stark-otter)) " "
-         (keep-port (lively-island)) " "
-         (keep-port (wary-quarry)) " "
-         (keep-port (silver-orchid)) " "
-         (keep-port (swift-pine)) " "
-         (keep-port (keen-harbor)) " "
-         (keep-port (bold-heron)) " "
-         (keep-port (rustic-nebula))))
-  (println (str "count chain: " (bold-geyser 1)))
-  (println (str "count pins: " (keep-count (silver-cedar)) " "
-         (keep-count (rapid-tundra)) " "
-         (keep-count (clever-quarry)) " "
-         (keep-count (witty-jackal)) " "
-         (keep-count (brisk-harbor)) " "
-         (keep-count (witty-falcon)) " "
-         (keep-count (noble-raven)) " "
-         (keep-count (rapid-summit)) " "
-         (keep-count (keen-falcon)) " "
-         (keep-count (umber-pebble)) " "
-         (keep-count (humble-willow)) " "
-         (keep-count (olive-pine)) " "
-         (keep-count (silver-quarry)) " "
-         (keep-count (witty-heron)) " "
-         (keep-count (ivory-otter))))
-  (println (str "offset chain: " (umber-willow 1)))
-  (println (str "offset pins: " (keep-offset (young-tundra)) " "
-         (keep-offset (sunny-sparrow)) " "
-         (keep-offset (placid-valley)) " "
-         (keep-offset (silver-glacier)) " "
-         (keep-offset (witty-zephyr)) " "
-         (keep-offset (silver-raven)) " "
-         (keep-offset (young-otter)) " "
-         (keep-offset (misty-pine)) " "
-         (keep-offset (jolly-walrus)) " "
-         (keep-offset (tender-lantern)) " "
-         (keep-offset (stark-orchid)) " "
-         (keep-offset (coral-orchid)) " "
-         (keep-offset (vivid-jackal)) " "
-         (keep-offset (dusky-quarry)) " "
-         (keep-offset (gilded-glacier))))
-  (println (str "index chain: " (olive-beacon 1)))
-  (println (str "index pins: " (keep-index (ivory-lagoon)) " "
-         (keep-index (dusky-comet)) " "
-         (keep-index (young-delta)) " "
-         (keep-index (brisk-ember)) " "
-         (keep-index (stark-yarrow)) " "
-         (keep-index (solemn-geyser)) " "
-         (keep-index (lucid-orchid)) " "
-         (keep-index (keen-yarrow)) " "
-         (keep-index (hollow-quarry)) " "
-         (keep-index (eager-jackal)) " "
-         (keep-index (zesty-quarry)) " "
-         (keep-index (wary-nebula)) " "
-         (keep-index (keen-island)) " "
-         (keep-index (placid-delta)) " "
-         (keep-index (keen-marten))))
-  (println (str "ratio chain: " (zesty-harbor 1.5)))
-  (println (str "ratio pins: " (keep-ratio (eager-sparrow)) " "
-         (keep-ratio (ivory-thistle)) " "
-         (keep-ratio (bold-island)) " "
-         (keep-ratio (keen-badger)) " "
-         (keep-ratio (fierce-glacier)) " "
-         (keep-ratio (brisk-sparrow)) " "
-         (keep-ratio (young-thistle)) " "
-         (keep-ratio (placid-kestrel)) " "
-         (keep-ratio (vivid-zephyr)) " "
-         (keep-ratio (gilded-orchid)) " "
-         (keep-ratio (zesty-lantern)) " "
-         (keep-ratio (sunny-comet)) " "
-         (keep-ratio (noble-bison)) " "
-         (keep-ratio (brisk-delta)) " "
-         (keep-ratio (bold-fern))))
+  (println (str "byte chain: " (byte-link-1 1)))
+  (println (str "byte pins: " (keep-byte (byte-pin-1)) " "
+         (keep-byte (byte-pin-2)) " "
+         (keep-byte (byte-pin-3)) " "
+         (keep-byte (byte-pin-4)) " "
+         (keep-byte (byte-pin-5)) " "
+         (keep-byte (byte-pin-6)) " "
+         (keep-byte (byte-pin-7)) " "
+         (keep-byte (byte-pin-8)) " "
+         (keep-byte (byte-pin-9)) " "
+         (keep-byte (byte-pin-10)) " "
+         (keep-byte (byte-pin-11)) " "
+         (keep-byte (byte-pin-12)) " "
+         (keep-byte (byte-pin-13)) " "
+         (keep-byte (byte-pin-14)) " "
+         (keep-byte (byte-pin-15))))
+  (println (str "port chain: " (port-link-1 1)))
+  (println (str "port pins: " (keep-port (port-pin-1)) " "
+         (keep-port (port-pin-2)) " "
+         (keep-port (port-pin-3)) " "
+         (keep-port (port-pin-4)) " "
+         (keep-port (port-pin-5)) " "
+         (keep-port (port-pin-6)) " "
+         (keep-port (port-pin-7)) " "
+         (keep-port (port-pin-8)) " "
+         (keep-port (port-pin-9)) " "
+         (keep-port (port-pin-10)) " "
+         (keep-port (port-pin-11)) " "
+         (keep-port (port-pin-12)) " "
+         (keep-port (port-pin-13)) " "
+         (keep-port (port-pin-14)) " "
+         (keep-port (port-pin-15))))
+  (println (str "count chain: " (count-link-1 1)))
+  (println (str "count pins: " (keep-count (count-pin-1)) " "
+         (keep-count (count-pin-2)) " "
+         (keep-count (count-pin-3)) " "
+         (keep-count (count-pin-4)) " "
+         (keep-count (count-pin-5)) " "
+         (keep-count (count-pin-6)) " "
+         (keep-count (count-pin-7)) " "
+         (keep-count (count-pin-8)) " "
+         (keep-count (count-pin-9)) " "
+         (keep-count (count-pin-10)) " "
+         (keep-count (count-pin-11)) " "
+         (keep-count (count-pin-12)) " "
+         (keep-count (count-pin-13)) " "
+         (keep-count (count-pin-14)) " "
+         (keep-count (count-pin-15))))
+  (println (str "offset chain: " (offset-link-1 1)))
+  (println (str "offset pins: " (keep-offset (offset-pin-1)) " "
+         (keep-offset (offset-pin-2)) " "
+         (keep-offset (offset-pin-3)) " "
+         (keep-offset (offset-pin-4)) " "
+         (keep-offset (offset-pin-5)) " "
+         (keep-offset (offset-pin-6)) " "
+         (keep-offset (offset-pin-7)) " "
+         (keep-offset (offset-pin-8)) " "
+         (keep-offset (offset-pin-9)) " "
+         (keep-offset (offset-pin-10)) " "
+         (keep-offset (offset-pin-11)) " "
+         (keep-offset (offset-pin-12)) " "
+         (keep-offset (offset-pin-13)) " "
+         (keep-offset (offset-pin-14)) " "
+         (keep-offset (offset-pin-15))))
+  (println (str "index chain: " (index-link-1 1)))
+  (println (str "index pins: " (keep-index (index-pin-1)) " "
+         (keep-index (index-pin-2)) " "
+         (keep-index (index-pin-3)) " "
+         (keep-index (index-pin-4)) " "
+         (keep-index (index-pin-5)) " "
+         (keep-index (index-pin-6)) " "
+         (keep-index (index-pin-7)) " "
+         (keep-index (index-pin-8)) " "
+         (keep-index (index-pin-9)) " "
+         (keep-index (index-pin-10)) " "
+         (keep-index (index-pin-11)) " "
+         (keep-index (index-pin-12)) " "
+         (keep-index (index-pin-13)) " "
+         (keep-index (index-pin-14)) " "
+         (keep-index (index-pin-15))))
+  (println (str "ratio chain: " (ratio-link-1 1.5)))
+  (println (str "ratio pins: " (keep-ratio (ratio-pin-1)) " "
+         (keep-ratio (ratio-pin-2)) " "
+         (keep-ratio (ratio-pin-3)) " "
+         (keep-ratio (ratio-pin-4)) " "
+         (keep-ratio (ratio-pin-5)) " "
+         (keep-ratio (ratio-pin-6)) " "
+         (keep-ratio (ratio-pin-7)) " "
+         (keep-ratio (ratio-pin-8)) " "
+         (keep-ratio (ratio-pin-9)) " "
+         (keep-ratio (ratio-pin-10)) " "
+         (keep-ratio (ratio-pin-11)) " "
+         (keep-ratio (ratio-pin-12)) " "
+         (keep-ratio (ratio-pin-13)) " "
+         (keep-ratio (ratio-pin-14)) " "
+         (keep-ratio (ratio-pin-15))))
   (println (str "local: " (local-chain)))
   (println (str "checksum: " (checksum (packet)))))
 
 (type keep-byte (fn (u8) u8))
 (defn keep-byte (value) value)
 
-(defn bold-lantern (x) (swift-geyser (+ x 0)))
+(defn byte-link-1 (x) (byte-link-2 (+ x 0)))
 
-(defn swift-geyser (x)
+(defn byte-link-2 (x)
   (let step 1)
   (let next (+ x step))
-  (swift-otter next))
+  (byte-link-3 next))
 
-(defn swift-otter (x)
-  (if (> x 0) (rustic-falcon x) (rustic-falcon (+ x 2))))
+(defn byte-link-3 (x)
+  (if (> x 0) (byte-link-4 x) (byte-link-4 (+ x 2))))
 
-(defn rustic-falcon (x) (fierce-falcon (+ x 0)))
+(defn byte-link-4 (x) (byte-link-5 (+ x 0)))
 
-(defn fierce-falcon (x)
+(defn byte-link-5 (x)
   (let step 1)
   (let next (+ x step))
-  (olive-meadow next))
+  (byte-link-6 next))
 
-(defn olive-meadow (x)
-  (if (> x 0) (lively-fern x) (lively-fern (+ x 2))))
+(defn byte-link-6 (x)
+  (if (> x 0) (byte-link-7 x) (byte-link-7 (+ x 2))))
 
-(defn lively-fern (x) (tender-beacon (+ x 0)))
+(defn byte-link-7 (x) (byte-link-8 (+ x 0)))
 
-(defn tender-beacon (x)
+(defn byte-link-8 (x)
   (let step 1)
   (let next (+ x step))
-  (jolly-thistle next))
+  (byte-link-9 next))
 
-(defn jolly-thistle (x)
-  (if (> x 0) (vivid-lantern x) (vivid-lantern (+ x 2))))
+(defn byte-link-9 (x)
+  (if (> x 0) (byte-link-10 x) (byte-link-10 (+ x 2))))
 
-(defn vivid-lantern (x) (wary-falcon (+ x 0)))
+(defn byte-link-10 (x) (byte-link-11 (+ x 0)))
 
-(defn wary-falcon (x)
+(defn byte-link-11 (x)
   (let step 1)
   (let next (+ x step))
-  (dusky-pebble next))
+  (byte-link-12 next))
 
-(defn dusky-pebble (x)
-  (if (> x 0) (stark-fern x) (stark-fern (+ x 2))))
+(defn byte-link-12 (x)
+  (if (> x 0) (byte-link-13 x) (byte-link-13 (+ x 2))))
 
-(defn stark-fern (x) (stark-falcon (+ x 0)))
+(defn byte-link-13 (x) (byte-link-14 (+ x 0)))
 
-(defn stark-falcon (x)
+(defn byte-link-14 (x)
   (let step 1)
   (let next (+ x step))
-  (keen-tundra next))
+  (byte-link-15 next))
 
-(defn keen-tundra (x)
-  (if (> x 0) (sunny-beacon x) (sunny-beacon (+ x 2))))
+(defn byte-link-15 (x)
+  (if (> x 0) (byte-link-16 x) (byte-link-16 (+ x 2))))
 
-(defn sunny-beacon (x) (witty-meadow (+ x 0)))
+(defn byte-link-16 (x) (byte-link-17 (+ x 0)))
 
-(defn witty-meadow (x)
+(defn byte-link-17 (x)
   (let step 1)
   (let next (+ x step))
-  (zesty-walrus next))
+  (byte-link-18 next))
 
-(defn zesty-walrus (x)
-  (if (> x 0) (lively-zephyr x) (lively-zephyr (+ x 2))))
+(defn byte-link-18 (x)
+  (if (> x 0) (byte-link-19 x) (byte-link-19 (+ x 2))))
 
-(defn lively-zephyr (x) (solemn-quarry (+ x 0)))
+(defn byte-link-19 (x) (byte-link-20 (+ x 0)))
 
-(defn solemn-quarry (x)
+(defn byte-link-20 (x)
   (let step 1)
   (let next (+ x step))
-  (zesty-willow next))
+  (byte-link-21 next))
 
-(defn zesty-willow (x)
-  (if (> x 0) (gilded-bison x) (gilded-bison (+ x 2))))
+(defn byte-link-21 (x)
+  (if (> x 0) (byte-link-22 x) (byte-link-22 (+ x 2))))
 
-(defn gilded-bison (x) (brisk-jackal (+ x 0)))
+(defn byte-link-22 (x) (byte-link-23 (+ x 0)))
 
-(defn brisk-jackal (x)
+(defn byte-link-23 (x)
   (let step 1)
   (let next (+ x step))
-  (rustic-heron next))
+  (byte-link-24 next))
 
-(defn rustic-heron (x)
-  (if (> x 0) (olive-kestrel x) (olive-kestrel (+ x 2))))
+(defn byte-link-24 (x)
+  (if (> x 0) (byte-link-25 x) (byte-link-25 (+ x 2))))
 
-(defn olive-kestrel (x) (zesty-delta (+ x 0)))
+(defn byte-link-25 (x) (byte-link-26 (+ x 0)))
 
-(defn zesty-delta (x)
+(defn byte-link-26 (x)
   (let step 1)
   (let next (+ x step))
-  (dusky-geyser next))
+  (byte-link-27 next))
 
-(defn dusky-geyser (x)
-  (if (> x 0) (fierce-nebula x) (fierce-nebula (+ x 2))))
+(defn byte-link-27 (x)
+  (if (> x 0) (byte-link-28 x) (byte-link-28 (+ x 2))))
 
-(defn fierce-nebula (x) (gilded-comet (+ x 0)))
+(defn byte-link-28 (x) (byte-link-29 (+ x 0)))
 
-(defn gilded-comet (x)
+(defn byte-link-29 (x)
   (let step 1)
   (let next (+ x step))
-  (young-pine next))
+  (byte-link-30 next))
 
-(defn young-pine (x)
-  (if (> x 0) (sleek-otter x) (sleek-otter (+ x 2))))
+(defn byte-link-30 (x)
+  (if (> x 0) (byte-link-31 x) (byte-link-31 (+ x 2))))
 
-(defn sleek-otter (x) (vivid-pebble (+ x 0)))
+(defn byte-link-31 (x) (byte-link-32 (+ x 0)))
 
-(defn vivid-pebble (x)
+(defn byte-link-32 (x)
   (let step 1)
   (let next (+ x step))
-  (brisk-heron next))
+  (byte-link-33 next))
 
-(defn brisk-heron (x)
-  (if (> x 0) (wary-cedar x) (wary-cedar (+ x 2))))
+(defn byte-link-33 (x)
+  (if (> x 0) (byte-link-34 x) (byte-link-34 (+ x 2))))
 
-(defn wary-cedar (x) (mellow-zephyr (+ x 0)))
+(defn byte-link-34 (x) (byte-link-35 (+ x 0)))
 
-(defn mellow-zephyr (x)
+(defn byte-link-35 (x)
   (let step 1)
   (let next (+ x step))
-  (vivid-otter next))
+  (byte-link-36 next))
 
-(defn vivid-otter (x)
-  (if (> x 0) (misty-heron x) (misty-heron (+ x 2))))
+(defn byte-link-36 (x)
+  (if (> x 0) (byte-link-37 x) (byte-link-37 (+ x 2))))
 
-(defn misty-heron (x) (solemn-sparrow (+ x 0)))
+(defn byte-link-37 (x) (byte-link-38 (+ x 0)))
 
-(defn solemn-sparrow (x)
+(defn byte-link-38 (x)
   (let step 1)
   (let next (+ x step))
-  (noble-tundra next))
+  (byte-link-39 next))
 
-(defn noble-tundra (x)
-  (if (> x 0) (mellow-island x) (mellow-island (+ x 2))))
+(defn byte-link-39 (x)
+  (if (> x 0) (byte-link-40 x) (byte-link-40 (+ x 2))))
 
-(defn mellow-island (x) (umber-condor (+ x 0)))
+(defn byte-link-40 (x) (byte-link-41 (+ x 0)))
 
-(defn umber-condor (x)
+(defn byte-link-41 (x)
   (let step 1)
   (let next (+ x step))
-  (rustic-tundra next))
+  (byte-link-42 next))
 
-(defn rustic-tundra (x)
-  (if (> x 0) (olive-marten x) (olive-marten (+ x 2))))
+(defn byte-link-42 (x)
+  (if (> x 0) (byte-link-43 x) (byte-link-43 (+ x 2))))
 
-(defn olive-marten (x) (young-falcon (+ x 0)))
+(defn byte-link-43 (x) (byte-link-44 (+ x 0)))
 
-(defn young-falcon (x)
+(defn byte-link-44 (x)
   (let step 1)
   (let next (+ x step))
-  (placid-tundra next))
+  (byte-link-45 next))
 
-(defn placid-tundra (x)
-  (if (> x 0) (eager-falcon x) (eager-falcon (+ x 2))))
+(defn byte-link-45 (x)
+  (if (> x 0) (byte-link-46 x) (byte-link-46 (+ x 2))))
 
-(defn eager-falcon (x) (sleek-condor (+ x 0)))
+(defn byte-link-46 (x) (byte-link-47 (+ x 0)))
 
-(defn sleek-condor (x)
+(defn byte-link-47 (x)
   (let step 1)
   (let next (+ x step))
-  (mellow-lagoon next))
+  (byte-link-48 next))
 
-(defn mellow-lagoon (x)
-  (if (> x 0) (quiet-valley x) (quiet-valley (+ x 2))))
+(defn byte-link-48 (x)
+  (if (> x 0) (byte-link-49 x) (byte-link-49 (+ x 2))))
 
-(defn quiet-valley (x) (silver-heron (+ x 0)))
+(defn byte-link-49 (x) (byte-link-50 (+ x 0)))
 
-(defn silver-heron (x)
+(defn byte-link-50 (x)
   (let step 1)
   (let next (+ x step))
-  (misty-island next))
+  (byte-link-51 next))
 
-(defn misty-island (x)
-  (if (> x 0) (eager-badger x) (eager-badger (+ x 2))))
+(defn byte-link-51 (x)
+  (if (> x 0) (byte-link-52 x) (byte-link-52 (+ x 2))))
 
-(defn eager-badger (x) (stark-heron (+ x 0)))
+(defn byte-link-52 (x) (byte-link-53 (+ x 0)))
 
-(defn stark-heron (x)
+(defn byte-link-53 (x)
   (let step 1)
   (let next (+ x step))
-  (hollow-sparrow next))
+  (byte-link-54 next))
 
-(defn hollow-sparrow (x)
-  (if (> x 0) (lively-yarrow x) (lively-yarrow (+ x 2))))
+(defn byte-link-54 (x)
+  (if (> x 0) (byte-link-55 x) (byte-link-55 (+ x 2))))
 
-(defn lively-yarrow (x) (tender-harbor (+ x 0)))
+(defn byte-link-55 (x) (byte-link-56 (+ x 0)))
 
-(defn tender-harbor (x)
+(defn byte-link-56 (x)
   (let step 1)
   (let next (+ x step))
-  (rustic-bison next))
+  (byte-link-57 next))
 
-(defn rustic-bison (x)
-  (if (> x 0) (rapid-willow x) (rapid-willow (+ x 2))))
+(defn byte-link-57 (x)
+  (if (> x 0) (byte-link-58 x) (byte-link-58 (+ x 2))))
 
-(defn rapid-willow (x) (gentle-falcon (+ x 0)))
+(defn byte-link-58 (x) (byte-link-59 (+ x 0)))
 
-(defn gentle-falcon (x)
+(defn byte-link-59 (x)
   (let step 1)
   (let next (+ x step))
-  (rustic-yarrow next))
+  (byte-link-60 next))
 
-(defn rustic-yarrow (x)
+(defn byte-link-60 (x)
   (if (> x 0) (keep-byte x) (keep-byte (+ x 2))))
 
-(defn rustic-meadow () 2)
+(defn byte-pin-1 () 2)
 
-(defn swift-tundra () 00)
+(defn byte-pin-2 () 00)
 
-(defn keen-reef () 1)
+(defn byte-pin-3 () 1)
 
-(defn lively-orchid () 20)
+(defn byte-pin-4 () 20)
 
-(defn zesty-jackal () 0)
+(defn byte-pin-5 () 0)
 
-(defn dusky-meadow () 10)
+(defn byte-pin-6 () 10)
 
-(defn gentle-zephyr () 2)
+(defn byte-pin-7 () 2)
 
-(defn dusky-jackal () 00)
+(defn byte-pin-8 () 00)
 
-(defn mellow-meadow () 1)
+(defn byte-pin-9 () 1)
 
-(defn ivory-zephyr () 20)
+(defn byte-pin-10 () 20)
 
-(defn umber-cedar () 0)
+(defn byte-pin-11 () 0)
 
-(defn solemn-pine () 10)
+(defn byte-pin-12 () 10)
 
-(defn misty-condor () 2)
+(defn byte-pin-13 () 2)
 
-(defn rapid-yarrow () 00)
+(defn byte-pin-14 () 00)
 
-(defn gilded-walrus () 1)
+(defn byte-pin-15 () 1)
 
 (type keep-port (fn (u16) u16))
 (defn keep-port (value) value)
 
-(defn sleek-walrus (x) (rapid-raven (+ x 0)))
+(defn port-link-1 (x) (port-link-2 (+ x 0)))
 
-(defn rapid-raven (x)
+(defn port-link-2 (x)
   (let step 1)
   (let next (+ x step))
-  (keen-walrus next))
+  (port-link-3 next))
 
-(defn keen-walrus (x)
-  (if (> x 0) (mellow-beacon x) (mellow-beacon (+ x 2))))
+(defn port-link-3 (x)
+  (if (> x 0) (port-link-4 x) (port-link-4 (+ x 2))))
 
-(defn mellow-beacon (x) (wary-otter (+ x 0)))
+(defn port-link-4 (x) (port-link-5 (+ x 0)))
 
-(defn wary-otter (x)
+(defn port-link-5 (x)
   (let step 1)
   (let next (+ x step))
-  (eager-otter next))
+  (port-link-6 next))
 
-(defn eager-otter (x)
-  (if (> x 0) (silver-tundra x) (silver-tundra (+ x 2))))
+(defn port-link-6 (x)
+  (if (> x 0) (port-link-7 x) (port-link-7 (+ x 2))))
 
-(defn silver-tundra (x) (quiet-ember (+ x 0)))
+(defn port-link-7 (x) (port-link-8 (+ x 0)))
 
-(defn quiet-ember (x)
+(defn port-link-8 (x)
   (let step 1)
   (let next (+ x step))
-  (humble-valley next))
+  (port-link-9 next))
 
-(defn humble-valley (x)
-  (if (> x 0) (umber-valley x) (umber-valley (+ x 2))))
+(defn port-link-9 (x)
+  (if (> x 0) (port-link-10 x) (port-link-10 (+ x 2))))
 
-(defn umber-valley (x) (coral-thistle (+ x 0)))
+(defn port-link-10 (x) (port-link-11 (+ x 0)))
 
-(defn coral-thistle (x)
+(defn port-link-11 (x)
   (let step 1)
   (let next (+ x step))
-  (gentle-marten next))
+  (port-link-12 next))
 
-(defn gentle-marten (x)
-  (if (> x 0) (solemn-badger x) (solemn-badger (+ x 2))))
+(defn port-link-12 (x)
+  (if (> x 0) (port-link-13 x) (port-link-13 (+ x 2))))
 
-(defn solemn-badger (x) (wary-walrus (+ x 0)))
+(defn port-link-13 (x) (port-link-14 (+ x 0)))
 
-(defn wary-walrus (x)
+(defn port-link-14 (x)
   (let step 1)
   (let next (+ x step))
-  (olive-badger next))
+  (port-link-15 next))
 
-(defn olive-badger (x)
-  (if (> x 0) (swift-thistle x) (swift-thistle (+ x 2))))
+(defn port-link-15 (x)
+  (if (> x 0) (port-link-16 x) (port-link-16 (+ x 2))))
 
-(defn swift-thistle (x) (hollow-willow (+ x 0)))
+(defn port-link-16 (x) (port-link-17 (+ x 0)))
 
-(defn hollow-willow (x)
+(defn port-link-17 (x)
   (let step 1)
   (let next (+ x step))
-  (humble-geyser next))
+  (port-link-18 next))
 
-(defn humble-geyser (x)
-  (if (> x 0) (bold-willow x) (bold-willow (+ x 2))))
+(defn port-link-18 (x)
+  (if (> x 0) (port-link-19 x) (port-link-19 (+ x 2))))
 
-(defn bold-willow (x) (lucid-tundra (+ x 0)))
+(defn port-link-19 (x) (port-link-20 (+ x 0)))
 
-(defn lucid-tundra (x)
+(defn port-link-20 (x)
   (let step 1)
   (let next (+ x step))
-  (noble-summit next))
+  (port-link-21 next))
 
-(defn noble-summit (x)
-  (if (> x 0) (lively-condor x) (lively-condor (+ x 2))))
+(defn port-link-21 (x)
+  (if (> x 0) (port-link-22 x) (port-link-22 (+ x 2))))
 
-(defn lively-condor (x) (brisk-yarrow (+ x 0)))
+(defn port-link-22 (x) (port-link-23 (+ x 0)))
 
-(defn brisk-yarrow (x)
+(defn port-link-23 (x)
   (let step 1)
   (let next (+ x step))
-  (jolly-sparrow next))
+  (port-link-24 next))
 
-(defn jolly-sparrow (x)
-  (if (> x 0) (zesty-falcon x) (zesty-falcon (+ x 2))))
+(defn port-link-24 (x)
+  (if (> x 0) (port-link-25 x) (port-link-25 (+ x 2))))
 
-(defn zesty-falcon (x) (sunny-raven (+ x 0)))
+(defn port-link-25 (x) (port-link-26 (+ x 0)))
 
-(defn sunny-raven (x)
+(defn port-link-26 (x)
   (let step 1)
   (let next (+ x step))
-  (gentle-reef next))
+  (port-link-27 next))
 
-(defn gentle-reef (x)
-  (if (> x 0) (gentle-meadow x) (gentle-meadow (+ x 2))))
+(defn port-link-27 (x)
+  (if (> x 0) (port-link-28 x) (port-link-28 (+ x 2))))
 
-(defn gentle-meadow (x) (fierce-beacon (+ x 0)))
+(defn port-link-28 (x) (port-link-29 (+ x 0)))
 
-(defn fierce-beacon (x)
+(defn port-link-29 (x)
   (let step 1)
   (let next (+ x step))
-  (olive-summit next))
+  (port-link-30 next))
 
-(defn olive-summit (x)
-  (if (> x 0) (bold-falcon x) (bold-falcon (+ x 2))))
+(defn port-link-30 (x)
+  (if (> x 0) (port-link-31 x) (port-link-31 (+ x 2))))
 
-(defn bold-falcon (x) (tawny-island (+ x 0)))
+(defn port-link-31 (x) (port-link-32 (+ x 0)))
 
-(defn tawny-island (x)
+(defn port-link-32 (x)
   (let step 1)
   (let next (+ x step))
-  (tender-bison next))
+  (port-link-33 next))
 
-(defn tender-bison (x)
-  (if (> x 0) (ivory-reef x) (ivory-reef (+ x 2))))
+(defn port-link-33 (x)
+  (if (> x 0) (port-link-34 x) (port-link-34 (+ x 2))))
 
-(defn ivory-reef (x) (gentle-nebula (+ x 0)))
+(defn port-link-34 (x) (port-link-35 (+ x 0)))
 
-(defn gentle-nebula (x)
+(defn port-link-35 (x)
   (let step 1)
   (let next (+ x step))
-  (fierce-kestrel next))
+  (port-link-36 next))
 
-(defn fierce-kestrel (x)
-  (if (> x 0) (humble-jackal x) (humble-jackal (+ x 2))))
+(defn port-link-36 (x)
+  (if (> x 0) (port-link-37 x) (port-link-37 (+ x 2))))
 
-(defn humble-jackal (x) (keen-summit (+ x 0)))
+(defn port-link-37 (x) (port-link-38 (+ x 0)))
 
-(defn keen-summit (x)
+(defn port-link-38 (x)
   (let step 1)
   (let next (+ x step))
-  (noble-comet next))
+  (port-link-39 next))
 
-(defn noble-comet (x)
-  (if (> x 0) (witty-quarry x) (witty-quarry (+ x 2))))
+(defn port-link-39 (x)
+  (if (> x 0) (port-link-40 x) (port-link-40 (+ x 2))))
 
-(defn witty-quarry (x) (bold-quarry (+ x 0)))
+(defn port-link-40 (x) (port-link-41 (+ x 0)))
 
-(defn bold-quarry (x)
+(defn port-link-41 (x)
   (let step 1)
   (let next (+ x step))
-  (young-glacier next))
+  (port-link-42 next))
 
-(defn young-glacier (x)
-  (if (> x 0) (lively-geyser x) (lively-geyser (+ x 2))))
+(defn port-link-42 (x)
+  (if (> x 0) (port-link-43 x) (port-link-43 (+ x 2))))
 
-(defn lively-geyser (x) (quiet-summit (+ x 0)))
+(defn port-link-43 (x) (port-link-44 (+ x 0)))
 
-(defn quiet-summit (x)
+(defn port-link-44 (x)
   (let step 1)
   (let next (+ x step))
-  (rustic-beacon next))
+  (port-link-45 next))
 
-(defn rustic-beacon (x)
-  (if (> x 0) (rapid-beacon x) (rapid-beacon (+ x 2))))
+(defn port-link-45 (x)
+  (if (> x 0) (port-link-46 x) (port-link-46 (+ x 2))))
 
-(defn rapid-beacon (x) (silver-summit (+ x 0)))
+(defn port-link-46 (x) (port-link-47 (+ x 0)))
 
-(defn silver-summit (x)
+(defn port-link-47 (x)
   (let step 1)
   (let next (+ x step))
-  (humble-reef next))
+  (port-link-48 next))
 
-(defn humble-reef (x)
-  (if (> x 0) (clever-orchid x) (clever-orchid (+ x 2))))
+(defn port-link-48 (x)
+  (if (> x 0) (port-link-49 x) (port-link-49 (+ x 2))))
 
-(defn clever-orchid (x) (coral-yarrow (+ x 0)))
+(defn port-link-49 (x) (port-link-50 (+ x 0)))
 
-(defn coral-yarrow (x)
+(defn port-link-50 (x)
   (let step 1)
   (let next (+ x step))
-  (umber-glacier next))
+  (port-link-51 next))
 
-(defn umber-glacier (x)
-  (if (> x 0) (tender-raven x) (tender-raven (+ x 2))))
+(defn port-link-51 (x)
+  (if (> x 0) (port-link-52 x) (port-link-52 (+ x 2))))
 
-(defn tender-raven (x) (eager-lagoon (+ x 0)))
+(defn port-link-52 (x) (port-link-53 (+ x 0)))
 
-(defn eager-lagoon (x)
+(defn port-link-53 (x)
   (let step 1)
   (let next (+ x step))
-  (dusky-heron next))
+  (port-link-54 next))
 
-(defn dusky-heron (x)
-  (if (> x 0) (ivory-island x) (ivory-island (+ x 2))))
+(defn port-link-54 (x)
+  (if (> x 0) (port-link-55 x) (port-link-55 (+ x 2))))
 
-(defn ivory-island (x) (gentle-lagoon (+ x 0)))
+(defn port-link-55 (x) (port-link-56 (+ x 0)))
 
-(defn gentle-lagoon (x)
+(defn port-link-56 (x)
   (let step 1)
   (let next (+ x step))
-  (brisk-raven next))
+  (port-link-57 next))
 
-(defn brisk-raven (x)
-  (if (> x 0) (swift-cedar x) (swift-cedar (+ x 2))))
+(defn port-link-57 (x)
+  (if (> x 0) (port-link-58 x) (port-link-58 (+ x 2))))
 
-(defn swift-cedar (x) (tender-marten (+ x 0)))
+(defn port-link-58 (x) (port-link-59 (+ x 0)))
 
-(defn tender-marten (x)
+(defn port-link-59 (x)
   (let step 1)
   (let next (+ x step))
-  (rustic-jackal next))
+  (port-link-60 next))
 
-(defn rustic-jackal (x)
+(defn port-link-60 (x)
   (if (> x 0) (keep-port x) (keep-port (+ x 2))))
 
-(defn noble-beacon () 2)
+(defn port-pin-1 () 2)
 
-(defn olive-ember () 00)
+(defn port-pin-2 () 00)
 
-(defn vivid-comet () 1)
+(defn port-pin-3 () 1)
 
-(defn zesty-meadow () 20)
+(defn port-pin-4 () 20)
 
-(defn coral-glacier () 0)
+(defn port-pin-5 () 0)
 
-(defn coral-beacon () 10)
+(defn port-pin-6 () 10)
 
-(defn tawny-bison () 2)
+(defn port-pin-7 () 2)
 
-(defn stark-otter () 00)
+(defn port-pin-8 () 00)
 
-(defn lively-island () 1)
+(defn port-pin-9 () 1)
 
-(defn wary-quarry () 20)
+(defn port-pin-10 () 20)
 
-(defn silver-orchid () 0)
+(defn port-pin-11 () 0)
 
-(defn swift-pine () 10)
+(defn port-pin-12 () 10)
 
-(defn keen-harbor () 2)
+(defn port-pin-13 () 2)
 
-(defn bold-heron () 00)
+(defn port-pin-14 () 00)
 
-(defn rustic-nebula () 1)
+(defn port-pin-15 () 1)
 
 (type keep-count (fn (u32) u32))
 (defn keep-count (value) value)
 
-(defn bold-geyser (x) (ivory-walrus (+ x 0)))
+(defn count-link-1 (x) (count-link-2 (+ x 0)))
 
-(defn ivory-walrus (x)
+(defn count-link-2 (x)
   (let step 1)
   (let next (+ x step))
-  (stark-valley next))
+  (count-link-3 next))
 
-(defn stark-valley (x)
-  (if (> x 0) (rapid-comet x) (rapid-comet (+ x 2))))
+(defn count-link-3 (x)
+  (if (> x 0) (count-link-4 x) (count-link-4 (+ x 2))))
 
-(defn rapid-comet (x) (placid-harbor (+ x 0)))
+(defn count-link-4 (x) (count-link-5 (+ x 0)))
 
-(defn placid-harbor (x)
+(defn count-link-5 (x)
   (let step 1)
   (let next (+ x step))
-  (dusky-willow next))
+  (count-link-6 next))
 
-(defn dusky-willow (x)
-  (if (> x 0) (gentle-badger x) (gentle-badger (+ x 2))))
+(defn count-link-6 (x)
+  (if (> x 0) (count-link-7 x) (count-link-7 (+ x 2))))
 
-(defn gentle-badger (x) (amber-pebble (+ x 0)))
+(defn count-link-7 (x) (count-link-8 (+ x 0)))
 
-(defn amber-pebble (x)
+(defn count-link-8 (x)
   (let step 1)
   (let next (+ x step))
-  (gentle-harbor next))
+  (count-link-9 next))
 
-(defn gentle-harbor (x)
-  (if (> x 0) (mellow-lantern x) (mellow-lantern (+ x 2))))
+(defn count-link-9 (x)
+  (if (> x 0) (count-link-10 x) (count-link-10 (+ x 2))))
 
-(defn mellow-lantern (x) (keen-kestrel (+ x 0)))
+(defn count-link-10 (x) (count-link-11 (+ x 0)))
 
-(defn keen-kestrel (x)
+(defn count-link-11 (x)
   (let step 1)
   (let next (+ x step))
-  (brisk-falcon next))
+  (count-link-12 next))
 
-(defn brisk-falcon (x)
-  (if (> x 0) (zesty-kestrel x) (zesty-kestrel (+ x 2))))
+(defn count-link-12 (x)
+  (if (> x 0) (count-link-13 x) (count-link-13 (+ x 2))))
 
-(defn zesty-kestrel (x) (coral-otter (+ x 0)))
+(defn count-link-13 (x) (count-link-14 (+ x 0)))
 
-(defn coral-otter (x)
+(defn count-link-14 (x)
   (let step 1)
   (let next (+ x step))
-  (jolly-orchid next))
+  (count-link-15 next))
 
-(defn jolly-orchid (x)
-  (if (> x 0) (coral-raven x) (coral-raven (+ x 2))))
+(defn count-link-15 (x)
+  (if (> x 0) (count-link-16 x) (count-link-16 (+ x 2))))
 
-(defn coral-raven (x) (swift-pebble (+ x 0)))
+(defn count-link-16 (x) (count-link-17 (+ x 0)))
 
-(defn swift-pebble (x)
+(defn count-link-17 (x)
   (let step 1)
   (let next (+ x step))
-  (placid-bison next))
+  (count-link-18 next))
 
-(defn placid-bison (x)
-  (if (> x 0) (dusky-island x) (dusky-island (+ x 2))))
+(defn count-link-18 (x)
+  (if (> x 0) (count-link-19 x) (count-link-19 (+ x 2))))
 
-(defn dusky-island (x) (lucid-kestrel (+ x 0)))
+(defn count-link-19 (x) (count-link-20 (+ x 0)))
 
-(defn lucid-kestrel (x)
+(defn count-link-20 (x)
   (let step 1)
   (let next (+ x step))
-  (sleek-nebula next))
+  (count-link-21 next))
 
-(defn sleek-nebula (x)
-  (if (> x 0) (calm-nebula x) (calm-nebula (+ x 2))))
+(defn count-link-21 (x)
+  (if (> x 0) (count-link-22 x) (count-link-22 (+ x 2))))
 
-(defn calm-nebula (x) (quiet-marten (+ x 0)))
+(defn count-link-22 (x) (count-link-23 (+ x 0)))
 
-(defn quiet-marten (x)
+(defn count-link-23 (x)
   (let step 1)
   (let next (+ x step))
-  (rapid-marten next))
+  (count-link-24 next))
 
-(defn rapid-marten (x)
-  (if (> x 0) (coral-kestrel x) (coral-kestrel (+ x 2))))
+(defn count-link-24 (x)
+  (if (> x 0) (count-link-25 x) (count-link-25 (+ x 2))))
 
-(defn coral-kestrel (x) (lively-kestrel (+ x 0)))
+(defn count-link-25 (x) (count-link-26 (+ x 0)))
 
-(defn lively-kestrel (x)
+(defn count-link-26 (x)
   (let step 1)
   (let next (+ x step))
-  (noble-thistle next))
+  (count-link-27 next))
 
-(defn noble-thistle (x)
-  (if (> x 0) (hollow-walrus x) (hollow-walrus (+ x 2))))
+(defn count-link-27 (x)
+  (if (> x 0) (count-link-28 x) (count-link-28 (+ x 2))))
 
-(defn hollow-walrus (x) (sunny-jackal (+ x 0)))
+(defn count-link-28 (x) (count-link-29 (+ x 0)))
 
-(defn sunny-jackal (x)
+(defn count-link-29 (x)
   (let step 1)
   (let next (+ x step))
-  (noble-harbor next))
+  (count-link-30 next))
 
-(defn noble-harbor (x)
-  (if (> x 0) (rustic-zephyr x) (rustic-zephyr (+ x 2))))
+(defn count-link-30 (x)
+  (if (> x 0) (count-link-31 x) (count-link-31 (+ x 2))))
 
-(defn rustic-zephyr (x) (fierce-tundra (+ x 0)))
+(defn count-link-31 (x) (count-link-32 (+ x 0)))
 
-(defn fierce-tundra (x)
+(defn count-link-32 (x)
   (let step 1)
   (let next (+ x step))
-  (solemn-raven next))
+  (count-link-33 next))
 
-(defn solemn-raven (x)
-  (if (> x 0) (swift-yarrow x) (swift-yarrow (+ x 2))))
+(defn count-link-33 (x)
+  (if (> x 0) (count-link-34 x) (count-link-34 (+ x 2))))
 
-(defn swift-yarrow (x) (amber-walrus (+ x 0)))
+(defn count-link-34 (x) (count-link-35 (+ x 0)))
 
-(defn amber-walrus (x)
+(defn count-link-35 (x)
   (let step 1)
   (let next (+ x step))
-  (rapid-reef next))
+  (count-link-36 next))
 
-(defn rapid-reef (x)
-  (if (> x 0) (sleek-yarrow x) (sleek-yarrow (+ x 2))))
+(defn count-link-36 (x)
+  (if (> x 0) (count-link-37 x) (count-link-37 (+ x 2))))
 
-(defn sleek-yarrow (x) (bold-sparrow (+ x 0)))
+(defn count-link-37 (x) (count-link-38 (+ x 0)))
 
-(defn bold-sparrow (x)
+(defn count-link-38 (x)
   (let step 1)
   (let next (+ x step))
-  (rustic-walrus next))
+  (count-link-39 next))
 
-(defn rustic-walrus (x)
-  (if (> x 0) (keen-lantern x) (keen-lantern (+ x 2))))
+(defn count-link-39 (x)
+  (if (> x 0) (count-link-40 x) (count-link-40 (+ x 2))))
 
-(defn keen-lantern (x) (hollow-badger (+ x 0)))
+(defn count-link-40 (x) (count-link-41 (+ x 0)))
 
-(defn hollow-badger (x)
+(defn count-link-41 (x)
   (let step 1)
   (let next (+ x step))
-  (witty-orchid next))
+  (count-link-42 next))
 
-(defn witty-orchid (x)
-  (if (> x 0) (tawny-tundra x) (tawny-tundra (+ x 2))))
+(defn count-link-42 (x)
+  (if (> x 0) (count-link-43 x) (count-link-43 (+ x 2))))
 
-(defn tawny-tundra (x) (umber-fern (+ x 0)))
+(defn count-link-43 (x) (count-link-44 (+ x 0)))
 
-(defn umber-fern (x)
+(defn count-link-44 (x)
   (let step 1)
   (let next (+ x step))
-  (hollow-harbor next))
+  (count-link-45 next))
 
-(defn hollow-harbor (x)
-  (if (> x 0) (solemn-yarrow x) (solemn-yarrow (+ x 2))))
+(defn count-link-45 (x)
+  (if (> x 0) (count-link-46 x) (count-link-46 (+ x 2))))
 
-(defn solemn-yarrow (x) (calm-glacier (+ x 0)))
+(defn count-link-46 (x) (count-link-47 (+ x 0)))
 
-(defn calm-glacier (x)
+(defn count-link-47 (x)
   (let step 1)
   (let next (+ x step))
-  (sleek-badger next))
+  (count-link-48 next))
 
-(defn sleek-badger (x)
-  (if (> x 0) (tawny-otter x) (tawny-otter (+ x 2))))
+(defn count-link-48 (x)
+  (if (> x 0) (count-link-49 x) (count-link-49 (+ x 2))))
 
-(defn tawny-otter (x) (tender-walrus (+ x 0)))
+(defn count-link-49 (x) (count-link-50 (+ x 0)))
 
-(defn tender-walrus (x)
+(defn count-link-50 (x)
   (let step 1)
   (let next (+ x step))
-  (hollow-ember next))
+  (count-link-51 next))
 
-(defn hollow-ember (x)
-  (if (> x 0) (rapid-meadow x) (rapid-meadow (+ x 2))))
+(defn count-link-51 (x)
+  (if (> x 0) (count-link-52 x) (count-link-52 (+ x 2))))
 
-(defn rapid-meadow (x) (calm-ember (+ x 0)))
+(defn count-link-52 (x) (count-link-53 (+ x 0)))
 
-(defn calm-ember (x)
+(defn count-link-53 (x)
   (let step 1)
   (let next (+ x step))
-  (gentle-bison next))
+  (count-link-54 next))
 
-(defn gentle-bison (x)
-  (if (> x 0) (vivid-sparrow x) (vivid-sparrow (+ x 2))))
+(defn count-link-54 (x)
+  (if (> x 0) (count-link-55 x) (count-link-55 (+ x 2))))
 
-(defn vivid-sparrow (x) (quiet-fern (+ x 0)))
+(defn count-link-55 (x) (count-link-56 (+ x 0)))
 
-(defn quiet-fern (x)
+(defn count-link-56 (x)
   (let step 1)
   (let next (+ x step))
-  (stark-reef next))
+  (count-link-57 next))
 
-(defn stark-reef (x)
-  (if (> x 0) (keen-lagoon x) (keen-lagoon (+ x 2))))
+(defn count-link-57 (x)
+  (if (> x 0) (count-link-58 x) (count-link-58 (+ x 2))))
 
-(defn keen-lagoon (x) (tender-delta (+ x 0)))
+(defn count-link-58 (x) (count-link-59 (+ x 0)))
 
-(defn tender-delta (x)
+(defn count-link-59 (x)
   (let step 1)
   (let next (+ x step))
-  (silver-lagoon next))
+  (count-link-60 next))
 
-(defn silver-lagoon (x)
+(defn count-link-60 (x)
   (if (> x 0) (keep-count x) (keep-count (+ x 2))))
 
-(defn silver-cedar () 2)
+(defn count-pin-1 () 2)
 
-(defn rapid-tundra () 00)
+(defn count-pin-2 () 00)
 
-(defn clever-quarry () 1)
+(defn count-pin-3 () 1)
 
-(defn witty-jackal () 20)
+(defn count-pin-4 () 20)
 
-(defn brisk-harbor () 0)
+(defn count-pin-5 () 0)
 
-(defn witty-falcon () 10)
+(defn count-pin-6 () 10)
 
-(defn noble-raven () 2)
+(defn count-pin-7 () 2)
 
-(defn rapid-summit () 00)
+(defn count-pin-8 () 00)
 
-(defn keen-falcon () 1)
+(defn count-pin-9 () 1)
 
-(defn umber-pebble () 20)
+(defn count-pin-10 () 20)
 
-(defn humble-willow () 0)
+(defn count-pin-11 () 0)
 
-(defn olive-pine () 10)
+(defn count-pin-12 () 10)
 
-(defn silver-quarry () 2)
+(defn count-pin-13 () 2)
 
-(defn witty-heron () 00)
+(defn count-pin-14 () 00)
 
-(defn ivory-otter () 1)
+(defn count-pin-15 () 1)
 
 (type keep-offset (fn (i32) i32))
 (defn keep-offset (value) value)
 
-(defn umber-willow (x) (gilded-yarrow (+ x 0)))
+(defn offset-link-1 (x) (offset-link-2 (+ x 0)))
 
-(defn gilded-yarrow (x)
+(defn offset-link-2 (x)
   (let step 1)
   (let next (+ x step))
-  (wary-geyser next))
+  (offset-link-3 next))
 
-(defn wary-geyser (x)
-  (if (> x 0) (vivid-heron x) (vivid-heron (+ x 2))))
+(defn offset-link-3 (x)
+  (if (> x 0) (offset-link-4 x) (offset-link-4 (+ x 2))))
 
-(defn vivid-heron (x) (noble-pine (+ x 0)))
+(defn offset-link-4 (x) (offset-link-5 (+ x 0)))
 
-(defn noble-pine (x)
+(defn offset-link-5 (x)
   (let step 1)
   (let next (+ x step))
-  (jolly-fern next))
+  (offset-link-6 next))
 
-(defn jolly-fern (x)
-  (if (> x 0) (clever-yarrow x) (clever-yarrow (+ x 2))))
+(defn offset-link-6 (x)
+  (if (> x 0) (offset-link-7 x) (offset-link-7 (+ x 2))))
 
-(defn clever-yarrow (x) (placid-raven (+ x 0)))
+(defn offset-link-7 (x) (offset-link-8 (+ x 0)))
 
-(defn placid-raven (x)
+(defn offset-link-8 (x)
   (let step 1)
   (let next (+ x step))
-  (tawny-jackal next))
+  (offset-link-9 next))
 
-(defn tawny-jackal (x)
-  (if (> x 0) (rapid-orchid x) (rapid-orchid (+ x 2))))
+(defn offset-link-9 (x)
+  (if (> x 0) (offset-link-10 x) (offset-link-10 (+ x 2))))
 
-(defn rapid-orchid (x) (brisk-quarry (+ x 0)))
+(defn offset-link-10 (x) (offset-link-11 (+ x 0)))
 
-(defn brisk-quarry (x)
+(defn offset-link-11 (x)
   (let step 1)
   (let next (+ x step))
-  (rapid-pebble next))
+  (offset-link-12 next))
 
-(defn rapid-pebble (x)
-  (if (> x 0) (wary-valley x) (wary-valley (+ x 2))))
+(defn offset-link-12 (x)
+  (if (> x 0) (offset-link-13 x) (offset-link-13 (+ x 2))))
 
-(defn wary-valley (x) (clever-lagoon (+ x 0)))
+(defn offset-link-13 (x) (offset-link-14 (+ x 0)))
 
-(defn clever-lagoon (x)
+(defn offset-link-14 (x)
   (let step 1)
   (let next (+ x step))
-  (dusky-thistle next))
+  (offset-link-15 next))
 
-(defn dusky-thistle (x)
-  (if (> x 0) (sleek-fern x) (sleek-fern (+ x 2))))
+(defn offset-link-15 (x)
+  (if (> x 0) (offset-link-16 x) (offset-link-16 (+ x 2))))
 
-(defn sleek-fern (x) (solemn-marten (+ x 0)))
+(defn offset-link-16 (x) (offset-link-17 (+ x 0)))
 
-(defn solemn-marten (x)
+(defn offset-link-17 (x)
   (let step 1)
   (let next (+ x step))
-  (fierce-sparrow next))
+  (offset-link-18 next))
 
-(defn fierce-sparrow (x)
-  (if (> x 0) (humble-heron x) (humble-heron (+ x 2))))
+(defn offset-link-18 (x)
+  (if (> x 0) (offset-link-19 x) (offset-link-19 (+ x 2))))
 
-(defn humble-heron (x) (amber-valley (+ x 0)))
+(defn offset-link-19 (x) (offset-link-20 (+ x 0)))
 
-(defn amber-valley (x)
+(defn offset-link-20 (x)
   (let step 1)
   (let next (+ x step))
-  (coral-lagoon next))
+  (offset-link-21 next))
 
-(defn coral-lagoon (x)
-  (if (> x 0) (gilded-lagoon x) (gilded-lagoon (+ x 2))))
+(defn offset-link-21 (x)
+  (if (> x 0) (offset-link-22 x) (offset-link-22 (+ x 2))))
 
-(defn gilded-lagoon (x) (keen-pebble (+ x 0)))
+(defn offset-link-22 (x) (offset-link-23 (+ x 0)))
 
-(defn keen-pebble (x)
+(defn offset-link-23 (x)
   (let step 1)
   (let next (+ x step))
-  (tender-glacier next))
+  (offset-link-24 next))
 
-(defn tender-glacier (x)
-  (if (> x 0) (lively-delta x) (lively-delta (+ x 2))))
+(defn offset-link-24 (x)
+  (if (> x 0) (offset-link-25 x) (offset-link-25 (+ x 2))))
 
-(defn lively-delta (x) (umber-delta (+ x 0)))
+(defn offset-link-25 (x) (offset-link-26 (+ x 0)))
 
-(defn umber-delta (x)
+(defn offset-link-26 (x)
   (let step 1)
   (let next (+ x step))
-  (quiet-thistle next))
+  (offset-link-27 next))
 
-(defn quiet-thistle (x)
-  (if (> x 0) (ivory-badger x) (ivory-badger (+ x 2))))
+(defn offset-link-27 (x)
+  (if (> x 0) (offset-link-28 x) (offset-link-28 (+ x 2))))
 
-(defn ivory-badger (x) (tawny-pebble (+ x 0)))
+(defn offset-link-28 (x) (offset-link-29 (+ x 0)))
 
-(defn tawny-pebble (x)
+(defn offset-link-29 (x)
   (let step 1)
   (let next (+ x step))
-  (eager-zephyr next))
+  (offset-link-30 next))
 
-(defn eager-zephyr (x)
-  (if (> x 0) (witty-cedar x) (witty-cedar (+ x 2))))
+(defn offset-link-30 (x)
+  (if (> x 0) (offset-link-31 x) (offset-link-31 (+ x 2))))
 
-(defn witty-cedar (x) (clever-marten (+ x 0)))
+(defn offset-link-31 (x) (offset-link-32 (+ x 0)))
 
-(defn clever-marten (x)
+(defn offset-link-32 (x)
   (let step 1)
   (let next (+ x step))
-  (olive-falcon next))
+  (offset-link-33 next))
 
-(defn olive-falcon (x)
-  (if (> x 0) (mellow-cedar x) (mellow-cedar (+ x 2))))
+(defn offset-link-33 (x)
+  (if (> x 0) (offset-link-34 x) (offset-link-34 (+ x 2))))
 
-(defn mellow-cedar (x) (rustic-willow (+ x 0)))
+(defn offset-link-34 (x) (offset-link-35 (+ x 0)))
 
-(defn rustic-willow (x)
+(defn offset-link-35 (x)
   (let step 1)
   (let next (+ x step))
-  (sleek-heron next))
+  (offset-link-36 next))
 
-(defn sleek-heron (x)
-  (if (> x 0) (gilded-sparrow x) (gilded-sparrow (+ x 2))))
+(defn offset-link-36 (x)
+  (if (> x 0) (offset-link-37 x) (offset-link-37 (+ x 2))))
 
-(defn gilded-sparrow (x) (ivory-meadow (+ x 0)))
+(defn offset-link-37 (x) (offset-link-38 (+ x 0)))
 
-(defn ivory-meadow (x)
+(defn offset-link-38 (x)
   (let step 1)
   (let next (+ x step))
-  (young-ember next))
+  (offset-link-39 next))
 
-(defn young-ember (x)
-  (if (> x 0) (tawny-ember x) (tawny-ember (+ x 2))))
+(defn offset-link-39 (x)
+  (if (> x 0) (offset-link-40 x) (offset-link-40 (+ x 2))))
 
-(defn tawny-ember (x) (quiet-jackal (+ x 0)))
+(defn offset-link-40 (x) (offset-link-41 (+ x 0)))
 
-(defn quiet-jackal (x)
+(defn offset-link-41 (x)
   (let step 1)
   (let next (+ x step))
-  (jolly-glacier next))
+  (offset-link-42 next))
 
-(defn jolly-glacier (x)
-  (if (> x 0) (eager-delta x) (eager-delta (+ x 2))))
+(defn offset-link-42 (x)
+  (if (> x 0) (offset-link-43 x) (offset-link-43 (+ x 2))))
 
-(defn eager-delta (x) (keen-zephyr (+ x 0)))
+(defn offset-link-43 (x) (offset-link-44 (+ x 0)))
 
-(defn keen-zephyr (x)
+(defn offset-link-44 (x)
   (let step 1)
   (let next (+ x step))
-  (bold-harbor next))
+  (offset-link-45 next))
 
-(defn bold-harbor (x)
-  (if (> x 0) (brisk-fern x) (brisk-fern (+ x 2))))
+(defn offset-link-45 (x)
+  (if (> x 0) (offset-link-46 x) (offset-link-46 (+ x 2))))
 
-(defn brisk-fern (x) (lively-raven (+ x 0)))
+(defn offset-link-46 (x) (offset-link-47 (+ x 0)))
 
-(defn lively-raven (x)
+(defn offset-link-47 (x)
   (let step 1)
   (let next (+ x step))
-  (amber-harbor next))
+  (offset-link-48 next))
 
-(defn amber-harbor (x)
-  (if (> x 0) (eager-harbor x) (eager-harbor (+ x 2))))
+(defn offset-link-48 (x)
+  (if (> x 0) (offset-link-49 x) (offset-link-49 (+ x 2))))
 
-(defn eager-harbor (x) (jolly-tundra (+ x 0)))
+(defn offset-link-49 (x) (offset-link-50 (+ x 0)))
 
-(defn jolly-tundra (x)
+(defn offset-link-50 (x)
   (let step 1)
   (let next (+ x step))
-  (clever-thistle next))
+  (offset-link-51 next))
 
-(defn clever-thistle (x)
-  (if (> x 0) (tender-geyser x) (tender-geyser (+ x 2))))
+(defn offset-link-51 (x)
+  (if (> x 0) (offset-link-52 x) (offset-link-52 (+ x 2))))
 
-(defn tender-geyser (x) (silver-sparrow (+ x 0)))
+(defn offset-link-52 (x) (offset-link-53 (+ x 0)))
 
-(defn silver-sparrow (x)
+(defn offset-link-53 (x)
   (let step 1)
   (let next (+ x step))
-  (wary-lagoon next))
+  (offset-link-54 next))
 
-(defn wary-lagoon (x)
-  (if (> x 0) (swift-valley x) (swift-valley (+ x 2))))
+(defn offset-link-54 (x)
+  (if (> x 0) (offset-link-55 x) (offset-link-55 (+ x 2))))
 
-(defn swift-valley (x) (vivid-fern (+ x 0)))
+(defn offset-link-55 (x) (offset-link-56 (+ x 0)))
 
-(defn vivid-fern (x)
+(defn offset-link-56 (x)
   (let step 1)
   (let next (+ x step))
-  (tender-lagoon next))
+  (offset-link-57 next))
 
-(defn tender-lagoon (x)
-  (if (> x 0) (olive-reef x) (olive-reef (+ x 2))))
+(defn offset-link-57 (x)
+  (if (> x 0) (offset-link-58 x) (offset-link-58 (+ x 2))))
 
-(defn olive-reef (x) (solemn-reef (+ x 0)))
+(defn offset-link-58 (x) (offset-link-59 (+ x 0)))
 
-(defn solemn-reef (x)
+(defn offset-link-59 (x)
   (let step 1)
   (let next (+ x step))
-  (gilded-tundra next))
+  (offset-link-60 next))
 
-(defn gilded-tundra (x)
+(defn offset-link-60 (x)
   (if (> x 0) (keep-offset x) (keep-offset (+ x 2))))
 
-(defn young-tundra () 2)
+(defn offset-pin-1 () 2)
 
-(defn sunny-sparrow () 00)
+(defn offset-pin-2 () 00)
 
-(defn placid-valley () 1)
+(defn offset-pin-3 () 1)
 
-(defn silver-glacier () 20)
+(defn offset-pin-4 () 20)
 
-(defn witty-zephyr () 0)
+(defn offset-pin-5 () 0)
 
-(defn silver-raven () 10)
+(defn offset-pin-6 () 10)
 
-(defn young-otter () 2)
+(defn offset-pin-7 () 2)
 
-(defn misty-pine () 00)
+(defn offset-pin-8 () 00)
 
-(defn jolly-walrus () 1)
+(defn offset-pin-9 () 1)
 
-(defn tender-lantern () 20)
+(defn offset-pin-10 () 20)
 
-(defn stark-orchid () 0)
+(defn offset-pin-11 () 0)
 
-(defn coral-orchid () 10)
+(defn offset-pin-12 () 10)
 
-(defn vivid-jackal () 2)
+(defn offset-pin-13 () 2)
 
-(defn dusky-quarry () 00)
+(defn offset-pin-14 () 00)
 
-(defn gilded-glacier () 1)
+(defn offset-pin-15 () 1)
 
 (type keep-index (fn (usize) usize))
 (defn keep-index (value) value)
 
-(defn olive-beacon (x) (sleek-falcon (+ x 0)))
+(defn index-link-1 (x) (index-link-2 (+ x 0)))
 
-(defn sleek-falcon (x)
+(defn index-link-2 (x)
   (let step 1)
   (let next (+ x step))
-  (sunny-walrus next))
+  (index-link-3 next))
 
-(defn sunny-walrus (x)
-  (if (> x 0) (young-heron x) (young-heron (+ x 2))))
+(defn index-link-3 (x)
+  (if (> x 0) (index-link-4 x) (index-link-4 (+ x 2))))
 
-(defn young-heron (x) (silver-marten (+ x 0)))
+(defn index-link-4 (x) (index-link-5 (+ x 0)))
 
-(defn silver-marten (x)
+(defn index-link-5 (x)
   (let step 1)
   (let next (+ x step))
-  (eager-nebula next))
+  (index-link-6 next))
 
-(defn eager-nebula (x)
-  (if (> x 0) (tender-ember x) (tender-ember (+ x 2))))
+(defn index-link-6 (x)
+  (if (> x 0) (index-link-7 x) (index-link-7 (+ x 2))))
 
-(defn tender-ember (x) (eager-orchid (+ x 0)))
+(defn index-link-7 (x) (index-link-8 (+ x 0)))
 
-(defn eager-orchid (x)
+(defn index-link-8 (x)
   (let step 1)
   (let next (+ x step))
-  (brisk-badger next))
+  (index-link-9 next))
 
-(defn brisk-badger (x)
-  (if (> x 0) (tawny-lagoon x) (tawny-lagoon (+ x 2))))
+(defn index-link-9 (x)
+  (if (> x 0) (index-link-10 x) (index-link-10 (+ x 2))))
 
-(defn tawny-lagoon (x) (mellow-badger (+ x 0)))
+(defn index-link-10 (x) (index-link-11 (+ x 0)))
 
-(defn mellow-badger (x)
+(defn index-link-11 (x)
   (let step 1)
   (let next (+ x step))
-  (olive-jackal next))
+  (index-link-12 next))
 
-(defn olive-jackal (x)
-  (if (> x 0) (noble-nebula x) (noble-nebula (+ x 2))))
+(defn index-link-12 (x)
+  (if (> x 0) (index-link-13 x) (index-link-13 (+ x 2))))
 
-(defn noble-nebula (x) (stark-zephyr (+ x 0)))
+(defn index-link-13 (x) (index-link-14 (+ x 0)))
 
-(defn stark-zephyr (x)
+(defn index-link-14 (x)
   (let step 1)
   (let next (+ x step))
-  (brisk-thistle next))
+  (index-link-15 next))
 
-(defn brisk-thistle (x)
-  (if (> x 0) (stark-marten x) (stark-marten (+ x 2))))
+(defn index-link-15 (x)
+  (if (> x 0) (index-link-16 x) (index-link-16 (+ x 2))))
 
-(defn stark-marten (x) (misty-nebula (+ x 0)))
+(defn index-link-16 (x) (index-link-17 (+ x 0)))
 
-(defn misty-nebula (x)
+(defn index-link-17 (x)
   (let step 1)
   (let next (+ x step))
-  (amber-summit next))
+  (index-link-18 next))
 
-(defn amber-summit (x)
-  (if (> x 0) (keen-heron x) (keen-heron (+ x 2))))
+(defn index-link-18 (x)
+  (if (> x 0) (index-link-19 x) (index-link-19 (+ x 2))))
 
-(defn keen-heron (x) (eager-fern (+ x 0)))
+(defn index-link-19 (x) (index-link-20 (+ x 0)))
 
-(defn eager-fern (x)
+(defn index-link-20 (x)
   (let step 1)
   (let next (+ x step))
-  (amber-tundra next))
+  (index-link-21 next))
 
-(defn amber-tundra (x)
-  (if (> x 0) (lively-bison x) (lively-bison (+ x 2))))
+(defn index-link-21 (x)
+  (if (> x 0) (index-link-22 x) (index-link-22 (+ x 2))))
 
-(defn lively-bison (x) (dusky-lantern (+ x 0)))
+(defn index-link-22 (x) (index-link-23 (+ x 0)))
 
-(defn dusky-lantern (x)
+(defn index-link-23 (x)
   (let step 1)
   (let next (+ x step))
-  (humble-zephyr next))
+  (index-link-24 next))
 
-(defn humble-zephyr (x)
-  (if (> x 0) (zesty-lagoon x) (zesty-lagoon (+ x 2))))
+(defn index-link-24 (x)
+  (if (> x 0) (index-link-25 x) (index-link-25 (+ x 2))))
 
-(defn zesty-lagoon (x) (umber-thistle (+ x 0)))
+(defn index-link-25 (x) (index-link-26 (+ x 0)))
 
-(defn umber-thistle (x)
+(defn index-link-26 (x)
   (let step 1)
   (let next (+ x step))
-  (coral-cedar next))
+  (index-link-27 next))
 
-(defn coral-cedar (x)
-  (if (> x 0) (clever-zephyr x) (clever-zephyr (+ x 2))))
+(defn index-link-27 (x)
+  (if (> x 0) (index-link-28 x) (index-link-28 (+ x 2))))
 
-(defn clever-zephyr (x) (clever-geyser (+ x 0)))
+(defn index-link-28 (x) (index-link-29 (+ x 0)))
 
-(defn clever-geyser (x)
+(defn index-link-29 (x)
   (let step 1)
   (let next (+ x step))
-  (mellow-sparrow next))
+  (index-link-30 next))
 
-(defn mellow-sparrow (x)
-  (if (> x 0) (bold-pebble x) (bold-pebble (+ x 2))))
+(defn index-link-30 (x)
+  (if (> x 0) (index-link-31 x) (index-link-31 (+ x 2))))
 
-(defn bold-pebble (x) (fierce-walrus (+ x 0)))
+(defn index-link-31 (x) (index-link-32 (+ x 0)))
 
-(defn fierce-walrus (x)
+(defn index-link-32 (x)
   (let step 1)
   (let next (+ x step))
-  (gentle-jackal next))
+  (index-link-33 next))
 
-(defn gentle-jackal (x)
-  (if (> x 0) (gilded-thistle x) (gilded-thistle (+ x 2))))
+(defn index-link-33 (x)
+  (if (> x 0) (index-link-34 x) (index-link-34 (+ x 2))))
 
-(defn gilded-thistle (x) (gilded-valley (+ x 0)))
+(defn index-link-34 (x) (index-link-35 (+ x 0)))
 
-(defn gilded-valley (x)
+(defn index-link-35 (x)
   (let step 1)
   (let next (+ x step))
-  (misty-zephyr next))
+  (index-link-36 next))
 
-(defn misty-zephyr (x)
-  (if (> x 0) (sunny-island x) (sunny-island (+ x 2))))
+(defn index-link-36 (x)
+  (if (> x 0) (index-link-37 x) (index-link-37 (+ x 2))))
 
-(defn sunny-island (x) (mellow-falcon (+ x 0)))
+(defn index-link-37 (x) (index-link-38 (+ x 0)))
 
-(defn mellow-falcon (x)
+(defn index-link-38 (x)
   (let step 1)
   (let next (+ x step))
-  (hollow-meadow next))
+  (index-link-39 next))
 
-(defn hollow-meadow (x)
-  (if (> x 0) (zesty-marten x) (zesty-marten (+ x 2))))
+(defn index-link-39 (x)
+  (if (> x 0) (index-link-40 x) (index-link-40 (+ x 2))))
 
-(defn zesty-marten (x) (mellow-pine (+ x 0)))
+(defn index-link-40 (x) (index-link-41 (+ x 0)))
 
-(defn mellow-pine (x)
+(defn index-link-41 (x)
   (let step 1)
   (let next (+ x step))
-  (hollow-marten next))
+  (index-link-42 next))
 
-(defn hollow-marten (x)
-  (if (> x 0) (noble-fern x) (noble-fern (+ x 2))))
+(defn index-link-42 (x)
+  (if (> x 0) (index-link-43 x) (index-link-43 (+ x 2))))
 
-(defn noble-fern (x) (witty-ember (+ x 0)))
+(defn index-link-43 (x) (index-link-44 (+ x 0)))
 
-(defn witty-ember (x)
+(defn index-link-44 (x)
   (let step 1)
   (let next (+ x step))
-  (amber-glacier next))
+  (index-link-45 next))
 
-(defn amber-glacier (x)
-  (if (> x 0) (ivory-condor x) (ivory-condor (+ x 2))))
+(defn index-link-45 (x)
+  (if (> x 0) (index-link-46 x) (index-link-46 (+ x 2))))
 
-(defn ivory-condor (x) (solemn-beacon (+ x 0)))
+(defn index-link-46 (x) (index-link-47 (+ x 0)))
 
-(defn solemn-beacon (x)
+(defn index-link-47 (x)
   (let step 1)
   (let next (+ x step))
-  (swift-orchid next))
+  (index-link-48 next))
 
-(defn swift-orchid (x)
-  (if (> x 0) (eager-quarry x) (eager-quarry (+ x 2))))
+(defn index-link-48 (x)
+  (if (> x 0) (index-link-49 x) (index-link-49 (+ x 2))))
 
-(defn eager-quarry (x) (clever-glacier (+ x 0)))
+(defn index-link-49 (x) (index-link-50 (+ x 0)))
 
-(defn clever-glacier (x)
+(defn index-link-50 (x)
   (let step 1)
   (let next (+ x step))
-  (sleek-lagoon next))
+  (index-link-51 next))
 
-(defn sleek-lagoon (x)
-  (if (> x 0) (rustic-glacier x) (rustic-glacier (+ x 2))))
+(defn index-link-51 (x)
+  (if (> x 0) (index-link-52 x) (index-link-52 (+ x 2))))
 
-(defn rustic-glacier (x) (sunny-valley (+ x 0)))
+(defn index-link-52 (x) (index-link-53 (+ x 0)))
 
-(defn sunny-valley (x)
+(defn index-link-53 (x)
   (let step 1)
   (let next (+ x step))
-  (ivory-kestrel next))
+  (index-link-54 next))
 
-(defn ivory-kestrel (x)
-  (if (> x 0) (eager-summit x) (eager-summit (+ x 2))))
+(defn index-link-54 (x)
+  (if (> x 0) (index-link-55 x) (index-link-55 (+ x 2))))
 
-(defn eager-summit (x) (eager-heron (+ x 0)))
+(defn index-link-55 (x) (index-link-56 (+ x 0)))
 
-(defn eager-heron (x)
+(defn index-link-56 (x)
   (let step 1)
   (let next (+ x step))
-  (amber-marten next))
+  (index-link-57 next))
 
-(defn amber-marten (x)
-  (if (> x 0) (wary-badger x) (wary-badger (+ x 2))))
+(defn index-link-57 (x)
+  (if (> x 0) (index-link-58 x) (index-link-58 (+ x 2))))
 
-(defn wary-badger (x) (ivory-beacon (+ x 0)))
+(defn index-link-58 (x) (index-link-59 (+ x 0)))
 
-(defn ivory-beacon (x)
+(defn index-link-59 (x)
   (let step 1)
   (let next (+ x step))
-  (mellow-condor next))
+  (index-link-60 next))
 
-(defn mellow-condor (x)
+(defn index-link-60 (x)
   (if (> x 0) (keep-index x) (keep-index (+ x 2))))
 
-(defn ivory-lagoon () 2)
+(defn index-pin-1 () 2)
 
-(defn dusky-comet () 00)
+(defn index-pin-2 () 00)
 
-(defn young-delta () 1)
+(defn index-pin-3 () 1)
 
-(defn brisk-ember () 20)
+(defn index-pin-4 () 20)
 
-(defn stark-yarrow () 0)
+(defn index-pin-5 () 0)
 
-(defn solemn-geyser () 10)
+(defn index-pin-6 () 10)
 
-(defn lucid-orchid () 2)
+(defn index-pin-7 () 2)
 
-(defn keen-yarrow () 00)
+(defn index-pin-8 () 00)
 
-(defn hollow-quarry () 1)
+(defn index-pin-9 () 1)
 
-(defn eager-jackal () 20)
+(defn index-pin-10 () 20)
 
-(defn zesty-quarry () 0)
+(defn index-pin-11 () 0)
 
-(defn wary-nebula () 10)
+(defn index-pin-12 () 10)
 
-(defn keen-island () 2)
+(defn index-pin-13 () 2)
 
-(defn placid-delta () 00)
+(defn index-pin-14 () 00)
 
-(defn keen-marten () 1)
+(defn index-pin-15 () 1)
 
 (type keep-ratio (fn (f32) f32))
 (defn keep-ratio (value) value)
 
-(defn zesty-harbor (x) (lucid-geyser (+ x 0.5)))
+(defn ratio-link-1 (x) (ratio-link-2 (+ x 0.5)))
 
-(defn lucid-geyser (x)
+(defn ratio-link-2 (x)
   (let step 1.5)
   (let next (+ x step))
-  (tawny-nebula next))
+  (ratio-link-3 next))
 
-(defn tawny-nebula (x)
-  (if (> x 0.5) (calm-comet x) (calm-comet (+ x 2.5))))
+(defn ratio-link-3 (x)
+  (if (> x 0.5) (ratio-link-4 x) (ratio-link-4 (+ x 2.5))))
 
-(defn calm-comet (x) (mellow-tundra (+ x 0.5)))
+(defn ratio-link-4 (x) (ratio-link-5 (+ x 0.5)))
 
-(defn mellow-tundra (x)
+(defn ratio-link-5 (x)
   (let step 1.5)
   (let next (+ x step))
-  (sunny-willow next))
+  (ratio-link-6 next))
 
-(defn sunny-willow (x)
-  (if (> x 0.5) (misty-geyser x) (misty-geyser (+ x 2.5))))
+(defn ratio-link-6 (x)
+  (if (> x 0.5) (ratio-link-7 x) (ratio-link-7 (+ x 2.5))))
 
-(defn misty-geyser (x) (witty-beacon (+ x 0.5)))
+(defn ratio-link-7 (x) (ratio-link-8 (+ x 0.5)))
 
-(defn witty-beacon (x)
+(defn ratio-link-8 (x)
   (let step 1.5)
   (let next (+ x step))
-  (umber-falcon next))
+  (ratio-link-9 next))
 
-(defn umber-falcon (x)
-  (if (> x 0.5) (wary-pine x) (wary-pine (+ x 2.5))))
+(defn ratio-link-9 (x)
+  (if (> x 0.5) (ratio-link-10 x) (ratio-link-10 (+ x 2.5))))
 
-(defn wary-pine (x) (mellow-fern (+ x 0.5)))
+(defn ratio-link-10 (x) (ratio-link-11 (+ x 0.5)))
 
-(defn mellow-fern (x)
+(defn ratio-link-11 (x)
   (let step 1.5)
   (let next (+ x step))
-  (clever-badger next))
+  (ratio-link-12 next))
 
-(defn clever-badger (x)
-  (if (> x 0.5) (ivory-yarrow x) (ivory-yarrow (+ x 2.5))))
+(defn ratio-link-12 (x)
+  (if (> x 0.5) (ratio-link-13 x) (ratio-link-13 (+ x 2.5))))
 
-(defn ivory-yarrow (x) (witty-island (+ x 0.5)))
+(defn ratio-link-13 (x) (ratio-link-14 (+ x 0.5)))
 
-(defn witty-island (x)
+(defn ratio-link-14 (x)
   (let step 1.5)
   (let next (+ x step))
-  (bold-nebula next))
+  (ratio-link-15 next))
 
-(defn bold-nebula (x)
-  (if (> x 0.5) (amber-raven x) (amber-raven (+ x 2.5))))
+(defn ratio-link-15 (x)
+  (if (> x 0.5) (ratio-link-16 x) (ratio-link-16 (+ x 2.5))))
 
-(defn amber-raven (x) (coral-pine (+ x 0.5)))
+(defn ratio-link-16 (x) (ratio-link-17 (+ x 0.5)))
 
-(defn coral-pine (x)
+(defn ratio-link-17 (x)
   (let step 1.5)
   (let next (+ x step))
-  (rustic-island next))
+  (ratio-link-18 next))
 
-(defn rustic-island (x)
-  (if (> x 0.5) (gentle-kestrel x) (gentle-kestrel (+ x 2.5))))
+(defn ratio-link-18 (x)
+  (if (> x 0.5) (ratio-link-19 x) (ratio-link-19 (+ x 2.5))))
 
-(defn gentle-kestrel (x) (rapid-island (+ x 0.5)))
+(defn ratio-link-19 (x) (ratio-link-20 (+ x 0.5)))
 
-(defn rapid-island (x)
+(defn ratio-link-20 (x)
   (let step 1.5)
   (let next (+ x step))
-  (gilded-geyser next))
+  (ratio-link-21 next))
 
-(defn gilded-geyser (x)
-  (if (> x 0.5) (calm-delta x) (calm-delta (+ x 2.5))))
+(defn ratio-link-21 (x)
+  (if (> x 0.5) (ratio-link-22 x) (ratio-link-22 (+ x 2.5))))
 
-(defn calm-delta (x) (jolly-beacon (+ x 0.5)))
+(defn ratio-link-22 (x) (ratio-link-23 (+ x 0.5)))
 
-(defn jolly-beacon (x)
+(defn ratio-link-23 (x)
   (let step 1.5)
   (let next (+ x step))
-  (zesty-bison next))
+  (ratio-link-24 next))
 
-(defn zesty-bison (x)
-  (if (> x 0.5) (zesty-zephyr x) (zesty-zephyr (+ x 2.5))))
+(defn ratio-link-24 (x)
+  (if (> x 0.5) (ratio-link-25 x) (ratio-link-25 (+ x 2.5))))
 
-(defn zesty-zephyr (x) (fierce-jackal (+ x 0.5)))
+(defn ratio-link-25 (x) (ratio-link-26 (+ x 0.5)))
 
-(defn fierce-jackal (x)
+(defn ratio-link-26 (x)
   (let step 1.5)
   (let next (+ x step))
-  (clever-falcon next))
+  (ratio-link-27 next))
 
-(defn clever-falcon (x)
-  (if (> x 0.5) (wary-kestrel x) (wary-kestrel (+ x 2.5))))
+(defn ratio-link-27 (x)
+  (if (> x 0.5) (ratio-link-28 x) (ratio-link-28 (+ x 2.5))))
 
-(defn wary-kestrel (x) (silver-fern (+ x 0.5)))
+(defn ratio-link-28 (x) (ratio-link-29 (+ x 0.5)))
 
-(defn silver-fern (x)
+(defn ratio-link-29 (x)
   (let step 1.5)
   (let next (+ x step))
-  (young-lagoon next))
+  (ratio-link-30 next))
 
-(defn young-lagoon (x)
-  (if (> x 0.5) (fierce-pebble x) (fierce-pebble (+ x 2.5))))
+(defn ratio-link-30 (x)
+  (if (> x 0.5) (ratio-link-31 x) (ratio-link-31 (+ x 2.5))))
 
-(defn fierce-pebble (x) (tawny-valley (+ x 0.5)))
+(defn ratio-link-31 (x) (ratio-link-32 (+ x 0.5)))
 
-(defn tawny-valley (x)
+(defn ratio-link-32 (x)
   (let step 1.5)
   (let next (+ x step))
-  (wary-marten next))
+  (ratio-link-33 next))
 
-(defn wary-marten (x)
-  (if (> x 0.5) (sleek-lantern x) (sleek-lantern (+ x 2.5))))
+(defn ratio-link-33 (x)
+  (if (> x 0.5) (ratio-link-34 x) (ratio-link-34 (+ x 2.5))))
 
-(defn sleek-lantern (x) (tender-falcon (+ x 0.5)))
+(defn ratio-link-34 (x) (ratio-link-35 (+ x 0.5)))
 
-(defn tender-falcon (x)
+(defn ratio-link-35 (x)
   (let step 1.5)
   (let next (+ x step))
-  (dusky-fern next))
+  (ratio-link-36 next))
 
-(defn dusky-fern (x)
-  (if (> x 0.5) (tawny-pine x) (tawny-pine (+ x 2.5))))
+(defn ratio-link-36 (x)
+  (if (> x 0.5) (ratio-link-37 x) (ratio-link-37 (+ x 2.5))))
 
-(defn tawny-pine (x) (jolly-cedar (+ x 0.5)))
+(defn ratio-link-37 (x) (ratio-link-38 (+ x 0.5)))
 
-(defn jolly-cedar (x)
+(defn ratio-link-38 (x)
   (let step 1.5)
   (let next (+ x step))
-  (swift-heron next))
+  (ratio-link-39 next))
 
-(defn swift-heron (x)
-  (if (> x 0.5) (eager-pine x) (eager-pine (+ x 2.5))))
+(defn ratio-link-39 (x)
+  (if (> x 0.5) (ratio-link-40 x) (ratio-link-40 (+ x 2.5))))
 
-(defn eager-pine (x) (rapid-kestrel (+ x 0.5)))
+(defn ratio-link-40 (x) (ratio-link-41 (+ x 0.5)))
 
-(defn rapid-kestrel (x)
+(defn ratio-link-41 (x)
   (let step 1.5)
   (let next (+ x step))
-  (misty-cedar next))
+  (ratio-link-42 next))
 
-(defn misty-cedar (x)
-  (if (> x 0.5) (noble-zephyr x) (noble-zephyr (+ x 2.5))))
+(defn ratio-link-42 (x)
+  (if (> x 0.5) (ratio-link-43 x) (ratio-link-43 (+ x 2.5))))
 
-(defn noble-zephyr (x) (placid-summit (+ x 0.5)))
+(defn ratio-link-43 (x) (ratio-link-44 (+ x 0.5)))
 
-(defn placid-summit (x)
+(defn ratio-link-44 (x)
   (let step 1.5)
   (let next (+ x step))
-  (noble-sparrow next))
+  (ratio-link-45 next))
 
-(defn noble-sparrow (x)
-  (if (> x 0.5) (misty-lantern x) (misty-lantern (+ x 2.5))))
+(defn ratio-link-45 (x)
+  (if (> x 0.5) (ratio-link-46 x) (ratio-link-46 (+ x 2.5))))
 
-(defn misty-lantern (x) (sleek-summit (+ x 0.5)))
+(defn ratio-link-46 (x) (ratio-link-47 (+ x 0.5)))
 
-(defn sleek-summit (x)
+(defn ratio-link-47 (x)
   (let step 1.5)
   (let next (+ x step))
-  (misty-bison next))
+  (ratio-link-48 next))
 
-(defn misty-bison (x)
-  (if (> x 0.5) (noble-island x) (noble-island (+ x 2.5))))
+(defn ratio-link-48 (x)
+  (if (> x 0.5) (ratio-link-49 x) (ratio-link-49 (+ x 2.5))))
 
-(defn noble-island (x) (sunny-nebula (+ x 0.5)))
+(defn ratio-link-49 (x) (ratio-link-50 (+ x 0.5)))
 
-(defn sunny-nebula (x)
+(defn ratio-link-50 (x)
   (let step 1.5)
   (let next (+ x step))
-  (calm-thistle next))
+  (ratio-link-51 next))
 
-(defn calm-thistle (x)
-  (if (> x 0.5) (tawny-badger x) (tawny-badger (+ x 2.5))))
+(defn ratio-link-51 (x)
+  (if (> x 0.5) (ratio-link-52 x) (ratio-link-52 (+ x 2.5))))
 
-(defn tawny-badger (x) (witty-condor (+ x 0.5)))
+(defn ratio-link-52 (x) (ratio-link-53 (+ x 0.5)))
 
-(defn witty-condor (x)
+(defn ratio-link-53 (x)
   (let step 1.5)
   (let next (+ x step))
-  (lucid-marten next))
+  (ratio-link-54 next))
 
-(defn lucid-marten (x)
-  (if (> x 0.5) (brisk-tundra x) (brisk-tundra (+ x 2.5))))
+(defn ratio-link-54 (x)
+  (if (> x 0.5) (ratio-link-55 x) (ratio-link-55 (+ x 2.5))))
 
-(defn brisk-tundra (x) (clever-meadow (+ x 0.5)))
+(defn ratio-link-55 (x) (ratio-link-56 (+ x 0.5)))
 
-(defn clever-meadow (x)
+(defn ratio-link-56 (x)
   (let step 1.5)
   (let next (+ x step))
-  (witty-tundra next))
+  (ratio-link-57 next))
 
-(defn witty-tundra (x)
-  (if (> x 0.5) (dusky-walrus x) (dusky-walrus (+ x 2.5))))
+(defn ratio-link-57 (x)
+  (if (> x 0.5) (ratio-link-58 x) (ratio-link-58 (+ x 2.5))))
 
-(defn dusky-walrus (x) (amber-falcon (+ x 0.5)))
+(defn ratio-link-58 (x) (ratio-link-59 (+ x 0.5)))
 
-(defn amber-falcon (x)
+(defn ratio-link-59 (x)
   (let step 1.5)
   (let next (+ x step))
-  (keen-pine next))
+  (ratio-link-60 next))
 
-(defn keen-pine (x)
+(defn ratio-link-60 (x)
   (if (> x 0.5) (keep-ratio x) (keep-ratio (+ x 2.5))))
 
-(defn eager-sparrow () 2.5)
+(defn ratio-pin-1 () 2.5)
 
-(defn ivory-thistle () 0.50)
+(defn ratio-pin-2 () 0.50)
 
-(defn bold-island () 1.5)
+(defn ratio-pin-3 () 1.5)
 
-(defn keen-badger () 2.50)
+(defn ratio-pin-4 () 2.50)
 
-(defn fierce-glacier () 0.5)
+(defn ratio-pin-5 () 0.5)
 
-(defn brisk-sparrow () 1.50)
+(defn ratio-pin-6 () 1.50)
 
-(defn young-thistle () 2.5)
+(defn ratio-pin-7 () 2.5)
 
-(defn placid-kestrel () 0.50)
+(defn ratio-pin-8 () 0.50)
 
-(defn vivid-zephyr () 1.5)
+(defn ratio-pin-9 () 1.5)
 
-(defn gilded-orchid () 2.50)
+(defn ratio-pin-10 () 2.50)
 
-(defn zesty-lantern () 0.5)
+(defn ratio-pin-11 () 0.5)
 
-(defn sunny-comet () 1.50)
+(defn ratio-pin-12 () 1.50)
 
-(defn noble-bison () 2.5)
+(defn ratio-pin-13 () 2.5)
 
-(defn brisk-delta () 0.50)
+(defn ratio-pin-14 () 0.50)
 
-(defn bold-fern () 1.5)
+(defn ratio-pin-15 () 1.5)
 
 (defn local-chain ()
   (let total 1)
