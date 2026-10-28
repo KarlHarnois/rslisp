@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/rust_type_unsized_parameter.rslisp
+---
+(rust-type (shared (item unsized)) "std::rc::Rc<{0}>")
+(rust-type (duo (first unsized) second) "(Box<{0}>, Vec<{1}>)")
