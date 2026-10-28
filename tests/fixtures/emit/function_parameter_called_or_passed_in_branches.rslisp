@@ -1,0 +1,9 @@
+(type build-with (fn ((fn (i64) i64)) i64))
+(defn build-with (constructor) (constructor 2))
+
+(defn build-either (constructor flag)
+  (if flag (constructor 1) (build-with constructor)))
+
+(defn main ()
+  (println (build-either (fn (n) (+ n 1)) true))
+  (println (build-either (fn (n) (+ n 1)) false)))

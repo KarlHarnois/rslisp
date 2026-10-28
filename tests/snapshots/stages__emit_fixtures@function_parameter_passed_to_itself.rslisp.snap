@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_parameter_passed_to_itself.rslisp
+---
+fn walk(mut f: impl FnMut(i64), mut n: i64) -> i64 {
+    loop {
+        if n < 5 {
+            f(n);
+            n += 1;
+            continue;
+        } else {
+            return 0;
+        }
+    }
+}
+
+fn main() {
+    let mut total: Vec<i64> = Vec::new();
+    walk(|n: i64| total.push(n), 0);
+    println!("{}", total.len())
+}

@@ -1,0 +1,21 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_parameter_called_or_passed_in_branches.rslisp
+---
+fn build_with(constructor: impl FnOnce(i64) -> i64) -> i64 {
+    constructor(2)
+}
+
+fn build_either(constructor: impl FnOnce(i64) -> i64, flag: bool) -> i64 {
+    if flag {
+        constructor(1)
+    } else {
+        build_with(constructor)
+    }
+}
+
+fn main() {
+    println!("{}", build_either(|n: i64| n + 1, true));
+    println!("{}", build_either(|n: i64| n + 1, false))
+}
