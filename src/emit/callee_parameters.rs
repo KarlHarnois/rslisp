@@ -64,7 +64,7 @@ impl OpenCallees {
         self.orders.get(&callee).copied()
     }
 
-    pub(super) fn assumed(&mut self, callee: BindingId) -> CalleeParameters {
+    pub(super) fn assume(&mut self, callee: BindingId) -> CalleeParameters {
         self.assumed.insert(callee);
         self.provisional.get(&callee).cloned().unwrap_or_default()
     }
