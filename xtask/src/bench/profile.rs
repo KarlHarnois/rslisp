@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use super::measurement::Measurement;
 use crate::failure::TaskFailure;
@@ -9,6 +9,12 @@ pub struct ProfileReader<'a> {
 
 impl<'a> ProfileReader<'a> {
     const ENTRY_MODULE: &'static str = "cli";
+    const STAGE_ENTRY_POINTS: [&'static str; 4] = [
+        "expand::Expander::expand",
+        "check::ProgramChecker::check",
+        "emit::RustEmitter::emit",
+        "build::formatting::EmittedFormatting::apply",
+    ];
 
     pub fn new(crate_name: &'a str) -> Self {
         Self { crate_name }
@@ -18,6 +24,13 @@ impl<'a> ProfileReader<'a> {
         let mut scan = ProfileScan::new(self);
         profile.lines().for_each(|line| scan.consume(line));
         scan.finish()
+    }
+
+    fn missing_entry_point(&self, entered: &BTreeSet<&str>) -> Option<String> {
+        Self::STAGE_ENTRY_POINTS
+            .iter()
+            .map(|entry_point| format!("{}::{entry_point}", self.crate_name))
+            .find(|entry_point| !entered.contains(entry_point.as_str()))
     }
 
     fn stage_of_call(&self, caller: &str, callee: &str) -> Option<String> {
@@ -74,6 +87,7 @@ struct ProfileScan<'reader, 'text> {
     callee: &'text str,
     call_cost_follows: bool,
     stages: BTreeMap<String, u64>,
+    entered: BTreeSet<&'text str>,
 }
 
 impl<'reader, 'text> ProfileScan<'reader, 'text> {
@@ -88,6 +102,7 @@ impl<'reader, 'text> ProfileScan<'reader, 'text> {
             callee: "",
             call_cost_follows: false,
             stages: BTreeMap::new(),
+            entered: BTreeSet::new(),
         }
     }
 
@@ -116,6 +131,7 @@ impl<'reader, 'text> ProfileScan<'reader, 'text> {
         };
         let counts = Self::counts(cost_line.split_once(' ').map_or("", |(_, counts)| counts));
         *self.stages.entry(stage).or_default() += Self::count_at(&counts, column);
+        self.entered.insert(self.callee);
     }
 
     fn finish(self) -> Result<Measurement, TaskFailure> {
@@ -125,6 +141,9 @@ impl<'reader, 'text> ProfileScan<'reader, 'text> {
         let summary = self
             .summary
             .ok_or(TaskFailure::malformed_profile("summary"))?;
+        if let Some(entry_point) = self.reader.missing_entry_point(&self.entered) {
+            return Err(TaskFailure::stage_entry_missing(&entry_point));
+        }
         Ok(Measurement::new(
             self.stages,
             Self::count_at(&summary, column),
@@ -163,9 +182,11 @@ mod tests {
             .map(|(stage, instructions)| (stage.to_string(), instructions))
             .collect();
         let expected = [
+            ("build", 20),
             ("check", 300),
+            ("emit", 50),
             ("expand", 500),
-            ("other", 200),
+            ("other", 130),
             ("total", 1000),
         ];
         let expected: Vec<(String, u64)> = expected
@@ -173,6 +194,17 @@ mod tests {
             .map(|(stage, instructions)| (stage.to_string(), *instructions))
             .collect();
         assert_eq!(rows, expected);
+    }
+
+    #[test]
+    fn rejects_a_profile_that_never_enters_a_stage() {
+        let inlined = PROFILE.replace("RustEmitter::emit\n", "RustEmitter::lower\n");
+        let failure = ProfileReader::new("compiler").read(&inlined).unwrap_err();
+        assert!(
+            failure
+                .to_string()
+                .contains("`compiler::emit::RustEmitter::emit`")
+        );
     }
 
     #[test]
