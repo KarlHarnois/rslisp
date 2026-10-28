@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/closure_advances_capture_twice.rslisp
+---
+(type twice (fn ((fn () unit)) unit))
+(type later (fn ((iterator i64)) unit))
+(type main (fn () unit))
