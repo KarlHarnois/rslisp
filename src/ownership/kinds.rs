@@ -8,9 +8,9 @@ use crate::core::{BindingArena, BindingId, ReferenceKind};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Borrow, ClosureKind, CopyRules, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem,
-    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedModule, TypedProgram,
-    TypedStructExpr,
+    Borrow, ClosureKind, CopyRules, TemplateBorrows, Type, TypedArgument, TypedBinder, TypedBlock,
+    TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedModule,
+    TypedProgram, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -80,6 +80,7 @@ pub struct KindSources<'a> {
     pub structs: &'a crate::types::StructTable,
     pub enums: &'a crate::types::EnumTable,
     pub bindings: &'a BindingArena,
+    pub template_borrows: &'a TemplateBorrows,
     pub function_parameters: HashMap<BindingId, Vec<BindingId>>,
     pub rust_parameter_kinds: HashMap<BindingId, Vec<ClosureKind>>,
     pub written_parameter_kinds: HashMap<BindingId, ClosureKind>,
@@ -88,6 +89,7 @@ pub struct KindSources<'a> {
 pub struct ClosureKinds<'a> {
     copy: CopyRules<'a>,
     bindings: &'a BindingArena,
+    template_borrows: &'a TemplateBorrows,
     parameter_kinds: HashMap<BindingId, ClosureKind>,
     binding_kinds: HashMap<BindingId, ClosureKind>,
     binding_captures: HashMap<BindingId, BindingId>,
@@ -171,6 +173,7 @@ impl<'a> ClosureKinds<'a> {
                 sources.enums,
             ),
             bindings: sources.bindings,
+            template_borrows: sources.template_borrows,
             parameter_kinds: HashMap::new(),
             binding_kinds: HashMap::new(),
             binding_captures: HashMap::new(),
@@ -380,7 +383,7 @@ impl<'a> ClosureKinds<'a> {
         match kind {
             TypedExprKind::Recur(arguments) => {
                 let mut report = CaptureReport::default();
-                self.scan_arguments(arguments, own, &mut report);
+                self.scan_arguments(None, arguments, own, &mut report);
                 report
             }
             TypedExprKind::Try { .. } | TypedExprKind::Borrow(..) | TypedExprKind::Deref(_) => {
@@ -477,7 +480,7 @@ impl<'a> ClosureKinds<'a> {
         report: &mut CaptureReport,
     ) {
         self.scan_callee(callee, own, report);
-        self.scan_arguments(arguments, own, report);
+        self.scan_arguments(Some(callee), arguments, own, report);
     }
 
     fn scan_callee(
@@ -510,33 +513,52 @@ impl<'a> ClosureKinds<'a> {
 
     fn scan_arguments(
         &mut self,
+        callee: Option<&TypedExpr>,
         arguments: &[TypedArgument],
         own: &HashSet<BindingId>,
         report: &mut CaptureReport,
     ) {
-        for argument in arguments {
-            self.scan_argument(argument, own, report);
+        for (position, argument) in arguments.iter().enumerate() {
+            self.scan_argument(callee, position, argument, own, report);
         }
     }
 
     fn scan_argument(
         &mut self,
+        callee: Option<&TypedExpr>,
+        position: usize,
         argument: &TypedArgument,
         own: &HashSet<BindingId>,
         report: &mut CaptureReport,
     ) {
-        if matches!(argument.borrow, Borrow::Mutable | Borrow::Reborrow)
+        let reference = self.argument_reference(callee, position, argument);
+        if reference == Some(ReferenceKind::Mutable)
             && let Some(root) = argument.value.place_root()
             && !own.contains(&root)
         {
             report.changed.entry(root).or_insert(argument.value.span);
         }
-        let usage = if argument.borrow == Borrow::None && !argument.value.ty.is_reference() {
+        let usage = if reference.is_none() && !argument.value.ty.is_reference() {
             Usage::Move
         } else {
             Usage::Borrow
         };
         report.merge(self.scan_expression(&argument.value, own, usage));
+    }
+
+    fn argument_reference(
+        &self,
+        callee: Option<&TypedExpr>,
+        position: usize,
+        argument: &TypedArgument,
+    ) -> Option<ReferenceKind> {
+        match argument.borrow {
+            Borrow::Mutable | Borrow::Reborrow => Some(ReferenceKind::Mutable),
+            Borrow::None => {
+                callee.and_then(|callee| self.template_borrows.reference(callee, position))
+            }
+            _ => Some(ReferenceKind::Shared),
+        }
     }
 
     fn scan_control(

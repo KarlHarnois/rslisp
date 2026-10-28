@@ -86,6 +86,7 @@ impl OwnershipChecker {
             structs: &program.structs,
             enums: &program.enums,
             bindings: &program.bindings,
+            template_borrows: &program.template_borrows,
             function_parameters: ClosureKinds::function_parameters(program),
             rust_parameter_kinds: ClosureKinds::rust_parameter_kinds(program),
             written_parameter_kinds: ClosureKinds::written_parameter_kinds(program),
