@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 
 use crate::core::BindingId;
 use crate::types::ClosureKind;
@@ -36,6 +37,13 @@ impl ParameterUses {
         *current = (*current).max(kind);
     }
 
+    pub fn extend(&mut self, other: Self) {
+        Self::combine_with(&mut self.calls, other.calls, usize::saturating_add);
+        Self::combine_with(&mut self.uses, other.uses, usize::saturating_add);
+        Self::combine_with(&mut self.pass_limits, other.pass_limits, ClosureKind::min);
+        Self::combine_with(&mut self.required, other.required, ClosureKind::max);
+    }
+
     pub fn repeat_uses_since(&mut self, before: &Self) {
         Self::repeat_since(&mut self.calls, &before.calls);
         Self::repeat_since(&mut self.uses, &before.uses);
@@ -53,20 +61,27 @@ impl ParameterUses {
     }
 
     fn join(&mut self, branch: Self) {
-        Self::join_with(&mut self.calls, branch.calls, usize::max);
-        Self::join_with(&mut self.uses, branch.uses, usize::max);
-        Self::join_with(&mut self.pass_limits, branch.pass_limits, ClosureKind::min);
-        Self::join_with(&mut self.required, branch.required, ClosureKind::max);
+        Self::combine_with(&mut self.calls, branch.calls, usize::max);
+        Self::combine_with(&mut self.uses, branch.uses, usize::max);
+        Self::combine_with(&mut self.pass_limits, branch.pass_limits, ClosureKind::min);
+        Self::combine_with(&mut self.required, branch.required, ClosureKind::max);
     }
 
-    fn join_with<T: Copy>(
+    fn combine_with<T: Copy>(
         joined: &mut HashMap<BindingId, T>,
-        branch: HashMap<BindingId, T>,
+        other: HashMap<BindingId, T>,
         combine: fn(T, T) -> T,
     ) {
-        for (parameter, value) in branch {
-            let current = joined.entry(parameter).or_insert(value);
-            *current = combine(*current, value);
+        for (parameter, value) in other {
+            match joined.entry(parameter) {
+                Entry::Occupied(mut entry) => {
+                    let current = entry.get_mut();
+                    *current = combine(*current, value);
+                }
+                Entry::Vacant(entry) => {
+                    entry.insert(value);
+                }
+            }
         }
     }
 

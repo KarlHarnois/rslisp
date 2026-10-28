@@ -777,16 +777,8 @@ impl<'a> ClosureKinds<'a> {
                 self.require_call(callee, arguments, params, nested, uses)
             }
             TypedExprKind::Control(control) => self.require_control(control, params, nested, uses),
-            TypedExprKind::Leaf(leaf) => self.require_leaf(leaf, params, uses),
+            TypedExprKind::Leaf(_) => {}
             other => self.require_nested(other, params, nested, uses),
-        }
-    }
-
-    fn require_leaf(&self, leaf: &TypedLeaf, params: &[BindingId], uses: &mut ParameterUses) {
-        if let TypedLeaf::Local(binding) = leaf
-            && params.contains(binding)
-        {
-            uses.require(*binding, ClosureKind::Fn);
         }
     }
 
@@ -875,20 +867,21 @@ impl<'a> ClosureKinds<'a> {
             TypedControl::If(test, then, otherwise) => {
                 self.require_expression(test, params, nested, uses);
                 let branches = [then.as_ref(), otherwise.as_ref()].map(|branch| {
-                    let mut branch_uses = uses.clone();
+                    let mut branch_uses = ParameterUses::default();
                     self.require_expression(branch, params, nested, &mut branch_uses);
                     branch_uses
                 });
-                *uses = ParameterUses::joined(branches.into());
+                let joined = ParameterUses::joined(branches.into());
+                uses.extend(joined);
             }
             TypedControl::Match(matched) => {
                 self.require_expression(&matched.value, params, nested, uses);
                 let arms = matched.arms.iter().map(|arm| {
-                    let mut arm_uses = uses.clone();
+                    let mut arm_uses = ParameterUses::default();
                     self.require_block(&arm.body, params, nested, &mut arm_uses);
                     arm_uses
                 });
-                *uses = ParameterUses::joined(arms.collect());
+                uses.extend(ParameterUses::joined(arms.collect()));
             }
         }
     }
