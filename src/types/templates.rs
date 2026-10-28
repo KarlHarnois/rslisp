@@ -23,6 +23,12 @@ impl TemplateBorrows {
         self.holds(callee, |parsed| parsed.advances_receiver(position))
     }
 
+    pub fn keeps(&self, callee: &TypedExpr, position: usize) -> bool {
+        self.holds(callee, |parsed| {
+            parsed.borrows(position) || parsed.advances_receiver(position)
+        })
+    }
+
     fn holds(&self, callee: &TypedExpr, fact: impl Fn(&ParsedTemplate) -> bool) -> bool {
         match &callee.kind {
             TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
