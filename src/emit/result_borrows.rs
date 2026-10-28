@@ -397,7 +397,9 @@ impl<'a> LocalBorrowCalls<'a> {
     fn pass(&mut self, callee: BindingId, arguments: &[TypedArgument]) {
         for (position, argument) in arguments.iter().enumerate() {
             if let TypedExprKind::Leaf(TypedLeaf::Local(local)) = argument.value.kind
-                && self.program.is_borrowing_function(&argument.value.ty)
+                && self
+                    .program
+                    .is_function_returning_borrow(&argument.value.ty)
             {
                 self.passed.push(PassedLocal {
                     callee,
