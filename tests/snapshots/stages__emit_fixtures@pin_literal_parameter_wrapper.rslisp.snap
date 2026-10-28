@@ -1,0 +1,25 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/pin_literal_parameter_wrapper.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn build(year: u16) -> Car<'static> {
+    Car {
+        make: "Nissan",
+        year,
+    }
+}
+
+fn wrap(y: u16) -> Car<'static> {
+    build(y)
+}
+
+fn main() {
+    println!("{}", wrap(2025).year)
+}
