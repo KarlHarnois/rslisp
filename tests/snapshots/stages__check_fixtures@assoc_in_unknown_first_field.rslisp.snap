@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/assoc_in_unknown_first_field.rslisp
+---
+error[L0408]: `line` has no field `:strat`
+ --> check/assoc_in_unknown_first_field.rslisp:7:19
+  |
+7 |   (assoc-in line (:strat :x) 3))
+  |                   ^^^^^^ unknown field
+  |
+help: a field with a similar name exists
+  |
+7 -   (assoc-in line (:strat :x) 3))
+7 +   (assoc-in line (:start :x) 3))
+  |

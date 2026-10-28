@@ -2408,12 +2408,31 @@ impl<'a> ExpressionEmitter<'a> {
     ) -> Code {
         let path = self.types().struct_path(binding);
         self.locals.enter();
-        let base = self.update_argument(base, "base");
+        let base = self.update_base(base);
         let update = self.struct_update(path, fields, base.usage());
         self.locals.leave();
         match base.name {
             Some(name) => Self::bound_block(&name, base.code, update),
             None => update,
+        }
+    }
+
+    fn update_base(&mut self, base: &TypedExpr) -> UpdateArgument {
+        if Self::is_place(base) {
+            UpdateArgument {
+                name: None,
+                code: self.expr(base),
+            }
+        } else {
+            self.update_argument(base, "base")
+        }
+    }
+
+    fn is_place(value: &TypedExpr) -> bool {
+        match &value.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(_)) => true,
+            TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => Self::is_place(owner),
+            _ => false,
         }
     }
 

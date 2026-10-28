@@ -1,0 +1,82 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/assoc_in_keywords.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Point {
+    x: i64,
+    y: i64,
+}
+
+fn make_point(x: i64, y: i64) -> Point {
+    Point { x, y }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Line {
+    start: Point,
+    end: Point,
+}
+
+fn make_line(start: Point, end: Point) -> Line {
+    Line { start, end }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Badge {
+    text: String,
+    at: Point,
+}
+
+fn make_badge(text: String, at: Point) -> Badge {
+    Badge { text, at }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Garage {
+    name: String,
+    badge: Badge,
+}
+
+fn make_garage(name: String, badge: Badge) -> Garage {
+    Garage { name, badge }
+}
+
+fn load_line() -> Line {
+    println!("load");
+    make_line(make_point(1, 2), make_point(5, 6))
+}
+
+fn main() {
+    let line = make_line(make_point(1, 2), make_point(5, 6));
+    let moved = {
+        let start = Point { x: 3, ..line.start };
+        Line { start, ..line }
+    };
+    println!("{} {} {}", moved.start.x, moved.start.y, moved.end.x);
+    let loaded = {
+        let base = load_line();
+        let end = Point { y: 9, ..base.end };
+        Line { end, ..base }
+    };
+    println!("{}", loaded.end.y);
+    let garage = make_garage(
+        "Leaf Garage".to_string(),
+        make_badge("open".to_string(), make_point(0, 0)),
+    );
+    let repainted = {
+        let badge = {
+            let at = Point {
+                x: 4,
+                ..garage.badge.at
+            };
+            Badge { at, ..garage.badge }
+        };
+        Garage { badge, ..garage }
+    };
+    println!(
+        "{} {} {}",
+        repainted.name, repainted.badge.text, repainted.badge.at.x
+    )
+}

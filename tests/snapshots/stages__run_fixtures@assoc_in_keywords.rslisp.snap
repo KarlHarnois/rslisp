@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/assoc_in_keywords.rslisp
+---
+3 2 5
+load
+9
+Leaf Garage open 4

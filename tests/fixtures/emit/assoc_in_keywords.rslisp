@@ -1,0 +1,21 @@
+(defstruct point :x i64 :y i64)
+
+(defstruct line :start point :end point)
+
+(defstruct badge :text string :at point)
+
+(defstruct garage :name string :badge badge)
+
+(defn load-line ()
+  (println "load")
+  (->line (->point 1 2) (->point 5 6)))
+
+(defn main ()
+  (let line (->line (->point 1 2) (->point 5 6)))
+  (let moved (assoc-in line (:start :x) 3))
+  (println (:x (:start moved)) " " (:y (:start moved)) " " (:x (:end moved)))
+  (let loaded (assoc-in (load-line) (:end :y) 9))
+  (println (:y (:end loaded)))
+  (let garage (->garage (to-string "Leaf Garage") (->badge (to-string "open") (->point 0 0))))
+  (let repainted (assoc-in garage (:badge :at :x) 4))
+  (println (:name repainted) " " (:text (:badge repainted)) " " (:x (:at (:badge repainted)))))
