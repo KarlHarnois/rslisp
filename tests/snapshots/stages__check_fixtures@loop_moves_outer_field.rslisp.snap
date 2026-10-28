@@ -1,0 +1,19 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/loop_moves_outer_field.rslisp
+---
+error[L0501]: use of moved value `g`
+  --> check/loop_moves_outer_field.rslisp:10:40
+   |
+10 |         (do (let bigger (assoc (:badge g) :size 14)) (recur (+ i 1)))
+   |                                --------^-
+   |                                |       |
+   |                                |       value used here after an earlier pass of the loop moved it
+   |                                value moved here, in an earlier pass of the loop
+   |
+help: clone the value if both places need it
+   |
+10 -         (do (let bigger (assoc (:badge g) :size 14)) (recur (+ i 1)))
+10 +         (do (let bigger (assoc (clone (:badge g)) :size 14)) (recur (+ i 1)))
+   |

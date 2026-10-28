@@ -1,0 +1,8 @@
+(defstruct garage :owner string :spots u16)
+
+(defn main ()
+  (let g (->garage (to-string "karl") 2))
+  (let kept
+    (loop ((i 0))
+      (if (< i (:spots g)) (recur (+ i 1)) g)))
+  (println (:owner kept) " " (:spots kept)))

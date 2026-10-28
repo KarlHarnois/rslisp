@@ -11,6 +11,7 @@ mod mutation;
 mod names;
 mod parameter_uses;
 mod problems;
+mod repeats;
 mod returned;
 mod rewrite;
 mod slices;

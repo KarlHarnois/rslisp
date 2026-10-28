@@ -77,6 +77,28 @@ impl MovedValues {
         }
     }
 
+    pub fn moved_since(&self, earlier: &MovedValues) -> MovedValues {
+        let values = self
+            .values
+            .iter()
+            .filter(|(binding, _)| !earlier.values.contains_key(binding))
+            .map(|(binding, moved)| (*binding, moved.clone()))
+            .collect();
+        MovedValues { values }
+    }
+
+    pub fn retain(&mut self, mut keep: impl FnMut(BindingId) -> bool) {
+        self.values.retain(|binding, _| keep(*binding));
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.values.is_empty()
+    }
+
+    pub fn bindings(&self) -> impl Iterator<Item = BindingId> + '_ {
+        self.values.keys().copied()
+    }
+
     pub fn merge(&mut self, other: MovedValues) {
         for (binding, moved) in other.values {
             match self.values.get_mut(&binding) {

@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use super::moved_values::{FieldPath, MoveSite, MovedValues};
 use super::mutation::ChangedValues;
 use super::problems::OwnershipProblems;
+use super::repeats::{NextPass, RepeatingBody};
 use crate::core::{BindingArena, BindingId, FieldLabel, FieldSpelling};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
@@ -32,6 +33,8 @@ pub struct MoveChecker<'a> {
     enclosing: BindingId,
     changed: ChangedValues,
     moved: MovedValues,
+    repeating: Option<RepeatingBody>,
+    moved_by_earlier_pass: HashSet<BindingId>,
     copy_functions: HashSet<BindingId>,
     reported: HashSet<BindingId>,
     parameters: HashSet<BindingId>,
@@ -58,6 +61,8 @@ impl<'a> MoveChecker<'a> {
             enclosing,
             changed: ChangedValues::default(),
             moved: MovedValues::default(),
+            repeating: None,
+            moved_by_earlier_pass: HashSet::new(),
             copy_functions: HashSet::new(),
             reported: HashSet::new(),
             parameters: HashSet::new(),
@@ -228,8 +233,23 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn closure(&mut self, lambda: &TypedLambda) -> bool {
-        self.block(&lambda.body, Usage::Move);
+        if let Some(next) = self.pass(lambda).next_pass(lambda) {
+            self.repeat(lambda, next);
+        }
         lambda.kind == ClosureKind::Fn
+    }
+
+    fn pass(&mut self, lambda: &TypedLambda) -> RepeatingBody {
+        let enclosing = self.repeating.replace(RepeatingBody::enter(&self.moved));
+        self.block(&lambda.body, Usage::Move);
+        std::mem::replace(&mut self.repeating, enclosing).expect("the pass entered a body")
+    }
+
+    fn repeat(&mut self, lambda: &TypedLambda, next: NextPass) {
+        self.moved_by_earlier_pass.extend(next.carried_bindings());
+        let after_first_pass = std::mem::replace(&mut self.moved, next.moved_at_start());
+        self.pass(lambda);
+        self.moved.merge(after_first_pass);
     }
 
     fn bind(&mut self, binding: BindingId, value: &TypedExpr) {
@@ -287,6 +307,9 @@ impl<'a> MoveChecker<'a> {
             };
             self.expr(&argument.value, usage);
         }
+        if let Some(body) = &mut self.repeating {
+            body.carry(&self.moved);
+        }
     }
 
     fn branches(
@@ -342,7 +365,7 @@ impl<'a> MoveChecker<'a> {
         if let Some(diagnostic) = self.bound_help(binding, ty, span, moved_at) {
             return diagnostic;
         }
-        let moved = OwnershipProblems::use_after_move(name, span, moved_at);
+        let moved = self.moved_value(binding, span, moved_at);
         self.ownership_help(binding, ty, &moved)
             .unwrap_or_else(|| self.reuse_help(moved, name, ty, site))
     }
@@ -352,6 +375,15 @@ impl<'a> MoveChecker<'a> {
             return OwnershipProblems::pipeline_help(moved, name);
         }
         OwnershipProblems::clone_suggestion(moved, site.cloned_place(name), site.span())
+    }
+
+    fn moved_value(&self, binding: BindingId, span: Span, moved_at: Span) -> Diagnostic {
+        let name = self.bindings.get(binding).name();
+        if self.moved_by_earlier_pass.contains(&binding) {
+            OwnershipProblems::use_after_earlier_pass_move(name, span, moved_at)
+        } else {
+            OwnershipProblems::use_after_move(name, span, moved_at)
+        }
     }
 
     fn bound_help(
@@ -364,7 +396,7 @@ impl<'a> MoveChecker<'a> {
         let name = self.bindings.get(binding).name();
         if matches!(ty, Type::Function(..)) {
             return Some(OwnershipProblems::closure_move_help(
-                OwnershipProblems::use_after_move(name, span, moved_at),
+                self.moved_value(binding, span, moved_at),
             ));
         }
         let Type::Generic(generic) = ty else {

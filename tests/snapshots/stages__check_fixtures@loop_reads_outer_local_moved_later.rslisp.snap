@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/loop_reads_outer_local_moved_later.rslisp
+---
+error[L0501]: use of moved value `g`
+ --> check/loop_reads_outer_local_moved_later.rslisp:8:30
+  |
+8 |         (do (println (:owner g)) (let b g) (recur (+ i 1)))
+  |                              ^          - value moved here, in an earlier pass of the loop
+  |                              |
+  |                              value used here after an earlier pass of the loop moved it
+  |
+help: clone the value if both places need it
+  |
+8 -         (do (println (:owner g)) (let b g) (recur (+ i 1)))
+8 +         (do (println (:owner g)) (let b (clone g)) (recur (+ i 1)))
+  |

@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/loop_moves_outer_local_on_return.rslisp
+---
+karl 2
