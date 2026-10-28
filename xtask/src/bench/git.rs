@@ -18,11 +18,34 @@ impl<'a> Git<'a> {
     }
 
     pub fn run(&self, arguments: &[&str]) -> Result<Output, TaskFailure> {
-        Command::new(Self::PROGRAM)
-            .args(arguments)
-            .env(Self::LOCALE_VARIABLE, Self::UNTRANSLATED_LOCALE)
-            .current_dir(self.workspace)
+        self.command(arguments)
             .output()
             .map_err(|error| TaskFailure::tool_missing(Self::PROGRAM, error))
+    }
+
+    fn command(&self, arguments: &[&str]) -> Command {
+        let mut command = Command::new(Self::PROGRAM);
+        command
+            .args(arguments)
+            .env(Self::LOCALE_VARIABLE, Self::UNTRANSLATED_LOCALE)
+            .current_dir(self.workspace);
+        command
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::ffi::OsStr;
+
+    use super::*;
+
+    #[test]
+    fn pins_the_untranslated_locale() {
+        let command = Git::new(Path::new("/checkout")).command(&["status"]);
+        let locale = command
+            .get_envs()
+            .find(|(variable, _)| *variable == OsStr::new(Git::LOCALE_VARIABLE))
+            .and_then(|(_, value)| value);
+        assert_eq!(locale, Some(OsStr::new(Git::UNTRANSLATED_LOCALE)));
     }
 }
