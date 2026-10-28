@@ -4,6 +4,7 @@ mod compiler;
 mod corpus;
 mod failure;
 mod fixed_seed;
+mod git;
 mod header;
 mod history;
 mod measurement;
@@ -25,6 +26,7 @@ use comparison::Comparison;
 use compiler::{BuiltCompiler, CompilerBuild};
 use corpus::Corpus;
 use fixed_seed::FixedSeedLibrary;
+use git::Git;
 use history::BenchHistory;
 use method::MeasurementMethod;
 use profile::EntryPointCheck;
@@ -101,7 +103,7 @@ impl BenchTask {
                 candidate,
                 length,
             } => Self::compare(&baseline, &candidate, length),
-            Self::Method => MeasurementMethod::new(root)
+            Self::Method => MeasurementMethod::new(Git::new(root))
                 .key()
                 .map(|key| format!("{key}\n")),
             Self::Recall { commit, save } => Self::recall(root, &commit, &save),
@@ -126,8 +128,8 @@ impl BenchTask {
     }
 
     fn recall(root: &Path, commit: &str, save: &Path) -> Result<String, TaskFailure> {
-        let method_key = MeasurementMethod::new(root).key()?;
-        let results = BenchHistory::new(root)
+        let method_key = MeasurementMethod::new(Git::new(root)).key()?;
+        let results = BenchHistory::new(Git::new(root))
             .note_of(commit)?
             .recall(&method_key)?;
         fs::write(save, results).map_err(|error| TaskFailure::unwritable(save, error))?;
@@ -172,7 +174,7 @@ impl<'a> FrontEndBenchmark<'a> {
         );
         let results = self
             .profile_corpus(&callgrind)?
-            .with_header(MeasurementMethod::new(self.root).header()?);
+            .with_header(MeasurementMethod::new(Git::new(self.root)).header()?);
         if let Some(path) = &self.options.save {
             results.save(path)?;
         }
