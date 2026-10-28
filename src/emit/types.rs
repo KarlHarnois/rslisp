@@ -597,7 +597,8 @@ impl<'a> RustTypes<'a> {
         let (inner_scope, binder) = Self::function_scope(
             position,
             scope,
-            self.program.needs_shared_lifetime(parameters, result),
+            self.program
+                .function_type_needs_shared_lifetime(parameters, result),
         );
         let parameters: Vec<String> = parameters
             .iter()
