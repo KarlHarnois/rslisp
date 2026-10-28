@@ -4,8 +4,8 @@ expression: reports.report(path)
 input_file: tests/fixtures/corpus/deep_nesting.rslisp
 ---
 arithmetic: 30
-calls: 348
-conditions: -91 299
-blocks: 300
-closures: 200
-matches: 88 89
+calls: 63
+conditions: -121 389
+blocks: 390
+closures: 260
+matches: 121 121
