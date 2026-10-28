@@ -94,7 +94,7 @@ The exceptions are:
 - A stage reports problems as `Diagnostic` values. NEVER print from a stage.
 - Only `src/cli/` prints.
 - Only `src/cli/`, `src/build/`, `ModuleSources` and `xtask/` touch the file system or run processes.
-- Write every diagnostic's wording of a compiler stage in the stage's problems type, such as `ExpandProblems` or `TypeProblems`.
+- Write the wording of every diagnostic that a compiler stage reports in the stage's problems type, such as `ExpandProblems` or `TypeProblems`.
 - A prelude `fail` writes its message, help and labels in the prelude.
 
 ### Tests
