@@ -51,8 +51,6 @@ pub(super) struct OpenCallees {
 }
 
 impl OpenCallees {
-    pub(super) const NONE_REACHED: usize = usize::MAX;
-
     pub(super) fn open(&mut self, callee: BindingId) -> usize {
         let order = self.orders.len();
         self.orders.insert(callee, order);
