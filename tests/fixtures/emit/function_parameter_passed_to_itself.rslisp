@@ -1,0 +1,9 @@
+(defn walk (f n)
+  (if (< n 5)
+    (do (f n) (walk f (+ n 1)))
+    0))
+
+(defn main ()
+  (let total (vec))
+  (walk (fn (n) (push! total n)) 0)
+  (println (len total)))
