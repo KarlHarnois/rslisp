@@ -84,8 +84,7 @@ The exceptions are:
 
 - Name a type with a noun. Name a method that acts with a verb.
 - NEVER put an abbreviation or a noise word in a name.
-- If the named things differ in role, NEVER tell their names apart by a number.
-- A number MAY name a position in a sequence, such as the 57th function of a generated call chain.
+- Unless a number gives each name's position in a sequence, NEVER tell two names apart by a number.
 - If a value's meaning is not obvious, make the value a named constant.
 - In Rust code, take the language's name and file extension from `Language` in `src/language.rs`: `rslisp` is a placeholder name.
 
@@ -107,8 +106,9 @@ The exceptions are:
 - The harness runs the compiled fixture with those arguments in the fixture's directory.
 - When a fixture writes to standard error or exits nonzero, its snapshot appends the standard error and exit code after the standard output.
 - Create or update snapshots with `INSTA_UPDATE=always`.
-- Keep the front end of each corpus entry at one second or less in a release build.
 - NEVER commit a snapshot that you have not read.
+- If a change adds or grows a corpus entry, build the compiler with `nix develop -c cargo build --release`, then time `nix develop -c bash -c 'time cargo run --release --quiet -- emit <entry> > /dev/null'`.
+- If that emission takes more than one second, shrink the entry.
 - NEVER lower `MINIMUM_LINE_COVERAGE` or raise `MAXIMUM_CRAP` in `xtask/src/gate.rs` without the project owner's approval.
 - NEVER hide code from `cargo xtask coverage`, such as by moving branches into a macro: the gate cannot see inside a macro.
 
