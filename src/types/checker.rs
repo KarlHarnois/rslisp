@@ -2696,6 +2696,7 @@ impl TypeChecker {
             template_borrows: self.template_borrows,
             pending_mode_checks: self.pending_mode_checks,
             borrowed_parameters: HashSet::new(),
+            stored_function_parameters: HashSet::new(),
             mutable_function_bindings: HashSet::new(),
             literal_generics: self.literal_generics,
             warnings,

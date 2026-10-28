@@ -1,0 +1,15 @@
+(defstruct user :age u16)
+(defstruct ranking :score (fn ((ref user)) u16) :label str)
+
+(type age (fn ((ref user)) u16))
+(defn age (someone) (:age someone))
+
+(defn by-score (score) (->ranking score "custom"))
+
+(defn main ()
+  (let ana (->user 30))
+  (let named (by-score age))
+  (let plain (by-score (fn ((someone (ref user))) (:age someone))))
+  (println (:label named) ((:score named) ana))
+  (println (:label plain) ((:score plain) ana))
+  (println (:age ana)))
