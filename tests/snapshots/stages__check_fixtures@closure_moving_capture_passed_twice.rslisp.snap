@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/closure_moving_capture_passed_twice.rslisp
+---
+error[L0501]: use of moved value `consume`
+ --> check/closure_moving_capture_passed_twice.rslisp:7:19
+  |
+6 |   (println (apply consume))
+  |                   ------- value moved here
+7 |   (println (apply consume)))
+  |                   ^^^^^^^ value used here after it moved
+  |
+  = help: this closure moves a captured value, so it cannot be copied

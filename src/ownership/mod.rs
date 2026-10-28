@@ -7,6 +7,7 @@ mod modes;
 mod moves;
 mod mutation;
 mod names;
+mod parameter_uses;
 mod problems;
 mod returned;
 mod rewrite;

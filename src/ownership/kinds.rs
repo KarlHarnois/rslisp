@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 
 use super::definitions::LocalDefinitions;
+use super::parameter_uses::ParameterUses;
 use super::problems::OwnershipProblems;
 use crate::core::{BindingArena, BindingId, ReferenceKind};
 use crate::diagnostic::Diagnostic;
@@ -726,24 +727,17 @@ impl<'a> ClosureKinds<'a> {
         kinds: &mut HashMap<BindingId, ClosureKind>,
     ) {
         let params: Vec<BindingId> = lambda.params.iter().map(|param| param.binding).collect();
-        let mut calls: HashMap<BindingId, usize> = HashMap::new();
-        let mut required: HashMap<BindingId, ClosureKind> = HashMap::new();
-        self.require_block(&lambda.body, &params, None, &mut calls, &mut required);
+        let mut uses = ParameterUses::default();
+        self.require_block(&lambda.body, &params, None, &mut uses);
         if lambda.body.repeats() {
-            Self::count_added_calls(&mut calls, &HashMap::new());
+            uses.repeat_uses_since(&ParameterUses::default());
         }
         for param in params {
             if self.written_parameter_kinds.contains_key(&param) {
                 continue;
             }
-            let called = match calls.get(&param).copied().unwrap_or(0) {
-                0 => ClosureKind::Fn,
-                1 => ClosureKind::FnOnce,
-                _ => ClosureKind::FnMut,
-            };
-            let requirement = called.max(required.get(&param).copied().unwrap_or(ClosureKind::Fn));
             let current = kinds.entry(param).or_insert(ClosureKind::Fn);
-            *current = (*current).max(requirement);
+            *current = (*current).max(uses.kind(param));
         }
     }
 
@@ -752,17 +746,14 @@ impl<'a> ClosureKinds<'a> {
         block: &TypedBlock,
         params: &[BindingId],
         nested: Option<ClosureKind>,
-        calls: &mut HashMap<BindingId, usize>,
-        required: &mut HashMap<BindingId, ClosureKind>,
+        uses: &mut ParameterUses,
     ) {
         for item in &block.items {
             match item {
                 TypedBodyItem::Let(_, value) => {
-                    self.require_expression(value, params, nested, calls, required)
+                    self.require_expression(value, params, nested, uses)
                 }
-                TypedBodyItem::Expr(expr) => {
-                    self.require_expression(expr, params, nested, calls, required)
-                }
+                TypedBodyItem::Expr(expr) => self.require_expression(expr, params, nested, uses),
             }
         }
     }
@@ -772,38 +763,30 @@ impl<'a> ClosureKinds<'a> {
         expr: &TypedExpr,
         params: &[BindingId],
         nested: Option<ClosureKind>,
-        calls: &mut HashMap<BindingId, usize>,
-        required: &mut HashMap<BindingId, ClosureKind>,
+        uses: &mut ParameterUses,
     ) {
         match &expr.kind {
             TypedExprKind::Fn(lambda) => {
-                let before = calls.clone();
-                self.require_block(&lambda.body, params, Some(lambda.kind), calls, required);
+                let before = uses.clone();
+                self.require_block(&lambda.body, params, Some(lambda.kind), uses);
                 if lambda.body.repeats() {
-                    Self::count_added_calls(calls, &before);
+                    uses.repeat_uses_since(&before);
                 }
             }
             TypedExprKind::Call(callee, arguments) => {
-                self.require_call(callee, arguments, params, nested, calls, required)
+                self.require_call(callee, arguments, params, nested, uses)
             }
-            TypedExprKind::Control(control) => {
-                self.require_control(control, params, nested, calls, required)
-            }
-            TypedExprKind::Leaf(leaf) => self.require_leaf(leaf, params, required),
-            other => self.require_nested(other, params, nested, calls, required),
+            TypedExprKind::Control(control) => self.require_control(control, params, nested, uses),
+            TypedExprKind::Leaf(leaf) => self.require_leaf(leaf, params, uses),
+            other => self.require_nested(other, params, nested, uses),
         }
     }
 
-    fn require_leaf(
-        &self,
-        leaf: &TypedLeaf,
-        params: &[BindingId],
-        required: &mut HashMap<BindingId, ClosureKind>,
-    ) {
+    fn require_leaf(&self, leaf: &TypedLeaf, params: &[BindingId], uses: &mut ParameterUses) {
         if let TypedLeaf::Local(binding) = leaf
             && params.contains(binding)
         {
-            Self::require(required, *binding, ClosureKind::Fn);
+            uses.require(*binding, ClosureKind::Fn);
         }
     }
 
@@ -813,13 +796,12 @@ impl<'a> ClosureKinds<'a> {
         arguments: &[TypedArgument],
         params: &[BindingId],
         nested: Option<ClosureKind>,
-        calls: &mut HashMap<BindingId, usize>,
-        required: &mut HashMap<BindingId, ClosureKind>,
+        uses: &mut ParameterUses,
     ) {
-        let calls_a_parameter = self.require_callee(callee, params, nested, calls, required);
-        self.require_arguments(arguments, callee, params, nested, calls, required);
+        let calls_a_parameter = self.require_callee(callee, params, nested, uses);
+        self.require_arguments(arguments, callee, params, nested, uses);
         if !calls_a_parameter {
-            self.require_expression(callee, params, nested, calls, required);
+            self.require_expression(callee, params, nested, uses);
         }
     }
 
@@ -828,8 +810,7 @@ impl<'a> ClosureKinds<'a> {
         callee: &TypedExpr,
         params: &[BindingId],
         nested: Option<ClosureKind>,
-        calls: &mut HashMap<BindingId, usize>,
-        required: &mut HashMap<BindingId, ClosureKind>,
+        uses: &mut ParameterUses,
     ) -> bool {
         let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &callee.kind else {
             return false;
@@ -837,9 +818,9 @@ impl<'a> ClosureKinds<'a> {
         if !params.contains(binding) {
             return false;
         }
-        *calls.entry(*binding).or_insert(0) += 1;
+        uses.record_call(*binding);
         if let Some(kind) = nested {
-            Self::require(required, *binding, kind);
+            uses.require(*binding, kind);
         }
         true
     }
@@ -850,21 +831,36 @@ impl<'a> ClosureKinds<'a> {
         callee: &TypedExpr,
         params: &[BindingId],
         nested: Option<ClosureKind>,
-        calls: &mut HashMap<BindingId, usize>,
-        required: &mut HashMap<BindingId, ClosureKind>,
+        uses: &mut ParameterUses,
     ) {
         for (position, argument) in arguments.iter().enumerate() {
             let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &argument.value.kind else {
-                self.require_expression(&argument.value, params, nested, calls, required);
+                self.require_expression(&argument.value, params, nested, uses);
                 continue;
             };
             if !params.contains(binding) {
-                self.require_expression(&argument.value, params, nested, calls, required);
+                self.require_expression(&argument.value, params, nested, uses);
                 continue;
             }
-            let kind = self.expected_kind(callee, position);
-            Self::require(required, *binding, kind);
+            uses.record_pass(*binding, self.pass_kind(callee, position, *binding));
         }
+    }
+
+    fn pass_kind(&self, callee: &TypedExpr, position: usize, parameter: BindingId) -> ClosureKind {
+        if self.passes_to_itself(callee, position, parameter) {
+            return ClosureKind::FnOnce;
+        }
+        self.expected_kind(callee, position)
+    }
+
+    fn passes_to_itself(&self, callee: &TypedExpr, position: usize, parameter: BindingId) -> bool {
+        let TypedExprKind::Leaf(TypedLeaf::Global(function)) = &callee.kind else {
+            return false;
+        };
+        self.function_parameters
+            .get(function)
+            .and_then(|params| params.get(position))
+            == Some(&parameter)
     }
 
     fn require_control(
@@ -872,23 +868,27 @@ impl<'a> ClosureKinds<'a> {
         control: &TypedControl,
         params: &[BindingId],
         nested: Option<ClosureKind>,
-        calls: &mut HashMap<BindingId, usize>,
-        required: &mut HashMap<BindingId, ClosureKind>,
+        uses: &mut ParameterUses,
     ) {
         match control {
-            TypedControl::Block(block) => {
-                self.require_block(block, params, nested, calls, required)
-            }
+            TypedControl::Block(block) => self.require_block(block, params, nested, uses),
             TypedControl::If(test, then, otherwise) => {
-                for expr in [test.as_ref(), then.as_ref(), otherwise.as_ref()] {
-                    self.require_expression(expr, params, nested, calls, required);
-                }
+                self.require_expression(test, params, nested, uses);
+                let branches = [then.as_ref(), otherwise.as_ref()].map(|branch| {
+                    let mut branch_uses = uses.clone();
+                    self.require_expression(branch, params, nested, &mut branch_uses);
+                    branch_uses
+                });
+                *uses = ParameterUses::joined(branches.into());
             }
             TypedControl::Match(matched) => {
-                self.require_expression(&matched.value, params, nested, calls, required);
-                for arm in &matched.arms {
-                    self.require_block(&arm.body, params, nested, calls, required);
-                }
+                self.require_expression(&matched.value, params, nested, uses);
+                let arms = matched.arms.iter().map(|arm| {
+                    let mut arm_uses = uses.clone();
+                    self.require_block(&arm.body, params, nested, &mut arm_uses);
+                    arm_uses
+                });
+                *uses = ParameterUses::joined(arms.collect());
             }
         }
     }
@@ -898,21 +898,18 @@ impl<'a> ClosureKinds<'a> {
         kind: &TypedExprKind,
         params: &[BindingId],
         nested: Option<ClosureKind>,
-        calls: &mut HashMap<BindingId, usize>,
-        required: &mut HashMap<BindingId, ClosureKind>,
+        uses: &mut ParameterUses,
     ) {
         match kind {
-            TypedExprKind::Recur(arguments) => {
-                self.require_recur(arguments, params, nested, calls, required)
-            }
+            TypedExprKind::Recur(arguments) => self.require_recur(arguments, params, nested, uses),
             TypedExprKind::Try { value, .. }
             | TypedExprKind::Borrow(_, value)
             | TypedExprKind::Deref(value)
             | TypedExprKind::TraitObject(value, _) => {
-                self.require_expression(value, params, nested, calls, required)
+                self.require_expression(value, params, nested, uses)
             }
             TypedExprKind::Struct(_) | TypedExprKind::Variant(..) | TypedExprKind::Assoc(..) => {
-                self.require_value(kind, params, nested, calls, required)
+                self.require_value(kind, params, nested, uses)
             }
             _ => unreachable!("the caller matches a nested expression"),
         }
@@ -923,8 +920,7 @@ impl<'a> ClosureKinds<'a> {
         arguments: &[TypedArgument],
         params: &[BindingId],
         nested: Option<ClosureKind>,
-        calls: &mut HashMap<BindingId, usize>,
-        required: &mut HashMap<BindingId, ClosureKind>,
+        uses: &mut ParameterUses,
     ) {
         for argument in arguments {
             let passes_parameter = matches!(
@@ -932,7 +928,7 @@ impl<'a> ClosureKinds<'a> {
                 TypedExprKind::Leaf(TypedLeaf::Local(binding)) if params.contains(binding)
             );
             if !passes_parameter {
-                self.require_expression(&argument.value, params, nested, calls, required);
+                self.require_expression(&argument.value, params, nested, uses);
             }
         }
     }
@@ -942,24 +938,23 @@ impl<'a> ClosureKinds<'a> {
         kind: &TypedExprKind,
         params: &[BindingId],
         nested: Option<ClosureKind>,
-        calls: &mut HashMap<BindingId, usize>,
-        required: &mut HashMap<BindingId, ClosureKind>,
+        uses: &mut ParameterUses,
     ) {
         match kind {
             TypedExprKind::Struct(structure) => {
-                self.require_structure(structure, params, nested, calls, required)
+                self.require_structure(structure, params, nested, uses)
             }
             TypedExprKind::Variant(_, arguments) => {
                 for argument in arguments {
-                    self.require_expression(argument, params, nested, calls, required);
+                    self.require_expression(argument, params, nested, uses);
                 }
             }
             TypedExprKind::Assoc(value, keys, item) => {
-                self.require_expression(value, params, nested, calls, required);
+                self.require_expression(value, params, nested, uses);
                 for key in keys {
-                    self.require_expression(key, params, nested, calls, required);
+                    self.require_expression(key, params, nested, uses);
                 }
-                self.require_expression(item, params, nested, calls, required);
+                self.require_expression(item, params, nested, uses);
             }
             _ => unreachable!("the caller matches a value form"),
         }
@@ -970,8 +965,7 @@ impl<'a> ClosureKinds<'a> {
         structure: &TypedStructExpr,
         params: &[BindingId],
         nested: Option<ClosureKind>,
-        calls: &mut HashMap<BindingId, usize>,
-        required: &mut HashMap<BindingId, ClosureKind>,
+        uses: &mut ParameterUses,
     ) {
         let values: Vec<&TypedExpr> = match structure {
             TypedStructExpr::New(_, fields) => fields.iter().map(|(_, value)| value).collect(),
@@ -981,27 +975,8 @@ impl<'a> ClosureKinds<'a> {
             TypedStructExpr::Field(value, _) => vec![value],
         };
         for value in values {
-            self.require_expression(value, params, nested, calls, required);
+            self.require_expression(value, params, nested, uses);
         }
-    }
-
-    fn count_added_calls(
-        calls: &mut HashMap<BindingId, usize>,
-        before: &HashMap<BindingId, usize>,
-    ) {
-        for (binding, count) in calls.iter_mut() {
-            let added = count.saturating_sub(before.get(binding).copied().unwrap_or(0));
-            *count += added;
-        }
-    }
-
-    fn require(
-        required: &mut HashMap<BindingId, ClosureKind>,
-        binding: BindingId,
-        kind: ClosureKind,
-    ) {
-        let current = required.entry(binding).or_insert(ClosureKind::Fn);
-        *current = (*current).max(kind);
     }
 
     fn expected_kind(&self, callee: &TypedExpr, position: usize) -> ClosureKind {

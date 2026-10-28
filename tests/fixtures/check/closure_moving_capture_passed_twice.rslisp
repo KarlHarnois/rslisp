@@ -1,0 +1,7 @@
+(defn apply (f) (f 0))
+
+(defn main ()
+  (let text (to-string "Leaf"))
+  (let consume (fn (ignored) text))
+  (println (apply consume))
+  (println (apply consume)))
