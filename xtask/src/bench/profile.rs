@@ -3,8 +3,15 @@ use std::collections::{BTreeMap, BTreeSet};
 use super::measurement::Measurement;
 use crate::failure::TaskFailure;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EntryPointCheck {
+    Enforced,
+    Skipped,
+}
+
 pub struct ProfileReader<'a> {
     crate_name: &'a str,
+    entry_point_check: EntryPointCheck,
 }
 
 impl<'a> ProfileReader<'a> {
@@ -16,8 +23,11 @@ impl<'a> ProfileReader<'a> {
         "build::formatting::EmittedFormatting::apply",
     ];
 
-    pub fn new(crate_name: &'a str) -> Self {
-        Self { crate_name }
+    pub fn new(crate_name: &'a str, entry_point_check: EntryPointCheck) -> Self {
+        Self {
+            crate_name,
+            entry_point_check,
+        }
     }
 
     pub fn read(&self, profile: &str) -> Result<Measurement, TaskFailure> {
@@ -27,6 +37,9 @@ impl<'a> ProfileReader<'a> {
     }
 
     fn missing_entry_point(&self, entered: &BTreeSet<&str>) -> Option<String> {
+        if self.entry_point_check == EntryPointCheck::Skipped {
+            return None;
+        }
         Self::STAGE_ENTRY_POINTS
             .iter()
             .map(|entry_point| format!("{}::{entry_point}", self.crate_name))
@@ -176,7 +189,9 @@ mod tests {
 
     #[test]
     fn charges_calls_out_of_the_entry_module_to_the_callee_module() {
-        let measurement = ProfileReader::new("compiler").read(PROFILE).unwrap();
+        let measurement = ProfileReader::new("compiler", EntryPointCheck::Enforced)
+            .read(PROFILE)
+            .unwrap();
         let rows: Vec<(String, u64)> = measurement
             .rows()
             .map(|(stage, instructions)| (stage.to_string(), instructions))
@@ -199,7 +214,9 @@ mod tests {
     #[test]
     fn rejects_a_profile_that_never_enters_a_stage() {
         let inlined = PROFILE.replace("RustEmitter::emit\n", "RustEmitter::lower\n");
-        let failure = ProfileReader::new("compiler").read(&inlined).unwrap_err();
+        let failure = ProfileReader::new("compiler", EntryPointCheck::Enforced)
+            .read(&inlined)
+            .unwrap_err();
         assert!(
             failure
                 .to_string()
@@ -208,8 +225,16 @@ mod tests {
     }
 
     #[test]
+    fn skips_the_entry_points_of_a_baseline() {
+        let inlined = PROFILE.replace("RustEmitter::emit\n", "RustEmitter::lower\n");
+        let measurement = ProfileReader::new("compiler", EntryPointCheck::Skipped).read(&inlined);
+        assert!(measurement.is_ok());
+    }
+
+    #[test]
     fn rejects_a_profile_without_a_summary() {
-        let failure = ProfileReader::new("compiler").read("events: Ir\n");
+        let failure =
+            ProfileReader::new("compiler", EntryPointCheck::Enforced).read("events: Ir\n");
         assert!(failure.unwrap_err().to_string().contains("summary"));
     }
 }

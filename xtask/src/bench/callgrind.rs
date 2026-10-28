@@ -9,12 +9,13 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
 
 use super::compiler::BuiltCompiler;
-use super::profile::ProfileReader;
+use super::profile::{EntryPointCheck, ProfileReader};
 use super::results::ProgramResult;
 use crate::failure::TaskFailure;
 
 pub struct Callgrind {
     compiler: BuiltCompiler,
+    entry_point_check: EntryPointCheck,
     fixed_seed: PathBuf,
     profiles: PathBuf,
 }
@@ -35,9 +36,15 @@ impl Callgrind {
     const FRONT_END_COMMAND: &'static str = "emit";
     const PROFILE_EXTENSION: &'static str = "callgrind";
 
-    pub fn new(compiler: BuiltCompiler, fixed_seed: PathBuf, profiles: PathBuf) -> Self {
+    pub fn new(
+        compiler: BuiltCompiler,
+        entry_point_check: EntryPointCheck,
+        fixed_seed: PathBuf,
+        profiles: PathBuf,
+    ) -> Self {
         Self {
             compiler,
+            entry_point_check,
             fixed_seed,
             profiles,
         }
@@ -90,7 +97,7 @@ impl Callgrind {
             .map_err(|_| TaskFailure::profile_missing(program, &output.stderr))?;
         let measurement = match output.status.success() {
             true => Some(
-                ProfileReader::new(&self.compiler.crate_name)
+                ProfileReader::new(&self.compiler.crate_name, self.entry_point_check)
                     .read(&text)
                     .map_err(|failure| failure.while_measuring(program))?,
             ),
