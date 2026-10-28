@@ -89,7 +89,7 @@ impl<'p> StoredClosures<'p> {
 
 #[derive(Clone)]
 struct FunctionSlot {
-    storage: Rc<FunctionStorage>,
+    storage: FunctionStorage,
     declared: Span,
 }
 
@@ -110,7 +110,7 @@ impl<'p> FunctionSlots<'p> {
             return None;
         }
         Some(FunctionSlot {
-            storage: Rc::new(FunctionStorage::Field(Rc::clone(slot.name))),
+            storage: FunctionStorage::Field(Rc::clone(slot.name)),
             declared: slot.span,
         })
     }
@@ -121,7 +121,7 @@ impl<'p> FunctionSlots<'p> {
             return None;
         }
         Some(FunctionSlot {
-            storage: Rc::new(FunctionStorage::Payload(Rc::clone(slot.name))),
+            storage: FunctionStorage::Payload(Rc::clone(slot.name)),
             declared: slot.span,
         })
     }
