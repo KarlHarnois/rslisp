@@ -4,6 +4,7 @@ mod definitions;
 mod functions;
 mod kinds;
 mod modes;
+mod moved_values;
 mod moves;
 mod mutation;
 mod names;

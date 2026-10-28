@@ -1,8 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
+use super::moved_values::{FieldPath, MoveSite, MovedValues};
 use super::mutation::ChangedValues;
 use super::problems::OwnershipProblems;
-use crate::core::{BindingArena, BindingId};
+use crate::core::{BindingArena, BindingId, FieldLabel, FieldSpelling};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
@@ -17,6 +18,12 @@ enum Usage {
     Borrow,
 }
 
+struct Place<'a> {
+    binding: BindingId,
+    ty: &'a Type,
+    path: FieldPath,
+}
+
 pub struct MoveReport {
     pub diagnostics: Vec<Diagnostic>,
     pub inferred_copies: InferredCopies,
@@ -29,7 +36,7 @@ pub struct MoveChecker<'a> {
     generics: &'a HashMap<GenericId, GenericParam>,
     enclosing: BindingId,
     changed: ChangedValues,
-    moved: HashMap<BindingId, Span>,
+    moved: MovedValues,
     copy_functions: HashSet<BindingId>,
     reported: HashSet<BindingId>,
     parameters: HashSet<BindingId>,
@@ -53,7 +60,7 @@ impl<'a> MoveChecker<'a> {
             generics,
             enclosing,
             changed: ChangedValues::default(),
-            moved: HashMap::new(),
+            moved: MovedValues::default(),
             copy_functions: HashSet::new(),
             reported: HashSet::new(),
             parameters: HashSet::new(),
@@ -118,7 +125,7 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn assoc(&mut self, value: &TypedExpr, keys: &[TypedExpr], item: &TypedExpr) {
-        self.expr(value, Usage::Move);
+        self.update_base(value);
         self.expressions(keys);
         self.expr(item, Usage::Move);
     }
@@ -146,11 +153,73 @@ impl<'a> MoveChecker<'a> {
                 .iter()
                 .for_each(|(_, value)| self.expr(value, Usage::Move)),
             TypedStructExpr::Update(_, base, fields) => {
-                self.expr(base, Usage::Move);
+                self.refill(base, fields);
+                self.update_base(base);
                 fields
                     .iter()
                     .for_each(|(_, value)| self.expr(value, Usage::Move));
             }
+        }
+    }
+
+    fn refill(&mut self, base: &TypedExpr, fields: &[(FieldLabel, TypedExpr)]) {
+        if let Some(place) = Self::place(base) {
+            let names = fields.iter().map(|(label, _)| &*label.name);
+            self.moved.refill(place.binding, &place.path, names);
+        }
+    }
+
+    fn update_base(&mut self, base: &TypedExpr) {
+        match Self::place(base) {
+            Some(place) if !place.path.is_empty() && !self.copy.is_copy(&base.ty) => {
+                self.expr(base, Usage::Borrow);
+                self.move_field(place, base);
+            }
+            _ => self.expr(base, Usage::Move),
+        }
+    }
+
+    fn place(value: &TypedExpr) -> Option<Place<'_>> {
+        match &value.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => Some(Place {
+                binding: *binding,
+                ty: &value.ty,
+                path: FieldPath::new(),
+            }),
+            TypedExprKind::Struct(TypedStructExpr::Field(owner, label)) => {
+                let mut place = Self::place(owner)?;
+                place.path.push(label.name.clone());
+                Some(place)
+            }
+            _ => None,
+        }
+    }
+
+    fn move_field(&mut self, place: Place, base: &TypedExpr) {
+        if self.copy.is_copy(place.ty) {
+            return;
+        }
+        let site = MoveSite::Field {
+            span: base.span,
+            place: self.place_text(base).into(),
+        };
+        self.moved.move_field(place.binding, place.path, site);
+    }
+
+    fn place_text(&self, place: &TypedExpr) -> String {
+        match &place.kind {
+            TypedExprKind::Struct(TypedStructExpr::Field(owner, label)) => {
+                let owner = self.place_text(owner);
+                let field = label.spelled(&label.name);
+                match label.spelling {
+                    FieldSpelling::Keyword => format!("({field} {owner})"),
+                    FieldSpelling::Bare => format!("(field {owner} {field})"),
+                }
+            }
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => {
+                self.bindings.get(*binding).name().to_string()
+            }
+            _ => unreachable!("a field owner is a chain of fields over a local"),
         }
     }
 
@@ -169,7 +238,7 @@ impl<'a> MoveChecker<'a> {
                 }
                 self.moved = before;
                 for moved in arm_moves {
-                    self.moved.extend(moved);
+                    self.moved.merge(moved);
                 }
             }
         }
@@ -249,7 +318,7 @@ impl<'a> MoveChecker<'a> {
         self.expr(then, usage);
         let after_then = std::mem::replace(&mut self.moved, before);
         self.expr(otherwise, usage);
-        self.moved.extend(after_then);
+        self.moved.merge(after_then);
     }
 
     fn block(&mut self, block: &TypedBlock, usage: Usage) {
@@ -264,17 +333,17 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn local(&mut self, binding: BindingId, ty: &Type, span: Span, usage: Usage) {
-        match self.moved.get(&binding).copied() {
-            Some(moved_at) => self.use_after_move(binding, ty, span, moved_at),
+        match self.moved.site(binding) {
+            Some(site) => self.use_after_move(binding, ty, span, &site),
             None => self.record_use(binding, ty, span, usage),
         }
     }
 
-    fn use_after_move(&mut self, binding: BindingId, ty: &Type, span: Span, moved_at: Span) {
+    fn use_after_move(&mut self, binding: BindingId, ty: &Type, span: Span, site: &MoveSite) {
         if self.records_inferred_copy(binding, ty) || !self.reported.insert(binding) {
             return;
         }
-        let diagnostic = self.use_after_move_diagnostic(binding, ty, span, moved_at);
+        let diagnostic = self.use_after_move_diagnostic(binding, ty, span, site);
         self.diagnostics.push(diagnostic);
     }
 
@@ -283,15 +352,17 @@ impl<'a> MoveChecker<'a> {
         binding: BindingId,
         ty: &Type,
         span: Span,
-        moved_at: Span,
+        site: &MoveSite,
     ) -> Diagnostic {
         let name = self.bindings.get(binding).name();
+        let moved_at = site.span();
         if let Some(diagnostic) = self.bound_help(binding, ty, span, moved_at) {
             return diagnostic;
         }
         let moved = OwnershipProblems::use_after_move(name, span, moved_at);
-        self.ownership_help(binding, ty, &moved)
-            .unwrap_or_else(|| OwnershipProblems::clone_suggestion(moved, name, moved_at))
+        self.ownership_help(binding, ty, &moved).unwrap_or_else(|| {
+            OwnershipProblems::clone_suggestion(moved, site.cloned_place(name), moved_at)
+        })
     }
 
     fn bound_help(
@@ -344,7 +415,7 @@ impl<'a> MoveChecker<'a> {
     fn record_use(&mut self, binding: BindingId, ty: &Type, span: Span, usage: Usage) {
         let is_copy = self.copy.is_copy(ty) || self.copy_functions.contains(&binding);
         if usage == Usage::Move && !is_copy {
-            self.moved.insert(binding, span);
+            self.moved.move_whole(binding, span);
         }
     }
 
