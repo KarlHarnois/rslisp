@@ -27,13 +27,11 @@ impl Callgrind {
         "--tool=callgrind",
         "--quiet",
         "--trace-children=no",
-        "--cache-sim=yes",
+        "--cache-sim=no",
         "--compress-strings=no",
         "--compress-pos=no",
         "--dump-instr=no",
     ];
-    const FIXED_CACHE_MODEL: [&'static str; 3] =
-        ["--I1=32768,8,64", "--D1=32768,8,64", "--LL=8388608,16,64"];
     const FRONT_END_COMMAND: &'static str = "emit";
     const PROFILE_EXTENSION: &'static str = "callgrind";
 
@@ -111,7 +109,6 @@ impl Callgrind {
             )
             .env(Self::PRELOAD, &self.fixed_seed)
             .args(Self::OPTIONS)
-            .args(Self::FIXED_CACHE_MODEL)
             .arg(format!("--callgrind-out-file={}", profile.display()))
             .arg(&self.compiler.executable)
             .arg(Self::FRONT_END_COMMAND)

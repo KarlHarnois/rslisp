@@ -1,6 +1,5 @@
 use std::collections::BTreeSet;
 
-use super::cost::Cost;
 use super::measurement::Measurement;
 use super::results::{ProgramResult, ResultSet};
 use super::table::{GroupedCount, MarkdownTable};
@@ -11,14 +10,11 @@ pub struct Comparison<'a> {
 }
 
 impl<'a> Comparison<'a> {
-    const HEADER: [&'static str; 8] = [
+    const HEADER: [&'static str; 5] = [
         "Program",
         "Stage",
         "Instructions before",
         "Instructions after",
-        "Change",
-        "Estimated cycles before",
-        "Estimated cycles after",
         "Change",
     ];
 
@@ -120,8 +116,7 @@ impl<'a> Comparison<'a> {
     fn criterion() -> String {
         format!(
             "A stage rises notably when its instruction count grows by more than {}% and by at \
-             least {}% of its program's instructions. Estimated cycles shift with code layout \
-             whenever the compiler changes, so they never count as a rise.",
+             least {}% of its program's instructions.",
             Change::NOTABLE_RISE_PERCENT,
             StageChange::MINIMUM_NOTABLE_SHARE * Change::PERCENT
         )
@@ -205,7 +200,6 @@ struct StageChange<'a> {
     stage: &'a str,
     program_instructions: u64,
     instructions: Change,
-    estimated_cycles: Change,
 }
 
 impl<'a> StageChange<'a> {
@@ -213,7 +207,7 @@ impl<'a> StageChange<'a> {
 
     fn all(program: &'a str, before: &'a Measurement, after: &'a Measurement) -> Vec<Self> {
         let modules: BTreeSet<&str> = before.modules().chain(after.modules()).collect();
-        let program_instructions = before.total().instructions;
+        let program_instructions = before.total();
         modules
             .into_iter()
             .chain([Measurement::OTHER, Measurement::TOTAL])
@@ -221,8 +215,7 @@ impl<'a> StageChange<'a> {
                 program,
                 stage,
                 program_instructions,
-                instructions: Change::of(before, after, stage, |cost| cost.instructions),
-                estimated_cycles: Change::of(before, after, stage, |cost| cost.estimated_cycles),
+                instructions: Change::of(before, after, stage),
             })
             .collect()
     }
@@ -237,11 +230,10 @@ impl<'a> StageChange<'a> {
 
     fn note(&self) -> String {
         format!(
-            "`{}` `{}`: instructions {}, estimated cycles {}",
+            "`{}` `{}`: {}",
             self.program,
             self.stage,
-            self.instructions.percent(),
-            self.estimated_cycles.percent()
+            self.instructions.percent()
         )
     }
 
@@ -253,8 +245,6 @@ impl<'a> StageChange<'a> {
         let mut row = vec![self.program.to_string(), self.stage.to_string()];
         row.extend(self.instructions.counts());
         row.push(instruction_change);
-        row.extend(self.estimated_cycles.counts());
-        row.push(self.estimated_cycles.percent());
         row
     }
 }
@@ -272,13 +262,8 @@ impl Change {
         Self { before, after }
     }
 
-    fn of(
-        before: &Measurement,
-        after: &Measurement,
-        stage: &str,
-        count: impl Fn(Cost) -> u64,
-    ) -> Self {
-        let count_of = |measurement: &Measurement| measurement.cost_of(stage).map_or(0, &count);
+    fn of(before: &Measurement, after: &Measurement, stage: &str) -> Self {
+        let count_of = |measurement: &Measurement| measurement.instructions_of(stage).unwrap_or(0);
         Self::new(count_of(before), count_of(after))
     }
 
@@ -328,7 +313,7 @@ mod tests {
     impl ComparisonFixture {
         const PROGRAM_INSTRUCTIONS: u64 = 1_000_000;
 
-        fn with_unmeasured(stages: &[(&str, Cost)]) -> ResultSet {
+        fn with_unmeasured(stages: &[(&str, u64)]) -> ResultSet {
             let orders = ProgramResult {
                 program: "orders".to_string(),
                 measurement: None,
@@ -336,28 +321,27 @@ mod tests {
             ResultSet::new(vec![Self::inventory(stages), orders])
         }
 
-        fn measured_only(stages: &[(&str, Cost)]) -> ResultSet {
+        fn measured_only(stages: &[(&str, u64)]) -> ResultSet {
             ResultSet::new(vec![Self::inventory(stages)])
         }
 
-        fn inventory(stages: &[(&str, Cost)]) -> ProgramResult {
-            let stages: BTreeMap<String, Cost> = stages
+        fn inventory(stages: &[(&str, u64)]) -> ProgramResult {
+            let stages: BTreeMap<String, u64> = stages
                 .iter()
-                .map(|(stage, cost)| (stage.to_string(), *cost))
+                .map(|(stage, instructions)| (stage.to_string(), *instructions))
                 .collect();
-            let total = Cost::new(Self::PROGRAM_INSTRUCTIONS, Self::PROGRAM_INSTRUCTIONS);
             ProgramResult {
                 program: "inventory".to_string(),
-                measurement: Some(Measurement::new(stages, total)),
+                measurement: Some(Measurement::new(stages, Self::PROGRAM_INSTRUCTIONS)),
             }
         }
 
-        fn expand(instructions: u64, estimated_cycles: u64) -> (&'static str, Cost) {
-            ("expand", Cost::new(instructions, estimated_cycles))
+        fn expand(instructions: u64) -> (&'static str, u64) {
+            ("expand", instructions)
         }
 
-        fn source(instructions: u64) -> (&'static str, Cost) {
-            ("source", Cost::new(instructions, instructions))
+        fn source(instructions: u64) -> (&'static str, u64) {
+            ("source", instructions)
         }
 
         fn report(before: &ResultSet, after: &ResultSet) -> String {
@@ -371,37 +355,29 @@ mod tests {
 
     #[test]
     fn lists_each_stage_that_rose_notably() {
-        let before =
-            ComparisonFixture::with_unmeasured(&[ComparisonFixture::expand(500_000, 500_000)]);
-        let after =
-            ComparisonFixture::with_unmeasured(&[ComparisonFixture::expand(510_000, 510_000)]);
+        let before = ComparisonFixture::with_unmeasured(&[ComparisonFixture::expand(500_000)]);
+        let after = ComparisonFixture::with_unmeasured(&[ComparisonFixture::expand(510_000)]);
         let report = ComparisonFixture::report(&before, &after);
         assert!(report.starts_with(
             "These stages rose notably, or could not be compared:\n\n\
-             - `inventory` `expand`: instructions +2.00%, estimated cycles +2.00%\n\
+             - `inventory` `expand`: +2.00%\n\
              - `orders` was not measured before\n"
         ));
     }
 
     #[test]
-    fn bolds_only_a_notable_instruction_change() {
-        let before =
-            ComparisonFixture::with_unmeasured(&[ComparisonFixture::expand(500_000, 500_000)]);
-        let after =
-            ComparisonFixture::with_unmeasured(&[ComparisonFixture::expand(510_000, 520_000)]);
+    fn bolds_a_notable_rise() {
+        let before = ComparisonFixture::with_unmeasured(&[ComparisonFixture::expand(500_000)]);
+        let after = ComparisonFixture::with_unmeasured(&[ComparisonFixture::expand(510_000)]);
         let report = ComparisonFixture::report(&before, &after);
-        assert!(report.contains(
-            "| inventory | expand | 500,000 | 510,000 | **+2.00%** | 500,000 | 520,000 | +4.00% |"
-        ));
-        assert!(report.contains("| orders | not measured before |  |  |  |  |  |  |"));
+        assert!(report.contains("| inventory | expand | 500,000 | 510,000 | **+2.00%** |"));
+        assert!(report.contains("| orders | not measured before |  |  |  |"));
     }
 
     #[test]
-    fn ignores_a_rise_in_estimated_cycles_alone() {
-        let before =
-            ComparisonFixture::measured_only(&[ComparisonFixture::expand(500_000, 500_000)]);
-        let after =
-            ComparisonFixture::measured_only(&[ComparisonFixture::expand(500_000, 600_000)]);
+    fn reports_no_change_when_every_count_held() {
+        let before = ComparisonFixture::measured_only(&[ComparisonFixture::expand(500_000)]);
+        let after = ComparisonFixture::measured_only(&[ComparisonFixture::expand(500_000)]);
         assert_eq!(
             ComparisonFixture::brief(&before, &after),
             "No instruction count changed.\n"
@@ -415,11 +391,11 @@ mod tests {
     #[test]
     fn ranks_changes_by_their_share_of_the_program() {
         let before = ComparisonFixture::measured_only(&[
-            ComparisonFixture::expand(500_000, 500_000),
+            ComparisonFixture::expand(500_000),
             ComparisonFixture::source(100),
         ]);
         let after = ComparisonFixture::measured_only(&[
-            ComparisonFixture::expand(510_000, 510_000),
+            ComparisonFixture::expand(510_000),
             ComparisonFixture::source(150),
         ]);
         let report = ComparisonFixture::brief(&before, &after);
@@ -435,8 +411,7 @@ mod tests {
 
     #[test]
     fn counts_an_unmeasured_program_in_the_brief_report() {
-        let results =
-            ComparisonFixture::with_unmeasured(&[ComparisonFixture::expand(500_000, 500_000)]);
+        let results = ComparisonFixture::with_unmeasured(&[ComparisonFixture::expand(500_000)]);
         assert_eq!(
             ComparisonFixture::brief(&results, &results),
             "Stages that rose notably, or could not be compared: 1.\n\n"

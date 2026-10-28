@@ -3,7 +3,6 @@ use std::fmt;
 use std::fs;
 use std::path::Path;
 
-use super::cost::Cost;
 use super::measurement::Measurement;
 use super::table::{GroupedCount, MarkdownTable};
 use crate::failure::TaskFailure;
@@ -21,7 +20,6 @@ pub struct ResultSet {
 impl ResultSet {
     const FIELD_SEPARATOR: char = '\t';
     const STAGE_SEPARATOR: char = '=';
-    const COST_SEPARATOR: char = '/';
 
     pub fn new(programs: Vec<ProgramResult>) -> Self {
         Self { programs }
@@ -63,14 +61,11 @@ impl ResultSet {
             .iter()
             .flat_map(Measurement::rows)
             .filter(|(stage, _)| *stage != Measurement::OTHER)
-            .map(|(stage, cost)| {
+            .map(|(stage, instructions)| {
                 format!(
-                    "{}{stage}{}{}{}{}",
+                    "{}{stage}{}{instructions}",
                     Self::FIELD_SEPARATOR,
-                    Self::STAGE_SEPARATOR,
-                    cost.instructions,
-                    Self::COST_SEPARATOR,
-                    cost.estimated_cycles
+                    Self::STAGE_SEPARATOR
                 )
             })
             .collect();
@@ -94,17 +89,14 @@ impl ResultSet {
         })
     }
 
-    fn parse_stage(field: &str) -> Option<(String, Cost)> {
-        let (stage, cost) = field.split_once(Self::STAGE_SEPARATOR)?;
-        let (instructions, estimated_cycles) = cost.split_once(Self::COST_SEPARATOR)?;
-        let cost = Cost::new(instructions.parse().ok()?, estimated_cycles.parse().ok()?);
-        Some((stage.to_string(), cost))
+    fn parse_stage(field: &str) -> Option<(String, u64)> {
+        let (stage, instructions) = field.split_once(Self::STAGE_SEPARATOR)?;
+        Some((stage.to_string(), instructions.parse().ok()?))
     }
 }
 
 impl ResultSet {
-    const REPORT_HEADER: [&'static str; 4] =
-        ["Program", "Stage", "Instructions", "Estimated cycles"];
+    const REPORT_HEADER: [&'static str; 3] = ["Program", "Stage", "Instructions"];
 
     fn report_table(&self) -> MarkdownTable {
         let mut table = MarkdownTable::new(&Self::REPORT_HEADER);
@@ -121,17 +113,15 @@ impl ResultSet {
                 result.program.clone(),
                 "rejected".to_string(),
                 String::new(),
-                String::new(),
             ]];
         };
         measurement
             .rows()
-            .map(|(stage, cost)| {
+            .map(|(stage, instructions)| {
                 vec![
                     result.program.clone(),
                     stage.to_string(),
-                    GroupedCount::new(cost.instructions).to_string(),
-                    GroupedCount::new(cost.estimated_cycles).to_string(),
+                    GroupedCount::new(instructions).to_string(),
                 ]
             })
             .collect()
@@ -157,11 +147,11 @@ mod tests {
 
     impl ResultsFixture {
         fn results() -> ResultSet {
-            let stages = BTreeMap::from([("expand".to_string(), Cost::new(60, 80))]);
+            let stages = BTreeMap::from([("expand".to_string(), 60)]);
             ResultSet::new(vec![
                 ProgramResult {
                     program: "inventory".to_string(),
-                    measurement: Some(Measurement::new(stages, Cost::new(100, 130))),
+                    measurement: Some(Measurement::new(stages, 100)),
                 },
                 ProgramResult {
                     program: "unsupported".to_string(),
@@ -186,14 +176,14 @@ mod tests {
     #[test]
     fn reports_a_rejected_program() {
         let report = ResultsFixture::results().to_string();
-        assert!(report.contains("| inventory | other | 40 | 50 |"));
-        assert!(report.contains("| unsupported | rejected |  |  |"));
+        assert!(report.contains("| inventory | other | 40 |"));
+        assert!(report.contains("| unsupported | rejected |  |"));
     }
 
     #[test]
     fn rejects_a_stage_without_a_total() {
         let path = ResultsFixture::scratch_file("no_total.tsv");
-        fs::write(&path, "inventory\texpand=1/2\n").unwrap();
+        fs::write(&path, "inventory\texpand=1\n").unwrap();
         let failure = ResultSet::load(&path).err().unwrap();
         assert!(failure.to_string().contains("inventory"));
     }
