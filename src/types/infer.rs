@@ -2947,7 +2947,7 @@ impl TypeChecker {
     }
 
     fn moved_field_base(&self, base: TypedExpr) -> TypedExpr {
-        if Self::reads_field(&base) && self.is_owned_place(&base) {
+        if self.reads_owned_field(&base) {
             TypedExpr {
                 ty: self.place_type(&base),
                 ..base
@@ -2957,22 +2957,14 @@ impl TypeChecker {
         }
     }
 
-    fn reads_field(value: &TypedExpr) -> bool {
-        matches!(
-            value.kind,
-            TypedExprKind::Struct(TypedStructExpr::Field(..))
-        )
-    }
-
-    fn is_owned_place(&self, value: &TypedExpr) -> bool {
-        match &value.kind {
-            TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => self.is_owned_place(owner),
-            TypedExprKind::Leaf(TypedLeaf::Local(_)) => !matches!(
-                self.unifier.shallow(&value.ty),
-                Type::Ref(..) | Type::Mut(..)
-            ),
-            _ => false,
-        }
+    fn reads_owned_field(&self, base: &TypedExpr) -> bool {
+        base.field_place().is_some_and(|place| {
+            place.reads_field()
+                && !matches!(
+                    self.unifier.shallow(place.root_type),
+                    Type::Ref(..) | Type::Mut(..)
+                )
+        })
     }
 
     fn update_owner(
