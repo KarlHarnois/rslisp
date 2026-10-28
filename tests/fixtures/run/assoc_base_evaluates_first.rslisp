@@ -1,0 +1,13 @@
+(defstruct point :x i64 :y i64)
+
+(defn noisy-base ()
+  (println "base")
+  (->point 1 2))
+
+(defn noisy-field ()
+  (println "field")
+  3)
+
+(defn main ()
+  (let updated (assoc (noisy-base) :x (noisy-field)))
+  (println (:x updated) (:y updated)))

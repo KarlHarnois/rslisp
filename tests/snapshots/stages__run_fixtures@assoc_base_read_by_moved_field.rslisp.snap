@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/assoc_base_read_by_moved_field.rslisp
+---
+abc 3

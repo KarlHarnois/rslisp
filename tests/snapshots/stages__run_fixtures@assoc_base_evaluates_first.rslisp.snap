@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/assoc_base_evaluates_first.rslisp
+---
+base
+field
+32

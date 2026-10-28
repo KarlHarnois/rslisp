@@ -39,34 +39,40 @@ fn origin() -> Point {
 }
 
 fn main() {
-    let positional = Point {
-        x: 3,
-        ..make_point(1, 2)
+    let positional = {
+        let base = make_point(1, 2);
+        Point { x: 3, ..base }
     };
     println!("{}{}", positional.x, positional.y);
-    let named = Point {
-        x: 3,
-        ..Point { x: 1, y: 2 }
+    let named = {
+        let base = Point { x: 1, y: 2 };
+        Point { x: 3, ..base }
     };
     println!("{}{}", named.x, named.y);
-    let kernel = Point {
-        x: 3,
-        ..Point { x: 1, y: 2 }
+    let kernel = {
+        let base = Point { x: 1, y: 2 };
+        Point { x: 3, ..base }
     };
     println!("{}{}", kernel.x, kernel.y);
-    let shifted = Point { y: 4, ..origin() };
+    let shifted = {
+        let base = origin();
+        Point { y: 4, ..base }
+    };
     println!("{}{}", shifted.x, shifted.y);
-    let nested = Line {
-        start: Point {
-            y: 9,
-            ..make_point(0, 0)
-        },
-        ..make_line(make_point(1, 2), make_point(5, 6))
+    let nested = {
+        let base = make_line(make_point(1, 2), make_point(5, 6));
+        Line {
+            start: {
+                let base_2 = make_point(0, 0);
+                Point { y: 9, ..base_2 }
+            },
+            ..base
+        }
     };
     println!("{}{}", nested.start.y, nested.end.x);
-    let leaf = Car {
-        year: 2025,
-        ..make_car("Nissan", "Leaf".to_string(), 2024)
+    let leaf = {
+        let base = make_car("Nissan", "Leaf".to_string(), 2024);
+        Car { year: 2025, ..base }
     };
     println!("{} {} {}", leaf.make, leaf.model, leaf.year);
     let grid: Vec<Vec<i64>> = {
