@@ -398,19 +398,19 @@
   (fn (form positional signature)
     (let pairs (rest form))
     (let keys (pair-keys pairs))
-    (check-call-keys keys signature)
+    (check-call-keys keys keys signature)
     (check-required-parameters form keys signature)
     (if (needs-temporaries? pairs (signature-names signature))
         (call-through-temporaries pairs positional signature)
         (prepend positional (positional-arguments pairs signature)))))
 
 (def check-call-keys
-  (fn (keys signature)
+  (fn (keys given-keys signature)
     (if (empty? keys)
         keys
-        (do (check-call-key (first keys) keys signature)
+        (do (check-call-key (first keys) given-keys signature)
             (check-given-once (first keys) (rest keys) signature)
-            (check-call-keys (rest keys) signature)))))
+            (check-call-keys (rest keys) given-keys signature)))))
 
 (def check-call-key
   (fn (key keys signature)
