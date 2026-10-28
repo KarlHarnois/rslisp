@@ -4,7 +4,7 @@ use crate::core::{BindingId, ReferenceKind};
 use crate::ownership::ChangedValues;
 use crate::types::{
     Borrow, TemplateBorrows, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
-    TypedExprKind, TypedLeaf,
+    TypedExprKind, TypedLambda, TypedLeaf,
 };
 
 pub struct MutableLocals<'a> {
@@ -53,13 +53,32 @@ impl<'a> MutableLocals<'a> {
 
     fn block(&mut self, block: &TypedBlock) {
         for item in &block.items {
-            if let TypedBodyItem::Let(binder, value) = item
-                && self.mutates_capture(binder.binding, value)
-            {
-                self.mutating_closures.insert(binder.binding);
+            match item {
+                TypedBodyItem::Let(binder, value) => self.let_value(binder.binding, value),
+                _ => self.expr(item.expr()),
             }
-            self.expr(item.expr());
         }
+    }
+
+    fn let_value(&mut self, binding: BindingId, value: &TypedExpr) {
+        match &value.kind {
+            TypedExprKind::Fn(lambda) => self.let_closure(binding, value, lambda),
+            _ => self.expr(value),
+        }
+    }
+
+    fn let_closure(&mut self, binding: BindingId, closure: &TypedExpr, lambda: &TypedLambda) {
+        let inside = MutableLocals::of(closure, self.templates);
+        if inside.changes_capture(binding, closure, lambda) {
+            self.mutating_closures.insert(binding);
+        }
+        self.absorb(inside);
+    }
+
+    fn absorb(&mut self, inside: MutableLocals) {
+        self.bindings.extend(inside.bindings);
+        self.mutating_closures.extend(inside.mutating_closures);
+        self.called_closures.extend(inside.called_closures);
     }
 
     fn control(&mut self, control: &TypedControl) {
@@ -131,19 +150,20 @@ impl<'a> MutableLocals<'a> {
         }
     }
 
-    fn mutates_capture(&self, enclosing: BindingId, value: &TypedExpr) -> bool {
-        let TypedExprKind::Fn(lambda) = &value.kind else {
-            return false;
-        };
-        let locals: HashSet<BindingId> = value
+    fn changes_capture(
+        &self,
+        enclosing: BindingId,
+        closure: &TypedExpr,
+        lambda: &TypedLambda,
+    ) -> bool {
+        let locals: HashSet<BindingId> = closure
             .binders()
             .iter()
             .map(|binder| binder.binding)
             .collect();
-        let mutable_inside = MutableLocals::of(value, self.templates).into_set();
         ChangedValues::of(lambda, enclosing)
             .changed_bindings()
-            .chain(mutable_inside)
+            .chain(self.bindings.iter().copied())
             .any(|binding| !locals.contains(&binding))
     }
 }
