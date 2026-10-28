@@ -124,9 +124,10 @@ impl InterpretProblems {
         code: DiagnosticCode,
         message: String,
         culprit: Span,
-        label: String,
+        label: Option<String>,
         earlier: Option<(Span, String)>,
     ) -> Diagnostic {
+        let label = label.unwrap_or_else(|| "here".to_owned());
         let failure = Diagnostic::error(code, message, Label::new(culprit, label));
         match earlier {
             Some((span, label)) => failure.with_label(Label::new(span, label)),
