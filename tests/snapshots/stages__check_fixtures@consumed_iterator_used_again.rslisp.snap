@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/consumed_iterator_used_again.rslisp
+---
+error[L0501]: use of moved value `values`
+ --> check/consumed_iterator_used_again.rslisp:1:56
+  |
+1 | (defn counted (values) (let total (count values)) (any values (fn (value) (> value 50))))
+  |                                          ------        ^^^^^^ value used here after it moved
+  |                                          |
+  |                                          value moved here
+  |
+help: clone the value if both places need it
+  |
+1 - (defn counted (values) (let total (count values)) (any values (fn (value) (> value 50))))
+1 + (defn counted (values) (let total (count (clone values))) (any values (fn (value) (> value 50))))
+  |

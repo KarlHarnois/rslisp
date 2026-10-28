@@ -1,0 +1,8 @@
+(defn both (values) (let first (find values (fn (value) (> (deref value) 5)))) (and (some? first) (any values (fn (value) (> value 50)))))
+
+(defn main ()
+  (prn (both (range 0 100)))
+  (prn (both (range 0 10)))
+  (let steps (range 0 10))
+  (prn (find steps (fn (step) (> (deref step) 2))))
+  (prn (find steps (fn (step) (> (deref step) 2)))))
