@@ -311,7 +311,7 @@ impl ParsedTemplate {
     }
 
     fn unary_deref(literal: &str) -> bool {
-        let Some(remainder) = literal.strip_suffix('*') else {
+        let Some(remainder) = literal.strip_suffix(Self::DEREFERENCE) else {
             return false;
         };
         remainder
@@ -372,7 +372,12 @@ mod tests {
 
     #[test]
     fn receives_an_argument_before_a_method_call() {
-        for text in ["{0}.len()", "*{0}.len()", "{&mut 0}.next()"] {
+        for text in [
+            "{0}.len()",
+            "*{0}.len()",
+            "{&mut 0}.next()",
+            "*{&mut 0}.next()",
+        ] {
             let parsed = ParsedTemplate::parse(text).expect("a valid template");
             assert!(parsed.receives(0), "{text}");
             assert!(!parsed.receives(1), "{text}");
