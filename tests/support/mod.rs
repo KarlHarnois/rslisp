@@ -74,11 +74,7 @@ impl Fixture {
             Ok(emitted) => emitted,
             Err(diagnostics) => return self.render(&diagnostics),
         };
-        let directory = std::env::temp_dir().join(format!(
-            "rslisp-run-{}-{}",
-            std::process::id(),
-            self.module_name()
-        ));
+        let directory = self.build_directory();
         let binary = directory.join(self.module_name());
         match RustCompiler::new(directory, BuildProfile::Debug).compile(
             &emitted,
@@ -92,6 +88,23 @@ impl Fixture {
                 panic!("the build environment failed: {message}")
             }
         }
+    }
+
+    fn build_directory(&self) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "rslisp-run-{}-{}-{}",
+            std::process::id(),
+            self.stage_name(),
+            self.module_name()
+        ))
+    }
+
+    fn stage_name(&self) -> String {
+        let stage = self.directory();
+        let name = stage
+            .file_name()
+            .expect("fixtures live in a stage directory");
+        name.to_string_lossy().into_owned()
     }
 
     fn arguments(&self) -> Vec<String> {
