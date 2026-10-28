@@ -813,7 +813,7 @@ impl<'a> ClosureKinds<'a> {
     ) {
         match &expr.kind {
             TypedExprKind::Fn(lambda) => {
-                let before = uses.clone();
+                let before = uses.counts();
                 self.require_block(&lambda.body, params, Some(lambda.kind), uses);
                 if lambda.body.repeats() {
                     uses.repeat_uses_since(&before);
