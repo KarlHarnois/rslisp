@@ -135,12 +135,8 @@ jobs:
       - name: Fetch the history and the accepted baseline
         shell: bash
         run: |
-          if git ls-remote --exit-code origin "$NOTES" > /dev/null; then
-            git fetch origin "$NOTES:$NOTES"
-          fi
-          if git ls-remote --exit-code origin "refs/tags/$ACCEPTED_TAG" > /dev/null; then
-            git fetch origin tag "$ACCEPTED_TAG"
-          fi
+          git fetch --no-tags origin "+$NOTES:$NOTES" || echo "::notice::No history fetched, so the job measures instead."
+          git fetch --no-tags origin "+refs/tags/$ACCEPTED_TAG:refs/tags/$ACCEPTED_TAG" || echo "::notice::No accepted baseline fetched."
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
@@ -154,7 +150,6 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-            ${{ env.BASELINE }}/target
           key: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-
       - name: Recall the base branch from the history
@@ -173,12 +168,27 @@ jobs:
           persist-credentials: false
           ref: ${{ steps.base.outputs.sha }}
           path: ${{ env.BASELINE }}
+      - name: Restore the base checkout's cargo cache
+        if: steps.recall-base.outputs.recalled == 'false'
+        id: base-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.BASELINE }}/target
+          key: ${{ runner.os }}-cargo-bench-base-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-bench-base-${{ hashFiles('flake.lock') }}-
       - name: Measure the base branch
         if: steps.recall-base.outputs.recalled == 'false'
+        id: measure-base
         run: nix develop .#ci -c cargo xtask bench measure --workspace "$BASELINE" --save target/bench/baseline.tsv
       - name: Measure the pull request
         id: measure
         run: nix develop .#ci -c cargo xtask bench measure --save target/bench/candidate.tsv
+      - name: Save the base checkout's cargo cache
+        if: ${{ !cancelled() && steps.measure-base.outcome == 'success' && steps.base-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.BASELINE }}/target
+          key: ${{ runner.os }}-cargo-bench-base-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
       - name: Recall the accepted baseline from the history
         id: accepted
         shell: bash
@@ -259,7 +269,6 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-            ${{ env.BASELINE }}/target
           key: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
 
   bench-history:
@@ -293,18 +302,22 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-            ${{ env.BASELINE }}/target
           key: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-
       - name: Fetch the history and the accepted baseline
         shell: bash
         run: |
-          if git ls-remote --exit-code origin "$NOTES" > /dev/null; then
-            git fetch origin "$NOTES:$NOTES"
-          fi
-          if git ls-remote --exit-code origin "refs/tags/$ACCEPTED_TAG" > /dev/null; then
-            git fetch origin tag "$ACCEPTED_TAG"
-          fi
+          fetch_when_present() {
+            local status=0
+            git ls-remote --exit-code origin "$1" > /dev/null || status=$?
+            case "$status" in
+              0) git fetch --no-tags origin "+$1:$1" ;;
+              2) echo "::notice::Origin has no $1." ;;
+              *) exit "$status" ;;
+            esac
+          }
+          fetch_when_present "$NOTES"
+          fetch_when_present "refs/tags/$ACCEPTED_TAG"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Record the counts of this commit
@@ -333,8 +346,17 @@ jobs:
           persist-credentials: false
           ref: ${{ steps.accepted.outputs.sha }}
           path: ${{ env.BASELINE }}
+      - name: Restore the base checkout's cargo cache
+        if: steps.accepted.outputs.measure == 'true'
+        id: base-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.BASELINE }}/target
+          key: ${{ runner.os }}-cargo-bench-base-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-bench-base-${{ hashFiles('flake.lock') }}-
       - name: Record the counts of the accepted baseline
         if: steps.accepted.outputs.measure == 'true'
+        id: measure-accepted
         env:
           ACCEPTED_SHA: ${{ steps.accepted.outputs.sha }}
         run: |
@@ -355,6 +377,12 @@ jobs:
             git notes --ref="$NOTES" add -f -F "$ACCEPTED_RESULTS" "$ACCEPTED_SHA"
           fi
           git push origin "$NOTES"
+      - name: Save the base checkout's cargo cache
+        if: ${{ !cancelled() && steps.measure-accepted.outcome == 'success' && steps.base-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.BASELINE }}/target
+          key: ${{ runner.os }}-cargo-bench-base-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
       - name: Save cargo cache
         if: ${{ !cancelled() && steps.measure.outcome != 'skipped' && steps.cargo-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
@@ -363,5 +391,4 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-            ${{ env.BASELINE }}/target
           key: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
