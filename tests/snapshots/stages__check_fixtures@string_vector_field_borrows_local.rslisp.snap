@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/string_vector_field_borrows_local.rslisp
+---
+error[L0510]: cannot return a borrow of a local value
+ --> check/string_vector_field_borrows_local.rslisp:5:18
+  |
+4 |   (let model (to-string line))
+  |        ----- this local is dropped when the function returns
+5 |   (->car :models (vec (as-str model))))
+  |                  ^^^^^^^^^^^^^^^^^^^^ this borrows a local value
+  |
+  = help: return an owned value with `(clone ...)`, or borrow from a parameter

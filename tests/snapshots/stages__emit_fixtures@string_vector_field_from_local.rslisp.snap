@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/string_vector_field_from_local.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    models: Vec<&'a str>,
+}
+
+fn main() {
+    let models = vec!["Leaf", "Ariya"];
+    let nissan = Car {
+        make: "Nissan",
+        models,
+    };
+    nissan
+        .models
+        .iter()
+        .for_each(|model: &&str| println!("{} {}", nissan.make, model))
+}

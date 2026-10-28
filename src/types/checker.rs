@@ -1482,11 +1482,21 @@ impl TypeChecker {
         scope: &HashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
         let lowered = self.lower_type(stored_type, scope)?;
-        Ok(if Self::is_unsized_type(&self.rust_types, &lowered) {
-            Type::shared(lowered)
-        } else {
-            lowered
-        })
+        Ok(self.borrow_views(lowered))
+    }
+
+    fn borrow_views(&self, stored: Type) -> Type {
+        match stored {
+            view if Self::is_unsized_type(&self.rust_types, &view) => Type::shared(view),
+            Type::Named(binding, arguments) => Type::Named(
+                binding,
+                arguments
+                    .into_iter()
+                    .map(|argument| self.borrow_views(argument))
+                    .collect(),
+            ),
+            sized => sized,
+        }
     }
 
     fn collect_rust_type(
