@@ -6,4 +6,5 @@
 
 (defn main ()
   (let tag (->tag (shared-str "Leaf")))
+  (let name (:name tag))
   (println "Leaf"))
