@@ -91,12 +91,15 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
         if !self.takes_borrowing_function(lambda) {
             return Vec::new();
         }
-        let higher_ranked = self.result_borrows.analyse(lambda).higher_ranked;
+        let borrows = self.result_borrows.analyse(lambda);
         lambda
             .params
             .iter()
             .enumerate()
-            .filter(|(_, param)| higher_ranked.contains(&param.binding))
+            .filter(|(_, param)| {
+                borrows.higher_ranked.contains(&param.binding)
+                    || borrows.flows.contains(&param.binding)
+            })
             .map(|(position, _)| position)
             .collect()
     }
