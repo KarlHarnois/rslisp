@@ -108,6 +108,7 @@ pub enum ItemKind {
     RustType(
         BindingId,
         Vec<TypeBinder>,
+        Vec<usize>,
         Rc<ParsedTemplate>,
         Vec<(TypeExpr, Rc<ParsedTemplate>)>,
     ),

@@ -3,7 +3,7 @@
 (rust-type (vec item) "Vec<{0}>")
 (rust-type (sorted-map key value) "std::collections::BTreeMap<{0}, {1}>")
 (rust-type (hash-map key value) "std::collections::HashMap<{0}, {1}>")
-(rust-type (box item) "Box<{0}>")
+(rust-type (box (item unsized)) "Box<{0}>")
 (def box-new (rust "Box::new({0})" (where (a) (fn (a) (box a)))))
 (enum (option value) (rust "Option" bare) (some value) none)
 (enum (result value error) (rust "Result" bare) (ok value) (err error))

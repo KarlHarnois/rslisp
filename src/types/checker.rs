@@ -389,8 +389,14 @@ impl TypeChecker {
         if let ItemKind::RustTrait(declaration) = kind {
             return self.collect_rust_trait(declaration);
         }
-        if let ItemKind::RustType(binding, binders, template, clauses) = kind {
-            return self.collect_rust_type(*binding, binders, template, clauses);
+        if let ItemKind::RustType(binding, binders, unsized_parameters, template, clauses) = kind {
+            return self.collect_rust_type(
+                *binding,
+                binders,
+                unsized_parameters,
+                template,
+                clauses,
+            );
         }
         if let ItemKind::Trait(
             binding,
@@ -1371,6 +1377,7 @@ impl TypeChecker {
                     template: rust.template.clone(),
                     clauses: Vec::new(),
                     params: params.iter().map(|param| Rc::clone(&param.name)).collect(),
+                    unsized_parameters: Vec::new(),
                 },
             );
         }
@@ -1488,21 +1495,41 @@ impl TypeChecker {
     fn borrow_views(&self, stored: Type) -> Type {
         match stored {
             view if Self::is_unsized_type(&self.rust_types, &view) => Type::shared(view),
-            Type::Named(binding, arguments) if !self.rust_types.is_box(binding) => Type::Named(
-                binding,
-                arguments
-                    .into_iter()
-                    .map(|argument| self.borrow_views(argument))
-                    .collect(),
-            ),
+            Type::Named(binding, arguments) => {
+                Type::Named(binding, self.borrow_named_arguments(binding, arguments))
+            }
             sized => sized,
         }
+    }
+
+    fn borrow_argument_views(&self, argument: Type) -> Type {
+        match argument {
+            Type::Named(binding, arguments) => {
+                Type::Named(binding, self.borrow_named_arguments(binding, arguments))
+            }
+            view => view,
+        }
+    }
+
+    fn borrow_named_arguments(&self, binding: BindingId, arguments: Vec<Type>) -> Vec<Type> {
+        arguments
+            .into_iter()
+            .enumerate()
+            .map(|(position, argument)| {
+                if self.rust_types.parameter_may_be_unsized(binding, position) {
+                    self.borrow_argument_views(argument)
+                } else {
+                    self.borrow_views(argument)
+                }
+            })
+            .collect()
     }
 
     fn collect_rust_type(
         &mut self,
         binding: BindingId,
         binders: &[TypeBinder],
+        unsized_parameters: &[usize],
         template: &Rc<ParsedTemplate>,
         clauses: &[(TypeExpr, Rc<ParsedTemplate>)],
     ) -> Result<(), Diagnostic> {
@@ -1523,6 +1550,7 @@ impl TypeChecker {
                     .filter(|binder| !binder.lifetime)
                     .map(|binder| Rc::from(self.bindings.get(binder.variable).name()))
                     .collect(),
+                unsized_parameters: unsized_parameters.to_vec(),
             },
         );
         Ok(())

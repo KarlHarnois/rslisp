@@ -69,6 +69,10 @@ pub struct TypeBinder {
     pub lifetime: bool,
 }
 
+impl TypeBinder {
+    pub const UNSIZED: &'static str = "unsized";
+}
+
 #[derive(Clone, Debug)]
 pub struct TypeBound {
     pub binding: BindingId,

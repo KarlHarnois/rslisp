@@ -8,6 +8,7 @@ pub struct RustType {
     pub template: Rc<ParsedTemplate>,
     pub clauses: Vec<(Type, Rc<ParsedTemplate>)>,
     pub params: Vec<Rc<str>>,
+    pub unsized_parameters: Vec<usize>,
 }
 
 impl RustType {
@@ -76,6 +77,11 @@ impl RustTypeTable {
 
     pub fn is_box(&self, binding: BindingId) -> bool {
         self.has_template(binding, RustType::BOX_TEMPLATE)
+    }
+
+    pub fn parameter_may_be_unsized(&self, binding: BindingId, position: usize) -> bool {
+        self.get(binding)
+            .is_some_and(|rust_type| rust_type.unsized_parameters.contains(&position))
     }
 
     pub fn is_sorted_map(&self, binding: BindingId) -> bool {
