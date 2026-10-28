@@ -340,7 +340,7 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 | `symbol-name`, `keyword-name`, `keyword-field`, `field-keyword`, `(symbol context part...)`, `(string part...)` | Read and build names and strings. |
 | `escape-string`, `escape-char`, `escape-format`, `string-strip-suffix`, `string-strip-prefix` | Escape a string for a Rust string literal, a Rust character literal or a format string in a template, and drop a suffix or a prefix. |
 | `(same-binding? left right)` | Test whether two symbols refer to the same binding. |
-| `(closest-name name names)` | Return a list that holds the symbol of `names` closest to `name`, ranked as the compiler ranks a misspelled name, or an empty list when none is close. |
+| `(closest-name name names)` | Return a list that holds the symbol of `names` closest to `name`, other than `name` itself, ranked as the compiler ranks a misspelled name, or an empty list when none is close. |
 | `(fail "message" form)`, `(fail "message" form "help")`, `(fail "message" form "help" description)` | Stop expansion with an error at `form`, an optional help line that says how to fix the call, and an optional description of the error. |
 | `number-add number-sub number-lt number-le number-gt number-ge` | Count and compare positions in code. They take integers. |
 | `value-eq bool-not` | Compare forms and negate booleans. |
