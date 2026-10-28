@@ -226,15 +226,15 @@
                                (names-without-argument names given-keys)))
     (let message (string "`" name "` has no " noun " `"
                          (symbol-name (spelling (keyword-field key))) "`"))
-    (if (empty? closest)
-        (fail message key
+    (fail message key
+          (if (empty? closest)
               (if (empty? names)
                   (string "`" name "` has no " noun "s")
                   (string "the " noun "s of `" name "` are "
                           (joined-names (map-list spelling names) "")))
-              (template (:code (unquote code))))
-        (fail message key
-              (string "a " noun " with a similar name exists")
+              (string "a " noun " with a similar name exists"))
+          (if (empty? closest)
+              (template (:code (unquote code)))
               (template (:code (unquote code)
                          :suggest (unquote (field-keyword (first closest)))))))))
 
