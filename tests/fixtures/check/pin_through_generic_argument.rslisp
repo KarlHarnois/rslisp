@@ -1,0 +1,6 @@
+(defn wrap (x) (some x))
+
+(defn outer (y) (wrap (some y)))
+
+(defn main ()
+  (prn (outer "a")))

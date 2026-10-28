@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/pin_through_generic_argument.rslisp
+---
+Some(Some("a"))

@@ -225,7 +225,7 @@ impl InstantiationReport {
         let resolved = matched
             && types
                 .iter()
-                .all(|ty| ty.as_ref().is_some_and(|ty| !ty.is_unknown()));
+                .all(|ty| ty.as_ref().is_some_and(Type::is_concrete));
         UseTypes { types, resolved }
     }
 

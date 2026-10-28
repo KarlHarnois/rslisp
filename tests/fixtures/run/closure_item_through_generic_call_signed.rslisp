@@ -1,0 +1,8 @@
+(defn apply (f) (f))
+
+(type later (fn ((iterator i64)) (option i64)))
+(defn later (values)
+  (apply (fn () (find values (fn (value) (> (deref value) 5))))))
+
+(defn main ()
+  (prn (later (range 0 10))))

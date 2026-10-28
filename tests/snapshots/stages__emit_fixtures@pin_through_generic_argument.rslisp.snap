@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/pin_through_generic_argument.rslisp
+---
+fn wrap(x: Option<&str>) -> Option<Option<&str>> {
+    Some(x)
+}
+
+fn outer(y: &str) -> Option<Option<&str>> {
+    wrap(Some(y))
+}
+
+fn main() {
+    println!("{:?}", outer("a"))
+}

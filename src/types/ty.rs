@@ -100,6 +100,10 @@ impl Type {
         }
     }
 
+    pub fn is_concrete(&self) -> bool {
+        !self.any_part(&|part| matches!(part, Type::Var(_) | Type::Generic(_)))
+    }
+
     pub fn has_vars(&self) -> bool {
         self.any_part(&|part| matches!(part, Type::Var(_)))
     }
