@@ -1,0 +1,15 @@
+(defn helper (g n)
+  (g n)
+  0)
+
+(defn ping (f n)
+  (f n)
+  (if (> n 0) (pong f (- n 1)) 0))
+
+(defn pong (f n)
+  (if (> n 0) (ping f (- n 1)) (helper f n)))
+
+(defn main ()
+  (let total (vec 0))
+  (ping (fn (n) (push! total n)) 3)
+  (println (len total)))
