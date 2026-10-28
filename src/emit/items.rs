@@ -8,7 +8,7 @@ use super::fresh_lifetimes::FreshLifetimes;
 use super::literal_generics::LiteralGenerics;
 use super::locals::LocalNames;
 use super::mangle::NameMangler;
-use super::method_elisions::MethodElisions;
+use super::method_elisions::{MethodElisions, TraitMethodElisions};
 use super::mutable_locals::MutableLocals;
 use super::opaque_borrows::OpaqueBorrows;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
@@ -79,6 +79,7 @@ pub struct ItemEmitter<'a> {
     plan: &'a EmitPlan<'a>,
     unsized_parameters: &'a UnsizedParameters,
     result_borrows: ResultBorrows<'a>,
+    trait_method_elisions: TraitMethodElisions,
     pub problems: Vec<Diagnostic>,
     pub names: Vec<(String, String)>,
 }
@@ -96,6 +97,7 @@ impl<'a> ItemEmitter<'a> {
             plan,
             unsized_parameters,
             result_borrows: ResultBorrows::new(program, plan),
+            trait_method_elisions: TraitMethodElisions::new(program),
             problems: Vec::new(),
             names: Vec::new(),
         }
@@ -665,7 +667,12 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn method_elisions(&self) -> MethodElisions<'_, 'a> {
-        MethodElisions::new(self.program, self.plan, &self.result_borrows)
+        MethodElisions::new(
+            self.program,
+            self.plan,
+            &self.result_borrows,
+            &self.trait_method_elisions,
+        )
     }
 
     fn parameter_scope(

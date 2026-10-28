@@ -1,14 +1,55 @@
-use std::collections::HashSet;
+use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
 use super::plan::EmitPlan;
 use super::result_borrows::ResultBorrows;
 use crate::core::BindingId;
 use crate::types::{TypedExprKind, TypedLambda, TypedProgram};
 
+type TraitMethodKey = (BindingId, String);
+
+pub struct TraitMethodElisions {
+    implemented_traits: HashMap<BindingId, BindingId>,
+    positions: RefCell<HashMap<TraitMethodKey, Rc<HashSet<usize>>>>,
+}
+
+impl TraitMethodElisions {
+    pub fn new(program: &TypedProgram) -> Self {
+        let implemented_traits = program
+            .trait_impls
+            .iter()
+            .flat_map(|implementation| {
+                implementation
+                    .methods
+                    .iter()
+                    .map(|implemented| (implemented.binding, implementation.trait_binding))
+            })
+            .collect();
+        Self {
+            implemented_traits,
+            positions: RefCell::default(),
+        }
+    }
+
+    fn implemented_trait(&self, method: BindingId) -> Option<BindingId> {
+        self.implemented_traits.get(&method).copied()
+    }
+
+    fn cached(&self, key: &TraitMethodKey) -> Option<Rc<HashSet<usize>>> {
+        self.positions.borrow().get(key).cloned()
+    }
+
+    fn remember(&self, key: TraitMethodKey, positions: Rc<HashSet<usize>>) {
+        self.positions.borrow_mut().insert(key, positions);
+    }
+}
+
 pub struct MethodElisions<'r, 'a> {
     program: &'a TypedProgram,
     plan: &'a EmitPlan<'a>,
     result_borrows: &'r ResultBorrows<'a>,
+    trait_method_elisions: &'r TraitMethodElisions,
 }
 
 impl<'r, 'a> MethodElisions<'r, 'a> {
@@ -16,32 +57,49 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
         program: &'a TypedProgram,
         plan: &'a EmitPlan<'a>,
         result_borrows: &'r ResultBorrows<'a>,
+        trait_method_elisions: &'r TraitMethodElisions,
     ) -> Self {
         Self {
             program,
             plan,
             result_borrows,
+            trait_method_elisions,
         }
     }
 
-    pub fn elided_positions(&self, method: BindingId) -> HashSet<usize> {
+    pub fn elided_positions(&self, method: BindingId) -> Rc<HashSet<usize>> {
         if self
             .lambda(method)
             .is_some_and(|lambda| !self.takes_borrowing_function(lambda))
         {
-            return HashSet::new();
+            return Rc::default();
         }
-        self.bodies(method)
+        let Some(trait_binding) = self.trait_of(method) else {
+            return Rc::default();
+        };
+        let name = self.program.bindings.get(method).name();
+        self.cached_positions(trait_binding, name)
+    }
+
+    fn cached_positions(&self, trait_binding: BindingId, name: &str) -> Rc<HashSet<usize>> {
+        let key = (trait_binding, name.to_string());
+        if let Some(cached) = self.trait_method_elisions.cached(&key) {
+            return cached;
+        }
+        let positions = Rc::new(self.positions_in_bodies(trait_binding, name));
+        self.trait_method_elisions
+            .remember(key, Rc::clone(&positions));
+        positions
+    }
+
+    fn positions_in_bodies(&self, trait_binding: BindingId, name: &str) -> HashSet<usize> {
+        self.bodies(trait_binding, name)
             .into_iter()
             .flat_map(|lambda| self.higher_ranked_positions(lambda))
             .collect()
     }
 
-    fn bodies(&self, method: BindingId) -> Vec<&'a TypedLambda> {
-        let Some(trait_binding) = self.trait_of(method) else {
-            return Vec::new();
-        };
-        let name = self.program.bindings.get(method).name();
+    fn bodies(&self, trait_binding: BindingId, name: &str) -> Vec<&'a TypedLambda> {
         self.program
             .trait_impls
             .iter()
@@ -65,19 +123,11 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
     }
 
     fn trait_of(&self, method: BindingId) -> Option<BindingId> {
-        if let Some(info) = self.program.trait_methods.get(&method) {
-            return Some(info.trait_binding);
-        }
         self.program
-            .trait_impls
-            .iter()
-            .find(|implementation| {
-                implementation
-                    .methods
-                    .iter()
-                    .any(|implemented| implemented.binding == method)
-            })
-            .map(|implementation| implementation.trait_binding)
+            .trait_methods
+            .get(&method)
+            .map(|info| info.trait_binding)
+            .or_else(|| self.trait_method_elisions.implemented_trait(method))
     }
 
     fn lambda(&self, binding: BindingId) -> Option<&'a TypedLambda> {
