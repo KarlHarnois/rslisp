@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 
-use super::cost::{Cost, EventLayout};
 use super::measurement::Measurement;
 use crate::failure::TaskFailure;
 
@@ -69,19 +68,21 @@ impl<'a> ProfileLine<'a> {
 
 struct ProfileScan<'reader, 'text> {
     reader: &'reader ProfileReader<'reader>,
-    layout: Option<EventLayout>,
+    instruction_column: Option<usize>,
     summary: Option<Vec<u64>>,
     caller: &'text str,
     callee: &'text str,
     call_cost_follows: bool,
-    stages: BTreeMap<String, Cost>,
+    stages: BTreeMap<String, u64>,
 }
 
 impl<'reader, 'text> ProfileScan<'reader, 'text> {
+    const INSTRUCTIONS_EVENT: &'static str = "Ir";
+
     fn new(reader: &'reader ProfileReader<'reader>) -> Self {
         Self {
             reader,
-            layout: None,
+            instruction_column: None,
             summary: None,
             caller: "",
             callee: "",
@@ -97,7 +98,7 @@ impl<'reader, 'text> ProfileScan<'reader, 'text> {
             return;
         }
         match ProfileLine::classify(line) {
-            ProfileLine::Events(header) => self.layout = Some(EventLayout::new(header)),
+            ProfileLine::Events(header) => self.instruction_column = Self::column_of(header),
             ProfileLine::Summary(counts) => self.summary = Some(Self::counts(counts)),
             ProfileLine::Caller(name) => self.caller = name,
             ProfileLine::Callee(name) => self.callee = name,
@@ -107,25 +108,37 @@ impl<'reader, 'text> ProfileScan<'reader, 'text> {
     }
 
     fn record_call(&mut self, cost_line: &str) {
-        let (Some(stage), Some(layout)) = (
+        let (Some(stage), Some(column)) = (
             self.reader.stage_of_call(self.caller, self.callee),
-            &self.layout,
+            self.instruction_column,
         ) else {
             return;
         };
         let counts = Self::counts(cost_line.split_once(' ').map_or("", |(_, counts)| counts));
-        let cost = layout.cost(&counts);
-        *self.stages.entry(stage).or_default() += cost;
+        *self.stages.entry(stage).or_default() += Self::count_at(&counts, column);
     }
 
     fn finish(self) -> Result<Measurement, TaskFailure> {
-        let layout = self
-            .layout
+        let column = self
+            .instruction_column
             .ok_or(TaskFailure::malformed_profile("events"))?;
         let summary = self
             .summary
             .ok_or(TaskFailure::malformed_profile("summary"))?;
-        Ok(Measurement::new(self.stages, layout.cost(&summary)))
+        Ok(Measurement::new(
+            self.stages,
+            Self::count_at(&summary, column),
+        ))
+    }
+
+    fn column_of(header: &str) -> Option<usize> {
+        header
+            .split_whitespace()
+            .position(|event| event == Self::INSTRUCTIONS_EVENT)
+    }
+
+    fn count_at(counts: &[u64], column: usize) -> u64 {
+        counts.get(column).copied().unwrap_or(0)
     }
 
     fn counts(fields: &str) -> Vec<u64> {
@@ -147,7 +160,7 @@ mod tests {
         let measurement = ProfileReader::new("compiler").read(PROFILE).unwrap();
         let rows: Vec<(String, u64)> = measurement
             .rows()
-            .map(|(stage, cost)| (stage.to_string(), cost.instructions))
+            .map(|(stage, instructions)| (stage.to_string(), instructions))
             .collect();
         let expected = [
             ("check", 300),

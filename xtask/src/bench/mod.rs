@@ -2,7 +2,6 @@ mod callgrind;
 mod comparison;
 mod compiler;
 mod corpus;
-mod cost;
 mod failure;
 mod fixed_seed;
 mod measurement;
