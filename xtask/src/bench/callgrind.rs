@@ -89,7 +89,11 @@ impl Callgrind {
         let text = fs::read_to_string(&profile)
             .map_err(|_| TaskFailure::profile_missing(program, &output.stderr))?;
         let measurement = match output.status.success() {
-            true => Some(ProfileReader::new(&self.compiler.crate_name).read(&text)?),
+            true => Some(
+                ProfileReader::new(&self.compiler.crate_name)
+                    .read(&text)
+                    .map_err(|failure| failure.while_measuring(program))?,
+            ),
             false => None,
         };
         Ok(ProgramResult {

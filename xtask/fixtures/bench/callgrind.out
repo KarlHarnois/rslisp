@@ -13,9 +13,15 @@ fn=compiler::cli::Terminal::emit
 cfn=compiler::cli::Terminal::check
 calls=1 0
 0 900
-cfn=compiler::check::Checker::check
+cfn=compiler::check::ProgramChecker::check
 calls=1 0
 0 200
+cfn=compiler::emit::RustEmitter::emit
+calls=1 0
+0 50
+cfn=compiler::build::formatting::EmittedFormatting::apply
+calls=1 0
+0 20
 cfn=core::ptr::drop_in_place<compiler::expand::Program>
 calls=1 0
 0 60
@@ -28,12 +34,12 @@ calls=1 0
 
 fn=<compiler::cli::Terminal as core::ops::Drop>::drop
 0 0
-cfn=compiler::check::module::<impl compiler::check::Checker>::finish
+cfn=compiler::check::module::<impl compiler::check::ProgramChecker>::finish
 calls=2 0
 0 100
 
 fn=compiler::expand::Expander::expand
 0 400
-cfn=compiler::check::Checker::check
+cfn=compiler::check::ProgramChecker::check
 calls=1 0
 0 100

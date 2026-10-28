@@ -32,6 +32,17 @@ impl TaskFailure {
         ))
     }
 
+    pub fn stage_entry_missing(entry_point: &str) -> Self {
+        Self::new(format!(
+            "the profile has no call from the command-line module into `{entry_point}`, \
+             so that stage's instructions would count as `other`"
+        ))
+    }
+
+    pub fn while_measuring(self, program: &Path) -> Self {
+        Self::new(format!("while measuring `{}`: {self}", program.display()))
+    }
+
     pub fn malformed_profile(missing: &str) -> Self {
         Self::new(format!("the callgrind profile has no `{missing}` line"))
     }
