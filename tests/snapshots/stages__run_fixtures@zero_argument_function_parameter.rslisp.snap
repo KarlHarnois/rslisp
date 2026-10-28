@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/zero_argument_function_parameter.rslisp
+---
+2024
+2025

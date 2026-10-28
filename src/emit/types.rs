@@ -607,7 +607,7 @@ impl<'a> RustTypes<'a> {
         position: TypePosition,
         scope: &LifetimeScope,
     ) -> String {
-        let scope = self.function_parameter_scope(parameters, result, position, scope);
+        let scope = self.function_parameter_scope(result, position, scope);
         let (inner_scope, binder) = Self::function_scope(
             position,
             &scope,
@@ -638,15 +638,12 @@ impl<'a> RustTypes<'a> {
 
     fn function_parameter_scope<'scope>(
         &self,
-        parameters: &[Type],
         result: &Type,
         position: TypePosition,
         scope: &'scope LifetimeScope,
     ) -> Cow<'scope, LifetimeScope> {
         let names_lifetime = position == TypePosition::Signature
-            && self
-                .program
-                .function_type_returns_argument_borrow(parameters, result);
+            && self.program.function_type_returns_borrow(result);
         names_lifetime
             .then(|| scope.entering_function())
             .flatten()

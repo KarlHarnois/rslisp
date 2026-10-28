@@ -1,0 +1,36 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/zero_argument_function_parameter.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn measure<'a>(constructor: impl FnOnce() -> Car<'a>) -> u16 {
+    constructor().year
+}
+
+fn measure_model_year<'a>(constructor: impl FnOnce(u16) -> Car<'a>) -> u16 {
+    constructor(2025).year
+}
+
+fn main() {
+    let make = "Nissan".to_string();
+    println!(
+        "{}",
+        measure(|| Car {
+            make: make.as_str(),
+            year: 2024
+        })
+    );
+    println!(
+        "{}",
+        measure_model_year(|year: u16| Car {
+            make: make.as_str(),
+            year
+        })
+    )
+}
