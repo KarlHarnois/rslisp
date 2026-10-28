@@ -1,20 +1,25 @@
 use super::problems::{BorrowedStorage, OwnershipProblems};
-use crate::core::{BindingId, BindingKind, FieldLabel, PrimitiveType, VariantInfo};
+use super::slots::DeclaredSlots;
+use crate::core::{BindingId, FieldLabel, PrimitiveType};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
     Borrow, Lifetime, RustType, Type, TypeDisplay, TypedArgument, TypedBinder, TypedBlock,
     TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedProgram,
-    TypedStructExpr, VariantPayload,
+    TypedStructExpr,
 };
 
 pub struct ReturnedBorrows<'p> {
     program: &'p TypedProgram,
+    slots: DeclaredSlots<'p>,
 }
 
 impl<'p> ReturnedBorrows<'p> {
     pub fn new(program: &'p TypedProgram) -> Self {
-        Self { program }
+        Self {
+            program,
+            slots: DeclaredSlots::new(program),
+        }
     }
 
     pub fn check(&self, lambda: &TypedLambda) -> Option<Diagnostic> {
@@ -35,36 +40,22 @@ impl<'p> ReturnedBorrows<'p> {
     }
 
     fn field_storage(&self, owner: BindingId, label: &FieldLabel) -> Option<BorrowedStorage> {
-        let definition = self.program.structs.get(owner)?;
-        let index = definition
-            .fields
-            .iter()
-            .position(|(name, _)| name.as_ref() == label.name.as_ref())?;
-        let owned = self.owned(&definition.fields[index].1)?;
+        let slot = self.slots.field(owner, label)?;
         Some(BorrowedStorage::Field {
-            field: label.name.to_string(),
-            owner: self.name(owner),
-            owned,
-            declared: *definition.field_spans.get(index)?,
+            field: slot.name.to_string(),
+            owner: self.name(slot.owner),
+            owned: self.owned(slot.declared)?,
+            declared: slot.span,
         })
     }
 
     fn payload_storage(&self, variant: BindingId, position: usize) -> Option<BorrowedStorage> {
-        let BindingKind::Variant(_, VariantInfo { owner, index, .. }) =
-            self.program.bindings.get(variant).kind()
-        else {
-            return None;
-        };
-        let definition = self.program.enums.get(owner)?.variants.get(index)?;
-        let VariantPayload::Positional(payloads) = &definition.payload else {
-            return None;
-        };
-        let owned = self.owned(payloads.get(position)?)?;
+        let slot = self.slots.positional_payload(variant, position)?;
         Some(BorrowedStorage::Payload {
-            variant: definition.name.to_string(),
-            owner: self.name(owner),
-            owned,
-            declared: *definition.payload_spans.get(position)?,
+            variant: slot.name.to_string(),
+            owner: self.name(slot.owner),
+            owned: self.owned(slot.declared)?,
+            declared: slot.span,
         })
     }
 

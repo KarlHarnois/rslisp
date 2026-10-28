@@ -11,6 +11,7 @@ mod problems;
 mod returned;
 mod rewrite;
 mod slices;
+mod slots;
 mod stored;
 mod usage;
 mod values;

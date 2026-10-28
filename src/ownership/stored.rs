@@ -2,12 +2,12 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use super::problems::{FunctionStorage, OwnershipProblems};
-use crate::core::{BindingId, BindingKind, FieldLabel, VariantInfo};
+use super::slots::DeclaredSlots;
+use crate::core::{BindingId, FieldLabel};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
     Type, TypedArgument, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram, TypedStructExpr,
-    VariantPayload,
 };
 
 pub struct StoredClosures<'p> {
@@ -18,7 +18,7 @@ pub struct StoredClosures<'p> {
 
 impl<'p> StoredClosures<'p> {
     pub fn check(program: &'p TypedProgram) -> Vec<Diagnostic> {
-        let slots = FunctionSlots { program };
+        let slots = FunctionSlots::new(program);
         let storing = StoringParameters::collect(program, &slots);
         let closures = Self {
             program,
@@ -62,42 +62,35 @@ struct FunctionSlot {
 }
 
 struct FunctionSlots<'p> {
-    program: &'p TypedProgram,
+    declared: DeclaredSlots<'p>,
 }
 
-impl FunctionSlots<'_> {
+impl<'p> FunctionSlots<'p> {
+    fn new(program: &'p TypedProgram) -> Self {
+        Self {
+            declared: DeclaredSlots::new(program),
+        }
+    }
+
     fn field(&self, owner: BindingId, label: &FieldLabel) -> Option<FunctionSlot> {
-        let definition = self.program.structs.get(owner)?;
-        let index = definition
-            .fields
-            .iter()
-            .position(|(name, _)| name.as_ref() == label.name.as_ref())?;
-        let (name, declared) = &definition.fields[index];
-        if !Self::is_function(declared) {
+        let slot = self.declared.field(owner, label)?;
+        if !Self::is_function(slot.declared) {
             return None;
         }
         Some(FunctionSlot {
-            storage: Rc::new(FunctionStorage::Field(name.clone())),
-            declared: *definition.field_spans.get(index)?,
+            storage: Rc::new(FunctionStorage::Field(Rc::clone(slot.name))),
+            declared: slot.span,
         })
     }
 
     fn payload(&self, variant: BindingId, position: usize) -> Option<FunctionSlot> {
-        let BindingKind::Variant(_, VariantInfo { owner, index, .. }) =
-            self.program.bindings.get(variant).kind()
-        else {
-            return None;
-        };
-        let definition = self.program.enums.get(owner)?.variants.get(index)?;
-        let VariantPayload::Positional(payloads) = &definition.payload else {
-            return None;
-        };
-        if !Self::is_function(payloads.get(position)?) {
+        let slot = self.declared.payload(variant, position)?;
+        if !Self::is_function(slot.declared) {
             return None;
         }
         Some(FunctionSlot {
-            storage: Rc::new(FunctionStorage::Payload(definition.name.clone())),
-            declared: *definition.payload_spans.get(position)?,
+            storage: Rc::new(FunctionStorage::Payload(Rc::clone(slot.name))),
+            declared: slot.span,
         })
     }
 
