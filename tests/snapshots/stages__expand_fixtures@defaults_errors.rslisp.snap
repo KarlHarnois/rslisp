@@ -85,3 +85,11 @@ help: a parameter with a similar name exists
 10 - (defn close-parameter (:name str (defaults :nmae "ana")) name)
 10 + (defn close-parameter (:name str (defaults :name "ana")) name)
    |
+
+error[L0324]: `user` has no field `admn?`
+  --> expand/defaults_errors.rslisp:11:64
+   |
+11 | (defstruct user :name str :admin? bool (defaults :admin? false :admn? true))
+   |                                                                ^^^^^^ here
+   |
+   = help: the fields of `user` are name, admin?
