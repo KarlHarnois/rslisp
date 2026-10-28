@@ -2418,21 +2418,13 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn update_base(&mut self, base: &TypedExpr) -> UpdateArgument {
-        if Self::is_place(base) {
+        if base.is_place() {
             UpdateArgument {
                 name: None,
                 code: self.expr(base),
             }
         } else {
             self.update_argument(base, "base")
-        }
-    }
-
-    fn is_place(value: &TypedExpr) -> bool {
-        match &value.kind {
-            TypedExprKind::Leaf(TypedLeaf::Local(_)) => true,
-            TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => Self::is_place(owner),
-            _ => false,
         }
     }
 

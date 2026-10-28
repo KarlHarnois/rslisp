@@ -36,9 +36,21 @@ impl TypedExpr {
     }
 
     pub fn place_root(&self) -> Option<BindingId> {
+        self.field_place().map(|place| place.root)
+    }
+
+    pub fn field_place(&self) -> Option<FieldPlace<'_>> {
         match &self.kind {
-            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => Some(*binding),
-            TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => owner.place_root(),
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => Some(FieldPlace {
+                root: *binding,
+                root_type: &self.ty,
+                path: Vec::new(),
+            }),
+            TypedExprKind::Struct(TypedStructExpr::Field(owner, label)) => {
+                let mut place = owner.field_place()?;
+                place.path.push(label);
+                Some(place)
+            }
             _ => None,
         }
     }
@@ -49,6 +61,18 @@ impl TypedExpr {
                 .children()
                 .into_iter()
                 .any(|child| child.mentions_local(binding))
+    }
+}
+
+pub struct FieldPlace<'a> {
+    pub root: BindingId,
+    pub root_type: &'a Type,
+    pub path: Vec<&'a FieldLabel>,
+}
+
+impl FieldPlace<'_> {
+    pub fn reads_field(&self) -> bool {
+        !self.path.is_empty()
     }
 }
 

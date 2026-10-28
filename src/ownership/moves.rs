@@ -7,21 +7,15 @@ use crate::core::{BindingArena, BindingId, FieldLabel, FieldSpelling};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Borrow, ClosureKind, CopyRules, GenericId, GenericParam, InferredCopies, TemplateBorrows, Type,
-    TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda,
-    TypedLeaf, TypedStructExpr,
+    Borrow, ClosureKind, CopyRules, FieldPlace, GenericId, GenericParam, InferredCopies,
+    TemplateBorrows, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
+    TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Usage {
     Move,
     Borrow,
-}
-
-struct Place<'a> {
-    binding: BindingId,
-    ty: &'a Type,
-    path: FieldPath,
 }
 
 pub struct MoveReport {
@@ -163,63 +157,49 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn refill(&mut self, base: &TypedExpr, fields: &[(FieldLabel, TypedExpr)]) {
-        if let Some(place) = Self::place(base) {
+        if let Some(place) = base.field_place() {
             let names = fields.iter().map(|(label, _)| &*label.name);
-            self.moved.refill(place.binding, &place.path, names);
+            self.moved
+                .refill(place.root, &Self::field_path(&place), names);
         }
     }
 
     fn update_base(&mut self, base: &TypedExpr) {
-        match Self::place(base) {
-            Some(place) if !place.path.is_empty() && !self.copy.is_copy(&base.ty) => {
+        match base.field_place() {
+            Some(place) if place.reads_field() && !self.copy.is_copy(&base.ty) => {
                 self.expr(base, Usage::Borrow);
-                self.move_field(place, base);
+                self.move_field(&place, base.span);
             }
             _ => self.expr(base, Usage::Move),
         }
     }
 
-    fn place(value: &TypedExpr) -> Option<Place<'_>> {
-        match &value.kind {
-            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => Some(Place {
-                binding: *binding,
-                ty: &value.ty,
-                path: FieldPath::new(),
-            }),
-            TypedExprKind::Struct(TypedStructExpr::Field(owner, label)) => {
-                let mut place = Self::place(owner)?;
-                place.path.push(label.name.clone());
-                Some(place)
-            }
-            _ => None,
-        }
-    }
-
-    fn move_field(&mut self, place: Place, base: &TypedExpr) {
-        if self.copy.is_copy(place.ty) {
+    fn move_field(&mut self, place: &FieldPlace, span: Span) {
+        if self.copy.is_copy(place.root_type) {
             return;
         }
         let site = MoveSite::Field {
-            span: base.span,
-            place: self.place_text(base).into(),
+            span,
+            place: self.place_text(place).into(),
         };
-        self.moved.move_field(place.binding, place.path, site);
+        self.moved
+            .move_field(place.root, Self::field_path(place), site);
     }
 
-    fn place_text(&self, place: &TypedExpr) -> String {
-        match &place.kind {
-            TypedExprKind::Struct(TypedStructExpr::Field(owner, label)) => {
-                let owner = self.place_text(owner);
-                let field = label.spelled(&label.name);
-                match label.spelling {
-                    FieldSpelling::Keyword => format!("({field} {owner})"),
-                    FieldSpelling::Bare => format!("(field {owner} {field})"),
-                }
-            }
-            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => {
-                self.bindings.get(*binding).name().to_string()
-            }
-            _ => unreachable!("a field owner is a chain of fields over a local"),
+    fn field_path(place: &FieldPlace) -> FieldPath {
+        place.path.iter().map(|label| label.name.clone()).collect()
+    }
+
+    fn place_text(&self, place: &FieldPlace) -> String {
+        let root = self.bindings.get(place.root).name().to_string();
+        place.path.iter().fold(root, Self::field_text)
+    }
+
+    fn field_text(owner: String, label: &&FieldLabel) -> String {
+        let field = label.spelled(&label.name);
+        match label.spelling {
+            FieldSpelling::Keyword => format!("({field} {owner})"),
+            FieldSpelling::Bare => format!("(field {owner} {field})"),
         }
     }
 
