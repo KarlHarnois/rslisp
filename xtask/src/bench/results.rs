@@ -3,6 +3,7 @@ use std::fmt;
 use std::fs;
 use std::path::Path;
 
+use super::header::ResultHeader;
 use super::measurement::Measurement;
 use super::table::{GroupedCount, MarkdownTable};
 use crate::failure::TaskFailure;
@@ -14,6 +15,7 @@ pub struct ProgramResult {
 }
 
 pub struct ResultSet {
+    header: ResultHeader,
     programs: Vec<ProgramResult>,
 }
 
@@ -22,23 +24,37 @@ impl ResultSet {
     const STAGE_SEPARATOR: char = '=';
 
     pub fn new(programs: Vec<ProgramResult>) -> Self {
-        Self { programs }
+        Self {
+            header: ResultHeader::default(),
+            programs,
+        }
+    }
+
+    pub fn with_header(self, header: ResultHeader) -> Self {
+        Self { header, ..self }
     }
 
     pub fn load(path: &Path) -> Result<Self, TaskFailure> {
         let text =
             fs::read_to_string(path).map_err(|error| TaskFailure::unreadable(path, error))?;
+        let header = ResultHeader::read(&text);
         let programs = text
             .lines()
+            .skip(header.line_count())
             .map(|line| {
                 Self::parse_program(line).ok_or_else(|| TaskFailure::malformed_results(path, line))
             })
             .collect::<Result<_, _>>()?;
-        Ok(Self { programs })
+        Ok(Self { header, programs })
     }
 
     pub fn save(&self, path: &Path) -> Result<(), TaskFailure> {
         fs::write(path, self.serialize()).map_err(|error| TaskFailure::unwritable(path, error))
+    }
+
+    #[cfg(test)]
+    pub fn method_key(&self) -> Option<&str> {
+        self.header.method_key()
     }
 
     pub fn programs(&self) -> &[ProgramResult] {
@@ -52,7 +68,8 @@ impl ResultSet {
     }
 
     fn serialize(&self) -> String {
-        self.programs.iter().map(Self::serialize_program).collect()
+        let programs: String = self.programs.iter().map(Self::serialize_program).collect();
+        format!("{}{programs}", self.header.serialize())
     }
 
     fn serialize_program(result: &ProgramResult) -> String {
@@ -160,6 +177,20 @@ mod tests {
             ])
         }
 
+        fn header() -> ResultHeader {
+            ResultHeader::new(
+                "a1-b2-c3".to_string(),
+                "rustc 1.0.0 (fake 2020-01-01)".to_string(),
+                "valgrind-0.0.0".to_string(),
+            )
+        }
+
+        fn fixture(name: &str) -> std::path::PathBuf {
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("fixtures/bench")
+                .join(name)
+        }
+
         fn scratch_file(name: &str) -> std::path::PathBuf {
             std::env::temp_dir().join(format!("xtask-bench-{}-{name}", std::process::id()))
         }
@@ -171,6 +202,30 @@ mod tests {
         ResultsFixture::results().save(&path).unwrap();
         let reloaded = ResultSet::load(&path).unwrap();
         assert_eq!(reloaded.programs(), ResultsFixture::results().programs());
+    }
+
+    #[test]
+    fn reloads_the_header_of_saved_results() {
+        let path = ResultsFixture::scratch_file("headed.tsv");
+        let results = ResultsFixture::results().with_header(ResultsFixture::header());
+        results.save(&path).unwrap();
+        let reloaded = ResultSet::load(&path).unwrap();
+        assert_eq!(reloaded.header, ResultsFixture::header());
+        assert_eq!(reloaded.programs(), results.programs());
+    }
+
+    #[test]
+    fn reads_the_method_key_of_a_headed_file() {
+        let results = ResultSet::load(&ResultsFixture::fixture("headed-results.tsv")).unwrap();
+        assert_eq!(results.method_key(), Some("1111111-2222222-3333333"));
+        assert_eq!(results.programs().len(), 2);
+    }
+
+    #[test]
+    fn loads_a_file_without_a_header() {
+        let results = ResultSet::load(&ResultsFixture::fixture("headless-results.tsv")).unwrap();
+        assert_eq!(results.method_key(), None);
+        assert_eq!(results.programs().len(), 2);
     }
 
     #[test]
