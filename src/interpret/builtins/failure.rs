@@ -79,7 +79,6 @@ impl FailureDescription {
         Self::SUGGEST,
     ];
     const CODE: &'static str = "code";
-    const DEFAULT_LABEL: &'static str = "here";
     const EARLIER: &'static str = "earlier";
     const EARLIER_LABEL: &'static str = "earlier-label";
     const LABEL: &'static str = "label";
@@ -190,9 +189,8 @@ impl FailureDescription {
     }
 
     fn labelled(self, message: String, culprit: Span) -> Diagnostic {
-        let label = self.label.unwrap_or_else(|| Self::DEFAULT_LABEL.to_owned());
         let earlier = self.earlier.zip(self.earlier_label);
-        InterpretProblems::failed(self.code, message, culprit, label, earlier)
+        InterpretProblems::failed(self.code, message, culprit, self.label, earlier)
     }
 }
 
