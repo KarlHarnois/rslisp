@@ -166,9 +166,9 @@ jobs:
           brief=$(compare brief)
           run_summary="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           heading="## Front-end instruction counts"
-          versions="Before: \`$BASE_REF\` at ${BASE_SHA::7}. After: ${HEAD_SHA::7} merged into it. This report never fails CI."
+          versions="\`$BASE_REF\` at ${BASE_SHA::7} against ${HEAD_SHA::7} merged into it."
           printf '%s\n\n%s\n\n%s\n' "$heading" "$versions" "$full" >> "$GITHUB_STEP_SUMMARY"
-          printf '%s\n%s\n\n%s The [run summary](%s) has every stage of every program.\n\n%s\n' \
+          printf '%s\n%s\n\n%s [Every stage](%s).\n\n%s\n' \
             "$REPORT_MARKER" "$heading" "$versions" "$run_summary" "$brief" > "$REPORT"
       - name: Post the report on the pull request
         if: github.event.pull_request.head.repo.full_name == github.repository
