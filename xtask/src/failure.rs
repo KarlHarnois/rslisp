@@ -39,6 +39,13 @@ impl TaskFailure {
         Self::new(format!("cannot parse `{}`: {error}", path.display()))
     }
 
+    pub fn constant_missing(path: &Path, owner: &str, name: &str) -> Self {
+        Self::new(format!(
+            "`{}` defines no string constant `{owner}::{name}`",
+            path.display()
+        ))
+    }
+
     pub fn report(&self) -> ExitCode {
         eprintln!("error: {self}");
         ExitCode::FAILURE

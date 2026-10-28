@@ -14,9 +14,9 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::{Args, Subcommand, ValueEnum};
-use rslisp::language::Language;
 
 use crate::failure::TaskFailure;
+use crate::language::LanguageSource;
 use callgrind::Callgrind;
 use comparison::Comparison;
 use compiler::{BuiltCompiler, CompilerBuild};
@@ -112,6 +112,7 @@ struct FrontEndBenchmark<'a> {
 impl<'a> FrontEndBenchmark<'a> {
     const PROFILES: &'static str = "target/bench";
     const EMPTY_PROGRAM: &'static str = "xtask/src/bench/empty_program";
+    const EXTENSION_CONSTANT: &'static str = "EXTENSION";
     const FIXED_COMPILER: &'static str = "target/bench/compiler/front-end";
 
     fn new(root: &'a Path, options: MeasureOptions) -> Self {
@@ -136,24 +137,25 @@ impl<'a> FrontEndBenchmark<'a> {
         }
     }
 
-    fn corpus(&self) -> Result<Corpus, TaskFailure> {
+    fn profile_corpus(&self, callgrind: &Callgrind) -> Result<ResultSet, TaskFailure> {
+        let extension = LanguageSource::new(self.root).constant(Self::EXTENSION_CONSTANT)?;
+        let mut programs = self.corpus(&extension)?.programs()?;
+        programs.push(self.empty_program(&extension));
+        Ok(ResultSet::new(callgrind.measure_all(&programs)?))
+    }
+
+    fn corpus(&self, extension: &str) -> Result<Corpus, TaskFailure> {
         let directory = match &self.options.corpus {
             Some(corpus) => Self::absolute(corpus)?,
             None => self.root.join(Corpus::DIRECTORY),
         };
-        Ok(Corpus::new(directory))
+        Ok(Corpus::new(directory, extension.to_string()))
     }
 
-    fn profile_corpus(&self, callgrind: &Callgrind) -> Result<ResultSet, TaskFailure> {
-        let mut programs = self.corpus()?.programs()?;
-        programs.push(self.empty_program());
-        Ok(ResultSet::new(callgrind.measure_all(&programs)?))
-    }
-
-    fn empty_program(&self) -> PathBuf {
+    fn empty_program(&self, extension: &str) -> PathBuf {
         self.root
             .join(Self::EMPTY_PROGRAM)
-            .with_extension(Language::EXTENSION)
+            .with_extension(extension)
     }
 
     fn place_at_fixed_path(&self, compiler: BuiltCompiler) -> Result<BuiltCompiler, TaskFailure> {
