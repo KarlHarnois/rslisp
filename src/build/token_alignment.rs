@@ -1,3 +1,5 @@
+use similar::{Algorithm, DiffOp};
+
 use crate::emit::SpanMap;
 
 pub(crate) struct TokenAlignment {
@@ -36,37 +38,43 @@ impl TokenAlignment {
     }
 
     fn align(&self) -> Option<Vec<(usize, usize, usize, usize)>> {
-        let original = self.original.len();
-        let formatted = self.formatted.len();
-        let mut lengths = vec![vec![0usize; formatted + 1]; original + 1];
-        for left in (0..original).rev() {
-            for right in (0..formatted).rev() {
-                lengths[left][right] = if self.original[left].text == self.formatted[right].text {
-                    lengths[left + 1][right + 1] + 1
-                } else {
-                    lengths[left + 1][right].max(lengths[left][right + 1])
-                };
-            }
+        let original_texts = Self::texts(&self.original);
+        let formatted_texts = Self::texts(&self.formatted);
+        let operations =
+            similar::capture_diff_slices(Algorithm::Myers, &original_texts, &formatted_texts);
+        Some(self.equal_pairs(&operations))
+    }
+
+    fn texts(tokens: &[LocatedToken]) -> Vec<&str> {
+        tokens.iter().map(|token| token.text.as_str()).collect()
+    }
+
+    fn equal_pairs(&self, operations: &[DiffOp]) -> Vec<(usize, usize, usize, usize)> {
+        operations
+            .iter()
+            .filter_map(Self::equal_run)
+            .flat_map(|(original_index, formatted_index, length)| {
+                (0..length)
+                    .map(move |offset| self.pair(original_index + offset, formatted_index + offset))
+            })
+            .collect()
+    }
+
+    fn equal_run(operation: &DiffOp) -> Option<(usize, usize, usize)> {
+        match *operation {
+            DiffOp::Equal {
+                old_index,
+                new_index,
+                len,
+            } => Some((old_index, new_index, len)),
+            _ => None,
         }
-        let mut pairs = Vec::new();
-        let (mut left, mut right) = (0, 0);
-        while left < original && right < formatted {
-            if self.original[left].text == self.formatted[right].text {
-                pairs.push((
-                    self.original[left].start,
-                    self.original[left].end,
-                    self.formatted[right].start,
-                    self.formatted[right].end,
-                ));
-                left += 1;
-                right += 1;
-            } else if lengths[left + 1][right] >= lengths[left][right + 1] {
-                left += 1;
-            } else {
-                right += 1;
-            }
-        }
-        Some(pairs)
+    }
+
+    fn pair(&self, original_index: usize, formatted_index: usize) -> (usize, usize, usize, usize) {
+        let original = &self.original[original_index];
+        let formatted = &self.formatted[formatted_index];
+        (original.start, original.end, formatted.start, formatted.end)
     }
 
     fn map(
@@ -433,6 +441,15 @@ mod tests {
     #[test]
     fn aligns_tokens_across_a_deletion() {
         assert!(!boundaries("{ println!(\"x\") }", "println!(\"x\")").is_empty());
+    }
+
+    #[test]
+    fn aligns_tokens_across_a_trailing_comma() {
+        let original = "call(first, second)";
+        let formatted = "call(first, second,)";
+        let closing = original.find(')').expect("the call closes");
+        let formatted_closing = formatted.find(')').expect("the call closes");
+        assert_eq!(boundaries(original, formatted)[closing], formatted_closing);
     }
 
     #[test]
