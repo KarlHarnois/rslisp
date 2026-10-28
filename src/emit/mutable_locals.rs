@@ -54,7 +54,7 @@ impl<'a> MutableLocals<'a> {
     fn block(&mut self, block: &TypedBlock) {
         for item in &block.items {
             if let TypedBodyItem::Let(binder, value) = item
-                && Self::mutates_capture(binder.binding, value)
+                && self.mutates_capture(binder.binding, value)
             {
                 self.mutating_closures.insert(binder.binding);
             }
@@ -131,7 +131,7 @@ impl<'a> MutableLocals<'a> {
         }
     }
 
-    fn mutates_capture(enclosing: BindingId, value: &TypedExpr) -> bool {
+    fn mutates_capture(&self, enclosing: BindingId, value: &TypedExpr) -> bool {
         let TypedExprKind::Fn(lambda) = &value.kind else {
             return false;
         };
@@ -140,8 +140,10 @@ impl<'a> MutableLocals<'a> {
             .iter()
             .map(|binder| binder.binding)
             .collect();
+        let mutable_inside = MutableLocals::of(value, self.templates).into_set();
         ChangedValues::of(lambda, enclosing)
             .changed_bindings()
+            .chain(mutable_inside)
             .any(|binding| !locals.contains(&binding))
     }
 }
