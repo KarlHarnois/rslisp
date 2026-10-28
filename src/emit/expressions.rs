@@ -170,7 +170,7 @@ pub struct ExpressionEmitter<'a> {
     pub locals: LocalNames,
     pub problems: Vec<Diagnostic>,
     mutable_locals: HashSet<BindingId>,
-    stored_functions: HashSet<BindingId>,
+    stored_functions: StoredFunctions,
     tail_loop: Option<TailLoop>,
     loop_exit: LoopExit,
 }
@@ -200,7 +200,7 @@ impl<'a> ExpressionEmitter<'a> {
             locals,
             problems: Vec::new(),
             mutable_locals: HashSet::new(),
-            stored_functions: HashSet::new(),
+            stored_functions: StoredFunctions::default(),
             tail_loop: None,
             loop_exit: LoopExit::Return,
         }
@@ -253,7 +253,7 @@ impl<'a> ExpressionEmitter<'a> {
         } else {
             ""
         };
-        let position = if self.stored_functions.contains(&param.binding) {
+        let position = if self.stored_functions.stores(param.binding) {
             TypePosition::Value
         } else {
             position
