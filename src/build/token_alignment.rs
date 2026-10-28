@@ -26,7 +26,7 @@ impl TokenAlignment {
     }
 
     fn boundaries(&self) -> Option<Vec<usize>> {
-        let pairs = self.align()?;
+        let pairs = self.align();
         if pairs.is_empty() {
             return None;
         }
@@ -37,12 +37,12 @@ impl TokenAlignment {
         ))
     }
 
-    fn align(&self) -> Option<Vec<(usize, usize, usize, usize)>> {
+    fn align(&self) -> Vec<(usize, usize, usize, usize)> {
         let original_texts = Self::texts(&self.original);
         let formatted_texts = Self::texts(&self.formatted);
         let operations =
             similar::capture_diff_slices(Algorithm::Myers, &original_texts, &formatted_texts);
-        Some(self.equal_pairs(&operations))
+        self.equal_pairs(&operations)
     }
 
     fn texts(tokens: &[LocatedToken]) -> Vec<&str> {
@@ -53,10 +53,7 @@ impl TokenAlignment {
         operations
             .iter()
             .filter_map(Self::equal_run)
-            .flat_map(|(original_index, formatted_index, length)| {
-                (0..length)
-                    .map(move |offset| self.pair(original_index + offset, formatted_index + offset))
-            })
+            .flat_map(|run| self.run_pairs(run))
             .collect()
     }
 
@@ -69,6 +66,13 @@ impl TokenAlignment {
             } => Some((old_index, new_index, len)),
             _ => None,
         }
+    }
+
+    fn run_pairs(
+        &self,
+        (original_index, formatted_index, length): (usize, usize, usize),
+    ) -> impl Iterator<Item = (usize, usize, usize, usize)> + '_ {
+        (0..length).map(move |offset| self.pair(original_index + offset, formatted_index + offset))
     }
 
     fn pair(&self, original_index: usize, formatted_index: usize) -> (usize, usize, usize, usize) {
