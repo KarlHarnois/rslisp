@@ -1,0 +1,34 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/method_iterator_lifetimes.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Depot {
+    size: usize,
+}
+
+fn make_depot(size: usize) -> Depot {
+    Depot { size }
+}
+
+fn main() {
+    let lot = make_depot(1);
+    let models: Vec<&str> = vec!["Leaf", "Ariya"];
+    println!("{}", lot.tally(models.iter().copied()));
+    println!("{}", Counter::total(models.iter().copied(), &lot))
+}
+
+trait Counter {
+    fn tally<'a>(&self, _: impl Iterator<Item = &'a str>) -> usize;
+    fn total<'a>(_: impl Iterator<Item = &'a str>, _: &Self) -> usize;
+}
+
+impl Counter for Depot {
+    fn tally<'a>(&self, names: impl Iterator<Item = &'a str>) -> usize {
+        self.size + names.count()
+    }
+    fn total<'a>(names: impl Iterator<Item = &'a str>, lot: &Depot) -> usize {
+        lot.size + names.count()
+    }
+}

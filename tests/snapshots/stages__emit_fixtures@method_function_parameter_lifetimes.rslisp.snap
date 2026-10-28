@@ -1,0 +1,101 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/method_function_parameter_lifetimes.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn make_car(make: &str, year: u16) -> Car<'_> {
+    Car { make, year }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Depot {
+    size: u16,
+}
+
+fn make_depot(size: u16) -> Depot {
+    Depot { size }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Yard {
+    rows: u16,
+}
+
+fn make_yard(rows: u16) -> Yard {
+    Yard { rows }
+}
+
+fn main() {
+    let model = "Leaf".to_string();
+    let lot = make_depot(1);
+    println!(
+        "{}",
+        Garage::park(
+            |make: &str, year: u16| Car {
+                make: model.as_str(),
+                year
+            },
+            &lot
+        )
+    );
+    println!(
+        "{}",
+        Garage::restock(
+            || Car {
+                make: model.as_str(),
+                year: 2025
+            },
+            &lot
+        )
+    );
+    println!(
+        "{}",
+        lot.inspect(|| Car {
+            make: model.as_str(),
+            year: 2026
+        })
+    );
+    println!("{}", Builder::assemble(make_car, &lot));
+    println!("{}", Builder::assemble(make_car, &make_yard(2)))
+}
+
+trait Garage {
+    fn park<'a>(_: impl Fn(&'a str, u16) -> Car<'a>, _: &Self) -> u16;
+    fn restock<'a>(_: impl Fn() -> Car<'a>, _: &Self) -> u16;
+    fn inspect<'a>(&self, _: impl Fn() -> Car<'a>) -> u16;
+}
+
+trait Builder {
+    fn assemble(_: impl Fn(&str, u16) -> Car<'_>, _: &Self) -> u16;
+}
+
+impl Garage for Depot {
+    fn park<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>, lot: &Depot) -> u16 {
+        lot.size + constructor("Nissan", 2024).year
+    }
+    fn restock<'a>(constructor: impl FnOnce() -> Car<'a>, lot: &Depot) -> u16 {
+        lot.size + constructor().year
+    }
+    fn inspect<'a>(&self, constructor: impl FnOnce() -> Car<'a>) -> u16 {
+        self.size + constructor().year
+    }
+}
+
+impl Builder for Depot {
+    fn assemble(constructor: impl FnOnce(&str, u16) -> Car<'_>, lot: &Depot) -> u16 {
+        lot.size + constructor("Nissan", 2024).year
+    }
+}
+
+impl Builder for Yard {
+    fn assemble(constructor: impl FnOnce(&str, u16) -> Car<'_>, lot: &Yard) -> u16 {
+        let make = "Nissan".to_string();
+        lot.rows + constructor(make.as_str(), 2025).year
+    }
+}

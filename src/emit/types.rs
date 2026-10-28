@@ -46,6 +46,11 @@ impl LifetimeScope {
         self
     }
 
+    pub fn naming_signature_lifetimes(self, fresh: &Rc<FreshLifetimes>) -> Self {
+        self.naming_opaque_lifetimes(fresh)
+            .naming_function_lifetime()
+    }
+
     pub fn naming_function_lifetime(mut self) -> Self {
         self.names_function_lifetime = true;
         self

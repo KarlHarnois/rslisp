@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::hash::Hash;
 use std::rc::Rc;
 
 use super::expressions::ExpressionEmitter;
@@ -7,6 +8,7 @@ use super::fresh_lifetimes::FreshLifetimes;
 use super::literal_generics::LiteralGenerics;
 use super::locals::LocalNames;
 use super::mangle::NameMangler;
+use super::method_elisions::MethodElisions;
 use super::mutable_locals::MutableLocals;
 use super::opaque_borrows::OpaqueBorrows;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
@@ -321,6 +323,10 @@ impl<'a> ItemEmitter<'a> {
             method.receiver.is_some(),
         );
         let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
+        let mut declared =
+            self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes);
+        let opaque_lifetimes = Rc::new(FreshLifetimes::new(declared.clone()));
+        let higher_ranked = self.method_elisions().elided_positions(method.binding);
         let mut rendered = Vec::new();
         if let Some(kind) = method.receiver {
             let lifetime = parameters.first().and_then(|parameter| {
@@ -329,18 +335,30 @@ impl<'a> ItemEmitter<'a> {
             rendered.push(Self::receiver_keyword(kind, lifetime.as_deref()));
         }
         let first = usize::from(method.receiver.is_some());
-        rendered.extend(parameters.iter().skip(first).map(|parameter| {
-            format!(
-                "_: {}",
-                Self::show_self_type(
-                    parameter,
-                    self_generic,
-                    &types,
-                    TypePosition::Signature,
-                    &scope,
-                )
-            )
-        }));
+        rendered.extend(
+            parameters
+                .iter()
+                .enumerate()
+                .skip(first)
+                .map(|(position, parameter)| {
+                    let parameter_scope = Self::naming_parameter_lifetimes(
+                        scope.clone(),
+                        &opaque_lifetimes,
+                        &higher_ranked,
+                        &position,
+                    );
+                    format!(
+                        "_: {}",
+                        Self::show_self_type(
+                            parameter,
+                            self_generic,
+                            &types,
+                            TypePosition::Signature,
+                            &parameter_scope,
+                        )
+                    )
+                }),
+        );
         let result = if RustTypes::is_unit(result) {
             String::new()
         } else {
@@ -356,10 +374,8 @@ impl<'a> ItemEmitter<'a> {
             )
         };
         let name = NameMangler::value(self.program.bindings.get(method.binding).name());
-        let generics = Self::with_lifetimes(
-            &self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),
-            String::new(),
-        );
+        declared.extend(opaque_lifetimes.issued());
+        let generics = Self::with_lifetimes(&declared, String::new());
         let header = format!("fn {name}{generics}({}){result}", rendered.join(", "));
         if method.default.is_none() {
             return vec![Fragment::Text(format!("{header};"))];
@@ -539,34 +555,42 @@ impl<'a> ItemEmitter<'a> {
         let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
         let used = self.used_written_lifetimes(&definition.value);
         let flowing = self.result_borrows.analyse(lambda).flows;
+        let mut declared =
+            self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes);
+        let mut reserved = declared.clone();
+        reserved.extend(reserved_lifetime.map(str::to_string));
+        let opaque_lifetimes = Rc::new(FreshLifetimes::new(reserved));
+        let higher_ranked = self.method_elisions().elided_positions(binding);
         let mut params = Vec::new();
         if let Some(kind) = receiver {
             let first = &lambda.params[0];
             emitter.locals.bind_receiver(first.binding);
             let receiver_lifetime = self.receiver_lifetime(first, &scope);
             params.push(Self::receiver_keyword(kind, receiver_lifetime.as_deref()));
-            params.extend(lambda.params[1..].iter().map(|param| {
-                self.bind_parameter_lifetime(
-                    &mut emitter,
-                    param,
-                    &definition.scheme.lifetimes,
-                    &used,
-                    inferred.as_deref(),
-                    &flowing,
-                )
-            }));
-        } else {
-            params.extend(lambda.params.iter().map(|param| {
-                self.bind_parameter_lifetime(
-                    &mut emitter,
-                    param,
-                    &definition.scheme.lifetimes,
-                    &used,
-                    inferred.as_deref(),
-                    &flowing,
-                )
-            }));
         }
+        let first = usize::from(receiver.is_some());
+        params.extend(
+            lambda
+                .params
+                .iter()
+                .enumerate()
+                .skip(first)
+                .map(|(position, param)| {
+                    let scope = Self::naming_parameter_lifetimes(
+                        self.parameter_scope(
+                            param,
+                            &definition.scheme.lifetimes,
+                            &used,
+                            inferred.as_deref(),
+                            &flowing,
+                        ),
+                        &opaque_lifetimes,
+                        &higher_ranked,
+                        &position,
+                    );
+                    emitter.bind_parameter_in(param, TypePosition::Signature, &scope)
+                }),
+        );
         let result = match &definition.value.ty {
             Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
                 let position = self.result_position(parameters, inferred.as_deref());
@@ -577,10 +601,8 @@ impl<'a> ItemEmitter<'a> {
         let body = emitter.function_body(&lambda.body);
         self.absorb(emitter);
         let name = NameMangler::value(self.program.bindings.get(binding).name());
-        let generics = Self::with_lifetimes(
-            &self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),
-            String::new(),
-        );
+        declared.extend(opaque_lifetimes.issued());
+        let generics = Self::with_lifetimes(&declared, String::new());
         vec![Fragment::Spanned(
             definition.span,
             vec![
@@ -629,17 +651,21 @@ impl<'a> ItemEmitter<'a> {
         )]
     }
 
-    fn bind_parameter_lifetime(
-        &self,
-        emitter: &mut ExpressionEmitter<'_>,
-        param: &TypedBinder,
-        lifetimes: &[BindingId],
-        used: &HashSet<BindingId>,
-        inferred: Option<&str>,
-        flowing: &HashSet<BindingId>,
-    ) -> String {
-        let scope = self.parameter_scope(param, lifetimes, used, inferred, flowing);
-        emitter.bind_parameter_in(param, TypePosition::Signature, &scope)
+    fn naming_parameter_lifetimes<Parameter: Eq + Hash>(
+        scope: LifetimeScope,
+        fresh: &Rc<FreshLifetimes>,
+        higher_ranked: &HashSet<Parameter>,
+        parameter: &Parameter,
+    ) -> LifetimeScope {
+        if higher_ranked.contains(parameter) {
+            scope.naming_opaque_lifetimes(fresh)
+        } else {
+            scope.naming_signature_lifetimes(fresh)
+        }
+    }
+
+    fn method_elisions(&self) -> MethodElisions<'_, 'a> {
+        MethodElisions::new(self.program, self.plan, &self.result_borrows)
     }
 
     fn parameter_scope(
@@ -687,20 +713,18 @@ impl<'a> ItemEmitter<'a> {
             .params
             .iter()
             .map(|param| {
-                let scope = self
-                    .parameter_scope(
+                let scope = Self::naming_parameter_lifetimes(
+                    self.parameter_scope(
                         param,
                         &definition.scheme.lifetimes,
                         &used,
                         inferred.as_deref(),
                         &flowing,
-                    )
-                    .naming_opaque_lifetimes(&opaque_lifetimes);
-                let scope = if higher_ranked.contains(&param.binding) {
-                    scope
-                } else {
-                    scope.naming_function_lifetime()
-                };
+                    ),
+                    &opaque_lifetimes,
+                    &higher_ranked,
+                    &param.binding,
+                );
                 emitter.bind_parameter_in(param, TypePosition::Signature, &scope)
             })
             .collect();

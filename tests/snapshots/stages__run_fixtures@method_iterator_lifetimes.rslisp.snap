@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/method_iterator_lifetimes.rslisp
+---
+3
+3

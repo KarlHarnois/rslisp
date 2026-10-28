@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/method_function_parameter_lifetimes.rslisp
+---
+2025
+2026
+2027
+2025
+2027
