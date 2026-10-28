@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/closure_calls_changing_closure.rslisp
+---
+error[L0509]: this closure is `FnMut`, but the parameter accepts `Fn`
+ --> check/closure_calls_changing_closure.rslisp:7:17
+  |
+7 |   (keep (fn () (record))))
+  |         --------^^^^^^--
+  |         |       |
+  |         |       `record` changes here
+  |         this closure is passed here
+  |
+  = help: `keep` calls this closure as `Fn`, but it changes `record`
