@@ -1,18 +1,16 @@
-use std::iter;
-use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Output};
 
 use super::callgrind::Callgrind;
 use super::corpus::Corpus;
+use super::git::Git;
 use super::header::ResultHeader;
 use crate::failure::TaskFailure;
 
 pub struct MeasurementMethod<'a> {
-    workspace: &'a Path,
+    git: Git<'a>,
 }
 
 impl<'a> MeasurementMethod<'a> {
-    const GIT: &'static str = "git";
     const REV_PARSE: &'static str = "rev-parse";
     const REVISION: &'static str = "HEAD";
     const RUSTC: &'static str = "rustc";
@@ -21,8 +19,8 @@ impl<'a> MeasurementMethod<'a> {
     const BENCHMARK_CODE: &'static str = "xtask/src/bench";
     const KEY_SEPARATOR: &'static str = "-";
 
-    pub fn new(workspace: &'a Path) -> Self {
-        Self { workspace }
+    pub fn new(git: Git<'a>) -> Self {
+        Self { git }
     }
 
     pub fn header(&self) -> Result<ResultHeader, TaskFailure> {
@@ -34,8 +32,10 @@ impl<'a> MeasurementMethod<'a> {
     }
 
     pub fn key(&self) -> Result<String, TaskFailure> {
-        let objects = self.run(Self::GIT, &Self::keyed_objects())?;
-        Ok(objects
+        let objects = Self::keyed_objects();
+        let arguments: Vec<&str> = objects.iter().map(String::as_str).collect();
+        let hashes = Self::stdout_of(Git::PROGRAM, self.git.run(&arguments)?)?;
+        Ok(hashes
             .split_whitespace()
             .collect::<Vec<_>>()
             .join(Self::KEY_SEPARATOR))
@@ -48,21 +48,21 @@ impl<'a> MeasurementMethod<'a> {
             Corpus::DIRECTORY,
         ];
         let objects = inputs.map(|path| format!("{}:{path}", Self::REVISION));
-        iter::once(Self::REV_PARSE.to_string())
+        [Self::REV_PARSE.to_string()]
+            .into_iter()
             .chain(objects)
             .collect()
     }
 
     fn version_of(&self, tool: &str) -> Result<String, TaskFailure> {
-        Ok(self.run(tool, &[Self::VERSION_FLAG])?.trim().to_string())
-    }
-
-    fn run(&self, tool: &str, arguments: &[impl AsRef<str>]) -> Result<String, TaskFailure> {
         let output = Command::new(tool)
-            .args(arguments.iter().map(AsRef::as_ref))
-            .current_dir(self.workspace)
+            .arg(Self::VERSION_FLAG)
             .output()
             .map_err(|error| TaskFailure::tool_missing(tool, error))?;
+        Ok(Self::stdout_of(tool, output)?.trim().to_string())
+    }
+
+    fn stdout_of(tool: &str, output: Output) -> Result<String, TaskFailure> {
         if !output.status.success() {
             return Err(TaskFailure::tool_failed(tool, &output.stderr));
         }

@@ -1,28 +1,22 @@
-use std::path::Path;
-use std::process::Command;
-
+use super::git::Git;
 use super::results::ResultSet;
 use crate::failure::TaskFailure;
 
 pub struct BenchHistory<'a> {
-    workspace: &'a Path,
+    git: Git<'a>,
 }
 
 impl<'a> BenchHistory<'a> {
-    const GIT: &'static str = "git";
     const SHOW_NOTE: [&'static str; 3] = ["notes", "--ref=bench", "show"];
 
-    pub fn new(workspace: &'a Path) -> Self {
-        Self { workspace }
+    pub fn new(git: Git<'a>) -> Self {
+        Self { git }
     }
 
     pub fn note_of(&self, commit: &str) -> Result<HistoryNote, TaskFailure> {
-        let output = Command::new(Self::GIT)
-            .args(Self::SHOW_NOTE)
-            .arg(commit)
-            .current_dir(self.workspace)
-            .output()
-            .map_err(|error| TaskFailure::tool_missing(Self::GIT, error))?;
+        let output = self
+            .git
+            .run(&[Self::SHOW_NOTE.as_slice(), &[commit]].concat())?;
         let text = output
             .status
             .success()
