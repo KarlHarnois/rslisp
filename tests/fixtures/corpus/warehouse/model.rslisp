@@ -13,6 +13,7 @@
 (enum ledger-error
   (unknown-sku string)
   (short-stock (struct (sku string) (wanted u32) (available u32)))
+  (negative-count (struct (sku string) (removed u32) (available u32)))
   (bad-line (struct (line usize) (reason string)))
   (bad-number parse-int-error))
 
@@ -34,6 +35,7 @@
   (match problem
     ((unknown-sku sku) (str "unknown sku " sku))
     ((short-stock sku wanted available) (str "cannot ship " wanted " of " sku ", only " available " left"))
+    ((negative-count sku removed available) (str "cannot remove " removed " of " sku ", only " available " counted"))
     ((bad-line line reason) (str "line " line ": " reason))
     ((bad-number reason) (str "bad number: " reason))))
 

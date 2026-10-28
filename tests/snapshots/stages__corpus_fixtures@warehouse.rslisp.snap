@@ -4,7 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/corpus/warehouse.rslisp
 ---
 == morning
-entries: 32, rejected: 8
+entries: 32, rejected: 9
   rejected: cannot ship 22 of PIPE-02, only 8 left
   rejected: cannot ship 31 of PIPE-01, only 21 left
   rejected: unknown sku WIDGET-99
@@ -13,6 +13,7 @@ entries: 32, rejected: 8
   rejected: cannot ship 25 of BOLT-02, only 3 left
   rejected: cannot ship 46 of BOLT-03, only 24 left
   rejected: cannot ship 36 of HOSE-02, only 13 left
+  rejected: cannot remove 500 of HOSE-01, only 5 counted
   #1 HOSE-03 +32 -> 76
   #2 VALVE-03 -44 -> 64
   #3 NUT-01 -10 -> 83
@@ -42,7 +43,7 @@ top value:
   NUT-03 medium nut x97 @ $32.70 = $3171.90
 busiest: VALVE-02 with 3 moves
 == full day
-entries: 77, rejected: 14
+entries: 77, rejected: 15
   rejected: cannot ship 22 of PIPE-02, only 8 left
   rejected: cannot ship 31 of PIPE-01, only 21 left
   rejected: unknown sku WIDGET-99
@@ -51,6 +52,7 @@ entries: 77, rejected: 14
   rejected: cannot ship 25 of BOLT-02, only 3 left
   rejected: cannot ship 46 of BOLT-03, only 24 left
   rejected: cannot ship 36 of HOSE-02, only 13 left
+  rejected: cannot remove 500 of HOSE-01, only 5 counted
   rejected: cannot ship 40 of NUT-05, only 4 left
   rejected: cannot ship 44 of GEAR-05, only 38 left
   rejected: cannot ship 20 of NUT-05, only 2 left
@@ -86,4 +88,4 @@ busiest: PIPE-05 with 6 moves
 == broken events
 failed: bad number: invalid digit found in string
 == broken stock
-failed: line 1: expected 5 fields, found 3
+failed: line 2: expected 5 fields, found 3
