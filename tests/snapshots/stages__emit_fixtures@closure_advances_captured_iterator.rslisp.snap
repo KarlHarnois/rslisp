@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/closure_advances_captured_iterator.rslisp
+---
+fn later(mut values: impl Iterator<Item = i64>) -> Option<i64> {
+    let mut pick = || values.find(|value: &i64| *value > 5);
+    pick()
+}
+
+fn main() {
+    println!("{:?}", later(0_i64..10_i64));
+    println!("{:?}", later(0_i64..3_i64))
+}

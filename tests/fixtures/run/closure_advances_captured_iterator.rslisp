@@ -1,0 +1,5 @@
+(defn later (values) (let pick (fn () (find values (fn (value) (> (deref value) 5))))) (pick))
+
+(defn main ()
+  (prn (later (range 0 10)))
+  (prn (later (range 0 3))))
