@@ -6,6 +6,7 @@ mod items;
 mod literal_generics;
 mod locals;
 pub(crate) mod mangle;
+mod method_elisions;
 mod mutable_locals;
 mod opaque_borrows;
 mod operator;

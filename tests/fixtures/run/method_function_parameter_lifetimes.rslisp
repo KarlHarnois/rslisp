@@ -1,0 +1,35 @@
+(defstruct car :make (ref str) :year u16)
+
+(defstruct depot :size u16)
+
+(trait garage
+  (park (fn ((fn ((ref str) u16) car) (ref self)) u16))
+  (restock (fn ((fn () car) (ref self)) u16))
+  (inspect (fn ((ref self) (fn () car)) u16)))
+
+(impl garage depot
+  (park (constructor lot) (+ (:size lot) (:year (constructor "Nissan" 2024))))
+  (restock (constructor lot) (+ (:size lot) (:year (constructor))))
+  (inspect (lot constructor) (+ (:size lot) (:year (constructor)))))
+
+(defstruct yard :rows u16)
+
+(trait builder
+  (assemble (fn ((fn ((ref str) u16) car) (ref self)) u16)))
+
+(impl builder depot
+  (assemble (constructor lot) (+ (:size lot) (:year (constructor "Nissan" 2024)))))
+
+(impl builder yard
+  (assemble (constructor lot)
+    (let make (to-string "Nissan"))
+    (+ (:rows lot) (:year (constructor (as-str make) 2025)))))
+
+(defn main ()
+  (let model (to-string "Leaf"))
+  (let lot (->depot 1))
+  (println (park (fn (make year) (->car :make (as-str model) :year year)) lot))
+  (println (restock (fn () (->car :make (as-str model) :year 2025)) lot))
+  (println (inspect lot (fn () (->car :make (as-str model) :year 2026))))
+  (println (assemble ->car lot))
+  (println (assemble ->car (->yard 2))))

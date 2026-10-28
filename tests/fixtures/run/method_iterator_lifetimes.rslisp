@@ -1,0 +1,15 @@
+(defstruct depot :size usize)
+
+(trait counter
+  (tally (fn ((ref self) (iterator (ref str))) usize))
+  (total (fn ((iterator (ref str)) (ref self)) usize)))
+
+(impl counter depot
+  (tally (lot names) (+ (:size lot) (count names)))
+  (total (names lot) (+ (:size lot) (count names))))
+
+(defn main ()
+  (let lot (->depot 1))
+  (let (models (vec (ref str))) (vec "Leaf" "Ariya"))
+  (println (tally lot (values models)))
+  (println (total (values models) lot)))
