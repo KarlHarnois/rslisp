@@ -3,13 +3,14 @@ use std::collections::HashSet;
 use crate::core::BindingId;
 use crate::types::{Type, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr};
 
+#[derive(Default)]
 pub struct StoredFunctions {
     parameters: HashSet<BindingId>,
     stored: HashSet<BindingId>,
 }
 
 impl StoredFunctions {
-    pub fn of(lambda: &TypedLambda) -> HashSet<BindingId> {
+    pub fn of(lambda: &TypedLambda) -> Self {
         let mut found = Self {
             parameters: lambda
                 .params
@@ -22,7 +23,11 @@ impl StoredFunctions {
         for expr in lambda.body.expressions() {
             found.expr(expr);
         }
-        found.stored
+        found
+    }
+
+    pub fn stores(&self, binding: BindingId) -> bool {
+        self.stored.contains(&binding)
     }
 
     fn expr(&mut self, expr: &TypedExpr) {
