@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/pin_through_generic_argument.rslisp
+---
+(type wrap (fn ((option (ref str))) (option (option (ref str)))))
+(type outer (fn ((ref str)) (option (option (ref str)))))
+(type main (fn () unit))

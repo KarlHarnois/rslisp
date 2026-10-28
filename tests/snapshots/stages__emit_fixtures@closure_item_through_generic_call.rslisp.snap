@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/closure_item_through_generic_call.rslisp
+---
+fn apply(f: impl FnOnce() -> Option<i64>) -> Option<i64> {
+    f()
+}
+
+fn later(mut values: impl Iterator<Item = i64>) -> Option<i64> {
+    apply(|| values.find(|value: &i64| *value > 5))
+}
+
+fn main() {
+    println!("{:?}", later(0_i64..10_i64))
+}

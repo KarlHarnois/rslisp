@@ -1,0 +1,7 @@
+(defn apply (f) (f))
+
+(defn later (values)
+  (apply (fn () (find values (fn (value) (> (deref value) 5))))))
+
+(defn main ()
+  (prn (later (range 0 10))))
