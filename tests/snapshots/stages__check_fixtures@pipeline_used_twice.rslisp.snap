@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/pipeline_used_twice.rslisp
+---
+error[L0501]: use of moved value `names`
+ --> check/pipeline_used_twice.rslisp:7:13
+  |
+6 |   (println (count names))
+  |                   ----- value moved here
+7 |   (for-each names (fn (name) (println name))))
+  |             ^^^^^ value used here after it moved
+  |
+  = note: `names` is a lazy pipeline, so it runs once
+  = help: collect it if both places need its items, as in `(collect names)`, or write a function that rebuilds it
