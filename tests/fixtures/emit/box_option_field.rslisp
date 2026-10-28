@@ -1,0 +1,5 @@
+(defstruct user :nickname (box (option str)))
+
+(defn main ()
+  (let user (->user :nickname (box-new (option/some "Leafy"))))
+  (prn (:nickname user)))
