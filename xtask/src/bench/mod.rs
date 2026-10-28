@@ -15,6 +15,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::{Args, Subcommand, ValueEnum};
+use rslisp::language::Language;
 
 use crate::failure::TaskFailure;
 use callgrind::Callgrind;
@@ -111,6 +112,7 @@ struct FrontEndBenchmark<'a> {
 
 impl<'a> FrontEndBenchmark<'a> {
     const PROFILES: &'static str = "target/bench";
+    const EMPTY_PROGRAM: &'static str = "xtask/src/bench/empty_program";
     const FIXED_COMPILER: &'static str = "target/bench/compiler/front-end";
 
     fn new(root: &'a Path, options: MeasureOptions) -> Self {
@@ -144,13 +146,19 @@ impl<'a> FrontEndBenchmark<'a> {
     }
 
     fn profile_corpus(&self, callgrind: &Callgrind) -> Result<ResultSet, TaskFailure> {
-        let results = self
-            .corpus()?
-            .programs()?
+        let mut programs = self.corpus()?.programs()?;
+        programs.push(self.empty_program());
+        let results = programs
             .iter()
             .map(|program| callgrind.measure(program))
             .collect::<Result<_, _>>()?;
         Ok(ResultSet::new(results))
+    }
+
+    fn empty_program(&self) -> PathBuf {
+        self.root
+            .join(Self::EMPTY_PROGRAM)
+            .with_extension(Language::EXTENSION)
     }
 
     fn place_at_fixed_path(&self, compiler: BuiltCompiler) -> Result<BuiltCompiler, TaskFailure> {

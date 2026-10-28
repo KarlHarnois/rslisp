@@ -29,6 +29,8 @@ impl Measurement {
              reading the entry file, printing, and dropping each stage's result. \
              `rustfmt` runs as a child process that callgrind does not trace, so the `build` stage \
              counts only the compiler's side of formatting.\n\n\
+             `empty_program` holds only an empty `main`, so its counts are the cost that every \
+             program pays, such as expanding and checking the prelude.\n\n\
              The compiler runs with a fixed random seed, so its hash maps lay out the same way \
              and identical runs give identical counts, except that the `build` stage can vary \
              by a few hundred instructions with the number of reads from `rustfmt`'s output.\n",
