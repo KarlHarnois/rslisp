@@ -4,6 +4,8 @@ mod compiler;
 mod corpus;
 mod failure;
 mod fixed_seed;
+#[cfg(test)]
+mod fixture;
 mod git;
 mod header;
 mod history;
