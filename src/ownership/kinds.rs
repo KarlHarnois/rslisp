@@ -1119,14 +1119,59 @@ impl<'a> ClosureKinds<'a> {
     ) {
         let capture = self.value_capture(&argument.value);
         let callee_name = self.callee_name(callee);
-        diagnostics.push(OwnershipProblems::closure_kind_mismatch(
-            actual,
-            required,
-            capture.map(|binding| self.bindings.get(binding).name()),
-            callee_name.as_deref(),
-            argument.value.span,
-            capture.and_then(|binding| self.capture_span(&argument.value, binding)),
-        ));
+        let called = capture.and_then(|binding| {
+            self.called_capture(&argument.value, binding)
+                .map(|(kind, span)| (binding, kind, span))
+        });
+        let diagnostic = match called {
+            Some((binding, kind, span)) => OwnershipProblems::closure_kind_mismatch_call(
+                actual,
+                required,
+                self.bindings.get(binding).name(),
+                kind,
+                callee_name.as_deref(),
+                argument.value.span,
+                span,
+            ),
+            None => OwnershipProblems::closure_kind_mismatch(
+                actual,
+                required,
+                capture.map(|binding| self.bindings.get(binding).name()),
+                callee_name.as_deref(),
+                argument.value.span,
+                capture.and_then(|binding| self.capture_span(&argument.value, binding)),
+            ),
+        };
+        diagnostics.push(diagnostic);
+    }
+
+    fn called_capture(&self, value: &TypedExpr, binding: BindingId) -> Option<(ClosureKind, Span)> {
+        let TypedExprKind::Fn(lambda) = &value.kind else {
+            return None;
+        };
+        let kind = self.kind_of(binding);
+        if kind == ClosureKind::Fn {
+            return None;
+        }
+        Self::called_span(&lambda.body, binding).map(|span| (kind, span))
+    }
+
+    fn called_span(block: &TypedBlock, binding: BindingId) -> Option<Span> {
+        block
+            .expressions()
+            .find_map(|expr| Self::expression_called_span(expr, binding))
+    }
+
+    fn expression_called_span(expr: &TypedExpr, binding: BindingId) -> Option<Span> {
+        if let TypedExprKind::Call(callee, _) = &expr.kind
+            && let TypedExprKind::Leaf(TypedLeaf::Local(called)) = &callee.kind
+            && *called == binding
+        {
+            return Some(callee.span);
+        }
+        expr.children()
+            .into_iter()
+            .find_map(|child| Self::expression_called_span(child, binding))
     }
 
     fn callee_name(&self, callee: &TypedExpr) -> Option<String> {

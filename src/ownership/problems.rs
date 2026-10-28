@@ -171,6 +171,42 @@ impl OwnershipProblems {
         }
     }
 
+    pub fn closure_kind_mismatch_call(
+        actual: ClosureKind,
+        required: ClosureKind,
+        name: &str,
+        kind: ClosureKind,
+        callee: Option<&str>,
+        passed: Span,
+        capture_span: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::CLOSURE_KIND_MISMATCH,
+            format!(
+                "this closure is `{}`, but the parameter accepts `{}`",
+                actual.keyword(),
+                required.keyword()
+            ),
+            Label::new(capture_span, format!("calls `{name}` here")),
+        )
+        .with_label(Label::new(passed, "this closure is passed here"))
+        .with_help(Self::called_capture_help(required, name, kind, callee))
+    }
+
+    fn called_capture_help(
+        required: ClosureKind,
+        name: &str,
+        kind: ClosureKind,
+        callee: Option<&str>,
+    ) -> String {
+        let callee = callee.unwrap_or("this function");
+        format!(
+            "`{callee}` calls this closure as `{}`, but it calls `{name}`, which is `{}`",
+            required.keyword(),
+            kind.keyword()
+        )
+    }
+
     fn closure_kind_labels(
         actual: ClosureKind,
         capture: Option<&str>,
