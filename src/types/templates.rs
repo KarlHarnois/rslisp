@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use super::typed::{TypedExpr, TypedExprKind, TypedLeaf};
 use crate::core::{BindingId, ParsedTemplate, ReferenceKind};
@@ -6,6 +8,7 @@ use crate::core::{BindingId, ParsedTemplate, ReferenceKind};
 #[derive(Default)]
 pub struct TemplateBorrows {
     templates: HashMap<BindingId, ParsedTemplate>,
+    inline: RefCell<HashMap<Rc<str>, Option<ParsedTemplate>>>,
 }
 
 impl TemplateBorrows {
@@ -45,10 +48,11 @@ impl TemplateBorrows {
                 self.templates.get(binding).map(fact).unwrap_or(absent)
             }
             TypedExprKind::Leaf(TypedLeaf::Rust(template)) => {
-                ParsedTemplate::parse(&template.template)
-                    .as_ref()
-                    .map(fact)
-                    .unwrap_or(absent)
+                let mut inline = self.inline.borrow_mut();
+                let parsed = inline
+                    .entry(template.template.clone())
+                    .or_insert_with(|| ParsedTemplate::parse(&template.template).ok());
+                parsed.as_ref().map(fact).unwrap_or(absent)
             }
             _ => absent,
         }
