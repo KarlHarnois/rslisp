@@ -5,6 +5,7 @@ mod corpus;
 mod failure;
 mod fixed_seed;
 mod header;
+mod history;
 mod measurement;
 mod method;
 mod profile;
@@ -24,6 +25,7 @@ use comparison::Comparison;
 use compiler::{BuiltCompiler, CompilerBuild};
 use corpus::Corpus;
 use fixed_seed::FixedSeedLibrary;
+use history::BenchHistory;
 use method::MeasurementMethod;
 use profile::EntryPointCheck;
 use results::ResultSet;
@@ -45,6 +47,14 @@ pub enum BenchTask {
         about = "Print the key of what besides the compiler's code decides the counts: the toolchain, the benchmark code and the corpus"
     )]
     Method,
+    #[command(
+        about = "Write a commit's saved results from its git note, if this workspace measures by the same method"
+    )]
+    Recall {
+        commit: String,
+        #[arg(long, help = "Write the recalled results to this file for `compare`")]
+        save: PathBuf,
+    },
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -94,6 +104,7 @@ impl BenchTask {
             Self::Method => MeasurementMethod::new(root)
                 .key()
                 .map(|key| format!("{key}\n")),
+            Self::Recall { commit, save } => Self::recall(root, &commit, &save),
         };
         match report {
             Ok(report) => {
@@ -112,6 +123,18 @@ impl BenchTask {
         let baseline = ResultSet::load(baseline)?;
         let candidate = ResultSet::load(candidate)?;
         Ok(length.render(&Comparison::new(&baseline, &candidate)))
+    }
+
+    fn recall(root: &Path, commit: &str, save: &Path) -> Result<String, TaskFailure> {
+        let method_key = MeasurementMethod::new(root).key()?;
+        let results = BenchHistory::new(root)
+            .note_of(commit)?
+            .recall(&method_key)?;
+        fs::write(save, results).map_err(|error| TaskFailure::unwritable(save, error))?;
+        Ok(format!(
+            "recalled the results of `{commit}` into `{}`\n",
+            save.display()
+        ))
     }
 }
 

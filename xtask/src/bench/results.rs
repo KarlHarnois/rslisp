@@ -14,6 +14,19 @@ pub struct ProgramResult {
     pub measurement: Option<Measurement>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct MalformedLine {
+    pub line: String,
+}
+
+impl MalformedLine {
+    fn new(line: &str) -> Self {
+        Self {
+            line: line.to_string(),
+        }
+    }
+}
+
 pub struct ResultSet {
     header: ResultHeader,
     programs: Vec<ProgramResult>,
@@ -37,13 +50,16 @@ impl ResultSet {
     pub fn load(path: &Path) -> Result<Self, TaskFailure> {
         let text =
             fs::read_to_string(path).map_err(|error| TaskFailure::unreadable(path, error))?;
-        let header = ResultHeader::read(&text);
+        Self::parse(&text)
+            .map_err(|malformed| TaskFailure::malformed_results(path, &malformed.line))
+    }
+
+    pub fn parse(text: &str) -> Result<Self, MalformedLine> {
+        let header = ResultHeader::read(text);
         let programs = text
             .lines()
             .skip(header.line_count())
-            .map(|line| {
-                Self::parse_program(line).ok_or_else(|| TaskFailure::malformed_results(path, line))
-            })
+            .map(|line| Self::parse_program(line).ok_or_else(|| MalformedLine::new(line)))
             .collect::<Result<_, _>>()?;
         Ok(Self { header, programs })
     }
@@ -52,7 +68,6 @@ impl ResultSet {
         fs::write(path, self.serialize()).map_err(|error| TaskFailure::unwritable(path, error))
     }
 
-    #[cfg(test)]
     pub fn method_key(&self) -> Option<&str> {
         self.header.method_key()
     }
