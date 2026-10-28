@@ -3,4 +3,5 @@
 
 (defn main ()
   (let chosen (->sorter :name "by name"))
-  (println (:label chosen)))
+  (let ana (->user :name "ana" :age 34))
+  (println (:label chosen) ": " ((:key chosen) ana)))
