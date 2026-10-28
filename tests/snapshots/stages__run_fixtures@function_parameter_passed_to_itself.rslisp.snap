@@ -4,3 +4,4 @@ expression: reports.report(path)
 input_file: tests/fixtures/run/function_parameter_passed_to_itself.rslisp
 ---
 5
+6
