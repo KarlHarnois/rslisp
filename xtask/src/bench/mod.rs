@@ -9,6 +9,7 @@ mod header;
 mod history;
 mod measurement;
 mod method;
+mod output_file;
 mod profile;
 mod results;
 mod table;
@@ -30,6 +31,7 @@ use git::Git;
 use header::ResultHeader;
 use history::BenchHistory;
 use method::MeasurementMethod;
+use output_file::OutputFile;
 use profile::EntryPointCheck;
 use results::ResultSet;
 
@@ -140,10 +142,7 @@ impl RecallOptions {
         let results = BenchHistory::new(Git::new(root), &self.notes_ref)
             .note_of(&self.commit)?
             .recall(&method_key)?;
-        let directory = self.save.parent().unwrap_or(&self.save);
-        fs::create_dir_all(directory).map_err(|error| TaskFailure::unwritable(directory, error))?;
-        fs::write(&self.save, results)
-            .map_err(|error| TaskFailure::unwritable(&self.save, error))?;
+        OutputFile::new(&self.save).write_with(|path| fs::write(path, results))?;
         Ok(format!(
             "recalled the results of `{}` into `{}`\n",
             self.commit,
@@ -231,10 +230,7 @@ impl<'a> FrontEndBenchmark<'a> {
 
     fn place_at_fixed_path(&self, compiler: BuiltCompiler) -> Result<BuiltCompiler, TaskFailure> {
         let placed = self.root.join(Self::FIXED_COMPILER);
-        let directory = placed.parent().unwrap_or(self.root);
-        fs::create_dir_all(directory).map_err(|error| TaskFailure::unwritable(directory, error))?;
-        fs::copy(&compiler.executable, &placed)
-            .map_err(|error| TaskFailure::unwritable(&placed, error))?;
+        OutputFile::new(&placed).write_with(|path| fs::copy(&compiler.executable, path))?;
         Ok(BuiltCompiler {
             executable: placed,
             ..compiler
