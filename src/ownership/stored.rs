@@ -17,20 +17,52 @@ pub struct StoredClosures<'p> {
 }
 
 impl<'p> StoredClosures<'p> {
-    pub fn check(program: &'p TypedProgram) -> Vec<Diagnostic> {
-        let slots = FunctionSlots::new(program);
-        let storing = StoringParameters::collect(program, &slots);
-        let closures = Self {
-            program,
-            slots,
-            storing,
+    pub fn check(program: &mut TypedProgram) -> Vec<Diagnostic> {
+        let (diagnostics, stored) = {
+            let program = &*program;
+            let slots = FunctionSlots::new(program);
+            let storing = StoringParameters::collect(program, &slots);
+            let closures = StoredClosures {
+                program,
+                slots,
+                storing,
+            };
+            (closures.diagnostics(), closures.stored_parameters())
         };
-        program
+        program.stored_function_parameters = stored;
+        diagnostics
+    }
+
+    fn diagnostics(&self) -> Vec<Diagnostic> {
+        self.program
             .modules
             .iter()
             .flat_map(|module| &module.definitions)
             .flat_map(|definition| Subtree::of(&definition.value))
-            .flat_map(|expr| closures.capturing_stores(expr))
+            .flat_map(|expr| self.capturing_stores(expr))
+            .collect()
+    }
+
+    fn stored_parameters(&self) -> HashSet<BindingId> {
+        self.program
+            .modules
+            .iter()
+            .flat_map(|module| &module.definitions)
+            .filter_map(|definition| match &definition.value.kind {
+                TypedExprKind::Fn(lambda) => Some((definition.binding, lambda)),
+                _ => None,
+            })
+            .flat_map(|(function, lambda)| {
+                lambda
+                    .params
+                    .iter()
+                    .enumerate()
+                    .filter_map(move |(position, param)| {
+                        self.storing
+                            .stores(function, position)
+                            .then_some(param.binding)
+                    })
+            })
             .collect()
     }
 
@@ -180,6 +212,10 @@ impl StoringParameters {
 
     fn slot(&self, function: BindingId, position: usize) -> Option<FunctionSlot> {
         self.slots.get(&(function, position)).cloned()
+    }
+
+    fn stores(&self, function: BindingId, position: usize) -> bool {
+        self.slots.contains_key(&(function, position))
     }
 
     fn add_stores(&mut self, program: &TypedProgram, slots: &FunctionSlots) -> bool {

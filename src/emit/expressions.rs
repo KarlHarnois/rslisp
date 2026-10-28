@@ -200,7 +200,7 @@ impl<'a> ExpressionEmitter<'a> {
             locals,
             problems: Vec::new(),
             mutable_locals: HashSet::new(),
-            stored_functions: StoredFunctions::empty(program),
+            stored_functions: StoredFunctions::new(program),
             tail_loop: None,
             loop_exit: LoopExit::Return,
         }
@@ -208,10 +208,6 @@ impl<'a> ExpressionEmitter<'a> {
 
     pub fn prepare_tail_loop(&mut self, function: BindingId, lambda: &TypedLambda) {
         self.tail_loop = TailLoop::of(function, lambda);
-    }
-
-    pub fn prepare_stored_functions(&mut self, lambda: &TypedLambda) {
-        self.stored_functions = StoredFunctions::of(self.program, lambda);
     }
 
     pub fn with_mutable_locals(mut self, mutable_locals: HashSet<BindingId>) -> Self {

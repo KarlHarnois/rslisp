@@ -665,7 +665,6 @@ impl<'a> ItemEmitter<'a> {
         };
         let mut emitter = self.expressions(info.module, &definition.value);
         emitter.prepare_tail_loop(definition.binding, lambda);
-        emitter.prepare_stored_functions(lambda);
         let types = emitter.types();
         let used = self.used_written_lifetimes(&definition.value);
         let inferred = self.inferred_lifetime(&definition.scheme.lifetimes, &definition.value);

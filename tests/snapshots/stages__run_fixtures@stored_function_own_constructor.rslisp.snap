@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/stored_function_own_constructor.rslisp
+---
+custom30
+custom30
+30
