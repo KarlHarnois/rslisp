@@ -1,0 +1,36 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/stored_function_let_parameter.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct User<'a> {
+    name: &'a str,
+    age: u16,
+}
+
+fn make_user(name: &str, age: u16) -> User<'_> {
+    User { name, age }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Sorter<'a> {
+    key: fn(&User<'_>) -> u16,
+    label: &'a str,
+}
+
+fn age_of(someone: &User<'_>) -> u16 {
+    someone.age
+}
+
+fn by_key(key: fn(&User<'_>) -> u16, label: &str) -> Sorter<'_> {
+    let chosen = key;
+    Sorter { key: chosen, label }
+}
+
+fn main() {
+    let ana = make_user("Ana", 30);
+    let by_age = by_key(age_of, "by age");
+    println!("{}", by_age.label);
+    println!("{}", (by_age.key)(&ana))
+}

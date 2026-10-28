@@ -1,0 +1,14 @@
+(defstruct user :name str :age u16)
+(defstruct sorter :key (fn ((ref user)) u16) :label str)
+
+(defn age-of ((someone (ref user))) (:age someone))
+
+(defn by-key (key label)
+  (let chosen key)
+  (new sorter (:key chosen) (:label label)))
+
+(defn main ()
+  (let ana (->user "Ana" 30))
+  (let by-age (by-key age-of "by age"))
+  (println (:label by-age))
+  (println ((:key by-age) ana)))

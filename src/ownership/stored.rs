@@ -7,8 +7,8 @@ use crate::core::{BindingId, FieldLabel};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Type, TypedArgument, TypedDefinition, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf,
-    TypedProgram, TypedStructExpr,
+    Type, TypedArgument, TypedBodyItem, TypedControl, TypedDefinition, TypedExpr, TypedExprKind,
+    TypedLambda, TypedLeaf, TypedProgram, TypedStructExpr,
 };
 
 pub struct StoredClosures<'p> {
@@ -40,8 +40,7 @@ impl<'p> StoredClosures<'p> {
     fn diagnostics(&self) -> Vec<Diagnostic> {
         self.definitions
             .iter()
-            .flat_map(|definition| definition.expressions.iter().copied())
-            .flat_map(|expr| self.capturing_stores(expr))
+            .flat_map(|definition| self.capturing_stores(definition))
             .collect()
     }
 
@@ -63,8 +62,9 @@ impl<'p> StoredClosures<'p> {
             .collect()
     }
 
-    fn capturing_stores(&self, expr: &TypedExpr) -> Vec<Diagnostic> {
-        Store::all_in(expr, &self.slots, &self.storing)
+    fn capturing_stores(&self, definition: &DefinitionTree) -> Vec<Diagnostic> {
+        definition
+            .stores(&self.slots, &self.storing)
             .into_iter()
             .filter_map(|store| self.capturing_store(store))
             .collect()
@@ -88,6 +88,7 @@ struct DefinitionTree<'e> {
     function: BindingId,
     lambda: Option<&'e TypedLambda>,
     expressions: Vec<&'e TypedExpr>,
+    aliases: LetAliases<'e>,
 }
 
 impl<'e> DefinitionTree<'e> {
@@ -101,14 +102,24 @@ impl<'e> DefinitionTree<'e> {
     }
 
     fn of(definition: &'e TypedDefinition) -> Self {
+        let expressions = Subtree::of(&definition.value);
         Self {
             function: definition.binding,
             lambda: match &definition.value.kind {
                 TypedExprKind::Fn(lambda) => Some(lambda),
                 _ => None,
             },
-            expressions: Subtree::of(&definition.value),
+            aliases: LetAliases::in_expressions(&expressions),
+            expressions,
         }
+    }
+
+    fn stores(&self, slots: &FunctionSlots, storing: &StoringParameters) -> Vec<Store<'e>> {
+        self.expressions
+            .iter()
+            .flat_map(|expr| Store::all_in(expr, slots, storing))
+            .map(|store| store.through(&self.aliases))
+            .collect()
     }
 
     fn function(&self) -> Option<(BindingId, &'e TypedLambda)> {
@@ -225,6 +236,50 @@ impl<'e> Store<'e> {
     fn new(value: &'e TypedExpr, slot: FunctionSlot) -> Self {
         Self { value, slot }
     }
+
+    fn through(self, aliases: &LetAliases<'e>) -> Self {
+        Self {
+            value: aliases.resolve(self.value),
+            slot: self.slot,
+        }
+    }
+}
+
+struct LetAliases<'e> {
+    values: HashMap<BindingId, &'e TypedExpr>,
+}
+
+impl<'e> LetAliases<'e> {
+    fn in_expressions(expressions: &[&'e TypedExpr]) -> Self {
+        Self {
+            values: expressions
+                .iter()
+                .flat_map(|expr| Self::body_items(expr))
+                .filter_map(|item| match item {
+                    TypedBodyItem::Let(binder, value) => Some((binder.binding, value)),
+                    TypedBodyItem::Expr(_) => None,
+                })
+                .collect(),
+        }
+    }
+
+    fn body_items(expr: &'e TypedExpr) -> &'e [TypedBodyItem] {
+        match &expr.kind {
+            TypedExprKind::Fn(lambda) => &lambda.body.items,
+            TypedExprKind::Control(TypedControl::Block(block)) => &block.items,
+            _ => &[],
+        }
+    }
+
+    fn resolve(&self, value: &'e TypedExpr) -> &'e TypedExpr {
+        let mut resolved = value;
+        while let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = resolved.kind
+            && let Some(bound) = self.values.get(&binding)
+        {
+            resolved = bound;
+        }
+        resolved
+    }
 }
 
 #[derive(Default)]
@@ -273,10 +328,8 @@ impl StoringParameters {
             .map(|(position, param)| (param.binding, position))
             .collect();
         definition
-            .expressions
-            .iter()
-            .copied()
-            .flat_map(|expr| Store::all_in(expr, slots, self))
+            .stores(slots, self)
+            .into_iter()
             .filter_map(|store| {
                 let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = store.value.kind else {
                     return None;
