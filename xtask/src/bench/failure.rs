@@ -1,5 +1,6 @@
 use std::io;
 use std::path::Path;
+use std::process::ExitStatus;
 
 use crate::failure::TaskFailure;
 
@@ -27,6 +28,14 @@ impl TaskFailure {
     pub fn profile_missing(program: &Path, stderr: &[u8]) -> Self {
         Self::new(format!(
             "callgrind wrote no profile for `{}`\n{}",
+            program.display(),
+            String::from_utf8_lossy(stderr)
+        ))
+    }
+
+    pub fn run_crashed(program: &Path, status: ExitStatus, stderr: &[u8]) -> Self {
+        Self::new(format!(
+            "measuring `{}` crashed with {status}\n{}",
             program.display(),
             String::from_utf8_lossy(stderr)
         ))
