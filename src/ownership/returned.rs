@@ -26,16 +26,17 @@ impl<'p> ReturnedBorrows<'p> {
         let tail = LocalBorrows::tail_of(&lambda.body)?;
         let found = LocalBorrows::new(&lambda.params).returned(tail)?;
         let defined = LocalBorrows::local_span(&lambda.body, found.binding).unwrap_or(found.span);
-        Some(match found.holder.and_then(|holder| self.storage(holder)) {
+        let storage = found.holders.iter().find_map(|holder| self.storage(holder));
+        Some(match storage {
             Some(storage) => OwnershipProblems::stored_local_borrow(found.span, defined, &storage),
             None => OwnershipProblems::local_borrow(found.span, defined),
         })
     }
 
-    fn storage(&self, holder: BorrowHolder) -> Option<BorrowedStorage> {
+    fn storage(&self, holder: &BorrowHolder) -> Option<BorrowedStorage> {
         match holder {
-            BorrowHolder::Field(owner, label) => self.field_storage(owner, label),
-            BorrowHolder::Payload(variant, position) => self.payload_storage(variant, position),
+            BorrowHolder::Field(owner, label) => self.field_storage(*owner, label),
+            BorrowHolder::Payload(variant, position) => self.payload_storage(*variant, *position),
         }
     }
 
@@ -107,7 +108,7 @@ impl<'p> ReturnedBorrows<'p> {
 struct LocalBorrow<'e> {
     span: Span,
     binding: BindingId,
-    holder: Option<BorrowHolder<'e>>,
+    holders: Vec<BorrowHolder<'e>>,
 }
 
 impl<'e> LocalBorrow<'e> {
@@ -115,15 +116,13 @@ impl<'e> LocalBorrow<'e> {
         Self {
             span,
             binding,
-            holder: None,
+            holders: Vec::new(),
         }
     }
 
-    fn held_by(self, holder: BorrowHolder<'e>) -> Self {
-        Self {
-            holder: self.holder.or(Some(holder)),
-            ..self
-        }
+    fn held_by(mut self, holder: BorrowHolder<'e>) -> Self {
+        self.holders.push(holder);
+        self
     }
 }
 
