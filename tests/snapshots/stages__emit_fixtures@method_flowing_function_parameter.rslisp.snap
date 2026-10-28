@@ -1,0 +1,36 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/method_flowing_function_parameter.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Depot {
+    size: u16,
+}
+
+fn make_depot(size: u16) -> Depot {
+    Depot { size }
+}
+
+fn main() {
+    let lot = make_depot(1);
+    let picked = lot.pick(|make: &str| Car { make, year: 2025 });
+    println!("{}", picked.make);
+    println!("{}", lot.size + picked.year)
+}
+
+trait Garage {
+    fn pick(&self, _: impl Fn(&str) -> Car<'_>) -> Car<'_>;
+}
+
+impl Garage for Depot {
+    fn pick(&self, constructor: impl FnOnce(&str) -> Car<'_>) -> Car<'_> {
+        constructor("Nissan")
+    }
+}

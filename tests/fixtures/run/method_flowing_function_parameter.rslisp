@@ -1,0 +1,15 @@
+(defstruct car :make (ref str) :year u16)
+
+(defstruct depot :size u16)
+
+(trait garage
+  (pick (fn ((ref self) (fn ((ref str)) car)) car)))
+
+(impl garage depot
+  (pick (lot constructor) (constructor "Nissan")))
+
+(defn main ()
+  (let lot (->depot 1))
+  (let picked (pick lot (fn (make) (->car :make make :year 2025))))
+  (println (:make picked))
+  (println (+ (:size lot) (:year picked))))
