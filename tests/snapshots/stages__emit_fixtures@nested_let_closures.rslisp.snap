@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/nested_let_closures.rslisp
+---
+fn main() {
+    let mut calls: Vec<i64> = vec![0_i64];
+    let mut outer = || {
+        let mut middle = || {
+            let mut inner = || calls.push(1);
+            inner()
+        };
+        middle()
+    };
+    outer();
+    println!("{}", calls.len())
+}
