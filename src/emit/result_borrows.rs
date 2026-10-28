@@ -129,10 +129,10 @@ pub struct LambdaFlows {
 
 impl LambdaFlows {
     fn parameters(&self, lambda: &TypedLambda) -> CalleeParameters {
-        CalleeParameters {
-            sharing: Self::marked(lambda, &self.flows),
-            higher_ranked: Self::marked(lambda, &self.higher_ranked),
-        }
+        CalleeParameters::new(
+            Self::marked(lambda, &self.flows),
+            Self::marked(lambda, &self.higher_ranked),
+        )
     }
 
     fn marked(lambda: &TypedLambda, bindings: &HashSet<BindingId>) -> Vec<bool> {
@@ -181,9 +181,7 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
 
     fn reaches_higher_ranked(&mut self, passed: &PassedLocal) -> bool {
         self.callee_parameters(passed.callee)
-            .higher_ranked
-            .get(passed.position)
-            .is_some_and(|higher_ranked| *higher_ranked)
+            .is_higher_ranked(passed.position)
     }
 
     fn block(&mut self, block: &TypedBlock) -> HashSet<BindingId> {
@@ -242,12 +240,12 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
     }
 
     fn passed_on(&mut self, callee: BindingId, arguments: &[TypedArgument]) -> HashSet<BindingId> {
-        let sharing = self.callee_parameters(callee).sharing;
+        let parameters = self.callee_parameters(callee);
         arguments
             .iter()
-            .zip(sharing)
-            .filter(|(_, shares)| *shares)
-            .flat_map(|(argument, _)| self.bound(&argument.value))
+            .enumerate()
+            .filter(|(position, _)| parameters.shares(*position))
+            .flat_map(|(_, argument)| self.bound(&argument.value))
             .collect()
     }
 

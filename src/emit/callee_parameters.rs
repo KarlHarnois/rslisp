@@ -4,16 +4,31 @@ use crate::core::BindingId;
 
 #[derive(Clone, Default, PartialEq)]
 pub(super) struct CalleeParameters {
-    pub(super) sharing: Vec<bool>,
-    pub(super) higher_ranked: Vec<bool>,
+    sharing: Vec<bool>,
+    higher_ranked: Vec<bool>,
 }
 
 impl CalleeParameters {
-    fn joined(&self, other: &Self) -> Self {
+    pub(super) fn new(sharing: Vec<bool>, higher_ranked: Vec<bool>) -> Self {
         Self {
-            sharing: Self::either(&self.sharing, &other.sharing),
-            higher_ranked: Self::either(&self.higher_ranked, &other.higher_ranked),
+            sharing,
+            higher_ranked,
         }
+    }
+
+    pub(super) fn shares(&self, position: usize) -> bool {
+        Self::marks(&self.sharing, position)
+    }
+
+    pub(super) fn is_higher_ranked(&self, position: usize) -> bool {
+        Self::marks(&self.higher_ranked, position)
+    }
+
+    fn joined(&self, other: &Self) -> Self {
+        Self::new(
+            Self::either(&self.sharing, &other.sharing),
+            Self::either(&self.higher_ranked, &other.higher_ranked),
+        )
     }
 
     fn either(left: &[bool], right: &[bool]) -> Vec<bool> {
