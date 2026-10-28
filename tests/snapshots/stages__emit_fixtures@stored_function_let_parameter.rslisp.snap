@@ -24,8 +24,9 @@ fn age_of(someone: &User<'_>) -> u16 {
 }
 
 fn by_key(key: fn(&User<'_>) -> u16, label: &str) -> Sorter<'_> {
-    let chosen = key;
-    Sorter { key: chosen, label }
+    let a = key;
+    let b = a;
+    Sorter { key: b, label }
 }
 
 fn main() {

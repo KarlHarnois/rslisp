@@ -13,3 +13,14 @@ error[L0511]: cannot store a capturing closure in the field `key`
   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this closure captures `bonus`
   |
   = help: a field declared with a function type holds only a named function or a closure that captures nothing
+
+error[L0511]: cannot store a capturing closure in the field `key`
+  --> check/capturing_function_field_let.rslisp:15:12
+   |
+ 2 | (defstruct sorter :key (fn ((ref user)) u16) :label str)
+   |                        --------------------- declared with a function type here
+...
+15 |   (let key (fn ((someone (ref user))) (+ (:age someone) bonus)))
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this closure captures `bonus`
+   |
+   = help: a field declared with a function type holds only a named function or a closure that captures nothing

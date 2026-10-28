@@ -4,8 +4,9 @@
 (defn age-of ((someone (ref user))) (:age someone))
 
 (defn by-key (key label)
-  (let chosen key)
-  (new sorter (:key chosen) (:label label)))
+  (let a key)
+  (let b a)
+  (new sorter (:key b) (:label label)))
 
 (defn main ()
   (let ana (->user "Ana" 30))
