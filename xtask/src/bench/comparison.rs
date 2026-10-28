@@ -80,11 +80,14 @@ impl<'a> Comparison<'a> {
 
     pub fn brief_report(&self) -> String {
         let programs = self.programs();
+        let changed = Self::changed_stages(&programs);
+        if changed.is_empty() && Self::note_count(&programs) == 0 {
+            return "No count changed.\n".to_string();
+        }
         format!(
-            "{}\n{}\n{}",
+            "{}\n{}",
             Self::count_notes(&programs),
-            Self::largest_changes(&programs),
-            Measurement::method()
+            Self::largest_changes(changed)
         )
     }
 
@@ -100,13 +103,17 @@ impl<'a> Comparison<'a> {
         )
     }
 
+    fn note_count(programs: &[ProgramComparison]) -> usize {
+        programs.iter().map(|program| program.notes().len()).sum()
+    }
+
     fn count_notes(programs: &[ProgramComparison]) -> String {
-        let count: usize = programs.iter().map(|program| program.notes().len()).sum();
+        let count = Self::note_count(programs);
         if count == 0 {
             return Self::no_notable_rise();
         }
         format!(
-            "{count} stages rose by more than {}%, or could not be compared.\n",
+            "Stages that rose by more than {}%, or could not be compared: {count}.\n",
             Change::NOTABLE_RISE_PERCENT
         )
     }
@@ -118,16 +125,22 @@ impl<'a> Comparison<'a> {
         )
     }
 
-    fn largest_changes(programs: &[ProgramComparison]) -> String {
+    fn changed_stages<'report>(
+        programs: &'report [ProgramComparison<'report>],
+    ) -> Vec<&'report StageChange<'report>> {
         let mut changed: Vec<&StageChange> = programs
             .iter()
             .flat_map(ProgramComparison::stages)
             .filter(|stage| stage.magnitude() > 0.0)
             .collect();
-        if changed.is_empty() {
-            return "No count changed.\n".to_string();
-        }
         changed.sort_by(|left, right| right.magnitude().total_cmp(&left.magnitude()));
+        changed
+    }
+
+    fn largest_changes(changed: Vec<&StageChange>) -> String {
+        if changed.is_empty() {
+            return String::new();
+        }
         let shown = changed.len().min(Self::LARGEST_CHANGES);
         let rows = changed.iter().take(shown).map(|stage| stage.row());
         format!(
@@ -304,17 +317,23 @@ mod tests {
 
     impl ComparisonFixture {
         fn results(expand: u64, total: u64) -> ResultSet {
+            let orders = ProgramResult {
+                program: "orders".to_string(),
+                measurement: None,
+            };
+            ResultSet::new(vec![Self::inventory(expand, total), orders])
+        }
+
+        fn measured_only(expand: u64, total: u64) -> ResultSet {
+            ResultSet::new(vec![Self::inventory(expand, total)])
+        }
+
+        fn inventory(expand: u64, total: u64) -> ProgramResult {
             let stages = BTreeMap::from([("expand".to_string(), Cost::new(expand, expand))]);
-            ResultSet::new(vec![
-                ProgramResult {
-                    program: "inventory".to_string(),
-                    measurement: Some(Measurement::new(stages, Cost::new(total, total))),
-                },
-                ProgramResult {
-                    program: "orders".to_string(),
-                    measurement: None,
-                },
-            ])
+            ProgramResult {
+                program: "inventory".to_string(),
+                measurement: Some(Measurement::new(stages, Cost::new(total, total))),
+            }
         }
 
         fn report(before: &ResultSet, after: &ResultSet) -> String {
@@ -363,7 +382,7 @@ mod tests {
         let after = ComparisonFixture::results(1020, 2010);
         let report = ComparisonFixture::brief(&before, &after);
         assert!(report.starts_with(
-            "2 stages rose by more than 1%, or could not be compared.\n\n\
+            "Stages that rose by more than 1%, or could not be compared: 2.\n\n\
              The 3 largest of 3 changes:\n"
         ));
         let expand = report.find("| inventory | expand |").unwrap();
@@ -376,7 +395,15 @@ mod tests {
     fn brief_report_says_when_no_count_changed() {
         let results = ComparisonFixture::results(1000, 2000);
         let report = ComparisonFixture::brief(&results, &results);
-        assert!(report.contains("No count changed.\n"));
+        assert_eq!(
+            report,
+            "Stages that rose by more than 1%, or could not be compared: 1.\n\n"
+        );
+        let measured = ComparisonFixture::measured_only(1000, 2000);
+        assert_eq!(
+            ComparisonFixture::brief(&measured, &measured),
+            "No count changed.\n"
+        );
     }
 
     #[test]
