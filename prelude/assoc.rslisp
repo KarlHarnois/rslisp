@@ -1,4 +1,4 @@
-(use prelude/macros defmacro defrule template whole-pairs?)
+(use prelude/macros defmacro whole-pairs?)
 (use code first rest list prepend concat length empty? list? nth drop number-sub symbol?
           string fail keyword? keyword-name field-keyword value-eq symbol
           bool-not)
@@ -79,55 +79,34 @@
         (list (field-keyword (first argument)) (nth argument 1))
         (list argument))))
 
-(defrule assoc-in
-  ((value (step ...) item)
-   (update-in value (step ...) item)))
+(defmacro assoc-in (value (step ...) item)
+  (if (symbol? value)
+      (path-update value step item)
+      (if (empty? (keyword-steps step))
+          (path-update value step item)
+          (list (quote do) (list (quote let) (quote base) value)
+                (path-update (quote base) step item)))))
 
-(defmacro update-in (value path item)
-  (if (every-index? path)
-      (list (quote assoc-at) value path item)
-      (bound-update value path item)))
-
-(def every-index?
+(def keyword-steps
   (fn (path)
     (if (empty? path)
-        true
-        (if (keyword? (first path)) false (every-index? (rest path))))))
-
-(def bound-update
-  (fn (value path item)
-    (if (symbol? value)
-        (path-update value path item)
-        (template (do (let base (unquote value))
-                      (unquote (path-update (quote base) path item)))))))
+        path
+        (if (keyword? (first path)) path (keyword-steps (rest path))))))
 
 (def path-update
   (fn (base path item)
-    (if (empty? path)
-        item
+    (let fields (keyword-steps path))
+    (if (empty? fields)
+        (list (quote assoc-at) base path item)
         (if (keyword? (first path))
-            (field-step base path item)
-            (index-steps base path item)))))
+            (field-step base (first path) (rest path) item)
+            (fail "a field step cannot follow an index step" (first fields))))))
 
 (def field-step
-  (fn (base path item)
-    (let key (first path))
-    (if (empty? (rest path))
-        (list (quote assoc) base key item)
-        (nested-field-step base key (rest path) item))))
-
-(def nested-field-step
   (fn (base key path item)
     (let field (symbol (quote base) (keyword-name key)))
-    (template (do (let (unquote field) (unquote (path-update (list key base) path item)))
-                  (assoc (unquote base) (unquote key) (unquote field))))))
-
-(def index-steps
-  (fn (base path item)
-    (if (every-index? path)
-        (list (quote assoc-at) base path item)
-        (fail "a field step cannot follow an index step" (first-keyword path)))))
-
-(def first-keyword
-  (fn (path)
-    (if (keyword? (first path)) (first path) (first-keyword (rest path)))))
+    (if (empty? path)
+        (list (quote assoc) base key item)
+        (list (quote do)
+              (list (quote let) field (path-update (list key base) path item))
+              (list (quote assoc) base key field)))))
