@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/loop_moves_loop_local.rslisp
+---
+Leaf 2020
+Leaf 2021
+Leaf 2022
+6063

@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/loop_updates_outer_struct.rslisp
+---
+error[L0501]: use of moved value `g`
+  --> check/loop_updates_outer_struct.rslisp:10:33
+   |
+10 |         (do (let renamed (assoc g :owner (to-string "Nissan"))) (recur (+ i 1)))
+   |                                 ^ value used here after an earlier pass of the loop moved it
+   |
+help: clone the value if both places need it
+   |
+10 -         (do (let renamed (assoc g :owner (to-string "Nissan"))) (recur (+ i 1)))
+10 +         (do (let renamed (assoc (clone g) :owner (to-string "Nissan"))) (recur (+ i 1)))
+   |

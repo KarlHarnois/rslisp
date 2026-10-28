@@ -51,6 +51,24 @@ impl OwnershipProblems {
         Self::moved_value(DiagnosticCode::USE_AFTER_MOVE, name, used, moved)
     }
 
+    pub fn use_after_earlier_pass_move(name: &str, used: Span, moved: Span) -> Diagnostic {
+        let diagnostic = Diagnostic::error(
+            DiagnosticCode::USE_AFTER_MOVE,
+            format!("use of moved value `{name}`"),
+            Label::new(
+                used,
+                "value used here after an earlier pass of the loop moved it",
+            ),
+        );
+        if used == moved {
+            return diagnostic;
+        }
+        diagnostic.with_label(Label::new(
+            moved,
+            "value moved here, in an earlier pass of the loop",
+        ))
+    }
+
     fn moved_value(code: DiagnosticCode, name: &str, used: Span, moved: Span) -> Diagnostic {
         Diagnostic::error(
             code,

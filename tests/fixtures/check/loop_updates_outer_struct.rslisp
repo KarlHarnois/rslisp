@@ -1,0 +1,11 @@
+(defstruct badge :label string :size u16)
+
+(defstruct garage :owner string :badge badge)
+
+(defn main ()
+  (let g (->garage (to-string "karl") (->badge (to-string "Leaf") 12)))
+  (println
+    (loop ((i 0))
+      (if (< i 2)
+        (do (let renamed (assoc g :owner (to-string "Nissan"))) (recur (+ i 1)))
+        i))))
