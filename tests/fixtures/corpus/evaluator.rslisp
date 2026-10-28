@@ -1,4 +1,4 @@
-(use evaluator/lexer token tokenize)
+(use evaluator/lexer tokenize)
 (use evaluator/parser parse-program)
 (use evaluator/machine execute)
 

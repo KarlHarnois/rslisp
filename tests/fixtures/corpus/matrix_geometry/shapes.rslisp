@@ -1,4 +1,4 @@
-(use matrix_geometry/linear rounded)
+(use matrix_geometry/linear rounded magnitude)
 
 (export point ->point shape area perimeter title circle ->circle rect ->rect polygon ->polygon
         cross distance)
@@ -61,5 +61,3 @@
 (defn cross (origin a b)
   (- (* (- (:x a) (:x origin)) (- (:y b) (:y origin)))
      (* (- (:y a) (:y origin)) (- (:x b) (:x origin)))))
-
-(def magnitude (rust "{0}.abs()" (fn (f64) f64)))

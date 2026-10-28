@@ -1,15 +1,9 @@
-(export token tokenize)
+(export token tokenize append)
 
 (enum token
   (number i64)
   (name string)
   (symbol string))
-
-(display token (t)
-  (match t
-    ((number value) (str "number " value))
-    ((name text) (str "name " text))
-    ((symbol text) (str "symbol " text))))
 
 (type tokenize (fn ((ref str)) (result (vec token) string)))
 (defn tokenize (source)

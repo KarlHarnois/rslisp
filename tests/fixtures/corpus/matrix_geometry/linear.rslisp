@@ -1,4 +1,4 @@
-(export matrix ->matrix identity multiply transpose determinant solve apply-to rounded)
+(export matrix ->matrix identity multiply transpose determinant solve apply-to rounded magnitude)
 
 (defstruct matrix :rows (vec (vec f64)))
 

@@ -1,4 +1,4 @@
-(export item ->item event ledger-error entry ->entry valued value-cents category)
+(export item ->item event ledger-error entry ->entry valued value-cents category dollars widen)
 
 (defstruct item :sku string :name string :quantity u32 :unit-cents u64 :reorder-at u32 (defaults :reorder-at 10))
 

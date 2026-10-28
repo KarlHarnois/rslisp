@@ -1,6 +1,6 @@
 (use warehouse/model item event ledger-error entry ->entry)
 
-(export book ->book apply-all)
+(export book apply-all)
 
 (defstruct book :stock (sorted-map string item) :entries (vec entry) :rejected (vec string))
 
