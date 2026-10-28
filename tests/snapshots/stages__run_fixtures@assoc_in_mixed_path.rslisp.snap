@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/assoc_in_mixed_path.rslisp
+---
+North Nissan 7

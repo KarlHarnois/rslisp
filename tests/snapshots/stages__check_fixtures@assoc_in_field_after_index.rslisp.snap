@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/assoc_in_field_after_index.rslisp
+---
+error[L0301]: a field step cannot follow an index step
+ --> check/assoc_in_field_after_index.rslisp:7:29
+  |
+7 |   (assoc-in garage (:bays 0 :make) "Nissan"))
+  |                             ^^^^^ here

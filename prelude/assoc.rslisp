@@ -124,4 +124,10 @@
 
 (def index-steps
   (fn (base path item)
-    (list (quote assoc-at) base path item)))
+    (if (every-index? path)
+        (list (quote assoc-at) base path item)
+        (fail "a field step cannot follow an index step" (first-keyword path)))))
+
+(def first-keyword
+  (fn (path)
+    (if (keyword? (first path)) (first path) (first-keyword (rest path)))))
