@@ -120,18 +120,27 @@ impl InterpretProblems {
         )
     }
 
-    pub fn failed(code: DiagnosticCode, message: String, span: Span) -> Diagnostic {
-        Diagnostic::error(code, message, Label::new(span, "here"))
-    }
-
-    pub fn failed_again(
+    pub fn failed(
         code: DiagnosticCode,
         message: String,
-        span: Span,
-        earlier: Span,
+        culprit: Span,
+        label: String,
+        earlier: Option<(Span, String)>,
     ) -> Diagnostic {
-        Diagnostic::error(code, message, Label::new(span, "given again here"))
-            .with_label(Label::new(earlier, "first given here"))
+        let failure = Diagnostic::error(code, message, Label::new(culprit, label));
+        match earlier {
+            Some((span, label)) => failure.with_label(Label::new(span, label)),
+            None => failure,
+        }
+    }
+
+    pub fn missing_earlier_label(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::FAILURE_PART,
+            "an `:earlier` part needs an `:earlier-label`",
+            Label::new(span, "this earlier form has no label"),
+        )
+        .with_help("add `:earlier-label \"text\"` beside `:earlier`")
     }
 
     pub fn malformed_failure_part(span: Span) -> Diagnostic {

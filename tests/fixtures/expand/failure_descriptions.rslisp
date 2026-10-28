@@ -1,4 +1,4 @@
-(use code fail)
+(use code fail first rest)
 
 (def unknown-part (macro (form) (fail "bad call" form "fix it" (quote (:cod repeated-parameter)))))
 (def part-without-value (macro (form) (fail "bad call" form "fix it" (quote (:code)))))
@@ -8,6 +8,10 @@
 (def too-many (macro (form) (fail "bad call" form "fix it" (quote ()) form)))
 (def string-suggestion (macro (form) (fail "bad call" form "fix it" (quote (:suggest "leaf")))))
 (def coded (macro (form) (fail "the leaf is parked" form "drive it" (quote (:code repeated-parameter)))))
+(def labelled (macro (form) (fail "the leaf is parked" form "drive it" (quote (:code repeated-parameter :label "parked here")))))
+(def symbol-label (macro (form) (fail "bad call" form "fix it" (quote (:label leaf)))))
+(def repeated-labelled (macro (form) (fail "`leaf` is given twice" (first (rest (rest form))) "remove the second `leaf`" (template (:code repeated-parameter :earlier (unquote (first (rest form))) :label "given again here" :earlier-label "first given here")))))
+(def earlier-unlabelled (macro (form) (fail "`leaf` is given twice" (first (rest (rest form))) "remove the second `leaf`" (template (:code repeated-parameter :earlier (unquote (first (rest form))))))))
 
 (unknown-part)
 (part-without-value)
@@ -17,3 +21,7 @@
 (too-many)
 (string-suggestion)
 (coded)
+(labelled)
+(symbol-label)
+(repeated-labelled leaf leaf)
+(earlier-unlabelled leaf leaf)

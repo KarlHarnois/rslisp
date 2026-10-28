@@ -2,7 +2,7 @@ use crate::core::Keyword;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, SimilarName, Suggestion};
 use crate::interpret::arguments::Arguments;
 use crate::interpret::problems::InterpretProblems;
-use crate::reader::Form;
+use crate::reader::{Form, FormKind};
 use crate::source::Span;
 
 pub struct FailCall<'a> {
@@ -64,14 +64,25 @@ impl<'a> FailCall<'a> {
 
 pub struct FailureDescription {
     code: DiagnosticCode,
+    label: Option<String>,
     earlier: Option<Span>,
+    earlier_label: Option<String>,
     replacement: Option<String>,
 }
 
 impl FailureDescription {
-    pub const PARTS: [&'static str; 3] = [Self::CODE, Self::EARLIER, Self::SUGGEST];
+    pub const PARTS: [&'static str; 5] = [
+        Self::CODE,
+        Self::EARLIER,
+        Self::EARLIER_LABEL,
+        Self::LABEL,
+        Self::SUGGEST,
+    ];
     const CODE: &'static str = "code";
+    const DEFAULT_LABEL: &'static str = "here";
     const EARLIER: &'static str = "earlier";
+    const EARLIER_LABEL: &'static str = "earlier-label";
+    const LABEL: &'static str = "label";
     const SUGGEST: &'static str = "suggest";
 
     fn read(parts: &[Form]) -> Result<Self, Diagnostic> {
@@ -82,7 +93,14 @@ impl FailureDescription {
         })?;
         match lone_part {
             Some(part) => Err(InterpretProblems::malformed_failure_part(part.span())),
-            None => Ok(description),
+            None => description.expect_earlier_label(),
+        }
+    }
+
+    fn expect_earlier_label(self) -> Result<Self, Diagnostic> {
+        match (self.earlier, self.earlier_label.is_some()) {
+            (Some(earlier), false) => Err(InterpretProblems::missing_earlier_label(earlier)),
+            _ => Ok(self),
         }
     }
 
@@ -94,6 +112,14 @@ impl FailureDescription {
             }),
             Some(Self::EARLIER) => Ok(Self {
                 earlier: Some(value.span()),
+                ..self
+            }),
+            Some(Self::EARLIER_LABEL) => Ok(Self {
+                earlier_label: Some(Self::string(value)?.to_owned()),
+                ..self
+            }),
+            Some(Self::LABEL) => Ok(Self {
+                label: Some(Self::string(value)?.to_owned()),
                 ..self
             }),
             Some(Self::SUGGEST) => Ok(Self {
@@ -124,6 +150,13 @@ impl FailureDescription {
             .ok_or_else(|| InterpretProblems::malformed_failure_part(value.span()))
     }
 
+    fn string(value: &Form) -> Result<&str, Diagnostic> {
+        match value.kind() {
+            FormKind::String(text) => Ok(text),
+            _ => Err(InterpretProblems::malformed_failure_part(value.span())),
+        }
+    }
+
     fn diagnostic(mut self, message: String, culprit: Span, help: Option<String>) -> Diagnostic {
         let replacement = self.replacement.take();
         let failure = self.labelled(message, culprit);
@@ -137,10 +170,9 @@ impl FailureDescription {
     }
 
     fn labelled(self, message: String, culprit: Span) -> Diagnostic {
-        match self.earlier {
-            Some(earlier) => InterpretProblems::failed_again(self.code, message, culprit, earlier),
-            None => InterpretProblems::failed(self.code, message, culprit),
-        }
+        let label = self.label.unwrap_or_else(|| Self::DEFAULT_LABEL.to_owned());
+        let earlier = self.earlier.zip(self.earlier_label);
+        InterpretProblems::failed(self.code, message, culprit, label, earlier)
     }
 }
 
@@ -148,7 +180,9 @@ impl Default for FailureDescription {
     fn default() -> Self {
         Self {
             code: DiagnosticCode::MACRO_FAILED,
+            label: None,
             earlier: None,
+            earlier_label: None,
             replacement: None,
         }
     }
