@@ -358,6 +358,7 @@ dependencies = [
  "clap",
  "insta",
  "serde_json",
+ "similar",
  "stacker",
 ]
 
