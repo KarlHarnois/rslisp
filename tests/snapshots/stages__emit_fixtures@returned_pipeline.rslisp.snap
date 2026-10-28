@@ -1,0 +1,27 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/returned_pipeline.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct User<'a> {
+    name: &'a str,
+    age: u16,
+}
+
+fn make_user(name: &str, age: u16) -> User<'_> {
+    User { name, age }
+}
+
+fn adult_names<'a>(users: impl Iterator<Item = User<'a>>) -> impl Iterator<Item = &'a str> {
+    users
+        .filter(|u: &User<'_>| u.age > 17)
+        .map(|value: User<'_>| value.name)
+}
+
+fn main() {
+    let mut users = vec![make_user("Ana", 34), make_user("Bo", 12)];
+    users.push(make_user("Cy", 51));
+    println!("{}", adult_names(users.iter().copied()).count());
+    adult_names(users.iter().copied()).for_each(|name: &str| println!("{}", name))
+}
