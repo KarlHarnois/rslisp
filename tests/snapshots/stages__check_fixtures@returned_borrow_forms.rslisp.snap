@@ -55,9 +55,12 @@ error[L0510]: cannot return a borrow of a local value
 error[L0510]: cannot return a borrow of a local value
   --> check/returned_borrow_forms.rslisp:31:20
    |
+11 | (enum plaque (engraved (struct (text str) (count u16))) empty)
+   |                                      --- declared as a borrow here
+...
 30 |   (let make (to-string "Nissan"))
    |        ---- this local is dropped when the function returns
 31 |   (plaque/engraved (as-str make) year))
    |                    ^^^^^^^^^^^^^ this borrows a local value
    |
-   = help: return an owned value with `(clone ...)`, or borrow from a parameter
+   = help: the `engraved` payload of `plaque` borrows its data, so give it the owned type `string`

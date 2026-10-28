@@ -50,7 +50,7 @@ impl<'p> ReturnedBorrows<'p> {
     }
 
     fn payload_storage(&self, variant: BindingId, position: usize) -> Option<BorrowedStorage> {
-        let slot = self.slots.positional_payload(variant, position)?;
+        let slot = self.slots.payload(variant, position)?;
         Some(BorrowedStorage::Payload {
             variant: slot.name.to_string(),
             owner: self.name(slot.owner),
