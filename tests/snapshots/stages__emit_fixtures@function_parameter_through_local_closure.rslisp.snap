@@ -1,0 +1,33 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_parameter_through_local_closure.rslisp
+---
+fn record_twice(mut record: impl FnMut(i64), year: i64) {
+    let mut step = |n: i64| record(n);
+    step(year);
+    step(year + 1)
+}
+
+fn record_once(record: impl FnOnce(i64), year: i64) {
+    let step = |n: i64| record(n);
+    step(year)
+}
+
+fn twice(mut action: impl FnMut(i64), year: i64) {
+    action(year);
+    action(year + 1)
+}
+
+fn record_through_twice(mut record: impl FnMut(i64), year: i64) {
+    let step = |n: i64| record(n);
+    twice(step, year)
+}
+
+fn main() {
+    let mut years: Vec<i64> = vec![2024_i64];
+    record_twice(|year: i64| years.push(year), 2025);
+    record_once(|year: i64| years.push(year), 2027);
+    record_through_twice(|year: i64| years.push(year), 2028);
+    println!("{}", years.len())
+}

@@ -847,14 +847,43 @@ impl<'a> ClosureKinds<'a> {
         nested: Option<ClosureKind>,
         uses: &mut ParameterUses,
     ) {
-        for item in &block.items {
-            match item {
-                TypedBodyItem::Let(_, value) => {
-                    self.require_expression(value, params, nested, uses)
-                }
-                TypedBodyItem::Expr(expr) => self.require_expression(expr, params, nested, uses),
+        for (position, item) in block.items.iter().enumerate() {
+            let before = uses.counts();
+            self.require_item(item, params, nested, uses);
+            let later = &block.items[position + 1..];
+            if self.is_local_closure_called_again(item, later) {
+                uses.repeat_uses_since(&before);
             }
         }
+    }
+
+    fn require_item(
+        &self,
+        item: &TypedBodyItem,
+        params: &[BindingId],
+        nested: Option<ClosureKind>,
+        uses: &mut ParameterUses,
+    ) {
+        match item {
+            TypedBodyItem::Let(_, value) | TypedBodyItem::Expr(value) => {
+                self.require_expression(value, params, nested, uses)
+            }
+        }
+    }
+
+    fn is_local_closure_called_again(&self, item: &TypedBodyItem, later: &[TypedBodyItem]) -> bool {
+        let TypedBodyItem::Let(binder, value) = item else {
+            return false;
+        };
+        if !matches!(value.kind, TypedExprKind::Fn(_)) {
+            return false;
+        }
+        let closure = [binder.binding];
+        let mut closure_uses = ParameterUses::default();
+        for item in later {
+            self.require_item(item, &closure, None, &mut closure_uses);
+        }
+        !closure_uses.allows_fn_once(binder.binding)
     }
 
     fn require_expression(
