@@ -439,7 +439,10 @@
         (fail (string "`" (symbol-name key) "` is given twice in `" (signature-name signature) "`")
               (first repeated)
               (string "remove the second `" (symbol-name key) "` and its value")
-              (template (:code repeated-parameter :earlier (unquote key)))))))
+              (template (:code repeated-parameter
+                         :earlier (unquote key)
+                         :label "given again here"
+                         :earlier-label "first given here"))))))
 
 (def check-required-parameters
   (fn (form keys signature)
