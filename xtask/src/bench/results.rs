@@ -194,10 +194,10 @@ mod tests {
 
         fn header() -> ResultHeader {
             ResultHeader::new(
-                "a1-b2-c3-d4".to_string(),
                 "rustc 1.0.0 (fake 2020-01-01)".to_string(),
                 "valgrind-0.0.0".to_string(),
             )
+            .keyed("a1-b2-c3-d4".to_string())
         }
 
         fn fixture(name: &str) -> std::path::PathBuf {

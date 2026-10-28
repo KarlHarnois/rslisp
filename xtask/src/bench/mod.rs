@@ -27,6 +27,7 @@ use compiler::{BuiltCompiler, CompilerBuild};
 use corpus::Corpus;
 use fixed_seed::FixedSeedLibrary;
 use git::Git;
+use header::ResultHeader;
 use history::BenchHistory;
 use method::MeasurementMethod;
 use profile::EntryPointCheck;
@@ -132,6 +133,8 @@ impl BenchTask {
         let results = BenchHistory::new(Git::new(root))
             .note_of(commit)?
             .recall(&method_key)?;
+        let directory = save.parent().unwrap_or(save);
+        fs::create_dir_all(directory).map_err(|error| TaskFailure::unwritable(directory, error))?;
         fs::write(save, results).map_err(|error| TaskFailure::unwritable(save, error))?;
         Ok(format!(
             "recalled the results of `{commit}` into `{}`\n",
@@ -164,21 +167,33 @@ impl<'a> FrontEndBenchmark<'a> {
     }
 
     fn measure(&self) -> Result<String, TaskFailure> {
+        let saved_header = self.saved_header()?;
+        let results = self.profile_corpus(&self.callgrind()?)?;
+        let report = results.to_string();
+        if let (Some(path), Some(header)) = (&self.options.save, saved_header) {
+            results.with_header(header).save(path)?;
+        }
+        Ok(report)
+    }
+
+    fn saved_header(&self) -> Result<Option<ResultHeader>, TaskFailure> {
+        let method = MeasurementMethod::new(Git::new(self.root));
+        match (&self.options.save, &self.options.corpus) {
+            (None, _) => Ok(None),
+            (Some(_), None) => method.keyed_header().map(Some),
+            (Some(_), Some(_)) => method.unkeyed_header().map(Some),
+        }
+    }
+
+    fn callgrind(&self) -> Result<Callgrind, TaskFailure> {
         let compiler = self.place_at_fixed_path(CompilerBuild::new(&self.workspace()?).run()?)?;
         let fixed_seed = FixedSeedLibrary::new(self.root).build()?;
-        let callgrind = Callgrind::new(
+        Ok(Callgrind::new(
             compiler,
             self.options.entry_point_check(),
             fixed_seed,
             self.root.join(Self::PROFILES),
-        );
-        let results = self
-            .profile_corpus(&callgrind)?
-            .with_header(MeasurementMethod::new(Git::new(self.root)).header()?);
-        if let Some(path) = &self.options.save {
-            results.save(path)?;
-        }
-        Ok(results.to_string())
+        ))
     }
 
     fn workspace(&self) -> Result<PathBuf, TaskFailure> {

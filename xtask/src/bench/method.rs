@@ -24,9 +24,12 @@ impl<'a> MeasurementMethod<'a> {
         Self { git }
     }
 
-    pub fn header(&self) -> Result<ResultHeader, TaskFailure> {
+    pub fn keyed_header(&self) -> Result<ResultHeader, TaskFailure> {
+        Ok(self.unkeyed_header()?.keyed(self.key()?))
+    }
+
+    pub fn unkeyed_header(&self) -> Result<ResultHeader, TaskFailure> {
         Ok(ResultHeader::new(
-            self.key()?,
             self.version_of(Self::RUSTC)?,
             self.version_of(Callgrind::VALGRIND)?,
         ))

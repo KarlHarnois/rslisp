@@ -8,6 +8,7 @@ pub struct BenchHistory<'a> {
 
 impl<'a> BenchHistory<'a> {
     const SHOW_NOTE: [&'static str; 3] = ["notes", "--ref=bench", "show"];
+    const NO_NOTE: &'static str = "no note found";
 
     pub fn new(git: Git<'a>) -> Self {
         Self { git }
@@ -17,11 +18,19 @@ impl<'a> BenchHistory<'a> {
         let output = self
             .git
             .run(&[Self::SHOW_NOTE.as_slice(), &[commit]].concat())?;
-        let text = output
-            .status
-            .success()
-            .then(|| String::from_utf8_lossy(&output.stdout).into_owned());
-        Ok(HistoryNote::new(commit, text))
+        let shown = match output.status.success() {
+            true => Ok(String::from_utf8_lossy(&output.stdout).into_owned()),
+            false => Err(String::from_utf8_lossy(&output.stderr).into_owned()),
+        };
+        Self::read_note(commit, shown)
+    }
+
+    fn read_note(commit: &str, shown: Result<String, String>) -> Result<HistoryNote, TaskFailure> {
+        match shown {
+            Ok(text) => Ok(HistoryNote::new(commit, Some(text))),
+            Err(stderr) if stderr.contains(Self::NO_NOTE) => Ok(HistoryNote::new(commit, None)),
+            Err(stderr) => Err(TaskFailure::tool_failed(Git::PROGRAM, stderr.as_bytes())),
+        }
     }
 }
 
@@ -66,6 +75,25 @@ mod tests {
         fn note(text: &str) -> HistoryNote {
             HistoryNote::new(Self::COMMIT, Some(text.to_string()))
         }
+    }
+
+    #[test]
+    fn reads_a_missing_note_from_the_error_of_git() {
+        let stderr = format!("error: no note found for object {}.\n", NoteFixture::COMMIT);
+        let failure = BenchHistory::read_note(NoteFixture::COMMIT, Err(stderr))
+            .unwrap()
+            .recall(NoteFixture::NOTED_KEY)
+            .unwrap_err();
+        assert!(failure.to_string().contains("has no note"));
+    }
+
+    #[test]
+    fn fails_on_any_other_error_of_git() {
+        let stderr = "fatal: failed to resolve 'nonsense' as a valid ref.\n".to_string();
+        let failure = BenchHistory::read_note("nonsense", Err(stderr))
+            .err()
+            .unwrap();
+        assert!(failure.to_string().contains("failed to resolve"));
     }
 
     #[test]

@@ -16,13 +16,19 @@ impl ResultHeader {
     const RUSTC: &'static str = "rustc";
     const VALGRIND: &'static str = "valgrind";
 
-    pub fn new(method_key: String, rustc_version: String, valgrind_version: String) -> Self {
+    pub fn new(rustc_version: String, valgrind_version: String) -> Self {
         Self {
             fields: vec![
-                HeaderField::new(Self::METHOD, method_key),
                 HeaderField::new(Self::RUSTC, rustc_version),
                 HeaderField::new(Self::VALGRIND, valgrind_version),
             ],
+        }
+    }
+
+    pub fn keyed(self, method_key: String) -> Self {
+        let method = HeaderField::new(Self::METHOD, method_key);
+        Self {
+            fields: [method].into_iter().chain(self.fields).collect(),
         }
     }
 
