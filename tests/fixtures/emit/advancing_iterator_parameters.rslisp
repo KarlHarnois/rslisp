@@ -20,4 +20,5 @@
   (prn (all-small? (range 1 100)))
   (prn (how-many (range 1 100)))
   (prn (first-even (range 2041 2045)))
-  (prn (even-year (vec 2017 2018 2019))))
+  (let years (vec 2017 2018 2019))
+  (prn (even-year years)))

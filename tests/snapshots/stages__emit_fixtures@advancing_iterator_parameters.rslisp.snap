@@ -33,5 +33,6 @@ fn main() {
     println!("{:?}", is_all_small(1_i64..100_i64));
     println!("{:?}", how_many(1_i64..100_i64));
     println!("{:?}", first_even(2041_i64..2045_i64));
-    println!("{:?}", even_year(&vec![2017_i64, 2018_i64, 2019_i64]))
+    let years: Vec<i64> = vec![2017_i64, 2018_i64, 2019_i64];
+    println!("{:?}", even_year(&years))
 }
