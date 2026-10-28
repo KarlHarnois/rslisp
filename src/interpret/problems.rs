@@ -139,9 +139,18 @@ impl InterpretProblems {
         Diagnostic::error(
             DiagnosticCode::FAILURE_PART,
             "an `:earlier` part needs an `:earlier-label`",
-            Label::new(span, "this earlier form has no label"),
+            Label::new(span, "this `:earlier` part has no `:earlier-label`"),
         )
         .with_help("add `:earlier-label \"text\"` beside `:earlier`")
+    }
+
+    pub fn stray_earlier_label(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::FAILURE_PART,
+            "an `:earlier-label` part needs an `:earlier`",
+            Label::new(span, "this `:earlier-label` part has no `:earlier`"),
+        )
+        .with_help("add `:earlier` beside `:earlier-label`")
     }
 
     pub fn malformed_failure_part(span: Span) -> Diagnostic {

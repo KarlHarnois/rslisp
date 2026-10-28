@@ -9,7 +9,7 @@ error[L0321]: a failure description takes `:part value` pairs
  3 | (def unknown-part (macro (form) (fail "bad call" form "fix it" (quote (:cod repeated-parameter)))))
    |                                                                        ^^^^ not a `:part value` pair
 ...
-16 | (unknown-part)
+17 | (unknown-part)
    | -------------- in this macro call
    |
    = help: the parts are `:code`, `:earlier`, `:earlier-label`, `:label`, `:suggest`
@@ -20,7 +20,7 @@ error[L0321]: a failure description takes `:part value` pairs
  4 | (def part-without-value (macro (form) (fail "bad call" form "fix it" (quote (:code)))))
    |                                                                              ^^^^^ not a `:part value` pair
 ...
-17 | (part-without-value)
+18 | (part-without-value)
    | -------------------- in this macro call
    |
    = help: the parts are `:code`, `:earlier`, `:earlier-label`, `:label`, `:suggest`
@@ -31,7 +31,7 @@ error[L0322]: no macro diagnostic is named `repeated-parametr`
  5 | (def misspelled-code (macro (form) (fail "bad call" form "fix it" (quote (:code repeated-parametr)))))
    |                                                                                 ^^^^^^^^^^^^^^^^^ unknown diagnostic
 ...
-18 | (misspelled-code)
+19 | (misspelled-code)
    | ----------------- in this macro call
    |
 help: a diagnostic with a similar name exists
@@ -45,7 +45,7 @@ error[L0322]: no macro diagnostic is named `repeated-field`
  6 | (def type-stage-code (macro (form) (fail "bad call" form "fix it" (quote (:code repeated-field)))))
    |                                                                                 ^^^^^^^^^^^^^^ unknown diagnostic
 ...
-19 | (type-stage-code)
+20 | (type-stage-code)
    | ----------------- in this macro call
 
 error[L0321]: a failure description takes `:part value` pairs
@@ -54,7 +54,7 @@ error[L0321]: a failure description takes `:part value` pairs
  7 | (def string-code (macro (form) (fail "bad call" form "fix it" (quote (:code "L0320")))))
    |                                                                             ^^^^^^^ not a `:part value` pair
 ...
-20 | (string-code)
+21 | (string-code)
    | ------------- in this macro call
    |
    = help: the parts are `:code`, `:earlier`, `:earlier-label`, `:label`, `:suggest`
@@ -65,7 +65,7 @@ error[L0311]: `fail` takes 4 arguments but 5 were given
  8 | (def too-many (macro (form) (fail "bad call" form "fix it" (quote ()) form)))
    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 5 arguments given
 ...
-21 | (too-many)
+22 | (too-many)
    | ---------- in this macro call
 
 error[L0321]: a failure description takes `:part value` pairs
@@ -74,7 +74,7 @@ error[L0321]: a failure description takes `:part value` pairs
  9 | (def string-suggestion (macro (form) (fail "bad call" form "fix it" (quote (:suggest "leaf")))))
    |                                                                                      ^^^^^^ not a `:part value` pair
 ...
-22 | (string-suggestion)
+23 | (string-suggestion)
    | ------------------- in this macro call
    |
    = help: the parts are `:code`, `:earlier`, `:earlier-label`, `:label`, `:suggest`
@@ -85,41 +85,55 @@ error[L0321]: a failure description takes `:part value` pairs
 12 | (def symbol-label (macro (form) (fail "bad call" form "fix it" (quote (:label leaf)))))
    |                                                                               ^^^^ not a `:part value` pair
 ...
-25 | (symbol-label)
+26 | (symbol-label)
    | -------------- in this macro call
    |
    = help: the parts are `:code`, `:earlier`, `:earlier-label`, `:label`, `:suggest`
 
-error[L0320]: the leaf is parked
-  --> expand/failure_descriptions.rslisp:23:1
+error[L0321]: an `:earlier` part needs an `:earlier-label`
+  --> expand/failure_descriptions.rslisp:14:159
    |
-23 | (coded)
+14 | (def earlier-unlabelled (macro (form) (fail "`leaf` is given twice" (first (rest (rest form))) "remove the second `leaf`" (template (:code repeated-parameter :earlier (u...
+   |                                                                                                                                                               ^^^^^^^^ this `:earlier` part has no `:earlier-label`
+...
+28 | (earlier-unlabelled leaf leaf)
+   | ------------------------------ in this macro call
+   |
+   = help: add `:earlier-label "text"` beside `:earlier`
+
+error[L0321]: an `:earlier-label` part needs an `:earlier`
+  --> expand/failure_descriptions.rslisp:15:79
+   |
+15 | (def stray-earlier-label (macro (form) (fail "bad call" form "fix it" (quote (:earlier-label "first given here")))))
+   |                                                                               ^^^^^^^^^^^^^^ this `:earlier-label` part has no `:earlier`
+...
+29 | (stray-earlier-label)
+   | --------------------- in this macro call
+   |
+   = help: add `:earlier` beside `:earlier-label`
+
+error[L0320]: the leaf is parked
+  --> expand/failure_descriptions.rslisp:24:1
+   |
+24 | (coded)
    | ^^^^^^^ here
    |
    = help: drive it
 
 error[L0320]: the leaf is parked
-  --> expand/failure_descriptions.rslisp:24:1
+  --> expand/failure_descriptions.rslisp:25:1
    |
-24 | (labelled)
+25 | (labelled)
    | ^^^^^^^^^^ parked here
    |
    = help: drive it
 
 error[L0320]: `leaf` is given twice
-  --> expand/failure_descriptions.rslisp:26:25
+  --> expand/failure_descriptions.rslisp:27:25
    |
-26 | (repeated-labelled leaf leaf)
+27 | (repeated-labelled leaf leaf)
    |                    ---- ^^^^ given again here
    |                    |
    |                    first given here
    |
    = help: remove the second `leaf`
-
-error[L0321]: an `:earlier` part needs an `:earlier-label`
-  --> expand/failure_descriptions.rslisp:27:21
-   |
-27 | (earlier-unlabelled leaf leaf)
-   |                     ^^^^ this earlier form has no label
-   |
-   = help: add `:earlier-label "text"` beside `:earlier`

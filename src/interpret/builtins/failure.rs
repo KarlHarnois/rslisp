@@ -65,9 +65,19 @@ impl<'a> FailCall<'a> {
 pub struct FailureDescription {
     code: DiagnosticCode,
     label: Option<String>,
-    earlier: Option<Span>,
-    earlier_label: Option<String>,
+    earlier: Option<Earlier>,
+    earlier_label: Option<EarlierLabel>,
     replacement: Option<String>,
+}
+
+struct Earlier {
+    form: Span,
+    part: Span,
+}
+
+struct EarlierLabel {
+    text: String,
+    part: Span,
 }
 
 impl FailureDescription {
@@ -97,17 +107,24 @@ impl FailureDescription {
     }
 
     fn expect_earlier_label(self) -> Result<Self, Diagnostic> {
-        match (self.earlier, self.earlier_label.is_some()) {
-            (Some(earlier), false) => Err(InterpretProblems::missing_earlier_label(earlier)),
-            _ => Ok(self),
+        match (self.earlier, self.earlier_label) {
+            (Some(earlier), None) => Err(InterpretProblems::missing_earlier_label(earlier.part)),
+            (None, Some(earlier_label)) => {
+                Err(InterpretProblems::stray_earlier_label(earlier_label.part))
+            }
+            (earlier, earlier_label) => Ok(Self {
+                earlier,
+                earlier_label,
+                ..self
+            }),
         }
     }
 
     fn with_part(self, part: &Form, value: &Form) -> Result<Self, Diagnostic> {
         match Self::part_name(part) {
             Some(Self::CODE) => self.with_code(value),
-            Some(Self::EARLIER) => Ok(self.with_earlier(value)),
-            Some(Self::EARLIER_LABEL) => self.with_earlier_label(value),
+            Some(Self::EARLIER) => Ok(self.with_earlier(part, value)),
+            Some(Self::EARLIER_LABEL) => self.with_earlier_label(part, value),
             Some(Self::LABEL) => self.with_label(value),
             Some(Self::SUGGEST) => self.with_replacement(value),
             _ => Err(InterpretProblems::malformed_failure_part(part.span())),
@@ -121,16 +138,22 @@ impl FailureDescription {
         })
     }
 
-    fn with_earlier(self, value: &Form) -> Self {
+    fn with_earlier(self, part: &Form, value: &Form) -> Self {
         Self {
-            earlier: Some(value.span()),
+            earlier: Some(Earlier {
+                form: value.span(),
+                part: part.span(),
+            }),
             ..self
         }
     }
 
-    fn with_earlier_label(self, value: &Form) -> Result<Self, Diagnostic> {
+    fn with_earlier_label(self, part: &Form, value: &Form) -> Result<Self, Diagnostic> {
         Ok(Self {
-            earlier_label: Some(Self::string(value)?.to_owned()),
+            earlier_label: Some(EarlierLabel {
+                text: Self::string(value)?.to_owned(),
+                part: part.span(),
+            }),
             ..self
         })
     }
@@ -189,7 +212,10 @@ impl FailureDescription {
     }
 
     fn labelled(self, message: String, culprit: Span) -> Diagnostic {
-        let earlier = self.earlier.zip(self.earlier_label);
+        let earlier = self
+            .earlier
+            .zip(self.earlier_label)
+            .map(|(earlier, label)| (earlier.form, label.text));
         InterpretProblems::failed(self.code, message, culprit, self.label, earlier)
     }
 }
