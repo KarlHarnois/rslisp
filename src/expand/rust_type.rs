@@ -27,7 +27,8 @@ impl Expander<'_> {
         let items = shape.at_least(Self::RUST_TYPE_PARTS)?;
         self.reject_old_rust_type_parameters(items)?;
         let body = vec![items[2].clone()];
-        let parameterized = self.lower_head(&shape, &items[1], body)?;
+        let (head, unsized_parameters) = Self::mark_unsized_parameters(&items[1]);
+        let parameterized = self.lower_head(&shape, &head, body)?;
         if let Some(binder) = parameterized.binders.iter().find(|binder| binder.lifetime) {
             return Err(ExpandProblems::wrong_namespace(
                 self.bindings.get(binder.variable).name(),
@@ -46,11 +47,43 @@ impl Expander<'_> {
         let clauses =
             self.lower_rust_type_clauses(&shape, form, items, parameterized.binders.len())?;
         core.items.push(Item {
-            kind: ItemKind::RustType(binding, parameterized.binders, Rc::new(template), clauses),
+            kind: ItemKind::RustType(
+                binding,
+                parameterized.binders,
+                unsized_parameters,
+                Rc::new(template),
+                clauses,
+            ),
             span: form.span(),
             hidden: false,
         });
         Ok(())
+    }
+
+    fn mark_unsized_parameters(head: &Form) -> (Form, Vec<usize>) {
+        let Some([name, parameters @ ..]) = head.as_list() else {
+            return (head.clone(), Vec::new());
+        };
+        let mut unsized_parameters = Vec::new();
+        let mut parts = vec![name.clone()];
+        for (position, parameter) in parameters.iter().enumerate() {
+            match parameter.as_list() {
+                Some([variable, word]) if Self::is_unsized_word(word) => {
+                    unsized_parameters.push(position);
+                    parts.push(variable.clone());
+                }
+                _ => parts.push(parameter.clone()),
+            }
+        }
+        (
+            Form::new(FormKind::List(parts), head.span()),
+            unsized_parameters,
+        )
+    }
+
+    fn is_unsized_word(form: &Form) -> bool {
+        form.as_symbol()
+            .is_some_and(|symbol| symbol.name() == TypeBinder::UNSIZED)
     }
 
     fn reject_old_rust_type_parameters(&self, items: &[Form]) -> Result<(), Diagnostic> {

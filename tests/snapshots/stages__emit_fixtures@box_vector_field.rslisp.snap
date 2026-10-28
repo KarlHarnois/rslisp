@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/box_vector_field.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    models: Box<Vec<&'a str>>,
+}
+
+fn main() {
+    let car = Car {
+        models: Box::new(vec!["Leaf", "Ariya"]),
+    };
+    println!("{:?}", car.models)
+}

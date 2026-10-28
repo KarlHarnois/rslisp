@@ -80,8 +80,10 @@ impl<'a> CorePrinter<'a> {
     }
 
     fn imported_type_item(&mut self, item: &Item) -> String {
-        if let ItemKind::RustType(binding, params, template, clauses) = &item.kind {
-            return self.rust_type_item(*binding, params, template, clauses);
+        if let ItemKind::RustType(binding, params, unsized_parameters, template, clauses) =
+            &item.kind
+        {
+            return self.rust_type_item(*binding, params, unsized_parameters, template, clauses);
         }
         if let ItemKind::RustTrait(declaration) = &item.kind {
             let mut parts = vec![
@@ -513,10 +515,11 @@ impl<'a> CorePrinter<'a> {
         &mut self,
         binding: BindingId,
         params: &[TypeBinder],
+        unsized_parameters: &[usize],
         template: &ParsedTemplate,
         clauses: &[(TypeExpr, std::rc::Rc<ParsedTemplate>)],
     ) -> String {
-        let head = self.type_head(binding, params);
+        let head = self.type_head_with_unsized(binding, params, unsized_parameters);
         let mut parts = vec![head, format!("{:?}", template.text())];
         parts.extend(clauses.iter().map(|(target, template)| {
             format!("({} {:?})", self.type_expr(target), template.text())
@@ -531,6 +534,29 @@ impl<'a> CorePrinter<'a> {
         }
         let binders = self.type_binders(params);
         format!("({name} {})", binders.join(" "))
+    }
+
+    fn type_head_with_unsized(
+        &mut self,
+        binding: BindingId,
+        params: &[TypeBinder],
+        unsized_parameters: &[usize],
+    ) -> String {
+        if params.is_empty() {
+            return self.name(binding);
+        }
+        let binders = params
+            .iter()
+            .enumerate()
+            .map(|(position, binder)| {
+                if unsized_parameters.contains(&position) {
+                    format!("({} {})", self.name(binder.variable), TypeBinder::UNSIZED)
+                } else {
+                    self.type_binder(binder)
+                }
+            })
+            .collect::<Vec<_>>();
+        format!("({} {})", self.name(binding), binders.join(" "))
     }
 
     fn rust_trait_implementor(&mut self, entry: &RustTraitImplementor) -> String {

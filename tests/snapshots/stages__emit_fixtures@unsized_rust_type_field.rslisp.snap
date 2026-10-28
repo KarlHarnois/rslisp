@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/unsized_rust_type_field.rslisp
+---
+struct Tag {
+    name: std::rc::Rc<str>,
+}
+
+fn make_tag(name: std::rc::Rc<str>) -> Tag {
+    Tag { name }
+}
+
+fn main() {
+    let tag = make_tag(std::rc::Rc::from("Leaf"));
+    println!("Leaf")
+}

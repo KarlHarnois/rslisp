@@ -1,0 +1,9 @@
+(rust-type (shared (item unsized)) "std::rc::Rc<{0}>")
+
+(def shared-str (rust "std::rc::Rc::from({0})" (fn ((ref str)) (shared str))))
+
+(defstruct tag :name (shared str))
+
+(defn main ()
+  (let tag (->tag (shared-str "Leaf")))
+  (println "Leaf"))
