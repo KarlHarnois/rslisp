@@ -43,11 +43,7 @@ impl Check for CoverageFloor<'_> {
             .iter()
             .map(|missed| format!("  {missed}\n"))
             .collect();
-        format!(
-            "The files with the most missed lines:\n{files}\
-             If a test target was deleted, run `cargo llvm-cov clean --workspace` once: \
-             its stale binary counts as uncovered.\n"
-        )
+        format!("The files with the most missed lines:\n{files}")
     }
 }
 
