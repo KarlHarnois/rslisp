@@ -6,6 +6,7 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
 use crate::types::ClosureKind;
 
+#[derive(Clone)]
 pub enum FunctionStorage {
     Field(Rc<str>),
     Payload(Rc<str>),
