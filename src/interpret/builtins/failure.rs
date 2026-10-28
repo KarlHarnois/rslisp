@@ -106,28 +106,48 @@ impl FailureDescription {
 
     fn with_part(self, part: &Form, value: &Form) -> Result<Self, Diagnostic> {
         match Self::part_name(part) {
-            Some(Self::CODE) => Ok(Self {
-                code: Self::code(value)?,
-                ..self
-            }),
-            Some(Self::EARLIER) => Ok(Self {
-                earlier: Some(value.span()),
-                ..self
-            }),
-            Some(Self::EARLIER_LABEL) => Ok(Self {
-                earlier_label: Some(Self::string(value)?.to_owned()),
-                ..self
-            }),
-            Some(Self::LABEL) => Ok(Self {
-                label: Some(Self::string(value)?.to_owned()),
-                ..self
-            }),
-            Some(Self::SUGGEST) => Ok(Self {
-                replacement: Some(Self::symbol_name(value)?.to_string()),
-                ..self
-            }),
+            Some(Self::CODE) => self.with_code(value),
+            Some(Self::EARLIER) => Ok(self.with_earlier(value)),
+            Some(Self::EARLIER_LABEL) => self.with_earlier_label(value),
+            Some(Self::LABEL) => self.with_label(value),
+            Some(Self::SUGGEST) => self.with_replacement(value),
             _ => Err(InterpretProblems::malformed_failure_part(part.span())),
         }
+    }
+
+    fn with_code(self, value: &Form) -> Result<Self, Diagnostic> {
+        Ok(Self {
+            code: Self::code(value)?,
+            ..self
+        })
+    }
+
+    fn with_earlier(self, value: &Form) -> Self {
+        Self {
+            earlier: Some(value.span()),
+            ..self
+        }
+    }
+
+    fn with_earlier_label(self, value: &Form) -> Result<Self, Diagnostic> {
+        Ok(Self {
+            earlier_label: Some(Self::string(value)?.to_owned()),
+            ..self
+        })
+    }
+
+    fn with_label(self, value: &Form) -> Result<Self, Diagnostic> {
+        Ok(Self {
+            label: Some(Self::string(value)?.to_owned()),
+            ..self
+        })
+    }
+
+    fn with_replacement(self, value: &Form) -> Result<Self, Diagnostic> {
+        Ok(Self {
+            replacement: Some(Self::symbol_name(value)?.to_string()),
+            ..self
+        })
     }
 
     fn part_name(part: &Form) -> Option<&str> {
