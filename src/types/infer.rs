@@ -2932,6 +2932,7 @@ impl TypeChecker {
         span: Span,
     ) -> Result<(TypedExprKind, Type), Diagnostic> {
         let base = self.infer(base)?;
+        let base = self.moved_field_base(base);
         let (binding, arguments) = self.update_owner(&base, fields, span)?;
         let typed_fields = self.check_fields(binding, &arguments, fields)?;
         Ok((
@@ -2942,6 +2943,35 @@ impl TypeChecker {
             )),
             Type::Named(binding, arguments),
         ))
+    }
+
+    fn moved_field_base(&self, base: TypedExpr) -> TypedExpr {
+        if Self::reads_field(&base) && self.is_owned_place(&base) {
+            TypedExpr {
+                ty: self.place_type(&base),
+                ..base
+            }
+        } else {
+            base
+        }
+    }
+
+    fn reads_field(value: &TypedExpr) -> bool {
+        matches!(
+            value.kind,
+            TypedExprKind::Struct(TypedStructExpr::Field(..))
+        )
+    }
+
+    fn is_owned_place(&self, value: &TypedExpr) -> bool {
+        match &value.kind {
+            TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => self.is_owned_place(owner),
+            TypedExprKind::Leaf(TypedLeaf::Local(_)) => !matches!(
+                self.unifier.shallow(&value.ty),
+                Type::Ref(..) | Type::Mut(..)
+            ),
+            _ => false,
+        }
     }
 
     fn update_owner(

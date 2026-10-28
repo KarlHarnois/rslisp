@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/assoc_in_unknown_second_field.rslisp
+---
+error[L0408]: `point` has no field `:z`
+ --> check/assoc_in_unknown_second_field.rslisp:7:26
+  |
+7 |   (assoc-in line (:start :z) 3))
+  |                          ^^ unknown field
