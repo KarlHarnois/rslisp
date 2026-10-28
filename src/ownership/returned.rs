@@ -60,17 +60,33 @@ impl<'p> ReturnedBorrows<'p> {
     }
 
     fn owned(&self, declared: &Type) -> Option<String> {
-        let (Type::Ref(_, viewed) | Type::Mut(_, viewed)) = declared else {
-            return None;
-        };
-        let owned = match viewed.as_ref() {
-            Type::Primitive(PrimitiveType::Str) => Type::Primitive(PrimitiveType::String),
-            Type::Named(slice, elements) if self.program.rust_types.is_slice(*slice) => {
-                Type::Named(self.vector()?, elements.clone())
+        let owned = self.owned_type(declared)?;
+        let declares_borrow = declared.holds_reference() && !owned.holds_reference();
+        declares_borrow.then(|| self.display().show(&owned))
+    }
+
+    fn owned_type(&self, ty: &Type) -> Option<Type> {
+        match ty {
+            Type::Ref(_, viewed) | Type::Mut(_, viewed) => self.owned_view(viewed),
+            Type::Named(binding, arguments) => {
+                Some(Type::Named(*binding, self.owned_types(arguments)?))
             }
-            other => other.clone(),
-        };
-        Some(self.display().show(&owned))
+            other => Some(other.clone()),
+        }
+    }
+
+    fn owned_view(&self, viewed: &Type) -> Option<Type> {
+        match viewed {
+            Type::Primitive(PrimitiveType::Str) => Some(Type::Primitive(PrimitiveType::String)),
+            Type::Named(slice, elements) if self.program.rust_types.is_slice(*slice) => {
+                Some(Type::Named(self.vector()?, self.owned_types(elements)?))
+            }
+            other => self.owned_type(other),
+        }
+    }
+
+    fn owned_types(&self, types: &[Type]) -> Option<Vec<Type>> {
+        types.iter().map(|ty| self.owned_type(ty)).collect()
     }
 
     fn vector(&self) -> Option<BindingId> {
