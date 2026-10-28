@@ -93,6 +93,7 @@ pub struct ClosureKinds<'a> {
     binding_captures: HashMap<BindingId, BindingId>,
     value_parameters: HashMap<BindingId, Vec<BindingId>>,
     function_parameters: HashMap<BindingId, Vec<BindingId>>,
+    pass_edges: HashMap<BindingId, HashSet<BindingId>>,
     rust_parameter_kinds: HashMap<BindingId, Vec<ClosureKind>>,
     written_parameter_kinds: HashMap<BindingId, ClosureKind>,
     result_kinds: HashMap<BindingId, ClosureKind>,
@@ -174,13 +175,68 @@ impl<'a> ClosureKinds<'a> {
             binding_captures: HashMap::new(),
             value_parameters: HashMap::new(),
             function_parameters: sources.function_parameters,
+            pass_edges: HashMap::new(),
             rust_parameter_kinds: sources.rust_parameter_kinds,
             written_parameter_kinds: sources.written_parameter_kinds,
             result_kinds: HashMap::new(),
         }
     }
 
+    fn build_pass_edges(&mut self, modules: &[TypedModule]) {
+        for definition in modules.iter().flat_map(|module| &module.definitions) {
+            self.build_lambda_pass_edges(&definition.value);
+        }
+    }
+
+    fn build_lambda_pass_edges(&mut self, expr: &TypedExpr) {
+        if let TypedExprKind::Fn(lambda) = &expr.kind {
+            let params: HashSet<BindingId> =
+                lambda.params.iter().map(|param| param.binding).collect();
+            for child in lambda.body.expressions() {
+                self.build_body_pass_edges(child, &params);
+            }
+        }
+        for child in expr.children() {
+            self.build_lambda_pass_edges(child);
+        }
+    }
+
+    fn build_body_pass_edges(&mut self, expr: &TypedExpr, params: &HashSet<BindingId>) {
+        if let TypedExprKind::Call(callee, arguments) = &expr.kind
+            && let TypedExprKind::Leaf(TypedLeaf::Global(function)) = &callee.kind
+            && let Some(parameters) = self.function_parameters.get(function)
+        {
+            for (position, argument) in arguments.iter().enumerate() {
+                let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &argument.value.kind else {
+                    continue;
+                };
+                let Some(target) = parameters.get(position) else {
+                    continue;
+                };
+                if params.contains(binding) {
+                    self.pass_edges.entry(*binding).or_default().insert(*target);
+                }
+            }
+        }
+        for child in expr.children() {
+            self.build_body_pass_edges(child, params);
+        }
+    }
+
+    fn allow_every_kind_on_recursive_passes(&mut self) {
+        let parameters: Vec<BindingId> = self.pass_edges.keys().copied().collect();
+        for parameter in parameters {
+            if !self.written_parameter_kinds.contains_key(&parameter)
+                && self.reaches(parameter, parameter)
+            {
+                self.parameter_kinds.insert(parameter, ClosureKind::FnOnce);
+            }
+        }
+    }
+
     pub fn run(mut self, modules: &mut [TypedModule]) -> KindReport {
+        self.build_pass_edges(modules);
+        self.allow_every_kind_on_recursive_passes();
         loop {
             let known_binding_kinds = self.binding_kinds.clone();
             self.recompute_lambdas(modules);
@@ -834,25 +890,28 @@ impl<'a> ClosureKinds<'a> {
                 self.require_expression(&argument.value, params, nested, uses);
                 continue;
             }
-            uses.record_pass(*binding, self.pass_kind(callee, position, *binding));
+            uses.record_pass(*binding, self.expected_kind(callee, position));
         }
     }
 
-    fn pass_kind(&self, callee: &TypedExpr, position: usize, parameter: BindingId) -> ClosureKind {
-        if self.passes_to_itself(callee, position, parameter) {
-            return ClosureKind::FnOnce;
-        }
-        self.expected_kind(callee, position)
-    }
-
-    fn passes_to_itself(&self, callee: &TypedExpr, position: usize, parameter: BindingId) -> bool {
-        let TypedExprKind::Leaf(TypedLeaf::Global(function)) = &callee.kind else {
+    fn reaches(&self, from: BindingId, parameter: BindingId) -> bool {
+        let Some(targets) = self.pass_edges.get(&from) else {
             return false;
         };
-        self.function_parameters
-            .get(function)
-            .and_then(|params| params.get(position))
-            == Some(&parameter)
+        let mut pending: Vec<BindingId> = targets.iter().copied().collect();
+        let mut visited = HashSet::new();
+        while let Some(current) = pending.pop() {
+            if current == parameter {
+                return true;
+            }
+            if !visited.insert(current) {
+                continue;
+            }
+            if let Some(targets) = self.pass_edges.get(&current) {
+                pending.extend(targets);
+            }
+        }
+        false
     }
 
     fn require_control(

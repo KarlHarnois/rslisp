@@ -1,0 +1,19 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_parameter_mutual_recursion.rslisp
+---
+fn ping(mut f: impl FnMut(i64), n: i64) -> i64 {
+    f(n);
+    if n > 0 { pong(f, n - 1) } else { 0 }
+}
+
+fn pong(mut f: impl FnMut(i64), n: i64) -> i64 {
+    if n > 0 { ping(f, n - 1) } else { 0 }
+}
+
+fn main() {
+    let mut total: Vec<i64> = vec![0_i64];
+    ping(|n: i64| total.push(n), 3);
+    println!("{}", total.len())
+}
