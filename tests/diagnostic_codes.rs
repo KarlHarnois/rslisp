@@ -6,7 +6,7 @@ struct DiagnosticCoverage {
 
 impl DiagnosticCoverage {
     const CODE_DEFINITIONS: &str = include_str!("../src/diagnostic/code.rs");
-    const CODE_OPENING: &str = " = \"";
+    const CODE_OPENING: &str = " = \"L";
     const CODE_CLOSING: char = '"';
     const SNAPSHOT_DIRECTORY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/snapshots");
 
@@ -19,17 +19,18 @@ impl DiagnosticCoverage {
         Self { snapshots }
     }
 
-    fn codes_without_snapshot(&self) -> Vec<&'static str> {
+    fn codes_without_snapshot(&self) -> Vec<String> {
         Self::defined_codes()
             .filter(|code| !self.snapshots.contains(&format!("[{code}]")))
             .collect()
     }
 
-    fn defined_codes() -> impl Iterator<Item = &'static str> {
+    fn defined_codes() -> impl Iterator<Item = String> {
         Self::CODE_DEFINITIONS
             .split(Self::CODE_OPENING)
             .skip(1)
             .filter_map(|rest| rest.split(Self::CODE_CLOSING).next())
+            .map(|code| format!("L{code}"))
     }
 }
 
@@ -37,5 +38,5 @@ impl DiagnosticCoverage {
 fn every_diagnostic_code_has_a_snapshot() {
     let coverage = DiagnosticCoverage::load();
     assert!(DiagnosticCoverage::defined_codes().count() > 0);
-    assert_eq!(coverage.codes_without_snapshot(), Vec::<&str>::new());
+    assert_eq!(coverage.codes_without_snapshot(), Vec::<String>::new());
 }
