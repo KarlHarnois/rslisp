@@ -14,7 +14,8 @@
        "let r = 4 +; r"
        "let s = 3 $ 4"
        "if 1 then 2"
-       "let p = 2; mystery(p)"))
+       "let p = 2; mystery(p)"
+       "max(1 2)"))
 
 (defn main ()
   (for-each (enumerate (iter scripts))

@@ -44,3 +44,5 @@ script 10: if 1 then 2
   error: expected `else` at token 4
 script 11: let p = 2; mystery(p)
   error: unknown function `mystery`
+script 12: max(1 2)
+  error: expected `,` or `)` at token 3

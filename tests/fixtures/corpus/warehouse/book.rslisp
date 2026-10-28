@@ -67,7 +67,7 @@
 (defn adjust (current delta)
   (let counted (+ (signed (:quantity current)) delta))
   (if (< counted 0)
-      (err (ledger-error/short-stock (clone (:sku current)) (narrow (- 0 delta)) (:quantity current)))
+      (err (ledger-error/negative-count (clone (:sku current)) (narrow (- 0 delta)) (:quantity current)))
       (ok (assoc (clone current) :quantity (narrow counted)))))
 
 (type reprice (fn ((ref item) u64) item))

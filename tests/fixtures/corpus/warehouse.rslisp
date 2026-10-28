@@ -75,7 +75,8 @@
        "ship GEAR-02 27\n"
        "ship HOSE-02 36\n"
        "receive BOLT-04 37\n"
-       "adjust GEAR-02 1"))
+       "adjust GEAR-02 1\n"
+       "adjust HOSE-01 -500"))
 
 (def afternoon-events
   (str "ship PIPE-03 11\n"

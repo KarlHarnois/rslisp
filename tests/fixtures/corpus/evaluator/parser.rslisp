@@ -129,9 +129,15 @@
       (ok (->parsed (expr/call function arguments) (+ position 1)))
       (do (let argument (try (parse-expression tokens position)))
           (let next (:next argument))
-          (let after (if (symbol-at? tokens next ",") (+ next 1) next))
+          (let after (try (skip-argument-separator tokens next)))
           (let-fields (parsed (node _)) argument
             (parse-arguments tokens after function (append arguments node))))))
+
+(type skip-argument-separator (fn ((ref (vec token)) usize) (result usize string)))
+(defn skip-argument-separator (tokens position)
+  (cond ((symbol-at? tokens position ",") (ok (+ position 1)))
+        ((symbol-at? tokens position ")") (ok position))
+        (else (err (str "expected `,` or `)` at token " position)))))
 
 (type parse-group (fn ((ref (vec token)) usize) (result parsed string)))
 (defn parse-group (tokens position)
