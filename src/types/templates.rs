@@ -19,11 +19,11 @@ impl TemplateBorrows {
     }
 
     pub fn borrows(&self, callee: &TypedExpr, position: usize) -> bool {
-        self.fact(callee, false, |parsed| parsed.borrows(position))
+        self.read_template(callee, false, |parsed| parsed.borrows(position))
     }
 
     pub fn advances(&self, callee: &TypedExpr, position: usize) -> bool {
-        self.fact(callee, false, |parsed| parsed.advances_receiver(position))
+        self.read_template(callee, false, |parsed| parsed.advances_receiver(position))
     }
 
     pub fn keeps(&self, callee: &TypedExpr, position: usize) -> bool {
@@ -31,7 +31,7 @@ impl TemplateBorrows {
     }
 
     pub fn reference(&self, callee: &TypedExpr, position: usize) -> Option<ReferenceKind> {
-        self.fact(callee, None, |parsed| {
+        self.read_template(callee, None, |parsed| {
             if parsed.advances_receiver(position) {
                 Some(ReferenceKind::Mutable)
             } else if parsed.borrows(position) {
@@ -42,17 +42,22 @@ impl TemplateBorrows {
         })
     }
 
-    fn fact<T>(&self, callee: &TypedExpr, absent: T, fact: impl Fn(&ParsedTemplate) -> T) -> T {
+    fn read_template<T>(
+        &self,
+        callee: &TypedExpr,
+        absent: T,
+        read: impl Fn(&ParsedTemplate) -> T,
+    ) -> T {
         match &callee.kind {
             TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
-                self.templates.get(binding).map(fact).unwrap_or(absent)
+                self.templates.get(binding).map(read).unwrap_or(absent)
             }
             TypedExprKind::Leaf(TypedLeaf::Rust(template)) => {
                 let mut inline = self.inline.borrow_mut();
                 let parsed = inline
                     .entry(template.template.clone())
                     .or_insert_with(|| ParsedTemplate::parse(&template.template).ok());
-                parsed.as_ref().map(fact).unwrap_or(absent)
+                parsed.as_ref().map(read).unwrap_or(absent)
             }
             _ => absent,
         }
