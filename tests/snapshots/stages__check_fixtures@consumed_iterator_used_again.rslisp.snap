@@ -11,8 +11,5 @@ error[L0501]: use of moved value `values`
   |                                          |
   |                                          value moved here
   |
-help: clone the value if both places need it
-  |
-1 - (defn counted (values) (let total (count values)) (any values (fn (value) (> value 50))))
-1 + (defn counted (values) (let total (count (clone values))) (any values (fn (value) (> value 50))))
-  |
+  = note: `values` is a lazy pipeline, so it runs once
+  = help: collect it if both places need its items, as in `(collect values)`, or write a function that rebuilds it

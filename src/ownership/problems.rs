@@ -67,6 +67,14 @@ impl OwnershipProblems {
         )
     }
 
+    pub fn pipeline_help(diagnostic: Diagnostic, name: &str) -> Diagnostic {
+        diagnostic
+            .with_note(format!("`{name}` is a lazy pipeline, so it runs once"))
+            .with_help(format!(
+                "collect it if both places need its items, as in `(collect {name})`, or write a function that rebuilds it"
+            ))
+    }
+
     pub fn mut_parameter_move_help(diagnostic: Diagnostic) -> Diagnostic {
         diagnostic
             .with_help("use the value before it moves, because a `mut` borrow cannot be cloned")

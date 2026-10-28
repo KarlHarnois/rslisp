@@ -114,6 +114,7 @@ impl OwnershipChecker {
                     &program.bindings,
                     &program.template_borrows,
                     &program.generics,
+                    &program.rust_types,
                     definition.binding,
                 );
                 let report = checker.check(lambda);

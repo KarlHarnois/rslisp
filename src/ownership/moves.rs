@@ -8,8 +8,8 @@ use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
     Borrow, ClosureKind, CopyRules, FieldPlace, GenericId, GenericParam, InferredCopies,
-    TemplateBorrows, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
-    TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
+    RustTypeTable, TemplateBorrows, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedControl,
+    TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -28,6 +28,7 @@ pub struct MoveChecker<'a> {
     bindings: &'a BindingArena,
     template_borrows: &'a TemplateBorrows,
     generics: &'a HashMap<GenericId, GenericParam>,
+    rust_types: &'a RustTypeTable,
     enclosing: BindingId,
     changed: ChangedValues,
     moved: MovedValues,
@@ -45,6 +46,7 @@ impl<'a> MoveChecker<'a> {
         bindings: &'a BindingArena,
         template_borrows: &'a TemplateBorrows,
         generics: &'a HashMap<GenericId, GenericParam>,
+        rust_types: &'a RustTypeTable,
         enclosing: BindingId,
     ) -> Self {
         Self {
@@ -52,6 +54,7 @@ impl<'a> MoveChecker<'a> {
             bindings,
             template_borrows,
             generics,
+            rust_types,
             enclosing,
             changed: ChangedValues::default(),
             moved: MovedValues::default(),
@@ -340,9 +343,19 @@ impl<'a> MoveChecker<'a> {
             return diagnostic;
         }
         let moved = OwnershipProblems::use_after_move(name, span, moved_at);
-        self.ownership_help(binding, ty, &moved).unwrap_or_else(|| {
-            OwnershipProblems::clone_suggestion(moved, site.cloned_place(name), moved_at)
-        })
+        self.ownership_help(binding, ty, &moved)
+            .unwrap_or_else(|| self.reuse_help(moved, name, ty, site))
+    }
+
+    fn reuse_help(&self, moved: Diagnostic, name: &str, ty: &Type, site: &MoveSite) -> Diagnostic {
+        if self.is_pipeline(ty) {
+            return OwnershipProblems::pipeline_help(moved, name);
+        }
+        OwnershipProblems::clone_suggestion(moved, site.cloned_place(name), site.span())
+    }
+
+    fn is_pipeline(&self, ty: &Type) -> bool {
+        matches!(ty, Type::Named(binding, _) if self.rust_types.is_iterator(*binding))
     }
 
     fn bound_help(
