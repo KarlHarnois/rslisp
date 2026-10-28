@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/returned_option_field_borrow.rslisp
+---
+error[L0510]: cannot return a borrow of a local value
+ --> check/returned_option_field_borrow.rslisp:5:23
+  |
+1 | (defstruct car :model (option str))
+  |                       ------------ declared as a borrow here
+...
+4 |   (let model (to-string line))
+  |        ----- this local is dropped when the function returns
+5 |   (->car :model (some (as-str model))))
+  |                       ^^^^^^^^^^^^^^ this borrows a local value
+  |
+  = help: the field `model` of `car` borrows its data, so give it the owned type `(option string)`

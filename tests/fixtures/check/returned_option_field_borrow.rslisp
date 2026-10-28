@@ -1,0 +1,8 @@
+(defstruct car :model (option str))
+
+(defn build (line)
+  (let model (to-string line))
+  (->car :model (some (as-str model))))
+
+(defn main ()
+  (build "Leaf"))
