@@ -83,7 +83,9 @@ The exceptions are:
 ### Names
 
 - Name a type with a noun. Name a method that acts with a verb.
-- NEVER put an abbreviation, a number series, or a noise word in a name.
+- NEVER put an abbreviation or a noise word in a name.
+- If the named things differ in role, NEVER tell their names apart by a number.
+- A number MAY name a position in a sequence, such as the 57th function of a generated call chain.
 - If a value's meaning is not obvious, make the value a named constant.
 - In Rust code, take the language's name and file extension from `Language` in `src/language.rs`: `rslisp` is a placeholder name.
 
