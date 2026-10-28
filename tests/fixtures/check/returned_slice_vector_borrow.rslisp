@@ -1,0 +1,8 @@
+(defstruct archive :chunks (vec (slice u8)))
+
+(defn build ()
+  (let bytes (vec 1 2 3))
+  (->archive :chunks (vec (ref bytes))))
+
+(defn main ()
+  (build))

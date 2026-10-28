@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/returned_slice_vector_borrow.rslisp
+---
+error[L0510]: cannot return a borrow of a local value
+ --> check/returned_slice_vector_borrow.rslisp:5:22
+  |
+1 | (defstruct archive :chunks (vec (slice u8)))
+  |                            ---------------- declared as a borrow here
+...
+4 |   (let bytes (vec 1 2 3))
+  |        ----- this local is dropped when the function returns
+5 |   (->archive :chunks (vec (ref bytes))))
+  |                      ^^^^^^^^^^^^^^^^^ this borrows a local value
+  |
+  = help: the field `chunks` of `archive` borrows its data, so give it the owned type `(vec (vec u8))`
