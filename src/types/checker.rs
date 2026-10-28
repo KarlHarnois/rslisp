@@ -1488,7 +1488,7 @@ impl TypeChecker {
     fn borrow_views(&self, stored: Type) -> Type {
         match stored {
             view if Self::is_unsized_type(&self.rust_types, &view) => Type::shared(view),
-            Type::Named(binding, arguments) => Type::Named(
+            Type::Named(binding, arguments) if !self.rust_types.is_box(binding) => Type::Named(
                 binding,
                 arguments
                     .into_iter()

@@ -1,0 +1,7 @@
+(defstruct tag :name (box str))
+
+(def box-str (rust "Box::from({0})" (fn ((ref str)) (box str))))
+
+(defn main ()
+  (let tag (->tag (box-str "Leaf")))
+  (prn (:name tag)))

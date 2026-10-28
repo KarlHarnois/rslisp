@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/box_string_field.rslisp
+---
+#[derive(Debug, PartialEq, Eq, Hash)]
+struct Tag {
+    name: Box<str>,
+}
+
+fn make_tag(name: Box<str>) -> Tag {
+    Tag { name }
+}
+
+fn main() {
+    let tag = make_tag(Box::from("Leaf"));
+    println!("{:?}", tag.name)
+}
