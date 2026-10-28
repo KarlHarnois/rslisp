@@ -25,6 +25,12 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
     }
 
     pub fn elided_positions(&self, method: BindingId) -> HashSet<usize> {
+        if self
+            .lambda(method)
+            .is_some_and(|lambda| !self.takes_borrowing_function(lambda))
+        {
+            return HashSet::new();
+        }
         self.bodies(method)
             .into_iter()
             .flat_map(|lambda| self.higher_ranked_positions(lambda))
@@ -82,11 +88,7 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
     }
 
     fn higher_ranked_positions(&self, lambda: &TypedLambda) -> Vec<usize> {
-        if !lambda
-            .params
-            .iter()
-            .any(|param| self.program.is_borrowing_function(&param.ty))
-        {
+        if !self.takes_borrowing_function(lambda) {
             return Vec::new();
         }
         let higher_ranked = self.result_borrows.analyse(lambda).higher_ranked;
@@ -97,5 +99,12 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
             .filter(|(_, param)| higher_ranked.contains(&param.binding))
             .map(|(position, _)| position)
             .collect()
+    }
+
+    fn takes_borrowing_function(&self, lambda: &TypedLambda) -> bool {
+        lambda
+            .params
+            .iter()
+            .any(|param| self.program.is_borrowing_function(&param.ty))
     }
 }
