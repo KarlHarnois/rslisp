@@ -22,7 +22,7 @@ pub struct Callgrind {
 }
 
 impl Callgrind {
-    const VALGRIND: &'static str = "valgrind";
+    pub const VALGRIND: &'static str = "valgrind";
     const PRELOAD: &'static str = "LD_PRELOAD";
     const SEARCH_PATH: &'static str = "PATH";
     const OPTIONS: [&'static str; 7] = [

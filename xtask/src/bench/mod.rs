@@ -4,7 +4,9 @@ mod compiler;
 mod corpus;
 mod failure;
 mod fixed_seed;
+mod header;
 mod measurement;
+mod method;
 mod profile;
 mod results;
 mod table;
@@ -22,6 +24,7 @@ use comparison::Comparison;
 use compiler::{BuiltCompiler, CompilerBuild};
 use corpus::Corpus;
 use fixed_seed::FixedSeedLibrary;
+use method::MeasurementMethod;
 use profile::EntryPointCheck;
 use results::ResultSet;
 
@@ -38,6 +41,10 @@ pub enum BenchTask {
         #[arg(long, value_enum, default_value_t = ReportLength::Full)]
         length: ReportLength,
     },
+    #[command(
+        about = "Print the key of what besides the compiler's code decides the counts: the toolchain, the benchmark code and the corpus"
+    )]
+    Method,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -84,6 +91,9 @@ impl BenchTask {
                 candidate,
                 length,
             } => Self::compare(&baseline, &candidate, length),
+            Self::Method => MeasurementMethod::new(root)
+                .key()
+                .map(|key| format!("{key}\n")),
         };
         match report {
             Ok(report) => {
@@ -137,7 +147,9 @@ impl<'a> FrontEndBenchmark<'a> {
             fixed_seed,
             self.root.join(Self::PROFILES),
         );
-        let results = self.profile_corpus(&callgrind)?;
+        let results = self
+            .profile_corpus(&callgrind)?
+            .with_header(MeasurementMethod::new(self.root).header()?);
         if let Some(path) = &self.options.save {
             results.save(path)?;
         }
