@@ -4,7 +4,7 @@ use std::rc::Rc;
 use super::copy::InferredCopies;
 use super::display::TypeDisplay;
 use super::enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};
-use super::graph::DependencyGraph;
+use super::graph::DefinitionGraph;
 use super::pending::PendingBorrow;
 use super::pinning::LiteralDefaults;
 use super::problems::{ImplementorGroup, ImplementorList, MismatchContext, TypeProblems};
@@ -528,6 +528,7 @@ impl TypeChecker {
         &mut self,
         modules: &[CoreModule],
         entry: ModuleId,
+        graph: &DefinitionGraph,
     ) -> HashMap<BindingId, TypedDefinition> {
         let definitions: Vec<Definition> = modules
             .iter()
@@ -541,34 +542,29 @@ impl TypeChecker {
                 _ => None,
             })
             .collect();
-        let pairs: Vec<(BindingId, &Expr)> = definitions
-            .iter()
-            .map(|definition| (definition.binding, definition.value))
-            .collect();
-        let graph = DependencyGraph::build(&pairs, &self.bindings);
-        let order: Vec<BindingId> = definitions
-            .iter()
-            .map(|definition| definition.binding)
-            .collect();
-        let runtime = graph.reachable_from(&self.main_definition(modules, entry));
-        self.compile_time_only = order
+        let dependencies = graph.dependencies();
+        let runtime = dependencies.reachable_from(&self.main_definition(modules, entry));
+        self.compile_time_only = graph
+            .order()
             .iter()
             .copied()
-            .filter(|binding| graph.is_compile_time_only(*binding) && !runtime.contains(binding))
+            .filter(|binding| {
+                dependencies.is_compile_time_only(*binding) && !runtime.contains(binding)
+            })
             .collect();
         let by_binding: HashMap<BindingId, &Definition> = definitions
             .iter()
             .map(|definition| (definition.binding, definition))
             .collect();
         let mut typed = HashMap::new();
-        for component in graph.components(&order) {
+        for component in graph.components() {
             let members: Vec<&Definition> = component
                 .iter()
                 .filter(|binding| !self.compile_time_only.contains(binding))
                 .map(|binding| by_binding[binding])
                 .collect();
             let bindings: Vec<BindingId> = members.iter().map(|member| member.binding).collect();
-            if graph.depends_on_any(&bindings, &self.failed_bindings) {
+            if dependencies.depends_on_any(&bindings, &self.failed_bindings) {
                 self.failed_bindings.extend(bindings);
                 continue;
             }
@@ -2625,6 +2621,7 @@ impl TypeChecker {
 impl TypeChecker {
     pub fn check(
         program: &crate::expand::Program,
+        graph: &DefinitionGraph,
         changed_structs: &HashSet<BindingId>,
         inferred_copies: &InferredCopies,
         pinned: &HashMap<BindingId, Type>,
@@ -2643,10 +2640,9 @@ impl TypeChecker {
             .map(|(span, origin)| (*span, Rc::clone(&origin.name)))
             .collect();
         checker.collect_declarations(&program.modules);
-        let mut definitions = checker.check_definitions(&program.modules, program.entry);
-        let order = Self::definition_order(&program.modules);
+        let mut definitions = checker.check_definitions(&program.modules, program.entry, graph);
         let mut finalizer = super::finalize::Finalizer::new(&mut checker);
-        for binding in &order {
+        for binding in graph.order() {
             if let Some(definition) = definitions.get_mut(binding) {
                 finalizer.definition(definition);
             }
@@ -2661,17 +2657,6 @@ impl TypeChecker {
             .map(|module| Self::typed_module(module, &mut definitions))
             .collect();
         checker.into_program(typed_modules, program.entry)
-    }
-
-    fn definition_order(modules: &[CoreModule]) -> Vec<BindingId> {
-        modules
-            .iter()
-            .flat_map(|module| &module.items)
-            .filter_map(|item| match &item.kind {
-                ItemKind::Def(binding, _) => Some(*binding),
-                _ => None,
-            })
-            .collect()
     }
 
     fn typed_module(

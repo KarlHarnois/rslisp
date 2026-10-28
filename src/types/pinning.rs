@@ -1,10 +1,10 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use super::display::TypeDisplay;
-use super::graph::DependencyGraph;
+use super::graph::DefinitionGraph;
 use super::ty::{GenericId, Type};
 use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
-use crate::core::{BindingId, Expr, ItemKind, PrimitiveType};
+use crate::core::{BindingId, ItemKind, PrimitiveType};
 use crate::expand::Program;
 
 struct UseTypes {
@@ -32,9 +32,9 @@ pub struct InstantiationReport {
 }
 
 impl InstantiationReport {
-    pub fn of(program: &Program, typed: &TypedProgram) -> Self {
+    pub fn of(program: &Program, graph: &DefinitionGraph, typed: &TypedProgram) -> Self {
         let written = Self::written_signatures(program);
-        let groups = Self::recursive_groups(program);
+        let groups = Self::recursive_groups(graph);
         let targets = Self::targets(typed);
         let mut entries = Self::entries(&targets, &written);
         Self::collect_uses(typed, &targets, &groups, &mut entries);
@@ -61,22 +61,11 @@ impl InstantiationReport {
             .collect()
     }
 
-    fn recursive_groups(program: &Program) -> HashMap<BindingId, usize> {
-        let definitions: Vec<(BindingId, &Expr)> = program
-            .modules
-            .iter()
-            .flat_map(|module| &module.items)
-            .filter_map(|item| match &item.kind {
-                ItemKind::Def(binding, value) => Some((*binding, value)),
-                _ => None,
-            })
-            .collect();
-        let graph = DependencyGraph::build(&definitions, &program.bindings);
-        let order: Vec<BindingId> = definitions.iter().map(|(binding, _)| *binding).collect();
+    fn recursive_groups(graph: &DefinitionGraph) -> HashMap<BindingId, usize> {
         let mut groups = HashMap::new();
-        for (index, component) in graph.components(&order).into_iter().enumerate() {
+        for (index, component) in graph.components().iter().enumerate() {
             for binding in component {
-                groups.insert(binding, index);
+                groups.insert(*binding, index);
             }
         }
         groups

@@ -36,6 +36,7 @@ pub use collection::{Collection, CollectionKind};
 pub use copy::{CopyRules, InferredCopies};
 pub use display::TypeDisplay;
 pub use enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};
+pub use graph::DefinitionGraph;
 pub use pinning::{InstantiationReport, LiteralDefaults, Pinning};
 pub use projection::{AssociatedType, ProjectionTable};
 pub use rust_types::{RustType, RustTypeTable};
