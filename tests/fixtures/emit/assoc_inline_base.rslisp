@@ -1,0 +1,23 @@
+(defstruct point :x i64 :y i64)
+
+(defstruct line :start point :end point)
+
+(defstruct car :make str :model string :year u16)
+
+(defn origin () (->point 0 0))
+
+(defn main ()
+  (let positional (assoc (->point 1 2) :x 3))
+  (println (:x positional) (:y positional))
+  (let named (assoc (->point :x 1 :y 2) :x 3))
+  (println (:x named) (:y named))
+  (let kernel (assoc (new point (x 1) (y 2)) :x 3))
+  (println (:x kernel) (:y kernel))
+  (let shifted (assoc (origin) :y 4))
+  (println (:x shifted) (:y shifted))
+  (let nested (assoc (->line (->point 1 2) (->point 5 6)) :start (assoc (->point 0 0) :y 9)))
+  (println (:y (:start nested)) (:x (:end nested)))
+  (let leaf (assoc (->car "Nissan" (to-string "Leaf") 2024) :year 2025))
+  (println (:make leaf) " " (:model leaf) " " (:year leaf))
+  (let grid (assoc-in (vec (vec 1 2) (vec 3 4)) (1 0) 7))
+  (println (at (at grid 1) 0)))
