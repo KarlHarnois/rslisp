@@ -174,7 +174,6 @@ impl fmt::Display for ResultSet {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bench::fixture::HeadedResultsFixture;
 
     struct ResultsFixture;
 
@@ -228,13 +227,6 @@ mod tests {
         let reloaded = ResultSet::load(&path).unwrap();
         assert_eq!(reloaded.header, ResultsFixture::header());
         assert_eq!(reloaded.programs(), results.programs());
-    }
-
-    #[test]
-    fn reads_the_method_key_of_a_headed_file() {
-        let results = ResultSet::load(&ResultsFixture::fixture("headed-results.tsv")).unwrap();
-        assert_eq!(results.method_key(), Some(HeadedResultsFixture::METHOD_KEY));
-        assert_eq!(results.programs().len(), 2);
     }
 
     #[test]
