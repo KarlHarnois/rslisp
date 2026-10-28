@@ -1,6 +1,6 @@
 # RFC 0038: Field keywords
 
-**Status:** Accepted. Its construction call rule is superseded by 0039.
+**Status:** Accepted. Its construction call rule is superseded by 0039. Its field view rule is superseded by 0040.
 **Date:** 2026-10-26
 
 ## Problem
