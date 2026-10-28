@@ -24,10 +24,33 @@ fn record_through_twice(mut record: impl FnMut(i64), year: i64) {
     twice(step, year)
 }
 
+fn record_in_loop(mut record: impl FnMut(i64), year: i64) {
+    let mut step = |n: i64| record(n);
+    let mut offset: i64 = 0;
+    loop {
+        if offset < 2 {
+            step(year + offset);
+            offset += 1;
+            continue;
+        } else {
+            break;
+        }
+    }
+}
+
+fn record_nested(mut record: impl FnMut(i64), year: i64) {
+    let mut step = |n: i64| record(n);
+    let mut step_next = |n: i64| step(n + 1);
+    step_next(year);
+    step_next(year + 1)
+}
+
 fn main() {
     let mut years: Vec<i64> = vec![2024_i64];
     record_twice(|year: i64| years.push(year), 2025);
     record_once(|year: i64| years.push(year), 2027);
     record_through_twice(|year: i64| years.push(year), 2028);
+    record_in_loop(|year: i64| years.push(year), 2029);
+    record_nested(|year: i64| years.push(year), 2031);
     println!("{}", years.len())
 }
