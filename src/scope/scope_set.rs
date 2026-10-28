@@ -49,6 +49,7 @@ impl ScopeSet {
         self.sorted.binary_search(&scope).is_ok()
     }
 
+    #[inline]
     pub fn is_subset_of(&self, other: &ScopeSet) -> bool {
         self.sorted.iter().all(|scope| other.contains(*scope))
     }
