@@ -44,6 +44,14 @@ impl ParameterUses {
         Self::combine_with(&mut self.required, other.required, ClosureKind::max);
     }
 
+    pub fn counts(&self) -> Self {
+        Self {
+            calls: self.calls.clone(),
+            uses: self.uses.clone(),
+            ..Self::default()
+        }
+    }
+
     pub fn repeat_uses_since(&mut self, before: &Self) {
         Self::repeat_since(&mut self.calls, &before.calls);
         Self::repeat_since(&mut self.uses, &before.uses);
