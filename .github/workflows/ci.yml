@@ -126,10 +126,14 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          fetch-depth: 2
+      - name: Find the commit the pull request merges into
+        id: base
+        run: echo "sha=$(git rev-parse HEAD^1)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ steps.base.outputs.sha }}
           path: ${{ env.BASELINE }}
       - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
       - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
@@ -156,7 +160,7 @@ jobs:
         shell: bash
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ steps.base.outputs.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           compare() {
