@@ -1,0 +1,26 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/string_map_fields.rslisp
+---
+struct Dealer<'a> {
+    prices: std::collections::HashMap<&'a str, u32>,
+    ranking: std::collections::BTreeMap<u8, &'a str>,
+}
+
+fn main() {
+    let dealer = Dealer {
+        prices: {
+            let mut map = std::collections::HashMap::new();
+            map.insert("Leaf", 30000_u32);
+            map
+        },
+        ranking: {
+            let mut map = std::collections::BTreeMap::new();
+            map.insert(1_u8, "Leaf");
+            map
+        },
+    };
+    println!("{}", dealer.prices.get("Leaf").unwrap());
+    println!("{}", dealer.ranking.get(&1).unwrap())
+}

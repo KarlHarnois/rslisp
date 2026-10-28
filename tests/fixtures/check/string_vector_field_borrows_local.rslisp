@@ -1,0 +1,8 @@
+(defstruct car :models (vec str))
+
+(defn build (line)
+  (let model (to-string line))
+  (->car :models (vec (as-str model))))
+
+(defn main ()
+  (println (len (:models (build "Leaf")))))

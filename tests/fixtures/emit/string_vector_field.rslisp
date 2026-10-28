@@ -1,0 +1,6 @@
+(defstruct car :make str :models (vec str))
+
+(defn main ()
+  (let nissan (->car :make "Nissan" :models (vec "Leaf" "Ariya")))
+  (println (:make nissan))
+  (for-each (iter (:models nissan)) (fn (model) (println model))))
