@@ -8,6 +8,7 @@
 (defstruct blank (defaults :x 1))
 (defstruct close :name str (defaults :nmae "ana"))
 (defn close-parameter (:name str (defaults :nmae "ana")) name)
+(defstruct user :name str :admin? bool (defaults :admin? false :admn? true))
 
 (defn main ()
   (->user :name "ana"))

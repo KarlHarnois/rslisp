@@ -186,30 +186,35 @@
 
 (def default-bindings
   (fn (pairs owner names)
+    (given-default-bindings pairs owner names
+                            (if (whole-pairs? pairs) (pair-keys pairs) (list)))))
+
+(def given-default-bindings
+  (fn (pairs owner names given-keys)
     (if (empty? pairs)
         (list)
-        (prepend (default-binding pairs owner names)
-                 (default-bindings (drop 2 pairs) owner names)))))
+        (prepend (default-binding pairs owner names given-keys)
+                 (given-default-bindings (drop 2 pairs) owner names given-keys)))))
 
 (def default-binding
-  (fn (pairs owner names)
+  (fn (pairs owner names given-keys)
     (let key (first pairs))
-    (check-default-key key owner names)
+    (check-default-key key owner names given-keys)
     (check-default-value pairs)
     (check-single-default key (pair-keys (drop 2 pairs)))
     (list (name-of-key key names) (nth pairs 1))))
 
 (def check-default-key
-  (fn (key owner names)
+  (fn (key owner names given-keys)
     (if (keyword? key)
-        (if (key-names-one-of? key names) key (unknown-default-error key owner names))
+        (if (key-names-one-of? key names) key (unknown-default-error key owner names given-keys))
         (fail "a default must start with `:`" key
               (string "write each default as `:" (definition-noun owner)
                       " value`, as in (defaults :admin? false)")))))
 
 (def unknown-default-error
-  (fn (key owner names)
-    (unknown-key-error key owner names (list))))
+  (fn (key owner names given-keys)
+    (unknown-key-error key owner names given-keys)))
 
 (def unknown-key-error
   (fn (key owner names given-keys)
