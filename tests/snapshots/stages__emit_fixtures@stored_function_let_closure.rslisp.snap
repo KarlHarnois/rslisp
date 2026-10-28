@@ -1,0 +1,31 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/stored_function_let_closure.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct User<'a> {
+    name: &'a str,
+    age: u16,
+}
+
+fn make_user(name: &str, age: u16) -> User<'_> {
+    User { name, age }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Sorter<'a> {
+    key: fn(&User<'_>) -> u16,
+    label: &'a str,
+}
+
+fn main() {
+    let ana = make_user("Ana", 30);
+    let key = |someone: &User<'_>| someone.age + 2;
+    let by_bonus = Sorter {
+        key,
+        label: "by bonus",
+    };
+    println!("{}", by_bonus.label);
+    println!("{}", (by_bonus.key)(&ana))
+}
