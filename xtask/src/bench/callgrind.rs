@@ -4,11 +4,12 @@ use std::io::ErrorKind;
 use std::num::NonZeroUsize;
 use std::panic;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output, Stdio};
+use std::process::{Command, ExitStatus, Output, Stdio};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
 
 use super::compiler::BuiltCompiler;
+use super::measurement::Measurement;
 use super::profile::{EntryPointCheck, ProfileReader};
 use super::results::ProgramResult;
 use crate::failure::TaskFailure;
@@ -93,20 +94,34 @@ impl Callgrind {
         let profile = self.profile_path(program);
         Self::remove_stale(&profile)?;
         let output = self.run(program, &profile)?;
-        let text = fs::read_to_string(&profile)
-            .map_err(|_| TaskFailure::profile_missing(program, &output.stderr))?;
-        let measurement = match output.status.success() {
-            true => Some(
-                ProfileReader::new(&self.compiler.crate_name, self.entry_point_check)
-                    .read(&text)
-                    .map_err(|failure| failure.while_measuring(program))?,
-            ),
-            false => None,
+        let measurement = match RunOutcome::of(output.status) {
+            RunOutcome::Accepted => Some(self.read_profile(program, &profile, &output)?),
+            RunOutcome::Rejected => None,
+            RunOutcome::Crashed => {
+                return Err(TaskFailure::run_crashed(
+                    program,
+                    output.status,
+                    &output.stderr,
+                ));
+            }
         };
         Ok(ProgramResult {
             program: Self::name_of(program),
             measurement,
         })
+    }
+
+    fn read_profile(
+        &self,
+        program: &Path,
+        profile: &Path,
+        output: &Output,
+    ) -> Result<Measurement, TaskFailure> {
+        let text = fs::read_to_string(profile)
+            .map_err(|_| TaskFailure::profile_missing(program, &output.stderr))?;
+        ProfileReader::new(&self.compiler.crate_name, self.entry_point_check)
+            .read(&text)
+            .map_err(|failure| failure.while_measuring(program))
     }
 
     fn run(&self, program: &Path, profile: &Path) -> Result<Output, TaskFailure> {
@@ -150,5 +165,66 @@ impl Callgrind {
             .file_stem()
             .map(|stem| stem.to_string_lossy().into_owned())
             .unwrap_or_default()
+    }
+}
+
+enum RunOutcome {
+    Accepted,
+    Rejected,
+    Crashed,
+}
+
+impl RunOutcome {
+    const PROGRAM_ERRORS_EXIT_CODE: i32 = 1;
+
+    fn of(status: ExitStatus) -> Self {
+        match status.code() {
+            Some(0) => Self::Accepted,
+            Some(Self::PROGRAM_ERRORS_EXIT_CODE) => Self::Rejected,
+            _ => Self::Crashed,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::os::unix::process::ExitStatusExt;
+
+    use super::*;
+
+    struct RunOutcomeFixture;
+
+    impl RunOutcomeFixture {
+        const EXITED_WITH_SUCCESS: i32 = 0;
+        const EXITED_WITH_PROGRAM_ERRORS: i32 = 256;
+        const KILLED_BY_SEGMENTATION_FAULT: i32 = 11;
+
+        fn of(raw_wait_status: i32) -> RunOutcome {
+            RunOutcome::of(ExitStatus::from_raw(raw_wait_status))
+        }
+    }
+
+    #[test]
+    fn a_successful_run_is_accepted() {
+        assert!(matches!(
+            RunOutcomeFixture::of(RunOutcomeFixture::EXITED_WITH_SUCCESS),
+            RunOutcome::Accepted
+        ));
+    }
+
+    #[test]
+    fn a_run_that_reports_program_errors_is_rejected() {
+        assert!(matches!(
+            RunOutcomeFixture::of(RunOutcomeFixture::EXITED_WITH_PROGRAM_ERRORS),
+            RunOutcome::Rejected
+        ));
+    }
+
+    #[test]
+    fn a_run_killed_by_a_signal_crashed() {
+        assert!(matches!(
+            RunOutcomeFixture::of(RunOutcomeFixture::KILLED_BY_SEGMENTATION_FAULT),
+            RunOutcome::Crashed
+        ));
     }
 }
