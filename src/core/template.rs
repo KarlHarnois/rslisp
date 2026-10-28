@@ -38,6 +38,7 @@ impl ParsedTemplate {
     const BORROW: char = '&';
     const MUTABLE: &'static str = "mut ";
     const BINDER: char = '!';
+    const DEREFERENCE: &'static str = "*";
 
     pub fn parse(text: &str) -> Result<Self, MalformedPlaceholder> {
         let mut pieces = Vec::new();
@@ -214,6 +215,18 @@ impl ParsedTemplate {
             .collect()
     }
 
+    pub fn receives(&self, argument: usize) -> bool {
+        let pieces = match self.pieces.as_slice() {
+            [Piece::Literal(dereference), rest @ ..] if dereference == Self::DEREFERENCE => rest,
+            pieces => pieces,
+        };
+        matches!(
+            pieces,
+            [Piece::Placeholder { index, access }, Piece::Literal(method), ..]
+                if *index == argument && *access != Access::Borrowed && method.starts_with('.')
+        )
+    }
+
     pub fn borrows_any(&self) -> bool {
         self.pieces.iter().any(
             |piece| matches!(piece, Piece::Placeholder { access, .. } if *access != Access::Passed),
@@ -355,6 +368,29 @@ mod tests {
         assert!(!parsed.borrows(0));
         assert!(parsed.borrows_any());
         assert_eq!(parsed.text(), "{&mut 0}.find({1})");
+    }
+
+    #[test]
+    fn receives_an_argument_before_a_method_call() {
+        for text in ["{0}.len()", "*{0}.len()", "{&mut 0}.next()"] {
+            let parsed = ParsedTemplate::parse(text).expect("a valid template");
+            assert!(parsed.receives(0), "{text}");
+            assert!(!parsed.receives(1), "{text}");
+        }
+    }
+
+    #[test]
+    fn does_not_receive_an_argument_outside_a_leading_method_call() {
+        for text in [
+            "{&0}.len()",
+            "{1} + {0}.len()",
+            "{0} .len()",
+            "{0}[1]",
+            "{0}",
+        ] {
+            let parsed = ParsedTemplate::parse(text).expect("a valid template");
+            assert!(!parsed.receives(0), "{text}");
+        }
     }
 
     #[test]

@@ -38,6 +38,10 @@ impl Template {
         self.parsed.dereferences(argument)
     }
 
+    pub fn receives(&self, argument: usize) -> bool {
+        self.parsed.receives(argument)
+    }
+
     pub fn indexes(&self, argument: usize) -> bool {
         self.parsed.indexes(argument)
     }

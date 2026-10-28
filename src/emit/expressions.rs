@@ -179,9 +179,6 @@ impl<'a> ExpressionEmitter<'a> {
     const ETA_PARAMETER: &'static str = "argument_";
     const STRING_GUARD_BINDING: &'static str = "text";
     const BOX_BINDING: &'static str = "inner";
-    const RECEIVER: &'static str = "{0}.";
-    const DEREF_RECEIVER: &'static str = "*{0}.";
-    const ADVANCED_RECEIVER: &'static str = "{&mut 0}.";
     const MAP_UPDATE_TEMPLATE: &'static str = "@map-update";
     const INTEGER_CONVERSION: &'static str = "from_literal";
     const FLOAT_CONVERSION: &'static str = "from_float_literal";
@@ -1849,7 +1846,7 @@ impl<'a> ExpressionEmitter<'a> {
         let roles: Vec<ArgumentRole> = arguments
             .iter()
             .enumerate()
-            .map(|(position, argument)| Self::argument_role(template, &parsed, position, argument))
+            .map(|(position, argument)| Self::argument_role(&parsed, position, argument))
             .collect();
         let places: Vec<bool> = roles
             .iter()
@@ -2003,17 +2000,8 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn argument_role(
-        template: &RustTemplate,
-        parsed: &Template,
-        position: usize,
-        argument: &TypedArgument,
-    ) -> ArgumentRole {
-        if position == 0
-            && (template.template.starts_with(Self::RECEIVER)
-                || template.template.starts_with(Self::DEREF_RECEIVER)
-                || template.template.starts_with(Self::ADVANCED_RECEIVER))
-        {
+    fn argument_role(parsed: &Template, position: usize, argument: &TypedArgument) -> ArgumentRole {
+        if position == 0 && parsed.receives(position) {
             ArgumentRole::Receiver
         } else if parsed.indexes(position) {
             ArgumentRole::IndexReceiver
