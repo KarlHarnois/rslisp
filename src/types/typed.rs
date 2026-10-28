@@ -357,6 +357,17 @@ impl TypedProgram {
         self.borrow_lifetimes(result) > 0 && parameter_lifetimes > 1
     }
 
+    pub fn function_type_returns_argument_borrow(
+        &self,
+        parameters: &[Type],
+        result: &Type,
+    ) -> bool {
+        self.borrow_lifetimes(result) > 0
+            && parameters
+                .iter()
+                .any(|parameter| self.borrow_lifetimes(parameter) > 0)
+    }
+
     pub fn borrow_lifetimes(&self, ty: &Type) -> usize {
         match ty {
             Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {

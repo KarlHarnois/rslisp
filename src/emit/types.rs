@@ -25,6 +25,7 @@ pub struct LifetimeScope {
     elided: Option<String>,
     elided_written: HashSet<BindingId>,
     opaque_lifetimes: Option<Rc<FreshLifetimes>>,
+    names_function_lifetime: bool,
     reserved: Option<String>,
 }
 
@@ -35,6 +36,7 @@ impl LifetimeScope {
             elided: None,
             elided_written: HashSet::new(),
             opaque_lifetimes: None,
+            names_function_lifetime: false,
             reserved: None,
         }
     }
@@ -42,6 +44,17 @@ impl LifetimeScope {
     pub fn naming_opaque_lifetimes(mut self, fresh: &Rc<FreshLifetimes>) -> Self {
         self.opaque_lifetimes = Some(Rc::clone(fresh));
         self
+    }
+
+    pub fn naming_function_lifetime(mut self) -> Self {
+        self.names_function_lifetime = true;
+        self
+    }
+
+    fn entering_function(&self) -> Option<Self> {
+        self.names_function_lifetime
+            .then(|| self.entering_opaque())
+            .flatten()
     }
 
     fn entering_opaque(&self) -> Option<Self> {
@@ -594,9 +607,10 @@ impl<'a> RustTypes<'a> {
         position: TypePosition,
         scope: &LifetimeScope,
     ) -> String {
+        let scope = self.function_parameter_scope(parameters, result, position, scope);
         let (inner_scope, binder) = Self::function_scope(
             position,
-            scope,
+            &scope,
             self.program
                 .function_type_needs_shared_lifetime(parameters, result),
         );
@@ -620,6 +634,23 @@ impl<'a> RustTypes<'a> {
             TypePosition::Value => format!("{binder}fn"),
         };
         format!("{keyword}({}){result}", parameters.join(", "))
+    }
+
+    fn function_parameter_scope<'scope>(
+        &self,
+        parameters: &[Type],
+        result: &Type,
+        position: TypePosition,
+        scope: &'scope LifetimeScope,
+    ) -> Cow<'scope, LifetimeScope> {
+        let names_lifetime = position == TypePosition::Signature
+            && self
+                .program
+                .function_type_returns_argument_borrow(parameters, result);
+        names_lifetime
+            .then(|| scope.entering_function())
+            .flatten()
+            .map_or(Cow::Borrowed(scope), Cow::Owned)
     }
 
     fn function_scope(

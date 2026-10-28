@@ -1,0 +1,14 @@
+(defstruct car :make (ref str) :year u16)
+
+(defn measure (constructor) (:year (constructor "Leaf" 2024)))
+
+(defn year-of (constructor) (measure constructor))
+
+(defn main ()
+  (let model (to-string "Nissan"))
+  (let borrowing (fn (make year)
+                   (->car :make (as-str model) :year (if (= make "Leaf") year 0))))
+  (println (measure (fn (make year) (->car :make (trim make) :year year))))
+  (println (year-of borrowing))
+  (println (measure ->car))
+  (println (:make (->car :make "Leaf" :year 2024))))

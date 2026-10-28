@@ -1,0 +1,47 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_parameter_unborrowed_result.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn make_car(make: &str, year: u16) -> Car<'_> {
+    Car { make, year }
+}
+
+fn measure<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>) -> u16 {
+    constructor("Leaf", 2024).year
+}
+
+fn year_of<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>) -> u16 {
+    measure(constructor)
+}
+
+fn main() {
+    let model = "Nissan".to_string();
+    let borrowing = |make: &str, year: u16| Car {
+        make: model.as_str(),
+        year: if make == "Leaf" { year } else { 0 },
+    };
+    println!(
+        "{}",
+        measure(|make: &str, year: u16| Car {
+            make: make.trim(),
+            year
+        })
+    );
+    println!("{}", year_of(borrowing));
+    println!("{}", measure(make_car));
+    println!(
+        "{}",
+        Car {
+            make: "Leaf",
+            year: 2024
+        }
+        .make
+    )
+}
