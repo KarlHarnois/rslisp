@@ -385,7 +385,7 @@ impl TypedProgram {
         self.borrow_lifetimes(result) > 0
     }
 
-    pub fn is_borrowing_function(&self, ty: &Type) -> bool {
+    pub fn is_function_returning_borrow(&self, ty: &Type) -> bool {
         matches!(ty, Type::Function(_, _, result) if self.function_type_returns_borrow(result))
     }
 

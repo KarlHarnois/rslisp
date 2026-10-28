@@ -158,6 +158,6 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
         lambda
             .params
             .iter()
-            .any(|param| self.program.is_borrowing_function(&param.ty))
+            .any(|param| self.program.is_function_returning_borrow(&param.ty))
     }
 }
