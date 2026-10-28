@@ -16,6 +16,18 @@ pub enum Access {
     MutableReceiver,
 }
 
+impl Access {
+    fn marker(&self) -> String {
+        match self {
+            Self::Passed => String::new(),
+            Self::Borrowed => ParsedTemplate::BORROW.to_string(),
+            Self::MutableReceiver => {
+                format!("{}{}", ParsedTemplate::BORROW, ParsedTemplate::MUTABLE)
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct ParsedTemplate {
     pieces: Vec<Piece>,
@@ -177,14 +189,7 @@ impl ParsedTemplate {
     fn rendered_piece(piece: &Piece) -> String {
         match piece {
             Piece::Literal(literal) => literal.replace('{', "{{").replace('}', "}}"),
-            Piece::Placeholder { index, access } => {
-                let marker = match access {
-                    Access::Passed => String::new(),
-                    Access::Borrowed => Self::BORROW.to_string(),
-                    Access::MutableReceiver => format!("{}{}", Self::BORROW, Self::MUTABLE),
-                };
-                format!("{{{marker}{index}}}")
-            }
+            Piece::Placeholder { index, access } => format!("{{{}{index}}}", access.marker()),
             Piece::TypePlaceholder { name } => format!("{{{name}}}"),
             Piece::BinderPlaceholder { name } => format!("{{!{name}}}"),
         }
