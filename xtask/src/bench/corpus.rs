@@ -21,8 +21,15 @@ impl Corpus {
     pub fn programs(&self) -> Result<Vec<PathBuf>, TaskFailure> {
         let entries = fs::read_dir(&self.directory)
             .map_err(|error| TaskFailure::unreadable(&self.directory, error))?;
-        let mut programs: Vec<PathBuf> = entries
-            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        let paths = entries
+            .map(|entry| {
+                entry
+                    .map(|entry| entry.path())
+                    .map_err(|error| TaskFailure::unreadable(&self.directory, error))
+            })
+            .collect::<Result<Vec<PathBuf>, TaskFailure>>()?;
+        let mut programs: Vec<PathBuf> = paths
+            .into_iter()
             .filter(|path| self.is_program(path))
             .collect();
         programs.sort();
