@@ -95,8 +95,11 @@ impl Callgrind {
         Self::remove_stale(&profile)?;
         let output = self.run(program, &profile)?;
         let measurement = match RunOutcome::of(output.status) {
-            RunOutcome::Accepted => Some(self.read_profile(program, &profile, &output)?),
-            RunOutcome::Rejected => None,
+            RunOutcome::Accepted => Some(self.read_profile(program, &profile, &output.stderr)?),
+            RunOutcome::Rejected => {
+                Self::require_profile(program, &profile, &output.stderr)?;
+                None
+            }
             RunOutcome::Crashed => {
                 return Err(TaskFailure::run_crashed(
                     program,
@@ -115,13 +118,20 @@ impl Callgrind {
         &self,
         program: &Path,
         profile: &Path,
-        output: &Output,
+        stderr: &[u8],
     ) -> Result<Measurement, TaskFailure> {
         let text = fs::read_to_string(profile)
-            .map_err(|_| TaskFailure::profile_missing(program, &output.stderr))?;
+            .map_err(|_| TaskFailure::profile_missing(program, stderr))?;
         ProfileReader::new(&self.compiler.crate_name, self.entry_point_check)
             .read(&text)
             .map_err(|failure| failure.while_measuring(program))
+    }
+
+    fn require_profile(program: &Path, profile: &Path, stderr: &[u8]) -> Result<(), TaskFailure> {
+        match profile.exists() {
+            true => Ok(()),
+            false => Err(TaskFailure::profile_missing(program, stderr)),
+        }
     }
 
     fn run(&self, program: &Path, profile: &Path) -> Result<Output, TaskFailure> {
@@ -198,6 +208,7 @@ mod tests {
         const EXITED_WITH_SUCCESS: i32 = 0;
         const EXITED_WITH_PROGRAM_ERRORS: i32 = 256;
         const KILLED_BY_SEGMENTATION_FAULT: i32 = 11;
+        const EXITED_WITH_PANIC: i32 = 101 << 8;
 
         fn of(raw_wait_status: i32) -> RunOutcome {
             RunOutcome::of(ExitStatus::from_raw(raw_wait_status))
@@ -224,6 +235,14 @@ mod tests {
     fn a_run_killed_by_a_signal_crashed() {
         assert!(matches!(
             RunOutcomeFixture::of(RunOutcomeFixture::KILLED_BY_SEGMENTATION_FAULT),
+            RunOutcome::Crashed
+        ));
+    }
+
+    #[test]
+    fn a_run_that_panicked_crashed() {
+        assert!(matches!(
+            RunOutcomeFixture::of(RunOutcomeFixture::EXITED_WITH_PANIC),
             RunOutcome::Crashed
         ));
     }
