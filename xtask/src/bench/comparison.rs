@@ -27,6 +27,31 @@ impl<'a> Comparison<'a> {
         }
     }
 
+    pub fn full_report(&self) -> String {
+        let programs = self.programs();
+        let rows = programs.iter().flat_map(ProgramComparison::rows);
+        format!(
+            "{}\n<details><summary>Every stage of every program</summary>\n\n{}\n</details>\n\n{}\n\n{}",
+            Self::list_notes(&programs),
+            Self::table(rows),
+            Self::criterion(),
+            Measurement::method()
+        )
+    }
+
+    pub fn brief_report(&self) -> String {
+        let programs = self.programs();
+        let changed = Self::changed_stages(&programs);
+        if changed.is_empty() && Self::note_count(&programs) == 0 {
+            return "No instruction count changed.\n".to_string();
+        }
+        format!(
+            "{}\n{}",
+            Self::count_notes(&programs),
+            Self::largest_changes(changed)
+        )
+    }
+
     fn programs(&self) -> Vec<ProgramComparison<'a>> {
         self.program_names()
             .into_iter()
@@ -63,31 +88,6 @@ impl<'a> Comparison<'a> {
         }
     }
 
-    pub fn full_report(&self) -> String {
-        let programs = self.programs();
-        let rows = programs.iter().flat_map(ProgramComparison::rows);
-        format!(
-            "{}\n<details><summary>Every stage of every program</summary>\n\n{}\n</details>\n\n{}\n\n{}",
-            Self::list_notes(&programs),
-            Self::table(rows),
-            Self::criterion(),
-            Measurement::method()
-        )
-    }
-
-    pub fn brief_report(&self) -> String {
-        let programs = self.programs();
-        let changed = Self::changed_stages(&programs);
-        if changed.is_empty() && Self::note_count(&programs) == 0 {
-            return "No instruction count changed.\n".to_string();
-        }
-        format!(
-            "{}\n{}",
-            Self::count_notes(&programs),
-            Self::largest_changes(changed)
-        )
-    }
-
     fn list_notes(programs: &[ProgramComparison]) -> String {
         let notes: Vec<String> = programs.iter().flat_map(ProgramComparison::notes).collect();
         if notes.is_empty() {
@@ -97,16 +97,16 @@ impl<'a> Comparison<'a> {
         format!("These stages rose notably, or could not be compared:\n\n{list}")
     }
 
-    fn note_count(programs: &[ProgramComparison]) -> usize {
-        programs.iter().map(|program| program.notes().len()).sum()
-    }
-
     fn count_notes(programs: &[ProgramComparison]) -> String {
         let count = Self::note_count(programs);
         if count == 0 {
             return Self::no_notable_rise();
         }
         format!("Stages that rose notably, or could not be compared: {count}.\n")
+    }
+
+    fn note_count(programs: &[ProgramComparison]) -> usize {
+        programs.iter().map(|program| program.notes().len()).sum()
     }
 
     fn no_notable_rise() -> String {
