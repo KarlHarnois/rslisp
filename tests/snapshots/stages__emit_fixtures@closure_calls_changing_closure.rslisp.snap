@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/closure_calls_changing_closure.rslisp
+---
+fn main() {
+    let mut calls: Vec<i64> = vec![0_i64];
+    let mut record = |n: i64| {
+        calls.push(n);
+        n + 1
+    };
+    let mut wrap = |y: i64| record(y);
+    println!("{}", wrap(1))
+}

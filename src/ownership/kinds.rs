@@ -181,10 +181,11 @@ impl<'a> ClosureKinds<'a> {
 
     pub fn run(mut self, modules: &mut [TypedModule]) -> KindReport {
         loop {
+            let known_binding_kinds = self.binding_kinds.clone();
             self.recompute_lambdas(modules);
             self.recompute_result_kinds(modules);
             let kinds = self.recompute_parameter_kinds(modules);
-            if kinds == self.parameter_kinds {
+            if kinds == self.parameter_kinds && self.binding_kinds == known_binding_kinds {
                 break;
             }
             self.parameter_kinds = kinds;
@@ -205,7 +206,6 @@ impl<'a> ClosureKinds<'a> {
     }
 
     fn recompute_lambdas(&mut self, modules: &mut [TypedModule]) {
-        self.binding_kinds.clear();
         self.binding_captures.clear();
         self.value_parameters.clear();
         for definition in modules

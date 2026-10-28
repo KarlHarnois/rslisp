@@ -1,0 +1,5 @@
+(defn main ()
+  (let calls (vec 0))
+  (let record (fn (n) (do (push! calls n) (+ n 1))))
+  (let wrap (fn (y) (record y)))
+  (println (wrap 1)))
