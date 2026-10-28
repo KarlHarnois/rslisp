@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/advanced_iterator_used_again.rslisp
+---
+fn both(mut values: impl Iterator<Item = i64>) -> bool {
+    let first: Option<i64> = values.find(|value: &i64| *value > 5);
+    first.is_some() && values.any(|value: i64| value > 50)
+}
+
+fn main() {
+    println!("{:?}", both(0_i64..100_i64));
+    println!("{:?}", both(0_i64..10_i64));
+    let mut steps = 0_i64..10_i64;
+    println!("{:?}", steps.find(|step: &i64| *step > 2));
+    println!("{:?}", steps.find(|step: &i64| *step > 2))
+}

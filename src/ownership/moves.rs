@@ -220,6 +220,7 @@ impl<'a> MoveChecker<'a> {
 
     fn moves(&self, callee: &TypedExpr, position: usize, argument: &TypedArgument) -> bool {
         !self.template_borrows.borrows(callee, position)
+            && !self.template_borrows.advances(callee, position)
             && argument.borrow == Borrow::None
             && !matches!(argument.value.ty, Type::Ref(_, _))
     }

@@ -1,0 +1,1 @@
+(defn counted (values) (let total (count values)) (any values (fn (value) (> value 50))))

@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/advanced_iterator_used_again.rslisp
+---
+(type both (fn ((iterator i64)) bool))
+(type main (fn () unit))
