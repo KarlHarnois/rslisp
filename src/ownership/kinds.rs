@@ -19,6 +19,28 @@ enum Usage {
     Borrow,
 }
 
+struct LocalClosure {
+    binding: BindingId,
+    body_uses: ParameterUses,
+}
+
+impl LocalClosure {
+    fn bound_by(item: &TypedBodyItem) -> Option<BindingId> {
+        match item {
+            TypedBodyItem::Let(binder, value) if matches!(value.kind, TypedExprKind::Fn(_)) => {
+                Some(binder.binding)
+            }
+            _ => None,
+        }
+    }
+
+    fn repeat_body_if_called_again(self, uses: &mut ParameterUses) {
+        if !uses.allows_fn_once(self.binding) {
+            uses.extend(self.body_uses);
+        }
+    }
+}
+
 #[derive(Default)]
 struct CaptureReport {
     moved: BTreeMap<BindingId, Span>,
@@ -847,13 +869,21 @@ impl<'a> ClosureKinds<'a> {
         nested: Option<ClosureKind>,
         uses: &mut ParameterUses,
     ) {
-        for (position, item) in block.items.iter().enumerate() {
+        let mut in_scope = params.to_vec();
+        let mut local_closures = Vec::new();
+        for item in &block.items {
             let before = uses.counts();
-            self.require_item(item, params, nested, uses);
-            let later = &block.items[position + 1..];
-            if self.is_local_closure_called_again(item, later) {
-                uses.repeat_uses_since(&before);
+            self.require_item(item, &in_scope, nested, uses);
+            if let Some(binding) = LocalClosure::bound_by(item) {
+                local_closures.push(LocalClosure {
+                    binding,
+                    body_uses: uses.uses_since(&before),
+                });
+                in_scope.push(binding);
             }
+        }
+        for closure in local_closures.into_iter().rev() {
+            closure.repeat_body_if_called_again(uses);
         }
     }
 
@@ -869,21 +899,6 @@ impl<'a> ClosureKinds<'a> {
                 self.require_expression(value, params, nested, uses)
             }
         }
-    }
-
-    fn is_local_closure_called_again(&self, item: &TypedBodyItem, later: &[TypedBodyItem]) -> bool {
-        let TypedBodyItem::Let(binder, value) = item else {
-            return false;
-        };
-        if !matches!(value.kind, TypedExprKind::Fn(_)) {
-            return false;
-        }
-        let closure = [binder.binding];
-        let mut closure_uses = ParameterUses::default();
-        for item in later {
-            self.require_item(item, &closure, None, &mut closure_uses);
-        }
-        !closure_uses.allows_fn_once(binder.binding)
     }
 
     fn require_expression(
