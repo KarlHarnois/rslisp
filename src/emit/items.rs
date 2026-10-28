@@ -538,7 +538,7 @@ impl<'a> ItemEmitter<'a> {
         );
         let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
         let used = self.used_written_lifetimes(&definition.value);
-        let flowing = self.result_borrows.of(lambda);
+        let flowing = self.result_borrows.analyse(lambda).flows;
         let mut params = Vec::new();
         if let Some(kind) = receiver {
             let first = &lambda.params[0];
@@ -677,8 +677,9 @@ impl<'a> ItemEmitter<'a> {
             .copied()
             .filter(|binding| used.contains(binding))
             .collect();
-        let flowing = self.result_borrows.of(lambda);
-        let higher_ranked = self.result_borrows.higher_ranked(lambda);
+        let borrows = self.result_borrows.analyse(lambda);
+        let flowing = borrows.flows;
+        let higher_ranked = borrows.higher_ranked;
         let opaque_lifetimes = Rc::new(FreshLifetimes::new(
             self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),
         ));
@@ -989,7 +990,7 @@ impl<'a> ItemEmitter<'a> {
         let TypedExprKind::Fn(lambda) = &value.kind else {
             return false;
         };
-        let flowing = self.result_borrows.of(lambda);
+        let flowing = self.result_borrows.analyse(lambda).flows;
         lambda.params.iter().any(|param| {
             flowing.contains(&param.binding) && self.hides_borrow_from_elision(&param.ty)
         })

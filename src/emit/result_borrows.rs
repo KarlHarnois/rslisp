@@ -29,12 +29,8 @@ impl<'a> ResultBorrows<'a> {
         }
     }
 
-    pub fn of(&self, lambda: &TypedLambda) -> HashSet<BindingId> {
-        BodyFlows::of(self, lambda, HashSet::new()).flows
-    }
-
-    pub fn higher_ranked(&self, lambda: &TypedLambda) -> HashSet<BindingId> {
-        BodyFlows::of(self, lambda, HashSet::new()).higher_ranked
+    pub fn analyse(&self, lambda: &TypedLambda) -> LambdaFlows {
+        BodyFlows::of(self, lambda, HashSet::new())
     }
 
     fn cached_parameters(&self, callee: BindingId) -> Option<CalleeParameters> {
@@ -63,9 +59,9 @@ struct BodyFlows<'r, 'a> {
     reached_recursion: bool,
 }
 
-struct LambdaFlows {
-    flows: HashSet<BindingId>,
-    higher_ranked: HashSet<BindingId>,
+pub struct LambdaFlows {
+    pub flows: HashSet<BindingId>,
+    pub higher_ranked: HashSet<BindingId>,
     reached_recursion: bool,
 }
 
