@@ -82,6 +82,13 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
     }
 
     fn higher_ranked_positions(&self, lambda: &TypedLambda) -> Vec<usize> {
+        if !lambda
+            .params
+            .iter()
+            .any(|param| self.program.is_borrowing_function(&param.ty))
+        {
+            return Vec::new();
+        }
         let higher_ranked = self.result_borrows.analyse(lambda).higher_ranked;
         lambda
             .params

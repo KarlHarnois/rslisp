@@ -385,6 +385,10 @@ impl TypedProgram {
         self.borrow_lifetimes(result) > 0
     }
 
+    pub fn is_borrowing_function(&self, ty: &Type) -> bool {
+        matches!(ty, Type::Function(_, _, result) if self.function_type_returns_borrow(result))
+    }
+
     pub fn borrow_lifetimes(&self, ty: &Type) -> usize {
         match ty {
             Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
