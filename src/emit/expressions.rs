@@ -2419,6 +2419,22 @@ impl<'a> ExpressionEmitter<'a> {
         fields: &[(FieldLabel, TypedExpr)],
     ) -> Code {
         let path = self.types().struct_path(binding);
+        self.locals.enter();
+        let base = self.update_argument(base, "base");
+        let update = self.struct_update(path, fields, base.usage());
+        self.locals.leave();
+        match base.name {
+            Some(name) => Self::bound_block(&name, base.code, update),
+            None => update,
+        }
+    }
+
+    fn struct_update(
+        &mut self,
+        path: String,
+        fields: &[(FieldLabel, TypedExpr)],
+        base: Code,
+    ) -> Code {
         let mut parts = vec![Code::atom(format!("{path} {{ "))];
         for (position, (label, value)) in fields.iter().enumerate() {
             if position > 0 {
@@ -2434,9 +2450,26 @@ impl<'a> ExpressionEmitter<'a> {
             }
         }
         parts.push(Code::atom(", .."));
-        parts.push(self.expr(base));
+        parts.push(base);
         parts.push(Code::atom(" }"));
         Code::joined(parts, Precedence::Atom)
+    }
+
+    fn bound_block(name: &str, value: Code, body: Code) -> Code {
+        let mut contents = vec![Fragment::Newline, Fragment::Text(format!("let {name} = "))];
+        contents.extend(value.fragments);
+        contents.push(Fragment::Text(";".to_string()));
+        contents.push(Fragment::Newline);
+        contents.extend(body.fragments);
+        Code {
+            fragments: vec![
+                Fragment::Text("{".to_string()),
+                Fragment::Indented(contents),
+                Fragment::Newline,
+                Fragment::Text("}".to_string()),
+            ],
+            precedence: Precedence::Block,
+        }
     }
 
     fn construction(&mut self, binding: BindingId, fields: &[(FieldLabel, TypedExpr)]) -> Code {
