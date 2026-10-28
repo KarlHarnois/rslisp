@@ -18,7 +18,7 @@ pub struct ResultBorrows<'a> {
 
 struct Visit {
     parameters: CalleeParameters,
-    earliest_reached: usize,
+    earliest_reached: Option<usize>,
 }
 
 impl<'a> ResultBorrows<'a> {
@@ -32,7 +32,7 @@ impl<'a> ResultBorrows<'a> {
     }
 
     pub fn analyse(&self, lambda: &TypedLambda) -> LambdaFlows {
-        BodyFlows::of(self, lambda, OpenCallees::NONE_REACHED)
+        BodyFlows::of(self, lambda, None)
     }
 
     fn cached_parameters(&self, callee: BindingId) -> Option<CalleeParameters> {
@@ -50,7 +50,7 @@ impl<'a> ResultBorrows<'a> {
     fn visit(&self, callee: BindingId, lambda: &TypedLambda) -> Visit {
         let order = self.open_callees.borrow_mut().open(callee);
         let visit = self.proposed_visit(callee, lambda, order);
-        if visit.earliest_reached == order {
+        if visit.earliest_reached == Some(order) {
             self.settle_group(order);
             return self.settled_visit(callee);
         }
@@ -58,7 +58,7 @@ impl<'a> ResultBorrows<'a> {
     }
 
     fn proposed_visit(&self, callee: BindingId, lambda: &TypedLambda, order: usize) -> Visit {
-        let analysed = BodyFlows::of(self, lambda, order);
+        let analysed = BodyFlows::of(self, lambda, Some(order));
         let parameters = analysed.parameters(lambda);
         self.open_callees
             .borrow_mut()
@@ -72,7 +72,7 @@ impl<'a> ResultBorrows<'a> {
     fn settled_visit(&self, callee: BindingId) -> Visit {
         Visit {
             parameters: self.cached_parameters(callee).unwrap_or_default(),
-            earliest_reached: OpenCallees::NONE_REACHED,
+            earliest_reached: None,
         }
     }
 
@@ -101,7 +101,7 @@ impl<'a> ResultBorrows<'a> {
         let Some(lambda) = self.callee_lambda(callee) else {
             return false;
         };
-        let analysed = BodyFlows::of(self, lambda, OpenCallees::NONE_REACHED);
+        let analysed = BodyFlows::of(self, lambda, None);
         let parameters = analysed.parameters(lambda);
         self.open_callees.borrow_mut().widen(callee, &parameters)
     }
@@ -118,13 +118,13 @@ struct BodyFlows<'r, 'a> {
     rules: &'r ResultBorrows<'a>,
     parameters: HashSet<BindingId>,
     aliases: HashMap<BindingId, HashSet<BindingId>>,
-    earliest_reached: usize,
+    earliest_reached: Option<usize>,
 }
 
 pub struct LambdaFlows {
     pub flows: HashSet<BindingId>,
     pub higher_ranked: HashSet<BindingId>,
-    earliest_reached: usize,
+    earliest_reached: Option<usize>,
 }
 
 impl LambdaFlows {
@@ -145,7 +145,7 @@ impl LambdaFlows {
 }
 
 impl<'r, 'a> BodyFlows<'r, 'a> {
-    fn of(rules: &'r ResultBorrows<'a>, lambda: &TypedLambda, order: usize) -> LambdaFlows {
+    fn of(rules: &'r ResultBorrows<'a>, lambda: &TypedLambda, order: Option<usize>) -> LambdaFlows {
         let mut borrows = Self {
             rules,
             parameters: lambda.params.iter().map(|param| param.binding).collect(),
@@ -269,12 +269,17 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
             return CalleeParameters::default();
         };
         let visit = self.rules.visit(callee, lambda);
-        self.reach(visit.earliest_reached);
+        if let Some(order) = visit.earliest_reached {
+            self.reach(order);
+        }
         visit.parameters
     }
 
     fn reach(&mut self, order: usize) {
-        self.earliest_reached = self.earliest_reached.min(order);
+        self.earliest_reached = Some(
+            self.earliest_reached
+                .map_or(order, |earliest| earliest.min(order)),
+        );
     }
 
     fn control(&mut self, control: &TypedControl) -> HashSet<BindingId> {
