@@ -8,9 +8,9 @@ use crate::core::{BindingArena, BindingId, ReferenceKind};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Borrow, ClosureKind, CopyRules, TemplateBorrows, Type, TypedArgument, TypedBinder, TypedBlock,
-    TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedModule,
-    TypedProgram, TypedStructExpr,
+    Borrow, ClosureKind, CopyRules, FieldPlace, TemplateBorrows, Type, TypedArgument, TypedBinder,
+    TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf,
+    TypedModule, TypedProgram, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -418,10 +418,9 @@ impl<'a> ClosureKinds<'a> {
                 self.scan_values(&values, own)
             }
             TypedExprKind::Assoc(value, keys, item) => {
-                let mut values = vec![value.as_ref()];
-                values.extend(keys);
+                let mut values: Vec<&TypedExpr> = keys.iter().collect();
                 values.push(item);
-                self.scan_values(&values, own)
+                self.scan_update(value, &values, own)
             }
             _ => unreachable!("the caller matches a value form"),
         }
@@ -456,12 +455,44 @@ impl<'a> ClosureKinds<'a> {
                 self.scan_values(&values, own)
             }
             TypedStructExpr::Update(_, base, fields) => {
-                let mut values = vec![base.as_ref()];
-                values.extend(fields.iter().map(|(_, value)| value));
-                self.scan_values(&values, own)
+                let values: Vec<&TypedExpr> = fields.iter().map(|(_, value)| value).collect();
+                self.scan_update(base, &values, own)
             }
             TypedStructExpr::Field(value, _) => self.scan_expression(value, own, Usage::Borrow),
         }
+    }
+
+    fn scan_update(
+        &mut self,
+        base: &TypedExpr,
+        values: &[&TypedExpr],
+        own: &HashSet<BindingId>,
+    ) -> CaptureReport {
+        let mut report = self.scan_update_base(base, own);
+        report.merge(self.scan_values(values, own));
+        report
+    }
+
+    fn scan_update_base(&mut self, base: &TypedExpr, own: &HashSet<BindingId>) -> CaptureReport {
+        match base.field_place() {
+            Some(place) if place.reads_field() && !self.copy.is_copy(&base.ty) => {
+                self.record_field_move(&place, base.span, own)
+            }
+            _ => self.scan_expression(base, own, Usage::Move),
+        }
+    }
+
+    fn record_field_move(
+        &self,
+        place: &FieldPlace,
+        span: Span,
+        own: &HashSet<BindingId>,
+    ) -> CaptureReport {
+        let mut report = CaptureReport::default();
+        if !own.contains(&place.root) {
+            self.record_move(&mut report, place.root, place.root_type, span);
+        }
+        report
     }
 
     fn scan_values(&mut self, values: &[&TypedExpr], own: &HashSet<BindingId>) -> CaptureReport {
