@@ -178,8 +178,9 @@ jobs:
           COMMENTS: repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments
           EDITS: repos/${{ github.repository }}/issues/comments
         run: |
-          existing=$(gh api --paginate "$COMMENTS" \
-            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$REPORT_MARKER\"))) | .id" | head -n 1)
+          ids=$(gh api --paginate "$COMMENTS" \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$REPORT_MARKER\"))) | .id")
+          existing=${ids%%$'\n'*}
           if [ -n "$existing" ]; then
             gh api --method PATCH "$EDITS/$existing" -F body=@"$REPORT" --silent
           else
