@@ -161,6 +161,7 @@ impl<'a> FrontEndBenchmark<'a> {
     const PROFILES: &'static str = "target/bench";
     const EXTENSION_CONSTANT: &'static str = "EXTENSION";
     const FIXED_COMPILER: &'static str = "target/bench/compiler/front-end";
+    const TARGET_DIRECTORY: &'static str = "target";
 
     fn new(root: &'a Path, options: MeasureOptions) -> Self {
         Self { root, options }
@@ -186,7 +187,9 @@ impl<'a> FrontEndBenchmark<'a> {
     }
 
     fn callgrind(&self) -> Result<Callgrind, TaskFailure> {
-        let compiler = self.place_at_fixed_path(CompilerBuild::new(&self.workspace()?).run()?)?;
+        let target_directory = self.root.join(Self::TARGET_DIRECTORY);
+        let build = CompilerBuild::new(&self.workspace()?, &target_directory).run()?;
+        let compiler = self.place_at_fixed_path(build)?;
         let fixed_seed = FixedSeedLibrary::new(self.root).build()?;
         Ok(Callgrind::new(
             compiler,

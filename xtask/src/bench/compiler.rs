@@ -13,6 +13,7 @@ pub struct BuiltCompiler {
 
 pub struct CompilerBuild<'a> {
     workspace: &'a Path,
+    target_directory: &'a Path,
 }
 
 impl<'a> CompilerBuild<'a> {
@@ -23,17 +24,19 @@ impl<'a> CompilerBuild<'a> {
         "--message-format=json",
         "--target-dir",
     ];
-    const TARGET_DIRECTORY: &'static str = "target";
     const MANIFEST: &'static str = "Cargo.toml";
 
-    pub fn new(workspace: &'a Path) -> Self {
-        Self { workspace }
+    pub fn new(workspace: &'a Path, target_directory: &'a Path) -> Self {
+        Self {
+            workspace,
+            target_directory,
+        }
     }
 
     pub fn run(&self) -> Result<BuiltCompiler, TaskFailure> {
         let output = Cargo::command()
             .args(Self::RELEASE_BUILD)
-            .arg(self.workspace.join(Self::TARGET_DIRECTORY))
+            .arg(self.target_directory)
             .current_dir(self.workspace)
             .output()
             .map_err(|error| TaskFailure::tool_missing("cargo", error))?;
@@ -116,7 +119,8 @@ mod tests {
 
     #[test]
     fn takes_the_binary_and_library_crate_of_the_checkout_package() {
-        let built = CompilerBuild::new(Path::new("/checkout")).read_artifacts(MESSAGES);
+        let built = CompilerBuild::new(Path::new("/checkout"), Path::new("/checkout/target"))
+            .read_artifacts(MESSAGES);
         assert_eq!(
             built,
             Some(BuiltCompiler {
@@ -128,7 +132,8 @@ mod tests {
 
     #[test]
     fn finds_no_compiler_outside_the_checkout() {
-        let built = CompilerBuild::new(Path::new("/elsewhere")).read_artifacts(MESSAGES);
+        let built = CompilerBuild::new(Path::new("/elsewhere"), Path::new("/elsewhere/target"))
+            .read_artifacts(MESSAGES);
         assert_eq!(built, None);
     }
 }
