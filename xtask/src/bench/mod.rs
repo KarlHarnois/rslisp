@@ -46,7 +46,7 @@ pub enum BenchTask {
         length: ReportLength,
     },
     #[command(
-        about = "Print the key of what besides the compiler's code decides the counts: the toolchain, the benchmark code and the corpus"
+        about = "Print the key of what besides the compiler's code decides the counts: the toolchain lock, the dev shell, the benchmark code and the corpus"
     )]
     Method,
     #[command(
