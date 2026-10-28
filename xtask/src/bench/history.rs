@@ -4,20 +4,19 @@ use crate::failure::TaskFailure;
 
 pub struct BenchHistory<'a> {
     git: Git<'a>,
+    notes_ref: &'a str,
 }
 
 impl<'a> BenchHistory<'a> {
-    const SHOW_NOTE: [&'static str; 3] = ["notes", "--ref=bench", "show"];
     const NO_NOTE: &'static str = "no note found";
 
-    pub fn new(git: Git<'a>) -> Self {
-        Self { git }
+    pub fn new(git: Git<'a>, notes_ref: &'a str) -> Self {
+        Self { git, notes_ref }
     }
 
     pub fn note_of(&self, commit: &str) -> Result<HistoryNote, TaskFailure> {
-        let output = self
-            .git
-            .run(&[Self::SHOW_NOTE.as_slice(), &[commit]].concat())?;
+        let ref_option = format!("--ref={}", self.notes_ref);
+        let output = self.git.run(&["notes", &ref_option, "show", commit])?;
         let shown = match output.status.success() {
             true => Ok(String::from_utf8_lossy(&output.stdout).into_owned()),
             false => Err(String::from_utf8_lossy(&output.stderr).into_owned()),

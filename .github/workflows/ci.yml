@@ -16,6 +16,9 @@ permissions:
 
 env:
   CACHIX_CACHE: rslisp
+  BASELINE: bench-baseline
+  NOTES: refs/notes/bench
+  ACCEPTED_TAG: bench-baseline
 
 jobs:
   cargo:
@@ -119,9 +122,6 @@ jobs:
       contents: read
       pull-requests: write
     env:
-      BASELINE: bench-baseline
-      NOTES: refs/notes/bench
-      ACCEPTED_TAG: bench-baseline
       REPORT: target/bench/report.md
       REPORT_MARKER: "<!-- front-end-instruction-counts -->"
     steps:
@@ -157,7 +157,7 @@ jobs:
         env:
           BASE_SHA: ${{ steps.base.outputs.sha }}
         run: |
-          if nix develop .#ci -c cargo xtask bench recall "$BASE_SHA" --save target/bench/baseline.tsv; then
+          if nix develop .#ci -c cargo xtask bench recall --notes-ref "$NOTES" "$BASE_SHA" --save target/bench/baseline.tsv; then
             echo "recalled=true" >> "$GITHUB_OUTPUT"
           else
             echo "recalled=false" >> "$GITHUB_OUTPUT"
@@ -183,7 +183,7 @@ jobs:
             exit 0
           fi
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          if nix develop .#ci -c cargo xtask bench recall "$sha" --save target/bench/accepted.tsv; then
+          if nix develop .#ci -c cargo xtask bench recall --notes-ref "$NOTES" "$sha" --save target/bench/accepted.tsv; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           else
             echo "found=note-missing" >> "$GITHUB_OUTPUT"
@@ -267,9 +267,6 @@ jobs:
       group: front-end-instruction-history
       cancel-in-progress: false
     env:
-      BASELINE: bench-baseline
-      NOTES: refs/notes/bench
-      ACCEPTED_TAG: bench-baseline
       HEAD_RESULTS: target/bench/head.tsv
       ACCEPTED_RESULTS: target/bench/accepted.tsv
     steps:
@@ -320,7 +317,7 @@ jobs:
             exit 0
           fi
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          if nix develop .#ci -c cargo xtask bench recall "$sha" --save target/bench/accepted-recalled.tsv; then
+          if nix develop .#ci -c cargo xtask bench recall --notes-ref "$NOTES" "$sha" --save target/bench/accepted-recalled.tsv; then
             echo "measure=false" >> "$GITHUB_OUTPUT"
           else
             echo "measure=true" >> "$GITHUB_OUTPUT"

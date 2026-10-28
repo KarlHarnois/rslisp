@@ -53,11 +53,7 @@ pub enum BenchTask {
     #[command(
         about = "Write a commit's saved results from its git note, if this workspace measures by the same method"
     )]
-    Recall {
-        commit: String,
-        #[arg(long, help = "Write the recalled results to this file for `compare`")]
-        save: PathBuf,
-    },
+    Recall(RecallOptions),
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -77,6 +73,15 @@ impl ReportLength {
             Self::Brief => comparison.brief_report(),
         }
     }
+}
+
+#[derive(Args)]
+pub struct RecallOptions {
+    commit: String,
+    #[arg(long, help = "The notes ref that holds the history")]
+    notes_ref: String,
+    #[arg(long, help = "Write the recalled results to this file for `compare`")]
+    save: PathBuf,
 }
 
 #[derive(Args)]
@@ -107,7 +112,7 @@ impl BenchTask {
             Self::Method => MeasurementMethod::new(Git::new(root))
                 .key()
                 .map(|key| format!("{key}\n")),
-            Self::Recall { commit, save } => Self::recall(root, &commit, &save),
+            Self::Recall(options) => options.recall(root),
         };
         match report {
             Ok(report) => {
@@ -127,18 +132,22 @@ impl BenchTask {
         let candidate = ResultSet::load(candidate)?;
         Ok(length.render(&Comparison::new(&baseline, &candidate)))
     }
+}
 
-    fn recall(root: &Path, commit: &str, save: &Path) -> Result<String, TaskFailure> {
+impl RecallOptions {
+    fn recall(&self, root: &Path) -> Result<String, TaskFailure> {
         let method_key = MeasurementMethod::new(Git::new(root)).key()?;
-        let results = BenchHistory::new(Git::new(root))
-            .note_of(commit)?
+        let results = BenchHistory::new(Git::new(root), &self.notes_ref)
+            .note_of(&self.commit)?
             .recall(&method_key)?;
-        let directory = save.parent().unwrap_or(save);
+        let directory = self.save.parent().unwrap_or(&self.save);
         fs::create_dir_all(directory).map_err(|error| TaskFailure::unwritable(directory, error))?;
-        fs::write(save, results).map_err(|error| TaskFailure::unwritable(save, error))?;
+        fs::write(&self.save, results)
+            .map_err(|error| TaskFailure::unwritable(&self.save, error))?;
         Ok(format!(
-            "recalled the results of `{commit}` into `{}`\n",
-            save.display()
+            "recalled the results of `{}` into `{}`\n",
+            self.commit,
+            self.save.display()
         ))
     }
 }
