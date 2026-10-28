@@ -381,15 +381,8 @@ impl TypedProgram {
         self.borrow_lifetimes(result) > 0 && parameter_lifetimes > 1
     }
 
-    pub fn function_type_returns_argument_borrow(
-        &self,
-        parameters: &[Type],
-        result: &Type,
-    ) -> bool {
+    pub fn function_type_returns_borrow(&self, result: &Type) -> bool {
         self.borrow_lifetimes(result) > 0
-            && parameters
-                .iter()
-                .any(|parameter| self.borrow_lifetimes(parameter) > 0)
     }
 
     pub fn borrow_lifetimes(&self, ty: &Type) -> usize {
