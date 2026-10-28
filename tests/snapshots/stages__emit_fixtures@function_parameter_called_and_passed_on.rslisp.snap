@@ -1,0 +1,30 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_parameter_called_and_passed_on.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn make_car(make: &str, year: u16) -> Car<'_> {
+    Car { make, year }
+}
+
+fn build_with<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>) -> Car<'a> {
+    constructor("Nissan", 2024)
+}
+
+fn build_twice(mut constructor: impl FnMut(&str, u16) -> Car<'_>) -> u16 {
+    let make = "Nissan".to_string();
+    let local = constructor(make.as_str(), 2011);
+    let built = build_with(constructor);
+    println!("{}", built.make);
+    local.year + built.year
+}
+
+fn main() {
+    println!("{}", build_twice(make_car))
+}

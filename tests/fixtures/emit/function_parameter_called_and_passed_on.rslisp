@@ -1,0 +1,14 @@
+(defstruct car :make str :year u16)
+
+(type build-with (fn ((fn ((ref str) u16) car)) car))
+(defn build-with (constructor) (constructor "Nissan" 2024))
+
+(defn build-twice (constructor)
+  (let make (to-string "Nissan"))
+  (let local (constructor (as-str make) 2011))
+  (let built (build-with constructor))
+  (println (:make built))
+  (+ (:year local) (:year built)))
+
+(defn main ()
+  (println (build-twice ->car)))
