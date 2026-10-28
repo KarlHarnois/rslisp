@@ -1,0 +1,8 @@
+(enum garage
+  (models (vec str)))
+
+(defn main ()
+  (let garage (garage/models (vec "Leaf" "Ariya")))
+  (println
+    (match garage
+      ((garage/models names) (len names)))))

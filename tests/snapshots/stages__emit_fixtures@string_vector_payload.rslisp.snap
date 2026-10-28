@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/string_vector_payload.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Garage<'a> {
+    Models(Vec<&'a str>),
+}
+
+fn main() {
+    let garage = Garage::Models(vec!["Leaf", "Ariya"]);
+    println!("{}", {
+        let Garage::Models(names) = garage;
+        names.len()
+    })
+}

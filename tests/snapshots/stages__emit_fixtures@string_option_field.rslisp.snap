@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/string_option_field.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct User<'a> {
+    nickname: Option<&'a str>,
+}
+
+fn main() {
+    let user = User {
+        nickname: Some("Leafy"),
+    };
+    println!("{}", user.nickname.unwrap())
+}
