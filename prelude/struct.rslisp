@@ -70,7 +70,7 @@
 
 (def field-definition
   (fn (name)
-    (definition name "field" (fn (name) name) (quote unknown-key-field))))
+    (definition name "field" (fn (name) name) (quote unknown-field-default))))
 
 (def constructor-call
   (fn (form hidden shape)
