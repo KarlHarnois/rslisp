@@ -1018,7 +1018,9 @@ impl TypeChecker {
                     .unify(&slice_arguments[0], &vector_arguments[0], span)
                     .is_ok()
             }
-            (Type::Ref(_, shared), Type::Ref(_, vector)) => self.coerces(&shared, &vector, span),
+            (Type::Ref(_, shared), Type::Ref(_, owned)) => {
+                Self::views_string(&shared, &owned) || self.coerces(&shared, &owned, span)
+            }
             (Type::Ref(_, shared), Type::Mut(_, mutable)) => {
                 self.unifier.unify(&shared, &mutable, span).is_ok()
             }
@@ -1210,6 +1212,7 @@ impl TypeChecker {
             result: result.clone(),
         };
         let previous = self.recur_target.replace(target);
+        let enclosing_body = std::mem::replace(&mut self.inside_lambda_body, true);
         let previous_try = self.try_target.replace(TryTarget {
             returns: result.clone(),
         });
@@ -1218,10 +1221,12 @@ impl TypeChecker {
             .map_or(MismatchContext::Plain, |expected| expected.context.clone());
         let inferred = self.infer_block_expecting(&lambda.body, &result, context.clone());
         self.recur_target = previous;
+        self.inside_lambda_body = enclosing_body;
         self.try_target = previous_try;
         let (body, found) = inferred?;
         let result_span = Self::block_result_span(&body).unwrap_or(span);
         self.expect(&result, &found, result_span, context)?;
+        let body = self.view_closure_result(body, &result, &found)?;
         let parameter_types = params.iter().map(|param| param.ty.clone()).collect();
         let function = Type::Function(
             crate::types::ClosureKind::Fn,
@@ -1971,7 +1976,7 @@ impl TypeChecker {
         }
     }
 
-    fn pass_call_argument(
+    pub(super) fn pass_call_argument(
         &mut self,
         callee: Option<&TypedExpr>,
         position: usize,

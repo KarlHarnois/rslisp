@@ -20,6 +20,7 @@ mod projection;
 mod rust_types;
 mod selection;
 mod size;
+mod string_view;
 mod structs;
 mod templates;
 mod traits;

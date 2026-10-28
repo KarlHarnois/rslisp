@@ -166,6 +166,7 @@ pub struct TypeChecker {
     pub(super) pending_borrows: Vec<PendingBorrow>,
     pub(super) template_borrows: TemplateBorrows,
     pub(super) recur_target: Option<super::infer::RecurTarget>,
+    pub(super) inside_lambda_body: bool,
     pub(super) try_target: Option<super::infer::TryTarget>,
     pub(super) changed_structs: HashSet<BindingId>,
     pub(super) inferred_copies: InferredCopies,
@@ -190,6 +191,7 @@ pub struct TypeChecker {
     pub(super) recursive_group: Vec<BindingId>,
     pub(super) reported_unknown_try_groups: HashSet<BindingId>,
     pub(super) prelude_value_names: HashSet<String>,
+    pub(super) string_view: Option<BindingId>,
 }
 
 struct Definition<'p> {
@@ -250,6 +252,7 @@ impl TypeChecker {
             pending_borrows: Vec::new(),
             template_borrows: TemplateBorrows::default(),
             recur_target: None,
+            inside_lambda_body: false,
             try_target: None,
             changed_structs: HashSet::new(),
             inferred_copies: InferredCopies::default(),
@@ -274,6 +277,7 @@ impl TypeChecker {
             recursive_group: Vec::new(),
             reported_unknown_try_groups: HashSet::new(),
             prelude_value_names: HashSet::new(),
+            string_view: None,
         }
     }
 
@@ -305,6 +309,7 @@ impl TypeChecker {
         self.check_trait_claims(modules);
         self.copy_trait = self.traits.with_paths(&[CopyTrait::PATH]).first().copied();
         self.record_written_parameters(modules);
+        self.record_string_view(modules);
     }
 
     fn record_prelude_value_names(&mut self, modules: &[CoreModule]) {
