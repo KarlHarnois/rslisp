@@ -19,4 +19,5 @@
 (defn pair-reversed (:ac i64 :ab i64) (+ ab ac))
 
 (defn call-pair-reversed ()
-  (pair-reversed :ax 1 :ab 2))
+  (pair-reversed :ax 1 :ab 2)
+  (pair-reversed :ab 2 :ax 1))
