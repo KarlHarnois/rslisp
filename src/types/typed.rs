@@ -348,7 +348,7 @@ impl TypedProgram {
         false
     }
 
-    pub fn needs_shared_lifetime(&self, parameters: &[Type], result: &Type) -> bool {
+    pub fn function_type_needs_shared_lifetime(&self, parameters: &[Type], result: &Type) -> bool {
         let parameter_lifetimes: usize = parameters
             .iter()
             .map(|parameter| self.borrow_lifetimes(parameter))

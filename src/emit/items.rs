@@ -1161,7 +1161,8 @@ impl<'a> ItemEmitter<'a> {
         let Type::Function(_, parameters, result) = &value.ty else {
             return false;
         };
-        self.program.needs_shared_lifetime(parameters, result)
+        self.program
+            .function_type_needs_shared_lifetime(parameters, result)
             || (self.program.borrow_lifetimes(result) > 0 && self.result_flows_past_elision(value))
     }
 
