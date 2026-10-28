@@ -12,10 +12,10 @@
   (report-hull))
 
 (defn report-systems ()
-  (let small (->matrix (vec (vec 2.0 1.0 0.0) (vec 1.0 3.0 1.0) (vec 0.0 1.0 4.0))))
+  (let small (->matrix (vec (vec 2.0 1.0 5.0) (vec 1.0 3.0 1.0) (vec 0.0 1.0 4.0))))
   (let singular (->matrix (vec (vec 1.0 2.0) (vec 2.0 4.0))))
   (let wide (->matrix (vec (vec 4.0 1.0 0.0 2.0 1.0)
-                           (vec 1.0 5.0 1.0 0.0 0.0)
+                           (vec 3.0 5.0 1.0 0.0 0.0)
                            (vec 0.0 1.0 6.0 1.0 2.0)
                            (vec 2.0 0.0 1.0 7.0 1.0)
                            (vec 1.0 0.0 2.0 1.0 8.0))))
