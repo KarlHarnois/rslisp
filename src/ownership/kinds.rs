@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 
@@ -869,18 +870,20 @@ impl<'a> ClosureKinds<'a> {
         nested: Option<ClosureKind>,
         uses: &mut ParameterUses,
     ) {
-        let mut in_scope = params.to_vec();
+        let mut in_scope = Cow::Borrowed(params);
         let mut local_closures = Vec::new();
         for item in &block.items {
+            let Some(binding) = LocalClosure::bound_by(item) else {
+                self.require_item(item, &in_scope, nested, uses);
+                continue;
+            };
             let before = uses.counts();
             self.require_item(item, &in_scope, nested, uses);
-            if let Some(binding) = LocalClosure::bound_by(item) {
-                local_closures.push(LocalClosure {
-                    binding,
-                    body_uses: uses.uses_since(&before),
-                });
-                in_scope.push(binding);
-            }
+            local_closures.push(LocalClosure {
+                binding,
+                body_uses: uses.uses_since(&before),
+            });
+            in_scope.to_mut().push(binding);
         }
         for closure in local_closures.into_iter().rev() {
             closure.repeat_body_if_called_again(uses);
