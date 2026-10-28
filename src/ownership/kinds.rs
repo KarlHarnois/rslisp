@@ -94,6 +94,7 @@ pub struct ClosureKinds<'a> {
     value_parameters: HashMap<BindingId, Vec<BindingId>>,
     function_parameters: HashMap<BindingId, Vec<BindingId>>,
     pass_edges: HashMap<BindingId, HashSet<BindingId>>,
+    cycle_peers: HashMap<BindingId, Vec<BindingId>>,
     rust_parameter_kinds: HashMap<BindingId, Vec<ClosureKind>>,
     written_parameter_kinds: HashMap<BindingId, ClosureKind>,
     result_kinds: HashMap<BindingId, ClosureKind>,
@@ -176,6 +177,7 @@ impl<'a> ClosureKinds<'a> {
             value_parameters: HashMap::new(),
             function_parameters: sources.function_parameters,
             pass_edges: HashMap::new(),
+            cycle_peers: HashMap::new(),
             rust_parameter_kinds: sources.rust_parameter_kinds,
             written_parameter_kinds: sources.written_parameter_kinds,
             result_kinds: HashMap::new(),
@@ -190,9 +192,13 @@ impl<'a> ClosureKinds<'a> {
 
     fn build_lambda_pass_edges(&mut self, expr: &TypedExpr) {
         if let TypedExprKind::Fn(lambda) = &expr.kind {
-            let params: HashSet<BindingId> =
-                lambda.params.iter().map(|param| param.binding).collect();
-            for child in lambda.body.expressions() {
+            let params: HashSet<BindingId> = lambda
+                .params
+                .iter()
+                .filter(|param| matches!(param.ty, Type::Function(..)))
+                .map(|param| param.binding)
+                .collect();
+            for child in lambda.body.expressions().filter(|_| !params.is_empty()) {
                 self.build_body_pass_edges(child, &params);
             }
         }
@@ -223,20 +229,9 @@ impl<'a> ClosureKinds<'a> {
         }
     }
 
-    fn allow_every_kind_on_recursive_passes(&mut self) {
-        let parameters: Vec<BindingId> = self.pass_edges.keys().copied().collect();
-        for parameter in parameters {
-            if !self.written_parameter_kinds.contains_key(&parameter)
-                && self.reaches(parameter, parameter)
-            {
-                self.parameter_kinds.insert(parameter, ClosureKind::FnOnce);
-            }
-        }
-    }
-
     pub fn run(mut self, modules: &mut [TypedModule]) -> KindReport {
         self.build_pass_edges(modules);
-        self.allow_every_kind_on_recursive_passes();
+        self.build_cycle_peers();
         loop {
             let known_binding_kinds = self.binding_kinds.clone();
             self.recompute_lambdas(modules);
@@ -736,6 +731,7 @@ impl<'a> ClosureKinds<'a> {
         for definition in modules.iter().flat_map(|module| &module.definitions) {
             self.requirements(&definition.value, &mut kinds);
         }
+        self.share_cycle_kinds(&mut kinds);
         kinds
     }
 
@@ -884,7 +880,50 @@ impl<'a> ClosureKinds<'a> {
                 self.require_expression(&argument.value, params, nested, uses);
                 continue;
             }
-            uses.record_pass(*binding, self.expected_kind(callee, position));
+            uses.record_pass(*binding, self.pass_kind(callee, position, *binding));
+        }
+    }
+
+    fn pass_kind(&self, callee: &TypedExpr, position: usize, parameter: BindingId) -> ClosureKind {
+        let target = match &callee.kind {
+            TypedExprKind::Leaf(TypedLeaf::Global(function)) => self
+                .function_parameters
+                .get(function)
+                .and_then(|parameters| parameters.get(position)),
+            _ => None,
+        };
+        match target {
+            Some(target) if self.reaches(*target, parameter) => ClosureKind::FnOnce,
+            _ => self.expected_kind(callee, position),
+        }
+    }
+
+    fn build_cycle_peers(&mut self) {
+        let parameters: Vec<BindingId> = self.pass_edges.keys().copied().collect();
+        for parameter in &parameters {
+            let peers: Vec<BindingId> = parameters
+                .iter()
+                .copied()
+                .filter(|other| {
+                    self.reaches(*parameter, *other) && self.reaches(*other, *parameter)
+                })
+                .collect();
+            if !peers.is_empty() && !self.written_parameter_kinds.contains_key(parameter) {
+                self.cycle_peers.insert(*parameter, peers);
+            }
+        }
+    }
+
+    fn share_cycle_kinds(&self, kinds: &mut HashMap<BindingId, ClosureKind>) {
+        for (parameter, peers) in &self.cycle_peers {
+            let shared = peers
+                .iter()
+                .filter_map(|peer| kinds.get(peer))
+                .copied()
+                .fold(ClosureKind::FnOnce, ClosureKind::min);
+            if let Some(kind) = kinds.get_mut(parameter) {
+                *kind = (*kind).min(shared);
+            }
         }
     }
 

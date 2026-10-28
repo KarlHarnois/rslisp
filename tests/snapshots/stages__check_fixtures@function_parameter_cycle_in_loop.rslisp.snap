@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/function_parameter_cycle_in_loop.rslisp
+---
+(type ping (fn ((fn (i64) unit) i64) i64))
+(type pong (fn ((fn (i64) unit) i64) i64))
+(type main (fn () unit))
