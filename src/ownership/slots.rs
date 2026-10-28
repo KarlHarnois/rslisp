@@ -2,21 +2,13 @@ use std::rc::Rc;
 
 use crate::core::{BindingId, BindingKind, FieldLabel, VariantInfo};
 use crate::source::Span;
-use crate::types::{Type, TypedProgram, VariantPayload};
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum SlotShape {
-    Field,
-    PositionalPayload,
-    NamedPayload,
-}
+use crate::types::{Type, TypedProgram};
 
 pub struct DeclaredSlot<'d> {
     pub owner: BindingId,
     pub name: &'d Rc<str>,
     pub declared: &'d Type,
     pub span: Span,
-    pub shape: SlotShape,
 }
 
 pub struct DeclaredSlots<'p> {
@@ -40,7 +32,6 @@ impl<'p> DeclaredSlots<'p> {
             name,
             declared,
             span: *definition.field_spans.get(index)?,
-            shape: SlotShape::Field,
         })
     }
 
@@ -56,24 +47,6 @@ impl<'p> DeclaredSlots<'p> {
             name: &definition.name,
             declared: definition.payload_types().get(position).copied()?,
             span: *definition.payload_spans.get(position)?,
-            shape: Self::payload_shape(&definition.payload)?,
         })
-    }
-
-    pub fn positional_payload(
-        &self,
-        variant: BindingId,
-        position: usize,
-    ) -> Option<DeclaredSlot<'p>> {
-        self.payload(variant, position)
-            .filter(|slot| slot.shape == SlotShape::PositionalPayload)
-    }
-
-    fn payload_shape(payload: &VariantPayload) -> Option<SlotShape> {
-        match payload {
-            VariantPayload::None => None,
-            VariantPayload::Positional(_) => Some(SlotShape::PositionalPayload),
-            VariantPayload::Named(_) => Some(SlotShape::NamedPayload),
-        }
     }
 }
