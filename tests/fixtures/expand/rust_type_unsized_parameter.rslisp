@@ -1,0 +1,2 @@
+(rust-type (shared (item unsized)) "std::rc::Rc<{0}>")
+(rust-type (duo (first unsized) second) "(Box<{0}>, Vec<{1}>)")
