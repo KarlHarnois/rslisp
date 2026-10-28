@@ -7,13 +7,15 @@ use crate::core::{BindingId, FieldLabel};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Type, TypedArgument, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram, TypedStructExpr,
+    Type, TypedArgument, TypedDefinition, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf,
+    TypedProgram, TypedStructExpr,
 };
 
 pub struct StoredClosures<'p> {
     program: &'p TypedProgram,
     slots: FunctionSlots<'p>,
     storing: StoringParameters,
+    definitions: Vec<DefinitionTree<'p>>,
 }
 
 impl<'p> StoredClosures<'p> {
@@ -21,11 +23,13 @@ impl<'p> StoredClosures<'p> {
         let (diagnostics, stored) = {
             let program = &*program;
             let slots = FunctionSlots::new(program);
-            let storing = StoringParameters::collect(program, &slots);
+            let definitions = DefinitionTree::all_in(program);
+            let storing = StoringParameters::collect(&definitions, &slots);
             let closures = StoredClosures {
                 program,
                 slots,
                 storing,
+                definitions,
             };
             (closures.diagnostics(), closures.stored_parameters())
         };
@@ -34,24 +38,17 @@ impl<'p> StoredClosures<'p> {
     }
 
     fn diagnostics(&self) -> Vec<Diagnostic> {
-        self.program
-            .modules
+        self.definitions
             .iter()
-            .flat_map(|module| &module.definitions)
-            .flat_map(|definition| Subtree::of(&definition.value))
+            .flat_map(|definition| definition.expressions.iter().copied())
             .flat_map(|expr| self.capturing_stores(expr))
             .collect()
     }
 
     fn stored_parameters(&self) -> HashSet<BindingId> {
-        self.program
-            .modules
+        self.definitions
             .iter()
-            .flat_map(|module| &module.definitions)
-            .filter_map(|definition| match &definition.value.kind {
-                TypedExprKind::Fn(lambda) => Some((definition.binding, lambda)),
-                _ => None,
-            })
+            .filter_map(DefinitionTree::function)
             .flat_map(|(function, lambda)| {
                 lambda
                     .params
@@ -84,6 +81,38 @@ impl<'p> StoredClosures<'p> {
             &store.slot.storage,
             store.slot.declared,
         ))
+    }
+}
+
+struct DefinitionTree<'e> {
+    function: BindingId,
+    lambda: Option<&'e TypedLambda>,
+    expressions: Vec<&'e TypedExpr>,
+}
+
+impl<'e> DefinitionTree<'e> {
+    fn all_in(program: &'e TypedProgram) -> Vec<Self> {
+        program
+            .modules
+            .iter()
+            .flat_map(|module| &module.definitions)
+            .map(Self::of)
+            .collect()
+    }
+
+    fn of(definition: &'e TypedDefinition) -> Self {
+        Self {
+            function: definition.binding,
+            lambda: match &definition.value.kind {
+                TypedExprKind::Fn(lambda) => Some(lambda),
+                _ => None,
+            },
+            expressions: Subtree::of(&definition.value),
+        }
+    }
+
+    fn function(&self) -> Option<(BindingId, &'e TypedLambda)> {
+        self.lambda.map(|lambda| (self.function, lambda))
     }
 }
 
@@ -204,9 +233,9 @@ struct StoringParameters {
 }
 
 impl StoringParameters {
-    fn collect(program: &TypedProgram, slots: &FunctionSlots) -> Self {
+    fn collect(definitions: &[DefinitionTree<'_>], slots: &FunctionSlots) -> Self {
         let mut storing = Self::default();
-        while storing.add_stores(program, slots) {}
+        while storing.add_stores(definitions, slots) {}
         storing
     }
 
@@ -218,14 +247,10 @@ impl StoringParameters {
         self.slots.contains_key(&(function, position))
     }
 
-    fn add_stores(&mut self, program: &TypedProgram, slots: &FunctionSlots) -> bool {
-        let found: Vec<((BindingId, usize), FunctionSlot)> = program
-            .modules
+    fn add_stores(&mut self, definitions: &[DefinitionTree<'_>], slots: &FunctionSlots) -> bool {
+        let found: Vec<((BindingId, usize), FunctionSlot)> = definitions
             .iter()
-            .flat_map(|module| &module.definitions)
-            .flat_map(|definition| {
-                self.parameter_stores(definition.binding, &definition.value, slots)
-            })
+            .flat_map(|definition| self.parameter_stores(definition, slots))
             .filter(|(key, _)| !self.slots.contains_key(key))
             .collect();
         let added = !found.is_empty();
@@ -235,11 +260,10 @@ impl StoringParameters {
 
     fn parameter_stores(
         &self,
-        function: BindingId,
-        value: &TypedExpr,
+        definition: &DefinitionTree<'_>,
         slots: &FunctionSlots,
     ) -> Vec<((BindingId, usize), FunctionSlot)> {
-        let TypedExprKind::Fn(lambda) = &value.kind else {
+        let Some((function, lambda)) = definition.function() else {
             return Vec::new();
         };
         let positions: HashMap<BindingId, usize> = lambda
@@ -248,8 +272,10 @@ impl StoringParameters {
             .enumerate()
             .map(|(position, param)| (param.binding, position))
             .collect();
-        Subtree::of(value)
-            .into_iter()
+        definition
+            .expressions
+            .iter()
+            .copied()
             .flat_map(|expr| Store::all_in(expr, slots, self))
             .filter_map(|store| {
                 let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = store.value.kind else {
