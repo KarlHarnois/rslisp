@@ -43,8 +43,8 @@ impl<'a> ResultBorrows<'a> {
         self.open_callees.borrow().order(callee)
     }
 
-    fn provisional_parameters(&self, callee: BindingId) -> CalleeParameters {
-        self.open_callees.borrow_mut().assumed(callee)
+    fn assume_parameters(&self, callee: BindingId) -> CalleeParameters {
+        self.open_callees.borrow_mut().assume(callee)
     }
 
     fn visit(&self, callee: BindingId, lambda: &TypedLambda) -> Visit {
@@ -261,7 +261,7 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
 
     fn assumed_parameters(&mut self, callee: BindingId, order: usize) -> CalleeParameters {
         self.reach(order);
-        self.rules.provisional_parameters(callee)
+        self.rules.assume_parameters(callee)
     }
 
     fn visited_parameters(&mut self, callee: BindingId) -> CalleeParameters {
