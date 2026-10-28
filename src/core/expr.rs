@@ -252,9 +252,10 @@ impl Control {
 impl StructExpr {
     fn children(&self) -> Vec<&Expr> {
         match self {
-            StructExpr::New(_, fields) | StructExpr::Update(_, fields) => {
-                fields.iter().map(|(_, value)| value).collect()
-            }
+            StructExpr::New(_, fields) => fields.iter().map(|(_, value)| value).collect(),
+            StructExpr::Update(base, fields) => std::iter::once(base.as_ref())
+                .chain(fields.iter().map(|(_, value)| value))
+                .collect(),
             StructExpr::Field(value, _) => vec![value],
         }
     }

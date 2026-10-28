@@ -156,18 +156,20 @@ impl TypedControl {
 impl TypedStructExpr {
     fn children(&self) -> Vec<&TypedExpr> {
         match self {
-            TypedStructExpr::New(_, fields) | TypedStructExpr::Update(_, _, fields) => {
-                fields.iter().map(|(_, value)| value).collect()
-            }
+            TypedStructExpr::New(_, fields) => fields.iter().map(|(_, value)| value).collect(),
+            TypedStructExpr::Update(_, base, fields) => std::iter::once(base.as_ref())
+                .chain(fields.iter().map(|(_, value)| value))
+                .collect(),
             TypedStructExpr::Field(value, _) => vec![value],
         }
     }
 
     fn children_mut(&mut self) -> Vec<&mut TypedExpr> {
         match self {
-            TypedStructExpr::New(_, fields) | TypedStructExpr::Update(_, _, fields) => {
-                fields.iter_mut().map(|(_, value)| value).collect()
-            }
+            TypedStructExpr::New(_, fields) => fields.iter_mut().map(|(_, value)| value).collect(),
+            TypedStructExpr::Update(_, base, fields) => std::iter::once(base.as_mut())
+                .chain(fields.iter_mut().map(|(_, value)| value))
+                .collect(),
             TypedStructExpr::Field(value, _) => vec![value.as_mut()],
         }
     }
