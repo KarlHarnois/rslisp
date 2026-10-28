@@ -15,8 +15,7 @@ impl<'a> InstrumentedTests<'a> {
     const REPORT: &'static str = "target/coverage/lcov.info";
     const UNMEASURED_PACKAGE: &'static str = "xtask";
     const DEFAULT_CARGO: &'static str = "cargo";
-    const FORGET_PREVIOUS_RUNS: [&'static str; 4] =
-        ["llvm-cov", "clean", "--profraw-only", "--workspace"];
+    const FORGET_PREVIOUS_RUNS: [&'static str; 3] = ["llvm-cov", "clean", "--workspace"];
     const KEEP_BUILD_ARTIFACTS: &'static str = "--no-clean";
 
     pub fn new(root: &'a Path) -> Self {
