@@ -151,7 +151,7 @@ impl FailureDescription {
     fn with_earlier_label(self, part: &Form, value: &Form) -> Result<Self, Diagnostic> {
         Ok(Self {
             earlier_label: Some(EarlierLabel {
-                text: Self::string(value)?.to_owned(),
+                text: Self::label_text(value)?,
                 part: part.span(),
             }),
             ..self
@@ -160,7 +160,7 @@ impl FailureDescription {
 
     fn with_label(self, value: &Form) -> Result<Self, Diagnostic> {
         Ok(Self {
-            label: Some(Self::string(value)?.to_owned()),
+            label: Some(Self::label_text(value)?),
             ..self
         })
     }
@@ -192,9 +192,9 @@ impl FailureDescription {
             .ok_or_else(|| InterpretProblems::malformed_failure_part(value.span()))
     }
 
-    fn string(value: &Form) -> Result<&str, Diagnostic> {
+    fn label_text(value: &Form) -> Result<String, Diagnostic> {
         match value.kind() {
-            FormKind::String(text) => Ok(text),
+            FormKind::String(text) => Ok(text.to_string()),
             _ => Err(InterpretProblems::malformed_failure_part(value.span())),
         }
     }

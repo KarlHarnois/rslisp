@@ -13,6 +13,7 @@
 (def repeated-labelled (macro (form) (fail "`leaf` is given twice" (first (rest (rest form))) "remove the second `leaf`" (template (:code repeated-parameter :earlier (unquote (first (rest form))) :label "given again here" :earlier-label "first given here")))))
 (def earlier-unlabelled (macro (form) (fail "`leaf` is given twice" (first (rest (rest form))) "remove the second `leaf`" (template (:code repeated-parameter :earlier (unquote (first (rest form))))))))
 (def stray-earlier-label (macro (form) (fail "bad call" form "fix it" (quote (:earlier-label "first given here")))))
+(def symbol-earlier-label (macro (form) (fail "bad call" form "fix it" (template (:earlier (unquote form) :earlier-label leaf)))))
 
 (unknown-part)
 (part-without-value)
@@ -24,6 +25,7 @@
 (coded)
 (labelled)
 (symbol-label)
+(symbol-earlier-label)
 (repeated-labelled leaf leaf)
 (earlier-unlabelled leaf leaf)
 (stray-earlier-label)
