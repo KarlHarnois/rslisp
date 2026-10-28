@@ -1,0 +1,22 @@
+(defn run (record)
+  (let f5 (fn (n) n))
+  (f5 1)
+  (do
+    (let f4 (fn (n) n))
+    (f4 1)
+    (do
+      (let f3 (fn (n) n))
+      (f3 1)
+      (do
+        (let f2 (fn (n) n))
+        (f2 1)
+        (do
+          (let f1 (fn (n) n))
+          (f1 1)
+          (do
+            (let f0 (fn (n) n))
+            (f0 1)
+            (do (record 1))))))))
+
+(defn main ()
+  (run (fn (x) (println x))))

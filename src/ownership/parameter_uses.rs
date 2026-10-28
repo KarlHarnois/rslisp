@@ -53,8 +53,15 @@ impl ParameterUses {
     }
 
     pub fn repeat_uses_since(&mut self, before: &Self) {
-        Self::repeat_since(&mut self.calls, &before.calls);
-        Self::repeat_since(&mut self.uses, &before.uses);
+        self.extend(self.uses_since(before));
+    }
+
+    pub fn uses_since(&self, before: &Self) -> Self {
+        Self {
+            calls: Self::added_since(&self.calls, &before.calls),
+            uses: Self::added_since(&self.uses, &before.uses),
+            ..Self::default()
+        }
     }
 
     pub fn kind(&self, parameter: BindingId) -> ClosureKind {
@@ -98,11 +105,17 @@ impl ParameterUses {
         }
     }
 
-    fn repeat_since(counts: &mut HashMap<BindingId, usize>, before: &HashMap<BindingId, usize>) {
-        for (parameter, count) in counts.iter_mut() {
-            let added = count.saturating_sub(before.get(parameter).copied().unwrap_or(0));
-            *count += added;
-        }
+    fn added_since(
+        counts: &HashMap<BindingId, usize>,
+        before: &HashMap<BindingId, usize>,
+    ) -> HashMap<BindingId, usize> {
+        counts
+            .iter()
+            .map(|(parameter, count)| {
+                let earlier = before.get(parameter).copied().unwrap_or(0);
+                (*parameter, count.saturating_sub(earlier))
+            })
+            .collect()
     }
 
     fn weakest_allowed_kind(&self, parameter: BindingId) -> Option<ClosureKind> {

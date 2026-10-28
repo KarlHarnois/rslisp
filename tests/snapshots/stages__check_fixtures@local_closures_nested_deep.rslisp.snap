@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/local_closures_nested_deep.rslisp
+---
+(type run (fn ((fn (i64) unit)) unit))
+(type main (fn () unit))
