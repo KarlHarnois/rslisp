@@ -54,6 +54,10 @@ impl Measurement {
             ])
     }
 
+    pub fn total(&self) -> Cost {
+        self.total
+    }
+
     pub fn cost_of(&self, stage: &str) -> Option<Cost> {
         self.rows()
             .find(|(name, _)| *name == stage)
