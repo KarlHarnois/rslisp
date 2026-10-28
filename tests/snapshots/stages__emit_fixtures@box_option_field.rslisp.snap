@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/box_option_field.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct User<'a> {
+    nickname: Box<Option<&'a str>>,
+}
+
+fn main() {
+    let user = User {
+        nickname: Box::new(Some("Leafy")),
+    };
+    println!("{:?}", user.nickname)
+}
