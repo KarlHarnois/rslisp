@@ -59,7 +59,7 @@ mod tests {
 
     impl NoteFixture {
         const COMMIT: &'static str = "abc1234";
-        const NOTED_KEY: &'static str = "1111111-2222222-3333333";
+        const NOTED_KEY: &'static str = "1111111-2222222-3333333-4444444";
         const HEADED: &'static str = include_str!("../../fixtures/bench/headed-results.tsv");
         const HEADLESS: &'static str = include_str!("../../fixtures/bench/headless-results.tsv");
 
@@ -85,9 +85,13 @@ mod tests {
     #[test]
     fn recalls_nothing_measured_by_another_method() {
         let failure = NoteFixture::note(NoteFixture::HEADED)
-            .recall("4444444-5555555-6666666")
+            .recall("5555555-6666666-7777777-8888888")
             .unwrap_err();
-        assert!(failure.to_string().contains("`1111111-2222222-3333333`"));
+        assert!(
+            failure
+                .to_string()
+                .contains("`1111111-2222222-3333333-4444444`")
+        );
     }
 
     #[test]

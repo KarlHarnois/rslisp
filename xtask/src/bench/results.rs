@@ -194,7 +194,7 @@ mod tests {
 
         fn header() -> ResultHeader {
             ResultHeader::new(
-                "a1-b2-c3".to_string(),
+                "a1-b2-c3-d4".to_string(),
                 "rustc 1.0.0 (fake 2020-01-01)".to_string(),
                 "valgrind-0.0.0".to_string(),
             )
@@ -232,7 +232,10 @@ mod tests {
     #[test]
     fn reads_the_method_key_of_a_headed_file() {
         let results = ResultSet::load(&ResultsFixture::fixture("headed-results.tsv")).unwrap();
-        assert_eq!(results.method_key(), Some("1111111-2222222-3333333"));
+        assert_eq!(
+            results.method_key(),
+            Some("1111111-2222222-3333333-4444444")
+        );
         assert_eq!(results.programs().len(), 2);
     }
 

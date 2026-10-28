@@ -16,6 +16,7 @@ impl<'a> MeasurementMethod<'a> {
     const RUSTC: &'static str = "rustc";
     const VERSION_FLAG: &'static str = "--version";
     const TOOLCHAIN_LOCK: &'static str = "flake.lock";
+    const DEV_SHELL: &'static str = "flake.nix";
     const BENCHMARK_CODE: &'static str = "xtask/src/bench";
     const KEY_SEPARATOR: &'static str = "-";
 
@@ -44,6 +45,7 @@ impl<'a> MeasurementMethod<'a> {
     fn keyed_objects() -> Vec<String> {
         let inputs = [
             Self::TOOLCHAIN_LOCK,
+            Self::DEV_SHELL,
             Self::BENCHMARK_CODE,
             Corpus::DIRECTORY,
         ];
