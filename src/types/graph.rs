@@ -1,6 +1,47 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::core::{BindingArena, BindingId, BindingKind, Expr, ExprKind, Leaf};
+use crate::core::{BindingArena, BindingId, BindingKind, Expr, ExprKind, ItemKind, Leaf};
+use crate::expand::Program;
+
+pub struct DefinitionGraph {
+    dependencies: DependencyGraph,
+    order: Vec<BindingId>,
+    components: Vec<Vec<BindingId>>,
+}
+
+impl DefinitionGraph {
+    pub fn of(program: &Program) -> Self {
+        let definitions: Vec<(BindingId, &Expr)> = program
+            .modules
+            .iter()
+            .flat_map(|module| &module.items)
+            .filter_map(|item| match &item.kind {
+                ItemKind::Def(binding, value) => Some((*binding, value)),
+                _ => None,
+            })
+            .collect();
+        let dependencies = DependencyGraph::build(&definitions, &program.bindings);
+        let order: Vec<BindingId> = definitions.iter().map(|(binding, _)| *binding).collect();
+        let components = dependencies.components(&order);
+        Self {
+            dependencies,
+            order,
+            components,
+        }
+    }
+
+    pub fn dependencies(&self) -> &DependencyGraph {
+        &self.dependencies
+    }
+
+    pub fn order(&self) -> &[BindingId] {
+        &self.order
+    }
+
+    pub fn components(&self) -> &[Vec<BindingId>] {
+        &self.components
+    }
+}
 
 pub struct DependencyGraph {
     edges: HashMap<BindingId, Vec<BindingId>>,

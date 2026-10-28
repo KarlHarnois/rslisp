@@ -5,7 +5,8 @@ use crate::diagnostic::Diagnostics;
 use crate::expand::Program;
 use crate::ownership::{InPlaceChanges, OwnershipChecker};
 use crate::types::{
-    InferredCopies, InstantiationReport, LiteralDefaults, Pinning, Type, TypeChecker, TypedProgram,
+    DefinitionGraph, InferredCopies, InstantiationReport, LiteralDefaults, Pinning, Type,
+    TypeChecker, TypedProgram,
 };
 
 pub struct ProgramChecker;
@@ -18,6 +19,7 @@ impl ProgramChecker {
 
 struct CheckRuns<'a> {
     program: &'a Program,
+    graph: DefinitionGraph,
     blocked: HashSet<BindingId>,
     inferred_copies: InferredCopies,
     pins: HashMap<BindingId, Type>,
@@ -33,6 +35,7 @@ impl<'a> CheckRuns<'a> {
     fn new(program: &'a Program) -> Self {
         Self {
             program,
+            graph: DefinitionGraph::of(program),
             blocked: HashSet::new(),
             inferred_copies: InferredCopies::default(),
             pins: HashMap::new(),
@@ -143,13 +146,14 @@ impl<'a> CheckRuns<'a> {
     ) -> Result<CheckedProgram, Diagnostics> {
         let mut typed = TypeChecker::check(
             self.program,
+            &self.graph,
             &self.blocked,
             &self.inferred_copies,
             &self.pins,
             literal_defaults,
             default_literal_parameters,
         )?;
-        let instantiations = InstantiationReport::of(self.program, &typed);
+        let instantiations = InstantiationReport::of(self.program, &self.graph, &typed);
         let inferred_copies = OwnershipChecker::check(&mut typed)?;
         Ok(CheckedProgram {
             program: typed,
