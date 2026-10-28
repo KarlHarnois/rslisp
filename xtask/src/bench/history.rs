@@ -62,13 +62,12 @@ impl HistoryNote {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::bench::fixture::HeadedResultsFixture;
 
     struct NoteFixture;
 
     impl NoteFixture {
         const COMMIT: &'static str = "abc1234";
-        const NOTED_KEY: &'static str = "1111111-2222222-3333333-4444444";
-        const HEADED: &'static str = include_str!("../../fixtures/bench/headed-results.tsv");
         const HEADLESS: &'static str = include_str!("../../fixtures/bench/headless-results.tsv");
 
         fn note(text: &str) -> HistoryNote {
@@ -81,7 +80,7 @@ mod tests {
         let stderr = format!("error: no note found for object {}.\n", NoteFixture::COMMIT);
         let failure = BenchHistory::read_note(NoteFixture::COMMIT, Err(stderr))
             .unwrap()
-            .recall(NoteFixture::NOTED_KEY)
+            .recall(HeadedResultsFixture::METHOD_KEY)
             .unwrap_err();
         assert!(failure.to_string().contains("has no note"));
     }
@@ -97,34 +96,32 @@ mod tests {
 
     #[test]
     fn recalls_a_note_measured_by_the_same_method() {
-        let recalled = NoteFixture::note(NoteFixture::HEADED).recall(NoteFixture::NOTED_KEY);
-        assert_eq!(recalled.unwrap(), NoteFixture::HEADED);
+        let recalled =
+            NoteFixture::note(HeadedResultsFixture::TEXT).recall(HeadedResultsFixture::METHOD_KEY);
+        assert_eq!(recalled.unwrap(), HeadedResultsFixture::TEXT);
     }
 
     #[test]
     fn recalls_nothing_without_a_note() {
         let failure = HistoryNote::new(NoteFixture::COMMIT, None)
-            .recall(NoteFixture::NOTED_KEY)
+            .recall(HeadedResultsFixture::METHOD_KEY)
             .unwrap_err();
         assert!(failure.to_string().contains("has no note"));
     }
 
     #[test]
     fn recalls_nothing_measured_by_another_method() {
-        let failure = NoteFixture::note(NoteFixture::HEADED)
+        let failure = NoteFixture::note(HeadedResultsFixture::TEXT)
             .recall("5555555-6666666-7777777-8888888")
             .unwrap_err();
-        assert!(
-            failure
-                .to_string()
-                .contains("`1111111-2222222-3333333-4444444`")
-        );
+        let noted_key = format!("`{}`", HeadedResultsFixture::METHOD_KEY);
+        assert!(failure.to_string().contains(&noted_key));
     }
 
     #[test]
     fn recalls_nothing_from_a_note_without_a_method() {
         let failure = NoteFixture::note(NoteFixture::HEADLESS)
-            .recall(NoteFixture::NOTED_KEY)
+            .recall(HeadedResultsFixture::METHOD_KEY)
             .unwrap_err();
         assert!(failure.to_string().contains("`unknown`"));
     }
@@ -132,7 +129,7 @@ mod tests {
     #[test]
     fn recalls_nothing_from_a_malformed_note() {
         let failure = NoteFixture::note("inventory\texpand=1\n")
-            .recall(NoteFixture::NOTED_KEY)
+            .recall(HeadedResultsFixture::METHOD_KEY)
             .unwrap_err();
         assert!(failure.to_string().contains("inventory"));
     }
