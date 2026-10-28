@@ -68,6 +68,11 @@ impl ParameterUses {
             .max(required)
     }
 
+    pub fn allows_fn_once(&self, parameter: BindingId) -> bool {
+        self.weakest_allowed_kind(parameter)
+            .is_none_or(|kind| kind == ClosureKind::FnOnce)
+    }
+
     fn join(&mut self, branch: Self) {
         Self::combine_with(&mut self.calls, branch.calls, usize::max);
         Self::combine_with(&mut self.uses, branch.uses, usize::max);
