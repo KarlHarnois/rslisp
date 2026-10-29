@@ -1,0 +1,44 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/set_map_borrowed_struct.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+    year: u16,
+}
+
+fn replace_car<'a>(
+    cars: &mut std::collections::HashMap<&'a str, Car<'a>>,
+    name: &'a str,
+    car: Car<'a>,
+) {
+    *cars.get_mut(name).unwrap() = car
+}
+
+fn main() {
+    let mut cars = {
+        let mut map = std::collections::HashMap::new();
+        map.insert(
+            "leaf",
+            Car {
+                make: "Nissan",
+                model: "Leaf",
+                year: 2023,
+            },
+        );
+        map
+    };
+    replace_car(
+        &mut cars,
+        "leaf",
+        Car {
+            make: "Nissan",
+            model: "Leaf",
+            year: 2024,
+        },
+    );
+    println!("{}", cars.get("leaf").unwrap().year)
+}

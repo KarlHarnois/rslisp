@@ -1,0 +1,26 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/push_struct_built_from_parameter.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+    year: u16,
+}
+
+fn add_leaf<'a>(cars: &mut Vec<Car<'a>>, make: &'a str) {
+    let car = Car {
+        make,
+        model: "Leaf",
+        year: 2024,
+    };
+    cars.push(car)
+}
+
+fn main() {
+    let mut cars = Vec::new();
+    add_leaf(&mut cars, "Nissan");
+    println!("{}", cars[0].make)
+}

@@ -28,6 +28,7 @@ pub struct LifetimeScope {
     opaque_lifetimes: Option<Rc<FreshLifetimes>>,
     names_function_lifetime: bool,
     reserved: Option<String>,
+    elides_outer_reference: bool,
 }
 
 impl LifetimeScope {
@@ -39,6 +40,7 @@ impl LifetimeScope {
             opaque_lifetimes: None,
             names_function_lifetime: false,
             reserved: None,
+            elides_outer_reference: false,
         }
     }
 
@@ -79,6 +81,20 @@ impl LifetimeScope {
     pub fn reserving(mut self, declared: Option<&str>) -> Self {
         self.reserved = declared.map(str::to_string);
         self
+    }
+
+    pub fn eliding_outer_reference(mut self) -> Self {
+        self.elides_outer_reference = true;
+        self
+    }
+
+    fn entering_reference(&self) -> Cow<'_, Self> {
+        if !self.elides_outer_reference {
+            return Cow::Borrowed(self);
+        }
+        let mut inner = self.clone();
+        inner.elides_outer_reference = false;
+        Cow::Owned(inner)
     }
 
     pub fn eliding(mut self, binding: BindingId) -> Self {
@@ -225,9 +241,21 @@ impl<'a> RustTypes<'a> {
         };
         format!(
             "&{}{mutability}{}",
-            self.lifetime(lifetime, position, scope),
-            self.show_in(inner, Self::inner(position), scope)
+            self.outer_lifetime(lifetime, position, scope),
+            self.show_in(inner, Self::inner(position), &scope.entering_reference())
         )
+    }
+
+    fn outer_lifetime(
+        &self,
+        lifetime: Lifetime,
+        position: TypePosition,
+        scope: &LifetimeScope,
+    ) -> String {
+        if scope.elides_outer_reference && lifetime == Lifetime::Elided {
+            return String::new();
+        }
+        self.lifetime(lifetime, position, scope)
     }
 
     pub fn generics(

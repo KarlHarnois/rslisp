@@ -1,0 +1,14 @@
+(defstruct car :make str :model str :year u16)
+
+(defn add-car! (cars car) (push! cars car))
+
+(defn add-pair! (cars first second)
+  (add-car! cars first)
+  (add-car! cars second))
+
+(defn main ()
+  (let cars (vec))
+  (add-pair! (mut cars)
+             (->car :make "Nissan" :model "Leaf" :year 2023)
+             (->car :make "Nissan" :model "Ariya" :year 2024))
+  (println (len cars)))

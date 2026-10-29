@@ -119,6 +119,10 @@ impl Type {
         self.any_part(&|part| *part == Type::Generic(generic))
     }
 
+    pub fn contains(&self, part: &Type) -> bool {
+        self.any_part(&|candidate| candidate == part)
+    }
+
     pub fn holds_reference(&self) -> bool {
         self.any_part(&Type::is_reference)
     }
