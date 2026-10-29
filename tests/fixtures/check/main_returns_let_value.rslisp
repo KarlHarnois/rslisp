@@ -1,0 +1,3 @@
+(defn main ()
+  (let total (+ 2 3))
+  total)

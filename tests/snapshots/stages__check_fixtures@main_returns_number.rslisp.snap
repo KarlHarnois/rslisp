@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/main_returns_number.rslisp
+---
+error[L0455]: `main` returns a value of type `i64`
+ --> check/main_returns_number.rslisp:3:3
+  |
+3 |   1)
+  |   ^ this `i64` is returned from `main`
+  |
+  = note: `main` returns `unit` or a `result`
+  = help: end the body of `main` with a print, such as `(println value)`, or return a `result`

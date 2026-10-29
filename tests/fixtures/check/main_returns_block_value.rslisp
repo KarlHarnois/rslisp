@@ -1,0 +1,4 @@
+(defn main ()
+  (do
+    (println "starting")
+    1))

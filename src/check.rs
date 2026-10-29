@@ -5,15 +5,15 @@ use crate::diagnostic::Diagnostics;
 use crate::expand::Program;
 use crate::ownership::{InPlaceChanges, OwnershipChecker};
 use crate::types::{
-    DefinitionGraph, InferredCopies, InstantiationReport, LiteralDefaults, Pinning, Type,
-    TypeChecker, TypedProgram,
+    DefinitionGraph, InferredCopies, InstantiationReport, LiteralDefaults, MainResult, Pinning,
+    Type, TypeChecker, TypedProgram,
 };
 
 pub struct ProgramChecker;
 
 impl ProgramChecker {
     pub fn check(program: &Program) -> Result<TypedProgram, Diagnostics> {
-        CheckRuns::new(program).typed()
+        CheckRuns::new(program).typed().and_then(MainResult::check)
     }
 }
 
