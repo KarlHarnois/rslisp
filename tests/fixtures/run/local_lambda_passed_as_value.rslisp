@@ -1,0 +1,9 @@
+(type apply-to-year (fn ((fn ((fn (i64) i64)) i64)) i64))
+(defn apply-to-year (apply) (apply (fn (n) (+ n 1))))
+
+(defn main ()
+  (let year 2024)
+  (let apply (fn (action) (action year)))
+  (println (apply-to-year apply))
+  (let shift (fn (n) (+ n year)))
+  (prn (collect (map (range 1 4) shift))))

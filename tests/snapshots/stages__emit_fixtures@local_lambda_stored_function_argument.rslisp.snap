@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/local_lambda_stored_function_argument.rslisp
+---
+#[derive(Clone, Copy, Debug)]
+struct Sorter {
+    key: fn(i64) -> i64,
+}
+
+fn main() {
+    let make = |key: fn(i64) -> i64| Sorter { key };
+    let chosen = make(|n: i64| n + 1);
+    println!("{}", (chosen.key)(2))
+}

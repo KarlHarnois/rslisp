@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use super::fragment::{Code, Fragment, Precedence};
+use super::function_borrow::FunctionBorrow;
 use super::locals::LocalNames;
 use super::mangle::NameMangler;
 use super::operator::{RustOperator, Side};
@@ -171,6 +172,8 @@ pub struct ExpressionEmitter<'a> {
     pub problems: Vec<Diagnostic>,
     mutable_locals: HashSet<BindingId>,
     stored_functions: StoredFunctions<'a>,
+    local_closures: HashMap<BindingId, Vec<Option<FunctionBorrow>>>,
+    escaping_locals: HashSet<BindingId>,
     tail_loop: Option<TailLoop>,
     loop_exit: LoopExit,
 }
@@ -199,6 +202,8 @@ impl<'a> ExpressionEmitter<'a> {
             problems: Vec::new(),
             mutable_locals: HashSet::new(),
             stored_functions: StoredFunctions::new(program),
+            local_closures: HashMap::new(),
+            escaping_locals: HashSet::new(),
             tail_loop: None,
             loop_exit: LoopExit::Return,
         }
@@ -210,6 +215,11 @@ impl<'a> ExpressionEmitter<'a> {
 
     pub fn with_mutable_locals(mut self, mutable_locals: HashSet<BindingId>) -> Self {
         self.mutable_locals = mutable_locals;
+        self
+    }
+
+    pub fn with_escaping_locals(mut self, escaping_locals: HashSet<BindingId>) -> Self {
+        self.escaping_locals = escaping_locals;
         self
     }
 
@@ -232,30 +242,62 @@ impl<'a> ExpressionEmitter<'a> {
         position: TypePosition,
         lifetimes: &LifetimeScope,
     ) -> String {
-        let name = self.locals.bind(
-            param.binding,
-            self.program.bindings.get(param.binding).name(),
-        );
-        let reassigned = self
-            .tail_loop
-            .as_ref()
-            .is_some_and(|tail_loop| tail_loop.reassigns(param.binding));
-        let mutable = if reassigned
-            || (self.mutable_locals.contains(&param.binding) && !param.ty.is_reference())
-        {
-            "mut "
-        } else {
-            ""
-        };
         let position = if self.stored_functions.stores(param.binding) {
             TypePosition::Value
         } else {
             position
         };
+        let ty = self.types().show_in(&param.ty, position, lifetimes);
+        let mutable = self.is_reassigned(param) || self.changes_in_place(param);
         format!(
-            "{mutable}{name}: {}",
-            self.types().show_in(&param.ty, position, lifetimes)
+            "{}{}: {ty}",
+            Self::mutability(mutable),
+            self.bind_name(param)
         )
+    }
+
+    fn bind_closure_parameter(&mut self, param: &TypedBinder) -> String {
+        let (Some(borrow), Type::Function(_, parameters, result)) =
+            (self.function_borrow(param), &param.ty)
+        else {
+            return self.bind_parameter(param, TypePosition::Value);
+        };
+        let ty = self.types().borrowed_function(borrow, parameters, result);
+        let mutable = self.is_reassigned(param);
+        format!(
+            "{}{}: {ty}",
+            Self::mutability(mutable),
+            self.bind_name(param)
+        )
+    }
+
+    fn function_borrow(&self, param: &TypedBinder) -> Option<FunctionBorrow> {
+        let Type::Function(kind, _, _) = param.ty else {
+            return None;
+        };
+        let stored = self.stored_functions.stores(param.binding);
+        (!stored).then(|| FunctionBorrow::of(kind))
+    }
+
+    fn bind_name(&mut self, param: &TypedBinder) -> String {
+        self.locals.bind(
+            param.binding,
+            self.program.bindings.get(param.binding).name(),
+        )
+    }
+
+    fn is_reassigned(&self, param: &TypedBinder) -> bool {
+        self.tail_loop
+            .as_ref()
+            .is_some_and(|tail_loop| tail_loop.reassigns(param.binding))
+    }
+
+    fn changes_in_place(&self, param: &TypedBinder) -> bool {
+        self.mutable_locals.contains(&param.binding) && !param.ty.is_reference()
+    }
+
+    fn mutability(mutable: bool) -> &'static str {
+        if mutable { "mut " } else { "" }
     }
 
     pub fn function_body(&mut self, block: &TypedBlock) -> Vec<Fragment> {
@@ -1376,12 +1418,29 @@ impl<'a> ExpressionEmitter<'a> {
             return self.let_value(binder, inner);
         }
         if !binder.annotated {
-            return self.expr(value);
+            return self.unannotated_let_value(binder, value);
         }
         match &value.kind {
             TypedExprKind::TraitObject(boxed, _) => self.expr(boxed),
             _ => self.expr(value),
         }
+    }
+
+    fn unannotated_let_value(&mut self, binder: &TypedBinder, value: &TypedExpr) -> Code {
+        let TypedExprKind::Fn(lambda) = &value.kind else {
+            return self.expr(value);
+        };
+        if self.escaping_locals.contains(&binder.binding) {
+            return self.expr(value);
+        }
+        let borrows = lambda
+            .params
+            .iter()
+            .map(|param| self.function_borrow(param))
+            .collect();
+        self.local_closures.insert(binder.binding, borrows);
+        self.closure_binding(lambda, &value.ty, Self::bind_closure_parameter)
+            .spanned(value.span)
     }
 
     fn let_block_value(value: &TypedExpr) -> Option<&TypedExpr> {
@@ -1609,9 +1668,39 @@ impl<'a> ExpressionEmitter<'a> {
         }
         let arguments = arguments
             .iter()
-            .map(|argument| self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary))
+            .enumerate()
+            .map(|(position, argument)| self.call_argument(callee, position, argument))
             .collect();
         self.call_code(callee, arguments)
+    }
+
+    fn call_argument(
+        &mut self,
+        callee: &TypedExpr,
+        position: usize,
+        argument: &TypedArgument,
+    ) -> Code {
+        let value = self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary);
+        match self.function_parameter_borrow(callee, position) {
+            Some(borrow) => Code::joined(vec![Code::atom(borrow), value], Precedence::Prefix),
+            None => value,
+        }
+    }
+
+    fn function_parameter_borrow(
+        &self,
+        callee: &TypedExpr,
+        position: usize,
+    ) -> Option<&'static str> {
+        let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = callee.kind else {
+            return None;
+        };
+        let borrows = self.local_closures.get(&binding)?;
+        borrows
+            .get(position)
+            .copied()
+            .flatten()
+            .map(FunctionBorrow::prefix)
     }
 
     fn trait_method_call(&mut self, binding: BindingId, arguments: &[TypedArgument]) -> Code {
@@ -1680,11 +1769,11 @@ impl<'a> ExpressionEmitter<'a> {
         for (position, argument) in arguments.iter().enumerate() {
             let moves = argument.borrow != Borrow::Mutable && position <= last;
             if !moves {
-                codes.push(self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary));
+                codes.push(self.call_argument(callee, position, argument));
                 continue;
             }
             let temporary = self.locals.temporary(&format!("call_argument_{position}"));
-            let value = self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary);
+            let value = self.call_argument(callee, position, argument);
             statements.push(Fragment::Newline);
             statements.push(Fragment::Text(format!("let {temporary} = ")));
             statements.extend(value.fragments);
@@ -2142,6 +2231,17 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn closure(&mut self, lambda: &TypedLambda, ty: &Type) -> Code {
+        self.closure_binding(lambda, ty, |emitter, param| {
+            emitter.bind_parameter(param, TypePosition::Value)
+        })
+    }
+
+    fn closure_binding(
+        &mut self,
+        lambda: &TypedLambda,
+        ty: &Type,
+        bind: fn(&mut Self, &TypedBinder) -> String,
+    ) -> Code {
         let annotated = Self::contains_try(&lambda.body);
         let previous = std::mem::replace(&mut self.tail_loop, TailLoop::of_closure(lambda));
         self.locals.enter();
@@ -2159,7 +2259,7 @@ impl<'a> ExpressionEmitter<'a> {
                         self.program.bindings.get(param.binding).name(),
                     )
                 } else {
-                    self.bind_parameter(param, TypePosition::Value)
+                    bind(self, param)
                 }
             })
             .collect();

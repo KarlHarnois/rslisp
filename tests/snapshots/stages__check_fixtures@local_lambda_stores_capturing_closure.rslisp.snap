@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/local_lambda_stores_capturing_closure.rslisp
+---
+error[L0511]: cannot store a capturing closure in the field `key`
+ --> check/local_lambda_stores_capturing_closure.rslisp:6:21
+  |
+1 | (defstruct sorter :key (fn (i64) i64))
+  |                        -------------- declared with a function type here
+...
+6 |   (let chosen (make (fn (n) (+ n bonus))))
+  |                     ^^^^^^^^^^^^^^^^^^^^ this closure captures `bonus`
+  |
+  = help: a field declared with a function type holds only a named function or a closure that captures nothing
