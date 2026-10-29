@@ -116,11 +116,18 @@ impl<'a> UsageCollector<'a> {
                 .iter()
                 .for_each(|(_, value)| self.expr(value, ParamMode::Own)),
             TypedStructExpr::Update(_, base, fields) => {
-                self.expr(base, ParamMode::Own);
+                self.update_base(base);
                 fields
                     .iter()
                     .for_each(|(_, value)| self.expr(value, ParamMode::Own));
             }
+        }
+    }
+
+    fn update_base(&mut self, base: &TypedExpr) {
+        match &base.kind {
+            TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => self.update_base(owner),
+            _ => self.expr(base, ParamMode::Own),
         }
     }
 
