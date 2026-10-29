@@ -124,6 +124,7 @@ impl OwnershipChecker {
                         &program.structs,
                         &program.enums,
                     ),
+                    &program.structs,
                     &program.bindings,
                     &program.template_borrows,
                     &program.generics,
