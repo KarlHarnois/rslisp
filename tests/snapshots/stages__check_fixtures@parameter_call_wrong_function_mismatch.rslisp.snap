@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/parameter_call_wrong_function_mismatch.rslisp
+---
+error[L0401]: mismatched types
+ --> check/parameter_call_wrong_function_mismatch.rslisp:2:24
+  |
+2 |   (prn (combine-ranges halve)))
+  |                        ^^^^^ expected `(fn (_ _) _)`, found `(fn (_) _)`

@@ -1,0 +1,8 @@
+(defn main ()
+  (prn (combine-ranges halve)))
+
+(defn combine-ranges (combine)
+  (combine 150 240))
+
+(defn halve (mileage)
+  (/ mileage 2))
