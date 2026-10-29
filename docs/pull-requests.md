@@ -7,6 +7,12 @@
 3. When the working commands pass, run `gh pr ready`.
 4. Run `gh pr checks --watch`.
 
+## Issues
+
+**If a pull request fixes a GitHub issue, end its description with `Closes #<number>` for each fixed issue.** The merge closes each issue that a `Closes` line names.
+
+**If a pull request addresses a GitHub issue only in part, name the issue in its description with `Part of #<number>`.** In the same description, state what the issue still needs.
+
 ## CI failures
 
 **The `front-end instruction counts` job posts a comparison of instruction counts and NEVER fails on a rise in a count.** If the job fails, its tooling broke: treat the failure as a CI failure.
