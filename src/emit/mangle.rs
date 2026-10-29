@@ -212,7 +212,11 @@ impl NameMangler {
     }
 
     fn continues_identifier(character: char) -> bool {
-        character.is_ascii_digit() || character == '_' || character.is_alphabetic()
+        character == '_' || unicode_ident::is_xid_continue(character)
+    }
+
+    fn starts_identifier(character: char) -> bool {
+        character == '_' || unicode_ident::is_xid_start(character)
     }
 
     fn code_point(character: char) -> String {
@@ -220,7 +224,7 @@ impl NameMangler {
     }
 
     fn valid_start(name: String) -> String {
-        if !name.starts_with(|character: char| character == '_' || character.is_alphabetic()) {
+        if !name.starts_with(Self::starts_identifier) {
             format!("_{name}")
         } else {
             name
@@ -318,6 +322,8 @@ mod tests {
     #[test]
     fn characters_outside_identifiers_become_code_points() {
         assert_eq!(NameMangler::value("café"), "café");
+        assert_eq!(NameMangler::value("cafe\u{301}"), "cafe\u{301}");
+        assert_eq!(NameMangler::value("a·b"), "a·b");
         assert_eq!(NameMangler::value("☃"), "u2603");
         assert_eq!(NameMangler::value("snow☃man"), "snow_u2603_man");
     }
