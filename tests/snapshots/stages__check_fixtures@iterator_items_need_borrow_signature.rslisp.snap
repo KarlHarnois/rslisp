@@ -9,4 +9,4 @@ error[L0401]: mismatched types
 8 |   (for-each (adult-ages users) (fn (age) (println age))))
   |                         ^^^^^ expected `(iterator user)`, found `(iterator (ref user))`
   |
-  = help: `adult-ages` takes owned items, but a vector yields borrowed ones: write `(type adult-ages (fn ((iterator (ref user))) (iterator u16)))` to take borrowed items
+  = help: `adult-ages` takes owned items, but the argument yields borrowed items: write `(type adult-ages (fn ((iterator (ref user))) (iterator u16)))` to take borrowed items

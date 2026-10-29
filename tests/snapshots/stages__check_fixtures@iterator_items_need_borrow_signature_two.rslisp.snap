@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/iterator_items_need_borrow_signature_two.rslisp
+---
+error[L0401]: mismatched types
+  --> check/iterator_items_need_borrow_signature_two.rslisp:10:25
+   |
+10 |   (println (adult-count users others)))
+   |                         ^^^^^ expected `(iterator user)`, found `(iterator (ref user))`
+   |
+   = help: `adult-count` takes owned items, but the argument yields borrowed items: write `(type adult-count (fn ((iterator (ref user)) (iterator (ref user))) usize))` to take borrowed items

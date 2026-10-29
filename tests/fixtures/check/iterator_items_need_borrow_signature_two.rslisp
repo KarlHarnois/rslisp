@@ -1,0 +1,10 @@
+(defstruct user :name string :age u16)
+
+(defn adult-count (left right)
+  (+ (count (filter left (fn (u) (> (:age u) 17))))
+     (count (filter right (fn (u) (> (:age u) 17))))))
+
+(defn main ()
+  (let users (vec (->user (to-string "Ana") 34) (->user (to-string "Ben") 12)))
+  (let others (vec (->user (to-string "Cid") 40)))
+  (println (adult-count users others)))
