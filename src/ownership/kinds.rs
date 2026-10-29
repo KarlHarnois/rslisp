@@ -12,9 +12,9 @@ use crate::core::{BindingArena, BindingId, FieldLabel, ReferenceKind};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Borrow, ClosureKind, CopyRules, FieldPlace, TemplateBorrows, Type, TypedArgument, TypedBinder,
-    TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf,
-    TypedModule, TypedProgram, TypedStructExpr,
+    Borrow, ClosureKind, CopyRules, FieldPlace, StructTable, TemplateBorrows, Type, TypedArgument,
+    TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda,
+    TypedLeaf, TypedModule, TypedProgram, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -103,7 +103,7 @@ pub struct KindReport {
 pub struct KindSources<'a> {
     pub traits: &'a crate::types::TraitTable,
     pub generics: &'a HashMap<crate::types::GenericId, crate::types::GenericParam>,
-    pub structs: &'a crate::types::StructTable,
+    pub structs: &'a StructTable,
     pub enums: &'a crate::types::EnumTable,
     pub bindings: &'a BindingArena,
     pub template_borrows: &'a TemplateBorrows,
@@ -543,8 +543,7 @@ impl<'a> ClosureKinds<'a> {
         own: &HashSet<BindingId>,
     ) -> CaptureReport {
         let bases = UpdateBases::new(self.structs, &self.copy);
-        let moved = bases.moved_fields(&bases.unlisted_fields(update, fields));
-        if moved.is_empty() {
+        if !bases.moves_any(&bases.unlisted_fields(update, fields)) {
             return CaptureReport::default();
         }
         self.record_field_move(place, span, own)
