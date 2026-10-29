@@ -30,6 +30,12 @@ impl Diagnostics {
         self.items.truncate(len);
     }
 
+    pub fn map(self, relabel: impl FnMut(Diagnostic) -> Diagnostic) -> Self {
+        Self {
+            items: self.items.into_iter().map(relabel).collect(),
+        }
+    }
+
     pub fn in_source_order(&self) -> Vec<&Diagnostic> {
         let mut ordered: Vec<&Diagnostic> = self.items.iter().collect();
         ordered.sort_by_key(|diagnostic| {

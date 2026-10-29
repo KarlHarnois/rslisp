@@ -7,6 +7,7 @@ use super::borrowed_items::ArgumentSite;
 use super::checker::{TypeChecker, VariantArmReference};
 use super::collection::{Collection, CollectionKind};
 use super::enums::VariantPayload;
+use super::parameter_calls::ParameterCallRequest;
 use super::pending::{DecidedBorrows, PendingBorrow};
 use super::pipelines::Pipelines;
 use super::problems::{MismatchContext, TypeProblems};
@@ -2006,8 +2007,8 @@ impl TypeChecker {
         let site = ArgumentSite { callee, position };
         self.pass_argument(parameter, value)
             .map_err(|diagnostic| self.explain_literal_default(call, position, diagnostic))
-            .map_err(|diagnostic| {
-                self.explain_parameter_call(call, position, &value.ty, diagnostic)
+            .inspect_err(|diagnostic| {
+                self.request_parameter_call_label(call, position, &value.ty, diagnostic)
             })
             .map_err(|diagnostic| self.explain_borrowed_items(&site, &value.ty, diagnostic))
     }
@@ -2038,20 +2039,20 @@ impl TypeChecker {
             ))
     }
 
-    fn explain_parameter_call(
-        &self,
+    fn request_parameter_call_label(
+        &mut self,
         callee: BindingId,
         position: usize,
         found: &Type,
-        diagnostic: Diagnostic,
-    ) -> Diagnostic {
-        if !self.function_type_comes_from_call(callee, position, found, &diagnostic) {
-            return diagnostic;
+        diagnostic: &Diagnostic,
+    ) {
+        if self.function_type_comes_from_call(callee, position, found, diagnostic) {
+            self.parameter_call_requests.push(ParameterCallRequest {
+                callee,
+                position,
+                argument: diagnostic.primary().span(),
+            });
         }
-        let Some(call) = self.parameter_calls.get(callee, position) else {
-            return diagnostic;
-        };
-        TypeProblems::parameter_call(diagnostic, self.bindings.get(callee).name(), call)
     }
 
     fn function_type_comes_from_call(
