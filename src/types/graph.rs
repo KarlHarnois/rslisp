@@ -101,10 +101,16 @@ impl DependencyGraph {
         self.compile_time_only.contains(&binding)
     }
 
-    pub fn depends_on_any(&self, roots: &[BindingId], bindings: &HashSet<BindingId>) -> bool {
-        self.reachable_from(roots)
+    pub fn directly_depends_on_any(
+        &self,
+        roots: &[BindingId],
+        bindings: &HashSet<BindingId>,
+    ) -> bool {
+        roots
             .iter()
-            .any(|binding| bindings.contains(binding))
+            .filter_map(|root| self.edges.get(root))
+            .flatten()
+            .any(|dependency| bindings.contains(dependency))
     }
 
     pub fn reachable_from(&self, roots: &[BindingId]) -> HashSet<BindingId> {
@@ -232,5 +238,68 @@ impl<'a> StronglyConnected<'a> {
         }
         component.reverse();
         self.components.push(component);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::{HashMap, HashSet};
+
+    use super::DependencyGraph;
+    use crate::core::{BindingArena, BindingId, BindingInfo, BindingKind, ModuleId};
+
+    struct CallGraph {
+        bindings: BindingArena,
+        edges: HashMap<BindingId, Vec<BindingId>>,
+    }
+
+    impl CallGraph {
+        fn new() -> Self {
+            Self {
+                bindings: BindingArena::default(),
+                edges: HashMap::new(),
+            }
+        }
+
+        fn function(&mut self, name: &str, callees: &[BindingId]) -> BindingId {
+            let kind = BindingKind::Global(ModuleId::new(0));
+            let binding = self.bindings.add(BindingInfo::new(name.into(), kind, None));
+            self.edges.insert(binding, callees.to_vec());
+            binding
+        }
+
+        fn dependencies(self) -> DependencyGraph {
+            DependencyGraph {
+                edges: self.edges,
+                compile_time_only: HashSet::new(),
+            }
+        }
+    }
+
+    #[test]
+    fn a_failed_callee_is_a_direct_dependency() {
+        let mut graph = CallGraph::new();
+        let last = graph.function("last-step", &[]);
+        let caller = graph.function("middle-step", &[last]);
+        let failed = HashSet::from([last]);
+        assert!(
+            graph
+                .dependencies()
+                .directly_depends_on_any(&[caller], &failed)
+        );
+    }
+
+    #[test]
+    fn a_failure_two_calls_away_is_not_a_direct_dependency() {
+        let mut graph = CallGraph::new();
+        let last = graph.function("last-step", &[]);
+        let middle = graph.function("middle-step", &[last]);
+        let first = graph.function("first-step", &[middle]);
+        let failed = HashSet::from([last]);
+        assert!(
+            !graph
+                .dependencies()
+                .directly_depends_on_any(&[first], &failed)
+        );
     }
 }

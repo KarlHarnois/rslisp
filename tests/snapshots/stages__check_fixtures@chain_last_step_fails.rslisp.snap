@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/chain_last_step_fails.rslisp
+---
+error[L0401]: mismatched types
+ --> check/chain_last_step_fails.rslisp:5:42
+  |
+5 | (defn fourth-step (n) (if (> n 0) n (+ n "five")))
+  |                                          ^^^^^^ expected an integer, found `str`

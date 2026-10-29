@@ -4,7 +4,7 @@ use std::rc::Rc;
 use super::copy::InferredCopies;
 use super::display::TypeDisplay;
 use super::enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};
-use super::graph::{Definition, DefinitionGraph};
+use super::graph::{Definition, DefinitionGraph, DependencyGraph};
 use super::pending::PendingBorrow;
 use super::pinning::LiteralDefaults;
 use super::problems::{ImplementorGroup, ImplementorList, MismatchContext, TypeProblems};
@@ -550,13 +550,35 @@ impl TypeChecker {
                 .map(|binding| by_binding[binding])
                 .collect();
             let bindings: Vec<BindingId> = members.iter().map(|member| member.binding).collect();
-            if dependencies.depends_on_any(&bindings, &self.failed_bindings) {
+            if self.has_failed_member_or_dependency(dependencies, &bindings) {
                 self.failed_bindings.extend(bindings);
                 continue;
             }
             typed.extend(self.check_component(&members));
+            self.fail_group_when_a_member_failed(bindings);
         }
         typed
+    }
+
+    fn has_failed_member_or_dependency(
+        &self,
+        dependencies: &DependencyGraph,
+        bindings: &[BindingId],
+    ) -> bool {
+        self.has_failed_member(bindings)
+            || dependencies.directly_depends_on_any(bindings, &self.failed_bindings)
+    }
+
+    fn fail_group_when_a_member_failed(&mut self, bindings: Vec<BindingId>) {
+        if self.has_failed_member(&bindings) {
+            self.failed_bindings.extend(bindings);
+        }
+    }
+
+    fn has_failed_member(&self, bindings: &[BindingId]) -> bool {
+        bindings
+            .iter()
+            .any(|binding| self.failed_bindings.contains(binding))
     }
 
     fn main_definition(&self, modules: &[CoreModule], entry: ModuleId) -> Vec<BindingId> {

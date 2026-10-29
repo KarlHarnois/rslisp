@@ -1,0 +1,5 @@
+(defn main () (println (str (first-step 0))))
+(defn first-step (n) (second-step n))
+(defn second-step (n) (third-step n))
+(defn third-step (n) (fourth-step n))
+(defn fourth-step (n) (if (> n 0) n (+ n "five")))
