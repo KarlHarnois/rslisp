@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/uncalled_parameter_mismatch.rslisp
+---
+error[L0401]: mismatched types
+ --> check/uncalled_parameter_mismatch.rslisp:2:24
+  |
+2 |   (prn (double-mileage "Leaf")))
+  |                        ^^^^^^ expected an integer, found `(ref str)`

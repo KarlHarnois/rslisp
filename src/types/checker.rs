@@ -5,6 +5,7 @@ use super::copy::InferredCopies;
 use super::display::TypeDisplay;
 use super::enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};
 use super::graph::{Definition, DefinitionGraph, DependencyGraph};
+use super::parameter_calls::ParameterCalls;
 use super::pending::PendingBorrow;
 use super::pinning::LiteralDefaults;
 use super::problems::{ImplementorGroup, ImplementorList, MismatchContext, TypeProblems};
@@ -175,6 +176,7 @@ pub struct TypeChecker {
     box_binding: Option<BindingId>,
     inferred_boxes: BTreeSet<(BindingId, usize, usize)>,
     pub(super) written_parameters: HashMap<BindingId, Vec<bool>>,
+    pub(super) parameter_calls: ParameterCalls,
     pub(super) pending_mode_checks: Vec<PendingModeCheck>,
     pub(super) trait_definitions: Vec<TypedTrait>,
     pub(super) rust_trait_paths: HashMap<BindingId, Rc<str>>,
@@ -255,6 +257,7 @@ impl TypeChecker {
             box_binding: None,
             inferred_boxes: BTreeSet::new(),
             written_parameters: HashMap::new(),
+            parameter_calls: ParameterCalls::default(),
             pending_mode_checks: Vec::new(),
             trait_definitions: Vec::new(),
             rust_trait_paths: HashMap::new(),
@@ -303,6 +306,7 @@ impl TypeChecker {
         self.check_trait_claims(modules);
         self.copy_trait = self.traits.with_paths(&[CopyTrait::PATH]).first().copied();
         self.record_written_parameters(modules);
+        self.parameter_calls = ParameterCalls::of(modules, &self.bindings);
         self.record_string_view(modules);
     }
 

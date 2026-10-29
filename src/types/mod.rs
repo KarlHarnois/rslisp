@@ -14,6 +14,7 @@ mod graph;
 mod infer;
 mod literal_fit;
 mod lowering;
+mod parameter_calls;
 mod pending;
 mod pinning;
 mod pipelines;
