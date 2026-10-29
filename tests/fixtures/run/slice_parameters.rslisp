@@ -1,0 +1,26 @@
+(defstruct car :make str :model str :year u16 :electric? bool)
+
+(defn size (items) (len items))
+
+(defn print-years (cars) (for-each (iter cars) (fn (car) (println (:year car)))))
+
+(defn years (cars) (collect (map (iter cars) :year)))
+
+(defn second-year (cars) (:year (at cars 1)))
+
+(defn maybe-second-year (cars) (map-some (get cars 1) :year))
+
+(defn add-year! (years year) (push! years year))
+
+(defn main ()
+  (let leaf (->car :make "Nissan" :model "Leaf" :year 2024 :electric? true))
+  (let civic (->car "Honda" "Civic" 2019 false))
+  (let fleet (vec leaf civic))
+  (println (size fleet))
+  (print-years fleet)
+  (println (len (years fleet)))
+  (println (second-year fleet))
+  (println (unwrap-or (maybe-second-year fleet) 0))
+  (let model-years (vec 2019))
+  (add-year! (mut model-years) 2024)
+  (println (len model-years)))
