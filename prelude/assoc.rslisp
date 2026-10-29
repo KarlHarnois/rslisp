@@ -89,15 +89,11 @@
 
 (def place-read?
   (fn (form)
-    (if (symbol? form) true (field-read? form))))
-
-(def field-read?
-  (fn (form)
     (if (list? form)
         (if (value-eq (length form) 2)
             (if (keyword? (first form)) (place-read? (nth form 1)) false)
             false)
-        false)))
+        (symbol? form))))
 
 (def keyword-steps
   (fn (path)
