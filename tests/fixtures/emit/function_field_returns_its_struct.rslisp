@@ -1,0 +1,8 @@
+(defstruct node :label u16 :next (fn () node))
+
+(defn leaf () (->node :label 2 :next leaf))
+
+(defn main ()
+  (let root (->node :label 1 :next leaf))
+  (println (:label root))
+  (println (:label ((:next root)))))

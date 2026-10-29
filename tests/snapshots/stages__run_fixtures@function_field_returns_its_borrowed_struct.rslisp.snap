@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_field_returns_its_borrowed_struct.rslisp
+---
+root
+leaf
