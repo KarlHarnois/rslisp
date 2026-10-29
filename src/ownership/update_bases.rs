@@ -32,11 +32,19 @@ impl<'r> UpdateBases<'r> {
             .collect()
     }
 
+    pub fn moves_any(&self, unlisted: &[(Rc<str>, Type)]) -> bool {
+        unlisted.iter().any(|field| self.moves(field))
+    }
+
     pub fn moved_fields(&self, unlisted: &[(Rc<str>, Type)]) -> Vec<Rc<str>> {
         unlisted
             .iter()
-            .filter(|(_, field_type)| !self.copy.is_copy(field_type))
+            .filter(|field| self.moves(field))
             .map(|(name, _)| name.clone())
             .collect()
+    }
+
+    fn moves(&self, (_, field_type): &(Rc<str>, Type)) -> bool {
+        !self.copy.is_copy(field_type)
     }
 }
