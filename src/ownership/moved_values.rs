@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::core::BindingId;
@@ -69,21 +69,6 @@ impl MovedValues {
         moved.add_field(MovedField { path, site });
     }
 
-    pub fn refill<'a>(
-        &mut self,
-        binding: BindingId,
-        place: &[Rc<str>],
-        fields: impl IntoIterator<Item = &'a str>,
-    ) {
-        let Some(moved) = self.values.get_mut(&binding) else {
-            return;
-        };
-        let refilled: HashSet<&str> = fields.into_iter().collect();
-        if moved.refill(place, &refilled) {
-            self.values.remove(&binding);
-        }
-    }
-
     pub fn moved_since(&self, earlier: &MovedValues) -> MovedValues {
         let values = self
             .values
@@ -142,14 +127,6 @@ impl MovedValue {
         }
     }
 
-    fn refill(&mut self, place: &[Rc<str>], refilled: &HashSet<&str>) -> bool {
-        let Self::Fields(fields) = self else {
-            return false;
-        };
-        fields.retain(|field| !field.is_refilled(place, refilled));
-        fields.is_empty()
-    }
-
     fn moved_since(&self, earlier: Option<&MovedValue>) -> Option<MovedValue> {
         match (self, earlier) {
             (_, None) | (Self::Whole(_), Some(Self::Fields(_))) => Some(self.clone()),
@@ -183,13 +160,5 @@ impl MovedField {
             .iter()
             .zip(read)
             .all(|(moved, read)| **moved == *read)
-    }
-
-    fn is_refilled(&self, place: &[Rc<str>], refilled: &HashSet<&str>) -> bool {
-        self.path.starts_with(place)
-            && self
-                .path
-                .get(place.len())
-                .is_some_and(|field| refilled.contains(&**field))
     }
 }

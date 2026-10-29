@@ -163,10 +163,10 @@ impl<'a> MoveChecker<'a> {
     fn update(&mut self, update: &TypedExpr, base: &TypedExpr, fields: &[(FieldLabel, TypedExpr)]) {
         if let Some(place) = base.field_place() {
             self.field_values(fields);
-            self.refill(base, fields);
-            self.expr(base, Usage::Borrow);
-            let unlisted = self.unlisted_moving_fields(update, fields);
-            self.move_fields(&place, base.span, unlisted);
+            let unlisted = self.unlisted_fields(update, fields);
+            self.unlisted_read(&place, Self::root_span(base), &unlisted);
+            let moving = self.moving_fields(unlisted);
+            self.move_fields(&place, base.span, moving);
         } else {
             self.update_base(base);
             self.field_values(fields);
@@ -193,18 +193,21 @@ impl<'a> MoveChecker<'a> {
         }
     }
 
+    fn unlisted_read(&mut self, place: &FieldPlace, span: Span, unlisted: &[(Rc<str>, Type)]) {
+        let site = unlisted.iter().find_map(|(field, _)| {
+            let path = place.path.iter().map(|label| &*label.name);
+            let field_path = path.chain(std::iter::once(&**field));
+            self.moved.site_overlapping(place.root, field_path)
+        });
+        if let Some(site) = site {
+            self.use_after_move(place.root, place.root_type, span, &site);
+        }
+    }
+
     fn root_span(read: &TypedExpr) -> Span {
         match &read.kind {
             TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => Self::root_span(owner),
             _ => read.span,
-        }
-    }
-
-    fn refill(&mut self, base: &TypedExpr, fields: &[(FieldLabel, TypedExpr)]) {
-        if let Some(place) = base.field_place() {
-            let names = fields.iter().map(|(label, _)| &*label.name);
-            self.moved
-                .refill(place.root, &Self::field_path(&place), names);
         }
     }
 
@@ -227,11 +230,11 @@ impl<'a> MoveChecker<'a> {
         }
     }
 
-    fn unlisted_moving_fields(
+    fn unlisted_fields(
         &self,
         update: &TypedExpr,
         fields: &[(FieldLabel, TypedExpr)],
-    ) -> Vec<Rc<str>> {
+    ) -> Vec<(Rc<str>, Type)> {
         let Type::Named(structure, arguments) = &update.ty else {
             unreachable!("a struct update has its struct's type")
         };
@@ -243,6 +246,12 @@ impl<'a> MoveChecker<'a> {
             .instantiated_fields(arguments)
             .into_iter()
             .filter(|(name, _)| !fields.iter().any(|(label, _)| label.name == *name))
+            .collect()
+    }
+
+    fn moving_fields(&self, fields: Vec<(Rc<str>, Type)>) -> Vec<Rc<str>> {
+        fields
+            .into_iter()
             .filter(|(_, field_type)| !self.copy.is_copy(field_type))
             .map(|(name, _)| name)
             .collect()
