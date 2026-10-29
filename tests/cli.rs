@@ -2,10 +2,12 @@ use std::fs;
 use std::io::{BufRead, BufReader};
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::process::ExitStatusExt;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
 const GREETING: &str = "(defn main ()\n  (println \"hello from the sandbox\"))\n";
+const PRINTS_A: &str = "(defn main () (println \"A\"))\n";
+const PRINTS_B: &str = "(defn main () (println \"B\"))\n";
 const MARKED_PROGRAM: &str = "\u{feff}(defn main () (println 1))\n";
 const UNBOUND_NAME: &str = "(defn main ()\n  (println greeting))\n";
 const ECHO: &str = "(def first-argument (rust \"std::env::args().nth(1).unwrap_or_default()\" string))\n\n(defn main ()\n  (println first-argument))\n";
@@ -61,14 +63,32 @@ impl Sandbox {
         Outcome::of(&mut self.command(Path::new(Self::COMPILER), arguments))
     }
 
+    fn compiler_in(&self, working_directory: &str, arguments: &[&str]) -> Outcome {
+        let mut command = self.command(Path::new(Self::COMPILER), arguments);
+        command.current_dir(self.directory.join(working_directory));
+        Outcome::of(&mut command)
+    }
+
     fn compiler_with_path(&self, path_directory: &str, arguments: &[&str]) -> Outcome {
         let mut command = self.command(Path::new(Self::COMPILER), arguments);
         command.env("PATH", self.directory.join(path_directory));
         Outcome::of(&mut command)
     }
 
-    fn built_program(&self, relative_path: &str) -> Outcome {
+    fn built_program(&self, relative_path: impl AsRef<Path>) -> Outcome {
         Outcome::of(&mut self.command(&self.directory.join(relative_path), &[]))
+    }
+
+    fn outside_build_path(&self, working_directory: &str, built_path: &str) -> PathBuf {
+        let sandbox = fs::canonicalize(&self.directory).expect("the sandbox directory resolves");
+        let sandbox_without_root: PathBuf = sandbox
+            .components()
+            .filter(|component| matches!(component, Component::Normal(_)))
+            .collect();
+        Path::new(working_directory)
+            .join("target/rslisp/outside")
+            .join(sandbox_without_root)
+            .join(built_path)
     }
 
     fn built_program_read_for_one_line(&self, relative_path: &str) -> Outcome {
@@ -255,6 +275,36 @@ fn build_writes_the_program_under_the_build_directory() {
         greeting.assert_exit_code(0).stdout(),
         "hello from the sandbox\n"
     );
+}
+
+#[test]
+fn build_keeps_entries_with_the_same_stem_apart() {
+    let sandbox = Sandbox::new("build_same_stem")
+        .with_file("a/program.rslisp", PRINTS_A)
+        .with_file("b/program.rslisp", PRINTS_B);
+    sandbox
+        .compiler(&["build", "a/program.rslisp"])
+        .assert_exit_code(0);
+    sandbox
+        .compiler(&["build", "b/program.rslisp"])
+        .assert_exit_code(0);
+    let first = sandbox.built_program("target/rslisp/a/program/program");
+    let second = sandbox.built_program("target/rslisp/b/program/program");
+    assert_eq!(first.assert_exit_code(0).stdout(), "A\n");
+    assert_eq!(second.assert_exit_code(0).stdout(), "B\n");
+}
+
+#[test]
+fn build_mirrors_an_entry_outside_the_working_directory() {
+    let sandbox = Sandbox::new("build_outside")
+        .with_file("shared/program.rslisp", PRINTS_A)
+        .with_file("work/empty", "");
+    sandbox
+        .compiler_in("work", &["build", "../shared/program.rslisp"])
+        .assert_exit_code(0);
+    let program =
+        sandbox.built_program(sandbox.outside_build_path("work", "shared/program/program"));
+    assert_eq!(program.assert_exit_code(0).stdout(), "A\n");
 }
 
 #[test]

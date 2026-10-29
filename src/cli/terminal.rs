@@ -1,6 +1,7 @@
 use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 
+use super::build_directory::BuildDirectory;
 use super::exit_status::ExitStatus;
 use crate::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use crate::core::ModulePath;
@@ -23,6 +24,7 @@ pub struct Terminal {
 
 impl Terminal {
     const BUILD_DIRECTORY: &str = "target/rslisp";
+    const WORKING_DIRECTORY: &str = ".";
 
     pub fn new() -> Self {
         Self {
@@ -40,7 +42,7 @@ impl Terminal {
     pub fn build(&mut self, path: &Path, options: &BuildOptions) -> Result<PathBuf, ExitStatus> {
         let emitted = self.emit(path)?;
         let crate_name = Self::crate_name(path);
-        let directory = PathBuf::from(Self::BUILD_DIRECTORY).join(&crate_name);
+        let directory = Self::build_directory(path, &crate_name)?;
         let output = options
             .output
             .clone()
@@ -115,6 +117,22 @@ impl Terminal {
         }
     }
 
+    fn build_directory(path: &Path, crate_name: &str) -> Result<PathBuf, ExitStatus> {
+        let working_directory = Self::canonical(Path::new(Self::WORKING_DIRECTORY))?;
+        let entry_directory = Self::canonical(&Self::directory_of(path))?;
+        Ok(
+            BuildDirectory::new(PathBuf::from(Self::BUILD_DIRECTORY), working_directory)
+                .for_entry(&entry_directory, crate_name),
+        )
+    }
+
+    fn canonical(directory: &Path) -> Result<PathBuf, ExitStatus> {
+        Path::new(Self::WORKING_DIRECTORY)
+            .join(directory)
+            .canonicalize()
+            .map_err(|error| Self::report_unresolvable(directory, &error))
+    }
+
     fn entry_span() -> Span {
         Span::new(SourceId::new(0), 0..0)
     }
@@ -131,6 +149,11 @@ impl Terminal {
         path.file_stem()
             .map(|stem| stem.to_string_lossy().into_owned())
             .unwrap_or_default()
+    }
+
+    fn report_unresolvable(directory: &Path, error: &std::io::Error) -> ExitStatus {
+        eprintln!("error: cannot resolve `{}`: {error}", directory.display());
+        ExitStatus::UsageError
     }
 
     fn report_unreadable(path: &Path, error: &std::io::Error) -> ExitStatus {
