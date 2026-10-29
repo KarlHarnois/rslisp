@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/local_lambda_the_bound.rslisp
+---
+Nissan Leaf2024

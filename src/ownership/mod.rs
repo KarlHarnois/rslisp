@@ -1,4 +1,5 @@
 mod aliases;
+mod borrowing_lambdas;
 mod changes;
 mod checks;
 mod definitions;
@@ -29,6 +30,7 @@ use crate::diagnostic::Diagnostics;
 use crate::types::{
     CopyRules, InferredCopies, PendingModeCheck, Pipelines, TypedExprKind, TypedProgram,
 };
+use borrowing_lambdas::BorrowingLambdas;
 use checks::OwnershipNeeds;
 use escaping_locals::EscapingLocals;
 use functions::{FunctionTable, ParamMode};
@@ -89,6 +91,10 @@ impl OwnershipChecker {
             .into_iter()
             .for_each(|diagnostic| diagnostics.push(diagnostic));
         program.escaping_locals = EscapingLocals::in_program(program);
+        StoredClosures::check(program)
+            .into_iter()
+            .for_each(|diagnostic| diagnostics.push(diagnostic));
+        program.borrowing_lambdas = BorrowingLambdas::in_program(program);
         let kinds = ClosureKinds::new(KindSources {
             traits: &program.traits,
             generics: &program.generics,
@@ -99,13 +105,10 @@ impl OwnershipChecker {
             function_parameters: ClosureKinds::function_parameters(program),
             rust_parameter_kinds: ClosureKinds::rust_parameter_kinds(program),
             written_parameter_kinds: ClosureKinds::written_parameter_kinds(program),
-            escaping_locals: &program.escaping_locals,
+            borrowing_lambdas: &program.borrowing_lambdas,
         });
         let report = kinds.run(&mut program.modules);
         Self::apply_kinds(program, report, &mut diagnostics);
-        StoredClosures::check(program)
-            .into_iter()
-            .for_each(|diagnostic| diagnostics.push(diagnostic));
         let mut inferred_copies = InferredCopies::default();
         let pipelines = Pipelines::new(&program.rust_types);
         for definition in program

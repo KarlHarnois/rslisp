@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/local_lambda_the_bound.rslisp
+---
+fn main() {
+    let year: i64 = 2024;
+    let model = "Nissan Leaf";
+    let record = |n: i64| println!("{}{}", model, n);
+    let apply = |action: &mut dyn FnMut(i64)| action(year);
+    apply(&mut |n: i64| record(n))
+}

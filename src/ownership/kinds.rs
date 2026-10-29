@@ -109,7 +109,7 @@ pub struct KindSources<'a> {
     pub function_parameters: HashMap<BindingId, Vec<BindingId>>,
     pub rust_parameter_kinds: HashMap<BindingId, Vec<ClosureKind>>,
     pub written_parameter_kinds: HashMap<BindingId, ClosureKind>,
-    pub escaping_locals: &'a HashSet<BindingId>,
+    pub borrowing_lambdas: &'a HashMap<BindingId, HashSet<BindingId>>,
 }
 
 pub struct ClosureKinds<'a> {
@@ -120,8 +120,7 @@ pub struct ClosureKinds<'a> {
     binding_kinds: HashMap<BindingId, ClosureKind>,
     binding_captures: HashMap<BindingId, BindingId>,
     value_parameters: HashMap<BindingId, Vec<BindingId>>,
-    borrowed_function_parameters: HashSet<BindingId>,
-    escaping_locals: &'a HashSet<BindingId>,
+    borrowing_lambdas: &'a HashMap<BindingId, HashSet<BindingId>>,
     function_parameters: HashMap<BindingId, Vec<BindingId>>,
     pass_edges: HashMap<BindingId, HashSet<BindingId>>,
     cycle_peers: HashMap<BindingId, Vec<BindingId>>,
@@ -209,8 +208,7 @@ impl<'a> ClosureKinds<'a> {
             binding_kinds: HashMap::new(),
             binding_captures: HashMap::new(),
             value_parameters: HashMap::new(),
-            borrowed_function_parameters: HashSet::new(),
-            escaping_locals: sources.escaping_locals,
+            borrowing_lambdas: sources.borrowing_lambdas,
             function_parameters: sources.function_parameters,
             pass_edges: HashMap::new(),
             cycle_peers: HashMap::new(),
@@ -359,7 +357,6 @@ impl<'a> ClosureKinds<'a> {
                 TypedBodyItem::Let(binder, value) => {
                     total.merge(self.scan_expression(value, own, Usage::Move));
                     self.register_binding(binder.binding, value);
-                    self.register_borrowed_function_parameters(binder, value);
                 }
                 TypedBodyItem::Expr(expr) if Some(position) == last => {
                     total.merge(self.scan_expression(expr, own, usage));
@@ -383,22 +380,6 @@ impl<'a> ClosureKinds<'a> {
         if let Some(parameters) = self.value_parameters_of(value) {
             self.value_parameters.insert(binding, parameters);
         }
-    }
-
-    fn register_borrowed_function_parameters(&mut self, binder: &TypedBinder, value: &TypedExpr) {
-        let TypedExprKind::Fn(lambda) = &value.kind else {
-            return;
-        };
-        if binder.annotated || self.escaping_locals.contains(&binder.binding) {
-            return;
-        }
-        let function_parameters = lambda
-            .params
-            .iter()
-            .filter(|param| matches!(param.ty, Type::Function(..)))
-            .map(|param| param.binding);
-        self.borrowed_function_parameters
-            .extend(function_parameters);
     }
 
     fn scan_expression(
@@ -857,7 +838,7 @@ impl<'a> ClosureKinds<'a> {
     }
 
     fn cap_borrowed_function_parameters(&self, kinds: &mut HashMap<BindingId, ClosureKind>) {
-        for parameter in &self.borrowed_function_parameters {
+        for parameter in self.borrowing_lambdas.values().flatten() {
             if let Some(kind) = kinds.get_mut(parameter) {
                 *kind = (*kind).min(Self::STRONGEST_CALLABLE_BORROW);
             }

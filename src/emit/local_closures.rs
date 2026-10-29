@@ -1,6 +1,5 @@
 use std::collections::{HashMap, HashSet};
 
-use super::expressions::ExpressionEmitter;
 use super::function_borrow::FunctionBorrow;
 use crate::core::BindingId;
 use crate::types::{
@@ -93,23 +92,27 @@ impl<'a> LocalClosures<'a> {
     }
 
     fn register(&mut self, binder: &TypedBinder, value: &TypedExpr) {
-        if let Some(inner) = ExpressionEmitter::let_block_value(value) {
+        if let Some(inner) = value.let_block_value() {
             return self.register(binder, inner);
         }
         let TypedExprKind::Fn(lambda) = &value.kind else {
             return;
         };
-        if binder.annotated || self.program.escaping_locals.contains(&binder.binding) {
-            return;
+        if let Some(borrowed) = self.program.borrowing_lambdas.get(&binder.binding) {
+            self.register_closure(binder.binding, lambda, borrowed);
         }
-        self.register_closure(binder.binding, lambda);
     }
 
-    fn register_closure(&mut self, closure: BindingId, lambda: &TypedLambda) {
+    fn register_closure(
+        &mut self,
+        closure: BindingId,
+        lambda: &TypedLambda,
+        borrowed: &HashSet<BindingId>,
+    ) {
         let borrows: Vec<Option<FunctionBorrow>> = lambda
             .params
             .iter()
-            .map(|param| self.function_borrow(param))
+            .map(|param| Self::function_borrow(param, borrowed))
             .collect();
         let borrowed = lambda
             .params
@@ -120,15 +123,16 @@ impl<'a> LocalClosures<'a> {
         self.argument_borrows.insert(closure, borrows);
     }
 
-    fn function_borrow(&self, param: &TypedBinder) -> Option<FunctionBorrow> {
+    fn function_borrow(
+        param: &TypedBinder,
+        borrowed: &HashSet<BindingId>,
+    ) -> Option<FunctionBorrow> {
         let Type::Function(kind, _, _) = param.ty else {
             return None;
         };
-        let stored = self
-            .program
-            .stored_function_parameters
-            .contains(&param.binding);
-        (!stored).then(|| FunctionBorrow::of(kind))
+        borrowed
+            .contains(&param.binding)
+            .then(|| FunctionBorrow::of(kind))
     }
 
     fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) {
