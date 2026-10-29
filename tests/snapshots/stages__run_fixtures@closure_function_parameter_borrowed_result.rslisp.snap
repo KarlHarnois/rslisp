@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/closure_function_parameter_borrowed_result.rslisp
+---
+Nissan Leaf

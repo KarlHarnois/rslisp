@@ -1,0 +1,8 @@
+(defstruct car :make str :model str)
+
+(defn longer-make (first second)
+  (let pick (fn (build) (:make (build))))
+  (pick (fn () (->car :make (if (> (len first) (len second)) first second) :model "Leaf"))))
+
+(defn main ()
+  (println (longer-make "Nissan" "Mitsubishi")))
