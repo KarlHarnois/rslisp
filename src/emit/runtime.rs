@@ -15,43 +15,42 @@ enum RuntimePart {
 }
 
 impl RuntimePart {
-    const STDOUT_MACROS: [&'static str; 2] = ["print!(", "println!("];
-    const STDOUT_HANDLE: &'static str = "std::io::stdout(";
-    const ALL: [(RuntimePart, &'static str); 10] = [
-        (RuntimePart::Number, "crate::rt::Number"),
-        (RuntimePart::FromLiteral, "::from_literal("),
-        (RuntimePart::FromFloatLiteral, "::from_float_literal("),
-        (RuntimePart::Signed, "crate::rt::Signed"),
-        (RuntimePart::Float, "crate::rt::Float"),
-        (RuntimePart::Integer, "crate::rt::Integer"),
-        (RuntimePart::Sequence, "crate::rt::Sequence"),
-        (RuntimePart::MapSequence, "std::collections::BTreeMap"),
-        (RuntimePart::Io, "crate::rt::read_line"),
-        (RuntimePart::Signal, Self::STDOUT_HANDLE),
+    const STDOUT_MARKERS: &'static [&'static str] = &["print!(", "println!(", "std::io::stdout("];
+    const ALL: [(RuntimePart, &'static [&'static str]); 10] = [
+        (RuntimePart::Number, &["crate::rt::Number"]),
+        (RuntimePart::FromLiteral, &["::from_literal("]),
+        (RuntimePart::FromFloatLiteral, &["::from_float_literal("]),
+        (RuntimePart::Signed, &["crate::rt::Signed"]),
+        (RuntimePart::Float, &["crate::rt::Float"]),
+        (RuntimePart::Integer, &["crate::rt::Integer"]),
+        (RuntimePart::Sequence, &["crate::rt::Sequence"]),
+        (RuntimePart::MapSequence, &["std::collections::BTreeMap"]),
+        (RuntimePart::Io, &["crate::rt::read_line"]),
+        (RuntimePart::Signal, Self::STDOUT_MARKERS),
     ];
 
     fn present(self, code: &str) -> bool {
-        let marker = Self::ALL
+        let markers = Self::ALL
             .iter()
             .find(|(part, _)| *part == self)
-            .map(|(_, marker)| *marker)
-            .expect("every runtime part has a marker");
+            .map(|(_, markers)| *markers)
+            .expect("every runtime part has markers");
         match self {
             Self::MapSequence => {
                 (code.contains("std::collections::BTreeMap")
                     || code.contains("std::collections::HashMap"))
                     && code.contains("crate::rt::Sequence")
             }
-            Self::Signal => code.contains(marker) || Self::calls_stdout_macro(code),
-            _ => code.contains(marker),
+            Self::Signal => markers
+                .iter()
+                .any(|marker| Self::contains_unprefixed(code, marker)),
+            _ => markers.iter().any(|marker| code.contains(marker)),
         }
     }
 
-    fn calls_stdout_macro(code: &str) -> bool {
-        Self::STDOUT_MACROS.iter().any(|call| {
-            code.match_indices(call)
-                .any(|(start, _)| !Self::continues_identifier(&code[..start]))
-        })
+    fn contains_unprefixed(code: &str, marker: &str) -> bool {
+        code.match_indices(marker)
+            .any(|(start, _)| !Self::continues_identifier(&code[..start]))
     }
 
     fn continues_identifier(preceding: &str) -> bool {

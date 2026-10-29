@@ -440,7 +440,7 @@ The associated type is a type constructor of one argument, the implementor: `(pa
 | Deref place | A `*` written immediately before a placeholder is dropped when the call borrows a `mut` place, because the `*` and the borrow cancel. |
 | Evaluation order | A repeated or out-of-order placeholder binds its arguments to temporaries first. |
 | Values | A function template used as a value becomes a closure whose parameters carry the types its signature declares. A bare path is used as the path. |
-| Runtime | `prelude/runtime/` holds the parts of `mod rt`. A program carries only the parts its code names, and its `Number` trait carries only the literal conversions it calls. |
+| Runtime | `prelude/runtime/` holds the parts of `mod rt`. A program carries only the parts its code names, plus the signal part when its code writes to stdout, a check that reads the emitted text, so a string literal that holds `println!(` also brings the signal part in. Its `Number` trait carries only the literal conversions it calls. |
 | Closed stdout | A program stops by SIGPIPE when its stdout closes, as a Unix filter does, instead of panicking. Rust ignores SIGPIPE at start-up, and stable rustc has no flag to keep it, so a program that writes to stdout starts `main` with the runtime's `restore_default_sigpipe`. A program that never prints carries no start-up call. |
 | Unsized | A type parameter used only behind references is declared `?Sized` exactly when a reached instantiation is unsized, so a caller that passes `str` can fill it. |
 
