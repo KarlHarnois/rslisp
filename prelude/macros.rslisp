@@ -6,25 +6,33 @@
 
 (def map-list
   (fn (function items)
+    (map-onto (list) function items)))
+
+(def map-onto
+  (fn (mapped function items)
     (if (empty? items)
-        (list)
-        (prepend (function (first items)) (map-list function (rest items))))))
+        mapped
+        (recur (concat mapped (list (function (first items)))) function (rest items)))))
 
 (def map-count
   (fn (count function)
-    (map-from 0 count function)))
+    (map-from (list) 0 count function)))
 
 (def map-from
-  (fn (index count function)
+  (fn (mapped index count function)
     (if (number-lt index count)
-        (prepend (function index) (map-from (number-add index 1) count function))
-        (list))))
+        (recur (concat mapped (list (function index))) (number-add index 1) count function)
+        mapped)))
 
 (def concat-all
   (fn (lists)
+    (concat-onto (list) lists)))
+
+(def concat-onto
+  (fn (joined lists)
     (if (empty? lists)
-        (list)
-        (concat (first lists) (concat-all (rest lists))))))
+        joined
+        (recur (concat joined (first lists)) (rest lists)))))
 
 (def headed-by?
   (fn (form name)
@@ -56,7 +64,7 @@
         false
         (if (value-eq (symbol-name (nth (first bindings) 1)) (symbol-name variable))
             (first bindings)
-            (lookup variable (rest bindings))))))
+            (recur variable (rest bindings))))))
 
 (def entry-value
   (fn (entry)
@@ -86,9 +94,9 @@
   (fn (left right)
     (if (list? left) (if (list? right) (concat left right) false) false)))
 
-(def prepend-match
-  (fn (match others)
-    (if (list? match) (if (list? others) (prepend match others) false) false)))
+(def append-match
+  (fn (matches match)
+    (if (list? match) (concat matches (list match)) false)))
 
 (def match-pattern
   (fn (pattern input)
@@ -131,10 +139,15 @@
 
 (def match-each
   (fn (pattern inputs)
+    (match-each-onto (list) pattern inputs)))
+
+(def match-each-onto
+  (fn (matches pattern inputs)
     (if (empty? inputs)
-        (list)
-        (prepend-match (match-pattern pattern (first inputs))
-                       (match-each pattern (rest inputs))))))
+        matches
+        (if (list? matches)
+            (recur (append-match matches (match-pattern pattern (first inputs))) pattern (rest inputs))
+            false))))
 
 (def fill-template
   (fn (template bindings)
@@ -263,4 +276,4 @@
   (fn (arguments)
     (if (empty? arguments)
         true
-        (if (empty? (rest arguments)) false (whole-pairs? (drop 2 arguments))))))
+        (if (empty? (rest arguments)) false (recur (drop 2 arguments))))))

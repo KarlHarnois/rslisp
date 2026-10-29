@@ -2,23 +2,30 @@
 (use prelude/types vec option iterator slice sequence)
 (use prelude/number ord partial-eq)
 (use prelude/ownership copy)
-(use code list prepend length empty? string number-add number-sub number-lt)
+(use code list prepend concat length empty? string number-add number-sub number-lt)
 
 (export vec push! len iter values collect get pop! remove-at! sort! sort-by-key! windows at dedup!
         first last reverse reverse! sort-descending!)
 
 (def element-placeholders
-  (fn (index count)
+  (fn (count)
+    (element-placeholders-onto "" 0 count)))
+
+(def element-placeholders-onto
+  (fn (text index count)
     (if (number-lt index count)
-        (string (if (number-lt 0 index) ", " "") "{" index "}"
-                (element-placeholders (number-add index 1) count))
-        "")))
+        (recur (string text (if (number-lt 0 index) ", " "") "{" index "}") (number-add index 1) count)
+        text)))
 
 (def repeated-item
   (fn (count)
+    (repeated-item-onto (list) count)))
+
+(def repeated-item-onto
+  (fn (items count)
     (if (number-lt 0 count)
-        (prepend (quote item) (repeated-item (number-sub count 1)))
-        (list))))
+        (recur (concat items (list (quote item))) (number-sub count 1))
+        items)))
 
 (def elements-type
   (fn (count)
@@ -29,7 +36,7 @@
   (let count (length elements))
   (if (empty? elements)
       (list (quote rust) "Vec::new()" (quote (where (item) (vec item))))
-      (prepend (list (quote rust) (string "vec![" (element-placeholders 0 count) "]")
+      (prepend (list (quote rust) (string "vec![" (element-placeholders count) "]")
                      (elements-type count))
                elements)))
 
