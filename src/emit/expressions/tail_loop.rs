@@ -53,15 +53,7 @@ impl TailLoop {
     }
 
     pub fn recurrence<'e>(&self, expr: &'e TypedExpr) -> Option<&'e [TypedArgument]> {
-        match &expr.kind {
-            TypedExprKind::Recur(arguments) => Some(arguments),
-            TypedExprKind::Call(callee, arguments) if self.calls(callee) => Some(arguments),
-            _ => None,
-        }
-    }
-
-    fn calls(&self, callee: &TypedExpr) -> bool {
-        TailCalls::calls_itself(self.function, callee)
+        TailCalls::recurrence(self.function, expr)
     }
 
     fn passes_through(param: BindingId, argument: &TypedArgument) -> bool {

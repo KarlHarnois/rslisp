@@ -27,7 +27,17 @@ impl<'e> TailCalls<'e> {
         &self.calls
     }
 
-    pub fn calls_itself(function: Option<BindingId>, callee: &TypedExpr) -> bool {
+    pub fn recurrence(function: Option<BindingId>, expr: &TypedExpr) -> Option<&[TypedArgument]> {
+        match &expr.kind {
+            TypedExprKind::Recur(arguments) => Some(arguments),
+            TypedExprKind::Call(callee, arguments) if Self::calls_itself(function, callee) => {
+                Some(arguments)
+            }
+            _ => None,
+        }
+    }
+
+    fn calls_itself(function: Option<BindingId>, callee: &TypedExpr) -> bool {
         let Some(function) = function else {
             return false;
         };
@@ -78,13 +88,11 @@ impl<'e> TailCalls<'e> {
     }
 
     fn collect(&mut self, expr: &'e TypedExpr) {
-        match &expr.kind {
-            TypedExprKind::Recur(arguments) => self.calls.push(arguments),
-            TypedExprKind::Call(callee, arguments) if Self::calls_itself(self.function, callee) => {
-                self.calls.push(arguments)
-            }
-            TypedExprKind::Control(control) => self.collect_control(control),
-            _ => {}
+        if let Some(arguments) = Self::recurrence(self.function, expr) {
+            self.calls.push(arguments)
+        }
+        if let TypedExprKind::Control(control) = &expr.kind {
+            self.collect_control(control)
         }
     }
 
