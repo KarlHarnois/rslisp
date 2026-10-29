@@ -9,9 +9,9 @@ error[L0306]: `to-string` belongs to the program, so macro code cannot run it
  3 | (def needs-rust (macro (form) (to-string 1) (list)))
    |                                ^^^^^^^^^ macro code runs this
    |
-  ::: prelude/text.rslisp:29:16
+  ::: prelude/text.rslisp:30:16
    |
-29 | (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
+30 | (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
    |                -------------------------------------------------------------------- `to-string` is Rust code that runs in the program
    |
    = help: to compute this in the program, return it as code from the macro, for example with `quote`
@@ -44,9 +44,9 @@ error[L0306]: `to-string` belongs to the program, so macro code cannot run it
 15 | (def in-untaken-branch (macro (form) (if true (quote 1) (to-string 1))))
    |                                                          ^^^^^^^^^ macro code runs this
    |
-  ::: prelude/text.rslisp:29:16
+  ::: prelude/text.rslisp:30:16
    |
-29 | (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
+30 | (def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
    |                -------------------------------------------------------------------- `to-string` is Rust code that runs in the program
    |
    = help: to compute this in the program, return it as code from the macro, for example with `quote`
@@ -79,9 +79,9 @@ error[L0306]: `print` belongs to the program, so macro code cannot run it
  29 | (def never-called (macro (form) (print "unused")))
     |                                 ^^^^^^^^^^^^^^^^ macro code runs this
     |
-   ::: prelude/text.rslisp:215:11
+   ::: prelude/text.rslisp:216:11
     |
-215 | (defmacro print (parts ...)
+216 | (defmacro print (parts ...)
     |           ----- `print` expands to Rust code that runs in the program
     |
     = help: to compute this in the program, return it as code from the macro, for example with `quote`

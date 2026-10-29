@@ -11,6 +11,7 @@
 (rust-type (slice item) "[{0}]")
 (rust-trait sequence "crate::rt::Sequence"
   str string
+  (where ((item sequence)) (ref item))
   (where (item) (vec item))
   (where (item) (slice item))
   (where (key value) (sorted-map key value))
