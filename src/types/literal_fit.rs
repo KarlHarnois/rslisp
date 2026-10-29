@@ -9,7 +9,7 @@ impl LiteralFit {
             return false;
         };
         match value {
-            NumberValue::Float(_) => primitive.is_float(),
+            NumberValue::Float(float) => primitive.is_float() && float.is_finite(),
             NumberValue::Integer(_) if primitive.is_float() => true,
             NumberValue::Integer(integer) => primitive
                 .integer_range()

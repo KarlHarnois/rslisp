@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/float_literal_overflow.rslisp
+---
+error[L0406]: the literal `1e400` does not fit in `f64`
+ --> check/float_literal_overflow.rslisp:1:24
+  |
+1 | (defn main () (println 1e400))
+  |                        ^^^^^ out of range for `f64`
