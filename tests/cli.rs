@@ -28,17 +28,6 @@ const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::
 
 const UNBOUND_NAMES_PAST_THE_CAP: usize = 25;
 
-struct UnboundNames;
-
-impl UnboundNames {
-    fn program(count: usize) -> String {
-        let body: String = (0..count)
-            .map(|index| format!("    missing{index}\n"))
-            .collect();
-        format!("(defn main ()\n  (do\n{body}    1))\n")
-    }
-}
-
 struct Sandbox {
     directory: PathBuf,
 }
@@ -62,6 +51,13 @@ impl Sandbox {
         }
         fs::write(path, source).expect("the sandbox accepts files");
         self
+    }
+
+    fn with_unbound_names(self, name: &str, count: usize) -> Self {
+        let body: String = (0..count)
+            .map(|index| format!("    missing{index}\n"))
+            .collect();
+        self.with_file(name, &format!("(defn main ()\n  (do\n{body}    1))\n"))
     }
 
     fn with_executable(self, name: &str, script: &str) -> Self {
@@ -262,8 +258,8 @@ fn check_reports_errors_without_terminal_styling() {
 
 #[test]
 fn check_caps_the_printed_diagnostics_and_counts_the_rest() {
-    let program = UnboundNames::program(UNBOUND_NAMES_PAST_THE_CAP);
-    let sandbox = Sandbox::new("check_capped").with_file("flood.rslisp", &program);
+    let sandbox =
+        Sandbox::new("check_capped").with_unbound_names("flood.rslisp", UNBOUND_NAMES_PAST_THE_CAP);
     let check = sandbox.compiler(&["check", "flood.rslisp"]);
     insta::assert_snapshot!(check.assert_exit_code(1).stderr());
 }
