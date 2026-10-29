@@ -1,7 +1,7 @@
 pub struct NameMangler;
 
 impl NameMangler {
-    const PUNCTUATION: [(char, &'static str); 20] = [
+    const PUNCTUATION: [(char, &'static str); 23] = [
         ('-', "_"),
         ('+', "plus"),
         ('*', "star"),
@@ -22,7 +22,13 @@ impl NameMangler {
         ('$', "dollar"),
         ('#', "hash"),
         ('\'', "prime"),
+        (',', "comma"),
+        ('\\', "backslash"),
+        ('`', "backtick"),
     ];
+    const LONE_SEPARATORS: [(char, &'static str); 2] = [('-', "minus"), ('_', "underscore")];
+    const CODE_POINT_PREFIX: char = 'u';
+    const WILDCARD: &str = "_";
 
     const PREDICATE_SUFFIX: char = '?';
     const CHANGE_SUFFIX: char = '!';
@@ -78,6 +84,14 @@ impl NameMangler {
         "Vec",
     ];
     const PRELUDE_SUFFIX: char = '2';
+
+    pub fn local(name: &str) -> String {
+        if name == Self::WILDCARD {
+            name.to_string()
+        } else {
+            Self::value(name)
+        }
+    }
 
     pub fn value(name: &str) -> String {
         Self::guard_keyword(Self::snake(Self::without_change_suffix(name)))
@@ -135,9 +149,31 @@ impl NameMangler {
         let prefixed = if is_predicate {
             format!("{}{spelled}", Self::PREDICATE_PREFIX)
         } else {
-            spelled
+            Self::spelled_or_separators(spelled, body)
         };
         Self::valid_start(prefixed)
+    }
+
+    fn spelled_or_separators(spelled: String, name: &str) -> String {
+        if spelled.is_empty() {
+            Self::spell_separators(name)
+        } else {
+            spelled
+        }
+    }
+
+    fn spell_separators(name: &str) -> String {
+        name.chars()
+            .filter_map(Self::separator_word)
+            .collect::<Vec<_>>()
+            .join("_")
+    }
+
+    fn separator_word(character: char) -> Option<&'static str> {
+        Self::LONE_SEPARATORS
+            .iter()
+            .find(|(separator, _)| *separator == character)
+            .map(|(_, word)| *word)
     }
 
     fn spell(name: &str) -> String {
@@ -149,8 +185,10 @@ impl NameMangler {
                 Self::push_word(&mut spelled, Self::ARROW_WORD);
             } else if let Some(word) = Self::spelling(character) {
                 Self::push_word(&mut spelled, word);
-            } else {
+            } else if Self::continues_identifier(character) {
                 spelled.push(character);
+            } else {
+                Self::push_word(&mut spelled, &Self::code_point(character));
             }
         }
         spelled.trim_end_matches('_').to_string().replace("__", "_")
@@ -173,8 +211,16 @@ impl NameMangler {
             .map(|(_, word)| *word)
     }
 
+    fn continues_identifier(character: char) -> bool {
+        character.is_ascii_digit() || character == '_' || character.is_alphabetic()
+    }
+
+    fn code_point(character: char) -> String {
+        format!("{}{:x}", Self::CODE_POINT_PREFIX, u32::from(character))
+    }
+
     fn valid_start(name: String) -> String {
-        if name.starts_with(|character: char| character.is_ascii_digit()) || name.is_empty() {
+        if !name.starts_with(|character: char| character == '_' || character.is_alphabetic()) {
             format!("_{name}")
         } else {
             name
@@ -204,6 +250,8 @@ impl NameMangler {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use super::NameMangler;
 
     #[test]
@@ -242,6 +290,54 @@ mod tests {
         assert_eq!(NameMangler::value("point->string"), "point_to_string");
         assert_eq!(NameMangler::value("set!"), "set");
         assert_eq!(NameMangler::value("set!x"), "set_bang_x");
+    }
+
+    #[test]
+    fn every_printable_character_becomes_a_distinct_identifier() {
+        let names: HashSet<String> = PrintableCharacters::ALL
+            .map(|character| NameMangler::value(&character.to_string()))
+            .inspect(|name| assert!(Identifier::is_valid(name), "`{name}` is not valid"))
+            .collect();
+        assert_eq!(names.len(), PrintableCharacters::ALL.count());
+    }
+
+    #[test]
+    fn lone_separators_are_spelled_out() {
+        assert_eq!(NameMangler::value("-"), "minus");
+        assert_eq!(NameMangler::value("_"), "underscore");
+        assert_eq!(NameMangler::value("_-"), "underscore_minus");
+        assert_eq!(NameMangler::constant("_"), "UNDERSCORE");
+    }
+
+    #[test]
+    fn a_wildcard_local_stays_a_wildcard() {
+        assert_eq!(NameMangler::local("_"), "_");
+        assert_eq!(NameMangler::local("-"), "minus");
+    }
+
+    #[test]
+    fn characters_outside_identifiers_become_code_points() {
+        assert_eq!(NameMangler::value("café"), "café");
+        assert_eq!(NameMangler::value("☃"), "u2603");
+        assert_eq!(NameMangler::value("snow☃man"), "snow_u2603_man");
+    }
+
+    struct PrintableCharacters;
+
+    impl PrintableCharacters {
+        const ALL: std::ops::RangeInclusive<char> = '!'..='~';
+    }
+
+    struct Identifier;
+
+    impl Identifier {
+        fn is_valid(name: &str) -> bool {
+            let mut characters = name.chars();
+            let starts = characters
+                .next()
+                .is_some_and(|first| first == '_' || first.is_alphabetic());
+            starts && name != "_" && characters.all(|rest| rest == '_' || rest.is_alphanumeric())
+        }
     }
 
     #[test]

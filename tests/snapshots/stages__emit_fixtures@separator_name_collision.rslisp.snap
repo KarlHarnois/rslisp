@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/separator_name_collision.rslisp
+---
+error[L0602]: `a-b` and `a_b` both become `a_b` in Rust
+ --> emit/separator_name_collision.rslisp:2:7
+  |
+1 | (defn a-b () 1)
+  |       --- this also becomes `a_b`
+2 | (defn a_b () 2)
+  |       ^^^ this becomes `a_b`
+  |
+  = help: rename one of them

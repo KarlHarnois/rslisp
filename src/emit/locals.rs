@@ -31,7 +31,7 @@ impl LocalNames {
     }
 
     pub fn bind(&mut self, binding: BindingId, name: &str) -> String {
-        let base = NameMangler::value(name);
+        let base = NameMangler::local(name);
         let mut candidate = base.clone();
         let mut suffix = Self::FIRST_SUFFIX;
         while self.used.contains(&candidate) {
