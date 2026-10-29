@@ -3,12 +3,12 @@ use std::collections::HashSet;
 use crate::core::BindingId;
 use crate::types::{TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
 
-pub struct EscapingLocals {
+pub struct EscapingLambdas {
     let_bound_lambdas: HashSet<BindingId>,
     escaping: HashSet<BindingId>,
 }
 
-impl EscapingLocals {
+impl EscapingLambdas {
     pub fn in_program(program: &TypedProgram) -> HashSet<BindingId> {
         let definitions = || {
             program

@@ -3,7 +3,7 @@ mod borrowing_lambdas;
 mod changes;
 mod checks;
 mod definitions;
-mod escaping_locals;
+mod escaping_lambdas;
 mod functions;
 mod kinds;
 mod modes;
@@ -32,7 +32,7 @@ use crate::types::{
 };
 use borrowing_lambdas::BorrowingLambdas;
 use checks::OwnershipNeeds;
-use escaping_locals::EscapingLocals;
+use escaping_lambdas::EscapingLambdas;
 use functions::{FunctionTable, ParamMode};
 use kinds::{ClosureKinds, KindReport, KindSources};
 use modes::ModeInference;
@@ -90,7 +90,7 @@ impl OwnershipChecker {
         FunctionValueModes::apply(program, rewrite.function_params())
             .into_iter()
             .for_each(|diagnostic| diagnostics.push(diagnostic));
-        program.escaping_locals = EscapingLocals::in_program(program);
+        program.escaping_lambdas = EscapingLambdas::in_program(program);
         StoredClosures::check(program)
             .into_iter()
             .for_each(|diagnostic| diagnostics.push(diagnostic));
