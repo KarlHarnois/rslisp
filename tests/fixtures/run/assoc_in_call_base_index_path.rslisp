@@ -1,0 +1,8 @@
+(defstruct shelf :label string :items (vec i64))
+
+(defn make-shelf ()
+  (->shelf (to-string "top") (vec 1 2 3)))
+
+(defn main ()
+  (let items (assoc-in (:items (make-shelf)) (1) 9))
+  (println (:label (make-shelf)) " " (at items 0) " " (at items 1) " " (at items 2)))

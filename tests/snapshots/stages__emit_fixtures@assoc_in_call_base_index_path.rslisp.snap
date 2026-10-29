@@ -1,0 +1,36 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/assoc_in_call_base_index_path.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Shelf {
+    label: String,
+    items: Vec<i64>,
+}
+
+fn make_shelf_2(label: String, items: Vec<i64>) -> Shelf {
+    Shelf { label, items }
+}
+
+fn make_shelf() -> Shelf {
+    make_shelf_2("top".to_string(), vec![1_i64, 2_i64, 3_i64])
+}
+
+fn main() {
+    let items: Vec<i64> = {
+        let base = make_shelf();
+        {
+            let mut value = base.items;
+            value[1] = 9;
+            value
+        }
+    };
+    println!(
+        "{} {} {} {}",
+        make_shelf().label,
+        items[0],
+        items[1],
+        items[2]
+    )
+}

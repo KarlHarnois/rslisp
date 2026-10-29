@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/assoc_in_call_base_index_path.rslisp
+---
+top 1 9 3
