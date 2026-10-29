@@ -100,6 +100,13 @@ impl Type {
         }
     }
 
+    pub fn referent(&self) -> &Self {
+        match self {
+            Self::Ref(_, inner) | Self::Mut(_, inner) => inner,
+            other => other,
+        }
+    }
+
     pub fn is_concrete(&self) -> bool {
         !self.any_part(&|part| matches!(part, Type::Var(_) | Type::Generic(_)))
     }

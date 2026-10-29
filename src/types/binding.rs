@@ -60,7 +60,7 @@ impl BindingWalk {
                 self.exact.entry(*generic).or_insert_with(|| used.clone());
             }
             Type::Ref(_, inner) | Type::Mut(_, inner) => {
-                self.absorb_behind_reference(Self::of(inner, Self::referent(used)));
+                self.absorb_behind_reference(Self::of(inner, used.referent()));
             }
             _ => self.bind_parts(declared, used),
         }
@@ -91,13 +91,6 @@ impl BindingWalk {
     ) {
         for (declared, used) in declared.into_iter().zip(used) {
             self.bind(declared, used);
-        }
-    }
-
-    fn referent(used: &Type) -> &Type {
-        match used {
-            Type::Ref(_, inner) | Type::Mut(_, inner) => inner,
-            other => other,
         }
     }
 }
