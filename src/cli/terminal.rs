@@ -1,5 +1,7 @@
+use std::env::{self, VarError};
 use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use super::build_directory::BuildDirectory;
 use super::capped_report::CappedReport;
@@ -55,15 +57,32 @@ impl Terminal {
     }
 
     pub fn emit(&mut self, path: &Path) -> Result<EmittedCrate, ExitStatus> {
+        let formatting = Self::formatting()?;
         let program = self.check(path)?;
         let emitted = RustEmitter::emit(&program, Self::entry_span())
             .map_err(|diagnostics| self.report(&diagnostics))?;
-        match EmittedFormatting::apply(&emitted) {
+        match formatting.apply(&emitted) {
             Ok(formatted) => Ok(formatted),
             Err(error) => {
                 eprintln!("note: {error}; writing unformatted Rust");
                 Ok(emitted)
             }
+        }
+    }
+
+    fn formatting() -> Result<EmittedFormatting, ExitStatus> {
+        Self::rustfmt_time_limit().map(EmittedFormatting::within)
+    }
+
+    fn rustfmt_time_limit() -> Result<Duration, ExitStatus> {
+        let variable = EmittedFormatting::time_limit_variable();
+        match env::var(&variable) {
+            Err(VarError::NotPresent) => Ok(EmittedFormatting::TIME_LIMIT),
+            value => value
+                .ok()
+                .and_then(|milliseconds| milliseconds.parse().ok())
+                .map(Duration::from_millis)
+                .ok_or_else(|| Self::report_malformed_variable(&variable)),
         }
     }
 
@@ -158,6 +177,11 @@ impl Terminal {
 
     fn report_unresolvable(directory: &Path, error: &std::io::Error) -> ExitStatus {
         eprintln!("error: cannot resolve `{}`: {error}", directory.display());
+        ExitStatus::UsageError
+    }
+
+    fn report_malformed_variable(variable: &str) -> ExitStatus {
+        eprintln!("error: `{variable}` must be a whole number of milliseconds");
         ExitStatus::UsageError
     }
 

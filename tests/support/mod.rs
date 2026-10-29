@@ -118,7 +118,9 @@ impl Fixture {
     fn emit(&mut self) -> Result<EmittedCrate, Diagnostics> {
         let program = self.checked()?;
         let emitted = RustEmitter::emit(&program, self.entry_span())?;
-        Ok(EmittedFormatting::apply(&emitted).expect("rustfmt formats the emitted Rust"))
+        Ok(EmittedFormatting::within(EmittedFormatting::TIME_LIMIT)
+            .apply(&emitted)
+            .expect("rustfmt formats the emitted Rust"))
     }
 
     fn checked(&mut self) -> Result<TypedProgram, Diagnostics> {

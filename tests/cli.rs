@@ -92,11 +92,12 @@ impl Sandbox {
         time_limit: Duration,
         arguments: &[&str],
     ) -> Outcome {
+        self.compiler_with_rustfmt_time_limit_value(&time_limit.as_millis().to_string(), arguments)
+    }
+
+    fn compiler_with_rustfmt_time_limit_value(&self, value: &str, arguments: &[&str]) -> Outcome {
         let mut command = self.command(Path::new(Self::COMPILER), arguments);
-        command.env(
-            EmittedFormatting::time_limit_variable(),
-            time_limit.as_millis().to_string(),
-        );
+        command.env(EmittedFormatting::time_limit_variable(), value);
         Outcome::of(&mut command)
     }
 
@@ -421,6 +422,20 @@ fn emit_stops_rustfmt_past_its_time_limit_and_writes_unformatted_rust() {
     assert_eq!(
         emit.stdout().matches("if true").count(),
         NestedIfProgram::DEPTH
+    );
+}
+
+#[test]
+fn emit_rejects_a_malformed_rustfmt_time_limit_as_a_usage_error() {
+    let sandbox =
+        Sandbox::new("emit_malformed_rustfmt_time_limit").with_file("greeting.rslisp", GREETING);
+    let emit = sandbox.compiler_with_rustfmt_time_limit_value("soon", &["emit", "greeting.rslisp"]);
+    let emit = emit.assert_exit_code(2);
+    assert!(
+        emit.stderr()
+            .contains(&EmittedFormatting::time_limit_variable()),
+        "stderr: {}",
+        emit.stderr()
     );
 }
 
