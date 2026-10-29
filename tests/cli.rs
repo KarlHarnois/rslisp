@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 const GREETING: &str = "(defn main ()\n  (println \"hello from the sandbox\"))\n";
+const MARKED_PROGRAM: &str = "\u{feff}(defn main () (println 1))\n";
 const UNBOUND_NAME: &str = "(defn main ()\n  (println greeting))\n";
 const ECHO: &str = "(def first-argument (rust \"std::env::args().nth(1).unwrap_or_default()\" string))\n\n(defn main ()\n  (println first-argument))\n";
 const EXIT_THREE: &str =
@@ -146,6 +147,14 @@ fn check_is_silent_on_a_valid_program() {
         (check.stdout(), check.stderr()),
         (String::new(), String::new())
     );
+}
+
+#[test]
+fn check_ignores_a_byte_order_mark() {
+    let sandbox = Sandbox::new("check_byte_order_mark").with_file("marked.rslisp", MARKED_PROGRAM);
+    sandbox
+        .compiler(&["check", "marked.rslisp"])
+        .assert_exit_code(0);
 }
 
 #[test]
