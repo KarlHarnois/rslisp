@@ -68,10 +68,14 @@ impl OwnershipProblems {
     }
 
     pub fn pipeline_help(diagnostic: Diagnostic, name: &str) -> Diagnostic {
+        Self::pipeline_wording(diagnostic, &format!("`{name}`"), name)
+    }
+
+    fn pipeline_wording(diagnostic: Diagnostic, subject: &str, collected: &str) -> Diagnostic {
         diagnostic
-            .with_note(format!("`{name}` is a lazy pipeline, so it runs once"))
+            .with_note(format!("{subject} is a lazy pipeline, so it runs once"))
             .with_help(format!(
-                "collect it if both places need its items, as in `(collect {name})`, or write a function that rebuilds it"
+                "collect it if both places need its items, as in `(collect {collected})`, or write a function that rebuilds it"
             ))
     }
 
@@ -334,12 +338,19 @@ impl OwnershipProblems {
     }
 
     pub fn needs_ownership(span: Span) -> Diagnostic {
+        Self::borrowed_argument(span).with_help("pass a copy with `(clone ...)`")
+    }
+
+    pub fn needs_pipeline_ownership(span: Span) -> Diagnostic {
+        Self::pipeline_wording(Self::borrowed_argument(span), "this value", "...")
+    }
+
+    fn borrowed_argument(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::NEEDS_OWNERSHIP,
             "this value is borrowed, but the call needs to own it",
             Label::new(span, "only a borrow is available here"),
         )
-        .with_help("pass a copy with `(clone ...)`")
     }
 
     pub fn function_value_mismatch(

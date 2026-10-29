@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/pipeline_field_borrowed.rslisp
+---
+error[L0503]: this value is borrowed, but the call needs to own it
+ --> check/pipeline_field_borrowed.rslisp:4:21
+  |
+4 |   (let first (count (:items f)))
+  |                     ^^^^^^^^^^ only a borrow is available here
+  |
+  = note: this value is a lazy pipeline, so it runs once
+  = help: collect it if both places need its items, as in `(collect ...)`, or write a function that rebuilds it
+
+error[L0503]: this value is borrowed, but the call needs to own it
+ --> check/pipeline_field_borrowed.rslisp:5:19
+  |
+5 |   (+ first (count (:items f))))
+  |                   ^^^^^^^^^^ only a borrow is available here
+  |
+  = note: this value is a lazy pipeline, so it runs once
+  = help: collect it if both places need its items, as in `(collect ...)`, or write a function that rebuilds it

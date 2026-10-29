@@ -10,6 +10,7 @@ mod moves;
 mod mutation;
 mod names;
 mod parameter_uses;
+mod pipelines;
 mod problems;
 mod returned;
 mod rewrite;
@@ -31,6 +32,7 @@ use kinds::{ClosureKinds, KindReport, KindSources};
 use modes::ModeInference;
 use moves::MoveChecker;
 use names::ChangingFunctionNames;
+use pipelines::Pipelines;
 use problems::OwnershipProblems;
 use returned::ReturnedBorrows;
 use rewrite::ModeRewrite;
@@ -100,6 +102,7 @@ impl OwnershipChecker {
             .into_iter()
             .for_each(|diagnostic| diagnostics.push(diagnostic));
         let mut inferred_copies = InferredCopies::default();
+        let pipelines = Pipelines::new(&program.rust_types);
         for definition in program
             .modules
             .iter()
@@ -116,7 +119,7 @@ impl OwnershipChecker {
                     &program.bindings,
                     &program.template_borrows,
                     &program.generics,
-                    &program.rust_types,
+                    pipelines,
                     definition.binding,
                 );
                 let report = checker.check(lambda);
@@ -130,7 +133,7 @@ impl OwnershipChecker {
                     .into_iter()
                     .for_each(|diagnostic| diagnostics.push(diagnostic));
             }
-            let needs = OwnershipNeeds::new(rewrite.function_params())
+            let needs = OwnershipNeeds::new(rewrite.function_params(), pipelines)
                 .check(definition.binding, &definition.value);
             needs
                 .into_iter()
