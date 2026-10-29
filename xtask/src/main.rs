@@ -12,6 +12,7 @@ mod gate;
 mod instrumented_tests;
 mod language;
 mod lcov;
+mod release;
 
 use std::path::Path;
 use std::process::ExitCode;
@@ -20,6 +21,7 @@ use clap::{Parser, Subcommand};
 
 use bench::BenchTask;
 use gate::QualityGate;
+use release::{NextRelease, SetVersion};
 
 #[derive(Parser)]
 #[command(about = "Development tasks for this repository")]
@@ -39,6 +41,12 @@ enum Task {
         about = "Measure the compiler's front end under callgrind, or compare two measurements"
     )]
     Bench(BenchTask),
+    #[command(
+        about = "Print the tag that follows the latest release, bumped by the pull requests' labels"
+    )]
+    NextRelease(NextRelease),
+    #[command(about = "Write a version into the crate's manifest and its lock file entry")]
+    SetVersion(SetVersion),
 }
 
 impl Task {
@@ -48,6 +56,8 @@ impl Task {
         match self {
             Task::Coverage => QualityGate::new(workspace_root).run(),
             Task::Bench(task) => task.run(workspace_root),
+            Task::NextRelease(release) => release.run(),
+            Task::SetVersion(version) => version.run(workspace_root),
         }
     }
 }
