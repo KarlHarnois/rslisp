@@ -1,6 +1,5 @@
 use super::definitions::LocalDefinitions;
 use super::moved_values::MovedValues;
-use crate::core::BindingId;
 use crate::types::TypedLambda;
 
 pub struct RepeatingBody {
@@ -39,8 +38,8 @@ pub struct NextPass {
 }
 
 impl NextPass {
-    pub fn carried_bindings(&self) -> impl Iterator<Item = BindingId> + '_ {
-        self.carried.bindings()
+    pub fn carried(&self) -> &MovedValues {
+        &self.carried
     }
 
     pub fn moved_at_start(self) -> MovedValues {

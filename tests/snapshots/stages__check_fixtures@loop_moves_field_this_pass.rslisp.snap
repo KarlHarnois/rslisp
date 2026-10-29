@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/loop_moves_field_this_pass.rslisp
+---
+error[L0501]: use of moved value `(:tag g)`
+  --> check/loop_moves_field_this_pass.rslisp:11:75
+   |
+11 |         (do (let renamed (assoc (:tag g) :size 2)) (println (:label (:tag g))) i)))))
+   |                                 -------- value moved here                 ^ value used here after it moved
+   |
+help: clone the value if both places need it
+   |
+11 -         (do (let renamed (assoc (:tag g) :size 2)) (println (:label (:tag g))) i)))))
+11 +         (do (let renamed (assoc (clone (:tag g)) :size 2)) (println (:label (:tag g))) i)))))
+   |

@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/use_after_whole_struct_move.rslisp
+---
+error[L0501]: use of moved value `g`
+ --> check/use_after_whole_struct_move.rslisp:8:41
+  |
+7 |   (let h g)
+  |          - value moved here
+8 |   (println (:name h) " " (:text (:badge g))))
+  |                                         ^ value used here after it moved
+  |
+help: clone the value if both places need it
+  |
+7 -   (let h g)
+7 +   (let h (clone g))
+  |

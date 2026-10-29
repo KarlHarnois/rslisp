@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/partial_move_reads_moved_field.rslisp
 ---
-error[L0501]: use of moved value `g`
+error[L0501]: use of moved value `(:badge g)`
  --> check/partial_move_reads_moved_field.rslisp:8:55
   |
 7 |   (let b (assoc (:badge g) :size 14))

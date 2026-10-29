@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/loop_moves_second_field.rslisp
 ---
-error[L0501]: use of moved value `g`
+error[L0501]: use of moved value `(:badge g)`
   --> check/loop_moves_second_field.rslisp:12:40
    |
 12 |         (do (let bigger (assoc (:badge g) :size 14)) (recur (+ i 1)))

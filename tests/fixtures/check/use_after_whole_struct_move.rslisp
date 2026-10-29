@@ -1,0 +1,8 @@
+(defstruct badge :text string :size u16)
+
+(defstruct garage :name string :badge badge)
+
+(defn main ()
+  (let g (->garage (to-string "Leaf Garage") (->badge (to-string "open") 12)))
+  (let h g)
+  (println (:name h) " " (:text (:badge g))))
