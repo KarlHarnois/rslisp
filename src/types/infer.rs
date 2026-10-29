@@ -2006,7 +2006,9 @@ impl TypeChecker {
         let site = ArgumentSite { callee, position };
         self.pass_argument(parameter, value)
             .map_err(|diagnostic| self.explain_literal_default(call, position, diagnostic))
-            .map_err(|diagnostic| self.explain_parameter_call(&site, &value.ty, diagnostic))
+            .map_err(|diagnostic| {
+                self.explain_parameter_call(call, position, &value.ty, diagnostic)
+            })
             .map_err(|diagnostic| self.explain_borrowed_items(&site, &value.ty, diagnostic))
     }
 
@@ -2038,20 +2040,18 @@ impl TypeChecker {
 
     fn explain_parameter_call(
         &self,
-        site: &ArgumentSite<'_>,
+        callee: BindingId,
+        position: usize,
         found: &Type,
         diagnostic: Diagnostic,
     ) -> Diagnostic {
-        let Some(function) = site.called_function() else {
-            return diagnostic;
-        };
-        if !self.function_type_comes_from_call(function, site.position, found, &diagnostic) {
+        if !self.function_type_comes_from_call(callee, position, found, &diagnostic) {
             return diagnostic;
         }
-        let Some(call) = self.parameter_calls.get(function, site.position) else {
+        let Some(call) = self.parameter_calls.get(callee, position) else {
             return diagnostic;
         };
-        TypeProblems::parameter_call(diagnostic, self.bindings.get(function).name(), call)
+        TypeProblems::parameter_call(diagnostic, self.bindings.get(callee).name(), call)
     }
 
     fn function_type_comes_from_call(
