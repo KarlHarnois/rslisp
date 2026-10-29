@@ -1,0 +1,3 @@
+(defn main () (println (str (+ (even-step 3) "oops"))))
+(defn even-step (n) (if (> n 0) (odd-step (- n 1)) 0))
+(defn odd-step (n) (if (> n 0) (even-step (- n 1)) (+ n "one")))

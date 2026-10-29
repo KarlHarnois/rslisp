@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/group_partial_failure.rslisp
+---
+error[L0401]: mismatched types
+ --> check/group_partial_failure.rslisp:3:57
+  |
+3 | (defn odd-step (n) (if (> n 0) (even-step (- n 1)) (+ n "one")))
+  |                                                         ^^^^^ expected an integer, found `str`
