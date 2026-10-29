@@ -2006,6 +2006,7 @@ impl TypeChecker {
         let site = ArgumentSite { callee, position };
         self.pass_argument(parameter, value)
             .map_err(|diagnostic| self.explain_literal_default(call, position, diagnostic))
+            .map_err(|diagnostic| self.explain_parameter_call(&site, &value.ty, diagnostic))
             .map_err(|diagnostic| self.explain_borrowed_items(&site, &value.ty, diagnostic))
     }
 
@@ -2033,6 +2034,36 @@ impl TypeChecker {
                 function,
                 &default.signature,
             ))
+    }
+
+    fn explain_parameter_call(
+        &self,
+        site: &ArgumentSite<'_>,
+        found: &Type,
+        diagnostic: Diagnostic,
+    ) -> Diagnostic {
+        let Some(function) = site.called_function() else {
+            return diagnostic;
+        };
+        if !self.function_type_comes_from_call(function, site.position, found, &diagnostic) {
+            return diagnostic;
+        }
+        let Some(call) = self.parameter_calls.get(function, site.position) else {
+            return diagnostic;
+        };
+        TypeProblems::parameter_call(diagnostic, self.bindings.get(function).name(), call)
+    }
+
+    fn function_type_comes_from_call(
+        &self,
+        function: BindingId,
+        position: usize,
+        found: &Type,
+        diagnostic: &Diagnostic,
+    ) -> bool {
+        *diagnostic.code() == DiagnosticCode::MISMATCHED_TYPES
+            && !self.parameter_is_written(function, position)
+            && !matches!(self.unifier.shallow(found), Type::Function(..))
     }
 
     pub(super) fn parameter_is_written(&self, callee: BindingId, position: usize) -> bool {

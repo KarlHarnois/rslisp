@@ -1,0 +1,5 @@
+(defn main ()
+  (prn (double-mileage "Leaf")))
+
+(defn double-mileage (mileage)
+  (* mileage 2))

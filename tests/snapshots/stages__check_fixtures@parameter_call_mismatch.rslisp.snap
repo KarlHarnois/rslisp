@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/parameter_call_mismatch.rslisp
+---
+error[L0401]: mismatched types
+ --> check/parameter_call_mismatch.rslisp:3:7
+  |
+3 |   (-> xs
+  |       ^^ expected `(fn () (vec card))`, found `(vec card)`
+...
+8 |     (->deck :name "The Deck" :cards (make)))
+  |                                     ------ `build-deck` calls its parameter `make` here, so it expects a function

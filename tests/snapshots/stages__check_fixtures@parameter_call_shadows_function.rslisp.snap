@@ -1,0 +1,19 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/parameter_call_shadows_function.rslisp
+---
+error[L0401]: mismatched types
+ --> check/parameter_call_shadows_function.rslisp:3:7
+  |
+3 |   (-> xs
+  |       ^^ expected `(fn () (vec card))`, found `(vec card)`
+...
+8 |     (->deck :name "The Deck" :cards (cards)))
+  |                                     ------- `build-deck` calls its parameter `cards` here, so it expects a function
+  |
+help: the parameter `cards` shadows the function `cards`, so to use the parameter's value, write it without parentheses
+  |
+8 -     (->deck :name "The Deck" :cards (cards)))
+8 +     (->deck :name "The Deck" :cards cards))
+  |

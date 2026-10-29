@@ -10,6 +10,15 @@ pub(super) struct ArgumentSite<'a> {
     pub position: usize,
 }
 
+impl ArgumentSite<'_> {
+    pub(super) fn called_function(&self) -> Option<BindingId> {
+        match &self.callee?.kind {
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => Some(*binding),
+            _ => None,
+        }
+    }
+}
+
 impl TypeChecker {
     pub(super) fn explain_borrowed_items(
         &self,
@@ -28,20 +37,13 @@ impl TypeChecker {
 
     fn borrowing_help(&self, site: &ArgumentSite<'_>, found: &Type) -> Option<String> {
         let callee = site.callee?;
-        let function = Self::called_function(callee)?;
+        let function = site.called_function()?;
         if self.parameter_is_written(function, site.position) {
             return None;
         }
         let signature = self.borrowing_signature(callee, function, site.position, found)?;
         let name = self.bindings.get(function).name();
         Some(TypeProblems::borrowed_items_help(name, &signature))
-    }
-
-    fn called_function(callee: &TypedExpr) -> Option<BindingId> {
-        match &callee.kind {
-            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => Some(*binding),
-            _ => None,
-        }
     }
 
     fn borrowing_signature(

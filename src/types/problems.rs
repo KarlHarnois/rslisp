@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use super::parameter_calls::ParameterCall;
 use crate::core::{FieldLabel, Keyword};
 use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
@@ -183,6 +184,29 @@ impl TypeProblems {
                 "expected because of this annotation",
             )),
         }
+    }
+
+    pub fn parameter_call(
+        diagnostic: Diagnostic,
+        function: &str,
+        call: &ParameterCall,
+    ) -> Diagnostic {
+        let parameter = &call.parameter;
+        let diagnostic = diagnostic.with_label(Label::new(
+            call.span,
+            format!(
+                "`{function}` calls its parameter `{parameter}` here, so it expects a function"
+            ),
+        ));
+        if !call.shadows_function {
+            return diagnostic;
+        }
+        diagnostic.with_suggestion(
+            format!(
+                "the parameter `{parameter}` shadows the function `{parameter}`, so to use the parameter's value, write it without parentheses"
+            ),
+            Suggestion::new(call.span, parameter.to_string()),
+        )
     }
 
     pub fn iter_needs_collection(found: &str, span: Span) -> Diagnostic {
