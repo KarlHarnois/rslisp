@@ -6,6 +6,7 @@ use super::{
     MapOperation, ParsedTemplate, Pattern, PatternKind, RustTemplate, RustTraitImplementor,
     StructExpr, TypeBinder, TypeBound, TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload,
 };
+use crate::stack::DeepRecursion;
 
 pub struct CorePrinter<'a> {
     bindings: &'a BindingArena,
@@ -172,7 +173,11 @@ impl<'a> CorePrinter<'a> {
     }
 
     fn expr(&mut self, expr: &Expr) -> String {
-        match expr.kind() {
+        DeepRecursion::guard(|| self.expr_by_kind(expr.kind()))
+    }
+
+    fn expr_by_kind(&mut self, kind: &ExprKind) -> String {
+        match kind {
             ExprKind::Leaf(leaf) => self.leaf(leaf),
             ExprKind::Fn(lambda) => self.lambda(lambda),
             ExprKind::Call(callee, arguments) => self.call(callee, arguments),
