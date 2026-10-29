@@ -81,12 +81,16 @@
 
 (defmacro assoc-in (value (step ...) item)
   (let root (read-root value))
-  (if (symbol? root)
-      (path-update value step item)
-      (if (empty? (keyword-steps step))
-          (path-update value step item)
-          (list (quote do) (list (quote let) (quote base) root)
-                (path-update (rebased-read value root) step item)))))
+  (if (bound-root? root value step)
+      (list (quote do) (list (quote let) (quote base) root)
+            (path-update (rebased-read value root) step item))
+      (path-update value step item)))
+
+(def bound-root?
+  (fn (root value path)
+    (if (symbol? root)
+        false
+        (if (value-eq root value) (bool-not (empty? (keyword-steps path))) true))))
 
 (def read-root
   (fn (form)
