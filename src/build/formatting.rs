@@ -84,8 +84,9 @@ impl Rustfmt {
         let mut child = Self::spawn()?;
         let output = PipeReader::start(child.stdout.take().expect("standard output is piped"));
         let errors = PipeReader::start(child.stderr.take().expect("standard error is piped"));
-        Self::send(&mut child, source)?;
-        let formatted = self.read_within_limit(&mut child, output)?;
+        let formatted = Self::send(&mut child, source)
+            .and_then(|()| self.read_within_limit(output))
+            .inspect_err(|_| Self::stop(&mut child))?;
         let status = child.wait().map_err(FormattingError::Unavailable)?;
         if !status.success() {
             return Err(FormattingError::Failed(errors.read_message()));
@@ -111,18 +112,11 @@ impl Rustfmt {
             .map_err(|error| FormattingError::Failed(error.to_string()))
     }
 
-    fn read_within_limit(
-        &self,
-        child: &mut Child,
-        output: PipeReader,
-    ) -> Result<Vec<u8>, FormattingError> {
-        match output.read_within(self.time_limit) {
-            Some(bytes) => bytes.map_err(|error| FormattingError::Failed(error.to_string())),
-            None => {
-                Self::stop(child);
-                Err(FormattingError::TimedOut(self.time_limit))
-            }
-        }
+    fn read_within_limit(&self, output: PipeReader) -> Result<Vec<u8>, FormattingError> {
+        output
+            .read_within(self.time_limit)
+            .ok_or(FormattingError::TimedOut(self.time_limit))?
+            .map_err(|error| FormattingError::Failed(error.to_string()))
     }
 
     fn stop(child: &mut Child) {
