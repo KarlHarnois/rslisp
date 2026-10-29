@@ -32,7 +32,7 @@ use std::collections::HashMap;
 use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostics;
 use crate::types::{
-    CopyRules, InferredCopies, PendingModeCheck, Pipelines, TypedExprKind, TypedProgram,
+    CopyRules, InferredCopies, PendingModeCheck, Pipelines, TypedExprKind, TypedLeaf, TypedProgram,
 };
 use borrowing_lambdas::BorrowingLambdas;
 use checks::OwnershipNeeds;
@@ -40,7 +40,7 @@ use escaping_lambdas::EscapingLambdas;
 use functions::{FunctionTable, ParamMode};
 use kinds::{ClosureKinds, KindReport, KindSources};
 use modes::ModeInference;
-use moves::MoveChecker;
+use moves::{MoveChecker, MoveReport};
 use names::ChangingFunctionNames;
 use problems::OwnershipProblems;
 use returned::ReturnedBorrows;
@@ -124,16 +124,18 @@ impl OwnershipChecker {
             .iter()
             .flat_map(|module| &module.definitions)
         {
-            let checker = Self::move_checker(program, pipelines, &stored_definitions);
             let report = match &definition.value.kind {
                 TypedExprKind::Fn(lambda) => {
                     ReturnedBorrows::new(program)
                         .check(lambda)
                         .into_iter()
                         .for_each(|diagnostic| diagnostics.push(diagnostic));
-                    checker.check(definition.binding, lambda)
+                    Self::move_checker(program, pipelines, &stored_definitions)
+                        .check(definition.binding, lambda)
                 }
-                _ => checker.check_value(&definition.value),
+                TypedExprKind::Leaf(TypedLeaf::Rust(_)) => MoveReport::default(),
+                _ => Self::move_checker(program, pipelines, &stored_definitions)
+                    .check_value(&definition.value),
             };
             inferred_copies.extend(report.inferred_copies);
             report

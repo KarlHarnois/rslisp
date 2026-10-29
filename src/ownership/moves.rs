@@ -29,6 +29,7 @@ struct MovedUse<'u> {
     site: &'u MoveSite,
 }
 
+#[derive(Default)]
 pub struct MoveReport {
     pub diagnostics: Vec<Diagnostic>,
     pub inferred_copies: InferredCopies,
