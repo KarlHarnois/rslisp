@@ -26,6 +26,19 @@ const MILLION_LINES: &str = "(defn main ()\n  (for-each (range 0 1000000) (fn (i
 const STRUCTS: &str = "(defstruct person :name string :age i64)\n(defstruct ticket :id u32)\n(derive ticket debug)\n\n(defn main () (do))\n";
 const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::ops::Add\" i64 (with i64 person))\n\n(type matches (where ((a (same person))) (fn (a) bool)))\n(defn matches (x) true)\n\n(defn main () (println (matches 1)))\n";
 
+const UNBOUND_NAMES_PAST_THE_CAP: usize = 25;
+
+struct UnboundNames;
+
+impl UnboundNames {
+    fn program(count: usize) -> String {
+        let body: String = (0..count)
+            .map(|index| format!("    missing{index}\n"))
+            .collect();
+        format!("(defn main ()\n  (do\n{body}    1))\n")
+    }
+}
+
 struct Sandbox {
     directory: PathBuf,
 }
@@ -244,6 +257,14 @@ fn emit_qualifies_a_struct_named_in_a_bound() {
 fn check_reports_errors_without_terminal_styling() {
     let sandbox = Sandbox::new("check_errors").with_file("unbound.rslisp", UNBOUND_NAME);
     let check = sandbox.compiler(&["check", "unbound.rslisp"]);
+    insta::assert_snapshot!(check.assert_exit_code(1).stderr());
+}
+
+#[test]
+fn check_caps_the_printed_diagnostics_and_counts_the_rest() {
+    let program = UnboundNames::program(UNBOUND_NAMES_PAST_THE_CAP);
+    let sandbox = Sandbox::new("check_capped").with_file("flood.rslisp", &program);
+    let check = sandbox.compiler(&["check", "flood.rslisp"]);
     insta::assert_snapshot!(check.assert_exit_code(1).stderr());
 }
 

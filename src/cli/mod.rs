@@ -1,5 +1,6 @@
 mod build;
 mod build_directory;
+mod capped_report;
 mod check;
 mod emit;
 mod exit_status;

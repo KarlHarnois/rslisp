@@ -1,0 +1,125 @@
+---
+source: tests/cli.rs
+expression: check.assert_exit_code(1).stderr()
+---
+error[L0201]: cannot find `missing0` in this scope
+ --> flood.rslisp:3:5
+  |
+3 |     missing0
+  |     ^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing1` in this scope
+ --> flood.rslisp:4:5
+  |
+4 |     missing1
+  |     ^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing2` in this scope
+ --> flood.rslisp:5:5
+  |
+5 |     missing2
+  |     ^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing3` in this scope
+ --> flood.rslisp:6:5
+  |
+6 |     missing3
+  |     ^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing4` in this scope
+ --> flood.rslisp:7:5
+  |
+7 |     missing4
+  |     ^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing5` in this scope
+ --> flood.rslisp:8:5
+  |
+8 |     missing5
+  |     ^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing6` in this scope
+ --> flood.rslisp:9:5
+  |
+9 |     missing6
+  |     ^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing7` in this scope
+  --> flood.rslisp:10:5
+   |
+10 |     missing7
+   |     ^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing8` in this scope
+  --> flood.rslisp:11:5
+   |
+11 |     missing8
+   |     ^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing9` in this scope
+  --> flood.rslisp:12:5
+   |
+12 |     missing9
+   |     ^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing10` in this scope
+  --> flood.rslisp:13:5
+   |
+13 |     missing10
+   |     ^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing11` in this scope
+  --> flood.rslisp:14:5
+   |
+14 |     missing11
+   |     ^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing12` in this scope
+  --> flood.rslisp:15:5
+   |
+15 |     missing12
+   |     ^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing13` in this scope
+  --> flood.rslisp:16:5
+   |
+16 |     missing13
+   |     ^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing14` in this scope
+  --> flood.rslisp:17:5
+   |
+17 |     missing14
+   |     ^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing15` in this scope
+  --> flood.rslisp:18:5
+   |
+18 |     missing15
+   |     ^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing16` in this scope
+  --> flood.rslisp:19:5
+   |
+19 |     missing16
+   |     ^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing17` in this scope
+  --> flood.rslisp:20:5
+   |
+20 |     missing17
+   |     ^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing18` in this scope
+  --> flood.rslisp:21:5
+   |
+21 |     missing18
+   |     ^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing19` in this scope
+  --> flood.rslisp:22:5
+   |
+22 |     missing19
+   |     ^^^^^^^^^ not found in this scope
+
+note: 5 more diagnostics were not shown
