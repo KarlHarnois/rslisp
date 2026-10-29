@@ -2511,7 +2511,7 @@ impl TypeChecker {
         item: &Expr,
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
-        let element = self.assoc_element(keys.len(), &value)?;
+        let element = self.assoc_element(keys.len(), &value.ty, value.span)?;
         let typed_keys = self.assoc_keys(keys)?;
         let item = self.infer(item)?;
         self.expect(&element, &item.ty, item.span, MismatchContext::Plain)?;
@@ -2759,20 +2759,49 @@ impl TypeChecker {
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
         let value = self.infer(value)?;
+        let collection = self.set_at_collection(&value, keys.len())?;
+        if collection.is_map() {
+            return self.infer_set_at_map(value, collection, keys, item, span);
+        }
+        self.infer_set_at_vector(value, collection, keys, item, span)
+    }
+
+    fn set_at_collection(
+        &mut self,
+        value: &TypedExpr,
+        depth: usize,
+    ) -> Result<Collection, Diagnostic> {
         let resolved = self.unifier.resolve(&value.ty);
-        let Some(collection) = Collection::of_referent(&resolved, &self.rust_types) else {
-            return Err(TypeProblems::mismatch(
+        let collection = match resolved {
+            Type::Var(_) => self.unknown_vector(depth),
+            _ => Collection::of_referent(&resolved, &self.rust_types),
+        };
+        collection.ok_or_else(|| {
+            TypeProblems::mismatch(
                 "a collection",
                 &self.display().show(&resolved),
                 value.span,
                 MismatchContext::Plain,
-            ));
-        };
-        if collection.is_map() {
-            return self.infer_set_at_map(value, collection, keys, item, span);
-        }
+            )
+        })
+    }
+
+    fn unknown_vector(&mut self, depth: usize) -> Option<Collection> {
+        let element = self.unifier.fresh();
+        let vector = self.nested_vector_type(depth, &element);
+        Collection::of(&vector, &self.rust_types)
+    }
+
+    fn infer_set_at_vector(
+        &mut self,
+        value: TypedExpr,
+        collection: Collection,
+        keys: &[Expr],
+        item: &Expr,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
         let depth = keys.len();
-        let item_type = self.assoc_element(depth, &value)?;
+        let item_type = self.assoc_element(depth, collection.ty(), value.span)?;
         let mut parameters = vec![Type::mutable(collection.ty().clone())];
         parameters.extend((0..depth).map(|_| Type::Primitive(PrimitiveType::Usize)));
         parameters.push(item_type);
@@ -2899,11 +2928,11 @@ impl TypeChecker {
         Type::Named(pair, vec![first, second])
     }
 
-    fn assoc_element(&mut self, depth: usize, value: &TypedExpr) -> Result<Type, Diagnostic> {
+    fn assoc_element(&mut self, depth: usize, base: &Type, span: Span) -> Result<Type, Diagnostic> {
         let element = self.unifier.fresh();
         let expected = self.nested_vector_type(depth, &element);
-        self.expect(&expected, &value.ty, value.span, MismatchContext::Plain)
-            .map_err(|error| self.point_struct_base_to_fields(error, &value.ty))?;
+        self.expect(&expected, base, span, MismatchContext::Plain)
+            .map_err(|error| self.point_struct_base_to_fields(error, base))?;
         Ok(element)
     }
 

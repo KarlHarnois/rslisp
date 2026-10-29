@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/set_vector_through_inferred_parameter.rslisp
+---
+Toyota Prius

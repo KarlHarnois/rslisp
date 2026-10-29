@@ -1,0 +1,8 @@
+(type reset-first! (fn ((mut (vec i64))) unit))
+(defn reset-first! (cars)
+  (set! (at cars 0) 7))
+
+(defn main ()
+  (let cars (vec 1 2))
+  (reset-first! (mut cars))
+  (println (at cars 0)))

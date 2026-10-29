@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/set_copy_vector_through_mut_parameter.rslisp
+---
+7
