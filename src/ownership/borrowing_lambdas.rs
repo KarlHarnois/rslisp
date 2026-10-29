@@ -1,10 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::core::BindingId;
-use crate::types::{
-    Type, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind,
-    TypedLambda, TypedProgram,
-};
+use crate::types::{Type, TypedBinder, TypedExpr, TypedExprKind, TypedLambda, TypedProgram};
 
 pub struct BorrowingLambdas<'p> {
     program: &'p TypedProgram,
@@ -21,32 +18,9 @@ impl<'p> BorrowingLambdas<'p> {
             .modules
             .iter()
             .flat_map(|module| &module.definitions)
-            .for_each(|definition| found.expr(&definition.value));
+            .flat_map(|definition| definition.value.let_bindings())
+            .for_each(|(binder, value)| found.register(binder, value));
         found.borrowed_parameters
-    }
-
-    fn expr(&mut self, expr: &TypedExpr) {
-        match &expr.kind {
-            TypedExprKind::Fn(lambda) => self.block(&lambda.body),
-            TypedExprKind::Control(TypedControl::Block(block)) => self.block(block),
-            TypedExprKind::Control(TypedControl::Match(matched)) => {
-                self.expr(&matched.value);
-                matched.arms.iter().for_each(|arm| self.block(&arm.body));
-            }
-            _ => expr
-                .children()
-                .into_iter()
-                .for_each(|child| self.expr(child)),
-        }
-    }
-
-    fn block(&mut self, block: &TypedBlock) {
-        for item in &block.items {
-            if let TypedBodyItem::Let(binder, value) = item {
-                self.register(binder, value);
-            }
-            self.expr(item.expr());
-        }
     }
 
     fn register(&mut self, binder: &TypedBinder, value: &TypedExpr) {
