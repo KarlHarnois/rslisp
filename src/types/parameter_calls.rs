@@ -37,11 +37,12 @@ impl ParameterCalls {
     fn record_module(&mut self, module: &CoreModule, bindings: &BindingArena) {
         let functions = Self::function_names(module, bindings);
         for (function, lambda) in Self::functions(module) {
+            let mut first_calls = Self::first_calls(lambda);
             for (position, param) in lambda.params.iter().enumerate() {
-                let parameter: Rc<str> = bindings.get(param.binding).name().into();
-                let Some(site) = Self::first_call(lambda.body.expressions(), param.binding) else {
+                let Some(site) = first_calls.remove(&param.binding) else {
                     continue;
                 };
+                let parameter: Rc<str> = bindings.get(param.binding).name().into();
                 let call = ParameterCall {
                     span: site.span,
                     arguments: site.arguments,
@@ -69,29 +70,25 @@ impl ParameterCalls {
         })
     }
 
-    fn first_call<'a>(
-        mut expressions: impl Iterator<Item = &'a Expr>,
-        parameter: BindingId,
-    ) -> Option<CallSite> {
-        expressions.find_map(|expr| Self::call_within(expr, parameter))
-    }
-
-    fn call_within(expr: &Expr, parameter: BindingId) -> Option<CallSite> {
-        match Self::arguments_of_call(expr, parameter) {
-            Some(arguments) => Some(CallSite {
-                span: expr.span(),
-                arguments,
-            }),
-            None => Self::first_call(expr.children().into_iter(), parameter),
+    fn first_calls(lambda: &Lambda) -> HashMap<BindingId, CallSite> {
+        let mut first_calls = HashMap::new();
+        for expr in lambda.body.expressions() {
+            Self::record_first_calls(expr, &mut first_calls);
         }
+        first_calls
     }
 
-    fn arguments_of_call(expr: &Expr, parameter: BindingId) -> Option<usize> {
-        match expr.kind() {
-            ExprKind::Call(callee, arguments) if matches!(callee.kind(), ExprKind::Leaf(Leaf::Var(binding)) if *binding == parameter) => {
-                Some(arguments.len())
-            }
-            _ => None,
+    fn record_first_calls(expr: &Expr, first_calls: &mut HashMap<BindingId, CallSite>) {
+        if let ExprKind::Call(callee, arguments) = expr.kind()
+            && let ExprKind::Leaf(Leaf::Var(binding)) = callee.kind()
+        {
+            first_calls.entry(*binding).or_insert(CallSite {
+                span: expr.span(),
+                arguments: arguments.len(),
+            });
+        }
+        for child in expr.children() {
+            Self::record_first_calls(child, first_calls);
         }
     }
 }
