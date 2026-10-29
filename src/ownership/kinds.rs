@@ -218,9 +218,15 @@ impl<'a> ClosureKinds<'a> {
         let expressions: Vec<&TypedExpr> = modules
             .iter()
             .flat_map(|module| &module.definitions)
+            .filter(|definition| Self::takes_function(&definition.value.ty))
             .flat_map(|definition| Subtree::of(&definition.value))
             .collect();
         self.alias_origins = LetAliases::in_expressions(&expressions).origins();
+    }
+
+    fn takes_function(ty: &Type) -> bool {
+        matches!(ty, Type::Function(_, parameters, _)
+            if parameters.iter().any(|parameter| matches!(parameter, Type::Function(..))))
     }
 
     fn build_pass_edges(&mut self, modules: &[TypedModule]) {
