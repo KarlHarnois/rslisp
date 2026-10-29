@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::core::BindingId;
 use crate::types::{TypedDefinition, TypedExprKind, TypedLeaf, TypedProgram};
@@ -10,11 +10,15 @@ pub struct StoredDefinitions {
 
 impl StoredDefinitions {
     pub fn of(program: &TypedProgram) -> Self {
-        let bindings = program
+        let definitions: HashMap<BindingId, &TypedDefinition> = program
             .modules
             .iter()
             .flat_map(|module| &module.definitions)
-            .filter(|definition| Self::stores_value(definition))
+            .map(|definition| (definition.binding, definition))
+            .collect();
+        let bindings = definitions
+            .values()
+            .filter(|definition| Self::stores_value(definition, &definitions))
             .map(|definition| definition.binding)
             .collect();
         Self { bindings }
@@ -24,10 +28,16 @@ impl StoredDefinitions {
         self.bindings.contains(&binding)
     }
 
-    fn stores_value(definition: &TypedDefinition) -> bool {
-        !matches!(
-            definition.value.kind,
-            TypedExprKind::Fn(_) | TypedExprKind::Leaf(TypedLeaf::Rust(_))
-        )
+    fn stores_value(
+        definition: &TypedDefinition,
+        definitions: &HashMap<BindingId, &TypedDefinition>,
+    ) -> bool {
+        match &definition.value.kind {
+            TypedExprKind::Fn(_) | TypedExprKind::Leaf(TypedLeaf::Rust(_)) => false,
+            TypedExprKind::Leaf(TypedLeaf::Global(named)) => definitions
+                .get(named)
+                .is_none_or(|named| Self::stores_value(named, definitions)),
+            _ => true,
+        }
     }
 }
