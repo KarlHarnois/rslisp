@@ -1,4 +1,5 @@
 use super::ty::Type;
+use crate::core::PrimitiveType;
 use crate::reader::NumberValue;
 
 pub struct LiteralFit;
@@ -16,11 +17,20 @@ impl LiteralFit {
             return false;
         };
         match value {
-            NumberValue::Float(float) => primitive.is_float() && float.is_finite(),
+            NumberValue::Float(float) => {
+                primitive.is_float() && Self::is_finite_as(*float, *primitive)
+            }
             NumberValue::Integer(_) if primitive.is_float() => true,
             NumberValue::Integer(integer) => primitive
                 .integer_range()
                 .is_some_and(|(minimum, maximum)| minimum <= *integer && *integer <= maximum),
+        }
+    }
+
+    fn is_finite_as(float: f64, primitive: PrimitiveType) -> bool {
+        match primitive {
+            PrimitiveType::F32 => (float as f32).is_finite(),
+            _ => float.is_finite(),
         }
     }
 }
