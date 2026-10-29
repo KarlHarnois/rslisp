@@ -74,8 +74,7 @@ impl<'a> OwnershipNeeds<'a> {
     }
 
     fn needs_ownership(&self, value: &TypedExpr) -> Diagnostic {
-        let borrowed = value.ty.clone().without_reference();
-        if self.pipelines.is_pipeline(&borrowed) {
+        if self.pipelines.is_pipeline(value.ty.referent()) {
             return OwnershipProblems::needs_pipeline_ownership(value.span);
         }
         OwnershipProblems::needs_ownership(value.span)
