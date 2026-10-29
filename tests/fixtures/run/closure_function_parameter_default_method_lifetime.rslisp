@@ -1,0 +1,15 @@
+(defstruct car :make str :model str)
+
+(defstruct depot :size u16)
+
+(trait showroom
+  (longer-make (fn ((ref str) (ref str) (ref self)) (ref str))
+    (let pick (fn (build) (:make (build))))
+    (pick (fn () (->car :make (if (> (len argument-0) (len argument-1)) argument-0 argument-1) :model "Leaf")))))
+
+(impl showroom depot)
+
+(defn main ()
+  (let lot (->depot 2024))
+  (println (longer-make "Nissan" "Mitsubishi" lot))
+  (println (:size lot)))
