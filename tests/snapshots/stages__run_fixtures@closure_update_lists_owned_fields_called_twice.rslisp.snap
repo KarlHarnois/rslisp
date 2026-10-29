@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/closure_update_lists_owned_fields_called_twice.rslisp
+---
+xx

@@ -20,6 +20,7 @@ mod slices;
 mod slots;
 mod stored;
 mod subtree;
+mod update_bases;
 mod usage;
 mod values;
 

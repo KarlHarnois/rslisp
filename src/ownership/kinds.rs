@@ -7,7 +7,8 @@ use super::definitions::LocalDefinitions;
 use super::parameter_uses::ParameterUses;
 use super::problems::OwnershipProblems;
 use super::subtree::Subtree;
-use crate::core::{BindingArena, BindingId, ReferenceKind};
+use super::update_bases::UpdateBases;
+use crate::core::{BindingArena, BindingId, FieldLabel, ReferenceKind};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
@@ -114,6 +115,7 @@ pub struct KindSources<'a> {
 
 pub struct ClosureKinds<'a> {
     copy: CopyRules<'a>,
+    structs: &'a crate::types::StructTable,
     bindings: &'a BindingArena,
     template_borrows: &'a TemplateBorrows,
     parameter_kinds: HashMap<BindingId, ClosureKind>,
@@ -202,6 +204,7 @@ impl<'a> ClosureKinds<'a> {
                 sources.structs,
                 sources.enums,
             ),
+            structs: sources.structs,
             bindings: sources.bindings,
             template_borrows: sources.template_borrows,
             parameter_kinds: HashMap::new(),
@@ -438,7 +441,7 @@ impl<'a> ClosureKinds<'a> {
                 self.scan_written(expr, kind, own)
             }
             TypedExprKind::TraitObject(value, _) => self.scan_expression(value, own, Usage::Move),
-            _ => self.scan_value(kind, own),
+            _ => self.scan_value(expr, kind, own),
         }
     }
 
@@ -458,9 +461,14 @@ impl<'a> ClosureKinds<'a> {
         }
     }
 
-    fn scan_value(&mut self, kind: &TypedExprKind, own: &HashSet<BindingId>) -> CaptureReport {
+    fn scan_value(
+        &mut self,
+        expr: &TypedExpr,
+        kind: &TypedExprKind,
+        own: &HashSet<BindingId>,
+    ) -> CaptureReport {
         match kind {
-            TypedExprKind::Struct(structure) => self.scan_structure(structure, own),
+            TypedExprKind::Struct(structure) => self.scan_structure(expr, structure, own),
             TypedExprKind::Variant(_, arguments) => {
                 let values: Vec<&TypedExpr> = arguments.iter().collect();
                 self.scan_values(&values, own)
@@ -494,6 +502,7 @@ impl<'a> ClosureKinds<'a> {
 
     fn scan_structure(
         &mut self,
+        expr: &TypedExpr,
         structure: &TypedStructExpr,
         own: &HashSet<BindingId>,
     ) -> CaptureReport {
@@ -503,11 +512,42 @@ impl<'a> ClosureKinds<'a> {
                 self.scan_values(&values, own)
             }
             TypedStructExpr::Update(_, base, fields) => {
-                let values: Vec<&TypedExpr> = fields.iter().map(|(_, value)| value).collect();
-                self.scan_update(base, &values, own)
+                self.scan_struct_update(expr, base, fields, own)
             }
             TypedStructExpr::Field(value, _) => self.scan_expression(value, own, Usage::Borrow),
         }
+    }
+
+    fn scan_struct_update(
+        &mut self,
+        update: &TypedExpr,
+        base: &TypedExpr,
+        fields: &[(FieldLabel, TypedExpr)],
+        own: &HashSet<BindingId>,
+    ) -> CaptureReport {
+        let mut report = match base.field_place() {
+            Some(place) => self.record_unlisted_moves(&place, base.span, update, fields, own),
+            None => self.scan_expression(base, own, Usage::Move),
+        };
+        let values: Vec<&TypedExpr> = fields.iter().map(|(_, value)| value).collect();
+        report.merge(self.scan_values(&values, own));
+        report
+    }
+
+    fn record_unlisted_moves(
+        &self,
+        place: &FieldPlace,
+        span: Span,
+        update: &TypedExpr,
+        fields: &[(FieldLabel, TypedExpr)],
+        own: &HashSet<BindingId>,
+    ) -> CaptureReport {
+        let bases = UpdateBases::new(self.structs, &self.copy);
+        let moved = bases.moved_fields(&bases.unlisted_fields(update, fields));
+        if moved.is_empty() {
+            return CaptureReport::default();
+        }
+        self.record_field_move(place, span, own)
     }
 
     fn scan_update(
