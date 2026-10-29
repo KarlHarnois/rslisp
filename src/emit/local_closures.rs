@@ -114,12 +114,12 @@ impl<'a> LocalClosures<'a> {
             .iter()
             .map(|param| Self::function_borrow(param, borrowed))
             .collect();
-        let borrowed = lambda
+        let parameter_borrows = lambda
             .params
             .iter()
             .zip(&borrows)
             .filter_map(|(param, borrow)| borrow.map(|borrow| (param.binding, borrow)));
-        self.borrowed_parameters.extend(borrowed);
+        self.borrowed_parameters.extend(parameter_borrows);
         self.argument_borrows.insert(closure, borrows);
     }
 
