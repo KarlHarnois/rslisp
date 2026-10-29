@@ -694,7 +694,7 @@ impl TypeProblems {
             Label::new(span, format!("this `{struct_name}` is borrowed")),
         )
         .with_help(format!(
-            "bind an owned `{struct_name}` with `let` first, such as a `clone` of the borrowed value, and update that"
+            "bind an owned `{struct_name}` first, as in `(let owned (clone base))`, and update `owned`"
         ))
     }
 
