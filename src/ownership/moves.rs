@@ -151,17 +151,26 @@ impl<'a> MoveChecker<'a> {
     fn structure(&mut self, expr: &TypedExpr, structure: &TypedStructExpr) {
         match structure {
             TypedStructExpr::Field(owner, _) => self.field_read(expr, owner),
-            TypedStructExpr::New(_, fields) => fields
-                .iter()
-                .for_each(|(_, value)| self.expr(value, Usage::Move)),
-            TypedStructExpr::Update(_, base, fields) => {
-                self.refill(base, fields);
-                self.update_base(base);
-                fields
-                    .iter()
-                    .for_each(|(_, value)| self.expr(value, Usage::Move));
-            }
+            TypedStructExpr::New(_, fields) => self.field_values(fields),
+            TypedStructExpr::Update(_, base, fields) => self.update(base, fields),
         }
+    }
+
+    fn update(&mut self, base: &TypedExpr, fields: &[(FieldLabel, TypedExpr)]) {
+        if base.is_place() {
+            self.field_values(fields);
+            self.refill(base, fields);
+            self.update_base(base);
+        } else {
+            self.update_base(base);
+            self.field_values(fields);
+        }
+    }
+
+    fn field_values(&mut self, fields: &[(FieldLabel, TypedExpr)]) {
+        fields
+            .iter()
+            .for_each(|(_, value)| self.expr(value, Usage::Move));
     }
 
     fn field_read(&mut self, read: &TypedExpr, owner: &TypedExpr) {
