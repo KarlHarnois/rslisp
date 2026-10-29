@@ -1,4 +1,3 @@
-use std::fs;
 use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 
@@ -32,7 +31,7 @@ impl Terminal {
     }
 
     pub fn load(&mut self, path: &Path) -> Result<SourceId, ExitStatus> {
-        match fs::read_to_string(path) {
+        match ModuleSources::read_file(path) {
             Ok(text) => Ok(self.sources.add(path.display().to_string(), text)),
             Err(error) => Err(Self::report_unreadable(path, &error)),
         }

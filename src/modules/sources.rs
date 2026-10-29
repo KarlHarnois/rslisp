@@ -1,5 +1,6 @@
 use std::fs;
-use std::path::PathBuf;
+use std::io;
+use std::path::{Path, PathBuf};
 
 use crate::core::ModulePath;
 use crate::language::Language;
@@ -25,6 +26,7 @@ impl ModuleSources {
     pub const CODE: &str = "code";
     pub const PRELUDE: &str = "prelude";
     const PRELUDE_DIRECTORY: &str = "prelude/";
+    const BYTE_ORDER_MARK: char = '\u{feff}';
     const PRELUDE_FILES: [(&str, &str); 19] = [
         ("prelude", include_str!("../../prelude/prelude.rslisp")),
         (
@@ -82,6 +84,14 @@ impl ModuleSources {
         path.as_str() == Self::PRELUDE || path.as_str().starts_with(Self::PRELUDE_DIRECTORY)
     }
 
+    pub fn read_file(path: &Path) -> io::Result<String> {
+        let text = fs::read_to_string(path)?;
+        Ok(match text.strip_prefix(Self::BYTE_ORDER_MARK) {
+            Some(unmarked) => unmarked.to_string(),
+            None => text,
+        })
+    }
+
     pub fn find(&self, path: &ModulePath) -> Option<ModuleSource> {
         self.builtin(path)
             .or_else(|| self.prelude_file(path))
@@ -108,7 +118,7 @@ impl ModuleSources {
 
     fn user_file(&self, path: &ModulePath) -> Option<ModuleSource> {
         let file_name = Self::file_name(path);
-        let text = fs::read_to_string(self.root.join(&file_name)).ok()?;
+        let text = Self::read_file(&self.root.join(&file_name)).ok()?;
         Some(ModuleSource::Text {
             name: self.display_root.join(&file_name).display().to_string(),
             text,

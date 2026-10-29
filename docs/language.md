@@ -1,6 +1,6 @@
 # The rslisp language
 
-`rslisp` is a placeholder name. Source files use the `.rslisp` extension.
+`rslisp` is a placeholder name. Source files use the `.rslisp` extension. A source file may start with a UTF-8 byte-order mark, which the compiler skips, as rustc does.
 
 The language is a Lisp that compiles to Rust. Its design follows four principles:
 
