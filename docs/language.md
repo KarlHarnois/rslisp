@@ -457,11 +457,16 @@ The emitted Rust is formatted by `rustfmt` when `rslisp emit` or `rslisp build` 
 | `add-item!` | `add_item` |
 | `point->string` | `point_to_string` |
 | constant `admin?` | `IS_ADMIN` |
-| other punctuation | spelled out, so `+` becomes `plus` |
+| other punctuation | spelled out, so `+` becomes `plus` and `\` becomes `backslash` |
+| a name made only of `-` and `_` | each character spelled out, so `-` becomes `minus` and `_` becomes `underscore` |
+| a local named `_` | `_`, Rust's wildcard |
+| a character that is not a letter or a digit | its code point, so `☃` becomes `u2603` |
 | a Rust keyword | a raw identifier, so `type` becomes `r#type` |
 | a program type or trait that hides a Rust prelude name | suffixed with `2`, so `sized` becomes `Sized2` |
 | a local whose name a binding still in scope uses | numbered, so `n` becomes `n_2` |
 | an item a macro introduced whose name a written item takes | the next free number, so the positional function of `car` becomes `make_car_2` beside a program's own `make-car`, and a struct or enum takes the number with no underscore, as `Point2` |
+
+Every symbol the reader accepts that names an item becomes a valid Rust identifier. Two items the program wrote that become one Rust name in one module are an error at the second item, so `a-b` beside `a_b` is reported, never left to rustc.
 
 A program type or trait that mangles to a name Rust's 2021 prelude brings into
 scope takes the suffix `2`, so the emitted name never hides `Sized`, `Clone`,

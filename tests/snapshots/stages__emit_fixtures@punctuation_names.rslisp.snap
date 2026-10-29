@@ -1,0 +1,36 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/punctuation_names.rslisp
+---
+fn minus(a: i64, b: i64) -> i64 {
+    a + b
+}
+
+const UNDERSCORE: i64 = 1;
+
+fn backslash() -> i64 {
+    2
+}
+
+fn backtick() -> i64 {
+    3
+}
+
+fn comma() -> i64 {
+    4
+}
+
+fn add_one(n: i64) -> i64 {
+    n + 1
+}
+
+const MAX_SIZE: i64 = 10;
+
+fn main() {
+    let a_b: i64 = minus(UNDERSCORE, backslash());
+    let a_b_2: i64 = backtick() + comma();
+    println!("{}", add_one(MAX_SIZE));
+    println!("{}", a_b);
+    println!("{}", a_b_2)
+}

@@ -1,0 +1,5 @@
+(defn a-b () 1)
+(defn a_b () 2)
+
+(defn main ()
+  (println (+ (a-b) (a_b))))
