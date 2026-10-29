@@ -4,6 +4,9 @@ use std::os::unix::fs::PermissionsExt;
 use std::os::unix::process::ExitStatusExt;
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Output, Stdio};
+use std::time::{Duration, Instant};
+
+use rslisp::build::EmittedFormatting;
 
 const GREETING: &str = "(defn main ()\n  (println \"hello from the sandbox\"))\n";
 const PRINTS_A: &str = "(defn main () (println \"A\"))\n";
@@ -81,6 +84,19 @@ impl Sandbox {
     fn compiler_with_path(&self, path_directory: &str, arguments: &[&str]) -> Outcome {
         let mut command = self.command(Path::new(Self::COMPILER), arguments);
         command.env("PATH", self.directory.join(path_directory));
+        Outcome::of(&mut command)
+    }
+
+    fn compiler_with_rustfmt_time_limit(
+        &self,
+        time_limit: Duration,
+        arguments: &[&str],
+    ) -> Outcome {
+        let mut command = self.command(Path::new(Self::COMPILER), arguments);
+        command.env(
+            EmittedFormatting::time_limit_variable(),
+            time_limit.as_millis().to_string(),
+        );
         Outcome::of(&mut command)
     }
 
@@ -371,6 +387,40 @@ fn emit_with_a_failing_rustfmt_prints_one_note_and_writes_unformatted_rust() {
         emit.stderr().contains("rustfmt failed"),
         "stderr: {}",
         emit.stderr()
+    );
+}
+
+struct NestedIfProgram;
+
+impl NestedIfProgram {
+    const DEPTH: usize = 25;
+
+    fn source() -> String {
+        let opening = "(if true ".repeat(Self::DEPTH);
+        let closing = " 0)".repeat(Self::DEPTH);
+        format!("(defn main ()\n  (println {opening}1{closing}))\n")
+    }
+}
+
+#[test]
+fn emit_stops_rustfmt_past_its_time_limit_and_writes_unformatted_rust() {
+    let time_limit = Duration::from_millis(500);
+    let sandbox = Sandbox::new("emit_rustfmt_time_limit")
+        .with_file("nested.rslisp", &NestedIfProgram::source());
+    let started = Instant::now();
+    let emit = sandbox.compiler_with_rustfmt_time_limit(time_limit, &["emit", "nested.rslisp"]);
+    assert!(started.elapsed() < time_limit + Duration::from_secs(5));
+    let emit = emit.assert_exit_code(0);
+    assert_eq!(emit.stderr().matches("note:").count(), 1);
+    assert!(
+        emit.stderr()
+            .contains("rustfmt did not finish within 500ms"),
+        "stderr: {}",
+        emit.stderr()
+    );
+    assert_eq!(
+        emit.stdout().matches("if true").count(),
+        NestedIfProgram::DEPTH
     );
 }
 

@@ -448,7 +448,7 @@ The associated type is a type constructor of one argument, the implementor: `(pa
 
 ### Formatting
 
-The emitted Rust is formatted by `rustfmt` when `rslisp emit` or `rslisp build` writes it, not by a compiler stage. `rustfmt` reads the nearest `rustfmt.toml`, so the program's directory chooses the layout. If `rustfmt` is missing or fails, the command prints one note and writes the unformatted Rust.
+The emitted Rust is formatted by `rustfmt` when `rslisp emit` or `rslisp build` writes it, not by a compiler stage. `rustfmt` reads the nearest `rustfmt.toml`, so the program's directory chooses the layout. If `rustfmt` is missing, fails, or runs past `EmittedFormatting::TIME_LIMIT`, the command stops it, prints one note and writes the unformatted Rust.
 
 ## Names in Rust
 
