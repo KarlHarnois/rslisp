@@ -24,6 +24,7 @@ fn reset_year(years: &mut Vec<i64>, year: i64) {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let mut cars = vec![make_car("Nissan Leaf".to_string(), 2011)];
     replace_first(
         &mut cars,
@@ -33,4 +34,21 @@ fn main() {
     let mut years: Vec<i64> = vec![2011_i64, 1997_i64];
     reset_year(&mut years, 2024);
     println!("{} {}", cars[0].make, years[0])
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }
