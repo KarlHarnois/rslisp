@@ -2578,9 +2578,10 @@ impl TypeChecker {
                 value.span,
             ));
         };
-        if let Some(collection) = Collection::of(&collection_type, &self.rust_types)
-            && collection.is_map()
-        {
+        if let Some(collection) = Collection::of(&collection_type, &self.rust_types) {
+            if collection.kind() == CollectionKind::Vector {
+                return self.infer_iter_slice(value, span);
+            }
             self.check_map_key(&collection, value.span);
         }
         let result = self.iterator_type(item);

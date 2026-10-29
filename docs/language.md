@@ -506,7 +506,7 @@ At each of them, the compiler adds one borrow, removes borrows, or copies a Copy
 
 - The rule applies to the outer reference only. `(vec (ref person))` never becomes `(vec person)`.
 - A `(ref (vec a))` value meets a `(ref (slice a))` type as Rust's deref coercion does. The compiler writes no new syntax, and a written `(ref (vec a))` stays `&Vec<T>`.
-- An inferred parameter of a vector type takes the slice when no use needs the vector. A use that takes a written `(ref (vec a))`, makes a `mut` borrow, owns the value or uses it in any other position keeps the vector. An inferred `string` parameter takes `str` when no use needs the owned string.
+- An inferred parameter of a vector type takes the slice when no use needs the vector. A use that takes a written `(ref (vec a))`, makes a `mut` borrow, owns the value or uses it in any other position keeps the vector. `iter` reads a vector through its slice, so `(for-each (iter cars) show)` lets `cars` take `(ref (slice car))`. An inferred `string` parameter takes `str` when no use needs the owned string.
 - In a generic slot, a borrowed Copy value of 16 bytes or less is copied. A larger value stays borrowed. Parameter modes use the same limit.
 - A written `ref`, `mut` or `deref` turns the rule off for that value. The compiler reports a mismatch as written.
 - A `mut` borrow always takes the original place, never a copy or a temporary.

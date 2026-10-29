@@ -1,0 +1,67 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/slice_parameters.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+    year: u16,
+    is_electric: bool,
+}
+
+fn make_car<'a>(make: &'a str, model: &'a str, year: u16, is_electric: bool) -> Car<'a> {
+    Car {
+        make,
+        model,
+        year,
+        is_electric,
+    }
+}
+
+fn size(items: &[Car<'_>]) -> usize {
+    items.len()
+}
+
+fn print_years(cars: &[Car<'_>]) {
+    cars.iter()
+        .for_each(|car: &Car<'_>| println!("{}", car.year))
+}
+
+fn years(cars: &[Car<'_>]) -> Vec<u16> {
+    cars.iter()
+        .map(|value: &Car<'_>| value.year)
+        .collect::<Vec<_>>()
+}
+
+fn second_year(cars: &[Car<'_>]) -> u16 {
+    cars[1].year
+}
+
+fn maybe_second_year(cars: &[Car<'_>]) -> Option<u16> {
+    cars.get(1).map(|value: &Car<'_>| value.year)
+}
+
+fn add_year(years_2: &mut Vec<i64>, year: i64) {
+    years_2.push(year)
+}
+
+fn main() {
+    let leaf = Car {
+        make: "Nissan",
+        model: "Leaf",
+        year: 2024,
+        is_electric: true,
+    };
+    let civic = make_car("Honda", "Civic", 2019, false);
+    let fleet = vec![leaf, civic];
+    println!("{}", size(&fleet));
+    print_years(&fleet);
+    println!("{}", years(&fleet).len());
+    println!("{}", second_year(&fleet));
+    println!("{}", maybe_second_year(&fleet).unwrap_or(0));
+    let mut model_years: Vec<i64> = vec![2019_i64];
+    add_year(&mut model_years, 2024);
+    println!("{}", model_years.len())
+}
