@@ -1,5 +1,6 @@
 mod associated;
 mod binding;
+mod borrowed_items;
 mod boxes;
 mod checker;
 mod collection;
