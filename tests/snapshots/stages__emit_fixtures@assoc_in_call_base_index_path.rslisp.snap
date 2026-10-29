@@ -9,28 +9,22 @@ struct Shelf {
     items: Vec<i64>,
 }
 
-fn make_shelf_2(label: String, items: Vec<i64>) -> Shelf {
+fn make_shelf(label: String, items: Vec<i64>) -> Shelf {
     Shelf { label, items }
 }
 
-fn make_shelf() -> Shelf {
-    make_shelf_2("top".to_string(), vec![1_i64, 2_i64, 3_i64])
+fn stock() -> Shelf {
+    make_shelf("top".to_string(), vec![1_i64, 2_i64, 3_i64])
 }
 
 fn main() {
     let items: Vec<i64> = {
-        let base = make_shelf();
+        let base = stock();
         {
             let mut value = base.items;
             value[1] = 9;
             value
         }
     };
-    println!(
-        "{} {} {} {}",
-        make_shelf().label,
-        items[0],
-        items[1],
-        items[2]
-    )
+    println!("{} {} {} {}", stock().label, items[0], items[1], items[2])
 }

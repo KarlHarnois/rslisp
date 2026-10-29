@@ -9,4 +9,4 @@ error[L0410]: cannot update a borrowed `badge`
 9 |   (let moved (assoc-in (:badge (at gs 0)) (:at :x) 4))
   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this `badge` is borrowed
   |
-  = help: bind an owned `badge` with `let` first, such as a `clone` of the borrowed value, and update that
+  = help: bind an owned `badge` first, as in `(let owned (clone base))`, and update `owned`
