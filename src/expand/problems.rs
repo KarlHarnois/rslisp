@@ -406,6 +406,24 @@ impl ExpandProblems {
         .with_help("check that every recursive macro has a case that stops")
     }
 
+    pub fn expansion_nests_too_deep(
+        span: Span,
+        limit: usize,
+        expansion: Option<&str>,
+    ) -> Diagnostic {
+        let diagnostic = Diagnostic::error(
+            DiagnosticCode::EXPANSION_NESTS_TOO_DEEP,
+            "this expression nests too deeply",
+            Label::new(span, format!("this expression sits inside {limit} others")),
+        )
+        .with_note(format!("expressions nest at most {limit} deep"));
+        match expansion {
+            Some(name) => diagnostic.with_note(format!("in this expansion of `{name}`")),
+            None => diagnostic,
+        }
+        .with_help("move the inner expressions into a function of their own")
+    }
+
     pub fn compile_time_cycle(name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::COMPILE_TIME_CYCLE,

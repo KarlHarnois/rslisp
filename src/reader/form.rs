@@ -19,6 +19,8 @@ pub enum FormKind {
 }
 
 impl Form {
+    pub const NESTING_LIMIT: usize = 1024;
+
     pub fn new(kind: FormKind, span: Span) -> Self {
         Self { kind, span }
     }

@@ -1,0 +1,14 @@
+(use code list number-gt number-sub)
+
+(def bury
+  (fn (form count)
+    (if (number-gt count 0)
+      (recur (list (quote do) form) (number-sub count 1))
+      form)))
+
+(def deep
+  (macro (form)
+    (bury 1 1100)))
+
+(defn main ()
+  (println (deep)))

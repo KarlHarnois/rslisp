@@ -62,6 +62,19 @@ impl ReadProblems {
         )
     }
 
+    pub fn list_too_deep(open: Span, limit: usize) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::LIST_TOO_DEEP,
+            "this list nests too deeply",
+            Label::new(
+                open,
+                format!("this `(` opens a list inside {limit} other lists"),
+            ),
+        )
+        .with_note(format!("lists nest at most {limit} deep"))
+        .with_help("move the inner forms into a function of their own")
+    }
+
     pub fn reserved_character(character: char, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::RESERVED_CHARACTER,
