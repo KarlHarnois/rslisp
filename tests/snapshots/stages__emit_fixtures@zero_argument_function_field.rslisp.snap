@@ -1,0 +1,78 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/zero_argument_function_field.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Factory<'a> {
+    make: fn() -> Car<'a>,
+    label: &'a str,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Line<'a> {
+    make: fn() -> Car<'a>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Dealer<'a> {
+    order: fn(bool) -> Car<'a>,
+}
+
+fn build_leaf() -> Car<'static> {
+    Car {
+        make: "Nissan",
+        model: "Leaf",
+    }
+}
+
+fn order_nissan(is_electric: bool) -> Car<'static> {
+    Car {
+        make: "Nissan",
+        model: if is_electric { "Ariya" } else { "Navara" },
+    }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let plant = Factory {
+        make: build_leaf,
+        label: "Oppama",
+    };
+    let leaf = (plant.make)();
+    println!("{}: {} {}", plant.label, leaf.make, leaf.model);
+    let tochigi = Line {
+        make: || Car {
+            make: "Nissan",
+            model: "Sakura",
+        },
+    };
+    println!("{}", (tochigi.make)().model);
+    let shop = Dealer {
+        order: order_nissan,
+    };
+    println!("{}", (shop.order)(true).model)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

@@ -1,0 +1,7 @@
+(defstruct counter :next (fn () i64) :label str)
+
+(defn seven () 7)
+
+(defn main ()
+  (let tally (->counter :next seven :label "seven"))
+  (println (:label tally) ": " ((:next tally))))

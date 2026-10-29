@@ -376,11 +376,23 @@ impl TypedProgram {
     }
 
     pub fn function_type_needs_shared_lifetime(&self, parameters: &[Type], result: &Type) -> bool {
-        let parameter_lifetimes: usize = parameters
+        self.function_type_returns_borrow(result) && self.parameter_lifetimes(parameters) > 1
+    }
+
+    pub fn function_type_needs_outer_lifetime(&self, parameters: &[Type], result: &Type) -> bool {
+        self.function_type_returns_borrow(result) && self.parameter_lifetimes(parameters) == 0
+    }
+
+    fn type_needs_outer_lifetime(&self, ty: &Type) -> bool {
+        matches!(ty, Type::Function(_, parameters, result)
+            if self.function_type_needs_outer_lifetime(parameters, result))
+    }
+
+    fn parameter_lifetimes(&self, parameters: &[Type]) -> usize {
+        parameters
             .iter()
             .map(|parameter| self.borrow_lifetimes(parameter))
-            .sum();
-        self.borrow_lifetimes(result) > 0 && parameter_lifetimes > 1
+            .sum()
     }
 
     pub fn function_type_returns_borrow(&self, result: &Type) -> bool {
@@ -442,17 +454,21 @@ impl TypedProgram {
             definition
                 .fields
                 .iter()
-                .any(|(_, field)| self.type_holds_borrow_with(field, visiting))
+                .any(|(_, field)| self.stored_type_holds_borrow(field, visiting))
         } else if let Some(definition) = self.enums.get(binding) {
             definition.rust.is_none()
                 && definition
                     .payload_types()
-                    .any(|payload| self.type_holds_borrow_with(payload, visiting))
+                    .any(|payload| self.stored_type_holds_borrow(payload, visiting))
         } else {
             false
         };
         visiting.remove(&binding);
         holds
+    }
+
+    fn stored_type_holds_borrow(&self, stored: &Type, visiting: &mut HashSet<BindingId>) -> bool {
+        self.type_holds_borrow_with(stored, visiting) || self.type_needs_outer_lifetime(stored)
     }
 
     pub fn entry_signatures(&self) -> String {
