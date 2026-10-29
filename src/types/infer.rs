@@ -1813,11 +1813,10 @@ impl TypeChecker {
         let result = self.iterator_type(item);
         let parameters = vec![Type::shared(collection_type)];
         let span = value.span;
-        let collection = value.ty.clone();
         let call =
             self.synthetic_call_with_value(template, parameters, result, value, &[], span)?;
         self.expect(&expected, &call.ty, span, MismatchContext::Plain)
-            .map_err(|diagnostic| self.explain_borrowed_items(site, &collection, diagnostic))?;
+            .map_err(|diagnostic| self.explain_borrowed_items(site, &call.ty, diagnostic))?;
         Ok(call)
     }
 
@@ -2007,8 +2006,10 @@ impl TypeChecker {
             });
             return Ok(Borrow::None);
         }
+        let site = ArgumentSite { callee, position };
         self.pass_argument(parameter, value)
             .map_err(|diagnostic| self.explain_literal_default(call, position, diagnostic))
+            .map_err(|diagnostic| self.explain_borrowed_items(&site, &value.ty, diagnostic))
     }
 
     fn explain_literal_default(

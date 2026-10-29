@@ -14,25 +14,25 @@ impl TypeChecker {
     pub(super) fn explain_borrowed_items(
         &self,
         site: &ArgumentSite<'_>,
-        collection: &Type,
+        found: &Type,
         diagnostic: Diagnostic,
     ) -> Diagnostic {
         if *diagnostic.code() != DiagnosticCode::MISMATCHED_TYPES {
             return diagnostic;
         }
-        match self.borrowing_help(site, collection) {
+        match self.borrowing_help(site, found) {
             Some(help) => diagnostic.with_help(help),
             None => diagnostic,
         }
     }
 
-    fn borrowing_help(&self, site: &ArgumentSite<'_>, collection: &Type) -> Option<String> {
+    fn borrowing_help(&self, site: &ArgumentSite<'_>, found: &Type) -> Option<String> {
         let callee = site.callee?;
         let function = Self::called_function(callee)?;
         if self.parameter_is_written(function, site.position) {
             return None;
         }
-        let signature = self.borrowing_signature(callee, site.position, collection)?;
+        let signature = self.borrowing_signature(callee, function, site.position, found)?;
         let name = self.bindings.get(function).name();
         Some(TypeProblems::borrowed_items_help(name, &signature))
     }
@@ -47,22 +47,39 @@ impl TypeChecker {
     fn borrowing_signature(
         &self,
         callee: &TypedExpr,
+        function: BindingId,
         position: usize,
-        collection: &Type,
+        found: &Type,
     ) -> Option<String> {
         let Type::Function(kind, mut parameters, result) = self.unifier.resolve(&callee.ty) else {
             return None;
         };
-        let parameter = parameters.get_mut(position)?;
-        let item = self.owned_iterator_item(parameter)?;
-        if !self.holds_elements(collection, &item) {
+        let item = self.owned_iterator_item(parameters.get(position)?)?;
+        if !self.yields_borrowed(found, &item) {
             return None;
         }
-        *parameter = self.iterator_of(Type::shared(item))?;
+        let borrowed = self.iterator_of(Type::shared(item.clone()))?;
+        self.borrow_owned_items(function, &mut parameters, &item, &borrowed);
         Some(
             self.display()
                 .show(&Type::Function(kind, parameters, result)),
         )
+    }
+
+    fn borrow_owned_items(
+        &self,
+        function: BindingId,
+        parameters: &mut [Type],
+        item: &Type,
+        borrowed: &Type,
+    ) {
+        for (position, parameter) in parameters.iter_mut().enumerate() {
+            if !self.parameter_is_written(function, position)
+                && self.owned_iterator_item(parameter).as_ref() == Some(item)
+            {
+                *parameter = borrowed.clone();
+            }
+        }
     }
 
     fn owned_iterator_item(&self, parameter: &Type) -> Option<Type> {
@@ -77,10 +94,10 @@ impl TypeChecker {
         }
     }
 
-    fn holds_elements(&self, collection: &Type, item: &Type) -> bool {
-        match self.unifier.resolve(collection) {
-            Type::Named(binding, elements) if self.rust_types.is_vector(binding) => {
-                elements.as_slice() == std::slice::from_ref(item)
+    fn yields_borrowed(&self, found: &Type, item: &Type) -> bool {
+        match self.unifier.resolve(found) {
+            Type::Named(binding, arguments) if self.rust_types.is_iterator(binding) => {
+                matches!(arguments.as_slice(), [Type::Ref(_, borrowed)] if **borrowed == *item)
             }
             _ => false,
         }

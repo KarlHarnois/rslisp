@@ -233,7 +233,7 @@ impl TypeProblems {
 
     pub fn borrowed_items_help(function: &str, signature: &str) -> String {
         format!(
-            "`{function}` takes owned items, but a vector yields borrowed ones: write `(type {function} {signature})` to take borrowed items"
+            "`{function}` takes owned items, but the argument yields borrowed items: write `(type {function} {signature})` to take borrowed items"
         )
     }
 
