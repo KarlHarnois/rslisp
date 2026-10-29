@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/tail_loop_rebuilt_parameter_used_after_call.rslisp
+---
+error[L0501]: use of moved value `start`
+  --> check/tail_loop_rebuilt_parameter_used_after_call.rslisp:11:20
+   |
+10 |   (println (count-up 3 start))
+   |                        ----- value moved here
+11 |   (println (:label start)))
+   |                    ^^^^^ value used here after it moved
+   |
+help: clone the value if both places need it
+   |
+10 -   (println (count-up 3 start))
+10 +   (println (count-up 3 (clone start)))
+   |

@@ -1,0 +1,35 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/tail_loop_unchanged_borrowed_parameter.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Counter {
+    label: String,
+    count: i64,
+}
+
+fn count_to(limit: i64, state: &Counter, mut steps: i64) -> i64 {
+    loop {
+        if steps == limit {
+            return steps + state.count;
+        } else {
+            steps += 1;
+            continue;
+        }
+    }
+}
+
+fn main() {
+    println!(
+        "{}",
+        count_to(
+            3,
+            &Counter {
+                label: "c".to_string(),
+                count: 10
+            },
+            0
+        )
+    )
+}

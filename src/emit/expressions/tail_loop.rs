@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use super::{ArgumentRole, BoxPosition, ExpressionEmitter, LoopExit, TypeContext};
 use crate::core::BindingId;
 use crate::emit::fragment::{Code, Fragment};
+use crate::ownership::TailCalls;
 use crate::types::{
     Type, TypedArgument, TypedArm, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
     TypedExprKind, TypedLambda, TypedLeaf, TypedMatch,
@@ -25,12 +26,12 @@ impl TailLoop {
 
     fn prepare(function: Option<BindingId>, lambda: &TypedLambda) -> Option<Self> {
         let params: Vec<BindingId> = lambda.params.iter().map(|param| param.binding).collect();
-        let mut calls = Vec::new();
-        Self::collect_block(function, &lambda.body, &mut calls);
-        if calls.is_empty() {
+        let calls = TailCalls::of(function, lambda);
+        if calls.arguments().is_empty() {
             return None;
         }
         let reassigned = calls
+            .arguments()
             .iter()
             .flat_map(|arguments| {
                 params
@@ -59,53 +60,8 @@ impl TailLoop {
         }
     }
 
-    fn collect_block<'e>(
-        function: Option<BindingId>,
-        block: &'e TypedBlock,
-        calls: &mut Vec<&'e [TypedArgument]>,
-    ) {
-        if let Some(TypedBodyItem::Expr(tail)) = block.items.last() {
-            Self::collect(function, tail, calls);
-        }
-    }
-
-    fn collect<'e>(
-        function: Option<BindingId>,
-        expr: &'e TypedExpr,
-        calls: &mut Vec<&'e [TypedArgument]>,
-    ) {
-        match &expr.kind {
-            TypedExprKind::Recur(arguments) => {
-                calls.push(arguments);
-            }
-            TypedExprKind::Call(callee, arguments) if Self::calls_global(function, callee) => {
-                calls.push(arguments);
-            }
-            TypedExprKind::Control(TypedControl::If(_, then, otherwise)) => {
-                Self::collect(function, then, calls);
-                Self::collect(function, otherwise, calls);
-            }
-            TypedExprKind::Control(TypedControl::Block(block)) => {
-                Self::collect_block(function, block, calls);
-            }
-            TypedExprKind::Control(TypedControl::Match(matched)) => {
-                for arm in &matched.arms {
-                    Self::collect_block(function, &arm.body, calls);
-                }
-            }
-            _ => {}
-        }
-    }
-
     fn calls(&self, callee: &TypedExpr) -> bool {
-        Self::calls_global(self.function, callee)
-    }
-
-    fn calls_global(function: Option<BindingId>, callee: &TypedExpr) -> bool {
-        let Some(function) = function else {
-            return false;
-        };
-        matches!(callee.kind, TypedExprKind::Leaf(TypedLeaf::Global(binding)) if binding == function)
+        TailCalls::calls_itself(self.function, callee)
     }
 
     fn passes_through(param: BindingId, argument: &TypedArgument) -> bool {

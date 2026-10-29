@@ -1,6 +1,7 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use super::functions::{FunctionTable, ParamMode};
+use super::functions::{FunctionInfo, FunctionTable, ParamMode, ParamSlot};
+use super::tail_calls::TailCalls;
 use super::usage::UsageCollector;
 use crate::core::BindingId;
 use crate::types::CopyRules;
@@ -24,16 +25,32 @@ impl<'a> ModeInference<'a> {
     fn initial_modes(&self) -> HashMap<BindingId, ParamMode> {
         self.functions
             .iter()
-            .flat_map(|(_, function)| &function.params)
-            .map(|slot| {
-                let mode = if slot.inferable {
-                    ParamMode::Ref
-                } else {
-                    FunctionTable::fixed_mode(slot, &self.copy)
-                };
-                (slot.binding, mode)
-            })
+            .flat_map(|(binding, function)| self.function_modes(*binding, function))
             .collect()
+    }
+
+    fn function_modes(
+        &self,
+        binding: BindingId,
+        function: &FunctionInfo,
+    ) -> Vec<(BindingId, ParamMode)> {
+        let rebuilt =
+            TailCalls::of(Some(binding), &function.lambda).rebuilt_parameters(&function.lambda);
+        function
+            .params
+            .iter()
+            .map(|slot| (slot.binding, self.initial_mode(slot, &rebuilt)))
+            .collect()
+    }
+
+    fn initial_mode(&self, slot: &ParamSlot, rebuilt: &HashSet<BindingId>) -> ParamMode {
+        if !slot.inferable {
+            FunctionTable::fixed_mode(slot, &self.copy)
+        } else if rebuilt.contains(&slot.binding) && !slot.ty.is_unsized() {
+            ParamMode::Own
+        } else {
+            ParamMode::Ref
+        }
     }
 
     fn raise_modes(&self, modes: &mut HashMap<BindingId, ParamMode>) -> bool {
