@@ -10,8 +10,11 @@
 (type name-length (fn ((ref str)) usize))
 (defn name-length (name) (len name))
 
+(defn roster ()
+  (vec (->user (to-string "Ana") 34) (->user (to-string "Ben") 12)))
+
 (defn main ()
-  (let users (vec (->user (to-string "Ana") 34) (->user (to-string "Ben") 12)))
+  (let users (roster))
   (for-each (adult-names users) (fn (name) (println name)))
   (let ana (->user (to-string "Ana") 34))
   (println (name-of ana))
