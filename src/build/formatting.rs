@@ -1,15 +1,40 @@
 use std::fmt;
-use std::io::{self, Write};
-use std::process::{Command, Stdio};
+use std::io::{self, Read, Write};
+use std::process::{Child, Command, Stdio};
+use std::sync::mpsc::{self, Receiver};
+use std::thread;
+use std::time::Duration;
 
 use super::token_alignment::TokenAlignment;
 use crate::emit::EmittedCrate;
+use crate::language::Language;
 
-pub struct EmittedFormatting;
+pub struct EmittedFormatting {
+    rustfmt: Rustfmt,
+}
 
 impl EmittedFormatting {
+    pub const TIME_LIMIT: Duration = Duration::from_secs(10);
+
     pub fn apply(emitted: &EmittedCrate) -> Result<EmittedCrate, FormattingError> {
-        let code = Rustfmt::new().format(&emitted.code)?;
+        Self::within(Self::TIME_LIMIT).format(emitted)
+    }
+
+    pub fn within(time_limit: Duration) -> Self {
+        Self {
+            rustfmt: Rustfmt::new(time_limit),
+        }
+    }
+
+    pub fn time_limit_variable() -> String {
+        format!(
+            "{}_RUSTFMT_TIME_LIMIT_MILLISECONDS",
+            Language::NAME.to_uppercase()
+        )
+    }
+
+    pub fn format(&self, emitted: &EmittedCrate) -> Result<EmittedCrate, FormattingError> {
+        let code = self.rustfmt.format(&emitted.code)?;
         let alignment = TokenAlignment::new(&emitted.code, &code);
         let span_map = alignment
             .remap(&emitted.span_map)
@@ -26,6 +51,7 @@ impl EmittedFormatting {
 pub enum FormattingError {
     Unavailable(io::Error),
     Failed(String),
+    TimedOut(Duration),
     Misaligned,
 }
 
@@ -35,6 +61,7 @@ impl fmt::Display for FormattingError {
             Self::Unavailable(error) => write!(formatter, "cannot run rustfmt: {error}"),
             Self::Failed(message) if message.is_empty() => write!(formatter, "rustfmt failed"),
             Self::Failed(message) => write!(formatter, "rustfmt failed: {message}"),
+            Self::TimedOut(limit) => write!(formatter, "rustfmt did not finish within {limit:?}"),
             Self::Misaligned => {
                 write!(
                     formatter,
@@ -45,38 +72,93 @@ impl fmt::Display for FormattingError {
     }
 }
 
-struct Rustfmt;
+struct Rustfmt {
+    time_limit: Duration,
+}
 
 impl Rustfmt {
     const PROGRAM: &'static str = "rustfmt";
     const ARGUMENTS: [&'static str; 2] = ["--edition", "2024"];
 
-    fn new() -> Self {
-        Self
+    fn new(time_limit: Duration) -> Self {
+        Self { time_limit }
     }
 
     fn format(&self, source: &str) -> Result<String, FormattingError> {
-        let mut child = Command::new(Self::PROGRAM)
+        let mut child = Self::spawn()?;
+        let output = PipeReader::start(child.stdout.take().expect("standard output is piped"));
+        let errors = PipeReader::start(child.stderr.take().expect("standard error is piped"));
+        Self::send(&mut child, source)?;
+        let formatted = self.read_within_limit(&mut child, output)?;
+        let status = child.wait().map_err(FormattingError::Unavailable)?;
+        if !status.success() {
+            return Err(FormattingError::Failed(errors.read_message()));
+        }
+        String::from_utf8(formatted)
+            .map_err(|_| FormattingError::Failed("rustfmt wrote non-UTF-8 output".to_string()))
+    }
+
+    fn spawn() -> Result<Child, FormattingError> {
+        Command::new(Self::PROGRAM)
             .args(Self::ARGUMENTS)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(FormattingError::Unavailable)?;
+            .map_err(FormattingError::Unavailable)
+    }
+
+    fn send(child: &mut Child, source: &str) -> Result<(), FormattingError> {
         let mut input = child.stdin.take().expect("standard input is piped");
         input
             .write_all(source.as_bytes())
-            .map_err(|error| FormattingError::Failed(error.to_string()))?;
-        drop(input);
-        let output = child
-            .wait_with_output()
-            .map_err(FormattingError::Unavailable)?;
-        if !output.status.success() {
-            let message = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            return Err(FormattingError::Failed(message));
+            .map_err(|error| FormattingError::Failed(error.to_string()))
+    }
+
+    fn read_within_limit(
+        &self,
+        child: &mut Child,
+        output: PipeReader,
+    ) -> Result<Vec<u8>, FormattingError> {
+        match output.read_within(self.time_limit) {
+            Some(bytes) => bytes.map_err(|error| FormattingError::Failed(error.to_string())),
+            None => {
+                Self::stop(child);
+                Err(FormattingError::TimedOut(self.time_limit))
+            }
         }
-        String::from_utf8(output.stdout)
-            .map_err(|_| FormattingError::Failed("rustfmt wrote non-UTF-8 output".to_string()))
+    }
+
+    fn stop(child: &mut Child) {
+        child.kill().ok();
+        child.wait().ok();
+    }
+}
+
+struct PipeReader {
+    contents: Receiver<io::Result<Vec<u8>>>,
+}
+
+impl PipeReader {
+    fn start(mut pipe: impl Read + Send + 'static) -> Self {
+        let (sender, contents) = mpsc::channel();
+        thread::spawn(move || {
+            let mut bytes = Vec::new();
+            let read = pipe.read_to_end(&mut bytes).map(|_| bytes);
+            sender.send(read).ok();
+        });
+        Self { contents }
+    }
+
+    fn read_within(&self, time_limit: Duration) -> Option<io::Result<Vec<u8>>> {
+        self.contents.recv_timeout(time_limit).ok()
+    }
+
+    fn read_message(&self) -> String {
+        let bytes = self.contents.recv().ok().and_then(Result::ok);
+        String::from_utf8_lossy(&bytes.unwrap_or_default())
+            .trim()
+            .to_string()
     }
 }
 
@@ -94,5 +176,11 @@ mod tests {
         assert_eq!(empty.to_string(), "rustfmt failed");
         let misaligned = FormattingError::Misaligned;
         assert!(misaligned.to_string().contains("align"));
+    }
+
+    #[test]
+    fn names_the_time_limit_that_rustfmt_exceeded() {
+        let timed_out = FormattingError::TimedOut(EmittedFormatting::TIME_LIMIT);
+        assert_eq!(timed_out.to_string(), "rustfmt did not finish within 10s");
     }
 }
