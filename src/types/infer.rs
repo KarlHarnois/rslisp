@@ -2995,11 +2995,18 @@ impl TypeChecker {
                 Ok((binding, arguments))
             }
             Type::Var(_) => self.update_owner_from_fields(&owner, fields, span),
+            Type::Ref(_, inner) | Type::Mut(_, inner) if self.is_struct(&inner) => Err(
+                TypeProblems::borrowed_update_base(&self.display().show(&inner), base.span),
+            ),
             other => Err(TypeProblems::no_fields(
                 &self.display().show(&other),
                 base.span,
             )),
         }
+    }
+
+    fn is_struct(&self, ty: &Type) -> bool {
+        matches!(self.unifier.shallow(ty), Type::Named(binding, _) if self.structs.get(binding).is_some())
     }
 
     fn update_owner_from_fields(
