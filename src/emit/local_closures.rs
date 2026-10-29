@@ -26,13 +26,19 @@ impl<'a> LocalClosures<'a> {
 
     pub fn of(program: &'a TypedProgram, value: &TypedExpr) -> Self {
         let mut found = Self::new(program);
-        value
-            .let_bindings()
-            .for_each(|(binder, value)| found.register(binder, value));
-        if !found.argument_borrows.is_empty() {
-            found.expr(value);
+        if !program.borrowing_lambdas.is_empty() {
+            found.find_closures(value);
         }
         found
+    }
+
+    fn find_closures(&mut self, value: &TypedExpr) {
+        value
+            .let_bindings()
+            .for_each(|(binder, value)| self.register(binder, value));
+        if !self.argument_borrows.is_empty() {
+            self.expr(value);
+        }
     }
 
     pub fn borrows_arguments_of(&self, closure: BindingId) -> bool {
