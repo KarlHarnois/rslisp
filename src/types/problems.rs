@@ -201,6 +201,16 @@ impl TypeProblems {
         if !call.shadows_function {
             return diagnostic;
         }
+        Self::parameter_shadows_function(diagnostic, call)
+    }
+
+    fn parameter_shadows_function(diagnostic: Diagnostic, call: &ParameterCall) -> Diagnostic {
+        let parameter = &call.parameter;
+        if call.arguments > 0 {
+            return diagnostic.with_help(format!(
+                "the parameter `{parameter}` shadows the function `{parameter}`, so to call the function, rename the parameter"
+            ));
+        }
         diagnostic.with_suggestion(
             format!(
                 "the parameter `{parameter}` shadows the function `{parameter}`, so to use the parameter's value, write it without parentheses"

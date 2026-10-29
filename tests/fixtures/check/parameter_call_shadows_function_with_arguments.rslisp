@@ -1,0 +1,8 @@
+(defn main ()
+  (prn (double-range 5)))
+
+(defn double-range (span)
+  (span 150 240))
+
+(defn span (low high)
+  (- high low))
