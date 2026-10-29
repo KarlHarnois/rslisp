@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use super::pipelines::Pipelines;
 use super::problems::OwnershipProblems;
 use crate::core::BindingId;
 use crate::diagnostic::Diagnostic;
@@ -7,13 +8,18 @@ use crate::types::{Borrow, Type, TypedArgument, TypedExpr, TypedExprKind, TypedL
 
 pub struct OwnershipNeeds<'a> {
     function_params: &'a HashMap<BindingId, Vec<Type>>,
+    pipelines: Pipelines<'a>,
     diagnostics: Vec<Diagnostic>,
 }
 
 impl<'a> OwnershipNeeds<'a> {
-    pub fn new(function_params: &'a HashMap<BindingId, Vec<Type>>) -> Self {
+    pub fn new(
+        function_params: &'a HashMap<BindingId, Vec<Type>>,
+        pipelines: Pipelines<'a>,
+    ) -> Self {
         Self {
             function_params,
+            pipelines,
             diagnostics: Vec::new(),
         }
     }
@@ -62,10 +68,18 @@ impl<'a> OwnershipNeeds<'a> {
                 .get(position)
                 .is_some_and(|parameter| !parameter.is_reference());
             if argument.borrow == Borrow::Passthrough && owns {
-                self.diagnostics
-                    .push(OwnershipProblems::needs_ownership(argument.value.span));
+                let diagnostic = self.needs_ownership(&argument.value);
+                self.diagnostics.push(diagnostic);
             }
         }
+    }
+
+    fn needs_ownership(&self, value: &TypedExpr) -> Diagnostic {
+        let borrowed = value.ty.clone().without_reference();
+        if self.pipelines.is_pipeline(&borrowed) {
+            return OwnershipProblems::needs_pipeline_ownership(value.span);
+        }
+        OwnershipProblems::needs_ownership(value.span)
     }
 
     fn parameters(&self, callee: &TypedExpr) -> Vec<Type> {
