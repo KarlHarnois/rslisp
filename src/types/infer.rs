@@ -2773,7 +2773,9 @@ impl TypeChecker {
     ) -> Result<Collection, Diagnostic> {
         let resolved = self.unifier.resolve(&value.ty);
         let collection = match resolved {
-            Type::Var(_) => self.unknown_vector(depth),
+            Type::Var(var) if self.unifier.literal_kind(var).is_none() => {
+                self.unknown_vector(depth)
+            }
             _ => Collection::of_referent(&resolved, &self.rust_types),
         };
         collection.ok_or_else(|| {
