@@ -1,0 +1,19 @@
+(defstruct car :make str :model str)
+(defstruct factory :make (fn () car) :label str)
+(defstruct line :make (fn () car))
+(defstruct dealer :order (fn (bool) car))
+
+(defn build-leaf ()
+  (->car :make "Nissan" :model "Leaf"))
+
+(defn order-nissan (electric?)
+  (->car :make "Nissan" :model (if electric? "Ariya" "Navara")))
+
+(defn main ()
+  (let plant (->factory :make build-leaf :label "Oppama"))
+  (let leaf ((:make plant)))
+  (println (:label plant) ": " (:make leaf) " " (:model leaf))
+  (let tochigi (->line :make (fn () (->car :make "Nissan" :model "Sakura"))))
+  (println (:model ((:make tochigi))))
+  (let shop (->dealer :order order-nissan))
+  (println (:model ((:order shop) true))))

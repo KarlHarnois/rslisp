@@ -1,0 +1,10 @@
+(defstruct car :make str :model str)
+
+(type leaf-maker (fn () (fn () car)))
+(defn leaf-maker ()
+  (fn () (->car :make "Nissan" :model "Leaf")))
+
+(defn main ()
+  (let make (leaf-maker))
+  (let leaf (make))
+  (println (:make leaf) " " (:model leaf)))

@@ -142,6 +142,7 @@ impl<'a> RustTypes<'a> {
     const SIZED_TRAITS: [&'static str; 3] = ["Clone", "Copy", "Default"];
     const INFERRED: &'static str = "_";
     const ELIDED_LIFETIME_ARGUMENT: &'static str = "'_";
+    const STATIC_LIFETIME: &'static str = "'static";
     const NUMBER_TRAIT: &'static str = "crate::rt::Number";
     const PREDICATE_SUBJECT: &'static str = "{0}";
     const RUNTIME_SUPERTRAITS: [(&'static str, &'static [&'static str]); 4] = [
@@ -611,7 +612,7 @@ impl<'a> RustTypes<'a> {
 
     fn lifetime_argument(position: TypePosition, scope: &LifetimeScope) -> String {
         match position {
-            TypePosition::StaticResult => "'static".to_string(),
+            TypePosition::StaticResult => Self::STATIC_LIFETIME.to_string(),
             TypePosition::Signature | TypePosition::Value => scope.elided().map_or_else(
                 || Self::ELIDED_LIFETIME_ARGUMENT.to_string(),
                 str::to_string,
@@ -682,7 +683,7 @@ impl<'a> RustTypes<'a> {
         scope: &LifetimeScope,
     ) -> (LifetimeScope, String) {
         let (inner_scope, binder) = Self::function_scope(
-            position,
+            self.inherited_lifetime(parameters, result, position, scope),
             scope,
             self.program
                 .function_type_needs_shared_lifetime(parameters, result),
@@ -718,15 +719,28 @@ impl<'a> RustTypes<'a> {
             .map_or(Cow::Borrowed(scope), Cow::Owned)
     }
 
-    fn function_scope(
+    fn inherited_lifetime(
+        &self,
+        parameters: &[Type],
+        result: &Type,
         position: TypePosition,
+        scope: &LifetimeScope,
+    ) -> Option<String> {
+        let needs_outer = self
+            .program
+            .function_type_needs_outer_lifetime(parameters, result);
+        match position {
+            TypePosition::Signature => scope.elided().map(str::to_string),
+            TypePosition::StaticResult => needs_outer.then(|| Self::STATIC_LIFETIME.to_string()),
+            TypePosition::Value => scope.elided().filter(|_| needs_outer).map(str::to_string),
+        }
+    }
+
+    fn function_scope(
+        inherited: Option<String>,
         scope: &LifetimeScope,
         needs_binder: bool,
     ) -> (LifetimeScope, Option<String>) {
-        let inherited = match position {
-            TypePosition::Signature => scope.elided().map(str::to_string),
-            TypePosition::StaticResult | TypePosition::Value => None,
-        };
         let binder = if inherited.is_none() && needs_binder {
             Some(Self::fresh_binder(scope))
         } else {
@@ -758,7 +772,7 @@ impl<'a> RustTypes<'a> {
     ) -> Option<String> {
         match lifetime {
             Lifetime::Elided if position == TypePosition::StaticResult => {
-                Some("'static".to_string())
+                Some(Self::STATIC_LIFETIME.to_string())
             }
             Lifetime::Elided => scope.elided().map(str::to_string),
             Lifetime::Written(binding) if scope.is_elided(binding) => None,

@@ -1,0 +1,41 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/zero_argument_function_signature_parameter.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+}
+
+fn describe<'a>(make: impl FnOnce() -> Car<'a>) {
+    let built = make();
+    println!("{} {}", built.make, built.model)
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let model = "Leaf".to_string();
+    describe(|| Car {
+        make: "Nissan",
+        model: model.as_str(),
+    })
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
