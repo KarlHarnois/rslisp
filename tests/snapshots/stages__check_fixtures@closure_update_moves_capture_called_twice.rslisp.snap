@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/closure_update_moves_capture_called_twice.rslisp
+---
+error[L0501]: use of moved value `f`
+ --> check/closure_update_moves_capture_called_twice.rslisp:6:32
+  |
+6 |   (println (:name (f)) (:name (f))))
+  |                    -           ^ value used here after it moved
+  |                    |
+  |                    value moved here
+  |
+  = help: this closure moves a captured value, so it cannot be copied

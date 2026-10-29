@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/closure_update_moves_capture_called_once.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Garage {
+    name: String,
+    city: String,
+    size: u16,
+}
+
+fn make_garage(name: String, city: String, size: u16) -> Garage {
+    Garage { name, city, size }
+}
+
+fn main() {
+    let g = make_garage("Leaf Garage".to_string(), "Leeds".to_string(), 12);
+    let f = || Garage {
+        name: "x".to_string(),
+        ..g
+    };
+    println!("{}", f().name)
+}

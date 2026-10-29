@@ -5,6 +5,7 @@ use super::moved_values::{FieldPath, MoveSite, MovedValues};
 use super::mutation::ChangedValues;
 use super::problems::OwnershipProblems;
 use super::repeats::{NextPass, RepeatingBody};
+use super::update_bases::UpdateBases;
 use crate::core::{BindingArena, BindingId, FieldLabel, FieldSpelling};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
@@ -38,6 +39,7 @@ pub struct MoveChecker<'a> {
     repeating: Option<RepeatingBody>,
     moved_by_earlier_pass: HashSet<BindingId>,
     copy_functions: HashSet<BindingId>,
+    once_functions: HashSet<BindingId>,
     reported: HashSet<BindingId>,
     parameters: HashSet<BindingId>,
     unwritten_parameters: HashSet<BindingId>,
@@ -68,6 +70,7 @@ impl<'a> MoveChecker<'a> {
             repeating: None,
             moved_by_earlier_pass: HashSet::new(),
             copy_functions: HashSet::new(),
+            once_functions: HashSet::new(),
             reported: HashSet::new(),
             parameters: HashSet::new(),
             unwritten_parameters: HashSet::new(),
@@ -117,9 +120,7 @@ impl<'a> MoveChecker<'a> {
             TypedExprKind::Try { .. } | TypedExprKind::Borrow(..) | TypedExprKind::Deref(..) => {
                 self.written(expr)
             }
-            TypedExprKind::Fn(lambda) => {
-                self.closure(lambda);
-            }
+            TypedExprKind::Fn(lambda) => self.closure(lambda),
             _ => unreachable!("the caller matches a nested expression"),
         }
     }
@@ -163,10 +164,11 @@ impl<'a> MoveChecker<'a> {
     fn update(&mut self, update: &TypedExpr, base: &TypedExpr, fields: &[(FieldLabel, TypedExpr)]) {
         if let Some(place) = base.field_place() {
             self.field_values(fields);
-            let unlisted = self.unlisted_fields(update, fields);
+            let bases = UpdateBases::new(self.structs, &self.copy);
+            let unlisted = bases.unlisted_fields(update, fields);
+            let moved = bases.moved_fields(&unlisted);
             self.unlisted_read(&place, Self::root_span(base), &unlisted);
-            let moving = self.moving_fields(unlisted);
-            self.move_fields(&place, base.span, moving);
+            self.move_fields(&place, base.span, moved);
         } else {
             self.update_base(base);
             self.field_values(fields);
@@ -230,33 +232,6 @@ impl<'a> MoveChecker<'a> {
         }
     }
 
-    fn unlisted_fields(
-        &self,
-        update: &TypedExpr,
-        fields: &[(FieldLabel, TypedExpr)],
-    ) -> Vec<(Rc<str>, Type)> {
-        let Type::Named(structure, arguments) = &update.ty else {
-            unreachable!("a struct update has its struct's type")
-        };
-        let definition = self
-            .structs
-            .get(*structure)
-            .expect("the type checker resolved the updated struct");
-        definition
-            .instantiated_fields(arguments)
-            .into_iter()
-            .filter(|(name, _)| !fields.iter().any(|(label, _)| label.name == *name))
-            .collect()
-    }
-
-    fn moving_fields(&self, fields: Vec<(Rc<str>, Type)>) -> Vec<Rc<str>> {
-        fields
-            .into_iter()
-            .filter(|(_, field_type)| !self.copy.is_copy(field_type))
-            .map(|(name, _)| name)
-            .collect()
-    }
-
     fn move_field(&mut self, place: &FieldPlace, span: Span) {
         if self.copy.is_copy(place.root_type) {
             return;
@@ -311,11 +286,10 @@ impl<'a> MoveChecker<'a> {
         }
     }
 
-    fn closure(&mut self, lambda: &TypedLambda) -> bool {
+    fn closure(&mut self, lambda: &TypedLambda) {
         if let Some(next) = self.pass(lambda).next_pass(lambda) {
             self.repeat(lambda, next);
         }
-        lambda.kind == ClosureKind::Fn
     }
 
     fn pass(&mut self, lambda: &TypedLambda) -> RepeatingBody {
@@ -332,23 +306,41 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn bind(&mut self, binding: BindingId, value: &TypedExpr) {
-        let is_copy_function = match &value.kind {
-            TypedExprKind::Fn(lambda) => self.closure(lambda),
+        match self.bound_function_kind(value) {
+            Some(ClosureKind::Fn) => self.copy_functions.insert(binding),
+            Some(ClosureKind::FnOnce) => self.once_functions.insert(binding),
+            _ => false,
+        };
+    }
+
+    fn bound_function_kind(&mut self, value: &TypedExpr) -> Option<ClosureKind> {
+        match &value.kind {
+            TypedExprKind::Fn(lambda) => {
+                self.closure(lambda);
+                Some(lambda.kind)
+            }
             TypedExprKind::Leaf(TypedLeaf::Global(_)) | TypedExprKind::Leaf(TypedLeaf::Rust(_)) => {
-                matches!(value.ty, Type::Function(..))
+                matches!(value.ty, Type::Function(..)).then_some(ClosureKind::Fn)
             }
             TypedExprKind::Leaf(TypedLeaf::Local(other)) => {
-                let is_copy = self.copy_functions.contains(other);
+                let kind = self.local_function_kind(*other);
                 self.expr(value, Usage::Move);
-                is_copy
+                kind
             }
             _ => {
                 self.expr(value, Usage::Move);
-                false
+                None
             }
-        };
-        if is_copy_function {
-            self.copy_functions.insert(binding);
+        }
+    }
+
+    fn local_function_kind(&self, binding: BindingId) -> Option<ClosureKind> {
+        if self.copy_functions.contains(&binding) {
+            Some(ClosureKind::Fn)
+        } else if self.once_functions.contains(&binding) {
+            Some(ClosureKind::FnOnce)
+        } else {
+            None
         }
     }
 
@@ -357,7 +349,8 @@ impl<'a> MoveChecker<'a> {
             callee.kind,
             TypedExprKind::Leaf(TypedLeaf::Global(_)) | TypedExprKind::Leaf(TypedLeaf::Rust(_))
         ) {
-            self.expr(callee, Usage::Borrow);
+            let usage = self.callee_usage(callee);
+            self.expr(callee, usage);
         }
         for (position, argument) in arguments.iter().enumerate() {
             let usage = if self.moves(callee, position, argument) {
@@ -366,6 +359,17 @@ impl<'a> MoveChecker<'a> {
                 Usage::Borrow
             };
             self.expr(&argument.value, usage);
+        }
+    }
+
+    fn callee_usage(&self, callee: &TypedExpr) -> Usage {
+        match &callee.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(binding))
+                if self.once_functions.contains(binding) =>
+            {
+                Usage::Move
+            }
+            _ => Usage::Borrow,
         }
     }
 
