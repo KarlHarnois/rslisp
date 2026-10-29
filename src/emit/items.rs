@@ -6,6 +6,7 @@ use super::expressions::ExpressionEmitter;
 use super::fragment::{Code, Fragment};
 use super::fresh_lifetimes::FreshLifetimes;
 use super::literal_generics::LiteralGenerics;
+use super::local_closures::LocalClosures;
 use super::locals::LocalNames;
 use super::mangle::NameMangler;
 use super::method_elisions::{MethodElisions, MethodLifetimes, TraitMethodElisions};
@@ -1280,6 +1281,8 @@ impl<'a> ItemEmitter<'a> {
             .map(|item| item.name.clone());
         let mut mutable = MutableLocals::of(value, &self.program.template_borrows);
         mutable.extend(self.program.mutable_function_bindings.iter().copied());
+        let local_closures = LocalClosures::of(self.program, value);
+        mutable.extend(local_closures.mutably_borrowed_arguments());
         ExpressionEmitter::new(
             self.program,
             self.plan,
@@ -1288,6 +1291,7 @@ impl<'a> ItemEmitter<'a> {
             LocalNames::new(reserved.collect::<Vec<String>>()),
         )
         .with_mutable_locals(mutable.into_set())
+        .with_local_closures(local_closures)
     }
 
     fn absorb(&mut self, emitter: ExpressionEmitter) {

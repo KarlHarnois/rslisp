@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/local_lambda_named_argument_twice.rslisp
+---
+Nissan Leaf2024
+Nissan Leaf2024

@@ -1,0 +1,4 @@
+(defn main ()
+  (let inner (fn (h) (h 2024)))
+  (let outer (fn (g) (inner g)))
+  (outer (fn (n) (println n))))

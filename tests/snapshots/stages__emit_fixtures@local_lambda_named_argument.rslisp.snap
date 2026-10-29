@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/local_lambda_named_argument.rslisp
+---
+fn main() {
+    let mut shout = |n: i64| println!("{}", n);
+    let apply = |action: &mut dyn FnMut(i64)| action(2024);
+    apply(&mut shout)
+}

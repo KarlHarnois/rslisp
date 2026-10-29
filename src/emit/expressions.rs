@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use super::fragment::{Code, Fragment, Precedence};
-use super::function_borrow::FunctionBorrow;
+use super::local_closures::LocalClosures;
 use super::locals::LocalNames;
 use super::mangle::NameMangler;
 use super::operator::{RustOperator, Side};
@@ -172,7 +172,7 @@ pub struct ExpressionEmitter<'a> {
     pub problems: Vec<Diagnostic>,
     mutable_locals: HashSet<BindingId>,
     stored_functions: StoredFunctions<'a>,
-    local_closures: HashMap<BindingId, Vec<Option<FunctionBorrow>>>,
+    local_closures: LocalClosures<'a>,
     tail_loop: Option<TailLoop>,
     loop_exit: LoopExit,
 }
@@ -201,7 +201,7 @@ impl<'a> ExpressionEmitter<'a> {
             problems: Vec::new(),
             mutable_locals: HashSet::new(),
             stored_functions: StoredFunctions::new(program),
-            local_closures: HashMap::new(),
+            local_closures: LocalClosures::new(program),
             tail_loop: None,
             loop_exit: LoopExit::Return,
         }
@@ -213,6 +213,11 @@ impl<'a> ExpressionEmitter<'a> {
 
     pub fn with_mutable_locals(mut self, mutable_locals: HashSet<BindingId>) -> Self {
         self.mutable_locals = mutable_locals;
+        self
+    }
+
+    pub fn with_local_closures(mut self, local_closures: LocalClosures<'a>) -> Self {
+        self.local_closures = local_closures;
         self
     }
 
@@ -250,9 +255,10 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn bind_closure_parameter(&mut self, param: &TypedBinder) -> String {
-        let (Some(borrow), Type::Function(_, parameters, result)) =
-            (self.function_borrow(param), &param.ty)
-        else {
+        let (Some(borrow), Type::Function(_, parameters, result)) = (
+            self.local_closures.parameter_borrow(param.binding),
+            &param.ty,
+        ) else {
             return self.bind_parameter(param, TypePosition::Value);
         };
         let ty = self.types().borrowed_function(borrow, parameters, result);
@@ -262,14 +268,6 @@ impl<'a> ExpressionEmitter<'a> {
             Self::mutability(mutable),
             self.bind_name(param)
         )
-    }
-
-    fn function_borrow(&self, param: &TypedBinder) -> Option<FunctionBorrow> {
-        let Type::Function(kind, _, _) = param.ty else {
-            return None;
-        };
-        let stored = self.stored_functions.stores(param.binding);
-        (!stored).then(|| FunctionBorrow::of(kind))
     }
 
     fn bind_name(&mut self, param: &TypedBinder) -> String {
@@ -1423,20 +1421,14 @@ impl<'a> ExpressionEmitter<'a> {
         let TypedExprKind::Fn(lambda) = &value.kind else {
             return self.expr(value);
         };
-        if self.program.escaping_locals.contains(&binder.binding) {
+        if !self.local_closures.borrows_arguments_of(binder.binding) {
             return self.expr(value);
         }
-        let borrows = lambda
-            .params
-            .iter()
-            .map(|param| self.function_borrow(param))
-            .collect();
-        self.local_closures.insert(binder.binding, borrows);
         self.closure_binding(lambda, &value.ty, Self::bind_closure_parameter)
             .spanned(value.span)
     }
 
-    fn let_block_value(value: &TypedExpr) -> Option<&TypedExpr> {
+    pub(super) fn let_block_value(value: &TypedExpr) -> Option<&TypedExpr> {
         let TypedExprKind::Control(TypedControl::Block(block)) = &value.kind else {
             return None;
         };
@@ -1674,26 +1666,15 @@ impl<'a> ExpressionEmitter<'a> {
         argument: &TypedArgument,
     ) -> Code {
         let value = self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary);
-        match self.function_parameter_borrow(callee, position) {
-            Some(borrow) => Code::joined(vec![Code::atom(borrow), value], Precedence::Prefix),
+        match self
+            .local_closures
+            .argument_borrow(callee, position, &argument.value)
+        {
+            Some(borrow) => {
+                Code::joined(vec![Code::atom(borrow.prefix()), value], Precedence::Prefix)
+            }
             None => value,
         }
-    }
-
-    fn function_parameter_borrow(
-        &self,
-        callee: &TypedExpr,
-        position: usize,
-    ) -> Option<&'static str> {
-        let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = callee.kind else {
-            return None;
-        };
-        let borrows = self.local_closures.get(&binding)?;
-        borrows
-            .get(position)
-            .copied()
-            .flatten()
-            .map(FunctionBorrow::prefix)
     }
 
     fn trait_method_call(&mut self, binding: BindingId, arguments: &[TypedArgument]) -> Code {
