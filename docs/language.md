@@ -152,7 +152,7 @@ A type parameter satisfies a trait when its `where` names the trait, or when eve
 
 - An integer literal can become any number type, so `(->point 1 2)` emits `make_point(1.0, 2.0)`.
 - A float literal can become `f32` or `f64`.
-- Every literal is checked against the range of its type. A float literal too large for `f64`, such as `1e400`, is an error, and one too small, such as `1e-400`, rounds to zero, as in Rust.
+- Every literal is checked against the range of its type. A float literal too large for its type, such as `1e400` or `(the f32 1e39)`, is an error, and one too small, such as `1e-400`, rounds to zero, as in Rust.
 - A call pins a literal parameter the way it pins any inferred parameter, so a helper called once with a `usize` keeps `usize` in its parameter and its literals.
 - A use pins a literal in a function's result the same way, so `(defn port () 8080)` passed only where a `u16` is expected emits `fn port() -> u16`.
 - A pin passes through other unannotated functions. `(defn other () (port))` used only where a `u16` is expected pins both `other` and `port`, a wrapper `(defn wrap (y) (build y))` takes the `u16` that `build` gives `y`, and `(build-with ->car)` pins the `2025` that `(defn build-with (constructor) (constructor "Nissan" 2025))` passes to its function parameter. Two uses that want different types leave the literal open, and the default then fails at the first use that disagrees.
