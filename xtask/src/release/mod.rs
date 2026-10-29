@@ -1,16 +1,19 @@
 mod crate_version;
 mod package_files;
+mod release_notes;
 mod release_version;
 mod toml_text;
 mod version_bump;
 
-use std::path::Path;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::Args;
 
 use crate::failure::TaskFailure;
 use crate_version::CrateVersion;
+use release_notes::ReleaseNotes;
 use release_version::ReleaseVersion;
 use version_bump::VersionBump;
 
@@ -56,6 +59,32 @@ impl SetVersion {
     fn write(&self, root: &Path) -> Result<(), TaskFailure> {
         let version = ReleaseVersion::parse(&self.version)?;
         CrateVersion::new(root).set(&version)
+    }
+}
+
+#[derive(Args)]
+pub struct ReleaseNotesTask {
+    #[arg(
+        help = "A JSON list of the pull requests that the release ships, each with a number, a title and labels"
+    )]
+    pulls: PathBuf,
+}
+
+impl ReleaseNotesTask {
+    pub fn run(self) -> ExitCode {
+        match self.notes() {
+            Ok(notes) => {
+                print!("{notes}");
+                ExitCode::SUCCESS
+            }
+            Err(failure) => failure.report(),
+        }
+    }
+
+    fn notes(&self) -> Result<String, TaskFailure> {
+        let json = fs::read_to_string(&self.pulls)
+            .map_err(|error| TaskFailure::unreadable(&self.pulls, error))?;
+        Ok(ReleaseNotes::parse(&json)?.render())
     }
 }
 

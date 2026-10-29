@@ -46,6 +46,20 @@ impl TaskFailure {
         ))
     }
 
+    pub fn pulls_unparsable(error: &serde_json::Error) -> Self {
+        Self::new(format!("cannot parse the pull requests: {error}"))
+    }
+
+    pub fn pulls_not_a_list() -> Self {
+        Self::new("the pull requests are not a JSON list".to_string())
+    }
+
+    pub fn pull_malformed(pull: &serde_json::Value) -> Self {
+        Self::new(format!(
+            "the pull request {pull} lacks a number, a title or a list of labels"
+        ))
+    }
+
     pub fn report(&self) -> ExitCode {
         eprintln!("error: {self}");
         ExitCode::FAILURE
