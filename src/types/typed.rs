@@ -346,6 +346,7 @@ pub struct TypedProgram {
     pub borrowed_parameters: HashSet<BindingId>,
     pub stored_function_parameters: HashSet<BindingId>,
     pub escaping_locals: HashSet<BindingId>,
+    pub borrowing_lambdas: HashMap<BindingId, HashSet<BindingId>>,
     pub mutable_function_bindings: HashSet<BindingId>,
     pub literal_generics: HashMap<GenericId, LiteralKind>,
     pub warnings: Diagnostics,

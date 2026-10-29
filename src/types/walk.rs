@@ -8,6 +8,23 @@ use super::typed::{
 };
 
 impl TypedExpr {
+    pub fn let_block_value(&self) -> Option<&TypedExpr> {
+        let TypedExprKind::Control(TypedControl::Block(block)) = &self.kind else {
+            return None;
+        };
+        let [
+            TypedBodyItem::Let(binder, inner),
+            TypedBodyItem::Expr(result),
+        ] = block.items.as_slice()
+        else {
+            return None;
+        };
+        let TypedExprKind::Leaf(TypedLeaf::Local(result)) = &result.kind else {
+            return None;
+        };
+        (*result == binder.binding).then_some(inner)
+    }
+
     pub fn repeats(&self) -> bool {
         match &self.kind {
             TypedExprKind::Recur(_) => true,

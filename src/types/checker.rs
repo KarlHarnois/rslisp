@@ -2707,6 +2707,7 @@ impl TypeChecker {
             borrowed_parameters: HashSet::new(),
             stored_function_parameters: HashSet::new(),
             escaping_locals: HashSet::new(),
+            borrowing_lambdas: HashMap::new(),
             mutable_function_bindings: HashSet::new(),
             literal_generics: self.literal_generics,
             warnings,
