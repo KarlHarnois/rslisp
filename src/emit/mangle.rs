@@ -110,7 +110,7 @@ impl NameMangler {
 
     pub fn lifetime(name: &str) -> String {
         let body = name.strip_prefix('\'').unwrap_or(name);
-        let mangled = Self::snake(body);
+        let mangled = Self::lifetime_body(body);
         let reserved = mangled == "_"
             || mangled == "static"
             || Self::NON_RAW_KEYWORDS.contains(&mangled.as_str())
@@ -121,6 +121,19 @@ impl NameMangler {
         } else {
             format!("'{mangled}")
         }
+    }
+
+    fn lifetime_body(body: &str) -> String {
+        if Self::is_separators(body) {
+            Self::WILDCARD.to_string()
+        } else {
+            Self::snake(body)
+        }
+    }
+
+    fn is_separators(name: &str) -> bool {
+        name.chars()
+            .all(|character| Self::separator_word(character).is_some())
     }
 
     pub fn type_name(name: &str) -> String {
@@ -273,6 +286,7 @@ mod tests {
     fn lifetimes_named_like_keywords_get_a_suffix() {
         assert_eq!(NameMangler::lifetime("'type"), "'type_");
         assert_eq!(NameMangler::lifetime("'static"), "'static_");
+        assert_eq!(NameMangler::lifetime("'_"), "'__");
     }
 
     #[test]
