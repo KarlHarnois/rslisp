@@ -28,6 +28,8 @@ The reader knows four rules:
 
 There is no quote shorthand, no `#` syntax and no `[]` or `{}`. The reader rejects `[`, `]`, `{` and `}` so that code from other Lisps fails with a clear message.
 
+A list nests at most 1,024 lists deep, a limit that `Form::NESTING_LIMIT` states. The reader reports a deeper list as `L0108` and skips it, so every later stage recurses only that deep. Macro output keeps the same limit: the expander reports an expression nested deeper than 1,024 expressions as `L0325`, because a macro can build forms deeper than its source.
+
 ## Meaning
 
 1. Each kernel form says what each of its positions holds: an expression, a binder, a type, a field label or a module path. The position table below lists them.

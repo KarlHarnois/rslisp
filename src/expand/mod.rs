@@ -83,6 +83,7 @@ pub struct Expander<'s> {
     warnings: Diagnostics,
     phase: Phase,
     expansion_depth: usize,
+    nesting_depth: usize,
     recovered_diagnostics: Vec<Diagnostic>,
 }
 
@@ -113,6 +114,7 @@ impl<'s> Expander<'s> {
             warnings: Diagnostics::default(),
             phase: Phase::Runtime,
             expansion_depth: 0,
+            nesting_depth: 0,
             recovered_diagnostics: Vec::new(),
         }
     }

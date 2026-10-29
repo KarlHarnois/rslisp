@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
@@ -21,7 +22,18 @@ use crate::stack::DeepRecursion;
 
 impl Expander<'_> {
     pub(super) fn lower_expr(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
-        DeepRecursion::guard(|| self.lower_form(form))
+        if self.nesting_depth == Form::NESTING_LIMIT {
+            return Err(self.nests_too_deep(form.span()));
+        }
+        self.nesting_depth += 1;
+        let lowered = DeepRecursion::guard(|| self.lower_form(form));
+        self.nesting_depth -= 1;
+        lowered
+    }
+
+    fn nests_too_deep(&self, span: Span) -> Diagnostic {
+        let expansion = self.macro_origins.get(&span).map(|origin| &*origin.name);
+        ExpandProblems::expansion_nests_too_deep(span, Form::NESTING_LIMIT, expansion)
     }
 
     fn lower_form(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
@@ -335,7 +347,7 @@ impl Expander<'_> {
 
     fn lower_body(&mut self, forms: &[Form]) -> Result<Block, Diagnostic> {
         let mut context = DefinitionContext::default();
-        let mut queue: VecDeque<Form> = forms.iter().cloned().collect();
+        let mut queue: VecDeque<Cow<Form>> = forms.iter().map(Cow::Borrowed).collect();
         let mut items = Vec::new();
         while let Some(form) = queue.pop_front() {
             items.push(self.lower_body_item(form, &mut queue, &mut context)?);
@@ -345,12 +357,12 @@ impl Expander<'_> {
 
     fn lower_body_item(
         &mut self,
-        form: Form,
-        queue: &mut VecDeque<Form>,
+        form: Cow<Form>,
+        queue: &mut VecDeque<Cow<Form>>,
         context: &mut DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
         let span = form.span();
-        match self.expand_head(form, Some(context)) {
+        match self.expand_body_head(form, context) {
             Ok(form) if self.is_kernel_form(&form, KernelForm::Let) => {
                 self.lower_let_or_recover(&form, queue, context, span)
             }
@@ -359,10 +371,22 @@ impl Expander<'_> {
         }
     }
 
+    fn expand_body_head<'form>(
+        &mut self,
+        form: Cow<'form, Form>,
+        context: &mut DefinitionContext,
+    ) -> Result<Cow<'form, Form>, Diagnostic> {
+        if self.macro_head(&form).is_none() {
+            return Ok(form);
+        }
+        self.expand_head(form.into_owned(), Some(context))
+            .map(Cow::Owned)
+    }
+
     fn lower_let_or_recover(
         &mut self,
         form: &Form,
-        queue: &mut VecDeque<Form>,
+        queue: &mut VecDeque<Cow<Form>>,
         context: &DefinitionContext,
         span: Span,
     ) -> Result<BodyItem, Diagnostic> {
@@ -375,7 +399,7 @@ impl Expander<'_> {
     fn lower_let(
         &mut self,
         form: &Form,
-        rest_of_body: &mut VecDeque<Form>,
+        rest_of_body: &mut VecDeque<Cow<Form>>,
         context: &DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
         let items = Shape::new(KernelForm::Let, form).exactly(3)?;
@@ -385,7 +409,7 @@ impl Expander<'_> {
         binder.add_scope(scope);
         rest_of_body
             .iter_mut()
-            .for_each(|later| later.add_scope(scope));
+            .for_each(|later| later.to_mut().add_scope(scope));
         Ok(BodyItem::Let(
             self.lower_binder(&binder, Some(context))?,
             value,

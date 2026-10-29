@@ -22,6 +22,7 @@ pub struct Reader<'a> {
     cursor: Cursor<'a>,
     diagnostics: Diagnostics,
     string_ran_to_end: bool,
+    open_lists: usize,
 }
 
 impl<'a> Reader<'a> {
@@ -31,6 +32,7 @@ impl<'a> Reader<'a> {
             cursor: Cursor::new(source.text()),
             diagnostics: Diagnostics::default(),
             string_ran_to_end: false,
+            open_lists: 0,
         }
     }
 
@@ -65,7 +67,7 @@ impl<'a> Reader<'a> {
     fn read_form(&mut self) -> Option<Form> {
         let next = self.cursor.peek()?;
         if next == Syntax::OPEN {
-            Some(self.read_list())
+            self.read_list()
         } else if next == Syntax::QUOTE {
             Some(self.read_string())
         } else if Syntax::is_reserved(next) {
@@ -76,11 +78,52 @@ impl<'a> Reader<'a> {
         }
     }
 
-    fn read_list(&mut self) -> Form {
+    fn read_list(&mut self) -> Option<Form> {
+        if self.open_lists == Form::NESTING_LIMIT {
+            self.skip_list_past_limit();
+            return None;
+        }
         let start = self.cursor.position();
         self.cursor.advance();
+        self.open_lists += 1;
         let items = self.read_list_items(start);
-        Form::new(FormKind::List(items), self.span_from(start))
+        self.open_lists -= 1;
+        Some(Form::new(FormKind::List(items), self.span_from(start)))
+    }
+
+    fn skip_list_past_limit(&mut self) {
+        let start = self.cursor.position();
+        let open = self.span_of_char(start, Syntax::OPEN);
+        self.report(ReadProblems::list_too_deep(open, Form::NESTING_LIMIT));
+        self.skip_list(start);
+    }
+
+    fn skip_list(&mut self, start: usize) {
+        let mut unclosed = 0;
+        while let Some(next) = self.skip_trivia() {
+            unclosed = self.skip_list_part(next, unclosed);
+            if unclosed == 0 {
+                return;
+            }
+        }
+        self.report_unclosed_list(start);
+    }
+
+    fn skip_list_part(&mut self, next: char, unclosed: usize) -> usize {
+        match next {
+            Syntax::OPEN => {
+                self.cursor.advance();
+                unclosed + 1
+            }
+            Syntax::CLOSE => {
+                self.cursor.advance();
+                unclosed - 1
+            }
+            _ => {
+                self.read_form();
+                unclosed
+            }
+        }
     }
 
     fn read_list_items(&mut self, start: usize) -> Vec<Form> {
@@ -100,11 +143,15 @@ impl<'a> Reader<'a> {
     }
 
     fn unclosed_list(&mut self, start: usize, items: Vec<Form>) -> Vec<Form> {
+        self.report_unclosed_list(start);
+        items
+    }
+
+    fn report_unclosed_list(&mut self, start: usize) {
         if !self.string_ran_to_end {
             let open = self.span_of_char(start, Syntax::OPEN);
             self.report(ReadProblems::unclosed_list(open));
         }
-        items
     }
 
     fn read_string(&mut self) -> Form {

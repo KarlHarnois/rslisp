@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/read/deep_data_nesting_past_limit.rslisp
+---
+error[L0108]: this list nests too deeply
+ --> read/deep_data_nesting_past_limit.rslisp:2:5122
+  |
+2 | ... (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec (vec...
+  |                                             ^ this `(` opens a list inside 1024 other lists
+  |
+  = note: lists nest at most 1024 deep
+  = help: move the inner forms into a function of their own
