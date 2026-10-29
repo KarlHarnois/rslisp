@@ -1,5 +1,4 @@
 mod callee_parameters;
-mod escaping_locals;
 mod expressions;
 mod fragment;
 mod fresh_lifetimes;

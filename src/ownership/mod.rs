@@ -2,6 +2,7 @@ mod aliases;
 mod changes;
 mod checks;
 mod definitions;
+mod escaping_locals;
 mod functions;
 mod kinds;
 mod modes;
@@ -29,6 +30,7 @@ use crate::types::{
     CopyRules, InferredCopies, PendingModeCheck, Pipelines, TypedExprKind, TypedProgram,
 };
 use checks::OwnershipNeeds;
+use escaping_locals::EscapingLocals;
 use functions::{FunctionTable, ParamMode};
 use kinds::{ClosureKinds, KindReport, KindSources};
 use modes::ModeInference;
@@ -86,6 +88,7 @@ impl OwnershipChecker {
         FunctionValueModes::apply(program, rewrite.function_params())
             .into_iter()
             .for_each(|diagnostic| diagnostics.push(diagnostic));
+        program.escaping_locals = EscapingLocals::in_program(program);
         let kinds = ClosureKinds::new(KindSources {
             traits: &program.traits,
             generics: &program.generics,
@@ -96,6 +99,7 @@ impl OwnershipChecker {
             function_parameters: ClosureKinds::function_parameters(program),
             rust_parameter_kinds: ClosureKinds::rust_parameter_kinds(program),
             written_parameter_kinds: ClosureKinds::written_parameter_kinds(program),
+            escaping_locals: &program.escaping_locals,
         });
         let report = kinds.run(&mut program.modules);
         Self::apply_kinds(program, report, &mut diagnostics);

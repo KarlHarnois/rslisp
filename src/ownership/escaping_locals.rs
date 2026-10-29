@@ -1,18 +1,22 @@
 use std::collections::HashSet;
 
 use crate::core::BindingId;
-use crate::types::{TypedExpr, TypedExprKind, TypedLeaf};
+use crate::types::{TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
 
 pub struct EscapingLocals {
     bindings: HashSet<BindingId>,
 }
 
 impl EscapingLocals {
-    pub fn of(value: &TypedExpr) -> HashSet<BindingId> {
+    pub fn in_program(program: &TypedProgram) -> HashSet<BindingId> {
         let mut found = Self {
             bindings: HashSet::new(),
         };
-        found.expr(value);
+        program
+            .modules
+            .iter()
+            .flat_map(|module| &module.definitions)
+            .for_each(|definition| found.expr(&definition.value));
         found.bindings
     }
 
