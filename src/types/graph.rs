@@ -13,7 +13,6 @@ pub struct Definition<'p> {
 pub struct DefinitionGraph<'p> {
     definitions: Vec<Definition<'p>>,
     dependencies: DependencyGraph,
-    order: Vec<BindingId>,
     components: Vec<Vec<BindingId>>,
 }
 
@@ -41,7 +40,6 @@ impl<'p> DefinitionGraph<'p> {
         Self {
             definitions,
             dependencies,
-            order,
             components,
         }
     }
@@ -54,8 +52,8 @@ impl<'p> DefinitionGraph<'p> {
         &self.dependencies
     }
 
-    pub fn order(&self) -> &[BindingId] {
-        &self.order
+    pub fn order(&self) -> impl Iterator<Item = BindingId> + '_ {
+        self.definitions.iter().map(|definition| definition.binding)
     }
 
     pub fn components(&self) -> &[Vec<BindingId>] {
