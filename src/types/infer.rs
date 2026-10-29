@@ -3,6 +3,7 @@ mod shared_variables;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use super::borrowed_items::ArgumentSite;
 use super::checker::{TypeChecker, VariantArmReference};
 use super::collection::{Collection, CollectionKind};
 use super::enums::VariantPayload;
@@ -1751,7 +1752,8 @@ impl TypeChecker {
     ) -> Result<Vec<TypedArgument>, Diagnostic> {
         let mut typed_arguments = Vec::new();
         for (position, (parameter, argument)) in parameters.iter().zip(arguments).enumerate() {
-            let value = self.infer_argument(parameter, argument)?;
+            let site = ArgumentSite { callee, position };
+            let value = self.infer_argument(parameter, argument, &site)?;
             let borrow = if shared.contains(position) {
                 Borrow::None
             } else {
@@ -1766,6 +1768,7 @@ impl TypeChecker {
         &mut self,
         parameter: &Type,
         argument: &Expr,
+        site: &ArgumentSite<'_>,
     ) -> Result<TypedExpr, Diagnostic> {
         let span = argument.span();
         let ExprKind::Fn(lambda) = argument.kind() else {
@@ -1776,7 +1779,7 @@ impl TypeChecker {
                 self.infer(argument)?
             };
             let value = self.wrap_function_value(parameter, value)?;
-            return self.iterate_collection(parameter, value);
+            return self.iterate_collection(parameter, value, site);
         };
         match self.unifier.shallow(parameter) {
             Type::Function(_, parameters, result) if parameters.len() == lambda.params.len() => {
@@ -1797,6 +1800,7 @@ impl TypeChecker {
         &mut self,
         parameter: &Type,
         value: TypedExpr,
+        site: &ArgumentSite<'_>,
     ) -> Result<TypedExpr, Diagnostic> {
         let expected = self.unifier.resolve(parameter);
         if value.is_written_form() || !self.is_iterator(&expected) {
@@ -1809,9 +1813,11 @@ impl TypeChecker {
         let result = self.iterator_type(item);
         let parameters = vec![Type::shared(collection_type)];
         let span = value.span;
+        let collection = value.ty.clone();
         let call =
             self.synthetic_call_with_value(template, parameters, result, value, &[], span)?;
-        self.expect(&expected, &call.ty, span, MismatchContext::Plain)?;
+        self.expect(&expected, &call.ty, span, MismatchContext::Plain)
+            .map_err(|diagnostic| self.explain_borrowed_items(site, &collection, diagnostic))?;
         Ok(call)
     }
 
@@ -2031,7 +2037,7 @@ impl TypeChecker {
             ))
     }
 
-    fn parameter_is_written(&self, callee: BindingId, position: usize) -> bool {
+    pub(super) fn parameter_is_written(&self, callee: BindingId, position: usize) -> bool {
         self.written_parameters
             .get(&callee)
             .and_then(|written| written.get(position))
@@ -2829,7 +2835,11 @@ impl TypeChecker {
         for (position, argument) in arguments.iter().enumerate() {
             let index = position + 1;
             let parameter = &parameters[index];
-            let value = self.infer_argument(parameter, argument)?;
+            let site = ArgumentSite {
+                callee: None,
+                position: index,
+            };
+            let value = self.infer_argument(parameter, argument, &site)?;
             let borrow = self.pass_call_argument(None, index, parameter, &value)?;
             typed_arguments.push(TypedArgument { value, borrow });
         }
