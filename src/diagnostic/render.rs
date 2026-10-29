@@ -1,11 +1,17 @@
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::ops::Range;
+
 use annotate_snippets::{AnnotationKind, Group, Level, Patch, Renderer, Snippet};
 
+use super::source_window::{LineIndex, SourceWindow};
 use super::{Diagnostic, Diagnostics, Help, Label, Suggestion};
 use crate::source::{SourceId, SourceMap};
 
 pub struct DiagnosticRenderer<'a> {
     sources: &'a SourceMap,
     renderer: Renderer,
+    line_indexes: RefCell<HashMap<SourceId, LineIndex>>,
 }
 
 impl<'a> DiagnosticRenderer<'a> {
@@ -13,6 +19,7 @@ impl<'a> DiagnosticRenderer<'a> {
         Self {
             sources,
             renderer: Renderer::plain(),
+            line_indexes: RefCell::default(),
         }
     }
 
@@ -20,6 +27,7 @@ impl<'a> DiagnosticRenderer<'a> {
         Self {
             sources,
             renderer: Renderer::styled(),
+            line_indexes: RefCell::default(),
         }
     }
 
@@ -87,20 +95,30 @@ impl<'a> DiagnosticRenderer<'a> {
         source: SourceId,
     ) -> Snippet<'d, annotate_snippets::Annotation<'d>> {
         let primary_span = diagnostic.primary().span();
-        let annotations = diagnostic
-            .labels()
-            .filter(|label| label.span().source() == source)
-            .map(|label| Self::annotation(label, label.span() == primary_span));
-        self.snippet(source).annotations(annotations)
+        let labels_in_source = || {
+            diagnostic
+                .labels()
+                .filter(move |label| label.span().source() == source)
+        };
+        let covered = SourceWindow::covering(labels_in_source().map(|label| label.span().range()));
+        let window = self.window(source, covered);
+        let annotations = labels_in_source()
+            .map(|label| Self::annotation(label, label.span() == primary_span, &window));
+        self.snippet(source, &window).annotations(annotations)
     }
 
-    fn annotation(label: &Label, is_primary: bool) -> annotate_snippets::Annotation<'_> {
+    fn annotation<'d>(
+        label: &'d Label,
+        is_primary: bool,
+        window: &SourceWindow,
+    ) -> annotate_snippets::Annotation<'d> {
         let kind = if is_primary {
             AnnotationKind::Primary
         } else {
             AnnotationKind::Context
         };
-        kind.span(label.span().range()).label(label.message())
+        kind.span(window.relative(label.span().range()))
+            .label(label.message())
     }
 
     fn suggestion_group<'d>(&'d self, help: &'d Help) -> Option<Group<'d>> {
@@ -112,18 +130,28 @@ impl<'a> DiagnosticRenderer<'a> {
     }
 
     fn patched_snippet<'d>(&'d self, suggestion: &'d Suggestion) -> Snippet<'d, Patch<'d>> {
-        let file = self.sources.file(suggestion.span().source());
-        Snippet::source(file.text())
-            .path(file.name())
-            .patch(Patch::new(
-                suggestion.span().range(),
-                suggestion.replacement(),
-            ))
+        let span = suggestion.span();
+        let window = self.window(span.source(), span.range());
+        self.snippet(span.source(), &window).patch(Patch::new(
+            window.relative(span.range()),
+            suggestion.replacement(),
+        ))
     }
 
-    fn snippet<'d, T: Clone>(&'d self, source: SourceId) -> Snippet<'d, T> {
+    fn snippet<'d, T: Clone>(&'d self, source: SourceId, window: &SourceWindow) -> Snippet<'d, T> {
         let file = self.sources.file(source);
-        Snippet::source(file.text()).path(file.name())
+        Snippet::source(window.text(file.text()))
+            .line_start(window.first_line())
+            .path(file.name())
+    }
+
+    fn window(&self, source: SourceId, covered: Range<usize>) -> SourceWindow {
+        let text = self.sources.file(source).text();
+        self.line_indexes
+            .borrow_mut()
+            .entry(source)
+            .or_insert_with(|| LineIndex::new(text))
+            .window(covered)
     }
 }
 
