@@ -67,9 +67,13 @@
 
 (def placeholders
   (fn (index count)
+    (placeholders-onto "" index count)))
+
+(def placeholders-onto
+  (fn (text index count)
     (if (number-lt index count)
-        (string ", {&" index "}" (placeholders (number-add index 1) count))
-        "")))
+        (recur (string text ", {&" index "}") (number-add index 1) count)
+        text)))
 
 (def part-type
   (fn (index)
@@ -109,9 +113,13 @@
 
 (def flatten-parts
   (fn (parts)
+    (flatten-parts-onto (list) parts)))
+
+(def flatten-parts-onto
+  (fn (pieces parts)
     (if (empty? parts)
-        (list)
-        (concat (flatten-part (first parts)) (flatten-parts (rest parts))))))
+        pieces
+        (recur (concat pieces (flatten-part (first parts))) (rest parts)))))
 
 (def literal-piece?
   (fn (piece)
@@ -123,10 +131,13 @@
 
 (def placeholder-count
   (fn (pieces)
+    (placeholder-count-onto 0 pieces)))
+
+(def placeholder-count-onto
+  (fn (count pieces)
     (if (empty? pieces)
-        0
-        (number-add (if (literal-piece? (first pieces)) 0 1)
-                    (placeholder-count (rest pieces))))))
+        count
+        (recur (number-add count (if (literal-piece? (first pieces)) 0 1)) (rest pieces)))))
 
 (def format-piece
   (fn (piece index escaper)
@@ -144,15 +155,22 @@
 
 (def format-pieces
   (fn (pieces index escaper)
+    (format-pieces-onto (list "" (list) (list) index) pieces escaper)))
+
+(def format-pieces-onto
+  (fn (formatted pieces escaper)
     (if (empty? pieces)
-        (list "" (list) (list) index)
-        (do
-          (let rendered (format-piece (first pieces) index escaper))
-          (let rest (format-pieces (rest pieces) (nth rendered 3) escaper))
-          (list (string (nth rendered 0) (nth rest 0))
-                (concat (nth rendered 1) (nth rest 1))
-                (concat (nth rendered 2) (nth rest 2))
-                (nth rest 3))))))
+        formatted
+        (recur (join-formatted formatted (format-piece (first pieces) (nth formatted 3) escaper))
+               (rest pieces)
+               escaper))))
+
+(def join-formatted
+  (fn (formatted rendered)
+    (list (string (nth formatted 0) (nth rendered 0))
+          (concat (nth formatted 1) (nth rendered 1))
+          (concat (nth formatted 2) (nth rendered 2))
+          (nth rendered 3))))
 
 (def last-piece
   (fn (pieces)
