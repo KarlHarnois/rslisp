@@ -46,6 +46,22 @@ impl TaskFailure {
         ))
     }
 
+    pub fn malformed_tag(tag: &str) -> Self {
+        Self::new(format!(
+            "cannot read the release tag {tag:?}: expected v<major>.<minor>.<patch>"
+        ))
+    }
+
+    pub fn malformed_version(version: &str) -> Self {
+        Self::new(format!(
+            "cannot read the version {version:?}: expected <major>.<minor>.<patch>"
+        ))
+    }
+
+    pub fn manifest_key_missing(file: &str, anchor: &str, key: &str) -> Self {
+        Self::new(format!("{file} has no `{key}` under `{anchor}`"))
+    }
+
     pub fn pulls_unparsable(error: &serde_json::Error) -> Self {
         Self::new(format!("cannot parse the pull requests: {error}"))
     }

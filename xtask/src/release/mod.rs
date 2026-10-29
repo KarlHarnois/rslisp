@@ -18,14 +18,14 @@ use release_version::ReleaseVersion;
 use version_bump::VersionBump;
 
 #[derive(Args)]
-pub struct NextRelease {
+pub struct NextReleaseTask {
     #[arg(help = "The latest release tag, such as v0.1.0")]
     latest: String,
     #[arg(help = "The labels of the pull requests that the release ships")]
     labels: Vec<String>,
 }
 
-impl NextRelease {
+impl NextReleaseTask {
     pub fn run(self) -> ExitCode {
         match self.next_tag() {
             Ok(tag) => {
@@ -43,12 +43,12 @@ impl NextRelease {
 }
 
 #[derive(Args)]
-pub struct SetVersion {
+pub struct SetVersionTask {
     #[arg(help = "The version to write into the crate, such as 0.1.1")]
     version: String,
 }
 
-impl SetVersion {
+impl SetVersionTask {
     pub fn run(self, root: &Path) -> ExitCode {
         match self.write(root) {
             Ok(()) => ExitCode::SUCCESS,
@@ -90,7 +90,7 @@ impl ReleaseNotesTask {
 
 #[cfg(test)]
 mod tests {
-    use super::NextRelease;
+    use super::NextReleaseTask;
 
     struct NextReleaseFixture;
 
@@ -98,7 +98,7 @@ mod tests {
         const LATEST: &'static str = "v0.1.0";
 
         fn next(latest: &str, labels: &[&str]) -> Result<String, String> {
-            let release = NextRelease {
+            let release = NextReleaseTask {
                 latest: latest.to_string(),
                 labels: labels.iter().map(ToString::to_string).collect(),
             };

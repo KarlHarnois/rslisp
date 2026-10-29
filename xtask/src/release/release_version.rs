@@ -16,8 +16,8 @@ impl ReleaseVersion {
     pub fn parse_tag(tag: &str) -> Result<Self, TaskFailure> {
         let version = tag
             .strip_prefix(Self::TAG_PREFIX)
-            .ok_or_else(|| Self::malformed_tag(tag))?;
-        Self::parse(version).map_err(|_| Self::malformed_tag(tag))
+            .ok_or_else(|| TaskFailure::malformed_tag(tag))?;
+        Self::parse(version).map_err(|_| TaskFailure::malformed_tag(tag))
     }
 
     pub fn parse(version: &str) -> Result<Self, TaskFailure> {
@@ -25,14 +25,14 @@ impl ReleaseVersion {
             .split('.')
             .map(str::parse)
             .collect::<Result<_, _>>()
-            .map_err(|_| Self::malformed_version(version))?;
+            .map_err(|_| TaskFailure::malformed_version(version))?;
         match numbers[..] {
             [major, minor, patch] => Ok(Self {
                 major,
                 minor,
                 patch,
             }),
-            _ => Err(Self::malformed_version(version)),
+            _ => Err(TaskFailure::malformed_version(version)),
         }
     }
 
@@ -57,18 +57,6 @@ impl ReleaseVersion {
 
     pub fn tag(&self) -> String {
         format!("{}{self}", Self::TAG_PREFIX)
-    }
-
-    fn malformed_tag(tag: &str) -> TaskFailure {
-        TaskFailure::new(format!(
-            "cannot read the release tag {tag:?}: expected v<major>.<minor>.<patch>"
-        ))
-    }
-
-    fn malformed_version(version: &str) -> TaskFailure {
-        TaskFailure::new(format!(
-            "cannot read the version {version:?}: expected <major>.<minor>.<patch>"
-        ))
     }
 }
 

@@ -26,7 +26,11 @@ impl TomlText {
 
     pub fn with_string_value(&self, anchor: &str, key: &str, value: &str) -> Option<Self> {
         let index = self.entry_index(anchor, key)?;
-        let replacement = format!("{key}{}{q}{value}{q}\n", Self::ASSIGNMENT, q = Self::QUOTE);
+        let replacement = format!(
+            "{key}{}{quote}{value}{quote}\n",
+            Self::ASSIGNMENT,
+            quote = Self::QUOTE
+        );
         let text = self
             .text
             .split_inclusive('\n')

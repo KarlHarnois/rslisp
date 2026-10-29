@@ -11,6 +11,8 @@ impl PackageFiles {
     const PACKAGE_TABLE: &'static str = "[package]";
     const NAME_KEY: &'static str = "name";
     const VERSION_KEY: &'static str = "version";
+    const MANIFEST_NAME: &'static str = "the manifest";
+    const LOCK_NAME: &'static str = "the lock file";
 
     pub fn new(manifest: TomlText, lock: TomlText) -> Self {
         Self { manifest, lock }
@@ -30,11 +32,19 @@ impl PackageFiles {
         let manifest = self
             .manifest
             .with_string_value(Self::PACKAGE_TABLE, Self::VERSION_KEY, &version)
-            .ok_or_else(|| Self::missing("the manifest", Self::PACKAGE_TABLE))?;
+            .ok_or_else(|| {
+                TaskFailure::manifest_key_missing(
+                    Self::MANIFEST_NAME,
+                    Self::PACKAGE_TABLE,
+                    Self::VERSION_KEY,
+                )
+            })?;
         let lock = self
             .lock
             .with_string_value(&lock_entry, Self::VERSION_KEY, &version)
-            .ok_or_else(|| Self::missing("the lock file", &lock_entry))?;
+            .ok_or_else(|| {
+                TaskFailure::manifest_key_missing(Self::LOCK_NAME, &lock_entry, Self::VERSION_KEY)
+            })?;
         Ok(Self::new(manifest, lock))
     }
 
@@ -42,15 +52,14 @@ impl PackageFiles {
         let name = self
             .manifest
             .string_value(Self::PACKAGE_TABLE, Self::NAME_KEY)
-            .ok_or_else(|| Self::missing("the manifest", Self::PACKAGE_TABLE))?;
+            .ok_or_else(|| {
+                TaskFailure::manifest_key_missing(
+                    Self::MANIFEST_NAME,
+                    Self::PACKAGE_TABLE,
+                    Self::NAME_KEY,
+                )
+            })?;
         Ok(format!("{} = \"{name}\"", Self::NAME_KEY))
-    }
-
-    fn missing(file: &str, anchor: &str) -> TaskFailure {
-        TaskFailure::new(format!(
-            "{file} has no `{}` under `{anchor}`",
-            Self::VERSION_KEY
-        ))
     }
 }
 
