@@ -1,0 +1,10 @@
+(defstruct point :x i64 :y i64)
+
+(defstruct sticker :text string :at point)
+
+(defn make-badge ()
+  (->sticker (to-string "open") (->point 0 2)))
+
+(defn main ()
+  (let moved (assoc-in (:at (make-badge)) (:x) 4))
+  (println (:text (make-badge)) " " (:x moved) " " (:y moved)))
