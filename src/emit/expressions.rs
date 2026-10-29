@@ -174,6 +174,7 @@ pub struct ExpressionEmitter<'a> {
     mutable_locals: HashSet<BindingId>,
     stored_functions: StoredFunctions<'a>,
     local_closures: LocalClosures<'a>,
+    enclosing_lifetime: Option<String>,
     tail_loop: Option<TailLoop>,
     loop_exit: LoopExit,
 }
@@ -203,6 +204,7 @@ impl<'a> ExpressionEmitter<'a> {
             mutable_locals: HashSet::new(),
             stored_functions: StoredFunctions::new(program),
             local_closures: LocalClosures::new(program),
+            enclosing_lifetime: None,
             tail_loop: None,
             loop_exit: LoopExit::Return,
         }
@@ -219,6 +221,11 @@ impl<'a> ExpressionEmitter<'a> {
 
     pub fn with_local_closures(mut self, local_closures: LocalClosures<'a>) -> Self {
         self.local_closures = local_closures;
+        self
+    }
+
+    pub fn with_enclosing_lifetime(mut self, lifetime: Option<String>) -> Self {
+        self.enclosing_lifetime = lifetime;
         self
     }
 
@@ -262,7 +269,12 @@ impl<'a> ExpressionEmitter<'a> {
         ) else {
             return self.bind_parameter(param, TypePosition::Value);
         };
-        let ty = self.types().borrowed_function(borrow, parameters, result);
+        let ty = self.types().borrowed_function(
+            borrow,
+            parameters,
+            result,
+            self.enclosing_lifetime.as_deref(),
+        );
         let mutable = self.is_reassigned(param);
         format!(
             "{}{}: {ty}",

@@ -661,18 +661,25 @@ impl<'a> RustTypes<'a> {
         borrow: FunctionBorrow,
         parameters: &[Type],
         result: &Type,
+        enclosing_lifetime: Option<&str>,
     ) -> String {
-        let (inner_scope, binder) = self.function_binder(
-            parameters,
-            result,
-            TypePosition::Value,
-            &LifetimeScope::default(),
-        );
+        let (position, scope) = Self::closure_parameter_scope(enclosing_lifetime);
+        let (inner_scope, binder) = self.function_binder(parameters, result, position, &scope);
         format!(
             "{}{}",
             borrow.trait_object(&binder),
             self.function_shape(parameters, result, &inner_scope)
         )
+    }
+
+    fn closure_parameter_scope(enclosing_lifetime: Option<&str>) -> (TypePosition, LifetimeScope) {
+        match enclosing_lifetime {
+            Some(lifetime) => (
+                TypePosition::Value,
+                LifetimeScope::default().with_elided(Some(lifetime.to_string())),
+            ),
+            None => (TypePosition::StaticResult, LifetimeScope::default()),
+        }
     }
 
     fn function_binder(

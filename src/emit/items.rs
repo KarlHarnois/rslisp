@@ -794,12 +794,14 @@ impl<'a> ItemEmitter<'a> {
         let TypedExprKind::Fn(lambda) = &definition.value.kind else {
             return Vec::new();
         };
-        let mut emitter = self.expressions(info.module, &definition.value);
-        emitter.prepare_tail_loop(definition.binding, lambda);
-        let types = emitter.types();
         let used = self.used_written_lifetimes(&definition.value);
         let stored = self.result_borrows.definition_stores(definition.binding);
         let inferred = self.function_lifetime(definition, &stored.flows);
+        let mut emitter = self
+            .expressions(info.module, &definition.value)
+            .with_enclosing_lifetime(inferred.clone());
+        emitter.prepare_tail_loop(definition.binding, lambda);
+        let types = emitter.types();
         let scope =
             self.lifetime_scope_used(&definition.scheme.lifetimes, &used, inferred.as_deref());
         let written: Vec<BindingId> = definition

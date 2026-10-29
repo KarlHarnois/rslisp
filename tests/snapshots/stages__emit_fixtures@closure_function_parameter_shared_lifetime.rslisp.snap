@@ -1,0 +1,44 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/closure_function_parameter_shared_lifetime.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+}
+
+fn longer_make<'a>(first: &'a str, second: &'a str) -> &'a str {
+    let pick = |build: &mut dyn FnMut() -> Car<'a>| build().make;
+    pick(&mut || Car {
+        make: if first.len() > second.len() {
+            first
+        } else {
+            second
+        },
+        model: "Leaf",
+    })
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!("{}", longer_make("Nissan", "Mitsubishi"))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
