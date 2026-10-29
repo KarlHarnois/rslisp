@@ -44,38 +44,61 @@ impl BorrowedStorage {
     }
 }
 
+struct MoveLabels {
+    used: &'static str,
+    moved: &'static str,
+}
+
+impl MoveLabels {
+    const SAME_PASS: Self = Self {
+        used: "value used here after it moved",
+        moved: "value moved here",
+    };
+    const EARLIER_PASS: Self = Self {
+        used: "value used here after an earlier pass of the loop moved it",
+        moved: "value moved here, in an earlier pass of the loop",
+    };
+}
+
 pub struct OwnershipProblems;
 
 impl OwnershipProblems {
     pub fn use_after_move(name: &str, used: Span, moved: Span) -> Diagnostic {
-        Self::moved_value(DiagnosticCode::USE_AFTER_MOVE, name, used, moved)
+        Self::moved_value(
+            DiagnosticCode::USE_AFTER_MOVE,
+            name,
+            used,
+            moved,
+            &MoveLabels::SAME_PASS,
+        )
     }
 
     pub fn use_after_earlier_pass_move(name: &str, used: Span, moved: Span) -> Diagnostic {
-        let diagnostic = Diagnostic::error(
+        Self::moved_value(
             DiagnosticCode::USE_AFTER_MOVE,
+            name,
+            used,
+            moved,
+            &MoveLabels::EARLIER_PASS,
+        )
+    }
+
+    fn moved_value(
+        code: DiagnosticCode,
+        name: &str,
+        used: Span,
+        moved: Span,
+        labels: &MoveLabels,
+    ) -> Diagnostic {
+        let diagnostic = Diagnostic::error(
+            code,
             format!("use of moved value `{name}`"),
-            Label::new(
-                used,
-                "value used here after an earlier pass of the loop moved it",
-            ),
+            Label::new(used, labels.used),
         );
         if used == moved {
             return diagnostic;
         }
-        diagnostic.with_label(Label::new(
-            moved,
-            "value moved here, in an earlier pass of the loop",
-        ))
-    }
-
-    fn moved_value(code: DiagnosticCode, name: &str, used: Span, moved: Span) -> Diagnostic {
-        Diagnostic::error(
-            code,
-            format!("use of moved value `{name}`"),
-            Label::new(used, "value used here after it moved"),
-        )
-        .with_label(Label::new(moved, "value moved here"))
+        diagnostic.with_label(Label::new(moved, labels.moved))
     }
 
     pub fn clone_suggestion(diagnostic: Diagnostic, name: &str, moved: Span) -> Diagnostic {
@@ -119,7 +142,13 @@ impl OwnershipProblems {
         used: Span,
         moved: Span,
     ) -> Diagnostic {
-        Self::moved_value(DiagnosticCode::MISSING_COPY_BOUND, name, used, moved)
+        Self::moved_value(
+            DiagnosticCode::MISSING_COPY_BOUND,
+            name,
+            used,
+            moved,
+            &MoveLabels::SAME_PASS,
+        )
             .with_note(format!(
                 "the signature writes `{parameter}` without `{copy_trait}`, and a written signature is exact"
             ))
