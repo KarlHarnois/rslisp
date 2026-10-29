@@ -25,6 +25,16 @@ impl TypedExpr {
         (*result == binder.binding).then_some(inner)
     }
 
+    pub fn lambda_value(&self) -> Option<&TypedLambda> {
+        if let Some(inner) = self.let_block_value() {
+            return inner.lambda_value();
+        }
+        match &self.kind {
+            TypedExprKind::Fn(lambda) => Some(lambda),
+            _ => None,
+        }
+    }
+
     pub fn let_bindings(&self) -> LetBindings<'_> {
         LetBindings {
             pending: vec![LetWalkStep::Visit(self)],

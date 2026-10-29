@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::core::BindingId;
-use crate::types::{Type, TypedBinder, TypedExpr, TypedExprKind, TypedLambda, TypedProgram};
+use crate::types::{Type, TypedBinder, TypedExpr, TypedLambda, TypedProgram};
 
 pub struct BorrowingLambdas<'p> {
     program: &'p TypedProgram,
@@ -24,10 +24,7 @@ impl<'p> BorrowingLambdas<'p> {
     }
 
     fn register(&mut self, binder: &TypedBinder, value: &TypedExpr) {
-        if let Some(inner) = value.let_block_value() {
-            return self.register(binder, inner);
-        }
-        let TypedExprKind::Fn(lambda) = &value.kind else {
+        let Some(lambda) = value.lambda_value() else {
             return;
         };
         if binder.annotated || self.program.escaping_locals.contains(&binder.binding) {
