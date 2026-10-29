@@ -14,7 +14,7 @@ use crate::source::Span;
 use crate::types::{
     Borrow, ClosureKind, CopyRules, FieldPlace, GenericId, GenericParam, InferredCopies, Pipelines,
     StructTable, TemplateBorrows, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedControl,
-    TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
+    TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedMatch, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -312,7 +312,7 @@ impl<'a> MoveChecker<'a> {
             TypedControl::Block(block) => self.block(block, usage),
             TypedControl::If(test, then, otherwise) => self.branches(test, then, otherwise, usage),
             TypedControl::Match(matched) => {
-                self.expr(&matched.value, Usage::Move);
+                self.expr(&matched.value, self.scrutinee_usage(matched));
                 let before = self.moved.clone();
                 let mut arm_moves = Vec::new();
                 for arm in &matched.arms {
@@ -325,6 +325,19 @@ impl<'a> MoveChecker<'a> {
                     self.moved.merge(moved);
                 }
             }
+        }
+    }
+
+    fn scrutinee_usage(&self, matched: &TypedMatch) -> Usage {
+        let binds_owned_part = matched
+            .arms
+            .iter()
+            .flat_map(|arm| arm.pattern.binders())
+            .any(|binder| !self.copy.is_copy(&binder.ty));
+        if binds_owned_part {
+            Usage::Move
+        } else {
+            Usage::Borrow
         }
     }
 
