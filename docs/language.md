@@ -460,7 +460,7 @@ The emitted Rust is formatted by `rustfmt` when `rslisp emit` or `rslisp build` 
 | other punctuation | spelled out, so `+` becomes `plus` and `\` becomes `backslash` |
 | a name made only of `-` and `_` | each character spelled out, so `-` becomes `minus` and `_` becomes `underscore` |
 | a local named `_` | `_`, Rust's wildcard |
-| a character that is not a letter or a digit | its code point, so `☃` becomes `u2603` |
+| a character that Rust does not allow in an identifier | its code point, so `☃` becomes `u2603` |
 | a Rust keyword | a raw identifier, so `type` becomes `r#type` |
 | a program type or trait that hides a Rust prelude name | suffixed with `2`, so `sized` becomes `Sized2` |
 | a local whose name a binding still in scope uses | numbered, so `n` becomes `n_2` |

@@ -360,6 +360,7 @@ dependencies = [
  "serde_json",
  "similar",
  "stacker",
+ "unicode-ident",
 ]
 
 [[package]]
