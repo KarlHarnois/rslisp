@@ -2,6 +2,7 @@ use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 
 use super::build_directory::BuildDirectory;
+use super::capped_report::CappedReport;
 use super::exit_status::ExitStatus;
 use crate::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use crate::core::ModulePath;
@@ -88,15 +89,19 @@ impl Terminal {
         if warnings.is_empty() {
             return;
         }
-        eprintln!("{}", self.renderer().render_all(warnings));
+        eprintln!("{}", self.capped_report().render(warnings));
     }
 
     pub fn report(&self, diagnostics: &Diagnostics) -> ExitStatus {
         if !diagnostics.has_errors() {
             return ExitStatus::Success;
         }
-        eprintln!("{}", self.renderer().render_all(diagnostics));
+        eprintln!("{}", self.capped_report().render(diagnostics));
         ExitStatus::ProgramErrors
+    }
+
+    fn capped_report(&self) -> CappedReport<'_> {
+        CappedReport::new(self.renderer())
     }
 
     fn renderer(&self) -> DiagnosticRenderer<'_> {

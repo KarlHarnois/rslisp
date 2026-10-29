@@ -17,6 +17,8 @@ This guide covers every error the compiler prints. A diagnostic uses rustc's lay
 
 A warning does not stop the build: the compiler prints it and continues.
 
+**The CLI prints at most `CappedReport::MAXIMUM_PRINTED_DIAGNOSTICS` diagnostics, in source order, then one `note:` line that counts the rest.** Every stage still returns every diagnostic.
+
 ```text
 error[L0201]: cannot find `distnce` in this scope
  --> src/main.rslisp:4:10
