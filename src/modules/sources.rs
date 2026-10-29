@@ -85,11 +85,11 @@ impl ModuleSources {
     }
 
     pub fn read_file(path: &Path) -> io::Result<String> {
-        let text = fs::read_to_string(path)?;
-        Ok(match text.strip_prefix(Self::BYTE_ORDER_MARK) {
-            Some(unmarked) => unmarked.to_string(),
-            None => text,
-        })
+        let mut text = fs::read_to_string(path)?;
+        if text.starts_with(Self::BYTE_ORDER_MARK) {
+            text.drain(..Self::BYTE_ORDER_MARK.len_utf8());
+        }
+        Ok(text)
     }
 
     pub fn find(&self, path: &ModulePath) -> Option<ModuleSource> {
