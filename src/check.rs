@@ -19,7 +19,7 @@ impl ProgramChecker {
 
 struct CheckRuns<'a> {
     program: &'a Program,
-    graph: DefinitionGraph,
+    graph: DefinitionGraph<'a>,
     blocked: HashSet<BindingId>,
     inferred_copies: InferredCopies,
     pins: HashMap<BindingId, Type>,

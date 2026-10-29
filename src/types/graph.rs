@@ -2,32 +2,52 @@ use std::collections::{HashMap, HashSet};
 
 use crate::core::{BindingArena, BindingId, BindingKind, Expr, ExprKind, ItemKind, Leaf};
 use crate::expand::Program;
+use crate::source::Span;
 
-pub struct DefinitionGraph {
+pub struct Definition<'p> {
+    pub binding: BindingId,
+    pub value: &'p Expr,
+    pub span: Span,
+}
+
+pub struct DefinitionGraph<'p> {
+    definitions: Vec<Definition<'p>>,
     dependencies: DependencyGraph,
     order: Vec<BindingId>,
     components: Vec<Vec<BindingId>>,
 }
 
-impl DefinitionGraph {
-    pub fn of(program: &Program) -> Self {
-        let definitions: Vec<(BindingId, &Expr)> = program
+impl<'p> DefinitionGraph<'p> {
+    pub fn of(program: &'p Program) -> Self {
+        let definitions: Vec<Definition<'p>> = program
             .modules
             .iter()
             .flat_map(|module| &module.items)
             .filter_map(|item| match &item.kind {
-                ItemKind::Def(binding, value) => Some((*binding, value)),
+                ItemKind::Def(binding, value) => Some(Definition {
+                    binding: *binding,
+                    value,
+                    span: item.span,
+                }),
                 _ => None,
             })
             .collect();
         let dependencies = DependencyGraph::build(&definitions, &program.bindings);
-        let order: Vec<BindingId> = definitions.iter().map(|(binding, _)| *binding).collect();
+        let order: Vec<BindingId> = definitions
+            .iter()
+            .map(|definition| definition.binding)
+            .collect();
         let components = dependencies.components(&order);
         Self {
+            definitions,
             dependencies,
             order,
             components,
         }
+    }
+
+    pub fn definitions(&self) -> &[Definition<'p>] {
+        &self.definitions
     }
 
     pub fn dependencies(&self) -> &DependencyGraph {
@@ -49,18 +69,21 @@ pub struct DependencyGraph {
 }
 
 impl DependencyGraph {
-    pub fn build(definitions: &[(BindingId, &Expr)], bindings: &BindingArena) -> Self {
-        let known: HashSet<BindingId> = definitions.iter().map(|(binding, _)| *binding).collect();
+    pub fn build(definitions: &[Definition], bindings: &BindingArena) -> Self {
+        let known: HashSet<BindingId> = definitions
+            .iter()
+            .map(|definition| definition.binding)
+            .collect();
         let mut edges = HashMap::new();
         let mut direct_compile_time = HashSet::new();
-        for (binding, value) in definitions {
+        for definition in definitions {
             let mut references = References::default();
-            references.collect(value, bindings);
+            references.collect(definition.value, bindings);
             if references.uses_compile_time_code {
-                direct_compile_time.insert(*binding);
+                direct_compile_time.insert(definition.binding);
             }
             edges.insert(
-                *binding,
+                definition.binding,
                 references
                     .globals
                     .into_iter()
