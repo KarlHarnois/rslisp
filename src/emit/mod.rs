@@ -5,6 +5,7 @@ mod fresh_lifetimes;
 mod function_borrow;
 mod items;
 mod literal_generics;
+mod local_closures;
 mod locals;
 pub(crate) mod mangle;
 mod method_elisions;

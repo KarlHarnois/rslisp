@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/local_lambda_nested_pass.rslisp
+---
+fn main() {
+    let inner = |h: &mut dyn FnMut(i64)| h(2024);
+    let outer = |g: &mut dyn FnMut(i64)| inner(g);
+    outer(&mut |n: i64| println!("{}", n))
+}
