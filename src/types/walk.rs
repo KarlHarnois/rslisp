@@ -25,6 +25,12 @@ impl TypedExpr {
         (*result == binder.binding).then_some(inner)
     }
 
+    pub fn let_bindings(&self) -> LetBindings<'_> {
+        LetBindings {
+            pending: vec![LetWalkStep::Visit(self)],
+        }
+    }
+
     pub fn repeats(&self) -> bool {
         match &self.kind {
             TypedExprKind::Recur(_) => true,
@@ -96,6 +102,58 @@ impl TypedExpr {
                 })
                 .collect(),
             _ => Vec::new(),
+        }
+    }
+}
+
+pub struct LetBindings<'e> {
+    pending: Vec<LetWalkStep<'e>>,
+}
+
+enum LetWalkStep<'e> {
+    Visit(&'e TypedExpr),
+    Yield(&'e TypedBinder, &'e TypedExpr),
+}
+
+impl<'e> Iterator for LetBindings<'e> {
+    type Item = (&'e TypedBinder, &'e TypedExpr);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(step) = self.pending.pop() {
+            match step {
+                LetWalkStep::Yield(binder, value) => return Some((binder, value)),
+                LetWalkStep::Visit(expr) => self.visit(expr),
+            }
+        }
+        None
+    }
+}
+
+impl<'e> LetBindings<'e> {
+    fn visit(&mut self, expr: &'e TypedExpr) {
+        match &expr.kind {
+            TypedExprKind::Fn(lambda) => self.visit_block(&lambda.body),
+            TypedExprKind::Control(TypedControl::Block(block)) => self.visit_block(block),
+            TypedExprKind::Control(TypedControl::Match(matched)) => {
+                matched
+                    .arms
+                    .iter()
+                    .rev()
+                    .for_each(|arm| self.visit_block(&arm.body));
+                self.pending.push(LetWalkStep::Visit(&matched.value));
+            }
+            _ => self
+                .pending
+                .extend(expr.children().into_iter().rev().map(LetWalkStep::Visit)),
+        }
+    }
+
+    fn visit_block(&mut self, block: &'e TypedBlock) {
+        for item in block.items.iter().rev() {
+            self.pending.push(LetWalkStep::Visit(item.expr()));
+            if let TypedBodyItem::Let(binder, value) = item {
+                self.pending.push(LetWalkStep::Yield(binder, value));
+            }
         }
     }
 }

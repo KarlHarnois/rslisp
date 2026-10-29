@@ -3,8 +3,8 @@ use std::collections::{HashMap, HashSet};
 use super::function_borrow::FunctionBorrow;
 use crate::core::BindingId;
 use crate::types::{
-    Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
-    TypedExprKind, TypedLambda, TypedLeaf, TypedProgram,
+    Type, TypedArgument, TypedBinder, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf,
+    TypedProgram,
 };
 
 pub struct LocalClosures<'a> {
@@ -26,7 +26,12 @@ impl<'a> LocalClosures<'a> {
 
     pub fn of(program: &'a TypedProgram, value: &TypedExpr) -> Self {
         let mut found = Self::new(program);
-        found.expr(value);
+        value
+            .let_bindings()
+            .for_each(|(binder, value)| found.register(binder, value));
+        if !found.argument_borrows.is_empty() {
+            found.expr(value);
+        }
         found
     }
 
@@ -68,26 +73,11 @@ impl<'a> LocalClosures<'a> {
 
     fn expr(&mut self, expr: &TypedExpr) {
         match &expr.kind {
-            TypedExprKind::Fn(lambda) => self.block(&lambda.body),
-            TypedExprKind::Control(TypedControl::Block(block)) => self.block(block),
-            TypedExprKind::Control(TypedControl::Match(matched)) => {
-                self.expr(&matched.value);
-                matched.arms.iter().for_each(|arm| self.block(&arm.body));
-            }
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
             _ => expr
                 .children()
                 .into_iter()
                 .for_each(|child| self.expr(child)),
-        }
-    }
-
-    fn block(&mut self, block: &TypedBlock) {
-        for item in &block.items {
-            if let TypedBodyItem::Let(binder, value) = item {
-                self.register(binder, value);
-            }
-            self.expr(item.expr());
         }
     }
 
