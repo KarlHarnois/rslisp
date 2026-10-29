@@ -1,0 +1,9 @@
+(defstruct counter :label string :count i64)
+
+(defn count-to (limit state steps)
+  (if (= steps limit)
+      (+ steps (:count state))
+      (count-to limit state (+ steps 1))))
+
+(defn main ()
+  (println (count-to 3 (->counter :label (to-string "c") :count 10) 0)))

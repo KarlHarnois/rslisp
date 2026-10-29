@@ -20,6 +20,7 @@ mod slices;
 mod slots;
 mod stored;
 mod subtree;
+mod tail_calls;
 mod update_bases;
 mod update_order;
 mod usage;
@@ -49,6 +50,7 @@ use values::FunctionValueModes;
 
 pub use changes::InPlaceChanges;
 pub use mutation::ChangedValues;
+pub use tail_calls::TailCalls;
 pub use update_order::StructUpdateOrder;
 
 pub struct OwnershipChecker;

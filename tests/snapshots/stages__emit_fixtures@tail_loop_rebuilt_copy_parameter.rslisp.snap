@@ -1,0 +1,26 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/tail_loop_rebuilt_copy_parameter.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Counter {
+    count: i64,
+}
+
+fn count_up(limit: i64, mut state: Counter) -> i64 {
+    loop {
+        if state.count == limit {
+            return state.count;
+        } else {
+            state = Counter {
+                count: state.count + 1,
+            };
+            continue;
+        }
+    }
+}
+
+fn main() {
+    println!("{}", count_up(3, Counter { count: 0 }))
+}

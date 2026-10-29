@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/tail_loop_unchanged_borrowed_parameter.rslisp
+---
+13
