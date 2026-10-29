@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/borrowed_element_by_value_trait.rslisp
+---
+error[L0404]: `(ref a)` does not implement `retire`
+ --> check/borrowed_element_by_value_trait.rslisp:6:67
+  |
+6 | (defn scrap-all (cars) (collect (map (iter cars) (fn (car) (scrap car)))))
+  |                                                                   ^^^ this needs `retire`
+  |
+  = note: `retire` is implemented for: car

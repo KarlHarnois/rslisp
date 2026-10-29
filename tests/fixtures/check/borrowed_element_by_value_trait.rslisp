@@ -1,0 +1,9 @@
+(defstruct car :model string :range u16)
+(trait retire
+  (scrap (fn (self) u16)))
+(impl retire car
+  (scrap (self) (:range self)))
+(defn scrap-all (cars) (collect (map (iter cars) (fn (car) (scrap car)))))
+(defn main ()
+  (let cars (vec (->car (to-string "Leaf") 240) (->car (to-string "Ariya") 300)))
+  (prn (scrap-all cars)))

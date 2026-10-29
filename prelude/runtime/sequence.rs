@@ -25,3 +25,9 @@ impl<T> Sequence for [T] {
         <[T]>::len(self)
     }
 }
+
+impl<T: Sequence + ?Sized> Sequence for &T {
+    fn len(&self) -> usize {
+        T::len(self)
+    }
+}

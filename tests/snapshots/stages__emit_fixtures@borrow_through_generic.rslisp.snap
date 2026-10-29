@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).emit_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/emit/borrow_through_generic.rslisp
 ---
 fn size_of<A: crate::rt::Sequence + ?Sized>(text: &A) -> usize {
@@ -39,6 +39,12 @@ mod rt {
     impl<T> Sequence for [T] {
         fn len(&self) -> usize {
             <[T]>::len(self)
+        }
+    }
+
+    impl<T: Sequence + ?Sized> Sequence for &T {
+        fn len(&self) -> usize {
+            T::len(self)
         }
     }
 }
