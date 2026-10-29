@@ -1,0 +1,47 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/assoc_in_field_base.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Point {
+    x: i64,
+    y: i64,
+}
+
+fn make_point(x: i64, y: i64) -> Point {
+    Point { x, y }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Badge {
+    text: String,
+    at: Point,
+}
+
+fn make_badge(text: String, at: Point) -> Badge {
+    Badge { text, at }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Garage {
+    name: String,
+    badge: Badge,
+}
+
+fn make_garage(name: String, badge: Badge) -> Garage {
+    Garage { name, badge }
+}
+
+fn main() {
+    let g = make_garage(
+        "Leaf Garage".to_string(),
+        make_badge("open".to_string(), make_point(0, 0)),
+    );
+    println!("{}", g.name);
+    let moved = {
+        let at = Point { x: 4, ..g.badge.at };
+        Badge { at, ..g.badge }
+    };
+    println!("{} {} {}", moved.text, moved.at.x, moved.at.y)
+}

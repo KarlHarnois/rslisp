@@ -80,12 +80,24 @@
         (list argument))))
 
 (defmacro assoc-in (value (step ...) item)
-  (if (symbol? value)
+  (if (place-read? value)
       (path-update value step item)
       (if (empty? (keyword-steps step))
           (path-update value step item)
           (list (quote do) (list (quote let) (quote base) value)
                 (path-update (quote base) step item)))))
+
+(def place-read?
+  (fn (form)
+    (if (symbol? form) true (field-read? form))))
+
+(def field-read?
+  (fn (form)
+    (if (list? form)
+        (if (value-eq (length form) 2)
+            (if (keyword? (first form)) (place-read? (nth form 1)) false)
+            false)
+        false)))
 
 (def keyword-steps
   (fn (path)
