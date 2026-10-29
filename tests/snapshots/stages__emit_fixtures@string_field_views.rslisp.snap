@@ -27,11 +27,15 @@ fn name_length(name: &str) -> usize {
     name.len()
 }
 
-fn main() {
-    let users = vec![
+fn roster() -> Vec<User> {
+    vec![
         make_user("Ana".to_string(), 34),
         make_user("Ben".to_string(), 12),
-    ];
+    ]
+}
+
+fn main() {
+    let users = roster();
     adult_names(users.iter()).for_each(|name: &str| println!("{}", name));
     let ana = make_user("Ana".to_string(), 34);
     println!("{}", name_of(&ana));
