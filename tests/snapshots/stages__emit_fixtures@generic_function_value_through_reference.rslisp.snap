@@ -13,7 +13,25 @@ fn apply_one<A, B>(f: impl FnOnce(A) -> B, a: A) -> B {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let name = "Leaf".to_string();
     println!("{}", apply_one(show, name.as_str()));
     println!("{}", apply_one(|argument: i64| show(&argument), 7))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

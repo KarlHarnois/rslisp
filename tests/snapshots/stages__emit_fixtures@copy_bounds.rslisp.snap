@@ -8,6 +8,24 @@ fn twice<A: Copy>(value: A, combine: impl FnOnce(A, A) -> A) -> A {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", twice(4, |left: i64, right: i64| left + right));
     println!("{}", twice(true, |left: bool, right: bool| left && right))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

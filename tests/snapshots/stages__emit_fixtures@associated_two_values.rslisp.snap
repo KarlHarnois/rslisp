@@ -4,7 +4,25 @@ expression: reports.report(path)
 input_file: tests/fixtures/emit/associated_two_values.rslisp
 ---
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", vec![7_i64, 8_i64].into_iter().next().unwrap());
     let rest: std::vec::IntoIter<i64> = vec![5_i64, 6_i64, 9_i64].into_iter();
     println!("{}", rest.len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

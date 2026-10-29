@@ -15,6 +15,7 @@ fn describe(entry: (i64, &str)) -> String {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", describe((1_i64, "alpha")));
     match Thing::Of(2) {
         Thing::Of(n) => println!("{}", n),
@@ -24,4 +25,21 @@ fn main() {
         Thing::Of(_) => println!("{}", 0_i64),
         Thing::Other(s) => println!("{}", s),
     }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

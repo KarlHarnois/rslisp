@@ -37,6 +37,7 @@ fn last_name<'a>(names: impl Iterator<Item = &'a str>) -> Option<&'a str> {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let names: Vec<&str> = vec!["Leaf", "Ariya", "Sakura"];
     let scores: Vec<i64> = vec![70_i64, 40_i64, 90_i64];
     let cars: Vec<Car<'_>> = vec![make_car("Leaf", 2024), make_car("Micra", 2017)];
@@ -49,4 +50,21 @@ fn main() {
         count_both(names.iter().copied(), makers.iter().copied())
     );
     println!("{:?}", last_name(names.iter().copied()))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

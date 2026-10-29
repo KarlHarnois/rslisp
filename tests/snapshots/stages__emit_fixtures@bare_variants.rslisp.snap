@@ -4,6 +4,7 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/bare_variants.rslisp
 ---
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let value: Option<i64> = Some(1);
     let nothing: Option<i64> = None;
     let answer: Result<i64, String> = Ok(1);
@@ -18,4 +19,21 @@ fn main() {
         Err(e) => println!("{}", e),
     }
     println!("{}", bad.is_err())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

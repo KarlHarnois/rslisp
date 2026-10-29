@@ -20,8 +20,26 @@ fn adult_names<'a>(users: impl Iterator<Item = User<'a>>) -> impl Iterator<Item 
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let mut users = vec![make_user("Ana", 34), make_user("Bo", 12)];
     users.push(make_user("Cy", 51));
     println!("{}", adult_names(users.iter().copied()).count());
     adult_names(users.iter().copied()).for_each(|name: &str| println!("{}", name))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

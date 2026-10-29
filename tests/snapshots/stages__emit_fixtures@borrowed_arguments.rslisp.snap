@@ -28,6 +28,7 @@ fn keep_borrowed(x: &i64) -> &i64 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let three: i64 = 3;
     println!("{}", is_big(&three));
     println!("{}", is_deep_big(&&1_i64));
@@ -35,4 +36,21 @@ fn main() {
     println!("{}", keep_borrowed(&three));
     println!("{}", Some(5).filter(|n: &i64| *n > 2).is_some());
     println!("{}", Some(4).filter(|n: &i64| is_even(*n)).is_some())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

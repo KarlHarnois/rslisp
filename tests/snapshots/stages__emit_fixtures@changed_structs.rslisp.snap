@@ -59,6 +59,7 @@ fn copy_into(target: &mut Spot, source: &Spot) {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let mut c = make_counter(1);
     std::ops::AddAssign::add_assign(&mut c.count, 1);
     println!("{}", c.count);
@@ -73,4 +74,21 @@ fn main() {
     copy_into(&mut s, &u);
     println!("{}", s.x);
     println!("{}", make_pin(4).x)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

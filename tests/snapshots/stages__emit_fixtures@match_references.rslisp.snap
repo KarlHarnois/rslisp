@@ -34,6 +34,7 @@ fn bump(state: &mut CounterState) {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let mut state = CounterState::Value(1);
     bump(&mut state);
     println!("{}", area(&Shape::Circle(1.0)));
@@ -51,4 +52,21 @@ fn main() {
         CounterState::Value(n) => println!("{}", n),
         CounterState::Idle => println!("idle"),
     }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

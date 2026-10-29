@@ -4,8 +4,26 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/at_borrowed_row.rslisp
 ---
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let mut grid = vec![vec![true, false]];
     grid.push(vec![false, true]);
     let row = &grid[1];
     println!("{}", row[0])
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

@@ -19,6 +19,7 @@ fn bump_x(p: Point) -> Point {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let p = make_point(7, 8, "seed".to_string());
     let one = Point { x: 3, ..p };
     println!("{} {} {}", one.x, one.y, one.label);
@@ -54,4 +55,21 @@ fn main() {
         None => 0,
     };
     println!("{}", cell)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

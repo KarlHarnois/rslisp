@@ -8,6 +8,7 @@ fn checked_half(n: i64) -> Result<i64, &'static str> {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let numbers: Vec<i64> = vec![10_i64, 20_i64, 30_i64];
     let index: usize = 0;
     let first: Option<i64> = Some(5);
@@ -33,4 +34,21 @@ fn main() {
             Err(_) => 0,
         }
     )
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

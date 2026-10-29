@@ -7,6 +7,7 @@ static PRIMES: std::sync::LazyLock<Vec<i64>> =
     std::sync::LazyLock::new(|| vec![2_i64, 3_i64, 5_i64, 7_i64]);
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let mut scores: Vec<i64> = Vec::new();
     scores.push(10);
     scores.push(20);
@@ -17,4 +18,21 @@ fn main() {
         .copied()
         .for_each(|score: i64| println!("{}", score));
     PRIMES.iter().for_each(|prime: &i64| println!("{}", prime))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

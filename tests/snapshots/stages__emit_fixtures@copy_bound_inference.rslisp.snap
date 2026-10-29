@@ -25,6 +25,7 @@ fn bigger<A: PartialOrd>(a: A, b: A) -> A {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", twice(3).len());
     println!("{}", twice(1.5).len());
     println!("{}", twice_pinned(3).len());
@@ -34,4 +35,21 @@ fn main() {
     show_twice(&"two".to_string());
     println!("{}", bigger(1, 2));
     println!("{}", bigger("pear".to_string(), "apple".to_string()))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

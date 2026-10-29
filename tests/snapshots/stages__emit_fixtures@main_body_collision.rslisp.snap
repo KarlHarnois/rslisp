@@ -18,6 +18,7 @@ fn main_body_() -> Result<(), AppError> {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     if let Err(error) = main_body_() {
         eprintln!("{}", error);
         std::process::exit(1);
@@ -28,4 +29,21 @@ impl std::fmt::Display for AppError {
     fn fmt(&self, out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(out, "missing")
     }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

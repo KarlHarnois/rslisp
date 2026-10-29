@@ -4,9 +4,27 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/mut_pattern_binding.rslisp
 ---
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let holder: (Vec<i64>, Vec<i64>) = (vec![1_i64], vec![2_i64]);
     let (mut left, right) = holder;
     left.push(3);
     println!("{}", left.len());
     println!("{}", right.len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

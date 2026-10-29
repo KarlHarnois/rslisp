@@ -50,6 +50,7 @@ fn wait(s: &Shape) {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", area(&Shape::Circle(1.0)));
     println!("{}", area(&Shape::Rect(2.0, 3.0)));
     println!(
@@ -75,4 +76,21 @@ fn main() {
         })
     );
     wait(&Shape::Circle(1.0))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

@@ -16,6 +16,7 @@ fn describe_half<N: crate::rt::Float + std::fmt::Display>(x: N) -> String {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", increment(41));
     println!("{}", increment(1.5));
     println!(
@@ -82,4 +83,19 @@ mod rt {
     impl Float for f32 {}
 
     impl Float for f64 {}
+
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

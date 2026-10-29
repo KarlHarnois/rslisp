@@ -8,8 +8,26 @@ fn total(values: impl Iterator<Item = i64>) -> i64 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let boxed_seven: Box<i64> = Box::new(7_i64);
     println!("{}", *boxed_seven);
     let summed = |values: _| total(values);
     println!("{}", summed((1_i64..4)))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

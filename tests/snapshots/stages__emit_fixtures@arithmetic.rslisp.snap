@@ -20,6 +20,7 @@ fn distance_squared(a: Point, b: Point) -> f64 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", 1_i64 + 2_i64 + 3 + 4);
     println!("{}", 2_i64 * 3_i64 * 4);
     println!("{}", -10_i64);
@@ -38,4 +39,21 @@ fn main() {
         "{}",
         distance_squared(make_point(0.0, 0.0), make_point(3.0, 4.0))
     )
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

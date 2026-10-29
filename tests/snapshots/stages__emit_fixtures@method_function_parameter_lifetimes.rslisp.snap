@@ -32,6 +32,7 @@ fn make_yard(rows: u16) -> Yard {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let model = "Leaf".to_string();
     let lot = make_depot(1);
     println!(
@@ -98,4 +99,21 @@ impl Builder for Yard {
         let make = "Nissan".to_string();
         lot.rows + constructor(make.as_str(), 2025).year
     }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

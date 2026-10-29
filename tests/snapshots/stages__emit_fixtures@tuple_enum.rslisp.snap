@@ -13,8 +13,26 @@ fn first_of(p: (String, i64)) -> String {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let p: (String, i64) = make("left".to_string(), 2);
     println!("{}", first_of(p));
     let (n, text) = make(3, "right".to_string());
     println!("{}{}", n, text)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

@@ -31,6 +31,7 @@ struct Basket<'a> {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let ana = User {
         name: "ana",
         email: "ana@example.org",
@@ -61,4 +62,21 @@ fn main() {
     println!("{}", local.retries);
     println!("{}", first_basket.items.len());
     println!("{}", second_basket.items.len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

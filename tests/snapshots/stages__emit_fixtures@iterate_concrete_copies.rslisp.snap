@@ -16,6 +16,7 @@ fn count_big<'a>(values: impl Iterator<Item = &'a i64>) -> usize {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let scores: Vec<i64> = vec![70_i64, 40_i64, 90_i64];
     println!("{}", total(scores.iter().copied()));
     let names: Vec<&str> = vec!["Leaf", "Ariya", "Bolt"];
@@ -64,4 +65,19 @@ mod rt {
     numbers!(
         i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
     );
+
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

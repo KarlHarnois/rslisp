@@ -4,9 +4,27 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/printing_escapes.rslisp
 ---
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("braces {{done}} quote \" slash \\ newline\ntab\t here");
     let text = "plain {text} quote \" slash \\".to_string();
     println!("{}", text);
     print!("no newline");
     println!()
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

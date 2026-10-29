@@ -35,9 +35,27 @@ fn roster() -> Vec<User> {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let users = roster();
     adult_names(users.iter()).for_each(|name: &str| println!("{}", name));
     let ana = make_user("Ana".to_string(), 34);
     println!("{}", name_of(&ana));
     println!("{}", name_length(&ana.name))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

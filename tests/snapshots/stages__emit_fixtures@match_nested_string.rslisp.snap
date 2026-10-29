@@ -39,6 +39,7 @@ fn scan(tokens: &[Token], mut position: usize) -> i64 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let open = vec![Token::Symbol("(".to_string())];
     let name = vec![Token::Symbol("foo".to_string())];
     let number = vec![Token::Number("42".to_string())];
@@ -47,4 +48,21 @@ fn main() {
     println!("{}", classify(&number, 0));
     println!("{}", classify(&Vec::new(), 0));
     println!("{}", scan(&open, 0))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

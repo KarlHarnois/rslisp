@@ -4,6 +4,7 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/iterators.rslisp
 ---
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", (1_i64..6_i64).fold(0, |total: i64, n: i64| total + n));
     let doubled: Vec<i64> = (1_i64..4_i64).map(|n: i64| n * 2).collect::<Vec<_>>();
     doubled.iter().copied().for_each(|n: i64| println!("{}", n));
@@ -13,4 +14,21 @@ fn main() {
         .filter(|n: &i64| *n < 5)
         .collect::<Vec<_>>();
     println!("{}", small.len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

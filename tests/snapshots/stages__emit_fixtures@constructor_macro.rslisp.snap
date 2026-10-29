@@ -25,6 +25,7 @@ fn make_car<'a>(make: &'a str, model: &'a str, year: u16, is_electric: bool) -> 
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let by_position = make_car("Honda", "Civic", 2019, false);
     let by_name = Car {
         make: "Nissan",
@@ -45,4 +46,21 @@ fn main() {
     println!("{}", reordered.year);
     println!("{}", built.model);
     println!("{}", describe_early())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

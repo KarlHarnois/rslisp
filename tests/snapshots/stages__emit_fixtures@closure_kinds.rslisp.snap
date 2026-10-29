@@ -87,6 +87,7 @@ fn choose_block() -> impl Fn() -> i64 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let text = "fake".to_string();
     println!("{}", apply(|ignored: i64| text, 0));
     let mut items: Vec<i64> = vec![1_i64];
@@ -113,4 +114,21 @@ fn main() {
     returned_mut();
     returned_mut();
     println!("{}", returns_once()())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

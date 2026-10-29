@@ -8,9 +8,27 @@ fn apply_to_year(apply: impl FnOnce(fn(i64) -> i64) -> i64) -> i64 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let year: i64 = 2024;
     let apply = |action: fn(i64) -> i64| action(year);
     println!("{}", apply_to_year(apply));
     let shift = |n: i64| n + year;
     println!("{:?}", (1_i64..4_i64).map(shift).collect::<Vec<_>>())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

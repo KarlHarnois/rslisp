@@ -25,6 +25,24 @@ fn make_car(make: &str) -> Car<'_> {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", make_car("Rivian").model);
     println!("{}", make_car_2("Honda", "Civic", 2019, false).model)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

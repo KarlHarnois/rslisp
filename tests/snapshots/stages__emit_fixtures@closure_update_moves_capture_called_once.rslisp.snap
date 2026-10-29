@@ -15,10 +15,28 @@ fn make_garage(name: String, city: String, size: u16) -> Garage {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let g = make_garage("Leaf Garage".to_string(), "Leeds".to_string(), 12);
     let f = || Garage {
         name: "x".to_string(),
         ..g
     };
     println!("{}", f().name)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

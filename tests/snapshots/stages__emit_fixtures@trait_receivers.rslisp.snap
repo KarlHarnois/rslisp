@@ -35,6 +35,7 @@ fn total_of(areas_2: impl Iterator<Item = f64>) -> f64 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let shapes = vec![Circle { radius: 1.0 }, Circle { radius: 2.0 }];
     println!("{}", total_area(&shapes));
     println!("{}", total_of(areas(&shapes).iter().copied()));
@@ -144,4 +145,21 @@ impl Swapped for Tag {
     fn swap(&mut self, b: &mut Tag) {
         let _b = b;
     }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

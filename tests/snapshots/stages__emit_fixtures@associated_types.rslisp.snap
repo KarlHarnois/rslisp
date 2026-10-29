@@ -8,6 +8,7 @@ fn first_item<C: Container<Item = Item>, Item>(c: &C) -> Option<&Item> {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", first_item(&vec![1_i64, 2_i64]).is_some());
     println!("{}", first_item(&vec!["a", "b"]).is_some())
 }
@@ -22,4 +23,21 @@ impl<A> Container for Vec<A> {
     fn first(&self) -> Option<&A> {
         Some(&self[0])
     }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }
