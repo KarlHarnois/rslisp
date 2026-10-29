@@ -1,0 +1,8 @@
+(defn main ()
+  (let year 2024)
+  (let model "Nissan Leaf")
+  (let seen (vec 0))
+  (let apply (fn (action) (action year)))
+  (apply (fn (n) (println model n)))
+  (apply (fn (n) (push! seen n)))
+  (println (len seen)))

@@ -49,7 +49,7 @@ impl<'p> StoredClosures<'p> {
     fn stored_parameters(&self) -> HashSet<BindingId> {
         self.definitions
             .iter()
-            .filter_map(DefinitionTree::function)
+            .flat_map(DefinitionTree::functions)
             .flat_map(|(function, lambda)| {
                 lambda
                     .params
@@ -91,6 +91,7 @@ impl<'p> StoredClosures<'p> {
 struct DefinitionTree<'e> {
     function: BindingId,
     lambda: Option<&'e TypedLambda>,
+    local_functions: Vec<(BindingId, &'e TypedLambda)>,
     expressions: Vec<&'e TypedExpr>,
     aliases: LetAliases<'e>,
 }
@@ -114,6 +115,7 @@ impl<'e> DefinitionTree<'e> {
                 _ => None,
             },
             aliases: LetAliases::in_expressions(&expressions),
+            local_functions: LetAliases::functions_in(&expressions),
             expressions,
         }
     }
@@ -126,8 +128,12 @@ impl<'e> DefinitionTree<'e> {
             .collect()
     }
 
-    fn function(&self) -> Option<(BindingId, &'e TypedLambda)> {
-        self.lambda.map(|lambda| (self.function, lambda))
+    fn functions(&self) -> Vec<(BindingId, &'e TypedLambda)> {
+        self.lambda
+            .map(|lambda| (self.function, lambda))
+            .into_iter()
+            .chain(self.local_functions.iter().copied())
+            .collect()
     }
 }
 
@@ -222,7 +228,9 @@ impl<'e> Store<'e> {
         arguments: &'e [TypedArgument],
         storing: &StoringParameters,
     ) -> Vec<Self> {
-        let TypedExprKind::Leaf(TypedLeaf::Global(function)) = callee.kind else {
+        let (TypedExprKind::Leaf(TypedLeaf::Global(function))
+        | TypedExprKind::Leaf(TypedLeaf::Local(function))) = callee.kind
+        else {
             return Vec::new();
         };
         arguments
@@ -285,14 +293,16 @@ impl StoringParameters {
         definition: &DefinitionTree<'_>,
         slots: &FunctionSlots,
     ) -> Vec<((BindingId, usize), FunctionSlot)> {
-        let Some((function, lambda)) = definition.function() else {
-            return Vec::new();
-        };
-        let positions: HashMap<BindingId, usize> = lambda
-            .params
-            .iter()
-            .enumerate()
-            .map(|(position, param)| (param.binding, position))
+        let positions: HashMap<BindingId, (BindingId, usize)> = definition
+            .functions()
+            .into_iter()
+            .flat_map(|(function, lambda)| {
+                lambda
+                    .params
+                    .iter()
+                    .enumerate()
+                    .map(move |(position, param)| (param.binding, (function, position)))
+            })
             .collect();
         definition
             .stores(slots, self)
@@ -301,7 +311,7 @@ impl StoringParameters {
                 let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = store.value.kind else {
                     return None;
                 };
-                Some(((function, *positions.get(&binding)?), store.slot))
+                Some((*positions.get(&binding)?, store.slot))
             })
             .collect()
     }

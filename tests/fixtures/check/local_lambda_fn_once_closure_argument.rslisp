@@ -1,0 +1,5 @@
+(defn main ()
+  (let year 2024)
+  (let model (to-string "Nissan Leaf"))
+  (let apply (fn (action) (action year)))
+  (apply (fn (n) (do (let owned model) (println owned n)))))

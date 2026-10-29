@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/local_lambda_fn_once_closure_argument.rslisp
+---
+error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
+ --> check/local_lambda_fn_once_closure_argument.rslisp:5:33
+  |
+5 |   (apply (fn (n) (do (let owned model) (println owned n)))))
+  |          -----------------------^^^^^---------------------
+  |          |                      |
+  |          |                      `model` moves here
+  |          this closure is passed here
+  |
+  = help: clone `model`, or borrow it with `(ref model)`

@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_parameter_capturing_closure_argument.rslisp
+---
+fn apply(action: impl FnOnce(i64), year: i64) {
+    action(year)
+}
+
+fn main() {
+    let model = "Nissan Leaf";
+    apply(|n: i64| println!("{}{}", model, n), 2024)
+}

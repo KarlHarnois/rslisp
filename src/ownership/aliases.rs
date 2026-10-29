@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::core::BindingId;
-use crate::types::{TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLeaf};
+use crate::types::{TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf};
 
 pub struct LetAliases<'e> {
     values: HashMap<BindingId, &'e TypedExpr>,
@@ -19,6 +19,20 @@ impl<'e> LetAliases<'e> {
                 })
                 .collect(),
         }
+    }
+
+    pub fn functions_in(expressions: &[&'e TypedExpr]) -> Vec<(BindingId, &'e TypedLambda)> {
+        expressions
+            .iter()
+            .flat_map(|expr| Self::body_items(expr))
+            .filter_map(|item| match item {
+                TypedBodyItem::Let(binder, value) => match &value.kind {
+                    TypedExprKind::Fn(lambda) => Some((binder.binding, lambda.as_ref())),
+                    _ => None,
+                },
+                TypedBodyItem::Expr(_) => None,
+            })
+            .collect()
     }
 
     fn body_items(expr: &'e TypedExpr) -> &'e [TypedBodyItem] {

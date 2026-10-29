@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/local_lambda_two_closure_arguments.rslisp
+---
+fn main() {
+    let year: i64 = 2024;
+    let model = "Nissan Leaf";
+    let mut seen: Vec<i64> = vec![0_i64];
+    let apply = |action: &mut dyn FnMut(i64)| action(year);
+    apply(&mut |n: i64| println!("{}{}", model, n));
+    apply(&mut |n: i64| seen.push(n));
+    println!("{}", seen.len())
+}

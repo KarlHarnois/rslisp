@@ -1,7 +1,9 @@
 mod callee_parameters;
+mod escaping_locals;
 mod expressions;
 mod fragment;
 mod fresh_lifetimes;
+mod function_borrow;
 mod items;
 mod literal_generics;
 mod locals;

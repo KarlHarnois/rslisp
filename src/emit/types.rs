@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use super::fresh_lifetimes::FreshLifetimes;
+use super::function_borrow::FunctionBorrow;
 use super::mangle::NameMangler;
 use super::opaque_borrows::OpaqueBorrows;
 use super::plan::EmitPlan;
@@ -613,32 +614,66 @@ impl<'a> RustTypes<'a> {
         scope: &LifetimeScope,
     ) -> String {
         let scope = self.function_parameter_scope(result, position, scope);
-        let (inner_scope, binder) = Self::function_scope(
-            position,
-            &scope,
-            self.program
-                .function_type_needs_shared_lifetime(parameters, result),
-        );
-        let parameters: Vec<String> = parameters
-            .iter()
-            .map(|parameter| self.show_in(parameter, TypePosition::Value, &inner_scope))
-            .collect();
-        let result = if Self::is_unit(result) {
-            String::new()
-        } else {
-            format!(
-                " -> {}",
-                self.show_in(result, TypePosition::Value, &inner_scope)
-            )
-        };
-        let binder = binder.map_or_else(String::new, |lifetime| format!("for<{lifetime}> "));
+        let (inner_scope, binder) = self.function_binder(parameters, result, position, &scope);
         let keyword = match position {
             TypePosition::Signature | TypePosition::StaticResult => {
                 format!("impl {binder}{}", kind.keyword())
             }
             TypePosition::Value => format!("{binder}fn"),
         };
-        format!("{keyword}({}){result}", parameters.join(", "))
+        format!(
+            "{keyword}{}",
+            self.function_shape(parameters, result, &inner_scope)
+        )
+    }
+
+    pub fn borrowed_function(
+        &self,
+        borrow: FunctionBorrow,
+        parameters: &[Type],
+        result: &Type,
+    ) -> String {
+        let (inner_scope, binder) = self.function_binder(
+            parameters,
+            result,
+            TypePosition::Value,
+            &LifetimeScope::default(),
+        );
+        format!(
+            "{}{}",
+            borrow.trait_object(&binder),
+            self.function_shape(parameters, result, &inner_scope)
+        )
+    }
+
+    fn function_binder(
+        &self,
+        parameters: &[Type],
+        result: &Type,
+        position: TypePosition,
+        scope: &LifetimeScope,
+    ) -> (LifetimeScope, String) {
+        let (inner_scope, binder) = Self::function_scope(
+            position,
+            scope,
+            self.program
+                .function_type_needs_shared_lifetime(parameters, result),
+        );
+        let binder = binder.map_or_else(String::new, |lifetime| format!("for<{lifetime}> "));
+        (inner_scope, binder)
+    }
+
+    fn function_shape(&self, parameters: &[Type], result: &Type, scope: &LifetimeScope) -> String {
+        let parameters: Vec<String> = parameters
+            .iter()
+            .map(|parameter| self.show_in(parameter, TypePosition::Value, scope))
+            .collect();
+        let result = if Self::is_unit(result) {
+            String::new()
+        } else {
+            format!(" -> {}", self.show_in(result, TypePosition::Value, scope))
+        };
+        format!("({}){result}", parameters.join(", "))
     }
 
     fn function_parameter_scope<'scope>(

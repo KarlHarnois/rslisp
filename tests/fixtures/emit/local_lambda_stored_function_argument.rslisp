@@ -1,0 +1,6 @@
+(defstruct sorter :key (fn (i64) i64))
+
+(defn main ()
+  (let make (fn (key) (->sorter :key key)))
+  (let chosen (make (fn (n) (+ n 1))))
+  (println ((:key chosen) 2)))

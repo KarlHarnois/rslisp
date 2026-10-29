@@ -1,0 +1,5 @@
+(defn apply (action year) (action year))
+
+(defn main ()
+  (let model "Nissan Leaf")
+  (apply (fn (n) (println model n)) 2024))

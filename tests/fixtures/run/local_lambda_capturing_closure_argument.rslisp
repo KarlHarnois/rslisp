@@ -1,0 +1,6 @@
+(defn main ()
+  (let year 2024)
+  (let model "Nissan Leaf")
+  (let record (fn (n) (println model n)))
+  (let apply (fn (action) (action year)))
+  (apply (fn (n) (record n))))
