@@ -4,7 +4,7 @@ use crate::core::BindingId;
 use crate::types::{TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
 
 pub struct EscapingLocals {
-    let_bound: HashSet<BindingId>,
+    let_bound_lambdas: HashSet<BindingId>,
     escaping: HashSet<BindingId>,
 }
 
@@ -17,13 +17,16 @@ impl EscapingLocals {
                 .flat_map(|module| &module.definitions)
         };
         let mut found = Self {
-            let_bound: definitions()
+            let_bound_lambdas: definitions()
                 .flat_map(|definition| definition.value.let_bindings())
+                .filter(|(_, value)| value.lambda_value().is_some())
                 .map(|(binder, _)| binder.binding)
                 .collect(),
             escaping: HashSet::new(),
         };
-        definitions().for_each(|definition| found.expr(&definition.value));
+        if !found.let_bound_lambdas.is_empty() {
+            definitions().for_each(|definition| found.expr(&definition.value));
+        }
         found.escaping
     }
 
@@ -41,7 +44,7 @@ impl EscapingLocals {
     }
 
     fn use_as_value(&mut self, binding: BindingId) {
-        if self.let_bound.contains(&binding) {
+        if self.let_bound_lambdas.contains(&binding) {
             self.escaping.insert(binding);
         }
     }

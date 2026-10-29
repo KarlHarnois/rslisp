@@ -82,10 +82,7 @@ impl<'a> LocalClosures<'a> {
     }
 
     fn register(&mut self, binder: &TypedBinder, value: &TypedExpr) {
-        if let Some(inner) = value.let_block_value() {
-            return self.register(binder, inner);
-        }
-        let TypedExprKind::Fn(lambda) = &value.kind else {
+        let Some(lambda) = value.lambda_value() else {
             return;
         };
         if let Some(borrowed) = self.program.borrowing_lambdas.get(&binder.binding) {
