@@ -1,0 +1,15 @@
+(defstruct point :x i64 :y i64)
+
+(defstruct badge :text string :at point)
+
+(defstruct garage :badge badge)
+
+(defstruct lot :garage garage)
+
+(defn build-lot ()
+  (println "called")
+  (->lot (->garage (->badge (to-string "open") (->point 0 0)))))
+
+(defn main ()
+  (let moved (assoc-in (:badge (:garage (build-lot))) (:at :x) 4))
+  (println (:text moved) " " (:x (:at moved)) " " (:y (:at moved))))

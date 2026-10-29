@@ -1,0 +1,36 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/assoc_in_copy_field_call_base.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Point {
+    x: i64,
+    y: i64,
+}
+
+fn make_point(x: i64, y: i64) -> Point {
+    Point { x, y }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Sticker {
+    text: String,
+    at: Point,
+}
+
+fn make_sticker(text: String, at: Point) -> Sticker {
+    Sticker { text, at }
+}
+
+fn make_badge() -> Sticker {
+    make_sticker("open".to_string(), make_point(0, 2))
+}
+
+fn main() {
+    let moved = {
+        let base = make_badge();
+        Point { x: 4, ..base.at }
+    };
+    println!("{} {} {}", make_badge().text, moved.x, moved.y)
+}
