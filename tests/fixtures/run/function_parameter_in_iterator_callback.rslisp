@@ -1,0 +1,23 @@
+(defn record-each (record years)
+  (for-each years (fn (year) (record year))))
+
+(type each-year (fn ((fn-mut (i64) unit) i64) unit))
+(defn each-year (action year)
+  (action year)
+  (action (+ year 1)))
+
+(defn record-through-each-year (record year)
+  (each-year (fn (n) (record n)) year))
+
+(defn apply-once (action year)
+  (action year))
+
+(defn record-in-one-call (record year)
+  (apply-once (fn (n) (record n)) year))
+
+(defn main ()
+  (let years (vec 2024))
+  (record-each (fn (year) (push! years year)) (range 2025 2027))
+  (record-through-each-year (fn (year) (push! years year)) 2028)
+  (record-in-one-call (fn (year) (push! years year)) 2030)
+  (println (len years)))

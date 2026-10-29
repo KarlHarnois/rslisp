@@ -926,19 +926,27 @@ impl<'a> ClosureKinds<'a> {
         uses: &mut ParameterUses,
     ) {
         match &expr.kind {
-            TypedExprKind::Fn(lambda) => {
-                let before = uses.counts();
-                self.require_block(&lambda.body, params, Some(lambda.kind), uses);
-                if lambda.body.repeats() {
-                    uses.repeat_uses_since(&before);
-                }
-            }
+            TypedExprKind::Fn(lambda) => self.require_lambda(lambda, lambda.kind, params, uses),
             TypedExprKind::Call(callee, arguments) => {
                 self.require_call(callee, arguments, params, nested, uses)
             }
             TypedExprKind::Control(control) => self.require_control(control, params, nested, uses),
             TypedExprKind::Leaf(_) => {}
             other => self.require_nested(other, params, nested, uses),
+        }
+    }
+
+    fn require_lambda(
+        &self,
+        lambda: &TypedLambda,
+        runs_as: ClosureKind,
+        params: &[BindingId],
+        uses: &mut ParameterUses,
+    ) {
+        let before = uses.counts();
+        self.require_block(&lambda.body, params, Some(runs_as), uses);
+        if lambda.body.repeats() {
+            uses.repeat_uses_since(&before);
         }
     }
 
@@ -991,17 +999,56 @@ impl<'a> ClosureKinds<'a> {
         uses: &mut ParameterUses,
     ) {
         for (position, argument) in arguments.iter().enumerate() {
-            let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &argument.value.kind else {
-                self.require_expression(&argument.value, params, nested, uses);
-                continue;
-            };
-            let passed = self.origin(*binding);
-            if !params.contains(&passed) {
-                self.require_expression(&argument.value, params, nested, uses);
-                continue;
+            match self.passed_parameter(argument, params) {
+                Some(passed) => {
+                    uses.record_pass(passed, self.pass_kind(callee, position, passed));
+                }
+                None => match self.repeated_callback(callee, position, argument) {
+                    Some(callback) => self.require_callback(callback, params, uses),
+                    None => self.require_expression(&argument.value, params, nested, uses),
+                },
             }
-            uses.record_pass(passed, self.pass_kind(callee, position, passed));
         }
+    }
+
+    fn passed_parameter(
+        &self,
+        argument: &TypedArgument,
+        params: &[BindingId],
+    ) -> Option<BindingId> {
+        let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &argument.value.kind else {
+            return None;
+        };
+        let passed = self.origin(*binding);
+        params.contains(&passed).then_some(passed)
+    }
+
+    fn repeated_callback<'e>(
+        &self,
+        callee: &TypedExpr,
+        position: usize,
+        argument: &'e TypedArgument,
+    ) -> Option<&'e TypedLambda> {
+        match &argument.value.kind {
+            TypedExprKind::Fn(lambda)
+                if self.expected_kind(callee, position) == ClosureKind::FnMut =>
+            {
+                Some(lambda)
+            }
+            _ => None,
+        }
+    }
+
+    fn require_callback(
+        &self,
+        callback: &TypedLambda,
+        params: &[BindingId],
+        uses: &mut ParameterUses,
+    ) {
+        let before = uses.counts();
+        let runs_as = callback.kind.min(ClosureKind::FnMut);
+        self.require_lambda(callback, runs_as, params, uses);
+        uses.repeat_uses_since(&before);
     }
 
     fn pass_kind(&self, callee: &TypedExpr, position: usize, parameter: BindingId) -> ClosureKind {
