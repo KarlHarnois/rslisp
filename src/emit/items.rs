@@ -8,7 +8,7 @@ use super::fresh_lifetimes::FreshLifetimes;
 use super::literal_generics::LiteralGenerics;
 use super::locals::LocalNames;
 use super::mangle::NameMangler;
-use super::method_elisions::{MethodElisions, TraitMethodElisions};
+use super::method_elisions::{MethodElisions, MethodLifetimes, TraitMethodElisions};
 use super::mutable_locals::MutableLocals;
 use super::opaque_borrows::OpaqueBorrows;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
@@ -22,8 +22,8 @@ use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
     Bound, GenericId, GenericParam, Lifetime, ReceiverKind, Type, TypedAssociatedType, TypedBinder,
-    TypedConversion, TypedDefinition, TypedExpr, TypedExprKind, TypedProgram, TypedTraitMethod,
-    VariantDefinition,
+    TypedConversion, TypedDefinition, TypedExpr, TypedExprKind, TypedLambda, TypedProgram,
+    TypedTraitMethod, VariantDefinition,
 };
 
 struct TraitHeader {
@@ -319,20 +319,25 @@ impl<'a> ItemEmitter<'a> {
             self.unsized_parameters,
             self.program.entry,
         );
-        let inferred = self.inferred_lifetime_for_method(
-            &definition.scheme.lifetimes,
-            &definition.value,
-            method.receiver.is_some(),
-        );
+        let lifetimes = self.method_elisions().lifetimes(method.binding);
+        let inferred = self
+            .shared_method_lifetime(&definition.scheme.lifetimes, &lifetimes, None)
+            .or_else(|| {
+                self.inferred_lifetime_for_method(
+                    &definition.scheme.lifetimes,
+                    &definition.value,
+                    method.receiver.is_some(),
+                )
+            });
         let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
         let mut declared =
             self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes);
         let opaque_lifetimes = Rc::new(FreshLifetimes::new(declared.clone()));
-        let higher_ranked = self.method_elisions().elided_positions(method.binding);
         let mut rendered = Vec::new();
         if let Some(kind) = method.receiver {
+            let receiver_scope = Self::method_parameter_scope(&scope, &lifetimes, 0);
             let lifetime = parameters.first().and_then(|parameter| {
-                types.reference_lifetime_name(parameter, TypePosition::Signature, &scope)
+                types.reference_lifetime_name(parameter, TypePosition::Signature, &receiver_scope)
             });
             rendered.push(Self::receiver_keyword(kind, lifetime.as_deref()));
         }
@@ -343,9 +348,9 @@ impl<'a> ItemEmitter<'a> {
             .skip(first)
             .map(|(position, parameter)| {
                 let parameter_scope = Self::naming_parameter_lifetimes(
-                    scope.clone(),
+                    Self::method_parameter_scope(&scope, &lifetimes, position),
                     &opaque_lifetimes,
-                    &higher_ranked,
+                    lifetimes.elided(),
                     &position,
                 );
                 Self::show_self_type(
@@ -556,26 +561,37 @@ impl<'a> ItemEmitter<'a> {
         let mut emitter = self.expressions(module, &definition.value);
         emitter.prepare_tail_loop(definition.binding, lambda);
         let types = emitter.types();
-        let inferred = self.inferred_lifetime_for_method_avoiding(
-            &definition.scheme.lifetimes,
-            &definition.value,
-            receiver.is_some(),
-            reserved_lifetime,
-        );
+        let lifetimes = self.method_elisions().lifetimes(binding);
+        let inferred = self
+            .shared_method_lifetime(&definition.scheme.lifetimes, &lifetimes, reserved_lifetime)
+            .or_else(|| {
+                self.inferred_lifetime_for_method_avoiding(
+                    &definition.scheme.lifetimes,
+                    &definition.value,
+                    receiver.is_some(),
+                    reserved_lifetime,
+                )
+            });
         let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
         let used = self.used_written_lifetimes(&definition.value);
-        let flowing = self.result_borrows.analyse(lambda).flows;
+        let flowing = self.flowing_parameters(lambda, &lifetimes);
         let mut declared =
             self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes);
         let mut reserved = declared.clone();
         reserved.extend(reserved_lifetime.map(str::to_string));
         let opaque_lifetimes = Rc::new(FreshLifetimes::new(reserved));
-        let higher_ranked = self.method_elisions().elided_positions(binding);
         let mut params = Vec::new();
         if let Some(kind) = receiver {
             let first = &lambda.params[0];
             emitter.locals.bind_receiver(first.binding);
-            let receiver_lifetime = self.receiver_lifetime(first, &scope);
+            let receiver_scope = self.parameter_scope(
+                first,
+                &definition.scheme.lifetimes,
+                &used,
+                inferred.as_deref(),
+                &flowing,
+            );
+            let receiver_lifetime = self.receiver_lifetime(first, &receiver_scope);
             params.push(Self::receiver_keyword(kind, receiver_lifetime.as_deref()));
         }
         let first = usize::from(receiver.is_some());
@@ -595,7 +611,7 @@ impl<'a> ItemEmitter<'a> {
                             &flowing,
                         ),
                         &opaque_lifetimes,
-                        &higher_ranked,
+                        lifetimes.elided(),
                         &position,
                     );
                     emitter.bind_parameter_in(param, TypePosition::Signature, &scope)
@@ -681,6 +697,35 @@ impl<'a> ItemEmitter<'a> {
             &self.result_borrows,
             &self.trait_method_elisions,
         )
+    }
+
+    fn method_parameter_scope(
+        scope: &LifetimeScope,
+        lifetimes: &MethodLifetimes,
+        position: usize,
+    ) -> LifetimeScope {
+        if lifetimes.keeps_own_lifetime(position) {
+            let shared = scope.elided().map(str::to_string);
+            return scope.clone().with_elided(None).reserving(shared.as_deref());
+        }
+        scope.clone()
+    }
+
+    fn flowing_parameters(
+        &self,
+        lambda: &TypedLambda,
+        lifetimes: &MethodLifetimes,
+    ) -> HashSet<BindingId> {
+        if !lifetimes.shares_lifetime() {
+            return self.result_borrows.analyse(lambda).flows;
+        }
+        lambda
+            .params
+            .iter()
+            .enumerate()
+            .filter(|(position, _)| lifetimes.takes_shared_lifetime(*position))
+            .map(|(_, param)| param.binding)
+            .collect()
     }
 
     fn parameter_scope(
@@ -1031,13 +1076,9 @@ impl<'a> ItemEmitter<'a> {
         };
         let flowing = self.result_borrows.analyse(lambda).flows;
         lambda.params.iter().any(|param| {
-            flowing.contains(&param.binding) && self.hides_borrow_from_elision(&param.ty)
+            flowing.contains(&param.binding)
+                && SignatureBorrows::new(self.program).hides_borrow_from_elision(&param.ty)
         })
-    }
-
-    fn hides_borrow_from_elision(&self, ty: &Type) -> bool {
-        SignatureBorrows::new(self.program).is_borrowing_function(ty)
-            || OpaqueBorrows::new(self.program).holds_borrow(ty)
     }
 
     fn inferred_lifetime(&self, lifetimes: &[BindingId], value: &TypedExpr) -> Option<String> {
@@ -1051,6 +1092,17 @@ impl<'a> ItemEmitter<'a> {
         has_receiver: bool,
     ) -> Option<String> {
         self.inferred_lifetime_for_method_avoiding(lifetimes, value, has_receiver, None)
+    }
+
+    fn shared_method_lifetime(
+        &self,
+        lifetimes: &[BindingId],
+        method: &MethodLifetimes,
+        reserved: Option<&str>,
+    ) -> Option<String> {
+        method
+            .shares_lifetime()
+            .then(|| self.unused_lifetime_avoiding(lifetimes, reserved))
     }
 
     fn inferred_lifetime_avoiding(
@@ -1072,14 +1124,17 @@ impl<'a> ItemEmitter<'a> {
         if has_receiver {
             return None;
         }
-        self.needs_shared_lifetime(value).then(|| {
-            let mut used: Vec<String> = lifetimes
-                .iter()
-                .map(|binding| RustTypes::binding_lifetime(self.program, *binding))
-                .collect();
-            used.extend(reserved.map(str::to_string));
-            FreshLifetimes::unused_name(&used)
-        })
+        self.needs_shared_lifetime(value)
+            .then(|| self.unused_lifetime_avoiding(lifetimes, reserved))
+    }
+
+    fn unused_lifetime_avoiding(&self, lifetimes: &[BindingId], reserved: Option<&str>) -> String {
+        let mut used: Vec<String> = lifetimes
+            .iter()
+            .map(|binding| RustTypes::binding_lifetime(self.program, *binding))
+            .collect();
+        used.extend(reserved.map(str::to_string));
+        FreshLifetimes::unused_name(&used)
     }
 
     fn unused_lifetime_name(program: &TypedProgram, lifetimes: &[BindingId]) -> String {

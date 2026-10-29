@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/method_shared_flowing_lifetime.rslisp
+---
+Nissan
+2024
+Leaf
+4049

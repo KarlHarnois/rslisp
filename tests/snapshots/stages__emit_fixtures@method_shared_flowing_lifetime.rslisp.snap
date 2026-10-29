@@ -1,0 +1,51 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/method_shared_flowing_lifetime.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn make_car(make: &str, year: u16) -> Car<'_> {
+    Car { make, year }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Depot {
+    size: u16,
+}
+
+fn make_depot(size: u16) -> Depot {
+    Depot { size }
+}
+
+fn main() {
+    let model = "Leaf".to_string();
+    let lot = make_depot(2024);
+    let built = Garage::build(make_car, &lot);
+    let restocked = lot.restock(|| Car {
+        make: model.as_str(),
+        year: 2025,
+    });
+    println!("{}", built.make);
+    println!("{}", built.year);
+    println!("{}", restocked.make);
+    println!("{}", lot.size + restocked.year)
+}
+
+trait Garage {
+    fn build<'a>(_: impl Fn(&'a str, u16) -> Car<'a>, _: &Self) -> Car<'a>;
+    fn restock<'a>(&self, _: impl Fn() -> Car<'a>) -> Car<'a>;
+}
+
+impl Garage for Depot {
+    fn build<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>, lot: &Depot) -> Car<'a> {
+        constructor("Nissan", lot.size)
+    }
+    fn restock<'a>(&self, constructor: impl FnOnce() -> Car<'a>) -> Car<'a> {
+        constructor()
+    }
+}

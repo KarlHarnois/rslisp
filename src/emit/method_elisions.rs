@@ -4,14 +4,53 @@ use std::rc::Rc;
 
 use super::plan::EmitPlan;
 use super::result_borrows::ResultBorrows;
+use super::signature_borrows::SignatureBorrows;
 use crate::core::BindingId;
-use crate::types::{TypedExprKind, TypedLambda, TypedProgram};
+use crate::types::{ReceiverKind, TypedExprKind, TypedLambda, TypedProgram, TypedTraitMethod};
 
 type TraitMethodKey = (BindingId, String);
 
+#[derive(Default)]
+pub struct MethodLifetimes {
+    elided: HashSet<usize>,
+    shared: HashSet<usize>,
+}
+
+impl MethodLifetimes {
+    fn sharing(called_with_local: HashSet<usize>, flowing: HashSet<usize>) -> Self {
+        Self {
+            elided: called_with_local,
+            shared: flowing,
+        }
+    }
+
+    fn eliding(called_with_local: HashSet<usize>, flowing: HashSet<usize>) -> Self {
+        Self {
+            elided: called_with_local.union(&flowing).copied().collect(),
+            shared: HashSet::new(),
+        }
+    }
+
+    pub fn elided(&self) -> &HashSet<usize> {
+        &self.elided
+    }
+
+    pub fn shares_lifetime(&self) -> bool {
+        !self.shared.is_empty()
+    }
+
+    pub fn takes_shared_lifetime(&self, position: usize) -> bool {
+        self.shared.contains(&position)
+    }
+
+    pub fn keeps_own_lifetime(&self, position: usize) -> bool {
+        self.shares_lifetime() && !self.takes_shared_lifetime(position)
+    }
+}
+
 pub struct TraitMethodElisions {
     implemented_traits: HashMap<BindingId, BindingId>,
-    positions: RefCell<HashMap<TraitMethodKey, Rc<HashSet<usize>>>>,
+    lifetimes: RefCell<HashMap<TraitMethodKey, Rc<MethodLifetimes>>>,
 }
 
 impl TraitMethodElisions {
@@ -28,7 +67,7 @@ impl TraitMethodElisions {
             .collect();
         Self {
             implemented_traits,
-            positions: RefCell::default(),
+            lifetimes: RefCell::default(),
         }
     }
 
@@ -36,12 +75,12 @@ impl TraitMethodElisions {
         self.implemented_traits.get(&method).copied()
     }
 
-    fn cached(&self, key: &TraitMethodKey) -> Option<Rc<HashSet<usize>>> {
-        self.positions.borrow().get(key).cloned()
+    fn cached(&self, key: &TraitMethodKey) -> Option<Rc<MethodLifetimes>> {
+        self.lifetimes.borrow().get(key).cloned()
     }
 
-    fn remember(&self, key: TraitMethodKey, positions: Rc<HashSet<usize>>) {
-        self.positions.borrow_mut().insert(key, positions);
+    fn remember(&self, key: TraitMethodKey, lifetimes: Rc<MethodLifetimes>) {
+        self.lifetimes.borrow_mut().insert(key, lifetimes);
     }
 }
 
@@ -67,7 +106,7 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
         }
     }
 
-    pub fn elided_positions(&self, method: BindingId) -> Rc<HashSet<usize>> {
+    pub fn lifetimes(&self, method: BindingId) -> Rc<MethodLifetimes> {
         if self
             .lambda(method)
             .is_some_and(|lambda| !self.takes_borrowing_function(lambda))
@@ -78,25 +117,74 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
             return Rc::default();
         };
         let name = self.program.bindings.get(method).name();
-        self.cached_positions(trait_binding, name)
+        self.cached_lifetimes(trait_binding, name)
     }
 
-    fn cached_positions(&self, trait_binding: BindingId, name: &str) -> Rc<HashSet<usize>> {
+    fn cached_lifetimes(&self, trait_binding: BindingId, name: &str) -> Rc<MethodLifetimes> {
         let key = (trait_binding, name.to_string());
         if let Some(cached) = self.trait_method_elisions.cached(&key) {
             return cached;
         }
-        let positions = Rc::new(self.positions_in_bodies(trait_binding, name));
+        let lifetimes = Rc::new(self.lifetimes_in_bodies(trait_binding, name));
         self.trait_method_elisions
-            .remember(key, Rc::clone(&positions));
-        positions
+            .remember(key, Rc::clone(&lifetimes));
+        lifetimes
     }
 
-    fn positions_in_bodies(&self, trait_binding: BindingId, name: &str) -> HashSet<usize> {
-        self.bodies(trait_binding, name)
+    fn lifetimes_in_bodies(&self, trait_binding: BindingId, name: &str) -> MethodLifetimes {
+        let bodies: Vec<&TypedLambda> = self
+            .bodies(trait_binding, name)
             .into_iter()
-            .flat_map(|lambda| self.higher_ranked_positions(lambda))
+            .filter(|lambda| self.takes_borrowing_function(lambda))
+            .collect();
+        let (called_with_local, flowing) = self.parameter_positions(&bodies);
+        let receiver = self.receiver_of(trait_binding, name);
+        if bodies
+            .iter()
+            .any(|lambda| self.flows_past_elision(lambda, &flowing, receiver))
+        {
+            MethodLifetimes::sharing(called_with_local, flowing)
+        } else {
+            MethodLifetimes::eliding(called_with_local, flowing)
+        }
+    }
+
+    fn parameter_positions(&self, bodies: &[&TypedLambda]) -> (HashSet<usize>, HashSet<usize>) {
+        let mut called_with_local = HashSet::new();
+        let mut flowing = HashSet::new();
+        for lambda in bodies {
+            let borrows = self.result_borrows.analyse(lambda);
+            called_with_local.extend(Self::positions(lambda, &borrows.higher_ranked));
+            flowing.extend(Self::positions(lambda, &borrows.flows));
+        }
+        flowing.retain(|position| !called_with_local.contains(position));
+        (called_with_local, flowing)
+    }
+
+    fn positions(lambda: &TypedLambda, bindings: &HashSet<BindingId>) -> Vec<usize> {
+        lambda
+            .params
+            .iter()
+            .enumerate()
+            .filter(|(_, param)| bindings.contains(&param.binding))
+            .map(|(position, _)| position)
             .collect()
+    }
+
+    fn flows_past_elision(
+        &self,
+        lambda: &TypedLambda,
+        flowing: &HashSet<usize>,
+        receiver: Option<ReceiverKind>,
+    ) -> bool {
+        let borrows = SignatureBorrows::new(self.program);
+        flowing.iter().any(|position| {
+            let ty = &lambda.params[*position].ty;
+            match receiver {
+                Some(_) => borrows.returns_borrow_from_no_argument(ty),
+                None => borrows.hides_borrow_from_elision(ty),
+            }
+        })
     }
 
     fn bodies(&self, trait_binding: BindingId, name: &str) -> Vec<&'a TypedLambda> {
@@ -113,13 +201,22 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
     }
 
     fn default_of(&self, trait_binding: BindingId, name: &str) -> Option<BindingId> {
+        self.declared(trait_binding, name)
+            .and_then(|declared| declared.default)
+    }
+
+    fn receiver_of(&self, trait_binding: BindingId, name: &str) -> Option<ReceiverKind> {
+        self.declared(trait_binding, name)
+            .and_then(|declared| declared.receiver)
+    }
+
+    fn declared(&self, trait_binding: BindingId, name: &str) -> Option<&'a TypedTraitMethod> {
         self.program
             .trait_definitions
             .iter()
             .filter(|definition| definition.binding == trait_binding)
             .flat_map(|definition| &definition.methods)
             .find(|declared| self.program.bindings.get(declared.binding).name() == name)
-            .and_then(|declared| declared.default)
     }
 
     fn trait_of(&self, method: BindingId) -> Option<BindingId> {
@@ -135,23 +232,6 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
             TypedExprKind::Fn(lambda) => Some(lambda),
             _ => None,
         }
-    }
-
-    fn higher_ranked_positions(&self, lambda: &TypedLambda) -> Vec<usize> {
-        if !self.takes_borrowing_function(lambda) {
-            return Vec::new();
-        }
-        let borrows = self.result_borrows.analyse(lambda);
-        lambda
-            .params
-            .iter()
-            .enumerate()
-            .filter(|(_, param)| {
-                borrows.higher_ranked.contains(&param.binding)
-                    || borrows.flows.contains(&param.binding)
-            })
-            .map(|(position, _)| position)
-            .collect()
     }
 
     fn takes_borrowing_function(&self, lambda: &TypedLambda) -> bool {

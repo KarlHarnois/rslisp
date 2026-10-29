@@ -1,0 +1,21 @@
+(defstruct car :make (ref str) :year u16)
+
+(defstruct depot :size u16)
+
+(trait garage
+  (build (fn ((fn ((ref str) u16) car) (ref self)) car))
+  (restock (fn ((ref self) (fn () car)) car)))
+
+(impl garage depot
+  (build (constructor lot) (constructor "Nissan" (:size lot)))
+  (restock (lot constructor) (constructor)))
+
+(defn main ()
+  (let model (to-string "Leaf"))
+  (let lot (->depot 2024))
+  (let built (build ->car lot))
+  (let restocked (restock lot (fn () (->car :make (as-str model) :year 2025))))
+  (println (:make built))
+  (println (:year built))
+  (println (:make restocked))
+  (println (+ (:size lot) (:year restocked))))
