@@ -384,6 +384,18 @@ impl OwnershipProblems {
         ))
     }
 
+    pub fn moved_definition(name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::NEEDS_OWNERSHIP,
+            format!("cannot move `{name}` out of a top-level definition"),
+            Label::new(span, "a top-level definition can only be borrowed"),
+        )
+        .with_suggestion(
+            "clone the value to own a copy",
+            Suggestion::new(span, format!("(clone {name})")),
+        )
+    }
+
     pub fn needs_ownership(span: Span) -> Diagnostic {
         Self::borrowed_argument(span).with_help("pass a copy with `(clone ...)`")
     }

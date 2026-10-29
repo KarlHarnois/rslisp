@@ -1,0 +1,30 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/borrowed_definition.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Card<'a> {
+    name: &'a str,
+    set: &'a str,
+}
+
+static CARDS: std::sync::LazyLock<Vec<Card<'_>>> = std::sync::LazyLock::new(|| {
+    vec![
+        Card {
+            name: "Black Lotus",
+            set: "Alpha",
+        },
+        Card {
+            name: "Counterspell",
+            set: "Alpha",
+        },
+    ]
+});
+
+fn main() {
+    println!("{:?}", CARDS.len());
+    CARDS
+        .iter()
+        .for_each(|card: &Card<'_>| println!("{}", card.name))
+}

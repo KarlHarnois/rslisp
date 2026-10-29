@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/moved_definition_field.rslisp
+---
+error[L0503]: cannot move `cards` out of a top-level definition
+ --> check/moved_definition_field.rslisp:2:45
+  |
+2 |   (let deck (->deck :name "The Deck" :cards cards))
+  |                                             ^^^^^ a top-level definition can only be borrowed
+  |
+help: clone the value to own a copy
+  |
+2 -   (let deck (->deck :name "The Deck" :cards cards))
+2 +   (let deck (->deck :name "The Deck" :cards (clone cards)))
+  |

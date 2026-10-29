@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/copied_definition_argument.rslisp
+---
+const LIMIT: i64 = 10;
+
+fn doubled(value: i64) -> i64 {
+    value * 2
+}
+
+fn main() {
+    println!("{}", doubled(LIMIT));
+    println!("{}", LIMIT + 1)
+}

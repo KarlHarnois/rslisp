@@ -19,6 +19,7 @@ mod rewrite;
 mod slices;
 mod slots;
 mod stored;
+mod stored_definitions;
 mod subtree;
 mod tail_calls;
 mod update_bases;
@@ -46,6 +47,7 @@ use returned::ReturnedBorrows;
 use rewrite::ModeRewrite;
 use slices::ShrinkSelection;
 use stored::StoredClosures;
+use stored_definitions::StoredDefinitions;
 use values::FunctionValueModes;
 
 pub use changes::InPlaceChanges;
@@ -116,37 +118,28 @@ impl OwnershipChecker {
         Self::apply_kinds(program, report, &mut diagnostics);
         let mut inferred_copies = InferredCopies::default();
         let pipelines = Pipelines::new(&program.rust_types);
+        let stored_definitions = StoredDefinitions::of(program);
         for definition in program
             .modules
             .iter()
             .flat_map(|module| &module.definitions)
         {
-            if let TypedExprKind::Fn(lambda) = &definition.value.kind {
-                let checker = MoveChecker::new(
-                    CopyRules::new(
-                        &program.traits,
-                        &program.generics,
-                        &program.structs,
-                        &program.enums,
-                    ),
-                    &program.structs,
-                    &program.bindings,
-                    &program.template_borrows,
-                    &program.generics,
-                    pipelines,
-                    definition.binding,
-                );
-                let report = checker.check(lambda);
-                inferred_copies.extend(report.inferred_copies);
-                report
-                    .diagnostics
-                    .into_iter()
-                    .for_each(|diagnostic| diagnostics.push(diagnostic));
-                ReturnedBorrows::new(program)
-                    .check(lambda)
-                    .into_iter()
-                    .for_each(|diagnostic| diagnostics.push(diagnostic));
-            }
+            let checker = Self::move_checker(program, pipelines, &stored_definitions);
+            let report = match &definition.value.kind {
+                TypedExprKind::Fn(lambda) => {
+                    ReturnedBorrows::new(program)
+                        .check(lambda)
+                        .into_iter()
+                        .for_each(|diagnostic| diagnostics.push(diagnostic));
+                    checker.check(definition.binding, lambda)
+                }
+                _ => checker.check_value(&definition.value),
+            };
+            inferred_copies.extend(report.inferred_copies);
+            report
+                .diagnostics
+                .into_iter()
+                .for_each(|diagnostic| diagnostics.push(diagnostic));
             let needs = OwnershipNeeds::new(rewrite.function_params(), pipelines)
                 .check(definition.binding, &definition.value);
             needs
@@ -160,6 +153,27 @@ impl OwnershipChecker {
             program.warnings.extend(warnings);
         }
         diagnostics.into_result(inferred_copies)
+    }
+
+    fn move_checker<'a>(
+        program: &'a TypedProgram,
+        pipelines: Pipelines<'a>,
+        stored_definitions: &'a StoredDefinitions,
+    ) -> MoveChecker<'a> {
+        MoveChecker::new(
+            CopyRules::new(
+                &program.traits,
+                &program.generics,
+                &program.structs,
+                &program.enums,
+            ),
+            &program.structs,
+            &program.bindings,
+            &program.template_borrows,
+            &program.generics,
+            pipelines,
+            stored_definitions,
+        )
     }
 
     fn apply_kinds(program: &mut TypedProgram, report: KindReport, diagnostics: &mut Diagnostics) {
