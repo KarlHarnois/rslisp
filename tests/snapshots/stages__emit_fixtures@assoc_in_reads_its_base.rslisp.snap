@@ -1,0 +1,42 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/assoc_in_reads_its_base.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Badge {
+    text: String,
+    size: u16,
+}
+
+fn make_badge(text: String, size: u16) -> Badge {
+    Badge { text, size }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Garage {
+    name: String,
+    badge: Badge,
+}
+
+fn make_garage(name: String, badge: Badge) -> Garage {
+    Garage { name, badge }
+}
+
+fn main() {
+    let g = make_garage(
+        "Leaf Garage".to_string(),
+        make_badge("open".to_string(), 12),
+    );
+    let bigger = {
+        let badge = Badge {
+            size: 1 + g.badge.size,
+            ..g.badge
+        };
+        Garage { badge, ..g }
+    };
+    println!(
+        "{} {} {}",
+        bigger.name, bigger.badge.text, bigger.badge.size
+    )
+}
