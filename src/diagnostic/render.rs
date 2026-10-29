@@ -100,8 +100,7 @@ impl<'a> DiagnosticRenderer<'a> {
                 .labels()
                 .filter(move |label| label.span().source() == source)
         };
-        let covered = SourceWindow::covering(labels_in_source().map(|label| label.span().range()));
-        let window = self.window(source, covered);
+        let window = self.window(source, labels_in_source().map(|label| label.span().range()));
         let annotations = labels_in_source()
             .map(|label| Self::annotation(label, label.span() == primary_span, &window));
         self.snippet(source, &window).annotations(annotations)
@@ -131,7 +130,7 @@ impl<'a> DiagnosticRenderer<'a> {
 
     fn patched_snippet<'d>(&'d self, suggestion: &'d Suggestion) -> Snippet<'d, Patch<'d>> {
         let span = suggestion.span();
-        let window = self.window(span.source(), span.range());
+        let window = self.window(span.source(), std::iter::once(span.range()));
         self.snippet(span.source(), &window).patch(Patch::new(
             window.relative(span.range()),
             suggestion.replacement(),
@@ -145,13 +144,13 @@ impl<'a> DiagnosticRenderer<'a> {
             .path(file.name())
     }
 
-    fn window(&self, source: SourceId, covered: Range<usize>) -> SourceWindow {
+    fn window(&self, source: SourceId, ranges: impl Iterator<Item = Range<usize>>) -> SourceWindow {
         let text = self.sources.file(source).text();
         self.line_indexes
             .borrow_mut()
             .entry(source)
             .or_insert_with(|| LineIndex::new(text))
-            .window(covered)
+            .window_covering(ranges)
     }
 }
 

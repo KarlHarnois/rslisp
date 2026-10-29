@@ -19,6 +19,13 @@ impl LineIndex {
         }
     }
 
+    pub fn window_covering(&self, ranges: impl Iterator<Item = Range<usize>>) -> SourceWindow {
+        let covered = ranges
+            .reduce(|left, right| left.start.min(right.start)..left.end.max(right.end))
+            .unwrap_or_default();
+        self.window(covered)
+    }
+
     pub fn window(&self, covered: Range<usize>) -> SourceWindow {
         let first = self.line_of(covered.start);
         let last = self.line_of(covered.end);
@@ -38,12 +45,6 @@ impl LineIndex {
 }
 
 impl SourceWindow {
-    pub fn covering(ranges: impl Iterator<Item = Range<usize>>) -> Range<usize> {
-        ranges
-            .reduce(|left, right| left.start.min(right.start)..left.end.max(right.end))
-            .unwrap_or_default()
-    }
-
     pub fn first_line(&self) -> usize {
         self.first_line
     }
@@ -59,7 +60,7 @@ impl SourceWindow {
 
 #[cfg(test)]
 mod tests {
-    use super::{LineIndex, SourceWindow};
+    use super::LineIndex;
 
     const TEXT: &str = "(defn main ()\n  (do\n    leaf\n    1))\n";
 
@@ -75,7 +76,7 @@ mod tests {
     #[test]
     fn a_window_spans_every_line_between_its_ranges() {
         let ranges = [0..5, TEXT.find('1').unwrap()..TEXT.len() - 1];
-        let window = LineIndex::new(TEXT).window(SourceWindow::covering(ranges.into_iter()));
+        let window = LineIndex::new(TEXT).window_covering(ranges.into_iter());
         assert_eq!(window.first_line(), 1);
         assert_eq!(window.text(TEXT), TEXT);
     }
