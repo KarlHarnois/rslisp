@@ -533,8 +533,6 @@ impl TypeChecker {
         let runtime = dependencies.reachable_from(&self.main_definition(modules, entry));
         self.compile_time_only = graph
             .order()
-            .iter()
-            .copied()
             .filter(|binding| {
                 dependencies.is_compile_time_only(*binding) && !runtime.contains(binding)
             })
@@ -2631,7 +2629,7 @@ impl TypeChecker {
         let mut definitions = checker.check_definitions(&program.modules, program.entry, graph);
         let mut finalizer = super::finalize::Finalizer::new(&mut checker);
         for binding in graph.order() {
-            if let Some(definition) = definitions.get_mut(binding) {
+            if let Some(definition) = definitions.get_mut(&binding) {
                 finalizer.definition(definition);
             }
         }
