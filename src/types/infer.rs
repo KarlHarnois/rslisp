@@ -1213,7 +1213,7 @@ impl TypeChecker {
             result: result.clone(),
         };
         let previous = self.recur_target.replace(target);
-        let enclosing_body = std::mem::replace(&mut self.inside_lambda_body, true);
+        let enclosing_body = std::mem::replace(&mut self.checking_function_body, true);
         let previous_try = self.try_target.replace(TryTarget {
             returns: result.clone(),
         });
@@ -1222,7 +1222,7 @@ impl TypeChecker {
             .map_or(MismatchContext::Plain, |expected| expected.context.clone());
         let inferred = self.infer_block_expecting(&lambda.body, &result, context.clone());
         self.recur_target = previous;
-        self.inside_lambda_body = enclosing_body;
+        self.checking_function_body = enclosing_body;
         self.try_target = previous_try;
         let (body, found) = inferred?;
         let result_span = Self::block_result_span(&body).unwrap_or(span);

@@ -24,7 +24,7 @@ impl TypeChecker {
         result: &Type,
         found: &Type,
     ) -> Result<TypedBlock, Diagnostic> {
-        if !self.checks_closure() || !self.needs_string_view(result, found) {
+        if !self.sits_in_function_body() || !self.needs_string_view(result, found) {
             return Ok(body);
         }
         let Some(view) = self.string_view else {
@@ -81,8 +81,8 @@ impl TypeChecker {
         Type::shared(Type::Primitive(PrimitiveType::String))
     }
 
-    fn checks_closure(&self) -> bool {
-        self.inside_lambda_body
+    fn sits_in_function_body(&self) -> bool {
+        self.checking_function_body
     }
 
     fn needs_string_view(&self, result: &Type, found: &Type) -> bool {
