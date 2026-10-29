@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/local_lambda_plain_argument_twice.rslisp
+---
+fn main() {
+    let mut shout = |n: i64| println!("Nissan Leaf{}", n);
+    let apply = |action: &mut dyn FnMut(i64)| action(2024);
+    apply(&mut shout);
+    apply(&mut shout)
+}

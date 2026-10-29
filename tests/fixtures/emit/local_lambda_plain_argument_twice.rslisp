@@ -1,0 +1,5 @@
+(defn main ()
+  (let shout (fn (n) (println "Nissan Leaf" n)))
+  (let apply (fn (action) (action 2024)))
+  (apply shout)
+  (apply shout))
