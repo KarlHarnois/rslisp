@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
 use super::moved_values::{FieldPath, MoveSite, MovedValues};
 use super::mutation::ChangedValues;
@@ -9,8 +10,8 @@ use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
     Borrow, ClosureKind, CopyRules, FieldPlace, GenericId, GenericParam, InferredCopies, Pipelines,
-    TemplateBorrows, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
-    TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
+    StructTable, TemplateBorrows, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedControl,
+    TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -26,6 +27,7 @@ pub struct MoveReport {
 
 pub struct MoveChecker<'a> {
     copy: CopyRules<'a>,
+    structs: &'a StructTable,
     bindings: &'a BindingArena,
     template_borrows: &'a TemplateBorrows,
     generics: &'a HashMap<GenericId, GenericParam>,
@@ -46,6 +48,7 @@ pub struct MoveChecker<'a> {
 impl<'a> MoveChecker<'a> {
     pub fn new(
         copy: CopyRules<'a>,
+        structs: &'a StructTable,
         bindings: &'a BindingArena,
         template_borrows: &'a TemplateBorrows,
         generics: &'a HashMap<GenericId, GenericParam>,
@@ -54,6 +57,7 @@ impl<'a> MoveChecker<'a> {
     ) -> Self {
         Self {
             copy,
+            structs,
             bindings,
             template_borrows,
             generics,
@@ -152,15 +156,17 @@ impl<'a> MoveChecker<'a> {
         match structure {
             TypedStructExpr::Field(owner, _) => self.field_read(expr, owner),
             TypedStructExpr::New(_, fields) => self.field_values(fields),
-            TypedStructExpr::Update(_, base, fields) => self.update(base, fields),
+            TypedStructExpr::Update(_, base, fields) => self.update(expr, base, fields),
         }
     }
 
-    fn update(&mut self, base: &TypedExpr, fields: &[(FieldLabel, TypedExpr)]) {
-        if base.is_place() {
+    fn update(&mut self, update: &TypedExpr, base: &TypedExpr, fields: &[(FieldLabel, TypedExpr)]) {
+        if let Some(place) = base.field_place() {
             self.field_values(fields);
             self.refill(base, fields);
-            self.update_base(base);
+            self.expr(base, Usage::Borrow);
+            let unlisted = self.unlisted_moving_fields(update, fields);
+            self.move_fields(&place, base.span, unlisted);
         } else {
             self.update_base(base);
             self.field_values(fields);
@@ -212,16 +218,50 @@ impl<'a> MoveChecker<'a> {
         }
     }
 
+    fn move_fields(&mut self, place: &FieldPlace, span: Span, moving: Vec<Rc<str>>) {
+        let site = self.field_site(place, span);
+        for field in moving {
+            let mut path = Self::field_path(place);
+            path.push(field);
+            self.moved.move_field(place.root, path, site.clone());
+        }
+    }
+
+    fn unlisted_moving_fields(
+        &self,
+        update: &TypedExpr,
+        fields: &[(FieldLabel, TypedExpr)],
+    ) -> Vec<Rc<str>> {
+        let Type::Named(structure, arguments) = &update.ty else {
+            unreachable!("a struct update has its struct's type")
+        };
+        let definition = self
+            .structs
+            .get(*structure)
+            .expect("the type checker resolved the updated struct");
+        definition
+            .instantiated_fields(arguments)
+            .into_iter()
+            .filter(|(name, _)| !fields.iter().any(|(label, _)| label.name == *name))
+            .filter(|(_, field_type)| !self.copy.is_copy(field_type))
+            .map(|(name, _)| name)
+            .collect()
+    }
+
     fn move_field(&mut self, place: &FieldPlace, span: Span) {
         if self.copy.is_copy(place.root_type) {
             return;
         }
-        let site = MoveSite::Field {
-            span,
-            place: self.place_text(place).into(),
-        };
+        let site = self.field_site(place, span);
         self.moved
             .move_field(place.root, Self::field_path(place), site);
+    }
+
+    fn field_site(&self, place: &FieldPlace, span: Span) -> MoveSite {
+        MoveSite::Field {
+            span,
+            place: self.place_text(place).into(),
+        }
     }
 
     fn field_path(place: &FieldPlace) -> FieldPath {

@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/partial_move_reads_listed_field.rslisp
+---
+open 14 12 Leaf Garage
+x 9 Leaf Depot
