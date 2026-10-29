@@ -15,6 +15,7 @@ fn read_number(path: &str) -> Result<i64, AppError> {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     match read_number("number.txt") {
         Ok(number) => println!("{}", number),
         Err(AppError::Io(_reason)) => println!("cannot read"),
@@ -37,4 +38,21 @@ impl From<std::num::ParseIntError> for AppError {
     fn from(error: std::num::ParseIntError) -> Self {
         AppError::Parse(error)
     }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

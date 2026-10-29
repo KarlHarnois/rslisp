@@ -31,6 +31,7 @@ fn make_user(name: &str, tags: Vec<String>) -> User<'_> {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let leaf = make_car("Nissan", "Leaf", 2024, true);
     let civic = make_car("Honda", "Civic", 2019, false);
     let mut cars = vec![leaf];
@@ -54,4 +55,21 @@ fn main() {
     let someone = make_user("cy", vec!["ops".to_string(), "dev".to_string()]);
     println!("{}", someone.tags.len());
     println!("{}", someone.name)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

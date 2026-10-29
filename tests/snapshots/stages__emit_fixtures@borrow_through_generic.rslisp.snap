@@ -8,6 +8,7 @@ fn size_of<A: crate::rt::Sequence + ?Sized>(text: &A) -> usize {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let word = "hello".to_string();
     println!("{}", size_of(word.as_str()));
     println!("{}", size_of(&word))
@@ -47,4 +48,19 @@ mod rt {
             T::len(self)
         }
     }
+
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

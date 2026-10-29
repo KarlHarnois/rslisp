@@ -4,6 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/emit/local_lambda_two_closure_arguments.rslisp
 ---
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let year: i64 = 2024;
     let model = "Nissan Leaf";
     let mut seen: Vec<i64> = vec![0_i64];
@@ -11,4 +12,21 @@ fn main() {
     apply(&mut |n: i64| println!("{}{}", model, n));
     apply(&mut |n: i64| seen.push(n));
     println!("{}", seen.len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

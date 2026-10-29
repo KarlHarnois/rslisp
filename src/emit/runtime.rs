@@ -11,10 +11,13 @@ enum RuntimePart {
     Sequence,
     MapSequence,
     Io,
+    Signal,
 }
 
 impl RuntimePart {
-    const ALL: [(RuntimePart, &'static str); 9] = [
+    const STDOUT_MACROS: [&'static str; 2] = ["print!(", "println!("];
+    const STDOUT_HANDLE: &'static str = "std::io::stdout(";
+    const ALL: [(RuntimePart, &'static str); 10] = [
         (RuntimePart::Number, "crate::rt::Number"),
         (RuntimePart::FromLiteral, "::from_literal("),
         (RuntimePart::FromFloatLiteral, "::from_float_literal("),
@@ -24,6 +27,7 @@ impl RuntimePart {
         (RuntimePart::Sequence, "crate::rt::Sequence"),
         (RuntimePart::MapSequence, "std::collections::BTreeMap"),
         (RuntimePart::Io, "crate::rt::read_line"),
+        (RuntimePart::Signal, Self::STDOUT_HANDLE),
     ];
 
     fn present(self, code: &str) -> bool {
@@ -32,13 +36,29 @@ impl RuntimePart {
             .find(|(part, _)| *part == self)
             .map(|(_, marker)| *marker)
             .expect("every runtime part has a marker");
-        if self == Self::MapSequence {
-            (code.contains("std::collections::BTreeMap")
-                || code.contains("std::collections::HashMap"))
-                && code.contains("crate::rt::Sequence")
-        } else {
-            code.contains(marker)
+        match self {
+            Self::MapSequence => {
+                (code.contains("std::collections::BTreeMap")
+                    || code.contains("std::collections::HashMap"))
+                    && code.contains("crate::rt::Sequence")
+            }
+            Self::Signal => code.contains(marker) || Self::calls_stdout_macro(code),
+            _ => code.contains(marker),
         }
+    }
+
+    fn calls_stdout_macro(code: &str) -> bool {
+        Self::STDOUT_MACROS.iter().any(|call| {
+            code.match_indices(call)
+                .any(|(start, _)| !Self::continues_identifier(&code[..start]))
+        })
+    }
+
+    fn continues_identifier(preceding: &str) -> bool {
+        preceding
+            .chars()
+            .next_back()
+            .is_some_and(|character| character.is_alphanumeric() || character == '_')
     }
 
     fn required(self) -> Option<RuntimePart> {
@@ -48,7 +68,9 @@ impl RuntimePart {
             | RuntimePart::Signed
             | RuntimePart::Integer => Some(RuntimePart::Number),
             RuntimePart::Float => Some(RuntimePart::Signed),
-            RuntimePart::Number | RuntimePart::Sequence | RuntimePart::Io => None,
+            RuntimePart::Number | RuntimePart::Sequence | RuntimePart::Io | RuntimePart::Signal => {
+                None
+            }
             RuntimePart::MapSequence => Some(RuntimePart::Sequence),
         }
     }
@@ -71,13 +93,16 @@ impl RuntimeModule {
     const SEQUENCE: &'static str = include_str!("../../prelude/runtime/sequence.rs");
     const MAP_SEQUENCE: &'static str = include_str!("../../prelude/runtime/map_sequence.rs");
     const IO: &'static str = include_str!("../../prelude/runtime/io.rs");
-    const FIXED_PARTS: [(RuntimePart, &'static str); 6] = [
+    const SIGNAL: &'static str = include_str!("../../prelude/runtime/signal.rs");
+    const START_UP_CALL: &'static str = "crate::rt::restore_default_sigpipe();";
+    const FIXED_PARTS: [(RuntimePart, &'static str); 7] = [
         (RuntimePart::Signed, Self::SIGNED),
         (RuntimePart::Float, Self::FLOAT),
         (RuntimePart::Integer, Self::INTEGER),
         (RuntimePart::Sequence, Self::SEQUENCE),
         (RuntimePart::MapSequence, Self::MAP_SEQUENCE),
         (RuntimePart::Io, Self::IO),
+        (RuntimePart::Signal, Self::SIGNAL),
     ];
     const CONVERSIONS: &'static [Conversion] = &[
         Conversion {
@@ -111,6 +136,12 @@ impl RuntimeModule {
             }
         }
         (!parts.is_empty()).then_some(RuntimeModule { parts })
+    }
+
+    pub fn start_up_call(&self) -> Option<&'static str> {
+        self.parts
+            .contains(&RuntimePart::Signal)
+            .then_some(Self::START_UP_CALL)
     }
 
     pub fn source(&self) -> String {

@@ -4,6 +4,7 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/fold_collection.rslisp
 ---
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let items: Vec<i64> = vec![1_i64, 2_i64, 3_i64];
     println!(
         "{}",
@@ -11,4 +12,21 @@ fn main() {
             .iter()
             .fold(0, |argument: i64, argument_2: &i64| argument + argument_2)
     )
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

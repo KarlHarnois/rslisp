@@ -8,7 +8,25 @@ fn add_item(items: &mut Vec<i64>, n: i64) {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let mut items: Vec<i64> = vec![1_i64];
     add_item(&mut items, 2);
     println!("{}", items.len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

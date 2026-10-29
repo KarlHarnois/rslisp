@@ -47,6 +47,7 @@ fn is_same_shape<A: PartialEq>(a: A, b: A) -> bool {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let p = make_point(1, 2);
     println!("{}", shift(p).x);
     println!("{}", shift(p).x);
@@ -61,4 +62,21 @@ fn main() {
     println!("{}", p.y);
     println!("{}", is_same_shape(p, make_point(1, 2)));
     println!("{}", is_same_shape(make_cube(1, 2, 3), make_cube(3, 2, 1)))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

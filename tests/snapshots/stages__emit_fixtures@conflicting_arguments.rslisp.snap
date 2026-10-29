@@ -8,6 +8,7 @@ fn add_item(items: &mut Vec<usize>, n: usize) {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let mut items: Vec<usize> = vec![1_usize];
     add_item(&mut items, 5);
     {
@@ -15,4 +16,21 @@ fn main() {
         add_item(&mut items, call_argument_1)
     }
     println!("{}", items.len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

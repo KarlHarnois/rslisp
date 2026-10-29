@@ -51,6 +51,7 @@ fn measure(pick: impl FnOnce(&str) -> &str) -> u16 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", build_with(make_car).year);
     let model = "Leaf".to_string();
     let built = build_with(|make: &str, year: u16| Car {
@@ -64,4 +65,21 @@ fn main() {
     println!("{}", count_make(|text: &str| 3, "Leaf"));
     println!("{}", label(|text: &str| 3));
     println!("{}", measure(first_word))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

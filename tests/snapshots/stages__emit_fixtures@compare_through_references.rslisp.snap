@@ -17,9 +17,27 @@ fn is_same_name(a: &Person, b: &Person) -> bool {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let ana = make_person("Ana".to_string());
     let bo = make_person("Bo".to_string());
     println!("{}", is_same_name(&ana, &bo));
     println!("{}", ana.name < bo.name);
     println!("{}", ana.name != bo.name)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

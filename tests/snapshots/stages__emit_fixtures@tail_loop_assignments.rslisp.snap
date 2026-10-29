@@ -78,10 +78,28 @@ fn grow(mut n: i64) -> i64 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", shrink(3));
     println!("{}", flip(5));
     println!("{}", settle(500));
     println!("{}", halve(40));
     println!("{}", cap(1));
     println!("{}", grow(1))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

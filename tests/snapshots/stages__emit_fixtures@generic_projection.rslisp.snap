@@ -14,10 +14,28 @@ fn read_inferred<A: std::str::FromStr>(text: &str) -> Result<A, <A as std::str::
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let count: Result<i64, std::num::ParseIntError> = read_value("4");
     println!("{}", count.unwrap());
     let flag: Result<bool, std::str::ParseBoolError> = read_inferred("true");
     println!("{}", flag.unwrap());
     let ratio: Result<f64, std::num::ParseFloatError> = read_inferred("0.5");
     println!("{}", ratio.unwrap())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

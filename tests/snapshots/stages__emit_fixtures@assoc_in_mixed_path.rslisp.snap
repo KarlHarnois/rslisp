@@ -26,6 +26,7 @@ fn make_garage(name: String, bays: Vec<Car<'_>>, levels: Vec<Vec<u16>>) -> Garag
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let garage = make_garage(
         "North".to_string(),
         vec![make_car("Honda", "Civic".to_string(), 2019)],
@@ -51,4 +52,21 @@ fn main() {
         "{} {} {}",
         renumbered.name, renumbered.bays[0].make, renumbered.levels[1][0]
     )
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

@@ -21,10 +21,28 @@ fn swap<A: Clone, B: Clone>(p: &Pair<A, B>) -> Pair<B, A> {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let counted: Pair<i64, String> = make_pair(7, "seven".to_string());
     println!("{}", counted.first);
     println!("{}", swap(&counted).first);
     let named: Pair<&str, i64> = make_pair("pear", 3);
     println!("{}", named.first);
     println!("{}", named.second)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

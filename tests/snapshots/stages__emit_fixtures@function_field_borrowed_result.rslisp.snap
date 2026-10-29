@@ -28,6 +28,7 @@ fn apply_key<'a>(key: impl FnOnce(&'a User<'a>) -> &'a str, someone: &'a User<'a
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let by_name = make_sorter(|value: &User<'_>| value.name, "by name");
     let by_name_again = make_sorter(name_of, "by name again");
     let ana = User {
@@ -40,4 +41,21 @@ fn main() {
         by_name_again.label,
         apply_key(by_name.key, &ana)
     )
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

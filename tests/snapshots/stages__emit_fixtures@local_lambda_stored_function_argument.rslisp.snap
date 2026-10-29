@@ -9,7 +9,25 @@ struct Sorter {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let make = |key: fn(i64) -> i64| Sorter { key };
     let chosen = make(|n: i64| n + 1);
     println!("{}", (chosen.key)(2))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

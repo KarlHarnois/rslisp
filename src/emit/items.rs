@@ -87,6 +87,7 @@ pub struct ItemEmitter<'a> {
 
 impl<'a> ItemEmitter<'a> {
     const RUNTIME_MODULE: &'static str = "rt";
+    const MAIN_HEADER: &'static str = "fn main() {";
 
     pub fn new(
         program: &'a TypedProgram,
@@ -120,11 +121,31 @@ impl<'a> ItemEmitter<'a> {
             fragments.extend(child.fragments(name, "mod"));
         }
         if let Some(runtime) = RuntimeModule::of(&Code::text_of(&fragments)) {
+            if let Some(call) = runtime.start_up_call() {
+                Self::start_main_with(&mut fragments, call);
+            }
             fragments.extend([Fragment::Newline, Fragment::Newline]);
             fragments.extend(Self::runtime(&runtime.source()));
         }
         fragments.push(Fragment::Newline);
         fragments
+    }
+
+    fn start_main_with(fragments: &mut [Fragment], call: &str) {
+        let main_body = fragments.iter_mut().find_map(|fragment| match fragment {
+            Fragment::Spanned(_, children) => match children.as_mut_slice() {
+                [Fragment::Text(header), Fragment::Indented(body), ..]
+                    if header == Self::MAIN_HEADER =>
+                {
+                    Some(body)
+                }
+                _ => None,
+            },
+            _ => None,
+        });
+        main_body
+            .expect("an emitted crate holds a main function")
+            .splice(0..0, [Fragment::Newline, Fragment::Text(call.to_string())]);
     }
 
     pub fn separated(items: Vec<Vec<Fragment>>) -> Vec<Fragment> {
@@ -659,7 +680,7 @@ impl<'a> ItemEmitter<'a> {
         vec![Fragment::Spanned(
             span,
             vec![
-                Fragment::Text("fn main() {".to_string()),
+                Fragment::Text(Self::MAIN_HEADER.to_string()),
                 Fragment::Indented(vec![
                     Fragment::Newline,
                     Fragment::Text(format!("if let Err(error) = {body}() {{")),

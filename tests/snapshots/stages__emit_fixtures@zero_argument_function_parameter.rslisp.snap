@@ -18,6 +18,7 @@ fn measure_model_year<'a>(constructor: impl FnOnce(u16) -> Car<'a>) -> u16 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let make = "Nissan".to_string();
     println!(
         "{}",
@@ -33,4 +34,21 @@ fn main() {
             year
         })
     )
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

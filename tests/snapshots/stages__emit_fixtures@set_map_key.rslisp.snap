@@ -4,6 +4,7 @@ expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/set_map_key.rslisp
 ---
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let mut balances: std::collections::BTreeMap<String, i64> = {
         let mut map = std::collections::BTreeMap::new();
         map.insert("alice".to_string(), 10);
@@ -12,4 +13,21 @@ fn main() {
     let name = "alice".to_string();
     *balances.get_mut(&name).unwrap() = 25;
     println!("{}", name)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

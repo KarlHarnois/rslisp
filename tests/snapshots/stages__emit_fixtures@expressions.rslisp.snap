@@ -47,6 +47,7 @@ fn counter_to_text(c: &Counter) -> String {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let mut c = make_counter(0);
     c.count += 1;
     println!("{}", is_in_range(3));
@@ -55,4 +56,21 @@ fn main() {
     println!("{}", sum_to(10));
     println!("{}", total(1, 2, 3));
     println!("{}", counter_to_text(&c))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

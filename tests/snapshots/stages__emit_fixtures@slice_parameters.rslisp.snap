@@ -48,6 +48,7 @@ fn add_year(known_years: &mut Vec<i64>, year: i64) {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let leaf = Car {
         make: "Nissan",
         model: "Leaf",
@@ -64,4 +65,21 @@ fn main() {
     let mut model_years: Vec<i64> = vec![2019_i64];
     add_year(&mut model_years, 2024);
     println!("{}", model_years.len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

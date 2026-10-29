@@ -46,6 +46,7 @@ fn record_nested(mut record: impl FnMut(i64), year: i64) {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let mut years: Vec<i64> = vec![2024_i64];
     record_twice(|year: i64| years.push(year), 2025);
     record_once(|year: i64| years.push(year), 2027);
@@ -53,4 +54,21 @@ fn main() {
     record_in_loop(|year: i64| years.push(year), 2029);
     record_nested(|year: i64| years.push(year), 2031);
     println!("{}", years.len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

@@ -24,6 +24,7 @@ fn count_up(limit: i64, mut state: Counter) -> i64 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!(
         "{}",
         count_up(
@@ -34,4 +35,21 @@ fn main() {
             }
         )
     )
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

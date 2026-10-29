@@ -41,6 +41,7 @@ fn ends_with_let() {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", apply_to_four(|argument_0: f64| argument_0.sqrt()));
     println!("{}", apply_to_four(f64::sqrt));
     println!("{}", *ROOT_OF_TWO);
@@ -48,4 +49,21 @@ fn main() {
     println!("{}", chosen_count(true));
     println!("{}", doubler()(2));
     ends_with_let()
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

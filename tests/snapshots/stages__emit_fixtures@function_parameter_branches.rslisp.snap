@@ -51,6 +51,7 @@ fn measure_alias(pick: impl FnOnce(&str) -> &str) -> u16 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let model = "Leaf".to_string();
     let borrowing = |make: &str, year: u16| Car {
         make: model.as_str(),
@@ -62,4 +63,21 @@ fn main() {
     let words = "Nissan Leaf".to_string();
     println!("{}", pick_alias(first_word, words.as_str()));
     println!("{}", measure_alias(first_word))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

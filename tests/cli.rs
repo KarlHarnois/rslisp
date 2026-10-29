@@ -1,7 +1,9 @@
 use std::fs;
+use std::io::{BufRead, BufReader};
 use std::os::unix::fs::PermissionsExt;
+use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::{Command, Output, Stdio};
 
 const GREETING: &str = "(defn main ()\n  (println \"hello from the sandbox\"))\n";
 const MARKED_PROGRAM: &str = "\u{feff}(defn main () (println 1))\n";
@@ -18,6 +20,7 @@ const PASSTHROUGH_RUSTFMT: &str =
     "#!/bin/sh\nwhile IFS= read -r line; do printf '%s\\n' \"$line\"; done\n";
 const FAILING_RUSTFMT: &str = "#!/bin/sh\nprintf 'rustfmt failed in the sandbox\\n' >&2\nexit 1\n";
 const BOUND_MODULE: &str = "(export person)\n\n(defstruct person :name string)\n";
+const MILLION_LINES: &str = "(defn main ()\n  (for-each (range 0 1000000) (fn (i) (println i))))\n";
 const STRUCTS: &str = "(defstruct person :name string :age i64)\n(defstruct ticket :id u32)\n(derive ticket debug)\n\n(defn main () (do))\n";
 const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::ops::Add\" i64 (with i64 person))\n\n(type matches (where ((a (same person))) (fn (a) bool)))\n(defn matches (x) true)\n\n(defn main () (println (matches 1)))\n";
 
@@ -68,6 +71,28 @@ impl Sandbox {
         Outcome::of(&mut self.command(&self.directory.join(relative_path), &[]))
     }
 
+    fn built_program_read_for_one_line(&self, relative_path: &str) -> Outcome {
+        let mut child = self
+            .command(&self.directory.join(relative_path), &[])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("the built program starts");
+        let mut first_line = String::new();
+        BufReader::new(child.stdout.take().expect("stdout is piped"))
+            .read_line(&mut first_line)
+            .expect("the program prints a line");
+        let output = child
+            .wait_with_output()
+            .expect("the program finishes after its reader closes");
+        Outcome {
+            output: Output {
+                stdout: first_line.into_bytes(),
+                ..output
+            },
+        }
+    }
+
     fn command(&self, program: &Path, arguments: &[&str]) -> Command {
         let mut command = Command::new(program);
         command.args(arguments).current_dir(&self.directory);
@@ -86,6 +111,8 @@ struct Outcome {
 }
 
 impl Outcome {
+    const SIGPIPE: i32 = 13;
+
     fn of(command: &mut Command) -> Self {
         let output = command
             .output()
@@ -101,6 +128,17 @@ impl Outcome {
             self.stdout(),
             self.stderr()
         );
+        self
+    }
+
+    fn assert_quiet_stop(&self) -> &Self {
+        let status = self.output.status;
+        assert!(
+            status.code() == Some(0) || status.signal() == Some(Self::SIGPIPE),
+            "status: {status}\nstderr:\n{}",
+            self.stderr()
+        );
+        assert!(!self.stderr().contains("panicked"), "{}", self.stderr());
         self
     }
 
@@ -217,6 +255,16 @@ fn build_writes_the_program_under_the_build_directory() {
         greeting.assert_exit_code(0).stdout(),
         "hello from the sandbox\n"
     );
+}
+
+#[test]
+fn built_program_stops_quietly_when_its_reader_closes_stdout() {
+    let sandbox = Sandbox::new("closed_stdout").with_file("count.rslisp", MILLION_LINES);
+    sandbox
+        .compiler(&["build", "count.rslisp"])
+        .assert_exit_code(0);
+    let count = sandbox.built_program_read_for_one_line("target/rslisp/count/count");
+    assert_eq!(count.assert_quiet_stop().stdout(), "0\n");
 }
 
 #[test]

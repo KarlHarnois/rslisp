@@ -15,6 +15,7 @@ fn initial(name: &str) -> String {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     let counts: std::collections::BTreeMap<String, i64> = {
         let mut map = std::collections::BTreeMap::new();
         map.insert("A".to_string(), 0);
@@ -35,4 +36,21 @@ fn main() {
         ..user
     };
     println!("{} {}", renamed.name, renamed.is_admin)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }

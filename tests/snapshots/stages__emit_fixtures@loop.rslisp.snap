@@ -22,6 +22,7 @@ fn once(n: i64) -> i64 {
 }
 
 fn main() {
+    crate::rt::restore_default_sigpipe();
     println!("{}", sum_to(10));
     (1_i64..4_i64).for_each(|n: i64| {
         println!("{}", {
@@ -50,4 +51,21 @@ fn main() {
         }
     }
     println!("{}", once(3))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
 }
