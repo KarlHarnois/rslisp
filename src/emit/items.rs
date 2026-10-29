@@ -411,7 +411,9 @@ impl<'a> ItemEmitter<'a> {
             unreachable!("a default method has a function value")
         };
         let lambda = std::rc::Rc::clone(lambda);
-        let mut emitter = self.expressions(module, &definition.value);
+        let mut emitter = self
+            .expressions(module, &definition.value)
+            .with_enclosing_lifetime(inferred.clone());
         emitter.prepare_tail_loop(declaration, &lambda);
         if method.receiver.is_some() {
             emitter.locals.bind_receiver(lambda.params[0].binding);
@@ -580,9 +582,6 @@ impl<'a> ItemEmitter<'a> {
         let TypedExprKind::Fn(lambda) = &definition.value.kind else {
             unreachable!("an implementation method is a function")
         };
-        let mut emitter = self.expressions(module, &definition.value);
-        emitter.prepare_tail_loop(definition.binding, lambda);
-        let types = emitter.types();
         let lifetimes = self.method_elisions().lifetimes(binding);
         let inferred = self
             .shared_method_lifetime(&definition.scheme.lifetimes, &lifetimes, reserved_lifetime)
@@ -594,6 +593,11 @@ impl<'a> ItemEmitter<'a> {
                     reserved_lifetime,
                 )
             });
+        let mut emitter = self
+            .expressions(module, &definition.value)
+            .with_enclosing_lifetime(inferred.clone());
+        emitter.prepare_tail_loop(definition.binding, lambda);
+        let types = emitter.types();
         let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
         let used = self.used_written_lifetimes(&definition.value);
         let flowing = self.flowing_parameters(lambda, &lifetimes);

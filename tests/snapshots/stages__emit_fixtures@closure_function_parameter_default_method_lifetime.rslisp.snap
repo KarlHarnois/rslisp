@@ -1,0 +1,59 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/closure_function_parameter_default_method_lifetime.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Depot {
+    size: u16,
+}
+
+fn make_depot(size: u16) -> Depot {
+    Depot { size }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let lot = make_depot(2024);
+    println!("{}", Showroom::longer_make("Nissan", "Mitsubishi", &lot));
+    println!("{}", lot.size)
+}
+
+trait Showroom {
+    fn longer_make<'a>(argument_0: &'a str, argument_1: &'a str, argument_2: &'a Self) -> &'a str {
+        let pick = |build: &mut dyn FnMut() -> Car<'a>| build().make;
+        pick(&mut || Car {
+            make: if argument_0.len() > argument_1.len() {
+                argument_0
+            } else {
+                argument_1
+            },
+            model: "Leaf",
+        })
+    }
+}
+
+impl Showroom for Depot {}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
