@@ -1,0 +1,6 @@
+(defn add-year! (years year) (push! years year))
+
+(defn main ()
+  (let years (vec))
+  (add-year! (mut years) 2024)
+  (println (len years)))

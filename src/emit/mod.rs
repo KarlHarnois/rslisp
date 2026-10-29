@@ -17,6 +17,8 @@ mod problems;
 mod result_borrows;
 mod runtime;
 mod signature_borrows;
+mod store_sites;
+mod stored_arguments;
 mod stored_functions;
 mod template;
 mod types;

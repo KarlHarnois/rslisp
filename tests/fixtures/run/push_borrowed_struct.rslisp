@@ -1,0 +1,8 @@
+(defstruct car :make str :model str :year u16)
+
+(defn add-car! (cars car) (push! cars car))
+
+(defn main ()
+  (let cars (vec))
+  (add-car! (mut cars) (->car :make "Nissan" :model "Leaf" :year 2024))
+  (println (:model (at cars 0))))

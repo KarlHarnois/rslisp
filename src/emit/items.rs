@@ -13,7 +13,7 @@ use super::method_elisions::{MethodElisions, MethodLifetimes, TraitMethodElision
 use super::mutable_locals::MutableLocals;
 use super::opaque_borrows::OpaqueBorrows;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
-use super::result_borrows::ResultBorrows;
+use super::result_borrows::{LambdaFlows, ResultBorrows, StoredFlows};
 use super::runtime::RuntimeModule;
 use super::signature_borrows::SignatureBorrows;
 use super::types::{LifetimeScope, RustTypes, TypePosition};
@@ -729,6 +729,29 @@ impl<'a> ItemEmitter<'a> {
             .collect()
     }
 
+    fn sharing_parameters(borrows: &LambdaFlows, stored: &StoredFlows) -> HashSet<BindingId> {
+        let mut sharing = borrows.flows.clone();
+        sharing.extend(&stored.values);
+        sharing.extend(&stored.targets);
+        sharing
+    }
+
+    fn store_targets(borrows: &LambdaFlows, stored: &StoredFlows) -> HashSet<BindingId> {
+        stored.targets.difference(&borrows.flows).copied().collect()
+    }
+
+    fn store_target_scope(
+        scope: LifetimeScope,
+        store_targets: &HashSet<BindingId>,
+        param: &TypedBinder,
+    ) -> LifetimeScope {
+        if store_targets.contains(&param.binding) {
+            scope.eliding_outer_reference()
+        } else {
+            scope
+        }
+    }
+
     fn parameter_scope(
         &self,
         param: &TypedBinder,
@@ -754,7 +777,8 @@ impl<'a> ItemEmitter<'a> {
         emitter.prepare_tail_loop(definition.binding, lambda);
         let types = emitter.types();
         let used = self.used_written_lifetimes(&definition.value);
-        let inferred = self.inferred_lifetime(&definition.scheme.lifetimes, &definition.value);
+        let stored = self.result_borrows.definition_stores(definition.binding);
+        let inferred = self.function_lifetime(definition, &stored.flows);
         let scope =
             self.lifetime_scope_used(&definition.scheme.lifetimes, &used, inferred.as_deref());
         let written: Vec<BindingId> = definition
@@ -765,7 +789,8 @@ impl<'a> ItemEmitter<'a> {
             .filter(|binding| used.contains(binding))
             .collect();
         let borrows = self.result_borrows.analyse(lambda);
-        let flowing = borrows.flows;
+        let sharing = Self::sharing_parameters(&borrows, &stored.flows);
+        let store_targets = Self::store_targets(&borrows, &stored.flows);
         let higher_ranked = borrows.higher_ranked;
         let opaque_lifetimes = Rc::new(FreshLifetimes::new(
             self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),
@@ -775,12 +800,16 @@ impl<'a> ItemEmitter<'a> {
             .iter()
             .map(|param| {
                 let scope = Self::naming_parameter_lifetimes(
-                    self.parameter_scope(
+                    Self::store_target_scope(
+                        self.parameter_scope(
+                            param,
+                            &definition.scheme.lifetimes,
+                            &used,
+                            inferred.as_deref(),
+                            &sharing,
+                        ),
+                        &store_targets,
                         param,
-                        &definition.scheme.lifetimes,
-                        &used,
-                        inferred.as_deref(),
-                        &flowing,
                     ),
                     &opaque_lifetimes,
                     &higher_ranked,
@@ -1069,6 +1098,17 @@ impl<'a> ItemEmitter<'a> {
         self.program
             .function_type_needs_shared_lifetime(parameters, result)
             || (self.program.borrow_lifetimes(result) > 0 && self.result_flows_past_elision(value))
+    }
+
+    fn function_lifetime(
+        &self,
+        definition: &TypedDefinition,
+        stored: &StoredFlows,
+    ) -> Option<String> {
+        if stored.is_empty() {
+            return self.inferred_lifetime(&definition.scheme.lifetimes, &definition.value);
+        }
+        Some(self.unused_lifetime_avoiding(&definition.scheme.lifetimes, None))
     }
 
     fn result_flows_past_elision(&self, value: &TypedExpr) -> bool {

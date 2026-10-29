@@ -1,0 +1,28 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/push_borrowed_struct.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+    year: u16,
+}
+
+fn add_car<'a>(cars: &mut Vec<Car<'a>>, car: Car<'a>) {
+    cars.push(car)
+}
+
+fn main() {
+    let mut cars = Vec::new();
+    add_car(
+        &mut cars,
+        Car {
+            make: "Nissan",
+            model: "Leaf",
+            year: 2024,
+        },
+    );
+    println!("{}", cars[0].model)
+}

@@ -1,0 +1,9 @@
+(defstruct car :make str :model str :year u16)
+
+(type replace-car! (fn ((mut (hash-map (ref str) car)) (ref str) car) unit))
+(defn replace-car! (cars name car) (set! (at cars name) car))
+
+(defn main ()
+  (let cars (hash-map "leaf" (->car :make "Nissan" :model "Leaf" :year 2023)))
+  (replace-car! (mut cars) "leaf" (->car :make "Nissan" :model "Leaf" :year 2024))
+  (println (:year (unwrap (lookup cars "leaf")))))

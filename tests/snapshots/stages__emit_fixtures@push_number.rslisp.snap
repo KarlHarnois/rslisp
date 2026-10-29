@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/push_number.rslisp
+---
+fn add_year(years: &mut Vec<i64>, year: i64) {
+    years.push(year)
+}
+
+fn main() {
+    let mut years: Vec<i64> = Vec::new();
+    add_year(&mut years, 2024);
+    println!("{}", years.len())
+}

@@ -1,8 +1,11 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
 use super::callee_parameters::{CalleeParameters, OpenCallees};
 use super::plan::EmitPlan;
+use super::store_sites::{StoreSite, StoreSites};
+use super::stored_arguments::Store;
 use crate::core::BindingId;
 use crate::types::{
     Borrow, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
@@ -14,6 +17,8 @@ pub struct ResultBorrows<'a> {
     plan: &'a EmitPlan<'a>,
     parameters_by_callee: RefCell<HashMap<BindingId, CalleeParameters>>,
     open_callees: RefCell<OpenCallees>,
+    stores_by_definition: RefCell<HashMap<BindingId, Rc<DefinitionStores>>>,
+    no_stores: Rc<DefinitionStores>,
 }
 
 struct Visit {
@@ -28,11 +33,75 @@ impl<'a> ResultBorrows<'a> {
             plan,
             parameters_by_callee: RefCell::new(HashMap::new()),
             open_callees: RefCell::new(OpenCallees::default()),
+            stores_by_definition: RefCell::new(HashMap::new()),
+            no_stores: Rc::default(),
         }
     }
 
     pub fn analyse(&self, lambda: &TypedLambda) -> LambdaFlows {
         BodyFlows::of(self, lambda, None)
+    }
+
+    fn stored_at_sites(&self, lambda: &TypedLambda) -> StoredFlows {
+        let sites = StoreSites::of(self, lambda);
+        if sites.is_empty() {
+            return StoredFlows::default();
+        }
+        BodyFlows::joined_by_stores(self, lambda, &sites)
+    }
+
+    pub fn definition_stores(&self, definition: BindingId) -> Rc<DefinitionStores> {
+        if let Some(stores) = self.stores_by_definition.borrow().get(&definition) {
+            return Rc::clone(stores);
+        }
+        let stores = match self.callee_lambda(definition) {
+            Some(lambda) if self.may_receive_store(lambda) => {
+                self.receiving_stores(definition, lambda)
+            }
+            _ => Rc::clone(&self.no_stores),
+        };
+        self.remember_stores(definition, &stores);
+        stores
+    }
+
+    fn receiving_stores(
+        &self,
+        definition: BindingId,
+        lambda: &TypedLambda,
+    ) -> Rc<DefinitionStores> {
+        self.remember_stores(definition, &self.no_stores);
+        let flows = self.stored_at_sites(lambda);
+        let positions = flows.positions(lambda);
+        Rc::new(DefinitionStores { flows, positions })
+    }
+
+    fn remember_stores(&self, definition: BindingId, stores: &Rc<DefinitionStores>) {
+        self.stores_by_definition
+            .borrow_mut()
+            .insert(definition, Rc::clone(stores));
+    }
+
+    pub(super) fn carries_borrow(&self, ty: &Type) -> bool {
+        self.program.type_holds_borrow(ty) || ty.is_unsized()
+    }
+
+    pub(super) fn program(&self) -> &'a TypedProgram {
+        self.program
+    }
+
+    fn may_receive_store(&self, lambda: &TypedLambda) -> bool {
+        lambda
+            .params
+            .iter()
+            .any(|param| self.referent_holds_borrow(&param.ty))
+    }
+
+    fn referent_holds_borrow(&self, ty: &Type) -> bool {
+        match ty {
+            Type::Ref(..) => false,
+            Type::Mut(_, referent) => self.program.type_holds_borrow(referent),
+            owned => self.program.type_holds_borrow(owned),
+        }
     }
 
     fn cached_parameters(&self, callee: BindingId) -> Option<CalleeParameters> {
@@ -121,6 +190,55 @@ struct BodyFlows<'r, 'a> {
     earliest_reached: Option<usize>,
 }
 
+#[derive(Default)]
+pub struct DefinitionStores {
+    pub flows: StoredFlows,
+    pub positions: Vec<Store>,
+}
+
+#[derive(Default)]
+pub struct StoredFlows {
+    pub values: HashSet<BindingId>,
+    pub targets: HashSet<BindingId>,
+}
+
+impl StoredFlows {
+    pub fn is_empty(&self) -> bool {
+        self.values.is_empty()
+    }
+
+    fn extend(&mut self, other: StoredFlows) {
+        self.values.extend(other.values);
+        self.targets.extend(other.targets);
+    }
+
+    fn positions(&self, lambda: &TypedLambda) -> Vec<Store> {
+        let values = Self::marked(lambda, &self.values);
+        Self::marked(lambda, &self.targets)
+            .into_iter()
+            .flat_map(|target| {
+                values
+                    .iter()
+                    .filter(move |value| **value != target)
+                    .map(move |value| Store {
+                        target,
+                        value: *value,
+                    })
+            })
+            .collect()
+    }
+
+    fn marked(lambda: &TypedLambda, bindings: &HashSet<BindingId>) -> Vec<usize> {
+        lambda
+            .params
+            .iter()
+            .enumerate()
+            .filter(|(_, param)| bindings.contains(&param.binding))
+            .map(|(position, _)| position)
+            .collect()
+    }
+}
+
 pub struct LambdaFlows {
     pub flows: HashSet<BindingId>,
     pub higher_ranked: HashSet<BindingId>,
@@ -146,12 +264,7 @@ impl LambdaFlows {
 
 impl<'r, 'a> BodyFlows<'r, 'a> {
     fn of(rules: &'r ResultBorrows<'a>, lambda: &TypedLambda, order: Option<usize>) -> LambdaFlows {
-        let mut borrows = Self {
-            rules,
-            parameters: lambda.params.iter().map(|param| param.binding).collect(),
-            aliases: HashMap::new(),
-            earliest_reached: order,
-        };
+        let mut borrows = Self::new(rules, lambda, order);
         let mut flows = borrows.block(&lambda.body);
         let calls = LocalBorrowCalls::of(rules.program, lambda);
         let mut higher_ranked: HashSet<BindingId> = calls
@@ -165,6 +278,15 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
             flows,
             higher_ranked,
             earliest_reached: borrows.earliest_reached,
+        }
+    }
+
+    fn new(rules: &'r ResultBorrows<'a>, lambda: &TypedLambda, order: Option<usize>) -> Self {
+        Self {
+            rules,
+            parameters: lambda.params.iter().map(|param| param.binding).collect(),
+            aliases: HashMap::new(),
+            earliest_reached: order,
         }
     }
 
@@ -182,6 +304,30 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
     fn reaches_higher_ranked(&mut self, passed: &PassedLocal) -> bool {
         self.callee_parameters(passed.callee)
             .is_higher_ranked(passed.position)
+    }
+
+    fn joined_by_stores(
+        rules: &'r ResultBorrows<'a>,
+        lambda: &TypedLambda,
+        sites: &[StoreSite],
+    ) -> StoredFlows {
+        let mut borrows = Self::new(rules, lambda, None);
+        borrows.block(&lambda.body);
+        let mut stored = StoredFlows::default();
+        for site in sites {
+            stored.extend(borrows.joined_by_store(site));
+        }
+        stored
+    }
+
+    fn joined_by_store(&mut self, site: &StoreSite) -> StoredFlows {
+        let values = self.bound(site.value);
+        let targets = if values.is_empty() {
+            HashSet::new()
+        } else {
+            self.bound(site.target)
+        };
+        StoredFlows { values, targets }
     }
 
     fn block(&mut self, block: &TypedBlock) -> HashSet<BindingId> {
@@ -217,7 +363,7 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
     }
 
     fn carries_borrow(&self, ty: &Type) -> bool {
-        self.rules.program.type_holds_borrow(ty) || ty.is_unsized()
+        self.rules.carries_borrow(ty)
     }
 
     fn call(
