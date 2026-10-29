@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/partial_move_reads_other_field.rslisp
+---
+open 14 Leaf Garage

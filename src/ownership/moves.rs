@@ -100,7 +100,7 @@ impl<'a> MoveChecker<'a> {
     fn nested_expr(&mut self, expr: &TypedExpr, kind: &TypedExprKind) {
         match kind {
             TypedExprKind::Recur(arguments) => self.recur(arguments),
-            TypedExprKind::Struct(structure) => self.structure(structure),
+            TypedExprKind::Struct(structure) => self.structure(expr, structure),
             TypedExprKind::Variant(_, arguments) => self.expressions(arguments),
             TypedExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item),
             TypedExprKind::TraitObject(value, _) => self.expr(value, Usage::Move),
@@ -148,9 +148,9 @@ impl<'a> MoveChecker<'a> {
         }
     }
 
-    fn structure(&mut self, structure: &TypedStructExpr) {
+    fn structure(&mut self, expr: &TypedExpr, structure: &TypedStructExpr) {
         match structure {
-            TypedStructExpr::Field(value, _) => self.expr(value, Usage::Borrow),
+            TypedStructExpr::Field(owner, _) => self.field_read(expr, owner),
             TypedStructExpr::New(_, fields) => fields
                 .iter()
                 .for_each(|(_, value)| self.expr(value, Usage::Move)),
@@ -161,6 +161,27 @@ impl<'a> MoveChecker<'a> {
                     .iter()
                     .for_each(|(_, value)| self.expr(value, Usage::Move));
             }
+        }
+    }
+
+    fn field_read(&mut self, read: &TypedExpr, owner: &TypedExpr) {
+        match read.field_place() {
+            Some(place) => self.place_read(&place, Self::root_span(read)),
+            None => self.expr(owner, Usage::Borrow),
+        }
+    }
+
+    fn place_read(&mut self, place: &FieldPlace, span: Span) {
+        let path = place.path.iter().map(|label| &*label.name);
+        if let Some(site) = self.moved.site_overlapping(place.root, path) {
+            self.use_after_move(place.root, place.root_type, span, &site);
+        }
+    }
+
+    fn root_span(read: &TypedExpr) -> Span {
+        match &read.kind {
+            TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => Self::root_span(owner),
+            _ => read.span,
         }
     }
 
