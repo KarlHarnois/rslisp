@@ -1,0 +1,114 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+env:
+  CACHIX_CACHE: rslisp
+  RELEASE_SUBJECT_PREFIX: Release v
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      !startsWith(github.event.workflow_run.head_commit.message, 'Release v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    env:
+      COMMIT: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+      - name: Find the commits since the latest release
+        id: since
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          main=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
+          if [ -n "$(git tag --points-at "$COMMIT" --list 'v*')" ]; then
+            echo "$COMMIT is already a release"
+          elif [ "$main" != "$COMMIT" ]; then
+            echo "main moved to $main, whose run releases $COMMIT"
+          else
+            echo "latest=$latest" >> "$GITHUB_OUTPUT"
+            echo "commits=$(git rev-list --reverse --first-parent "$latest..$COMMIT" | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Collect their pull requests
+        id: pulls
+        if: steps.since.outputs.latest != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMITS: ${{ steps.since.outputs.commits }}
+        run: |
+          for commit in $COMMITS; do
+            gh api "repos/$GITHUB_REPOSITORY/commits/$commit/pulls" \
+              --jq '.[] | {number, title, labels: [.labels[].name]}' || exit 1
+          done | jq -s 'unique_by(.number)' > pulls.json
+          echo "labels=$(jq -r '[.[].labels[]] | unique | join(" ")' pulls.json)" >> "$GITHUB_OUTPUT"
+          jq -r '
+            (map(select(.labels | any(. == "release:minor" or . == "release:major"))) +
+             map(select(.labels | all(. != "release:minor" and . != "release:major"))))
+            | .[] | "- \(.title) (#\(.number))"
+          ' pulls.json > notes.md
+      - if: steps.since.outputs.latest != ''
+        uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - if: steps.since.outputs.latest != ''
+        uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Commit and tag the release
+        id: tag
+        if: steps.since.outputs.latest != ''
+        env:
+          LATEST: ${{ steps.since.outputs.latest }}
+          LABELS: ${{ steps.pulls.outputs.labels }}
+        run: |
+          read -ra labels <<< "$LABELS"
+          tag=$(nix develop .#ci -c cargo xtask next-release "$LATEST" "${labels[@]}")
+          nix develop .#ci -c cargo xtask set-version "${tag#v}"
+          changed=$(git status --porcelain --untracked-files=no | awk '{print $2}' | sort | tr '\n' ' ')
+          if [ "$changed" != "Cargo.lock Cargo.toml " ]; then
+            echo "::error::set-version changed $changed instead of Cargo.lock and Cargo.toml"
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit --quiet -m "$RELEASE_SUBJECT_PREFIX${tag#v}" -- Cargo.toml Cargo.lock
+          git tag "$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - if: steps.tag.outputs.tag != ''
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
+      - name: Push the release commit and its tag
+        if: steps.tag.outputs.tag != ''
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: git push --atomic "git@github.com:$GITHUB_REPOSITORY.git" HEAD:refs/heads/main "refs/tags/$TAG"
+      - name: Publish the GitHub release
+        if: steps.tag.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md
