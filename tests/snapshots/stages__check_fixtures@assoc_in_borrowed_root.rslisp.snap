@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/assoc_in_borrowed_root.rslisp
+---
+error[L0410]: cannot update a borrowed `badge`
+ --> check/assoc_in_borrowed_root.rslisp:9:14
+  |
+9 |   (let moved (assoc-in (:badge (at gs 0)) (:at :x) 4))
+  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this `badge` is borrowed
+  |
+  = help: bind an owned `badge` with `let` first, such as a `clone` of the borrowed value, and update that

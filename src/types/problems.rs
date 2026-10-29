@@ -687,6 +687,17 @@ impl TypeProblems {
         )
     }
 
+    pub fn borrowed_update_base(struct_name: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::NO_FIELDS,
+            format!("cannot update a borrowed `{struct_name}`"),
+            Label::new(span, format!("this `{struct_name}` is borrowed")),
+        )
+        .with_help(format!(
+            "bind an owned `{struct_name}` with `let` first, such as a `clone` of the borrowed value, and update that"
+        ))
+    }
+
     pub fn struct_base_help() -> String {
         format!(
             "a struct is not a collection, so update a field with a keyword key, such as `{}field`",
