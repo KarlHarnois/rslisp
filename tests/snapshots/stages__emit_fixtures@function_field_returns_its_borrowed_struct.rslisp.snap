@@ -1,0 +1,44 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_field_returns_its_borrowed_struct.rslisp
+---
+#[derive(Clone, Copy, Debug)]
+struct Node<'a> {
+    next: fn() -> Node<'a>,
+    label: &'a str,
+}
+
+fn leaf() -> Node<'static> {
+    Node {
+        next: leaf,
+        label: "leaf",
+    }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let root = Node {
+        next: || leaf(),
+        label: "root",
+    };
+    println!("{}", root.label);
+    println!("{}", (root.next)().label)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

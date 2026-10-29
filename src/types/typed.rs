@@ -365,12 +365,22 @@ impl TypedProgram {
     }
 
     pub fn has_lifetime_parameter(&self, binding: BindingId) -> bool {
+        self.has_lifetime_parameter_with(binding, &mut HashSet::new())
+    }
+
+    fn has_lifetime_parameter_with(
+        &self,
+        binding: BindingId,
+        visiting: &mut HashSet<BindingId>,
+    ) -> bool {
         if let Some(definition) = self.structs.get(binding) {
-            return !definition.lifetimes.is_empty() || self.definition_holds_borrow(binding);
+            return !definition.lifetimes.is_empty()
+                || self.definition_holds_borrow_with(binding, visiting);
         }
         if let Some(definition) = self.enums.get(binding) {
             return definition.rust.is_none()
-                && (!definition.lifetimes.is_empty() || self.definition_holds_borrow(binding));
+                && (!definition.lifetimes.is_empty()
+                    || self.definition_holds_borrow_with(binding, visiting));
         }
         false
     }
@@ -380,18 +390,45 @@ impl TypedProgram {
     }
 
     pub fn function_type_needs_outer_lifetime(&self, parameters: &[Type], result: &Type) -> bool {
-        self.function_type_returns_borrow(result) && self.parameter_lifetimes(parameters) == 0
+        self.function_type_needs_outer_lifetime_with(parameters, result, &mut HashSet::new())
+    }
+
+    fn function_type_needs_outer_lifetime_with(
+        &self,
+        parameters: &[Type],
+        result: &Type,
+        visiting: &mut HashSet<BindingId>,
+    ) -> bool {
+        self.function_type_returns_borrow_with(result, visiting)
+            && self.parameter_lifetimes_with(parameters, visiting) == 0
     }
 
     fn parameter_lifetimes(&self, parameters: &[Type]) -> usize {
+        self.parameter_lifetimes_with(parameters, &mut HashSet::new())
+    }
+
+    fn parameter_lifetimes_with(
+        &self,
+        parameters: &[Type],
+        visiting: &mut HashSet<BindingId>,
+    ) -> usize {
         parameters
             .iter()
-            .map(|parameter| self.borrow_lifetimes(parameter))
+            .map(|parameter| self.borrow_lifetimes_with(parameter, visiting))
             .sum()
     }
 
     pub fn function_type_returns_borrow(&self, result: &Type) -> bool {
-        self.borrow_lifetimes(result) > 0 || self.type_needs_outer_lifetime(result)
+        self.function_type_returns_borrow_with(result, &mut HashSet::new())
+    }
+
+    fn function_type_returns_borrow_with(
+        &self,
+        result: &Type,
+        visiting: &mut HashSet<BindingId>,
+    ) -> bool {
+        self.borrow_lifetimes_with(result, visiting) > 0
+            || self.type_needs_outer_lifetime_with(result, visiting)
     }
 
     pub fn is_function_returning_borrow(&self, ty: &Type) -> bool {
@@ -399,15 +436,20 @@ impl TypedProgram {
     }
 
     pub fn borrow_lifetimes(&self, ty: &Type) -> usize {
+        self.borrow_lifetimes_with(ty, &mut HashSet::new())
+    }
+
+    fn borrow_lifetimes_with(&self, ty: &Type, visiting: &mut HashSet<BindingId>) -> usize {
         match ty {
             Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
-                usize::from(*lifetime == Lifetime::Elided) + self.borrow_lifetimes(inner)
+                usize::from(*lifetime == Lifetime::Elided)
+                    + self.borrow_lifetimes_with(inner, visiting)
             }
             Type::Named(binding, arguments) => {
-                usize::from(self.has_lifetime_parameter(*binding))
+                usize::from(self.has_lifetime_parameter_with(*binding, visiting))
                     + arguments
                         .iter()
-                        .map(|argument| self.borrow_lifetimes(argument))
+                        .map(|argument| self.borrow_lifetimes_with(argument, visiting))
                         .sum::<usize>()
             }
             Type::TraitObject(_) => 0,
@@ -423,7 +465,7 @@ impl TypedProgram {
         match ty {
             Type::Ref(..) | Type::Mut(..) => true,
             Type::Function(_, parameters, result) => {
-                self.function_type_needs_outer_lifetime(parameters, result)
+                self.function_type_needs_outer_lifetime_with(parameters, result, visiting)
             }
             Type::Named(binding, arguments) => {
                 arguments
@@ -464,14 +506,14 @@ impl TypedProgram {
         holds
     }
 
-    fn type_needs_outer_lifetime(&self, ty: &Type) -> bool {
+    fn type_needs_outer_lifetime_with(&self, ty: &Type, visiting: &mut HashSet<BindingId>) -> bool {
         match ty {
             Type::Function(_, parameters, result) => {
-                self.function_type_needs_outer_lifetime(parameters, result)
+                self.function_type_needs_outer_lifetime_with(parameters, result, visiting)
             }
             Type::Named(_, arguments) => arguments
                 .iter()
-                .any(|argument| self.type_needs_outer_lifetime(argument)),
+                .any(|argument| self.type_needs_outer_lifetime_with(argument, visiting)),
             Type::Ref(..)
             | Type::Mut(..)
             | Type::Var(_)
