@@ -4,6 +4,13 @@ use crate::reader::NumberValue;
 pub struct LiteralFit;
 
 impl LiteralFit {
+    pub fn is_representable(value: &NumberValue) -> bool {
+        match value {
+            NumberValue::Float(float) => float.is_finite(),
+            NumberValue::Integer(_) => true,
+        }
+    }
+
     pub fn fits(value: &NumberValue, candidate: &Type) -> bool {
         let Type::Primitive(primitive) = candidate else {
             return false;
