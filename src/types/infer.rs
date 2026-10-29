@@ -8,6 +8,7 @@ use super::checker::{TypeChecker, VariantArmReference};
 use super::collection::{Collection, CollectionKind};
 use super::enums::VariantPayload;
 use super::pending::{DecidedBorrows, PendingBorrow};
+use super::pipelines::Pipelines;
 use super::problems::{MismatchContext, TypeProblems};
 use super::rust_types::RustType;
 use super::ty::Bound;
@@ -1803,7 +1804,7 @@ impl TypeChecker {
         site: &ArgumentSite<'_>,
     ) -> Result<TypedExpr, Diagnostic> {
         let expected = self.unifier.resolve(parameter);
-        if value.is_written_form() || !self.is_iterator(&expected) {
+        if value.is_written_form() || !Pipelines::new(&self.rust_types).is_pipeline(&expected) {
             return Ok(value);
         }
         let Some((item, collection_type)) = self.collection_item(&value.ty) else {
@@ -1907,10 +1908,6 @@ impl TypeChecker {
             .iter()
             .any(|parameter| self.contains_box_object(parameter))
             || self.contains_box_object(result)
-    }
-
-    fn is_iterator(&self, ty: &Type) -> bool {
-        matches!(ty, Type::Named(binding, _) if self.rust_types.is_iterator(*binding))
     }
 
     fn wrap_function_value(
