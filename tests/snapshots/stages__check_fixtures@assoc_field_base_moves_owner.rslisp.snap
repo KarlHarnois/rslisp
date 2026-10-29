@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/assoc_field_base_moves_owner.rslisp
 ---
-error[L0501]: use of moved value `garage`
+error[L0501]: use of moved value `(:badge garage)`
  --> check/assoc_field_base_moves_owner.rslisp:8:14
   |
 7 |   (let bigger (assoc (:badge garage) :size 14))

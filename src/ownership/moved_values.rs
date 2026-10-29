@@ -17,7 +17,7 @@ impl MoveSite {
         }
     }
 
-    pub fn cloned_place<'a>(&'a self, name: &'a str) -> &'a str {
+    pub fn moved_place<'a>(&'a self, name: &'a str) -> &'a str {
         match self {
             Self::Whole(_) => name,
             Self::Field { place, .. } => place,
@@ -87,10 +87,6 @@ impl MovedValues {
 
     pub fn is_empty(&self) -> bool {
         self.values.is_empty()
-    }
-
-    pub fn bindings(&self) -> impl Iterator<Item = BindingId> + '_ {
-        self.values.keys().copied()
     }
 
     pub fn merge(&mut self, other: MovedValues) {

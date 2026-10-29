@@ -6,6 +6,7 @@ use super::mutation::ChangedValues;
 use super::problems::OwnershipProblems;
 use super::repeats::{NextPass, RepeatingBody};
 use super::update_bases::UpdateBases;
+use super::update_order::StructUpdateOrder;
 use crate::core::{BindingArena, BindingId, FieldLabel, FieldSpelling};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
@@ -19,6 +20,12 @@ use crate::types::{
 enum Usage {
     Move,
     Borrow,
+}
+
+struct MovedUse<'u> {
+    place: &'u FieldPlace<'u>,
+    span: Span,
+    site: &'u MoveSite,
 }
 
 pub struct MoveReport {
@@ -37,7 +44,7 @@ pub struct MoveChecker<'a> {
     changed: ChangedValues,
     moved: MovedValues,
     repeating: Option<RepeatingBody>,
-    moved_by_earlier_pass: HashSet<BindingId>,
+    moved_by_earlier_pass: MovedValues,
     copy_functions: HashSet<BindingId>,
     once_functions: HashSet<BindingId>,
     reported: HashSet<BindingId>,
@@ -68,7 +75,7 @@ impl<'a> MoveChecker<'a> {
             changed: ChangedValues::default(),
             moved: MovedValues::default(),
             repeating: None,
-            moved_by_earlier_pass: HashSet::new(),
+            moved_by_earlier_pass: MovedValues::default(),
             copy_functions: HashSet::new(),
             once_functions: HashSet::new(),
             reported: HashSet::new(),
@@ -162,16 +169,19 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn update(&mut self, update: &TypedExpr, base: &TypedExpr, fields: &[(FieldLabel, TypedExpr)]) {
-        if let Some(place) = base.field_place() {
-            self.field_values(fields);
-            let bases = UpdateBases::new(self.structs, &self.copy);
-            let unlisted = bases.unlisted_fields(update, fields);
-            let moved = bases.moved_fields(&unlisted);
-            self.unlisted_read(&place, Self::root_span(base), &unlisted);
-            self.move_fields(&place, base.span, moved);
-        } else {
-            self.update_base(base);
-            self.field_values(fields);
+        match StructUpdateOrder::of(base) {
+            StructUpdateOrder::FieldsBeforePlace(place) => {
+                self.field_values(fields);
+                let bases = UpdateBases::new(self.structs, &self.copy);
+                let unlisted = bases.unlisted_fields(update, fields);
+                let moved = bases.moved_fields(&unlisted);
+                self.unlisted_read(&place, Self::root_span(base), &unlisted);
+                self.move_fields(&place, base.span, moved);
+            }
+            StructUpdateOrder::BaseFirst => {
+                self.update_base(base);
+                self.field_values(fields);
+            }
         }
     }
 
@@ -189,21 +199,26 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn place_read(&mut self, place: &FieldPlace, span: Span) {
-        let path = place.path.iter().map(|label| &*label.name);
-        if let Some(site) = self.moved.site_overlapping(place.root, path) {
-            self.use_after_move(place.root, place.root_type, span, &site);
+        if let Some(site) = self
+            .moved
+            .site_overlapping(place.root, Self::path_names(place))
+        {
+            self.use_after_move(place, span, &site);
         }
     }
 
     fn unlisted_read(&mut self, place: &FieldPlace, span: Span, unlisted: &[(Rc<str>, Type)]) {
         let site = unlisted.iter().find_map(|(field, _)| {
-            let path = place.path.iter().map(|label| &*label.name);
-            let field_path = path.chain(std::iter::once(&**field));
+            let field_path = Self::path_names(place).chain(std::iter::once(&**field));
             self.moved.site_overlapping(place.root, field_path)
         });
         if let Some(site) = site {
-            self.use_after_move(place.root, place.root_type, span, &site);
+            self.use_after_move(place, span, &site);
         }
+    }
+
+    fn path_names<'p>(place: &'p FieldPlace) -> impl Iterator<Item = &'p str> + Clone {
+        place.path.iter().map(|label| &*label.name)
     }
 
     fn root_span(read: &TypedExpr) -> Span {
@@ -299,7 +314,7 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn repeat(&mut self, lambda: &TypedLambda, next: NextPass) {
-        self.moved_by_earlier_pass.extend(next.carried_bindings());
+        self.moved_by_earlier_pass.merge(next.carried().clone());
         let after_first_pass = std::mem::replace(&mut self.moved, next.moved_at_start());
         self.pass(lambda);
         self.moved.merge(after_first_pass);
@@ -423,78 +438,83 @@ impl<'a> MoveChecker<'a> {
 
     fn local(&mut self, binding: BindingId, ty: &Type, span: Span, usage: Usage) {
         match self.moved.site(binding) {
-            Some(site) => self.use_after_move(binding, ty, span, &site),
+            Some(site) => self.use_after_move(&Self::whole_place(binding, ty), span, &site),
             None => self.record_use(binding, ty, span, usage),
         }
     }
 
-    fn use_after_move(&mut self, binding: BindingId, ty: &Type, span: Span, site: &MoveSite) {
-        if self.records_inferred_copy(binding, ty) || !self.reported.insert(binding) {
+    fn whole_place(root: BindingId, root_type: &Type) -> FieldPlace<'_> {
+        FieldPlace {
+            root,
+            root_type,
+            path: Vec::new(),
+        }
+    }
+
+    fn use_after_move(&mut self, place: &FieldPlace, span: Span, site: &MoveSite) {
+        let binding = place.root;
+        if self.records_inferred_copy(binding, place.root_type) || !self.reported.insert(binding) {
             return;
         }
-        let diagnostic = self.use_after_move_diagnostic(binding, ty, span, site);
+        let moved_use = MovedUse { place, span, site };
+        let diagnostic = self.use_after_move_diagnostic(&moved_use);
         self.diagnostics.push(diagnostic);
     }
 
-    fn use_after_move_diagnostic(
-        &self,
-        binding: BindingId,
-        ty: &Type,
-        span: Span,
-        site: &MoveSite,
-    ) -> Diagnostic {
-        let name = self.bindings.get(binding).name();
-        let moved_at = site.span();
-        if let Some(diagnostic) = self.bound_help(binding, ty, span, moved_at) {
+    fn use_after_move_diagnostic(&self, moved_use: &MovedUse) -> Diagnostic {
+        let moved = self.moved_value(moved_use);
+        if let Some(diagnostic) = self.bound_help(moved_use, &moved) {
             return diagnostic;
         }
-        let moved = self.moved_value(binding, span, moved_at);
-        self.ownership_help(binding, ty, &moved)
-            .unwrap_or_else(|| self.reuse_help(moved, name, ty, site))
+        let place = moved_use.place;
+        self.ownership_help(place.root, place.root_type, &moved)
+            .unwrap_or_else(|| self.reuse_help(moved, moved_use))
     }
 
-    fn reuse_help(&self, moved: Diagnostic, name: &str, ty: &Type, site: &MoveSite) -> Diagnostic {
-        if self.pipelines.is_pipeline(ty) {
+    fn reuse_help(&self, moved: Diagnostic, moved_use: &MovedUse) -> Diagnostic {
+        let name = self.bindings.get(moved_use.place.root).name();
+        if self.pipelines.is_pipeline(moved_use.place.root_type) {
             return OwnershipProblems::pipeline_help(moved, name);
         }
-        OwnershipProblems::clone_suggestion(moved, site.cloned_place(name), site.span())
+        let site = moved_use.site;
+        OwnershipProblems::clone_suggestion(moved, site.moved_place(name), site.span())
     }
 
-    fn moved_value(&self, binding: BindingId, span: Span, moved_at: Span) -> Diagnostic {
-        let name = self.bindings.get(binding).name();
-        if self.moved_by_earlier_pass.contains(&binding) {
-            OwnershipProblems::use_after_earlier_pass_move(name, span, moved_at)
+    fn moved_value(&self, moved_use: &MovedUse) -> Diagnostic {
+        let site = moved_use.site;
+        let moved_place = site.moved_place(self.bindings.get(moved_use.place.root).name());
+        if self.moved_in_earlier_pass(moved_use) {
+            OwnershipProblems::use_after_earlier_pass_move(moved_place, moved_use.span, site.span())
         } else {
-            OwnershipProblems::use_after_move(name, span, moved_at)
+            OwnershipProblems::use_after_move(moved_place, moved_use.span, site.span())
         }
     }
 
-    fn bound_help(
-        &self,
-        binding: BindingId,
-        ty: &Type,
-        span: Span,
-        moved_at: Span,
-    ) -> Option<Diagnostic> {
-        let name = self.bindings.get(binding).name();
-        if matches!(ty, Type::Function(..)) {
-            return Some(OwnershipProblems::closure_move_help(
-                self.moved_value(binding, span, moved_at),
-            ));
+    fn moved_in_earlier_pass(&self, moved_use: &MovedUse) -> bool {
+        let place = moved_use.place;
+        self.moved_by_earlier_pass
+            .site_overlapping(place.root, Self::path_names(place))
+            .is_some_and(|earlier| earlier.span() == moved_use.site.span())
+    }
+
+    fn bound_help(&self, moved_use: &MovedUse, moved: &Diagnostic) -> Option<Diagnostic> {
+        let place = moved_use.place;
+        if matches!(place.root_type, Type::Function(..)) {
+            return Some(OwnershipProblems::closure_move_help(moved.clone()));
         }
-        let Type::Generic(generic) = ty else {
+        let Type::Generic(generic) = place.root_type else {
             return None;
         };
-        if !self.parameters.contains(&binding) {
+        if !self.parameters.contains(&place.root) {
             return None;
         }
         let parameter = self.generics.get(generic)?;
         Some(OwnershipProblems::missing_copy_bound(
-            name,
+            self.bindings.get(place.root).name(),
             &parameter.name,
             self.copy.copy_trait_name(self.bindings),
-            span,
-            moved_at,
+            moved_use.span,
+            moved_use.site.span(),
         ))
     }
 

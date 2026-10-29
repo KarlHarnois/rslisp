@@ -21,6 +21,7 @@ mod slots;
 mod stored;
 mod subtree;
 mod update_bases;
+mod update_order;
 mod usage;
 mod values;
 
@@ -48,6 +49,7 @@ use values::FunctionValueModes;
 
 pub use changes::InPlaceChanges;
 pub use mutation::ChangedValues;
+pub use update_order::StructUpdateOrder;
 
 pub struct OwnershipChecker;
 

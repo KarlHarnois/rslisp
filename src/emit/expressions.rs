@@ -17,6 +17,7 @@ use crate::core::{
     ReferenceKind, RustTemplate, VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
+use crate::ownership::StructUpdateOrder;
 use crate::reader::{Number, NumberValue};
 use crate::source::Span;
 use crate::types::{
@@ -2475,13 +2476,12 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn update_base(&mut self, base: &TypedExpr) -> UpdateArgument {
-        if base.is_place() {
-            UpdateArgument {
+        match StructUpdateOrder::of(base) {
+            StructUpdateOrder::FieldsBeforePlace(_) => UpdateArgument {
                 name: None,
                 code: self.expr(base),
-            }
-        } else {
-            self.update_argument(base, "base")
+            },
+            StructUpdateOrder::BaseFirst => self.update_argument(base, "base"),
         }
     }
 
