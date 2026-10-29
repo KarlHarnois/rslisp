@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/moved_definition_argument.rslisp
+---
+error[L0503]: cannot move `cars` out of a top-level definition
+  --> check/moved_definition_argument.rslisp:12:33
+   |
+12 |   (prn (len (:cars (open-garage cars)))))
+   |                                 ^^^^ a top-level definition can only be borrowed
+   |
+help: clone the value to own a copy
+   |
+12 -   (prn (len (:cars (open-garage cars)))))
+12 +   (prn (len (:cars (open-garage (clone cars))))))
+   |

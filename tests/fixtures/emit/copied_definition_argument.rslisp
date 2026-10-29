@@ -1,0 +1,7 @@
+(def limit 10)
+
+(defn doubled (value) (* value 2))
+
+(defn main ()
+  (println (doubled limit))
+  (println (+ limit 1)))

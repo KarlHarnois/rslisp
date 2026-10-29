@@ -5,6 +5,7 @@ use super::moved_values::{FieldPath, MoveSite, MovedValues};
 use super::mutation::ChangedValues;
 use super::problems::OwnershipProblems;
 use super::repeats::{NextPass, RepeatingBody};
+use super::stored_definitions::StoredDefinitions;
 use super::update_bases::UpdateBases;
 use super::update_order::StructUpdateOrder;
 use crate::core::{BindingArena, BindingId, FieldLabel, FieldSpelling};
@@ -40,7 +41,7 @@ pub struct MoveChecker<'a> {
     template_borrows: &'a TemplateBorrows,
     generics: &'a HashMap<GenericId, GenericParam>,
     pipelines: Pipelines<'a>,
-    enclosing: BindingId,
+    stored_definitions: &'a StoredDefinitions,
     changed: ChangedValues,
     moved: MovedValues,
     repeating: Option<RepeatingBody>,
@@ -62,7 +63,7 @@ impl<'a> MoveChecker<'a> {
         template_borrows: &'a TemplateBorrows,
         generics: &'a HashMap<GenericId, GenericParam>,
         pipelines: Pipelines<'a>,
-        enclosing: BindingId,
+        stored_definitions: &'a StoredDefinitions,
     ) -> Self {
         Self {
             copy,
@@ -71,7 +72,7 @@ impl<'a> MoveChecker<'a> {
             template_borrows,
             generics,
             pipelines,
-            enclosing,
+            stored_definitions,
             changed: ChangedValues::default(),
             moved: MovedValues::default(),
             repeating: None,
@@ -86,7 +87,7 @@ impl<'a> MoveChecker<'a> {
         }
     }
 
-    pub fn check(mut self, lambda: &TypedLambda) -> MoveReport {
+    pub fn check(mut self, enclosing: BindingId, lambda: &TypedLambda) -> MoveReport {
         self.parameters = lambda.params.iter().map(|param| param.binding).collect();
         self.unwritten_parameters = lambda
             .params
@@ -94,8 +95,17 @@ impl<'a> MoveChecker<'a> {
             .filter(|param| !param.annotated)
             .map(|param| param.binding)
             .collect();
-        self.changed = ChangedValues::of(lambda, self.enclosing);
+        self.changed = ChangedValues::of(lambda, enclosing);
         self.block(&lambda.body, Usage::Move);
+        self.report()
+    }
+
+    pub fn check_value(mut self, value: &TypedExpr) -> MoveReport {
+        self.expr(value, Usage::Move);
+        self.report()
+    }
+
+    fn report(self) -> MoveReport {
         MoveReport {
             diagnostics: self.diagnostics,
             inferred_copies: self.inferred_copies,
@@ -145,9 +155,25 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn leaf(&mut self, leaf: &TypedLeaf, expr: &TypedExpr, usage: Usage) {
-        if let TypedLeaf::Local(binding) = leaf {
-            self.local(*binding, &expr.ty, expr.span, usage);
+        match leaf {
+            TypedLeaf::Local(binding) => self.local(*binding, &expr.ty, expr.span, usage),
+            TypedLeaf::Global(binding) if usage == Usage::Move => {
+                self.stored_definition(*binding, expr)
+            }
+            _ => {}
         }
+    }
+
+    fn stored_definition(&mut self, binding: BindingId, expr: &TypedExpr) {
+        let moves_stored_value = self.stored_definitions.contains(binding)
+            && !self.copy.is_copy(&expr.ty)
+            && !matches!(expr.ty, Type::Function(..));
+        if !moves_stored_value {
+            return;
+        }
+        let name = self.bindings.get(binding).name();
+        self.diagnostics
+            .push(OwnershipProblems::moved_definition(name, expr.span));
     }
 
     fn written(&mut self, expr: &TypedExpr) {
