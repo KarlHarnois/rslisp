@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/main_returns_empty_vector.rslisp
+---
+error[L0455]: `main` returns a value of type `(vec a)`
+ --> check/main_returns_empty_vector.rslisp:1:15
+  |
+1 | (defn main () (vec))
+  |               ^^^^^ this `(vec a)` is returned from `main`
+  |
+  = note: `main` returns `unit` or a `result`
+  = help: end the body of `main` with a print, such as `(println value)`, or return a `result`

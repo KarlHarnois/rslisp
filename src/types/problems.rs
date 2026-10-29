@@ -683,6 +683,18 @@ impl TypeProblems {
         }
     }
 
+    pub fn main_returns_value(shown: &str, returned: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MAIN_RETURNS_VALUE,
+            format!("`main` returns a value of type `{shown}`"),
+            Label::new(returned, format!("this `{shown}` is returned from `main`")),
+        )
+        .with_note("`main` returns `unit` or a `result`")
+        .with_help(
+            "end the body of `main` with a print, such as `(println value)`, or return a `result`",
+        )
+    }
+
     pub fn repeated_field(struct_name: &str, label: &FieldLabel, first: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::REPEATED_FIELD,

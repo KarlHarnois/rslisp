@@ -201,7 +201,7 @@ An iterator is lazy, as in Rust, so `(fold (range 1 1000001) 0 (fn (total n) (+ 
 
 Program input and output use Rust's standard library through the prelude. `slurp` reads a file, `slurp-stdin` reads all of standard input, and both return `(result string io-error)`. `read-line` returns `(result (option string) io-error)`, returns `none` at end of input, and drops a trailing newline and carriage return. `io-error` is Rust's `std::io::Error`, which implements `display` and `debug`. `command-line-args` returns the arguments after the program name. `exit` stops the process with an `i32` code.
 
-A `main` whose inferred type is a `result` emits an inner function for its body and a `fn main()` that prints its error with `display` to standard error and exits 1. The success path exits 0. The error type must implement `display`; a program's own enum implements it with `display`.
+A `main` whose inferred type is a `result` emits an inner function for its body and a `fn main()` that prints its error with `display` to standard error and exits 1. The success path exits 0. The error type must implement `display`; a program's own enum implements it with `display`. A `main` whose inferred type is neither `unit` nor a `result` is an error, because Rust requires `main` to return a type that implements `Termination`.
 
 - `iter` yields `(ref a)` for a vector or a slice, and `(pair (ref key) (ref value))` for a map. `values` yields copies, so its elements must be `copy`.
 - `filter` passes each element to its test as a reference, as Rust does.
