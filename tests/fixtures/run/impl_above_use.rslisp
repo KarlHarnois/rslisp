@@ -1,0 +1,10 @@
+(trait described
+  (describe (fn ((ref self)) string)))
+
+(impl described car
+  (describe (c) (str (:make c) " " (:model c))))
+
+(defn main ()
+  (println (describe (->car :make "Nissan" :model "Leaf"))))
+
+(use impl_above_use/cars car ->car)

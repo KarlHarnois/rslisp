@@ -1,0 +1,11 @@
+(defn main ()
+  (let card-1 (->card :name "Black Lotus" :set "Alpha"))
+  (let card-2 (->card :name "Counterspell" :set "Alpha"))
+  (let deck (->deck :name "The Deck" :cards (vec card-1 card-2)))
+  (println deck))
+
+(display deck (d) (:name d) ": " (len (:cards d)) " cards")
+(display card (c) (:name c) " (" (:set c) ")")
+
+(defstruct deck :name str :cards (vec card))
+(defstruct card :name str :set str)
