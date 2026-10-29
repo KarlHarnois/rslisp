@@ -1,0 +1,6 @@
+[
+  {"number": 11, "title": "Fix the spelling of a hint", "labels": []},
+  {"number": 12, "title": "Rename the sample form", "labels": ["release:minor"]},
+  {"number": 13, "title": "Speed up the sample reader", "labels": ["documentation"]},
+  {"number": 14, "title": "Name the first stable release", "labels": ["release:major"]}
+]

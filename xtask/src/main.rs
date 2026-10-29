@@ -21,7 +21,7 @@ use clap::{Parser, Subcommand};
 
 use bench::BenchTask;
 use gate::QualityGate;
-use release::{NextRelease, SetVersion};
+use release::{NextRelease, ReleaseNotesTask, SetVersion};
 
 #[derive(Parser)]
 #[command(about = "Development tasks for this repository")]
@@ -47,6 +47,10 @@ enum Task {
     NextRelease(NextRelease),
     #[command(about = "Write a version into the crate's manifest and its lock file entry")]
     SetVersion(SetVersion),
+    #[command(
+        about = "Print the release notes: the pull requests with a release label first, then the rest"
+    )]
+    ReleaseNotes(ReleaseNotesTask),
 }
 
 impl Task {
@@ -58,6 +62,7 @@ impl Task {
             Task::Bench(task) => task.run(workspace_root),
             Task::NextRelease(release) => release.run(),
             Task::SetVersion(version) => version.run(workspace_root),
+            Task::ReleaseNotes(notes) => notes.run(),
         }
     }
 }

@@ -1,0 +1,4 @@
+- Rename the sample form (#12)
+- Name the first stable release (#14)
+- Fix the spelling of a hint (#11)
+- Speed up the sample reader (#13)
