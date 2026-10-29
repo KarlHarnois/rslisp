@@ -1,0 +1,17 @@
+(defstruct car :make string :year i64)
+
+(type replace-first! (fn ((mut (vec car)) car car) unit))
+(defn replace-first! (cars car spare)
+  (set! (at cars 0) car)
+  (push! cars spare))
+
+(defn reset-year! (years year)
+  (set! (at years 0) year)
+  (push! years year))
+
+(defn main ()
+  (let cars (vec (->car (to-string "Nissan Leaf") 2011)))
+  (replace-first! (mut cars) (->car (to-string "Toyota Prius") 1997) (->car (to-string "Honda Civic") 1999))
+  (let years (vec 2011 1997))
+  (reset-year! (mut years) 2024)
+  (println (:make (at cars 0)) " " (at years 0)))

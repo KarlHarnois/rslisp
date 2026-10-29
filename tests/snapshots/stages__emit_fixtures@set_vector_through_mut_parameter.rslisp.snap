@@ -1,0 +1,36 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/set_vector_through_mut_parameter.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Car {
+    make: String,
+    year: i64,
+}
+
+fn make_car(make: String, year: i64) -> Car {
+    Car { make, year }
+}
+
+fn replace_first(cars: &mut Vec<Car>, car: Car, spare: Car) {
+    cars[0] = car;
+    cars.push(spare)
+}
+
+fn reset_year(years: &mut Vec<i64>, year: i64) {
+    years[0] = year;
+    years.push(year)
+}
+
+fn main() {
+    let mut cars = vec![make_car("Nissan Leaf".to_string(), 2011)];
+    replace_first(
+        &mut cars,
+        make_car("Toyota Prius".to_string(), 1997),
+        make_car("Honda Civic".to_string(), 1999),
+    );
+    let mut years: Vec<i64> = vec![2011_i64, 1997_i64];
+    reset_year(&mut years, 2024);
+    println!("{} {}", cars[0].make, years[0])
+}
