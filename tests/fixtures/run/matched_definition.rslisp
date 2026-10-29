@@ -1,0 +1,4 @@
+(def maybe-name (some (to-string "Leaf")))
+
+(defn main ()
+  (println (match maybe-name ((some _) "named") (none "none"))))
