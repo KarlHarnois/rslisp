@@ -21,7 +21,7 @@ use clap::{Parser, Subcommand};
 
 use bench::BenchTask;
 use gate::QualityGate;
-use release::{NextRelease, ReleaseNotesTask, SetVersion};
+use release::{NextReleaseTask, ReleaseNotesTask, SetVersionTask};
 
 #[derive(Parser)]
 #[command(about = "Development tasks for this repository")]
@@ -44,9 +44,9 @@ enum Task {
     #[command(
         about = "Print the tag that follows the latest release, bumped by the pull requests' labels"
     )]
-    NextRelease(NextRelease),
+    NextRelease(NextReleaseTask),
     #[command(about = "Write a version into the crate's manifest and its lock file entry")]
-    SetVersion(SetVersion),
+    SetVersion(SetVersionTask),
     #[command(
         about = "Print the release notes: the pull requests with a release label first, then the rest"
     )]
