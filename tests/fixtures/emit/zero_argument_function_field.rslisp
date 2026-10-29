@@ -2,6 +2,7 @@
 (defstruct factory :make (fn () car) :label str)
 (defstruct line :make (fn () car))
 (defstruct dealer :order (fn (bool) car))
+(defstruct spare :maker (option (fn () car)))
 
 (defn build-leaf ()
   (->car :make "Nissan" :model "Leaf"))
@@ -16,4 +17,8 @@
   (let tochigi (->line :make (fn () (->car :make "Nissan" :model "Sakura"))))
   (println (:model ((:make tochigi))))
   (let shop (->dealer :order order-nissan))
-  (println (:model ((:order shop) true))))
+  (println (:model ((:order shop) true)))
+  (let backup (->spare :maker (some build-leaf)))
+  (match backup
+    ((spare (some maker)) (println (:model (maker))))
+    ((spare none) (println "no spare"))))

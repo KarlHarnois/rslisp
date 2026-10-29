@@ -383,11 +383,6 @@ impl TypedProgram {
         self.function_type_returns_borrow(result) && self.parameter_lifetimes(parameters) == 0
     }
 
-    fn type_needs_outer_lifetime(&self, ty: &Type) -> bool {
-        matches!(ty, Type::Function(_, parameters, result)
-            if self.function_type_needs_outer_lifetime(parameters, result))
-    }
-
     fn parameter_lifetimes(&self, parameters: &[Type]) -> usize {
         parameters
             .iter()
@@ -469,6 +464,23 @@ impl TypedProgram {
 
     fn stored_type_holds_borrow(&self, stored: &Type, visiting: &mut HashSet<BindingId>) -> bool {
         self.type_holds_borrow_with(stored, visiting) || self.type_needs_outer_lifetime(stored)
+    }
+
+    fn type_needs_outer_lifetime(&self, ty: &Type) -> bool {
+        match ty {
+            Type::Function(_, parameters, result) => {
+                self.function_type_needs_outer_lifetime(parameters, result)
+            }
+            Type::Named(_, arguments) => arguments
+                .iter()
+                .any(|argument| self.type_needs_outer_lifetime(argument)),
+            Type::Ref(..)
+            | Type::Mut(..)
+            | Type::Var(_)
+            | Type::Generic(_)
+            | Type::Primitive(_)
+            | Type::TraitObject(_) => false,
+        }
     }
 
     pub fn entry_signatures(&self) -> String {

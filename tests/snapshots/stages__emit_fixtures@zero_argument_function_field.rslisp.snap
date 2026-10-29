@@ -25,6 +25,10 @@ struct Dealer<'a> {
     order: fn(bool) -> Car<'a>,
 }
 
+struct Spare<'a> {
+    maker: Option<fn() -> Car<'a>>,
+}
+
 fn build_leaf() -> Car<'static> {
     Car {
         make: "Nissan",
@@ -57,7 +61,14 @@ fn main() {
     let shop = Dealer {
         order: order_nissan,
     };
-    println!("{}", (shop.order)(true).model)
+    println!("{}", (shop.order)(true).model);
+    let backup = Spare {
+        maker: Some(build_leaf),
+    };
+    match backup {
+        Spare { maker: Some(maker) } => println!("{}", maker().model),
+        Spare { maker: None } => println!("no spare"),
+    }
 }
 
 mod rt {
