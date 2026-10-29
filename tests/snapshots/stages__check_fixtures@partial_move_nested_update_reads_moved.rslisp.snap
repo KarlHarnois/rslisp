@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/partial_move_nested_update_reads_moved.rslisp
+---
+error[L0501]: use of moved value `g`
+ --> check/partial_move_nested_update_reads_moved.rslisp:8:50
+  |
+7 |   (let h (assoc-in g (:badge :size) 3))
+  |          ----------------------------- value moved here
+8 |   (println (:size (:badge h)) " " (:text (:badge g))))
+  |                                                  ^ value used here after it moved
+  |
+help: clone the value if both places need it
+  |
+7 -   (let h (assoc-in g (:badge :size) 3))
+7 +   (let h (clone (:badge g)))
+  |
