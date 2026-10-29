@@ -4,6 +4,7 @@ mod counted;
 mod label;
 mod render;
 mod similar_name;
+mod source_window;
 
 pub use code::DiagnosticCode;
 pub use collection::Diagnostics;

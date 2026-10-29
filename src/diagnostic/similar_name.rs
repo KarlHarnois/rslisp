@@ -12,6 +12,7 @@ impl SimilarName {
         candidates
             .iter()
             .filter(|candidate| candidate.as_ref() != target)
+            .filter(|candidate| length.abs_diff(candidate.chars().count()) <= allowed_edits)
             .map(|candidate| (Self::edit_distance(target, candidate), candidate))
             .filter(|(distance, _)| *distance <= allowed_edits && shares_a_character(*distance))
             .min_by(|(left_distance, left), (right_distance, right)| {
