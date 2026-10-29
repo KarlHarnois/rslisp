@@ -43,8 +43,8 @@ fn maybe_second_year(cars: &[Car<'_>]) -> Option<u16> {
     cars.get(1).map(|value: &Car<'_>| value.year)
 }
 
-fn add_year(years_2: &mut Vec<i64>, year: i64) {
-    years_2.push(year)
+fn add_year(known_years: &mut Vec<i64>, year: i64) {
+    known_years.push(year)
 }
 
 fn main() {

@@ -10,7 +10,7 @@
 
 (defn maybe-second-year (cars) (map-some (get cars 1) :year))
 
-(defn add-year! (years year) (push! years year))
+(defn add-year! (known-years year) (push! known-years year))
 
 (defn main ()
   (let leaf (->car :make "Nissan" :model "Leaf" :year 2024 :electric? true))

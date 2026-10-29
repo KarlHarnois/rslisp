@@ -2582,7 +2582,9 @@ impl TypeChecker {
             if collection.kind() == CollectionKind::Vector {
                 return self.infer_iter_slice(value, span);
             }
-            self.check_map_key(&collection, value.span);
+            if collection.is_map() {
+                self.check_map_key(&collection, value.span);
+            }
         }
         let result = self.iterator_type(item);
         let parameters = vec![Type::shared(collection_type)];
