@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/local_lambda_passed_as_value.rslisp
+---
+fn apply_to_year(apply: impl FnOnce(fn(i64) -> i64) -> i64) -> i64 {
+    apply(|n: i64| n + 1)
+}
+
+fn main() {
+    let year: i64 = 2024;
+    let apply = |action: fn(i64) -> i64| action(year);
+    println!("{}", apply_to_year(apply));
+    let shift = |n: i64| n + year;
+    println!("{:?}", (1_i64..4_i64).map(shift).collect::<Vec<_>>())
+}

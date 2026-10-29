@@ -345,6 +345,7 @@ pub struct TypedProgram {
     pub pending_mode_checks: Vec<PendingModeCheck>,
     pub borrowed_parameters: HashSet<BindingId>,
     pub stored_function_parameters: HashSet<BindingId>,
+    pub escaping_locals: HashSet<BindingId>,
     pub mutable_function_bindings: HashSet<BindingId>,
     pub literal_generics: HashMap<GenericId, LiteralKind>,
     pub warnings: Diagnostics,

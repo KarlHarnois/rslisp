@@ -2,7 +2,6 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::hash::Hash;
 use std::rc::Rc;
 
-use super::escaping_locals::EscapingLocals;
 use super::expressions::ExpressionEmitter;
 use super::fragment::{Code, Fragment};
 use super::fresh_lifetimes::FreshLifetimes;
@@ -1289,7 +1288,6 @@ impl<'a> ItemEmitter<'a> {
             LocalNames::new(reserved.collect::<Vec<String>>()),
         )
         .with_mutable_locals(mutable.into_set())
-        .with_escaping_locals(EscapingLocals::of(value))
     }
 
     fn absorb(&mut self, emitter: ExpressionEmitter) {

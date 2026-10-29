@@ -173,7 +173,6 @@ pub struct ExpressionEmitter<'a> {
     mutable_locals: HashSet<BindingId>,
     stored_functions: StoredFunctions<'a>,
     local_closures: HashMap<BindingId, Vec<Option<FunctionBorrow>>>,
-    escaping_locals: HashSet<BindingId>,
     tail_loop: Option<TailLoop>,
     loop_exit: LoopExit,
 }
@@ -203,7 +202,6 @@ impl<'a> ExpressionEmitter<'a> {
             mutable_locals: HashSet::new(),
             stored_functions: StoredFunctions::new(program),
             local_closures: HashMap::new(),
-            escaping_locals: HashSet::new(),
             tail_loop: None,
             loop_exit: LoopExit::Return,
         }
@@ -215,11 +213,6 @@ impl<'a> ExpressionEmitter<'a> {
 
     pub fn with_mutable_locals(mut self, mutable_locals: HashSet<BindingId>) -> Self {
         self.mutable_locals = mutable_locals;
-        self
-    }
-
-    pub fn with_escaping_locals(mut self, escaping_locals: HashSet<BindingId>) -> Self {
-        self.escaping_locals = escaping_locals;
         self
     }
 
@@ -1430,7 +1423,7 @@ impl<'a> ExpressionEmitter<'a> {
         let TypedExprKind::Fn(lambda) = &value.kind else {
             return self.expr(value);
         };
-        if self.escaping_locals.contains(&binder.binding) {
+        if self.program.escaping_locals.contains(&binder.binding) {
             return self.expr(value);
         }
         let borrows = lambda
