@@ -102,13 +102,28 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
       - name: Push the release commit and its tag
+        id: push
         if: steps.tag.outputs.tag != ''
         env:
           TAG: ${{ steps.tag.outputs.tag }}
-        run: git push --atomic "git@github.com:$GITHUB_REPOSITORY.git" HEAD:refs/heads/main "refs/tags/$TAG"
+        run: |
+          remote="git@github.com:$GITHUB_REPOSITORY.git"
+          if [ "$(git ls-remote "$remote" refs/heads/main | cut -f1)" != "$COMMIT" ]; then
+            echo "main moved past $COMMIT, whose run releases it"
+            exit 0
+          fi
+          git push --atomic "$remote" HEAD:refs/heads/main "refs/tags/$TAG"
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
       - name: Publish the GitHub release
-        if: steps.tag.outputs.tag != ''
+        if: steps.push.outputs.pushed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.tag.outputs.tag }}
-        run: gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md
+          PUBLISH_ATTEMPTS: 3
+          SECONDS_BETWEEN_ATTEMPTS: 15
+        run: |
+          for _ in $(seq "$PUBLISH_ATTEMPTS"); do
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md && exit 0
+            sleep "$SECONDS_BETWEEN_ATTEMPTS"
+          done
+          exit 1
