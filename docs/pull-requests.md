@@ -13,6 +13,20 @@
 
 **If a pull request addresses a GitHub issue only in part, name the issue in its description with `Part of #<number>`.** In the same description, state what the issue still needs.
 
+## Release labels
+
+**The labels of a pull request set the version that its merge releases.**
+
+| Label | The change | Example |
+| --- | --- | --- |
+| none | breaks no program that compiled and ran | `v0.1.4` to `v0.1.5` |
+| `release:minor` | before 1.0, makes a program that compiled and ran fail to compile or run | `v0.1.5` to `v0.2.0` |
+| `release:major` | is the release that the project owner names as 1.0 | `v0.2.0` to `v1.0.0` |
+
+**If a fix changes emitted Rust that rustc refused, leave the label off.** That fix is a patch.
+
+**The manager is the session that merges the pull request.** The manager applies the release label. NEVER apply a release label in any other session.
+
 ## CI failures
 
 **The `front-end instruction counts` job posts a comparison of instruction counts and NEVER fails on a rise in a count.** If the job fails, its tooling broke: treat the failure as a CI failure.
