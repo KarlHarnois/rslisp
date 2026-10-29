@@ -4,7 +4,7 @@ use std::rc::Rc;
 use super::copy::InferredCopies;
 use super::display::TypeDisplay;
 use super::enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};
-use super::graph::DefinitionGraph;
+use super::graph::{Definition, DefinitionGraph};
 use super::pending::PendingBorrow;
 use super::pinning::LiteralDefaults;
 use super::problems::{ImplementorGroup, ImplementorList, MismatchContext, TypeProblems};
@@ -192,12 +192,6 @@ pub struct TypeChecker {
     pub(super) reported_unknown_try_groups: HashSet<BindingId>,
     pub(super) prelude_value_names: HashSet<String>,
     pub(super) string_view: Option<BindingId>,
-}
-
-struct Definition<'p> {
-    binding: BindingId,
-    value: &'p Expr,
-    span: Span,
 }
 
 struct UserTrait<'a> {
@@ -535,18 +529,6 @@ impl TypeChecker {
         entry: ModuleId,
         graph: &DefinitionGraph,
     ) -> HashMap<BindingId, TypedDefinition> {
-        let definitions: Vec<Definition> = modules
-            .iter()
-            .flat_map(|module| &module.items)
-            .filter_map(|item| match &item.kind {
-                ItemKind::Def(binding, value) => Some(Definition {
-                    binding: *binding,
-                    value,
-                    span: item.span,
-                }),
-                _ => None,
-            })
-            .collect();
         let dependencies = graph.dependencies();
         let runtime = dependencies.reachable_from(&self.main_definition(modules, entry));
         self.compile_time_only = graph
@@ -557,7 +539,8 @@ impl TypeChecker {
                 dependencies.is_compile_time_only(*binding) && !runtime.contains(binding)
             })
             .collect();
-        let by_binding: HashMap<BindingId, &Definition> = definitions
+        let by_binding: HashMap<BindingId, &Definition> = graph
+            .definitions()
             .iter()
             .map(|definition| (definition.binding, definition))
             .collect();
