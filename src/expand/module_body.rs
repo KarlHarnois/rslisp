@@ -1191,7 +1191,7 @@ impl Expander<'_> {
             associated: &associated,
         };
         let (methods, implemented) = self.lower_impl_methods(&lowering, &method_forms, core)?;
-        self.report_missing_methods(&lowering, &implemented, &items[2]);
+        self.report_missing_methods(&lowering, &implemented, &type_name, items[2].span());
         let associated = associated
             .into_iter()
             .map(|(trait_type, name, value)| ImplAssociatedType {
@@ -1409,7 +1409,8 @@ impl Expander<'_> {
         &mut self,
         lowering: &ImplLowering<'_, '_>,
         implemented: &std::collections::HashSet<BindingId>,
-        implementor: &Form,
+        type_name: &str,
+        implementor_span: Span,
     ) {
         let trait_methods = lowering.trait_methods;
         for (method, _) in &trait_methods.methods {
@@ -1418,8 +1419,8 @@ impl Expander<'_> {
                 self.diagnostics.push(ExpandProblems::missing_method(
                     &name,
                     lowering.trait_name,
-                    &implementor.to_string(),
-                    implementor.span(),
+                    type_name,
+                    implementor_span,
                 ));
             }
         }
