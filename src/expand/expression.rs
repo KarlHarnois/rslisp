@@ -22,7 +22,7 @@ use crate::stack::DeepRecursion;
 
 impl Expander<'_> {
     pub(super) fn lower_expr(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
-        if self.nesting_depth == Form::NESTING_LIMIT {
+        if form.as_list().is_some() && self.nesting_depth == Form::NESTING_LIMIT {
             return Err(self.nests_too_deep(form.span()));
         }
         self.nesting_depth += 1;
