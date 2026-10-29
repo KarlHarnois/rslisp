@@ -1,6 +1,5 @@
 use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use super::build_directory::BuildDirectory;
 use super::capped_report::CappedReport;
@@ -59,22 +58,13 @@ impl Terminal {
         let program = self.check(path)?;
         let emitted = RustEmitter::emit(&program, Self::entry_span())
             .map_err(|diagnostics| self.report(&diagnostics))?;
-        match Self::formatting().format(&emitted) {
+        match EmittedFormatting::apply(&emitted) {
             Ok(formatted) => Ok(formatted),
             Err(error) => {
                 eprintln!("note: {error}; writing unformatted Rust");
                 Ok(emitted)
             }
         }
-    }
-
-    fn formatting() -> EmittedFormatting {
-        let time_limit = std::env::var(EmittedFormatting::time_limit_variable())
-            .ok()
-            .and_then(|milliseconds| milliseconds.parse().ok())
-            .map(Duration::from_millis)
-            .unwrap_or(EmittedFormatting::TIME_LIMIT);
-        EmittedFormatting::within(time_limit)
     }
 
     pub fn check(&mut self, path: &Path) -> Result<TypedProgram, ExitStatus> {

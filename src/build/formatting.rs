@@ -9,32 +9,13 @@ use super::token_alignment::TokenAlignment;
 use crate::emit::EmittedCrate;
 use crate::language::Language;
 
-pub struct EmittedFormatting {
-    rustfmt: Rustfmt,
-}
+pub struct EmittedFormatting;
 
 impl EmittedFormatting {
     pub const TIME_LIMIT: Duration = Duration::from_secs(10);
 
     pub fn apply(emitted: &EmittedCrate) -> Result<EmittedCrate, FormattingError> {
-        Self::within(Self::TIME_LIMIT).format(emitted)
-    }
-
-    pub fn within(time_limit: Duration) -> Self {
-        Self {
-            rustfmt: Rustfmt::new(time_limit),
-        }
-    }
-
-    pub fn time_limit_variable() -> String {
-        format!(
-            "{}_RUSTFMT_TIME_LIMIT_MILLISECONDS",
-            Language::NAME.to_uppercase()
-        )
-    }
-
-    pub fn format(&self, emitted: &EmittedCrate) -> Result<EmittedCrate, FormattingError> {
-        let code = self.rustfmt.format(&emitted.code)?;
+        let code = Rustfmt::new(Self::time_limit()).format(&emitted.code)?;
         let alignment = TokenAlignment::new(&emitted.code, &code);
         let span_map = alignment
             .remap(&emitted.span_map)
@@ -44,6 +25,21 @@ impl EmittedFormatting {
             span_map,
             names: emitted.names.clone(),
         })
+    }
+
+    pub fn time_limit_variable() -> String {
+        format!(
+            "{}_RUSTFMT_TIME_LIMIT_MILLISECONDS",
+            Language::NAME.to_uppercase()
+        )
+    }
+
+    fn time_limit() -> Duration {
+        std::env::var(Self::time_limit_variable())
+            .ok()
+            .and_then(|milliseconds| milliseconds.parse().ok())
+            .map(Duration::from_millis)
+            .unwrap_or(Self::TIME_LIMIT)
     }
 }
 
