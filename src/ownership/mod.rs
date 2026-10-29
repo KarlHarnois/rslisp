@@ -1,3 +1,4 @@
+mod aliases;
 mod changes;
 mod checks;
 mod definitions;
@@ -15,6 +16,7 @@ mod rewrite;
 mod slices;
 mod slots;
 mod stored;
+mod subtree;
 mod usage;
 mod values;
 

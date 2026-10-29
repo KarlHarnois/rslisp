@@ -1,0 +1,26 @@
+(defn record-through-alias (record year)
+  (let step (fn (n) (record n)))
+  (let again step)
+  (again year)
+  (again (+ year 1)))
+
+(defn record-through-alias-once (record year)
+  (let step (fn (n) (record n)))
+  (let again step)
+  (again year))
+
+(defn twice (action year)
+  (action year)
+  (action (+ year 1)))
+
+(defn record-alias-through-twice (record year)
+  (let step (fn (n) (record n)))
+  (let again step)
+  (twice again year))
+
+(defn main ()
+  (let years (vec 2024))
+  (record-through-alias (fn (year) (push! years year)) 2025)
+  (record-through-alias-once (fn (year) (push! years year)) 2027)
+  (record-alias-through-twice (fn (year) (push! years year)) 2028)
+  (println (len years)))
