@@ -6,8 +6,14 @@ use crate::source::Span;
 
 pub struct ParameterCall {
     pub span: Span,
+    pub arguments: usize,
     pub parameter: Rc<str>,
     pub shadows_function: bool,
+}
+
+struct CallSite {
+    span: Span,
+    arguments: usize,
 }
 
 #[derive(Default)]
@@ -33,11 +39,12 @@ impl ParameterCalls {
         for (function, lambda) in Self::functions(module) {
             for (position, param) in lambda.params.iter().enumerate() {
                 let parameter: Rc<str> = bindings.get(param.binding).name().into();
-                let Some(span) = Self::first_call(lambda.body.expressions(), param.binding) else {
+                let Some(site) = Self::first_call(lambda.body.expressions(), param.binding) else {
                     continue;
                 };
                 let call = ParameterCall {
-                    span,
+                    span: site.span,
+                    arguments: site.arguments,
                     shadows_function: functions.contains(&parameter),
                     parameter,
                 };
@@ -65,22 +72,26 @@ impl ParameterCalls {
     fn first_call<'a>(
         mut expressions: impl Iterator<Item = &'a Expr>,
         parameter: BindingId,
-    ) -> Option<Span> {
+    ) -> Option<CallSite> {
         expressions.find_map(|expr| Self::call_within(expr, parameter))
     }
 
-    fn call_within(expr: &Expr, parameter: BindingId) -> Option<Span> {
-        if Self::calls_parameter(expr, parameter) {
-            return Some(expr.span());
+    fn call_within(expr: &Expr, parameter: BindingId) -> Option<CallSite> {
+        match Self::arguments_of_call(expr, parameter) {
+            Some(arguments) => Some(CallSite {
+                span: expr.span(),
+                arguments,
+            }),
+            None => Self::first_call(expr.children().into_iter(), parameter),
         }
-        Self::first_call(expr.children().into_iter(), parameter)
     }
 
-    fn calls_parameter(expr: &Expr, parameter: BindingId) -> bool {
-        matches!(
-            expr.kind(),
-            ExprKind::Call(callee, _)
-                if matches!(callee.kind(), ExprKind::Leaf(Leaf::Var(binding)) if *binding == parameter)
-        )
+    fn arguments_of_call(expr: &Expr, parameter: BindingId) -> Option<usize> {
+        match expr.kind() {
+            ExprKind::Call(callee, arguments) if matches!(callee.kind(), ExprKind::Leaf(Leaf::Var(binding)) if *binding == parameter) => {
+                Some(arguments.len())
+            }
+            _ => None,
+        }
     }
 }

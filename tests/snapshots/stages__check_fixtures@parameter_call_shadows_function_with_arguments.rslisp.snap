@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/parameter_call_shadows_function_with_arguments.rslisp
+---
+error[L0401]: mismatched types
+ --> check/parameter_call_shadows_function_with_arguments.rslisp:2:22
+  |
+2 |   (prn (double-range 5)))
+  |                      ^ expected `(fn (_ _) _)`, found an integer
+...
+5 |   (span 150 240))
+  |   -------------- `double-range` calls its parameter `span` here, so it expects a function
+  |
+  = help: the parameter `span` shadows the function `span`, so to call the function, rename the parameter
