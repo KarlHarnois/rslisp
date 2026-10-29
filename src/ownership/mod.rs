@@ -32,7 +32,7 @@ use std::collections::HashMap;
 use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostics;
 use crate::types::{
-    CopyRules, InferredCopies, PendingModeCheck, Pipelines, TypedExprKind, TypedLeaf, TypedProgram,
+    CopyRules, InferredCopies, PendingModeCheck, Pipelines, TypedExprKind, TypedProgram,
 };
 use borrowing_lambdas::BorrowingLambdas;
 use checks::OwnershipNeeds;
@@ -133,9 +133,11 @@ impl OwnershipChecker {
                     Self::move_checker(program, pipelines, &stored_definitions)
                         .check(definition.binding, lambda)
                 }
-                TypedExprKind::Leaf(TypedLeaf::Rust(_)) => MoveReport::default(),
-                _ => Self::move_checker(program, pipelines, &stored_definitions)
-                    .check_value(&definition.value),
+                _ if stored_definitions.contains(definition.binding) => {
+                    Self::move_checker(program, pipelines, &stored_definitions)
+                        .check_value(&definition.value)
+                }
+                _ => MoveReport::default(),
             };
             inferred_copies.extend(report.inferred_copies);
             report
