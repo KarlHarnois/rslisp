@@ -391,7 +391,7 @@ impl TypedProgram {
     }
 
     pub fn function_type_returns_borrow(&self, result: &Type) -> bool {
-        self.borrow_lifetimes(result) > 0
+        self.borrow_lifetimes(result) > 0 || self.type_needs_outer_lifetime(result)
     }
 
     pub fn is_function_returning_borrow(&self, ty: &Type) -> bool {
@@ -422,7 +422,9 @@ impl TypedProgram {
     fn type_holds_borrow_with(&self, ty: &Type, visiting: &mut HashSet<BindingId>) -> bool {
         match ty {
             Type::Ref(..) | Type::Mut(..) => true,
-            Type::Function(..) => false,
+            Type::Function(_, parameters, result) => {
+                self.function_type_needs_outer_lifetime(parameters, result)
+            }
             Type::Named(binding, arguments) => {
                 arguments
                     .iter()
@@ -449,21 +451,17 @@ impl TypedProgram {
             definition
                 .fields
                 .iter()
-                .any(|(_, field)| self.stored_type_holds_borrow(field, visiting))
+                .any(|(_, field)| self.type_holds_borrow_with(field, visiting))
         } else if let Some(definition) = self.enums.get(binding) {
             definition.rust.is_none()
                 && definition
                     .payload_types()
-                    .any(|payload| self.stored_type_holds_borrow(payload, visiting))
+                    .any(|payload| self.type_holds_borrow_with(payload, visiting))
         } else {
             false
         };
         visiting.remove(&binding);
         holds
-    }
-
-    fn stored_type_holds_borrow(&self, stored: &Type, visiting: &mut HashSet<BindingId>) -> bool {
-        self.type_holds_borrow_with(stored, visiting) || self.type_needs_outer_lifetime(stored)
     }
 
     fn type_needs_outer_lifetime(&self, ty: &Type) -> bool {
