@@ -337,30 +337,26 @@ impl<'a> ItemEmitter<'a> {
             rendered.push(Self::receiver_keyword(kind, lifetime.as_deref()));
         }
         let first = usize::from(method.receiver.is_some());
-        rendered.extend(
-            parameters
-                .iter()
-                .enumerate()
-                .skip(first)
-                .map(|(position, parameter)| {
-                    let parameter_scope = Self::naming_parameter_lifetimes(
-                        scope.clone(),
-                        &opaque_lifetimes,
-                        &higher_ranked,
-                        &position,
-                    );
-                    format!(
-                        "_: {}",
-                        Self::show_self_type(
-                            parameter,
-                            self_generic,
-                            &types,
-                            TypePosition::Signature,
-                            &parameter_scope,
-                        )
-                    )
-                }),
-        );
+        let parameter_types: Vec<String> = parameters
+            .iter()
+            .enumerate()
+            .skip(first)
+            .map(|(position, parameter)| {
+                let parameter_scope = Self::naming_parameter_lifetimes(
+                    scope.clone(),
+                    &opaque_lifetimes,
+                    &higher_ranked,
+                    &position,
+                );
+                Self::show_self_type(
+                    parameter,
+                    self_generic,
+                    &types,
+                    TypePosition::Signature,
+                    &parameter_scope,
+                )
+            })
+            .collect();
         let result = if RustTypes::is_unit(result) {
             String::new()
         } else {
@@ -378,9 +374,11 @@ impl<'a> ItemEmitter<'a> {
         let name = NameMangler::value(self.program.bindings.get(method.binding).name());
         declared.extend(opaque_lifetimes.issued());
         let generics = Self::with_lifetimes(&declared, String::new());
-        let header = format!("fn {name}{generics}({}){result}", rendered.join(", "));
+        let header =
+            |rendered: &[String]| format!("fn {name}{generics}({}){result}", rendered.join(", "));
         if method.default.is_none() {
-            return vec![Fragment::Text(format!("{header};"))];
+            rendered.extend(parameter_types.iter().map(|ty| format!("_: {ty}")));
+            return vec![Fragment::Text(format!("{};", header(&rendered)))];
         }
         let TypedExprKind::Fn(lambda) = &definition.value.kind else {
             unreachable!("a default method has a function value")
@@ -391,6 +389,16 @@ impl<'a> ItemEmitter<'a> {
         if method.receiver.is_some() {
             emitter.locals.bind_receiver(lambda.params[0].binding);
         }
+        rendered.extend(lambda.params.iter().skip(first).zip(&parameter_types).map(
+            |(param, ty)| {
+                let name = emitter.locals.bind(
+                    param.binding,
+                    self.program.bindings.get(param.binding).name(),
+                );
+                format!("{name}: {ty}")
+            },
+        ));
+        let header = header(&rendered);
         let body = emitter.function_body(&lambda.body);
         self.absorb(emitter);
         vec![
