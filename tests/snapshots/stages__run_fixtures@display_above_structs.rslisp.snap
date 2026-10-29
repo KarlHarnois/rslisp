@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/display_above_structs.rslisp
+---
+The Deck: 2 cards

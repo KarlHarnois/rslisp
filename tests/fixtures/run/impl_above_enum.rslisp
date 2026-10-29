@@ -1,0 +1,14 @@
+(trait labeled
+  (label (fn ((ref self)) (ref str))))
+
+(impl labeled drive
+  (label (d)
+    (match d
+      (electric "electric")
+      (petrol "petrol"))))
+
+(enum drive electric petrol)
+
+(defn main ()
+  (println (label drive/electric))
+  (println (label drive/petrol)))

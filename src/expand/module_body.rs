@@ -59,7 +59,7 @@ enum PendingItem {
     RustTrait(BindingId, Form),
     RustType(BindingId, Form),
     Trait(BindingId, Form),
-    Impl(BindingId, TypeExpr, Form),
+    Impl(crate::scope::Scope, Form),
     Export(Form),
 }
 
@@ -409,114 +409,7 @@ impl Expander<'_> {
         let mut form = form;
         let scope = self.fresh_local_scope();
         form.add_scope(scope);
-        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Impl), &form);
-        let items = shape.at_least(3)?;
-        let trait_binding = self.impl_trait(&shape, &items[1])?;
-        let implementor = self.impl_type(&shape, &items[2], scope)?;
-        Ok(Some(PendingItem::Impl(trait_binding, implementor, form)))
-    }
-
-    fn impl_trait(&mut self, shape: &Shape, form: &Form) -> Result<BindingId, Diagnostic> {
-        let binding = self.resolve(shape.symbol(form)?, Namespace::Type, form.span())?;
-        if matches!(self.kind(binding), BindingKind::Trait(_)) {
-            return Ok(binding);
-        }
-        Err(shape.malformed_with_help(form, "write a visible trait"))
-    }
-
-    fn impl_type(
-        &mut self,
-        shape: &Shape,
-        form: &Form,
-        scope: crate::scope::Scope,
-    ) -> Result<TypeExpr, Diagnostic> {
-        self.reject_bare_implementor(form)?;
-        let implementor = self.bind_implementor_variables(form, scope)?;
-        if matches!(
-            implementor.kind(),
-            TypeExprKind::Named(..) | TypeExprKind::Primitive(_)
-        ) {
-            return Ok(implementor);
-        }
-        Err(shape.malformed_with_help(
-            form,
-            "write a concrete type such as `i64`, `string` or `(vec i64)`",
-        ))
-    }
-
-    fn reject_bare_implementor(&self, form: &Form) -> Result<(), Diagnostic> {
-        match form.as_symbol() {
-            Some(symbol) if self.is_type_variable(symbol) => Err(
-                ExpandProblems::generic_implementor(symbol.name(), form.span()),
-            ),
-            _ => Ok(()),
-        }
-    }
-
-    fn bind_implementor_variables(
-        &mut self,
-        form: &Form,
-        scope: crate::scope::Scope,
-    ) -> Result<TypeExpr, Diagnostic> {
-        let mut implementor = form.clone();
-        let mut variables = self.unresolved_type_variables(&implementor);
-        if variables.is_empty() {
-            return self.lower_type(&implementor);
-        }
-        implementor.add_scope(scope);
-        for variable in &mut variables {
-            variable.add_scope(scope);
-        }
-        for variable in &variables {
-            self.define_binder_variable(variable)?;
-        }
-        self.lower_type(&implementor)
-    }
-
-    fn unresolved_type_variables(&self, form: &Form) -> Vec<Form> {
-        let mut found: Vec<Form> = Vec::new();
-        self.collect_unresolved_type_variables(form, &mut found);
-        found
-    }
-
-    fn collect_unresolved_type_variables(&self, form: &Form, found: &mut Vec<Form>) {
-        if let FormKind::Symbol(symbol) = form.kind() {
-            self.collect_unresolved_variable(form, symbol, found);
-            return;
-        }
-        let Some(arguments) = self.type_arguments(form) else {
-            return;
-        };
-        for argument in arguments {
-            self.collect_unresolved_type_variables(argument, found);
-        }
-    }
-
-    fn collect_unresolved_variable(&self, form: &Form, symbol: &Symbol, found: &mut Vec<Form>) {
-        if self.is_type_variable(symbol) && !Self::already_found(found, symbol) {
-            found.push(form.clone());
-        }
-    }
-
-    fn already_found(found: &[Form], symbol: &Symbol) -> bool {
-        found.iter().any(|existing| {
-            existing
-                .as_symbol()
-                .is_some_and(|existing| existing.name() == symbol.name())
-        })
-    }
-
-    fn type_arguments<'f>(&self, form: &'f Form) -> Option<&'f [Form]> {
-        let items = form.as_list()?;
-        let (head, arguments) = items.split_first()?;
-        let symbol = head.as_symbol()?;
-        self.try_resolve(symbol, Namespace::Type)?;
-        Some(arguments)
-    }
-
-    fn is_type_variable(&self, symbol: &Symbol) -> bool {
-        self.try_resolve(symbol, Namespace::Type).is_none()
-            && self.try_resolve(symbol, Namespace::Value).is_none()
+        Ok(Some(PendingItem::Impl(scope, form)))
     }
 
     fn definition_head(&self, form: &Form) -> Result<KernelForm, Diagnostic> {
@@ -607,9 +500,7 @@ impl Expander<'_> {
             PendingItem::Enum(binding, form) => self.lower_enum(binding, &form, core),
             PendingItem::Derive(form) => self.lower_derive(module, &form, core),
             PendingItem::Trait(binding, form) => self.lower_trait(binding, &form, core),
-            PendingItem::Impl(trait_binding, implementor, form) => {
-                self.lower_impl(trait_binding, implementor, &form, core)
-            }
+            PendingItem::Impl(scope, form) => self.lower_impl(scope, &form, core),
             PendingItem::Export(form) => {
                 self.lower_exports(module, &form, core);
                 Ok(())
@@ -1271,13 +1162,14 @@ impl Expander<'_> {
 
     fn lower_impl(
         &mut self,
-        trait_binding: BindingId,
-        implementor: TypeExpr,
+        scope: crate::scope::Scope,
         form: &Form,
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
         let shape = Shape::new(KernelForm::Definition(DefinitionForm::Impl), form);
         let items = shape.at_least(3)?;
+        let trait_binding = self.impl_trait(&shape, &items[1])?;
+        let implementor = self.impl_type(&shape, &items[2], scope)?;
         let Some(trait_methods) = self.trait_methods.get(&trait_binding).cloned() else {
             return Err(shape.malformed_with_help(form, "define the trait before implementing it"));
         };
@@ -1299,17 +1191,7 @@ impl Expander<'_> {
             associated: &associated,
         };
         let (methods, implemented) = self.lower_impl_methods(&lowering, &method_forms, core)?;
-        for (method, _) in &trait_methods.methods {
-            if !implemented.contains(method) && !trait_methods.defaults.contains(method) {
-                let name = self.bindings.get(*method).name().to_string();
-                self.diagnostics.push(ExpandProblems::missing_method(
-                    &name,
-                    &trait_name,
-                    &type_name,
-                    items[2].span(),
-                ));
-            }
-        }
+        self.report_missing_methods(&lowering, &implemented, &items[2]);
         let associated = associated
             .into_iter()
             .map(|(trait_type, name, value)| ImplAssociatedType {
@@ -1324,6 +1206,109 @@ impl Expander<'_> {
             hidden: false,
         });
         Ok(())
+    }
+
+    fn impl_trait(&mut self, shape: &Shape, form: &Form) -> Result<BindingId, Diagnostic> {
+        let binding = self.resolve(shape.symbol(form)?, Namespace::Type, form.span())?;
+        if matches!(self.kind(binding), BindingKind::Trait(_)) {
+            return Ok(binding);
+        }
+        Err(shape.malformed_with_help(form, "write a visible trait"))
+    }
+
+    fn impl_type(
+        &mut self,
+        shape: &Shape,
+        form: &Form,
+        scope: crate::scope::Scope,
+    ) -> Result<TypeExpr, Diagnostic> {
+        self.reject_bare_implementor(form)?;
+        let implementor = self.bind_implementor_variables(form, scope)?;
+        if matches!(
+            implementor.kind(),
+            TypeExprKind::Named(..) | TypeExprKind::Primitive(_)
+        ) {
+            return Ok(implementor);
+        }
+        Err(shape.malformed_with_help(
+            form,
+            "write a concrete type such as `i64`, `string` or `(vec i64)`",
+        ))
+    }
+
+    fn reject_bare_implementor(&self, form: &Form) -> Result<(), Diagnostic> {
+        match form.as_symbol() {
+            Some(symbol) if self.is_type_variable(symbol) => Err(
+                ExpandProblems::generic_implementor(symbol.name(), form.span()),
+            ),
+            _ => Ok(()),
+        }
+    }
+
+    fn bind_implementor_variables(
+        &mut self,
+        form: &Form,
+        scope: crate::scope::Scope,
+    ) -> Result<TypeExpr, Diagnostic> {
+        let mut implementor = form.clone();
+        let mut variables = self.unresolved_type_variables(&implementor);
+        if variables.is_empty() {
+            return self.lower_type(&implementor);
+        }
+        implementor.add_scope(scope);
+        for variable in &mut variables {
+            variable.add_scope(scope);
+        }
+        for variable in &variables {
+            self.define_binder_variable(variable)?;
+        }
+        self.lower_type(&implementor)
+    }
+
+    fn unresolved_type_variables(&self, form: &Form) -> Vec<Form> {
+        let mut found: Vec<Form> = Vec::new();
+        self.collect_unresolved_type_variables(form, &mut found);
+        found
+    }
+
+    fn collect_unresolved_type_variables(&self, form: &Form, found: &mut Vec<Form>) {
+        if let FormKind::Symbol(symbol) = form.kind() {
+            self.collect_unresolved_variable(form, symbol, found);
+            return;
+        }
+        let Some(arguments) = self.type_arguments(form) else {
+            return;
+        };
+        for argument in arguments {
+            self.collect_unresolved_type_variables(argument, found);
+        }
+    }
+
+    fn collect_unresolved_variable(&self, form: &Form, symbol: &Symbol, found: &mut Vec<Form>) {
+        if self.is_type_variable(symbol) && !Self::already_found(found, symbol) {
+            found.push(form.clone());
+        }
+    }
+
+    fn already_found(found: &[Form], symbol: &Symbol) -> bool {
+        found.iter().any(|existing| {
+            existing
+                .as_symbol()
+                .is_some_and(|existing| existing.name() == symbol.name())
+        })
+    }
+
+    fn type_arguments<'f>(&self, form: &'f Form) -> Option<&'f [Form]> {
+        let items = form.as_list()?;
+        let (head, arguments) = items.split_first()?;
+        let symbol = head.as_symbol()?;
+        self.try_resolve(symbol, Namespace::Type)?;
+        Some(arguments)
+    }
+
+    fn is_type_variable(&self, symbol: &Symbol) -> bool {
+        self.try_resolve(symbol, Namespace::Type).is_none()
+            && self.try_resolve(symbol, Namespace::Value).is_none()
     }
 
     fn lower_impl_associated(
@@ -1418,6 +1403,26 @@ impl Expander<'_> {
             }
         }
         Ok((methods, implemented))
+    }
+
+    fn report_missing_methods(
+        &mut self,
+        lowering: &ImplLowering<'_, '_>,
+        implemented: &std::collections::HashSet<BindingId>,
+        implementor: &Form,
+    ) {
+        let trait_methods = lowering.trait_methods;
+        for (method, _) in &trait_methods.methods {
+            if !implemented.contains(method) && !trait_methods.defaults.contains(method) {
+                let name = self.bindings.get(*method).name().to_string();
+                self.diagnostics.push(ExpandProblems::missing_method(
+                    &name,
+                    lowering.trait_name,
+                    &implementor.to_string(),
+                    implementor.span(),
+                ));
+            }
+        }
     }
 
     fn lower_impl_method(

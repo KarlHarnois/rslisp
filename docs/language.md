@@ -91,9 +91,9 @@ In expression positions, the kernel provides `ref`, `mut` and `deref`, and the c
 A module body is expanded in two passes:
 
 1. Each top-level form is expanded in order until its head is a definition form: `def`, `type`, `struct`, `enum`, `derive`, `rust-trait`, `rust-type`, `trait`, `impl`, `use`, `export` or `do`. The names it defines are registered. A `def` whose value is a `macro` is evaluated right away.
-2. `def` values, types and `export` lists are expanded.
+2. `def` values, types, `impl` forms and `export` lists are expanded.
 
-Values and types are therefore order-independent, like Rust items. A macro must appear above its first top-level use.
+Values and types are therefore order-independent, like Rust items. An `impl` resolves its trait and its implementor in the second pass, so it may sit above the trait, the type or the `use` that it names. A macro must appear above its first top-level use.
 
 ### Bodies
 

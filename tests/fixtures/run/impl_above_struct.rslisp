@@ -1,0 +1,6 @@
+(trait sized (size (fn ((ref self)) i64)))
+(impl sized point (size (p) 2))
+(struct point (x i64) (y i64))
+
+(defn main ()
+  (println (size (new point (x 1) (y 2)))))
