@@ -1,7 +1,9 @@
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
+use super::checker::TypeChecker;
+use super::problems::TypeProblems;
 use crate::core::{BindingArena, BindingId, CoreModule, Expr, ExprKind, ItemKind, Lambda, Leaf};
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::source::Span;
 
 pub struct ParameterCall {
@@ -11,53 +13,81 @@ pub struct ParameterCall {
     pub shadows_function: bool,
 }
 
+pub(super) struct ParameterCallRequest {
+    pub callee: BindingId,
+    pub position: usize,
+    pub argument: Span,
+}
+
+impl ParameterCallRequest {
+    fn explains(&self, diagnostic: &Diagnostic) -> bool {
+        *diagnostic.code() == DiagnosticCode::MISMATCHED_TYPES
+            && diagnostic.primary().span() == self.argument
+    }
+}
+
 struct CallSite {
     span: Span,
     arguments: usize,
 }
 
-#[derive(Default)]
-pub struct ParameterCalls {
-    calls: HashMap<(BindingId, usize), ParameterCall>,
+struct ParameterCalls<'m> {
+    modules: &'m [CoreModule],
+    bindings: &'m BindingArena,
 }
 
-impl ParameterCalls {
-    pub fn of(modules: &[CoreModule], bindings: &BindingArena) -> Self {
-        let mut parameter_calls = Self::default();
-        for module in modules {
-            parameter_calls.record_module(module, bindings);
+impl TypeChecker {
+    pub(super) fn label_parameter_calls(&mut self, modules: &[CoreModule]) {
+        if self.parameter_call_requests.is_empty() {
+            return;
         }
-        parameter_calls
+        let requests = std::mem::take(&mut self.parameter_call_requests);
+        let calls = ParameterCalls {
+            modules,
+            bindings: &self.bindings,
+        };
+        let diagnostics = std::mem::take(&mut self.diagnostics);
+        self.diagnostics = diagnostics.map(|diagnostic| calls.label(&requests, diagnostic));
+    }
+}
+
+impl<'m> ParameterCalls<'m> {
+    fn label(&self, requests: &[ParameterCallRequest], diagnostic: Diagnostic) -> Diagnostic {
+        let Some(request) = requests
+            .iter()
+            .find(|request| request.explains(&diagnostic))
+        else {
+            return diagnostic;
+        };
+        let Some(call) = self.find(request.callee, request.position) else {
+            return diagnostic;
+        };
+        TypeProblems::parameter_call(diagnostic, self.bindings.get(request.callee).name(), &call)
     }
 
-    pub fn get(&self, function: BindingId, position: usize) -> Option<&ParameterCall> {
-        self.calls.get(&(function, position))
+    fn find(&self, function: BindingId, position: usize) -> Option<ParameterCall> {
+        let (module, lambda) = self.definition(function)?;
+        let param = lambda.params.get(position)?;
+        let site = Self::first_call(lambda.body.expressions(), param.binding)?;
+        let parameter: Rc<str> = self.bindings.get(param.binding).name().into();
+        Some(ParameterCall {
+            span: site.span,
+            arguments: site.arguments,
+            shadows_function: self.defines_function(module, &parameter),
+            parameter,
+        })
     }
 
-    fn record_module(&mut self, module: &CoreModule, bindings: &BindingArena) {
-        let functions = Self::function_names(module, bindings);
-        for (function, lambda) in Self::functions(module) {
-            let mut first_calls = Self::first_calls(lambda);
-            for (position, param) in lambda.params.iter().enumerate() {
-                let Some(site) = first_calls.remove(&param.binding) else {
-                    continue;
-                };
-                let parameter: Rc<str> = bindings.get(param.binding).name().into();
-                let call = ParameterCall {
-                    span: site.span,
-                    arguments: site.arguments,
-                    shadows_function: functions.contains(&parameter),
-                    parameter,
-                };
-                self.calls.insert((function, position), call);
-            }
-        }
+    fn definition(&self, function: BindingId) -> Option<(&'m CoreModule, &'m Lambda)> {
+        self.modules.iter().find_map(|module| {
+            Self::functions(module)
+                .find(|(binding, _)| *binding == function)
+                .map(|(_, lambda)| (module, lambda))
+        })
     }
 
-    fn function_names(module: &CoreModule, bindings: &BindingArena) -> HashSet<Rc<str>> {
-        Self::functions(module)
-            .map(|(function, _)| bindings.get(function).name().into())
-            .collect()
+    fn defines_function(&self, module: &CoreModule, name: &str) -> bool {
+        Self::functions(module).any(|(function, _)| self.bindings.get(function).name() == name)
     }
 
     fn functions(module: &CoreModule) -> impl Iterator<Item = (BindingId, &Lambda)> {
@@ -70,25 +100,29 @@ impl ParameterCalls {
         })
     }
 
-    fn first_calls(lambda: &Lambda) -> HashMap<BindingId, CallSite> {
-        let mut first_calls = HashMap::new();
-        for expr in lambda.body.expressions() {
-            Self::record_first_calls(expr, &mut first_calls);
-        }
-        first_calls
+    fn first_call<'a>(
+        mut expressions: impl Iterator<Item = &'a Expr>,
+        parameter: BindingId,
+    ) -> Option<CallSite> {
+        expressions.find_map(|expr| Self::call_within(expr, parameter))
     }
 
-    fn record_first_calls(expr: &Expr, first_calls: &mut HashMap<BindingId, CallSite>) {
-        if let ExprKind::Call(callee, arguments) = expr.kind()
-            && let ExprKind::Leaf(Leaf::Var(binding)) = callee.kind()
-        {
-            first_calls.entry(*binding).or_insert(CallSite {
+    fn call_within(expr: &Expr, parameter: BindingId) -> Option<CallSite> {
+        match Self::arguments_of_call(expr, parameter) {
+            Some(arguments) => Some(CallSite {
                 span: expr.span(),
-                arguments: arguments.len(),
-            });
+                arguments,
+            }),
+            None => Self::first_call(expr.children().into_iter(), parameter),
         }
-        for child in expr.children() {
-            Self::record_first_calls(child, first_calls);
+    }
+
+    fn arguments_of_call(expr: &Expr, parameter: BindingId) -> Option<usize> {
+        match expr.kind() {
+            ExprKind::Call(callee, arguments) if matches!(callee.kind(), ExprKind::Leaf(Leaf::Var(binding)) if *binding == parameter) => {
+                Some(arguments.len())
+            }
+            _ => None,
         }
     }
 }
