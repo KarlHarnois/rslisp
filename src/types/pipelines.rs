@@ -1,4 +1,5 @@
-use crate::types::{RustTypeTable, Type};
+use super::rust_types::RustTypeTable;
+use super::ty::Type;
 
 #[derive(Clone, Copy)]
 pub struct Pipelines<'a> {

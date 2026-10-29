@@ -10,7 +10,6 @@ mod moves;
 mod mutation;
 mod names;
 mod parameter_uses;
-mod pipelines;
 mod problems;
 mod returned;
 mod rewrite;
@@ -25,14 +24,15 @@ use std::collections::HashMap;
 
 use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostics;
-use crate::types::{CopyRules, InferredCopies, PendingModeCheck, TypedExprKind, TypedProgram};
+use crate::types::{
+    CopyRules, InferredCopies, PendingModeCheck, Pipelines, TypedExprKind, TypedProgram,
+};
 use checks::OwnershipNeeds;
 use functions::{FunctionTable, ParamMode};
 use kinds::{ClosureKinds, KindReport, KindSources};
 use modes::ModeInference;
 use moves::MoveChecker;
 use names::ChangingFunctionNames;
-use pipelines::Pipelines;
 use problems::OwnershipProblems;
 use returned::ReturnedBorrows;
 use rewrite::ModeRewrite;

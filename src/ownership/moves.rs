@@ -2,13 +2,12 @@ use std::collections::{HashMap, HashSet};
 
 use super::moved_values::{FieldPath, MoveSite, MovedValues};
 use super::mutation::ChangedValues;
-use super::pipelines::Pipelines;
 use super::problems::OwnershipProblems;
 use crate::core::{BindingArena, BindingId, FieldLabel, FieldSpelling};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Borrow, ClosureKind, CopyRules, FieldPlace, GenericId, GenericParam, InferredCopies,
+    Borrow, ClosureKind, CopyRules, FieldPlace, GenericId, GenericParam, InferredCopies, Pipelines,
     TemplateBorrows, Type, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
     TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
 };

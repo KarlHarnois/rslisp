@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
-use super::pipelines::Pipelines;
 use super::problems::OwnershipProblems;
 use crate::core::BindingId;
 use crate::diagnostic::Diagnostic;
-use crate::types::{Borrow, Type, TypedArgument, TypedExpr, TypedExprKind, TypedLeaf};
+use crate::types::{Borrow, Pipelines, Type, TypedArgument, TypedExpr, TypedExprKind, TypedLeaf};
 
 pub struct OwnershipNeeds<'a> {
     function_params: &'a HashMap<BindingId, Vec<Type>>,
