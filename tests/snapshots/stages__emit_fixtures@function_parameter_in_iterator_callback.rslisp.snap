@@ -1,0 +1,33 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_parameter_in_iterator_callback.rslisp
+---
+fn record_each(mut record: impl FnMut(i64), years: impl Iterator<Item = i64>) {
+    years.for_each(|year: i64| record(year))
+}
+
+fn each_year(mut action: impl FnMut(i64), year: i64) {
+    action(year);
+    action(year + 1)
+}
+
+fn record_through_each_year(mut record: impl FnMut(i64), year: i64) {
+    each_year(|n: i64| record(n), year)
+}
+
+fn apply_once(action: impl FnOnce(i64), year: i64) {
+    action(year)
+}
+
+fn record_in_one_call(record: impl FnOnce(i64), year: i64) {
+    apply_once(|n: i64| record(n), year)
+}
+
+fn main() {
+    let mut years: Vec<i64> = vec![2024_i64];
+    record_each(|year: i64| years.push(year), 2025_i64..2027_i64);
+    record_through_each_year(|year: i64| years.push(year), 2028);
+    record_in_one_call(|year: i64| years.push(year), 2030);
+    println!("{}", years.len())
+}
