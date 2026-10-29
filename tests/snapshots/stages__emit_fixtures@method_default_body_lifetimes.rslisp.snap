@@ -1,0 +1,39 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/method_default_body_lifetimes.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn make_car(make: &str, year: u16) -> Car<'_> {
+    Car { make, year }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Depot {
+    size: u16,
+}
+
+fn make_depot(size: u16) -> Depot {
+    Depot { size }
+}
+
+fn main() {
+    let lot = make_depot(1);
+    println!("{}", lot.size + lot.park(make_car))
+}
+
+trait Garage {
+    fn park(&self, argument_1: impl FnOnce(&str, u16) -> Car<'_>) -> u16 {
+        let make = "Nissan".to_string();
+        let parked = argument_1(make.as_str(), 2024);
+        println!("{}", parked.make);
+        parked.year
+    }
+}
+
+impl Garage for Depot {}

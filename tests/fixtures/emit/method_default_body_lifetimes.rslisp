@@ -1,0 +1,16 @@
+(defstruct car :make (ref str) :year u16)
+
+(defstruct depot :size u16)
+
+(trait garage
+  (park (fn ((ref self) (fn ((ref str) u16) car)) u16)
+    (let make (to-string "Nissan"))
+    (let parked (argument-1 (as-str make) 2024))
+    (println (:make parked))
+    (:year parked)))
+
+(impl garage depot)
+
+(defn main ()
+  (let lot (->depot 1))
+  (println (+ (:size lot) (park lot ->car))))
