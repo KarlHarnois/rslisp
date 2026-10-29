@@ -26,7 +26,7 @@ fn build_matched<'a>(
     )
 }
 
-fn build_alias<'a>(constructor: impl Fn(&'a str, u16) -> Car<'a>) -> Car<'a> {
+fn build_alias<'a>(constructor: impl FnOnce(&'a str, u16) -> Car<'a>) -> Car<'a> {
     let build = constructor;
     build("Nissan", 2023)
 }
@@ -35,12 +35,12 @@ fn first_word(text: &str) -> &str {
     text
 }
 
-fn pick_alias<'a>(pick: impl Fn(&'a str) -> &'a str, text: &'a str) -> &'a str {
+fn pick_alias<'a>(pick: impl FnOnce(&'a str) -> &'a str, text: &'a str) -> &'a str {
     let chosen = pick;
     chosen(text)
 }
 
-fn measure_alias(pick: impl Fn(&str) -> &str) -> u16 {
+fn measure_alias(pick: impl FnOnce(&str) -> &str) -> u16 {
     let chosen = pick;
     let model = "Leaf".to_string();
     if chosen(model.as_str()) == "Leaf" {

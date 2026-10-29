@@ -1,14 +1,16 @@
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
+use super::aliases::LetAliases;
 use super::problems::{FunctionStorage, OwnershipProblems};
 use super::slots::DeclaredSlots;
+use super::subtree::Subtree;
 use crate::core::{BindingId, FieldLabel};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Type, TypedArgument, TypedBodyItem, TypedControl, TypedDefinition, TypedExpr, TypedExprKind,
-    TypedLambda, TypedLeaf, TypedProgram, TypedStructExpr,
+    Type, TypedArgument, TypedDefinition, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf,
+    TypedProgram, TypedStructExpr,
 };
 
 pub struct StoredClosures<'p> {
@@ -247,43 +249,6 @@ impl<'e> Store<'e> {
     }
 }
 
-struct LetAliases<'e> {
-    values: HashMap<BindingId, &'e TypedExpr>,
-}
-
-impl<'e> LetAliases<'e> {
-    fn in_expressions(expressions: &[&'e TypedExpr]) -> Self {
-        Self {
-            values: expressions
-                .iter()
-                .flat_map(|expr| Self::body_items(expr))
-                .filter_map(|item| match item {
-                    TypedBodyItem::Let(binder, value) => Some((binder.binding, value)),
-                    TypedBodyItem::Expr(_) => None,
-                })
-                .collect(),
-        }
-    }
-
-    fn body_items(expr: &'e TypedExpr) -> &'e [TypedBodyItem] {
-        match &expr.kind {
-            TypedExprKind::Fn(lambda) => &lambda.body.items,
-            TypedExprKind::Control(TypedControl::Block(block)) => &block.items,
-            _ => &[],
-        }
-    }
-
-    fn resolve(&self, value: &'e TypedExpr) -> &'e TypedExpr {
-        let mut resolved = value;
-        while let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = resolved.kind
-            && let Some(bound) = self.values.get(&binding)
-        {
-            resolved = bound;
-        }
-        resolved
-    }
-}
-
 #[derive(Default)]
 struct StoringParameters {
     slots: HashMap<(BindingId, usize), FunctionSlot>,
@@ -339,34 +304,5 @@ impl StoringParameters {
                 Some(((function, *positions.get(&binding)?), store.slot))
             })
             .collect()
-    }
-}
-
-struct Subtree;
-
-impl Subtree {
-    fn of(root: &TypedExpr) -> Vec<&TypedExpr> {
-        let mut expressions = vec![root];
-        let mut next = 0;
-        while let Some(expr) = expressions.get(next).copied() {
-            expressions.extend(expr.children());
-            next += 1;
-        }
-        expressions
-    }
-
-    fn first_capture(closure: &TypedExpr) -> Option<BindingId> {
-        let expressions = Self::of(closure);
-        let bound: HashSet<BindingId> = expressions
-            .iter()
-            .flat_map(|expr| expr.binders())
-            .map(|binder| binder.binding)
-            .collect();
-        expressions.iter().find_map(|expr| match expr.kind {
-            TypedExprKind::Leaf(TypedLeaf::Local(binding)) if !bound.contains(&binding) => {
-                Some(binding)
-            }
-            _ => None,
-        })
     }
 }

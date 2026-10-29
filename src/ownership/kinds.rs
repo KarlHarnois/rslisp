@@ -2,9 +2,11 @@ use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 
+use super::aliases::LetAliases;
 use super::definitions::LocalDefinitions;
 use super::parameter_uses::ParameterUses;
 use super::problems::OwnershipProblems;
+use super::subtree::Subtree;
 use crate::core::{BindingArena, BindingId, ReferenceKind};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
@@ -123,6 +125,7 @@ pub struct ClosureKinds<'a> {
     rust_parameter_kinds: HashMap<BindingId, Vec<ClosureKind>>,
     written_parameter_kinds: HashMap<BindingId, ClosureKind>,
     result_kinds: HashMap<BindingId, ClosureKind>,
+    alias_origins: HashMap<BindingId, BindingId>,
 }
 
 impl<'a> ClosureKinds<'a> {
@@ -207,7 +210,17 @@ impl<'a> ClosureKinds<'a> {
             rust_parameter_kinds: sources.rust_parameter_kinds,
             written_parameter_kinds: sources.written_parameter_kinds,
             result_kinds: HashMap::new(),
+            alias_origins: HashMap::new(),
         }
+    }
+
+    fn build_alias_origins(&mut self, modules: &[TypedModule]) {
+        let expressions: Vec<&TypedExpr> = modules
+            .iter()
+            .flat_map(|module| &module.definitions)
+            .flat_map(|definition| Subtree::of(&definition.value))
+            .collect();
+        self.alias_origins = LetAliases::in_expressions(&expressions).origins();
     }
 
     fn build_pass_edges(&mut self, modules: &[TypedModule]) {
@@ -256,6 +269,7 @@ impl<'a> ClosureKinds<'a> {
     }
 
     pub fn run(mut self, modules: &mut [TypedModule]) -> KindReport {
+        self.build_alias_origins(modules);
         self.build_pass_edges(modules);
         self.build_cycle_peers();
         loop {
@@ -953,14 +967,19 @@ impl<'a> ClosureKinds<'a> {
         let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &callee.kind else {
             return false;
         };
-        if !params.contains(binding) {
+        let called = self.origin(*binding);
+        if !params.contains(&called) {
             return false;
         }
-        uses.record_call(*binding);
+        uses.record_call(called);
         if let Some(kind) = nested {
-            uses.require(*binding, kind);
+            uses.require(called, kind);
         }
         true
+    }
+
+    fn origin(&self, binding: BindingId) -> BindingId {
+        self.alias_origins.get(&binding).copied().unwrap_or(binding)
     }
 
     fn require_arguments(
@@ -976,11 +995,12 @@ impl<'a> ClosureKinds<'a> {
                 self.require_expression(&argument.value, params, nested, uses);
                 continue;
             };
-            if !params.contains(binding) {
+            let passed = self.origin(*binding);
+            if !params.contains(&passed) {
                 self.require_expression(&argument.value, params, nested, uses);
                 continue;
             }
-            uses.record_pass(*binding, self.pass_kind(callee, position, *binding));
+            uses.record_pass(passed, self.pass_kind(callee, position, passed));
         }
     }
 

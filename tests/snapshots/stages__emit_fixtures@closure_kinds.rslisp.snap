@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).emit_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/emit/closure_kinds.rslisp
 ---
 fn apply(f: impl FnOnce(i64) -> String, x: i64) -> String {
@@ -22,7 +22,7 @@ fn hold_mut(mut f: impl FnMut() -> i64) -> i64 {
     f()
 }
 
-fn alias(f: impl Fn(i64) -> i64, x: i64) -> i64 {
+fn alias(f: impl FnOnce(i64) -> i64, x: i64) -> i64 {
     let g = f;
     g(x)
 }
