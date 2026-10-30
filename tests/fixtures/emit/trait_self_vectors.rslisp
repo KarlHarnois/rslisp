@@ -1,0 +1,14 @@
+(defstruct car :year i64)
+
+(trait fleet
+  (newest (fn ((ref self) (vec self)) i64))
+  (pair (fn (self) (vec self))))
+
+(impl fleet car
+  (newest (c others) (+ (:year c) (:year (at others 0))))
+  (pair (c) (vec c c)))
+
+(defn main ()
+  (let leaf (->car 2024))
+  (let others (pair (->car 2019)))
+  (println (newest leaf others)))

@@ -88,6 +88,7 @@ pub struct ItemEmitter<'a> {
 impl<'a> ItemEmitter<'a> {
     const RUNTIME_MODULE: &'static str = "rt";
     const MAIN_HEADER: &'static str = "fn main() {";
+    const SIZED_SELF: &'static str = " where Self: Sized";
 
     pub fn new(
         program: &'a TypedProgram,
@@ -335,6 +336,7 @@ impl<'a> ItemEmitter<'a> {
             unreachable!("a trait method has a function type")
         };
         let self_generic = definition.scheme.params.first().map(|param| param.id);
+        let bound = Self::sized_self_bound(parameters, result, self_generic);
         let types = RustTypes::new(
             self.program,
             self.plan,
@@ -401,8 +403,12 @@ impl<'a> ItemEmitter<'a> {
         let name = NameMangler::value(self.program.bindings.get(method.binding).name());
         declared.extend(opaque_lifetimes.issued());
         let generics = Self::with_lifetimes(&declared, String::new());
-        let header =
-            |rendered: &[String]| format!("fn {name}{generics}({}){result}", rendered.join(", "));
+        let header = |rendered: &[String]| {
+            format!(
+                "fn {name}{generics}({}){result}{bound}",
+                rendered.join(", ")
+            )
+        };
         if method.default.is_none() {
             rendered.extend(parameter_types.iter().map(|ty| format!("_: {ty}")));
             return vec![Fragment::Text(format!("{};", header(&rendered)))];
@@ -436,6 +442,28 @@ impl<'a> ItemEmitter<'a> {
             Fragment::Newline,
             Fragment::Text("}".to_string()),
         ]
+    }
+
+    fn sized_self_bound(
+        parameters: &[Type],
+        result: &Type,
+        self_generic: Option<GenericId>,
+    ) -> &'static str {
+        let needs_sized =
+            |ty: &Type| self_generic.is_some_and(|generic| Self::needs_sized_self(ty, generic));
+        if parameters.iter().chain([result]).any(needs_sized) {
+            Self::SIZED_SELF
+        } else {
+            ""
+        }
+    }
+
+    fn needs_sized_self(ty: &Type, generic: GenericId) -> bool {
+        match ty {
+            Type::Generic(_) => false,
+            Type::Ref(_, inner) | Type::Mut(_, inner) => Self::needs_sized_self(inner, generic),
+            other => other.mentions(generic),
+        }
     }
 
     fn receiver_keyword(kind: ReceiverKind, lifetime: Option<&str>) -> String {

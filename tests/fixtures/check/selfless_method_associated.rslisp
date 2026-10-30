@@ -1,0 +1,12 @@
+(defstruct car :year i64)
+
+(trait garage
+  (type item)
+  (score (fn (item) i64)))
+
+(impl garage car
+  (type item i64)
+  (score (year) (+ year 1)))
+
+(defn main ()
+  (println (score 2024)))

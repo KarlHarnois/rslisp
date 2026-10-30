@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/selfless_method_associated.rslisp
+---
+error[L0456]: cannot choose which implementor of `garage` runs `score`
+  --> check/selfless_method_associated.rslisp:12:13
+   |
+ 5 |   (score (fn (item) i64)))
+   |          --------------- this signature never mentions `self`
+...
+12 |   (println (score 2024)))
+   |             ^^^^^ no type here picks an implementor of `garage`
+   |
+   = note: a call picks an implementor from the type of a parameter or result that is `self`
+   = help: add `(ref self)` as the first parameter of `score`, as in `(where (item) (fn ((ref self) item) i64))`
