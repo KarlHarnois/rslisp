@@ -119,13 +119,16 @@ impl Template {
     ) -> Result<Code, TemplateError> {
         let pieces = self.pieces_without_deref(places);
         let mut fragments = Vec::new();
+        let mut bare_struct_literal = false;
         for (position, piece) in pieces.iter().enumerate() {
             match piece {
                 Piece::Literal(literal) => fragments.push(Fragment::Text(literal.clone())),
-                Piece::Placeholder { index, .. } => fragments.extend(
-                    self.argument_in_place(&arguments[*index], position)
-                        .fragments,
-                ),
+                Piece::Placeholder { index, .. } => {
+                    let argument = self.argument_in_place(&arguments[*index], position);
+                    bare_struct_literal |= argument.bare_struct_literal
+                        && Self::is_outside_delimiters(&pieces[..position]);
+                    fragments.extend(argument.fragments);
+                }
                 Piece::TypePlaceholder { name } => {
                     let (_, code) = types
                         .iter()
@@ -141,7 +144,21 @@ impl Template {
         Ok(Code {
             fragments,
             precedence: self.precedence(),
+            bare_struct_literal,
         })
+    }
+
+    fn is_outside_delimiters(preceding: &[Piece]) -> bool {
+        let text: String = preceding
+            .iter()
+            .filter_map(|piece| match piece {
+                Piece::Literal(literal) => Some(literal.as_str()),
+                Piece::Placeholder { .. }
+                | Piece::TypePlaceholder { .. }
+                | Piece::BinderPlaceholder { .. } => None,
+            })
+            .collect();
+        RustText::new(&text).closes_every_delimiter()
     }
 
     fn pieces_without_deref(&self, places: &[bool]) -> Vec<Piece> {
@@ -300,15 +317,12 @@ impl Template {
         }
         statements.push(Fragment::Newline);
         statements.extend(self.substitute(&replaced, types, &[])?.fragments);
-        Ok(Code {
-            fragments: vec![
-                Fragment::Text("{".to_string()),
-                Fragment::Indented(statements),
-                Fragment::Newline,
-                Fragment::Text("}".to_string()),
-            ],
-            precedence: Precedence::Block,
-        })
+        Ok(Code::block(vec![
+            Fragment::Text("{".to_string()),
+            Fragment::Indented(statements),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ]))
     }
 }
 

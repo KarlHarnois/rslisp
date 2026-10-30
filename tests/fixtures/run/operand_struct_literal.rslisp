@@ -1,0 +1,15 @@
+(defstruct spare :size u16 :label str)
+
+(defn main ()
+  (let s (->spare :size 3 :label "bolt"))
+  (println (:label s))
+  (if (= s (->spare :size 3 :label "bolt"))
+    (println "same")
+    (println "other"))
+  (if (> (:size s) (:size (->spare :size 2 :label "nut")))
+    (println "larger")
+    (println "smaller"))
+  (println
+    (match (= s (->spare :size 4 :label "bolt"))
+      (true "equal")
+      (false "unequal"))))

@@ -101,7 +101,11 @@ impl<'a> RustText<'a> {
     }
 
     pub fn tokens(&self) -> Vec<&'a str> {
-        TokenScanner::scan(self.text)
+        TokenScanner::scan(self.text).tokens
+    }
+
+    pub fn closes_every_delimiter(&self) -> bool {
+        TokenScanner::scan(self.text).depth == 0
     }
 }
 
@@ -115,7 +119,7 @@ struct TokenScanner<'a> {
 }
 
 impl<'a> TokenScanner<'a> {
-    fn scan(text: &'a str) -> Vec<&'a str> {
+    fn scan(text: &'a str) -> Self {
         let mut scanner = Self {
             text,
             tokens: Vec::new(),
@@ -142,7 +146,7 @@ impl<'a> TokenScanner<'a> {
             }
         }
         scanner.flush(text.len());
-        scanner.tokens
+        scanner
     }
 
     fn consume_literal(&mut self, character: char) -> bool {
