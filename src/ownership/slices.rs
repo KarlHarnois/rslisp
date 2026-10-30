@@ -1,16 +1,22 @@
 use std::collections::{HashMap, HashSet};
 
-use super::functions::{FunctionTable, ParamMode};
+use super::functions::{FunctionTable, ParamMode, ParamSlot};
 use crate::core::{BindingId, PrimitiveType};
 use crate::types::{
-    GenericId, RustType, Type, TypedArgument, TypedBlock, TypedExpr, TypedExprKind, TypedLeaf,
-    TypedProgram,
+    GenericId, Lifetime, RustType, Type, TypedArgument, TypedBlock, TypedExpr, TypedExprKind,
+    TypedLeaf, TypedProgram,
 };
 
 #[derive(Clone)]
 enum Shrink {
-    Slice(Type),
+    Slice(Reference, Type),
     Str,
+}
+
+#[derive(Clone, Copy)]
+enum Reference {
+    Shared(Lifetime),
+    Mutable(Lifetime),
 }
 
 pub struct ShrinkSelection<'a> {
@@ -76,22 +82,31 @@ impl<'a> ShrinkSelection<'a> {
 
     fn shrunk(&self, shrink: &Shrink) -> Type {
         match shrink {
-            Shrink::Slice(element) => Type::shared(Type::Named(self.slice, vec![element.clone()])),
+            Shrink::Slice(Reference::Shared(lifetime), element) => {
+                Type::Ref(*lifetime, Box::new(self.slice_of(element)))
+            }
+            Shrink::Slice(Reference::Mutable(lifetime), element) => {
+                Type::Mut(*lifetime, Box::new(self.slice_of(element)))
+            }
             Shrink::Str => Type::shared(Type::Primitive(PrimitiveType::Str)),
         }
     }
 
+    fn slice_of(&self, element: &Type) -> Type {
+        Type::Named(self.slice, vec![element.clone()])
+    }
+
     fn candidates(&self) -> HashMap<BindingId, Shrink> {
         let mut found = HashMap::new();
-        for (function, info) in self.functions.iter() {
-            if self.values.contains(function) {
+        for function in self.functions.definition_bindings() {
+            if self.values.contains(&function) {
                 continue;
             }
+            let Some(info) = self.functions.definition(function) else {
+                continue;
+            };
             for slot in &info.params {
-                if !slot.inferable || self.modes.get(&slot.binding) != Some(&ParamMode::Ref) {
-                    continue;
-                }
-                if let Some(shrink) = self.candidate_shrink(&slot.ty) {
+                if let Some(shrink) = self.slot_shrink(slot) {
                     found.insert(slot.binding, shrink);
                 }
             }
@@ -99,15 +114,36 @@ impl<'a> ShrinkSelection<'a> {
         found
     }
 
-    fn candidate_shrink(&self, ty: &Type) -> Option<Shrink> {
+    fn slot_shrink(&self, slot: &ParamSlot) -> Option<Shrink> {
+        match &slot.ty {
+            Type::Ref(lifetime, vector) => self.slice_shrink(Reference::Shared(*lifetime), vector),
+            Type::Mut(lifetime, vector) => self.slice_shrink(Reference::Mutable(*lifetime), vector),
+            owned if slot.inferable => self.inferred_shrink(owned, self.modes.get(&slot.binding)?),
+            _ => None,
+        }
+    }
+
+    fn inferred_shrink(&self, ty: &Type, mode: &ParamMode) -> Option<Shrink> {
+        match (mode, ty) {
+            (ParamMode::Ref, Type::Primitive(PrimitiveType::String)) => Some(Shrink::Str),
+            (ParamMode::Ref, vector) => {
+                self.slice_shrink(Reference::Shared(Lifetime::Elided), vector)
+            }
+            (ParamMode::Mut, vector) => {
+                self.slice_shrink(Reference::Mutable(Lifetime::Elided), vector)
+            }
+            _ => None,
+        }
+    }
+
+    fn slice_shrink(&self, reference: Reference, ty: &Type) -> Option<Shrink> {
         match ty {
             Type::Named(vector, arguments) if self.program.rust_types.is_vector(*vector) => {
                 match arguments.as_slice() {
-                    [element] => Some(Shrink::Slice(element.clone())),
+                    [element] => Some(Shrink::Slice(reference, element.clone())),
                     _ => None,
                 }
             }
-            Type::Primitive(PrimitiveType::String) => Some(Shrink::Str),
             _ => None,
         }
     }
@@ -197,21 +233,20 @@ impl<'a> ShrinkSelection<'a> {
     }
 
     fn accepts(&self, parameter: &Type, shrink: &Shrink) -> bool {
-        let Type::Ref(_, inner) = parameter else {
-            return false;
-        };
-        match shrink {
-            Shrink::Slice(element) => self.accepts_slice(inner, element),
-            Shrink::Str => self.accepts_str(inner),
+        match (shrink, parameter) {
+            (Shrink::Slice(_, element), Type::Ref(_, inner))
+            | (Shrink::Slice(Reference::Mutable(_), element), Type::Mut(_, inner)) => {
+                self.accepts_slice(inner, element)
+            }
+            (Shrink::Str, Type::Ref(_, inner)) => self.accepts_str(inner),
+            _ => false,
         }
     }
 
     fn accepts_slice(&self, inner: &Type, element: &Type) -> bool {
         match inner {
             Type::Named(binding, _) if self.program.rust_types.is_slice(*binding) => true,
-            Type::Generic(generic) => {
-                self.generic_accepts(*generic, &Type::Named(self.slice, vec![element.clone()]))
-            }
+            Type::Generic(generic) => self.generic_accepts(*generic, &self.slice_of(element)),
             _ => false,
         }
     }
