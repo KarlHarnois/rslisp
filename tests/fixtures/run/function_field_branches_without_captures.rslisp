@@ -1,0 +1,22 @@
+(defstruct spare :maker (fn () i64))
+(defstruct backup :maker (option (fn () i64)))
+
+(defn count-doors () 4)
+
+(defn main ()
+  (let base 4)
+  (let chosen (->spare :maker (if (> base 2) (fn () (+ 4 1)) count-doors)))
+  (let matched
+    (->backup :maker
+      (some
+        (match base
+          (4 count-doors)
+          (_ (fn () (+ 2 1)))))))
+  (let made (->spare :maker (do (println "making") (fn () (+ 6 1)))))
+  (let pick (:maker chosen))
+  (let build (:maker made))
+  (println (pick))
+  (println (build))
+  (match matched
+    ((backup (some maker)) (println (maker)))
+    ((backup none) (println "no backup"))))

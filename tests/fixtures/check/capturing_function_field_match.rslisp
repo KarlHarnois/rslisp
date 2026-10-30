@@ -1,0 +1,13 @@
+(defstruct spare :maker (fn () i64))
+
+(defn count-doors () 4)
+
+(defn main ()
+  (let base 4)
+  (let backup
+    (->spare :maker
+      (match base
+        (4 (fn () (+ base 1)))
+        (_ count-doors))))
+  (let maker (:maker backup))
+  (println (maker)))

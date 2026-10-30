@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/capturing_function_field_option_match.rslisp
+---
+error[L0511]: cannot store a capturing closure in the field `maker`
+  --> check/capturing_function_field_option_match.rslisp:11:14
+   |
+ 1 | (defstruct spare :maker (option (fn () i64)))
+   |                                 ----------- declared with a function type here
+...
+11 |           (4 (fn () (+ base 1)))
+   |              ^^^^^^^^^^^^^^^^^^ this closure captures `base`
+   |
+   = help: a field declared with a function type holds only a named function or a closure that captures nothing
