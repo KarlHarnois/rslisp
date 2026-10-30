@@ -1,0 +1,9 @@
+(defn rename! (models key model)
+  (set! (at models key) model))
+
+(defn main ()
+  (let models (hash-map "leaf" "Nissan Leaf"))
+  (rename! (mut models) "leaf" "Nissan Leaf Plus")
+  (let years (vec 2011))
+  (rename! (mut years) 0 2024)
+  (println (at years 0)))

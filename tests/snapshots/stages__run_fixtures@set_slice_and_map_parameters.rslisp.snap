@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/set_slice_and_map_parameters.rslisp
+---
+Nissan Ariya 2023
+Nissan Leaf Plus
+41000

@@ -1,10 +1,11 @@
 use super::rust_types::RustTypeTable;
 use super::ty::Type;
-use crate::core::PrimitiveType;
+use crate::core::{BindingId, PrimitiveType};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CollectionKind {
     Vector,
+    Slice,
     SortedMap,
     HashMap,
 }
@@ -28,12 +29,12 @@ impl Collection {
         let Type::Named(binding, arguments) = ty else {
             return None;
         };
-        if rust_types.is_vector(*binding) {
+        if let Some(kind) = Self::sequence_kind(*binding, rust_types) {
             let [value] = arguments.as_slice() else {
                 return None;
             };
             return Some(Self {
-                kind: CollectionKind::Vector,
+                kind,
                 ty: ty.clone(),
                 key: Type::Primitive(PrimitiveType::Usize),
                 value: value.clone(),
@@ -56,6 +57,16 @@ impl Collection {
             });
         }
         None
+    }
+
+    fn sequence_kind(binding: BindingId, rust_types: &RustTypeTable) -> Option<CollectionKind> {
+        if rust_types.is_vector(binding) {
+            Some(CollectionKind::Vector)
+        } else if rust_types.is_slice(binding) {
+            Some(CollectionKind::Slice)
+        } else {
+            None
+        }
     }
 
     pub fn kind(&self) -> CollectionKind {

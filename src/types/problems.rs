@@ -571,6 +571,15 @@ impl TypeProblems {
         )
     }
 
+    pub fn unknown_collection(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::CANNOT_INFER,
+            "type annotations needed",
+            Label::new(span, "cannot tell whether this is a vector or a map"),
+        )
+        .with_help("add a `type` signature that names the collection's type")
+    }
+
     pub fn ambiguous_variant(name: &str, enums: &[String], span: Span) -> Diagnostic {
         let diagnostic = Diagnostic::error(
             DiagnosticCode::AMBIGUOUS_VARIANT,

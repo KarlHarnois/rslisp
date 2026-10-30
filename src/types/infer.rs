@@ -1,3 +1,5 @@
+mod open_collections;
+pub(super) use open_collections::OpenSetAt;
 mod shared_variables;
 
 use std::collections::HashMap;
@@ -2832,6 +2834,9 @@ impl TypeChecker {
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
         let value = self.infer(value)?;
+        if self.is_open_collection(&value, keys.len()) {
+            return self.infer_open_set_at(value, keys, item, span);
+        }
         let collection = self.set_at_collection(&value, keys.len())?;
         if collection.is_map() {
             return self.infer_set_at_map(value, collection, keys, item, span);
@@ -2877,8 +2882,11 @@ impl TypeChecker {
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
         let depth = keys.len();
-        let item_type = self.assoc_element(depth, collection.ty(), value.span)?;
-        let mut parameters = vec![self.set_at_target(depth, &item_type)];
+        let item_type = self.unifier.fresh();
+        let target = self.set_at_target(depth, &item_type);
+        self.expect(&target, collection.ty(), value.span, MismatchContext::Plain)
+            .map_err(|error| self.point_struct_base_to_fields(error, collection.ty()))?;
+        let mut parameters = vec![Type::mutable(target)];
         parameters.extend((0..depth).map(|_| Type::Primitive(PrimitiveType::Usize)));
         parameters.push(item_type);
         let mut template = "{0}".to_string();
@@ -2894,10 +2902,8 @@ impl TypeChecker {
 
     fn set_at_target(&self, depth: usize, item: &Type) -> Type {
         match depth.checked_sub(1) {
-            Some(row_depth) => {
-                Type::mutable(self.slice_of(self.nested_vector_type(row_depth, item)))
-            }
-            None => Type::mutable(item.clone()),
+            Some(row_depth) => self.slice_of(self.nested_vector_type(row_depth, item)),
+            None => item.clone(),
         }
     }
 
