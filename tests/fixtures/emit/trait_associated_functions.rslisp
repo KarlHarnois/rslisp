@@ -1,0 +1,19 @@
+(defstruct garage :spots i64)
+(defstruct lot :spots i64)
+
+(trait parking
+  (build (fn (i64) self))
+  (add (fn (i64 self) i64)))
+
+(impl parking garage
+  (build (spots) (->garage spots))
+  (add (extra g) (+ extra (:spots g))))
+
+(impl parking lot
+  (build (spots) (->lot spots))
+  (add (extra l) (* extra (:spots l))))
+
+(defn main ()
+  (let (g garage) (build 3))
+  (println (:spots g))
+  (println (add 2 (->lot 5))))

@@ -1,0 +1,69 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/trait_associated_functions.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Garage {
+    spots: i64,
+}
+
+fn make_garage(spots: i64) -> Garage {
+    Garage { spots }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Lot {
+    spots: i64,
+}
+
+fn make_lot(spots: i64) -> Lot {
+    Lot { spots }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let g: Garage = Parking::build(3);
+    println!("{}", g.spots);
+    println!("{}", Parking::add(2, make_lot(5)))
+}
+
+trait Parking {
+    fn build(_: i64) -> Self;
+    fn add(_: i64, _: Self) -> i64;
+}
+
+impl Parking for Garage {
+    fn build(spots: i64) -> Garage {
+        make_garage(spots)
+    }
+    fn add(extra: i64, g: Garage) -> i64 {
+        extra + g.spots
+    }
+}
+
+impl Parking for Lot {
+    fn build(spots: i64) -> Lot {
+        make_lot(spots)
+    }
+    fn add(extra: i64, l: Lot) -> i64 {
+        extra * l.spots
+    }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
