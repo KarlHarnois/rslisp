@@ -419,7 +419,7 @@ impl<'a> ExpressionEmitter<'a> {
         } else {
             value.parenthesized()
         };
-        Code::joined(vec![value, Code::atom("?")], Precedence::Atom)
+        Code::joined_outside_delimiters(vec![value, Code::atom("?")], Precedence::Atom)
     }
 
     fn written(&mut self, expr: &TypedExpr) -> Code {
@@ -552,10 +552,7 @@ impl<'a> ExpressionEmitter<'a> {
         fragments.push(Fragment::Indented(inner));
         fragments.push(Fragment::Newline);
         fragments.push(Fragment::Text("}".to_string()));
-        Code {
-            fragments,
-            precedence: Precedence::Block,
-        }
+        Code::block(fragments)
     }
 
     fn add_fallback(arms: &mut Vec<Fragment>, unguarded_exhaustive: bool) {
@@ -595,15 +592,12 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn sure_arm(&mut self, value: &TypedExpr, arm: &TypedArm) -> Code {
         let statements = self.sure_arm_contents(value, arm);
-        Code {
-            fragments: vec![
-                Fragment::Text("{".to_string()),
-                Fragment::Indented(statements),
-                Fragment::Newline,
-                Fragment::Text("}".to_string()),
-            ],
-            precedence: Precedence::Block,
-        }
+        Code::block(vec![
+            Fragment::Text("{".to_string()),
+            Fragment::Indented(statements),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ])
     }
 
     fn sure_arm_contents(&mut self, value: &TypedExpr, arm: &TypedArm) -> Vec<Fragment> {
@@ -668,7 +662,7 @@ impl<'a> ExpressionEmitter<'a> {
         } else {
             value.parenthesized()
         };
-        Code::joined(vec![value, Code::atom(".as_str()")], Precedence::Atom)
+        Code::joined_outside_delimiters(vec![value, Code::atom(".as_str()")], Precedence::Atom)
     }
 
     fn arm_body(&mut self, body: &TypedBlock, prologue: Vec<Prologue>) -> Vec<Fragment> {
@@ -1282,7 +1276,7 @@ impl<'a> ExpressionEmitter<'a> {
             )
         };
         let value = self.expr_in(value, TypeContext::Known);
-        Code::joined(
+        Code::joined_outside_delimiters(
             vec![value, Code::atom(format!(" as {shown}"))],
             Precedence::Operator,
         )
@@ -1321,15 +1315,12 @@ impl<'a> ExpressionEmitter<'a> {
         let name = self.assoc_name(value);
         let inner = self.assoc_assignment(&name, value, keys, item);
         self.locals.leave();
-        Code {
-            fragments: vec![
-                Fragment::Text("{".to_string()),
-                Fragment::Indented(inner),
-                Fragment::Newline,
-                Fragment::Text("}".to_string()),
-            ],
-            precedence: Precedence::Block,
-        }
+        Code::block(vec![
+            Fragment::Text("{".to_string()),
+            Fragment::Indented(inner),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ])
     }
 
     fn assoc_name(&mut self, value: &TypedExpr) -> String {
@@ -1697,9 +1688,10 @@ impl<'a> ExpressionEmitter<'a> {
             .local_closures
             .argument_borrow(callee, position, &argument.value)
         {
-            Some(borrow) => {
-                Code::joined(vec![Code::atom(borrow.prefix()), value], Precedence::Prefix)
-            }
+            Some(borrow) => Code::joined_outside_delimiters(
+                vec![Code::atom(borrow.prefix()), value],
+                Precedence::Prefix,
+            ),
             None => value,
         }
     }
@@ -1785,15 +1777,12 @@ impl<'a> ExpressionEmitter<'a> {
         self.locals.leave();
         statements.push(Fragment::Newline);
         statements.extend(call.fragments);
-        Code {
-            fragments: vec![
-                Fragment::Text("{".to_string()),
-                Fragment::Indented(statements),
-                Fragment::Newline,
-                Fragment::Text("}".to_string()),
-            ],
-            precedence: Precedence::Block,
-        }
+        Code::block(vec![
+            Fragment::Text("{".to_string()),
+            Fragment::Indented(statements),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ])
     }
 
     fn contains_try(block: &TypedBlock) -> bool {
@@ -2038,15 +2027,12 @@ impl<'a> ExpressionEmitter<'a> {
         inner.push(Fragment::Newline);
         inner.push(Fragment::Text(map_name));
         self.locals.leave();
-        Code {
-            fragments: vec![
-                Fragment::Text("{".to_string()),
-                Fragment::Indented(inner),
-                Fragment::Newline,
-                Fragment::Text("}".to_string()),
-            ],
-            precedence: Precedence::Block,
-        }
+        Code::block(vec![
+            Fragment::Text("{".to_string()),
+            Fragment::Indented(inner),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ])
     }
 
     fn map_update_base(&mut self, value: &TypedExpr) -> String {
@@ -2217,7 +2203,7 @@ impl<'a> ExpressionEmitter<'a> {
         } else {
             value
         };
-        Code::joined(vec![Code::atom(prefix), value], Precedence::Prefix)
+        Code::joined_outside_delimiters(vec![Code::atom(prefix), value], Precedence::Prefix)
     }
 
     fn separated(arguments: Vec<Code>) -> Vec<Code> {
@@ -2298,10 +2284,7 @@ impl<'a> ExpressionEmitter<'a> {
             return if annotated {
                 Self::braced(fragments)
             } else {
-                Code {
-                    fragments,
-                    precedence: Precedence::Block,
-                }
+                Code::block(fragments)
             };
         }
         if annotated {
@@ -2316,28 +2299,22 @@ impl<'a> ExpressionEmitter<'a> {
     fn braced(fragments: Vec<Fragment>) -> Code {
         let mut inner = vec![Fragment::Newline];
         inner.extend(fragments);
-        Code {
-            fragments: vec![
-                Fragment::Text("{".to_string()),
-                Fragment::Indented(inner),
-                Fragment::Newline,
-                Fragment::Text("}".to_string()),
-            ],
-            precedence: Precedence::Block,
-        }
+        Code::block(vec![
+            Fragment::Text("{".to_string()),
+            Fragment::Indented(inner),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ])
     }
 
     fn inline_call(&mut self, lambda: &TypedLambda, arguments: &[TypedArgument]) -> Code {
         let fragments = self.inline_call_contents(lambda, arguments);
-        Code {
-            fragments: vec![
-                Fragment::Text("{".to_string()),
-                Fragment::Indented(fragments),
-                Fragment::Newline,
-                Fragment::Text("}".to_string()),
-            ],
-            precedence: Precedence::Block,
-        }
+        Code::block(vec![
+            Fragment::Text("{".to_string()),
+            Fragment::Indented(fragments),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ])
     }
 
     fn inline_call_contents(
@@ -2369,15 +2346,12 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn block(&mut self, block: &TypedBlock) -> Code {
         let statements = self.block_contents(block);
-        Code {
-            fragments: vec![
-                Fragment::Text("{".to_string()),
-                Fragment::Indented(statements),
-                Fragment::Newline,
-                Fragment::Text("}".to_string()),
-            ],
-            precedence: Precedence::Block,
-        }
+        Code::block(vec![
+            Fragment::Text("{".to_string()),
+            Fragment::Indented(statements),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ])
     }
 
     fn block_contents(&mut self, block: &TypedBlock) -> Vec<Fragment> {
@@ -2420,10 +2394,7 @@ impl<'a> ExpressionEmitter<'a> {
             fragments.push(Fragment::Newline);
             fragments.push(Fragment::Text("}".to_string()));
         }
-        Code {
-            fragments,
-            precedence: Precedence::Block,
-        }
+        Code::block(fragments)
     }
 
     fn negated_conditional(&mut self, test: &TypedExpr, branch: &TypedExpr) -> Code {
@@ -2434,10 +2405,7 @@ impl<'a> ExpressionEmitter<'a> {
         fragments.push(Fragment::Indented(self.branch(branch)));
         fragments.push(Fragment::Newline);
         fragments.push(Fragment::Text("}".to_string()));
-        Code {
-            fragments,
-            precedence: Precedence::Block,
-        }
+        Code::block(fragments)
     }
 
     fn short_circuit(
@@ -2450,7 +2418,7 @@ impl<'a> ExpressionEmitter<'a> {
         let value = self.expr(value);
         let test = self.binary_operand(test, operator, Side::Left);
         let value = self.binary_operand(value, operator, Side::Right);
-        Code::joined(
+        Code::joined_outside_delimiters(
             vec![test, Code::atom(format!(" {} ", operator.symbol())), value],
             Precedence::Operator,
         )
@@ -2560,15 +2528,12 @@ impl<'a> ExpressionEmitter<'a> {
         contents.push(Fragment::Text(";".to_string()));
         contents.push(Fragment::Newline);
         contents.extend(body.fragments);
-        Code {
-            fragments: vec![
-                Fragment::Text("{".to_string()),
-                Fragment::Indented(contents),
-                Fragment::Newline,
-                Fragment::Text("}".to_string()),
-            ],
-            precedence: Precedence::Block,
-        }
+        Code::block(vec![
+            Fragment::Text("{".to_string()),
+            Fragment::Indented(contents),
+            Fragment::Newline,
+            Fragment::Text("}".to_string()),
+        ])
     }
 
     fn construction(&mut self, binding: BindingId, fields: &[(FieldLabel, TypedExpr)]) -> Code {
@@ -2598,7 +2563,7 @@ impl<'a> ExpressionEmitter<'a> {
                 .is_some_and(|declared| declared.is_reference());
         let access = self.field_place(value, label);
         if borrows_field {
-            Code::joined(vec![Code::atom("&"), access], Precedence::Prefix)
+            Code::joined_outside_delimiters(vec![Code::atom("&"), access], Precedence::Prefix)
         } else {
             access
         }
@@ -2611,7 +2576,7 @@ impl<'a> ExpressionEmitter<'a> {
         } else {
             value.parenthesized()
         };
-        Code::joined(
+        Code::joined_outside_delimiters(
             vec![
                 value,
                 Code::atom(format!(".{}", NameMangler::value(&label.name))),

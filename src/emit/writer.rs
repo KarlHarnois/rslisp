@@ -49,7 +49,6 @@ impl RustWriter {
                 Fragment::Newline => self.newline(),
                 Fragment::Indented(inner) => self.indented(inner),
                 Fragment::Spanned(span, inner) => self.spanned(*span, inner),
-                Fragment::StructLiteral(inner) => self.write(inner),
             }
         }
     }

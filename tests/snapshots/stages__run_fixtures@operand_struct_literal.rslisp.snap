@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/operand_struct_literal.rslisp
+---
+bolt
+same
+larger
+unequal
