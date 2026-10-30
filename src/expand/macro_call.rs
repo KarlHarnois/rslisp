@@ -110,8 +110,10 @@ impl Expander<'_> {
 
     pub(super) fn discarded_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
         let checkpoint = self.module_notes.checkpoint();
+        let budget = self.form_budget.clone();
         let expansion = self.trial_expansion(binding, form);
         self.module_notes.roll_back(checkpoint);
+        self.form_budget = budget;
         expansion
     }
 

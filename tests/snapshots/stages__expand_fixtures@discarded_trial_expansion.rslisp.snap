@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/discarded_trial_expansion.rslisp
+---
+error[L0304]: `wide` is a macro, not a value
+  --> expand/discarded_trial_expansion.rslisp:14:7
+   |
+14 |   (do wide (padding)))
+   |       ^^^^ used as a value here
+   |
+   = help: a macro can only be called; pass a function instead
