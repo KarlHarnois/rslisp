@@ -4,7 +4,7 @@
           string-lines string-trim-start string-length string-drop string-strip-suffix)
 
 (export defrule defmacro template map-list whole-pairs? documented doc-entry doc-symbol type-doc-symbol
-        docstring-before-body? docstring-before-parameters
+        docstring-before-body? documented-body? docstring-before-parameters
         doc docstring header)
 
 (def map-list
@@ -229,10 +229,15 @@
 (def defrule
   (macro (form)
     (let name (nth form 1))
-    (if (string? (nth form 2))
-        (documented (rule-definition name (drop 3 form))
-                    (doc-entry (doc-symbol name) (list (quote defrule) name) (nth form 2)))
-        (rule-definition name (drop 2 form)))))
+    (let body (drop 2 form))
+    (if (documented-body? body)
+        (documented (rule-definition name (rest body))
+                    (doc-entry (doc-symbol name) (list (quote defrule) name) (first body)))
+        (rule-definition name body))))
+
+(def documented-body?
+  (fn (body)
+    (if (empty? body) false (string? (first body)))))
 
 (def rule-definition
   (fn (name rules)
