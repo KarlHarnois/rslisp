@@ -15,7 +15,7 @@ pub use expr::{
     Literal, MapOperation, Pattern, PatternKind, RustTemplate, StructExpr,
 };
 pub use kernel::{
-    ControlForm, CopyTrait, DefinitionForm, ExpressionForm, FunctionFieldTraits, KernelConstants,
+    ControlForm, CopyTrait, DefinitionForm, ExpressionForm, FunctionTraits, KernelConstants,
     KernelForm, KernelType, LeafForm, OrderTrait, PrimitiveType, ReferenceKind, StructDerives,
     StructForm,
 };

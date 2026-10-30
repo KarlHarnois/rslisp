@@ -4,7 +4,7 @@ use std::rc::Rc;
 use super::projection::ProjectionTable;
 use super::selection::{ImplementorMatch, Selection};
 use super::ty::{Bound, GenericId, Scheme, Type};
-use crate::core::{BindingId, FunctionFieldTraits, StructDerives};
+use crate::core::{BindingId, FunctionTraits, StructDerives};
 
 pub struct Implementor {
     pub scheme: Scheme,
@@ -102,7 +102,7 @@ impl TraitTable {
 
     fn holds_for_functions(&self, binding: BindingId) -> bool {
         self.traits.get(&binding).is_some_and(|rust_trait| {
-            FunctionFieldTraits::ALLOWED.contains(&StructDerives::derive_name(&rust_trait.path))
+            FunctionTraits::ALLOWED.contains(&StructDerives::derive_name(&rust_trait.path))
         })
     }
 
