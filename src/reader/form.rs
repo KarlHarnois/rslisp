@@ -62,6 +62,10 @@ impl Form {
         self.update_scopes(&|scopes| scopes.flip(scope));
     }
 
+    pub fn flip_scope_within(&mut self, scope: Scope, allowance: &mut usize) -> bool {
+        self.update_scopes_within(&|scopes| scopes.flip(scope), allowance)
+    }
+
     pub fn remove_scope(&mut self, scope: Scope) {
         self.update_scopes(&|scopes| scopes.remove(scope));
     }
@@ -93,6 +97,28 @@ impl Form {
         }
     }
 
+    fn update_scopes_within(
+        &mut self,
+        update: &dyn Fn(&mut ScopeSet),
+        allowance: &mut usize,
+    ) -> bool {
+        let Some(remaining) = allowance.checked_sub(1) else {
+            return false;
+        };
+        *allowance = remaining;
+        match self.scoped_kind_mut() {
+            Some(FormKind::Symbol(symbol)) => {
+                update(symbol.scopes_mut());
+                true
+            }
+            Some(FormKind::List(items)) => items
+                .iter_mut()
+                .all(|item| item.update_scopes_within(update, allowance)),
+            _ => true,
+        }
+    }
+
+    #[inline(always)]
     fn scoped_kind_mut(&mut self) -> Option<&mut FormKind> {
         match self.kind() {
             FormKind::Symbol(_) | FormKind::List(_) => Some(Rc::make_mut(&mut self.kind)),
