@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::core::{BindingId, Expr, PrimitiveType};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::expand::Program;
@@ -22,29 +24,35 @@ pub(in crate::types) struct OpenCollections {
 }
 
 impl OpenCollections {
-    pub(in crate::types) fn check(
+    pub(in crate::types) fn vector_bases(
         &self,
         program: &Program,
         graph: &DefinitionGraph,
         typed: &TypedProgram,
-    ) -> Result<(), Diagnostics> {
+    ) -> Result<HashSet<Span>, Diagnostics> {
+        let mut vector_bases = HashSet::new();
         if self.generics.is_empty() {
-            return Ok(());
+            return Ok(vector_bases);
         }
         let report = InstantiationReport::of(program, graph, typed);
         let mut diagnostics = Diagnostics::default();
         for (generic, span) in &self.generics {
-            if let Some(owner) = Self::owner(typed, *generic)
-                && report.is_used(owner)
-                && !Self::is_pinned(&report, owner, *generic)
-            {
+            let Some(owner) = Self::owner(typed, *generic) else {
+                continue;
+            };
+            if !report.is_used(owner) || Self::is_pinned(&report, owner, *generic) {
+                continue;
+            }
+            if Self::passes_only_sequences(&report, typed, owner, *generic) {
+                vector_bases.insert(*span);
+            } else {
                 diagnostics.push(TypeProblems::unknown_collection(*span));
             }
         }
         if diagnostics.has_errors() {
             return Err(diagnostics);
         }
-        Ok(())
+        Ok(vector_bases)
     }
 
     fn owner(typed: &TypedProgram, generic: GenericId) -> Option<BindingId> {
@@ -60,6 +68,19 @@ impl OpenCollections {
                     .any(|param| param.id == generic)
             })
             .map(|definition| definition.binding)
+    }
+
+    fn passes_only_sequences(
+        report: &InstantiationReport,
+        typed: &TypedProgram,
+        owner: BindingId,
+        generic: GenericId,
+    ) -> bool {
+        report.uses_of(owner, generic).iter().all(|used| {
+            used.as_ref()
+                .and_then(|ty| Collection::of_referent(ty, &typed.rust_types))
+                .is_some_and(|collection| collection.is_sequence())
+        })
     }
 
     fn is_pinned(report: &InstantiationReport, owner: BindingId, generic: GenericId) -> bool {
@@ -104,6 +125,7 @@ impl TypeChecker {
     pub(super) fn is_open_collection(&self, value: &TypedExpr, depth: usize) -> bool {
         const ONE_KEY: usize = 1;
         depth == ONE_KEY
+            && !self.vector_bases.contains(&value.span)
             && !self.defaults_literal_parameters()
             && matches!(
                 self.unifier.resolve(&value.ty),

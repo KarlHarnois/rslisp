@@ -1,0 +1,34 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/set_mixed_element_vectors.rslisp
+---
+fn replace_at<A>(items: &mut [A], index: usize, item: A) {
+    items[index] = item
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut years: Vec<i64> = vec![2011_i64, 2019_i64];
+    replace_at(&mut years, 1, 2024);
+    let mut makes = vec!["Nissan", "Honda"];
+    replace_at(&mut makes, 0, "Toyota");
+    println!("{} {}", years[1], makes[0])
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
