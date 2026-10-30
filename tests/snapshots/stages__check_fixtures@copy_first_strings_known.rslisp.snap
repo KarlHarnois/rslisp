@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/copy_first_strings_known.rslisp
+---
+error[L0503]: this value is borrowed, but the call needs to own it
+ --> check/copy_first_strings_known.rslisp:1:46
+  |
+1 | (defn copy-first! (names) (set! (at names 1) (at names 0)) (push! names (to-string "x")))
+  |                                              ^^^^^^^^^^^^ only a borrow is available here
+  |
+  = help: pass a copy with `(clone ...)`

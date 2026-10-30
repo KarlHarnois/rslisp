@@ -2255,14 +2255,16 @@ impl TypeChecker {
             let referent = Self::innermost_referent(&argument).clone();
             return self.pass(&parameter, &referent, pending.span, Borrow::Deref(levels));
         }
-        if Self::borrows_parameter_type(&parameter, &argument) {
+        if Self::borrows_open_parameter_type(&parameter, &argument) {
             return Ok(self.copy_through_borrow(&parameter, &argument));
         }
         self.pass_types(&parameter, &argument, pending.span)
     }
 
-    fn borrows_parameter_type(parameter: &Type, argument: &Type) -> bool {
-        argument.is_reference() && Self::innermost_referent(argument) == parameter
+    fn borrows_open_parameter_type(parameter: &Type, argument: &Type) -> bool {
+        matches!(parameter, Type::Var(_))
+            && argument.is_reference()
+            && Self::innermost_referent(argument) == parameter
     }
 
     fn copy_through_borrow(&mut self, parameter: &Type, argument: &Type) -> Borrow {
