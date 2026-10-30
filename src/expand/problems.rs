@@ -406,6 +406,23 @@ impl ExpandProblems {
         .with_help("check that every recursive macro has a case that stops")
     }
 
+    pub fn expansion_too_large(name: &str, limit: usize, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::EXPANSION_TOO_LARGE,
+            "macro expansion did not finish",
+            Label::new(
+                span,
+                format!("expanding this call of `{name}` passes {limit} forms"),
+            ),
+        )
+        .with_note(format!(
+            "the macro calls in one top-level form expand to at most {limit} forms in all"
+        ))
+        .with_help(
+            "make each recursive macro stop, or split a large expansion across several top-level forms",
+        )
+    }
+
     pub fn expansion_nests_too_deep(
         span: Span,
         limit: usize,

@@ -2,6 +2,7 @@ mod compile_time_check;
 mod context;
 mod expression;
 mod field_keyword;
+mod form_budget;
 mod globals;
 mod host;
 mod introduced;
@@ -28,6 +29,7 @@ use crate::modules::{ModuleRegistry, ModuleSources};
 use crate::reader::Form;
 use crate::scope::{BindingTable, FastHashMap, FastHashSet, Phase, Scope, ScopeAllocator};
 use crate::source::{SourceId, SourceMap, Span};
+use form_budget::FormBudget;
 use globals::GlobalTable;
 pub use macro_call::MacroOrigin;
 use macro_call::MacroTable;
@@ -85,6 +87,7 @@ pub struct Expander<'s> {
     phase: Phase,
     expansion_depth: usize,
     nesting_depth: usize,
+    form_budget: FormBudget,
     recovered_diagnostics: Vec<Diagnostic>,
 }
 
@@ -116,6 +119,7 @@ impl<'s> Expander<'s> {
             phase: Phase::Runtime,
             expansion_depth: 0,
             nesting_depth: 0,
+            form_budget: FormBudget::full(),
             recovered_diagnostics: Vec::new(),
         }
     }

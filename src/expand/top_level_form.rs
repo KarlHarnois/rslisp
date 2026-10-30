@@ -1,4 +1,5 @@
 use super::Expander;
+use super::form_budget::FormBudget;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::scope::FastHashSet;
 use crate::source::Span;
@@ -28,7 +29,9 @@ impl Expander<'_> {
         expand: impl FnOnce(&mut Self) -> Result<T, Diagnostic>,
     ) -> Result<T, Diagnostic> {
         let first_recovered = self.recovered_diagnostics.len();
+        let enclosing_budget = std::mem::replace(&mut self.form_budget, FormBudget::full());
         let expanded = expand(self);
+        self.form_budget = enclosing_budget;
         let reported = expanded.as_ref().err().map(RepeatedDiagnostic::of);
         self.drop_repeated_recoveries(first_recovered, reported.into_iter().collect());
         expanded

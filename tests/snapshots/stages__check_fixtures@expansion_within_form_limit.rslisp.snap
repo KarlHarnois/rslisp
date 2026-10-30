@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/expansion_within_form_limit.rslisp
+---
+(type padded (fn () i64))

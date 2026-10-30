@@ -28,7 +28,7 @@ The reader knows four rules:
 
 There is no quote shorthand, no `#` syntax and no `[]` or `{}`. The reader rejects `[`, `]`, `{` and `}` so that code from other Lisps fails with a clear message.
 
-A list nests at most 1,024 lists deep, a limit that `Form::NESTING_LIMIT` states. The reader reports a deeper list as `L0108` and skips it, so every later stage recurses only that deep. Macro output keeps the same limit: the expander reports an expression nested deeper than 1,024 expressions as `L0325`, because a macro can build forms deeper than its source.
+A list nests at most 1,024 lists deep, a limit that `Form::NESTING_LIMIT` states. The reader reports a deeper list as `L0108` and skips it, so every later stage recurses only that deep. Macro output keeps the same limit: the expander reports an expression nested deeper than 1,024 expressions as `L0325`, because a macro can build forms deeper than its source. The macro calls inside one top-level form expand to at most 131,072 forms in all, a limit that `FormBudget::EXPANSION_LIMIT` states. The expander reports the call that passes it as `L0326`, so a macro whose expansion grows on every step, in one form or across many calls, stops with an error instead of running until it exhausts time or memory.
 
 ## Meaning
 
