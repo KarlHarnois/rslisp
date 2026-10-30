@@ -76,17 +76,48 @@ impl OpenCollections {
         owner: BindingId,
         generic: GenericId,
     ) -> bool {
-        report.uses_of(owner, generic).iter().all(|used| {
-            used.as_ref()
-                .and_then(|ty| Collection::of_referent(ty, &typed.rust_types))
-                .is_some_and(|collection| collection.is_sequence())
-        })
+        SequenceUses::new(report, typed).reach_only_sequences(owner, generic)
     }
 
     fn is_pinned(report: &InstantiationReport, owner: BindingId, generic: GenericId) -> bool {
         report
             .one_type(owner)
             .is_some_and(|pinned| pinned.contains_key(&generic))
+    }
+}
+
+struct SequenceUses<'a> {
+    report: &'a InstantiationReport,
+    typed: &'a TypedProgram,
+    visited: HashSet<GenericId>,
+}
+
+impl<'a> SequenceUses<'a> {
+    fn new(report: &'a InstantiationReport, typed: &'a TypedProgram) -> Self {
+        Self {
+            report,
+            typed,
+            visited: HashSet::new(),
+        }
+    }
+
+    fn reach_only_sequences(&mut self, owner: BindingId, generic: GenericId) -> bool {
+        if !self.visited.insert(generic) {
+            return true;
+        }
+        self.report
+            .uses_of(owner, generic)
+            .iter()
+            .all(|used| used.as_ref().is_some_and(|ty| self.is_sequence(ty)))
+    }
+
+    fn is_sequence(&mut self, ty: &Type) -> bool {
+        match ty.referent() {
+            Type::Generic(caller_generic) => OpenCollections::owner(self.typed, *caller_generic)
+                .is_some_and(|caller| self.reach_only_sequences(caller, *caller_generic)),
+            passed => Collection::of_referent(passed, &self.typed.rust_types)
+                .is_some_and(|collection| collection.is_sequence()),
+        }
     }
 }
 
