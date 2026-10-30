@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::core::{BindingArena, BindingId, BindingKind, Expr, ExprKind, ItemKind, Leaf};
 use crate::expand::Program;
+use crate::scope::{FastHashMap, FastHashSet};
 use crate::source::Span;
 
 pub struct Definition<'p> {
@@ -174,10 +175,10 @@ impl References {
 
 struct StronglyConnected<'a> {
     edges: &'a HashMap<BindingId, Vec<BindingId>>,
-    index: HashMap<BindingId, usize>,
-    low_link: HashMap<BindingId, usize>,
+    index: FastHashMap<BindingId, usize>,
+    low_link: FastHashMap<BindingId, usize>,
     stack: Vec<BindingId>,
-    on_stack: HashSet<BindingId>,
+    on_stack: FastHashSet<BindingId>,
     components: Vec<Vec<BindingId>>,
 }
 
@@ -185,10 +186,10 @@ impl<'a> StronglyConnected<'a> {
     fn new(edges: &'a HashMap<BindingId, Vec<BindingId>>) -> Self {
         Self {
             edges,
-            index: HashMap::new(),
-            low_link: HashMap::new(),
+            index: FastHashMap::default(),
+            low_link: FastHashMap::default(),
             stack: Vec::new(),
-            on_stack: HashSet::new(),
+            on_stack: FastHashSet::default(),
             components: Vec::new(),
         }
     }

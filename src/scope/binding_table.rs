@@ -1,8 +1,7 @@
-use std::collections::HashMap;
 use std::ops::Range;
 use std::rc::Rc;
 
-use super::{Scope, ScopeSet};
+use super::{FastHashMap, Scope, ScopeSet};
 use crate::core::{BindingId, Namespace};
 use crate::reader::Symbol;
 
@@ -128,7 +127,7 @@ impl NameEntries {
 
 #[derive(Default)]
 pub struct BindingTable {
-    entries: HashMap<(Rc<str>, Namespace), NameEntries>,
+    entries: FastHashMap<(Rc<str>, Namespace), NameEntries>,
 }
 
 impl BindingTable {
