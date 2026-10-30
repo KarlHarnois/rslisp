@@ -1,0 +1,40 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/sequential_lets.rslisp
+---
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let total: i64 = 1;
+    let doubled: i64 = total * 2;
+    let total_2: i64 = total + doubled;
+    let add_total = |amount: i64| amount + total_2;
+    let inner: i64 = {
+        let doubled_2: i64 = 10;
+        let total_3: i64 = total_2 + doubled_2;
+        total_3
+    };
+    println!("{}", {
+        let total_3: i64 = 100;
+        total_3 + total_2
+    });
+    println!("{}", add_total(inner));
+    println!("{}", doubled)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
