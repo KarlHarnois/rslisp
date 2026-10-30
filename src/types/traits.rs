@@ -4,7 +4,7 @@ use std::rc::Rc;
 use super::projection::ProjectionTable;
 use super::selection::{ImplementorMatch, Selection};
 use super::ty::{Bound, GenericId, Scheme, Type};
-use crate::core::BindingId;
+use crate::core::{BindingId, FunctionFieldTraits, StructDerives};
 
 pub struct Implementor {
     pub scheme: Scheme,
@@ -74,6 +74,12 @@ impl TraitTable {
 
     pub fn select(&self, bound: &Bound, implementor: &Type) -> Selection {
         let normalized = self.projections.normalize_deep(implementor);
+        if matches!(normalized, Type::Function(..)) && self.holds_for_functions(bound.binding) {
+            return Selection::Implemented {
+                requirements: Vec::new(),
+                argument: None,
+            };
+        }
         self.traits.get(&bound.binding).map_or_else(
             || Selection::Missing,
             |rust_trait| {
@@ -92,6 +98,12 @@ impl TraitTable {
                     .fold(Selection::Missing, Selection::best)
             },
         )
+    }
+
+    fn holds_for_functions(&self, binding: BindingId) -> bool {
+        self.traits.get(&binding).is_some_and(|rust_trait| {
+            FunctionFieldTraits::ALLOWED.contains(&StructDerives::derive_name(&rust_trait.path))
+        })
     }
 
     fn normalized_implementors(&self, binding: BindingId) -> &[Implementor] {

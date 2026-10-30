@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/deref_function_reference.rslisp
+---
+(derive car clone copy debug partial-eq eq hash)
+(derive spare clone copy debug)
+(type ->car (fn ((ref str) (ref str)) car))
+(type ->spare (fn ((option (fn () car))) spare))
+(type build-leaf (fn () car))
+(type call-through (fn ((ref (fn () car))) car))
+(type main (fn () unit))

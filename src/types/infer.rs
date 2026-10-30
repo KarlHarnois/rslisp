@@ -3179,7 +3179,7 @@ impl TypeChecker {
                 SimilarName::closest(&label.name, &names),
             ));
         };
-        let ty = if self.reads_field_by_copy(owner, &label.name, &ty) {
+        let ty = if self.reads_field_by_copy(&ty) {
             ty
         } else {
             Type::shared(ty)
@@ -3191,17 +3191,8 @@ impl TypeChecker {
         })
     }
 
-    fn reads_field_by_copy(&self, owner: BindingId, field: &str, field_type: &Type) -> bool {
-        self.declares_function_field(owner, field) || self.copy_rules().is_small_copy(field_type)
-    }
-
-    fn declares_function_field(&self, owner: BindingId, field: &str) -> bool {
-        self.structs.get(owner).is_some_and(|definition| {
-            definition
-                .fields
-                .iter()
-                .any(|(name, declared)| &**name == field && matches!(declared, Type::Function(..)))
-        })
+    fn reads_field_by_copy(&self, field_type: &Type) -> bool {
+        self.copy_rules().is_small_copy(field_type)
     }
 
     fn field_owner(

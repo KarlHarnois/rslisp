@@ -5,7 +5,7 @@ use super::checker::TypeChecker;
 use super::problems::TypeProblems;
 use super::traits::Implementor;
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
-use crate::core::{BindingId, CoreModule, FunctionFieldTraits, ItemKind, StructDerives};
+use crate::core::{BindingId, CoreModule, ItemKind, StructDerives};
 use crate::modules::ModuleSources;
 use crate::source::Span;
 
@@ -377,20 +377,10 @@ impl TypeChecker {
         payload: &Type,
         params: &[GenericId],
     ) -> bool {
-        match payload {
-            Type::Function(..) => self.function_field_trait_allowed(trait_binding),
-            _ => self
-                .traits
-                .satisfies(&Bound::plain(trait_binding), payload, &|generic, _| {
-                    params.contains(&generic)
-                }),
-        }
-    }
-
-    fn function_field_trait_allowed(&self, trait_binding: BindingId) -> bool {
-        self.traits.get(trait_binding).is_some_and(|rust_trait| {
-            FunctionFieldTraits::ALLOWED.contains(&StructDerives::derive_name(&rust_trait.path))
-        })
+        self.traits
+            .satisfies(&Bound::plain(trait_binding), payload, &|generic, _| {
+                params.contains(&generic)
+            })
     }
 
     fn derived_implementor(

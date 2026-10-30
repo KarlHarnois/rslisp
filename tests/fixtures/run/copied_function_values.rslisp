@@ -1,0 +1,27 @@
+(defstruct car :make str :model str)
+(defstruct spare :maker (option (fn () car)))
+(defstruct badge :number u16)
+
+(defn build-leaf ()
+  (->car :make "Nissan" :model "Leaf"))
+
+(defn first-badge ()
+  (->badge :number 1))
+
+(defn spare-model (backup)
+  (match (:maker backup)
+    ((some maker) (:model (maker)))
+    (none "no spare")))
+
+(type issue-through (fn ((ref (fn () badge))) badge))
+(defn issue-through (issue)
+  (let copied (deref issue))
+  (copied))
+
+(defn main ()
+  (let backup (->spare :maker (some build-leaf)))
+  (println (spare-model backup))
+  (println (spare-model backup))
+  (prn (->spare :maker none))
+  (let (issue (fn () badge)) first-badge)
+  (println (:number (issue-through (ref issue)))))

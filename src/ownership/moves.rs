@@ -577,10 +577,16 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn record_use(&mut self, binding: BindingId, ty: &Type, span: Span, usage: Usage) {
-        let is_copy = self.copy.is_copy(ty) || self.copy_functions.contains(&binding);
-        if usage == Usage::Move && !is_copy {
+        if usage == Usage::Move && !self.is_copy_binding(binding, ty) {
             self.moved.move_whole(binding, span);
         }
+    }
+
+    fn is_copy_binding(&self, binding: BindingId, ty: &Type) -> bool {
+        if matches!(ty, Type::Function(..)) {
+            return self.copy_functions.contains(&binding);
+        }
+        self.copy.is_copy(ty)
     }
 
     fn records_inferred_copy(&mut self, binding: BindingId, ty: &Type) -> bool {
