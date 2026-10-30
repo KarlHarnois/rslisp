@@ -63,6 +63,8 @@ help: a function with a similar name exists
 
 **Keep rustc's own code on an error that rustc reports.** Add `note: reported by rustc` and rewrite every Rust name in the message to the name the user wrote.
 
+**Report each error once.** A macro can copy one form of its input into several places of its output, so the expander drops a recovered error that repeats an earlier error of the same top-level form with the same code, location, title and notes.
+
 **Report a missing annotation only when no other error explains it.** A `type annotations needed` error is a symptom of another error, so the type stage drops it when the program has any other error.
 
 ## Tests

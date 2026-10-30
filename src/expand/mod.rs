@@ -17,6 +17,7 @@ mod rest_of_body;
 mod rust_type;
 mod session;
 mod shape;
+mod top_level_form;
 mod try_check;
 mod type_expr;
 mod type_parameters;
