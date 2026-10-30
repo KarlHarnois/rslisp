@@ -343,6 +343,7 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 | `symbol? keyword? list? string? number?` | Test what kind of form a value is. |
 | `symbol-name`, `keyword-name`, `keyword-field`, `field-keyword`, `(symbol context part...)`, `(string part...)` | Read and build names and strings. |
 | `escape-string`, `escape-char`, `escape-format`, `string-strip-suffix`, `string-strip-prefix` | Escape a string for a Rust string literal, a Rust character literal or a format string in a template, and drop a suffix or a prefix. |
+| `(string-lines text)`, `(string-trim-start text)`, `(string-length text)`, `(string-drop count text)` | Split a string at each newline into a list of strings, drop its leading whitespace, count its characters, and drop its first `count` characters. A `count` past the end is an error. |
 | `(same-binding? left right)` | Test whether two symbols refer to the same binding. |
 | `(definition-symbol term part...)` | Build a symbol, as `symbol` does, with the scopes of the module that defines the binding `term` refers to. An unbound `term` is an unbound-name error at `term`. A kernel name keeps the scopes of `term`. |
 | `(bound? name)` | Test whether a symbol refers to a binding in either namespace. |

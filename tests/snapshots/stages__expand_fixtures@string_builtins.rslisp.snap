@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/string_builtins.rslisp
+---
+(def lines (quote ("first" "  second" "")))
+(def trimmed "indented ")
+(def length 5)
+(def dropped "ïve")
+(def dropped-all "")

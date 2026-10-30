@@ -39,10 +39,14 @@ pub enum Builtin {
     EscapeFormat,
     StringStripSuffix,
     StringStripPrefix,
+    StringLines,
+    StringTrimStart,
+    StringLength,
+    StringDrop,
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 39] = [
+    const NAMES: [(Builtin, &'static str); 43] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -82,6 +86,10 @@ impl Builtin {
         (Builtin::EscapeFormat, "escape-format"),
         (Builtin::StringStripSuffix, "string-strip-suffix"),
         (Builtin::StringStripPrefix, "string-strip-prefix"),
+        (Builtin::StringLines, "string-lines"),
+        (Builtin::StringTrimStart, "string-trim-start"),
+        (Builtin::StringLength, "string-length"),
+        (Builtin::StringDrop, "string-drop"),
     ];
 
     pub fn all() -> impl Iterator<Item = Builtin> {

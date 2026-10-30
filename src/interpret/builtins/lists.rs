@@ -1,10 +1,10 @@
 use std::ops::Range;
 
+use super::Forms;
 use crate::diagnostic::Diagnostic;
 use crate::interpret::arguments::Arguments;
 use crate::interpret::problems::InterpretProblems;
 use crate::interpret::{CodeList, Value};
-use crate::reader::{Form, FormKind, Number, NumberValue};
 use crate::source::Span;
 
 pub struct ListOperations<'a> {
@@ -57,12 +57,7 @@ impl<'a> ListOperations<'a> {
 
     pub fn length(&self) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(1)?;
-        let count = self.arguments.list(0)?.len();
-        let number = Number::new(count.to_string(), NumberValue::Integer(count as i128));
-        Ok(Value::Form(Form::new(
-            FormKind::Number(number),
-            self.call_site,
-        )))
+        Ok(Forms::count(self.arguments.list(0)?.len(), self.call_site))
     }
 
     pub fn is_empty(&self) -> Result<Value, Diagnostic> {

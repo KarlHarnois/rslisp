@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/string_drop_errors.rslisp
+---
+error[L0314]: `string-drop` was given a count longer than the string
+ --> expand/string_drop_errors.rslisp:4:3
+  |
+4 |   (string-drop 6 "naïve"))
+  |   ^^^^^^^^^^^^^^^^^^^^^^^ count out of range
+5 |
+6 | (def past-end (drop-past-end "unused"))
+  |               ------------------------ in this macro call

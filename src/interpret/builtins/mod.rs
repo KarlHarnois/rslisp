@@ -1,6 +1,7 @@
 mod failure;
 mod lists;
 mod numbers;
+mod strings;
 mod text;
 
 pub use failure::FailureDescription;
@@ -11,10 +12,11 @@ use super::arguments::Arguments;
 use super::{CompileTimeHost, Value};
 use crate::core::Builtin;
 use crate::diagnostic::Diagnostic;
-use crate::reader::{Form, FormKind};
+use crate::reader::{Form, FormKind, Number, NumberValue};
 use crate::source::Span;
 use lists::ListOperations;
 use numbers::NumberOperations;
+use strings::StringOperations;
 use text::TextOperations;
 
 pub struct BuiltinCall {
@@ -24,7 +26,7 @@ pub struct BuiltinCall {
 }
 
 impl BuiltinCall {
-    const IMPLEMENTATIONS: [(Builtin, Implementation); 39] = [
+    const IMPLEMENTATIONS: [(Builtin, Implementation); 43] = [
         (Builtin::First, |operations, _| operations.lists.first()),
         (Builtin::Rest, |operations, _| operations.lists.rest()),
         (Builtin::List, |operations, _| operations.lists.list()),
@@ -120,6 +122,18 @@ impl BuiltinCall {
         (Builtin::StringStripPrefix, |operations, _| {
             operations.text.string_strip_prefix()
         }),
+        (Builtin::StringLines, |operations, _| {
+            operations.strings.lines()
+        }),
+        (Builtin::StringTrimStart, |operations, _| {
+            operations.strings.trim_start()
+        }),
+        (Builtin::StringLength, |operations, _| {
+            operations.strings.length()
+        }),
+        (Builtin::StringDrop, |operations, _| {
+            operations.strings.drop()
+        }),
     ];
 
     pub fn new(builtin: Builtin, values: Vec<Value>, span: Span, call_site: Span) -> Self {
@@ -150,6 +164,7 @@ type Implementation =
 struct Operations<'a> {
     lists: ListOperations<'a>,
     numbers: NumberOperations<'a>,
+    strings: StringOperations<'a>,
     text: TextOperations<'a>,
 }
 
@@ -158,6 +173,7 @@ impl<'a> Operations<'a> {
         Self {
             lists: ListOperations::new(arguments, call_site),
             numbers: NumberOperations::new(arguments, call_site),
+            strings: StringOperations::new(arguments, call_site),
             text: TextOperations::new(arguments, call_site),
         }
     }
@@ -168,5 +184,10 @@ struct Forms;
 impl Forms {
     fn list(items: Vec<Form>, span: Span) -> Value {
         Value::Form(Form::new(FormKind::List(items), span))
+    }
+
+    fn count(count: usize, span: Span) -> Value {
+        let number = Number::new(count.to_string(), NumberValue::Integer(count as i128));
+        Value::Form(Form::new(FormKind::Number(number), span))
     }
 }

@@ -79,6 +79,14 @@ impl InterpretProblems {
         )
     }
 
+    pub fn past_string_end(function: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::INDEX_OUT_OF_RANGE,
+            format!("`{function}` was given a count longer than the string"),
+            Label::new(span, "count out of range"),
+        )
+    }
+
     pub fn arithmetic_failed(function: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::ARITHMETIC_OVERFLOW,
