@@ -29,6 +29,7 @@ const MILLION_LINES: &str = "(defn main ()\n  (for-each (range 0 1000000) (fn (i
 const STRUCTS: &str = "(defstruct person :name string :age i64)\n(defstruct ticket :id u32)\n(derive ticket debug)\n\n(defn main () (do))\n";
 const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::ops::Add\" i64 (with i64 person))\n\n(type matches (where ((a (same person))) (fn (a) bool)))\n(defn matches (x) true)\n\n(defn main () (println (matches 1)))\n";
 
+const TRAIT_SHARED_VECTOR: &str = "(struct odometer (offset i64))\n\n(trait mileage\n  (first-reading (fn ((ref self) (ref (vec i64))) i64)))\n\n(impl mileage odometer\n  (first-reading (o readings) (+ (field o offset) (at readings 0))))\n\n(defn main ()\n  (println (first-reading (new odometer (offset 10)) (vec 1200))))\n";
 const UNBOUND_NAMES_PAST_THE_CAP: usize = 25;
 
 struct Sandbox {
@@ -264,6 +265,13 @@ fn emit_qualifies_a_struct_named_in_a_bound() {
     let stdout = emitted.assert_exit_code(0).stdout();
     assert!(stdout.contains("std::ops::Add<crate::other::person::Person>"));
     assert!(stdout.contains("struct Person"));
+}
+
+#[test]
+fn run_keeps_a_trait_method_vector_parameter_as_written() {
+    let sandbox = Sandbox::new("trait_vector").with_file("mileage.rslisp", TRAIT_SHARED_VECTOR);
+    let run = sandbox.compiler(&["run", "mileage.rslisp"]);
+    assert_eq!(run.assert_exit_code(0).stdout(), "1210\n");
 }
 
 #[test]

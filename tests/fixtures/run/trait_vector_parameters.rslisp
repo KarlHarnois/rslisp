@@ -1,0 +1,12 @@
+(struct odometer (offset i64))
+
+(trait mileage
+  (reset-first! (fn ((ref self) (mut (vec i64))) unit)))
+
+(impl mileage odometer
+  (reset-first! (o readings) (set! (at readings 0) (field o offset))))
+
+(defn main ()
+  (let readings (vec 1200 3400))
+  (reset-first! (new odometer (offset 10)) (mut readings))
+  (println (at readings 0) " " (at readings 1)))

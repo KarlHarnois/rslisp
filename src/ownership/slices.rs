@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use super::functions::{FunctionTable, ParamMode, ParamSlot};
+use super::names::ChangingFunctionNames;
 use crate::core::{BindingId, PrimitiveType};
 use crate::types::{
     GenericId, Lifetime, RustType, Type, TypedArgument, TypedBlock, TypedExpr, TypedExprKind,
@@ -25,6 +26,7 @@ pub struct ShrinkSelection<'a> {
     modes: &'a HashMap<BindingId, ParamMode>,
     declared: HashMap<BindingId, Vec<Type>>,
     values: HashSet<BindingId>,
+    trait_methods: HashSet<BindingId>,
     slice: BindingId,
 }
 
@@ -54,12 +56,15 @@ impl<'a> ShrinkSelection<'a> {
         {
             Self::scan(&definition.value, false, &mut values);
         }
+        let mut trait_methods = ChangingFunctionNames::impl_methods(program);
+        trait_methods.extend(ChangingFunctionNames::default_methods(program));
         Some(Self {
             program,
             functions,
             modes,
             declared,
             values,
+            trait_methods,
             slice,
         })
     }
@@ -99,7 +104,7 @@ impl<'a> ShrinkSelection<'a> {
     fn candidates(&self) -> HashMap<BindingId, Shrink> {
         let mut found = HashMap::new();
         for function in self.functions.definition_bindings() {
-            if self.values.contains(&function) {
+            if self.values.contains(&function) || self.trait_methods.contains(&function) {
                 continue;
             }
             let Some(info) = self.functions.definition(function) else {
