@@ -3192,7 +3192,8 @@ impl TypeChecker {
     }
 
     fn reads_field_by_copy(&self, field_type: &Type) -> bool {
-        self.copy_rules().is_small_copy(field_type)
+        self.copy_rules()
+            .is_small_copy(&self.unifier.resolve(field_type))
     }
 
     fn field_owner(

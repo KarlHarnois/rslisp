@@ -1,0 +1,21 @@
+(defstruct car :make str :model str)
+(defstruct factory :maker (fn () car))
+(defstruct (holder a) :item a)
+
+(defn build-leaf ()
+  (->car :make "Nissan" :model "Leaf"))
+
+(defn build-ariya ()
+  (->car :make "Nissan" :model "Ariya"))
+
+(type model-from (fn ((ref factory)) (ref str)))
+(defn model-from (plant)
+  (:model ((:maker plant))))
+
+(defn main ()
+  (let factory (->factory :maker build-leaf))
+  (println (:model ((:maker factory))))
+  (println (model-from (ref factory)))
+  (let held (->holder :item build-ariya))
+  (println (:model ((:item held))))
+  (println (:model ((:item held)))))

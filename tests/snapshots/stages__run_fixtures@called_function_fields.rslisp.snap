@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/called_function_fields.rslisp
+---
+Leaf
+Leaf
+Ariya
+Ariya

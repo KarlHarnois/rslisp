@@ -66,10 +66,7 @@ fn main() {
     let backup = Spare {
         maker: Some(build_leaf),
     };
-    match backup {
-        Spare { maker: Some(maker) } => println!("{}", maker().model),
-        Spare { maker: None } => println!("no spare"),
-    }
+    println!("{}", backup.maker.unwrap()().model)
 }
 
 mod rt {

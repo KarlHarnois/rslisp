@@ -19,6 +19,4 @@
   (let shop (->dealer :order order-nissan))
   (println (:model ((:order shop) true)))
   (let backup (->spare :maker (some build-leaf)))
-  (match backup
-    ((spare (some maker)) (println (:model (maker))))
-    ((spare none) (println "no spare"))))
+  (println (:model ((unwrap (:maker backup))))))
