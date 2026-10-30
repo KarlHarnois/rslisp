@@ -1,5 +1,5 @@
-(use prelude/macros defrule defmacro template map-list whole-pairs?)
-(use code first rest list nth take drop length empty? list? symbol? symbol symbol-name value-eq prepend
+(use prelude/macros defrule defmacro template map-list whole-pairs? documented doc-entry docstring-before-body?)
+(use code first rest list nth take drop length empty? list? symbol? string? symbol symbol-name value-eq prepend
           concat string fail closest-name keyword? keyword-name keyword-field field-keyword number-sub bool-not)
 
 (export defn the -> ->> try-> let-try loop
@@ -8,9 +8,23 @@
         has-argument? pair-keys read-call)
 
 (defmacro defn (name parameters body ...)
-  (if (keyword-parameters? parameters)
-      (keyword-function name parameters body)
-      (template (def (unquote name) (fn (unquote parameters) (splice body))))))
+  "Defines a function: (defn name (parameter ...) body ...).
+
+  A string before at least one more body form is the docstring."
+  (if (string? parameters)
+      (fail "a docstring goes after the parameter list" parameters
+            "write it as the first body form, as in (defn name (x) \"Does a thing.\" body)"
+            (template (:code docstring-before-parameters :label "a docstring in place of the parameter list")))
+      (if (docstring-before-body? body)
+          (documented (function-definition name parameters (rest body))
+                      (doc-entry name (list (quote defn) name parameters) (first body)))
+          (function-definition name parameters body))))
+
+(def function-definition
+  (fn (name parameters body)
+    (if (keyword-parameters? parameters)
+        (keyword-function name parameters body)
+        (template (def (unquote name) (fn (unquote parameters) (splice body)))))))
 
 (def keyword-parameters?
   (fn (parameters)
@@ -548,7 +562,7 @@
 (defrule the
   ((type-expression value) (do (let (result type-expression) value) result)))
 
-(defrule ->
+(defrule -> "Threads a value through each form as its first argument: (-> value form ...)."
   ((value) value)
   ((value (head arguments ...) more ...) (-> (head value arguments ...) more ...))
   ((value head more ...) (-> (head value) more ...)))

@@ -1,0 +1,5 @@
+(defn greeting () "hi")
+
+(defn pair-of () "a" "b")
+
+(defn main () (println (greeting) (pair-of)))

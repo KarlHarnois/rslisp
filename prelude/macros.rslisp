@@ -1,8 +1,9 @@
 (use code first rest list prepend concat length empty? nth take drop
-          symbol? list? symbol-name string same-binding? fail
-          value-eq number-add number-sub number-lt)
+          symbol? list? string? symbol-name symbol string same-binding? fail
+          value-eq number-add number-sub number-lt
+          string-lines string-trim-start string-length string-drop string-strip-suffix)
 
-(export defrule defmacro template map-list whole-pairs?)
+(export defrule defmacro template map-list whole-pairs? documented doc-entry docstring-before-body?)
 
 (def map-list
   (fn (function items)
@@ -225,9 +226,17 @@
 
 (def defrule
   (macro (form)
-    (list (quote def) (nth form 1)
+    (let name (nth form 1))
+    (if (string? (nth form 2))
+        (documented (rule-definition name (drop 3 form))
+                    (doc-entry name (list (quote defrule) name) (nth form 2)))
+        (rule-definition name (drop 2 form)))))
+
+(def rule-definition
+  (fn (name rules)
+    (list (quote def) name
           (list (quote macro) (list (quote rule-form))
-                (list (quote expand-rules) (list (quote quote) (drop 2 form)) (quote rule-form))))))
+                (list (quote expand-rules) (list (quote quote) rules) (quote rule-form))))))
 
 (def build-template
   (fn (template)
@@ -264,13 +273,100 @@
 
 (def defmacro
   (macro (form)
+    (let name (nth form 1))
     (let pattern (nth form 2))
-    (list (quote def) (nth form 1)
+    (let body (drop 3 form))
+    (if (docstring-before-body? body)
+        (documented (macro-definition name pattern (rest body))
+                    (doc-entry name (list (quote defmacro) name pattern) (first body)))
+        (macro-definition name pattern body))))
+
+(def docstring-before-body?
+  (fn (body)
+    (if (number-lt 1 (length body)) (string? (first body)) false)))
+
+(def macro-definition
+  (fn (name pattern body)
+    (list (quote def) name
           (concat (list (quote macro) (list (quote macro-form))
                         (list (quote let) (quote macro-bindings)
                               (list (quote match-or-fail) (list (quote quote) pattern) (quote macro-form))))
                   (pattern-lets pattern)
-                  (drop 3 form)))))
+                  body))))
+
+(def documented
+  (fn (definition entry)
+    (list (quote do) definition entry)))
+
+(def doc-entry
+  (fn (name header text)
+    (list (quote def) (symbol name "doc/" name)
+          (list (quote macro) (list (quote doc-form))
+                (list (quote list) (list (quote nth) (quote doc-form) 1)
+                      (string header) (clean-docstring text))))))
+
+(def clean-docstring
+  (fn (text)
+    (let lines (string-lines text))
+    (let margin (shared-indentation (rest lines)))
+    (let continuation (map-list (fn (line) (unindent margin line)) (rest lines)))
+    (without-trailing-newlines
+      (join-lines (without-leading-blanks (prepend (string-trim-start (first lines)) continuation))))))
+
+(def shared-indentation
+  (fn (lines)
+    (smallest (map-list indentation (written-lines lines)))))
+
+(def indentation
+  (fn (line)
+    (number-sub (string-length line) (string-length (string-trim-start line)))))
+
+(def blank?
+  (fn (line)
+    (value-eq (string-trim-start line) "")))
+
+(def written-lines
+  (fn (lines)
+    (if (empty? lines)
+        lines
+        (if (blank? (first lines))
+            (written-lines (rest lines))
+            (prepend (first lines) (written-lines (rest lines)))))))
+
+(def smallest
+  (fn (numbers)
+    (if (empty? numbers) 0 (smallest-from (first numbers) (rest numbers)))))
+
+(def smallest-from
+  (fn (least numbers)
+    (if (empty? numbers)
+        least
+        (recur (if (number-lt (first numbers) least) (first numbers) least) (rest numbers)))))
+
+(def unindent
+  (fn (margin line)
+    (if (blank? line) "" (string-drop margin line))))
+
+(def without-leading-blanks
+  (fn (lines)
+    (if (empty? lines)
+        lines
+        (if (blank? (first lines)) (recur (rest lines)) lines))))
+
+(def join-lines
+  (fn (lines)
+    (if (empty? lines) "" (join-onto (first lines) (rest lines)))))
+
+(def join-onto
+  (fn (joined lines)
+    (if (empty? lines)
+        joined
+        (recur (string joined "\n" (first lines)) (rest lines)))))
+
+(def without-trailing-newlines
+  (fn (text)
+    (let stripped (string-strip-suffix text "\n"))
+    (if (value-eq stripped text) text (recur stripped))))
 
 (def whole-pairs?
   (fn (arguments)

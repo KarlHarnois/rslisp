@@ -1,0 +1,9 @@
+(use code list)
+
+(defn scale (:size i64 :factor i64 (defaults :factor 2))
+  "Multiplies a size by a factor, which defaults to two."
+  (* size factor))
+
+(defn main () (println (scale :size 3)))
+
+(def scale-entry (doc/scale list))

@@ -1,0 +1,11 @@
+(use code list)
+
+(defn scale (size factor)
+  "Multiplies a size by a factor.
+
+  The factor must be positive.
+    An indented line keeps its extra indentation.
+  "
+  (* size factor))
+
+(def scale-entry (doc/scale list))
