@@ -1,0 +1,7 @@
+(defstruct spare :maker (option (fn () i64)))
+
+(defn main ()
+  (let backup (->spare :maker (some (fn () (+ 4 1)))))
+  (match backup
+    ((spare (some maker)) (println (maker)))
+    ((spare none) (println "no spare"))))

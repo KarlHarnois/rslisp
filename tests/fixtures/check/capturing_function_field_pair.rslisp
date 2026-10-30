@@ -1,0 +1,6 @@
+(defstruct badge :maker (pair (fn () i64) str))
+
+(defn main ()
+  (let base 4)
+  (let gold (->badge :maker (pair (fn () (+ base 1)) "gold")))
+  (prn gold))
