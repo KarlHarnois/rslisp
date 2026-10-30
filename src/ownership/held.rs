@@ -2,7 +2,9 @@ use std::collections::HashSet;
 
 use super::aliases::LetAliases;
 use crate::core::BindingId;
-use crate::types::{TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
+use crate::types::{
+    TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram,
+};
 
 pub struct HeldClosures<'h, 'e> {
     aliases: &'h LetAliases<'e>,
@@ -42,7 +44,27 @@ impl<'h, 'e> HeldClosures<'h, 'e> {
                     .filter(|argument| value.ty.contains(&argument.ty))
                     .collect()
             }
+            TypedExprKind::Control(control) => Self::branch_results(control),
             _ => Vec::new(),
+        }
+    }
+
+    fn branch_results(control: &'e TypedControl) -> Vec<&'e TypedExpr> {
+        match control {
+            TypedControl::Block(block) => Self::tail_of(block).into_iter().collect(),
+            TypedControl::If(_, then, otherwise) => vec![then, otherwise],
+            TypedControl::Match(matched) => matched
+                .arms
+                .iter()
+                .filter_map(|arm| Self::tail_of(&arm.body))
+                .collect(),
+        }
+    }
+
+    fn tail_of(block: &'e TypedBlock) -> Option<&'e TypedExpr> {
+        match block.items.last()? {
+            TypedBodyItem::Expr(tail) => Some(tail),
+            TypedBodyItem::Let(..) => None,
         }
     }
 }
