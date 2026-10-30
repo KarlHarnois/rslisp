@@ -1,0 +1,32 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/copy_first.rslisp
+---
+fn copy_first(years: &mut [i64]) {
+    years[1] = years[0]
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut years: Vec<i64> = vec![2019_i64, 2021_i64, 2024_i64];
+    copy_first(&mut years);
+    println!("{} {}", years[0], years[1])
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
