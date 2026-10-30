@@ -23,9 +23,14 @@ use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
     Bound, GenericId, GenericParam, Lifetime, ReceiverKind, Type, TypedAssociatedType, TypedBinder,
-    TypedConversion, TypedDefinition, TypedExpr, TypedExprKind, TypedLambda, TypedProgram,
-    TypedTraitMethod, VariantDefinition,
+    TypedConversion, TypedDefinition, TypedExpr, TypedExprKind, TypedImplMethod, TypedLambda,
+    TypedProgram, TypedTraitMethod, VariantDefinition,
 };
+
+struct ImplementedTrait<'l> {
+    binding: BindingId,
+    implementor_lifetime: Option<&'l str>,
+}
 
 struct TraitHeader {
     binding: BindingId,
@@ -327,10 +332,9 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn trait_method(&mut self, module: ModuleId, method: &TypedTraitMethod) -> Vec<Fragment> {
-        let declaration = method.default.unwrap_or(method.binding);
         let definition = self
             .plan
-            .definition(declaration)
+            .definition(method.declaration())
             .expect("a trait method has a definition");
         let Type::Function(_, parameters, result) = &definition.scheme.body else {
             unreachable!("a trait method has a function type")
@@ -420,7 +424,7 @@ impl<'a> ItemEmitter<'a> {
         let mut emitter = self
             .expressions(module, &definition.value)
             .with_enclosing_lifetime(inferred.clone());
-        emitter.prepare_tail_loop(declaration, &lambda);
+        emitter.prepare_tail_loop(method.declaration(), &lambda);
         if method.receiver.is_some() {
             emitter.locals.bind_receiver(lambda.params[0].binding);
         }
@@ -556,14 +560,13 @@ impl<'a> ItemEmitter<'a> {
                 body.push(Fragment::Newline);
                 body.push(Fragment::Text(line));
             }
+            let implemented = ImplementedTrait {
+                binding: trait_binding,
+                implementor_lifetime: lifetime.as_deref(),
+            };
             for method in &methods {
                 body.push(Fragment::Newline);
-                body.extend(self.impl_method(
-                    method.binding,
-                    method.receiver,
-                    module,
-                    lifetime.as_deref(),
-                ));
+                body.extend(self.impl_method(*method, module, &implemented));
             }
             items.push(vec![
                 Fragment::Text(format!("impl{generics} {trait_path} for {type_name} {{")),
@@ -598,11 +601,12 @@ impl<'a> ItemEmitter<'a> {
 
     fn impl_method(
         &mut self,
-        binding: BindingId,
-        receiver: Option<ReceiverKind>,
+        method: TypedImplMethod,
         module: ModuleId,
-        reserved_lifetime: Option<&str>,
+        implemented: &ImplementedTrait,
     ) -> Vec<Fragment> {
+        let TypedImplMethod { binding, receiver } = method;
+        let reserved_lifetime = implemented.implementor_lifetime;
         let definition = self
             .plan
             .definition(binding)
@@ -674,7 +678,8 @@ impl<'a> ItemEmitter<'a> {
         let result = match &definition.value.ty {
             Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
                 let position = self.result_position(parameters, inferred.as_deref());
-                format!(" -> {}", types.show_in(result, position, &scope))
+                let shown = self.result_naming_self(binding, result, implemented);
+                format!(" -> {}", types.show_in(&shown, position, &scope))
             }
             _ => String::new(),
         };
@@ -695,6 +700,35 @@ impl<'a> ItemEmitter<'a> {
                 Fragment::Text("}".to_string()),
             ],
         )]
+    }
+
+    fn result_naming_self(
+        &self,
+        method: BindingId,
+        result: &Type,
+        implemented: &ImplementedTrait,
+    ) -> Type {
+        implemented
+            .implementor_lifetime
+            .and_then(|_| self.declared_result(implemented.binding, method))
+            .map_or_else(
+                || result.clone(),
+                |(declared, self_generic)| result.restore_generic(declared, self_generic),
+            )
+    }
+
+    fn declared_result(
+        &self,
+        trait_binding: BindingId,
+        method: BindingId,
+    ) -> Option<(&'a Type, GenericId)> {
+        let name = self.program.bindings.get(method).name();
+        let declared = self.program.declared_trait_method(trait_binding, name)?;
+        let scheme = &self.plan.definition(declared.declaration())?.scheme;
+        let Type::Function(_, _, result) = &scheme.body else {
+            unreachable!("a trait method has a function type")
+        };
+        Some((result, scheme.params.first()?.id))
     }
 
     fn result_main(&mut self, definition: &TypedDefinition, info: &ItemInfo) -> Vec<Fragment> {
