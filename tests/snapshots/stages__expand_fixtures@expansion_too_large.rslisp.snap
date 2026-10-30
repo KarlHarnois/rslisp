@@ -1,0 +1,41 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/expansion_too_large.rslisp
+---
+error[L0326]: macro expansion did not finish
+  --> expand/expansion_too_large.rslisp:17:12
+   |
+17 |   (println (grow 1)))
+   |            ^^^^^^^^ expanding this call of `grow` passes 131072 forms
+   |
+   = note: the macro calls in one top-level form expand to at most 131072 forms in all
+   = help: make each recursive macro stop, or split a large expansion across several top-level forms
+
+error[L0325]: this expression nests too deeply
+  --> expand/expansion_too_large.rslisp:20:12
+   |
+20 |   (println (spread 1)))
+   |            ^^^^^^^^^^ this expression sits inside 1024 others
+   |
+   = note: expressions nest at most 1024 deep
+   = note: in this expansion of `spread`
+   = help: move the inner expressions into a function of their own
+
+error[L0326]: macro expansion did not finish
+  --> expand/expansion_too_large.rslisp:20:12
+   |
+20 |   (println (spread 1)))
+   |            ^^^^^^^^^^ expanding this call of `spread` passes 131072 forms
+   |
+   = note: the macro calls in one top-level form expand to at most 131072 forms in all
+   = help: make each recursive macro stop, or split a large expansion across several top-level forms
+
+error[L0326]: macro expansion did not finish
+  --> expand/expansion_too_large.rslisp:23:3
+   |
+23 |   (past-the-limit))
+   |   ^^^^^^^^^^^^^^^^ expanding this call of `past-the-limit` passes 131072 forms
+   |
+   = note: the macro calls in one top-level form expand to at most 131072 forms in all
+   = help: make each recursive macro stop, or split a large expansion across several top-level forms
