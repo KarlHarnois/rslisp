@@ -532,6 +532,7 @@ impl<'a> ExpressionEmitter<'a> {
         } else {
             value
         };
+        let value = Self::scrutinee(value, &matched.value);
         let mut fragments = vec![Fragment::Text("match ".to_string())];
         fragments.extend(value.fragments);
         fragments.push(Fragment::Text(" {".to_string()));
@@ -555,6 +556,21 @@ impl<'a> ExpressionEmitter<'a> {
             fragments,
             precedence: Precedence::Block,
         }
+    }
+
+    fn scrutinee(code: Code, value: &TypedExpr) -> Code {
+        if Self::is_struct_literal(value) && code.is_atomic() {
+            code.parenthesized()
+        } else {
+            code
+        }
+    }
+
+    fn is_struct_literal(value: &TypedExpr) -> bool {
+        matches!(
+            value.kind,
+            TypedExprKind::Struct(TypedStructExpr::New(..) | TypedStructExpr::Update(..))
+        )
     }
 
     fn add_fallback(arms: &mut Vec<Fragment>, unguarded_exhaustive: bool) {

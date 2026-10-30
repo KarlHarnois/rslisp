@@ -113,7 +113,7 @@ impl ExpressionEmitter<'_> {
         }
         let arm = &matched.arms[repeating];
         let position = BoxPosition::of(&matched.value.ty);
-        let value = self.expr(&matched.value);
+        let value = Self::scrutinee(self.expr(&matched.value), &matched.value);
         self.locals.enter();
         let pattern = self.pattern(&arm.pattern, position);
         if !pattern.guards.is_empty() || !pattern.prologue.is_empty() {
@@ -241,7 +241,7 @@ impl ExpressionEmitter<'_> {
         if let Some(arm) = self.sole_sure_arm(&matched.arms) {
             return self.loop_sure_arm(&matched.value, arm);
         }
-        let value = self.expr(&matched.value);
+        let value = Self::scrutinee(self.expr(&matched.value), &matched.value);
         let mut fragments = vec![Fragment::Text("match ".to_string())];
         fragments.extend(value.fragments);
         fragments.push(Fragment::Text(" {".to_string()));
