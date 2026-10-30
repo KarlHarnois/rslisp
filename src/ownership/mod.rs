@@ -1,5 +1,6 @@
 mod aliases;
 mod borrowing_lambdas;
+mod callers;
 mod changes;
 mod checks;
 mod definitions;
@@ -26,6 +27,7 @@ mod update_bases;
 mod update_order;
 mod usage;
 mod values;
+mod worklist;
 
 use std::collections::HashMap;
 

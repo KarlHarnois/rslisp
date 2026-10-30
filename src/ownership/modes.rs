@@ -1,8 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
+use super::callers::Callers;
 use super::functions::{FunctionInfo, FunctionTable, ParamMode, ParamSlot};
 use super::tail_calls::TailCalls;
-use super::usage::UsageCollector;
+use super::usage::{Usage, UsageCollector};
+use super::worklist::Worklist;
 use crate::core::BindingId;
 use crate::types::CopyRules;
 
@@ -18,7 +20,16 @@ impl<'a> ModeInference<'a> {
 
     pub fn run(&self) -> HashMap<BindingId, ParamMode> {
         let mut modes = self.initial_modes();
-        while self.raise_modes(&mut modes) {}
+        let mut callers = Callers::default();
+        let mut pending = Worklist::of(self.functions.definition_bindings());
+        while let Some(binding) = pending.pop() {
+            let usage = self.usage(binding, &modes);
+            callers.record(binding, &usage.callees);
+            if Self::raise_modes(usage, &mut modes) {
+                pending.extend([binding]);
+                pending.extend(callers.of_function(binding).iter().copied());
+            }
+        }
         modes
     }
 
@@ -53,29 +64,32 @@ impl<'a> ModeInference<'a> {
         }
     }
 
-    fn raise_modes(&self, modes: &mut HashMap<BindingId, ParamMode>) -> bool {
+    fn usage(&self, binding: BindingId, modes: &HashMap<BindingId, ParamMode>) -> Usage {
+        let function = self
+            .functions
+            .definition(binding)
+            .expect("the worklist holds definitions");
+        let tracked = function
+            .params
+            .iter()
+            .filter(|slot| slot.inferable && !slot.ty.is_unsized())
+            .map(|slot| slot.binding)
+            .collect();
+        let self_modes = function
+            .params
+            .iter()
+            .map(|slot| modes[&slot.binding])
+            .collect();
+        UsageCollector::new(self.functions, modes, &self.copy, tracked, self_modes)
+            .collect(&function.lambda.body)
+    }
+
+    fn raise_modes(usage: Usage, modes: &mut HashMap<BindingId, ParamMode>) -> bool {
         let mut changed = false;
-        for function in self.functions.definitions() {
-            let tracked = function
-                .params
-                .iter()
-                .filter(|slot| slot.inferable && !slot.ty.is_unsized())
-                .map(|slot| slot.binding)
-                .collect();
-            let self_modes = function
-                .params
-                .iter()
-                .map(|slot| modes[&slot.binding])
-                .collect();
-            let required =
-                UsageCollector::new(self.functions, modes, &self.copy, tracked, self_modes)
-                    .collect(&function.lambda.body);
-            for (binding, needed) in required {
-                let current = modes[&binding];
-                if needed > current {
-                    modes.insert(binding, needed);
-                    changed = true;
-                }
+        for (param, needed) in usage.required {
+            if needed > modes[&param] {
+                modes.insert(param, needed);
+                changed = true;
             }
         }
         changed

@@ -16,6 +16,12 @@ pub struct UsageCollector<'a> {
     self_modes: Vec<ParamMode>,
     required: HashMap<BindingId, ParamMode>,
     pattern_required: HashMap<BindingId, ParamMode>,
+    callees: HashSet<BindingId>,
+}
+
+pub struct Usage {
+    pub required: HashMap<BindingId, ParamMode>,
+    pub callees: HashSet<BindingId>,
 }
 
 impl<'a> UsageCollector<'a> {
@@ -35,12 +41,16 @@ impl<'a> UsageCollector<'a> {
             self_modes,
             required: HashMap::new(),
             pattern_required: HashMap::new(),
+            callees: HashSet::new(),
         }
     }
 
-    pub fn collect(mut self, body: &TypedBlock) -> HashMap<BindingId, ParamMode> {
+    pub fn collect(mut self, body: &TypedBlock) -> Usage {
         self.block(body, ParamMode::Own);
-        self.required
+        Usage {
+            required: self.required,
+            callees: self.callees,
+        }
     }
 
     fn expr(&mut self, expr: &TypedExpr, context: ParamMode) {
@@ -217,10 +227,11 @@ impl<'a> UsageCollector<'a> {
         }
     }
 
-    fn callee_modes(&self, callee: &TypedExpr) -> Vec<ParamMode> {
+    fn callee_modes(&mut self, callee: &TypedExpr) -> Vec<ParamMode> {
         let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = callee.kind else {
             return Vec::new();
         };
+        self.callees.insert(binding);
         self.functions
             .get(binding)
             .map(|function| {
