@@ -1,0 +1,55 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/trait_self_vectors.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car {
+    year: i64,
+}
+
+fn make_car(year: i64) -> Car {
+    Car { year }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let leaf = make_car(2024);
+    let others = make_car(2019).pair();
+    println!("{}", leaf.newest(others))
+}
+
+trait Fleet {
+    fn newest(&self, _: Vec<Self>) -> i64
+    where
+        Self: Sized;
+    fn pair(self) -> Vec<Self>
+    where
+        Self: Sized;
+}
+
+impl Fleet for Car {
+    fn newest(&self, others: Vec<Car>) -> i64 {
+        self.year + others[0].year
+    }
+    fn pair(self) -> Vec<Car> {
+        vec![self, self]
+    }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
