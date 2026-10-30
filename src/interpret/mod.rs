@@ -138,19 +138,20 @@ impl<'h> Interpreter<'h> {
         span: Span,
     ) -> Result<Value, Diagnostic> {
         let function = self.eval(callee, env)?;
-        let values = arguments
-            .iter()
-            .map(|argument| self.eval(argument, env))
-            .collect::<Result<Vec<Value>, Diagnostic>>()?;
+        let values = self.eval_arguments(arguments, env)?;
         self.call(&function, values, span)
     }
 
     fn eval_recur(&mut self, arguments: &[Expr], env: &Env) -> Result<Step, Diagnostic> {
-        let values = arguments
-            .iter()
-            .map(|argument| self.eval(argument, env))
-            .collect::<Result<Vec<Value>, Diagnostic>>()?;
-        Ok(Step::Recur(values))
+        Ok(Step::Recur(self.eval_arguments(arguments, env)?))
+    }
+
+    fn eval_arguments(&mut self, arguments: &[Expr], env: &Env) -> Result<Vec<Value>, Diagnostic> {
+        let mut values = Vec::with_capacity(arguments.len());
+        for argument in arguments {
+            values.push(self.eval(argument, env)?);
+        }
+        Ok(values)
     }
 
     fn call_closure(
