@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/closure_unannotated_string_parameter.rslisp
+---
+Nissan 2025

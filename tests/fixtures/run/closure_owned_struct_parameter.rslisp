@@ -1,0 +1,6 @@
+(defstruct user :name string :age i64)
+
+(defn main ()
+  (let ana (->user (to-string "Ana") 30))
+  (let age-of (fn (someone) (:age someone)))
+  (println (age-of ana)))
