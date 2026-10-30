@@ -36,7 +36,8 @@ pub struct FunctionInfo {
 
 #[derive(Default)]
 pub struct FunctionTable {
-    functions: HashMap<BindingId, FunctionInfo>,
+    definitions: HashMap<BindingId, FunctionInfo>,
+    local_closures: HashMap<BindingId, FunctionInfo>,
 }
 
 impl FunctionTable {
@@ -63,16 +64,23 @@ impl FunctionTable {
                 Self::lambda(value).map(|lambda| (binder.binding, Self::closure_info(lambda)))
             });
         Self {
-            functions: top_level.chain(local_closures).collect(),
+            definitions: top_level.collect(),
+            local_closures: local_closures.collect(),
         }
     }
 
     pub fn get(&self, binding: BindingId) -> Option<&FunctionInfo> {
-        self.functions.get(&binding)
+        self.definitions
+            .get(&binding)
+            .or_else(|| self.local_closures.get(&binding))
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (&BindingId, &FunctionInfo)> {
-        self.functions.iter()
+        self.definitions.iter().chain(&self.local_closures)
+    }
+
+    pub fn definitions(&self) -> impl Iterator<Item = &FunctionInfo> {
+        self.definitions.values()
     }
 
     pub fn fixed_mode(slot: &ParamSlot, copy: &CopyRules) -> ParamMode {

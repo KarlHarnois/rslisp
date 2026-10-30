@@ -58,7 +58,7 @@ impl<'a> ModeRewrite<'a> {
 
     fn copy_binders(functions: &FunctionTable, copy: &CopyRules) -> HashSet<BindingId> {
         let mut binders = HashSet::new();
-        for (_, function) in functions.iter() {
+        for function in functions.definitions() {
             for expr in function.lambda.body.expressions() {
                 Self::collect_copy_binders(expr, copy, &mut binders);
             }

@@ -55,7 +55,7 @@ impl<'a> ModeInference<'a> {
 
     fn raise_modes(&self, modes: &mut HashMap<BindingId, ParamMode>) -> bool {
         let mut changed = false;
-        for (_, function) in self.functions.iter() {
+        for function in self.functions.definitions() {
             let tracked = function
                 .params
                 .iter()
