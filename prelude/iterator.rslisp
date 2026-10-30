@@ -20,6 +20,7 @@
 (type sum (where ((n number)) (fn ((iterator n)) n)))
 (defn sum (values) (fold values 0 add))
 (def count-items (rust "{0}.count()" (where (a) (fn ((iterator a)) usize))))
+(def count-function (rust "Iterator::count" (where (a) (fn ((iterator a)) usize))))
 
 (def iter-form?
   (fn (form)
@@ -42,7 +43,7 @@
 (def count
   (macro (form)
     (if (symbol? form)
-        (quote count-items)
+        (quote count-function)
         (if (counts-one-collection? (rest form))
             (prepend (quote len) (rest (first (rest form))))
             (prepend (quote count-items) (rest form))))))
