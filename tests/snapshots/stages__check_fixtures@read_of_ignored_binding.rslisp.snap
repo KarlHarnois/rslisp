@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/read_of_ignored_binding.rslisp
+---
+error[L0245]: `_` binds no value to read
+ --> check/read_of_ignored_binding.rslisp:1:13
+  |
+1 | (defn f (_) _)
+  |             ^ this reads a binding named `_`
+  |
+  = help: give the binding a name, and read that name here

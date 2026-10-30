@@ -521,6 +521,15 @@ impl ExpandProblems {
         ))
     }
 
+    pub fn ignored_binding_read(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::IGNORED_BINDING_READ,
+            "`_` binds no value to read",
+            Label::new(span, "this reads a binding named `_`"),
+        )
+        .with_help("give the binding a name, and read that name here")
+    }
+
     pub fn not_a_pattern(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::NOT_A_PATTERN,
