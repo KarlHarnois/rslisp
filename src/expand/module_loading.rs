@@ -14,6 +14,7 @@ use crate::modules::{BuiltinModule, ModuleSource, ModuleSources};
 use crate::reader::{Form, Reader, Symbol};
 use crate::scope::{Phase, ScopeSet};
 use crate::source::{SourceId, Span};
+use crate::stack::DeepRecursion;
 
 impl Expander<'_> {
     const NAMESPACES: [Namespace; 2] = [Namespace::Value, Namespace::Type];
@@ -30,7 +31,9 @@ impl Expander<'_> {
             Some(ModuleSource::Builtin(builtin)) => Ok(self.create_builtin(path, builtin)),
             Some(ModuleSource::Text { name, text }) => {
                 let source = self.sources.add(name, text);
-                Ok(self.load_source_module(path.clone(), source))
+                Ok(DeepRecursion::guard(|| {
+                    self.load_source_module(path.clone(), source)
+                }))
             }
             None => Err(ExpandProblems::unknown_module(path, span)),
         }

@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -61,6 +62,7 @@ pub struct DeferredEquality {
 #[derive(Default)]
 struct VarState {
     binding: Option<Type>,
+    shortcut: Cell<Option<TypeVar>>,
     literal: Option<LiteralKind>,
     bounds: Vec<Bound>,
 }
@@ -152,14 +154,39 @@ impl Unifier {
     }
 
     pub fn shallow(&self, value: &Type) -> Type {
-        let mut current = value.clone();
-        while let Type::Var(var) = current {
-            match &self.vars[var.index()].binding {
-                Some(bound) => current = bound.clone(),
-                None => return current,
-            }
+        let Type::Var(start) = value else {
+            return value.clone();
+        };
+        let last = self.last_var(*start);
+        self.shorten_chain(*start, last);
+        match &self.vars[last.index()].binding {
+            Some(bound) => bound.clone(),
+            None => Type::Var(last),
+        }
+    }
+
+    fn last_var(&self, start: TypeVar) -> TypeVar {
+        let mut current = start;
+        while let Some(next) = self.next_var(current) {
+            current = next;
         }
         current
+    }
+
+    fn shorten_chain(&self, start: TypeVar, last: TypeVar) {
+        let mut current = start;
+        while let Some(next) = self.next_var(current).filter(|_| current != last) {
+            self.vars[current.index()].shortcut.set(Some(last));
+            current = next;
+        }
+    }
+
+    fn next_var(&self, var: TypeVar) -> Option<TypeVar> {
+        let state = &self.vars[var.index()];
+        state.shortcut.get().or(match &state.binding {
+            Some(Type::Var(next)) => Some(*next),
+            _ => None,
+        })
     }
 
     pub fn unify(&mut self, expected: &Type, found: &Type, span: Span) -> Result<(), UnifyError> {
@@ -311,6 +338,7 @@ impl Unifier {
         let var = TypeVar::new(self.vars.len());
         self.vars.push(VarState {
             binding: None,
+            shortcut: Cell::new(None),
             literal,
             bounds,
         });
