@@ -1086,11 +1086,22 @@ impl TypeChecker {
     }
 
     fn component_vars(&self, members: &[(BindingId, &TypedExpr)]) -> Vec<TypeVar> {
+        let candidates = self.generalizable_vars(members);
+        if candidates.is_empty() {
+            return candidates;
+        }
         let excluded = self.monomorphic_vars();
+        candidates
+            .into_iter()
+            .filter(|var| !excluded.contains(var))
+            .collect()
+    }
+
+    fn generalizable_vars(&self, members: &[(BindingId, &TypedExpr)]) -> Vec<TypeVar> {
         let mut vars = Vec::new();
         for (binding, value) in members {
             if self.generalizes(binding, value) {
-                self.add_free_vars(binding, &excluded, &mut vars);
+                self.add_free_vars(binding, &mut vars);
             }
         }
         vars
@@ -1100,14 +1111,9 @@ impl TypeChecker {
         !self.signatures.contains_key(binding) && matches!(value.kind, TypedExprKind::Fn(_))
     }
 
-    fn add_free_vars(
-        &self,
-        binding: &BindingId,
-        excluded: &HashSet<TypeVar>,
-        vars: &mut Vec<TypeVar>,
-    ) {
+    fn add_free_vars(&self, binding: &BindingId, vars: &mut Vec<TypeVar>) {
         for var in self.free_vars(&self.component[binding]) {
-            if !excluded.contains(&var) && !vars.contains(&var) {
+            if !vars.contains(&var) {
                 vars.push(var);
             }
         }
