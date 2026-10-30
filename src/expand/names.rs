@@ -102,7 +102,7 @@ impl Expander<'_> {
         Ok(binding)
     }
 
-    fn unbound(&self, symbol: &Symbol, namespace: Namespace, span: Span) -> Diagnostic {
+    pub(super) fn unbound(&self, symbol: &Symbol, namespace: Namespace, span: Span) -> Diagnostic {
         let candidates: Vec<_> = self
             .table
             .visible_name_bindings(symbol, namespace, self.phase)
@@ -131,7 +131,7 @@ impl Expander<'_> {
         }
     }
 
-    fn definition_module(&self, binding: BindingId) -> Option<ModuleId> {
+    pub(super) fn definition_module(&self, binding: BindingId) -> Option<ModuleId> {
         match self.kind(binding) {
             BindingKind::Global(module)
             | BindingKind::Macro(module)

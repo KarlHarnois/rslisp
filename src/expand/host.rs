@@ -17,6 +17,26 @@ impl CompileTimeHost for Expander<'_> {
         }
     }
 
+    fn definition_symbol(
+        &self,
+        term: &Symbol,
+        name: String,
+        span: Span,
+    ) -> Result<Symbol, Diagnostic> {
+        let binding = self
+            .term_binding(term)
+            .ok_or_else(|| self.unbound(term, Namespace::Value, span))?;
+        let scopes = self.definition_module(binding).map_or_else(
+            || term.scopes().clone(),
+            |module| self.modules.get(module).body_scopes(),
+        );
+        Ok(Symbol::with_scopes(name, scopes))
+    }
+
+    fn is_bound(&self, symbol: &Symbol) -> bool {
+        self.term_binding(symbol).is_some()
+    }
+
     fn same_binding(&self, left: &Symbol, right: &Symbol) -> bool {
         let pairs: Vec<(Resolution, Resolution)> = [Namespace::Value, Namespace::Type]
             .into_iter()
@@ -35,5 +55,18 @@ impl CompileTimeHost for Expander<'_> {
             .iter()
             .all(|pair| matches!(pair, (Resolution::Unbound, Resolution::Unbound)));
         bound_together || (unbound_everywhere && left.name() == right.name())
+    }
+}
+
+impl Expander<'_> {
+    fn term_binding(&self, term: &Symbol) -> Option<BindingId> {
+        [Namespace::Value, Namespace::Type]
+            .into_iter()
+            .find_map(
+                |namespace| match self.table.resolve(term, namespace, Phase::Runtime) {
+                    Resolution::Bound(binding) => Some(binding),
+                    _ => None,
+                },
+            )
     }
 }
