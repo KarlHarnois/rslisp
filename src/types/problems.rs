@@ -573,7 +573,7 @@ impl TypeProblems {
 
     pub fn unknown_collection(span: Span) -> Diagnostic {
         Diagnostic::error(
-            DiagnosticCode::CANNOT_INFER,
+            DiagnosticCode::UNKNOWN_COLLECTION,
             "type annotations needed",
             Label::new(span, "cannot tell whether this is a vector or a map"),
         )
