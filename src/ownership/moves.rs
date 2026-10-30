@@ -49,6 +49,8 @@ pub struct MoveChecker<'a> {
     moved_by_earlier_pass: MovedValues,
     copy_functions: HashSet<BindingId>,
     once_functions: HashSet<BindingId>,
+    moving_closure_holders: HashSet<BindingId>,
+    moving_closure_uses: usize,
     reported: HashSet<BindingId>,
     parameters: HashSet<BindingId>,
     unwritten_parameters: HashSet<BindingId>,
@@ -80,6 +82,8 @@ impl<'a> MoveChecker<'a> {
             moved_by_earlier_pass: MovedValues::default(),
             copy_functions: HashSet::new(),
             once_functions: HashSet::new(),
+            moving_closure_holders: HashSet::new(),
+            moving_closure_uses: 0,
             reported: HashSet::new(),
             parameters: HashSet::new(),
             unwritten_parameters: HashSet::new(),
@@ -118,14 +122,14 @@ impl<'a> MoveChecker<'a> {
             TypedExprKind::Leaf(leaf) => self.leaf(leaf, expr, usage),
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments),
             TypedExprKind::Control(control) => self.control(control, usage),
-            other => self.nested_expr(expr, other),
+            other => self.nested_expr(expr, other, usage),
         }
     }
 
-    fn nested_expr(&mut self, expr: &TypedExpr, kind: &TypedExprKind) {
+    fn nested_expr(&mut self, expr: &TypedExpr, kind: &TypedExprKind, usage: Usage) {
         match kind {
             TypedExprKind::Recur(arguments) => self.recur(arguments),
-            TypedExprKind::Struct(structure) => self.structure(expr, structure),
+            TypedExprKind::Struct(structure) => self.structure(expr, structure, usage),
             TypedExprKind::Variant(_, arguments) => self.expressions(arguments),
             TypedExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item),
             TypedExprKind::TraitObject(value, _) => self.expr(value, Usage::Move),
@@ -187,9 +191,9 @@ impl<'a> MoveChecker<'a> {
         }
     }
 
-    fn structure(&mut self, expr: &TypedExpr, structure: &TypedStructExpr) {
+    fn structure(&mut self, expr: &TypedExpr, structure: &TypedStructExpr, usage: Usage) {
         match structure {
-            TypedStructExpr::Field(owner, _) => self.field_read(expr, owner),
+            TypedStructExpr::Field(owner, _) => self.field_read(expr, owner, usage),
             TypedStructExpr::New(_, fields) => self.field_values(fields),
             TypedStructExpr::Update(_, base, fields) => self.update(expr, base, fields),
         }
@@ -218,11 +222,30 @@ impl<'a> MoveChecker<'a> {
             .for_each(|(_, value)| self.expr(value, Usage::Move));
     }
 
-    fn field_read(&mut self, read: &TypedExpr, owner: &TypedExpr) {
+    fn field_read(&mut self, read: &TypedExpr, owner: &TypedExpr, usage: Usage) {
         match read.field_place() {
-            Some(place) => self.place_read(&place, Self::root_span(read)),
+            Some(place) => {
+                self.place_read(&place, Self::root_span(read));
+                self.closure_field_read(&place, read, usage);
+            }
             None => self.expr(owner, Usage::Borrow),
         }
+    }
+
+    fn closure_field_read(&mut self, place: &FieldPlace, read: &TypedExpr, usage: Usage) {
+        if !self.reads_moving_closure(place, &read.ty) {
+            return;
+        }
+        self.moving_closure_uses += 1;
+        if usage == Usage::Move {
+            self.record_field_move(place, read.span);
+        }
+    }
+
+    fn reads_moving_closure(&self, place: &FieldPlace, read_type: &Type) -> bool {
+        self.moving_closure_holders.contains(&place.root)
+            && read_type.holds_function()
+            && !read_type.is_reference()
     }
 
     fn place_read(&mut self, place: &FieldPlace, span: Span) {
@@ -275,9 +298,12 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn move_field(&mut self, place: &FieldPlace, span: Span) {
-        if self.copy.is_copy(place.root_type) {
-            return;
+        if !self.copy.is_copy(place.root_type) {
+            self.record_field_move(place, span);
         }
+    }
+
+    fn record_field_move(&mut self, place: &FieldPlace, span: Span) {
         let site = self.field_site(place, span);
         self.moved
             .move_field(place.root, Self::field_path(place), site);
@@ -333,12 +359,22 @@ impl<'a> MoveChecker<'a> {
             .arms
             .iter()
             .flat_map(|arm| arm.pattern.binders())
-            .any(|binder| !self.copy.is_copy(&binder.ty));
+            .any(|binder| !self.copies_out_of(&matched.value, &binder.ty));
         if binds_owned_part {
             Usage::Move
         } else {
             Usage::Borrow
         }
+    }
+
+    fn copies_out_of(&self, scrutinee: &TypedExpr, part: &Type) -> bool {
+        let copies_closure = !part.holds_function() || !self.is_moving_closure_holder(scrutinee);
+        copies_closure && self.copy.is_copy(part)
+    }
+
+    fn is_moving_closure_holder(&self, value: &TypedExpr) -> bool {
+        matches!(&value.kind, TypedExprKind::Leaf(TypedLeaf::Local(binding))
+            if self.moving_closure_holders.contains(binding))
     }
 
     fn closure(&mut self, lambda: &TypedLambda) {
@@ -361,11 +397,24 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn bind(&mut self, binding: BindingId, value: &TypedExpr) {
-        match self.bound_function_kind(value) {
+        let earlier_uses = self.moving_closure_uses;
+        let kind = self.bound_function_kind(value);
+        self.record_function_kind(binding, kind);
+        if self.moving_closure_uses > earlier_uses && Self::wraps_function(&value.ty) {
+            self.moving_closure_holders.insert(binding);
+        }
+    }
+
+    fn record_function_kind(&mut self, binding: BindingId, kind: Option<ClosureKind>) {
+        match kind {
             Some(ClosureKind::Fn) => self.copy_functions.insert(binding),
             Some(ClosureKind::FnOnce) => self.once_functions.insert(binding),
             _ => false,
         };
+    }
+
+    fn wraps_function(ty: &Type) -> bool {
+        ty.holds_function() && !matches!(ty, Type::Function(..))
     }
 
     fn bound_function_kind(&mut self, value: &TypedExpr) -> Option<ClosureKind> {
@@ -424,6 +473,7 @@ impl<'a> MoveChecker<'a> {
             {
                 Usage::Move
             }
+            TypedExprKind::Struct(TypedStructExpr::Field(..)) => Usage::Move,
             _ => Usage::Borrow,
         }
     }
@@ -577,16 +627,23 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn record_use(&mut self, binding: BindingId, ty: &Type, span: Span, usage: Usage) {
+        if self.holds_moving_closure(binding, ty) {
+            self.moving_closure_uses += 1;
+        }
         if usage == Usage::Move && !self.is_copy_binding(binding, ty) {
             self.moved.move_whole(binding, span);
         }
     }
 
     fn is_copy_binding(&self, binding: BindingId, ty: &Type) -> bool {
-        if matches!(ty, Type::Function(..)) {
-            return self.copy_functions.contains(&binding);
-        }
-        self.copy.is_copy(ty)
+        let copies_closure = !self.holds_moving_closure(binding, ty) || matches!(ty, Type::Ref(..));
+        copies_closure && self.copy.is_copy(ty)
+    }
+
+    fn holds_moving_closure(&self, binding: BindingId, ty: &Type) -> bool {
+        let is_moving_closure =
+            matches!(ty, Type::Function(..)) && !self.copy_functions.contains(&binding);
+        is_moving_closure || self.moving_closure_holders.contains(&binding)
     }
 
     fn records_inferred_copy(&mut self, binding: BindingId, ty: &Type) -> bool {

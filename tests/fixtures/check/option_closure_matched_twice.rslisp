@@ -1,0 +1,6 @@
+(defn main ()
+  (let text (to-string "Leaf"))
+  (let consume (fn (ignored) text))
+  (let held (some consume))
+  (match held ((some f) (println (f 0))) (none (println "none")))
+  (match held ((some f) (println (f 0))) (none (println "none"))))

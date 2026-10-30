@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/option_closure_matched_twice.rslisp
+---
+error[L0501]: use of moved value `held`
+ --> check/option_closure_matched_twice.rslisp:6:10
+  |
+5 |   (match held ((some f) (println (f 0))) (none (println "none")))
+  |          ---- value moved here
+6 |   (match held ((some f) (println (f 0))) (none (println "none"))))
+  |          ^^^^ value used here after it moved
+  |
+help: clone the value if both places need it
+  |
+5 -   (match held ((some f) (println (f 0))) (none (println "none")))
+5 +   (match (clone held) ((some f) (println (f 0))) (none (println "none")))
+  |

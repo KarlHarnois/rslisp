@@ -1,0 +1,11 @@
+(defn run-held (held)
+  (match held
+    ((some f) (f 0))
+    (none (to-string "none"))))
+
+(defn main ()
+  (let text (to-string "Leaf"))
+  (let consume (fn (ignored) text))
+  (let held (some consume))
+  (println (run-held held))
+  (println (run-held held)))

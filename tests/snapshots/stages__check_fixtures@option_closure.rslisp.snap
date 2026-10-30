@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/option_closure.rslisp
+---
+error[L0501]: use of moved value `held`
+ --> check/option_closure.rslisp:8:27
+  |
+7 |   (println (apply (unwrap held)))
+  |                           ---- value moved here
+8 |   (println (apply (unwrap held))))
+  |                           ^^^^ value used here after it moved
+  |
+help: clone the value if both places need it
+  |
+7 -   (println (apply (unwrap held)))
+7 +   (println (apply (unwrap (clone held))))
+  |

@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/option_twice.rslisp
+---
+error[L0501]: use of moved value `held`
+  --> check/option_twice.rslisp:11:22
+   |
+10 |   (println (run-held held))
+   |                      ---- value moved here
+11 |   (println (run-held held)))
+   |                      ^^^^ value used here after it moved
+   |
+help: clone the value if both places need it
+   |
+10 -   (println (run-held held))
+10 +   (println (run-held (clone held)))
+   |

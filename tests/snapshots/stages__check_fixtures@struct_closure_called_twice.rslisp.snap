@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/struct_closure_called_twice.rslisp
+---
+error[L0501]: use of moved value `(:item held)`
+ --> check/struct_closure_called_twice.rslisp:8:20
+  |
+7 |   (println ((:item held)))
+  |             ------------ value moved here
+8 |   (println ((:item held))))
+  |                    ^^^^ value used here after it moved
+  |
+help: clone the value if both places need it
+  |
+7 -   (println ((:item held)))
+7 +   (println ((clone (:item held))))
+  |

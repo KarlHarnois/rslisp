@@ -1,0 +1,11 @@
+(defstruct (holder a) :item a)
+
+(defn main ()
+  (let text (to-string "Leaf"))
+  (let show (fn () (len text)))
+  (let held (->holder :item show))
+  (let maybe (some show))
+  (println ((:item held)))
+  (println ((:item held)))
+  (println ((unwrap maybe)))
+  (println ((unwrap maybe))))

@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/copied_closure_holders.rslisp
+---
+4
+4
+4
+4
