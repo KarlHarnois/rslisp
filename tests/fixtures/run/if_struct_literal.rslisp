@@ -1,0 +1,18 @@
+(defstruct spare :size u16 :label str)
+
+(defstruct check :passed bool)
+
+(defn describe (s)
+  (if (= (->spare :size 3 :label "bolt") s) "same" "other"))
+
+(defn main ()
+  (let s (->spare :size 3 :label "bolt"))
+  (println (:label s))
+  (println (describe s))
+  (if (:passed (->check :passed false))
+    (do)
+    (println "failed"))
+  (loop ((size 2))
+    (if (= (->spare :size size :label "bolt") s)
+      (println size)
+      (recur 3))))
