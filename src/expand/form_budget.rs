@@ -2,6 +2,7 @@ use crate::interpret::Value;
 use crate::reader::Form;
 use crate::scope::Scope;
 
+#[derive(Clone)]
 pub struct FormBudget {
     remaining: usize,
 }
