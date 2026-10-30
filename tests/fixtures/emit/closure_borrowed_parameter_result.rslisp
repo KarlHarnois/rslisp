@@ -1,0 +1,3 @@
+(defn main ()
+  (let first (fn ((s (ref str))) s))
+  (println (first "Leaf")))

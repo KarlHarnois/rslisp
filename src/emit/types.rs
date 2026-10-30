@@ -672,6 +672,11 @@ impl<'a> RustTypes<'a> {
         )
     }
 
+    pub fn closure_result_parameter(&self, ty: &Type, enclosing_lifetime: Option<&str>) -> String {
+        let (position, scope) = Self::closure_parameter_scope(enclosing_lifetime);
+        self.show_in(ty, position, &scope)
+    }
+
     fn closure_parameter_scope(enclosing_lifetime: Option<&str>) -> (TypePosition, LifetimeScope) {
         match enclosing_lifetime {
             Some(lifetime) => (
