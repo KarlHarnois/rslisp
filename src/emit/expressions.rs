@@ -8,6 +8,7 @@ use super::mangle::NameMangler;
 use super::operator::{RustOperator, Side};
 use super::plan::{EmitPlan, ItemKind};
 use super::problems::EmitProblems;
+use super::result_borrows::ResultBorrows;
 use super::stored_functions::StoredFunctions;
 use super::template::{Template, TemplateError};
 use super::types::{LifetimeScope, RustTypes, TypePosition};
@@ -175,6 +176,7 @@ pub struct ExpressionEmitter<'a> {
     stored_functions: StoredFunctions<'a>,
     local_closures: LocalClosures<'a>,
     enclosing_lifetime: Option<String>,
+    result_parameters: HashSet<BindingId>,
     tail_loop: Option<TailLoop>,
     loop_exit: LoopExit,
 }
@@ -205,6 +207,7 @@ impl<'a> ExpressionEmitter<'a> {
             stored_functions: StoredFunctions::new(program),
             local_closures: LocalClosures::new(program),
             enclosing_lifetime: None,
+            result_parameters: HashSet::new(),
             tail_loop: None,
             loop_exit: LoopExit::Return,
         }
@@ -267,7 +270,7 @@ impl<'a> ExpressionEmitter<'a> {
             self.local_closures.parameter_borrow(param.binding),
             &param.ty,
         ) else {
-            return self.bind_parameter(param, TypePosition::Value);
+            return self.bind_value_closure_parameter(param);
         };
         let ty = self.types().borrowed_function(
             borrow,
@@ -275,6 +278,25 @@ impl<'a> ExpressionEmitter<'a> {
             result,
             self.enclosing_lifetime.as_deref(),
         );
+        let mutable = self.is_reassigned(param);
+        format!(
+            "{}{}: {ty}",
+            Self::mutability(mutable),
+            self.bind_name(param)
+        )
+    }
+
+    fn bind_value_closure_parameter(&mut self, param: &TypedBinder) -> String {
+        if self.result_parameters.contains(&param.binding) {
+            return self.bind_result_parameter(param);
+        }
+        self.bind_parameter(param, TypePosition::Value)
+    }
+
+    fn bind_result_parameter(&mut self, param: &TypedBinder) -> String {
+        let ty = self
+            .types()
+            .closure_result_parameter(&param.ty, self.enclosing_lifetime.as_deref());
         let mutable = self.is_reassigned(param);
         format!(
             "{}{}: {ty}",
@@ -1434,11 +1456,25 @@ impl<'a> ExpressionEmitter<'a> {
         let TypedExprKind::Fn(lambda) = &value.kind else {
             return self.expr(value);
         };
-        if !self.local_closures.borrows_arguments_of(binder.binding) {
+        let result_parameters = self.result_parameters_of(lambda, &value.ty);
+        if !self.local_closures.borrows_arguments_of(binder.binding) && result_parameters.is_empty()
+        {
             return self.expr(value);
         }
+        self.result_parameters.extend(result_parameters);
         self.closure_binding(lambda, &value.ty, Self::bind_closure_parameter)
             .spanned(value.span)
+    }
+
+    fn result_parameters_of(&self, lambda: &TypedLambda, ty: &Type) -> HashSet<BindingId> {
+        match ty {
+            Type::Function(_, _, result) if self.program.function_type_returns_borrow(result) => {
+                ResultBorrows::new(self.program, self.plan)
+                    .analyse(lambda)
+                    .flows
+            }
+            _ => HashSet::new(),
+        }
     }
 
     fn declaration(&self, binder: &TypedBinder) -> &'static str {
