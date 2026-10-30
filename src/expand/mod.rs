@@ -18,14 +18,14 @@ mod try_check;
 mod type_expr;
 mod type_parameters;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::core::{BindingArena, CoreModule, ModuleId, ModulePath};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::modules::{ModuleRegistry, ModuleSources};
 use crate::reader::Form;
-use crate::scope::{BindingTable, Phase, Scope, ScopeAllocator};
+use crate::scope::{BindingTable, FastHashMap, FastHashSet, Phase, Scope, ScopeAllocator};
 use crate::source::{SourceId, SourceMap, Span};
 use globals::GlobalTable;
 pub use macro_call::MacroOrigin;
@@ -62,15 +62,15 @@ pub struct Expander<'s> {
     sources: &'s mut SourceMap,
     module_sources: ModuleSources,
     scopes: ScopeAllocator,
-    local_scopes: HashSet<Scope>,
-    use_site_scopes: HashSet<Scope>,
+    local_scopes: FastHashSet<Scope>,
+    use_site_scopes: FastHashSet<Scope>,
     table: BindingTable,
     bindings: BindingArena,
     modules: ModuleRegistry,
     macros: MacroTable,
     macro_origins: HashMap<Span, MacroOrigin>,
-    introduced_names: HashMap<(Span, String), Span>,
-    introduction_scopes: HashSet<Scope>,
+    introduced_names: FastHashMap<(Span, String), Span>,
+    introduction_scopes: FastHashSet<Scope>,
     global_macros: Vec<(crate::core::BindingId, Form)>,
     trait_paths: HashMap<crate::core::BindingId, Rc<str>>,
     enum_variants: HashMap<crate::core::BindingId, Vec<crate::core::BindingId>>,
@@ -93,15 +93,15 @@ impl<'s> Expander<'s> {
             sources,
             module_sources,
             scopes: ScopeAllocator::default(),
-            local_scopes: HashSet::new(),
-            use_site_scopes: HashSet::new(),
+            local_scopes: FastHashSet::default(),
+            use_site_scopes: FastHashSet::default(),
             table: BindingTable::default(),
             bindings: BindingArena::default(),
             modules: ModuleRegistry::default(),
             macros: MacroTable::default(),
             macro_origins: HashMap::new(),
-            introduced_names: HashMap::new(),
-            introduction_scopes: HashSet::new(),
+            introduced_names: FastHashMap::default(),
+            introduction_scopes: FastHashSet::default(),
             global_macros: Vec::new(),
             trait_paths: HashMap::new(),
             enum_variants: HashMap::new(),

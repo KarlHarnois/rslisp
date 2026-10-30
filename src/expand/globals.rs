@@ -1,4 +1,3 @@
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use super::Expander;
@@ -9,7 +8,7 @@ use crate::core::{BindingId, Expr};
 use crate::diagnostic::Diagnostic;
 use crate::interpret::{Env, Interpreter, Value};
 use crate::reader::Form;
-use crate::scope::Phase;
+use crate::scope::{FastHashMap, FastHashSet, Phase};
 use crate::source::Span;
 
 enum GlobalState {
@@ -21,10 +20,10 @@ enum GlobalState {
 
 #[derive(Default)]
 pub struct GlobalTable {
-    states: HashMap<BindingId, GlobalState>,
-    values: HashMap<BindingId, Value>,
-    evaluating: HashSet<BindingId>,
-    compile_time_checks: HashMap<BindingId, CompileTimeCheck>,
+    states: FastHashMap<BindingId, GlobalState>,
+    values: FastHashMap<BindingId, Value>,
+    evaluating: FastHashSet<BindingId>,
+    compile_time_checks: FastHashMap<BindingId, CompileTimeCheck>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
