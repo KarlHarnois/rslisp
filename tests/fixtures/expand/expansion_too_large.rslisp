@@ -21,3 +21,13 @@
 
 (defn padded ()
   (past-the-limit))
+
+(def nest
+  (fn (item times)
+    (if (number-le times 0) item (nest (list item item) (number-sub times 1)))))
+
+(defmacro huge ()
+  (nest (list 0) 40))
+
+(defn nested ()
+  (huge))
