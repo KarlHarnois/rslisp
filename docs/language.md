@@ -333,6 +333,35 @@ Write a macro with `defrule` when its expansion follows from the shape of its ca
 
 One implementation per name keeps the compiler small. Compile-time twins of the prelude's Rust templates would disagree with Rust on integer width, overflow, division by zero and floats. Most macros need no computation when written with `defrule`.
 
+### Docstrings
+
+A docstring is a string literal that documents a definition. `defn` and `defmacro` take it as the first body form, and only when another form follows it:
+
+```lisp
+(defn twice (x) "Doubles a number." (* 2 x))   ; documented
+(defn greeting () "hi")                         ; returns "hi", no docstring
+(defn pair-of () "a" "b")                       ; documented "a", returns "b"
+```
+
+`defstruct` and `defrule` take the docstring as the first form after their header: `(defstruct point "A point on a grid." :x i64 :y i64)` and `(defrule swap "Swaps the two arguments of a call." rules...)`. A string in place of `defn`'s parameter list is `L0328`. A user documents a definition through these four definers only.
+
+The prelude's lookups expand to string literals at expansion time, so `(def twice-doc (docstring twice))` emits `const TWICE_DOC: &str = "Doubles a number.";`, and a program's emitted Rust is the same with and without its docstrings:
+
+| Lookup | Returns |
+| --- | --- |
+| `(docstring term)` | The docstring. |
+| `(header term)` | The first line of the definition as written, such as `"(defn twice (x))"`. |
+| `(doc term)` | The page: the header, a blank line, then the docstring. |
+
+A lookup finds the docstring in the module that defines the binding `term` refers to, so an imported or re-exported term needs no other export. An unbound term is `L0201`, with the closest name. A bound term without a docstring is `L0327`.
+
+A docstring is Markdown. A definer removes the indentation that every written continuation line shares, as Python's `inspect.cleandoc` does, and drop blank lines at both ends. Write docstrings to these rules, which no compile error enforces:
+
+- The first line is one complete summary sentence.
+- Lines stay within 80 columns.
+- Continuation lines are indented to the body.
+- Markdown conventions apply.
+
 ### The `code` module
 
 The compiler provides the `code` module for macro bodies. Code that uses it exists only at compile time.
