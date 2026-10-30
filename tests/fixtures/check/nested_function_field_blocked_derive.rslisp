@@ -1,0 +1,7 @@
+(defstruct badge :code i64)
+(derive badge clone)
+
+(defstruct locker :opener (pair (fn () i64) badge))
+(derive locker debug)
+
+(defn main () (do))

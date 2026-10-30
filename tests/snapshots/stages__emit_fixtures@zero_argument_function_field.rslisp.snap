@@ -25,6 +25,7 @@ struct Dealer<'a> {
     order: fn(bool) -> Car<'a>,
 }
 
+#[derive(Clone, Copy, Debug)]
 struct Spare<'a> {
     maker: Option<fn() -> Car<'a>>,
 }
