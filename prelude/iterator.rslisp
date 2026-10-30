@@ -2,6 +2,8 @@
 (use prelude/pair pair)
 (use prelude/number integer number ord add)
 (use prelude/syntax defn)
+(use prelude/vec len iter)
+(use code first rest list prepend empty? symbol? list? same-binding?)
 
 (export range map filter fold for-each enumerate zip
         sum count max min max-by-key any all find take take-while)
@@ -17,7 +19,33 @@
 (def zip (rust "{0}.zip({1})" (where (a b) (fn ((iterator a) (iterator b)) (iterator (pair a b))))))
 (type sum (where ((n number)) (fn ((iterator n)) n)))
 (defn sum (values) (fold values 0 add))
-(def count (rust "{0}.count()" (where (a) (fn ((iterator a)) usize))))
+(def count-items (rust "{0}.count()" (where (a) (fn ((iterator a)) usize))))
+
+(def iter-form?
+  (fn (form)
+    (if (list? form)
+        (if (empty? form)
+            false
+            (if (symbol? (first form))
+                (same-binding? (first form) (quote iter))
+                false))
+        false)))
+
+(def counts-one-collection?
+  (fn (arguments)
+    (if (empty? arguments)
+        false
+        (if (empty? (rest arguments))
+            (iter-form? (first arguments))
+            false))))
+
+(def count
+  (macro (form)
+    (if (symbol? form)
+        (quote count-items)
+        (if (counts-one-collection? (rest form))
+            (prepend (quote len) (rest (first (rest form))))
+            (prepend (quote count-items) (rest form))))))
 (def max (rust "{0}.max()" (where ((a ord)) (fn ((iterator a)) (option a)))))
 (def min (rust "{0}.min()" (where ((a ord)) (fn ((iterator a)) (option a)))))
 (def max-by-key (rust "{0}.max_by_key({1})" (where (a (k ord)) (fn ((iterator a) (fn-mut ((ref a)) k)) (option a)))))

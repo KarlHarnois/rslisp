@@ -1,0 +1,43 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/count_collection.rslisp
+---
+fn count_years(years: &[i64]) -> usize {
+    years.len()
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let years: Vec<i64> = vec![2011_i64, 2019_i64, 2024_i64];
+    println!("{}", years.len());
+    println!("{}", count_years(&years));
+    let prices: std::collections::HashMap<&str, i64> = {
+        let mut map = std::collections::HashMap::new();
+        map.insert("leaf", 28000_i64);
+        map.insert("ariya", 39000_i64);
+        map
+    };
+    println!("{}", prices.len());
+    println!(
+        "{}",
+        years.iter().filter(|year: &&i64| **year > 2015).count()
+    )
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
