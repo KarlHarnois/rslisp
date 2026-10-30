@@ -2,7 +2,9 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::core::{BindingId, ReferenceKind};
-use crate::types::{CopyRules, Type, TypedExpr, TypedExprKind, TypedLambda, TypedProgram};
+use crate::types::{
+    CopyRules, Type, TypedBinder, TypedExpr, TypedExprKind, TypedLambda, TypedProgram,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ParamMode {
@@ -90,31 +92,28 @@ impl FunctionTable {
     }
 
     fn closure_info(lambda: &Rc<TypedLambda>) -> FunctionInfo {
-        let params = lambda
-            .params
-            .iter()
-            .map(|param| ParamSlot {
-                binding: param.binding,
-                ty: param.ty.clone(),
-                inferable: false,
-            })
-            .collect();
-        FunctionInfo {
-            lambda: Rc::clone(lambda),
-            params,
-        }
+        Self::function_info(lambda, |_| false)
     }
 
     fn info(lambda: &Rc<TypedLambda>, copy: &CopyRules) -> FunctionInfo {
+        Self::function_info(lambda, |param| {
+            !param.annotated
+                && !matches!(param.ty, Type::Function(..) | Type::Mut(_, _))
+                && (!copy.is_small_copy(&param.ty) || lambda.body.writes_local(param.binding))
+        })
+    }
+
+    fn function_info(
+        lambda: &Rc<TypedLambda>,
+        inferable: impl Fn(&TypedBinder) -> bool,
+    ) -> FunctionInfo {
         let params = lambda
             .params
             .iter()
             .map(|param| ParamSlot {
                 binding: param.binding,
                 ty: param.ty.clone(),
-                inferable: !param.annotated
-                    && !matches!(param.ty, Type::Function(..) | Type::Mut(_, _))
-                    && (!copy.is_small_copy(&param.ty) || lambda.body.writes_local(param.binding)),
+                inferable: inferable(param),
             })
             .collect();
         FunctionInfo {
