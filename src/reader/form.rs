@@ -70,7 +70,9 @@ impl Form {
         if !region.contains(self.span) {
             self.span = region;
         }
-        if let Some(FormKind::List(items)) = self.scoped_kind_mut() {
+        if self.as_list().is_some()
+            && let FormKind::List(items) = Rc::make_mut(&mut self.kind)
+        {
             items
                 .iter_mut()
                 .for_each(|item| item.relocate_outside(region));
