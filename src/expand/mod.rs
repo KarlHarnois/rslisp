@@ -12,6 +12,7 @@ mod module_loading;
 mod names;
 mod problems;
 mod recur_check;
+mod rest_of_body;
 mod rust_type;
 mod shape;
 mod try_check;
