@@ -1,0 +1,10 @@
+(defn count-years (years)
+  (count (iter years)))
+
+(defn main ()
+  (let years (vec 2011 2019 2024))
+  (println (count (iter years)))
+  (println (count-years years))
+  (let prices (hash-map "leaf" 28000 "ariya" 39000))
+  (println (count (iter prices)))
+  (println (count (filter (iter years) (fn (year) (> year 2015))))))

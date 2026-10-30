@@ -204,6 +204,7 @@ Program input and output use Rust's standard library through the prelude. `slurp
 A `main` whose inferred type is a `result` emits an inner function for its body and a `fn main()` that prints its error with `display` to standard error and exits 1. The success path exits 0. The error type must implement `display`; a program's own enum implements it with `display`. A `main` whose inferred type is neither `unit` nor a `result` is an error, because Rust requires `main` to return a type that implements `Termination`.
 
 - `iter` yields `(ref a)` for a vector or a slice, and `(pair (ref key) (ref value))` for a map. `values` yields copies, so its elements must be `copy`.
+- `(count (iter coll))` emits `coll.len()`, because the collection already knows its length. `count` is a prelude macro that rewrites only that written form, so `count` on any other iterator, and on a vector that the compiler iterates for it, emits `.count()`.
 - `filter` passes each element to its test as a reference, as Rust does.
 - `range` takes an `integer`, a prelude trait of the integer types.
 - An `iterator` cannot be a struct field.
