@@ -7,6 +7,7 @@ use crate::types::collection::Collection;
 use crate::types::graph::DefinitionGraph;
 use crate::types::pinning::InstantiationReport;
 use crate::types::problems::{MismatchContext, TypeProblems};
+use crate::types::unifier::LiteralKind;
 use crate::types::{GenericId, Type, TypedExpr, TypedProgram};
 
 pub(in crate::types) struct OpenSetAt {
@@ -134,6 +135,9 @@ impl TypeChecker {
     fn close_open_set_at(&mut self, open: &OpenSetAt) -> Result<(), Diagnostic> {
         let resolved = self.unifier.resolve(&open.collection);
         if matches!(resolved, Type::Var(_)) {
+            if self.is_integer_literal(&open.key) {
+                self.expect_index(open)?;
+            }
             self.unsettled_collections
                 .push((open.collection.clone(), open.span));
             return Ok(());
@@ -150,11 +154,22 @@ impl TypeChecker {
             })?;
         let target = self.slice_of(open.item.clone());
         self.expect(&target, collection.ty(), open.span, MismatchContext::Plain)?;
+        self.expect_index(open)
+    }
+
+    fn expect_index(&mut self, open: &OpenSetAt) -> Result<(), Diagnostic> {
         self.expect(
             &Type::Primitive(PrimitiveType::Usize),
             &open.key,
             open.span,
             MismatchContext::Plain,
+        )
+    }
+
+    fn is_integer_literal(&self, ty: &Type) -> bool {
+        matches!(
+            self.unifier.resolve(ty),
+            Type::Var(var) if self.unifier.literal_kind(var) == Some(LiteralKind::Integer)
         )
     }
 }
