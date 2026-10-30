@@ -83,6 +83,14 @@ impl FunctionTable {
         self.definitions.values()
     }
 
+    pub fn definition_bindings(&self) -> impl Iterator<Item = BindingId> + '_ {
+        self.definitions.keys().copied()
+    }
+
+    pub fn definition(&self, binding: BindingId) -> Option<&FunctionInfo> {
+        self.definitions.get(&binding)
+    }
+
     pub fn fixed_mode(slot: &ParamSlot, copy: &CopyRules) -> ParamMode {
         match &slot.ty {
             Type::Mut(_, _) => ParamMode::Mut,
