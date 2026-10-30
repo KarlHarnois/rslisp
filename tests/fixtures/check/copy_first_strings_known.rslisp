@@ -1,0 +1,6 @@
+(defn copy-first! (names) (set! (at names 1) (at names 0)) (push! names (to-string "x")))
+
+(defn main ()
+  (let names (vec (to-string "Leaf") (to-string "Civic")))
+  (copy-first! (mut names))
+  (println (at names 1)))
