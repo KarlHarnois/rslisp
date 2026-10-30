@@ -6,7 +6,7 @@ use crate::source::Span;
 
 #[derive(Clone, Debug)]
 pub struct Form {
-    kind: FormKind,
+    kind: Rc<FormKind>,
     span: Span,
 }
 
@@ -22,7 +22,10 @@ impl Form {
     pub const NESTING_LIMIT: usize = 1024;
 
     pub fn new(kind: FormKind, span: Span) -> Self {
-        Self { kind, span }
+        Self {
+            kind: Rc::new(kind),
+            span,
+        }
     }
 
     pub fn kind(&self) -> &FormKind {
@@ -34,14 +37,14 @@ impl Form {
     }
 
     pub fn as_symbol(&self) -> Option<&Symbol> {
-        match &self.kind {
+        match self.kind() {
             FormKind::Symbol(symbol) => Some(symbol),
             _ => None,
         }
     }
 
     pub fn as_list(&self) -> Option<&[Form]> {
-        match &self.kind {
+        match self.kind() {
             FormKind::List(items) => Some(items),
             _ => None,
         }
@@ -67,7 +70,7 @@ impl Form {
         if !region.contains(self.span) {
             self.span = region;
         }
-        if let FormKind::List(items) = &mut self.kind {
+        if let Some(FormKind::List(items)) = self.scoped_kind_mut() {
             items
                 .iter_mut()
                 .for_each(|item| item.relocate_outside(region));
@@ -75,17 +78,26 @@ impl Form {
     }
 
     fn update_scopes(&mut self, update: &dyn Fn(&mut ScopeSet)) {
-        match &mut self.kind {
-            FormKind::Symbol(symbol) => update(symbol.scopes_mut()),
-            FormKind::List(items) => items.iter_mut().for_each(|item| item.update_scopes(update)),
-            FormKind::String(_) | FormKind::Number(_) => {}
+        match self.scoped_kind_mut() {
+            Some(FormKind::Symbol(symbol)) => update(symbol.scopes_mut()),
+            Some(FormKind::List(items)) => {
+                items.iter_mut().for_each(|item| item.update_scopes(update))
+            }
+            _ => {}
+        }
+    }
+
+    fn scoped_kind_mut(&mut self) -> Option<&mut FormKind> {
+        match self.kind() {
+            FormKind::Symbol(_) | FormKind::List(_) => Some(Rc::make_mut(&mut self.kind)),
+            FormKind::String(_) | FormKind::Number(_) => None,
         }
     }
 }
 
 impl fmt::Display for Form {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self.kind {
+        match self.kind() {
             FormKind::Symbol(symbol) => write!(formatter, "{}", symbol.name()),
             FormKind::String(text) => write!(formatter, "{text:?}"),
             FormKind::Number(number) => write!(formatter, "{}", number.text()),
