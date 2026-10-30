@@ -1,5 +1,5 @@
-use super::Value;
 use super::problems::InterpretProblems;
+use super::{CodeList, Value};
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, NumberValue, Symbol};
 use crate::source::Span;
@@ -48,30 +48,44 @@ impl Arguments {
         &self.values[index]
     }
 
-    pub fn form(&self, index: usize) -> Result<&Form, Diagnostic> {
+    pub fn code(&self, index: usize) -> Result<Value, Diagnostic> {
+        let value = self.value(index);
+        if value.is_code() {
+            Ok(value.clone())
+        } else {
+            Err(self.wrong(index, "code"))
+        }
+    }
+
+    pub fn form(&self, index: usize) -> Result<Form, Diagnostic> {
         self.values[index]
-            .as_form()
+            .to_form()
             .ok_or_else(|| self.wrong(index, "code"))
     }
 
-    pub fn list(&self, index: usize) -> Result<&[Form], Diagnostic> {
-        self.form(index)?
-            .as_list()
+    pub fn list(&self, index: usize) -> Result<CodeList, Diagnostic> {
+        self.code(index)?
+            .as_code_list()
             .ok_or_else(|| self.wrong(index, "a list"))
     }
 
+    pub fn list_forms(&self, index: usize) -> Result<Vec<Form>, Diagnostic> {
+        Ok(self.list(index)?.forms())
+    }
+
     pub fn symbol(&self, index: usize) -> Result<&Symbol, Diagnostic> {
-        self.form(index)?
+        self.atom(index, "a symbol")?
             .as_symbol()
             .ok_or_else(|| self.wrong(index, "a symbol"))
     }
 
-    pub fn symbols(&self, index: usize) -> Result<Vec<&Symbol>, Diagnostic> {
-        self.list(index)?
-            .iter()
-            .map(Form::as_symbol)
-            .collect::<Option<Vec<&Symbol>>>()
-            .ok_or_else(|| self.wrong(index, "a list of symbols"))
+    pub fn symbol_forms(&self, index: usize) -> Result<Vec<Form>, Diagnostic> {
+        let forms = self.list_forms(index)?;
+        if forms.iter().all(|form| form.as_symbol().is_some()) {
+            Ok(forms)
+        } else {
+            Err(self.wrong(index, "a list of symbols"))
+        }
     }
 
     pub fn keyword_name(&self, index: usize) -> Result<&str, Diagnostic> {
@@ -93,14 +107,14 @@ impl Arguments {
     }
 
     pub fn string(&self, index: usize) -> Result<&str, Diagnostic> {
-        match self.form(index)?.kind() {
+        match self.atom(index, "a string")?.kind() {
             FormKind::String(text) => Ok(text),
             _ => Err(self.wrong(index, "a string")),
         }
     }
 
     pub fn integer(&self, index: usize) -> Result<i128, Diagnostic> {
-        match self.form(index)?.kind() {
+        match self.atom(index, "an integer")?.kind() {
             FormKind::Number(number) => match number.value() {
                 NumberValue::Integer(value) => Ok(*value),
                 NumberValue::Float(_) => Err(self.wrong(index, "an integer")),
@@ -117,6 +131,14 @@ impl Arguments {
         match self.values[index] {
             Value::Bool(value) => Ok(value),
             _ => Err(self.wrong(index, "a boolean")),
+        }
+    }
+
+    fn atom(&self, index: usize, expected: &str) -> Result<&Form, Diagnostic> {
+        match &self.values[index] {
+            Value::Form(form) => Ok(form),
+            Value::List(_) => Err(self.wrong(index, expected)),
+            _ => Err(self.wrong(index, "code")),
         }
     }
 

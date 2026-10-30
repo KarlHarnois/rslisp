@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/compile_time_shared_lists.rslisp
+---
+12 123 124 235 1 16

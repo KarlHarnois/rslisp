@@ -43,7 +43,7 @@ impl<'a> FailCall<'a> {
 
     fn description(&self) -> Result<FailureDescription, Diagnostic> {
         if self.has_argument(Self::DESCRIPTION) {
-            FailureDescription::read(self.arguments.list(Self::DESCRIPTION)?)
+            FailureDescription::read(&self.arguments.list_forms(Self::DESCRIPTION)?)
         } else {
             Ok(FailureDescription::default())
         }

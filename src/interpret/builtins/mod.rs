@@ -45,11 +45,7 @@ impl BuiltinCall {
         (Builtin::IsKeyword, |operations, _| {
             operations.text.is_keyword()
         }),
-        (Builtin::IsList, |operations, _| {
-            operations
-                .text
-                .is_kind(|kind| matches!(kind, FormKind::List(_)))
-        }),
+        (Builtin::IsList, |operations, _| operations.text.is_list()),
         (Builtin::IsString, |operations, _| {
             operations
                 .text
