@@ -1,0 +1,17 @@
+(defstruct spare :maker (fn () i64))
+(defstruct backup :maker (option (fn () i64)))
+
+(defn count-doors () 4)
+(defn count-wheels () 6)
+
+(defn wrap (c f g) (->spare :maker (if c f g)))
+
+(defn wrap-backup (c f g) (->backup :maker (some (if c f g))))
+
+(defn main ()
+  (let chosen (wrap true count-doors count-wheels))
+  (let pick (:maker chosen))
+  (println (pick))
+  (match (wrap-backup false count-doors count-wheels)
+    ((backup (some maker)) (println (maker)))
+    ((backup none) (println "no backup"))))
