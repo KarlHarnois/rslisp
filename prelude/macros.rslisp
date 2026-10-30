@@ -4,7 +4,7 @@
           string-lines string-trim-start string-length string-drop string-strip-suffix)
 
 (export defrule defmacro template map-list whole-pairs? documented doc-entry doc-symbol type-doc-symbol
-        docstring-before-body?
+        docstring-before-body? docstring-before-parameters
         doc docstring header)
 
 (def map-list
@@ -278,10 +278,18 @@
     (let name (nth form 1))
     (let pattern (nth form 2))
     (let body (drop 3 form))
-    (if (docstring-before-body? body)
-        (documented (macro-definition name pattern (rest body))
-                    (doc-entry (doc-symbol name) (list (quote defmacro) name pattern) (first body)))
-        (macro-definition name pattern body))))
+    (if (string? pattern)
+        (docstring-before-parameters pattern)
+        (if (docstring-before-body? body)
+            (documented (macro-definition name pattern (rest body))
+                        (doc-entry (doc-symbol name) (list (quote defmacro) name pattern) (first body)))
+            (macro-definition name pattern body)))))
+
+(def docstring-before-parameters
+  (fn (docstring)
+    (fail "a docstring goes after the parameter list" docstring
+          "write it as the first body form, as in (defn name (x) \"Does a thing.\" body)"
+          (template (:code docstring-before-parameters :label "a docstring in place of the parameter list")))))
 
 (def docstring-before-body?
   (fn (body)

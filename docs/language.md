@@ -343,7 +343,7 @@ A docstring is a string literal that documents a definition. `defn` and `defmacr
 (defn pair-of () "a" "b")                       ; documented "a", returns "b"
 ```
 
-`defstruct` and `defrule` take the docstring as the first form after their header: `(defstruct point "A point on a grid." :x i64 :y i64)` and `(defrule swap "Swaps the two arguments of a call." rules...)`. A string in place of `defn`'s parameter list is `L0328`. A user documents a definition through these four definers only.
+`defstruct` and `defrule` take the docstring as the first form after their header: `(defstruct point "A point on a grid." :x i64 :y i64)` and `(defrule swap "Swaps the two arguments of a call." rules...)`. A string in place of the parameter list of `defn` or `defmacro` is `L0328`. A user documents a definition through these four definers only.
 
 The prelude's lookups expand to string literals at expansion time, so `(def twice-doc (docstring twice))` emits `const TWICE_DOC: &str = "Doubles a number.";`, and a program's emitted Rust is the same with and without its docstrings:
 
