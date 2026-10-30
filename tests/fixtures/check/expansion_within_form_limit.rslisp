@@ -5,10 +5,7 @@
     (if (number-le times 0) items (doubled (concat items items) (number-sub times 1)))))
 
 (defmacro within-the-limit ()
-  (template (do (splice (doubled (list 0) 16)))))
+  (template (do (splice (doubled (list 0) 15)))))
 
 (defn padded ()
-  (within-the-limit))
-
-(defn padded-again ()
   (within-the-limit))
