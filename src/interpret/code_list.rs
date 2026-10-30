@@ -80,10 +80,7 @@ impl CodeList {
     }
 
     pub fn to_form(&self) -> Form {
-        match &self.items {
-            ListItems::Read(form) if self.is_whole(form) => form.clone(),
-            _ => Form::new(FormKind::List(self.forms()), self.span),
-        }
+        Form::new(FormKind::List(self.forms()), self.span)
     }
 
     fn item(&self, index: usize) -> Value {
@@ -93,12 +90,6 @@ impl CodeList {
             }
             ListItems::Built(buffer) => buffer.borrow()[index].clone(),
         }
-    }
-
-    fn is_whole(&self, form: &Form) -> bool {
-        self.range.start == 0
-            && self.span == form.span()
-            && Some(self.len()) == form.as_list().map(<[Form]>::len)
     }
 
     fn growable_buffer(&self) -> Option<&Rc<RefCell<Vec<Value>>>> {
