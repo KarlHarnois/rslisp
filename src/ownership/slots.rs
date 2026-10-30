@@ -9,6 +9,7 @@ pub struct DeclaredSlot<'d> {
     pub name: &'d Rc<str>,
     pub declared: &'d Type,
     pub span: Span,
+    pub function_span: Span,
 }
 
 pub struct DeclaredSlots<'p> {
@@ -32,6 +33,7 @@ impl<'p> DeclaredSlots<'p> {
             name,
             declared,
             span: *definition.field_spans.get(index)?,
+            function_span: *definition.function_spans.get(index)?,
         })
     }
 
@@ -42,6 +44,7 @@ impl<'p> DeclaredSlots<'p> {
             name: &definition.name,
             declared: definition.payload_types().get(position).copied()?,
             span: *definition.payload_spans.get(position)?,
+            function_span: *definition.function_spans.get(position)?,
         })
     }
 

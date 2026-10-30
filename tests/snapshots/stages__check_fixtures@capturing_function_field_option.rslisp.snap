@@ -7,7 +7,7 @@ error[L0511]: cannot store a capturing closure in the field `maker`
  --> check/capturing_function_field_option.rslisp:5:37
   |
 1 | (defstruct spare :maker (option (fn () i64)))
-  |                         -------------------- declared with a function type here
+  |                                 ----------- declared with a function type here
 ...
 5 |   (let backup (->spare :maker (some (fn () (+ base 1)))))
   |                                     ^^^^^^^^^^^^^^^^^^ this closure captures `base`

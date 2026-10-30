@@ -7,7 +7,7 @@ error[L0511]: cannot store a capturing closure in the field `steps`
  --> check/capturing_function_field_vec.rslisp:7:46
   |
 1 | (defstruct route :steps (vec (fn () i64)))
-  |                         ----------------- declared with a function type here
+  |                              ----------- declared with a function type here
 ...
 7 |   (let tour (->route :steps (vec count-doors (fn () (+ base 1)))))
   |                                              ^^^^^^^^^^^^^^^^^^ this closure captures `base`
