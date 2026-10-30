@@ -1,0 +1,8 @@
+(defstruct route :steps (vec (fn () i64)))
+
+(defn count-doors () 4)
+
+(defn main ()
+  (let base 4)
+  (let tour (->route :steps (vec count-doors (fn () (+ base 1)))))
+  (println (len (:steps tour))))

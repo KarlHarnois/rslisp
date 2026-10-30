@@ -6,6 +6,7 @@ mod checks;
 mod definitions;
 mod escaping_lambdas;
 mod functions;
+mod held;
 mod kinds;
 mod modes;
 mod moved_values;

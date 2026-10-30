@@ -127,6 +127,10 @@ impl Type {
         self.any_part(&Type::is_reference)
     }
 
+    pub fn holds_function(&self) -> bool {
+        self.any_part(&|part| matches!(part, Type::Function(..)))
+    }
+
     pub fn without_written_lifetimes(&self) -> Type {
         match self {
             Type::Ref(_, inner) => Type::shared(inner.without_written_lifetimes()),

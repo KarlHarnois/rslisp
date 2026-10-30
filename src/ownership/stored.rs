@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use super::aliases::LetAliases;
+use super::held::{HeldClosures, RustTemplates};
 use super::problems::{FunctionStorage, OwnershipProblems};
 use super::slots::DeclaredSlots;
 use super::subtree::Subtree;
@@ -17,6 +18,7 @@ pub struct StoredClosures<'p> {
     program: &'p TypedProgram,
     slots: FunctionSlots<'p>,
     storing: StoringParameters,
+    templates: RustTemplates,
     definitions: Vec<DefinitionTree<'p>>,
 }
 
@@ -31,6 +33,7 @@ impl<'p> StoredClosures<'p> {
                 program,
                 slots,
                 storing,
+                templates: RustTemplates::of(program),
                 definitions,
             };
             (closures.diagnostics(), closures.stored_parameters())
@@ -66,18 +69,17 @@ impl<'p> StoredClosures<'p> {
 
     fn capturing_stores(&self, definition: &DefinitionTree) -> Vec<Diagnostic> {
         let mut reported_closures = HashSet::new();
+        let held = HeldClosures::new(&definition.aliases, &self.templates);
         definition
             .stores(&self.slots, &self.storing)
             .into_iter()
+            .flat_map(|store| store.closures(&held))
             .filter(|store| reported_closures.insert(store.value.span))
             .filter_map(|store| self.capturing_store(store))
             .collect()
     }
 
     fn capturing_store(&self, store: Store) -> Option<Diagnostic> {
-        if !matches!(store.value.kind, TypedExprKind::Fn(_)) {
-            return None;
-        }
         let captured = Subtree::first_capture(store.value)?;
         Some(OwnershipProblems::capturing_function_field(
             store.value.span,
@@ -156,7 +158,7 @@ impl<'p> FunctionSlots<'p> {
 
     fn field(&self, owner: BindingId, label: &FieldLabel) -> Option<FunctionSlot> {
         let slot = self.declared.field(owner, label)?;
-        if !Self::is_function(slot.declared) {
+        if !slot.declared.holds_function() {
             return None;
         }
         Some(FunctionSlot {
@@ -167,17 +169,13 @@ impl<'p> FunctionSlots<'p> {
 
     fn payload(&self, variant: BindingId, position: usize) -> Option<FunctionSlot> {
         let slot = self.declared.payload(variant, position)?;
-        if !Self::is_function(slot.declared) {
+        if !slot.declared.holds_function() {
             return None;
         }
         Some(FunctionSlot {
             storage: FunctionStorage::Payload(Rc::clone(slot.name)),
             declared: slot.span,
         })
-    }
-
-    fn is_function(declared: &Type) -> bool {
-        matches!(declared, Type::Function(..))
     }
 }
 
@@ -249,6 +247,13 @@ impl<'e> Store<'e> {
         Self { value, slot }
     }
 
+    fn closures(self, held: &HeldClosures<'_, 'e>) -> Vec<Self> {
+        held.in_value(self.value)
+            .into_iter()
+            .map(|closure| Self::new(closure, self.slot.clone()))
+            .collect()
+    }
+
     fn through(self, aliases: &LetAliases<'e>) -> Self {
         Self {
             value: aliases.resolve(self.value),
@@ -307,6 +312,7 @@ impl StoringParameters {
         definition
             .stores(slots, self)
             .into_iter()
+            .filter(|store| matches!(store.value.ty, Type::Function(..)))
             .filter_map(|store| {
                 let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = store.value.kind else {
                     return None;
