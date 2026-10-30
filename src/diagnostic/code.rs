@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::rc::Rc;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct DiagnosticCode(Cow<'static, str>);
 
 macro_rules! diagnostic_codes {
@@ -95,6 +95,7 @@ diagnostic_codes! {
     UNKNOWN_PARAMETER = "L0323",
     UNKNOWN_FIELD_DEFAULT = "L0324",
     EXPANSION_NESTS_TOO_DEEP = "L0325",
+    EXPANSION_TOO_LARGE = "L0326",
 
     MISMATCHED_TYPES = "L0401",
     WRONG_ARGUMENT_COUNT = "L0402",

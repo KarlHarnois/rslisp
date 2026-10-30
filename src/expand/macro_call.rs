@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use super::Expander;
 use super::context::DefinitionContext;
+use super::form_budget::FormBudget;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{BindingId, BindingKind, Expr, KernelForm, Lambda, Namespace};
@@ -107,7 +108,14 @@ impl Expander<'_> {
         form
     }
 
-    pub(super) fn trial_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
+    pub(super) fn discarded_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
+        let budget = self.form_budget.clone();
+        let expansion = self.trial_expansion(binding, form);
+        self.form_budget = budget;
+        expansion
+    }
+
+    fn trial_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
         let diagnostics = self.diagnostics.len();
         let recovered = self.recovered_diagnostics.len();
         let result = self.run_macro(binding, form, None).ok();
@@ -136,11 +144,41 @@ impl Expander<'_> {
         );
         self.expansion_depth -= 1;
         let output = result.map_err(|diagnostic| Self::point_at_call(diagnostic, call_site))?;
-        let Some(mut form) = output.to_form() else {
-            return Err(ExpandProblems::macro_result(output.describe(), call_site));
-        };
-        form.flip_scope(introduction);
+        let mut form = self.output_form(binding, &output, call_site)?;
+        self.introduce_within_budget(binding, &mut form, introduction, call_site)?;
         Ok(form)
+    }
+
+    fn output_form(
+        &self,
+        binding: BindingId,
+        output: &Value,
+        call_site: Span,
+    ) -> Result<Form, Diagnostic> {
+        if !output.is_code() {
+            return Err(ExpandProblems::macro_result(output.describe(), call_site));
+        }
+        self.form_budget
+            .admitted_form(output)
+            .ok_or_else(|| self.expansion_too_large(binding, call_site))
+    }
+
+    fn introduce_within_budget(
+        &mut self,
+        binding: BindingId,
+        form: &mut Form,
+        introduction: Scope,
+        call_site: Span,
+    ) -> Result<(), Diagnostic> {
+        if self.form_budget.flip_scope(form, introduction) {
+            return Ok(());
+        }
+        Err(self.expansion_too_large(binding, call_site))
+    }
+
+    fn expansion_too_large(&self, binding: BindingId, call_site: Span) -> Diagnostic {
+        let name = self.bindings.get(binding).name();
+        ExpandProblems::expansion_too_large(name, FormBudget::EXPANSION_LIMIT, call_site)
     }
 
     fn macro_origin(&self, binding: BindingId, call_site: Span) -> MacroOrigin {
@@ -225,7 +263,9 @@ impl Expander<'_> {
 
     pub(super) fn compile_pending_macros(&mut self) {
         for (binding, definition) in self.macros.pending() {
-            if let Err(diagnostic) = self.compile_macro(binding, &definition) {
+            let compiled =
+                self.within_top_level_form(|expander| expander.compile_macro(binding, &definition));
+            if let Err(diagnostic) = compiled {
                 self.diagnostics.push(diagnostic);
             }
         }

@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/repeated_error_with_other_help.rslisp
+---
+error[L0201]: cannot find `missing-name` in this scope
+ --> expand/repeated_error_with_other_help.rslisp:4:21
+  |
+4 |   (both missing-nam missing-name))
+  |                     ^^^^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `missing-name` in this scope
+ --> expand/repeated_error_with_other_help.rslisp:4:21
+  |
+4 |   (both missing-nam missing-name))
+  |                     ^^^^^^^^^^^^ not found in this scope
+  |
+help: a name with a similar spelling exists
+  |
+4 -   (both missing-nam missing-name))
+4 +   (both missing-nam missing-nam))
+  |

@@ -1,0 +1,38 @@
+(use code list concat number-sub number-le)
+
+(defmacro grow (form)
+  (template (grow (do (unquote form) (unquote form)))))
+
+(defmacro spread (form)
+  (template (do (spread (unquote form)) (spread (unquote form)))))
+
+(def doubled
+  (fn (items times)
+    (if (number-le times 0) items (doubled (concat items items) (number-sub times 1)))))
+
+(defmacro past-the-limit ()
+  (template (do (splice (doubled (list 0) 17)))))
+
+(defn main ()
+  (println (grow 1)))
+
+(defn spreads ()
+  (println (spread 1)))
+
+(defn padded ()
+  (past-the-limit))
+
+(def nest
+  (fn (item times)
+    (if (number-le times 0) item (nest (list item item) (number-sub times 1)))))
+
+(defmacro huge ()
+  (nest (list 0) 40))
+
+(defn nested ()
+  (huge))
+
+(defmacro spread-top ()
+  (template (do (spread-top) (spread-top))))
+
+(spread-top)

@@ -83,6 +83,15 @@ impl CodeList {
         Form::new(FormKind::List(self.forms()), self.span)
     }
 
+    pub fn to_form_within(&self, allowance: &mut usize) -> Option<Form> {
+        *allowance = allowance.checked_sub(1)?;
+        let mut forms = Vec::with_capacity(self.len());
+        for index in self.range.clone() {
+            forms.push(self.item(index).to_form_within(allowance)?);
+        }
+        Some(Form::new(FormKind::List(forms), self.span))
+    }
+
     fn item(&self, index: usize) -> Value {
         match &self.items {
             ListItems::Read(form) => {
