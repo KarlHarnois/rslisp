@@ -1,0 +1,46 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/set_integer_keys.rslisp
+---
+fn set_next(years: &mut [i64], i: usize, year: i64) {
+    years[i + 1] = year
+}
+
+fn fill(years: &mut [i64], mut i: usize, n: usize) {
+    loop {
+        if i < n {
+            years[i] = 2020;
+            i += 1;
+            continue;
+        } else {
+            return;
+        }
+    }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut years: Vec<i64> = vec![2011_i64, 2015_i64, 2019_i64];
+    set_next(&mut years, 0, 2016);
+    println!("{}", years[1]);
+    fill(&mut years, 1, 3);
+    println!("{} {} {}", years[0], years[1], years[2])
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
