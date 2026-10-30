@@ -464,7 +464,7 @@ The emitted Rust is formatted by `rustfmt` when `rslisp emit`, `rslisp build` or
 | constant `admin?` | `IS_ADMIN` |
 | other punctuation | spelled out, so `+` becomes `plus` and `\` becomes `backslash` |
 | a name made only of `-` and `_` | each character spelled out, so `-` becomes `minus` and `_` becomes `underscore` |
-| a local named `_` | `_`, Rust's wildcard |
+| a local named `_` | `_`, Rust's wildcard, so a read of it is an error, `L0245` |
 | a character that Rust does not allow in an identifier | its code point, so `☃` becomes `u2603` |
 | a Rust keyword | a raw identifier, so `type` becomes `r#type` |
 | a program type or trait that hides a Rust prelude name | suffixed with `2`, so `sized` becomes `Sized2` |

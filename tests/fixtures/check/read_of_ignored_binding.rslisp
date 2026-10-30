@@ -1,0 +1,4 @@
+(defn f (_) _)
+
+(defn main ()
+  (println (f 1)))

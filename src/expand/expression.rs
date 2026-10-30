@@ -139,6 +139,9 @@ impl Expander<'_> {
                 info.arity,
                 span,
             )),
+            BindingKind::Local if self.bindings.get(binding).name() == "_" => {
+                Err(ExpandProblems::ignored_binding_read(span))
+            }
             _ => Ok(ExprKind::Leaf(Leaf::Var(binding))),
         }
     }
