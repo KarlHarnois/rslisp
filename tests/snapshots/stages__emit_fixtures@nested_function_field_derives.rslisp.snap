@@ -1,0 +1,63 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/nested_function_field_derives.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    model: &'a str,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Spare<'a> {
+    maker: Option<fn() -> Car<'a>>,
+}
+
+#[derive(Clone, Debug)]
+enum Line {
+    Stations(Vec<fn() -> i64>),
+}
+
+fn build_leaf() -> Car<'static> {
+    Car {
+        make: "Nissan",
+        model: "Leaf",
+    }
+}
+
+fn count_doors() -> i64 {
+    4
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!("{:?}", Spare { maker: None });
+    println!("{:?}", Line::Stations(Vec::new()));
+    let backup = Spare {
+        maker: Some(build_leaf),
+    };
+    match backup {
+        Spare { maker: Some(maker) } => println!("{} {}", maker().make, maker().model),
+        Spare { maker: None } => println!("no spare"),
+    }
+    let Line::Stations(steps) = Line::Stations(vec![count_doors]);
+    println!("{}", steps.len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

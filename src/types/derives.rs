@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 use super::checker::TypeChecker;
 use super::problems::TypeProblems;
+use super::selection::Selection;
 use super::traits::Implementor;
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
 use crate::core::{BindingId, CoreModule, FunctionFieldTraits, ItemKind, StructDerives};
@@ -377,13 +378,25 @@ impl TypeChecker {
         payload: &Type,
         params: &[GenericId],
     ) -> bool {
-        match payload {
-            Type::Function(..) => self.function_field_trait_allowed(trait_binding),
-            _ => self
-                .traits
-                .satisfies(&Bound::plain(trait_binding), payload, &|generic, _| {
-                    params.contains(&generic)
-                }),
+        self.field_type_satisfies(&Bound::plain(trait_binding), payload, params)
+    }
+
+    fn field_type_satisfies(&self, bound: &Bound, field_type: &Type, params: &[GenericId]) -> bool {
+        match field_type {
+            Type::Function(..) => self.function_field_trait_allowed(bound.binding),
+            Type::Generic(generic) => params.contains(generic),
+            _ => match self.traits.select(bound, field_type) {
+                Selection::Implemented { requirements, .. } => {
+                    requirements.iter().all(|requirement| {
+                        self.field_type_satisfies(
+                            &requirement.bound,
+                            &requirement.implementor,
+                            params,
+                        )
+                    })
+                }
+                Selection::Undecided | Selection::Missing => false,
+            },
         }
     }
 

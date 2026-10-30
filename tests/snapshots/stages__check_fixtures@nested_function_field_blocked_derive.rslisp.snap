@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/nested_function_field_blocked_derive.rslisp
+---
+error[L0423]: `locker` cannot derive `debug`
+ --> check/nested_function_field_blocked_derive.rslisp:5:16
+  |
+5 | (derive locker debug)
+  |                ^^^^^ field `opener` is `(pair (fn () i64) badge)`, which is not `debug`
+  |
+  = help: change the type of field `opener`, or leave this trait out of the `derive`
