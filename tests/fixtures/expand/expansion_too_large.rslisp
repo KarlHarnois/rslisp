@@ -31,3 +31,8 @@
 
 (defn nested ()
   (huge))
+
+(defmacro spread-top ()
+  (template (do (spread-top) (spread-top))))
+
+(spread-top)

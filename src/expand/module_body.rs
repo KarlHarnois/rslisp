@@ -17,6 +17,7 @@ use crate::core::{
 use crate::diagnostic::{Counted, Diagnostic};
 use crate::emit::mangle::NameMangler;
 use crate::reader::{Form, FormKind, Symbol};
+use crate::scope::FastHashSet;
 use crate::source::Span;
 
 struct TraitLowering<'a, 'f> {
@@ -113,18 +114,45 @@ impl Expander<'_> {
 
     fn register_definitions(&mut self, module: ModuleId, forms: Vec<Form>) -> Vec<PendingItem> {
         let mut context = DefinitionContext::default();
-        let mut queue: VecDeque<Form> = forms.into();
         let mut pending = Vec::new();
-        while let Some(form) = queue.pop_front() {
+        for form in forms {
             let registered = self.within_top_level_form(|expander| {
-                expander.register_top_level(module, form, &mut context, &mut queue)
+                expander.register_source_form(module, form, &mut context, &mut pending)
             });
-            match registered {
-                Ok(item) => pending.extend(item),
-                Err(diagnostic) => self.diagnostics.push(diagnostic),
+            if let Err(diagnostic) = registered {
+                self.diagnostics.push(diagnostic);
             }
         }
         pending
+    }
+
+    fn register_source_form(
+        &mut self,
+        module: ModuleId,
+        form: Form,
+        context: &mut DefinitionContext,
+        pending: &mut Vec<PendingItem>,
+    ) -> Result<(), Diagnostic> {
+        let mut spliced = VecDeque::new();
+        pending.extend(self.register_top_level(module, form, context, &mut spliced)?);
+        self.register_spliced_forms(module, spliced, context, pending);
+        Ok(())
+    }
+
+    fn register_spliced_forms(
+        &mut self,
+        module: ModuleId,
+        mut spliced: VecDeque<Form>,
+        context: &mut DefinitionContext,
+        pending: &mut Vec<PendingItem>,
+    ) {
+        let mut reported = FastHashSet::default();
+        while let Some(form) = spliced.pop_front() {
+            match self.register_top_level(module, form, context, &mut spliced) {
+                Ok(item) => pending.extend(item),
+                Err(diagnostic) => self.report_once(diagnostic, &mut reported),
+            }
+        }
     }
 
     fn register_top_level(
