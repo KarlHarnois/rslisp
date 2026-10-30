@@ -1,0 +1,7 @@
+(defstruct spare :size u16 :label str)
+
+(defn main ()
+  (loop ((size 3))
+    (match (->spare :size size :label "nut")
+      ((spare 3 label) (do (println label) (recur 4)))
+      ((spare size _) (println size)))))

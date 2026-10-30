@@ -1,0 +1,12 @@
+(defstruct slot :item (option i64))
+
+(type drain! (fn ((mut (vec i64))) unit))
+(defn drain! (items)
+  (loop ()
+    (match (->slot :item (pop! items))
+      ((slot (some item)) (do (println item) (recur)))
+      ((slot none) (do)))))
+
+(defn main ()
+  (let items (vec 1 2))
+  (drain! (mut items)))
