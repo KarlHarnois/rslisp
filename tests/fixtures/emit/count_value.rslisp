@@ -1,0 +1,4 @@
+(defn main ()
+  (let years (vec 2019 2021 2024))
+  (let counter count)
+  (println (counter (iter years))))
