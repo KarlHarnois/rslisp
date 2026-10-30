@@ -1,4 +1,4 @@
-(use prelude/macros defmacro defrule template)
+(use prelude/macros defmacro defrule template doc docstring header)
 (use prelude/logic not when unless and or cond)
 (use prelude/syntax defn the -> ->> try-> let-try loop)
 (use prelude/types vec option result iterator slice sequence box box-new)
@@ -29,7 +29,7 @@
         ref mut deref where with _ assoc-at map-at set-at
         bool char str string unit
         i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
-        defmacro defrule template
+        defmacro defrule template doc docstring header
         true false not when unless and or cond
         defn the -> ->> try-> let-try loop
         number signed float integer partial-eq hash partial-ord ord

@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_imported.rslisp
+---
+(def area-page "(defn area (width height))\n\nMultiplies a width by a height.")
+(def area-docstring "Multiplies a width by a height.")
+(def area-header "(defn area (width height))")
+(def main (fn () ((rust "println!(\"{{}}{{}}\", {&0}, {&1})" (where ((part-type-0 display) (part-type-1 display)) (fn ((ref part-type-0) (ref part-type-1)) unit))) (area 3 4) area-page)))

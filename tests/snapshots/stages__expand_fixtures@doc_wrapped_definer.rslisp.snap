@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_wrapped_definer.rslisp
+---
+(def twice (fn (x) (mul 2 x)))
+(def twice-page "(defn twice (x))\n\nDoubles.")

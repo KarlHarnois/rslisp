@@ -1,0 +1,9 @@
+(use documented/shapes area)
+
+(def area-page (doc area))
+
+(def area-docstring (docstring area))
+
+(def area-header (header area))
+
+(defn main () (println (area 3 4) area-page))

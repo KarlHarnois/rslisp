@@ -1,0 +1,14 @@
+(defn twice (x) "Doubles a number." (* 2 x))
+
+(defmacro unless (test body ...) "Runs body when test is false."
+  (template (if (unquote test) (do) (do (splice body)))))
+
+(def twice-page (doc twice))
+
+(def twice-docstring (docstring twice))
+
+(def twice-header (header twice))
+
+(def unless-page (doc unless))
+
+(defn main () (println twice-page))

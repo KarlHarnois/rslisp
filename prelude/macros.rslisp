@@ -1,9 +1,10 @@
 (use code first rest list prepend concat length empty? nth take drop
           symbol? list? string? symbol-name symbol string same-binding? fail
-          value-eq number-add number-sub number-lt
+          definition-symbol bound? value-eq number-add number-sub number-lt
           string-lines string-trim-start string-length string-drop string-strip-suffix)
 
-(export defrule defmacro template map-list whole-pairs? documented doc-entry docstring-before-body?)
+(export defrule defmacro template map-list whole-pairs? documented doc-entry docstring-before-body?
+        doc docstring header)
 
 (def map-list
   (fn (function items)
@@ -373,3 +374,33 @@
     (if (empty? arguments)
         true
         (if (empty? (rest arguments)) false (recur (drop 2 arguments))))))
+
+(defmacro doc (term)
+  "Returns the page of a term as a string: its header, a blank line, then its docstring."
+  (list (documentation-of term) (quote page-part)))
+
+(defmacro docstring (term)
+  "Returns the docstring of a term as a string."
+  (list (documentation-of term) (quote docstring-part)))
+
+(defmacro header (term)
+  "Returns the first line of a term's definition as written, as in (defn area (width height))."
+  (list (documentation-of term) (quote header-part)))
+
+(def documentation-of
+  (fn (term)
+    (let entry (definition-symbol term "doc/" term))
+    (if (bound? entry)
+        entry
+        (fail (string "`" term "` has no docstring") term
+              "write a docstring as the first body form where it is defined, as in (defn name (x) \"Does a thing.\" body)"
+              (template (:code undocumented-term :label "no docstring for this name"))))))
+
+(defmacro page-part (header text)
+  (string header "\n\n" text))
+
+(defmacro docstring-part (header text)
+  text)
+
+(defmacro header-part (header text)
+  header)

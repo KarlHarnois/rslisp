@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/undocumented_term.rslisp
+---
+error[L0327]: `twice` has no docstring
+ --> expand/undocumented_term.rslisp:3:22
+  |
+3 | (def twice-page (doc twice))
+  |                      ^^^^^ no docstring for this name
+  |
+  = help: write a docstring as the first body form where it is defined, as in (defn name (x) "Does a thing." body)
