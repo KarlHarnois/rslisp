@@ -317,8 +317,16 @@
   (fn (entry header text)
     (list (quote def) entry
           (list (quote macro) (list (quote doc-form))
-                (list (quote list) (list (quote nth) (quote doc-form) 1)
+                (list (quote doc-part) (list (quote nth) (quote doc-form) 1)
                       (list (quote quote) header) text)))))
+
+(def doc-part
+  (fn (part header text)
+    (if (value-eq part (quote header))
+        (string header)
+        (if (value-eq part (quote docstring))
+            (clean-docstring text)
+            (string header "\n\n" (clean-docstring text))))))
 
 (def doc-symbol
   (fn (name)
@@ -399,15 +407,15 @@
 
 (defmacro doc (term)
   "Returns the page of a term as a string: its header, a blank line, then its docstring."
-  (list (documentation-of term) (quote page-part)))
+  (list (documentation-of term) (quote page)))
 
 (defmacro docstring (term)
   "Returns the docstring of a term as a string."
-  (list (documentation-of term) (quote docstring-part)))
+  (list (documentation-of term) (quote docstring)))
 
 (defmacro header (term)
   "Returns the first line of a term's definition as written, as in (defn area (width height))."
-  (list (documentation-of term) (quote header-part)))
+  (list (documentation-of term) (quote header)))
 
 (def documentation-of
   (fn (term)
@@ -422,12 +430,3 @@
     (fail (string "`" term "` has no docstring") term
           "write a docstring as the first body form where it is defined, as in (defn name (x) \"Does a thing.\" body)"
           (template (:code undocumented-term :label "no docstring for this name")))))
-
-(defmacro page-part (header text)
-  (string header "\n\n" (clean-docstring text)))
-
-(defmacro docstring-part (header text)
-  (clean-docstring text))
-
-(defmacro header-part (header text)
-  (string header))
