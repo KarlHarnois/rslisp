@@ -213,9 +213,13 @@ mod tests {
         }
 
         fn symbol(name: &str, scopes: &[Scope]) -> Symbol {
+            Symbol::with_scopes(name, Self::scope_set(scopes))
+        }
+
+        fn scope_set(scopes: &[Scope]) -> ScopeSet {
             let mut set = ScopeSet::default();
             scopes.iter().for_each(|scope| set.add(*scope));
-            Symbol::with_scopes(name, set)
+            set
         }
 
         fn define(&mut self, name: &str, scopes: &[Scope], phase: Phase) -> BindingId {
@@ -226,6 +230,40 @@ mod tests {
                 .bind(&symbol, Namespace::Value, binding, phase)
                 .expect("no duplicate");
             binding
+        }
+
+        fn define_under_subsets(
+            &mut self,
+            name: &str,
+            scopes: &[Scope],
+            count: usize,
+        ) -> Vec<(Vec<Scope>, BindingId)> {
+            (0..count)
+                .map(|index| {
+                    let subset = Self::subset(scopes, index);
+                    let binding = self.define(name, &subset, Phase::Runtime);
+                    (subset, binding)
+                })
+                .collect()
+        }
+
+        fn subset(scopes: &[Scope], index: usize) -> Vec<Scope> {
+            scopes
+                .iter()
+                .enumerate()
+                .filter(|(position, _)| index & (1 << position) != 0)
+                .map(|(_, scope)| *scope)
+                .collect()
+        }
+
+        fn visible(&self, scopes: &[Scope]) -> Vec<BindingId> {
+            let mut bindings = self.table.visible_bindings(
+                &Self::scope_set(scopes),
+                Namespace::Value,
+                Phase::Runtime,
+            );
+            bindings.sort();
+            bindings
         }
 
         fn resolve(&self, name: &str, scopes: &[Scope], phase: Phase) -> Resolution {
@@ -292,5 +330,27 @@ mod tests {
             Phase::Runtime,
         );
         assert_eq!(duplicate, Err(first));
+    }
+
+    #[test]
+    fn a_long_binding_list_finds_what_a_full_scan_finds() {
+        let mut world = World::new();
+        let scopes: Vec<Scope> = (0..5).map(|_| world.scope()).collect();
+        let entries = world.define_under_subsets("x", &scopes, NameEntries::SHORT_LIST_LENGTH + 4);
+        let reference = [scopes[0], scopes[1], scopes[4]];
+        let scanned: Vec<BindingId> = entries
+            .iter()
+            .filter(|(subset, _)| subset.iter().all(|scope| reference.contains(scope)))
+            .map(|(_, binding)| *binding)
+            .collect();
+        let (_, exact) = entries
+            .iter()
+            .find(|(subset, _)| *subset == reference)
+            .expect("the reference scopes are a defined subset");
+        assert_eq!(world.visible(&reference), scanned);
+        assert_eq!(
+            world.resolve("x", &reference, Phase::Runtime),
+            Resolution::Bound(*exact)
+        );
     }
 }
