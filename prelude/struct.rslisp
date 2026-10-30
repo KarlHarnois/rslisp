@@ -1,8 +1,8 @@
-(use prelude/macros defmacro template map-list documented doc-entry type-doc-symbol)
+(use prelude/macros defmacro template map-list documented documented-body? doc-entry type-doc-symbol)
 (use prelude/syntax defn definition declared-forms default-pairs type-missing? defaults-clause?
                     default-bindings call-signature signature-name signature-defaults
                     read-call has-argument? pair-keys)
-(use code first rest list nth drop empty? list? symbol? string? symbol symbol-name prepend
+(use code first rest list nth drop empty? list? symbol? symbol symbol-name prepend
           concat string fail keyword? keyword-field)
 
 (export defstruct)
@@ -90,10 +90,6 @@
       (documented (struct-definition head (rest body))
                   (doc-entry (type-doc-symbol (head-name head)) (list (quote defstruct) head) (first body)))
       (struct-definition head body)))
-
-(def documented-body?
-  (fn (body)
-    (if (empty? body) false (string? (first body)))))
 
 (def struct-definition
   (fn (head body)
