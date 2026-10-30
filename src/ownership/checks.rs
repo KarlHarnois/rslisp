@@ -81,7 +81,8 @@ impl<'a> OwnershipNeeds<'a> {
     }
 
     fn parameters(&self, callee: &TypedExpr) -> Vec<Type> {
-        if let TypedExprKind::Leaf(TypedLeaf::Global(function)) = callee.kind
+        if let TypedExprKind::Leaf(TypedLeaf::Global(function) | TypedLeaf::Local(function)) =
+            callee.kind
             && let Some(parameters) = self.function_params.get(&function)
         {
             return parameters.clone();

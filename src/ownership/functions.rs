@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::core::{BindingId, ReferenceKind};
-use crate::types::{CopyRules, Type, TypedExprKind, TypedLambda, TypedProgram};
+use crate::types::{CopyRules, Type, TypedExpr, TypedExprKind, TypedLambda, TypedProgram};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ParamMode {
@@ -45,16 +45,24 @@ impl FunctionTable {
             &program.structs,
             &program.enums,
         );
-        let functions = program
-            .modules
-            .iter()
-            .flat_map(|module| &module.definitions)
-            .filter_map(|definition| match &definition.value.kind {
-                TypedExprKind::Fn(lambda) => Some((definition.binding, Self::info(lambda, &copy))),
-                _ => None,
-            })
-            .collect();
-        Self { functions }
+        let definitions = || {
+            program
+                .modules
+                .iter()
+                .flat_map(|module| &module.definitions)
+        };
+        let top_level = definitions().filter_map(|definition| {
+            Self::lambda(&definition.value)
+                .map(|lambda| (definition.binding, Self::info(lambda, &copy)))
+        });
+        let local_closures = definitions()
+            .flat_map(|definition| definition.value.let_bindings())
+            .filter_map(|(binder, value)| {
+                Self::lambda(value).map(|lambda| (binder.binding, Self::closure_info(lambda)))
+            });
+        Self {
+            functions: top_level.chain(local_closures).collect(),
+        }
     }
 
     pub fn get(&self, binding: BindingId) -> Option<&FunctionInfo> {
@@ -71,6 +79,29 @@ impl FunctionTable {
             borrowed if borrowed.is_unsized() => ParamMode::Ref,
             written if copy.is_small_copy(written) => ParamMode::Copy,
             _ => ParamMode::Own,
+        }
+    }
+
+    fn lambda(value: &TypedExpr) -> Option<&Rc<TypedLambda>> {
+        match &value.kind {
+            TypedExprKind::Fn(lambda) => Some(lambda),
+            _ => None,
+        }
+    }
+
+    fn closure_info(lambda: &Rc<TypedLambda>) -> FunctionInfo {
+        let params = lambda
+            .params
+            .iter()
+            .map(|param| ParamSlot {
+                binding: param.binding,
+                ty: param.ty.clone(),
+                inferable: false,
+            })
+            .collect();
+        FunctionInfo {
+            lambda: Rc::clone(lambda),
+            params,
         }
     }
 
