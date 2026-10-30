@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/docstring_before_parameters.rslisp
+---
+error[L0328]: a docstring goes after the parameter list
+ --> expand/docstring_before_parameters.rslisp:1:16
+  |
+1 | (defn greeting "Says hello." () "hi")
+  |                ^^^^^^^^^^^^^ a docstring in place of the parameter list
+  |
+  = help: write it as the first body form, as in (defn name (x) "Does a thing." body)

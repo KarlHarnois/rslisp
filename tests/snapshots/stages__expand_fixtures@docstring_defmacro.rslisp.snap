@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/docstring_defmacro.rslisp
+---
+(def main (fn () (if false (do) (do ((rust "println!(\"ran\")" (where () (fn () unit))))))))
+(def unless-entry (list "(defmacro unless (test body ...))" "Runs body when test is false."))

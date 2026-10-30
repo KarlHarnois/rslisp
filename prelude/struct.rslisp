@@ -1,8 +1,8 @@
-(use prelude/macros defmacro template map-list)
+(use prelude/macros defmacro template map-list documented doc-entry)
 (use prelude/syntax defn definition declared-forms default-pairs type-missing? defaults-clause?
                     default-bindings call-signature signature-name signature-defaults
                     read-call has-argument? pair-keys)
-(use code first rest list nth drop empty? list? symbol? symbol symbol-name prepend
+(use code first rest list nth drop empty? list? symbol? string? symbol symbol-name prepend
           concat string fail keyword? keyword-field)
 
 (export defstruct)
@@ -85,17 +85,29 @@
         (constructor-call form hidden shape))))
 
 (defmacro defstruct (head body ...)
-  (let name (head-name head))
-  (let fields (field-groups (declared-forms body)))
-  (let field-names (map-list first fields))
-  (let field-types (map-list field-type-form fields))
-  (let defaults (default-bindings (default-pairs body) (field-definition name) field-names))
-  (let hidden (symbol (quote make) "make-" name))
-  (template
-    (do (struct (unquote head) (splice fields))
-        (defn (unquote hidden) (unquote field-names)
-          (new (unquote name) (splice (map-list field-initializer fields))))
-        (def (unquote (symbol name "->" name))
-          (macro (form)
-            (constructor-expansion form (quote (unquote hidden))
-                                   (quote (unquote (call-signature name field-names defaults field-types)))))))))
+  "Defines a struct and its keyword constructor: (defstruct name :field type ...)."
+  (if (documented-body? body)
+      (documented (struct-definition head (rest body))
+                  (doc-entry (head-name head) (list (quote defstruct) head) (first body)))
+      (struct-definition head body)))
+
+(def documented-body?
+  (fn (body)
+    (if (empty? body) false (string? (first body)))))
+
+(def struct-definition
+  (fn (head body)
+    (let name (head-name head))
+    (let fields (field-groups (declared-forms body)))
+    (let field-names (map-list first fields))
+    (let field-types (map-list field-type-form fields))
+    (let defaults (default-bindings (default-pairs body) (field-definition name) field-names))
+    (let hidden (symbol (quote make) "make-" name))
+    (template
+      (do (struct (unquote head) (splice fields))
+          (defn (unquote hidden) (unquote field-names)
+            (new (unquote name) (splice (map-list field-initializer fields))))
+          (def (unquote (symbol name "->" name))
+            (macro (form)
+              (constructor-expansion form (quote (unquote hidden))
+                                     (quote (unquote (call-signature name field-names defaults field-types))))))))))

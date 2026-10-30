@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/string_body_defn.rslisp
+---
+(def greeting (fn () "hi"))
+(def pair-of (fn () "b"))
+(def main (fn () ((rust "println!(\"{{}}{{}}\", {&0}, {&1})" (where ((part-type-0 display) (part-type-1 display)) (fn ((ref part-type-0) (ref part-type-1)) unit))) (greeting) (pair-of))))

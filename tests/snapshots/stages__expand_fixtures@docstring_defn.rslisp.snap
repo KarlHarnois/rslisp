@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/docstring_defn.rslisp
+---
+(def twice (fn (x) (mul 2 x)))
+(def main (fn () ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0 display)) (fn ((ref part-type-0)) unit))) (twice 21))))
+(def twice-entry (list "(defn twice (x))" "Doubles a number."))
