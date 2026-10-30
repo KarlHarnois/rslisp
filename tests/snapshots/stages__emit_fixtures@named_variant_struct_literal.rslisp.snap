@@ -1,0 +1,51 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/named_variant_struct_literal.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Shape<'a> {
+    Labeled { text: &'a str, size: i64 },
+    Point,
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!(
+        "{}",
+        match Shape::Point {
+            Shape::Labeled { .. } => "labeled",
+            Shape::Point => "point",
+        }
+    );
+    println!(
+        "{}",
+        match (Shape::Labeled { text: "a", size: 3 }) {
+            Shape::Labeled { text, size: 3 } => text,
+            Shape::Labeled { size, .. } =>
+                if size > 3 {
+                    "large"
+                } else {
+                    "small"
+                },
+            Shape::Point => "point",
+        }
+    )
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

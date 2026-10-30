@@ -1,0 +1,14 @@
+(enum shape
+  (labeled (struct (text str) (size i64)))
+  point)
+
+(defn main ()
+  (println
+    (match shape/point
+      ((labeled _ _) "labeled")
+      (point "point")))
+  (println
+    (match (shape/labeled "a" 3)
+      ((labeled text 3) text)
+      ((labeled _ size) (if (> size 3) "large" "small"))
+      (point "point"))))

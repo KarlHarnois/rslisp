@@ -1,0 +1,43 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/update_struct_literal.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Spare<'a> {
+    size: u16,
+    label: &'a str,
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let s = Spare {
+        size: 3,
+        label: "bolt",
+    };
+    println!("{}", s.label);
+    println!(
+        "{}",
+        match (Spare { size: 4, ..s }.size) {
+            4 => "four",
+            _ => "other",
+        }
+    )
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
