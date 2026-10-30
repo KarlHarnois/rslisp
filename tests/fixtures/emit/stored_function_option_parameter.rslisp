@@ -1,0 +1,11 @@
+(defstruct spare :maker (option (fn () i64)))
+
+(defn count-doors () 4)
+
+(defn wrap (f) (->spare :maker (some f)))
+
+(defn main ()
+  (let backup (wrap count-doors))
+  (match backup
+    ((spare (some maker)) (println (maker)))
+    ((spare none) (println "no spare"))))
