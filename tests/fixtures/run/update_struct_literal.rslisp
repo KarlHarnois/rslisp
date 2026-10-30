@@ -1,0 +1,9 @@
+(defstruct spare :size u16 :label str)
+
+(defn main ()
+  (let s (->spare :size 3 :label "bolt"))
+  (println (:label s))
+  (println
+    (match (:size (new _ s (:size 4)))
+      (4 "four")
+      (_ "other"))))
