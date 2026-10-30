@@ -4,4 +4,4 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/docstring_defrule.rslisp
 ---
 (def main (fn () ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0 display)) (fn ((ref part-type-0)) unit))) (sub 10 1))))
-(def swap-entry (list "(defrule swap)" "Swaps the two arguments of a call: (swap f a b)."))
+(def swap-page "(defrule swap)\n\nSwaps the two arguments of a call: (swap f a b).")

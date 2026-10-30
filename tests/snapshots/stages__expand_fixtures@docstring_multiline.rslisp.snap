@@ -4,4 +4,4 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/docstring_multiline.rslisp
 ---
 (def scale (fn (size factor) (mul size factor)))
-(def scale-entry (list "(defn scale (size factor))" "Multiplies a size by a factor.\n\nThe factor must be positive.\n  An indented line keeps its extra indentation."))
+(def scale-page "(defn scale (size factor))\n\nMultiplies a size by a factor.\n\nThe factor must be positive.\n  An indented line keeps its extra indentation.")

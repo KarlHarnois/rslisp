@@ -1,5 +1,3 @@
-(use code list)
-
 (defn scale (size factor)
   "Multiplies a size by a factor.
 
@@ -8,4 +6,4 @@
   "
   (* size factor))
 
-(def scale-entry (doc/scale list))
+(def scale-page (doc scale))
