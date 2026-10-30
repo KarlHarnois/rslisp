@@ -5,4 +5,4 @@ input_file: tests/fixtures/expand/docstring_keyword_defn.rslisp
 ---
 (def scale (fn ((size i64) (factor i64)) (mul size factor)))
 (def main (fn () ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0 display)) (fn ((ref part-type-0)) unit))) (scale 3 2))))
-(def scale-entry (list "(defn scale (:size i64 :factor i64 (defaults :factor 2)))" "Multiplies a size by a factor, which defaults to two."))
+(def scale-page "(defn scale (:size i64 :factor i64 (defaults :factor 2)))\n\nMultiplies a size by a factor, which defaults to two.")

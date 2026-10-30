@@ -1,7 +1,5 @@
-(use code list)
-
 (defn twice (x) "Doubles a number." (* 2 x))
 
 (defn main () (println (twice 21)))
 
-(def twice-entry (doc/twice list))
+(def twice-page (doc twice))
