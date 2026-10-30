@@ -294,15 +294,9 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn bind_result_parameter(&mut self, param: &TypedBinder) -> String {
-        let ty = self
-            .types()
-            .closure_result_parameter(&param.ty, self.enclosing_lifetime.as_deref());
-        let mutable = self.is_reassigned(param);
-        format!(
-            "{}{}: {ty}",
-            Self::mutability(mutable),
-            self.bind_name(param)
-        )
+        let (position, scope) =
+            RustTypes::closure_parameter_scope(self.enclosing_lifetime.as_deref());
+        self.bind_parameter_in(param, position, &scope)
     }
 
     fn bind_name(&mut self, param: &TypedBinder) -> String {
