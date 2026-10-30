@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/selfless_method_signature.rslisp
+---
+error[L0456]: cannot choose which implementor of `vetting` runs `check`
+  --> check/selfless_method_signature.rslisp:10:13
+   |
+ 4 |   (check (fn (str) bool)))
+   |          --------------- this signature never mentions `self`
+...
+10 |   (println (check "visitor")))
+   |             ^^^^^ no type here picks an implementor of `vetting`
+   |
+   = note: a call picks an implementor from the type of a parameter or result that is `self`
+   = help: add `(ref self)` as the first parameter of `check`, as in `(fn ((ref self) str) bool)`

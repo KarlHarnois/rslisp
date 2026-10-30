@@ -109,6 +109,36 @@ impl<'a> TypeDisplay<'a> {
         )
     }
 
+    pub fn scheme_with_receiver(&self, scheme: &Scheme, trait_binding: BindingId) -> String {
+        let Type::Function(kind, parameters, result) = &scheme.body else {
+            return self.scheme(scheme);
+        };
+        let mut params = scheme.params.clone();
+        let receiver = params.remove(Self::receiver_position(scheme, trait_binding));
+        let receiver = Type::shared(Type::Generic(receiver.id));
+        let parameters = std::iter::once(receiver)
+            .chain(parameters.iter().cloned())
+            .collect();
+        self.scheme(&Scheme {
+            lifetimes: scheme.lifetimes.clone(),
+            params,
+            body: Type::Function(*kind, parameters, result.clone()),
+        })
+    }
+
+    fn receiver_position(scheme: &Scheme, trait_binding: BindingId) -> usize {
+        scheme
+            .params
+            .iter()
+            .position(|param| {
+                param
+                    .bounds
+                    .iter()
+                    .any(|bound| bound.binding == trait_binding)
+            })
+            .expect("a trait method's scheme binds its trait's `self`")
+    }
+
     fn param(&self, param: &GenericParam) -> String {
         if param.bounds.is_empty() {
             return param.name.to_string();
