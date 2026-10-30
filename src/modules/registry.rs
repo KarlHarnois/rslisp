@@ -27,10 +27,6 @@ impl ModuleRecord {
         self.base_scope
     }
 
-    pub fn body_scope(&self) -> Scope {
-        self.body_scope
-    }
-
     pub fn body_scopes(&self) -> ScopeSet {
         let mut scopes = ScopeSet::default();
         scopes.add(self.base_scope);
