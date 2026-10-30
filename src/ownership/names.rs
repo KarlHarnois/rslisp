@@ -41,7 +41,7 @@ impl ChangingFunctionNames {
         warnings
     }
 
-    fn impl_methods(program: &TypedProgram) -> HashSet<BindingId> {
+    pub(super) fn impl_methods(program: &TypedProgram) -> HashSet<BindingId> {
         program
             .trait_impls
             .iter()
@@ -50,7 +50,7 @@ impl ChangingFunctionNames {
             .collect()
     }
 
-    fn default_methods(program: &TypedProgram) -> HashSet<BindingId> {
+    pub(super) fn default_methods(program: &TypedProgram) -> HashSet<BindingId> {
         program
             .trait_definitions
             .iter()
