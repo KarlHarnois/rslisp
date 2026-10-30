@@ -1,0 +1,38 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/closure_owned_struct_parameter.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct User {
+    name: String,
+    age: i64,
+}
+
+fn make_user(name: String, age: i64) -> User {
+    User { name, age }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let ana = make_user("Ana".to_string(), 30);
+    let age_of = |someone: User| someone.age;
+    println!("{}", age_of(ana))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
