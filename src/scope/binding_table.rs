@@ -81,14 +81,31 @@ impl NameEntries {
     }
 
     fn visible(&self, scopes: &ScopeSet, phase: Phase) -> Vec<&Entry> {
-        let is_visible = |entry: &&Entry| entry.is_visible_from_scopes(scopes, phase);
+        let mut visible = Vec::new();
+        self.visit_visible(scopes, phase, |entry| visible.push(entry));
+        visible
+    }
+
+    fn visit_visible<'entries>(
+        &'entries self,
+        scopes: &ScopeSet,
+        phase: Phase,
+        mut visit: impl FnMut(&'entries Entry),
+    ) {
+        let mut visit_if_visible = |entry: &'entries Entry| {
+            if entry.is_visible_from_scopes(scopes, phase) {
+                visit(entry);
+            }
+        };
         if self.is_shorter_than_an_anchor_search(scopes) {
-            return self.sorted_by_anchor.iter().filter(is_visible).collect();
+            self.sorted_by_anchor.iter().for_each(visit_if_visible);
+            return;
         }
-        Self::possible_anchors(scopes)
-            .flat_map(|anchor| &self.sorted_by_anchor[self.anchored(anchor)])
-            .filter(is_visible)
-            .collect()
+        for anchor in Self::possible_anchors(scopes) {
+            self.sorted_by_anchor[self.anchored(anchor)]
+                .iter()
+                .for_each(&mut visit_if_visible);
+        }
     }
 
     fn is_shorter_than_an_anchor_search(&self, scopes: &ScopeSet) -> bool {
@@ -129,21 +146,11 @@ impl BindingTable {
     }
 
     pub fn resolve(&self, symbol: &Symbol, namespace: Namespace, phase: Phase) -> Resolution {
-        let candidates = self.candidates(symbol, namespace, phase);
-        let Some(largest) = candidates.iter().map(|entry| entry.scopes.len()).max() else {
-            return Resolution::Unbound;
-        };
-        let mut best: Vec<BindingId> = candidates
-            .iter()
-            .filter(|entry| entry.scopes.len() == largest)
-            .map(|entry| entry.binding)
-            .collect();
-        best.sort();
-        best.dedup();
-        match best.as_slice() {
-            [binding] => Resolution::Bound(*binding),
-            _ => Resolution::Ambiguous(best),
+        let mut largest = LargestCandidates::default();
+        if let Some(entries) = self.entries.get(&(symbol.shared_name(), namespace)) {
+            entries.visit_visible(symbol.scopes(), phase, |entry| largest.consider(entry));
         }
+        largest.resolution()
     }
 
     pub fn visible_name_bindings(
@@ -177,13 +184,50 @@ impl BindingTable {
             .map(|entry| entry.binding)
             .collect()
     }
+}
 
-    fn candidates(&self, symbol: &Symbol, namespace: Namespace, phase: Phase) -> Vec<&Entry> {
-        let key = (symbol.shared_name(), namespace);
-        self.entries
-            .get(&key)
-            .map(|entries| entries.visible(symbol.scopes(), phase))
-            .unwrap_or_default()
+#[derive(Default)]
+struct LargestCandidates {
+    size: usize,
+    first: Option<BindingId>,
+    others: Vec<BindingId>,
+}
+
+impl LargestCandidates {
+    fn consider(&mut self, entry: &Entry) {
+        let size = entry.scopes.len();
+        match self.first {
+            Some(_) if size < self.size => {}
+            Some(first) if size == self.size => self.add_equal(first, entry.binding),
+            _ => self.replace(size, entry.binding),
+        }
+    }
+
+    fn add_equal(&mut self, first: BindingId, binding: BindingId) {
+        if binding != first {
+            self.others.push(binding);
+        }
+    }
+
+    fn replace(&mut self, size: usize, binding: BindingId) {
+        self.size = size;
+        self.first = Some(binding);
+        self.others.clear();
+    }
+
+    fn resolution(self) -> Resolution {
+        match self.first {
+            None => Resolution::Unbound,
+            Some(binding) if self.others.is_empty() => Resolution::Bound(binding),
+            Some(binding) => Resolution::Ambiguous(Self::distinct(binding, self.others)),
+        }
+    }
+
+    fn distinct(first: BindingId, mut others: Vec<BindingId>) -> Vec<BindingId> {
+        others.push(first);
+        others.sort();
+        others.dedup();
+        others
     }
 }
 
@@ -303,6 +347,19 @@ mod tests {
         world.define("x", &[module, right], Phase::Runtime);
         let resolution = world.resolve("x", &[module, left, right], Phase::Runtime);
         assert!(matches!(resolution, Resolution::Ambiguous(_)));
+    }
+
+    #[test]
+    fn a_larger_binding_settles_two_smaller_bindings_of_equal_size() {
+        let mut world = World::new();
+        let (module, left, right) = (world.scope(), world.scope(), world.scope());
+        world.define("x", &[module, left], Phase::Runtime);
+        world.define("x", &[module, right], Phase::Runtime);
+        let settled = world.define("x", &[module, left, right], Phase::Runtime);
+        assert_eq!(
+            world.resolve("x", &[module, left, right], Phase::Runtime),
+            Resolution::Bound(settled)
+        );
     }
 
     #[test]
