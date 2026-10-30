@@ -17,4 +17,4 @@
   (other (p) (field p x)))
 
 (defn main ()
-  (println (free 1)))
+  (println (by-ref (new point (x 1)))))

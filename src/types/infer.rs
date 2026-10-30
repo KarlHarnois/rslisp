@@ -1100,15 +1100,33 @@ impl TypeChecker {
                 TypedExprKind::Leaf(TypedLeaf::Local(binding)),
                 self.locals[&binding].clone(),
             )),
-            BindingKind::Global(_) if self.compile_time_only.contains(&binding) => {
-                Err(TypeProblems::compile_time_only(&name, span))
-            }
-            BindingKind::Global(_) => Ok((
-                TypedExprKind::Leaf(TypedLeaf::Global(binding)),
-                self.global_type(binding),
-            )),
+            BindingKind::Global(_) => self.infer_global(binding, &name, span),
             _ => Err(TypeProblems::compile_time_only(&name, span)),
         }
+    }
+
+    fn infer_global(
+        &mut self,
+        binding: BindingId,
+        name: &str,
+        span: Span,
+    ) -> Result<(TypedExprKind, Type), Diagnostic> {
+        if self.compile_time_only.contains(&binding) {
+            return Err(TypeProblems::compile_time_only(name, span));
+        }
+        if let Some(method) = self.selfless_methods.get(binding) {
+            let trait_name = self.bindings.get(method.trait_binding).name();
+            return Err(TypeProblems::selfless_method_call(
+                trait_name,
+                name,
+                span,
+                method.signature,
+            ));
+        }
+        Ok((
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)),
+            self.global_type(binding),
+        ))
     }
 
     fn global_type(&mut self, binding: BindingId) -> Type {

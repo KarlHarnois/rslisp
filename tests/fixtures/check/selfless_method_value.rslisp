@@ -1,0 +1,11 @@
+(defstruct garage :spots i64)
+
+(trait parking
+  (park (fn (i64) i64)))
+
+(impl parking garage
+  (park (spot) (+ spot 100)))
+
+(defn main ()
+  (let spots (vec 1 2))
+  (println (len (collect (map (iter spots) park)))))
