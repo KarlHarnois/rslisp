@@ -1,0 +1,9 @@
+(defstruct point "A point on a grid." :x i64 :y i64)
+
+(defn point (x) "Makes a point." (->point :x x :y x))
+
+(defstruct size "A width and a height." :width i64 :height i64)
+
+(def point-page (doc point))
+
+(def size-page (doc size))

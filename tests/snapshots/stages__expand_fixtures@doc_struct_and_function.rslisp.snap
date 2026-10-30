@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_struct_and_function.rslisp
+---
+(struct point (x i64) (y i64))
+(def make-point (fn (x y) (new point (x x) (y y))))
+(def point_2 (fn (x_2) (new point (x x_2) (y x_2))))
+(struct size (width i64) (height i64))
+(def make-size (fn (width height) (new size (width width) (height height))))
+(def point-page "(defn point (x))\n\nMakes a point.")
+(def size-page "(defstruct size)\n\nA width and a height.")

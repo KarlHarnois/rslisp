@@ -3,7 +3,8 @@
           definition-symbol bound? value-eq number-add number-sub number-lt
           string-lines string-trim-start string-length string-drop string-strip-suffix)
 
-(export defrule defmacro template map-list whole-pairs? documented doc-entry docstring-before-body?
+(export defrule defmacro template map-list whole-pairs? documented doc-entry doc-symbol type-doc-symbol
+        docstring-before-body?
         doc docstring header)
 
 (def map-list
@@ -230,7 +231,7 @@
     (let name (nth form 1))
     (if (string? (nth form 2))
         (documented (rule-definition name (drop 3 form))
-                    (doc-entry name (list (quote defrule) name) (nth form 2)))
+                    (doc-entry (doc-symbol name) (list (quote defrule) name) (nth form 2)))
         (rule-definition name (drop 2 form)))))
 
 (def rule-definition
@@ -279,7 +280,7 @@
     (let body (drop 3 form))
     (if (docstring-before-body? body)
         (documented (macro-definition name pattern (rest body))
-                    (doc-entry name (list (quote defmacro) name pattern) (first body)))
+                    (doc-entry (doc-symbol name) (list (quote defmacro) name pattern) (first body)))
         (macro-definition name pattern body))))
 
 (def docstring-before-body?
@@ -300,11 +301,19 @@
     (list (quote do) definition entry)))
 
 (def doc-entry
-  (fn (name header text)
-    (list (quote def) (symbol name "doc/" name)
+  (fn (entry header text)
+    (list (quote def) entry
           (list (quote macro) (list (quote doc-form))
                 (list (quote list) (list (quote nth) (quote doc-form) 1)
                       (list (quote quote) header) text)))))
+
+(def doc-symbol
+  (fn (name)
+    (symbol name "doc/" name)))
+
+(def type-doc-symbol
+  (fn (name)
+    (symbol name "doc-type/" name)))
 
 (def clean-docstring
   (fn (text)
@@ -389,12 +398,17 @@
 
 (def documentation-of
   (fn (term)
-    (let entry (definition-symbol term "doc/" term))
-    (if (bound? entry)
-        entry
-        (fail (string "`" term "` has no docstring") term
-              "write a docstring as the first body form where it is defined, as in (defn name (x) \"Does a thing.\" body)"
-              (template (:code undocumented-term :label "no docstring for this name"))))))
+    (let value-entry (definition-symbol term "doc/" term))
+    (let type-entry (definition-symbol term "doc-type/" term))
+    (if (bound? value-entry)
+        value-entry
+        (if (bound? type-entry) type-entry (undocumented term)))))
+
+(def undocumented
+  (fn (term)
+    (fail (string "`" term "` has no docstring") term
+          "write a docstring as the first body form where it is defined, as in (defn name (x) \"Does a thing.\" body)"
+          (template (:code undocumented-term :label "no docstring for this name")))))
 
 (defmacro page-part (header text)
   (string header "\n\n" (clean-docstring text)))
