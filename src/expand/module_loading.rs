@@ -42,7 +42,9 @@ impl Expander<'_> {
     pub(super) fn load_source_module(&mut self, path: ModulePath, source: SourceId) -> ModuleId {
         let base_scope = self.scopes.fresh();
         let module_scope = self.scopes.fresh();
-        let id = self.modules.register(path.clone(), base_scope);
+        let id = self
+            .modules
+            .register(path.clone(), base_scope, module_scope);
         let forms = self.read_module(source);
         self.import_base(id, &path, Span::new(source, 0..0));
         let scoped = forms
@@ -249,7 +251,10 @@ impl Expander<'_> {
     }
 
     fn create_builtin(&mut self, path: &ModulePath, builtin: BuiltinModule) -> ModuleId {
-        let id = self.modules.register(path.clone(), self.scopes.fresh());
+        let base_scope = self.scopes.fresh();
+        let id = self
+            .modules
+            .register(path.clone(), base_scope, self.scopes.fresh());
         for (name, namespace, kind) in Self::builtin_exports(builtin) {
             let binding = self.bindings.add(BindingInfo::new(name.into(), kind, None));
             self.modules

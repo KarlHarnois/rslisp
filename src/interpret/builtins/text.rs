@@ -97,6 +97,21 @@ impl<'a> TextOperations<'a> {
         Ok(Value::Bool(host.same_binding(left, right)))
     }
 
+    pub fn definition_symbol(&self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
+        let term = self.arguments.form(0)?;
+        let context = self.arguments.symbol(0)?;
+        let symbol = host.definition_symbol(context, self.joined_parts(1)?, term.span())?;
+        Ok(Value::Form(Form::new(
+            FormKind::Symbol(symbol),
+            self.call_site,
+        )))
+    }
+
+    pub fn is_bound(&self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(1)?;
+        Ok(Value::Bool(host.is_bound(self.arguments.symbol(0)?)))
+    }
+
     pub fn closest_name(&self) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(2)?;
         let name = self.arguments.symbol(0)?.name();

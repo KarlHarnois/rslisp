@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::core::{BindingId, ModuleId, ModulePath, Namespace};
-use crate::scope::Scope;
+use crate::scope::{Scope, ScopeSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum LoadStatus {
@@ -13,6 +13,7 @@ enum LoadStatus {
 pub struct ModuleRecord {
     path: ModulePath,
     base_scope: Scope,
+    body_scope: Scope,
     exports: HashMap<(Rc<str>, Namespace), BindingId>,
     status: LoadStatus,
 }
@@ -24,6 +25,17 @@ impl ModuleRecord {
 
     pub fn base_scope(&self) -> Scope {
         self.base_scope
+    }
+
+    pub fn body_scope(&self) -> Scope {
+        self.body_scope
+    }
+
+    pub fn body_scopes(&self) -> ScopeSet {
+        let mut scopes = ScopeSet::default();
+        scopes.add(self.base_scope);
+        scopes.add(self.body_scope);
+        scopes
     }
 
     pub fn export(&mut self, name: Rc<str>, namespace: Namespace, binding: BindingId) {
@@ -52,12 +64,13 @@ pub struct ModuleRegistry {
 }
 
 impl ModuleRegistry {
-    pub fn register(&mut self, path: ModulePath, base_scope: Scope) -> ModuleId {
+    pub fn register(&mut self, path: ModulePath, base_scope: Scope, body_scope: Scope) -> ModuleId {
         let id = ModuleId::new(self.records.len());
         self.by_path.insert(path.clone(), id);
         self.records.push(ModuleRecord {
             path,
             base_scope,
+            body_scope,
             exports: HashMap::new(),
             status: LoadStatus::Loading,
         });
