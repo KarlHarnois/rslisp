@@ -164,7 +164,7 @@ impl<'p> FunctionSlots<'p> {
         }
         Some(FunctionSlot {
             storage: FunctionStorage::Field(Rc::clone(slot.name)),
-            declared: slot.span,
+            declared: slot.function_span,
         })
     }
 
@@ -175,7 +175,7 @@ impl<'p> FunctionSlots<'p> {
         }
         Some(FunctionSlot {
             storage: FunctionStorage::Payload(Rc::clone(slot.name)),
-            declared: slot.span,
+            declared: slot.function_span,
         })
     }
 }

@@ -1351,6 +1351,10 @@ impl TypeChecker {
                 params,
                 fields: lowered,
                 field_spans,
+                function_spans: fields
+                    .iter()
+                    .map(|(_, field_type)| Self::function_span(field_type))
+                    .collect(),
                 derives: Vec::new(),
                 derived_traits: Vec::new(),
                 blocked: Vec::new(),
@@ -1382,6 +1386,10 @@ impl TypeChecker {
                 name: variant.name.clone(),
                 payload,
                 payload_spans,
+                function_spans: Self::payload_type_exprs(&variant.payload)
+                    .into_iter()
+                    .map(Self::function_span)
+                    .collect(),
                 span: variant.span,
             });
         }
@@ -1497,6 +1505,30 @@ impl TypeChecker {
             spans.push(field_type.span());
         }
         Ok((lowered, spans))
+    }
+
+    fn payload_type_exprs(payload: &CoreVariantPayload) -> Vec<&TypeExpr> {
+        match payload {
+            CoreVariantPayload::None => Vec::new(),
+            CoreVariantPayload::Positional(types) => types.iter().collect(),
+            CoreVariantPayload::Named(fields) => {
+                fields.iter().map(|(_, field_type)| field_type).collect()
+            }
+        }
+    }
+
+    fn function_span(stored_type: &TypeExpr) -> Span {
+        Self::inner_function_span(stored_type).unwrap_or(stored_type.span())
+    }
+
+    fn inner_function_span(type_expr: &TypeExpr) -> Option<Span> {
+        if matches!(type_expr.kind(), TypeExprKind::Function(..)) {
+            return Some(type_expr.span());
+        }
+        type_expr
+            .parts()
+            .into_iter()
+            .find_map(Self::inner_function_span)
     }
 
     fn lower_stored_type(
