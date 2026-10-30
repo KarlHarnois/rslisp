@@ -42,6 +42,11 @@ impl<'a> TextOperations<'a> {
         Ok(Value::Bool(is_match))
     }
 
+    pub fn is_list(&self) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(1)?;
+        Ok(Value::Bool(self.arguments.value(0).is_list()))
+    }
+
     pub fn symbol_name(&self) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(1)?;
         let name = self.arguments.symbol(0)?.name().to_string();
@@ -95,15 +100,14 @@ impl<'a> TextOperations<'a> {
     pub fn closest_name(&self) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(2)?;
         let name = self.arguments.symbol(0)?.name();
-        let candidates = self.arguments.symbols(1)?;
+        let candidates = self.arguments.symbol_forms(1)?;
         let names: Vec<Rc<str>> = candidates
             .iter()
+            .filter_map(Form::as_symbol)
             .map(|symbol| Rc::from(symbol.name()))
             .collect();
         let closest = SimilarName::closest(name, &names);
-        let found = self
-            .arguments
-            .list(1)?
+        let found = candidates
             .iter()
             .filter(|candidate| candidate.as_symbol().map(Symbol::name) == closest.as_deref())
             .take(1)
@@ -118,13 +122,21 @@ impl<'a> TextOperations<'a> {
 
     pub fn value_eq(&self) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(2)?;
-        let equal = match (self.arguments.value(0), self.arguments.value(1)) {
-            (Value::Form(left), Value::Form(right)) => Self::forms_equal(left, right),
+        let left = self.arguments.value(0);
+        let right = self.arguments.value(1);
+        let equal = match (left.to_form(), right.to_form()) {
+            (Some(left), Some(right)) => Self::forms_equal(&left, &right),
+            _ => Self::plain_values_equal(left, right),
+        };
+        Ok(Value::Bool(equal))
+    }
+
+    fn plain_values_equal(left: &Value, right: &Value) -> bool {
+        match (left, right) {
             (Value::Bool(left), Value::Bool(right)) => left == right,
             (Value::Unit, Value::Unit) => true,
             _ => false,
-        };
-        Ok(Value::Bool(equal))
+        }
     }
 
     pub fn not(&self) -> Result<Value, Diagnostic> {

@@ -1,9 +1,11 @@
 mod arguments;
 mod builtins;
+mod code_list;
 mod problems;
 mod value;
 
 pub use builtins::BuiltinCall;
+pub use code_list::CodeList;
 pub use problems::InterpretProblems;
 pub use value::{Closure, Env, Value};
 

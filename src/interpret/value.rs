@@ -1,11 +1,13 @@
 use std::rc::Rc;
 
+use super::CodeList;
 use crate::core::{BindingId, Builtin, Keyword, Lambda};
 use crate::reader::{Form, FormKind, NumberValue, Symbol};
 
 #[derive(Clone, Debug)]
 pub enum Value {
     Form(Form),
+    List(CodeList),
     Bool(bool),
     Unit,
     Closure(Rc<Closure>),
@@ -16,6 +18,7 @@ impl Value {
     pub fn describe(&self) -> &'static str {
         match self {
             Value::Form(form) => Self::describe_form(form),
+            Value::List(_) => "a list",
             Value::Bool(_) => "a boolean",
             Value::Unit => "unit",
             Value::Closure(_) | Value::Builtin(_) => "a function",
@@ -38,6 +41,30 @@ impl Value {
     pub fn as_form(&self) -> Option<&Form> {
         match self {
             Value::Form(form) => Some(form),
+            _ => None,
+        }
+    }
+
+    pub fn to_form(&self) -> Option<Form> {
+        match self {
+            Value::Form(form) => Some(form.clone()),
+            Value::List(list) => Some(list.to_form()),
+            _ => None,
+        }
+    }
+
+    pub fn is_code(&self) -> bool {
+        matches!(self, Value::Form(_) | Value::List(_))
+    }
+
+    pub fn is_list(&self) -> bool {
+        self.as_code_list().is_some()
+    }
+
+    pub fn as_code_list(&self) -> Option<CodeList> {
+        match self {
+            Value::Form(form) => CodeList::of_form(form),
+            Value::List(list) => Some(list.clone()),
             _ => None,
         }
     }

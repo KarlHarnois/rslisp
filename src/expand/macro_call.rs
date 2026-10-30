@@ -137,7 +137,7 @@ impl Expander<'_> {
         );
         self.expansion_depth -= 1;
         let output = result.map_err(|diagnostic| Self::point_at_call(diagnostic, call_site))?;
-        let Value::Form(mut form) = output else {
+        let Some(mut form) = output.to_form() else {
             return Err(ExpandProblems::macro_result(output.describe(), call_site));
         };
         form.flip_scope(introduction);
