@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/repeated_recovered_error.rslisp
+---
+error[L0201]: cannot find `missing-name` in this scope
+ --> expand/repeated_recovered_error.rslisp:4:11
+  |
+4 |   (twice (missing-name)))
+  |           ^^^^^^^^^^^^ not found in this scope

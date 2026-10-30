@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::rc::Rc;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct DiagnosticCode(Cow<'static, str>);
 
 macro_rules! diagnostic_codes {
