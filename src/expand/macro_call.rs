@@ -108,7 +108,14 @@ impl Expander<'_> {
         form
     }
 
-    pub(super) fn trial_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
+    pub(super) fn discarded_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
+        let budget = self.form_budget.clone();
+        let expansion = self.trial_expansion(binding, form);
+        self.form_budget = budget;
+        expansion
+    }
+
+    fn trial_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
         let diagnostics = self.diagnostics.len();
         let recovered = self.recovered_diagnostics.len();
         let result = self.run_macro(binding, form, None).ok();

@@ -15,7 +15,7 @@ impl Expander<'_> {
         span: Span,
     ) -> Option<BindingId> {
         let (trial, left, right) = Self::trial_form(reference, span);
-        let output = self.trial_expansion(binding, trial)?;
+        let output = self.discarded_expansion(binding, trial)?;
         let function = self.output_function(&output, &left, &right)?;
         self.resolves_to(function, reference)
     }
