@@ -348,7 +348,7 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 | `number-add number-sub number-lt number-le number-gt number-ge` | Count and compare positions in code. They take integers. |
 | `value-eq bool-not` | Compare forms and negate booleans. |
 
-`first`, `rest`, `nth`, `take`, `drop`, `length` and `empty?` take constant time: a list that `rest`, `take` or `drop` returns shares its items with the list it reads. `concat` copies only the lists after its first, unless another `concat` has already grown the first list, so a loop that builds a list with `(recur (concat built (list item)) ...)` takes linear time. `prepend` copies its list.
+`first`, `rest`, `nth`, `take`, `drop`, `length` and `empty?` take constant time: a list that `rest`, `take` or `drop` returns shares its items with the list it reads. `concat` appends to its first list in place when `list`, `concat` or `prepend` built that list and no other `concat` has grown it since. Otherwise it copies the first list too. So a loop that builds a list with `(recur (concat built (list item)) ...)` takes linear time. `prepend` copies its list.
 
 A keyword is a symbol whose name is `:` followed by at least one character, such as `:year`. `keyword?` tests for one, and `keyword-name` returns its name without the `:`, so `(keyword-name (quote :year))` is `"year"`. `keyword-field` returns the field symbol, so `(keyword-field (quote :year))` is `year`, with the keyword's location and hygiene, so an error about the field points at the keyword the user wrote. `field-keyword` is its inverse: `(field-keyword (quote year))` is `:year`, with the field's location and hygiene. The compiler states the `:` marker once, so macro code never compares names with it.
 
