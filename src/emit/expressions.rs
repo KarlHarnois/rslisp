@@ -532,7 +532,7 @@ impl<'a> ExpressionEmitter<'a> {
         } else {
             value
         };
-        let value = Self::scrutinee(value, &matched.value);
+        let value = value.into_head();
         let mut fragments = vec![Fragment::Text("match ".to_string())];
         fragments.extend(value.fragments);
         fragments.push(Fragment::Text(" {".to_string()));
@@ -556,21 +556,6 @@ impl<'a> ExpressionEmitter<'a> {
             fragments,
             precedence: Precedence::Block,
         }
-    }
-
-    fn scrutinee(code: Code, value: &TypedExpr) -> Code {
-        if Self::is_struct_literal(value) && code.is_atomic() {
-            code.parenthesized()
-        } else {
-            code
-        }
-    }
-
-    fn is_struct_literal(value: &TypedExpr) -> bool {
-        matches!(
-            value.kind,
-            TypedExprKind::Struct(TypedStructExpr::New(..) | TypedStructExpr::Update(..))
-        )
     }
 
     fn add_fallback(arms: &mut Vec<Fragment>, unguarded_exhaustive: bool) {
@@ -1272,7 +1257,7 @@ impl<'a> ExpressionEmitter<'a> {
             parts.push(self.payload_argument(argument, payload));
         }
         parts.push(Code::atom(" }"));
-        Code::joined(parts, Precedence::Atom)
+        Code::struct_literal(parts)
     }
 
     fn payload_argument(&mut self, argument: &TypedExpr, payload: &Type) -> Code {
@@ -2414,7 +2399,7 @@ impl<'a> ExpressionEmitter<'a> {
             };
             return self.short_circuit(operator, test, value);
         }
-        let test = self.expr(test);
+        let test = self.expr(test).into_head();
         let mut fragments = vec![Fragment::Text("if ".to_string())];
         fragments.extend(test.fragments);
         fragments.push(Fragment::Text(" {".to_string()));
@@ -2442,7 +2427,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn negated_conditional(&mut self, test: &TypedExpr, branch: &TypedExpr) -> Code {
-        let test = Self::prefixed("!", self.expr(test));
+        let test = Self::prefixed("!", self.expr(test)).into_head();
         let mut fragments = vec![Fragment::Text("if ".to_string())];
         fragments.extend(test.fragments);
         fragments.push(Fragment::Text(" {".to_string()));
@@ -2566,7 +2551,7 @@ impl<'a> ExpressionEmitter<'a> {
         parts.push(Code::atom(", .."));
         parts.push(base);
         parts.push(Code::atom(" }"));
-        Code::joined(parts, Precedence::Atom)
+        Code::struct_literal(parts)
     }
 
     fn bound_block(name: &str, value: Code, body: Code) -> Code {
@@ -2603,7 +2588,7 @@ impl<'a> ExpressionEmitter<'a> {
             }
         }
         parts.push(Code::atom(" }"));
-        Code::joined(parts, Precedence::Atom)
+        Code::struct_literal(parts)
     }
 
     fn field_access(&mut self, value: &TypedExpr, label: &FieldLabel, result: &Type) -> Code {

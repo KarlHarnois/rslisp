@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/if_struct_literal.rslisp
+---
+bolt
+same
+failed
+3

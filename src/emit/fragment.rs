@@ -6,6 +6,7 @@ pub enum Fragment {
     Newline,
     Indented(Vec<Fragment>),
     Spanned(Span, Vec<Fragment>),
+    StructLiteral(Vec<Fragment>),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -23,6 +24,8 @@ pub struct Code {
 }
 
 impl Code {
+    const PREFIX_OPERATORS: [&str; 6] = ["", "!", "&", "&mut ", "*", "-"];
+
     pub fn atom(text: impl Into<String>) -> Self {
         Self::with(text, Precedence::Atom)
     }
@@ -41,6 +44,15 @@ impl Code {
         }
     }
 
+    pub fn struct_literal(parts: Vec<Code>) -> Self {
+        Self {
+            fragments: vec![Fragment::StructLiteral(
+                Self::joined(parts, Precedence::Atom).fragments,
+            )],
+            precedence: Precedence::Atom,
+        }
+    }
+
     pub fn spanned(self, span: Span) -> Self {
         Self {
             fragments: vec![Fragment::Spanned(span, self.fragments)],
@@ -53,6 +65,27 @@ impl Code {
             vec![Code::atom("("), self, Code::atom(")")],
             Precedence::Atom,
         )
+    }
+
+    pub fn into_head(self) -> Self {
+        if self.starts_with_struct_literal() {
+            self.parenthesized()
+        } else {
+            self
+        }
+    }
+
+    fn starts_with_struct_literal(&self) -> bool {
+        Self::left_edge_is_struct_literal(&self.fragments) == Some(true)
+    }
+
+    fn left_edge_is_struct_literal(fragments: &[Fragment]) -> Option<bool> {
+        fragments.iter().find_map(|fragment| match fragment {
+            Fragment::StructLiteral(_) => Some(true),
+            Fragment::Spanned(_, inner) => Self::left_edge_is_struct_literal(inner),
+            Fragment::Text(text) if Self::PREFIX_OPERATORS.contains(&text.as_str()) => None,
+            _ => Some(false),
+        })
     }
 
     pub fn is_atomic(&self) -> bool {
@@ -82,9 +115,9 @@ impl Code {
             match fragment {
                 Fragment::Text(part) => text.push_str(part),
                 Fragment::Newline => text.push('\n'),
-                Fragment::Indented(inner) | Fragment::Spanned(_, inner) => {
-                    Self::collect_text(inner, text)
-                }
+                Fragment::Indented(inner)
+                | Fragment::Spanned(_, inner)
+                | Fragment::StructLiteral(inner) => Self::collect_text(inner, text),
             }
         }
     }

@@ -1,0 +1,8 @@
+(defstruct spare :size u16 :label str)
+
+(defn main ()
+  (println (:label (->spare :size 1 :label "washer")))
+  (println
+    (match (:size (->spare :size 3 :label "bolt"))
+      (3 "three")
+      (_ "other"))))
