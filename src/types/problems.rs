@@ -698,6 +698,7 @@ impl TypeProblems {
     pub fn selfless_method_call(
         trait_name: &str,
         method: &str,
+        replacement: &str,
         call: Span,
         signature: Span,
     ) -> Diagnostic {
@@ -717,7 +718,7 @@ impl TypeProblems {
             "a call picks an implementor from the type of a parameter or result that is `self`",
         )
         .with_help(format!(
-            "mention `self` in the signature of `{method}`, as in `(fn ((ref self) i64) i64)`"
+            "add `(ref self)` as the first parameter of `{method}`, as in `{replacement}`"
         ))
     }
 

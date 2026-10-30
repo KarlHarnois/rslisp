@@ -1,0 +1,10 @@
+(defstruct badge :code i64)
+
+(trait vetting
+  (check (fn (str) bool)))
+
+(impl vetting badge
+  (check (word) (!= word "")))
+
+(defn main ()
+  (println (check "visitor")))

@@ -12,6 +12,7 @@ use super::pending::{DecidedBorrows, PendingBorrow};
 use super::pipelines::Pipelines;
 use super::problems::{MismatchContext, TypeProblems};
 use super::rust_types::RustType;
+use super::selfless_methods::SelflessMethod;
 use super::ty::Bound;
 use super::ty::Type;
 use super::ty::TypeVar;
@@ -1115,18 +1116,35 @@ impl TypeChecker {
             return Err(TypeProblems::compile_time_only(name, span));
         }
         if let Some(method) = self.selfless_methods.get(binding) {
-            let trait_name = self.bindings.get(method.trait_binding).name();
-            return Err(TypeProblems::selfless_method_call(
-                trait_name,
-                name,
-                span,
-                method.signature,
-            ));
+            return Err(self.selfless_method_call(binding, method, name, span));
         }
         Ok((
             TypedExprKind::Leaf(TypedLeaf::Global(binding)),
             self.global_type(binding),
         ))
+    }
+
+    fn selfless_method_call(
+        &self,
+        binding: BindingId,
+        method: SelflessMethod,
+        name: &str,
+        span: Span,
+    ) -> Diagnostic {
+        let scheme = self
+            .schemes
+            .get(&binding)
+            .expect("a trait method has a scheme before any call");
+        let replacement = self
+            .display()
+            .scheme_with_receiver(scheme, method.trait_binding);
+        TypeProblems::selfless_method_call(
+            self.bindings.get(method.trait_binding).name(),
+            name,
+            &replacement,
+            span,
+            method.signature,
+        )
     }
 
     fn global_type(&mut self, binding: BindingId) -> Type {
