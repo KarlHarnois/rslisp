@@ -1,24 +1,25 @@
 use super::Expander;
 use super::form_budget::FormBudget;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, Help, Label};
 use crate::scope::FastHashSet;
-use crate::source::Span;
 
 #[derive(PartialEq, Eq, Hash)]
 pub(super) struct RepeatedDiagnostic {
     code: DiagnosticCode,
-    span: Span,
     title: String,
+    labels: Vec<Label>,
     notes: Vec<String>,
+    helps: Vec<Help>,
 }
 
 impl RepeatedDiagnostic {
     fn of(diagnostic: &Diagnostic) -> Self {
         Self {
             code: diagnostic.code().clone(),
-            span: diagnostic.primary().span(),
             title: diagnostic.title().to_string(),
+            labels: diagnostic.labels().cloned().collect(),
             notes: diagnostic.notes().to_vec(),
+            helps: diagnostic.helps().to_vec(),
         }
     }
 }

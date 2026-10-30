@@ -1,0 +1,4 @@
+(defrule both ((name form) (do (println form) (fn () (let name 1) form))))
+
+(defn main ()
+  (both missing-nam missing-name))

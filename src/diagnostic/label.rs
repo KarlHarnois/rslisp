@@ -1,6 +1,6 @@
 use crate::source::Span;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Label {
     span: Span,
     message: String,
@@ -23,7 +23,7 @@ impl Label {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Suggestion {
     span: Span,
     replacement: String,
@@ -46,7 +46,7 @@ impl Suggestion {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Help {
     message: String,
     suggestion: Option<Suggestion>,
