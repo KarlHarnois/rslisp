@@ -1,3 +1,4 @@
+use crate::interpret::Value;
 use crate::reader::Form;
 use crate::scope::Scope;
 
@@ -12,6 +13,11 @@ impl FormBudget {
         Self {
             remaining: Self::EXPANSION_LIMIT,
         }
+    }
+
+    pub fn admitted_form(&self, value: &Value) -> Option<Form> {
+        let mut allowance = self.remaining;
+        value.to_form_within(&mut allowance)
     }
 
     pub fn flip_scope(&mut self, form: &mut Form, scope: Scope) -> bool {

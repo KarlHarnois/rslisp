@@ -53,6 +53,16 @@ impl Value {
         }
     }
 
+    pub fn to_form_within(&self, allowance: &mut usize) -> Option<Form> {
+        match self {
+            Value::List(list) => list.to_form_within(allowance),
+            _ => {
+                *allowance = allowance.checked_sub(1)?;
+                self.to_form()
+            }
+        }
+    }
+
     pub fn is_code(&self) -> bool {
         matches!(self, Value::Form(_) | Value::List(_))
     }
