@@ -1,0 +1,5 @@
+(def defn-page (doc defn))
+
+(def threading-docstring (docstring ->))
+
+(def doc-header (header doc))

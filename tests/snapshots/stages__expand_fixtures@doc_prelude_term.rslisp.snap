@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_prelude_term.rslisp
+---
+(def defn-page "(defmacro defn (name parameters body ...))\n\nDefines a function: (defn name (parameter ...) body ...).\n\nA string before at least one more body form is the docstring.")
+(def threading-docstring "Threads a value through each form as its first argument: (-> value form ...).")
+(def doc-header "(defmacro doc (term))")

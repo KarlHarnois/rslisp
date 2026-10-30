@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_unbound_term.rslisp
+---
+error[L0201]: cannot find `no-such-term` in this scope
+ --> expand/doc_unbound_term.rslisp:1:24
+  |
+1 | (def missing-page (doc no-such-term))
+  |                        ^^^^^^^^^^^^ not found in this scope

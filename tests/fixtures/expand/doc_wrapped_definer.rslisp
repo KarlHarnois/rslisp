@@ -1,0 +1,5 @@
+(defrule my-defn ((n p d b ...) (defn n p d b ...)))
+
+(my-defn twice (x) "Doubles." (* 2 x))
+
+(def twice-page (doc twice))

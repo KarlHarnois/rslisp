@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_lookup.rslisp
+---
+(def twice (fn (x) (mul 2 x)))
+(def twice-page "(defn twice (x))\n\nDoubles a number.")
+(def twice-docstring "Doubles a number.")
+(def twice-header "(defn twice (x))")
+(def unless-page "(defmacro unless (test body ...))\n\nRuns body when test is false.")
+(def main (fn () ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0 display)) (fn ((ref part-type-0)) unit))) twice-page)))
