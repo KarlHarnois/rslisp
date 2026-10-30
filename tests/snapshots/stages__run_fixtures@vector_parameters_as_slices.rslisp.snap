@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/vector_parameters_as_slices.rslisp
+---
+2013 2013
+2025 3
+false
+Nissan Ariya

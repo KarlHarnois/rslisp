@@ -1,0 +1,76 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/vector_parameters_as_slices.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn make_car(make: &str, year: u16) -> Car<'_> {
+    Car { make, year }
+}
+
+fn reset_first_year(years: &mut [i64], year: i64) {
+    years[0] = year
+}
+
+fn reset_last_year(years: &mut [i64], year: i64) {
+    years[years.len() - 1] = year
+}
+
+fn reset_both(years: &mut [i64], year: i64) {
+    reset_first_year(years, year);
+    reset_last_year(years, year)
+}
+
+fn clear_cell(grid: &mut [Vec<bool>], row: usize, column: usize) {
+    grid[row][column] = false
+}
+
+fn replace_first<'a>(cars: &mut [Car<'a>], car: Car<'a>) {
+    cars[0] = car
+}
+
+fn first_make<'a>(cars: &'a [Car<'a>]) -> &'a str {
+    cars[0].make
+}
+
+fn add_year(years: &mut Vec<i64>, year: i64) {
+    years[0] = year;
+    years.push(year)
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut years: Vec<i64> = vec![2011_i64, 2024_i64];
+    reset_both(&mut years, 2013);
+    println!("{} {}", years[0], years[1]);
+    add_year(&mut years, 2025);
+    println!("{} {}", years[0], years.len());
+    let mut grid = vec![vec![true, true], vec![true, true]];
+    clear_cell(&mut grid, 1, 0);
+    println!("{}", grid[1][0]);
+    let mut cars = vec![make_car("Nissan Leaf", 2011)];
+    replace_first(&mut cars, make_car("Nissan Ariya", 2023));
+    println!("{}", first_make(&cars))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

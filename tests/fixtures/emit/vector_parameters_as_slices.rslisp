@@ -1,0 +1,39 @@
+(defstruct car :make str :year u16)
+
+(defn reset-first-year! (years year)
+  (set! (at years 0) year))
+
+(defn reset-last-year! (years year)
+  (set! (at years (- (len years) 1)) year))
+
+(defn reset-both! (years year)
+  (reset-first-year! years year)
+  (reset-last-year! years year))
+
+(defn clear-cell! (grid row column)
+  (set! (at (at grid row) column) false))
+
+(type replace-first! (fn ((mut (vec car)) car) unit))
+(defn replace-first! (cars car)
+  (set! (at cars 0) car))
+
+(type first-make (fn ((ref (vec car))) (ref str)))
+(defn first-make (cars)
+  (:make (at cars 0)))
+
+(defn add-year! (years year)
+  (set! (at years 0) year)
+  (push! years year))
+
+(defn main ()
+  (let years (vec 2011 2024))
+  (reset-both! (mut years) 2013)
+  (println (at years 0) " " (at years 1))
+  (add-year! (mut years) 2025)
+  (println (at years 0) " " (len years))
+  (let grid (vec (vec true true) (vec true true)))
+  (clear-cell! (mut grid) 1 0)
+  (println (at (at grid 1) 0))
+  (let cars (vec (->car "Nissan Leaf" 2011)))
+  (replace-first! (mut cars) (->car "Nissan Ariya" 2023))
+  (println (first-make cars)))

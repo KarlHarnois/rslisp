@@ -1028,6 +1028,7 @@ impl TypeChecker {
             (Type::Ref(_, shared), Type::Mut(_, mutable)) => {
                 self.unifier.unify(&shared, &mutable, span).is_ok()
             }
+            (Type::Mut(_, slice), Type::Mut(_, vector)) => self.coerces(&slice, &vector, span),
             _ => false,
         }
     }
@@ -2661,13 +2662,17 @@ impl TypeChecker {
 
     fn infer_iter_slice(&mut self, value: TypedExpr, span: Span) -> Result<TypedExpr, Diagnostic> {
         let element = self.unifier.fresh();
+        let parameter = Type::shared(self.slice_of(element.clone()));
+        let result = self.iterator_type(Type::shared(element));
+        self.synthetic_call_with_value("{0}.iter()", vec![parameter], result, value, &[], span)
+    }
+
+    fn slice_of(&self, element: Type) -> Type {
         let slice = self
             .rust_types
             .binding_with_template(RustType::SLICE_TEMPLATE)
             .expect("the prelude defines a slice type");
-        let parameter = Type::shared(Type::Named(slice, vec![element.clone()]));
-        let result = self.iterator_type(Type::shared(element));
-        self.synthetic_call_with_value("{0}.iter()", vec![parameter], result, value, &[], span)
+        Type::Named(slice, vec![element])
     }
 
     fn map_collection(&self, value: &TypedExpr) -> Result<Collection, Diagnostic> {
@@ -2842,7 +2847,7 @@ impl TypeChecker {
         let resolved = self.unifier.resolve(&value.ty);
         let collection = match resolved {
             Type::Var(var) if self.unifier.literal_kind(var).is_none() => {
-                self.unknown_vector(depth)
+                self.unknown_vector(&value.ty, depth, value.span)
             }
             _ => Collection::of_referent(&resolved, &self.rust_types),
         };
@@ -2856,9 +2861,10 @@ impl TypeChecker {
         })
     }
 
-    fn unknown_vector(&mut self, depth: usize) -> Option<Collection> {
+    fn unknown_vector(&mut self, unknown: &Type, depth: usize, span: Span) -> Option<Collection> {
         let element = self.unifier.fresh();
         let vector = self.nested_vector_type(depth, &element);
+        self.unifier.unify(unknown, &vector, span).ok()?;
         Collection::of(&vector, &self.rust_types)
     }
 
@@ -2872,7 +2878,7 @@ impl TypeChecker {
     ) -> Result<TypedExpr, Diagnostic> {
         let depth = keys.len();
         let item_type = self.assoc_element(depth, collection.ty(), value.span)?;
-        let mut parameters = vec![Type::mutable(collection.ty().clone())];
+        let mut parameters = vec![self.set_at_target(depth, &item_type)];
         parameters.extend((0..depth).map(|_| Type::Primitive(PrimitiveType::Usize)));
         parameters.push(item_type);
         let mut template = "{0}".to_string();
@@ -2884,6 +2890,15 @@ impl TypeChecker {
         arguments.extend(keys.iter().cloned());
         arguments.push(item.clone());
         self.synthetic_call_with_value(&template, parameters, Type::unit(), value, &arguments, span)
+    }
+
+    fn set_at_target(&self, depth: usize, item: &Type) -> Type {
+        match depth.checked_sub(1) {
+            Some(row_depth) => {
+                Type::mutable(self.slice_of(self.nested_vector_type(row_depth, item)))
+            }
+            None => Type::mutable(item.clone()),
+        }
     }
 
     fn infer_set_at_map(
