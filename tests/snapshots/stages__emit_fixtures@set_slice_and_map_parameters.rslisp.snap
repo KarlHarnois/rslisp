@@ -1,0 +1,77 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/set_slice_and_map_parameters.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn make_car(make: &str, year: u16) -> Car<'_> {
+    Car { make, year }
+}
+
+fn replace_first<'a>(cars: &mut [Car<'a>], car: Car<'a>) {
+    cars[0] = car
+}
+
+fn rename<'a>(
+    models: &mut std::collections::HashMap<&'a str, &'a str>,
+    key: &'a str,
+    model: &'a str,
+) {
+    *models.get_mut(key).unwrap() = model
+}
+
+fn rename_through<'a>(
+    models: &mut std::collections::HashMap<&'a str, &'a str>,
+    key: &'a str,
+    model: &'a str,
+) {
+    rename(models, key, model)
+}
+
+fn reprice<'a>(prices: &mut std::collections::BTreeMap<&'a str, i64>, key: &'a str, price: i64) {
+    *prices.get_mut(key).unwrap() = price
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut cars = vec![make_car("Nissan Leaf", 2011), make_car("Honda Civic", 1999)];
+    replace_first(&mut cars, make_car("Nissan Ariya", 2023));
+    println!("{} {}", cars[0].make, cars[0].year);
+    let mut models = {
+        let mut map = std::collections::HashMap::new();
+        map.insert("leaf", "Nissan Leaf");
+        map
+    };
+    rename_through(&mut models, "leaf", "Nissan Leaf Plus");
+    println!("{}", models.get("leaf").unwrap());
+    let mut prices: std::collections::BTreeMap<&str, i64> = {
+        let mut map = std::collections::BTreeMap::new();
+        map.insert("leaf", 28000_i64);
+        map.insert("ariya", 39000_i64);
+        map
+    };
+    reprice(&mut prices, "ariya", 41000);
+    println!("{}", prices.get("ariya").unwrap())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

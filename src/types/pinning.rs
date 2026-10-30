@@ -55,6 +55,12 @@ impl InstantiationReport {
         self.substitutions.get(&binding).cloned()
     }
 
+    pub fn is_used(&self, binding: BindingId) -> bool {
+        self.entries
+            .get(&binding)
+            .is_some_and(|entry| !entry.sites.is_empty())
+    }
+
     fn written_signatures(program: &Program) -> HashSet<BindingId> {
         program
             .modules

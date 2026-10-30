@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/set_collection_unknown.rslisp
+---
+error[L0407]: type annotations needed
+ --> check/set_collection_unknown.rslisp:2:13
+  |
+2 |   (set! (at models key) model))
+  |             ^^^^^^ cannot tell whether this is a vector or a map
+  |
+  = help: add a `type` signature that names the collection's type

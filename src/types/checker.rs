@@ -166,6 +166,8 @@ pub struct TypeChecker {
     pub(super) associated_generics: HashMap<GenericId, std::rc::Rc<str>>,
     pub(super) single_field_readers: HashMap<BindingId, Rc<str>>,
     pub(super) pending_borrows: Vec<PendingBorrow>,
+    pub(super) open_set_ats: Vec<super::infer::OpenSetAt>,
+    pub(super) unsettled_collections: Vec<(Type, Span)>,
     pub(super) template_borrows: TemplateBorrows,
     pub(super) recur_target: Option<super::infer::RecurTarget>,
     pub(super) checking_function_body: bool,
@@ -248,6 +250,8 @@ impl TypeChecker {
             associated_generics: HashMap::new(),
             single_field_readers: HashMap::new(),
             pending_borrows: Vec::new(),
+            open_set_ats: Vec::new(),
+            unsettled_collections: Vec::new(),
             template_borrows: TemplateBorrows::default(),
             recur_target: None,
             checking_function_body: false,
@@ -802,6 +806,10 @@ impl TypeChecker {
         }
     }
 
+    pub(super) fn defaults_literal_parameters(&self) -> bool {
+        self.default_literal_parameters
+    }
+
     fn leave_unresolved(&mut self, obligation: Obligation, pass: ObligationPass) {
         match pass {
             ObligationPass::Deferring => self.unifier.defer(obligation),
@@ -834,6 +842,7 @@ impl TypeChecker {
                 }
             }
         }
+        self.close_open_set_ats();
         let decided = self.decide_pending_borrows();
         for (binding, value) in &mut typed {
             decided.patch(value);
@@ -2705,12 +2714,15 @@ impl TypeChecker {
         checker.check_written_projections();
         checker.resolve_missing_annotations();
         checker.label_parameter_calls(&program.modules);
+        let open_collections = checker.open_collections();
         let typed_modules = program
             .modules
             .iter()
             .map(|module| Self::typed_module(module, &mut definitions))
             .collect();
-        checker.into_program(typed_modules, program.entry)
+        let typed = checker.into_program(typed_modules, program.entry)?;
+        open_collections.check(program, graph, &typed)?;
+        Ok(typed)
     }
 
     fn typed_module(
