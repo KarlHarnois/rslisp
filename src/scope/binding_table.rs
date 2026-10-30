@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use std::ops::Range;
 use std::rc::Rc;
 
-use super::ScopeSet;
+use super::{Scope, ScopeSet};
 use crate::core::{BindingId, Namespace};
 use crate::reader::Symbol;
 
@@ -25,19 +26,92 @@ struct Entry {
 }
 
 impl Entry {
-    fn is_visible_from(&self, symbol: &Symbol, phase: Phase) -> bool {
-        self.is_visible_from_scopes(symbol.scopes(), phase)
-    }
-
     fn is_visible_from_scopes(&self, scopes: &ScopeSet, phase: Phase) -> bool {
         let phase_matches = phase == Phase::CompileTime || self.phase == Phase::Runtime;
         phase_matches && self.scopes.is_subset_of(scopes)
+    }
+
+    fn anchor(&self) -> Option<Scope> {
+        self.scopes.largest()
+    }
+}
+
+#[derive(Default)]
+struct NameEntries {
+    sorted_by_anchor: Vec<Entry>,
+}
+
+impl NameEntries {
+    const SHORT_LIST_LENGTH: usize = 16;
+
+    fn bind(
+        &mut self,
+        scopes: &ScopeSet,
+        binding: BindingId,
+        phase: Phase,
+    ) -> Result<(), BindingId> {
+        let anchored_end = self.anchored_end(scopes.largest());
+        match self.entry_with_scopes(anchored_end, scopes) {
+            Some(existing) if existing.binding == binding => Ok(()),
+            Some(existing) => Err(existing.binding),
+            None => {
+                let entry = Entry {
+                    scopes: scopes.clone(),
+                    binding,
+                    phase,
+                };
+                self.sorted_by_anchor.insert(anchored_end, entry);
+                Ok(())
+            }
+        }
+    }
+
+    fn anchored_end(&self, anchor: Option<Scope>) -> usize {
+        self.sorted_by_anchor
+            .partition_point(|entry| entry.anchor() <= anchor)
+    }
+
+    fn entry_with_scopes(&self, anchored_end: usize, scopes: &ScopeSet) -> Option<&Entry> {
+        let anchor = scopes.largest();
+        self.sorted_by_anchor[..anchored_end]
+            .iter()
+            .rev()
+            .take_while(|entry| entry.anchor() == anchor)
+            .find(|entry| entry.scopes == *scopes)
+    }
+
+    fn visible(&self, scopes: &ScopeSet, phase: Phase) -> Vec<&Entry> {
+        let is_visible = |entry: &&Entry| entry.is_visible_from_scopes(scopes, phase);
+        if self.is_shorter_than_an_anchor_search(scopes) {
+            return self.sorted_by_anchor.iter().filter(is_visible).collect();
+        }
+        Self::possible_anchors(scopes)
+            .flat_map(|anchor| &self.sorted_by_anchor[self.anchored(anchor)])
+            .filter(is_visible)
+            .collect()
+    }
+
+    fn is_shorter_than_an_anchor_search(&self, scopes: &ScopeSet) -> bool {
+        self.sorted_by_anchor.len() <= scopes.len().max(Self::SHORT_LIST_LENGTH)
+    }
+
+    fn anchored(&self, anchor: Option<Scope>) -> Range<usize> {
+        let start = self
+            .sorted_by_anchor
+            .partition_point(|entry| entry.anchor() < anchor);
+        let length =
+            self.sorted_by_anchor[start..].partition_point(|entry| entry.anchor() == anchor);
+        start..start + length
+    }
+
+    fn possible_anchors(scopes: &ScopeSet) -> impl Iterator<Item = Option<Scope>> + '_ {
+        std::iter::once(None).chain(scopes.iter().map(Some))
     }
 }
 
 #[derive(Default)]
 pub struct BindingTable {
-    entries: HashMap<(Rc<str>, Namespace), Vec<Entry>>,
+    entries: HashMap<(Rc<str>, Namespace), NameEntries>,
 }
 
 impl BindingTable {
@@ -48,25 +122,10 @@ impl BindingTable {
         binding: BindingId,
         phase: Phase,
     ) -> Result<(), BindingId> {
-        let entries = self
-            .entries
+        self.entries
             .entry((symbol.shared_name(), namespace))
-            .or_default();
-        match entries
-            .iter()
-            .find(|entry| entry.scopes == *symbol.scopes())
-        {
-            Some(existing) if existing.binding == binding => Ok(()),
-            Some(existing) => Err(existing.binding),
-            None => {
-                entries.push(Entry {
-                    scopes: symbol.scopes().clone(),
-                    binding,
-                    phase,
-                });
-                Ok(())
-            }
-        }
+            .or_default()
+            .bind(symbol.scopes(), binding, phase)
     }
 
     pub fn resolve(&self, symbol: &Symbol, namespace: Namespace, phase: Phase) -> Resolution {
@@ -98,8 +157,8 @@ impl BindingTable {
             .filter(|((_, entry_namespace), _)| *entry_namespace == namespace)
             .flat_map(|((name, _), entries)| {
                 entries
-                    .iter()
-                    .filter(|entry| entry.is_visible_from(symbol, phase))
+                    .visible(symbol.scopes(), phase)
+                    .into_iter()
                     .map(|entry| (Rc::clone(name), entry.binding))
             })
             .collect()
@@ -114,8 +173,7 @@ impl BindingTable {
         self.entries
             .iter()
             .filter(|((_, entry_namespace), _)| *entry_namespace == namespace)
-            .flat_map(|(_, entries)| entries)
-            .filter(|entry| entry.is_visible_from_scopes(scopes, phase))
+            .flat_map(|(_, entries)| entries.visible(scopes, phase))
             .map(|entry| entry.binding)
             .collect()
     }
@@ -124,12 +182,7 @@ impl BindingTable {
         let key = (symbol.shared_name(), namespace);
         self.entries
             .get(&key)
-            .map(|entries| {
-                entries
-                    .iter()
-                    .filter(|entry| entry.is_visible_from(symbol, phase))
-                    .collect()
-            })
+            .map(|entries| entries.visible(symbol.scopes(), phase))
             .unwrap_or_default()
     }
 }

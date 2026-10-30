@@ -54,6 +54,14 @@ impl ScopeSet {
         self.sorted.iter().all(|scope| other.contains(*scope))
     }
 
+    pub(super) fn largest(&self) -> Option<Scope> {
+        self.sorted.last().copied()
+    }
+
+    pub(super) fn iter(&self) -> impl Iterator<Item = Scope> {
+        self.sorted.iter().copied()
+    }
+
     pub(super) fn len(&self) -> usize {
         self.sorted.len()
     }
