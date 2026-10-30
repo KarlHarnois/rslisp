@@ -491,6 +491,20 @@ mod tests {
     }
 
     #[test]
+    fn rebinding_a_binding_to_its_own_scopes_is_accepted() {
+        let mut world = World::new();
+        let module = world.scope();
+        let binding = world.define("x", &[module], Phase::Runtime);
+        let rebound = world.table.bind(
+            &World::symbol("x", &[module]),
+            Namespace::Value,
+            binding,
+            Phase::Runtime,
+        );
+        assert_eq!(rebound, Ok(()));
+    }
+
+    #[test]
     fn rebinding_the_same_scopes_reports_the_existing_binding() {
         let mut world = World::new();
         let module = world.scope();

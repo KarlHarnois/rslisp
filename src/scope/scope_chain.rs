@@ -20,11 +20,12 @@ impl ScopeChain {
 
     pub fn prefix(&self) -> Option<ChainPrefix> {
         let scopes = self.scopes.borrow();
+        let (&first, &last) = scopes.first().zip(scopes.last())?;
         Some(ChainPrefix {
             chain: self.clone(),
             length: scopes.len(),
-            first: *scopes.first()?,
-            last: *scopes.last()?,
+            first,
+            last,
         })
     }
 }
@@ -145,5 +146,15 @@ impl SharedScopes {
                 self.ascending_prefixes = None;
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn an_empty_chain_has_no_prefix() {
+        assert!(ScopeChain::default().prefix().is_none());
     }
 }

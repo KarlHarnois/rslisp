@@ -528,11 +528,27 @@ mod tests {
     }
 
     #[test]
-    fn removing_or_flipping_a_shared_scope_keeps_the_others() {
+    fn removing_an_absent_scope_keeps_the_set() {
+        let mut scopes = Scopes::new();
+        let (mut set, _) = scopes.set_of(2);
+        let original = set.clone();
+        let (_, absent) = scopes.set_of(1);
+        set.remove(absent[0]);
+        assert_eq!(set, original);
+    }
+
+    #[test]
+    fn removing_a_shared_scope_keeps_the_others() {
         let (mut set, scopes) = Scopes::new().shared_set_of(Scopes::SHARED_LENGTH);
         set.remove(scopes[0]);
-        set.flip(scopes[1]);
-        assert_eq!(set.iter().collect::<Vec<_>>(), scopes[2..]);
+        assert_eq!(set.iter().collect::<Vec<_>>(), scopes[1..]);
+    }
+
+    #[test]
+    fn flipping_a_shared_scope_keeps_the_others() {
+        let (mut set, scopes) = Scopes::new().shared_set_of(Scopes::SHARED_LENGTH);
+        set.flip(scopes[0]);
+        assert_eq!(set.iter().collect::<Vec<_>>(), scopes[1..]);
     }
 
     #[test]
@@ -544,6 +560,14 @@ mod tests {
         kept.retain(|scope| !dropped.contains(&scope));
         assert!(kept.own().is_empty());
         assert_eq!(kept.len(), Scopes::SHARED_LENGTH);
+    }
+
+    #[test]
+    fn retaining_none_of_a_prefix_leaves_the_set_plain() {
+        let (mut set, _) = Scopes::new().shared_set_of(Scopes::SHARED_LENGTH);
+        set.retain(|_| false);
+        assert!(set.is_plain());
+        assert_eq!(set.len(), 0);
     }
 
     #[test]
