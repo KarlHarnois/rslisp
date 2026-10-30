@@ -1,0 +1,60 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/method_struct_literal.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Spare<'a> {
+    size: u16,
+    label: &'a str,
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!(
+        "{}",
+        Spare {
+            size: 1,
+            label: "washer"
+        }
+        .label
+    );
+    if (Spare {
+        size: 3,
+        label: "nut",
+    }
+    .size_of()
+        == 3)
+    {
+        println!("three")
+    } else {
+        println!("other")
+    }
+}
+
+trait Sized2 {
+    fn size_of(&self) -> u16;
+}
+
+impl<'a> Sized2 for Spare<'a> {
+    fn size_of(&self) -> u16 {
+        self.size
+    }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

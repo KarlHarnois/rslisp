@@ -1717,10 +1717,13 @@ impl<'a> ExpressionEmitter<'a> {
                 .iter()
                 .map(|argument| self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary))
                 .collect();
-            let mut parts = vec![receiver, Code::atom(format!(".{name}("))];
-            parts.extend(Self::separated(rest));
-            parts.push(Code::atom(")"));
-            return Code::joined(parts, Precedence::Atom);
+            let mut call = vec![Code::atom(format!(".{name}("))];
+            call.extend(Self::separated(rest));
+            call.push(Code::atom(")"));
+            return Code::joined_outside_delimiters(
+                vec![receiver, Code::joined(call, Precedence::Atom)],
+                Precedence::Atom,
+            );
         }
         let arguments: Vec<Code> = arguments
             .iter()
