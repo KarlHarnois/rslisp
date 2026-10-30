@@ -12,10 +12,16 @@ struct UseTypes {
     resolved: bool,
 }
 
+struct UseSite {
+    enclosing: BindingId,
+    actual: Type,
+}
+
 struct FunctionUses {
     params: Vec<GenericId>,
     literal: Vec<(GenericId, PrimitiveType)>,
     body: Type,
+    sites: Vec<UseSite>,
     uses: Vec<UseTypes>,
     written: bool,
 }
@@ -38,7 +44,7 @@ impl InstantiationReport {
         let targets = Self::targets(typed);
         let mut entries = Self::entries(&targets, &written);
         Self::collect_uses(typed, &targets, &groups, &mut entries);
-        let substitutions = Self::group_substitutions(&targets, &groups, &entries);
+        let substitutions = Self::group_substitutions(graph, &mut entries);
         Self {
             entries,
             substitutions,
@@ -117,6 +123,7 @@ impl InstantiationReport {
                     params: target.params.clone(),
                     literal: target.literal.clone(),
                     body: target.body.clone(),
+                    sites: Vec::new(),
                     uses: Vec::new(),
                     written: written.contains(binding),
                 };
@@ -193,15 +200,16 @@ impl InstantiationReport {
         if groups.get(&enclosing) == groups.get(&target_binding) {
             return;
         }
-        let Some(target) = targets.get(&target_binding) else {
+        if !targets.contains_key(&target_binding) {
             return;
-        };
+        }
         let entry = entries
             .get_mut(&target_binding)
             .expect("every target has an entry");
-        entry
-            .uses
-            .push(Self::use_types(&target.body, &target.params, actual));
+        entry.sites.push(UseSite {
+            enclosing,
+            actual: actual.clone(),
+        });
     }
 
     fn use_types(body: &Type, params: &[GenericId], actual: &Type) -> UseTypes {
@@ -274,27 +282,55 @@ impl InstantiationReport {
     }
 
     fn group_substitutions(
-        targets: &HashMap<BindingId, Target>,
-        groups: &HashMap<BindingId, usize>,
-        entries: &BTreeMap<BindingId, FunctionUses>,
+        graph: &DefinitionGraph,
+        entries: &mut BTreeMap<BindingId, FunctionUses>,
     ) -> HashMap<BindingId, HashMap<GenericId, Type>> {
-        let mut members: HashMap<usize, Vec<BindingId>> = HashMap::new();
-        for binding in targets.keys() {
-            if let Some(group) = groups.get(binding) {
-                members.entry(*group).or_default().push(*binding);
-            }
-        }
         let mut substitutions = HashMap::new();
-        for members in members.values() {
-            if let Some(substitution) = Self::decide_group(members, entries)
-                && !Self::only_literal_defaults(members, entries, &substitution)
+        for component in graph.components().iter().rev() {
+            let members: Vec<BindingId> = component
+                .iter()
+                .filter(|binding| entries.contains_key(binding))
+                .copied()
+                .collect();
+            Self::resolve_group_uses(&members, entries, &substitutions);
+            if let Some(substitution) = Self::decide_group(&members, entries)
+                && !Self::only_literal_defaults(&members, entries, &substitution)
             {
-                for member in members {
+                for member in &members {
                     substitutions.insert(*member, substitution.clone());
                 }
             }
         }
         substitutions
+    }
+
+    fn resolve_group_uses(
+        members: &[BindingId],
+        entries: &mut BTreeMap<BindingId, FunctionUses>,
+        callers: &HashMap<BindingId, HashMap<GenericId, Type>>,
+    ) {
+        for member in members {
+            let entry = entries.get_mut(member).expect("every member has an entry");
+            entry.uses = entry
+                .sites
+                .iter()
+                .map(|site| Self::resolved_use(entry, site, callers))
+                .collect();
+        }
+    }
+
+    fn resolved_use(
+        entry: &FunctionUses,
+        site: &UseSite,
+        callers: &HashMap<BindingId, HashMap<GenericId, Type>>,
+    ) -> UseTypes {
+        match callers.get(&site.enclosing) {
+            Some(caller) => {
+                let actual = site.actual.substitute(caller);
+                Self::use_types(&entry.body, &entry.params, &actual)
+            }
+            None => Self::use_types(&entry.body, &entry.params, &site.actual),
+        }
     }
 
     fn only_literal_defaults(
@@ -546,11 +582,20 @@ impl Pinning {
 mod tests {
     use std::collections::HashMap;
 
-    use super::InstantiationReport;
+    use std::collections::HashSet;
+    use std::path::PathBuf;
+
+    use super::{InstantiationReport, Pinning};
     use crate::core::{
-        BindingArena, BindingId, BindingInfo, BindingKind, ClosureKind, ModuleId, PrimitiveType,
+        BindingArena, BindingId, BindingInfo, BindingKind, ClosureKind, ModuleId, ModulePath,
+        PrimitiveType,
     };
-    use crate::types::{GenericId, Type, TypeVar};
+    use crate::expand::{Expander, Program};
+    use crate::modules::ModuleSources;
+    use crate::source::SourceMap;
+    use crate::types::{
+        DefinitionGraph, GenericId, InferredCopies, LiteralDefaults, Type, TypeChecker, TypeVar,
+    };
 
     struct BindFixture {
         bound: HashMap<GenericId, Type>,
@@ -606,5 +651,54 @@ mod tests {
         let mut fixture = BindFixture::new();
         let scheme = Type::shared(Type::Primitive(PrimitiveType::I64));
         assert!(!fixture.bind(&scheme, &fixture.primitive()));
+    }
+
+    struct ChainFixture {
+        program: Program,
+    }
+
+    impl ChainFixture {
+        const WRAPPER_CHAIN: &str = "
+            (defn inner (x) x)
+            (defn middle (x) (inner x))
+            (defn outer (x) (middle x))
+            (defn main () (println (outer (the u16 1))))";
+
+        fn new() -> Self {
+            let mut sources = SourceMap::default();
+            let entry = sources.add("chain.rslisp", Self::WRAPPER_CHAIN);
+            let module_sources = ModuleSources::new(PathBuf::from("."), PathBuf::from("."));
+            let program = Expander::new(&mut sources, module_sources)
+                .expand(ModulePath::new("chain"), entry)
+                .expect("the chain expands");
+            Self { program }
+        }
+
+        fn pinned_after_one_run(&self) -> HashSet<String> {
+            let graph = DefinitionGraph::of(&self.program);
+            let typed = TypeChecker::check(
+                &self.program,
+                &graph,
+                &HashSet::new(),
+                &InferredCopies::default(),
+                &HashMap::new(),
+                LiteralDefaults::default(),
+                false,
+            )
+            .expect("the chain checks");
+            let report = InstantiationReport::of(&self.program, &graph, &typed);
+            Pinning::of(&report)
+                .pins()
+                .iter()
+                .map(|(binding, _)| self.program.bindings.get(*binding).name().to_string())
+                .collect()
+        }
+    }
+
+    #[test]
+    fn one_run_pins_every_wrapper_that_a_pinned_caller_reaches() {
+        let pinned = ChainFixture::new().pinned_after_one_run();
+        let expected = HashSet::from(["inner", "middle", "outer"].map(String::from));
+        assert_eq!(pinned, expected);
     }
 }
