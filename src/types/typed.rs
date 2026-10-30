@@ -279,6 +279,12 @@ pub struct TypedTraitMethod {
     pub returns_self: bool,
 }
 
+impl TypedTraitMethod {
+    pub fn declaration(&self) -> BindingId {
+        self.default.unwrap_or(self.binding)
+    }
+}
+
 #[derive(Clone)]
 pub struct TypedAssociatedType {
     pub binding: BindingId,
@@ -353,6 +359,18 @@ pub struct TypedProgram {
 }
 
 impl TypedProgram {
+    pub fn declared_trait_method(
+        &self,
+        trait_binding: BindingId,
+        name: &str,
+    ) -> Option<&TypedTraitMethod> {
+        self.trait_definitions
+            .iter()
+            .filter(|definition| definition.binding == trait_binding)
+            .flat_map(|definition| &definition.methods)
+            .find(|declared| self.bindings.get(declared.binding).name() == name)
+    }
+
     pub fn is_box(&self, ty: &Type) -> bool {
         matches!(ty, Type::Named(binding, arguments) if Some(*binding) == self.box_binding && arguments.len() == 1)
     }

@@ -1,0 +1,60 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/trait_self_result_borrow.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    model: &'a str,
+    year: i64,
+}
+
+fn make_car(model: &str, year: i64) -> Car<'_> {
+    Car { model, year }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let leaf = make_car("Leaf", 2024);
+    println!("{}", leaf.twin().model);
+    println!("{}", leaf.fleet().len());
+    println!("{}", leaf.rename("Nissan").year)
+}
+
+trait Garage {
+    fn twin(self) -> Self;
+    fn fleet(self) -> Vec<Self>
+    where
+        Self: Sized;
+    fn rename(self, _: &str) -> Self;
+}
+
+impl<'a> Garage for Car<'a> {
+    fn twin(self) -> Self {
+        self
+    }
+    fn fleet(self) -> Vec<Self> {
+        vec![self, self]
+    }
+    fn rename(self, label: &str) -> Self {
+        println!("{}", label);
+        self
+    }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

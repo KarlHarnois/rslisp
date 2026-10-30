@@ -209,6 +209,41 @@ impl Type {
         }
     }
 
+    pub fn restore_generic(&self, declared: &Type, generic: GenericId) -> Type {
+        match (declared, self) {
+            (Type::Generic(found), _) if *found == generic => declared.clone(),
+            (Type::Named(_, declared_arguments), Type::Named(binding, arguments)) => Type::Named(
+                *binding,
+                Self::restore_generic_all(arguments, declared_arguments, generic),
+            ),
+            (
+                Type::Function(_, declared_parameters, declared_result),
+                Type::Function(kind, parameters, result),
+            ) => Type::Function(
+                *kind,
+                Self::restore_generic_all(parameters, declared_parameters, generic),
+                Box::new(result.restore_generic(declared_result, generic)),
+            ),
+            (Type::Ref(_, declared_inner), Type::Ref(lifetime, inner)) => Type::Ref(
+                *lifetime,
+                Box::new(inner.restore_generic(declared_inner, generic)),
+            ),
+            (Type::Mut(_, declared_inner), Type::Mut(lifetime, inner)) => Type::Mut(
+                *lifetime,
+                Box::new(inner.restore_generic(declared_inner, generic)),
+            ),
+            _ => self.clone(),
+        }
+    }
+
+    fn restore_generic_all(types: &[Type], declared: &[Type], generic: GenericId) -> Vec<Type> {
+        types
+            .iter()
+            .zip(declared)
+            .map(|(part, declared_part)| part.restore_generic(declared_part, generic))
+            .collect()
+    }
+
     fn substitute_all(types: &[Type], replacements: &HashMap<GenericId, Type>) -> Vec<Type> {
         types
             .iter()
@@ -383,6 +418,67 @@ mod tests {
         assert_eq!(
             fixture.substitute(&fixture.named()),
             Type::Named(fixture.binding, vec![replacement])
+        );
+    }
+
+    #[test]
+    fn restoring_a_generic_reaches_every_part_of_a_type() {
+        let fixture = Substitution::new();
+        let generic = Type::Generic(GenericId::new(0));
+        let concrete = fixture.replacement.clone();
+        let restored = |declared: Type, implemented: Type| {
+            implemented.restore_generic(&declared, GenericId::new(0))
+        };
+        assert_eq!(restored(generic.clone(), concrete.clone()), generic);
+        assert_eq!(
+            restored(
+                Type::Function(
+                    ClosureKind::Fn,
+                    vec![generic.clone()],
+                    Box::new(generic.clone())
+                ),
+                Type::Function(
+                    ClosureKind::Fn,
+                    vec![concrete.clone()],
+                    Box::new(concrete.clone())
+                )
+            ),
+            Type::Function(
+                ClosureKind::Fn,
+                vec![generic.clone()],
+                Box::new(generic.clone())
+            )
+        );
+        assert_eq!(
+            restored(
+                Type::shared(generic.clone()),
+                Type::shared(concrete.clone())
+            ),
+            Type::shared(generic.clone())
+        );
+        assert_eq!(
+            restored(
+                Type::mutable(generic.clone()),
+                Type::mutable(concrete.clone())
+            ),
+            Type::mutable(generic.clone())
+        );
+        assert_eq!(
+            restored(
+                Type::Named(fixture.binding, vec![generic.clone()]),
+                Type::Named(fixture.binding, vec![concrete])
+            ),
+            Type::Named(fixture.binding, vec![generic])
+        );
+    }
+
+    #[test]
+    fn restoring_a_generic_keeps_parts_the_declaration_names() {
+        let concrete = Type::Primitive(PrimitiveType::I64);
+        let other = Type::Generic(GenericId::new(1));
+        assert_eq!(
+            concrete.restore_generic(&other, GenericId::new(0)),
+            concrete
         );
     }
 

@@ -1,0 +1,19 @@
+(defstruct car :model str :year i64)
+
+(trait garage
+  (twin (fn (self) self))
+  (fleet (fn (self) (vec self)))
+  (rename (fn (self (ref str)) self)))
+
+(impl garage car
+  (twin (c) c)
+  (fleet (c) (vec c c))
+  (rename (c label)
+    (println label)
+    c))
+
+(defn main ()
+  (let leaf (->car "Leaf" 2024))
+  (println (:model (twin leaf)))
+  (println (len (fleet leaf)))
+  (println (:year (rename leaf "Nissan"))))
