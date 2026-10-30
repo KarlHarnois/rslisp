@@ -101,14 +101,22 @@ The exceptions are:
 
 - If a change adds a behavior or a diagnostic, add a fixture under `tests/fixtures/<stage>/`.
 - If a change alters a CLI command's arguments, exit codes or written files, add a test to `tests/cli.rs`.
+- A regression test is a test that fails without the fix it covers.
+- If a change fixes a bug, add a regression test.
+- A regression test MAY be a fixture, a `tests/cli.rs` test, or a unit test.
+- Before you commit a fix, revert the fix alone and run its regression test. If the test passes, change the test until it fails without the fix.
+- A slow input is an input that runs longer than one second in a debug build.
+- If a bug shows only on a slow input, unit-test the structure that caused the bug.
 - If a fixture imports a module, put the module in a subdirectory: each top-level fixture file is an entry.
 - Give fixtures fake data only.
 - A run fixture MAY carry a `<fixture>.arguments` sidecar with one argument per line.
 - The harness runs the compiled fixture with those arguments in the fixture's directory.
-- When a fixture writes to standard error or exits nonzero, its snapshot appends the standard error and exit code after the standard output.
+- If a fixture writes to standard error or exits nonzero, its snapshot appends the standard error and the exit code.
+- The standard error and the exit code follow the standard output in the snapshot.
 - Create or update snapshots with `INSTA_UPDATE=always`.
 - NEVER commit a snapshot that you have not read.
-- If a change adds or grows a corpus entry, build the compiler with `nix develop -c cargo build --release`, then time `nix develop -c bash -c 'time cargo run --release --quiet -- emit <entry> > /dev/null'`.
+- If a change adds or grows a corpus entry, build the compiler with `nix develop -c cargo build --release`.
+- Then time the entry's emission with `nix develop -c bash -c 'time cargo run --release --quiet -- emit <entry> > /dev/null'`.
 - If that emission takes more than one second, shrink the entry.
 - NEVER lower `MINIMUM_LINE_COVERAGE` or raise `MAXIMUM_CRAP` in `xtask/src/gate.rs` without the project owner's approval.
 - NEVER hide code from `cargo xtask coverage`, such as by moving branches into a macro: the gate cannot see inside a macro.
