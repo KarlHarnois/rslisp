@@ -15,13 +15,20 @@ impl<'h, 'e> HeldClosures<'h, 'e> {
     }
 
     pub fn in_value(&self, value: &'e TypedExpr) -> Vec<&'e TypedExpr> {
+        self.leaves_of(value)
+            .into_iter()
+            .filter(|leaf| matches!(leaf.kind, TypedExprKind::Fn(_)))
+            .collect()
+    }
+
+    pub fn leaves_of(&self, value: &'e TypedExpr) -> Vec<&'e TypedExpr> {
         let value = self.aliases.resolve(value);
-        if matches!(value.kind, TypedExprKind::Fn(_)) {
+        let held = self.held_values(value);
+        if held.is_empty() {
             return vec![value];
         }
-        self.held_values(value)
-            .into_iter()
-            .flat_map(|held| self.in_value(held))
+        held.into_iter()
+            .flat_map(|held| self.leaves_of(held))
             .collect()
     }
 

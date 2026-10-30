@@ -28,12 +28,13 @@ impl<'p> StoredClosures<'p> {
             let program = &*program;
             let slots = FunctionSlots::new(program);
             let definitions = DefinitionTree::all_in(program);
-            let storing = StoringParameters::collect(&definitions, &slots);
+            let templates = RustTemplates::of(program);
+            let storing = StoringParameters::collect(&definitions, &slots, &templates);
             let closures = StoredClosures {
                 program,
                 slots,
                 storing,
-                templates: RustTemplates::of(program),
+                templates,
                 definitions,
             };
             (closures.diagnostics(), closures.stored_parameters())
@@ -248,9 +249,17 @@ impl<'e> Store<'e> {
     }
 
     fn closures(self, held: &HeldClosures<'_, 'e>) -> Vec<Self> {
-        held.in_value(self.value)
+        self.spread(held.in_value(self.value))
+    }
+
+    fn leaves(self, held: &HeldClosures<'_, 'e>) -> Vec<Self> {
+        self.spread(held.leaves_of(self.value))
+    }
+
+    fn spread(&self, values: Vec<&'e TypedExpr>) -> Vec<Self> {
+        values
             .into_iter()
-            .map(|closure| Self::new(closure, self.slot.clone()))
+            .map(|value| Self::new(value, self.slot.clone()))
             .collect()
     }
 
@@ -268,9 +277,13 @@ struct StoringParameters {
 }
 
 impl StoringParameters {
-    fn collect(definitions: &[DefinitionTree<'_>], slots: &FunctionSlots) -> Self {
+    fn collect(
+        definitions: &[DefinitionTree<'_>],
+        slots: &FunctionSlots,
+        templates: &RustTemplates,
+    ) -> Self {
         let mut storing = Self::default();
-        while storing.add_stores(definitions, slots) {}
+        while storing.add_stores(definitions, slots, templates) {}
         storing
     }
 
@@ -282,10 +295,15 @@ impl StoringParameters {
         self.slots.contains_key(&(function, position))
     }
 
-    fn add_stores(&mut self, definitions: &[DefinitionTree<'_>], slots: &FunctionSlots) -> bool {
+    fn add_stores(
+        &mut self,
+        definitions: &[DefinitionTree<'_>],
+        slots: &FunctionSlots,
+        templates: &RustTemplates,
+    ) -> bool {
         let found: Vec<((BindingId, usize), FunctionSlot)> = definitions
             .iter()
-            .flat_map(|definition| self.parameter_stores(definition, slots))
+            .flat_map(|definition| self.parameter_stores(definition, slots, templates))
             .filter(|(key, _)| !self.slots.contains_key(key))
             .collect();
         let added = !found.is_empty();
@@ -297,7 +315,9 @@ impl StoringParameters {
         &self,
         definition: &DefinitionTree<'_>,
         slots: &FunctionSlots,
+        templates: &RustTemplates,
     ) -> Vec<((BindingId, usize), FunctionSlot)> {
+        let held = HeldClosures::new(&definition.aliases, templates);
         let positions: HashMap<BindingId, (BindingId, usize)> = definition
             .functions()
             .into_iter()
@@ -312,6 +332,7 @@ impl StoringParameters {
         definition
             .stores(slots, self)
             .into_iter()
+            .flat_map(|store| store.leaves(&held))
             .filter(|store| matches!(store.value.ty, Type::Function(..)))
             .filter_map(|store| {
                 let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = store.value.kind else {

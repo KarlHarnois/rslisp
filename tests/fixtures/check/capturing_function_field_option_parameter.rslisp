@@ -1,0 +1,10 @@
+(defstruct spare :maker (option (fn () i64)))
+
+(defn wrap (f) (->spare :maker (some f)))
+
+(defn main ()
+  (let base 4)
+  (let backup (wrap (fn () (+ base 1))))
+  (match backup
+    ((spare (some maker)) (println (maker)))
+    ((spare none) (println "no spare"))))
