@@ -1,0 +1,11 @@
+(defstruct spare :maker (fn () i64))
+
+(defn count-doors () 4)
+
+(defn wrap (c f g) (->spare :maker (if c f g)))
+
+(defn main ()
+  (let base 4)
+  (let chosen (wrap true (fn () (+ base 1)) count-doors))
+  (let pick (:maker chosen))
+  (println (pick)))
