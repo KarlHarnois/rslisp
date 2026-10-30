@@ -211,12 +211,7 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
     }
 
     fn declared(&self, trait_binding: BindingId, name: &str) -> Option<&'a TypedTraitMethod> {
-        self.program
-            .trait_definitions
-            .iter()
-            .filter(|definition| definition.binding == trait_binding)
-            .flat_map(|definition| &definition.methods)
-            .find(|declared| self.program.bindings.get(declared.binding).name() == name)
+        self.program.declared_trait_method(trait_binding, name)
     }
 
     fn trait_of(&self, method: BindingId) -> Option<BindingId> {

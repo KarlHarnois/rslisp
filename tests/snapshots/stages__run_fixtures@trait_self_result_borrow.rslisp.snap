@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/trait_self_result_borrow.rslisp
+---
+Leaf
+2
+Nissan
+2024
