@@ -14,6 +14,7 @@ mod problems;
 mod recur_check;
 mod rust_type;
 mod shape;
+mod top_level_form;
 mod try_check;
 mod type_expr;
 mod type_parameters;

@@ -96,7 +96,9 @@ impl Expander<'_> {
         core: &mut CoreModule,
     ) {
         for item in items {
-            if let Err(diagnostic) = self.lower_pending(module, item, core) {
+            let lowered =
+                self.within_top_level_form(|expander| expander.lower_pending(module, item, core));
+            if let Err(diagnostic) = lowered {
                 self.diagnostics.push(diagnostic);
             }
         }
@@ -114,7 +116,10 @@ impl Expander<'_> {
         let mut queue: VecDeque<Form> = forms.into();
         let mut pending = Vec::new();
         while let Some(form) = queue.pop_front() {
-            match self.register_top_level(module, form, &mut context, &mut queue) {
+            let registered = self.within_top_level_form(|expander| {
+                expander.register_top_level(module, form, &mut context, &mut queue)
+            });
+            match registered {
                 Ok(item) => pending.extend(item),
                 Err(diagnostic) => self.diagnostics.push(diagnostic),
             }

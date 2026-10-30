@@ -1,0 +1,4 @@
+(defrule twice ((form) (do form form)))
+
+(defn main ()
+  (twice (missing-name)))
