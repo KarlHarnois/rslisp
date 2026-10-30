@@ -1,11 +1,11 @@
 use std::borrow::Cow;
-use std::collections::VecDeque;
 use std::rc::Rc;
 
 use super::Expander;
 use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::recur_check::RecurCheck;
+use super::rest_of_body::RestOfBody;
 use super::shape::Shape;
 use super::try_check::TryCheck;
 use crate::core::{
@@ -350,10 +350,10 @@ impl Expander<'_> {
 
     fn lower_body(&mut self, forms: &[Form]) -> Result<Block, Diagnostic> {
         let mut context = DefinitionContext::default();
-        let mut queue: VecDeque<Cow<Form>> = forms.iter().map(Cow::Borrowed).collect();
+        let mut rest_of_body = RestOfBody::new(forms);
         let mut items = Vec::new();
-        while let Some(form) = queue.pop_front() {
-            items.push(self.lower_body_item(form, &mut queue, &mut context)?);
+        while let Some(form) = rest_of_body.next() {
+            items.push(self.lower_body_item(form, &mut rest_of_body, &mut context)?);
         }
         Ok(Block { items })
     }
@@ -361,13 +361,13 @@ impl Expander<'_> {
     fn lower_body_item(
         &mut self,
         form: Cow<Form>,
-        queue: &mut VecDeque<Cow<Form>>,
+        rest_of_body: &mut RestOfBody,
         context: &mut DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
         let span = form.span();
         match self.expand_body_head(form, context) {
             Ok(form) if self.is_kernel_form(&form, KernelForm::Let) => {
-                self.lower_let_or_recover(&form, queue, context, span)
+                self.lower_let_or_recover(&form, rest_of_body, context, span)
             }
             Ok(form) => Ok(BodyItem::Expr(self.lower_recovered(&form)?)),
             Err(diagnostic) => Ok(BodyItem::Expr(self.recover(diagnostic, span)?)),
@@ -389,11 +389,11 @@ impl Expander<'_> {
     fn lower_let_or_recover(
         &mut self,
         form: &Form,
-        queue: &mut VecDeque<Cow<Form>>,
+        rest_of_body: &mut RestOfBody,
         context: &DefinitionContext,
         span: Span,
     ) -> Result<BodyItem, Diagnostic> {
-        match self.lower_let(form, queue, context) {
+        match self.lower_let(form, rest_of_body, context) {
             Ok(item) => Ok(item),
             Err(diagnostic) => Ok(BodyItem::Expr(self.recover(diagnostic, span)?)),
         }
@@ -402,7 +402,7 @@ impl Expander<'_> {
     fn lower_let(
         &mut self,
         form: &Form,
-        rest_of_body: &mut VecDeque<Cow<Form>>,
+        rest_of_body: &mut RestOfBody,
         context: &DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
         let items = Shape::new(KernelForm::Let, form).exactly(3)?;
@@ -410,9 +410,7 @@ impl Expander<'_> {
         let scope = self.fresh_local_scope();
         let mut binder = items[1].clone();
         binder.add_scope(scope);
-        rest_of_body
-            .iter_mut()
-            .for_each(|later| later.to_mut().add_scope(scope));
+        rest_of_body.add_scope(scope);
         Ok(BodyItem::Let(
             self.lower_binder(&binder, Some(context))?,
             value,

@@ -26,18 +26,26 @@ struct Entry {
 
 impl Entry {
     fn is_visible_from_scopes(&self, scopes: &ScopeSet, phase: Phase) -> bool {
-        let phase_matches = phase == Phase::CompileTime || self.phase == Phase::Runtime;
-        phase_matches && self.scopes.is_subset_of(scopes)
+        self.phase_matches(phase) && self.scopes.is_subset_of(scopes)
+    }
+
+    fn is_visible_from_plain_scopes(&self, scopes: &ScopeSet, phase: Phase) -> bool {
+        self.phase_matches(phase) && self.scopes.is_plain_subset_of(scopes)
+    }
+
+    fn phase_matches(&self, phase: Phase) -> bool {
+        phase == Phase::CompileTime || self.phase == Phase::Runtime
     }
 
     fn anchor(&self) -> Option<Scope> {
-        self.scopes.largest()
+        self.scopes.plain_largest()
     }
 }
 
 #[derive(Default)]
 struct NameEntries {
-    sorted_by_anchor: Vec<Entry>,
+    plain_sorted_by_anchor: Vec<Entry>,
+    sharing: Vec<Entry>,
 }
 
 impl NameEntries {
@@ -49,30 +57,64 @@ impl NameEntries {
         binding: BindingId,
         phase: Phase,
     ) -> Result<(), BindingId> {
-        let anchored_end = self.anchored_end(scopes.largest());
+        if !self.is_plain_search(scopes) {
+            return self.bind_sharing(scopes, binding, phase);
+        }
+        let anchored_end = self.anchored_end(scopes.plain_largest());
         match self.entry_with_scopes(anchored_end, scopes) {
-            Some(existing) if existing.binding == binding => Ok(()),
-            Some(existing) => Err(existing.binding),
+            Some(existing) => Self::existing(existing, binding),
             None => {
                 let entry = Entry {
                     scopes: scopes.clone(),
                     binding,
                     phase,
                 };
-                self.sorted_by_anchor.insert(anchored_end, entry);
+                self.plain_sorted_by_anchor.insert(anchored_end, entry);
                 Ok(())
             }
         }
     }
 
+    fn existing(existing: &Entry, binding: BindingId) -> Result<(), BindingId> {
+        if existing.binding == binding {
+            Ok(())
+        } else {
+            Err(existing.binding)
+        }
+    }
+
+    #[inline(never)]
+    fn bind_sharing(
+        &mut self,
+        scopes: &ScopeSet,
+        binding: BindingId,
+        phase: Phase,
+    ) -> Result<(), BindingId> {
+        if let Some(existing) = self.all().find(|entry| entry.scopes == *scopes) {
+            return Self::existing(existing, binding);
+        }
+        let entry = Entry {
+            scopes: scopes.clone(),
+            binding,
+            phase,
+        };
+        if scopes.is_plain() {
+            let anchored_end = self.anchored_end(scopes.plain_largest());
+            self.plain_sorted_by_anchor.insert(anchored_end, entry);
+        } else {
+            self.sharing.push(entry);
+        }
+        Ok(())
+    }
+
     fn anchored_end(&self, anchor: Option<Scope>) -> usize {
-        self.sorted_by_anchor
+        self.plain_sorted_by_anchor
             .partition_point(|entry| entry.anchor() <= anchor)
     }
 
     fn entry_with_scopes(&self, anchored_end: usize, scopes: &ScopeSet) -> Option<&Entry> {
-        let anchor = scopes.largest();
-        self.sorted_by_anchor[..anchored_end]
+        let anchor = scopes.plain_largest();
+        self.plain_sorted_by_anchor[..anchored_end]
             .iter()
             .rev()
             .take_while(|entry| entry.anchor() == anchor)
@@ -89,39 +131,74 @@ impl NameEntries {
         &'entries self,
         scopes: &ScopeSet,
         phase: Phase,
+        visit: impl FnMut(&'entries Entry),
+    ) {
+        if self.is_plain_search(scopes) {
+            self.visit_plain_visible(scopes, phase, visit);
+        } else {
+            self.visit_visible_sharing(scopes, phase, visit);
+        }
+    }
+
+    fn is_plain_search(&self, scopes: &ScopeSet) -> bool {
+        self.sharing.is_empty() && scopes.is_plain()
+    }
+
+    fn visit_plain_visible<'entries>(
+        &'entries self,
+        scopes: &ScopeSet,
+        phase: Phase,
         mut visit: impl FnMut(&'entries Entry),
     ) {
         let mut visit_if_visible = |entry: &'entries Entry| {
-            if entry.is_visible_from_scopes(scopes, phase) {
+            if entry.is_visible_from_plain_scopes(scopes, phase) {
                 visit(entry);
             }
         };
         if self.is_shorter_than_an_anchor_search(scopes) {
-            self.sorted_by_anchor.iter().for_each(visit_if_visible);
+            self.plain_sorted_by_anchor
+                .iter()
+                .for_each(visit_if_visible);
             return;
         }
         for anchor in Self::possible_anchors(scopes) {
-            self.sorted_by_anchor[self.anchored(anchor)]
+            self.plain_sorted_by_anchor[self.anchored(anchor)]
                 .iter()
                 .for_each(&mut visit_if_visible);
         }
     }
 
+    #[inline(never)]
+    fn visit_visible_sharing<'entries>(
+        &'entries self,
+        scopes: &ScopeSet,
+        phase: Phase,
+        visit: impl FnMut(&'entries Entry),
+    ) {
+        self.all()
+            .filter(|entry| entry.is_visible_from_scopes(scopes, phase))
+            .for_each(visit);
+    }
+
+    fn all(&self) -> impl Iterator<Item = &Entry> {
+        self.plain_sorted_by_anchor.iter().chain(&self.sharing)
+    }
+
     fn is_shorter_than_an_anchor_search(&self, scopes: &ScopeSet) -> bool {
-        self.sorted_by_anchor.len() <= scopes.len().max(Self::SHORT_LIST_LENGTH)
+        self.plain_sorted_by_anchor.len() <= scopes.plain_len().max(Self::SHORT_LIST_LENGTH)
     }
 
     fn anchored(&self, anchor: Option<Scope>) -> Range<usize> {
         let start = self
-            .sorted_by_anchor
+            .plain_sorted_by_anchor
             .partition_point(|entry| entry.anchor() < anchor);
         let length =
-            self.sorted_by_anchor[start..].partition_point(|entry| entry.anchor() == anchor);
+            self.plain_sorted_by_anchor[start..].partition_point(|entry| entry.anchor() == anchor);
         start..start + length
     }
 
     fn possible_anchors(scopes: &ScopeSet) -> impl Iterator<Item = Option<Scope>> + '_ {
-        std::iter::once(None).chain(scopes.iter().map(Some))
+        std::iter::once(None).chain(scopes.plain_iter().map(Some))
     }
 }
 
@@ -234,7 +311,7 @@ impl LargestCandidates {
 mod tests {
     use super::*;
     use crate::core::{BindingArena, BindingInfo, BindingKind};
-    use crate::scope::{Scope, ScopeAllocator};
+    use crate::scope::{ChainPrefix, Scope, ScopeAllocator, ScopeChain};
 
     struct World {
         table: BindingTable,
@@ -255,6 +332,48 @@ mod tests {
             self.scopes.fresh()
         }
 
+        fn chain(&mut self, length: usize) -> ScopeChain {
+            let chain = ScopeChain::default();
+            (0..length).for_each(|_| chain.push(self.scope()));
+            chain
+        }
+
+        fn prefix(chain: &ScopeChain) -> ChainPrefix {
+            chain.prefix().expect("a test chain holds scopes")
+        }
+
+        fn sharing_symbol(name: &str, prefix: &ChainPrefix) -> Symbol {
+            let mut scopes = ScopeSet::default();
+            scopes.add_prefix(prefix);
+            Symbol::with_scopes(name, scopes)
+        }
+
+        fn define_sharing(&mut self, name: &str, prefix: &ChainPrefix) -> BindingId {
+            let binding = self.new_binding(name);
+            self.table
+                .bind(
+                    &Self::sharing_symbol(name, prefix),
+                    Namespace::Value,
+                    binding,
+                    Phase::Runtime,
+                )
+                .expect("no duplicate");
+            binding
+        }
+
+        fn new_binding(&mut self, name: &str) -> BindingId {
+            let info = BindingInfo::new(name.into(), BindingKind::Local, None);
+            self.bindings.add(info)
+        }
+
+        fn resolve_sharing(&self, name: &str, prefix: &ChainPrefix) -> Resolution {
+            self.table.resolve(
+                &Self::sharing_symbol(name, prefix),
+                Namespace::Value,
+                Phase::Runtime,
+            )
+        }
+
         fn symbol(name: &str, scopes: &[Scope]) -> Symbol {
             Symbol::with_scopes(name, Self::scope_set(scopes))
         }
@@ -266,8 +385,7 @@ mod tests {
         }
 
         fn define(&mut self, name: &str, scopes: &[Scope], phase: Phase) -> BindingId {
-            let info = BindingInfo::new(name.into(), BindingKind::Local, None);
-            let binding = self.bindings.add(info);
+            let binding = self.new_binding(name);
             let symbol = Self::symbol(name, scopes);
             self.table
                 .bind(&symbol, Namespace::Value, binding, phase)
@@ -408,5 +526,59 @@ mod tests {
             world.resolve("x", &reference, Phase::Runtime),
             Resolution::Bound(*exact)
         );
+    }
+
+    #[test]
+    fn a_binding_under_a_shared_prefix_is_visible_from_a_longer_prefix() {
+        let mut world = World::new();
+        let chain = world.chain(ScopeSet::SHORTEST_SHARED_PREFIX);
+        let bound = world.define_sharing("x", &World::prefix(&chain));
+        chain.push(world.scope());
+        assert_eq!(
+            world.resolve_sharing("x", &World::prefix(&chain)),
+            Resolution::Bound(bound)
+        );
+    }
+
+    #[test]
+    fn a_plain_binding_beside_a_shared_one_sees_only_its_own_scopes() {
+        let mut world = World::new();
+        let chain = world.chain(ScopeSet::SHORTEST_SHARED_PREFIX);
+        world.define_sharing("x", &World::prefix(&chain));
+        let outside = world.scope();
+        let plain = world.define("x", &[outside], Phase::Runtime);
+        assert_eq!(
+            world.resolve("x", &[outside], Phase::Runtime),
+            Resolution::Bound(plain)
+        );
+    }
+
+    #[test]
+    fn a_shared_prefix_sees_the_plain_binding_it_shadows_only_when_larger() {
+        let mut world = World::new();
+        let chain = world.chain(ScopeSet::SHORTEST_SHARED_PREFIX);
+        let first = World::prefix(&chain).first();
+        world.define("x", &[first], Phase::Runtime);
+        let shadow = world.define_sharing("x", &World::prefix(&chain));
+        assert_eq!(
+            world.resolve_sharing("x", &World::prefix(&chain)),
+            Resolution::Bound(shadow)
+        );
+    }
+
+    #[test]
+    fn rebinding_shared_scopes_reports_the_existing_binding() {
+        let mut world = World::new();
+        let chain = world.chain(ScopeSet::SHORTEST_SHARED_PREFIX);
+        let prefix = World::prefix(&chain);
+        let first = world.define_sharing("x", &prefix);
+        let second = world.new_binding("x");
+        let duplicate = world.table.bind(
+            &World::sharing_symbol("x", &prefix),
+            Namespace::Value,
+            second,
+            Phase::Runtime,
+        );
+        assert_eq!(duplicate, Err(first));
     }
 }
