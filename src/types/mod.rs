@@ -23,6 +23,7 @@ mod problems;
 mod projection;
 mod rust_types;
 mod selection;
+mod selfless_methods;
 mod size;
 mod string_view;
 mod structs;

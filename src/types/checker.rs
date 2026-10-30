@@ -11,6 +11,7 @@ use super::pinning::LiteralDefaults;
 use super::problems::{ImplementorGroup, ImplementorList, MismatchContext, TypeProblems};
 use super::rust_types::{RustType, RustTypeTable};
 use super::selection::Selection;
+use super::selfless_methods::SelflessMethods;
 use super::structs::{StructDefinition, StructTable};
 use super::templates::TemplateBorrows;
 use super::traits::{Implementor, RustTrait, TraitTable};
@@ -185,6 +186,7 @@ pub struct TypeChecker {
     impl_generics: HashSet<GenericId>,
     pub(super) conversions: Vec<TypedConversion>,
     pub(super) trait_methods: HashMap<BindingId, TraitMethodInfo>,
+    pub(super) selfless_methods: SelflessMethods,
     pub(super) synthetic_bindings: HashSet<BindingId>,
     pub(super) pinned: HashMap<BindingId, Type>,
     pub(super) literal_defaults: LiteralDefaults,
@@ -266,6 +268,7 @@ impl TypeChecker {
             impl_generics: HashSet::new(),
             conversions: Vec::new(),
             trait_methods: HashMap::new(),
+            selfless_methods: SelflessMethods::default(),
             synthetic_bindings: HashSet::new(),
             pinned: HashMap::new(),
             literal_defaults: LiteralDefaults::default(),
@@ -1663,6 +1666,7 @@ impl TypeChecker {
         for method in methods {
             let receiver = Self::receiver_kind(&method.signature, self_variable);
             let returns_self = Self::trait_method_returns_self(&method.signature, self_variable);
+            self.selfless_methods.record(method, binding, self_variable);
             self.synthetic_bindings.insert(method.binding);
             if let Some(default) = method.default {
                 self.synthetic_bindings.insert(default);

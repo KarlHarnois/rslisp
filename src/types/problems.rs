@@ -695,6 +695,32 @@ impl TypeProblems {
         )
     }
 
+    pub fn selfless_method_call(
+        trait_name: &str,
+        method: &str,
+        call: Span,
+        signature: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::SELFLESS_METHOD_CALL,
+            format!("cannot choose which implementor of `{trait_name}` runs `{method}`"),
+            Label::new(
+                call,
+                format!("no type here picks an implementor of `{trait_name}`"),
+            ),
+        )
+        .with_label(Label::new(
+            signature,
+            "this signature never mentions `self`",
+        ))
+        .with_note(
+            "a call picks an implementor from the type of a parameter or result that is `self`",
+        )
+        .with_help(format!(
+            "mention `self` in the signature of `{method}`, as in `(fn ((ref self) i64) i64)`"
+        ))
+    }
+
     pub fn repeated_field(struct_name: &str, label: &FieldLabel, first: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::REPEATED_FIELD,

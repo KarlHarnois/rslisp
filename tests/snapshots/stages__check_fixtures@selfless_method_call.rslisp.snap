@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/selfless_method_call.rslisp
+---
+error[L0456]: cannot choose which implementor of `parking` runs `park`
+  --> check/selfless_method_call.rslisp:14:13
+   |
+ 5 |   (park (fn (i64) i64)))
+   |         -------------- this signature never mentions `self`
+...
+14 |   (println (park 3)))
+   |             ^^^^ no type here picks an implementor of `parking`
+   |
+   = note: a call picks an implementor from the type of a parameter or result that is `self`
+   = help: mention `self` in the signature of `park`, as in `(fn ((ref self) i64) i64)`
