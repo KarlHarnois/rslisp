@@ -5,7 +5,7 @@ use crate::scope::FastHashSet;
 use crate::source::Span;
 
 #[derive(PartialEq, Eq, Hash)]
-struct RepeatedDiagnostic {
+pub(super) struct RepeatedDiagnostic {
     code: DiagnosticCode,
     span: Span,
     title: String,
@@ -35,6 +35,16 @@ impl Expander<'_> {
         let reported = expanded.as_ref().err().map(RepeatedDiagnostic::of);
         self.drop_repeated_recoveries(first_recovered, reported.into_iter().collect());
         expanded
+    }
+
+    pub(super) fn report_once(
+        &mut self,
+        diagnostic: Diagnostic,
+        reported: &mut FastHashSet<RepeatedDiagnostic>,
+    ) {
+        if reported.insert(RepeatedDiagnostic::of(&diagnostic)) {
+            self.diagnostics.push(diagnostic);
+        }
     }
 
     fn drop_repeated_recoveries(
