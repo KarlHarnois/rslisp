@@ -183,12 +183,29 @@ impl<'a> MoveChecker<'a> {
 
     fn written(&mut self, expr: &TypedExpr) {
         match &expr.kind {
-            TypedExprKind::Borrow(_, value) | TypedExprKind::Deref(value) => {
-                self.expr(value, Usage::Borrow)
-            }
+            TypedExprKind::Borrow(_, value) => self.expr(value, Usage::Borrow),
+            TypedExprKind::Deref(referent) => self.deref(expr, referent),
             TypedExprKind::Try { value, .. } => self.expr(value, Usage::Move),
             _ => unreachable!("the caller matches a written form"),
         }
+    }
+
+    fn deref(&mut self, deref: &TypedExpr, referent: &TypedExpr) {
+        let ((), uses_moving_closure) =
+            self.tracking_moving_closures(|checker| checker.expr(referent, Usage::Borrow));
+        if uses_moving_closure && deref.ty.holds_function() {
+            let copy_trait = self.copy.copy_trait_name(self.bindings);
+            self.diagnostics
+                .push(OwnershipProblems::closure_copied_out_of_reference(
+                    copy_trait, deref.span,
+                ));
+        }
+    }
+
+    fn tracking_moving_closures<R>(&mut self, visit: impl FnOnce(&mut Self) -> R) -> (R, bool) {
+        let earlier_uses = self.moving_closure_uses;
+        let visited = visit(self);
+        (visited, self.moving_closure_uses > earlier_uses)
     }
 
     fn structure(&mut self, expr: &TypedExpr, structure: &TypedStructExpr, usage: Usage) {
@@ -397,10 +414,10 @@ impl<'a> MoveChecker<'a> {
     }
 
     fn bind(&mut self, binding: BindingId, value: &TypedExpr) {
-        let earlier_uses = self.moving_closure_uses;
-        let kind = self.bound_function_kind(value);
+        let (kind, uses_moving_closure) =
+            self.tracking_moving_closures(|checker| checker.bound_function_kind(value));
         self.record_function_kind(binding, kind);
-        if self.moving_closure_uses > earlier_uses && Self::wraps_function(&value.ty) {
+        if uses_moving_closure && Self::wraps_function(&value.ty) {
             self.moving_closure_holders.insert(binding);
         }
     }

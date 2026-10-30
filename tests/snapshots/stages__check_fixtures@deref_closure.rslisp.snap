@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/deref_closure.rslisp
+---
+error[L0404]: a closure that moves its capture does not implement `copy`
+ --> check/deref_closure.rslisp:5:15
+  |
+5 |   (let copied (deref borrowed))
+  |               ^^^^^^^^^^^^^^^^ this copies the closure out of a reference
+  |
+  = note: this closure moves a captured value, so it cannot be copied

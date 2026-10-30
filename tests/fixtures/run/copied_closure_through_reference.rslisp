@@ -1,0 +1,7 @@
+(defn main ()
+  (let text (to-string "Leaf"))
+  (let show (fn () (len text)))
+  (let borrowed (ref show))
+  (let copied (deref borrowed))
+  (println (copied))
+  (println (show)))

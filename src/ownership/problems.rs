@@ -63,6 +63,9 @@ impl MoveLabels {
 pub struct OwnershipProblems;
 
 impl OwnershipProblems {
+    const CLOSURE_MOVES_CAPTURE: &str =
+        "this closure moves a captured value, so it cannot be copied";
+
     pub fn use_after_move(name: &str, used: Span, moved: Span) -> Diagnostic {
         Self::moved_value(
             DiagnosticCode::USE_AFTER_MOVE,
@@ -190,7 +193,16 @@ impl OwnershipProblems {
     }
 
     pub fn closure_move_help(diagnostic: Diagnostic) -> Diagnostic {
-        diagnostic.with_help("this closure moves a captured value, so it cannot be copied")
+        diagnostic.with_help(Self::CLOSURE_MOVES_CAPTURE)
+    }
+
+    pub fn closure_copied_out_of_reference(copy_trait: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MISSING_TRAIT,
+            format!("a closure that moves its capture does not implement `{copy_trait}`"),
+            Label::new(span, "this copies the closure out of a reference"),
+        )
+        .with_note(Self::CLOSURE_MOVES_CAPTURE)
     }
 
     pub fn capturing_function_field(
