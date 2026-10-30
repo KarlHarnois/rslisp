@@ -1,0 +1,9 @@
+(defn replace-at! (items index item)
+  (set! (at items index) item))
+
+(defn main ()
+  (let years (vec 2011 2019))
+  (replace-at! (mut years) 1 2024)
+  (let makes (vec "Nissan" "Honda"))
+  (replace-at! (mut makes) 0 "Toyota")
+  (println (at years 1) " " (at makes 0)))

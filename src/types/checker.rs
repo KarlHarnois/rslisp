@@ -5,6 +5,7 @@ use super::copy::InferredCopies;
 use super::display::TypeDisplay;
 use super::enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};
 use super::graph::{Definition, DefinitionGraph, DependencyGraph};
+use super::infer::OpenCollections;
 use super::parameter_calls::ParameterCallRequest;
 use super::pending::PendingBorrow;
 use super::pinning::LiteralDefaults;
@@ -168,6 +169,7 @@ pub struct TypeChecker {
     pub(super) pending_borrows: Vec<PendingBorrow>,
     pub(super) open_set_ats: Vec<super::infer::OpenSetAt>,
     pub(super) unsettled_collections: Vec<(Type, Span)>,
+    pub(super) vector_bases: HashSet<Span>,
     pub(super) template_borrows: TemplateBorrows,
     pub(super) recur_target: Option<super::infer::RecurTarget>,
     pub(super) checking_function_body: bool,
@@ -252,6 +254,7 @@ impl TypeChecker {
             pending_borrows: Vec::new(),
             open_set_ats: Vec::new(),
             unsettled_collections: Vec::new(),
+            vector_bases: HashSet::new(),
             template_borrows: TemplateBorrows::default(),
             recur_target: None,
             checking_function_body: false,
@@ -2690,39 +2693,59 @@ impl TypeChecker {
         literal_defaults: LiteralDefaults,
         default_literal_parameters: bool,
     ) -> Result<super::typed::TypedProgram, Diagnostics> {
-        let mut checker = Self::new(program.bindings.clone());
-        checker.changed_structs = changed_structs.clone();
-        checker.inferred_copies = inferred_copies.clone();
-        checker.pinned = pinned.clone();
-        checker.literal_defaults = literal_defaults;
-        checker.default_literal_parameters = default_literal_parameters;
-        checker.macro_origins = program
-            .macro_origins
-            .iter()
-            .map(|(span, origin)| (*span, Rc::clone(&origin.name)))
-            .collect();
-        checker.collect_declarations(&program.modules);
-        let mut definitions = checker.check_definitions(&program.modules, program.entry, graph);
-        let mut finalizer = super::finalize::Finalizer::new(&mut checker);
+        let configured = |vector_bases: &HashSet<Span>| {
+            let mut checker = Self::new(program.bindings.clone());
+            checker.changed_structs = changed_structs.clone();
+            checker.inferred_copies = inferred_copies.clone();
+            checker.pinned = pinned.clone();
+            checker.literal_defaults = literal_defaults.clone();
+            checker.default_literal_parameters = default_literal_parameters;
+            checker.vector_bases = vector_bases.clone();
+            checker.macro_origins = program
+                .macro_origins
+                .iter()
+                .map(|(span, origin)| (*span, Rc::clone(&origin.name)))
+                .collect();
+            checker
+        };
+        let mut vector_bases = HashSet::new();
+        loop {
+            let (typed, open_collections) =
+                configured(&vector_bases).check_program(program, graph)?;
+            let found = open_collections.vector_bases(program, graph, &typed)?;
+            if found.is_empty() {
+                return Ok(typed);
+            }
+            vector_bases.extend(found);
+        }
+    }
+
+    fn check_program(
+        mut self,
+        program: &crate::expand::Program,
+        graph: &DefinitionGraph,
+    ) -> Result<(super::typed::TypedProgram, OpenCollections), Diagnostics> {
+        self.collect_declarations(&program.modules);
+        let mut definitions = self.check_definitions(&program.modules, program.entry, graph);
+        let mut finalizer = super::finalize::Finalizer::new(&mut self);
         for binding in graph.order() {
             if let Some(definition) = definitions.get_mut(&binding) {
                 finalizer.definition(definition);
             }
         }
-        checker.absorb_impl_bounds(&definitions);
-        checker.discharge_obligations(ObligationPass::Final);
-        checker.check_written_projections();
-        checker.resolve_missing_annotations();
-        checker.label_parameter_calls(&program.modules);
-        let open_collections = checker.open_collections();
+        self.absorb_impl_bounds(&definitions);
+        self.discharge_obligations(ObligationPass::Final);
+        self.check_written_projections();
+        self.resolve_missing_annotations();
+        self.label_parameter_calls(&program.modules);
+        let open_collections = self.open_collections();
         let typed_modules = program
             .modules
             .iter()
             .map(|module| Self::typed_module(module, &mut definitions))
             .collect();
-        let typed = checker.into_program(typed_modules, program.entry)?;
-        open_collections.check(program, graph, &typed)?;
-        Ok(typed)
+        let typed = self.into_program(typed_modules, program.entry)?;
+        Ok((typed, open_collections))
     }
 
     fn typed_module(

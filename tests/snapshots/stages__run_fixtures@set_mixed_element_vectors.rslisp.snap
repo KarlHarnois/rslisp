@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/set_mixed_element_vectors.rslisp
+---
+2024 Toyota

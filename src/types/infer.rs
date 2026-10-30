@@ -1,5 +1,5 @@
 mod open_collections;
-pub(super) use open_collections::OpenSetAt;
+pub(super) use open_collections::{OpenCollections, OpenSetAt};
 mod shared_variables;
 
 use std::collections::HashMap;

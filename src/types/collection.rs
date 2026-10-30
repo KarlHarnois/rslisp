@@ -85,6 +85,10 @@ impl Collection {
         &self.value
     }
 
+    pub fn is_sequence(&self) -> bool {
+        matches!(self.kind, CollectionKind::Vector | CollectionKind::Slice)
+    }
+
     pub fn is_map(&self) -> bool {
         matches!(
             self.kind,

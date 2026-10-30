@@ -55,6 +55,20 @@ impl InstantiationReport {
         self.substitutions.get(&binding).cloned()
     }
 
+    pub fn uses_of(&self, binding: BindingId, generic: GenericId) -> Vec<Option<Type>> {
+        let Some(entry) = self.entries.get(&binding) else {
+            return Vec::new();
+        };
+        let Some(index) = entry.params.iter().position(|param| *param == generic) else {
+            return Vec::new();
+        };
+        entry
+            .uses
+            .iter()
+            .map(|used| used.types[index].clone())
+            .collect()
+    }
+
     pub fn is_used(&self, binding: BindingId) -> bool {
         self.entries
             .get(&binding)
