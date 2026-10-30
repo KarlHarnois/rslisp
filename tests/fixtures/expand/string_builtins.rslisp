@@ -1,0 +1,22 @@
+(use code list string-lines string-trim-start string-length string-drop)
+
+(defmacro show-lines (form)
+  (list (quote quote) (string-lines "first\n  second\n")))
+
+(defmacro show-trim-start (form)
+  (string-trim-start "  \t indented "))
+
+(defmacro show-length (form)
+  (string-length "naïve"))
+
+(defmacro show-drop (form)
+  (string-drop 2 "naïve"))
+
+(defmacro show-drop-all (form)
+  (string-drop 5 "naïve"))
+
+(def lines (show-lines "unused"))
+(def trimmed (show-trim-start "unused"))
+(def length (show-length "unused"))
+(def dropped (show-drop "unused"))
+(def dropped-all (show-drop-all "unused"))
