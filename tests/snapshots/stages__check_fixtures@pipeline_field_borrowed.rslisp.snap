@@ -3,6 +3,15 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/pipeline_field_borrowed.rslisp
 ---
+error[L0458]: Rust cannot name the type `(iterator i64)` here
+ --> check/pipeline_field_borrowed.rslisp:1:24
+  |
+1 | (defstruct feed :items (iterator i64) :label str)
+  |                        ^^^^^^^^^^^^^^ this stores `(iterator i64)`
+  |
+  = note: Rust names this type only as the type of a function's own parameter or result
+  = help: store the collection the items come from instead, and call `iter` on it where the items are used
+
 error[L0503]: this value is borrowed, but the call needs to own it
  --> check/pipeline_field_borrowed.rslisp:4:21
   |

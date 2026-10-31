@@ -1,0 +1,19 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/iterator_stored_beside_type_error.rslisp
+---
+error[L0458]: Rust cannot name the type `(iterator i64)` here
+ --> check/iterator_stored_beside_type_error.rslisp:1:24
+  |
+1 | (defstruct feed :items (iterator i64) :label str)
+  |                        ^^^^^^^^^^^^^^ this stores `(iterator i64)`
+  |
+  = note: Rust names this type only as the type of a function's own parameter or result
+  = help: store the collection the items come from instead, and call `iter` on it where the items are used
+
+error[L0401]: mismatched types
+ --> check/iterator_stored_beside_type_error.rslisp:4:20
+  |
+4 |   (println (+ 2024 "Nissan Leaf")))
+  |                    ^^^^^^^^^^^^^ expected an integer, found `str`

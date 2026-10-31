@@ -1,0 +1,14 @@
+(defstruct feed :items (iterator i64) :label str)
+
+(defstruct survey :answers (option (iterator i64)))
+
+(enum source
+  (stream (iterator i64))
+  empty)
+
+(defn main ()
+  (let leaf (->feed :items (range 2019 2025) :label "Nissan Leaf"))
+  (println (:label leaf))
+  (match (source/stream (range 2019 2025))
+    ((stream items) (println (count items)))
+    (empty (println 0))))

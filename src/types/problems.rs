@@ -572,18 +572,29 @@ impl TypeProblems {
     }
 
     pub fn unnameable_type(opaque: &str, span: Span) -> Diagnostic {
+        let label = Label::new(
+            span,
+            format!("this holds `{opaque}` inside a function type"),
+        );
+        Self::unnameable(opaque, label).with_help(
+            "pass a value whose type Rust can name instead, such as the collection the items come from",
+        )
+    }
+
+    pub fn stored_unnameable_type(opaque: &str, span: Span) -> Diagnostic {
+        let label = Label::new(span, format!("this stores `{opaque}`"));
+        Self::unnameable(opaque, label).with_help(
+            "store the collection the items come from instead, and call `iter` on it where the items are used",
+        )
+    }
+
+    fn unnameable(opaque: &str, label: Label) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::UNNAMEABLE_TYPE,
             format!("Rust cannot name the type `{opaque}` here"),
-            Label::new(
-                span,
-                format!("this holds `{opaque}` inside a function type"),
-            ),
+            label,
         )
         .with_note("Rust names this type only as the type of a function's own parameter or result")
-        .with_help(
-            "pass a value whose type Rust can name instead, such as the collection the items come from",
-        )
     }
 
     pub fn unknown_collection(span: Span) -> Diagnostic {
