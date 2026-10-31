@@ -31,33 +31,6 @@ impl DocCommand {
     }
 }
 
-pub enum DocEnvironment {
-    Prelude,
-    Program(PathBuf),
-}
-
-impl DocEnvironment {
-    const PRELUDE_ENTRY: &'static str = "prelude-only";
-
-    pub fn new(file: Option<PathBuf>) -> Self {
-        file.map_or(Self::Prelude, Self::Program)
-    }
-
-    fn entry(&self) -> PathBuf {
-        match self {
-            Self::Prelude => PathBuf::from(Self::PRELUDE_ENTRY).with_extension(Language::EXTENSION),
-            Self::Program(path) => path.clone(),
-        }
-    }
-
-    fn load(&self, terminal: &mut Terminal) -> Result<SourceId, ExitStatus> {
-        match self {
-            Self::Prelude => Ok(terminal.add_empty_source(&self.entry())),
-            Self::Program(path) => terminal.load(path),
-        }
-    }
-}
-
 pub struct DocLookup<'t> {
     terminal: &'t mut Terminal,
 }
@@ -83,7 +56,10 @@ impl<'t> DocLookup<'t> {
     }
 
     fn read_term(&mut self, term: &str) -> Result<Form, ExitStatus> {
-        let forms = self.terminal.read_text(Self::TERM_SOURCE, term)?;
+        let forms = self
+            .terminal
+            .read_text(Self::TERM_SOURCE, term)
+            .map_err(|_| ExitStatus::UsageError)?;
         match forms.as_slice() {
             [form] if form.as_symbol().is_some() => Ok(form.clone()),
             _ => {
@@ -106,6 +82,33 @@ impl<'t> DocLookup<'t> {
                 eprintln!("error: `{}` did not expand to a string", DocCommand::NAME);
                 Err(ExitStatus::ProgramErrors)
             }
+        }
+    }
+}
+
+pub enum DocEnvironment {
+    Prelude,
+    Program(PathBuf),
+}
+
+impl DocEnvironment {
+    const PRELUDE_ENTRY: &'static str = "prelude-only";
+
+    pub fn new(file: Option<PathBuf>) -> Self {
+        file.map_or(Self::Prelude, Self::Program)
+    }
+
+    fn load(&self, terminal: &mut Terminal) -> Result<SourceId, ExitStatus> {
+        match self {
+            Self::Prelude => Ok(terminal.add_empty_source(&self.entry())),
+            Self::Program(path) => terminal.load(path),
+        }
+    }
+
+    fn entry(&self) -> PathBuf {
+        match self {
+            Self::Prelude => PathBuf::from(Self::PRELUDE_ENTRY).with_extension(Language::EXTENSION),
+            Self::Program(path) => path.clone(),
         }
     }
 }
