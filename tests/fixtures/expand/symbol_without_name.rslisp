@@ -1,0 +1,5 @@
+(use code symbol)
+
+(defmacro m () (symbol))
+
+(def x (m))

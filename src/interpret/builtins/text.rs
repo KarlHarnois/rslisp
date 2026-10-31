@@ -24,6 +24,7 @@ impl<'a> TextOperations<'a> {
     ];
     const STRING_BRACES: [(char, &'static str); 2] = [('{', "{{"), ('}', "}}")];
     const FORMAT_BRACES: [(char, &'static str); 2] = [('{', "{{{{"), ('}', "}}}}")];
+    const FEWEST_SYMBOL_ARGUMENTS: usize = 1;
 
     pub fn new(arguments: &'a Arguments, call_site: Span) -> Self {
         Self {
@@ -77,6 +78,7 @@ impl<'a> TextOperations<'a> {
     }
 
     pub fn make_symbol(&self) -> Result<Value, Diagnostic> {
+        self.expect_symbol_arguments()?;
         let context = self.arguments.symbol(0)?;
         let name = self.joined_parts(1)?;
         let symbol = Symbol::with_scopes(name, context.scopes().clone());
@@ -98,6 +100,7 @@ impl<'a> TextOperations<'a> {
     }
 
     pub fn definition_symbol(&self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
+        self.expect_symbol_arguments()?;
         let term = self.arguments.form(0)?;
         let context = self.arguments.symbol(0)?;
         let symbol = host.definition_symbol(context, self.joined_parts(1)?, term.span())?;
@@ -108,9 +111,16 @@ impl<'a> TextOperations<'a> {
         &self,
         host: &mut dyn CompileTimeHost,
     ) -> Result<Value, Diagnostic> {
+        self.expect_symbol_arguments()?;
         let term = self.arguments.symbol(0)?;
         let symbol = host.type_definition_symbol(term, self.joined_parts(1)?);
         Ok(self.symbol_value(symbol))
+    }
+
+    fn expect_symbol_arguments(&self) -> Result<(), Diagnostic> {
+        let count = self.arguments.values().len();
+        self.arguments
+            .expect_count(count.max(Self::FEWEST_SYMBOL_ARGUMENTS))
     }
 
     fn symbol_value(&self, symbol: Symbol) -> Value {

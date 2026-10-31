@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/symbol_without_name.rslisp
+---
+error[L0311]: `symbol` takes 1 argument but 0 were given
+ --> expand/symbol_without_name.rslisp:3:16
+  |
+3 | (defmacro m () (symbol))
+  |                ^^^^^^^^ 0 arguments given
+4 |
+5 | (def x (m))
+  |        --- in this macro call

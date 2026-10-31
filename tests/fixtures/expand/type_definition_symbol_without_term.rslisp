@@ -1,0 +1,5 @@
+(use code type-definition-symbol)
+
+(defmacro m () (type-definition-symbol))
+
+(def x (m))
