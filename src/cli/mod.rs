@@ -2,6 +2,7 @@ mod build;
 mod build_directory;
 mod capped_report;
 mod check;
+mod doc;
 mod emit;
 mod exit_status;
 mod expand;
@@ -18,6 +19,7 @@ use crate::build::BuildProfile;
 use crate::language::Language;
 use build::BuildCommand;
 use check::CheckCommand;
+use doc::{DocCommand, DocEnvironment};
 use emit::EmitCommand;
 use exit_status::ExitStatus;
 use expand::ExpandCommand;
@@ -38,6 +40,16 @@ enum Command {
     Check { file: PathBuf },
     #[command(about = "Print the inferred signature of each function in a program")]
     Signatures { file: PathBuf },
+    #[command(
+        name = DocCommand::NAME,
+        about = "Print the page of a prelude term, or of a program's term with --file"
+    )]
+    Doc {
+        #[arg(allow_hyphen_values = true)]
+        term: String,
+        #[arg(long)]
+        file: Option<PathBuf>,
+    },
     #[command(about = "Print a program as kernel forms after macro expansion")]
     Expand { file: PathBuf },
     #[command(about = "Print the Rust code generated for a program")]
@@ -77,6 +89,7 @@ impl Command {
         match self {
             Command::Check { file } => CheckCommand::new(file).run(),
             Command::Signatures { file } => SignaturesCommand::new(file).run(),
+            Command::Doc { term, file } => DocCommand::new(DocEnvironment::new(file), term).run(),
             Command::Expand { file } => ExpandCommand::new(file).run(),
             Command::Emit { file } => EmitCommand::new(file).run(),
             Command::Build {

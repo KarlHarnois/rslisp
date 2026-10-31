@@ -9,6 +9,7 @@ Usage: rslisp <COMMAND>
 Commands:
   check       Read, expand and check a program, then print its diagnostics
   signatures  Print the inferred signature of each function in a program
+  doc         Print the page of a prelude term, or of a program's term with --file
   expand      Print a program as kernel forms after macro expansion
   emit        Print the Rust code generated for a program
   build       Compile a program to a native binary

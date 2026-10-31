@@ -30,6 +30,11 @@ const STRUCTS: &str = "(defstruct person :name string :age i64)\n(defstruct tick
 const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::ops::Add\" i64 (with i64 person))\n\n(type matches (where ((a (same person))) (fn (a) bool)))\n(defn matches (x) true)\n\n(defn main () (println (matches 1)))\n";
 
 const TRAIT_SHARED_VECTOR: &str = "(struct odometer (offset i64))\n\n(trait mileage\n  (first-reading (fn ((ref self) (ref (vec i64))) i64)))\n\n(impl mileage odometer\n  (first-reading (o readings) (+ (field o offset) (at readings 0))))\n\n(defn main ()\n  (println (first-reading (new odometer (offset 10)) (vec 1200))))\n";
+const GEOMETRY: &str = "(export area)\n\n(defn area (width height) \"Multiplies a width by a height.\" (* width height))\n";
+const GEOMETRY_ENTRY: &str = "(use geometry area)\n\n(defn main () (println (area 3 4)))\n";
+const SHADOWING_DOC: &str = "(defrule doc ((term) 0))\n\n(defn main () (do))\n";
+const THREADING_HEADER: &str = "(defrule ->)";
+
 const UNBOUND_NAMES_PAST_THE_CAP: usize = 25;
 
 struct Sandbox {
@@ -254,6 +259,70 @@ fn signatures_prints_inferred_struct_derives() {
     let sandbox = Sandbox::new("signatures_structs").with_file("structs.rslisp", STRUCTS);
     let signatures = sandbox.compiler(&["signatures", "structs.rslisp"]);
     insta::assert_snapshot!(signatures.assert_exit_code(0).stdout());
+}
+
+#[test]
+fn doc_prints_the_page_of_a_prelude_term() {
+    let sandbox = Sandbox::new("doc_prelude");
+    let doc = sandbox.compiler(&["doc", "defn"]);
+    assert_eq!(
+        doc.assert_exit_code(0).stdout(),
+        "(defmacro defn (name parameters body ...))\n\nDefines a function: (defn name (parameter ...) body ...).\n\nA string before at least one more body form is the docstring.\n"
+    );
+}
+
+#[test]
+fn doc_takes_a_term_that_starts_with_a_hyphen() {
+    let sandbox = Sandbox::new("doc_hyphen");
+    let doc = sandbox.compiler(&["doc", "->"]);
+    let page = doc.assert_exit_code(0).stdout();
+    assert_eq!(page.lines().next(), Some(THREADING_HEADER));
+}
+
+#[test]
+fn doc_prints_the_page_of_an_imported_term() {
+    let sandbox = Sandbox::new("doc_imported")
+        .with_file("geometry.rslisp", GEOMETRY)
+        .with_file("main.rslisp", GEOMETRY_ENTRY);
+    let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "area"]);
+    assert_eq!(
+        doc.assert_exit_code(0).stdout(),
+        "(defn area (width height))\n\nMultiplies a width by a height.\n"
+    );
+}
+
+#[test]
+fn doc_reports_a_term_without_a_docstring() {
+    let sandbox = Sandbox::new("doc_undocumented");
+    let doc = sandbox.compiler(&["doc", "if"]);
+    insta::assert_snapshot!(doc.assert_exit_code(1).stderr());
+}
+
+#[test]
+fn doc_suggests_a_close_name_for_an_unknown_term() {
+    let sandbox = Sandbox::new("doc_unknown");
+    let doc = sandbox.compiler(&["doc", "defm"]);
+    insta::assert_snapshot!(doc.assert_exit_code(1).stderr());
+}
+
+#[test]
+fn doc_rejects_a_term_that_is_not_one_name() {
+    let sandbox = Sandbox::new("doc_not_one_name");
+    let doc = sandbox.compiler(&["doc", "x y"]);
+    assert_eq!(
+        doc.assert_exit_code(2).stderr(),
+        "error: `x y` is not one name\n"
+    );
+}
+
+#[test]
+fn doc_rejects_a_shadowing_doc_that_returns_no_string() {
+    let sandbox = Sandbox::new("doc_shadowed").with_file("main.rslisp", SHADOWING_DOC);
+    let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "main"]);
+    assert_eq!(
+        doc.assert_exit_code(1).stderr(),
+        "error: `doc` did not expand to a string\n"
+    );
 }
 
 #[test]
