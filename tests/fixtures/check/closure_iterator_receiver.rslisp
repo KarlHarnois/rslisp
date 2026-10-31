@@ -1,0 +1,6 @@
+(defn main ()
+  (let years (vec 2019 2021 2024))
+  (let tally (fn (it) (count it)))
+  (println (tally (iter years)))
+  (let offset-tally (fn (it) (+ 1 (count it))))
+  (println (offset-tally (iter years))))

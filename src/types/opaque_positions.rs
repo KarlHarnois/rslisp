@@ -2,11 +2,12 @@ use std::collections::{HashMap, HashSet};
 
 use super::checker::TypeChecker;
 use super::enums::EnumTable;
+use super::method_receivers::MethodReceivers;
 use super::problems::TypeProblems;
 use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
 use super::ty::Type;
-use super::typed::{TypedDefinition, TypedExprKind, TypedLambda};
+use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLambda};
 use crate::core::{BindingId, CoreModule, Item, ItemKind, TraitMethod, TypeExpr, TypeExprKind};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
@@ -21,6 +22,7 @@ struct UnnameableType {
 enum UnnameablePlace {
     FunctionType,
     StoredValue,
+    ClosureReceiver,
 }
 
 #[derive(Clone, Copy)]
@@ -33,6 +35,7 @@ struct OpaquePositions<'c> {
     rust_types: &'c RustTypeTable,
     structs: &'c StructTable,
     enums: &'c EnumTable,
+    receivers: MethodReceivers<'c>,
     definitions: &'c HashMap<BindingId, TypedDefinition>,
     modules: &'c [CoreModule],
 }
@@ -47,6 +50,7 @@ impl TypeChecker {
             rust_types: &self.rust_types,
             structs: &self.structs,
             enums: &self.enums,
+            receivers: MethodReceivers::new(&self.template_borrows),
             definitions,
             modules,
         };
@@ -62,6 +66,9 @@ impl UnnameableType {
         match self.place {
             UnnameablePlace::FunctionType => TypeProblems::unnameable_type(shown, self.span),
             UnnameablePlace::StoredValue => TypeProblems::stored_unnameable_type(shown, self.span),
+            UnnameablePlace::ClosureReceiver => {
+                TypeProblems::closure_receiver_unnameable_type(shown, self.span)
+            }
         }
     }
 }
@@ -116,7 +123,33 @@ impl OpaquePositions<'_> {
     fn in_definition(&self, binding: BindingId) -> Vec<UnnameableType> {
         self.definitions
             .get(&binding)
-            .map_or_else(Vec::new, |definition| self.in_function(binding, definition))
+            .map_or_else(Vec::new, |definition| {
+                let in_signature = self.in_function(binding, definition);
+                let in_closures = self.in_local_closures(&definition.value);
+                in_signature.into_iter().chain(in_closures).collect()
+            })
+    }
+
+    fn in_local_closures(&self, value: &TypedExpr) -> Vec<UnnameableType> {
+        value
+            .let_bindings()
+            .filter_map(|(_, bound)| bound.lambda_value())
+            .flat_map(|lambda| self.in_closure(lambda))
+            .collect()
+    }
+
+    fn in_closure(&self, lambda: &TypedLambda) -> Vec<UnnameableType> {
+        lambda
+            .params
+            .iter()
+            .filter_map(|param| Some((param, self.opaque_part(&param.ty)?)))
+            .filter(|(param, _)| self.receivers.calls_method_on(&lambda.body, param.binding))
+            .map(|(param, opaque)| UnnameableType {
+                opaque: opaque.clone(),
+                span: param.span,
+                place: UnnameablePlace::ClosureReceiver,
+            })
+            .collect()
     }
 
     fn in_function(&self, binding: BindingId, definition: &TypedDefinition) -> Vec<UnnameableType> {

@@ -12,6 +12,11 @@ pub enum FunctionStorage {
     Payload(Rc<str>),
 }
 
+pub enum DroppedValue {
+    Local(Span),
+    Parameter(Span),
+}
+
 pub enum BorrowedStorage {
     Field {
         field: String,
@@ -327,17 +332,23 @@ impl OwnershipProblems {
         }
     }
 
-    pub fn local_borrow(borrowed: Span, defined: Span) -> Diagnostic {
-        Self::returned_local_borrow(borrowed, defined)
-            .with_help("return an owned value with `(clone ...)`, or borrow from a parameter")
+    pub fn local_borrow(borrowed: Span, dropped: &DroppedValue) -> Diagnostic {
+        Self::returned_local_borrow(borrowed, dropped).with_help(match dropped {
+            DroppedValue::Local(_) => {
+                "return an owned value with `(clone ...)`, or borrow from a parameter"
+            }
+            DroppedValue::Parameter(_) => {
+                "return an owned value with `(clone ...)`, or give this parameter a borrowed type"
+            }
+        })
     }
 
     pub fn stored_local_borrow(
         borrowed: Span,
-        defined: Span,
+        dropped: &DroppedValue,
         storage: &BorrowedStorage,
     ) -> Diagnostic {
-        Self::returned_local_borrow(borrowed, defined)
+        Self::returned_local_borrow(borrowed, dropped)
             .with_help(Self::owned_storage(storage))
             .with_label(Label::new(storage.declared(), "declared as a borrow here"))
     }
@@ -372,16 +383,25 @@ impl OwnershipProblems {
         }
     }
 
-    fn returned_local_borrow(borrowed: Span, defined: Span) -> Diagnostic {
+    fn returned_local_borrow(borrowed: Span, dropped: &DroppedValue) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::LOCAL_BORROW,
             "cannot return a borrow of a local value",
             Label::new(borrowed, "this borrows a local value"),
         )
-        .with_label(Label::new(
-            defined,
-            "this local is dropped when the function returns",
-        ))
+        .with_label(Self::dropped_label(dropped))
+    }
+
+    fn dropped_label(dropped: &DroppedValue) -> Label {
+        match dropped {
+            DroppedValue::Local(defined) => {
+                Label::new(*defined, "this local is dropped when the function returns")
+            }
+            DroppedValue::Parameter(defined) => Label::new(
+                *defined,
+                "this parameter owns its value, which is dropped when the function returns",
+            ),
+        }
     }
 
     pub fn moved_definition(name: &str, span: Span) -> Diagnostic {
