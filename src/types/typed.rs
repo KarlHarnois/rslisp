@@ -204,6 +204,17 @@ pub struct TypedBinder {
     pub annotated: bool,
 }
 
+impl TypedBinder {
+    pub fn with_type(&self, ty: Type) -> Self {
+        Self {
+            binding: self.binding,
+            ty,
+            span: self.span,
+            annotated: self.annotated,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct TypedLambda {
     pub params: Vec<TypedBinder>,
