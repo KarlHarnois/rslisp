@@ -7,7 +7,7 @@ use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
 use super::ty::Type;
 use super::typed::{TypedDefinition, TypedExprKind, TypedLambda};
-use crate::core::{BindingId, CoreModule, ItemKind, TypeExpr, TypeExprKind};
+use crate::core::{BindingId, CoreModule, Item, ItemKind, TypeExpr, TypeExprKind};
 use crate::source::Span;
 
 struct UnnameableType {
@@ -15,18 +15,9 @@ struct UnnameableType {
     span: Span,
 }
 
-impl UnnameableType {
-    fn found(opaque: Option<&Type>, span: Span) -> Option<Self> {
-        opaque.map(|opaque| Self {
-            opaque: opaque.clone(),
-            span,
-        })
-    }
-}
-
-struct LabelSpans {
-    parameters: Vec<Span>,
-    result: Option<Span>,
+struct FunctionLabels<'f> {
+    lambda: &'f TypedLambda,
+    written: Option<(&'f [TypeExpr], &'f TypeExpr)>,
 }
 
 struct OpaquePositions<'c> {
@@ -34,7 +25,7 @@ struct OpaquePositions<'c> {
     structs: &'c StructTable,
     enums: &'c EnumTable,
     definitions: &'c HashMap<BindingId, TypedDefinition>,
-    signatures: HashMap<BindingId, &'c TypeExpr>,
+    modules: &'c [CoreModule],
 }
 
 impl TypeChecker {
@@ -48,9 +39,9 @@ impl TypeChecker {
             structs: &self.structs,
             enums: &self.enums,
             definitions,
-            signatures: OpaquePositions::signatures_in(modules),
+            modules,
         };
-        for unnameable in positions.unnameable_in(modules) {
+        for unnameable in positions.unnameable() {
             let shown = self.display().show(&unnameable.opaque);
             self.diagnostics
                 .push(TypeProblems::unnameable_type(&shown, unnameable.span));
@@ -59,25 +50,14 @@ impl TypeChecker {
 }
 
 impl OpaquePositions<'_> {
-    fn signatures_in(modules: &[CoreModule]) -> HashMap<BindingId, &TypeExpr> {
-        modules
-            .iter()
-            .flat_map(|module| &module.items)
-            .filter_map(|item| match &item.kind {
-                ItemKind::Signature(binding, signature) => Some((*binding, signature)),
-                _ => None,
-            })
-            .collect()
-    }
-
-    fn unnameable_in(&self, modules: &[CoreModule]) -> Vec<UnnameableType> {
+    fn unnameable(&self) -> Vec<UnnameableType> {
         let mut reporting_forms: Vec<Span> = Vec::new();
         let mut found = Vec::new();
-        for item in modules.iter().flat_map(|module| &module.items) {
+        for item in self.items() {
             if Self::reported_by_its_form(&reporting_forms, item.span) {
                 continue;
             }
-            let unnameable = self.unnameable(&item.kind);
+            let unnameable = self.in_item(&item.kind);
             if !unnameable.is_empty() {
                 reporting_forms.push(item.span);
             }
@@ -86,11 +66,15 @@ impl OpaquePositions<'_> {
         found
     }
 
+    fn items(&self) -> impl Iterator<Item = &Item> {
+        self.modules.iter().flat_map(|module| &module.items)
+    }
+
     fn reported_by_its_form(reporting_forms: &[Span], item: Span) -> bool {
         reporting_forms.iter().any(|form| form.contains(item))
     }
 
-    fn unnameable(&self, item: &ItemKind) -> Vec<UnnameableType> {
+    fn in_item(&self, item: &ItemKind) -> Vec<UnnameableType> {
         match item {
             ItemKind::Def(binding, _) => self.in_definition(*binding),
             ItemKind::Struct(binding, ..) => self.in_struct(*binding),
@@ -107,30 +91,26 @@ impl OpaquePositions<'_> {
     fn in_definition(&self, binding: BindingId) -> Vec<UnnameableType> {
         self.definitions
             .get(&binding)
-            .map_or_else(Vec::new, |definition| {
-                self.in_function(definition, self.signatures.get(&binding).copied())
-            })
+            .map_or_else(Vec::new, |definition| self.in_function(binding, definition))
     }
 
-    fn in_function(
-        &self,
-        definition: &TypedDefinition,
-        signature: Option<&TypeExpr>,
-    ) -> Vec<UnnameableType> {
+    fn in_function(&self, binding: BindingId, definition: &TypedDefinition) -> Vec<UnnameableType> {
         let (TypedExprKind::Fn(lambda), Type::Function(_, _, result)) =
             (&definition.value.kind, &definition.value.ty)
         else {
             return Vec::new();
         };
-        let spans = LabelSpans::of(lambda, signature);
-        lambda
+        let in_parameters = lambda
             .params
             .iter()
-            .map(|param| &param.ty)
-            .zip(spans.parameters)
-            .chain(spans.result.map(|span| (result.as_ref(), span)))
-            .filter_map(|(ty, span)| UnnameableType::found(self.opaque_in_function(ty), span))
-            .collect()
+            .enumerate()
+            .filter_map(|(position, param)| {
+                self.unnameable_at(&param.ty, || {
+                    self.labels(binding, lambda).parameter(position)
+                })
+            });
+        let in_result = self.unnameable_at(result, || self.labels(binding, lambda).result());
+        in_parameters.chain(in_result).collect()
     }
 
     fn in_struct(&self, binding: BindingId) -> Vec<UnnameableType> {
@@ -138,7 +118,7 @@ impl OpaquePositions<'_> {
             .get(binding)
             .into_iter()
             .flat_map(|definition| definition.fields.iter().zip(&definition.field_spans))
-            .filter_map(|((_, ty), span)| UnnameableType::found(self.opaque_in_function(ty), *span))
+            .filter_map(|((_, ty), span)| self.unnameable_at(ty, || Some(*span)))
             .collect()
     }
 
@@ -153,8 +133,34 @@ impl OpaquePositions<'_> {
                     .into_iter()
                     .zip(&variant.payload_spans)
             })
-            .filter_map(|(ty, span)| UnnameableType::found(self.opaque_in_function(ty), *span))
+            .filter_map(|(ty, span)| self.unnameable_at(ty, || Some(*span)))
             .collect()
+    }
+
+    fn unnameable_at(
+        &self,
+        ty: &Type,
+        label: impl FnOnce() -> Option<Span>,
+    ) -> Option<UnnameableType> {
+        let opaque = self.opaque_in_function(ty)?;
+        Some(UnnameableType {
+            opaque: opaque.clone(),
+            span: label()?,
+        })
+    }
+
+    fn labels<'f>(&'f self, binding: BindingId, lambda: &'f TypedLambda) -> FunctionLabels<'f> {
+        FunctionLabels {
+            lambda,
+            written: self.signature(binding).and_then(FunctionLabels::written),
+        }
+    }
+
+    fn signature(&self, binding: BindingId) -> Option<&TypeExpr> {
+        self.items().find_map(|item| match &item.kind {
+            ItemKind::Signature(signed, signature) if *signed == binding => Some(signature),
+            _ => None,
+        })
     }
 
     fn opaque_in_function<'t>(&self, ty: &'t Type) -> Option<&'t Type> {
@@ -189,28 +195,26 @@ impl OpaquePositions<'_> {
     }
 }
 
-impl LabelSpans {
-    fn of(lambda: &TypedLambda, signature: Option<&TypeExpr>) -> Self {
-        signature
-            .and_then(Self::written)
-            .unwrap_or_else(|| Self::inferred(lambda))
-    }
-
-    fn written(signature: &TypeExpr) -> Option<Self> {
-        match signature.kind() {
-            TypeExprKind::Function(_, parameters, result) => Some(Self {
-                parameters: parameters.iter().map(TypeExpr::span).collect(),
-                result: Some(result.span()),
-            }),
-            TypeExprKind::Where(_, function) => Self::written(function),
-            _ => None,
+impl FunctionLabels<'_> {
+    fn parameter(&self, position: usize) -> Option<Span> {
+        match self.written {
+            Some((parameters, _)) => parameters.get(position).map(TypeExpr::span),
+            None => self.lambda.params.get(position).map(|param| param.span),
         }
     }
 
-    fn inferred(lambda: &TypedLambda) -> Self {
-        Self {
-            parameters: lambda.params.iter().map(|param| param.span).collect(),
-            result: lambda.body.expressions().last().map(|tail| tail.span),
+    fn result(&self) -> Option<Span> {
+        match self.written {
+            Some((_, result)) => Some(result.span()),
+            None => self.lambda.body.expressions().last().map(|tail| tail.span),
+        }
+    }
+
+    fn written(signature: &TypeExpr) -> Option<(&[TypeExpr], &TypeExpr)> {
+        match signature.kind() {
+            TypeExprKind::Function(_, parameters, result) => Some((parameters, result)),
+            TypeExprKind::Where(_, function) => Self::written(function),
+            _ => None,
         }
     }
 }
@@ -219,7 +223,7 @@ impl LabelSpans {
 mod tests {
     use std::ops::Range;
 
-    use super::{LabelSpans, OpaquePositions};
+    use super::{FunctionLabels, OpaquePositions};
     use crate::core::{ClosureKind, TypeExpr, TypeExprKind};
     use crate::source::{SourceId, Span};
 
@@ -262,18 +266,20 @@ mod tests {
             TypeExprKind::Where(Vec::new(), Box::new(fixture.function())),
             fixture.span(0..20),
         );
-        let spans = LabelSpans::written(&bounded).expect("a where wraps a function type");
+        let (parameters, result) =
+            FunctionLabels::written(&bounded).expect("a where wraps a function type");
+        let parameter_spans: Vec<Span> = parameters.iter().map(TypeExpr::span).collect();
         assert_eq!(
-            spans.parameters,
+            parameter_spans,
             vec![fixture.span(SignatureFixture::PARAMETER)]
         );
-        assert_eq!(spans.result, Some(fixture.span(SignatureFixture::RESULT)));
+        assert_eq!(result.span(), fixture.span(SignatureFixture::RESULT));
     }
 
     #[test]
     fn a_signature_that_is_not_a_function_labels_nothing() {
         let fixture = SignatureFixture::new();
-        assert!(LabelSpans::written(&fixture.hole(0..1)).is_none());
+        assert!(FunctionLabels::written(&fixture.hole(0..1)).is_none());
     }
 
     #[test]
