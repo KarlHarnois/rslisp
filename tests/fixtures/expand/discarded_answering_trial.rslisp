@@ -1,0 +1,14 @@
+(use code list concat number-sub number-le)
+
+(def doubled
+  (fn (items times)
+    (if (number-le times 0) items (doubled (concat items items) (number-sub times 1)))))
+
+(defmacro padded-definition ()
+  (template (def padded (do (splice (doubled (list 0) 16))))))
+
+(do
+  (use trials/wide)
+  (padded-definition))
+
+(defn main () unknown-value)
