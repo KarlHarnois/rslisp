@@ -7,7 +7,7 @@ use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
 use super::ty::Type;
 use super::typed::{TypedDefinition, TypedExprKind};
-use crate::core::{BindingId, CoreModule, Item, ItemKind};
+use crate::core::{BindingId, CoreModule, ItemKind};
 use crate::source::Span;
 
 struct UnnameableType {
@@ -56,7 +56,7 @@ impl OpaquePositions<'_> {
         let mut reporting_forms: Vec<Span> = Vec::new();
         let mut found = Vec::new();
         for item in modules.iter().flat_map(|module| &module.items) {
-            if Self::reported_by_its_form(&reporting_forms, item) {
+            if Self::reported_by_its_form(&reporting_forms, item.span) {
                 continue;
             }
             let unnameable = self.unnameable(&item.kind);
@@ -68,8 +68,8 @@ impl OpaquePositions<'_> {
         found
     }
 
-    fn reported_by_its_form(reporting_forms: &[Span], item: &Item) -> bool {
-        reporting_forms.iter().any(|form| form.contains(item.span))
+    fn reported_by_its_form(reporting_forms: &[Span], item: Span) -> bool {
+        reporting_forms.iter().any(|form| form.contains(item))
     }
 
     fn unnameable(&self, item: &ItemKind) -> Vec<UnnameableType> {
@@ -160,5 +160,27 @@ impl OpaquePositions<'_> {
         self.rust_types
             .get(*binding)
             .is_some_and(|rust_type| rust_type.is_opaque())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::OpaquePositions;
+    use crate::source::{SourceId, Span};
+
+    #[test]
+    fn only_an_item_inside_an_earlier_reporting_form_is_skipped() {
+        let source = SourceId::new(0);
+        let reporting_form = Span::new(source, 10..50);
+        let inside = Span::new(source, 20..30);
+        let enclosing = Span::new(source, 0..60);
+        assert!(OpaquePositions::reported_by_its_form(
+            &[reporting_form],
+            inside
+        ));
+        assert!(!OpaquePositions::reported_by_its_form(
+            &[reporting_form],
+            enclosing
+        ));
     }
 }
