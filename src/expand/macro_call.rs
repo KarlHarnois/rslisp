@@ -268,7 +268,9 @@ impl Expander<'_> {
                     .insert(binding, MacroState::Ready(Rc::clone(&closure)));
                 Ok(closure)
             }
-            Some(MacroState::Pending(definition)) => self.compile_macro(binding, &definition),
+            Some(MacroState::Pending(definition)) => {
+                self.within_top_level_form(|expander| expander.compile_macro(binding, &definition))
+            }
             Some(MacroState::Failed) => {
                 self.macros.states.insert(binding, MacroState::Failed);
                 Err(ExpandProblems::broken_macro(&name, span))
