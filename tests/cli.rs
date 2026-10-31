@@ -316,6 +316,24 @@ fn doc_rejects_a_term_that_is_not_one_name() {
 }
 
 #[test]
+fn doc_rejects_a_term_that_does_not_read() {
+    let sandbox = Sandbox::new("doc_unreadable_term");
+    let doc = sandbox.compiler(&["doc", "("]);
+    assert!(doc.assert_exit_code(2).stderr().starts_with("error[L0101]"));
+}
+
+#[test]
+fn doc_reports_an_unreadable_file_as_a_usage_error() {
+    let sandbox = Sandbox::new("doc_unreadable_file");
+    let doc = sandbox.compiler(&["doc", "--file", "missing.rslisp", "defn"]);
+    assert!(
+        doc.assert_exit_code(2)
+            .stderr()
+            .starts_with("error: cannot read `missing.rslisp`")
+    );
+}
+
+#[test]
 fn doc_rejects_a_shadowing_doc_that_returns_no_string() {
     let sandbox = Sandbox::new("doc_shadowed").with_file("main.rslisp", SHADOWING_DOC);
     let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "main"]);
