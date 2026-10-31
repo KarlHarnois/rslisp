@@ -68,6 +68,23 @@ fn counted_years(years: &Vec<i64>) -> usize {
     year_count(years)
 }
 
+fn alternate_oldest<'a>(
+    mut years: &'a Vec<i64>,
+    mut spare: &'a Vec<i64>,
+    mut turns: i64,
+) -> &'a i64 {
+    loop {
+        if turns > 0 {
+            (years, spare, turns) = (spare, years, turns - 1);
+            continue;
+        } else if year_capacity(spare) > 0 {
+            return &years[0];
+        } else {
+            return &spare[0];
+        }
+    }
+}
+
 fn main() {
     crate::rt::restore_default_sigpipe();
     let mut leaf_years: Vec<i64> = vec![2011_i64, 2017_i64];
@@ -82,7 +99,9 @@ fn main() {
         counted_years(&leaf_years)
     );
     let count_years = year_count;
-    println!("{}", count_years(&leaf_years))
+    println!("{}", count_years(&leaf_years));
+    let spare_years: Vec<i64> = vec![2000_i64];
+    println!("{}", alternate_oldest(&leaf_years, &spare_years, 1))
 }
 
 mod rt {

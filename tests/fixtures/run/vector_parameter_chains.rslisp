@@ -45,6 +45,13 @@
 (defn counted-years (years)
   (year-count years))
 
+(defn alternate-oldest (years spare turns)
+  (if (> turns 0)
+      (recur spare years (- turns 1))
+      (if (> (year-capacity spare) 0)
+          (at years 0)
+          (at spare 0))))
+
 (defn main ()
   (let leaf-years (vec 2011 2017))
   (record-decade! (mut leaf-years) 2019)
@@ -54,4 +61,6 @@
   (println (len leaf-years) " " (oldest-year leaf-years))
   (println (<= (len leaf-years) (year-capacity leaf-years)) " " (counted-years leaf-years))
   (let count-years year-count)
-  (println (count-years (ref leaf-years))))
+  (println (count-years (ref leaf-years)))
+  (let spare-years (vec 2000))
+  (println (alternate-oldest leaf-years spare-years 1)))
