@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_value_trial.rslisp
+---
+error[L0304]: `big` is a macro, not a value
+  --> expand/failed_value_trial.rslisp:26:17
+   |
+26 |   (do (padding) big (small)))
+   |                 ^^^ used as a value here
+   |
+   = help: a macro can only be called; pass a function instead

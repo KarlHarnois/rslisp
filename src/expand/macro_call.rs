@@ -120,9 +120,13 @@ impl Expander<'_> {
     fn trial_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
         let diagnostics = self.diagnostics.len();
         let recovered = self.recovered_diagnostics.len();
+        let budget_before = self.form_budget.clone();
         let result = self.run_macro(binding, form, None).ok();
         self.diagnostics.truncate(diagnostics);
         self.recovered_diagnostics.truncate(recovered);
+        if result.is_none() {
+            self.form_budget = budget_before;
+        }
         result
     }
 
