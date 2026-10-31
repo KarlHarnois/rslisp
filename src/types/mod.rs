@@ -15,6 +15,7 @@ mod infer;
 mod literal_fit;
 mod lowering;
 mod main_result;
+mod opaque_positions;
 mod parameter_calls;
 mod pending;
 mod pinning;
