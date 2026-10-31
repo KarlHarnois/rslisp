@@ -1,0 +1,137 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/vector_parameter_chains.rslisp
+---
+fn record_year(years: &mut Vec<i64>, year: i64) {
+    years.push(year)
+}
+
+fn record_twice(years: &mut Vec<i64>, year: i64) {
+    record_year(years, year);
+    record_year(years, year + 1)
+}
+
+fn record_decade(years: &mut Vec<i64>, year: i64) {
+    record_twice(years, year);
+    years[0] = year
+}
+
+fn oldest_year(years: &[i64]) -> &i64 {
+    &years[0]
+}
+
+fn newest_year(years: &[i64]) -> &i64 {
+    &years[years.len() - 1]
+}
+
+fn year_span(years: &[i64]) -> i64 {
+    *newest_year(years) - *oldest_year(years)
+}
+
+fn added_years(years: &[i64], index: usize) -> i64 {
+    if index < years.len() {
+        years[index] + subtracted_years(years, index + 1)
+    } else {
+        0
+    }
+}
+
+fn subtracted_years(years: &[i64], index: usize) -> i64 {
+    if index < years.len() {
+        added_years(years, index + 1) - years[index]
+    } else {
+        0
+    }
+}
+
+fn pad_years(years: &mut Vec<i64>, year: i64, remaining: i64) {
+    years.push(year);
+    fill_years(years, year + 1, remaining - 1)
+}
+
+fn fill_years(years: &mut Vec<i64>, year: i64, remaining: i64) {
+    if remaining > 0 {
+        pad_years(years, year, remaining)
+    }
+}
+
+fn year_capacity(years: &Vec<i64>) -> usize {
+    years.capacity()
+}
+
+fn year_count<A: crate::rt::Sequence>(years: &A) -> usize {
+    years.len()
+}
+
+fn counted_years(years: &Vec<i64>) -> usize {
+    year_count(years)
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut leaf_years: Vec<i64> = vec![2011_i64, 2017_i64];
+    record_decade(&mut leaf_years, 2019);
+    println!("{} {}", leaf_years.len(), year_span(&leaf_years));
+    println!("{}", added_years(&leaf_years, 0));
+    fill_years(&mut leaf_years, 2024, 2);
+    println!("{} {}", leaf_years.len(), oldest_year(&leaf_years));
+    println!(
+        "{} {}",
+        leaf_years.len() <= year_capacity(&leaf_years),
+        counted_years(&leaf_years)
+    );
+    let count_years = year_count;
+    println!("{}", count_years(&leaf_years))
+}
+
+mod rt {
+    pub trait Sequence {
+        fn len(&self) -> usize;
+    }
+
+    impl Sequence for String {
+        fn len(&self) -> usize {
+            self.as_str().len()
+        }
+    }
+
+    impl Sequence for str {
+        fn len(&self) -> usize {
+            str::len(self)
+        }
+    }
+
+    impl<T> Sequence for Vec<T> {
+        fn len(&self) -> usize {
+            Vec::len(self)
+        }
+    }
+
+    impl<T> Sequence for [T] {
+        fn len(&self) -> usize {
+            <[T]>::len(self)
+        }
+    }
+
+    impl<T: Sequence + ?Sized> Sequence for &T {
+        fn len(&self) -> usize {
+            T::len(self)
+        }
+    }
+
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
