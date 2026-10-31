@@ -375,6 +375,7 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 | `(string-lines text)`, `(string-trim-start text)`, `(string-length text)`, `(string-drop count text)` | Split a string at each newline into a list of strings, drop its leading whitespace, count its characters, and drop its first `count` characters. A `count` past the end is an error. |
 | `(same-binding? left right)` | Test whether two symbols refer to the same binding. |
 | `(definition-symbol term part...)` | Build a symbol, as `symbol` does, with the scopes of the module that defines the binding `term` refers to. An unbound `term` is an unbound-name error at `term`. A kernel form keeps the scopes of `term`. Any other binding that no module defines, such as a local, gives a symbol with no scopes. |
+| `(type-definition-symbol term part...)` | Build a symbol as `definition-symbol` does, from the type binding `term` refers to, even when `term` also has a value binding. A `term` with no type binding gives a symbol with no scopes. |
 | `(bound? name)` | Test whether a symbol refers to a binding in either namespace. |
 | `(closest-name name names)` | Return a list that holds the symbol of `names` closest to `name`, other than `name` itself, ranked as the compiler ranks a misspelled name, or an empty list when none is close. |
 | `(fail "message" form)`, `(fail "message" form "help")`, `(fail "message" form "help" description)` | Stop expansion with an error at `form`, an optional help line that says how to fix the call, and an optional description of the error. |

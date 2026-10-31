@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_imported_struct_and_function.rslisp
+---
+(def point (fn (x) x))
+(def point-page "(defstruct point)\n\nA point on a grid.")

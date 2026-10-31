@@ -26,6 +26,7 @@ pub trait CompileTimeHost {
         name: String,
         span: Span,
     ) -> Result<Symbol, Diagnostic>;
+    fn type_definition_symbol(&self, term: &Symbol, name: String) -> Symbol;
     fn is_bound(&self, symbol: &Symbol) -> bool;
 }
 
