@@ -49,6 +49,14 @@ error[L0326]: macro expansion did not finish
    = note: the macro calls in one top-level form expand to at most 131072 forms in all
    = help: make each recursive macro stop, or split a large expansion across several top-level forms
 
+error[L0305]: macro expansion did not finish
+  --> expand/expansion_too_large.rslisp:38:1
+   |
+38 | (spread-top)
+   | ^^^^^^^^^^^^ expanding this form keeps producing more macro calls
+   |
+   = help: check that every recursive macro has a case that stops
+
 error[L0326]: macro expansion did not finish
   --> expand/expansion_too_large.rslisp:38:1
    |
@@ -57,3 +65,11 @@ error[L0326]: macro expansion did not finish
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all
    = help: make each recursive macro stop, or split a large expansion across several top-level forms
+
+error[L0305]: macro expansion did not finish
+  --> expand/expansion_too_large.rslisp:43:1
+   |
+43 | (loop-def)
+   | ^^^^^^^^^^ expanding this form keeps producing more macro calls
+   |
+   = help: check that every recursive macro has a case that stops

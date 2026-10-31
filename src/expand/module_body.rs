@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::rc::Rc;
 
 use super::Expander;
@@ -6,6 +5,7 @@ use super::TraitMethods;
 use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
+use super::spliced_forms::{SplicedForm, SplicedForms};
 use crate::core::{
     BindingId, BindingInfo, BindingKind, ControlForm, CoreModule, DefinitionForm, Expr, ExprKind,
     ExpressionForm, FieldLabel, ImplAssociatedType, ImplMethod, Item, ItemKind, KernelForm, Leaf,
@@ -133,7 +133,7 @@ impl Expander<'_> {
         context: &mut DefinitionContext,
         pending: &mut Vec<PendingItem>,
     ) -> Result<(), Diagnostic> {
-        let mut spliced = VecDeque::new();
+        let mut spliced = SplicedForms::default();
         pending.extend(self.register_top_level(module, form, context, &mut spliced)?);
         self.register_spliced_forms(module, spliced, context, pending);
         Ok(())
@@ -142,17 +142,30 @@ impl Expander<'_> {
     fn register_spliced_forms(
         &mut self,
         module: ModuleId,
-        mut spliced: VecDeque<Form>,
+        mut spliced: SplicedForms,
         context: &mut DefinitionContext,
         pending: &mut Vec<PendingItem>,
     ) {
         let mut reported = FastHashSet::default();
-        while let Some(form) = spliced.pop_front() {
-            match self.register_top_level(module, form, context, &mut spliced) {
+        while let Some(next) = spliced.take_first() {
+            match self.register_spliced_form(module, next, context, &mut spliced) {
                 Ok(item) => pending.extend(item),
                 Err(diagnostic) => self.report_once(diagnostic, &mut reported),
             }
         }
+    }
+
+    fn register_spliced_form(
+        &mut self,
+        module: ModuleId,
+        spliced_form: SplicedForm,
+        context: &mut DefinitionContext,
+        queue: &mut SplicedForms,
+    ) -> Result<Option<PendingItem>, Diagnostic> {
+        let enclosing_depth = std::mem::replace(&mut self.expansion_depth, spliced_form.depth);
+        let registered = self.register_top_level(module, spliced_form.form, context, queue);
+        self.expansion_depth = enclosing_depth;
+        registered
     }
 
     fn register_top_level(
@@ -160,15 +173,16 @@ impl Expander<'_> {
         module: ModuleId,
         form: Form,
         context: &mut DefinitionContext,
-        queue: &mut VecDeque<Form>,
+        queue: &mut SplicedForms,
     ) -> Result<Option<PendingItem>, Diagnostic> {
+        let written = form.clone();
         let form = self.expand_head(form, Some(context))?;
         match self.definition_head(&form)? {
             KernelForm::Definition(definition) => {
                 self.register_definition(definition, module, form, context)
             }
             KernelForm::Expression(ExpressionForm::Control(ControlForm::Do)) => {
-                Self::splice(&form, queue);
+                self.splice(&written, &form, queue);
                 Ok(None)
             }
             _ => Err(ExpandProblems::not_a_definition(form.span())),
@@ -458,10 +472,16 @@ impl Expander<'_> {
         }
     }
 
-    fn splice(form: &Form, queue: &mut VecDeque<Form>) {
-        let items = form.as_list().unwrap_or_default();
-        for item in items.iter().skip(1).rev() {
-            queue.push_front(item.clone());
+    fn splice(&self, written: &Form, expanded: &Form, queue: &mut SplicedForms) {
+        let items = expanded.as_list().unwrap_or_default();
+        let spliced = items.get(1..).unwrap_or_default();
+        queue.splice(spliced, self.splice_depth(written));
+    }
+
+    fn splice_depth(&self, written: &Form) -> usize {
+        match self.macro_head(written) {
+            Some(_) => self.expansion_depth + 1,
+            None => self.expansion_depth,
         }
     }
 
