@@ -113,9 +113,9 @@ mod tests {
     #[test]
     fn a_leader_that_is_not_refused_keeps_its_follower() {
         let mut fixture = RefusalFixture::new();
+        let refused = fixture.parameter("refused");
         let leader = fixture.parameter("leader");
         let follower = fixture.parameter("follower");
-        let refused = fixture.parameter("refused");
         fixture.refusals.follow(follower, leader);
         fixture.refusals.refuse(refused);
         assert_eq!(fixture.spread(), HashSet::from([refused]));
