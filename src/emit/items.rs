@@ -22,9 +22,9 @@ use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Bound, GenericId, GenericParam, Lifetime, ReceiverKind, Type, TypedAssociatedType, TypedBinder,
-    TypedConversion, TypedDefinition, TypedExpr, TypedExprKind, TypedImplMethod, TypedLambda,
-    TypedProgram, TypedTraitMethod, VariantDefinition,
+    Bound, GenericId, GenericParam, Lifetime, ReceiverKind, Scheme, Type, TypedAssociatedType,
+    TypedBinder, TypedConversion, TypedDefinition, TypedExpr, TypedExprKind, TypedImplMethod,
+    TypedLambda, TypedProgram, TypedTraitMethod, VariantDefinition,
 };
 
 struct ImplementedTrait<'l> {
@@ -339,7 +339,7 @@ impl<'a> ItemEmitter<'a> {
         let Type::Function(_, parameters, result) = &definition.scheme.body else {
             unreachable!("a trait method has a function type")
         };
-        let self_generic = definition.scheme.params.first().map(|param| param.id);
+        let self_generic = Self::self_generic(&definition.scheme);
         let bound = Self::sized_self_bound(parameters, result, self_generic);
         let types = RustTypes::new(
             self.program,
@@ -733,7 +733,11 @@ impl<'a> ItemEmitter<'a> {
         let name = self.program.bindings.get(method).name();
         let declared = self.program.declared_trait_method(trait_binding, name)?;
         let scheme = &self.plan.definition(declared.declaration())?.scheme;
-        Some((&scheme.body, scheme.params.first()?.id))
+        Some((&scheme.body, Self::self_generic(scheme)?))
+    }
+
+    fn self_generic(trait_method: &Scheme) -> Option<GenericId> {
+        trait_method.params.first().map(|param| param.id)
     }
 
     fn result_main(&mut self, definition: &TypedDefinition, info: &ItemInfo) -> Vec<Fragment> {
