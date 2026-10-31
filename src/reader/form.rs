@@ -1,7 +1,7 @@
 use std::fmt;
 use std::rc::Rc;
 
-use crate::scope::{Scope, ScopeSet};
+use crate::scope::{ChainPrefix, Scope, ScopeSet};
 use crate::source::Span;
 
 #[derive(Clone, Debug)]
@@ -52,6 +52,10 @@ impl Form {
 
     pub fn add_scope(&mut self, scope: Scope) {
         self.update_scopes(&|scopes| scopes.add(scope));
+    }
+
+    pub fn add_prefix(&mut self, prefix: &ChainPrefix) {
+        self.update_scopes(&|scopes| scopes.add_prefix(prefix));
     }
 
     pub fn flip_scope(&mut self, scope: Scope) {
