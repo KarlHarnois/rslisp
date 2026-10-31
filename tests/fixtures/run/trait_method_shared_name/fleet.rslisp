@@ -1,0 +1,9 @@
+(defstruct car :model str :year i64)
+
+(trait lot
+  (newer (fn (self i64) self)))
+
+(impl lot car
+  (newer (c year) (->car (:model c) year)))
+
+(export car ->car)

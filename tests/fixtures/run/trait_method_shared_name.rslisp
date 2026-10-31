@@ -1,0 +1,11 @@
+(use trait_method_shared_name/fleet car ->car)
+
+(trait garage
+  (newer (fn (self self) self)))
+
+(impl garage car
+  (newer (c other) (if (> (:year c) (:year other)) c other)))
+
+(defn main ()
+  (let leaf (->car "Leaf" 2024))
+  (println (:model (newer leaf (->car "Golf" 2019)))))
