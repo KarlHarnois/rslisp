@@ -49,19 +49,19 @@ error[L0326]: macro expansion did not finish
    = note: the macro calls in one top-level form expand to at most 131072 forms in all
    = help: make each recursive macro stop, or split a large expansion across several top-level forms
 
-error[L0305]: macro expansion did not finish
+error[L0207]: expected a definition at module level
   --> expand/expansion_too_large.rslisp:38:1
    |
-38 | (spread-top)
-   | ^^^^^^^^^^^^ expanding this form keeps producing more macro calls
+38 | (spread-wide)
+   | ^^^^^^^^^^^^^ this is not a definition
    |
-   = help: check that every recursive macro has a case that stops
+   = help: put expressions inside a function, such as `(def run (fn () ...))`
 
 error[L0326]: macro expansion did not finish
   --> expand/expansion_too_large.rslisp:38:1
    |
-38 | (spread-top)
-   | ^^^^^^^^^^^^ expanding this call of `spread-top` passes 131072 forms
+38 | (spread-wide)
+   | ^^^^^^^^^^^^^ expanding this call of `spread-wide` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all
    = help: make each recursive macro stop, or split a large expansion across several top-level forms

@@ -32,10 +32,10 @@
 (defn nested ()
   (huge))
 
-(defmacro spread-top ()
-  (template (do (spread-top) (spread-top))))
+(defmacro spread-wide ()
+  (template (do ((splice (doubled (list 0) 16))) (spread-wide) (spread-wide))))
 
-(spread-top)
+(spread-wide)
 
 (defmacro loop-def ()
   (template (do (def looped 1) (loop-def))))
