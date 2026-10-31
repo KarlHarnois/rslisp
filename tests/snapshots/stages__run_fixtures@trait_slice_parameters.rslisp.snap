@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/trait_slice_parameters.rslisp
+---
+1210
+6800
+10 3

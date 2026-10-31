@@ -19,12 +19,14 @@ mod refusals;
 mod repeats;
 mod returned;
 mod rewrite;
+mod shrunk_parameters;
 mod slices;
 mod slots;
 mod stored;
 mod stored_definitions;
 mod subtree;
 mod tail_calls;
+mod trait_slices;
 mod update_bases;
 mod update_order;
 mod usage;
@@ -96,8 +98,9 @@ impl OwnershipChecker {
             &program.structs,
             &program.enums,
         );
-        let mut rewrite = ModeRewrite::new(&functions, &modes, &slices, &copy);
+        let mut rewrite = ModeRewrite::new(&functions, &modes, slices.parameters(), &copy);
         rewrite.apply(program);
+        slices.rewrite_declarations(program);
         FunctionValueModes::apply(program, rewrite.function_params())
             .into_iter()
             .for_each(|diagnostic| diagnostics.push(diagnostic));

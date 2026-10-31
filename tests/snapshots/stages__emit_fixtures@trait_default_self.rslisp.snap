@@ -1,0 +1,97 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/trait_default_self.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    model: &'a str,
+    year: i64,
+}
+
+fn make_car(model: &str, year: i64) -> Car<'_> {
+    Car { model, year }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Truck {
+    load: i64,
+}
+
+fn make_truck(load: i64) -> Truck {
+    Truck { load }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Van {
+    seats: i64,
+}
+
+fn make_van(seats: i64) -> Van {
+    Van { seats }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!("{}", make_car("Leaf", 2024).twin().model);
+    println!("{}", make_truck(3).twin().load);
+    println!("{}", make_van(7).twin().seats);
+    println!("{} {}", make_truck(3).scrap(), make_van(7).scrap());
+    println!(
+        "{}",
+        make_truck(3)
+            .fleet(vec![make_truck(1), make_truck(2)])
+            .len()
+    )
+}
+
+trait Garage {
+    fn twin(self) -> Self
+    where
+        Self: Sized,
+    {
+        self
+    }
+    fn scrap(self) -> i64
+    where
+        Self: Sized,
+    {
+        0
+    }
+    fn fleet(&self, argument_1: Vec<Self>) -> Vec<Self>
+    where
+        Self: Sized,
+    {
+        argument_1
+    }
+}
+
+impl<'a> Garage for Car<'a> {}
+
+impl Garage for Truck {}
+
+impl Garage for Van {
+    fn twin(self) -> Van {
+        make_van(self.seats + 1)
+    }
+    fn scrap(self) -> i64 {
+        self.seats
+    }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

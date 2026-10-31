@@ -1,0 +1,86 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/trait_slice_parameters.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Odometer {
+    offset: i64,
+}
+
+fn make_odometer(offset: i64) -> Odometer {
+    Odometer { offset }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Meter {
+    scale: i64,
+}
+
+fn make_meter(scale: i64) -> Meter {
+    Meter { scale }
+}
+
+fn report(o: Odometer, readings: &[i64]) -> i64 {
+    o.total(readings)
+}
+
+fn log<A: Mileage>(m: A, readings: &mut Vec<i64>) {
+    m.record(readings)
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut readings: Vec<i64> = vec![1200_i64, 3400_i64];
+    println!("{}", report(make_odometer(10), &readings));
+    println!("{}", make_meter(2).total(&readings));
+    log(make_odometer(10), &mut readings);
+    log(make_meter(2), &mut readings);
+    println!("{} {}", readings[0], readings.len())
+}
+
+trait Mileage {
+    fn base(&self) -> i64;
+    fn total(&self, argument_1: &[i64]) -> i64 {
+        self.base() + argument_1[0]
+    }
+    fn record(&self, _: &mut Vec<i64>);
+}
+
+impl Mileage for Odometer {
+    fn base(&self) -> i64 {
+        self.offset
+    }
+    fn record(&self, readings: &mut Vec<i64>) {
+        readings[0] = self.offset
+    }
+}
+
+impl Mileage for Meter {
+    fn base(&self) -> i64 {
+        self.scale
+    }
+    fn total(&self, readings: &[i64]) -> i64 {
+        self.scale * readings[1]
+    }
+    fn record(&self, readings: &mut Vec<i64>) {
+        readings.push(self.scale)
+    }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

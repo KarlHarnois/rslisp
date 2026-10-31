@@ -16,11 +16,11 @@ fn main() {
 }
 
 trait Mileage {
-    fn reset_first(&self, _: &mut Vec<i64>);
+    fn reset_first(&self, _: &mut [i64]);
 }
 
 impl Mileage for Odometer {
-    fn reset_first(&self, readings: &mut Vec<i64>) {
+    fn reset_first(&self, readings: &mut [i64]) {
         readings[0] = self.offset
     }
 }

@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/trait_default_self.rslisp
+---
+Leaf
+3
+8
+0 7
+2

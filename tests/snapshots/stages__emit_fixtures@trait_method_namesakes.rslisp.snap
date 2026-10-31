@@ -1,0 +1,82 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/trait_method_namesakes.rslisp
+---
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut readings: Vec<i64> = vec![1200_i64, 3400_i64];
+    crate::trait_method_namesakes::odometers::reset_odometer(&mut readings);
+    crate::trait_method_namesakes::counters::reset_counter(&mut readings);
+    println!("{} {}", readings[0], readings.len())
+}
+
+mod trait_method_namesakes {
+
+    pub(crate) mod counters {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+        struct Counter {
+            step: i64,
+        }
+
+        fn make_counter(step: i64) -> Counter {
+            Counter { step }
+        }
+
+        pub fn reset_counter(counts: &mut Vec<i64>) {
+            make_counter(1).reset(counts)
+        }
+
+        trait Tally {
+            fn reset(&self, _: &mut Vec<i64>);
+        }
+
+        impl Tally for Counter {
+            fn reset(&self, counts: &mut Vec<i64>) {
+                counts.push(self.step)
+            }
+        }
+    }
+
+    pub(crate) mod odometers {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+        struct Odometer {
+            offset: i64,
+        }
+
+        fn make_odometer(offset: i64) -> Odometer {
+            Odometer { offset }
+        }
+
+        pub fn reset_odometer(readings: &mut [i64]) {
+            make_odometer(10).reset(readings)
+        }
+
+        trait Mileage {
+            fn reset(&self, _: &mut [i64]);
+        }
+
+        impl Mileage for Odometer {
+            fn reset(&self, readings: &mut [i64]) {
+                readings[0] = self.offset
+            }
+        }
+    }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

@@ -390,6 +390,20 @@ impl TypedProgram {
             .find(|declared| self.bindings.get(declared.binding).name() == name)
     }
 
+    pub fn trait_method_bodies(&self, trait_binding: BindingId, name: &str) -> Vec<BindingId> {
+        let default = self
+            .declared_trait_method(trait_binding, name)
+            .and_then(|declared| declared.default);
+        self.trait_impls
+            .iter()
+            .filter(|implementation| implementation.trait_binding == trait_binding)
+            .flat_map(|implementation| &implementation.methods)
+            .map(|implemented| implemented.binding)
+            .filter(|binding| self.bindings.get(*binding).name() == name)
+            .chain(default)
+            .collect()
+    }
+
     pub fn is_box(&self, ty: &Type) -> bool {
         matches!(ty, Type::Named(binding, arguments) if Some(*binding) == self.box_binding && arguments.len() == 1)
     }
