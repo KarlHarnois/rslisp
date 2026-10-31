@@ -44,6 +44,14 @@ The project uses a [Nix](https://nixos.org/download/) flake.
 
    The binary is `result/bin/rslisp`.
 
+   If you build without Nix, install the compiler with Cargo:
+
+   ```sh
+   cargo install --locked --profile dist --path .
+   ```
+
+   Both commands build with the `dist` profile in `Cargo.toml`. The `dist` profile builds slower than the `release` profile and gives a faster compiler.
+
 Run `nix fmt` to format the Nix files, and `nix flake check` to build the package and run the checks that `cargo xtask coverage` leaves out.
 
 ## Use

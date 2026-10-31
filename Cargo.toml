@@ -19,3 +19,8 @@ unicode-ident = "1"
 
 [dev-dependencies]
 insta = { version = "1", features = ["glob"] }
+
+[profile.dist]
+inherits = "release"
+codegen-units = 1
+lto = "fat"

@@ -44,8 +44,10 @@
           pkgs.sccache
         ];
 
-      cratePackage = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package;
+      cargoManifest = builtins.fromTOML (builtins.readFile ./Cargo.toml);
+      cratePackage = cargoManifest.package;
       crateVersion = cratePackage.version;
+      installedProfileName = "dist";
 
       coverageTools = pkgs: {
         LLVM_COV = "${pkgs.rustc.llvmPackages.llvm}/bin/llvm-cov";
@@ -107,6 +109,38 @@
           ${benchmarkToolsCheck}
           touch $out
         '';
+
+      installedProfile =
+        pkgs: package:
+        let
+          wantedSettings = {
+            inherits = "release";
+            codegen-units = 1;
+            lto = "fat";
+          };
+          declaredSettings = cargoManifest.profile.${installedProfileName} or { };
+          driftedSettings = pkgs.lib.filterAttrs (
+            setting: value: declaredSettings.${setting} or null != value
+          ) wantedSettings;
+          renderedSettings = pkgs.lib.concatMapAttrsStringSep ", " (
+            setting: value: "${setting} = ${builtins.toJSON value}"
+          ) wantedSettings;
+          builds = [
+            package
+            package.cargoArtifacts
+          ];
+          buildsOnOtherProfiles = builtins.filter (
+            build: build.CARGO_PROFILE or null != installedProfileName
+          ) builds;
+          namesOfBuildsOnOtherProfiles = map (build: build.name) buildsOnOtherProfiles;
+          profileKeepsSettings = driftedSettings == { };
+          everyBuildUsesProfile = buildsOnOtherProfiles == [ ];
+        in
+        assert pkgs.lib.assertMsg profileKeepsSettings
+          "[profile.${installedProfileName}] in Cargo.toml must set ${renderedSettings}.";
+        assert pkgs.lib.assertMsg everyBuildUsesProfile
+          "${pkgs.lib.concatStringsSep ", " namesOfBuildsOnOtherProfiles} must set CARGO_PROFILE = \"${installedProfileName}\".";
+        pkgs.runCommand "installed-profile" { } "touch $out";
     in
     {
       packages = forEachSystem (pkgs: {
@@ -122,6 +156,7 @@
               version = crateVersion;
               src = self;
               cargoExtraArgs = "--locked --package rslisp";
+              CARGO_PROFILE = installedProfileName;
               doCheck = false;
             };
           in
@@ -174,6 +209,9 @@
         default = self.packages.${system}.default;
         agent-docs = agentDocs nixpkgs.legacyPackages.${system};
         dev-shell-tools = devShellTools nixpkgs.legacyPackages.${system} self.devShells.${system}.default;
+        installed-profile =
+          installedProfile nixpkgs.legacyPackages.${system}
+            self.packages.${system}.default;
       });
     };
 }
