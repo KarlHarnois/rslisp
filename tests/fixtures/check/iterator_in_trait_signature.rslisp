@@ -1,0 +1,19 @@
+(defstruct depot :years (vec i64))
+
+(defstruct garage :years (vec i64))
+
+(trait survey
+  (tally (fn ((ref self) (fn ((iterator (ref i64))) usize)) usize)))
+
+(impl survey depot
+  (tally (lot counter) (counter (iter (:years lot)))))
+
+(impl survey garage
+  (tally (lot counter) (counter (iter (:years lot)))))
+
+(trait census
+  (counter (fn ((ref self)) (fn ((iterator (ref i64))) usize))))
+
+(defn main ()
+  (let lot (->depot (vec 2019 2021 2024)))
+  (println (tally lot count)))

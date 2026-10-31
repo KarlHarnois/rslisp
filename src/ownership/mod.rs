@@ -79,7 +79,7 @@ impl OwnershipChecker {
             .filter(|(_, mode)| matches!(mode, ParamMode::Ref | ParamMode::Mut))
             .map(|(binding, _)| *binding)
             .collect();
-        let mut diagnostics = Diagnostics::default();
+        let mut diagnostics = std::mem::take(&mut program.unnameable_types);
         Self::check_written_modes(
             &program.pending_mode_checks,
             &functions,

@@ -1,0 +1,4 @@
+(defstruct feed :items (iterator i64) :label str)
+
+(defn main ()
+  (println (+ 2024 "Nissan Leaf")))

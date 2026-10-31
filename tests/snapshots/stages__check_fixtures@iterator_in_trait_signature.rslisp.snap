@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/iterator_in_trait_signature.rslisp
+---
+error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
+ --> check/iterator_in_trait_signature.rslisp:6:26
+  |
+6 |   (tally (fn ((ref self) (fn ((iterator (ref i64))) usize)) usize)))
+  |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this holds `(iterator (ref i64))` inside a function type
+  |
+  = note: Rust names this type only as the type of a function's own parameter or result
+  = help: pass a value whose type Rust can name instead, such as the collection the items come from
+
+error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
+  --> check/iterator_in_trait_signature.rslisp:15:29
+   |
+15 |   (counter (fn ((ref self)) (fn ((iterator (ref i64))) usize))))
+   |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this holds `(iterator (ref i64))` inside a function type
+   |
+   = note: Rust names this type only as the type of a function's own parameter or result
+   = help: pass a value whose type Rust can name instead, such as the collection the items come from

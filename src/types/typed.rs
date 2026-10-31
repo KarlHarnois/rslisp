@@ -366,6 +366,7 @@ pub struct TypedProgram {
     pub borrowing_lambdas: HashMap<BindingId, HashSet<BindingId>>,
     pub mutable_function_bindings: HashSet<BindingId>,
     pub literal_generics: HashMap<GenericId, LiteralKind>,
+    pub unnameable_types: Diagnostics,
     pub warnings: Diagnostics,
 }
 
