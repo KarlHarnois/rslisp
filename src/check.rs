@@ -154,12 +154,22 @@ impl<'a> CheckRuns<'a> {
             default_literal_parameters,
         )?;
         let instantiations = InstantiationReport::of(self.program, &self.graph, &typed);
-        let inferred_copies = OwnershipChecker::check(&mut typed)?;
+        let inferred_copies = Self::check_ownership(&mut typed)?;
         Ok(CheckedProgram {
             program: typed,
             inferred_copies,
             instantiations,
         })
+    }
+
+    fn check_ownership(typed: &mut TypedProgram) -> Result<InferredCopies, Diagnostics> {
+        let mut diagnostics = std::mem::take(&mut typed.unnameable_types);
+        match OwnershipChecker::check(typed) {
+            Ok(inferred_copies) if diagnostics.is_empty() => return Ok(inferred_copies),
+            Ok(_) => diagnostics.extend(std::mem::take(&mut typed.warnings)),
+            Err(ownership_errors) => diagnostics.extend(ownership_errors),
+        }
+        Err(diagnostics)
     }
 
     fn inferred_copy_changed(typed: &TypedProgram) -> HashSet<BindingId> {

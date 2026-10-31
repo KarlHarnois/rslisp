@@ -1,0 +1,10 @@
+(defstruct feed :items (iterator i64) :label str)
+
+(enum shape (circle f64) point)
+
+(defn area (s)
+  (match s
+    (_ 0.0)
+    (point 1.0)))
+
+(defn add-one (items) (push! items 1))
