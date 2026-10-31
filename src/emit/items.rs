@@ -625,6 +625,10 @@ impl<'a> ItemEmitter<'a> {
                     reserved_lifetime,
                 )
             });
+        let signature = self.signature_naming_self(binding, &definition.value.ty, implemented);
+        let Type::Function(_, shown_parameters, shown_result) = &signature else {
+            unreachable!("an implementation method has a function type")
+        };
         let mut emitter = self
             .expressions(module, &definition.value)
             .with_enclosing_lifetime(inferred.clone());
@@ -657,9 +661,10 @@ impl<'a> ItemEmitter<'a> {
             lambda
                 .params
                 .iter()
+                .zip(shown_parameters)
                 .enumerate()
                 .skip(first)
-                .map(|(position, param)| {
+                .map(|(position, (param, shown))| {
                     let scope = Self::naming_parameter_lifetimes(
                         self.parameter_scope(
                             param,
@@ -672,14 +677,17 @@ impl<'a> ItemEmitter<'a> {
                         lifetimes.elided(),
                         &position,
                     );
-                    emitter.bind_parameter_in(param, TypePosition::Signature, &scope)
+                    emitter.bind_parameter_in(
+                        &param.with_type(shown.clone()),
+                        TypePosition::Signature,
+                        &scope,
+                    )
                 }),
         );
         let result = match &definition.value.ty {
             Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
                 let position = self.result_position(parameters, inferred.as_deref());
-                let shown = self.result_naming_self(binding, result, implemented);
-                format!(" -> {}", types.show_in(&shown, position, &scope))
+                format!(" -> {}", types.show_in(shown_result, position, &scope))
             }
             _ => String::new(),
         };
@@ -702,22 +710,22 @@ impl<'a> ItemEmitter<'a> {
         )]
     }
 
-    fn result_naming_self(
+    fn signature_naming_self(
         &self,
         method: BindingId,
-        result: &Type,
+        signature: &Type,
         implemented: &ImplementedTrait,
     ) -> Type {
         implemented
             .implementor_lifetime
-            .and_then(|_| self.declared_result(implemented.binding, method))
+            .and_then(|_| self.declared_signature(implemented.binding, method))
             .map_or_else(
-                || result.clone(),
-                |(declared, self_generic)| result.restore_generic(declared, self_generic),
+                || signature.clone(),
+                |(declared, self_generic)| signature.restore_generic(declared, self_generic),
             )
     }
 
-    fn declared_result(
+    fn declared_signature(
         &self,
         trait_binding: BindingId,
         method: BindingId,
@@ -725,10 +733,7 @@ impl<'a> ItemEmitter<'a> {
         let name = self.program.bindings.get(method).name();
         let declared = self.program.declared_trait_method(trait_binding, name)?;
         let scheme = &self.plan.definition(declared.declaration())?.scheme;
-        let Type::Function(_, _, result) = &scheme.body else {
-            unreachable!("a trait method has a function type")
-        };
-        Some((result, scheme.params.first()?.id))
+        Some((&scheme.body, scheme.params.first()?.id))
     }
 
     fn result_main(&mut self, definition: &TypedDefinition, info: &ItemInfo) -> Vec<Fragment> {

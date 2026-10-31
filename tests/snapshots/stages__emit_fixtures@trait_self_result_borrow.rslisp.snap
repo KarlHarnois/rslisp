@@ -18,7 +18,8 @@ fn main() {
     let leaf = make_car("Leaf", 2024);
     println!("{}", leaf.twin().model);
     println!("{}", leaf.fleet().len());
-    println!("{}", leaf.rename("Nissan").year)
+    println!("{}", leaf.rename("Nissan").year);
+    println!("{}", leaf.newer(make_car("Golf", 2019)).model)
 }
 
 trait Garage {
@@ -27,6 +28,7 @@ trait Garage {
     where
         Self: Sized;
     fn rename(self, _: &str) -> Self;
+    fn newer(self, _: Self) -> Self;
 }
 
 impl<'a> Garage for Car<'a> {
@@ -39,6 +41,9 @@ impl<'a> Garage for Car<'a> {
     fn rename(self, label: &str) -> Self {
         println!("{}", label);
         self
+    }
+    fn newer(self, other: Self) -> Self {
+        if self.year > other.year { self } else { other }
     }
 }
 
