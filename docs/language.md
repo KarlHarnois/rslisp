@@ -208,6 +208,7 @@ A `main` whose inferred type is a `result` emits an inner function for its body 
 - `filter` passes each element to its test as a reference, as Rust does.
 - `range` takes an `integer`, a prelude trait of the integer types.
 - An `iterator` cannot be a struct field.
+- An `iterator` inside a function type is an error, `L0458`, in a struct field, an enum payload, or a top-level function's parameter or result, because Rust names an iterator's type only as the type of a function's own parameter or result. `(defstruct tally :counter (fn ((iterator (ref i64))) usize))` would emit `counter: fn(_) -> usize`, and passing `count` to `(defn tally (counter years) (counter (iter years)))` would emit `counter: impl FnOnce(_) -> usize`. Pass the collection and call `iter` inside the function instead.
 - A function generic over `integer` can call `range`: the prelude's `step` trait states Rust's requirement `Range<N>: Iterator<Item = N>`, and the function's emitted signature carries it as a `where` predicate.
 
 ## Structs

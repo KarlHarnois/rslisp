@@ -1,0 +1,40 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/iterator_in_function_type.rslisp
+---
+error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
+ --> check/iterator_in_function_type.rslisp:1:27
+  |
+1 | (defstruct tally :counter (fn ((iterator (ref i64))) usize))
+  |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this holds `(iterator (ref i64))` inside a function type
+  |
+  = note: Rust names this type only as the type of a function's own parameter or result
+  = help: take the collection instead, and call `iter` on it where the items are used
+
+error[L0458]: Rust cannot name the type `(iterator i64)` here
+ --> check/iterator_in_function_type.rslisp:4:12
+  |
+4 |   (counted (option (fn ((option (iterator i64))) usize)))
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this holds `(iterator i64)` inside a function type
+  |
+  = note: Rust names this type only as the type of a function's own parameter or result
+  = help: take the collection instead, and call `iter` on it where the items are used
+
+error[L0458]: Rust cannot name the type `(iterator (ref a))` here
+ --> check/iterator_in_function_type.rslisp:7:20
+  |
+7 | (defn tally-years (counter years) (counter (iter years)))
+  |                    ^^^^^^^ this holds `(iterator (ref a))` inside a function type
+  |
+  = note: Rust names this type only as the type of a function's own parameter or result
+  = help: take the collection instead, and call `iter` on it where the items are used
+
+error[L0458]: Rust cannot name the type `(iterator a)` here
+ --> check/iterator_in_function_type.rslisp:9:1
+  |
+9 | (defn counter-of () count)
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^ this holds `(iterator a)` inside a function type
+  |
+  = note: Rust names this type only as the type of a function's own parameter or result
+  = help: take the collection instead, and call `iter` on it where the items are used
