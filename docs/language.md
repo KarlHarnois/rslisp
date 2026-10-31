@@ -355,14 +355,14 @@ The prelude's lookups expand to string literals at expansion time, so `(def twic
 
 A lookup finds the docstring in the module that defines the binding `term` refers to, so an imported or re-exported term needs no other export. An unbound term is `L0201`, with the closest name. A bound term without a docstring is `L0327`.
 
-`rslisp doc [--file <entry>] <term>` prints the page that `(doc <term>)` returns, for a prelude term or, with `--file`, for a term the entry module defines or imports.
-
 A docstring is Markdown. A lookup removes the indentation that every written continuation line shares, as Python's `inspect.cleandoc` does, and drops blank lines at both ends. Write docstrings to these rules, which no compile error enforces:
 
 - The first line is one complete summary sentence.
 - Lines stay within 80 columns.
 - Continuation lines are indented to the body.
 - Markdown conventions apply.
+
+`rslisp doc [--file <entry>] <term>` prints the page that `(doc <term>)` returns, for a prelude term or, with `--file`, for a term the entry module defines or imports.
 
 ### The `code` module
 
