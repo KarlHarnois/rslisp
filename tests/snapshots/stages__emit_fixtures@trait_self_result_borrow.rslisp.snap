@@ -19,19 +19,23 @@ fn main() {
     println!("{}", leaf.twin().model);
     println!("{}", leaf.fleet().len());
     println!("{}", leaf.rename("Nissan").year);
-    println!("{}", leaf.newer(make_car("Golf", 2019)).model)
+    println!("{}", leaf.newer(make_car("Golf", 2019)).model);
+    println!("{}", leaf.swap(2030).year)
 }
 
 trait Garage {
+    type Part;
     fn twin(self) -> Self;
     fn fleet(self) -> Vec<Self>
     where
         Self: Sized;
     fn rename(self, _: &str) -> Self;
     fn newer(self, _: Self) -> Self;
+    fn swap(self, _: Self::Part) -> Self;
 }
 
 impl<'a> Garage for Car<'a> {
+    type Part = i64;
     fn twin(self) -> Self {
         self
     }
@@ -44,6 +48,9 @@ impl<'a> Garage for Car<'a> {
     }
     fn newer(self, other: Self) -> Self {
         if self.year > other.year { self } else { other }
+    }
+    fn swap(self, year: i64) -> Self {
+        make_car(self.model, year)
     }
 }
 
