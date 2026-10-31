@@ -20,6 +20,8 @@ pub struct CompilerBuild<'a> {
 impl<'a> CompilerBuild<'a> {
     const RELEASE_BUILD: [&'static str; 4] =
         ["build", "--release", "--quiet", "--message-format=json"];
+    const UNPARTITIONED_CODEGEN: [&'static str; 2] =
+        ["--config", "profile.release.codegen-units=1"];
     const RELEASE_CLEAN: [&'static str; 3] = ["clean", "--release", "--quiet"];
     const PACKAGE_FLAG: &'static str = "--package";
     const PACKAGE_ID_COMMAND: &'static str = "pkgid";
@@ -66,11 +68,18 @@ impl<'a> CompilerBuild<'a> {
     }
 
     fn build_release(&self) -> Result<String, TaskFailure> {
-        let mut build = self.cargo_in_target(Self::RELEASE_BUILD);
+        let mut build = self.release_build();
         let stdout = Self::run_cargo(&mut build, |stderr| {
             TaskFailure::build_failed("the compiler", stderr)
         })?;
         Ok(String::from_utf8_lossy(&stdout).into_owned())
+    }
+
+    fn release_build(&self) -> Command {
+        let arguments = Self::RELEASE_BUILD
+            .into_iter()
+            .chain(Self::UNPARTITIONED_CODEGEN);
+        self.cargo_in_target(arguments)
     }
 
     fn cargo_in_target<'b>(&self, arguments: impl IntoIterator<Item = &'b str>) -> Command {
@@ -190,6 +199,18 @@ mod tests {
         assert_eq!(
             CompilerBuild::package_spec(stdout),
             "path+file:///checkout#ledger-lang@0.1.0"
+        );
+    }
+
+    #[test]
+    fn builds_the_compiler_in_one_codegen_unit() {
+        let build = CompilerBuild::new(Path::new("/checkout"), Path::new("/checkout/target"))
+            .release_build();
+        let arguments: Vec<_> = build.get_args().collect();
+        assert!(
+            arguments
+                .windows(2)
+                .any(|pair| pair == ["--config", "profile.release.codegen-units=1"])
         );
     }
 
