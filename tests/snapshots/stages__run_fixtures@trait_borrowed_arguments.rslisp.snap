@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/trait_borrowed_arguments.rslisp
+---
+Leaf Nissan
+Leaf
+echo again
+old light
+Leaf 5
+Leaf
+fresh

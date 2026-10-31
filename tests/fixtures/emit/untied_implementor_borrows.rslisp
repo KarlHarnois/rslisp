@@ -1,0 +1,20 @@
+(defstruct car :model str :year i64)
+
+(trait garage
+  (newer (fn (self car) self))
+  (relabel (fn ((ref str) self) self))
+  (badge (fn (i64 self) (ref str)))
+  (model-of (fn (self) (ref str))))
+
+(impl garage car
+  (newer (c other) (if (> (:year c) (:year other)) c other))
+  (relabel (label c) (->car label (:year c)))
+  (badge (year c) (if (> year (:year c)) "old" (:model c)))
+  (model-of (c) (:model c)))
+
+(defn main ()
+  (let leaf (->car "Leaf" 2024))
+  (println (:model (newer leaf (->car "Golf" 2019))))
+  (println (:model (relabel "Nissan" leaf)))
+  (println (badge 2030 leaf))
+  (println (model-of leaf)))

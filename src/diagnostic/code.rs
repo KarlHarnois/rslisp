@@ -169,6 +169,7 @@ diagnostic_codes! {
     NAME_COLLISION = "L0602",
     BAD_TEMPLATE = "L0603",
     RUST_ERROR = "L0604",
+    UNTIED_IMPLEMENTOR_BORROW = "L0605",
 }
 
 impl DiagnosticCode {
