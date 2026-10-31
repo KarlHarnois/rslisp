@@ -1,0 +1,40 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/untied_implementor_borrows.rslisp
+---
+error[L0605]: `newer` returns a `car`, which cannot hold the borrow in `other`
+  --> emit/untied_implementor_borrows.rslisp:10:13
+   |
+10 |   (newer (c other) (if (> (:year c) (:year other)) c other))
+   |             ^^^^^ this borrow reaches the result
+   |
+   = note: a trait signature cannot name the lifetime that `car` holds
+   = help: write `self` in place of `car` for this parameter in the trait
+
+error[L0605]: `relabel` returns a `car`, which cannot hold the borrow in `label`
+  --> emit/untied_implementor_borrows.rslisp:11:13
+   |
+11 |   (relabel (label c) (->car label (:year c)))
+   |             ^^^^^ this borrow reaches the result
+   |
+   = note: a trait signature cannot name the lifetime that `car` holds
+   = help: build the `car` in a function outside the trait
+
+error[L0605]: `badge` returns a borrow that cannot come from `c`
+  --> emit/untied_implementor_borrows.rslisp:12:16
+   |
+12 |   (badge (year c) (if (> year (:year c)) "old" (:model c)))
+   |                ^ the result borrows from this value
+   |
+   = note: no parameter of the trait's signature holds a borrow, so the result takes the `'static` lifetime
+   = help: take this parameter as `(ref self)` in the trait, so the result can borrow from it
+
+error[L0605]: `model-of` returns a borrow that cannot come from `c`
+  --> emit/untied_implementor_borrows.rslisp:13:14
+   |
+13 |   (model-of (c) (:model c)))
+   |              ^ the result borrows from this value
+   |
+   = note: no parameter of the trait's signature holds a borrow, so the result takes the `'static` lifetime
+   = help: take this parameter as `(ref self)` in the trait, so the result can borrow from it

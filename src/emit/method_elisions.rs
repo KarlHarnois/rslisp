@@ -6,7 +6,9 @@ use super::plan::EmitPlan;
 use super::result_borrows::ResultBorrows;
 use super::signature_borrows::SignatureBorrows;
 use crate::core::BindingId;
-use crate::types::{ReceiverKind, TypedExprKind, TypedLambda, TypedProgram, TypedTraitMethod};
+use crate::types::{
+    ReceiverKind, Type, TypedExprKind, TypedLambda, TypedProgram, TypedTraitMethod,
+};
 
 type TraitMethodKey = (BindingId, String);
 
@@ -107,16 +109,20 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
     }
 
     pub fn lifetimes(&self, method: BindingId) -> Rc<MethodLifetimes> {
-        if self
-            .lambda(method)
-            .is_some_and(|lambda| !self.takes_borrowing_function(lambda))
-        {
-            return Rc::default();
-        }
         let Some(trait_binding) = self.trait_of(method) else {
             return Rc::default();
         };
         let name = self.program.bindings.get(method).name();
+        let hides_argument = !self
+            .arguments_behind_receiver(trait_binding, name)
+            .is_empty();
+        if !hides_argument
+            && self
+                .lambda(method)
+                .is_some_and(|lambda| !self.takes_borrowing_function(lambda))
+        {
+            return Rc::default();
+        }
         self.cached_lifetimes(trait_binding, name)
     }
 
@@ -132,16 +138,18 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
     }
 
     fn lifetimes_in_bodies(&self, trait_binding: BindingId, name: &str) -> MethodLifetimes {
+        let behind_receiver = self.arguments_behind_receiver(trait_binding, name);
         let bodies: Vec<&TypedLambda> = self
             .bodies(trait_binding, name)
             .into_iter()
-            .filter(|lambda| self.takes_borrowing_function(lambda))
+            .filter(|lambda| !behind_receiver.is_empty() || self.takes_borrowing_function(lambda))
             .collect();
         let (called_with_local, flowing) = self.parameter_positions(&bodies);
         let receiver = self.receiver_of(trait_binding, name);
-        if bodies
-            .iter()
-            .any(|lambda| self.flows_past_elision(lambda, &flowing, receiver))
+        if !flowing.is_disjoint(&behind_receiver)
+            || bodies
+                .iter()
+                .any(|lambda| self.flows_past_elision(lambda, &flowing, receiver))
         {
             MethodLifetimes::sharing(called_with_local, flowing)
         } else {
@@ -192,6 +200,36 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
             .trait_method_bodies(trait_binding, name)
             .into_iter()
             .filter_map(|binding| self.lambda(binding))
+            .collect()
+    }
+
+    fn arguments_behind_receiver(&self, trait_binding: BindingId, name: &str) -> HashSet<usize> {
+        let Some(declared) = self.declared(trait_binding, name) else {
+            return HashSet::new();
+        };
+        let borrowed_receiver = matches!(
+            declared.receiver,
+            Some(ReceiverKind::Shared | ReceiverKind::Mutable)
+        );
+        match self
+            .plan
+            .definition(declared.declaration())
+            .map(|definition| &definition.scheme.body)
+        {
+            Some(Type::Function(_, parameters, _)) if borrowed_receiver => {
+                Self::borrowed_arguments(self.program, parameters)
+            }
+            _ => HashSet::new(),
+        }
+    }
+
+    fn borrowed_arguments(program: &TypedProgram, parameters: &[Type]) -> HashSet<usize> {
+        parameters
+            .iter()
+            .enumerate()
+            .skip(1)
+            .filter(|(_, parameter)| program.type_holds_borrow(parameter))
+            .map(|(position, _)| position)
             .collect()
     }
 

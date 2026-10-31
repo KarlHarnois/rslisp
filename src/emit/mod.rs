@@ -23,6 +23,7 @@ mod stored_functions;
 mod template;
 mod types;
 mod unsized_parameters;
+mod untied_borrows;
 mod writer;
 
 pub use writer::SpanMap;

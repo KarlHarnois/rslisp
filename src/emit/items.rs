@@ -18,6 +18,7 @@ use super::runtime::RuntimeModule;
 use super::signature_borrows::SignatureBorrows;
 use super::types::{LifetimeScope, RustTypes, TypePosition};
 use super::unsized_parameters::UnsizedParameters;
+use super::untied_borrows::{ShownMethod, UntiedBorrows};
 use crate::core::{BindingId, ModuleId};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
@@ -29,6 +30,7 @@ use crate::types::{
 
 struct ImplementedTrait<'l> {
     binding: BindingId,
+    implementor: &'l Type,
     implementor_lifetime: Option<&'l str>,
 }
 
@@ -399,7 +401,7 @@ impl<'a> ItemEmitter<'a> {
                     result,
                     self_generic,
                     &types,
-                    TypePosition::Signature,
+                    self.result_position(parameters, inferred.as_deref()),
                     &scope,
                 )
             )
@@ -571,6 +573,7 @@ impl<'a> ItemEmitter<'a> {
             }
             let implemented = ImplementedTrait {
                 binding: trait_binding,
+                implementor: &implementor,
                 implementor_lifetime: lifetime.as_deref(),
             };
             for method in &methods {
@@ -693,13 +696,21 @@ impl<'a> ItemEmitter<'a> {
                     )
                 }),
         );
-        let result = match &definition.value.ty {
-            Type::Function(_, parameters, result) if !RustTypes::is_unit(result) => {
-                let position = self.result_position(parameters, inferred.as_deref());
-                format!(" -> {}", types.show_in(shown_result, position, &scope))
-            }
-            _ => String::new(),
+        let position = self.result_position(shown_parameters, inferred.as_deref());
+        let result = if RustTypes::is_unit(shown_result) {
+            String::new()
+        } else {
+            format!(" -> {}", types.show_in(shown_result, position, &scope))
         };
+        let shown = ShownMethod {
+            binding,
+            lambda,
+            parameters: shown_parameters,
+            result: shown_result,
+            static_result: position == TypePosition::StaticResult
+                && self.program.type_holds_borrow(shown_result),
+        };
+        self.report_untied_borrows(&shown, implemented);
         let body = emitter.function_body(&lambda.body);
         self.absorb(emitter);
         let name = NameMangler::value(self.program.bindings.get(binding).name());
@@ -717,6 +728,20 @@ impl<'a> ItemEmitter<'a> {
                 Fragment::Text("}".to_string()),
             ],
         )]
+    }
+
+    fn report_untied_borrows(&mut self, method: &ShownMethod, implemented: &ImplementedTrait) {
+        let Some((_, self_generic)) = self.declared_signature(implemented.binding, method.binding)
+        else {
+            return;
+        };
+        let flows = self.result_borrows.analyse(method.lambda).flows;
+        if let Some(problem) =
+            UntiedBorrows::new(self.program, implemented.implementor, self_generic)
+                .check(method, &flows)
+        {
+            self.problems.push(problem);
+        }
     }
 
     fn signature_naming_self(

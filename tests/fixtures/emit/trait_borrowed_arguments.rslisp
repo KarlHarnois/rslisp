@@ -1,0 +1,46 @@
+(defstruct car :model str :year i64)
+(defstruct truck :load i64)
+(defstruct van :model string :year i64)
+
+(trait garage
+  (label (fn ((ref self) (ref str)) (pair self (ref str))))
+  (newer-model (fn ((ref self) self) (ref str)))
+  (echo (fn (self (ref str)) (ref str)))
+  (badge (fn (i64 self) (ref str)))
+  (newest (fn (self (ref self)) self)))
+
+(impl garage car
+  (label (c name) (pair (->car (:model c) (:year c)) name))
+  (newer-model (c other) (if (> (:year c) (:year other)) (:model c) (:model other)))
+  (echo (c name) name)
+  (badge (year c) (if (> year (:year c)) "old" "new"))
+  (newest (c other) (if (> (:year c) (:year other)) c (deref other))))
+
+(impl garage truck
+  (label (t name) (pair (->truck (:load t)) name))
+  (newer-model (t other) (if (> (:load t) (:load other)) "this" "that"))
+  (echo (t name) name)
+  (badge (load t) (if (> load (:load t)) "heavy" "light"))
+  (newest (t other) (if (> (:load t) (:load other)) t (deref other))))
+
+(trait lot
+  (pick (fn ((ref self) (ref self)) (ref self)))
+  (stamp! (fn ((mut self) (ref str)) (ref str))))
+
+(impl lot van
+  (pick (v other) (if (> (:year v) (:year other)) v other))
+  (stamp! (v label) (if (> (:year v) 2020) label "classic")))
+
+(defn main ()
+  (let leaf (->car "Leaf" 2024))
+  (let-pair (labeled name) (label leaf "Nissan")
+    (println (:model labeled) " " name))
+  (println (newer-model leaf (->car "Golf" 2019)))
+  (println (echo leaf "echo") " " (echo (->truck 3) "again"))
+  (println (badge 2030 leaf) " " (badge 2 (->truck 3)))
+  (println (:model (newest (->car "Golf" 2019) leaf)) " " (:load (newest (->truck 3) (->truck 5))))
+  (let old (->van (to-string "Golf") 2019))
+  (let new (->van (to-string "Leaf") 2024))
+  (println (:model (pick old new)))
+  (let fresh (->van (to-string "Ioniq") 2025))
+  (println (stamp! fresh "fresh")))

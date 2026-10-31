@@ -1,0 +1,144 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/trait_borrowed_arguments.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    model: &'a str,
+    year: i64,
+}
+
+fn make_car(model: &str, year: i64) -> Car<'_> {
+    Car { model, year }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Truck {
+    load: i64,
+}
+
+fn make_truck(load: i64) -> Truck {
+    Truck { load }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Van {
+    model: String,
+    year: i64,
+}
+
+fn make_van(model: String, year: i64) -> Van {
+    Van { model, year }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let leaf = make_car("Leaf", 2024);
+    {
+        let (labeled, name) = leaf.label("Nissan");
+        println!("{} {}", labeled.model, name)
+    }
+    println!("{}", leaf.newer_model(make_car("Golf", 2019)));
+    println!("{} {}", leaf.echo("echo"), make_truck(3).echo("again"));
+    println!(
+        "{} {}",
+        Garage::badge(2030, leaf),
+        Garage::badge(2, make_truck(3))
+    );
+    println!(
+        "{} {}",
+        make_car("Golf", 2019).newest(&leaf).model,
+        make_truck(3).newest(&make_truck(5)).load
+    );
+    let old = make_van("Golf".to_string(), 2019);
+    let new = make_van("Leaf".to_string(), 2024);
+    println!("{}", old.pick(&new).model);
+    let mut fresh = make_van("Ioniq".to_string(), 2025);
+    println!("{}", fresh.stamp("fresh"))
+}
+
+trait Garage {
+    fn label<'a>(&'a self, _: &'a str) -> (Self, &'a str)
+    where
+        Self: Sized;
+    fn newer_model(&self, _: Self) -> &str;
+    fn echo(self, _: &str) -> &str;
+    fn badge(_: i64, _: Self) -> &'static str;
+    fn newest(self, _: &Self) -> Self;
+}
+
+trait Lot {
+    fn pick<'a>(&'a self, _: &'a Self) -> &'a Self;
+    fn stamp<'a>(&mut self, _: &'a str) -> &'a str;
+}
+
+impl<'a> Garage for Car<'a> {
+    fn label<'b>(&'b self, name: &'b str) -> (Self, &'b str) {
+        (make_car(self.model, self.year), name)
+    }
+    fn newer_model(&self, other: Self) -> &str {
+        if self.year > other.year {
+            self.model
+        } else {
+            other.model
+        }
+    }
+    fn echo(self, name: &str) -> &str {
+        name
+    }
+    fn badge(year: i64, c: Self) -> &'static str {
+        if year > c.year { "old" } else { "new" }
+    }
+    fn newest(self, other: &Self) -> Self {
+        if self.year > other.year { self } else { *other }
+    }
+}
+
+impl Garage for Truck {
+    fn label<'a>(&'a self, name: &'a str) -> (Truck, &'a str) {
+        (make_truck(self.load), name)
+    }
+    fn newer_model(&self, other: Truck) -> &str {
+        if self.load > other.load {
+            "this"
+        } else {
+            "that"
+        }
+    }
+    fn echo(self, name: &str) -> &str {
+        name
+    }
+    fn badge(load: i64, t: Truck) -> &'static str {
+        if load > t.load { "heavy" } else { "light" }
+    }
+    fn newest(self, other: &Truck) -> Truck {
+        if self.load > other.load { self } else { *other }
+    }
+}
+
+impl Lot for Van {
+    fn pick<'a>(&'a self, other: &'a Van) -> &'a Van {
+        if self.year > other.year { self } else { other }
+    }
+    fn stamp<'a>(&mut self, label: &'a str) -> &'a str {
+        if self.year > 2020 { label } else { "classic" }
+    }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
