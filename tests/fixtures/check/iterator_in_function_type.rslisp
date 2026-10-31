@@ -8,8 +8,13 @@
 
 (defn counter-of () count)
 
+(type tally-signed (fn ((fn ((iterator (ref i64))) usize) (ref (vec i64))) usize))
+
+(defn tally-signed (counter years) (counter (iter years)))
+
 (defn main ()
   (let years (vec 2019 2021 2024))
   (println (tally-years count years))
+  (println (tally-signed count years))
   (println ((:counter (->tally count)) (iter years)))
   (println ((counter-of) (iter years))))
