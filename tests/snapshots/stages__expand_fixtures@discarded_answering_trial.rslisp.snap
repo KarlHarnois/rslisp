@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/discarded_answering_trial.rslisp
+---
+error[L0201]: cannot find `unknown-value` in this scope
+  --> expand/discarded_answering_trial.rslisp:14:15
+   |
+14 | (defn main () unknown-value)
+   |               ^^^^^^^^^^^^^ not found in this scope
