@@ -1,0 +1,26 @@
+{
+  "packages": [
+    {
+      "name": "xtask",
+      "targets": [
+        { "kind": ["bin"], "name": "xtask", "src_path": "/ledger/xtask/src/main.rs" }
+      ]
+    },
+    {
+      "name": "ledger-syntax",
+      "targets": [
+        { "kind": ["lib"], "name": "ledger_syntax", "src_path": "/ledger/syntax/src/lib.rs" }
+      ]
+    },
+    {
+      "name": "ledger-lang",
+      "targets": [
+        { "kind": ["lib"], "name": "ledger_lang", "src_path": "/ledger/src/lib.rs" },
+        { "kind": ["bin"], "name": "ledger-lang", "src_path": "/ledger/src/main.rs" },
+        { "kind": ["test"], "name": "cli", "src_path": "/ledger/tests/cli.rs" },
+        { "kind": ["custom-build"], "name": "build-script-build", "src_path": "/ledger/build.rs" }
+      ]
+    }
+  ],
+  "workspace_root": "/ledger"
+}

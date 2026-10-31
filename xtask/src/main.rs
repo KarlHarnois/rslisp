@@ -13,6 +13,7 @@ mod instrumented_tests;
 mod language;
 mod lcov;
 mod release;
+mod workspace;
 
 use std::path::Path;
 use std::process::ExitCode;

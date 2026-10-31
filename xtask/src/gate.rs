@@ -9,6 +9,7 @@ use crate::failure::TaskFailure;
 use crate::functions::{SourceFunction, SourceTree};
 use crate::instrumented_tests::InstrumentedTests;
 use crate::lcov::LcovReport;
+use crate::workspace::CargoWorkspace;
 
 pub struct QualityGate {
     root: PathBuf,
@@ -41,7 +42,8 @@ impl QualityGate {
 
     fn measure(&self) -> Result<Measurement, TaskFailure> {
         let report = InstrumentedTests::new(&self.root).run()?;
-        let functions = SourceTree::new(&self.root).functions()?;
+        let directories = CargoWorkspace::read(&self.root)?.source_directories();
+        let functions = SourceTree::new(&self.root, directories).functions()?;
         let readme_path = self.root.join(Self::README);
         let readme = fs::read_to_string(&readme_path)
             .map_err(|error| TaskFailure::unreadable(&readme_path, error))?;
