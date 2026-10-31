@@ -32,7 +32,7 @@ Each definer adds `(def doc/twice (quote ((defn twice (x)) "Doubles a number."))
 
 ### C: one table of notes per module
 
-Each definer adds the note `("value" "twice" (defn twice (x)) "Doubles a number.")` under the key `docstrings` of its module's table with `add-module-note`, and defines no binding. A lookup reads the table of the module that defines the term with `module-notes`. Prototype `research-doc-storage-table` (`981d62ef`). Cost: 95K per definition in the prototype, and 93K in the build. The source and the emitted Rust are those of option A.
+Each definer adds the note `("value" twice (defn twice (x)) "Doubles a number.")` under the key `docstrings` of its module's table with `add-module-note`, and defines no binding. A lookup reads the table of the module that defines the term with `module-notes`, and takes the note whose name refers to the same binding as the term. Prototype `research-doc-storage-table` (`981d62ef`). Cost: 95K per definition in the prototype, and 93K in the build. The source and the emitted Rust are those of option A.
 
 ## Recommendation
 
@@ -44,7 +44,9 @@ The project owner decided on 2026-10-31.
 
 - **D7:** "docstrings are stored in one table per module, as Elixir's `@doc` and Julia's `META` do, instead of one hidden `doc/<name>` macro per definition. The definers add a note to their module's table, and `doc`, `docstring` and `header` read the table of the module that defines the term. This adds two general `code` built-ins over a per-module table in the expander (prototype `research-doc-storage-table`, 981d62ef: `add-module-note` and `module-notes`). A note added during a trial expansion that fails is rolled back. The saved prelude state includes the table. A user `(def doc/name ...)` no longer collides. What users write and what the lookups return stay the same."
 
-The build rolls a note back whenever the macro call that added it fails, and whenever the expander discards a trial expansion, so a note stays only with an expansion the expander keeps. The lookups no longer test for a binding, so the build removes `bound?`, which only those lookups used.
+The build rolls a note back whenever the macro call that added it fails, and whenever the expander discards a trial expansion, so a note stays only with an expansion the expander keeps. The lookups no longer test for a binding, so the build removes `bound?`, which only those lookups used. A user macro that imports `bound?` no longer compiles, so this change releases a minor version.
+
+For a kernel form, D3's `document` helper notes its docstring in the prelude, so the lookup of a kernel name reads the prelude's notes. That lookup comes with the helper's build.
 
 ## Rejected options and why
 
