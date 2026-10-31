@@ -3,7 +3,7 @@ use super::problems::ExpandProblems;
 use crate::core::{BindingId, BindingKind, Namespace};
 use crate::diagnostic::Diagnostic;
 use crate::interpret::{CompileTimeHost, Value};
-use crate::reader::Symbol;
+use crate::reader::{Form, Symbol};
 use crate::scope::{Phase, Resolution, ScopeSet};
 use crate::source::Span;
 
@@ -43,6 +43,19 @@ impl CompileTimeHost for Expander<'_> {
 
     fn is_bound(&self, symbol: &Symbol) -> bool {
         self.term_binding(symbol).is_some()
+    }
+
+    fn add_module_note(&mut self, key: &str, note: Form) {
+        let module = self
+            .current_module
+            .expect("macro code runs while a module expands");
+        self.module_notes.add(module, key, note);
+    }
+
+    fn module_notes(&self, context: &Symbol, key: &str) -> Vec<Form> {
+        self.modules
+            .with_body_scopes(context.scopes())
+            .map_or_else(Vec::new, |module| self.module_notes.of(module, key))
     }
 
     fn same_binding(&self, left: &Symbol, right: &Symbol) -> bool {

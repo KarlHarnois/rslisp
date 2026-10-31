@@ -9,6 +9,7 @@ mod macro_call;
 mod macro_function;
 mod module_body;
 mod module_loading;
+mod module_notes;
 mod names;
 mod problems;
 mod recur_check;
@@ -32,6 +33,7 @@ use crate::source::{SourceId, SourceMap, Span};
 use globals::GlobalTable;
 pub use macro_call::MacroOrigin;
 use macro_call::MacroTable;
+use module_notes::ModuleNotes;
 pub use problems::ExpandProblems;
 pub use session::ExpansionSession;
 
@@ -79,6 +81,7 @@ pub struct Expander<'s> {
     enum_variants: HashMap<crate::core::BindingId, Vec<crate::core::BindingId>>,
     trait_methods: HashMap<crate::core::BindingId, TraitMethods>,
     globals: GlobalTable,
+    module_notes: ModuleNotes,
     expanded: HashMap<ModuleId, CoreModule>,
     order: Vec<ModuleId>,
     current_module: Option<ModuleId>,
@@ -110,6 +113,7 @@ impl<'s> Expander<'s> {
             enum_variants: HashMap::new(),
             trait_methods: HashMap::new(),
             globals: GlobalTable::default(),
+            module_notes: ModuleNotes::default(),
             expanded: HashMap::new(),
             order: Vec::new(),
             current_module: None,

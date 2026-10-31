@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/module_notes_failed_call.rslisp
+---
+error[L0301]: this sighting is unconfirmed
+  --> expand/module_notes_failed_call.rslisp:13:18
+   |
+13 | (def unconfirmed (note-then-fail))
+   |                  ^^^^^^^^^^^^^^^^ here
+
+error[L0301]: sightings noted: 0
+  --> expand/module_notes_failed_call.rslisp:17:13
+   |
+17 | (def report (report-sightings bird))
+   |             ^^^^^^^^^^^^^^^^^^^^^^^ here

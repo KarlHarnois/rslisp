@@ -1,0 +1,17 @@
+(use code add-module-note module-notes definition-symbol fail length nth string)
+
+(def note-then-fail
+  (macro (form)
+    (add-module-note (quote sightings) "a heron")
+    (fail "this sighting is unconfirmed" form)))
+
+(def report-sightings
+  (macro (form)
+    (let notes (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))
+    (fail (string "sightings noted: " (length notes)) form)))
+
+(def unconfirmed (note-then-fail))
+
+(def bird "heron")
+
+(def report (report-sightings bird))

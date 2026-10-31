@@ -45,7 +45,7 @@ impl Expander<'_> {
     }
 
     fn answered_function(&mut self, answering: BindingId, name: Form) -> Option<BindingId> {
-        let expansion = self.trial_expansion(answering, name)?;
+        let expansion = self.discarded_expansion(answering, name)?;
         let function = self.try_resolve(expansion.as_symbol()?, Namespace::Value)?;
         self.bindings.is_introduced(function).then_some(function)
     }

@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/module_notes.rslisp
+---
+(def remembered true)
+(def bird "heron")
+(def sighting "a heron")
+(def sighting-count 1)
+(def local-sightings (fn (bird_2) 0))

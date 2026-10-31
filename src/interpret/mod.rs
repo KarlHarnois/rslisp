@@ -28,6 +28,8 @@ pub trait CompileTimeHost {
     ) -> Result<Symbol, Diagnostic>;
     fn type_definition_symbol(&self, term: &Symbol, name: String) -> Symbol;
     fn is_bound(&self, symbol: &Symbol) -> bool;
+    fn add_module_note(&mut self, key: &str, note: Form);
+    fn module_notes(&self, context: &Symbol, key: &str) -> Vec<Form>;
 }
 
 enum Step {

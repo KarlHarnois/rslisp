@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/module_notes_discarded.rslisp
+---
+(def remembered true)
+(def pond "pond")
+(def heron-sightings 1)
+(def pond-sightings 1)

@@ -44,10 +44,12 @@ pub enum Builtin {
     StringTrimStart,
     StringLength,
     StringDrop,
+    AddModuleNote,
+    ModuleNotes,
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 44] = [
+    const NAMES: [(Builtin, &'static str); 46] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -92,6 +94,8 @@ impl Builtin {
         (Builtin::StringTrimStart, "string-trim-start"),
         (Builtin::StringLength, "string-length"),
         (Builtin::StringDrop, "string-drop"),
+        (Builtin::AddModuleNote, "add-module-note"),
+        (Builtin::ModuleNotes, "module-notes"),
     ];
 
     pub fn all() -> impl Iterator<Item = Builtin> {
