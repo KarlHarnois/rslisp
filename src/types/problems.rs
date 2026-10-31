@@ -571,6 +571,21 @@ impl TypeProblems {
         )
     }
 
+    pub fn unnameable_type(opaque: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::UNNAMEABLE_TYPE,
+            format!("Rust cannot name the type `{opaque}` here"),
+            Label::new(
+                span,
+                format!("this holds `{opaque}` inside a function type"),
+            ),
+        )
+        .with_note("Rust names this type only as the type of a function's own parameter or result")
+        .with_help(
+            "pass a value whose type Rust can name instead, such as the collection the items come from",
+        )
+    }
+
     pub fn unknown_collection(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::UNKNOWN_COLLECTION,

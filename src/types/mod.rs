@@ -15,6 +15,7 @@ mod infer;
 mod literal_fit;
 mod lowering;
 mod main_result;
+mod opaque_positions;
 mod parameter_calls;
 mod pending;
 mod pinning;
@@ -55,8 +56,8 @@ pub use ty::{Bound, GenericId, GenericParam, Lifetime, Scheme, Type, TypeVar};
 pub use typed::{
     Borrow, FieldPlace, PendingModeCheck, ReceiverKind, TraitMethodInfo, TypedArgument, TypedArm,
     TypedAssociatedType, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedConversion,
-    TypedDefinition, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedMatch, TypedModule,
-    TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr, TypedTrait, TypedTraitImpl,
-    TypedTraitMethod,
+    TypedDefinition, TypedExpr, TypedExprKind, TypedImplMethod, TypedLambda, TypedLeaf, TypedMatch,
+    TypedModule, TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr, TypedTrait,
+    TypedTraitImpl, TypedTraitMethod,
 };
 pub use wrapper::{FunctionValueWrapper, PreparedFunctionValue};

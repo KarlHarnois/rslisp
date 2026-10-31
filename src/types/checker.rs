@@ -2738,6 +2738,7 @@ impl TypeChecker {
         self.check_written_projections();
         self.resolve_missing_annotations();
         self.label_parameter_calls(&program.modules);
+        self.check_opaque_positions(&program.modules, &definitions);
         let open_collections = self.open_collections();
         let typed_modules = program
             .modules

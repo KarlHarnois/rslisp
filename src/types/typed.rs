@@ -204,6 +204,17 @@ pub struct TypedBinder {
     pub annotated: bool,
 }
 
+impl TypedBinder {
+    pub fn with_type(&self, ty: Type) -> Self {
+        Self {
+            binding: self.binding,
+            ty,
+            span: self.span,
+            annotated: self.annotated,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct TypedLambda {
     pub params: Vec<TypedBinder>,
@@ -277,6 +288,12 @@ pub struct TypedTraitMethod {
     pub receiver: Option<ReceiverKind>,
     pub default: Option<BindingId>,
     pub returns_self: bool,
+}
+
+impl TypedTraitMethod {
+    pub fn declaration(&self) -> BindingId {
+        self.default.unwrap_or(self.binding)
+    }
 }
 
 #[derive(Clone)]
@@ -353,6 +370,18 @@ pub struct TypedProgram {
 }
 
 impl TypedProgram {
+    pub fn declared_trait_method(
+        &self,
+        trait_binding: BindingId,
+        name: &str,
+    ) -> Option<&TypedTraitMethod> {
+        self.trait_definitions
+            .iter()
+            .filter(|definition| definition.binding == trait_binding)
+            .flat_map(|definition| &definition.methods)
+            .find(|declared| self.bindings.get(declared.binding).name() == name)
+    }
+
     pub fn is_box(&self, ty: &Type) -> bool {
         matches!(ty, Type::Named(binding, arguments) if Some(*binding) == self.box_binding && arguments.len() == 1)
     }
