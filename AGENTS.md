@@ -105,6 +105,8 @@ The exceptions are:
 - If a change fixes a bug, add a regression test.
 - A regression test MAY be a fixture, a `tests/cli.rs` test, or a unit test.
 - Before you commit a fix, revert the fix alone and run its regression test. If the test passes, change the test until it fails without the fix.
+- A test MUST reach every condition and match arm that a change adds.
+- Before you commit, negate each new condition and empty each new match arm, one at a time. Run the tests after each change. If every test still passes, add a test that fails on that change.
 - A slow input is an input that runs longer than one second in a debug build.
 - If a bug shows only on a slow input, unit-test the structure that caused the bug.
 - If a fixture imports a module, put the module in a subdirectory: each top-level fixture file is an entry.
