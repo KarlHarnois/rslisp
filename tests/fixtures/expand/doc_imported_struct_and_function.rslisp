@@ -1,0 +1,5 @@
+(use documented/points point)
+
+(defn point (x) x)
+
+(def point-page (doc point))

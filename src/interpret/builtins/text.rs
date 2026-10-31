@@ -101,10 +101,20 @@ impl<'a> TextOperations<'a> {
         let term = self.arguments.form(0)?;
         let context = self.arguments.symbol(0)?;
         let symbol = host.definition_symbol(context, self.joined_parts(1)?, term.span())?;
-        Ok(Value::Form(Form::new(
-            FormKind::Symbol(symbol),
-            self.call_site,
-        )))
+        Ok(self.symbol_value(symbol))
+    }
+
+    pub fn type_definition_symbol(
+        &self,
+        host: &mut dyn CompileTimeHost,
+    ) -> Result<Value, Diagnostic> {
+        let term = self.arguments.symbol(0)?;
+        let symbol = host.type_definition_symbol(term, self.joined_parts(1)?);
+        Ok(self.symbol_value(symbol))
+    }
+
+    fn symbol_value(&self, symbol: Symbol) -> Value {
+        Value::Form(Form::new(FormKind::Symbol(symbol), self.call_site))
     }
 
     pub fn is_bound(&self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {

@@ -1,6 +1,6 @@
 (use code first rest list prepend concat length empty? nth take drop
           symbol? list? string? symbol-name symbol string same-binding? fail
-          definition-symbol bound? value-eq number-add number-sub number-lt
+          definition-symbol type-definition-symbol bound? value-eq number-add number-sub number-lt
           string-lines string-trim-start string-length string-drop string-strip-suffix)
 
 (export defrule defmacro template map-list whole-pairs? documented doc-entry doc-symbol type-doc-symbol
@@ -420,7 +420,7 @@
 (def documentation-of
   (fn (term)
     (let value-entry (definition-symbol term "doc/" term))
-    (let type-entry (definition-symbol term "doc-type/" term))
+    (let type-entry (type-definition-symbol term "doc-type/" term))
     (if (bound? value-entry)
         value-entry
         (if (bound? type-entry) type-entry (undocumented term)))))

@@ -32,6 +32,15 @@ impl CompileTimeHost for Expander<'_> {
         ))
     }
 
+    fn type_definition_symbol(&self, term: &Symbol, name: String) -> Symbol {
+        let scopes = self
+            .namespace_binding(term, Namespace::Type)
+            .map_or_else(ScopeSet::default, |binding| {
+                self.definition_scopes(term, binding)
+            });
+        Symbol::with_scopes(name, scopes)
+    }
+
     fn is_bound(&self, symbol: &Symbol) -> bool {
         self.term_binding(symbol).is_some()
     }
@@ -71,11 +80,13 @@ impl Expander<'_> {
     fn term_binding(&self, term: &Symbol) -> Option<BindingId> {
         [Namespace::Value, Namespace::Type]
             .into_iter()
-            .find_map(
-                |namespace| match self.table.resolve(term, namespace, Phase::Runtime) {
-                    Resolution::Bound(binding) => Some(binding),
-                    _ => None,
-                },
-            )
+            .find_map(|namespace| self.namespace_binding(term, namespace))
+    }
+
+    fn namespace_binding(&self, term: &Symbol, namespace: Namespace) -> Option<BindingId> {
+        match self.table.resolve(term, namespace, Phase::Runtime) {
+            Resolution::Bound(binding) => Some(binding),
+            _ => None,
+        }
     }
 }
