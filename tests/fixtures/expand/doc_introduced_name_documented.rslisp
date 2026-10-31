@@ -1,0 +1,8 @@
+(defmacro define-helper ()
+  (template (defn helper (x) "Helps inside the macro." x)))
+
+(define-helper)
+
+(defn helper (x) "Helps the user." x)
+
+(def helper-page (doc helper))
