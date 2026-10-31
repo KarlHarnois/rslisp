@@ -3,6 +3,8 @@ use std::collections::{HashMap, HashSet};
 use super::functions::{FunctionInfo, FunctionTable, ParamMode, ParamSlot};
 use super::names::ChangingFunctionNames;
 use super::refusals::Refusals;
+use super::shrunk_parameters::ShrunkParameters;
+use super::trait_slices::{TraitSlot, TraitSlotCollector};
 use crate::core::{BindingId, PrimitiveType};
 use crate::types::{
     GenericId, Lifetime, RustType, Type, TypedArgument, TypedBlock, TypedExpr, TypedExprKind,
@@ -31,6 +33,11 @@ struct Candidates {
     by_binding: Vec<(BindingId, Shrink)>,
 }
 
+struct ShrinkableSlot {
+    slot: TraitSlot,
+    shrink: Shrink,
+}
+
 pub struct ShrinkSelection<'a> {
     program: &'a TypedProgram,
     functions: &'a FunctionTable,
@@ -38,6 +45,7 @@ pub struct ShrinkSelection<'a> {
     declared: HashMap<BindingId, Vec<Type>>,
     values: HashSet<BindingId>,
     trait_methods: HashSet<BindingId>,
+    trait_slots: Vec<ShrinkableSlot>,
     slice: BindingId,
 }
 
@@ -51,7 +59,7 @@ impl<'a> ShrinkSelection<'a> {
             .rust_types
             .binding_with_template(RustType::SLICE_TEMPLATE)?;
         let mut values = HashSet::new();
-        let declared = program
+        let declared: HashMap<BindingId, Vec<Type>> = program
             .modules
             .iter()
             .flat_map(|module| &module.definitions)
@@ -69,25 +77,64 @@ impl<'a> ShrinkSelection<'a> {
         }
         let mut trait_methods = ChangingFunctionNames::impl_methods(program);
         trait_methods.extend(ChangingFunctionNames::default_methods(program));
-        Some(Self {
+        let mut selection = Self {
             program,
             functions,
             modes,
             declared,
             values,
             trait_methods,
+            trait_slots: Vec::new(),
             slice,
-        })
+        };
+        let slots = TraitSlotCollector::new(program, functions, &selection.declared).slots();
+        selection.trait_slots = selection.shrinkable_slots(slots);
+        Some(selection)
     }
 
-    pub fn run(&self) -> HashMap<BindingId, Type> {
+    fn shrinkable_slots(&self, slots: Vec<TraitSlot>) -> Vec<ShrinkableSlot> {
+        slots
+            .into_iter()
+            .filter_map(|slot| {
+                let shrink = self.trait_slot_shrink(&slot)?;
+                Some(ShrinkableSlot { slot, shrink })
+            })
+            .collect()
+    }
+
+    fn trait_slot_shrink(&self, slot: &TraitSlot) -> Option<Shrink> {
+        if self.values.contains(&slot.method) {
+            return None;
+        }
+        self.written_shrink(&slot.declared)
+    }
+
+    pub fn run(&self) -> ShrunkParameters {
         let candidates = self.candidates();
         let refused = self.refusals(&candidates).spread();
-        candidates
+        let declarations = self.shrunk_declarations(&refused);
+        let parameters = candidates
             .iter()
             .filter(|(binding, _)| !refused.contains(binding))
             .map(|(binding, shrink)| (*binding, self.shrunk(shrink)))
-            .collect()
+            .collect();
+        ShrunkParameters::new(parameters, declarations)
+    }
+
+    fn shrunk_declarations(
+        &self,
+        refused: &HashSet<BindingId>,
+    ) -> HashMap<BindingId, Vec<(usize, Type)>> {
+        let mut declarations: HashMap<BindingId, Vec<(usize, Type)>> = HashMap::new();
+        for ShrinkableSlot { slot, shrink } in &self.trait_slots {
+            if !slot.is_refused(refused) {
+                declarations
+                    .entry(slot.method)
+                    .or_default()
+                    .push((slot.position, self.shrunk(shrink)));
+            }
+        }
+        declarations
     }
 
     fn shrunk(&self, shrink: &Shrink) -> Type {
@@ -121,14 +168,28 @@ impl<'a> ShrinkSelection<'a> {
                 }
             }
         }
+        for ShrinkableSlot { slot, shrink } in &self.trait_slots {
+            found.extend(
+                slot.parameters
+                    .iter()
+                    .map(|parameter| (*parameter, shrink.clone())),
+            );
+        }
         Candidates::sorted(found)
     }
 
     fn slot_shrink(&self, slot: &ParamSlot) -> Option<Shrink> {
         match &slot.ty {
+            Type::Ref(..) | Type::Mut(..) => self.written_shrink(&slot.ty),
+            owned if slot.inferable => self.inferred_shrink(owned, self.modes.get(&slot.binding)?),
+            _ => None,
+        }
+    }
+
+    fn written_shrink(&self, ty: &Type) -> Option<Shrink> {
+        match ty {
             Type::Ref(lifetime, vector) => self.slice_shrink(Reference::Shared(*lifetime), vector),
             Type::Mut(lifetime, vector) => self.slice_shrink(Reference::Mutable(*lifetime), vector),
-            owned if slot.inferable => self.inferred_shrink(owned, self.modes.get(&slot.binding)?),
             _ => None,
         }
     }
@@ -160,6 +221,9 @@ impl<'a> ShrinkSelection<'a> {
 
     fn refusals(&self, candidates: &Candidates) -> Refusals {
         let mut refusals = Refusals::default();
+        for ShrinkableSlot { slot, .. } in &self.trait_slots {
+            slot.bind_mates(&mut refusals);
+        }
         for (function, info) in self.holders(candidates) {
             BodyUses::new(self, *function, candidates, &mut refusals).block(&info.lambda.body);
         }
@@ -196,7 +260,16 @@ impl<'a> ShrinkSelection<'a> {
         if self.declared_argument_accepts(function, position, shrink) {
             return ArgumentUse::Accepted;
         }
+        if let Some(slot) = self.trait_slot_at(function, position) {
+            return slot.argument_use();
+        }
         self.parameter_use(function, position)
+    }
+
+    fn trait_slot_at(&self, function: BindingId, position: usize) -> Option<&ShrinkableSlot> {
+        self.trait_slots
+            .iter()
+            .find(|shrinkable| shrinkable.slot.is_at(function, position))
     }
 
     fn declared_argument_accepts(
@@ -301,6 +374,15 @@ impl<'a> ShrinkSelection<'a> {
                 }
             }
         }
+    }
+}
+
+impl ShrinkableSlot {
+    fn argument_use(&self) -> ArgumentUse {
+        self.slot
+            .parameters
+            .first()
+            .map_or(ArgumentUse::Accepted, |mate| ArgumentUse::Follows(*mate))
     }
 }
 
@@ -454,8 +536,27 @@ mod tests {
               (record-twice! (mut years) 2019)
               (println (oldest-year years) (next-year 2024)))";
 
-        fn new() -> Self {
-            let program = TypedSource::expand(Self::CALLER_CHAIN).typed();
+        const BODILESS_TRAIT_METHOD: &str = "
+            (trait mileage
+              (total (fn ((ref self) (ref (vec i64))) i64)))
+            (defn report (o readings) (total o readings))
+            (defn main ())";
+
+        const TWO_VECTOR_SLOTS: &str = "
+            (defstruct odometer :offset i64)
+            (trait mileage
+              (copy-first! (fn ((ref self) (ref (vec i64)) (mut (vec i64))) unit)))
+            (impl mileage odometer
+              (copy-first! (o readings history)
+                (push! history (+ (:offset o) (at readings 0)))))
+            (defn log-first! (o readings history) (copy-first! o readings history))
+            (defn main ()
+              (let readings (vec 1200))
+              (let history (vec 0))
+              (log-first! (->odometer 10) readings (mut history)))";
+
+        fn new(source: &str) -> Self {
+            let program = TypedSource::expand(source).typed();
             let functions = FunctionTable::collect(&program);
             let copy = CopyRules::new(
                 &program.traits,
@@ -488,6 +589,7 @@ mod tests {
         fn shrunk_parameters(&self) -> HashSet<&str> {
             self.selection()
                 .run()
+                .parameters()
                 .keys()
                 .map(|binding| self.name(*binding))
                 .collect()
@@ -500,14 +602,26 @@ mod tests {
 
     #[test]
     fn only_the_bodies_that_hold_a_candidate_are_walked() {
-        let fixture = SelectionFixture::new();
+        let fixture = SelectionFixture::new(SelectionFixture::CALLER_CHAIN);
         let holders = HashSet::from(["record-year!", "record-twice!", "oldest-year"]);
         assert_eq!(fixture.walked_bodies(), holders);
     }
 
     #[test]
     fn a_vector_only_callee_keeps_the_vector_of_its_caller() {
-        let fixture = SelectionFixture::new();
+        let fixture = SelectionFixture::new(SelectionFixture::CALLER_CHAIN);
         assert_eq!(fixture.shrunk_parameters(), HashSet::from(["years"]));
+    }
+
+    #[test]
+    fn a_trait_method_without_bodies_lends_its_slice_to_callers() {
+        let fixture = SelectionFixture::new(SelectionFixture::BODILESS_TRAIT_METHOD);
+        assert_eq!(fixture.shrunk_parameters(), HashSet::from(["readings"]));
+    }
+
+    #[test]
+    fn a_trait_argument_follows_the_slot_at_its_own_position() {
+        let fixture = SelectionFixture::new(SelectionFixture::TWO_VECTOR_SLOTS);
+        assert_eq!(fixture.shrunk_parameters(), HashSet::from(["readings"]));
     }
 }

@@ -1,0 +1,21 @@
+(defstruct car :model str :year i64)
+(defstruct truck :load i64)
+(defstruct van :seats i64)
+
+(trait garage
+  (twin (fn (self) self) self)
+  (scrap (fn (self) i64) 0)
+  (fleet (fn ((ref self) (vec self)) (vec self)) argument-1))
+
+(impl garage car)
+(impl garage truck)
+(impl garage van
+  (twin (v) (->van (+ (:seats v) 1)))
+  (scrap (v) (:seats v)))
+
+(defn main ()
+  (println (:model (twin (->car "Leaf" 2024))))
+  (println (:load (twin (->truck 3))))
+  (println (:seats (twin (->van 7))))
+  (println (scrap (->truck 3)) " " (scrap (->van 7)))
+  (println (len (fleet (->truck 3) (vec (->truck 1) (->truck 2))))))

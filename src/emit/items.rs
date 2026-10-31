@@ -340,7 +340,7 @@ impl<'a> ItemEmitter<'a> {
             unreachable!("a trait method has a function type")
         };
         let self_generic = Self::self_generic(&definition.scheme);
-        let bound = Self::sized_self_bound(parameters, result, self_generic);
+        let bound = Self::sized_self_bound(method, &definition.scheme.body, self_generic);
         let types = RustTypes::new(
             self.program,
             self.plan,
@@ -449,17 +449,26 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn sized_self_bound(
-        parameters: &[Type],
-        result: &Type,
+        method: &TypedTraitMethod,
+        signature: &Type,
         self_generic: Option<GenericId>,
     ) -> &'static str {
-        let needs_sized =
-            |ty: &Type| self_generic.is_some_and(|generic| Self::needs_sized_self(ty, generic));
-        if parameters.iter().chain([result]).any(needs_sized) {
+        let needs_sized = if method.default.is_some() {
+            Self::body_needs_sized_self
+        } else {
+            Self::needs_sized_self
+        };
+        let holds_sized_self =
+            |ty: &&Type| self_generic.is_some_and(|generic| needs_sized(ty, generic));
+        if signature.parts().iter().any(holds_sized_self) {
             Self::SIZED_SELF
         } else {
             ""
         }
+    }
+
+    fn body_needs_sized_self(ty: &Type, generic: GenericId) -> bool {
+        Self::is_self_type(ty, Some(generic)) || Self::needs_sized_self(ty, generic)
     }
 
     fn needs_sized_self(ty: &Type, generic: GenericId) -> bool {

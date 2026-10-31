@@ -1,0 +1,13 @@
+(defstruct odometer :offset i64)
+
+(trait mileage
+  (total (fn ((ref self) (ref (vec i64))) i64)))
+
+(impl mileage odometer
+  (total (o readings) (+ (:offset o) (at readings 0))))
+
+(defn apply-total (measure o readings) (measure o readings))
+
+(defn main ()
+  (let readings (vec 1200 3400))
+  (println (apply-total total (->odometer 10) readings)))

@@ -1,0 +1,11 @@
+(defstruct odometer :offset i64)
+
+(trait mileage
+  (reset! (fn ((ref self) (mut (vec i64))) unit)))
+
+(impl mileage odometer
+  (reset! (o readings) (set! (at readings 0) (:offset o))))
+
+(defn reset-odometer! (readings) (reset! (->odometer 10) readings))
+
+(export reset-odometer!)

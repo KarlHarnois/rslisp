@@ -189,20 +189,10 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
 
     fn bodies(&self, trait_binding: BindingId, name: &str) -> Vec<&'a TypedLambda> {
         self.program
-            .trait_impls
-            .iter()
-            .filter(|implementation| implementation.trait_binding == trait_binding)
-            .flat_map(|implementation| &implementation.methods)
-            .map(|implemented| implemented.binding)
-            .filter(|binding| self.program.bindings.get(*binding).name() == name)
-            .chain(self.default_of(trait_binding, name))
+            .trait_method_bodies(trait_binding, name)
+            .into_iter()
             .filter_map(|binding| self.lambda(binding))
             .collect()
-    }
-
-    fn default_of(&self, trait_binding: BindingId, name: &str) -> Option<BindingId> {
-        self.declared(trait_binding, name)
-            .and_then(|declared| declared.default)
     }
 
     fn receiver_of(&self, trait_binding: BindingId, name: &str) -> Option<ReceiverKind> {
