@@ -123,6 +123,7 @@ impl OwnershipChecker {
         let mut inferred_copies = InferredCopies::default();
         let pipelines = Pipelines::new(&program.rust_types);
         let stored_definitions = StoredDefinitions::of(program);
+        let returned_borrows = ReturnedBorrows::new(program);
         for definition in program
             .modules
             .iter()
@@ -130,8 +131,8 @@ impl OwnershipChecker {
         {
             let report = match &definition.value.kind {
                 TypedExprKind::Fn(lambda) => {
-                    ReturnedBorrows::new(program)
-                        .check_every_function(&definition.value)
+                    returned_borrows
+                        .check_definition(definition)
                         .into_iter()
                         .for_each(|diagnostic| diagnostics.push(diagnostic));
                     Self::move_checker(program, pipelines, &stored_definitions)

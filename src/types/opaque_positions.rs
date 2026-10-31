@@ -7,7 +7,7 @@ use super::problems::TypeProblems;
 use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
 use super::ty::Type;
-use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLambda};
+use super::typed::{ClosureType, TypedDefinition, TypedExpr, TypedExprKind, TypedLambda};
 use crate::core::{BindingId, CoreModule, Item, ItemKind, TraitMethod, TypeExpr, TypeExprKind};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
@@ -37,6 +37,7 @@ struct OpaquePositions<'c> {
     enums: &'c EnumTable,
     receivers: MethodReceivers<'c>,
     definitions: &'c HashMap<BindingId, TypedDefinition>,
+    closures: &'c [ClosureType],
     modules: &'c [CoreModule],
 }
 
@@ -52,6 +53,7 @@ impl TypeChecker {
             enums: &self.enums,
             receivers: MethodReceivers::new(&self.template_borrows),
             definitions,
+            closures: &self.closure_types,
             modules,
         };
         for unnameable in positions.unnameable() {
@@ -77,11 +79,12 @@ impl OpaquePositions<'_> {
     fn unnameable(&self) -> Vec<UnnameableType> {
         let mut reporting_forms: Vec<Span> = Vec::new();
         let mut found = Vec::new();
+        let closure_owners = self.owners_of_closures_taking_opaque();
         for item in self.items() {
             if Self::reported_by_its_form(&reporting_forms, item.span) {
                 continue;
             }
-            let unnameable = self.in_item(&item.kind);
+            let unnameable = self.in_item(&item.kind, &closure_owners);
             if !unnameable.is_empty() {
                 reporting_forms.push(item.span);
             }
@@ -92,6 +95,22 @@ impl OpaquePositions<'_> {
 
     fn items(&self) -> impl Iterator<Item = &Item> {
         self.modules.iter().flat_map(|module| &module.items)
+    }
+
+    fn owners_of_closures_taking_opaque(&self) -> Vec<BindingId> {
+        self.closures
+            .iter()
+            .filter(|closure| self.takes_opaque(&closure.ty))
+            .map(|closure| closure.definition)
+            .collect()
+    }
+
+    fn takes_opaque(&self, closure: &Type) -> bool {
+        closure
+            .parameters()
+            .into_iter()
+            .flatten()
+            .any(|parameter| self.opaque_part(parameter).is_some())
     }
 
     fn reported_by_its_form(reporting_forms: &[Span], item: Span) -> bool {
@@ -106,9 +125,9 @@ impl OpaquePositions<'_> {
             .collect()
     }
 
-    fn in_item(&self, item: &ItemKind) -> Vec<UnnameableType> {
+    fn in_item(&self, item: &ItemKind, closure_owners: &[BindingId]) -> Vec<UnnameableType> {
         match item {
-            ItemKind::Def(binding, _) => self.in_definition(*binding),
+            ItemKind::Def(binding, _) => self.in_definition(*binding, closure_owners),
             ItemKind::Struct(binding, ..) => self.in_struct(*binding),
             ItemKind::Enum(binding, ..) => self.in_enum(*binding),
             ItemKind::Trait(.., methods) => self.in_trait(methods),
@@ -120,12 +139,20 @@ impl OpaquePositions<'_> {
         }
     }
 
-    fn in_definition(&self, binding: BindingId) -> Vec<UnnameableType> {
+    fn in_definition(
+        &self,
+        binding: BindingId,
+        closure_owners: &[BindingId],
+    ) -> Vec<UnnameableType> {
         self.definitions
             .get(&binding)
             .map_or_else(Vec::new, |definition| {
                 let in_signature = self.in_function(binding, definition);
-                let in_closures = self.in_local_closures(&definition.value);
+                let in_closures = if closure_owners.contains(&binding) {
+                    self.in_local_closures(&definition.value)
+                } else {
+                    Vec::new()
+                };
                 in_signature.into_iter().chain(in_closures).collect()
             })
     }

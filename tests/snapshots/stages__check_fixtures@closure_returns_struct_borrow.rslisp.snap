@@ -1,0 +1,30 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/closure_returns_struct_borrow.rslisp
+---
+error[L0510]: cannot return a borrow of a local value
+ --> check/closure_returns_struct_borrow.rslisp:7:20
+  |
+1 | (defstruct car :make str :year u16)
+  |                      --- declared as a borrow here
+...
+6 |       (let make (to-string "Nissan"))
+  |            ---- this local is dropped when the function returns
+7 |       (->car :make (as-str make) :year year)))
+  |                    ^^^^^^^^^^^^^ this borrows a local value
+  |
+  = help: the field `make` of `car` borrows its data, so give it the owned type `string`
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/closure_returns_struct_borrow.rslisp:14:26
+   |
+ 1 | (defstruct car :make str :year u16)
+   |                      --- declared as a borrow here
+...
+13 |       (let make (to-string "Nissan"))
+   |            ---- this local is dropped when the function returns
+14 |       (some (->car :make (as-str make) :year year))))
+   |                          ^^^^^^^^^^^^^ this borrows a local value
+   |
+   = help: the field `make` of `car` borrows its data, so give it the owned type `string`

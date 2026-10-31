@@ -245,6 +245,12 @@ pub struct PendingModeCheck {
 }
 
 #[derive(Clone, Debug)]
+pub struct ClosureType {
+    pub definition: BindingId,
+    pub ty: Type,
+}
+
+#[derive(Clone, Debug)]
 pub struct TypedDefinition {
     pub binding: BindingId,
     pub scheme: Scheme,
@@ -367,6 +373,7 @@ pub struct TypedProgram {
     pub mutable_function_bindings: HashSet<BindingId>,
     pub literal_generics: HashMap<GenericId, LiteralKind>,
     pub unnameable_types: Diagnostics,
+    pub closure_types: Vec<ClosureType>,
     pub warnings: Diagnostics,
 }
 
