@@ -93,6 +93,13 @@ impl ModuleRegistry {
             .collect()
     }
 
+    pub fn with_body_scopes(&self, scopes: &ScopeSet) -> Option<ModuleId> {
+        self.records
+            .iter()
+            .position(|record| record.body_scopes() == *scopes)
+            .map(ModuleId::new)
+    }
+
     pub fn get(&self, id: ModuleId) -> &ModuleRecord {
         &self.records[id.index()]
     }

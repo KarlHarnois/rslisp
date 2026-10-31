@@ -107,7 +107,14 @@ impl Expander<'_> {
         form
     }
 
-    pub(super) fn trial_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
+    pub(super) fn discarded_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
+        let checkpoint = self.module_notes.checkpoint();
+        let expansion = self.trial_expansion(binding, form);
+        self.module_notes.roll_back(checkpoint);
+        expansion
+    }
+
+    fn trial_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
         let diagnostics = self.diagnostics.len();
         let recovered = self.recovered_diagnostics.len();
         let result = self.run_macro(binding, form, None).ok();
@@ -117,6 +124,20 @@ impl Expander<'_> {
     }
 
     fn run_macro(
+        &mut self,
+        binding: BindingId,
+        form: Form,
+        context: Option<&mut DefinitionContext>,
+    ) -> Result<Form, Diagnostic> {
+        let checkpoint = self.module_notes.checkpoint();
+        let expansion = self.macro_expansion(binding, form, context);
+        if expansion.is_err() {
+            self.module_notes.roll_back(checkpoint);
+        }
+        expansion
+    }
+
+    fn macro_expansion(
         &mut self,
         binding: BindingId,
         form: Form,

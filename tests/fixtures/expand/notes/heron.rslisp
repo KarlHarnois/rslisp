@@ -1,0 +1,12 @@
+(use code add-module-note)
+
+(export bird)
+
+(def remember-heron
+  (macro (form)
+    (add-module-note (quote sightings) "a heron")
+    (quote (def remembered true))))
+
+(remember-heron)
+
+(def bird "heron")

@@ -1,0 +1,19 @@
+(use notes/heron bird)
+(use code add-module-note module-notes definition-symbol length nth)
+
+(def remember-crane
+  (macro (form)
+    (add-module-note (quote sightings) "a crane")
+    (quote (def remembered true))))
+
+(def count-sightings
+  (macro (form)
+    (length (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))))
+
+(remember-crane)
+
+(def pond "pond")
+
+(def heron-sightings (count-sightings bird))
+
+(def pond-sightings (count-sightings pond))

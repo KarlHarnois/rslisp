@@ -132,6 +132,19 @@ impl<'a> TextOperations<'a> {
         Ok(Value::Bool(host.is_bound(self.arguments.symbol(0)?)))
     }
 
+    pub fn add_module_note(&self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(2)?;
+        host.add_module_note(self.arguments.symbol(0)?.name(), self.arguments.form(1)?);
+        Ok(Value::Unit)
+    }
+
+    pub fn module_notes(&self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(2)?;
+        let context = self.arguments.symbol(0)?;
+        let notes = host.module_notes(context, self.arguments.symbol(1)?.name());
+        Ok(Forms::list(notes, self.call_site))
+    }
+
     pub fn closest_name(&self) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(2)?;
         let name = self.arguments.symbol(0)?.name();

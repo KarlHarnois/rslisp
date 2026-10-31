@@ -1,0 +1,25 @@
+(use code add-module-note module-notes definition-symbol first length nth)
+
+(def remember
+  (macro (form)
+    (add-module-note (quote sightings) (nth form 1))
+    (add-module-note (quote rumors) "a crane")
+    (quote (def remembered true))))
+
+(def recall
+  (macro (form)
+    (first (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))))
+
+(def count-sightings
+  (macro (form)
+    (length (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))))
+
+(remember "a heron")
+
+(def bird "heron")
+
+(def sighting (recall bird))
+
+(def sighting-count (count-sightings bird))
+
+(defn local-sightings (bird) (count-sightings bird))
