@@ -555,6 +555,38 @@ mod tests {
     }
 
     #[test]
+    fn a_shared_binding_is_visible_from_plain_scopes_that_hold_its_prefix() {
+        let mut world = World::new();
+        let scopes: Vec<Scope> = (0..ScopeSet::SHORTEST_SHARED_PREFIX)
+            .map(|_| world.scope())
+            .collect();
+        let chain = ScopeChain::default();
+        scopes.iter().for_each(|scope| chain.push(*scope));
+        let bound = world.define_sharing("x", &World::prefix(&chain));
+        assert_eq!(
+            world.resolve("x", &scopes, Phase::Runtime),
+            Resolution::Bound(bound)
+        );
+    }
+
+    #[test]
+    fn a_compile_time_shared_binding_is_invisible_to_runtime_code() {
+        let mut world = World::new();
+        let prefix = World::prefix(&world.chain(ScopeSet::SHORTEST_SHARED_PREFIX));
+        let binding = world.new_binding("x");
+        world
+            .table
+            .bind(
+                &World::sharing_symbol("x", &prefix),
+                Namespace::Value,
+                binding,
+                Phase::CompileTime,
+            )
+            .expect("no duplicate");
+        assert_eq!(world.resolve_sharing("x", &prefix), Resolution::Unbound);
+    }
+
+    #[test]
     fn a_plain_binding_beside_a_shared_one_sees_only_its_own_scopes() {
         let mut world = World::new();
         let chain = world.chain(ScopeSet::SHORTEST_SHARED_PREFIX);
