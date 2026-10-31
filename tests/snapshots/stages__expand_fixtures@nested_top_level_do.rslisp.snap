@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/nested_top_level_do.rslisp
+---
+(def main (fn () 0))
