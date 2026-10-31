@@ -1,6 +1,6 @@
 [package]
 name = "rslisp"
-version = "0.1.28"
+version = "0.1.29"
 edition = "2024"
 description = "A minimal Lisp that compiles to Rust (placeholder name)"
 license = "MIT"
