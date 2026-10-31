@@ -1,0 +1,21 @@
+(defstruct car :make str :year u16)
+
+(defn build (year)
+  (let assemble
+    (fn ()
+      (let make (to-string "Nissan"))
+      (->car :make (as-str make) :year year)))
+  (assemble))
+
+(defn build-maybe (year)
+  (let assemble
+    (fn ()
+      (let make (to-string "Nissan"))
+      (some (->car :make (as-str make) :year year))))
+  (assemble))
+
+(defn main ()
+  (println (:year (build 2024)))
+  (match (build-maybe 2024)
+    ((some built) (println (:year built)))
+    (none (println 0))))

@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/uncalled_closure_returns_local_borrow.rslisp
+---
+error[L0510]: cannot return a borrow of a local value
+ --> check/uncalled_closure_returns_local_borrow.rslisp:2:54
+  |
+2 |   (let first (fn () (let years (vec 2019 2021 2024)) (ref years)))
+  |                          -----                       ^^^^^^^^^^^ this borrows a local value
+  |                          |
+  |                          this local is dropped when the function returns
+  |
+  = help: return an owned value with `(clone ...)`, or borrow from a parameter

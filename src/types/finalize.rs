@@ -4,9 +4,9 @@ use super::checker::{Admissible, TypeChecker};
 use super::literal_fit::LiteralFit;
 use super::problems::TypeProblems;
 use super::ty::{GenericId, Type, TypeVar};
-use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
+use super::typed::{ClosureType, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::LiteralKind;
-use crate::core::{Literal, PrimitiveType};
+use crate::core::{BindingId, Literal, PrimitiveType};
 use crate::reader::Number;
 use crate::source::Span;
 
@@ -14,6 +14,7 @@ pub struct Finalizer<'c> {
     checker: &'c mut TypeChecker,
     reported: HashSet<TypeVar>,
     earlier_errors: bool,
+    closures_in_definition: Vec<Type>,
 }
 
 impl<'c> Finalizer<'c> {
@@ -23,12 +24,22 @@ impl<'c> Finalizer<'c> {
             checker,
             reported: HashSet::new(),
             earlier_errors,
+            closures_in_definition: Vec::new(),
         }
     }
 
     pub fn definition(&mut self, definition: &mut TypedDefinition) {
         self.expr(&mut definition.value);
         self.finalize_type(&mut definition.scheme.body, definition.span);
+        self.record_closure_types(definition.binding);
+    }
+
+    fn record_closure_types(&mut self, definition: BindingId) {
+        let closures = self
+            .closures_in_definition
+            .drain(..)
+            .map(|ty| ClosureType { definition, ty });
+        self.checker.closure_types.extend(closures);
     }
 
     fn expr(&mut self, expr: &mut TypedExpr) {
@@ -38,9 +49,16 @@ impl<'c> Finalizer<'c> {
         }
         for child in expr.children_mut() {
             self.expr(child);
+            self.note_closure(child);
         }
         for binder in expr.binders_mut() {
             self.finalize_type(&mut binder.ty, binder.span);
+        }
+    }
+
+    fn note_closure(&mut self, expr: &TypedExpr) {
+        if let TypedExprKind::Fn(_) = expr.kind {
+            self.closures_in_definition.push(expr.ty.clone());
         }
     }
 

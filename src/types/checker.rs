@@ -158,6 +158,7 @@ pub struct TypeChecker {
     pub(super) warnings: Diagnostics,
     missing_annotations: Diagnostics,
     pub(super) unnameable_types: Diagnostics,
+    pub(super) closure_types: Vec<super::typed::ClosureType>,
     pub(super) type_arities: HashMap<BindingId, usize>,
     pub(super) written_projections: Vec<super::associated::WrittenProjection>,
     pub(super) checked_projections: usize,
@@ -244,6 +245,7 @@ impl TypeChecker {
             warnings: Diagnostics::default(),
             missing_annotations: Diagnostics::default(),
             unnameable_types: Diagnostics::default(),
+            closure_types: Vec::new(),
             type_arities: HashMap::new(),
             written_projections: Vec::new(),
             checked_projections: 0,
@@ -2818,6 +2820,7 @@ impl TypeChecker {
             mutable_function_bindings: HashSet::new(),
             literal_generics: self.literal_generics,
             unnameable_types: self.unnameable_types,
+            closure_types: self.closure_types,
             warnings,
         })
     }

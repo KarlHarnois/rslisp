@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::problems::{BorrowedStorage, DroppedValue, OwnershipProblems};
 use super::slots::DeclaredSlots;
 use crate::core::{BindingId, FieldLabel, PrimitiveType};
@@ -5,13 +7,14 @@ use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
     Borrow, Lifetime, RustType, Type, TypeDisplay, TypedArgument, TypedBinder, TypedBlock,
-    TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedProgram,
-    TypedStructExpr,
+    TypedBodyItem, TypedControl, TypedDefinition, TypedExpr, TypedExprKind, TypedLambda,
+    TypedProgram, TypedStructExpr,
 };
 
 pub struct ReturnedBorrows<'p> {
     program: &'p TypedProgram,
     slots: DeclaredSlots<'p>,
+    owners_of_borrowing_closures: HashSet<BindingId>,
 }
 
 impl<'p> ReturnedBorrows<'p> {
@@ -19,14 +22,28 @@ impl<'p> ReturnedBorrows<'p> {
         Self {
             program,
             slots: DeclaredSlots::new(program),
+            owners_of_borrowing_closures: BorrowingClosures { program }.owners(),
         }
     }
 
-    pub fn check_every_function(&self, value: &TypedExpr) -> Vec<Diagnostic> {
-        LocalBorrows::lambdas_in(value)
+    pub fn check_definition(&self, definition: &TypedDefinition) -> Vec<Diagnostic> {
+        self.checked_functions(definition)
             .into_iter()
             .filter_map(|lambda| self.check(lambda))
             .collect()
+    }
+
+    fn checked_functions<'d>(&self, definition: &'d TypedDefinition) -> Vec<&'d TypedLambda> {
+        if self
+            .owners_of_borrowing_closures
+            .contains(&definition.binding)
+        {
+            return LocalBorrows::lambdas_in(&definition.value);
+        }
+        match &definition.value.kind {
+            TypedExprKind::Fn(lambda) => vec![lambda.as_ref()],
+            _ => Vec::new(),
+        }
     }
 
     fn check(&self, lambda: &TypedLambda) -> Option<Diagnostic> {
@@ -121,6 +138,34 @@ impl<'p> ReturnedBorrows<'p> {
 
     fn display(&self) -> TypeDisplay<'p> {
         TypeDisplay::new(&self.program.bindings, &self.program.generics)
+    }
+}
+
+struct BorrowingClosures<'p> {
+    program: &'p TypedProgram,
+}
+
+impl BorrowingClosures<'_> {
+    fn owners(&self) -> HashSet<BindingId> {
+        self.program
+            .closure_types
+            .iter()
+            .filter(|closure| self.can_return_borrow(&closure.ty))
+            .map(|closure| closure.definition)
+            .collect()
+    }
+
+    fn can_return_borrow(&self, closure: &Type) -> bool {
+        matches!(closure, Type::Function(_, _, result)
+            if result.holds_reference() || self.names_borrowing_type(result))
+    }
+
+    fn names_borrowing_type(&self, ty: &Type) -> bool {
+        matches!(ty, Type::Named(binding, _) if self.program.definition_holds_borrow(*binding))
+            || ty
+                .parts()
+                .into_iter()
+                .any(|part| self.names_borrowing_type(part))
     }
 }
 
