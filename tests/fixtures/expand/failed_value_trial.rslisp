@@ -1,0 +1,26 @@
+(use code list concat number-sub number-le)
+
+(def doubled
+  (fn (items times)
+    (if (number-le times 0) items (doubled (concat items items) (number-sub times 1)))))
+
+(def zeros
+  (fn (items count)
+    (if (number-le count 0) items (recur (concat items (list 0)) (number-sub count 1)))))
+
+(defmacro padding ()
+  (template
+    (do
+      (splice (concat (doubled (list 0) 16) (doubled (list 0) 15)))
+      (splice (concat (doubled (list 0) 14) (doubled (list 0) 13)))
+      (splice (zeros (list) 8180)))))
+
+(def big
+  (macro (form)
+    (quote (do 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))))
+
+(defmacro small ()
+  (template 1))
+
+(defn main ()
+  (do (padding) big (small)))
