@@ -33,6 +33,7 @@ impl FormBudget {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::interpret::CodeList;
     use crate::reader::{FormKind, Symbol};
     use crate::scope::ScopeAllocator;
     use crate::source::{SourceId, Span};
@@ -62,11 +63,25 @@ mod tests {
             self.budget.flip_scope(&mut list, scope)
         }
 
+        fn admits_value(&self, value: &Value) -> bool {
+            self.budget.admitted_form(value).is_some()
+        }
+
         fn list_of(forms: usize) -> Form {
-            let span = Span::new(SourceId::new(0), 0..0);
-            let leaf = Form::new(FormKind::Symbol(Symbol::new("leaf")), span);
-            let items = vec![leaf; forms - 1];
-            Form::new(FormKind::List(items), span)
+            let items = vec![Self::leaf(); forms - 1];
+            Form::new(FormKind::List(items), Self::span())
+        }
+
+        fn code_list(items: Vec<Value>) -> Value {
+            Value::List(CodeList::new(items, Self::span()))
+        }
+
+        fn leaf() -> Form {
+            Form::new(FormKind::Symbol(Symbol::new("leaf")), Self::span())
+        }
+
+        fn span() -> Span {
+            Span::new(SourceId::new(0), 0..0)
         }
     }
 
@@ -103,5 +118,26 @@ mod tests {
         let mut fixture = BudgetFixture::exhausted();
         fixture.budget = fixture.budget.refilled();
         assert!(!fixture.admits_list_of(1));
+    }
+
+    #[test]
+    fn admits_a_converted_list_of_exactly_the_limit() {
+        let leaves = vec![Value::Form(BudgetFixture::leaf()); FormBudget::EXPANSION_LIMIT - 1];
+        let list = BudgetFixture::code_list(leaves);
+        assert!(BudgetFixture::new().admits_value(&list));
+    }
+
+    #[test]
+    fn rejects_a_converted_list_whose_leaves_pass_the_limit() {
+        let leaves = vec![Value::Form(BudgetFixture::leaf()); FormBudget::EXPANSION_LIMIT];
+        let list = BudgetFixture::code_list(leaves);
+        assert!(!BudgetFixture::new().admits_value(&list));
+    }
+
+    #[test]
+    fn rejects_a_converted_list_whose_inner_lists_pass_the_limit() {
+        let empty_lists = vec![BudgetFixture::code_list(Vec::new()); FormBudget::EXPANSION_LIMIT];
+        let list = BudgetFixture::code_list(empty_lists);
+        assert!(!BudgetFixture::new().admits_value(&list));
     }
 }
