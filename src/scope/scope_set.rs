@@ -514,6 +514,73 @@ mod tests {
         longer.add_prefix(&Scopes::prefix_of(&chain));
         assert!(shorter.is_subset_of(&longer));
         assert!(!longer.is_subset_of(&shorter));
+        assert_ne!(shorter, longer);
+    }
+
+    #[test]
+    fn a_prefix_of_another_chain_is_not_a_subset() {
+        let mut scopes = Scopes::new();
+        let (first, _) = scopes.shared_set_of(Scopes::SHARED_LENGTH);
+        let (second, _) = scopes.shared_set_of(Scopes::SHARED_LENGTH);
+        assert!(!second.is_subset_of(&first));
+    }
+
+    #[test]
+    fn a_scope_between_a_prefixs_scopes_is_not_in_the_set() {
+        let mut scopes = Scopes::new();
+        let chain = ScopeChain::default();
+        chain.push(scopes.allocator.fresh());
+        let between = scopes.allocator.fresh();
+        (1..Scopes::SHARED_LENGTH).for_each(|_| chain.push(scopes.allocator.fresh()));
+        let mut set = ScopeSet::default();
+        set.add_prefix(&Scopes::prefix_of(&chain));
+        assert!(!set.contains(between));
+    }
+
+    #[test]
+    fn sets_sharing_prefixes_of_different_chains_differ() {
+        let mut scopes = Scopes::new();
+        let (first, _) = scopes.shared_set_of(Scopes::SHARED_LENGTH);
+        let (second, _) = scopes.shared_set_of(Scopes::SHARED_LENGTH);
+        assert_ne!(first, second);
+    }
+
+    #[test]
+    fn a_set_sharing_two_prefixes_contains_the_scopes_of_each() {
+        let mut scopes = Scopes::new();
+        let (mut set, older) = scopes.shared_set_of(Scopes::SHARED_LENGTH);
+        let (newer_chain, newer) = scopes.chain_of(Scopes::SHARED_LENGTH);
+        set.add_prefix(&Scopes::prefix_of(&newer_chain));
+        assert!(set.contains(older[0]));
+        assert!(set.contains(newer[0]));
+    }
+
+    #[test]
+    fn a_set_sharing_two_prefixes_has_the_newer_prefix_largest() {
+        let mut scopes = Scopes::new();
+        let (mut set, _) = scopes.shared_set_of(Scopes::SHARED_LENGTH);
+        let (newer_chain, newer) = scopes.chain_of(Scopes::SHARED_LENGTH);
+        set.add_prefix(&Scopes::prefix_of(&newer_chain));
+        assert_eq!(set.largest(), newer.last().copied());
+    }
+
+    #[test]
+    fn an_own_scope_beside_a_prefix_keeps_the_set_from_being_a_subset_of_the_prefix() {
+        let mut scopes = Scopes::new();
+        let (chain, _) = scopes.chain_of(Scopes::SHARED_LENGTH);
+        let mut prefix_alone = ScopeSet::default();
+        prefix_alone.add_prefix(&Scopes::prefix_of(&chain));
+        let mut with_own_scope = prefix_alone.clone();
+        with_own_scope.add(scopes.allocator.fresh());
+        assert!(!with_own_scope.is_subset_of(&prefix_alone));
+    }
+
+    #[test]
+    fn adding_a_shared_scope_keeps_the_set() {
+        let (mut set, scopes) = Scopes::new().shared_set_of(Scopes::SHARED_LENGTH);
+        set.add(scopes[0]);
+        assert!(set.own().is_empty());
+        assert_eq!(set.len(), scopes.len());
     }
 
     #[test]
