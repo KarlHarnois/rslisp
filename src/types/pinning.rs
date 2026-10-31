@@ -603,19 +603,12 @@ mod tests {
     use std::collections::HashMap;
 
     use std::collections::HashSet;
-    use std::path::PathBuf;
 
     use super::{InstantiationReport, Pinning};
     use crate::core::{
-        BindingArena, BindingId, BindingInfo, BindingKind, ClosureKind, ModuleId, ModulePath,
-        PrimitiveType,
+        BindingArena, BindingId, BindingInfo, BindingKind, ClosureKind, ModuleId, PrimitiveType,
     };
-    use crate::expand::{Expander, Program};
-    use crate::modules::ModuleSources;
-    use crate::source::SourceMap;
-    use crate::types::{
-        DefinitionGraph, GenericId, InferredCopies, LiteralDefaults, Type, TypeChecker, TypeVar,
-    };
+    use crate::types::{DefinitionGraph, GenericId, Type, TypeVar, TypedSource};
 
     struct BindFixture {
         bound: HashMap<GenericId, Type>,
@@ -674,7 +667,7 @@ mod tests {
     }
 
     struct ChainFixture {
-        program: Program,
+        source: TypedSource,
     }
 
     impl ChainFixture {
@@ -685,32 +678,20 @@ mod tests {
             (defn main () (println (outer (the u16 1))))";
 
         fn new() -> Self {
-            let mut sources = SourceMap::default();
-            let entry = sources.add("chain.rslisp", Self::WRAPPER_CHAIN);
-            let module_sources = ModuleSources::new(PathBuf::from("."), PathBuf::from("."));
-            let program = Expander::new(&mut sources, module_sources)
-                .expand(ModulePath::new("chain"), entry)
-                .expect("the chain expands");
-            Self { program }
+            Self {
+                source: TypedSource::expand(Self::WRAPPER_CHAIN),
+            }
         }
 
         fn pinned_after_one_run(&self) -> HashSet<String> {
-            let graph = DefinitionGraph::of(&self.program);
-            let typed = TypeChecker::check(
-                &self.program,
-                &graph,
-                &HashSet::new(),
-                &InferredCopies::default(),
-                &HashMap::new(),
-                LiteralDefaults::default(),
-                false,
-            )
-            .expect("the chain checks");
-            let report = InstantiationReport::of(&self.program, &graph, &typed);
+            let program = self.source.program();
+            let graph = DefinitionGraph::of(program);
+            let typed = self.source.check(&graph);
+            let report = InstantiationReport::of(program, &graph, &typed);
             Pinning::of(&report)
                 .pins()
                 .iter()
-                .map(|(binding, _)| self.program.bindings.get(*binding).name().to_string())
+                .map(|(binding, _)| program.bindings.get(*binding).name().to_string())
                 .collect()
         }
     }
