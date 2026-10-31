@@ -4,7 +4,7 @@ use crate::core::{BindingId, BindingKind, Namespace};
 use crate::diagnostic::Diagnostic;
 use crate::interpret::{CompileTimeHost, Value};
 use crate::reader::Symbol;
-use crate::scope::{Phase, Resolution};
+use crate::scope::{Phase, Resolution, ScopeSet};
 use crate::source::Span;
 
 impl CompileTimeHost for Expander<'_> {
@@ -26,11 +26,10 @@ impl CompileTimeHost for Expander<'_> {
         let binding = self
             .term_binding(term)
             .ok_or_else(|| self.unbound(term, Namespace::Value, span))?;
-        let scopes = self.definition_module(binding).map_or_else(
-            || term.scopes().clone(),
-            |module| self.modules.get(module).body_scopes(),
-        );
-        Ok(Symbol::with_scopes(name, scopes))
+        Ok(Symbol::with_scopes(
+            name,
+            self.definition_scopes(term, binding),
+        ))
     }
 
     fn is_bound(&self, symbol: &Symbol) -> bool {
@@ -59,6 +58,16 @@ impl CompileTimeHost for Expander<'_> {
 }
 
 impl Expander<'_> {
+    fn definition_scopes(&self, term: &Symbol, binding: BindingId) -> ScopeSet {
+        if let Some(module) = self.definition_module(binding) {
+            return self.modules.get(module).body_scopes();
+        }
+        match self.kind(binding) {
+            BindingKind::KernelForm(_) => term.scopes().clone(),
+            _ => ScopeSet::default(),
+        }
+    }
+
     fn term_binding(&self, term: &Symbol) -> Option<BindingId> {
         [Namespace::Value, Namespace::Type]
             .into_iter()
