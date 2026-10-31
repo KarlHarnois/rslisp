@@ -293,7 +293,7 @@
 (def docstring-before-parameters
   (fn (docstring)
     (fail "a docstring goes after the parameter list" docstring
-          "write it as the first body form, as in (defn name (x) \"Does a thing.\" body)"
+          "write it as the first body form, after the parameter list"
           (template (:code docstring-before-parameters :label "a docstring in place of the parameter list")))))
 
 (def docstring-before-body?
@@ -428,5 +428,5 @@
 (def undocumented
   (fn (term)
     (fail (string "`" term "` has no docstring") term
-          "write a docstring as the first body form where it is defined, as in (defn name (x) \"Does a thing.\" body)"
+          "write a docstring where it is defined, as the first form after the parameter list or the header"
           (template (:code undocumented-term :label "no docstring for this name")))))
