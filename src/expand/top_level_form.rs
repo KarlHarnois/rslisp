@@ -1,27 +1,6 @@
 use super::Expander;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, Help, Label};
-use crate::scope::FastHashSet;
-
-#[derive(PartialEq, Eq, Hash)]
-pub(super) struct RepeatedDiagnostic {
-    code: DiagnosticCode,
-    title: String,
-    labels: Vec<Label>,
-    notes: Vec<String>,
-    helps: Vec<Help>,
-}
-
-impl RepeatedDiagnostic {
-    fn of(diagnostic: &Diagnostic) -> Self {
-        Self {
-            code: diagnostic.code().clone(),
-            title: diagnostic.title().to_string(),
-            labels: diagnostic.labels().cloned().collect(),
-            notes: diagnostic.notes().to_vec(),
-            helps: diagnostic.helps().to_vec(),
-        }
-    }
-}
+use super::distinct_diagnostics::DistinctDiagnostics;
+use crate::diagnostic::Diagnostic;
 
 impl Expander<'_> {
     pub(super) fn within_top_level_form<T>(
@@ -32,31 +11,31 @@ impl Expander<'_> {
         let enclosing_budget = self.form_budget.refilled();
         let expanded = expand(self);
         self.form_budget = enclosing_budget;
-        let reported = expanded.as_ref().err().map(RepeatedDiagnostic::of);
-        self.drop_repeated_recoveries(first_recovered, reported.into_iter().collect());
-        expanded
-    }
-
-    pub(super) fn report_once(
-        &mut self,
-        diagnostic: Diagnostic,
-        reported: &mut FastHashSet<RepeatedDiagnostic>,
-    ) {
-        if reported.insert(RepeatedDiagnostic::of(&diagnostic)) {
-            self.diagnostics.push(diagnostic);
+        let recovered = self.recovered_diagnostics.split_off(first_recovered);
+        match expanded {
+            Ok(value) => {
+                self.recover_distinct(recovered);
+                Ok(value)
+            }
+            Err(error) => Err(self.recover_distinct_beside(error, recovered)),
         }
     }
 
-    fn drop_repeated_recoveries(
+    fn recover_distinct(&mut self, recovered: Vec<Diagnostic>) {
+        let distinct = DistinctDiagnostics::of(recovered);
+        self.recovered_diagnostics
+            .extend(distinct.into_diagnostics());
+    }
+
+    fn recover_distinct_beside(
         &mut self,
-        first_recovered: usize,
-        mut reported: FastHashSet<RepeatedDiagnostic>,
-    ) {
-        let recovered = self.recovered_diagnostics.split_off(first_recovered);
-        self.recovered_diagnostics.extend(
-            recovered
-                .into_iter()
-                .filter(|diagnostic| reported.insert(RepeatedDiagnostic::of(diagnostic))),
-        );
+        error: Diagnostic,
+        recovered: Vec<Diagnostic>,
+    ) -> Diagnostic {
+        let with_error = std::iter::once(error).chain(recovered);
+        let mut distinct = DistinctDiagnostics::of(with_error).into_diagnostics();
+        let most_helpful_error = distinct.remove(0);
+        self.recovered_diagnostics.extend(distinct);
+        most_helpful_error
     }
 }

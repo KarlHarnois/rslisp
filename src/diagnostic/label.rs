@@ -23,7 +23,7 @@ impl Label {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug)]
 pub struct Suggestion {
     span: Span,
     replacement: String,
@@ -46,7 +46,7 @@ impl Suggestion {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug)]
 pub struct Help {
     message: String,
     suggestion: Option<Suggestion>,

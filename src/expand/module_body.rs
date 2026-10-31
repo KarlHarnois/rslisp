@@ -3,6 +3,7 @@ use std::rc::Rc;
 use super::Expander;
 use super::TraitMethods;
 use super::context::DefinitionContext;
+use super::distinct_diagnostics::DistinctDiagnostics;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use super::spliced_forms::{SplicedForm, SplicedForms};
@@ -17,7 +18,6 @@ use crate::core::{
 use crate::diagnostic::{Counted, Diagnostic};
 use crate::emit::mangle::NameMangler;
 use crate::reader::{Form, FormKind, Symbol};
-use crate::scope::FastHashSet;
 use crate::source::Span;
 
 struct TraitLowering<'a, 'f> {
@@ -146,12 +146,15 @@ impl Expander<'_> {
         context: &mut DefinitionContext,
         pending: &mut Vec<PendingItem>,
     ) {
-        let mut reported = FastHashSet::default();
+        let mut errors = DistinctDiagnostics::default();
         while let Some(next) = spliced.take_first() {
             match self.register_spliced_form(module, next, context, &mut spliced) {
                 Ok(item) => pending.extend(item),
-                Err(diagnostic) => self.report_once(diagnostic, &mut reported),
+                Err(diagnostic) => errors.add(diagnostic),
             }
+        }
+        for diagnostic in errors.into_diagnostics() {
+            self.diagnostics.push(diagnostic);
         }
     }
 
