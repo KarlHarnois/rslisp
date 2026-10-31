@@ -41,10 +41,6 @@ impl CompileTimeHost for Expander<'_> {
         Symbol::with_scopes(name, scopes)
     }
 
-    fn is_bound(&self, symbol: &Symbol) -> bool {
-        self.term_binding(symbol).is_some()
-    }
-
     fn add_module_note(&mut self, key: &str, note: Form) {
         let module = self
             .current_module

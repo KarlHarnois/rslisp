@@ -1,4 +1,4 @@
-(use prelude/macros defmacro template map-list documented documented-body? doc-entry type-doc-symbol)
+(use prelude/macros defmacro template map-list documented-body? note-docstring type-doc-key)
 (use prelude/syntax defn definition declared-forms default-pairs type-missing? defaults-clause?
                     default-bindings call-signature signature-name signature-defaults
                     read-call has-argument? pair-keys)
@@ -87,8 +87,8 @@
 (defmacro defstruct (head body ...)
   "Defines a struct and its keyword constructor: (defstruct name :field type ...)."
   (if (documented-body? body)
-      (documented (struct-definition head (rest body))
-                  (doc-entry (type-doc-symbol (head-name head)) (list (quote defstruct) head) (first body)))
+      (do (note-docstring (type-doc-key (head-name head)) (list (quote defstruct) head) (first body))
+          (struct-definition head (rest body)))
       (struct-definition head body)))
 
 (def struct-definition
