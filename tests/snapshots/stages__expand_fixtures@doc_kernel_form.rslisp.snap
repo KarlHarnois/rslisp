@@ -9,4 +9,4 @@ error[L0327]: `if` has no docstring
 1 | (def if-page (doc if))
   |                   ^^ no docstring for this name
   |
-  = help: write a docstring as the first body form where it is defined, as in (defn name (x) "Does a thing." body)
+  = help: write a docstring where it is defined, as the first form after the parameter list or the header

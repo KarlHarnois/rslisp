@@ -9,4 +9,4 @@ error[L0328]: a docstring goes after the parameter list
 1 | (defmacro shout "Shouts." (x) x)
   |                 ^^^^^^^^^ a docstring in place of the parameter list
   |
-  = help: write it as the first body form, as in (defn name (x) "Does a thing." body)
+  = help: write it as the first body form, after the parameter list
