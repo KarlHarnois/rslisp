@@ -36,3 +36,8 @@
   (template (do (spread-top) (spread-top))))
 
 (spread-top)
+
+(defmacro loop-def ()
+  (template (do (def looped 1) (loop-def))))
+
+(loop-def)
