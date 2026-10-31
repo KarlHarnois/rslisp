@@ -19,6 +19,13 @@ impl TaskFailure {
         ))
     }
 
+    pub fn tool_failed(tool: &str, stderr: &[u8]) -> Self {
+        Self::new(format!(
+            "`{tool}` failed\n{}",
+            String::from_utf8_lossy(stderr)
+        ))
+    }
+
     pub fn tests_failed(output: &Output) -> Self {
         Self::new(format!(
             "the instrumented test run failed\n{}{}",
@@ -44,6 +51,10 @@ impl TaskFailure {
             "`{}` defines no string constant `{owner}::{name}`",
             path.display()
         ))
+    }
+
+    pub fn metadata_malformed() -> Self {
+        Self::new("cannot read the workspace's crates from `cargo metadata`".to_string())
     }
 
     pub fn malformed_tag(tag: &str) -> Self {

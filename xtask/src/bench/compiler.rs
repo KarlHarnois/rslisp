@@ -48,7 +48,7 @@ impl<'a> CompilerBuild<'a> {
             .into_iter()
             .chain([Self::PACKAGE_FLAG, spec.as_str()]);
         let mut clean = self.cargo_in_target(arguments);
-        Self::run_cargo(&mut clean, |stderr| {
+        Cargo::run(&mut clean, |stderr| {
             TaskFailure::tool_failed("cargo clean", stderr)
         })?;
         Ok(())
@@ -57,7 +57,7 @@ impl<'a> CompilerBuild<'a> {
     fn read_root_package_spec(&self) -> Result<String, TaskFailure> {
         let mut pkgid = self.cargo_in_checkout();
         pkgid.arg(Self::PACKAGE_ID_COMMAND);
-        let stdout = Self::run_cargo(&mut pkgid, |stderr| {
+        let stdout = Cargo::run(&mut pkgid, |stderr| {
             TaskFailure::tool_failed("cargo pkgid", stderr)
         })?;
         Ok(Self::package_spec(&stdout))
@@ -69,7 +69,7 @@ impl<'a> CompilerBuild<'a> {
 
     fn build_release(&self) -> Result<String, TaskFailure> {
         let mut build = self.release_build();
-        let stdout = Self::run_cargo(&mut build, |stderr| {
+        let stdout = Cargo::run(&mut build, |stderr| {
             TaskFailure::build_failed("the compiler", stderr)
         })?;
         Ok(String::from_utf8_lossy(&stdout).into_owned())
@@ -95,19 +95,6 @@ impl<'a> CompilerBuild<'a> {
         let mut command = Cargo::command();
         command.current_dir(self.workspace);
         command
-    }
-
-    fn run_cargo(
-        command: &mut Command,
-        failure: impl FnOnce(&[u8]) -> TaskFailure,
-    ) -> Result<Vec<u8>, TaskFailure> {
-        let output = command
-            .output()
-            .map_err(|error| TaskFailure::tool_missing("cargo", error))?;
-        if !output.status.success() {
-            return Err(failure(&output.stderr));
-        }
-        Ok(output.stdout)
     }
 
     fn read_artifacts(&self, messages: &str) -> Option<BuiltCompiler> {

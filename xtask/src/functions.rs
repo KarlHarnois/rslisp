@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::fmt;
 use std::fs;
 use std::io;
@@ -44,32 +45,37 @@ impl fmt::Display for SourceFunction {
 
 pub struct SourceTree {
     root: PathBuf,
+    directories: BTreeSet<PathBuf>,
 }
 
 impl SourceTree {
-    const DIRECTORY: &str = "src";
     const EXTENSION: &str = "rs";
 
-    pub fn new(root: &Path) -> Self {
+    pub fn new(root: &Path, directories: BTreeSet<PathBuf>) -> Self {
         Self {
             root: root.to_path_buf(),
+            directories,
         }
     }
 
     pub fn functions(&self) -> Result<Vec<SourceFunction>, TaskFailure> {
-        let directory = self.root.join(Self::DIRECTORY);
-        let mut files = Vec::new();
-        Self::collect_files(&directory, &mut files)
-            .map_err(|error| TaskFailure::unreadable(&directory, error))?;
-        files.sort();
         let mut functions = Vec::new();
-        for file in files {
+        for file in self.files()? {
             functions.extend(self.functions_in(&file)?);
         }
         Ok(functions)
     }
 
-    fn collect_files(directory: &Path, files: &mut Vec<PathBuf>) -> io::Result<()> {
+    fn files(&self) -> Result<BTreeSet<PathBuf>, TaskFailure> {
+        let mut files = BTreeSet::new();
+        for directory in &self.directories {
+            Self::collect_files(directory, &mut files)
+                .map_err(|error| TaskFailure::unreadable(directory, error))?;
+        }
+        Ok(files)
+    }
+
+    fn collect_files(directory: &Path, files: &mut BTreeSet<PathBuf>) -> io::Result<()> {
         for entry in fs::read_dir(directory)? {
             let path = entry?.path();
             if path.is_dir() {
@@ -78,7 +84,7 @@ impl SourceTree {
                 .extension()
                 .is_some_and(|extension| extension == Self::EXTENSION)
             {
-                files.push(path);
+                files.insert(path);
             }
         }
         Ok(())
@@ -189,7 +195,8 @@ impl<'ast> Visit<'ast> for FunctionCollector {
 
 #[cfg(test)]
 mod tests {
-    use super::{FunctionCollector, LineSpan};
+    use super::{FunctionCollector, LineSpan, SourceTree};
+    use crate::workspace::WorkspaceFixture;
 
     struct SampleFile;
 
@@ -251,6 +258,23 @@ mod tests {
                 "src/shapes.rs:8 Square::side 2",
                 "src/shapes.rs:14 Shape::name 1",
                 "src/shapes.rs:22 Square::sides 1",
+            ]
+        );
+    }
+
+    #[test]
+    fn scans_the_sources_of_every_crate_in_the_workspace() {
+        let workspace = WorkspaceFixture::workspace();
+        let functions = SourceTree::new(&WorkspaceFixture::root(), workspace.source_directories())
+            .functions()
+            .unwrap();
+        let names: Vec<String> = functions.iter().map(ToString::to_string).collect();
+        assert_eq!(
+            names,
+            [
+                "src/lib.rs:1 post_entry",
+                "src/main.rs:1 main",
+                "syntax/src/lib.rs:1 read_entry",
             ]
         );
     }

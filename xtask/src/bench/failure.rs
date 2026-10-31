@@ -18,13 +18,6 @@ impl TaskFailure {
         ))
     }
 
-    pub fn tool_failed(tool: &str, stderr: &[u8]) -> Self {
-        Self::new(format!(
-            "`{tool}` failed\n{}",
-            String::from_utf8_lossy(stderr)
-        ))
-    }
-
     pub fn compiler_missing(workspace: &Path) -> Self {
         Self::new(format!(
             "the release build of `{}` produced no binary of its root package",
