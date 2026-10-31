@@ -1,0 +1,15 @@
+(defstruct tally :counter (fn ((iterator (ref i64))) usize))
+
+(enum survey
+  (counted (option (fn ((option (iterator i64))) usize)))
+  skipped)
+
+(defn tally-years (counter years) (counter (iter years)))
+
+(defn counter-of () count)
+
+(defn main ()
+  (let years (vec 2019 2021 2024))
+  (println (tally-years count years))
+  (println ((:counter (->tally count)) (iter years)))
+  (println ((counter-of) (iter years))))
