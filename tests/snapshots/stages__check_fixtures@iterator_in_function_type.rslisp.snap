@@ -47,3 +47,12 @@ error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
    |
    = note: Rust names this type only as the type of a function's own parameter or result
    = help: pass a value whose type Rust can name instead, such as the collection the items come from
+
+error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
+  --> check/iterator_in_function_type.rslisp:17:29
+   |
+17 | (type counter-signed (fn () (fn ((iterator (ref i64))) usize)))
+   |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this holds `(iterator (ref i64))` inside a function type
+   |
+   = note: Rust names this type only as the type of a function's own parameter or result
+   = help: pass a value whose type Rust can name instead, such as the collection the items come from
