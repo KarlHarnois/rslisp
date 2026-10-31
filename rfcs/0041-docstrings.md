@@ -55,7 +55,7 @@ const AREA_DOC: &str = "Multiplies a width by a height.";
 
 Option B.
 
-- It keeps "If the prelude can express a feature, NEVER add a kernel form for it": storage and lookup are prelude macros. The compiler gains three built-ins that state no prelude fact. `definition-symbol` is the module-scoped twin of `symbol`, and `bound?` is a resolution test.
+- It keeps "If the prelude can express a feature, NEVER add a kernel form for it": storage and lookup are prelude macros. The compiler gains three built-ins that state no prelude fact. `definition-symbol` is the module-scoped twin of `symbol`, `type-definition-symbol` is its twin for a type binding, and `bound?` is a resolution test.
 - It keeps "NEVER emit a clone or an allocation that the source does not write": a lookup is a string literal, and a `doc/<name>` macro emits no Rust.
 - It reaches imported and re-exported terms through the binding itself, which A cannot do without a second export for every documented name.
 
