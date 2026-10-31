@@ -354,7 +354,7 @@ The prelude's lookups expand to string literals at expansion time, so `(def twic
 | `(header term)` | The first line of the definition as written, such as `"(defn twice (x))"`. |
 | `(doc term)` | The page: the header, a blank line, then the docstring. |
 
-A lookup finds the docstring in the module that defines the binding `term` refers to, so an imported or re-exported term needs no other export. Each definer stores the header and the docstring as a note under `docstrings` in its module's notes, with `add-module-note`, and defines no other name, so a program may define `doc/twice` beside a documented `twice`. A lookup reads the notes of the defining module with `module-notes`. An unbound term is `L0201`, with the closest name. A bound term without a docstring is `L0327`.
+A lookup finds the docstring in the module that defines the binding `term` refers to, so an imported or re-exported term needs no other export. Each definer stores the header and the docstring as a note under `docstrings` in its module's notes, with `add-module-note`, and defines no other name, so a program may define `doc/twice` beside a documented `twice`. A lookup reads the notes of the defining module with `module-notes` and takes the note whose name refers to the same binding as `term`, so a documented name that a macro introduces never answers for a user's name of the same spelling. An unbound term is `L0201`, with the closest name. A bound term without a docstring is `L0327`.
 
 A docstring is Markdown. A lookup removes the indentation that every written continuation line shares, as Python's `inspect.cleandoc` does, and drops blank lines at both ends. Write docstrings to these rules, which no compile error enforces:
 

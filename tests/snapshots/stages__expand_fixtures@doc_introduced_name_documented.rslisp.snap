@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_introduced_name_documented.rslisp
+---
+(def helper (fn (x) x))
+(def helper_2 (fn (x_2) x_2))
+(def helper-page "(defn helper (x))\n\nHelps the user.")

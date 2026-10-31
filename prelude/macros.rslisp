@@ -323,11 +323,11 @@
 
 (def value-doc-key
   (fn (name)
-    (list "value" (symbol-name name))))
+    (list "value" name)))
 
 (def type-doc-key
   (fn (name)
-    (list "type" (symbol-name name))))
+    (list "type" name)))
 
 (def clean-docstring
   (fn (text)
@@ -439,7 +439,7 @@
 
 (def same-doc-key?
   (fn (key note)
-    (if (value-eq (first key) (first note)) (value-eq (nth key 1) (nth note 1)) false)))
+    (if (value-eq (first key) (first note)) (same-binding? (nth key 1) (nth note 1)) false)))
 
 (def undocumented
   (fn (term)
