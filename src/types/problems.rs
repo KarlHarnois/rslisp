@@ -581,7 +581,9 @@ impl TypeProblems {
             ),
         )
         .with_note("Rust names this type only as the type of a function's own parameter or result")
-        .with_help("take the collection instead, and call `iter` on it where the items are used")
+        .with_help(
+            "pass a value whose type Rust can name instead, such as the collection the items come from",
+        )
     }
 
     pub fn unknown_collection(span: Span) -> Diagnostic {
