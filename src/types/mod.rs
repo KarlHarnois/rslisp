@@ -32,6 +32,8 @@ mod templates;
 mod traits;
 mod ty;
 mod typed;
+#[cfg(test)]
+mod typed_source;
 mod unifier;
 mod walk;
 mod wrapper;
@@ -60,4 +62,6 @@ pub use typed::{
     TypedModule, TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr, TypedTrait,
     TypedTraitImpl, TypedTraitMethod,
 };
+#[cfg(test)]
+pub use typed_source::TypedSource;
 pub use wrapper::{FunctionValueWrapper, PreparedFunctionValue};

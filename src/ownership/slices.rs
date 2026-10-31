@@ -428,18 +428,12 @@ impl<'a, 'b> BodyUses<'a, 'b> {
 #[cfg(test)]
 mod tests {
     use std::collections::{HashMap, HashSet};
-    use std::path::PathBuf;
 
     use super::ShrinkSelection;
-    use crate::core::{BindingId, ModulePath};
-    use crate::expand::Expander;
-    use crate::modules::ModuleSources;
+    use crate::core::BindingId;
     use crate::ownership::functions::{FunctionTable, ParamMode};
     use crate::ownership::modes::ModeInference;
-    use crate::source::SourceMap;
-    use crate::types::{
-        CopyRules, DefinitionGraph, InferredCopies, LiteralDefaults, TypeChecker, TypedProgram,
-    };
+    use crate::types::{CopyRules, TypedProgram, TypedSource};
 
     struct SelectionFixture {
         program: TypedProgram,
@@ -461,7 +455,7 @@ mod tests {
               (println (oldest-year years) (next-year 2024)))";
 
         fn new() -> Self {
-            let program = Self::typed(Self::CALLER_CHAIN);
+            let program = TypedSource::expand(Self::CALLER_CHAIN).typed();
             let functions = FunctionTable::collect(&program);
             let copy = CopyRules::new(
                 &program.traits,
@@ -475,25 +469,6 @@ mod tests {
                 functions,
                 modes,
             }
-        }
-
-        fn typed(source: &str) -> TypedProgram {
-            let mut sources = SourceMap::default();
-            let entry = sources.add("chain.rslisp", source);
-            let module_sources = ModuleSources::new(PathBuf::from("."), PathBuf::from("."));
-            let program = Expander::new(&mut sources, module_sources)
-                .expand(ModulePath::new("chain"), entry)
-                .expect("the chain expands");
-            TypeChecker::check(
-                &program,
-                &DefinitionGraph::of(&program),
-                &HashSet::new(),
-                &InferredCopies::default(),
-                &HashMap::new(),
-                LiteralDefaults::default(),
-                false,
-            )
-            .expect("the chain checks")
         }
 
         fn selection(&self) -> ShrinkSelection<'_> {
