@@ -6,7 +6,9 @@
 
 (defn tally-years (counter years) (counter (iter years)))
 
-(defn counter-of () count)
+(defn counter-of ()
+  (println "counting")
+  count)
 
 (type tally-signed (fn ((fn ((iterator (ref i64))) usize) (ref (vec i64))) usize))
 
