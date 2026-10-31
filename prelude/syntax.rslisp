@@ -1,4 +1,4 @@
-(use prelude/macros defrule defmacro template map-list whole-pairs? documented doc-entry doc-symbol docstring-before-body?
+(use prelude/macros defrule defmacro template map-list whole-pairs? note-docstring value-doc-key docstring-before-body?
                     docstring-before-parameters)
 (use code first rest list nth take drop length empty? list? symbol? string? symbol symbol-name value-eq prepend
           concat string fail closest-name keyword? keyword-name keyword-field field-keyword number-sub bool-not)
@@ -15,8 +15,8 @@
   (if (string? parameters)
       (docstring-before-parameters parameters)
       (if (docstring-before-body? body)
-          (documented (function-definition name parameters (rest body))
-                      (doc-entry (doc-symbol name) (list (quote defn) name parameters) (first body)))
+          (do (note-docstring (value-doc-key name) (list (quote defn) name parameters) (first body))
+              (function-definition name parameters (rest body)))
           (function-definition name parameters body))))
 
 (def function-definition

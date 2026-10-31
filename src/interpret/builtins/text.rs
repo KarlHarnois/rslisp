@@ -127,11 +127,6 @@ impl<'a> TextOperations<'a> {
         Value::Form(Form::new(FormKind::Symbol(symbol), self.call_site))
     }
 
-    pub fn is_bound(&self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
-        self.arguments.expect_count(1)?;
-        Ok(Value::Bool(host.is_bound(self.arguments.symbol(0)?)))
-    }
-
     pub fn add_module_note(&self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(2)?;
         host.add_module_note(self.arguments.symbol(0)?.name(), self.arguments.form(1)?);

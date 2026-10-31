@@ -1,0 +1,5 @@
+(defn twice (x) "Doubles a number." (* 2 x))
+
+(def doc/twice 1)
+
+(def twice-page (doc twice))

@@ -1,9 +1,9 @@
 (use code first rest list prepend concat length empty? nth take drop
-          symbol? list? string? symbol-name symbol string same-binding? fail
-          definition-symbol type-definition-symbol bound? value-eq number-add number-sub number-lt
+          symbol? list? string? symbol-name string same-binding? fail
+          definition-symbol type-definition-symbol add-module-note module-notes value-eq number-add number-sub number-lt
           string-lines string-trim-start string-length string-drop string-strip-suffix)
 
-(export defrule defmacro template map-list whole-pairs? documented doc-entry doc-symbol type-doc-symbol
+(export defrule defmacro template map-list whole-pairs? note-docstring value-doc-key type-doc-key
         docstring-before-body? documented-body? docstring-before-parameters
         doc docstring header)
 
@@ -231,8 +231,8 @@
     (let name (nth form 1))
     (let body (drop 2 form))
     (if (documented-body? body)
-        (documented (rule-definition name (rest body))
-                    (doc-entry (doc-symbol name) (list (quote defrule) name) (first body)))
+        (do (note-docstring (value-doc-key name) (list (quote defrule) name) (first body))
+            (rule-definition name (rest body)))
         (rule-definition name body))))
 
 (def documented-body?
@@ -286,8 +286,8 @@
     (if (string? pattern)
         (docstring-before-parameters pattern)
         (if (docstring-before-body? body)
-            (documented (macro-definition name pattern (rest body))
-                        (doc-entry (doc-symbol name) (list (quote defmacro) name pattern) (first body)))
+            (do (note-docstring (value-doc-key name) (list (quote defmacro) name pattern) (first body))
+                (macro-definition name pattern (rest body)))
             (macro-definition name pattern body)))))
 
 (def docstring-before-parameters
@@ -309,16 +309,9 @@
                   (pattern-lets pattern)
                   body))))
 
-(def documented
-  (fn (definition entry)
-    (list (quote do) definition entry)))
-
-(def doc-entry
-  (fn (entry header text)
-    (list (quote def) entry
-          (list (quote macro) (list (quote doc-form))
-                (list (quote doc-part) (list (quote nth) (quote doc-form) 1)
-                      (list (quote quote) header) text)))))
+(def note-docstring
+  (fn (key header text)
+    (add-module-note (quote docstrings) (concat key (list header text)))))
 
 (def doc-part
   (fn (part header text)
@@ -328,13 +321,13 @@
             (clean-docstring text)
             (string header "\n\n" (clean-docstring text))))))
 
-(def doc-symbol
+(def value-doc-key
   (fn (name)
-    (symbol name "doc/" name)))
+    (list "value" (symbol-name name))))
 
-(def type-doc-symbol
+(def type-doc-key
   (fn (name)
-    (symbol name "doc-type/" name)))
+    (list "type" (symbol-name name))))
 
 (def clean-docstring
   (fn (text)
@@ -407,23 +400,46 @@
 
 (defmacro doc (term)
   "Returns the page of a term as a string: its header, a blank line, then its docstring."
-  (list (documentation-of term) (quote page)))
+  (documentation-part (quote page) term))
 
 (defmacro docstring (term)
   "Returns the docstring of a term as a string."
-  (list (documentation-of term) (quote docstring)))
+  (documentation-part (quote docstring) term))
 
 (defmacro header (term)
   "Returns the first line of a term's definition as written, as in (defn area (width height))."
-  (list (documentation-of term) (quote header)))
+  (documentation-part (quote header) term))
+
+(def documentation-part
+  (fn (part term)
+    (let note (documentation-of term))
+    (doc-part part (nth note 2) (nth note 3))))
 
 (def documentation-of
   (fn (term)
-    (let value-entry (definition-symbol term "doc/" term))
-    (let type-entry (type-definition-symbol term "doc-type/" term))
-    (if (bound? value-entry)
-        value-entry
-        (if (bound? type-entry) type-entry (undocumented term)))))
+    (let value-notes (docstring-notes (definition-symbol term "doc") (value-doc-key term)))
+    (if (empty? value-notes) (type-documentation-of term) (first value-notes))))
+
+(def type-documentation-of
+  (fn (term)
+    (let type-notes (docstring-notes (type-definition-symbol term "doc") (type-doc-key term)))
+    (if (empty? type-notes) (undocumented term) (first type-notes))))
+
+(def docstring-notes
+  (fn (context key)
+    (notes-with-key key (module-notes context (quote docstrings)))))
+
+(def notes-with-key
+  (fn (key notes)
+    (if (empty? notes)
+        notes
+        (if (same-doc-key? key (first notes))
+            (take 1 notes)
+            (recur key (rest notes))))))
+
+(def same-doc-key?
+  (fn (key note)
+    (if (value-eq (first key) (first note)) (value-eq (nth key 1) (nth note 1)) false)))
 
 (def undocumented
   (fn (term)
