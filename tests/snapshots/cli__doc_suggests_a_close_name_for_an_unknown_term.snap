@@ -1,0 +1,15 @@
+---
+source: tests/cli.rs
+expression: doc.assert_exit_code(1).stderr()
+---
+error[L0201]: cannot find `defm` in this scope
+ --> <term>:1:1
+  |
+1 | defm
+  | ^^^^ not found in this scope
+  |
+help: a name with a similar spelling exists
+  |
+1 - defm
+1 + def
+  |

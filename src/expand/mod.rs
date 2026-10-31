@@ -14,6 +14,7 @@ mod problems;
 mod recur_check;
 mod rest_of_body;
 mod rust_type;
+mod session;
 mod shape;
 mod try_check;
 mod type_expr;
@@ -32,6 +33,7 @@ use globals::GlobalTable;
 pub use macro_call::MacroOrigin;
 use macro_call::MacroTable;
 pub use problems::ExpandProblems;
+pub use session::ExpansionSession;
 
 pub struct Program {
     pub modules: Vec<CoreModule>,
@@ -120,19 +122,25 @@ impl<'s> Expander<'s> {
         }
     }
 
-    pub fn expand(mut self, path: ModulePath, entry: SourceId) -> Result<Program, Diagnostics> {
-        let entry = self.load_source_module(path, entry);
+    pub fn expand(self, path: ModulePath, entry: SourceId) -> Result<Program, Diagnostics> {
+        self.open(path, entry).map(ExpansionSession::program)
+    }
+
+    fn take_diagnostics(&mut self) -> Diagnostics {
         for diagnostic in std::mem::take(&mut self.recovered_diagnostics) {
             self.diagnostics.push(diagnostic);
         }
-        let program = Program {
+        std::mem::take(&mut self.diagnostics)
+    }
+
+    fn into_program(mut self, entry: ModuleId) -> Program {
+        Program {
             modules: self.take_modules(),
             entry,
             bindings: self.bindings,
             macro_origins: self.macro_origins,
             warnings: self.warnings,
-        };
-        self.diagnostics.into_result(program)
+        }
     }
 
     fn fresh_local_scope(&mut self) -> Scope {

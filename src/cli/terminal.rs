@@ -7,11 +7,12 @@ use super::build_directory::BuildDirectory;
 use super::capped_report::CappedReport;
 use super::exit_status::ExitStatus;
 use crate::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
-use crate::core::ModulePath;
+use crate::core::{Expr, ModulePath};
 use crate::diagnostic::{DiagnosticRenderer, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
 use crate::expand::{Expander, Program};
 use crate::modules::ModuleSources;
+use crate::reader::{Form, Reader};
 use crate::source::Span;
 use crate::source::{SourceId, SourceMap};
 use crate::types::TypedProgram;
@@ -37,9 +38,17 @@ impl Terminal {
 
     pub fn load(&mut self, path: &Path) -> Result<SourceId, ExitStatus> {
         match ModuleSources::read_file(path) {
-            Ok(text) => Ok(self.sources.add(path.display().to_string(), text)),
+            Ok(text) => Ok(self.add_source(path, text)),
             Err(error) => Err(Self::report_unreadable(path, &error)),
         }
+    }
+
+    pub fn add_empty_source(&mut self, path: &Path) -> SourceId {
+        self.add_source(path, String::new())
+    }
+
+    fn add_source(&mut self, path: &Path, text: String) -> SourceId {
+        self.sources.add(path.display().to_string(), text)
     }
 
     pub fn build(&mut self, path: &Path, options: &BuildOptions) -> Result<PathBuf, ExitStatus> {
@@ -96,12 +105,40 @@ impl Terminal {
 
     pub fn expand(&mut self, path: &Path) -> Result<Program, ExitStatus> {
         let entry = self.load(path)?;
-        let directory = Self::directory_of(path);
-        let module_sources = ModuleSources::new(directory.clone(), directory);
-        let module_path = ModulePath::new(Self::module_name(path));
-        Expander::new(&mut self.sources, module_sources)
-            .expand(module_path, entry)
+        self.expander(path)
+            .expand(Self::module_path(path), entry)
             .map_err(|diagnostics| self.report(&diagnostics))
+    }
+
+    pub fn read_text(&mut self, name: &str, text: &str) -> Result<Vec<Form>, ExitStatus> {
+        let source = self.sources.add(name, text);
+        Reader::new(self.sources.file(source))
+            .read()
+            .map_err(|diagnostics| self.report(&diagnostics))
+    }
+
+    pub fn expand_expression(
+        &mut self,
+        path: &Path,
+        entry: SourceId,
+        expression: Form,
+    ) -> Result<Expr, ExitStatus> {
+        self.expander(path)
+            .open(Self::module_path(path), entry)
+            .and_then(|mut session| session.expression(expression))
+            .map_err(|diagnostics| self.report(&diagnostics))
+    }
+
+    fn expander(&mut self, path: &Path) -> Expander<'_> {
+        let directory = Self::directory_of(path);
+        Expander::new(
+            &mut self.sources,
+            ModuleSources::new(directory.clone(), directory),
+        )
+    }
+
+    fn module_path(path: &Path) -> ModulePath {
+        ModulePath::new(Self::module_name(path))
     }
 
     fn print_warnings(&self, warnings: &Diagnostics) {
