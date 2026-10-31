@@ -131,7 +131,7 @@ impl OwnershipChecker {
             let report = match &definition.value.kind {
                 TypedExprKind::Fn(lambda) => {
                     ReturnedBorrows::new(program)
-                        .check(lambda)
+                        .check_every_function(&definition.value)
                         .into_iter()
                         .for_each(|diagnostic| diagnostics.push(diagnostic));
                     Self::move_checker(program, pipelines, &stored_definitions)

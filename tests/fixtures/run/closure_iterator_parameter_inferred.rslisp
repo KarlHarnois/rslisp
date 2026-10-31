@@ -1,0 +1,12 @@
+(defn sum-of (it) (fold it 0 (fn (total year) (+ total year))))
+
+(defn main ()
+  (let through-function (fn (it) (sum-of it)))
+  (println (through-function (range 2019 2025)))
+  (let pass (fn (it) it))
+  (println (count (pass (range 2019 2025))))
+  (let extra (range 0 3))
+  (let combined (fn (it) (println (sum-of it)) (count extra)))
+  (println (combined (range 2019 2025)))
+  (let label-length (fn (label) (len label)))
+  (println (label-length "Nissan Leaf")))

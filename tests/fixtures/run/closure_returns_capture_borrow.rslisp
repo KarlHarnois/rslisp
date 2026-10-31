@@ -1,0 +1,7 @@
+(defn first-of-capture ()
+  (let years (vec 2019 2021 2024))
+  (let first (fn () (at years 0)))
+  (println (first)))
+
+(defn main ()
+  (first-of-capture))

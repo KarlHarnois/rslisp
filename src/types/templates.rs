@@ -26,6 +26,10 @@ impl TemplateBorrows {
         self.read_template(callee, false, |parsed| parsed.advances_receiver(position))
     }
 
+    pub fn receives(&self, callee: &TypedExpr, position: usize) -> bool {
+        self.read_template(callee, false, |parsed| parsed.receives(position))
+    }
+
     pub fn keeps(&self, callee: &TypedExpr, position: usize) -> bool {
         self.reference(callee, position).is_some()
     }

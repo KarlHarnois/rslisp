@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/closure_iterator_receiver.rslisp
+---
+error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
+ --> check/closure_iterator_receiver.rslisp:3:19
+  |
+3 |   (let tally (fn (it) (count it)))
+  |                   ^^ this parameter holds `(iterator (ref i64))`, and the closure calls a method on it
+  |
+  = note: Rust names this type only as the type of a function's own parameter or result
+  = note: Rust must know a closure parameter's type before the closure calls a method on it
+  = help: define the function with `defn`, whose parameters can take an `iterator`
+
+error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
+ --> check/closure_iterator_receiver.rslisp:5:26
+  |
+5 |   (let offset-tally (fn (it) (+ 1 (count it))))
+  |                          ^^ this parameter holds `(iterator (ref i64))`, and the closure calls a method on it
+  |
+  = note: Rust names this type only as the type of a function's own parameter or result
+  = note: Rust must know a closure parameter's type before the closure calls a method on it
+  = help: define the function with `defn`, whose parameters can take an `iterator`

@@ -1,4 +1,4 @@
-use super::problems::{BorrowedStorage, OwnershipProblems};
+use super::problems::{BorrowedStorage, DroppedValue, OwnershipProblems};
 use super::slots::DeclaredSlots;
 use crate::core::{BindingId, FieldLabel, PrimitiveType};
 use crate::diagnostic::Diagnostic;
@@ -22,14 +22,22 @@ impl<'p> ReturnedBorrows<'p> {
         }
     }
 
-    pub fn check(&self, lambda: &TypedLambda) -> Option<Diagnostic> {
+    pub fn check_every_function(&self, value: &TypedExpr) -> Vec<Diagnostic> {
+        LocalBorrows::lambdas_in(value)
+            .into_iter()
+            .filter_map(|lambda| self.check(lambda))
+            .collect()
+    }
+
+    fn check(&self, lambda: &TypedLambda) -> Option<Diagnostic> {
         let tail = LocalBorrows::tail_of(&lambda.body)?;
-        let found = LocalBorrows::new(&lambda.params).returned(tail)?;
-        let defined = LocalBorrows::local_span(&lambda.body, found.binding).unwrap_or(found.span);
+        let borrows = LocalBorrows::new(lambda);
+        let found = borrows.returned(tail)?;
+        let dropped = borrows.dropped(&found);
         let storage = found.holders.iter().find_map(|holder| self.storage(holder));
         Some(match storage {
-            Some(storage) => OwnershipProblems::stored_local_borrow(found.span, defined, &storage),
-            None => OwnershipProblems::local_borrow(found.span, defined),
+            Some(storage) => OwnershipProblems::stored_local_borrow(found.span, &dropped, &storage),
+            None => OwnershipProblems::local_borrow(found.span, &dropped),
         })
     }
 
@@ -143,12 +151,20 @@ enum BorrowHolder<'e> {
 }
 
 struct LocalBorrows<'e> {
-    params: &'e [TypedBinder],
+    lambda: &'e TypedLambda,
 }
 
 impl<'e> LocalBorrows<'e> {
-    fn new(params: &'e [TypedBinder]) -> Self {
-        Self { params }
+    fn new(lambda: &'e TypedLambda) -> Self {
+        Self { lambda }
+    }
+
+    fn lambdas_in(value: &TypedExpr) -> Vec<&TypedLambda> {
+        let nested = value.children().into_iter().flat_map(Self::lambdas_in);
+        match &value.kind {
+            TypedExprKind::Fn(lambda) => std::iter::once(lambda.as_ref()).chain(nested).collect(),
+            _ => nested.collect(),
+        }
     }
 
     fn returned(&self, expr: &'e TypedExpr) -> Option<LocalBorrow<'e>> {
@@ -235,10 +251,54 @@ impl<'e> LocalBorrows<'e> {
 
     fn local_root(&self, place: &TypedExpr) -> Option<BindingId> {
         let binding = place.place_root()?;
-        self.params
+        self.owns(binding).then_some(binding)
+    }
+
+    fn owns(&self, binding: BindingId) -> bool {
+        match self.parameter(binding) {
+            Some(parameter) => !parameter.ty.is_reference(),
+            None => self.body_binder(binding).is_some(),
+        }
+    }
+
+    fn parameter(&self, binding: BindingId) -> Option<&'e TypedBinder> {
+        self.lambda
+            .params
             .iter()
-            .all(|param| param.binding != binding)
-            .then_some(binding)
+            .find(|parameter| parameter.binding == binding)
+    }
+
+    fn body_binder(&self, binding: BindingId) -> Option<&'e TypedBinder> {
+        self.lambda
+            .binders()
+            .find(|binder| binder.binding == binding)
+            .or_else(|| {
+                self.lambda
+                    .body
+                    .expressions()
+                    .find_map(|expr| Self::binder_inside(expr, binding))
+            })
+    }
+
+    fn binder_inside(expr: &'e TypedExpr, binding: BindingId) -> Option<&'e TypedBinder> {
+        expr.binders()
+            .into_iter()
+            .find(|binder| binder.binding == binding)
+            .or_else(|| {
+                expr.children()
+                    .into_iter()
+                    .find_map(|child| Self::binder_inside(child, binding))
+            })
+    }
+
+    fn dropped(&self, found: &LocalBorrow) -> DroppedValue {
+        match self.parameter(found.binding) {
+            Some(parameter) => DroppedValue::Parameter(parameter.span),
+            None => DroppedValue::Local(
+                self.body_binder(found.binding)
+                    .map_or(found.span, |binder| binder.span),
+            ),
+        }
     }
 
     fn tail_of(block: &TypedBlock) -> Option<&TypedExpr> {
@@ -246,13 +306,6 @@ impl<'e> LocalBorrows<'e> {
             TypedBodyItem::Expr(expr) => Some(expr),
             TypedBodyItem::Let(..) => None,
         }
-    }
-
-    fn local_span(block: &TypedBlock, binding: BindingId) -> Option<Span> {
-        block.items.iter().find_map(|item| match item {
-            TypedBodyItem::Let(binder, _) if binder.binding == binding => Some(binder.span),
-            _ => None,
-        })
     }
 }
 

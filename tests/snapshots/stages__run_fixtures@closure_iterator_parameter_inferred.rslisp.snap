@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/closure_iterator_parameter_inferred.rslisp
+---
+12129
+6
+12129
+3
+11

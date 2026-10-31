@@ -588,6 +588,18 @@ impl TypeProblems {
         )
     }
 
+    pub fn closure_receiver_unnameable_type(opaque: &str, span: Span) -> Diagnostic {
+        let label = Label::new(
+            span,
+            format!("this parameter holds `{opaque}`, and the closure calls a method on it"),
+        );
+        Self::unnameable(opaque, label)
+            .with_note(
+                "Rust must know a closure parameter's type before the closure calls a method on it",
+            )
+            .with_help("define the function with `defn`, whose parameters can take an `iterator`")
+    }
+
     fn unnameable(opaque: &str, label: Label) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::UNNAMEABLE_TYPE,

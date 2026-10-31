@@ -1,0 +1,44 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/closure_returns_owned_borrow.rslisp
+---
+error[L0510]: cannot return a borrow of a local value
+ --> check/closure_returns_owned_borrow.rslisp:2:26
+  |
+2 |   (let first (fn (items) (at items 0)))
+  |                   -----  ^^^^^^^^^^^^ this borrows a local value
+  |                   |
+  |                   this parameter owns its value, which is dropped when the function returns
+  |
+  = help: return an owned value with `(clone ...)`, or give this parameter a borrowed type
+
+error[L0510]: cannot return a borrow of a local value
+ --> check/closure_returns_owned_borrow.rslisp:6:27
+  |
+6 | (defn first-owned (items) (at items 0))
+  |                    -----  ^^^^^^^^^^^^ this borrows a local value
+  |                    |
+  |                    this parameter owns its value, which is dropped when the function returns
+  |
+  = help: return an owned value with `(clone ...)`, or give this parameter a borrowed type
+
+error[L0510]: cannot return a borrow of a local value
+ --> check/closure_returns_owned_borrow.rslisp:9:54
+  |
+9 |   (let first (fn () (let years (vec 2019 2021 2024)) (at years 0)))
+  |                          -----                       ^^^^^^^^^^^^ this borrows a local value
+  |                          |
+  |                          this local is dropped when the function returns
+  |
+  = help: return an owned value with `(clone ...)`, or borrow from a parameter
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/closure_returns_owned_borrow.rslisp:18:56
+   |
+18 |           ((some year) (do (let years (vec year 2024)) (at years 0)))
+   |                                 -----                  ^^^^^^^^^^^^ this borrows a local value
+   |                                 |
+   |                                 this local is dropped when the function returns
+   |
+   = help: return an owned value with `(clone ...)`, or borrow from a parameter
