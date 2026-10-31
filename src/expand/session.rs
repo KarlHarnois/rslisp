@@ -1,4 +1,4 @@
-use super::{Expander, Program};
+use super::Expander;
 use crate::core::{Expr, ModuleId, ModulePath};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::reader::Form;
@@ -28,10 +28,6 @@ impl ExpansionSession<'_> {
         let scoped = self.in_entry_scope(form);
         let lowered = self.lower_in_entry(&scoped);
         self.collect_diagnostics(lowered)
-    }
-
-    pub fn program(self) -> Program {
-        self.expander.into_program(self.entry)
     }
 
     fn in_entry_scope(&self, mut form: Form) -> Form {

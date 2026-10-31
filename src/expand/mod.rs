@@ -122,8 +122,17 @@ impl<'s> Expander<'s> {
         }
     }
 
-    pub fn expand(self, path: ModulePath, entry: SourceId) -> Result<Program, Diagnostics> {
-        self.open(path, entry).map(ExpansionSession::program)
+    pub fn expand(mut self, path: ModulePath, entry: SourceId) -> Result<Program, Diagnostics> {
+        let entry = self.load_source_module(path, entry);
+        let diagnostics = self.take_diagnostics();
+        let program = Program {
+            modules: self.take_modules(),
+            entry,
+            bindings: self.bindings,
+            macro_origins: self.macro_origins,
+            warnings: self.warnings,
+        };
+        diagnostics.into_result(program)
     }
 
     fn take_diagnostics(&mut self) -> Diagnostics {
@@ -131,16 +140,6 @@ impl<'s> Expander<'s> {
             self.diagnostics.push(diagnostic);
         }
         std::mem::take(&mut self.diagnostics)
-    }
-
-    fn into_program(mut self, entry: ModuleId) -> Program {
-        Program {
-            modules: self.take_modules(),
-            entry,
-            bindings: self.bindings,
-            macro_origins: self.macro_origins,
-            warnings: self.warnings,
-        }
     }
 
     fn fresh_local_scope(&mut self) -> Scope {
