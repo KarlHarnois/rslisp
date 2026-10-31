@@ -313,6 +313,69 @@
   (fn (key header text)
     (add-module-note (quote docstrings) (concat key (list header text)))))
 
+(def value-doc-key
+  (fn (name)
+    (list "value" name)))
+
+(def whole-pairs?
+  (fn (arguments)
+    (if (empty? arguments)
+        true
+        (if (empty? (rest arguments)) false (recur (drop 2 arguments))))))
+
+(defmacro doc (term)
+  "Returns the page of a term as a string: its header, a blank line, then its docstring."
+  (documentation-part (quote page) term))
+
+(defmacro docstring (term)
+  "Returns the docstring of a term as a string."
+  (documentation-part (quote docstring) term))
+
+(defmacro header (term)
+  "Returns the first line of a term's definition as written, as in (defn area (width height))."
+  (documentation-part (quote header) term))
+
+(def documentation-part
+  (fn (part term)
+    (let note (documentation-of term))
+    (doc-part part (nth note 2) (nth note 3))))
+
+(def documentation-of
+  (fn (term)
+    (let value-notes (docstring-notes (definition-symbol term "doc") (value-doc-key term)))
+    (if (empty? value-notes) (type-documentation-of term) (first value-notes))))
+
+(def type-documentation-of
+  (fn (term)
+    (let type-notes (docstring-notes (type-definition-symbol term "doc") (type-doc-key term)))
+    (if (empty? type-notes) (undocumented term) (first type-notes))))
+
+(def docstring-notes
+  (fn (context key)
+    (notes-with-key key (module-notes context (quote docstrings)))))
+
+(def notes-with-key
+  (fn (key notes)
+    (if (empty? notes)
+        notes
+        (if (same-doc-key? key (first notes))
+            (take 1 notes)
+            (recur key (rest notes))))))
+
+(def same-doc-key?
+  (fn (key note)
+    (if (value-eq (first key) (first note)) (same-binding? (nth key 1) (nth note 1)) false)))
+
+(def type-doc-key
+  (fn (name)
+    (list "type" name)))
+
+(def undocumented
+  (fn (term)
+    (fail (string "`" term "` has no docstring") term
+          "write a docstring where it is defined, as the first form after the parameter list or the header"
+          (template (:code undocumented-term :label "no docstring for this name")))))
+
 (def doc-part
   (fn (part header text)
     (if (value-eq part (quote header))
@@ -320,14 +383,6 @@
         (if (value-eq part (quote docstring))
             (clean-docstring text)
             (string header "\n\n" (clean-docstring text))))))
-
-(def value-doc-key
-  (fn (name)
-    (list "value" name)))
-
-(def type-doc-key
-  (fn (name)
-    (list "type" name)))
 
 (def clean-docstring
   (fn (text)
@@ -391,58 +446,3 @@
   (fn (text)
     (let stripped (string-strip-suffix text "\n"))
     (if (value-eq stripped text) text (recur stripped))))
-
-(def whole-pairs?
-  (fn (arguments)
-    (if (empty? arguments)
-        true
-        (if (empty? (rest arguments)) false (recur (drop 2 arguments))))))
-
-(defmacro doc (term)
-  "Returns the page of a term as a string: its header, a blank line, then its docstring."
-  (documentation-part (quote page) term))
-
-(defmacro docstring (term)
-  "Returns the docstring of a term as a string."
-  (documentation-part (quote docstring) term))
-
-(defmacro header (term)
-  "Returns the first line of a term's definition as written, as in (defn area (width height))."
-  (documentation-part (quote header) term))
-
-(def documentation-part
-  (fn (part term)
-    (let note (documentation-of term))
-    (doc-part part (nth note 2) (nth note 3))))
-
-(def documentation-of
-  (fn (term)
-    (let value-notes (docstring-notes (definition-symbol term "doc") (value-doc-key term)))
-    (if (empty? value-notes) (type-documentation-of term) (first value-notes))))
-
-(def type-documentation-of
-  (fn (term)
-    (let type-notes (docstring-notes (type-definition-symbol term "doc") (type-doc-key term)))
-    (if (empty? type-notes) (undocumented term) (first type-notes))))
-
-(def docstring-notes
-  (fn (context key)
-    (notes-with-key key (module-notes context (quote docstrings)))))
-
-(def notes-with-key
-  (fn (key notes)
-    (if (empty? notes)
-        notes
-        (if (same-doc-key? key (first notes))
-            (take 1 notes)
-            (recur key (rest notes))))))
-
-(def same-doc-key?
-  (fn (key note)
-    (if (value-eq (first key) (first note)) (same-binding? (nth key 1) (nth note 1)) false)))
-
-(def undocumented
-  (fn (term)
-    (fail (string "`" term "` has no docstring") term
-          "write a docstring where it is defined, as the first form after the parameter list or the header"
-          (template (:code undocumented-term :label "no docstring for this name")))))
