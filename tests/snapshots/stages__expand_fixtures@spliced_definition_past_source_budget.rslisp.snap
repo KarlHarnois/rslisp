@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/spliced_definition_past_source_budget.rslisp
+---
+error[L0326]: macro expansion did not finish
+  --> expand/spliced_definition_past_source_budget.rslisp:15:23
+   |
+15 |   (def padding (fn () (pad))))
+   |                       ^^^^^ expanding this call of `pad` passes 131072 forms
+   |
+   = note: the macro calls in one top-level form expand to at most 131072 forms in all
+   = help: make each recursive macro stop, or split a large expansion across several top-level forms

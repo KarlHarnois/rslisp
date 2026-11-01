@@ -19,6 +19,7 @@ mod rest_of_body;
 mod rust_type;
 mod session;
 mod shape;
+mod sourced_items;
 mod spliced_forms;
 mod top_level_form;
 mod try_check;
