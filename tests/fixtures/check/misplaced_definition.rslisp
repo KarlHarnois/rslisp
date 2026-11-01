@@ -1,0 +1,48 @@
+(defn used-once ()
+  (defn double (x) (* x 2))
+  (double 1))
+
+(defn used-twice ()
+  (defn triple (x) (* x 3))
+  (+ (triple 1) (triple 2)))
+
+(defn constant ()
+  (def limit 10)
+  (+ limit 1))
+
+(defn recursive ()
+  (defn countdown (n) (if (= n 0) 0 (countdown (- n 1))))
+  (countdown 3))
+
+(defn used-before ()
+  (println (halve 4))
+  (defn halve (x) (/ x 2)))
+
+(defn let-used-before ()
+  (println shift)
+  (let shift 1))
+
+(defn main ()
+  (println (used-once) (used-twice) (constant) (recursive))
+  (used-before)
+  (let-used-before)
+  (malformed)
+  (misplaced-macro)
+  (misplaced-typo))
+
+(defn malformed ()
+  (def incomplete)
+  (incomplete))
+
+(defn misplaced-macro ()
+  (def shout (macro (form) form))
+  (shout 1))
+
+(defn misplaced-typo ()
+  (defn wrong () (missing 1))
+  (wrong))
+
+(def compile-time-misplaced
+  (macro (form)
+    (def inner 1)
+    inner))
