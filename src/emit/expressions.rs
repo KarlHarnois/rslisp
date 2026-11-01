@@ -2123,8 +2123,8 @@ impl<'a> ExpressionEmitter<'a> {
         if let Some(value) = self.borrowed_index_argument(argument, context) {
             return value;
         }
-        if let Some(place) = Self::copied_out_of_written_borrows(argument) {
-            return self.place(place, context).spanned(argument.value.span);
+        if let Some(value) = self.argument_under_written_borrows(argument, context) {
+            return value;
         }
         let value = match (&argument.value.kind, role) {
             (TypedExprKind::Borrow(_, place), ArgumentRole::Receiver) => self.place(place, context),
@@ -2141,12 +2141,27 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn copied_out_of_written_borrows(argument: &TypedArgument) -> Option<&TypedExpr> {
-        let Borrow::Deref(levels) = argument.borrow else {
-            return None;
+    fn argument_under_written_borrows(
+        &mut self,
+        argument: &TypedArgument,
+        context: TypeContext,
+    ) -> Option<Code> {
+        let value = &argument.value;
+        let code = match argument.borrow {
+            Borrow::Deref(levels) => {
+                self.place(Self::under_written_borrows(value, levels)?, context)
+            }
+            Borrow::Collapse(levels) => {
+                self.expr_in(Self::under_written_borrows(value, levels)?, context)
+            }
+            _ => return None,
         };
+        Some(code.spanned(value.span))
+    }
+
+    fn under_written_borrows(value: &TypedExpr, levels: usize) -> Option<&TypedExpr> {
         (0..levels).try_fold(
-            Self::without_dereferenced_borrows(&argument.value),
+            Self::without_dereferenced_borrows(value),
             |value, _| match &value.kind {
                 TypedExprKind::Borrow(_, place) => Some(place.as_ref()),
                 _ => None,
@@ -2606,7 +2621,10 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn field_place(&mut self, value: &TypedExpr, label: &FieldLabel) -> Code {
-        let value = self.place(value, TypeContext::Known);
+        let value = self.place(
+            Self::without_dereferenced_borrows(value),
+            TypeContext::Known,
+        );
         let value = if value.is_atomic() {
             value
         } else {

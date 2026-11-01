@@ -1,5 +1,10 @@
+(defstruct car :make string :year i64)
+
 (type first-after? (fn ((ref (ref i64))) bool))
 (defn first-after? (y) (> (deref (deref y)) 2018))
+
+(type shallow (fn ((ref i64)) i64))
+(defn shallow (y) (deref y))
 
 (defn main ()
   (let year 2019)
@@ -7,4 +12,11 @@
   (println (first-after? (ref (ref year))))
   (println (> (deref (ref (ref year))) 2018))
   (println (> (deref (ref (ref year))) (ref 2018)))
-  (println (> (ref 2018) (deref (ref (ref year))))))
+  (println (> (ref 2018) (deref (ref (ref year)))))
+  (let r (ref year))
+  (println (shallow (deref (ref (ref r)))))
+  (println (shallow (deref (ref (ref year)))))
+  (println (shallow (deref (ref (ref (ref year))))))
+  (let leaf (->car (to-string "Leaf") 2019))
+  (println (:make (deref (ref (ref leaf)))))
+  (println (:year (deref (ref (ref leaf))))))

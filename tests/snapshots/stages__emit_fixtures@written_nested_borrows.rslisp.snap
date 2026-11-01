@@ -3,8 +3,22 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/written_nested_borrows.rslisp
 ---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Car {
+    make: String,
+    year: i64,
+}
+
+fn make_car(make: String, year: i64) -> Car {
+    Car { make, year }
+}
+
 fn is_first_after(y: &&i64) -> bool {
     **y > 2018
+}
+
+fn shallow(y: &i64) -> i64 {
+    *y
 }
 
 fn main() {
@@ -14,7 +28,14 @@ fn main() {
     println!("{}", is_first_after(&&year));
     println!("{}", year > 2018);
     println!("{}", year > 2018);
-    println!("{}", 2018 > year)
+    println!("{}", 2018 > year);
+    let r = &year;
+    println!("{}", shallow(r));
+    println!("{}", shallow(&year));
+    println!("{}", shallow(&year));
+    let leaf = make_car("Leaf".to_string(), 2019);
+    println!("{}", leaf.make);
+    println!("{}", leaf.year)
 }
 
 mod rt {
