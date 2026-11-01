@@ -4,8 +4,10 @@ use super::Expander;
 use super::TraitMethods;
 use super::context::DefinitionContext;
 use super::distinct_diagnostics::DistinctDiagnostics;
+use super::form_budget::FormBudget;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
+use super::sourced_items::SourcedItems;
 use super::spliced_forms::{SplicedForm, SplicedForms};
 use crate::core::{
     BindingId, BindingInfo, BindingKind, ControlForm, CoreModule, DefinitionForm, Expr, ExprKind,
@@ -67,22 +69,18 @@ enum PendingItem {
 impl Expander<'_> {
     pub(super) fn expand_module_body(&mut self, module: ModuleId, forms: Vec<Form>) {
         let outer_module = self.current_module.replace(module);
-        let pending = self.register_definitions(module, forms);
+        let (pending, mut budgets) = self.register_definitions(module, forms);
         let mut core = CoreModule {
             id: module,
             path: self.modules.get(module).path().clone(),
             items: Vec::new(),
             exports: Vec::new(),
         };
-        let (impls, rest): (Vec<PendingItem>, Vec<PendingItem>) = pending
-            .into_iter()
-            .partition(|item| matches!(item, PendingItem::Impl(..)));
-        let (exports, rest): (Vec<PendingItem>, Vec<PendingItem>) = rest
-            .into_iter()
-            .partition(|item| matches!(item, PendingItem::Export(..)));
-        self.lower_pending_group(module, rest, &mut core);
-        self.lower_pending_group(module, impls, &mut core);
-        self.lower_pending_group(module, exports, &mut core);
+        let (impls, rest) = pending.partition(|item| matches!(item, PendingItem::Impl(..)));
+        let (exports, rest) = rest.partition(|item| matches!(item, PendingItem::Export(..)));
+        self.lower_pending_group(module, rest, &mut budgets, &mut core);
+        self.lower_pending_group(module, impls, &mut budgets, &mut core);
+        self.lower_pending_group(module, exports, &mut budgets, &mut core);
         self.compile_pending_macros();
         self.record_answering_macros(module);
         self.order.push(module);
@@ -93,14 +91,27 @@ impl Expander<'_> {
     fn lower_pending_group(
         &mut self,
         module: ModuleId,
+        items: SourcedItems<PendingItem>,
+        budgets: &mut [FormBudget],
+        core: &mut CoreModule,
+    ) {
+        for run in items.into_runs() {
+            let budget = &mut budgets[run.source];
+            self.within_source_run(budget, |expander| {
+                expander.lower_source_run(module, run.items, core)
+            });
+        }
+    }
+
+    fn lower_source_run(
+        &mut self,
+        module: ModuleId,
         items: Vec<PendingItem>,
         core: &mut CoreModule,
     ) {
         for item in items {
-            let lowered =
-                self.within_top_level_form(|expander| expander.lower_pending(module, item, core));
-            if let Err(diagnostic) = lowered {
-                self.diagnostics.push(diagnostic);
+            if let Err(diagnostic) = self.lower_pending(module, item, core) {
+                self.recovered_diagnostics.push(diagnostic);
             }
         }
     }
@@ -112,18 +123,27 @@ impl Expander<'_> {
         }
     }
 
-    fn register_definitions(&mut self, module: ModuleId, forms: Vec<Form>) -> Vec<PendingItem> {
+    fn register_definitions(
+        &mut self,
+        module: ModuleId,
+        forms: Vec<Form>,
+    ) -> (SourcedItems<PendingItem>, Vec<FormBudget>) {
         let mut context = DefinitionContext::default();
-        let mut pending = Vec::new();
+        let mut pending = SourcedItems::new();
+        let mut budgets = Vec::with_capacity(forms.len());
         for form in forms {
-            let registered = self.within_top_level_form(|expander| {
-                expander.register_source_form(module, form, &mut context, &mut pending)
+            let mut budget = FormBudget::full();
+            let mut items = Vec::new();
+            let registered = self.within_source_form(&mut budget, |expander| {
+                expander.register_source_form(module, form, &mut context, &mut items)
             });
             if let Err(diagnostic) = registered {
                 self.diagnostics.push(diagnostic);
             }
+            pending.add_source(items);
+            budgets.push(budget);
         }
-        pending
+        (pending, budgets)
     }
 
     fn register_source_form(
