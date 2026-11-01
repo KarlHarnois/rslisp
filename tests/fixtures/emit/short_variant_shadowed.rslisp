@@ -1,0 +1,11 @@
+(enum result (ok i64) (err string))
+
+(type settle (fn (result) i64))
+(defn settle (outcome)
+  (match outcome
+    ((ok value) value)
+    ((err _) 0)))
+
+(defn main ()
+  (println (settle (result/ok 4)))
+  (println (settle (result/err (to-string "refused")))))

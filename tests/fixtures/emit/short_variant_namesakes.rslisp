@@ -1,0 +1,33 @@
+(enum reply (some i64) none)
+
+(type reply-value (fn (reply) i64))
+(defn reply-value (answer)
+  (match answer
+    ((some count) count)
+    (none 0)))
+
+(type option-value (fn ((option i64)) i64))
+(defn option-value (found)
+  (match found
+    ((some count) (+ count 1))
+    (none 0)))
+
+(type with-local-none (fn ((option i64)) i64))
+(defn with-local-none (found)
+  (let none 7)
+  (match found
+    ((some count) (+ count none))
+    (none none)))
+
+(type payload-named-none (fn ((option i64)) i64))
+(defn payload-named-none (found)
+  (match found
+    ((some none) (* none 2))
+    (_ 0)))
+
+(defn main ()
+  (println (reply-value (reply/some 1)))
+  (println (reply-value reply/none))
+  (println (option-value (some 2)))
+  (println (with-local-none none))
+  (println (payload-named-none (some 3))))

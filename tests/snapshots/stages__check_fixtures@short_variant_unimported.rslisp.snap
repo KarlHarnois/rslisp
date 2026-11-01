@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/short_variant_unimported.rslisp
+---
+error[L0231]: this is not a pattern
+ --> check/short_variant_unimported.rslisp:6:6
+  |
+6 |     ((custom level) (println level))))
+  |      ^^^^^^^^^^^^^^ a pattern names a binding, a literal or a variant
+  |
+  = help: write a binding name, `_`, a literal, or `(variant pattern ...)`

@@ -1,0 +1,65 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/short_variant_namesakes.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Reply {
+    Some(i64),
+    None,
+}
+
+fn reply_value(answer: Reply) -> i64 {
+    match answer {
+        Reply::Some(count) => count,
+        Reply::None => 0,
+    }
+}
+
+fn option_value(found: Option<i64>) -> i64 {
+    match found {
+        Some(count) => count + 1,
+        None => 0,
+    }
+}
+
+fn with_local_none(found: Option<i64>) -> i64 {
+    let none: i64 = 7;
+    match found {
+        Some(count) => count + none,
+        None => none,
+    }
+}
+
+fn payload_named_none(found: Option<i64>) -> i64 {
+    match found {
+        Some(none) => none * 2,
+        _ => 0,
+    }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!("{}", reply_value(Reply::Some(1)));
+    println!("{}", reply_value(Reply::None));
+    println!("{}", option_value(Some(2)));
+    println!("{}", with_local_none(None));
+    println!("{}", payload_named_none(Some(3)))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

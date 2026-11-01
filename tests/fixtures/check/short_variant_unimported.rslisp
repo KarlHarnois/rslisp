@@ -1,0 +1,6 @@
+(use short_variant_unimported/palette brightest)
+
+(defn main ()
+  (match (brightest)
+    (red (println "red"))
+    ((custom level) (println level))))
