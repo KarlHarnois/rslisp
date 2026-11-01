@@ -17,6 +17,7 @@ pub enum Selection {
 }
 
 impl Selection {
+    #[inline]
     pub fn best(self, other: Selection) -> Selection {
         match (self, other) {
             (implemented @ Selection::Implemented { .. }, _)
