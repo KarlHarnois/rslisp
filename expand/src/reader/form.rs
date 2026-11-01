@@ -4,13 +4,13 @@ use std::rc::Rc;
 use crate::scope::{ChainPrefix, Scope, ScopeSet};
 use crate::source::Span;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Form {
     kind: Rc<FormKind>,
     span: Span,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum FormKind {
     Symbol(Symbol),
     String(Rc<str>),
@@ -145,7 +145,7 @@ impl Form {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Symbol {
     name: Rc<str>,
     scopes: ScopeSet,
@@ -180,13 +180,13 @@ impl Symbol {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum NumberValue {
     Integer(i128),
     Float(f64),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Number {
     text: Rc<str>,
     value: NumberValue,

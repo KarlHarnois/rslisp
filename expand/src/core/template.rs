@@ -1,7 +1,7 @@
 #[derive(Debug, PartialEq, Eq)]
 pub struct MalformedPlaceholder;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum Piece {
     Literal(String),
     Placeholder { index: usize, access: Access },
@@ -9,7 +9,7 @@ pub enum Piece {
     BinderPlaceholder { name: String },
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum Access {
     Passed,
     Borrowed,
@@ -28,7 +28,7 @@ impl Access {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ParsedTemplate {
     pieces: Vec<Piece>,
     text: String,

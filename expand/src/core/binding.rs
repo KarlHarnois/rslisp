@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use super::{Builtin, KernelForm, KernelType, ModuleId};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct VariantInfo {
     pub owner: BindingId,
     pub index: usize,
@@ -11,16 +11,18 @@ pub struct VariantInfo {
 }
 use crate::source::Span;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct BindingId(u32);
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum Namespace {
     Value,
     Type,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum BindingKind {
     KernelForm(KernelForm),
     KernelType(KernelType),
@@ -39,7 +41,7 @@ pub enum BindingKind {
     Lifetime,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct BindingInfo {
     name: Rc<str>,
     kind: BindingKind,
@@ -64,7 +66,7 @@ impl BindingInfo {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct BindingArena {
     infos: Vec<BindingInfo>,
     introduced: HashSet<BindingId>,

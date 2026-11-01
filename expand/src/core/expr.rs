@@ -4,13 +4,13 @@ use super::{BindingId, Keyword, ReferenceKind, TypeExpr};
 use crate::reader::{Form, Number};
 use crate::source::Span;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Expr {
     kind: ExprKind,
     span: Span,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum ExprKind {
     Leaf(Leaf),
     Fn(Rc<Lambda>),
@@ -27,7 +27,7 @@ pub enum ExprKind {
     SetAt(Box<Expr>, Vec<Expr>, Box<Expr>),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum MapOperation {
     Lookup,
     Keys,
@@ -62,7 +62,7 @@ impl MapOperation {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Leaf {
     Literal(Literal),
     Var(BindingId),
@@ -70,27 +70,27 @@ pub enum Leaf {
     Rust(Rc<RustTemplate>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Control {
     Block(Block),
     If(Box<Expr>, Box<Expr>, Box<Expr>),
     Match(Box<Expr>, Vec<Arm>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Arm {
     pub pattern: Pattern,
     pub body: Block,
     pub span: Span,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Pattern {
     pub kind: PatternKind,
     pub span: Span,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum PatternKind {
     Wildcard,
     Bind(BindingId),
@@ -116,21 +116,21 @@ impl Pattern {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum StructExpr {
     New(BindingId, Vec<(FieldLabel, Expr)>),
     Update(Box<Expr>, Vec<(FieldLabel, Expr)>),
     Field(Box<Expr>, FieldLabel),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Literal {
     Number(Number),
     String(Rc<str>),
     Bool(bool),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct FieldLabel {
     pub name: Rc<str>,
     pub span: Span,
@@ -146,37 +146,37 @@ impl FieldLabel {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum FieldSpelling {
     Bare,
     Keyword,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Binder {
     pub binding: BindingId,
     pub annotation: Option<TypeExpr>,
     pub span: Span,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Lambda {
     pub params: Vec<Binder>,
     pub body: Block,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct Block {
     pub items: Vec<BodyItem>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum BodyItem {
     Let(Binder, Expr),
     Expr(Expr),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct RustTemplate {
     pub template: Rc<str>,
     pub type_expr: TypeExpr,

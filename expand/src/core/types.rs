@@ -1,7 +1,9 @@
 use super::{BindingId, PrimitiveType, ReferenceKind};
 use crate::source::Span;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum ClosureKind {
     Fn,
     FnMut,
@@ -43,13 +45,13 @@ impl ClosureKind {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TypeExpr {
     kind: TypeExprKind,
     span: Span,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum TypeExprKind {
     Primitive(PrimitiveType),
     Named(BindingId, Vec<TypeExpr>),
@@ -61,7 +63,7 @@ pub enum TypeExprKind {
     Trait(BindingId),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TypeBinder {
     pub variable: BindingId,
     pub bounds: Vec<TypeBound>,
@@ -73,7 +75,7 @@ impl TypeBinder {
     pub const UNSIZED: &'static str = "unsized";
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TypeBound {
     pub binding: BindingId,
     pub argument: Option<TypeExpr>,

@@ -12,20 +12,21 @@ use crate::reader::Form;
 use crate::scope::{FastHashMap, Phase, Scope};
 use crate::source::Span;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 enum MacroState {
     Pending(Form),
     Ready(Rc<Closure>),
     Failed,
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct MacroOrigin {
     pub name: Rc<str>,
     pub defined: Span,
     pub call_site: Span,
 }
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct MacroTable {
     states: FastHashMap<BindingId, MacroState>,
 }

@@ -4,7 +4,7 @@ use crate::scope::FastHashMap;
 
 type NotesKey = (ModuleId, String);
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct ModuleNotes {
     notes: FastHashMap<NotesKey, Vec<Form>>,
     added: Vec<NotesKey>,

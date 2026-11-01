@@ -12,7 +12,7 @@ use rslisp::core::{
 };
 use rslisp::diagnostic::{DiagnosticRenderer, Diagnostics};
 use rslisp::emit::{EmittedCrate, RustEmitter};
-use rslisp::expand::Expander;
+use rslisp::expand::{Expander, PreludeState};
 use rslisp::modules::ModuleSources;
 use rslisp::reader::Reader;
 use rslisp::source::{SourceId, SourceMap, Span};
@@ -25,6 +25,7 @@ pub struct Fixture {
     sources: SourceMap,
     entry: SourceId,
     path: PathBuf,
+    prelude: Option<PreludeState>,
 }
 
 impl Fixture {
@@ -38,6 +39,22 @@ impl Fixture {
             sources,
             entry,
             path: path.to_path_buf(),
+            prelude: None,
+        }
+    }
+
+    pub fn with_saved_prelude(self, prelude: PreludeState) -> Self {
+        Self {
+            prelude: Some(prelude),
+            ..self
+        }
+    }
+
+    pub fn stage_report(self) -> String {
+        match self.stage_name().as_str() {
+            "expand" => self.expand_report(),
+            "check" => self.check_report(),
+            _ => self.emit_report(),
         }
     }
 
@@ -181,7 +198,11 @@ impl Fixture {
     fn expand(&mut self) -> Result<rslisp::expand::Program, Diagnostics> {
         let module_sources = ModuleSources::new(self.directory(), self.display_directory());
         let module_path = ModulePath::new(self.module_name());
-        Expander::new(&mut self.sources, module_sources).expand(module_path, self.entry)
+        let expander = match self.prelude.take() {
+            Some(prelude) => Expander::with_prelude(&mut self.sources, module_sources, prelude),
+            None => Expander::new(&mut self.sources, module_sources),
+        };
+        expander.expand(module_path, self.entry)
     }
 
     fn render(&self, diagnostics: &Diagnostics) -> String {

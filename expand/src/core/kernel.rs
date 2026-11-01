@@ -1,6 +1,6 @@
 use super::ClosureKind;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum KernelForm {
     Expression(ExpressionForm),
     Definition(DefinitionForm),
@@ -8,7 +8,7 @@ pub enum KernelForm {
     Macro,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ExpressionForm {
     Fn,
     Recur,
@@ -24,25 +24,25 @@ pub enum ExpressionForm {
     SetAt,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum LeafForm {
     Quote,
     Rust,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ControlForm {
     Do,
     If,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum StructForm {
     New,
     Field,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum DefinitionForm {
     Def,
     Type,
@@ -232,7 +232,7 @@ impl KernelForm {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum PrimitiveType {
     Bool,
     Char,
@@ -388,7 +388,7 @@ impl PrimitiveType {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum KernelType {
     Function(ClosureKind),
     Reference(ReferenceKind),
@@ -398,7 +398,7 @@ pub enum KernelType {
     Primitive(PrimitiveType),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ReferenceKind {
     Shared,
     Mutable,
