@@ -24,6 +24,8 @@ pub struct Callgrind {
 impl Callgrind {
     pub const VALGRIND: &'static str = "valgrind";
     const PRELOAD: &'static str = "LD_PRELOAD";
+    const ALLOCATOR_TUNING: &'static str = "GLIBC_TUNABLES";
+    const NO_FASTBINS: &'static str = "glibc.malloc.mxfast=0";
     const SEARCH_PATH: &'static str = "PATH";
     const OPTIONS: [&'static str; 7] = [
         "--tool=callgrind",
@@ -137,22 +139,29 @@ impl Callgrind {
     fn run(&self, program: &Path, profile: &Path) -> Result<Output, TaskFailure> {
         fs::create_dir_all(&self.profiles)
             .map_err(|error| TaskFailure::unwritable(&self.profiles, error))?;
-        Command::new(Self::VALGRIND)
+        self.command(program, profile)
+            .output()
+            .map_err(TaskFailure::valgrind_missing)
+    }
+
+    fn command(&self, program: &Path, profile: &Path) -> Command {
+        let mut command = Command::new(Self::VALGRIND);
+        command
             .env_clear()
             .env(
                 Self::SEARCH_PATH,
                 env::var_os(Self::SEARCH_PATH).unwrap_or_default(),
             )
             .env(Self::PRELOAD, &self.fixed_seed)
+            .env(Self::ALLOCATOR_TUNING, Self::NO_FASTBINS)
             .args(Self::OPTIONS)
             .arg(format!("--callgrind-out-file={}", profile.display()))
             .arg(&self.compiler.executable)
             .arg(Self::FRONT_END_COMMAND)
             .arg(program)
             .current_dir(program.parent().unwrap_or(Path::new(".")))
-            .stdout(Stdio::null())
-            .output()
-            .map_err(TaskFailure::valgrind_missing)
+            .stdout(Stdio::null());
+        command
     }
 
     fn profile_path(&self, program: &Path) -> PathBuf {
@@ -198,9 +207,48 @@ impl RunOutcome {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
+    use std::ffi::OsStr;
     use std::os::unix::process::ExitStatusExt;
 
     use super::*;
+
+    struct CallgrindFixture;
+
+    impl CallgrindFixture {
+        const EXECUTABLE: &'static str = "/checkout/target/release/compiler";
+        const FIXED_SEED: &'static str = "/checkout/target/bench/fixed_seed.so";
+        const PROFILES: &'static str = "/profiles";
+        const PROGRAM: &'static str = "/checkout/corpus/inventory";
+        const PROFILE: &'static str = "/profiles/inventory.callgrind";
+
+        fn command() -> Command {
+            Self::callgrind().command(Path::new(Self::PROGRAM), Path::new(Self::PROFILE))
+        }
+
+        fn callgrind() -> Callgrind {
+            let compiler = BuiltCompiler {
+                executable: PathBuf::from(Self::EXECUTABLE),
+                crate_names: BTreeSet::new(),
+            };
+            Callgrind::new(
+                compiler,
+                EntryPointCheck::Enforced,
+                PathBuf::from(Self::FIXED_SEED),
+                PathBuf::from(Self::PROFILES),
+            )
+        }
+    }
+
+    #[test]
+    fn turns_off_glibc_fastbins() {
+        let command = CallgrindFixture::command();
+        let tuning = command
+            .get_envs()
+            .find(|(variable, _)| *variable == OsStr::new(Callgrind::ALLOCATOR_TUNING))
+            .and_then(|(_, value)| value);
+        assert_eq!(tuning, Some(OsStr::new("glibc.malloc.mxfast=0")));
+    }
 
     struct RunOutcomeFixture;
 
