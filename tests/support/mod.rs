@@ -1,7 +1,6 @@
 mod headers;
 mod reports;
 
-use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -17,6 +16,7 @@ use rslisp::modules::ModuleSources;
 use rslisp::reader::Reader;
 use rslisp::source::{SourceId, SourceMap, Span};
 use rslisp::types::TypedProgram;
+use rustc_hash::FxHashMap;
 
 pub use headers::HeaderAgreement;
 pub use reports::FixtureReports;
@@ -72,7 +72,7 @@ impl Fixture {
         }
     }
 
-    pub fn string_definitions(mut self) -> HashMap<String, String> {
+    pub fn string_definitions(mut self) -> FxHashMap<String, String> {
         let program = self.expand().unwrap_or_else(|diagnostics| {
             panic!("the fixture expands:\n{}", self.render(&diagnostics))
         });

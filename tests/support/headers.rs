@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+
+use rustc_hash::FxHashMap;
 
 use super::Fixture;
 
@@ -34,7 +35,7 @@ impl HeaderAgreement {
         ))
     }
 
-    fn header<'headers>(headers: &'headers HashMap<String, String>, name: &str) -> &'headers str {
+    fn header<'headers>(headers: &'headers FxHashMap<String, String>, name: &str) -> &'headers str {
         headers
             .get(&format!("{name}-header"))
             .expect("the fixture defines the header of each definition")
