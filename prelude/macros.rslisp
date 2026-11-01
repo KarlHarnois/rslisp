@@ -189,34 +189,85 @@
 
 (def fill-repeated
   (fn (template bindings)
-    (let variables (repeated-variables (template-variables template) bindings))
-    (if (empty? variables)
+    (let entries (repeated-entries (template-variables template) bindings))
+    (if (empty? entries)
         (fail "nothing before this `...` repeats" template)
-        (do (let leader (lookup (first variables) bindings))
-            (if (lone-slice? template leader)
-                (nth leader 2)
-                (map-count (length (nth leader 2))
-                           (fn (index) (fill-template template (iteration-bindings variables bindings index)))))))))
+        (if (lone-slice? template (first entries))
+            (nth (first entries) 2)
+            (do (let fill-iteration (fn (index) (fill-template template (iteration-bindings entries bindings index))))
+                (map-count (repetition-count template entries fill-iteration) fill-iteration))))))
 
 (def lone-slice?
   (fn (template leader)
     (if (symbol? template) (entry-kind? leader "forms") false)))
 
-(def repeated-variables
+(def repetition-count
+  (fn (repeated entries fill-iteration)
+    (let count (entry-length (first entries)))
+    (let mismatched (mismatched-entry count (rest entries)))
+    (if (list? mismatched)
+        (do (map-count (shortest-length count (rest entries)) fill-iteration)
+            (unequal-repetitions repeated (first entries) mismatched))
+        count)))
+
+(def entry-length
+  (fn (entry)
+    (length (nth entry 2))))
+
+(def mismatched-entry
+  (fn (count entries)
+    (if (empty? entries)
+        false
+        (if (value-eq (entry-length (first entries)) count)
+            (recur count (rest entries))
+            (first entries)))))
+
+(def shortest-length
+  (fn (shortest entries)
+    (if (empty? entries)
+        shortest
+        (recur (shorter-length shortest (first entries)) (rest entries)))))
+
+(def shorter-length
+  (fn (shortest entry)
+    (if (number-lt (entry-length entry) shortest) (entry-length entry) shortest)))
+
+(def unequal-repetitions
+  (fn (repeated leader mismatched)
+    (let names (string "`" (nth leader 1) "` and `" (nth mismatched 1) "`"))
+    (let label (if (number-lt (entry-length leader) (entry-length mismatched))
+                   (unpaired-label repeated names mismatched leader)
+                   (unpaired-label repeated names leader mismatched)))
+    (fail (string "`" (nth leader 1) "` has length " (entry-length leader)
+                  " but `" (nth mismatched 1) "` has length " (entry-length mismatched))
+          (first label)
+          (string "give " names " the same length")
+          (list (quote :code) (quote unequal-repetitions) (quote :label) (nth label 1)))))
+
+(def unpaired-label
+  (fn (repeated names longer shorter)
+    (if (entry-kind? longer "forms")
+        (list (nth (nth longer 2) (entry-length shorter))
+              (string "this `" (nth longer 1) "` has no matching `" (nth shorter 1) "`"))
+        (list repeated (string names " repeat together here")))))
+
+(def repeated-entries
   (fn (candidates bindings)
     (if (empty? candidates)
         (list)
-        (if (repeated-entry? (lookup (first candidates) bindings))
-            (prepend (first candidates) (repeated-variables (rest candidates) bindings))
-            (repeated-variables (rest candidates) bindings)))))
+        (prepend-repeated (lookup (first candidates) bindings) (repeated-entries (rest candidates) bindings)))))
+
+(def prepend-repeated
+  (fn (entry entries)
+    (if (repeated-entry? entry) (prepend entry entries) entries)))
 
 (def repeated-entry?
   (fn (entry)
     (if (entry-kind? entry "many") true (entry-kind? entry "forms"))))
 
 (def iteration-bindings
-  (fn (variables bindings index)
-    (concat (map-list (fn (variable) (iteration-entry (lookup variable bindings) index)) variables)
+  (fn (entries bindings index)
+    (concat (map-list (fn (entry) (iteration-entry entry index)) entries)
             bindings)))
 
 (def iteration-entry

@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/unequal_repetitions_wrong_depth.rslisp
+---
+error[L0301]: nothing before this `...` repeats
+ --> expand/unequal_repetitions_wrong_depth.rslisp:2:34
+  |
+2 |   (((a ...) (b ...)) (vec (vec a b ...) ...)))
+  |                                  ^ here
+3 |
+4 | (defn rows () (spread (1 2) (3)))
+  |               ------------------ in this macro call

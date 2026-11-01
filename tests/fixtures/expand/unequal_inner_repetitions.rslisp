@@ -1,0 +1,4 @@
+(defrule zip-rows
+  ((((a ...) (b ...)) ...) (vec (vec (pair a b) ...) ...)))
+
+(defn rows () (zip-rows ((1 2) (3 4)) ((5 6) (7))))

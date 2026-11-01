@@ -1,0 +1,4 @@
+(defrule zip
+  (((a ...) (b ...)) (vec (pair a b) ...)))
+
+(defn longer-second () (zip (1 2) (4 5 6)))
