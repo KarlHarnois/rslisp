@@ -87,6 +87,12 @@ impl FunctionTable {
         self.definitions.keys().copied()
     }
 
+    pub fn sorted_definition_bindings(&self) -> Vec<BindingId> {
+        let mut bindings: Vec<BindingId> = self.definition_bindings().collect();
+        bindings.sort_unstable();
+        bindings
+    }
+
     pub fn definition(&self, binding: BindingId) -> Option<&FunctionInfo> {
         self.definitions.get(&binding)
     }

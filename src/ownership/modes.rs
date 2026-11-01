@@ -21,7 +21,7 @@ impl<'a> ModeInference<'a> {
     pub fn run(&self) -> HashMap<BindingId, ParamMode> {
         let mut modes = self.initial_modes();
         let mut callers = Callers::default();
-        let mut pending = Worklist::of(self.functions.definition_bindings());
+        let mut pending = self.seed();
         while let Some(binding) = pending.pop() {
             let usage = self.usage(binding, &modes);
             callers.record(binding, &usage.callees);
@@ -31,6 +31,10 @@ impl<'a> ModeInference<'a> {
             }
         }
         modes
+    }
+
+    fn seed(&self) -> Worklist {
+        Worklist::of(self.functions.sorted_definition_bindings().into_iter())
     }
 
     fn initial_modes(&self) -> HashMap<BindingId, ParamMode> {
@@ -93,5 +97,58 @@ impl<'a> ModeInference<'a> {
             }
         }
         changed
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ModeInference;
+    use crate::core::BindingId;
+    use crate::ownership::functions::FunctionTable;
+    use crate::types::{CopyRules, TypedProgram, TypedSource};
+
+    struct SeedFixture {
+        program: TypedProgram,
+        functions: FunctionTable,
+    }
+
+    impl SeedFixture {
+        const RANGES: &str = "
+            (defn leaf-range ((kilowatt-hours f64)) (* kilowatt-hours 6.5))
+            (defn ariya-range ((kilowatt-hours f64)) (* kilowatt-hours 5.8))
+            (defn sakura-range ((kilowatt-hours f64)) (* kilowatt-hours 6.9))
+            (defn main ()
+              (println (leaf-range 40.0) (ariya-range 63.0) (sakura-range 20.0)))";
+
+        fn new() -> Self {
+            let program = TypedSource::expand(Self::RANGES).typed();
+            let functions = FunctionTable::collect(&program);
+            Self { program, functions }
+        }
+
+        fn seeded_order(&self) -> Vec<BindingId> {
+            let copy = CopyRules::new(
+                &self.program.traits,
+                &self.program.generics,
+                &self.program.structs,
+                &self.program.enums,
+            );
+            let mut seed = ModeInference::new(&self.functions, copy).seed();
+            std::iter::from_fn(|| seed.pop()).collect()
+        }
+    }
+
+    #[test]
+    fn mode_inference_seeds_definitions_in_binding_order() {
+        assert!(SeedFixture::new().seeded_order().is_sorted());
+    }
+
+    #[test]
+    fn mode_inference_seeds_every_definition() {
+        let fixture = SeedFixture::new();
+        assert_eq!(
+            fixture.seeded_order().len(),
+            fixture.functions.definitions().count()
+        );
     }
 }
