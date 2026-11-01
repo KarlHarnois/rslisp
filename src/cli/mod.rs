@@ -10,8 +10,10 @@ mod expand;
 mod run;
 mod signatures;
 mod stage_work;
+mod term_parser;
 mod terminal;
 
+use std::convert::Infallible;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -29,6 +31,7 @@ use exit_status::ExitStatus;
 use expand::ExpandCommand;
 use run::RunCommand;
 use signatures::SignaturesCommand;
+use term_parser::{SurplusParser, TermParser};
 use terminal::{BuildOptions, Terminal};
 
 #[derive(Parser)]
@@ -51,8 +54,10 @@ enum Command {
         about = "Print the page of a prelude term, or of a program's term with --file"
     )]
     Doc {
-        #[arg(allow_hyphen_values = true)]
+        #[arg(allow_hyphen_values = true, value_parser = TermParser)]
         term: String,
+        #[arg(hide = true, value_parser = SurplusParser)]
+        surplus: Vec<Infallible>,
         #[arg(long)]
         file: Option<PathBuf>,
     },
@@ -102,7 +107,7 @@ impl Command {
         match self {
             Command::Check { file } => CheckCommand::new(file).run(terminal),
             Command::Signatures { file } => SignaturesCommand::new(file).run(terminal),
-            Command::Doc { term, file } => {
+            Command::Doc { term, file, .. } => {
                 DocCommand::new(DocEnvironment::new(file), term).run(terminal)
             }
             Command::Expand { file } => ExpandCommand::new(file).run(terminal),
