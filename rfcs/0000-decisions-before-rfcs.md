@@ -7,7 +7,7 @@ This file records the decisions the project owner made before RFCs existed. Each
 - **Decision:** Wherever a value meets an expected type, the compiler adds one borrow, removes borrows, or copies a Copy value of 16 bytes or less out of a borrow. It never clones, a written `ref`, `mut` or `deref` turns the rule off, and mutating functions end in `!`.
 - **Rejected:** Explicit `deref` and `as-str` everywhere; Rust's coercion rules as written; ownership erased from the types.
 - **Why:** Ownership stays in the types but users rarely write it, and the emitted Rust stays hand-written Rust with no runtime cost.
-- **Rule:** [8.1 References at call sites](../docs/language.md#81-references-at-call-sites)
+- **Rule:** Superseded by [RFC 0043](0043-written-deref.md) for a written `deref`; [8.1 References at call sites](../docs/language.md#81-references-at-call-sites) for the rest
 
 ## D2. How a struct gets traits before milestone 10
 
