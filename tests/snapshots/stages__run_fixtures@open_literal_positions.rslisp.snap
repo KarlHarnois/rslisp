@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/open_literal_positions.rslisp
+---
+-1294967296
+Some(-1294967296)
+(2024, -1294967296)
+-1294967296
+-1294967296
