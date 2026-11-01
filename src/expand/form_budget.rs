@@ -16,6 +16,14 @@ impl FormBudget {
         }
     }
 
+    pub fn exhaust(&mut self) {
+        self.remaining = 0;
+    }
+
+    pub fn is_exhausted(&self) -> bool {
+        self.remaining == 0
+    }
+
     pub fn admitted_form(&self, value: &Value) -> Option<Form> {
         let mut allowance = self.remaining;
         value.to_form_within(&mut allowance)
@@ -115,5 +123,25 @@ mod tests {
         let empty_lists = vec![BudgetFixture::code_list(Vec::new()); FormBudget::EXPANSION_LIMIT];
         let list = BudgetFixture::code_list(empty_lists);
         assert!(!BudgetFixture::new().admits_value(&list));
+    }
+
+    #[test]
+    fn a_full_budget_is_not_exhausted() {
+        assert!(!FormBudget::full().is_exhausted());
+    }
+
+    #[test]
+    fn spending_every_form_exhausts_the_budget() {
+        let mut fixture = BudgetFixture::new();
+        assert!(fixture.admits_list_of(FormBudget::EXPANSION_LIMIT));
+        assert!(fixture.budget.is_exhausted());
+    }
+
+    #[test]
+    fn an_exhausted_budget_admits_no_form() {
+        let mut fixture = BudgetFixture::new();
+        fixture.budget.exhaust();
+        assert!(fixture.budget.is_exhausted());
+        assert!(!fixture.admits_list_of(1));
     }
 }

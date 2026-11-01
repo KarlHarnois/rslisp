@@ -8,6 +8,6 @@
   (template (do (splice (doubled (list 0) 16)))))
 
 (defmacro defs ()
-  (template (do (def x (fn () (pad))) (defs) (defs))))
+  (template (do (def x (fn () (pad))) ((splice (doubled (list 0) 12))) (defs) (defs))))
 
 (defs)
