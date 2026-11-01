@@ -17,13 +17,11 @@ use crate::failure::TaskFailure;
 pub struct Callgrind {
     compiler: BuiltCompiler,
     entry_point_check: EntryPointCheck,
-    fixed_seed: PathBuf,
     profiles: PathBuf,
 }
 
 impl Callgrind {
     pub const VALGRIND: &'static str = "valgrind";
-    const PRELOAD: &'static str = "LD_PRELOAD";
     const ALLOCATOR_TUNING: &'static str = "GLIBC_TUNABLES";
     const NO_FASTBINS: &'static str = "glibc.malloc.mxfast=0";
     const SEARCH_PATH: &'static str = "PATH";
@@ -42,13 +40,11 @@ impl Callgrind {
     pub fn new(
         compiler: BuiltCompiler,
         entry_point_check: EntryPointCheck,
-        fixed_seed: PathBuf,
         profiles: PathBuf,
     ) -> Self {
         Self {
             compiler,
             entry_point_check,
-            fixed_seed,
             profiles,
         }
     }
@@ -152,7 +148,6 @@ impl Callgrind {
                 Self::SEARCH_PATH,
                 env::var_os(Self::SEARCH_PATH).unwrap_or_default(),
             )
-            .env(Self::PRELOAD, &self.fixed_seed)
             .env(Self::ALLOCATOR_TUNING, Self::NO_FASTBINS)
             .args(Self::OPTIONS)
             .arg(format!("--callgrind-out-file={}", profile.display()))
@@ -217,7 +212,6 @@ mod tests {
 
     impl CallgrindFixture {
         const EXECUTABLE: &'static str = "/checkout/target/release/compiler";
-        const FIXED_SEED: &'static str = "/checkout/target/bench/fixed_seed.so";
         const PROFILES: &'static str = "/profiles";
         const PROGRAM: &'static str = "/checkout/corpus/inventory";
         const PROFILE: &'static str = "/profiles/inventory.callgrind";
@@ -234,7 +228,6 @@ mod tests {
             Callgrind::new(
                 compiler,
                 EntryPointCheck::Enforced,
-                PathBuf::from(Self::FIXED_SEED),
                 PathBuf::from(Self::PROFILES),
             )
         }
