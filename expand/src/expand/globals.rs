@@ -12,6 +12,7 @@ use crate::reader::Form;
 use crate::scope::{FastHashMap, FastHashSet, Phase};
 use crate::source::Span;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 enum GlobalState {
     Pending { value: Form, budget: BudgetId },
     Lowering,
@@ -19,7 +20,7 @@ enum GlobalState {
     Failed,
 }
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct GlobalTable {
     states: FastHashMap<BindingId, GlobalState>,
     values: FastHashMap<BindingId, Value>,
@@ -27,7 +28,7 @@ pub struct GlobalTable {
     compile_time_checks: FastHashMap<BindingId, CompileTimeCheck>,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum CompileTimeCheck {
     InProgress,
     Passed,

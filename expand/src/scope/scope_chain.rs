@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use super::Scope;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct ScopeChain {
     scopes: Rc<RefCell<Vec<Scope>>>,
 }
@@ -30,7 +30,7 @@ impl ScopeChain {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct ChainPrefix {
     chain: ScopeChain,
     length: usize,
@@ -83,7 +83,7 @@ impl PartialEq for ChainPrefix {
     }
 }
 
-#[derive(Clone, Default, PartialEq)]
+#[derive(Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub(super) struct SharedScopes {
     ascending_prefixes: Option<Rc<Vec<ChainPrefix>>>,
 }

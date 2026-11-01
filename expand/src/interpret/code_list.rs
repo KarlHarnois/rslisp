@@ -6,14 +6,14 @@ use super::Value;
 use crate::reader::{Form, FormKind};
 use crate::source::Span;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct CodeList {
     items: ListItems,
     range: Range<usize>,
     span: Span,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 enum ListItems {
     Read(Form),
     Built(Rc<RefCell<Vec<Value>>>),

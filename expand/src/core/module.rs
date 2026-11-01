@@ -4,7 +4,7 @@ use std::rc::Rc;
 use super::{BindingId, Expr, FieldLabel, Lambda, ParsedTemplate, TypeBinder, TypeBound, TypeExpr};
 use crate::source::Span;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct ModuleId(u32);
 
 impl ModuleId {
@@ -17,7 +17,7 @@ impl ModuleId {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct ModulePath(Rc<str>);
 
 impl ModulePath {
@@ -36,7 +36,7 @@ impl fmt::Display for ModulePath {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Item {
     pub kind: ItemKind,
     pub span: Span,
@@ -47,27 +47,27 @@ pub const RUST_TRAIT_METHOD_MARKER: &str = "method";
 pub const RUST_TRAIT_HELP_MARKER: &str = "help";
 pub const RUST_TRAIT_ASSOCIATED_MARKER: &str = "associated";
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct RustTraitAssociatedType {
     pub binding: BindingId,
     pub parameter: Rc<str>,
     pub rust_name: Rc<str>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct AssociatedValue {
     pub binding: BindingId,
     pub value: TypeExpr,
     pub span: Span,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct RustTraitImplementor {
     pub implementor: TypeExpr,
     pub associated: Vec<AssociatedValue>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct RustTraitDeclaration {
     pub binding: BindingId,
     pub path: Rc<str>,
@@ -78,7 +78,7 @@ pub struct RustTraitDeclaration {
     pub implementors: Vec<RustTraitImplementor>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum ItemKind {
     Def(BindingId, Expr),
     Signature(BindingId, TypeExpr),
@@ -114,27 +114,27 @@ pub enum ItemKind {
     ),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TraitAssociatedType {
     pub binding: BindingId,
     pub name: Rc<str>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ImplAssociatedType {
     pub trait_type: BindingId,
     pub name: Rc<str>,
     pub value: TypeExpr,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TraitMethod {
     pub binding: BindingId,
     pub signature: TypeExpr,
     pub default: Option<BindingId>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ImplMethod {
     pub binding: BindingId,
     pub trait_method: BindingId,
@@ -142,7 +142,7 @@ pub struct ImplMethod {
     pub lambda: Rc<Lambda>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct EnumRust {
     pub path: Rc<str>,
     pub template: Rc<ParsedTemplate>,
@@ -150,7 +150,7 @@ pub struct EnumRust {
     pub bare: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct VariantDeclaration {
     pub binding: BindingId,
     pub name: Rc<str>,
@@ -158,14 +158,14 @@ pub struct VariantDeclaration {
     pub span: Span,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum VariantPayload {
     None,
     Positional(Vec<TypeExpr>),
     Named(Vec<(FieldLabel, TypeExpr)>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct CoreModule {
     pub id: ModuleId,
     pub path: ModulePath,

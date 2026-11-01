@@ -5,7 +5,7 @@ use super::{FastHashMap, Scope, ScopeSet};
 use crate::core::{BindingId, Namespace};
 use crate::reader::Symbol;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum Phase {
     Runtime,
     CompileTime,
@@ -18,6 +18,7 @@ pub enum Resolution {
     Ambiguous(Vec<BindingId>),
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
 struct Entry {
     scopes: ScopeSet,
     binding: BindingId,
@@ -42,7 +43,7 @@ impl Entry {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 struct NameEntries {
     plain_sorted_by_anchor: Vec<Entry>,
     sharing: Vec<Entry>,
@@ -202,7 +203,7 @@ impl NameEntries {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct BindingTable {
     entries: FastHashMap<(Rc<str>, Namespace), NameEntries>,
 }

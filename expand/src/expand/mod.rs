@@ -15,6 +15,7 @@ mod module_body;
 mod module_loading;
 mod module_notes;
 mod names;
+mod prelude_state;
 mod problems;
 mod recur_check;
 mod rest_of_body;
@@ -42,6 +43,7 @@ use globals::GlobalTable;
 pub use macro_call::MacroOrigin;
 use macro_call::MacroTable;
 use module_notes::ModuleNotes;
+pub use prelude_state::{PreludeState, UnreadablePrelude};
 pub use problems::ExpandProblems;
 pub use session::ExpansionSession;
 
@@ -62,7 +64,7 @@ impl Program {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct TraitMethods {
     pub rust_name: Rc<str>,
     pub self_variable: crate::core::BindingId,
@@ -84,9 +86,10 @@ pub struct Expander<'s> {
     nesting_depth: usize,
     form_budgets: BudgetArena,
     recovered_diagnostics: Vec<Diagnostic>,
+    saved_prelude: Option<PreludeState>,
 }
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 struct ExpansionTables {
     scopes: ScopeAllocator,
     local_scopes: FastHashSet<Scope>,
@@ -122,6 +125,18 @@ impl<'s> Expander<'s> {
             nesting_depth: 0,
             form_budgets: BudgetArena::default(),
             recovered_diagnostics: Vec::new(),
+            saved_prelude: None,
+        }
+    }
+
+    pub fn with_prelude(
+        sources: &'s mut SourceMap,
+        module_sources: ModuleSources,
+        prelude: PreludeState,
+    ) -> Self {
+        Self {
+            saved_prelude: Some(prelude),
+            ..Self::new(sources, module_sources)
         }
     }
 

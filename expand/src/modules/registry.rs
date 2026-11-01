@@ -4,12 +4,13 @@ use std::rc::Rc;
 use crate::core::{BindingId, ModuleId, ModulePath, Namespace};
 use crate::scope::{Scope, ScopeSet};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 enum LoadStatus {
     Loading,
     Loaded,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct ModuleRecord {
     path: ModulePath,
     base_scope: Scope,
@@ -65,16 +66,24 @@ pub struct ModuleRegistry {
 
 impl ModuleRegistry {
     pub fn register(&mut self, path: ModulePath, base_scope: Scope, body_scope: Scope) -> ModuleId {
-        let id = ModuleId::new(self.records.len());
-        self.by_path.insert(path.clone(), id);
-        self.records.push(ModuleRecord {
+        self.adopt(ModuleRecord {
             path,
             base_scope,
             body_scope,
             exports: HashMap::new(),
             status: LoadStatus::Loading,
-        });
+        })
+    }
+
+    pub fn adopt(&mut self, record: ModuleRecord) -> ModuleId {
+        let id = ModuleId::new(self.records.len());
+        self.by_path.insert(record.path.clone(), id);
+        self.records.push(record);
         id
+    }
+
+    pub fn into_records_after(mut self, id: ModuleId) -> Vec<ModuleRecord> {
+        self.records.split_off(id.index() + 1)
     }
 
     pub fn find(&self, path: &ModulePath) -> Option<ModuleId> {

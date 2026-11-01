@@ -27,6 +27,12 @@ impl Expander<'_> {
         if let Some(id) = self.modules.find(path) {
             return self.loaded(id, path, span);
         }
+        if let Some(prelude) = self
+            .saved_prelude
+            .take_if(|_| path.as_str() == ModuleSources::PRELUDE)
+        {
+            return Ok(prelude.install(self));
+        }
         match self.module_sources.find(path) {
             Some(ModuleSource::Builtin(builtin)) => Ok(self.create_builtin(path, builtin)),
             Some(ModuleSource::Text { name, text }) => {
@@ -40,24 +46,28 @@ impl Expander<'_> {
     }
 
     pub(super) fn load_source_module(&mut self, path: ModulePath, source: SourceId) -> ModuleId {
-        let base_scope = self.tables.scopes.fresh();
-        let module_scope = self.tables.scopes.fresh();
-        let id = self
-            .modules
-            .register(path.clone(), base_scope, module_scope);
+        let id = self.register_source_module(path.clone());
         let forms = self.read_module(source);
         self.import_base(id, &path, Span::new(source, 0..0));
+        let record = self.modules.get(id);
+        let (base_scope, body_scope) = (record.base_scope(), record.body_scope());
         let scoped = forms
             .into_iter()
             .map(|mut form| {
                 form.add_scope(base_scope);
-                form.add_scope(module_scope);
+                form.add_scope(body_scope);
                 form
             })
             .collect();
         self.expand_module_body(id, scoped);
         self.modules.finish_loading(id);
         id
+    }
+
+    pub(super) fn register_source_module(&mut self, path: ModulePath) -> ModuleId {
+        let base_scope = self.tables.scopes.fresh();
+        let body_scope = self.tables.scopes.fresh();
+        self.modules.register(path, base_scope, body_scope)
     }
 
     pub(super) fn import(

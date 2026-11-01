@@ -1,6 +1,6 @@
 use super::form_budget::FormBudget;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct BudgetId(usize);
 
 pub struct BudgetArena {

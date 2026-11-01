@@ -4,7 +4,7 @@ use super::CodeList;
 use crate::core::{BindingId, Builtin, Keyword, Lambda};
 use crate::reader::{Form, FormKind, NumberValue, Symbol};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Value {
     Form(Form),
     List(CodeList),
@@ -102,16 +102,16 @@ impl Value {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Closure {
     pub lambda: Rc<Lambda>,
     pub env: Env,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct Env(Option<Rc<Frame>>);
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct Frame {
     binding: BindingId,
     value: Value,

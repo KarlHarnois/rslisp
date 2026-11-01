@@ -5,10 +5,12 @@ use std::{slice, vec};
 
 use super::scope_chain::{ChainPrefix, SharedScopes};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct Scope(u32);
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct ScopeAllocator {
     next: u32,
 }
@@ -21,7 +23,7 @@ impl ScopeAllocator {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct ScopeSet {
     sorted: SortedScopes,
 }
@@ -229,7 +231,7 @@ impl Iterator for SortedIter<'_> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 enum SortedScopes {
     Inline {
         length: usize,
