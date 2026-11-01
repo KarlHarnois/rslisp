@@ -10,7 +10,7 @@ use crate::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use crate::core::{Expr, ModulePath};
 use crate::diagnostic::{DiagnosticRenderer, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
-use crate::expand::{Expander, Program};
+use crate::expand::{Expander, PreludeState, Program};
 use crate::modules::ModuleSources;
 use crate::reader::{Form, Reader};
 use crate::source::Span;
@@ -29,6 +29,7 @@ pub struct Terminal {
 impl Terminal {
     const BUILD_DIRECTORY: &str = "target/rslisp";
     const WORKING_DIRECTORY: &str = ".";
+    const SAVED_PRELUDE: &[u8] = include_bytes!(env!("PRELUDE_STATE"));
 
     pub fn new() -> Self {
         Self {
@@ -121,19 +122,26 @@ impl Terminal {
         &mut self,
         path: &Path,
         entry: SourceId,
-        expression: Form,
+        (name, text): (&str, &str),
+        expression: impl FnOnce(SourceId) -> Form,
     ) -> Result<Expr, ExitStatus> {
         self.expander(path)
             .open(Self::module_path(path), entry)
-            .and_then(|mut session| session.expression(expression))
+            .and_then(|mut session| {
+                let source = session.add_source(name, text);
+                session.expression(expression(source))
+            })
             .map_err(|diagnostics| self.report(&diagnostics))
     }
 
     fn expander(&mut self, path: &Path) -> Expander<'_> {
         let directory = Self::directory_of(path);
-        Expander::new(
+        let prelude =
+            PreludeState::load(Self::SAVED_PRELUDE).expect("the embedded prelude state loads");
+        Expander::with_prelude(
             &mut self.sources,
             ModuleSources::new(directory.clone(), directory),
+            prelude,
         )
     }
 

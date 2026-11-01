@@ -338,6 +338,16 @@ fn doc_reports_an_unreadable_file_as_a_usage_error() {
 }
 
 #[test]
+fn doc_rejects_a_term_that_is_not_one_name_before_reading_the_file() {
+    let sandbox = Sandbox::new("doc_term_before_file");
+    let doc = sandbox.compiler(&["doc", "--file", "missing.rslisp", "x y"]);
+    assert_eq!(
+        doc.assert_exit_code(2).stderr(),
+        "error: `x y` is not one name\n"
+    );
+}
+
+#[test]
 fn doc_rejects_a_shadowing_doc_that_returns_no_string() {
     let sandbox = Sandbox::new("doc_shadowed").with_file("main.rslisp", SHADOWING_DOC);
     let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "main"]);
