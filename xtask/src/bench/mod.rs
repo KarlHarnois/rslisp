@@ -24,6 +24,7 @@ use clap::{Args, Subcommand, ValueEnum};
 
 use crate::failure::TaskFailure;
 use crate::language::LanguageSource;
+use crate::workspace::CargoWorkspace;
 use callgrind::Callgrind;
 use comparison::Comparison;
 use compiler::{BuiltCompiler, CompilerBuild};
@@ -217,7 +218,8 @@ impl<'a> FrontEndBenchmark<'a> {
     }
 
     fn profile_corpus(&self, callgrind: &Callgrind) -> Result<ResultSet, TaskFailure> {
-        let extension = LanguageSource::new(self.root).constant(Self::EXTENSION_CONSTANT)?;
+        let language = LanguageSource::find(&CargoWorkspace::read(self.root)?)?;
+        let extension = language.constant(Self::EXTENSION_CONSTANT)?;
         let programs = self.corpus(&extension)?.programs()?;
         Ok(ResultSet::new(callgrind.measure_all(&programs)?))
     }

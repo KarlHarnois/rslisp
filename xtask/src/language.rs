@@ -1,22 +1,27 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use syn::{Expr, ImplItem, Item, Lit, Type};
 
 use crate::failure::TaskFailure;
+use crate::workspace::CargoWorkspace;
 
 pub struct LanguageSource {
     path: PathBuf,
 }
 
 impl LanguageSource {
-    const FILE: &'static str = "src/language.rs";
+    const FILE: &'static str = "language.rs";
     const TYPE: &'static str = "Language";
 
-    pub fn new(root: &Path) -> Self {
-        Self {
-            path: root.join(Self::FILE),
-        }
+    pub fn find(workspace: &CargoWorkspace) -> Result<Self, TaskFailure> {
+        workspace
+            .source_directories()
+            .into_iter()
+            .map(|directory| directory.join(Self::FILE))
+            .find(|path| path.is_file())
+            .map(|path| Self { path })
+            .ok_or_else(|| TaskFailure::language_missing(Self::FILE))
     }
 
     pub fn constant(&self, name: &str) -> Result<String, TaskFailure> {
@@ -64,6 +69,7 @@ impl LanguageSource {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::workspace::WorkspaceFixture;
 
     const SOURCE: &str = r#"
         pub struct Language;
@@ -86,5 +92,17 @@ mod tests {
             Some("fake")
         );
         assert_eq!(LanguageSource::constant_in(&syntax, "VERSION"), None);
+    }
+
+    #[test]
+    fn finds_the_language_file_in_whichever_crate_holds_it() {
+        let language = LanguageSource::find(&WorkspaceFixture::workspace()).unwrap();
+        assert_eq!(language.constant("EXTENSION").unwrap(), "ldg");
+    }
+
+    #[test]
+    fn reports_a_workspace_whose_crates_hold_no_language_file() {
+        let failure = LanguageSource::find(&WorkspaceFixture::without_crates()).err();
+        assert!(failure.unwrap().to_string().contains("`language.rs`"));
     }
 }

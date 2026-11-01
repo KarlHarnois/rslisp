@@ -48,11 +48,13 @@ impl Corpus {
 mod tests {
     use super::*;
     use crate::language::LanguageSource;
+    use crate::workspace::WorkspaceFixture;
 
     #[test]
     fn lists_the_entry_programs_but_not_their_modules() {
         let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let extension = LanguageSource::new(manifest.parent().unwrap())
+        let extension = LanguageSource::find(&WorkspaceFixture::this_repository())
+            .unwrap()
             .constant("EXTENSION")
             .unwrap();
         let names: Vec<String> = Corpus::new(manifest.join("fixtures/bench/corpus"), extension)
