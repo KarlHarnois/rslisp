@@ -366,6 +366,9 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn tail_block_contents(&mut self, expr: &TypedExpr) -> Option<Vec<Fragment>> {
+        if Self::bound_literal(expr).is_some() {
+            return None;
+        }
         match &expr.kind {
             TypedExprKind::Control(TypedControl::Block(block)) => Some(self.block_contents(block)),
             TypedExprKind::Control(TypedControl::Match(matched)) => {
@@ -432,6 +435,9 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn value(&mut self, expr: &TypedExpr) -> Code {
+        if let Some(literal) = Self::bound_literal(expr) {
+            return self.expr_in(literal, TypeContext::Unknown);
+        }
         match &expr.kind {
             TypedExprKind::Control(control) => self.control(control),
             TypedExprKind::Struct(structure) => self.structure(structure, &expr.ty),
@@ -442,6 +448,11 @@ impl<'a> ExpressionEmitter<'a> {
             }
             _ => unreachable!("the caller matches a value form"),
         }
+    }
+
+    fn bound_literal(expr: &TypedExpr) -> Option<&TypedExpr> {
+        expr.let_block_value()
+            .filter(|value| matches!(value.kind, TypedExprKind::Leaf(TypedLeaf::Literal(_))))
     }
 
     fn borrow(&mut self, kind: ReferenceKind, value: &TypedExpr) -> Code {
