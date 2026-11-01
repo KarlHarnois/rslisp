@@ -20,7 +20,13 @@
         (at fallback 0))))
   (println (first (some 2019))))
 
+(def first-year
+  (do
+    (let first (fn (items) (at items 0)))
+    (deref (first (vec 2019 2021)))))
+
 (defn main ()
+  (println first-year)
   (println (first-through-closure (vec 2019 2021 2024)))
   (println (first-owned (vec 2019 2021 2024)))
   (println (local-through-closure))
