@@ -4,7 +4,7 @@
 
 The language is a Lisp that compiles to Rust. Its design follows five principles:
 
-1. **User experience first.** Better output wins over an easier implementation in every trade-off.
+1. **User experience first.** The user's experience wins over an easier implementation in every trade-off. It includes the emitted Rust, diagnostics, run output, compile speed and predictable rules, so a uniform rule beats a special case.
 2. **Few rules, no exceptions.** A feature that needs an exception gets redesigned or left out.
 3. **Small compiler, big prelude.** Anything the language can express lives in the prelude, written in the language itself. The compiler only reads, checks, reports and emits.
 4. **Rust's performance and Rust's model.** Ownership, borrowing, traits and generics work as in Rust. The compiler never adds a hidden clone or allocation, except the `Box` a recursive enum payload requires.

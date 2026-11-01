@@ -20,8 +20,10 @@ This file and the reference files it names are the living reference for working 
 
 ### User experience first
 
-- The end user's experience wins every trade-off. When better output and an easier implementation conflict, build the better output.
+- The end user's experience wins every trade-off against an easier implementation.
+- User experience covers the emitted Rust, diagnostics, run output, compile speed and the predictability of the language's rules.
 - NEVER accept worse output because it is easier to build, such as a confusing page or a doubled diagnostic.
+- A language exception costs the user too: PREFER a uniform rule that gives the better output OVER a special case.
 
 ### Few rules, no exceptions
 
