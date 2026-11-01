@@ -47,7 +47,7 @@ impl TemplateBorrows {
         })
     }
 
-    fn read_template<T>(
+    pub fn read_template<T>(
         &self,
         callee: &TypedExpr,
         absent: T,
