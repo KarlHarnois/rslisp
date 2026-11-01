@@ -30,10 +30,10 @@ fn report_signed(years: &[i64]) {
     println!("{}", years.iter().filter(|y: &&i64| **y > 2020).count())
 }
 
-fn report_years(years: &[i64], floor: &i64) {
+fn report_years(years: &[i64], floor: i64) {
     println!("{}", years.iter().filter(|y: &&i64| 2020 < **y).count());
     println!("{}", years.iter().filter(|y: &&i64| **y == 2021).count());
-    println!("{}", years.iter().filter(|y: &&i64| *y > floor).count());
+    println!("{}", years.iter().filter(|y: &&i64| **y > floor).count());
     println!("{}", years.iter().filter(|y: &&i64| **y + 1 > 2022).count());
     println!("{}", years.iter().filter(|y: &&i64| is_later(**y)).count());
     println!("{:?}", years.iter().max_by_key(|y: &&i64| **y - 2020));
@@ -58,7 +58,7 @@ fn main() {
     crate::rt::restore_default_sigpipe();
     let years: Vec<i64> = vec![2019_i64, 2021_i64, 2024_i64];
     report_signed(&years);
-    report_years(&years, &2020);
+    report_years(&years, 2020);
     let leaf = make_car("Nissan".to_string(), 2024);
     let cars = vec![leaf.clone(), make_car("Honda".to_string(), 2019)];
     println!("{}", cars.iter().filter(|c: &&Car| leaf == **c).count());

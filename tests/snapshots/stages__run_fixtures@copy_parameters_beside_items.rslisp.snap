@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/copy_parameters_beside_items.rslisp
+---
+2
+true
+2
+2
+1
+Leaf
