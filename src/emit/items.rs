@@ -920,7 +920,11 @@ impl<'a> ItemEmitter<'a> {
         };
         let used = self.used_written_lifetimes(&definition.value);
         let stored = self.result_borrows.definition_stores(definition.binding);
-        let inferred = self.function_lifetime(definition, &stored.flows);
+        let shared = stored.flows.with_values(
+            self.result_borrows
+                .reassigned_parameters(definition.binding, lambda),
+        );
+        let inferred = self.function_lifetime(definition, &shared);
         let mut emitter = self
             .expressions(info.module, &definition.value)
             .with_enclosing_lifetime(inferred.clone());
@@ -936,8 +940,8 @@ impl<'a> ItemEmitter<'a> {
             .filter(|binding| used.contains(binding))
             .collect();
         let borrows = self.result_borrows.analyse(lambda);
-        let sharing = Self::sharing_parameters(&borrows, &stored.flows);
-        let store_targets = Self::store_targets(&borrows, &stored.flows);
+        let sharing = Self::sharing_parameters(&borrows, &shared);
+        let store_targets = Self::store_targets(&borrows, &shared);
         let higher_ranked = borrows.higher_ranked;
         let opaque_lifetimes = Rc::new(FreshLifetimes::new(
             self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes),

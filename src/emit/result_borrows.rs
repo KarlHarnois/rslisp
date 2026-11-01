@@ -8,6 +8,7 @@ use super::plan::EmitPlan;
 use super::store_sites::{StoreSite, StoreSites};
 use super::stored_arguments::Store;
 use crate::core::BindingId;
+use crate::ownership::TailCalls;
 use crate::types::{
     Borrow, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
     TypedExprKind, TypedLambda, TypedLeaf, TypedMatch, TypedProgram,
@@ -49,6 +50,14 @@ impl<'a> ResultBorrows<'a> {
             return StoredFlows::default();
         }
         BodyFlows::joined_by_stores(self, lambda, &sites)
+    }
+
+    pub fn reassigned_parameters(
+        &self,
+        function: BindingId,
+        lambda: &TypedLambda,
+    ) -> FxHashSet<BindingId> {
+        BodyFlows::joined_by_tail_calls(self, lambda, &TailCalls::of(Some(function), lambda))
     }
 
     pub fn definition_stores(&self, definition: BindingId) -> Rc<DefinitionStores> {
@@ -208,6 +217,13 @@ impl StoredFlows {
         self.values.is_empty()
     }
 
+    pub fn with_values(&self, values: FxHashSet<BindingId>) -> StoredFlows {
+        StoredFlows {
+            values: self.values.union(&values).copied().collect(),
+            targets: self.targets.clone(),
+        }
+    }
+
     fn extend(&mut self, other: StoredFlows) {
         self.values.extend(other.values);
         self.targets.extend(other.targets);
@@ -305,6 +321,48 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
     fn reaches_higher_ranked(&mut self, passed: &PassedLocal) -> bool {
         self.callee_parameters(passed.callee)
             .is_higher_ranked(passed.position)
+    }
+
+    fn joined_by_tail_calls(
+        rules: &'r ResultBorrows<'a>,
+        lambda: &TypedLambda,
+        calls: &TailCalls,
+    ) -> FxHashSet<BindingId> {
+        let mut borrows = Self::new(rules, lambda, None);
+        borrows.block(&lambda.body);
+        calls
+            .arguments()
+            .iter()
+            .flat_map(|arguments| borrows.joined_by_tail_call(lambda, arguments))
+            .collect()
+    }
+
+    fn joined_by_tail_call(
+        &mut self,
+        lambda: &TypedLambda,
+        arguments: &[TypedArgument],
+    ) -> FxHashSet<BindingId> {
+        lambda
+            .params
+            .iter()
+            .zip(arguments)
+            .flat_map(|(param, argument)| {
+                self.joined_by_reassignment(param.binding, &argument.value)
+            })
+            .collect()
+    }
+
+    fn joined_by_reassignment(
+        &mut self,
+        param: BindingId,
+        value: &TypedExpr,
+    ) -> FxHashSet<BindingId> {
+        let mut sources = self.bound(value);
+        sources.remove(&param);
+        if !sources.is_empty() {
+            sources.insert(param);
+        }
+        sources
     }
 
     fn joined_by_stores(
