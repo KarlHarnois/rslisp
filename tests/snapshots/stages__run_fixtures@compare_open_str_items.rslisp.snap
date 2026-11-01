@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/compare_open_str_items.rslisp
+---
+1
+1
+Some("Leaf")

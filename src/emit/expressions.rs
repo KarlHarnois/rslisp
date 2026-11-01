@@ -448,7 +448,7 @@ impl<'a> ExpressionEmitter<'a> {
         if Self::passes_through_reference(self.program, kind, value) {
             return self.expr_in(value, TypeContext::Known);
         }
-        let place = self.place(value, TypeContext::Unknown);
+        let place = self.borrowed_operand(value, TypeContext::Unknown);
         let prefix = match kind {
             ReferenceKind::Shared => "&",
             ReferenceKind::Mutable => "&mut ",
@@ -474,11 +474,18 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn deref(&mut self, value: &TypedExpr) -> Code {
         match &value.kind {
-            TypedExprKind::Borrow(_, place) => self.place(place, TypeContext::Known),
+            TypedExprKind::Borrow(_, place) => self.borrowed_operand(place, TypeContext::Known),
             TypedExprKind::Call(callee, _) if self.borrowed_index_template(callee).is_some() => {
                 self.place(value, TypeContext::Known)
             }
             _ => Self::prefixed("*", self.expr_in(value, TypeContext::Known)),
+        }
+    }
+
+    fn borrowed_operand(&mut self, value: &TypedExpr, context: TypeContext) -> Code {
+        match &value.kind {
+            TypedExprKind::Borrow(..) => self.expr_in(value, context),
+            _ => self.place(value, context),
         }
     }
 
@@ -2113,7 +2120,7 @@ impl<'a> ExpressionEmitter<'a> {
         context: TypeContext,
         role: ArgumentRole,
     ) -> Code {
-        if let Some(value) = self.borrowed_index_argument(argument, context) {
+        if let Some(value) = self.adjusted_argument(argument, context) {
             return value;
         }
         let value = match (&argument.value.kind, role) {
@@ -2128,6 +2135,53 @@ impl<'a> ExpressionEmitter<'a> {
         match prefix {
             Some(prefix) => Self::prefixed(&prefix, value).spanned(argument.value.span),
             None => value,
+        }
+    }
+
+    fn adjusted_argument(
+        &mut self,
+        argument: &TypedArgument,
+        context: TypeContext,
+    ) -> Option<Code> {
+        self.borrowed_index_argument(argument, context)
+            .or_else(|| self.argument_under_written_borrows(argument, context))
+    }
+
+    fn argument_under_written_borrows(
+        &mut self,
+        argument: &TypedArgument,
+        context: TypeContext,
+    ) -> Option<Code> {
+        let value = &argument.value;
+        let code = match argument.borrow {
+            Borrow::Deref(levels) => {
+                self.place(Self::under_written_borrows(value, levels)?, context)
+            }
+            Borrow::Collapse(levels) => {
+                self.expr_in(Self::under_written_borrows(value, levels)?, context)
+            }
+            _ => return None,
+        };
+        Some(code.spanned(value.span))
+    }
+
+    fn under_written_borrows(value: &TypedExpr, levels: usize) -> Option<&TypedExpr> {
+        (0..levels).try_fold(
+            Self::without_dereferenced_borrows(value),
+            |value, _| match &value.kind {
+                TypedExprKind::Borrow(_, place) => Some(place.as_ref()),
+                _ => None,
+            },
+        )
+    }
+
+    fn without_dereferenced_borrows(value: &TypedExpr) -> &TypedExpr {
+        match &value.kind {
+            TypedExprKind::Deref(inner) => match &inner.kind {
+                TypedExprKind::Borrow(_, place) => Self::without_dereferenced_borrows(place),
+                _ => value,
+            },
+            _ => value,
         }
     }
 
@@ -2573,7 +2627,10 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn field_place(&mut self, value: &TypedExpr, label: &FieldLabel) -> Code {
-        let value = self.place(value, TypeContext::Known);
+        let value = self.place(
+            Self::without_dereferenced_borrows(value),
+            TypeContext::Known,
+        );
         let value = if value.is_atomic() {
             value
         } else {

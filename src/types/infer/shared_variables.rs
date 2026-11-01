@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
+use crate::core::ReferenceKind;
 use crate::diagnostic::Diagnostic;
 use crate::types::checker::TypeChecker;
 use crate::types::problems::MismatchContext;
 use crate::types::unifier::Unifier;
-use crate::types::{Borrow, Bound, Type, TypeVar, TypedArgument, TypedExpr};
+use crate::types::{Borrow, Bound, Type, TypeVar, TypedArgument, TypedExpr, TypedExprKind};
 
 pub(super) struct SharedVariables {
     groups: Vec<SharedGroup>,
@@ -267,17 +268,18 @@ impl TypeChecker {
             .iter()
             .map(|position| self.unifier.resolve(&arguments[*position].value.ty))
             .collect();
-        if resolved
-            .iter()
-            .any(|argument| self.referent_unknown(argument))
-        {
-            return self.pass_each(callee, group, arguments);
-        }
-        let referent = self.unify_referents(&positions, &resolved, arguments)?;
         let depths: Vec<usize> = positions
             .iter()
             .map(|position| self.reference_depth_as_written(&arguments[*position]))
             .collect();
+        if resolved
+            .iter()
+            .any(|argument| self.referent_unknown(argument))
+            && !self.copies_known_referent(&resolved, &depths)
+        {
+            return self.pass_each(callee, group, arguments);
+        }
+        let referent = self.unify_referents(&positions, &resolved, arguments)?;
         let target = self.target_depth(group, &referent, &depths, borrowed_by_rust);
         let span = arguments[positions[0]].value.span;
         let chosen = Self::with_references(referent, target);
@@ -293,6 +295,13 @@ impl TypeChecker {
             arguments[*position].borrow = Self::borrow_for_depth(depth, target);
         }
         Ok(())
+    }
+
+    fn copies_known_referent(&self, resolved: &[Type], depths: &[usize]) -> bool {
+        depths.windows(2).any(|pair| pair[0] != pair[1])
+            && resolved
+                .iter()
+                .any(|argument| self.holds_copy_value(Self::innermost_referent(argument)))
     }
 
     fn pass_each(
@@ -313,15 +322,71 @@ impl TypeChecker {
                 MismatchContext::Plain,
             )?;
         }
-        for position in group.positions() {
-            let borrow = self.pass_call_argument(
-                callee,
-                position,
-                &Type::Var(root),
-                &arguments[position].value,
-            )?;
-            arguments[position].borrow = borrow;
+        let shared = Type::Var(root);
+        for position in self.template_borrows_first(callee, group, &shared, arguments) {
+            self.pass_member(callee, position, &shared, &mut arguments[position])?;
         }
+        Ok(())
+    }
+
+    fn template_borrows_first(
+        &self,
+        callee: Option<&TypedExpr>,
+        group: &SharedGroup,
+        shared: &Type,
+        arguments: &[TypedArgument],
+    ) -> Vec<usize> {
+        let mut positions: Vec<usize> = group.positions().collect();
+        positions.sort_by_key(|position| {
+            self.place_the_template_borrows(callee, *position, shared, &arguments[*position].value)
+                .is_none()
+        });
+        positions
+    }
+
+    fn pass_member(
+        &mut self,
+        callee: Option<&TypedExpr>,
+        position: usize,
+        shared: &Type,
+        argument: &mut TypedArgument,
+    ) -> Result<(), Diagnostic> {
+        match self.place_the_template_borrows(callee, position, shared, &argument.value) {
+            Some(place) => self.pass_template_borrow(shared, place.clone(), argument),
+            None => {
+                argument.borrow =
+                    self.pass_call_argument(callee, position, shared, &argument.value)?;
+                Ok(())
+            }
+        }
+    }
+
+    fn place_the_template_borrows<'v>(
+        &self,
+        callee: Option<&TypedExpr>,
+        position: usize,
+        shared: &Type,
+        value: &'v TypedExpr,
+    ) -> Option<&'v TypedExpr> {
+        let TypedExprKind::Borrow(ReferenceKind::Shared, place) = &value.kind else {
+            return None;
+        };
+        let template_borrows =
+            callee.is_some_and(|callee| self.template_borrows.borrows(callee, position));
+        (template_borrows && !self.unifier.shallow(shared).is_reference()).then_some(place)
+    }
+
+    fn pass_template_borrow(
+        &mut self,
+        shared: &Type,
+        place: TypedExpr,
+        argument: &mut TypedArgument,
+    ) -> Result<(), Diagnostic> {
+        self.expect(shared, &place.ty, place.span, MismatchContext::Plain)?;
+        *argument = TypedArgument {
+            value: place,
+            borrow: Borrow::Shared,
+        };
         Ok(())
     }
 

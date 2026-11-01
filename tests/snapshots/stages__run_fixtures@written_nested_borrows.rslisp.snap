@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/written_nested_borrows.rslisp
+---
+true
+true
+true
+true
+false
+2019
+2019
+2019
+Leaf
+2019

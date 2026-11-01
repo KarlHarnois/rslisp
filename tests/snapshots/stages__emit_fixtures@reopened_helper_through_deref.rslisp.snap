@@ -1,0 +1,43 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/reopened_helper_through_deref.rslisp
+---
+fn is_same(a: i64, b: i64) -> bool {
+    a == b
+}
+
+fn check(y: &i64) -> bool {
+    let v: i64 = *y;
+    println!("{}", v);
+    is_same(*y, *y)
+}
+
+fn show(y: &i64) {
+    let v: i64 = *y;
+    println!("{}", v)
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let x: i64 = 3;
+    println!("{}", check(&x));
+    show(&x)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
