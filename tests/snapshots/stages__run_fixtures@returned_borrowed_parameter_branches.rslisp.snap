@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/returned_borrowed_parameter_branches.rslisp
+---
+2
+2019
+Some(2019)
+noting
+2019
+2019
