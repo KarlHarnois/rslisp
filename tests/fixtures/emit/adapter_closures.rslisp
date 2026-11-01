@@ -1,7 +1,10 @@
 (defstruct car :make str :year u16)
 
 (defn report-years (years)
+  (println (count (filter (iter years) (fn (y) (> (deref y) 2020)))))
   (println (sum (map (iter years) (fn (y) (+ (deref y) 1)))))
+  (println (count (take-while (iter years) (fn (y) (< (deref y) 2022)))))
+  (prn (find (iter years) (fn (y) (> (deref y) 2020))))
   (println (any (iter years) (fn (y) (> (deref y) 2020))))
   (println (all (iter years) (fn (y) (> (deref y) 2020))))
   (println (fold (iter years) 0 (fn (total y) (+ total (deref y)))))
@@ -19,6 +22,8 @@
 
 (defn main ()
   (let years (vec 2019 2021 2024))
+  (println (count (filter (iter years) (fn (y) (> (deref y) 2020)))))
+  (println (sum (map (iter years) (fn (y) (+ (deref y) 1)))))
   (report-years years)
   (let cars (vec (->car "Nissan" 2024) (->car "Honda" 2019)))
   (report-cars cars))

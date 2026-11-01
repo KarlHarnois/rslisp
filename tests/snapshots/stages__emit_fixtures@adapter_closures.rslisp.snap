@@ -14,10 +14,13 @@ fn make_car(make: &str, year: u16) -> Car<'_> {
 }
 
 fn report_years(years: &[i64]) {
+    println!("{}", years.iter().filter(|y: &&i64| **y > 2020).count());
     println!(
         "{}",
         crate::prelude::iterator::sum(years.iter().map(|y: &i64| *y + 1))
     );
+    println!("{}", years.iter().take_while(|y: &&i64| **y < 2022).count());
+    println!("{:?}", years.iter().find(|y: &&i64| **y > 2020));
     println!("{}", years.iter().any(|y: &i64| *y > 2020));
     println!("{}", years.iter().all(|y: &i64| *y > 2020));
     println!("{}", years.iter().fold(0, |total: i64, y: &i64| total + *y));
@@ -51,6 +54,11 @@ fn report_cars(cars: &[Car<'_>]) {
 fn main() {
     crate::rt::restore_default_sigpipe();
     let years: Vec<i64> = vec![2019_i64, 2021_i64, 2024_i64];
+    println!("{}", years.iter().filter(|y: &&i64| **y > 2020).count());
+    println!(
+        "{}",
+        crate::prelude::iterator::sum(years.iter().map(|y: &i64| *y + 1))
+    );
     report_years(&years);
     let cars = vec![make_car("Nissan", 2024), make_car("Honda", 2019)];
     report_cars(&cars)

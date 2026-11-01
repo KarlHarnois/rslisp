@@ -155,7 +155,7 @@ impl TypeChecker {
         for group in shared.groups() {
             if group
                 .positions()
-                .any(|position| arguments[position].value.is_written_form())
+                .any(|position| self.passes_as_written(&arguments[position].value))
             {
                 self.pass_each(callee, group, arguments)?;
                 continue;
