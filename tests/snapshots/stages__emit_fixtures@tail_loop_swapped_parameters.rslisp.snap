@@ -38,6 +38,17 @@ fn settle<'a>(mut make: &'a str, model: &'a str, mut turns: i64) -> usize {
     }
 }
 
+fn swap_years(mut low: i64, mut high: i64, mut turns: i64) -> i64 {
+    loop {
+        if turns == 0 {
+            return low;
+        } else {
+            (low, high, turns) = (high, low, turns - 1);
+            continue;
+        }
+    }
+}
+
 fn main() {
     crate::rt::restore_default_sigpipe();
     let mut spare: Vec<i64> = vec![2019_i64];
@@ -46,7 +57,8 @@ fn main() {
     println!("{} {}", spare.len(), years.len());
     let model = "Leaf".to_string();
     println!("{}", alternate("Nissan", model.as_str(), 3));
-    println!("{}", settle("Nissan", model.as_str(), 2))
+    println!("{}", settle("Nissan", model.as_str(), 2));
+    println!("{}", swap_years(2019, 2024, 3))
 }
 
 mod rt {
