@@ -1,0 +1,10 @@
+(use code list concat number-sub number-le)
+
+(def doubled
+  (fn (items times)
+    (if (number-le times 0) items (doubled (concat items items) (number-sub times 1)))))
+
+(defmacro defs ()
+  (template (do (def x (fn () missing)) ((splice (doubled (list 0) 12))) (defs) (defs))))
+
+(defs)

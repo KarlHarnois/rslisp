@@ -1,0 +1,32 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/spliced_repeated_error.rslisp
+---
+error[L0201]: cannot find `missing` in this scope
+  --> expand/spliced_repeated_error.rslisp:8:31
+   |
+ 8 |   (template (do (def x (fn () missing)) ((splice (doubled (list 0) 12))) (defs) (defs))))
+   |                               ^^^^^^^ not found in this scope
+ 9 |
+10 | (defs)
+   | ------ in this macro call
+   |
+   = note: in this expansion of `defs`
+
+error[L0207]: expected a definition at module level
+  --> expand/spliced_repeated_error.rslisp:10:1
+   |
+10 | (defs)
+   | ^^^^^^ this is not a definition
+   |
+   = help: put expressions inside a function, such as `(def run (fn () ...))`
+
+error[L0326]: macro expansion did not finish
+  --> expand/spliced_repeated_error.rslisp:10:1
+   |
+10 | (defs)
+   | ^^^^^^ expanding this call of `defs` passes 131072 forms
+   |
+   = note: the macro calls in one top-level form expand to at most 131072 forms in all
+   = help: make each recursive macro stop, or split a large expansion across several top-level forms
