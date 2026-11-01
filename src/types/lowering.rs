@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use super::associated::LoweredAssociatedValue;
 use super::checker::TypeChecker;
@@ -17,14 +17,14 @@ use crate::source::Span;
 struct LoweredBinders {
     lifetimes: Vec<BindingId>,
     params: Vec<GenericParam>,
-    scope: HashMap<BindingId, GenericId>,
+    scope: FxHashMap<BindingId, GenericId>,
 }
 
 impl TypeChecker {
     pub(super) fn lower_scheme(&mut self, type_expr: &TypeExpr) -> Result<Scheme, Diagnostic> {
         let TypeExprKind::Where(binders, inner) = type_expr.kind() else {
             return Ok(Scheme::monomorphic(
-                self.lower_type(type_expr, &HashMap::new())?,
+                self.lower_type(type_expr, &FxHashMap::default())?,
             ));
         };
         let binders = self.lower_binders(binders)?;
@@ -70,7 +70,7 @@ impl TypeChecker {
     fn lower_associated_values(
         &mut self,
         values: &[AssociatedValue],
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<Vec<LoweredAssociatedValue>, Diagnostic> {
         values
             .iter()
@@ -87,7 +87,7 @@ impl TypeChecker {
     fn lower_implementor_body(
         &mut self,
         type_expr: &TypeExpr,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<(Type, Option<Type>), Diagnostic> {
         if let TypeExprKind::With(implementor, argument) = type_expr.kind() {
             let body = self.lower_type(implementor, scope)?;
@@ -112,7 +112,7 @@ impl TypeChecker {
     fn lower_binders(&mut self, binders: &[TypeBinder]) -> Result<LoweredBinders, Diagnostic> {
         let mut lifetimes = Vec::new();
         let mut params = Vec::new();
-        let mut scope = HashMap::new();
+        let mut scope = FxHashMap::default();
         for binder in binders {
             if binder.lifetime {
                 lifetimes.push(binder.variable);
@@ -148,7 +148,7 @@ impl TypeChecker {
     fn lower_bounds(
         &mut self,
         binder: &TypeBinder,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<Vec<Bound>, Diagnostic> {
         binder
             .bounds
@@ -160,7 +160,7 @@ impl TypeChecker {
     pub(super) fn lower_type_bound(
         &mut self,
         bound: &TypeBound,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<Bound, Diagnostic> {
         let Some(argument) = &bound.argument else {
             return Ok(Bound::plain(bound.binding));
@@ -192,7 +192,7 @@ impl TypeChecker {
     pub(super) fn lower_type(
         &mut self,
         type_expr: &TypeExpr,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
         self.lower_type_kind(type_expr.kind(), type_expr, scope)
     }
@@ -201,7 +201,7 @@ impl TypeChecker {
         &mut self,
         kind: &TypeExprKind,
         type_expr: &TypeExpr,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
         match kind {
             TypeExprKind::Where(..) | TypeExprKind::With(..) | TypeExprKind::Trait(_) => {
@@ -215,7 +215,7 @@ impl TypeChecker {
         &mut self,
         kind: &TypeExprKind,
         type_expr: &TypeExpr,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
         match kind {
             TypeExprKind::Primitive(primitive) => Ok(Type::Primitive(*primitive)),
@@ -254,7 +254,7 @@ impl TypeChecker {
         kind: ClosureKind,
         parameters: &[TypeExpr],
         result: &TypeExpr,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
         let parameters = parameters
             .iter()
@@ -269,7 +269,7 @@ impl TypeChecker {
         kind: ReferenceKind,
         lifetime: Option<BindingId>,
         inner: &TypeExpr,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
         let lifetime = lifetime.map_or(Lifetime::Elided, Lifetime::written);
         let inner = Box::new(self.lower_type(inner, scope)?);
@@ -285,7 +285,7 @@ impl TypeChecker {
             .iter()
             .map(|param| self.fresh_instance(param.id))
             .collect();
-        let replacements: HashMap<GenericId, Type> = scheme
+        let replacements: FxHashMap<GenericId, Type> = scheme
             .params
             .iter()
             .zip(&fresh)
@@ -318,7 +318,7 @@ impl TypeChecker {
         binding: BindingId,
         arguments: &[TypeExpr],
         span: Span,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
         self.check_type_argument_count(binding, arguments.len(), span)?;
         let arguments = self.lower_named_arguments(binding, arguments, scope)?;
@@ -331,7 +331,7 @@ impl TypeChecker {
         &mut self,
         binding: BindingId,
         arguments: &[TypeExpr],
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<Vec<Type>, Diagnostic> {
         arguments
             .iter()
@@ -349,7 +349,7 @@ impl TypeChecker {
         &mut self,
         binding: BindingId,
         arguments: Vec<Type>,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Type {
         match (self.bindings.get(binding).kind(), scope.get(&binding)) {
             (BindingKind::TypeVariable | BindingKind::AssociatedType, Some(generic)) => {
@@ -363,7 +363,7 @@ impl TypeChecker {
     fn lower_box_argument(
         &mut self,
         argument: &TypeExpr,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
         match argument.kind() {
             TypeExprKind::Trait(binding) => {

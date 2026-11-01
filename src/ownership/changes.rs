@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use crate::core::{BindingId, ReferenceKind};
 use crate::types::{Borrow, Type, TypedExpr, TypedExprKind, TypedProgram, TypedStructExpr};
@@ -6,8 +6,8 @@ use crate::types::{Borrow, Type, TypedExpr, TypedExprKind, TypedProgram, TypedSt
 pub struct InPlaceChanges;
 
 impl InPlaceChanges {
-    pub fn of(program: &TypedProgram) -> HashSet<BindingId> {
-        let mut changed = HashSet::new();
+    pub fn of(program: &TypedProgram) -> FxHashSet<BindingId> {
+        let mut changed = FxHashSet::default();
         for definition in program
             .modules
             .iter()
@@ -22,7 +22,7 @@ impl InPlaceChanges {
         changed
     }
 
-    fn expression(expr: &TypedExpr, changed: &mut HashSet<BindingId>) {
+    fn expression(expr: &TypedExpr, changed: &mut FxHashSet<BindingId>) {
         Self::written_mut_types(&expr.ty, changed);
         for binder in expr.binders() {
             Self::written_mut_types(&binder.ty, changed);
@@ -42,7 +42,7 @@ impl InPlaceChanges {
         }
     }
 
-    fn place(place: &TypedExpr, changed: &mut HashSet<BindingId>) {
+    fn place(place: &TypedExpr, changed: &mut FxHashSet<BindingId>) {
         match &place.kind {
             TypedExprKind::Struct(TypedStructExpr::Field(owner, _)) => {
                 Self::changed_type(&owner.ty, changed);
@@ -52,7 +52,7 @@ impl InPlaceChanges {
         }
     }
 
-    fn written_mut_types(ty: &Type, changed: &mut HashSet<BindingId>) {
+    fn written_mut_types(ty: &Type, changed: &mut FxHashSet<BindingId>) {
         if let Type::Mut(_, inner) = ty {
             Self::changed_type(inner, changed);
         }
@@ -61,7 +61,7 @@ impl InPlaceChanges {
         }
     }
 
-    fn changed_type(ty: &Type, changed: &mut HashSet<BindingId>) {
+    fn changed_type(ty: &Type, changed: &mut FxHashSet<BindingId>) {
         let mut resolved = ty;
         while let Type::Ref(_, inner) | Type::Mut(_, inner) = resolved {
             resolved = inner;

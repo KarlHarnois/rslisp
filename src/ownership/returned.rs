@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use super::problems::{BorrowedStorage, DroppedValue, OwnershipProblems};
 use super::slots::DeclaredSlots;
@@ -14,7 +14,7 @@ use crate::types::{
 pub struct ReturnedBorrows<'p> {
     program: &'p TypedProgram,
     slots: DeclaredSlots<'p>,
-    owners_of_borrowing_closures: HashSet<BindingId>,
+    owners_of_borrowing_closures: FxHashSet<BindingId>,
 }
 
 impl<'p> ReturnedBorrows<'p> {
@@ -164,7 +164,7 @@ struct BorrowingClosures<'p> {
 }
 
 impl BorrowingClosures<'_> {
-    fn owners(&self) -> HashSet<BindingId> {
+    fn owners(&self) -> FxHashSet<BindingId> {
         self.program
             .closure_types
             .iter()

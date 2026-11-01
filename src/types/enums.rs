@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use super::ty::{GenericId, GenericParam, Type};
 use crate::core::BindingId;
@@ -32,7 +33,7 @@ impl VariantDefinition {
         }
     }
 
-    pub fn instantiated_payload(&self, replacements: &HashMap<GenericId, Type>) -> Vec<Type> {
+    pub fn instantiated_payload(&self, replacements: &FxHashMap<GenericId, Type>) -> Vec<Type> {
         match &self.payload {
             VariantPayload::None => Vec::new(),
             VariantPayload::Positional(types) => types
@@ -119,7 +120,7 @@ impl EnumDefinition {
         })
     }
 
-    fn replacements(&self, arguments: &[Type]) -> HashMap<GenericId, Type> {
+    fn replacements(&self, arguments: &[Type]) -> FxHashMap<GenericId, Type> {
         self.params
             .iter()
             .map(|param| param.id)
@@ -130,7 +131,7 @@ impl EnumDefinition {
 
 #[derive(Clone, Default)]
 pub struct EnumTable {
-    enums: HashMap<BindingId, EnumDefinition>,
+    enums: FxHashMap<BindingId, EnumDefinition>,
 }
 
 impl EnumTable {

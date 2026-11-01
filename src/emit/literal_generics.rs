@@ -1,15 +1,15 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use crate::core::Literal;
 use crate::types::{GenericId, Type, TypedExpr, TypedExprKind, TypedLeaf};
 
 #[derive(Default)]
 pub struct LiteralGenerics {
-    generics: HashSet<GenericId>,
+    generics: FxHashSet<GenericId>,
 }
 
 impl LiteralGenerics {
-    pub fn of(value: &TypedExpr) -> HashSet<GenericId> {
+    pub fn of(value: &TypedExpr) -> FxHashSet<GenericId> {
         let mut found = Self::default();
         found.expr(value);
         found.generics

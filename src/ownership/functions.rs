@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use crate::core::{BindingId, ReferenceKind};
 use crate::types::{
@@ -36,8 +37,8 @@ pub struct FunctionInfo {
 
 #[derive(Default)]
 pub struct FunctionTable {
-    definitions: HashMap<BindingId, FunctionInfo>,
-    local_closures: HashMap<BindingId, FunctionInfo>,
+    definitions: FxHashMap<BindingId, FunctionInfo>,
+    local_closures: FxHashMap<BindingId, FunctionInfo>,
 }
 
 impl FunctionTable {

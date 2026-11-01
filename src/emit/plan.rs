@@ -1,4 +1,6 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::BTreeSet;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::mangle::NameMangler;
 use super::problems::EmitProblems;
@@ -46,14 +48,14 @@ pub struct EmitPlan<'p> {
     program: &'p TypedProgram,
     main: BindingId,
     main_body: Option<String>,
-    definitions: HashMap<BindingId, (&'p TypedDefinition, ModuleId)>,
-    type_modules: HashMap<BindingId, ModuleId>,
-    exported: HashSet<BindingId>,
+    definitions: FxHashMap<BindingId, (&'p TypedDefinition, ModuleId)>,
+    type_modules: FxHashMap<BindingId, ModuleId>,
+    exported: FxHashSet<BindingId>,
     reached: Vec<BindingId>,
-    crate_visible: HashSet<BindingId>,
-    items: HashMap<BindingId, ItemInfo>,
+    crate_visible: FxHashSet<BindingId>,
+    items: FxHashMap<BindingId, ItemInfo>,
     used_rust_types: BTreeSet<BindingId>,
-    trait_uses: HashMap<ModuleId, BTreeSet<BindingId>>,
+    trait_uses: FxHashMap<ModuleId, BTreeSet<BindingId>>,
 }
 
 impl<'p> EmitPlan<'p> {
@@ -87,10 +89,10 @@ impl<'p> EmitPlan<'p> {
                 .flat_map(|module| module.exports.iter().copied())
                 .collect(),
             reached: Vec::new(),
-            crate_visible: HashSet::new(),
-            items: HashMap::new(),
+            crate_visible: FxHashSet::default(),
+            items: FxHashMap::default(),
             used_rust_types: BTreeSet::new(),
-            trait_uses: HashMap::new(),
+            trait_uses: FxHashMap::default(),
         };
         plan.visit_definition(main);
         plan.reach_implementations();
@@ -301,7 +303,7 @@ impl<'p> EmitPlan<'p> {
 
     fn index_definitions(
         program: &TypedProgram,
-    ) -> HashMap<BindingId, (&TypedDefinition, ModuleId)> {
+    ) -> FxHashMap<BindingId, (&TypedDefinition, ModuleId)> {
         program
             .modules
             .iter()
@@ -492,7 +494,7 @@ impl<'p> EmitPlan<'p> {
     }
 
     fn assign_items(&mut self) -> Result<(), Diagnostics> {
-        let mut taken: HashMap<(ModuleId, String), BindingId> = HashMap::new();
+        let mut taken: FxHashMap<(ModuleId, String), BindingId> = FxHashMap::default();
         let mut diagnostics = Diagnostics::default();
         for binding in self.written_items_first() {
             let info = self.item_info(binding);
@@ -525,7 +527,7 @@ impl<'p> EmitPlan<'p> {
 
     fn claim(
         &mut self,
-        taken: &mut HashMap<(ModuleId, String), BindingId>,
+        taken: &mut FxHashMap<(ModuleId, String), BindingId>,
         binding: BindingId,
         info: ItemInfo,
     ) {
@@ -533,7 +535,10 @@ impl<'p> EmitPlan<'p> {
         self.items.insert(binding, info);
     }
 
-    fn next_free_name(info: ItemInfo, taken: &HashMap<(ModuleId, String), BindingId>) -> ItemInfo {
+    fn next_free_name(
+        info: ItemInfo,
+        taken: &FxHashMap<(ModuleId, String), BindingId>,
+    ) -> ItemInfo {
         let separator = Self::rename_separator(&info);
         let name = (Self::FIRST_RENAME_SUFFIX..)
             .map(|suffix| format!("{}{separator}{suffix}", info.name))

@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::core::BindingId;
 use crate::types::{TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf};
 
 pub struct LetAliases<'e> {
-    values: HashMap<BindingId, &'e TypedExpr>,
+    values: FxHashMap<BindingId, &'e TypedExpr>,
 }
 
 impl<'e> LetAliases<'e> {
@@ -53,7 +53,7 @@ impl<'e> LetAliases<'e> {
         resolved
     }
 
-    pub fn origins(&self) -> HashMap<BindingId, BindingId> {
+    pub fn origins(&self) -> FxHashMap<BindingId, BindingId> {
         self.values
             .keys()
             .map(|alias| (*alias, self.origin(*alias)))

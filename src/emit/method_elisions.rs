@@ -1,6 +1,7 @@
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::plan::EmitPlan;
 use super::result_borrows::ResultBorrows;
@@ -14,26 +15,26 @@ type TraitMethodKey = (BindingId, String);
 
 #[derive(Default)]
 pub struct MethodLifetimes {
-    elided: HashSet<usize>,
-    shared: HashSet<usize>,
+    elided: FxHashSet<usize>,
+    shared: FxHashSet<usize>,
 }
 
 impl MethodLifetimes {
-    fn sharing(called_with_local: HashSet<usize>, flowing: HashSet<usize>) -> Self {
+    fn sharing(called_with_local: FxHashSet<usize>, flowing: FxHashSet<usize>) -> Self {
         Self {
             elided: called_with_local,
             shared: flowing,
         }
     }
 
-    fn eliding(called_with_local: HashSet<usize>, flowing: HashSet<usize>) -> Self {
+    fn eliding(called_with_local: FxHashSet<usize>, flowing: FxHashSet<usize>) -> Self {
         Self {
             elided: called_with_local.union(&flowing).copied().collect(),
-            shared: HashSet::new(),
+            shared: FxHashSet::default(),
         }
     }
 
-    pub fn elided(&self) -> &HashSet<usize> {
+    pub fn elided(&self) -> &FxHashSet<usize> {
         &self.elided
     }
 
@@ -51,8 +52,8 @@ impl MethodLifetimes {
 }
 
 pub struct TraitMethodElisions {
-    implemented_traits: HashMap<BindingId, BindingId>,
-    lifetimes: RefCell<HashMap<TraitMethodKey, Rc<MethodLifetimes>>>,
+    implemented_traits: FxHashMap<BindingId, BindingId>,
+    lifetimes: RefCell<FxHashMap<TraitMethodKey, Rc<MethodLifetimes>>>,
 }
 
 impl TraitMethodElisions {
@@ -157,9 +158,9 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
         }
     }
 
-    fn parameter_positions(&self, bodies: &[&TypedLambda]) -> (HashSet<usize>, HashSet<usize>) {
-        let mut called_with_local = HashSet::new();
-        let mut flowing = HashSet::new();
+    fn parameter_positions(&self, bodies: &[&TypedLambda]) -> (FxHashSet<usize>, FxHashSet<usize>) {
+        let mut called_with_local = FxHashSet::default();
+        let mut flowing = FxHashSet::default();
         for lambda in bodies {
             let borrows = self.result_borrows.analyse(lambda);
             called_with_local.extend(Self::positions(lambda, &borrows.higher_ranked));
@@ -169,7 +170,7 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
         (called_with_local, flowing)
     }
 
-    fn positions(lambda: &TypedLambda, bindings: &HashSet<BindingId>) -> Vec<usize> {
+    fn positions(lambda: &TypedLambda, bindings: &FxHashSet<BindingId>) -> Vec<usize> {
         lambda
             .params
             .iter()
@@ -182,7 +183,7 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
     fn flows_past_elision(
         &self,
         lambda: &TypedLambda,
-        flowing: &HashSet<usize>,
+        flowing: &FxHashSet<usize>,
         receiver: Option<ReceiverKind>,
     ) -> bool {
         let borrows = SignatureBorrows::new(self.program);
@@ -203,9 +204,9 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
             .collect()
     }
 
-    fn arguments_behind_receiver(&self, trait_binding: BindingId, name: &str) -> HashSet<usize> {
+    fn arguments_behind_receiver(&self, trait_binding: BindingId, name: &str) -> FxHashSet<usize> {
         let Some(declared) = self.declared(trait_binding, name) else {
-            return HashSet::new();
+            return FxHashSet::default();
         };
         let borrowed_receiver = matches!(
             declared.receiver,
@@ -219,11 +220,11 @@ impl<'r, 'a> MethodElisions<'r, 'a> {
             Some(Type::Function(_, parameters, _)) if borrowed_receiver => {
                 Self::borrowed_arguments(self.program, parameters)
             }
-            _ => HashSet::new(),
+            _ => FxHashSet::default(),
         }
     }
 
-    fn borrowed_arguments(program: &TypedProgram, parameters: &[Type]) -> HashSet<usize> {
+    fn borrowed_arguments(program: &TypedProgram, parameters: &[Type]) -> FxHashSet<usize> {
         parameters
             .iter()
             .enumerate()

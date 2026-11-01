@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use crate::core::BindingId;
 use crate::types::{
@@ -35,7 +35,7 @@ impl LambdaSource {
         self.let_bound(name).0
     }
 
-    pub fn names(&self, bindings: &HashSet<BindingId>) -> HashSet<&str> {
+    pub fn names(&self, bindings: &FxHashSet<BindingId>) -> FxHashSet<&str> {
         bindings.iter().map(|binding| self.name(*binding)).collect()
     }
 

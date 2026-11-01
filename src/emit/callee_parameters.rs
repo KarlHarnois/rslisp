@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::core::BindingId;
 
@@ -44,10 +44,10 @@ impl CalleeParameters {
 
 #[derive(Default)]
 pub(super) struct OpenCallees {
-    orders: HashMap<BindingId, usize>,
+    orders: FxHashMap<BindingId, usize>,
     stack: Vec<BindingId>,
-    provisional: HashMap<BindingId, CalleeParameters>,
-    assumed: HashSet<BindingId>,
+    provisional: FxHashMap<BindingId, CalleeParameters>,
+    assumed: FxHashSet<BindingId>,
 }
 
 impl OpenCallees {

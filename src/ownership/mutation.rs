@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::core::{BindingId, ReferenceKind};
 use crate::types::{
@@ -8,17 +8,17 @@ use crate::types::{
 
 #[derive(Default)]
 pub struct ChangedValues {
-    aliases: HashMap<BindingId, BindingId>,
-    changed: HashSet<BindingId>,
-    recursive_arguments: HashSet<BindingId>,
+    aliases: FxHashMap<BindingId, BindingId>,
+    changed: FxHashSet<BindingId>,
+    recursive_arguments: FxHashSet<BindingId>,
 }
 
 impl ChangedValues {
     pub fn of(lambda: &TypedLambda, enclosing: BindingId) -> Self {
         let mut values = Self {
-            aliases: HashMap::new(),
-            changed: HashSet::new(),
-            recursive_arguments: HashSet::new(),
+            aliases: FxHashMap::default(),
+            changed: FxHashSet::default(),
+            recursive_arguments: FxHashSet::default(),
         };
         values.block(&lambda.body, enclosing);
         values

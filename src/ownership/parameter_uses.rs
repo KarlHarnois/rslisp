@@ -1,15 +1,16 @@
-use std::collections::HashMap;
 use std::collections::hash_map::Entry;
+
+use rustc_hash::FxHashMap;
 
 use crate::core::BindingId;
 use crate::types::ClosureKind;
 
 #[derive(Clone, Default)]
 pub struct ParameterUses {
-    calls: HashMap<BindingId, usize>,
-    uses: HashMap<BindingId, usize>,
-    pass_limits: HashMap<BindingId, ClosureKind>,
-    required: HashMap<BindingId, ClosureKind>,
+    calls: FxHashMap<BindingId, usize>,
+    uses: FxHashMap<BindingId, usize>,
+    pass_limits: FxHashMap<BindingId, ClosureKind>,
+    required: FxHashMap<BindingId, ClosureKind>,
 }
 
 impl ParameterUses {
@@ -88,8 +89,8 @@ impl ParameterUses {
     }
 
     fn combine_with<T: Copy>(
-        joined: &mut HashMap<BindingId, T>,
-        other: HashMap<BindingId, T>,
+        joined: &mut FxHashMap<BindingId, T>,
+        other: FxHashMap<BindingId, T>,
         combine: fn(T, T) -> T,
     ) {
         for (parameter, value) in other {
@@ -106,9 +107,9 @@ impl ParameterUses {
     }
 
     fn added_since(
-        counts: &HashMap<BindingId, usize>,
-        before: &HashMap<BindingId, usize>,
-    ) -> HashMap<BindingId, usize> {
+        counts: &FxHashMap<BindingId, usize>,
+        before: &FxHashMap<BindingId, usize>,
+    ) -> FxHashMap<BindingId, usize> {
         counts
             .iter()
             .map(|(parameter, count)| {

@@ -1,5 +1,6 @@
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::fragment::{Code, Fragment, Precedence};
 use super::local_closures::LocalClosures;
@@ -172,11 +173,11 @@ pub struct ExpressionEmitter<'a> {
     module: ModuleId,
     pub locals: LocalNames,
     pub problems: Vec<Diagnostic>,
-    mutable_locals: HashSet<BindingId>,
+    mutable_locals: FxHashSet<BindingId>,
     stored_functions: StoredFunctions<'a>,
     local_closures: LocalClosures<'a>,
     enclosing_lifetime: Option<String>,
-    result_parameters: HashSet<BindingId>,
+    result_parameters: FxHashSet<BindingId>,
     tail_loop: Option<TailLoop>,
     loop_exit: LoopExit,
 }
@@ -203,11 +204,11 @@ impl<'a> ExpressionEmitter<'a> {
             module,
             locals,
             problems: Vec::new(),
-            mutable_locals: HashSet::new(),
+            mutable_locals: FxHashSet::default(),
             stored_functions: StoredFunctions::new(program),
             local_closures: LocalClosures::new(program),
             enclosing_lifetime: None,
-            result_parameters: HashSet::new(),
+            result_parameters: FxHashSet::default(),
             tail_loop: None,
             loop_exit: LoopExit::Return,
         }
@@ -217,7 +218,7 @@ impl<'a> ExpressionEmitter<'a> {
         self.tail_loop = TailLoop::of(function, lambda);
     }
 
-    pub fn with_mutable_locals(mut self, mutable_locals: HashSet<BindingId>) -> Self {
+    pub fn with_mutable_locals(mut self, mutable_locals: FxHashSet<BindingId>) -> Self {
         self.mutable_locals = mutable_locals;
         self
     }
@@ -1452,14 +1453,14 @@ impl<'a> ExpressionEmitter<'a> {
             .spanned(value.span)
     }
 
-    fn result_parameters_of(&self, lambda: &TypedLambda, ty: &Type) -> HashSet<BindingId> {
+    fn result_parameters_of(&self, lambda: &TypedLambda, ty: &Type) -> FxHashSet<BindingId> {
         match ty {
             Type::Function(_, _, result) if self.program.function_type_returns_borrow(result) => {
                 ResultBorrows::new(self.program, self.plan)
                     .analyse(lambda)
                     .flows
             }
-            _ => HashSet::new(),
+            _ => FxHashSet::default(),
         }
     }
 
@@ -1865,7 +1866,7 @@ impl<'a> ExpressionEmitter<'a> {
         let Some(definition) = self.plan.definition(binding) else {
             return Vec::new();
         };
-        let mut bindings = HashMap::new();
+        let mut bindings = FxHashMap::default();
         Self::collect_generic_bindings(&definition.scheme.body, instantiated, &mut bindings);
         definition
             .scheme
@@ -1884,7 +1885,7 @@ impl<'a> ExpressionEmitter<'a> {
     fn collect_generic_bindings(
         pattern: &Type,
         instantiated: &Type,
-        bindings: &mut HashMap<GenericId, Type>,
+        bindings: &mut FxHashMap<GenericId, Type>,
     ) {
         match (pattern, instantiated) {
             (Type::Generic(generic), ty) => {

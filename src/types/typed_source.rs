@@ -1,5 +1,6 @@
-use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{DefinitionGraph, InferredCopies, LiteralDefaults, TypeChecker, TypedProgram};
 use crate::core::ModulePath;
@@ -37,9 +38,9 @@ impl TypedSource {
         TypeChecker::check(
             &self.program,
             graph,
-            &HashSet::new(),
+            &FxHashSet::default(),
             &InferredCopies::default(),
-            &HashMap::new(),
+            &FxHashMap::default(),
             LiteralDefaults::default(),
             false,
         )

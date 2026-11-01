@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+use rustc_hash::{FxHashMap, FxHashSet};
+
 use super::Expander;
 use super::budget_arena::BudgetId;
 use super::problems::ExpandProblems;
@@ -9,7 +11,7 @@ use crate::core::{BindingId, Expr};
 use crate::diagnostic::Diagnostic;
 use crate::interpret::{Env, Interpreter, Value};
 use crate::reader::Form;
-use crate::scope::{FastHashMap, FastHashSet, Phase};
+use crate::scope::Phase;
 use crate::source::Span;
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -22,10 +24,10 @@ enum GlobalState {
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct GlobalTable {
-    states: FastHashMap<BindingId, GlobalState>,
-    values: FastHashMap<BindingId, Value>,
-    evaluating: FastHashSet<BindingId>,
-    compile_time_checks: FastHashMap<BindingId, CompileTimeCheck>,
+    states: FxHashMap<BindingId, GlobalState>,
+    values: FxHashMap<BindingId, Value>,
+    evaluating: FxHashSet<BindingId>,
+    compile_time_checks: FxHashMap<BindingId, CompileTimeCheck>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

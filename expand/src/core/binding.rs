@@ -1,5 +1,6 @@
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{Builtin, KernelForm, KernelType, ModuleId};
 
@@ -69,8 +70,8 @@ impl BindingInfo {
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct BindingArena {
     infos: Vec<BindingInfo>,
-    introduced: HashSet<BindingId>,
-    answering_macros: HashMap<BindingId, BindingId>,
+    introduced: FxHashSet<BindingId>,
+    answering_macros: FxHashMap<BindingId, BindingId>,
 }
 
 impl BindingArena {

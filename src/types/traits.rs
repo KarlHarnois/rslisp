@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use super::projection::ProjectionTable;
 use super::selection::{ImplementorMatch, Selection};
@@ -29,9 +30,9 @@ impl RustTrait {
 
 #[derive(Default)]
 pub struct TraitTable {
-    traits: HashMap<BindingId, RustTrait>,
+    traits: FxHashMap<BindingId, RustTrait>,
     projections: Rc<ProjectionTable>,
-    normalized_implementors: HashMap<BindingId, Vec<Implementor>>,
+    normalized_implementors: FxHashMap<BindingId, Vec<Implementor>>,
 }
 
 impl TraitTable {

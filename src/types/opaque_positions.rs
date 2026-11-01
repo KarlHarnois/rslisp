@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::checker::TypeChecker;
 use super::enums::EnumTable;
@@ -36,7 +36,7 @@ struct OpaquePositions<'c> {
     structs: &'c StructTable,
     enums: &'c EnumTable,
     receivers: MethodReceivers<'c>,
-    definitions: &'c HashMap<BindingId, TypedDefinition>,
+    definitions: &'c FxHashMap<BindingId, TypedDefinition>,
     closures: &'c [ClosureType],
     modules: &'c [CoreModule],
 }
@@ -45,7 +45,7 @@ impl TypeChecker {
     pub(super) fn check_opaque_positions(
         &mut self,
         modules: &[CoreModule],
-        definitions: &HashMap<BindingId, TypedDefinition>,
+        definitions: &FxHashMap<BindingId, TypedDefinition>,
     ) {
         let positions = OpaquePositions {
             rust_types: &self.rust_types,
@@ -118,7 +118,7 @@ impl OpaquePositions<'_> {
     }
 
     fn once_per_span(found: Vec<UnnameableType>) -> Vec<UnnameableType> {
-        let mut reported = HashSet::new();
+        let mut reported = FxHashSet::default();
         found
             .into_iter()
             .filter(|unnameable| reported.insert(unnameable.span))

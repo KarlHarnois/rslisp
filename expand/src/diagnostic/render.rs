@@ -1,8 +1,8 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::ops::Range;
 
 use annotate_snippets::{AnnotationKind, Group, Level, Patch, Renderer, Snippet};
+use rustc_hash::FxHashMap;
 
 use super::source_window::{LineIndex, SourceWindow};
 use super::{Diagnostic, Diagnostics, Help, Label, Suggestion};
@@ -11,7 +11,7 @@ use crate::source::{SourceId, SourceMap};
 pub struct DiagnosticRenderer<'a> {
     sources: &'a SourceMap,
     renderer: Renderer,
-    line_indexes: RefCell<HashMap<SourceId, LineIndex>>,
+    line_indexes: RefCell<FxHashMap<SourceId, LineIndex>>,
 }
 
 impl<'a> DiagnosticRenderer<'a> {

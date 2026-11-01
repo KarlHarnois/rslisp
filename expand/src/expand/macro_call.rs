@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+use rustc_hash::FxHashMap;
+
 use super::Expander;
 use super::context::DefinitionContext;
 use super::form_budget::FormBudget;
@@ -9,7 +11,7 @@ use crate::core::{BindingId, BindingKind, Expr, KernelForm, Lambda, Namespace};
 use crate::diagnostic::{Diagnostic, Label};
 use crate::interpret::{Closure, Env, Interpreter, Value};
 use crate::reader::Form;
-use crate::scope::{FastHashMap, Phase, Scope};
+use crate::scope::{Phase, Scope};
 use crate::source::Span;
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -28,7 +30,7 @@ pub struct MacroOrigin {
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct MacroTable {
-    states: FastHashMap<BindingId, MacroState>,
+    states: FxHashMap<BindingId, MacroState>,
 }
 
 impl MacroTable {

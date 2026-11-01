@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use super::plan::EmitPlan;
 use super::types::RustTypes;
@@ -9,7 +9,7 @@ use crate::types::{
 };
 
 pub struct UnsizedParameters {
-    generic_ids: HashSet<GenericId>,
+    generic_ids: FxHashSet<GenericId>,
 }
 
 impl UnsizedParameters {
@@ -66,8 +66,8 @@ impl UnsizedParameters {
         instances.extend(GenericBinding::of(&definition.scheme.body, actual).into_bound());
     }
 
-    fn solve(program: &TypedProgram, instances: Vec<(GenericId, Type)>) -> HashSet<GenericId> {
-        let mut found = HashSet::new();
+    fn solve(program: &TypedProgram, instances: Vec<(GenericId, Type)>) -> FxHashSet<GenericId> {
+        let mut found = FxHashSet::default();
         loop {
             let mut changed = false;
             for (generic, actual) in &instances {
@@ -81,7 +81,7 @@ impl UnsizedParameters {
         }
     }
 
-    fn is_unsized(program: &TypedProgram, ty: &Type, found: &HashSet<GenericId>) -> bool {
+    fn is_unsized(program: &TypedProgram, ty: &Type, found: &FxHashSet<GenericId>) -> bool {
         match ty {
             Type::Primitive(PrimitiveType::Str) => true,
             Type::Named(binding, _) => {

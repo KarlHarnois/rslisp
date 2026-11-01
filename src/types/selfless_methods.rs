@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::core::{BindingId, TraitMethod, TypeExpr, TypeExprKind};
 use crate::source::Span;
@@ -11,7 +11,7 @@ pub(super) struct SelflessMethod {
 
 #[derive(Default)]
 pub(super) struct SelflessMethods {
-    methods: HashMap<BindingId, SelflessMethod>,
+    methods: FxHashMap<BindingId, SelflessMethod>,
 }
 
 impl SelflessMethods {

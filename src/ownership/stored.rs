@@ -1,5 +1,6 @@
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::aliases::LetAliases;
 use super::held::{HeldClosures, RustTemplates};
@@ -50,7 +51,7 @@ impl<'p> StoredClosures<'p> {
             .collect()
     }
 
-    fn stored_parameters(&self) -> HashSet<BindingId> {
+    fn stored_parameters(&self) -> FxHashSet<BindingId> {
         self.definitions
             .iter()
             .flat_map(DefinitionTree::functions)
@@ -69,7 +70,7 @@ impl<'p> StoredClosures<'p> {
     }
 
     fn capturing_stores(&self, definition: &DefinitionTree) -> Vec<Diagnostic> {
-        let mut reported_closures = HashSet::new();
+        let mut reported_closures = FxHashSet::default();
         let held = HeldClosures::new(&definition.aliases, &self.templates);
         definition
             .stores(&self.slots, &self.storing)
@@ -273,7 +274,7 @@ impl<'e> Store<'e> {
 
 #[derive(Default)]
 struct StoringParameters {
-    slots: HashMap<(BindingId, usize), FunctionSlot>,
+    slots: FxHashMap<(BindingId, usize), FunctionSlot>,
 }
 
 impl StoringParameters {
@@ -318,7 +319,7 @@ impl StoringParameters {
         templates: &RustTemplates,
     ) -> Vec<((BindingId, usize), FunctionSlot)> {
         let held = HeldClosures::new(&definition.aliases, templates);
-        let positions: HashMap<BindingId, (BindingId, usize)> = definition
+        let positions: FxHashMap<BindingId, (BindingId, usize)> = definition
             .functions()
             .into_iter()
             .flat_map(|(function, lambda)| {

@@ -1,11 +1,11 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::mangle::NameMangler;
 use crate::core::BindingId;
 
 pub struct LocalNames {
-    used: HashSet<String>,
-    assigned: HashMap<BindingId, String>,
+    used: FxHashSet<String>,
+    assigned: FxHashMap<BindingId, String>,
     scopes: Vec<Vec<String>>,
 }
 
@@ -15,7 +15,7 @@ impl LocalNames {
     pub fn new(reserved: impl IntoIterator<Item = String>) -> Self {
         Self {
             used: reserved.into_iter().collect(),
-            assigned: HashMap::new(),
+            assigned: FxHashMap::default(),
             scopes: Vec::new(),
         }
     }

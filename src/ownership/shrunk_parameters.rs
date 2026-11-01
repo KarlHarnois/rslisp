@@ -1,18 +1,18 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::core::BindingId;
 use crate::types::{Type, TypedProgram};
 
 #[derive(Default)]
 pub struct ShrunkParameters {
-    parameters: HashMap<BindingId, Type>,
-    declarations: HashMap<BindingId, Vec<(usize, Type)>>,
+    parameters: FxHashMap<BindingId, Type>,
+    declarations: FxHashMap<BindingId, Vec<(usize, Type)>>,
 }
 
 impl ShrunkParameters {
     pub fn new(
-        parameters: HashMap<BindingId, Type>,
-        declarations: HashMap<BindingId, Vec<(usize, Type)>>,
+        parameters: FxHashMap<BindingId, Type>,
+        declarations: FxHashMap<BindingId, Vec<(usize, Type)>>,
     ) -> Self {
         Self {
             parameters,
@@ -20,7 +20,7 @@ impl ShrunkParameters {
         }
     }
 
-    pub fn parameters(&self) -> &HashMap<BindingId, Type> {
+    pub fn parameters(&self) -> &FxHashMap<BindingId, Type> {
         &self.parameters
     }
 

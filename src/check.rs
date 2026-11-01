@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::core::{BindingId, StructDerives};
 use crate::diagnostic::Diagnostics;
@@ -20,9 +20,9 @@ impl ProgramChecker {
 struct CheckRuns<'a> {
     program: &'a Program,
     graph: DefinitionGraph<'a>,
-    blocked: HashSet<BindingId>,
+    blocked: FxHashSet<BindingId>,
     inferred_copies: InferredCopies,
-    pins: HashMap<BindingId, Type>,
+    pins: FxHashMap<BindingId, Type>,
 }
 
 struct CheckedProgram {
@@ -36,9 +36,9 @@ impl<'a> CheckRuns<'a> {
         Self {
             program,
             graph: DefinitionGraph::of(program),
-            blocked: HashSet::new(),
+            blocked: FxHashSet::default(),
             inferred_copies: InferredCopies::default(),
-            pins: HashMap::new(),
+            pins: FxHashMap::default(),
         }
     }
 
@@ -101,11 +101,11 @@ impl<'a> CheckRuns<'a> {
         }
     }
 
-    fn pins(report: &InstantiationReport) -> HashMap<BindingId, Type> {
+    fn pins(report: &InstantiationReport) -> FxHashMap<BindingId, Type> {
         Pinning::of(report).pins().iter().cloned().collect()
     }
 
-    fn new_pins(&self, report: &InstantiationReport) -> HashMap<BindingId, Type> {
+    fn new_pins(&self, report: &InstantiationReport) -> FxHashMap<BindingId, Type> {
         Self::pins(report)
             .into_iter()
             .filter(|(binding, _)| !self.pins.contains_key(binding))
@@ -179,7 +179,7 @@ impl<'a> CheckRuns<'a> {
         Err(diagnostics)
     }
 
-    fn inferred_copy_changed(typed: &TypedProgram) -> HashSet<BindingId> {
+    fn inferred_copy_changed(typed: &TypedProgram) -> FxHashSet<BindingId> {
         InPlaceChanges::of(typed)
             .into_iter()
             .filter(|binding| {

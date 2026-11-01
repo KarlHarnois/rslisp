@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use super::{ArgumentRole, BoxPosition, ExpressionEmitter, LoopExit, TypeContext};
 use crate::core::BindingId;
@@ -12,7 +12,7 @@ use crate::types::{
 pub struct TailLoop {
     function: Option<BindingId>,
     params: Vec<BindingId>,
-    reassigned: HashSet<BindingId>,
+    reassigned: FxHashSet<BindingId>,
 }
 
 impl TailLoop {

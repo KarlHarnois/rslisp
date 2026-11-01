@@ -1,6 +1,7 @@
 use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::fresh_lifetimes::FreshLifetimes;
 use super::function_borrow::FunctionBorrow;
@@ -22,9 +23,9 @@ pub enum TypePosition {
 
 #[derive(Default, Clone)]
 pub struct LifetimeScope {
-    names: HashMap<BindingId, String>,
+    names: FxHashMap<BindingId, String>,
     elided: Option<String>,
-    elided_written: HashSet<BindingId>,
+    elided_written: FxHashSet<BindingId>,
     opaque_lifetimes: Option<Rc<FreshLifetimes>>,
     names_function_lifetime: bool,
     reserved: Option<String>,
@@ -32,11 +33,11 @@ pub struct LifetimeScope {
 }
 
 impl LifetimeScope {
-    pub fn new(names: HashMap<BindingId, String>) -> Self {
+    pub fn new(names: FxHashMap<BindingId, String>) -> Self {
         Self {
             names,
             elided: None,
-            elided_written: HashSet::new(),
+            elided_written: FxHashSet::default(),
             opaque_lifetimes: None,
             names_function_lifetime: false,
             reserved: None,
@@ -263,7 +264,7 @@ impl<'a> RustTypes<'a> {
         &self,
         params: &[GenericParam],
         signature: &Type,
-        literal_generics: &HashSet<GenericId>,
+        literal_generics: &FxHashSet<GenericId>,
     ) -> String {
         if params.is_empty() {
             return String::new();

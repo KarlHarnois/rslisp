@@ -1,10 +1,10 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use crate::core::BindingId;
 
 #[derive(Default)]
 pub struct Refusals {
-    refused: HashSet<BindingId>,
+    refused: FxHashSet<BindingId>,
     followings: Vec<Following>,
 }
 
@@ -23,7 +23,7 @@ impl Refusals {
         self.followings.push(Following { leader, follower });
     }
 
-    pub fn spread(mut self) -> HashSet<BindingId> {
+    pub fn spread(mut self) -> FxHashSet<BindingId> {
         self.followings.sort_unstable();
         let mut pending: Vec<BindingId> = self.refused.iter().copied().collect();
         while let Some(leader) = pending.pop() {
@@ -47,7 +47,7 @@ impl Refusals {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
+    use rustc_hash::FxHashSet;
 
     use super::Refusals;
     use crate::core::{BindingArena, BindingId, BindingInfo, BindingKind};
@@ -70,7 +70,7 @@ mod tests {
                 .add(BindingInfo::new(name.into(), BindingKind::Local, None))
         }
 
-        fn spread(self) -> HashSet<BindingId> {
+        fn spread(self) -> FxHashSet<BindingId> {
             self.refusals.spread()
         }
     }
@@ -84,7 +84,10 @@ mod tests {
         fixture.refusals.follow(outer, middle);
         fixture.refusals.follow(middle, inner);
         fixture.refusals.refuse(inner);
-        assert_eq!(fixture.spread(), HashSet::from([inner, middle, outer]));
+        assert_eq!(
+            fixture.spread(),
+            FxHashSet::from_iter([inner, middle, outer])
+        );
     }
 
     #[test]
@@ -94,7 +97,7 @@ mod tests {
         let odd = fixture.parameter("odd");
         fixture.refusals.follow(even, odd);
         fixture.refusals.follow(odd, even);
-        assert_eq!(fixture.spread(), HashSet::new());
+        assert_eq!(fixture.spread(), FxHashSet::default());
     }
 
     #[test]
@@ -107,7 +110,7 @@ mod tests {
         fixture.refusals.follow(fill, pad);
         fixture.refusals.follow(pad, push);
         fixture.refusals.refuse(push);
-        assert_eq!(fixture.spread(), HashSet::from([pad, fill, push]));
+        assert_eq!(fixture.spread(), FxHashSet::from_iter([pad, fill, push]));
     }
 
     #[test]
@@ -118,6 +121,6 @@ mod tests {
         let follower = fixture.parameter("follower");
         fixture.refusals.follow(follower, leader);
         fixture.refusals.refuse(refused);
-        assert_eq!(fixture.spread(), HashSet::from([refused]));
+        assert_eq!(fixture.spread(), FxHashSet::from_iter([refused]));
     }
 }

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::function_borrow::FunctionBorrow;
 use crate::core::BindingId;
@@ -9,18 +9,18 @@ use crate::types::{
 
 pub struct LocalClosures<'a> {
     program: &'a TypedProgram,
-    argument_borrows: HashMap<BindingId, Vec<Option<FunctionBorrow>>>,
-    borrowed_parameters: HashMap<BindingId, FunctionBorrow>,
-    mutably_borrowed_arguments: HashSet<BindingId>,
+    argument_borrows: FxHashMap<BindingId, Vec<Option<FunctionBorrow>>>,
+    borrowed_parameters: FxHashMap<BindingId, FunctionBorrow>,
+    mutably_borrowed_arguments: FxHashSet<BindingId>,
 }
 
 impl<'a> LocalClosures<'a> {
     pub fn new(program: &'a TypedProgram) -> Self {
         Self {
             program,
-            argument_borrows: HashMap::new(),
-            borrowed_parameters: HashMap::new(),
-            mutably_borrowed_arguments: HashSet::new(),
+            argument_borrows: FxHashMap::default(),
+            borrowed_parameters: FxHashMap::default(),
+            mutably_borrowed_arguments: FxHashSet::default(),
         }
     }
 
@@ -100,7 +100,7 @@ impl<'a> LocalClosures<'a> {
         &mut self,
         closure: BindingId,
         lambda: &TypedLambda,
-        borrowed: &HashSet<BindingId>,
+        borrowed: &FxHashSet<BindingId>,
     ) {
         let borrows: Vec<Option<FunctionBorrow>> = lambda
             .params
@@ -118,7 +118,7 @@ impl<'a> LocalClosures<'a> {
 
     fn function_borrow(
         param: &TypedBinder,
-        borrowed: &HashSet<BindingId>,
+        borrowed: &FxHashSet<BindingId>,
     ) -> Option<FunctionBorrow> {
         let Type::Function(kind, _, _) = param.ty else {
             return None;

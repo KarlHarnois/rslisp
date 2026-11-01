@@ -1,6 +1,7 @@
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::callee_parameters::{CalleeParameters, OpenCallees};
 use super::plan::EmitPlan;
@@ -15,9 +16,9 @@ use crate::types::{
 pub struct ResultBorrows<'a> {
     program: &'a TypedProgram,
     plan: &'a EmitPlan<'a>,
-    parameters_by_callee: RefCell<HashMap<BindingId, CalleeParameters>>,
+    parameters_by_callee: RefCell<FxHashMap<BindingId, CalleeParameters>>,
     open_callees: RefCell<OpenCallees>,
-    stores_by_definition: RefCell<HashMap<BindingId, Rc<DefinitionStores>>>,
+    stores_by_definition: RefCell<FxHashMap<BindingId, Rc<DefinitionStores>>>,
     no_stores: Rc<DefinitionStores>,
 }
 
@@ -31,9 +32,9 @@ impl<'a> ResultBorrows<'a> {
         Self {
             program,
             plan,
-            parameters_by_callee: RefCell::new(HashMap::new()),
+            parameters_by_callee: RefCell::new(FxHashMap::default()),
             open_callees: RefCell::new(OpenCallees::default()),
-            stores_by_definition: RefCell::new(HashMap::new()),
+            stores_by_definition: RefCell::new(FxHashMap::default()),
             no_stores: Rc::default(),
         }
     }
@@ -185,8 +186,8 @@ impl<'a> ResultBorrows<'a> {
 
 struct BodyFlows<'r, 'a> {
     rules: &'r ResultBorrows<'a>,
-    parameters: HashSet<BindingId>,
-    aliases: HashMap<BindingId, HashSet<BindingId>>,
+    parameters: FxHashSet<BindingId>,
+    aliases: FxHashMap<BindingId, FxHashSet<BindingId>>,
     earliest_reached: Option<usize>,
 }
 
@@ -198,8 +199,8 @@ pub struct DefinitionStores {
 
 #[derive(Default)]
 pub struct StoredFlows {
-    pub values: HashSet<BindingId>,
-    pub targets: HashSet<BindingId>,
+    pub values: FxHashSet<BindingId>,
+    pub targets: FxHashSet<BindingId>,
 }
 
 impl StoredFlows {
@@ -228,7 +229,7 @@ impl StoredFlows {
             .collect()
     }
 
-    fn marked(lambda: &TypedLambda, bindings: &HashSet<BindingId>) -> Vec<usize> {
+    fn marked(lambda: &TypedLambda, bindings: &FxHashSet<BindingId>) -> Vec<usize> {
         lambda
             .params
             .iter()
@@ -240,8 +241,8 @@ impl StoredFlows {
 }
 
 pub struct LambdaFlows {
-    pub flows: HashSet<BindingId>,
-    pub higher_ranked: HashSet<BindingId>,
+    pub flows: FxHashSet<BindingId>,
+    pub higher_ranked: FxHashSet<BindingId>,
     earliest_reached: Option<usize>,
 }
 
@@ -253,7 +254,7 @@ impl LambdaFlows {
         )
     }
 
-    fn marked(lambda: &TypedLambda, bindings: &HashSet<BindingId>) -> Vec<bool> {
+    fn marked(lambda: &TypedLambda, bindings: &FxHashSet<BindingId>) -> Vec<bool> {
         lambda
             .params
             .iter()
@@ -267,7 +268,7 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
         let mut borrows = Self::new(rules, lambda, order);
         let mut flows = borrows.block(&lambda.body);
         let calls = LocalBorrowCalls::of(rules.program, lambda);
-        let mut higher_ranked: HashSet<BindingId> = calls
+        let mut higher_ranked: FxHashSet<BindingId> = calls
             .callees
             .iter()
             .flat_map(|callee| borrows.local(*callee))
@@ -285,12 +286,12 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
         Self {
             rules,
             parameters: lambda.params.iter().map(|param| param.binding).collect(),
-            aliases: HashMap::new(),
+            aliases: FxHashMap::default(),
             earliest_reached: order,
         }
     }
 
-    fn passed_to_higher_ranked(&mut self, passed: &[PassedLocal]) -> HashSet<BindingId> {
+    fn passed_to_higher_ranked(&mut self, passed: &[PassedLocal]) -> FxHashSet<BindingId> {
         let higher_ranked: Vec<&PassedLocal> = passed
             .iter()
             .filter(|passed| self.reaches_higher_ranked(passed))
@@ -323,14 +324,14 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
     fn joined_by_store(&mut self, site: &StoreSite) -> StoredFlows {
         let values = self.bound(site.value);
         let targets = if values.is_empty() {
-            HashSet::new()
+            FxHashSet::default()
         } else {
             self.bound(site.target)
         };
         StoredFlows { values, targets }
     }
 
-    fn block(&mut self, block: &TypedBlock) -> HashSet<BindingId> {
+    fn block(&mut self, block: &TypedBlock) -> FxHashSet<BindingId> {
         for item in &block.items {
             if let TypedBodyItem::Let(binder, value) = item {
                 let flows = self.bound(value);
@@ -339,20 +340,20 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
         }
         match block.items.last() {
             Some(TypedBodyItem::Expr(expr)) => self.value(expr),
-            _ => HashSet::new(),
+            _ => FxHashSet::default(),
         }
     }
 
-    fn bound(&mut self, value: &TypedExpr) -> HashSet<BindingId> {
+    fn bound(&mut self, value: &TypedExpr) -> FxHashSet<BindingId> {
         match value.kind {
             TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.local(binding),
             _ => self.value(value),
         }
     }
 
-    fn value(&mut self, expr: &TypedExpr) -> HashSet<BindingId> {
+    fn value(&mut self, expr: &TypedExpr) -> FxHashSet<BindingId> {
         if !self.carries_borrow(&expr.ty) {
-            return HashSet::new();
+            return FxHashSet::default();
         }
         match &expr.kind {
             TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.local(*binding),
@@ -371,21 +372,25 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
         callee: &TypedExpr,
         arguments: &[TypedArgument],
         call: &TypedExpr,
-    ) -> HashSet<BindingId> {
+    ) -> FxHashSet<BindingId> {
         let mut flows = self.children(call);
         flows.extend(self.callee(callee, arguments));
         flows
     }
 
-    fn callee(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) -> HashSet<BindingId> {
+    fn callee(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) -> FxHashSet<BindingId> {
         match callee.kind {
             TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.local(binding),
             TypedExprKind::Leaf(TypedLeaf::Global(binding)) => self.passed_on(binding, arguments),
-            _ => HashSet::new(),
+            _ => FxHashSet::default(),
         }
     }
 
-    fn passed_on(&mut self, callee: BindingId, arguments: &[TypedArgument]) -> HashSet<BindingId> {
+    fn passed_on(
+        &mut self,
+        callee: BindingId,
+        arguments: &[TypedArgument],
+    ) -> FxHashSet<BindingId> {
         let parameters = self.callee_parameters(callee);
         arguments
             .iter()
@@ -428,7 +433,7 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
         );
     }
 
-    fn control(&mut self, control: &TypedControl) -> HashSet<BindingId> {
+    fn control(&mut self, control: &TypedControl) -> FxHashSet<BindingId> {
         match control {
             TypedControl::Block(block) => self.block(block),
             TypedControl::If(_, then, otherwise) => self.branches(then, otherwise),
@@ -436,13 +441,13 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
         }
     }
 
-    fn branches(&mut self, then: &TypedExpr, otherwise: &TypedExpr) -> HashSet<BindingId> {
+    fn branches(&mut self, then: &TypedExpr, otherwise: &TypedExpr) -> FxHashSet<BindingId> {
         let mut flows = self.value(then);
         flows.extend(self.value(otherwise));
         flows
     }
 
-    fn matched(&mut self, matched: &TypedMatch) -> HashSet<BindingId> {
+    fn matched(&mut self, matched: &TypedMatch) -> FxHashSet<BindingId> {
         let mut flows = self.value(&matched.value);
         for arm in &matched.arms {
             flows.extend(self.block(&arm.body));
@@ -450,16 +455,16 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
         flows
     }
 
-    fn children(&mut self, expr: &TypedExpr) -> HashSet<BindingId> {
+    fn children(&mut self, expr: &TypedExpr) -> FxHashSet<BindingId> {
         expr.children()
             .into_iter()
             .flat_map(|child| self.value(child))
             .collect()
     }
 
-    fn local(&self, binding: BindingId) -> HashSet<BindingId> {
+    fn local(&self, binding: BindingId) -> FxHashSet<BindingId> {
         if self.parameters.contains(&binding) {
-            HashSet::from([binding])
+            FxHashSet::from_iter([binding])
         } else {
             self.aliases.get(&binding).cloned().unwrap_or_default()
         }
@@ -474,8 +479,8 @@ struct PassedLocal {
 
 struct LocalBorrowCalls<'a> {
     program: &'a TypedProgram,
-    outliving: HashSet<BindingId>,
-    callees: HashSet<BindingId>,
+    outliving: FxHashSet<BindingId>,
+    callees: FxHashSet<BindingId>,
     passed: Vec<PassedLocal>,
 }
 
@@ -490,7 +495,7 @@ impl<'a> LocalBorrowCalls<'a> {
         let mut calls = Self {
             program,
             outliving,
-            callees: HashSet::new(),
+            callees: FxHashSet::default(),
             passed: Vec::new(),
         };
         calls.block(&lambda.body);

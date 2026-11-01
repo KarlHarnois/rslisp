@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::callers::Callers;
 use super::functions::{FunctionInfo, FunctionTable, ParamMode, ParamSlot};
@@ -18,7 +18,7 @@ impl<'a> ModeInference<'a> {
         Self { functions, copy }
     }
 
-    pub fn run(&self) -> HashMap<BindingId, ParamMode> {
+    pub fn run(&self) -> FxHashMap<BindingId, ParamMode> {
         let mut modes = self.initial_modes();
         let mut callers = Callers::default();
         let mut pending = self.seed();
@@ -37,7 +37,7 @@ impl<'a> ModeInference<'a> {
         Worklist::of(self.functions.sorted_definition_bindings().into_iter())
     }
 
-    fn initial_modes(&self) -> HashMap<BindingId, ParamMode> {
+    fn initial_modes(&self) -> FxHashMap<BindingId, ParamMode> {
         self.functions
             .iter()
             .flat_map(|(binding, function)| self.function_modes(*binding, function))
@@ -58,7 +58,7 @@ impl<'a> ModeInference<'a> {
             .collect()
     }
 
-    fn initial_mode(&self, slot: &ParamSlot, rebuilt: &HashSet<BindingId>) -> ParamMode {
+    fn initial_mode(&self, slot: &ParamSlot, rebuilt: &FxHashSet<BindingId>) -> ParamMode {
         if !slot.inferable {
             FunctionTable::fixed_mode(slot, &self.copy)
         } else if rebuilt.contains(&slot.binding) && !slot.ty.is_unsized() {
@@ -68,7 +68,7 @@ impl<'a> ModeInference<'a> {
         }
     }
 
-    fn usage(&self, binding: BindingId, modes: &HashMap<BindingId, ParamMode>) -> Usage {
+    fn usage(&self, binding: BindingId, modes: &FxHashMap<BindingId, ParamMode>) -> Usage {
         let function = self
             .functions
             .definition(binding)
@@ -88,7 +88,7 @@ impl<'a> ModeInference<'a> {
             .collect(&function.lambda.body)
     }
 
-    fn raise_modes(usage: Usage, modes: &mut HashMap<BindingId, ParamMode>) -> bool {
+    fn raise_modes(usage: Usage, modes: &mut FxHashMap<BindingId, ParamMode>) -> bool {
         let mut changed = false;
         for (param, needed) in usage.required {
             if needed > modes[&param] {

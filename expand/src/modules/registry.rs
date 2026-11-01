@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use crate::core::{BindingId, ModuleId, ModulePath, Namespace};
 use crate::scope::{Scope, ScopeSet};
@@ -15,7 +16,7 @@ pub struct ModuleRecord {
     path: ModulePath,
     base_scope: Scope,
     body_scope: Scope,
-    exports: HashMap<(Rc<str>, Namespace), BindingId>,
+    exports: FxHashMap<(Rc<str>, Namespace), BindingId>,
     status: LoadStatus,
 }
 
@@ -61,7 +62,7 @@ impl ModuleRecord {
 #[derive(Default)]
 pub struct ModuleRegistry {
     records: Vec<ModuleRecord>,
-    by_path: HashMap<ModulePath, ModuleId>,
+    by_path: FxHashMap<ModulePath, ModuleId>,
 }
 
 impl ModuleRegistry {
@@ -70,7 +71,7 @@ impl ModuleRegistry {
             path,
             base_scope,
             body_scope,
-            exports: HashMap::new(),
+            exports: FxHashMap::default(),
             status: LoadStatus::Loading,
         })
     }

@@ -1,18 +1,18 @@
-use std::collections::HashSet;
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::lambda_address::LambdaAddress;
 use crate::core::BindingId;
-use crate::scope::FastHashMap;
 use crate::types::{TypedExpr, TypedExprKind, TypedLambda};
 
 #[derive(Default)]
 pub struct LocalDefinitions {
-    collected: FastHashMap<LambdaAddress, Rc<HashSet<BindingId>>>,
+    collected: FxHashMap<LambdaAddress, Rc<FxHashSet<BindingId>>>,
 }
 
 impl LocalDefinitions {
-    pub fn of(&mut self, lambda: &TypedLambda) -> Rc<HashSet<BindingId>> {
+    pub fn of(&mut self, lambda: &TypedLambda) -> Rc<FxHashSet<BindingId>> {
         let address = LambdaAddress::of(lambda);
         if let Some(bindings) = self.collected.get(&address) {
             return Rc::clone(bindings);
@@ -26,7 +26,7 @@ impl LocalDefinitions {
         self.collected.clear();
     }
 
-    fn collect(&mut self, lambda: &TypedLambda) -> HashSet<BindingId> {
+    fn collect(&mut self, lambda: &TypedLambda) -> FxHashSet<BindingId> {
         let mut bindings = lambda.binders().map(|binder| binder.binding).collect();
         for expr in lambda.body.expressions() {
             self.expr(expr, &mut bindings);
@@ -34,7 +34,7 @@ impl LocalDefinitions {
         bindings
     }
 
-    fn expr(&mut self, expr: &TypedExpr, bindings: &mut HashSet<BindingId>) {
+    fn expr(&mut self, expr: &TypedExpr, bindings: &mut FxHashSet<BindingId>) {
         if let TypedExprKind::Fn(lambda) = &expr.kind {
             bindings.extend(self.of(lambda).iter());
             return;
@@ -48,7 +48,7 @@ impl LocalDefinitions {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
+    use rustc_hash::FxHashSet;
     use std::rc::Rc;
 
     use super::LocalDefinitions;
@@ -77,12 +77,12 @@ mod tests {
             }
         }
 
-        fn names_defined_in(&mut self, name: &str) -> HashSet<&str> {
+        fn names_defined_in(&mut self, name: &str) -> FxHashSet<&str> {
             let bindings = self.definitions_of(name);
             self.source.names(&bindings)
         }
 
-        fn definitions_of(&mut self, name: &str) -> Rc<HashSet<BindingId>> {
+        fn definitions_of(&mut self, name: &str) -> Rc<FxHashSet<BindingId>> {
             self.definitions.of(self.source.lambda(name))
         }
 
@@ -100,7 +100,7 @@ mod tests {
     fn a_lambda_defines_the_bindings_of_each_lambda_inside_it() {
         let mut fixture = DefinitionFixture::new();
         let defined = fixture.names_defined_in("describe");
-        assert_eq!(defined, HashSet::from(["make", "label", "year"]));
+        assert_eq!(defined, FxHashSet::from_iter(["make", "label", "year"]));
     }
 
     #[test]
@@ -108,7 +108,7 @@ mod tests {
         let mut fixture = DefinitionFixture::new();
         fixture.store("label", &["model"]);
         let defined = fixture.names_defined_in("describe");
-        assert_eq!(defined, HashSet::from(["make", "label", "model"]));
+        assert_eq!(defined, FxHashSet::from_iter(["make", "label", "model"]));
     }
 
     #[test]

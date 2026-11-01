@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::functions::FunctionTable;
 use super::refusals::Refusals;
@@ -17,7 +17,7 @@ impl TraitSlot {
         self.method == method && self.position == position
     }
 
-    pub fn is_refused(&self, refused: &HashSet<BindingId>) -> bool {
+    pub fn is_refused(&self, refused: &FxHashSet<BindingId>) -> bool {
         self.bindings()
             .any(|parameter| refused.contains(&parameter))
     }
@@ -37,14 +37,14 @@ impl TraitSlot {
 pub struct TraitSlotCollector<'a> {
     program: &'a TypedProgram,
     functions: &'a FunctionTable,
-    declared: &'a HashMap<BindingId, Vec<Type>>,
+    declared: &'a FxHashMap<BindingId, Vec<Type>>,
 }
 
 impl<'a> TraitSlotCollector<'a> {
     pub fn new(
         program: &'a TypedProgram,
         functions: &'a FunctionTable,
-        declared: &'a HashMap<BindingId, Vec<Type>>,
+        declared: &'a FxHashMap<BindingId, Vec<Type>>,
     ) -> Self {
         Self {
             program,
@@ -95,7 +95,7 @@ impl<'a> TraitSlotCollector<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
+    use rustc_hash::FxHashSet;
 
     use super::TraitSlot;
     use crate::core::{BindingArena, BindingId, BindingInfo, BindingKind, ModuleId, PrimitiveType};
@@ -136,7 +136,7 @@ mod tests {
     fn a_method_without_bodies_keeps_its_slot() {
         let mut fixture = SlotFixture::new();
         let slot = fixture.slot(Vec::new());
-        assert!(!slot.is_refused(&HashSet::new()));
+        assert!(!slot.is_refused(&FxHashSet::default()));
     }
 
     #[test]
@@ -145,7 +145,7 @@ mod tests {
         let reading = fixture.binding("readings");
         let pushing = fixture.binding("pushed");
         let slot = fixture.slot(vec![reading, pushing]);
-        assert!(slot.is_refused(&HashSet::from([pushing])));
+        assert!(slot.is_refused(&FxHashSet::from_iter([pushing])));
     }
 
     #[test]
@@ -160,7 +160,7 @@ mod tests {
         refusals.refuse(pushing);
         assert_eq!(
             refusals.spread(),
-            HashSet::from([reading, summing, pushing])
+            FxHashSet::from_iter([reading, summing, pushing])
         );
     }
 }

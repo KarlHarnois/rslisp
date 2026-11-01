@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use crate::core::{BindingId, ReferenceKind};
 use crate::ownership::ChangedValues;
@@ -9,18 +9,18 @@ use crate::types::{
 
 pub struct MutableLocals<'a> {
     templates: &'a TemplateBorrows,
-    bindings: HashSet<BindingId>,
-    mutating_closures: HashSet<BindingId>,
-    called_closures: HashSet<BindingId>,
+    bindings: FxHashSet<BindingId>,
+    mutating_closures: FxHashSet<BindingId>,
+    called_closures: FxHashSet<BindingId>,
 }
 
 impl<'a> MutableLocals<'a> {
     pub fn of(value: &TypedExpr, templates: &'a TemplateBorrows) -> Self {
         let mut found = Self {
             templates,
-            bindings: HashSet::new(),
-            mutating_closures: HashSet::new(),
-            called_closures: HashSet::new(),
+            bindings: FxHashSet::default(),
+            mutating_closures: FxHashSet::default(),
+            called_closures: FxHashSet::default(),
         };
         found.expr(value);
         let called_closures: Vec<BindingId> = found
@@ -36,7 +36,7 @@ impl<'a> MutableLocals<'a> {
         self.bindings.extend(bindings);
     }
 
-    pub fn into_set(self) -> HashSet<BindingId> {
+    pub fn into_set(self) -> FxHashSet<BindingId> {
         self.bindings
     }
 
@@ -156,7 +156,7 @@ impl<'a> MutableLocals<'a> {
         closure: &TypedExpr,
         lambda: &TypedLambda,
     ) -> bool {
-        let locals: HashSet<BindingId> = closure
+        let locals: FxHashSet<BindingId> = closure
             .binders()
             .iter()
             .map(|binder| binder.binding)

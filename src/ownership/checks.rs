@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use super::problems::OwnershipProblems;
 use crate::core::BindingId;
@@ -6,14 +6,14 @@ use crate::diagnostic::Diagnostic;
 use crate::types::{Borrow, Pipelines, Type, TypedArgument, TypedExpr, TypedExprKind, TypedLeaf};
 
 pub struct OwnershipNeeds<'a> {
-    function_params: &'a HashMap<BindingId, Vec<Type>>,
+    function_params: &'a FxHashMap<BindingId, Vec<Type>>,
     pipelines: Pipelines<'a>,
     diagnostics: Vec<Diagnostic>,
 }
 
 impl<'a> OwnershipNeeds<'a> {
     pub fn new(
-        function_params: &'a HashMap<BindingId, Vec<Type>>,
+        function_params: &'a FxHashMap<BindingId, Vec<Type>>,
         pipelines: Pipelines<'a>,
     ) -> Self {
         Self {

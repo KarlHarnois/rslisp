@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use super::checker::TypeChecker;
 use super::ty::Type;
@@ -65,7 +65,7 @@ impl TypeChecker {
     fn lowers_to(&mut self, written: &TypeExpr, expected: &Type) -> bool {
         !matches!(written.kind(), TypeExprKind::Where(..))
             && self
-                .lower_type(written, &HashMap::new())
+                .lower_type(written, &FxHashMap::default())
                 .is_ok_and(|lowered| &lowered == expected)
     }
 

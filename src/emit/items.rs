@@ -1,6 +1,8 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::expressions::ExpressionEmitter;
 use super::fragment::{Code, Fragment};
@@ -547,7 +549,7 @@ impl<'a> ItemEmitter<'a> {
                     RustTypes::new(self.program, self.plan, self.unsized_parameters, module);
                 let scope = LifetimeScope::default().with_elided(lifetime.clone());
                 let type_name = types.show_in(&implementor, TypePosition::Signature, &scope);
-                let declared = types.generics(&params, &implementor, &HashSet::new());
+                let declared = types.generics(&params, &implementor, &FxHashSet::default());
                 let lifetimes: Vec<String> = lifetime.iter().cloned().collect();
                 (type_name, Self::with_lifetimes(&lifetimes, declared))
             };
@@ -826,7 +828,7 @@ impl<'a> ItemEmitter<'a> {
     fn naming_parameter_lifetimes<Parameter: Eq + Hash>(
         scope: LifetimeScope,
         fresh: &Rc<FreshLifetimes>,
-        higher_ranked: &HashSet<Parameter>,
+        higher_ranked: &FxHashSet<Parameter>,
         parameter: &Parameter,
     ) -> LifetimeScope {
         if higher_ranked.contains(parameter) {
@@ -861,7 +863,7 @@ impl<'a> ItemEmitter<'a> {
         &self,
         lambda: &TypedLambda,
         lifetimes: &MethodLifetimes,
-    ) -> HashSet<BindingId> {
+    ) -> FxHashSet<BindingId> {
         if !lifetimes.shares_lifetime() {
             return self.result_borrows.analyse(lambda).flows;
         }
@@ -874,20 +876,20 @@ impl<'a> ItemEmitter<'a> {
             .collect()
     }
 
-    fn sharing_parameters(borrows: &LambdaFlows, stored: &StoredFlows) -> HashSet<BindingId> {
+    fn sharing_parameters(borrows: &LambdaFlows, stored: &StoredFlows) -> FxHashSet<BindingId> {
         let mut sharing = borrows.flows.clone();
         sharing.extend(&stored.values);
         sharing.extend(&stored.targets);
         sharing
     }
 
-    fn store_targets(borrows: &LambdaFlows, stored: &StoredFlows) -> HashSet<BindingId> {
+    fn store_targets(borrows: &LambdaFlows, stored: &StoredFlows) -> FxHashSet<BindingId> {
         stored.targets.difference(&borrows.flows).copied().collect()
     }
 
     fn store_target_scope(
         scope: LifetimeScope,
-        store_targets: &HashSet<BindingId>,
+        store_targets: &FxHashSet<BindingId>,
         param: &TypedBinder,
     ) -> LifetimeScope {
         if store_targets.contains(&param.binding) {
@@ -901,9 +903,9 @@ impl<'a> ItemEmitter<'a> {
         &self,
         param: &TypedBinder,
         lifetimes: &[BindingId],
-        used: &HashSet<BindingId>,
+        used: &FxHashSet<BindingId>,
         inferred: Option<&str>,
-        flowing: &HashSet<BindingId>,
+        flowing: &FxHashSet<BindingId>,
     ) -> LifetimeScope {
         let elided = if flowing.contains(&param.binding) {
             inferred
@@ -1333,14 +1335,14 @@ impl<'a> ItemEmitter<'a> {
         FreshLifetimes::unused_name(&used)
     }
 
-    fn used_written_lifetimes(&self, value: &TypedExpr) -> HashSet<BindingId> {
+    fn used_written_lifetimes(&self, value: &TypedExpr) -> FxHashSet<BindingId> {
         let mut used = Self::linking_written_lifetimes(&value.ty);
         used.extend(OpaqueBorrows::new(self.program).written_lifetimes(&value.ty));
         used
     }
 
-    fn linking_written_lifetimes(ty: &Type) -> HashSet<BindingId> {
-        let mut counts: HashMap<BindingId, usize> = HashMap::new();
+    fn linking_written_lifetimes(ty: &Type) -> FxHashSet<BindingId> {
+        let mut counts: FxHashMap<BindingId, usize> = FxHashMap::default();
         Self::count_written_lifetimes(ty, &mut counts);
         counts
             .into_iter()
@@ -1349,7 +1351,7 @@ impl<'a> ItemEmitter<'a> {
             .collect()
     }
 
-    fn count_written_lifetimes(ty: &Type, counts: &mut HashMap<BindingId, usize>) {
+    fn count_written_lifetimes(ty: &Type, counts: &mut FxHashMap<BindingId, usize>) {
         match ty {
             Type::Ref(..) | Type::Mut(..) => Self::count_reference_lifetime(ty, counts),
             Type::Named(_, arguments) => {
@@ -1367,7 +1369,7 @@ impl<'a> ItemEmitter<'a> {
         }
     }
 
-    fn count_reference_lifetime(ty: &Type, counts: &mut HashMap<BindingId, usize>) {
+    fn count_reference_lifetime(ty: &Type, counts: &mut FxHashMap<BindingId, usize>) {
         let (lifetime, inner) = match ty {
             Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => (lifetime, inner),
             _ => unreachable!("the caller matches a reference"),
@@ -1381,7 +1383,7 @@ impl<'a> ItemEmitter<'a> {
     fn lifetime_scope_used(
         &self,
         lifetimes: &[BindingId],
-        used: &HashSet<BindingId>,
+        used: &FxHashSet<BindingId>,
         elided: Option<&str>,
     ) -> LifetimeScope {
         lifetimes

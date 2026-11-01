@@ -1,10 +1,11 @@
+use rustc_hash::FxHashMap;
+
 use crate::diagnostic::{Diagnostic, DiagnosticCode, Label};
-use crate::scope::FastHashMap;
 
 #[derive(Default)]
 pub struct DistinctDiagnostics {
     kept: Vec<Diagnostic>,
-    positions: FastHashMap<DiagnosticKey, usize>,
+    positions: FxHashMap<DiagnosticKey, usize>,
 }
 
 #[derive(PartialEq, Eq, Hash)]

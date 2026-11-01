@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use crate::core::BindingId;
 use crate::types::{TypedExpr, TypedExprKind, TypedLeaf};
@@ -18,7 +18,7 @@ impl Subtree {
 
     pub fn first_capture(closure: &TypedExpr) -> Option<BindingId> {
         let expressions = Self::of(closure);
-        let bound: HashSet<BindingId> = expressions
+        let bound: FxHashSet<BindingId> = expressions
             .iter()
             .flat_map(|expr| expr.binders())
             .map(|binder| binder.binding)

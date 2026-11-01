@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::functions::{FunctionTable, ParamMode};
 use crate::core::{BindingId, ReferenceKind};
@@ -9,27 +9,27 @@ use crate::types::{
 
 pub struct UsageCollector<'a> {
     functions: &'a FunctionTable,
-    modes: &'a HashMap<BindingId, ParamMode>,
+    modes: &'a FxHashMap<BindingId, ParamMode>,
     copy: &'a CopyRules<'a>,
-    tracked: HashSet<BindingId>,
-    pattern_bindings: HashSet<BindingId>,
+    tracked: FxHashSet<BindingId>,
+    pattern_bindings: FxHashSet<BindingId>,
     self_modes: Vec<ParamMode>,
-    required: HashMap<BindingId, ParamMode>,
-    pattern_required: HashMap<BindingId, ParamMode>,
-    callees: HashSet<BindingId>,
+    required: FxHashMap<BindingId, ParamMode>,
+    pattern_required: FxHashMap<BindingId, ParamMode>,
+    callees: FxHashSet<BindingId>,
 }
 
 pub struct Usage {
-    pub required: HashMap<BindingId, ParamMode>,
-    pub callees: HashSet<BindingId>,
+    pub required: FxHashMap<BindingId, ParamMode>,
+    pub callees: FxHashSet<BindingId>,
 }
 
 impl<'a> UsageCollector<'a> {
     pub fn new(
         functions: &'a FunctionTable,
-        modes: &'a HashMap<BindingId, ParamMode>,
+        modes: &'a FxHashMap<BindingId, ParamMode>,
         copy: &'a CopyRules<'a>,
-        tracked: HashSet<BindingId>,
+        tracked: FxHashSet<BindingId>,
         self_modes: Vec<ParamMode>,
     ) -> Self {
         Self {
@@ -37,11 +37,11 @@ impl<'a> UsageCollector<'a> {
             modes,
             copy,
             tracked,
-            pattern_bindings: HashSet::new(),
+            pattern_bindings: FxHashSet::default(),
             self_modes,
-            required: HashMap::new(),
-            pattern_required: HashMap::new(),
-            callees: HashSet::new(),
+            required: FxHashMap::default(),
+            pattern_required: FxHashMap::default(),
+            callees: FxHashSet::default(),
         }
     }
 
@@ -157,7 +157,7 @@ impl<'a> UsageCollector<'a> {
                 self.expr(otherwise, context);
             }
             TypedControl::Match(matched) => {
-                let binders: HashMap<BindingId, Type> = matched
+                let binders: FxHashMap<BindingId, Type> = matched
                     .arms
                     .iter()
                     .flat_map(|arm| Self::pattern_bindings(&arm.pattern))
