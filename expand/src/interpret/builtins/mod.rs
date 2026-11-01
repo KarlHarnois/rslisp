@@ -88,12 +88,10 @@ impl BuiltinCall {
         (Builtin::DefinitionCall, |operations, host| {
             operations.text.definition_call(host)
         }),
-        (Builtin::Fail, |operations, _| operations.text.fail()),
         (Builtin::ClosestName, |operations, _| {
             operations.text.closest_name()
         }),
-        (Builtin::ValueEq, |operations, _| operations.text.value_eq()),
-        (Builtin::BoolNot, |operations, _| operations.text.not()),
+        (Builtin::Fail, |operations, _| operations.text.fail()),
         (Builtin::NumberAdd, |operations, _| operations.numbers.add()),
         (Builtin::NumberSub, |operations, _| {
             operations.numbers.subtract()
@@ -110,6 +108,8 @@ impl BuiltinCall {
         (Builtin::NumberGe, |operations, _| {
             operations.numbers.compare(Ordering::is_ge)
         }),
+        (Builtin::ValueEq, |operations, _| operations.text.value_eq()),
+        (Builtin::BoolNot, |operations, _| operations.text.not()),
         (Builtin::EscapeString, |operations, _| {
             operations.text.escape_string()
         }),
@@ -159,11 +159,8 @@ impl BuiltinCall {
     }
 
     fn implementation(builtin: Builtin) -> Implementation {
-        Self::IMPLEMENTATIONS
-            .iter()
-            .find(|(implemented, _)| *implemented == builtin)
-            .map(|(_, implementation)| *implementation)
-            .expect("every builtin has a row in the implementation table")
+        let (_, implementation) = Self::IMPLEMENTATIONS[builtin.position()];
+        implementation
     }
 }
 
@@ -198,5 +195,19 @@ impl Forms {
     fn count(count: usize, span: Span) -> Value {
         let number = Number::new(count.to_string(), NumberValue::Integer(count as i128));
         Value::Form(Form::new(FormKind::Number(number), span))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BuiltinCall;
+    use crate::core::Builtin;
+
+    #[test]
+    fn each_builtin_finds_its_own_implementation_row() {
+        for builtin in Builtin::all() {
+            let (implemented, _) = BuiltinCall::IMPLEMENTATIONS[builtin.position()];
+            assert_eq!(implemented, builtin);
+        }
     }
 }

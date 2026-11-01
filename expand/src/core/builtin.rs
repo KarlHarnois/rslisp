@@ -102,6 +102,10 @@ impl Builtin {
         Self::NAMES.iter().map(|(builtin, _)| *builtin)
     }
 
+    pub fn position(self) -> usize {
+        self as usize
+    }
+
     pub fn name(self) -> &'static str {
         Self::NAMES
             .iter()
