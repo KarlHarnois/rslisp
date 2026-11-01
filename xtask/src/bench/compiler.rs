@@ -26,7 +26,6 @@ impl<'a> CompilerBuild<'a> {
         ["--config", "profile.release.codegen-units=1"];
     const RELEASE_CLEAN: [&'static str; 3] = ["clean", "--release", "--quiet"];
     const PACKAGE_FLAG: &'static str = "--package";
-    const PACKAGE_ID_COMMAND: &'static str = "pkgid";
     const TARGET_DIRECTORY_FLAG: &'static str = "--target-dir";
     const MANIFEST: &'static str = "Cargo.toml";
 
@@ -38,40 +37,34 @@ impl<'a> CompilerBuild<'a> {
     }
 
     pub fn run(&self) -> Result<BuiltCompiler, TaskFailure> {
-        self.clean_root_package()?;
+        let workspace = CargoWorkspace::read(self.workspace)?;
+        self.clean_workspace_packages(&workspace.package_names())?;
         let messages = self.build_release()?;
         let executable = self
             .read_executable(&messages)
             .ok_or_else(|| TaskFailure::compiler_missing(self.workspace))?;
         Ok(BuiltCompiler {
             executable,
-            crate_names: CargoWorkspace::read(self.workspace)?.crate_names(),
+            crate_names: workspace.crate_names(),
         })
     }
 
-    fn clean_root_package(&self) -> Result<(), TaskFailure> {
-        let spec = self.read_root_package_spec()?;
-        let arguments = Self::RELEASE_CLEAN
-            .into_iter()
-            .chain([Self::PACKAGE_FLAG, spec.as_str()]);
-        let mut clean = self.cargo_in_target(arguments);
+    fn clean_workspace_packages(
+        &self,
+        package_names: &BTreeSet<String>,
+    ) -> Result<(), TaskFailure> {
+        let mut clean = self.release_clean(package_names);
         Cargo::run(&mut clean, |stderr| {
             TaskFailure::tool_failed("cargo clean", stderr)
         })?;
         Ok(())
     }
 
-    fn read_root_package_spec(&self) -> Result<String, TaskFailure> {
-        let mut pkgid = self.cargo_in_checkout();
-        pkgid.arg(Self::PACKAGE_ID_COMMAND);
-        let stdout = Cargo::run(&mut pkgid, |stderr| {
-            TaskFailure::tool_failed("cargo pkgid", stderr)
-        })?;
-        Ok(Self::package_spec(&stdout))
-    }
-
-    fn package_spec(stdout: &[u8]) -> String {
-        String::from_utf8_lossy(stdout).trim().to_string()
+    fn release_clean(&self, package_names: &BTreeSet<String>) -> Command {
+        let packages = package_names
+            .iter()
+            .flat_map(|name| [Self::PACKAGE_FLAG, name.as_str()]);
+        self.cargo_in_target(Self::RELEASE_CLEAN.into_iter().chain(packages))
     }
 
     fn build_release(&self) -> Result<String, TaskFailure> {
@@ -148,6 +141,7 @@ impl Artifact {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::workspace::WorkspaceFixture;
 
     const MESSAGES: &str = include_str!("../../fixtures/bench/cargo-build.json");
 
@@ -162,12 +156,18 @@ mod tests {
     }
 
     #[test]
-    fn reads_the_package_spec_without_its_line_break() {
-        let stdout = b"path+file:///checkout#ledger-lang@0.1.0\n";
-        assert_eq!(
-            CompilerBuild::package_spec(stdout),
-            "path+file:///checkout#ledger-lang@0.1.0"
-        );
+    fn cleans_every_package_of_the_workspace() {
+        let package_names = WorkspaceFixture::workspace().package_names();
+        let clean = CompilerBuild::new(Path::new("/checkout"), Path::new("/checkout/target"))
+            .release_clean(&package_names);
+        let arguments: Vec<_> = clean.get_args().collect();
+        for package in ["ledger-lang", "ledger-syntax"] {
+            assert!(
+                arguments
+                    .windows(2)
+                    .any(|pair| pair == ["--package", package])
+            );
+        }
     }
 
     #[test]

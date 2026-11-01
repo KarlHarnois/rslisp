@@ -8,7 +8,7 @@ use crate::failure::TaskFailure;
 
 pub struct CargoWorkspace {
     root: PathBuf,
-    targets: Vec<CrateTarget>,
+    packages: Vec<MemberPackage>,
 }
 
 impl CargoWorkspace {
@@ -29,46 +29,69 @@ impl CargoWorkspace {
         Self::parse(root, &String::from_utf8_lossy(&stdout))
     }
 
-    pub fn source_directories(&self) -> BTreeSet<PathBuf> {
-        self.targets
+    pub fn package_names(&self) -> BTreeSet<String> {
+        self.packages
             .iter()
+            .map(|package| package.name.clone())
+            .collect()
+    }
+
+    pub fn source_directories(&self) -> BTreeSet<PathBuf> {
+        self.targets()
             .filter_map(|target| target.source_file.parent())
             .map(|directory| self.root.join(directory))
             .collect()
     }
 
     pub fn crate_names(&self) -> BTreeSet<String> {
-        self.targets
-            .iter()
+        self.targets()
             .map(|target| target.crate_name.clone())
             .collect()
     }
 
+    fn targets(&self) -> impl Iterator<Item = &CrateTarget> {
+        self.packages.iter().flat_map(|package| &package.targets)
+    }
+
     fn parse(root: &Path, metadata: &str) -> Result<Self, TaskFailure> {
-        let targets = serde_json::from_str(metadata)
+        let packages = serde_json::from_str(metadata)
             .ok()
-            .and_then(|metadata| Self::crate_targets(&metadata))
+            .and_then(|metadata| Self::member_packages(&metadata))
             .ok_or_else(TaskFailure::metadata_malformed)?;
         Ok(Self {
             root: root.to_path_buf(),
-            targets,
+            packages,
         })
     }
 
-    fn crate_targets(metadata: &Value) -> Option<Vec<CrateTarget>> {
+    fn member_packages(metadata: &Value) -> Option<Vec<MemberPackage>> {
         let workspace_root = Path::new(metadata["workspace_root"].as_str()?);
-        let target_lists = metadata["packages"]
+        metadata["packages"]
             .as_array()?
             .iter()
             .filter(|package| package["name"] != Self::TOOLING_PACKAGE)
-            .map(|package| package["targets"].as_array())
-            .collect::<Option<Vec<_>>>()?;
-        target_lists
-            .into_iter()
-            .flatten()
+            .map(|package| MemberPackage::read(package, workspace_root))
+            .collect()
+    }
+}
+
+struct MemberPackage {
+    name: String,
+    targets: Vec<CrateTarget>,
+}
+
+impl MemberPackage {
+    fn read(package: &Value, workspace_root: &Path) -> Option<Self> {
+        let targets = package["targets"]
+            .as_array()?
+            .iter()
             .filter(|target| !CrateTarget::is_auxiliary(target))
             .map(|target| CrateTarget::read(target, workspace_root))
-            .collect()
+            .collect::<Option<Vec<_>>>()?;
+        Some(Self {
+            name: package["name"].as_str()?.to_string(),
+            targets,
+        })
     }
 }
 
@@ -147,6 +170,14 @@ mod tests {
         assert_eq!(
             WorkspaceFixture::workspace().source_directories(),
             BTreeSet::from([root.join("src"), root.join("syntax/src")])
+        );
+    }
+
+    #[test]
+    fn names_each_package_but_not_its_tooling() {
+        assert_eq!(
+            WorkspaceFixture::workspace().package_names(),
+            BTreeSet::from(["ledger-lang".to_string(), "ledger-syntax".to_string()])
         );
     }
 
