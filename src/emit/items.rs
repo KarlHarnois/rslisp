@@ -352,13 +352,7 @@ impl<'a> ItemEmitter<'a> {
         let lifetimes = self.method_elisions().lifetimes(method.binding);
         let inferred = self
             .shared_method_lifetime(&definition.scheme.lifetimes, &lifetimes, None)
-            .or_else(|| {
-                self.inferred_lifetime_for_method(
-                    &definition.scheme.lifetimes,
-                    &definition.value,
-                    method.receiver.is_some(),
-                )
-            });
+            .or_else(|| self.inferred_lifetime_for_method(definition, method.receiver.is_some()));
         let scope = self.lifetime_scope(&definition.scheme.lifetimes, inferred.as_deref());
         let mut declared =
             self.declared_lifetimes(inferred.as_deref(), &definition.scheme.lifetimes);
@@ -627,17 +621,17 @@ impl<'a> ItemEmitter<'a> {
             unreachable!("an implementation method is a function")
         };
         let lifetimes = self.method_elisions().lifetimes(binding);
+        let signature = self.signature_naming_self(binding, &definition.value.ty, implemented);
         let inferred = self
             .shared_method_lifetime(&definition.scheme.lifetimes, &lifetimes, reserved_lifetime)
             .or_else(|| {
-                self.inferred_lifetime_for_method_avoiding(
-                    &definition.scheme.lifetimes,
-                    &definition.value,
+                self.method_signature_lifetime(
+                    definition,
+                    &signature,
                     receiver.is_some(),
                     reserved_lifetime,
                 )
             });
-        let signature = self.signature_naming_self(binding, &definition.value.ty, implemented);
         let Type::Function(_, shown_parameters, shown_result) = &signature else {
             unreachable!("an implementation method has a function type")
         };
@@ -1238,8 +1232,8 @@ impl<'a> ItemEmitter<'a> {
         }
     }
 
-    fn needs_shared_lifetime(&self, value: &TypedExpr) -> bool {
-        let Type::Function(_, parameters, result) = &value.ty else {
+    fn needs_shared_lifetime(&self, signature: &Type, value: &TypedExpr) -> bool {
+        let Type::Function(_, parameters, result) = signature else {
             return false;
         };
         self.program
@@ -1253,7 +1247,7 @@ impl<'a> ItemEmitter<'a> {
         stored: &StoredFlows,
     ) -> Option<String> {
         if stored.is_empty() {
-            return self.inferred_lifetime(&definition.scheme.lifetimes, &definition.value);
+            return self.inferred_lifetime(definition);
         }
         Some(self.unused_lifetime_avoiding(&definition.scheme.lifetimes, None))
     }
@@ -1269,17 +1263,16 @@ impl<'a> ItemEmitter<'a> {
         })
     }
 
-    fn inferred_lifetime(&self, lifetimes: &[BindingId], value: &TypedExpr) -> Option<String> {
-        self.inferred_lifetime_avoiding(lifetimes, value, None)
+    fn inferred_lifetime(&self, definition: &TypedDefinition) -> Option<String> {
+        self.signature_lifetime(definition, &definition.value.ty, None)
     }
 
     fn inferred_lifetime_for_method(
         &self,
-        lifetimes: &[BindingId],
-        value: &TypedExpr,
+        definition: &TypedDefinition,
         has_receiver: bool,
     ) -> Option<String> {
-        self.inferred_lifetime_for_method_avoiding(lifetimes, value, has_receiver, None)
+        self.method_signature_lifetime(definition, &definition.value.ty, has_receiver, None)
     }
 
     fn shared_method_lifetime(
@@ -1293,27 +1286,27 @@ impl<'a> ItemEmitter<'a> {
             .then(|| self.unused_lifetime_avoiding(lifetimes, reserved))
     }
 
-    fn inferred_lifetime_avoiding(
+    fn method_signature_lifetime(
         &self,
-        lifetimes: &[BindingId],
-        value: &TypedExpr,
-        reserved: Option<&str>,
-    ) -> Option<String> {
-        self.inferred_lifetime_for_method_avoiding(lifetimes, value, false, reserved)
-    }
-
-    fn inferred_lifetime_for_method_avoiding(
-        &self,
-        lifetimes: &[BindingId],
-        value: &TypedExpr,
+        definition: &TypedDefinition,
+        signature: &Type,
         has_receiver: bool,
         reserved: Option<&str>,
     ) -> Option<String> {
         if has_receiver {
             return None;
         }
-        self.needs_shared_lifetime(value)
-            .then(|| self.unused_lifetime_avoiding(lifetimes, reserved))
+        self.signature_lifetime(definition, signature, reserved)
+    }
+
+    fn signature_lifetime(
+        &self,
+        definition: &TypedDefinition,
+        signature: &Type,
+        reserved: Option<&str>,
+    ) -> Option<String> {
+        self.needs_shared_lifetime(signature, &definition.value)
+            .then(|| self.unused_lifetime_avoiding(&definition.scheme.lifetimes, reserved))
     }
 
     fn unused_lifetime_avoiding(&self, lifetimes: &[BindingId], reserved: Option<&str>) -> String {
