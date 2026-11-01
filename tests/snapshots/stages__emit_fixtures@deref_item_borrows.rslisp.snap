@@ -17,6 +17,15 @@ fn is_later(year: i64) -> bool {
     year > 2020
 }
 
+fn year_of(y: &&i64) -> i64 {
+    **y
+}
+
+fn is_recent(y: &&i64) -> bool {
+    let year: i64 = **y;
+    year > 2020
+}
+
 fn report_signed(years: &[i64]) {
     println!("{}", years.iter().filter(|y: &&i64| **y > 2020).count())
 }
@@ -27,7 +36,18 @@ fn report_years(years: &[i64], floor: &i64) {
     println!("{}", years.iter().filter(|y: &&i64| *y > floor).count());
     println!("{}", years.iter().filter(|y: &&i64| **y + 1 > 2022).count());
     println!("{}", years.iter().filter(|y: &&i64| is_later(**y)).count());
-    println!("{:?}", years.iter().max_by_key(|y: &&i64| **y - 2020))
+    println!("{:?}", years.iter().max_by_key(|y: &&i64| **y - 2020));
+    println!(
+        "{}",
+        years.iter().filter(|y: &&i64| year_of(y) > 2020).count()
+    );
+    println!(
+        "{}",
+        years
+            .iter()
+            .filter(|argument: &&i64| is_recent(argument))
+            .count()
+    )
 }
 
 fn report_cars(cars: &[Car], wanted: &Car) {

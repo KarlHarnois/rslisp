@@ -10,5 +10,7 @@ input_file: tests/fixtures/run/deref_item_borrows.rslisp
 1
 2
 Some(2024)
+2
+2
 1
 1
