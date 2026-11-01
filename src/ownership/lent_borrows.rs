@@ -14,6 +14,8 @@ pub struct LentBorrows<'p> {
 
 type LentParameters<'d> = Vec<Option<&'d TypedBinder>>;
 
+type LocalCall<'e> = (BindingId, &'e [TypedArgument]);
+
 impl<'p> LentBorrows<'p> {
     pub fn new(program: &'p TypedProgram) -> Self {
         Self { program }
@@ -60,12 +62,20 @@ impl<'p> LentBorrows<'p> {
             .collect()
     }
 
-    fn local_calls(expr: &TypedExpr) -> Vec<(BindingId, &[TypedArgument])> {
-        let nested = expr.children().into_iter().flat_map(Self::local_calls);
-        Self::local_call(expr).into_iter().chain(nested).collect()
+    fn local_calls(expr: &TypedExpr) -> Vec<LocalCall<'_>> {
+        let mut calls = Vec::new();
+        Self::collect_local_calls(expr, &mut calls);
+        calls
     }
 
-    fn local_call(expr: &TypedExpr) -> Option<(BindingId, &[TypedArgument])> {
+    fn collect_local_calls<'e>(expr: &'e TypedExpr, calls: &mut Vec<LocalCall<'e>>) {
+        calls.extend(Self::local_call(expr));
+        expr.children()
+            .into_iter()
+            .for_each(|child| Self::collect_local_calls(child, calls));
+    }
+
+    fn local_call(expr: &TypedExpr) -> Option<LocalCall<'_>> {
         let TypedExprKind::Call(callee, arguments) = &expr.kind else {
             return None;
         };

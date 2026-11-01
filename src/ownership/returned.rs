@@ -29,8 +29,15 @@ impl<'p> ReturnedBorrows<'p> {
         self.checked_functions(definition)
             .into_iter()
             .filter_map(|(lambda, owner)| self.check(lambda, owner))
-            .chain(LentBorrows::new(self.program).check_definition(definition))
+            .chain(self.lent_borrows(definition))
             .collect()
+    }
+
+    fn lent_borrows(&self, definition: &TypedDefinition) -> Vec<Diagnostic> {
+        if self.owns_borrowing_closures(definition) {
+            return LentBorrows::new(self.program).check_definition(definition);
+        }
+        Vec::new()
     }
 
     fn checked_functions<'d>(
@@ -54,13 +61,15 @@ impl<'p> ReturnedBorrows<'p> {
     }
 
     fn closures_to_check<'d>(&self, definition: &'d TypedDefinition) -> Vec<&'d TypedLambda> {
-        if self
-            .owners_of_borrowing_closures
-            .contains(&definition.binding)
-        {
+        if self.owns_borrowing_closures(definition) {
             return LocalBorrows::closures_in(&definition.value);
         }
         Vec::new()
+    }
+
+    fn owns_borrowing_closures(&self, definition: &TypedDefinition) -> bool {
+        self.owners_of_borrowing_closures
+            .contains(&definition.binding)
     }
 
     fn check(&self, lambda: &TypedLambda, owner: ParameterOwner) -> Option<Diagnostic> {

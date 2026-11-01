@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
@@ -51,12 +52,8 @@ impl<'a> ResultBorrows<'a> {
         BodyFlows::joined_by_stores(self, lambda, &sites)
     }
 
-    pub fn reassigned_parameters(
-        &self,
-        function: BindingId,
-        lambda: &TypedLambda,
-    ) -> HashSet<BindingId> {
-        BodyFlows::joined_by_tail_calls(self, lambda, &TailCalls::of(Some(function), lambda))
+    pub fn analyse_function(&self, function: BindingId, lambda: &TypedLambda) -> FunctionFlows {
+        BodyFlows::of_function(self, lambda, &TailCalls::of(Some(function), lambda))
     }
 
     pub fn definition_stores(&self, definition: BindingId) -> Rc<DefinitionStores> {
@@ -205,7 +202,7 @@ pub struct DefinitionStores {
     pub positions: Vec<Store>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct StoredFlows {
     pub values: HashSet<BindingId>,
     pub targets: HashSet<BindingId>,
@@ -216,11 +213,14 @@ impl StoredFlows {
         self.values.is_empty()
     }
 
-    pub fn with_values(&self, values: HashSet<BindingId>) -> StoredFlows {
-        StoredFlows {
+    pub fn with_values(&self, values: HashSet<BindingId>) -> Cow<'_, StoredFlows> {
+        if values.is_empty() {
+            return Cow::Borrowed(self);
+        }
+        Cow::Owned(StoredFlows {
             values: self.values.union(&values).copied().collect(),
             targets: self.targets.clone(),
-        }
+        })
     }
 
     fn extend(&mut self, other: StoredFlows) {
@@ -278,22 +278,43 @@ impl LambdaFlows {
     }
 }
 
+pub struct FunctionFlows {
+    pub flows: LambdaFlows,
+    pub reassigned_parameters: HashSet<BindingId>,
+}
+
 impl<'r, 'a> BodyFlows<'r, 'a> {
     fn of(rules: &'r ResultBorrows<'a>, lambda: &TypedLambda, order: Option<usize>) -> LambdaFlows {
-        let mut borrows = Self::new(rules, lambda, order);
-        let mut flows = borrows.block(&lambda.body);
-        let calls = LocalBorrowCalls::of(rules.program, lambda);
+        Self::new(rules, lambda, order).lambda_flows(lambda)
+    }
+
+    fn of_function(
+        rules: &'r ResultBorrows<'a>,
+        lambda: &TypedLambda,
+        calls: &TailCalls,
+    ) -> FunctionFlows {
+        let mut borrows = Self::new(rules, lambda, None);
+        let flows = borrows.lambda_flows(lambda);
+        FunctionFlows {
+            flows,
+            reassigned_parameters: borrows.joined_by_tail_calls(lambda, calls),
+        }
+    }
+
+    fn lambda_flows(&mut self, lambda: &TypedLambda) -> LambdaFlows {
+        let mut flows = self.block(&lambda.body);
+        let calls = LocalBorrowCalls::of(self.rules.program, lambda);
         let mut higher_ranked: HashSet<BindingId> = calls
             .callees
             .iter()
-            .flat_map(|callee| borrows.local(*callee))
+            .flat_map(|callee| self.local(*callee))
             .collect();
         flows.retain(|binding| !higher_ranked.contains(binding));
-        higher_ranked.extend(borrows.passed_to_higher_ranked(&calls.passed));
+        higher_ranked.extend(self.passed_to_higher_ranked(&calls.passed));
         LambdaFlows {
             flows,
             higher_ranked,
-            earliest_reached: borrows.earliest_reached,
+            earliest_reached: self.earliest_reached,
         }
     }
 
@@ -323,16 +344,14 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
     }
 
     fn joined_by_tail_calls(
-        rules: &'r ResultBorrows<'a>,
+        &mut self,
         lambda: &TypedLambda,
         calls: &TailCalls,
     ) -> HashSet<BindingId> {
-        let mut borrows = Self::new(rules, lambda, None);
-        borrows.block(&lambda.body);
         calls
             .arguments()
             .iter()
-            .flat_map(|arguments| borrows.joined_by_tail_call(lambda, arguments))
+            .flat_map(|arguments| self.joined_by_tail_call(lambda, arguments))
             .collect()
     }
 
