@@ -4,12 +4,14 @@ use std::rc::Rc;
 
 use super::aliases::LetAliases;
 use super::definitions::LocalDefinitions;
+use super::lambda_address::LambdaAddress;
 use super::parameter_uses::ParameterUses;
 use super::problems::OwnershipProblems;
 use super::subtree::Subtree;
 use super::update_bases::UpdateBases;
 use crate::core::{BindingArena, BindingId, FieldLabel, ReferenceKind};
 use crate::diagnostic::Diagnostic;
+use crate::scope::FastHashMap;
 use crate::source::Span;
 use crate::types::{
     Borrow, ClosureKind, CopyRules, FieldPlace, StructTable, TemplateBorrows, Type, TypedArgument,
@@ -45,7 +47,7 @@ impl LocalClosure {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct CaptureReport {
     moved: BTreeMap<BindingId, Span>,
     changed: BTreeMap<BindingId, Span>,
@@ -130,6 +132,9 @@ pub struct ClosureKinds<'a> {
     written_parameter_kinds: HashMap<BindingId, ClosureKind>,
     result_kinds: HashMap<BindingId, ClosureKind>,
     alias_origins: HashMap<BindingId, BindingId>,
+    definitions: LocalDefinitions,
+    reusable_reports: FastHashMap<LambdaAddress, CaptureReport>,
+    registered_function_bindings: usize,
 }
 
 impl<'a> ClosureKinds<'a> {
@@ -219,6 +224,9 @@ impl<'a> ClosureKinds<'a> {
             written_parameter_kinds: sources.written_parameter_kinds,
             result_kinds: HashMap::new(),
             alias_origins: HashMap::new(),
+            definitions: LocalDefinitions::default(),
+            reusable_reports: FastHashMap::default(),
+            registered_function_bindings: 0,
         }
     }
 
@@ -313,7 +321,13 @@ impl<'a> ClosureKinds<'a> {
             .flat_map(|module| module.definitions.iter_mut())
         {
             self.patch_expression(&mut definition.value);
+            self.forget_lambda_analyses();
         }
+    }
+
+    fn forget_lambda_analyses(&mut self) {
+        self.definitions.forget();
+        self.reusable_reports.clear();
     }
 
     fn patch_expression(&mut self, expr: &mut TypedExpr) {
@@ -343,7 +357,17 @@ impl<'a> ClosureKinds<'a> {
     }
 
     fn analyze_lambda(&mut self, lambda: &TypedLambda) -> CaptureReport {
-        let own = LocalDefinitions::of(lambda);
+        let registered_before = self.registered_function_bindings;
+        let report = self.scan_lambda_body(lambda);
+        if self.registered_function_bindings == registered_before {
+            self.reusable_reports
+                .insert(LambdaAddress::of(lambda), report.clone());
+        }
+        report
+    }
+
+    fn scan_lambda_body(&mut self, lambda: &TypedLambda) -> CaptureReport {
+        let own = self.definitions.of(lambda);
         self.scan_block(&lambda.body, &own, Usage::Move)
     }
 
@@ -376,6 +400,7 @@ impl<'a> ClosureKinds<'a> {
         if !matches!(value.ty, Type::Function(..)) {
             return;
         }
+        self.registered_function_bindings += 1;
         self.binding_kinds.insert(binding, self.value_kind(value));
         if let Some(capture) = self.value_capture(value) {
             self.binding_captures.insert(binding, capture);
@@ -422,7 +447,10 @@ impl<'a> ClosureKinds<'a> {
     }
 
     fn scan_lambda(&mut self, lambda: &TypedLambda, own: &HashSet<BindingId>) -> CaptureReport {
-        self.analyze_lambda(lambda).outside(own)
+        match self.reusable_reports.get(&LambdaAddress::of(lambda)) {
+            Some(report) => report.outside(own),
+            None => self.scan_lambda_body(lambda).outside(own),
+        }
     }
 
     fn scan_nested(
@@ -1566,5 +1594,102 @@ impl<'a> ClosureKinds<'a> {
                 .copied()
                 .unwrap_or(ClosureKind::Fn);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use super::{CaptureReport, ClosureKinds, KindSources};
+    use crate::core::BindingId;
+    use crate::ownership::lambda_address::LambdaAddress;
+    use crate::ownership::lambda_source::LambdaSource;
+
+    struct KindsFixture {
+        source: LambdaSource,
+    }
+
+    impl KindsFixture {
+        const NESTED_CLOSURES: &str = "
+            (defn keep (model) model)
+            (defn main ()
+              (let model (to-string \"Leaf\"))
+              (let make (to-string \"Nissan\"))
+              (let announce (fn ()
+                (let shown (fn () (keep model)))
+                (shown)))
+              (announce))";
+
+        fn new() -> Self {
+            Self {
+                source: LambdaSource::new(Self::NESTED_CLOSURES),
+            }
+        }
+
+        fn kinds(&self) -> ClosureKinds<'_> {
+            let program = self.source.program();
+            ClosureKinds::new(KindSources {
+                traits: &program.traits,
+                generics: &program.generics,
+                structs: &program.structs,
+                enums: &program.enums,
+                bindings: &program.bindings,
+                template_borrows: &program.template_borrows,
+                function_parameters: ClosureKinds::function_parameters(program),
+                rust_parameter_kinds: ClosureKinds::rust_parameter_kinds(program),
+                written_parameter_kinds: ClosureKinds::written_parameter_kinds(program),
+                borrowing_lambdas: &program.borrowing_lambdas,
+            })
+        }
+
+        fn analyze(&self, kinds: &mut ClosureKinds, name: &str) -> CaptureReport {
+            kinds.analyze_lambda(self.source.lambda(name))
+        }
+
+        fn has_reusable_report(&self, kinds: &ClosureKinds, name: &str) -> bool {
+            let address = LambdaAddress::of(self.source.lambda(name));
+            kinds.reusable_reports.contains_key(&address)
+        }
+
+        fn store_reusable_report_moving(&self, kinds: &mut ClosureKinds, name: &str, moved: &str) {
+            let moved = self.source.binder(moved);
+            let report = CaptureReport {
+                moved: BTreeMap::from([(moved.binding, moved.span)]),
+                changed: BTreeMap::new(),
+            };
+            let address = LambdaAddress::of(self.source.lambda(name));
+            kinds.reusable_reports.insert(address, report);
+        }
+
+        fn binding(&self, name: &str) -> BindingId {
+            self.source.binder(name).binding
+        }
+    }
+
+    #[test]
+    fn a_lambda_that_binds_no_function_has_a_reusable_report() {
+        let fixture = KindsFixture::new();
+        let mut kinds = fixture.kinds();
+        fixture.analyze(&mut kinds, "shown");
+        assert!(fixture.has_reusable_report(&kinds, "shown"));
+    }
+
+    #[test]
+    fn a_lambda_that_binds_a_function_has_no_reusable_report() {
+        let fixture = KindsFixture::new();
+        let mut kinds = fixture.kinds();
+        fixture.analyze(&mut kinds, "announce");
+        assert!(!fixture.has_reusable_report(&kinds, "announce"));
+    }
+
+    #[test]
+    fn an_enclosing_lambda_reuses_the_report_of_a_lambda_inside_it() {
+        let fixture = KindsFixture::new();
+        let mut kinds = fixture.kinds();
+        fixture.store_reusable_report_moving(&mut kinds, "shown", "make");
+        let report = fixture.analyze(&mut kinds, "announce");
+        let moved: Vec<BindingId> = report.moved.into_keys().collect();
+        assert_eq!(moved, [fixture.binding("make")]);
     }
 }

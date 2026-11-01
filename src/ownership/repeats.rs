@@ -23,7 +23,7 @@ impl RepeatingBody {
         if self.carried.is_empty() {
             return None;
         }
-        let own = LocalDefinitions::of(lambda);
+        let own = LocalDefinitions::default().of(lambda);
         self.carried.retain(|binding| !own.contains(&binding));
         (!self.carried.is_empty()).then_some(NextPass {
             entry: self.entry,

@@ -8,6 +8,9 @@ mod escaping_lambdas;
 mod functions;
 mod held;
 mod kinds;
+mod lambda_address;
+#[cfg(test)]
+mod lambda_source;
 mod modes;
 mod moved_values;
 mod moves;
