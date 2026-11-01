@@ -7,7 +7,7 @@ mod items;
 mod literal_generics;
 mod local_closures;
 mod locals;
-pub(crate) mod mangle;
+pub(crate) use rslisp_expand::mangle;
 mod method_elisions;
 mod mutable_locals;
 mod opaque_borrows;

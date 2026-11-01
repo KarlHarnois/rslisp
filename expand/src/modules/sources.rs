@@ -28,51 +28,63 @@ impl ModuleSources {
     const PRELUDE_DIRECTORY: &str = "prelude/";
     const BYTE_ORDER_MARK: char = '\u{feff}';
     const PRELUDE_FILES: [(&str, &str); 19] = [
-        ("prelude", include_str!("../../prelude/prelude.rslisp")),
+        ("prelude", include_str!("../../../prelude/prelude.rslisp")),
         (
             "prelude/macros",
-            include_str!("../../prelude/macros.rslisp"),
+            include_str!("../../../prelude/macros.rslisp"),
         ),
-        ("prelude/logic", include_str!("../../prelude/logic.rslisp")),
+        (
+            "prelude/logic",
+            include_str!("../../../prelude/logic.rslisp"),
+        ),
         (
             "prelude/syntax",
-            include_str!("../../prelude/syntax.rslisp"),
+            include_str!("../../../prelude/syntax.rslisp"),
         ),
         (
             "prelude/number",
-            include_str!("../../prelude/number.rslisp"),
+            include_str!("../../../prelude/number.rslisp"),
         ),
-        ("prelude/text", include_str!("../../prelude/text.rslisp")),
+        ("prelude/text", include_str!("../../../prelude/text.rslisp")),
         (
             "prelude/struct",
-            include_str!("../../prelude/struct.rslisp"),
+            include_str!("../../../prelude/struct.rslisp"),
         ),
         (
             "prelude/ownership",
-            include_str!("../../prelude/ownership.rslisp"),
+            include_str!("../../../prelude/ownership.rslisp"),
         ),
-        ("prelude/types", include_str!("../../prelude/types.rslisp")),
-        ("prelude/pair", include_str!("../../prelude/pair.rslisp")),
-        ("prelude/assoc", include_str!("../../prelude/assoc.rslisp")),
-        ("prelude/place", include_str!("../../prelude/place.rslisp")),
-        ("prelude/vec", include_str!("../../prelude/vec.rslisp")),
+        (
+            "prelude/types",
+            include_str!("../../../prelude/types.rslisp"),
+        ),
+        ("prelude/pair", include_str!("../../../prelude/pair.rslisp")),
+        (
+            "prelude/assoc",
+            include_str!("../../../prelude/assoc.rslisp"),
+        ),
+        (
+            "prelude/place",
+            include_str!("../../../prelude/place.rslisp"),
+        ),
+        ("prelude/vec", include_str!("../../../prelude/vec.rslisp")),
         (
             "prelude/iterator",
-            include_str!("../../prelude/iterator.rslisp"),
+            include_str!("../../../prelude/iterator.rslisp"),
         ),
         (
             "prelude/option",
-            include_str!("../../prelude/option.rslisp"),
+            include_str!("../../../prelude/option.rslisp"),
         ),
         (
             "prelude/result",
-            include_str!("../../prelude/result.rslisp"),
+            include_str!("../../../prelude/result.rslisp"),
         ),
-        ("prelude/io", include_str!("../../prelude/io.rslisp")),
-        ("prelude/map", include_str!("../../prelude/map.rslisp")),
+        ("prelude/io", include_str!("../../../prelude/io.rslisp")),
+        ("prelude/map", include_str!("../../../prelude/map.rslisp")),
         (
             "prelude/sequence",
-            include_str!("../../prelude/sequence.rslisp"),
+            include_str!("../../../prelude/sequence.rslisp"),
         ),
     ];
 
