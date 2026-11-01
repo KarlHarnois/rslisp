@@ -1,0 +1,5 @@
+(def limit 10)
+
+(def limit-page (doc limit))
+
+(def limit-header (header limit))

@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_prelude_undocumented.rslisp
+---
+(def when-page "(defrule when)\n\nNo documentation.")
+(def sum-page "(defn sum (values))\n\nNo documentation.")
+(def assoc-page "(defmacro assoc (value key more ...))\n\nNo documentation.")

@@ -1,0 +1,5 @@
+(defrule quietly ((definition) definition))
+
+(quietly (defn helper (x) x))
+
+(def helper-page (doc helper))

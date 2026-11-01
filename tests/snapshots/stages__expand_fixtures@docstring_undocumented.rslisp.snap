@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/docstring_undocumented.rslisp
+---
+error[L0327]: `twice` has no docstring
+ --> expand/docstring_undocumented.rslisp:3:33
+  |
+3 | (def twice-docstring (docstring twice))
+  |                                 ^^^^^ no docstring for this name
+  |
+  = help: write a docstring where it is defined, as the first form after the parameter list or the header

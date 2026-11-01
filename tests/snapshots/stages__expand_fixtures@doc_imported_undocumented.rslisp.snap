@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_imported_undocumented.rslisp
+---
+(def area-page "(defn area (width height))\n\nNo documentation.")

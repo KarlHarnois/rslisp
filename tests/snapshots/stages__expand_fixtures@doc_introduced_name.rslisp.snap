@@ -3,10 +3,6 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/expand/doc_introduced_name.rslisp
 ---
-error[L0327]: `helper` has no docstring
- --> expand/doc_introduced_name.rslisp:8:23
-  |
-8 | (def helper-page (doc helper))
-  |                       ^^^^^^ no docstring for this name
-  |
-  = help: write a docstring where it is defined, as the first form after the parameter list or the header
+(def helper (fn (x) x))
+(def helper_2 (fn (x_2) x_2))
+(def helper-page "(defn helper (x))\n\nNo documentation.")

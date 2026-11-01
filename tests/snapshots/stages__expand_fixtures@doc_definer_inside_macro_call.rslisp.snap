@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_definer_inside_macro_call.rslisp
+---
+(def helper (fn (x) x))
+(def helper-page "(defn helper (x))\n\nNo documentation.")

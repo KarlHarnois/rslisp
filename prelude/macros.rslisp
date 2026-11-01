@@ -1,9 +1,10 @@
 (use code first rest list prepend concat length empty? nth take drop
           symbol? list? string? symbol-name string same-binding? fail
-          definition-symbol type-definition-symbol add-module-note module-notes value-eq bool-not number-add number-sub number-lt
+          definition-symbol type-definition-symbol definition-call add-module-note module-notes symbol
+          value-eq bool-not number-add number-sub number-lt
           string-lines string-trim-start string-length string-drop string-strip-suffix)
 
-(export defrule defmacro template map-list whole-pairs? note-docstring value-doc-key type-doc-key
+(export defrule defmacro template map-list whole-pairs? note-docstring value-doc-key type-doc-key header-shape
         docstring-before-body? documented-body? docstring-before-parameters
         doc docstring header)
 
@@ -341,8 +342,22 @@
         true
         (if (empty? (rest arguments)) false (recur (drop 2 arguments))))))
 
+(defmacro header-shape (shape)
+  "States the header of a definer's calls: (header-shape (definer name ...)).
+
+  The page of a definition that the definer made shows as many leading
+  forms of its call as the shape lists."
+  (add-module-note (quote header-shapes) shape)
+  (quote (do)))
+
+(header-shape (defrule name))
+
+(header-shape (defmacro name pattern))
+
 (defmacro doc (term)
-  "Returns the page of a term as a string: its header, a blank line, then its docstring."
+  "Returns the page of a term as a string: its header, a blank line, then its docstring.
+
+  A term without a docstring has `No documentation.` in its place."
   (documentation-part (quote page) term))
 
 (defmacro docstring (term)
@@ -355,18 +370,20 @@
 
 (def documentation-part
   (fn (part term)
-    (let note (documentation-of term))
-    (doc-part part (nth note 2) (nth note 3))))
+    (doc-part part term (documentation-of term))))
 
 (def documentation-of
   (fn (term)
-    (let value-notes (docstring-notes (definition-symbol term "doc") (value-doc-key term)))
-    (if (empty? value-notes) (type-documentation-of term) (first value-notes))))
+    (let notes (concat (value-notes term) (type-notes term)))
+    (if (empty? notes) (undocumented-note term) (first notes))))
 
-(def type-documentation-of
+(def value-notes
   (fn (term)
-    (let type-notes (docstring-notes (type-definition-symbol term "doc") (type-doc-key term)))
-    (if (empty? type-notes) (undocumented term) (first type-notes))))
+    (docstring-notes (definition-symbol term "doc") (value-doc-key term))))
+
+(def type-notes
+  (fn (term)
+    (docstring-notes (type-definition-symbol term "doc") (type-doc-key term))))
 
 (def docstring-notes
   (fn (context key)
@@ -388,6 +405,40 @@
   (fn (name)
     (list "type" name)))
 
+(def undocumented-note
+  (fn (term)
+    (concat (value-doc-key term) (list (written-header term)))))
+
+(def written-header
+  (fn (term)
+    (let calls (definition-call term))
+    (if (empty? calls) term (call-header term (first calls)))))
+
+(def call-header
+  (fn (term call)
+    (let shapes (header-shapes (symbol (definition-symbol term "doc") (first call))))
+    (if (empty? shapes) term (take (length (first shapes)) call))))
+
+(def header-shapes
+  (fn (definer)
+    (shapes-of definer (module-notes (definition-symbol definer "doc") (quote header-shapes)))))
+
+(def shapes-of
+  (fn (definer shapes)
+    (if (empty? shapes)
+        shapes
+        (if (same-binding? definer (first (first shapes)))
+            (take 1 shapes)
+            (recur definer (rest shapes))))))
+
+(def note-header
+  (fn (note)
+    (nth note 2)))
+
+(def note-docstrings
+  (fn (note)
+    (drop 3 note)))
+
 (def undocumented
   (fn (term)
     (fail (string "`" term "` has no docstring") term
@@ -395,12 +446,22 @@
           (template (:code undocumented-term :label "no docstring for this name")))))
 
 (def doc-part
-  (fn (part header text)
+  (fn (part term note)
     (if (value-eq part (quote header))
-        (string header)
+        (string (note-header note))
         (if (value-eq part (quote docstring))
-            (clean-docstring text)
-            (string header "\n\n" (clean-docstring text))))))
+            (clean-docstring (written-docstring term note))
+            (string (note-header note) "\n\n" (page-text note))))))
+
+(def written-docstring
+  (fn (term note)
+    (let docstrings (note-docstrings note))
+    (if (empty? docstrings) (undocumented term) (first docstrings))))
+
+(def page-text
+  (fn (note)
+    (let docstrings (note-docstrings note))
+    (if (empty? docstrings) "No documentation." (clean-docstring (first docstrings)))))
 
 (def clean-docstring
   (fn (text)

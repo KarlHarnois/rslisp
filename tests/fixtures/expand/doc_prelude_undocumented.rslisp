@@ -1,0 +1,5 @@
+(def when-page (doc when))
+
+(def sum-page (doc sum))
+
+(def assoc-page (doc assoc))

@@ -3,10 +3,5 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/expand/undocumented_term.rslisp
 ---
-error[L0327]: `twice` has no docstring
- --> expand/undocumented_term.rslisp:3:22
-  |
-3 | (def twice-page (doc twice))
-  |                      ^^^^^ no docstring for this name
-  |
-  = help: write a docstring where it is defined, as the first form after the parameter list or the header
+(def twice (fn (x) (mul 2 x)))
+(def twice-page "(defn twice (x))\n\nNo documentation.")

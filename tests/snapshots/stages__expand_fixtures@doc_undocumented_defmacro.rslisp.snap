@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_undocumented_defmacro.rslisp
+---
+(def unless-page "(defmacro unless (test body ...))\n\nNo documentation.")

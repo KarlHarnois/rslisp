@@ -32,6 +32,7 @@ const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::
 const TRAIT_SHARED_VECTOR: &str = "(struct odometer (offset i64))\n\n(trait mileage\n  (first-reading (fn ((ref self) (ref (vec i64))) i64)))\n\n(impl mileage odometer\n  (first-reading (o readings) (+ (field o offset) (at readings 0))))\n\n(defn main ()\n  (println (first-reading (new odometer (offset 10)) (vec 1200))))\n";
 const GEOMETRY: &str = "(export area)\n\n(defn area (width height) \"Multiplies a width by a height.\" (* width height))\n";
 const GEOMETRY_ENTRY: &str = "(use geometry area)\n\n(defn main () (println (area 3 4)))\n";
+const UNDOCUMENTED_ENTRY: &str = "(defn twice (x) (* 2 x))\n\n(defn main () (println (twice 2)))\n";
 const SHADOWING_DOC: &str = "(defrule doc ((term) 0))\n\n(defn main () (do))\n";
 const THREADING_HEADER: &str = "(defrule ->)";
 
@@ -292,10 +293,13 @@ fn doc_prints_the_page_of_an_imported_term() {
 }
 
 #[test]
-fn doc_reports_a_term_without_a_docstring() {
-    let sandbox = Sandbox::new("doc_undocumented");
-    let doc = sandbox.compiler(&["doc", "if"]);
-    insta::assert_snapshot!(doc.assert_exit_code(1).stderr());
+fn doc_prints_the_page_of_an_undocumented_term() {
+    let sandbox = Sandbox::new("doc_undocumented").with_file("main.rslisp", UNDOCUMENTED_ENTRY);
+    let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "twice"]);
+    assert_eq!(
+        doc.assert_exit_code(0).stdout(),
+        "(defn twice (x))\n\nNo documentation.\n"
+    );
 }
 
 #[test]

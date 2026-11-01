@@ -1,0 +1,4 @@
+(defmacro unless (test body ...)
+  (template (if (unquote test) (do) (do (splice body)))))
+
+(def unless-page (doc unless))
