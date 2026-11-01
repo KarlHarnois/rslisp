@@ -23,15 +23,28 @@ impl Expander<'_> {
         context: &DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
         let misplaced = ExpandProblems::module_level_only(Self::DEF_FORM, form.span());
-        let Ok(items) = Shape::new(Self::DEF_FORM, form).exactly(3) else {
+        let Some((binder, value)) = Self::misplaced_def_parts(form) else {
             return Err(misplaced);
         };
         self.keep_recovered(misplaced)?;
         let scope = self.fresh_local_scope();
         rest_of_body.add_scope(scope);
-        let binder = self.lower_binder(&Self::scoped(&items[1], scope), Some(context))?;
-        let value = self.lower_misplaced_value(&Self::scoped(&items[2], scope))?;
+        let binder = self.lower_binder(&Self::scoped(binder, scope), Some(context))?;
+        let value = match value {
+            Some(value) => self.lower_misplaced_value(&Self::scoped(value, scope))?,
+            None => Self::placeholder(form.span()),
+        };
         Ok(BodyItem::Let(binder, value))
+    }
+
+    fn misplaced_def_parts(form: &Form) -> Option<(&Form, Option<&Form>)> {
+        let (binder, value) = match form.as_list()? {
+            [_, binder] => (binder, None),
+            [_, binder, value, ..] => (binder, Some(value)),
+            _ => return None,
+        };
+        Self::split_binder(binder).0.as_symbol()?;
+        Some((binder, value))
     }
 
     fn lower_misplaced_value(&mut self, value: &Form) -> Result<Expr, Diagnostic> {
