@@ -11,6 +11,7 @@ mod host;
 mod introduced;
 mod macro_call;
 mod macro_function;
+mod misplaced_definition;
 mod module_body;
 mod module_loading;
 mod module_notes;
