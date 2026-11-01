@@ -192,8 +192,15 @@
     (let variables (repeated-variables (template-variables template) bindings))
     (if (empty? variables)
         (fail "nothing before this `...` repeats" template)
-        (map-count (length (nth (lookup (first variables) bindings) 2))
-                   (fn (index) (fill-template template (iteration-bindings variables bindings index)))))))
+        (do (let leader (lookup (first variables) bindings))
+            (if (lone-slice? template leader)
+                (nth leader 2)
+                (map-count (length (nth leader 2))
+                           (fn (index) (fill-template template (iteration-bindings variables bindings index)))))))))
+
+(def lone-slice?
+  (fn (template leader)
+    (if (symbol? template) (entry-kind? leader "forms") false)))
 
 (def repeated-variables
   (fn (candidates bindings)
