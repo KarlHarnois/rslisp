@@ -9,11 +9,13 @@ use crate::source::Span;
 
 impl CompileTimeHost for Expander<'_> {
     fn global_value(&mut self, binding: BindingId, span: Span) -> Result<Value, Diagnostic> {
-        let name = self.tables.bindings.get(binding).name().to_string();
         match self.kind(binding) {
             BindingKind::CodeBuiltin(builtin) => Ok(Value::Builtin(builtin)),
             BindingKind::Global(_) => self.evaluate_global(binding, span),
-            _ => Err(ExpandProblems::not_at_compile_time(&name, span)),
+            _ => Err(ExpandProblems::not_at_compile_time(
+                self.tables.bindings.get(binding).name(),
+                span,
+            )),
         }
     }
 
