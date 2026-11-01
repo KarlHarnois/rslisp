@@ -1,0 +1,125 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/returned_unpromoted_temporary.rslisp
+---
+error[L0510]: cannot return a borrow of a local value
+ --> check/returned_unpromoted_temporary.rslisp:7:3
+  |
+7 |   (ref (= "Leaf" "Ariya")))
+  |   ^^^^^------------------^
+  |   |    |
+  |   |    this temporary value is dropped when the function returns
+  |   this borrows a local value
+  |
+  = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/returned_unpromoted_temporary.rslisp:10:3
+   |
+10 |   (ref (/ 7 0)))
+   |   ^^^^^-------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a local value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/returned_unpromoted_temporary.rslisp:13:3
+   |
+13 |   (ref (/ 7 (+ 1 1))))
+   |   ^^^^^-------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a local value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/returned_unpromoted_temporary.rslisp:16:3
+   |
+16 |   (ref (/ (+ 3 4) -1)))
+   |   ^^^^^--------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a local value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/returned_unpromoted_temporary.rslisp:19:3
+   |
+19 |   (ref (/ (+ 3 4) (- 1))))
+   |   ^^^^^-----------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a local value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/returned_unpromoted_temporary.rslisp:22:3
+   |
+22 |   (ref (+ year 1)))
+   |   ^^^^^----------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a local value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/returned_unpromoted_temporary.rslisp:25:3
+   |
+25 |   (ref (if flag 2019 2021)))
+   |   ^^^^^-------------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a local value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/returned_unpromoted_temporary.rslisp:28:3
+   |
+28 |   (ref (+ (if flag 2019 2021) 1)))
+   |   ^^^^^-------------------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a local value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/returned_unpromoted_temporary.rslisp:31:3
+   |
+31 |   (ref (do (let year 2019) year)))
+   |   ^^^^^-------------------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a local value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/returned_unpromoted_temporary.rslisp:34:3
+   |
+34 |   (ref (+ (base-year) 1)))
+   |   ^^^^^-----------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a local value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/returned_unpromoted_temporary.rslisp:37:3
+   |
+37 |   (ref (pair (the (vec i64) (vec)) 1)))
+   |   ^^^^^------------------------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a local value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`

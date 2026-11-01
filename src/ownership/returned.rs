@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use super::lent_borrows::LentBorrows;
 use super::local_borrows::{BorrowHolder, LocalBorrows, ParameterOwner};
 use super::problems::{BorrowedStorage, OwnershipProblems};
+use super::promoted_constants::PromotedConstants;
 use super::slots::DeclaredSlots;
 use crate::core::{BindingId, FieldLabel, PrimitiveType};
 use crate::diagnostic::Diagnostic;
@@ -14,6 +15,7 @@ pub struct ReturnedBorrows<'p> {
     program: &'p TypedProgram,
     slots: DeclaredSlots<'p>,
     owners_of_borrowing_closures: HashSet<BindingId>,
+    constants: PromotedConstants<'p>,
 }
 
 impl<'p> ReturnedBorrows<'p> {
@@ -22,6 +24,7 @@ impl<'p> ReturnedBorrows<'p> {
             program,
             slots: DeclaredSlots::new(program),
             owners_of_borrowing_closures: BorrowingClosures { program }.owners(),
+            constants: PromotedConstants::new(program),
         }
     }
 
@@ -74,7 +77,7 @@ impl<'p> ReturnedBorrows<'p> {
 
     fn check(&self, lambda: &TypedLambda, owner: ParameterOwner) -> Option<Diagnostic> {
         let tail = LocalBorrows::tail_of(&lambda.body)?;
-        let borrows = LocalBorrows::dropped_in(lambda, owner);
+        let borrows = LocalBorrows::dropped_in(lambda, owner, self.constants);
         let found = borrows.returned(tail)?;
         let storage = found.holders.iter().find_map(|holder| self.storage(holder));
         Some(match storage {

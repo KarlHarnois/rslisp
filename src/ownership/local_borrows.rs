@@ -1,4 +1,5 @@
 use super::problems::DroppedValue;
+use super::promoted_constants::PromotedConstants;
 use crate::core::{BindingId, FieldLabel};
 use crate::source::Span;
 use crate::types::{
@@ -48,21 +49,25 @@ impl ParameterOwner {
 }
 
 #[derive(Clone, Copy)]
-enum BorrowRoots {
-    Dropped(ParameterOwner),
+enum BorrowRoots<'e> {
+    Dropped(ParameterOwner, PromotedConstants<'e>),
     Lent(BindingId),
 }
 
 pub(super) struct LocalBorrows<'e> {
     lambda: &'e TypedLambda,
-    roots: BorrowRoots,
+    roots: BorrowRoots<'e>,
 }
 
 impl<'e> LocalBorrows<'e> {
-    pub(super) fn dropped_in(lambda: &'e TypedLambda, owner: ParameterOwner) -> Self {
+    pub(super) fn dropped_in(
+        lambda: &'e TypedLambda,
+        owner: ParameterOwner,
+        constants: PromotedConstants<'e>,
+    ) -> Self {
         Self {
             lambda,
-            roots: BorrowRoots::Dropped(owner),
+            roots: BorrowRoots::Dropped(owner, constants),
         }
     }
 
@@ -176,17 +181,18 @@ impl<'e> LocalBorrows<'e> {
     }
 
     fn dropped_root(&self, borrowed: &TypedExpr) -> Option<DroppedValue> {
-        let BorrowRoots::Dropped(owner) = self.roots else {
+        let BorrowRoots::Dropped(owner, constants) = self.roots else {
             return None;
         };
         match borrowed.place_root() {
             Some(root) => self.dropped_value(root, owner),
-            None => Self::temporary(borrowed),
+            None => Self::temporary(borrowed, constants),
         }
     }
 
-    fn temporary(borrowed: &TypedExpr) -> Option<DroppedValue> {
-        matches!(borrowed.kind, TypedExprKind::Call(..))
+    fn temporary(borrowed: &TypedExpr, constants: PromotedConstants) -> Option<DroppedValue> {
+        constants
+            .is_temporary(borrowed)
             .then_some(DroppedValue::Temporary(borrowed.span))
     }
 

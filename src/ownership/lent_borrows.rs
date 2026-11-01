@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use super::local_borrows::{LocalBorrows, ParameterOwner};
 use super::problems::OwnershipProblems;
+use super::promoted_constants::PromotedConstants;
 use crate::core::BindingId;
 use crate::diagnostic::Diagnostic;
 use crate::types::{
@@ -26,7 +27,8 @@ impl<'p> LentBorrows<'p> {
             return Vec::new();
         };
         let closures = Self::lending_closures(&definition.value);
-        let borrows = LocalBorrows::dropped_in(function, ParameterOwner::Function);
+        let constants = PromotedConstants::new(self.program);
+        let borrows = LocalBorrows::dropped_in(function, ParameterOwner::Function, constants);
         Self::local_calls(&definition.value)
             .into_iter()
             .filter_map(|(closure, arguments)| Some((closure, closures.get(&closure)?, arguments)))
