@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/lazy_helpers_top.rslisp
+---
+(type first-helper (fn () i64))
+(type second-helper (fn () i64))

@@ -2,9 +2,9 @@ use std::rc::Rc;
 
 use super::Expander;
 use super::TraitMethods;
+use super::budget_arena::BudgetId;
 use super::context::DefinitionContext;
 use super::distinct_diagnostics::DistinctDiagnostics;
-use super::form_budget::FormBudget;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use super::sourced_items::SourcedItems;
@@ -69,7 +69,7 @@ enum PendingItem {
 impl Expander<'_> {
     pub(super) fn expand_module_body(&mut self, module: ModuleId, forms: Vec<Form>) {
         let outer_module = self.current_module.replace(module);
-        let (pending, mut budgets) = self.register_definitions(module, forms);
+        let (pending, budgets) = self.register_definitions(module, forms);
         let mut core = CoreModule {
             id: module,
             path: self.modules.get(module).path().clone(),
@@ -78,9 +78,9 @@ impl Expander<'_> {
         };
         let (impls, rest) = pending.partition(|item| matches!(item, PendingItem::Impl(..)));
         let (exports, rest) = rest.partition(|item| matches!(item, PendingItem::Export(..)));
-        self.lower_pending_group(module, rest, &mut budgets, &mut core);
-        self.lower_pending_group(module, impls, &mut budgets, &mut core);
-        self.lower_pending_group(module, exports, &mut budgets, &mut core);
+        self.lower_pending_group(module, rest, &budgets, &mut core);
+        self.lower_pending_group(module, impls, &budgets, &mut core);
+        self.lower_pending_group(module, exports, &budgets, &mut core);
         self.compile_pending_macros();
         self.record_answering_macros(module);
         self.order.push(module);
@@ -92,12 +92,11 @@ impl Expander<'_> {
         &mut self,
         module: ModuleId,
         items: SourcedItems<PendingItem>,
-        budgets: &mut [FormBudget],
+        budgets: &[BudgetId],
         core: &mut CoreModule,
     ) {
         for run in items.into_runs() {
-            let budget = &mut budgets[run.source];
-            self.within_source_run(budget, |expander| {
+            self.within_source_run(budgets[run.source], |expander| {
                 expander.lower_source_run(module, run.items, core)
             });
         }
@@ -127,14 +126,14 @@ impl Expander<'_> {
         &mut self,
         module: ModuleId,
         forms: Vec<Form>,
-    ) -> (SourcedItems<PendingItem>, Vec<FormBudget>) {
+    ) -> (SourcedItems<PendingItem>, Vec<BudgetId>) {
         let mut context = DefinitionContext::default();
         let mut pending = SourcedItems::new();
         let mut budgets = Vec::with_capacity(forms.len());
         for form in forms {
-            let mut budget = FormBudget::full();
+            let budget = self.form_budgets.open();
             let mut items = Vec::new();
-            let registered = self.within_source_form(&mut budget, |expander| {
+            let registered = self.within_source_form(budget, |expander| {
                 expander.register_source_form(module, form, &mut context, &mut items)
             });
             if let Err(diagnostic) = registered {
@@ -516,7 +515,8 @@ impl Expander<'_> {
         }
         let binding =
             self.define_global(name, Namespace::Value, BindingKind::Global(module), context)?;
-        self.globals.add_pending(binding, value.clone());
+        let budget = self.form_budgets.spending();
+        self.globals.add_pending(binding, value.clone(), budget);
         Ok(Some(PendingItem::Def {
             binding,
             annotation: annotation.cloned(),

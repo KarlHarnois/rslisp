@@ -1,6 +1,6 @@
 use super::Expander;
+use super::budget_arena::BudgetId;
 use super::distinct_diagnostics::DistinctDiagnostics;
-use super::form_budget::FormBudget;
 use crate::diagnostic::Diagnostic;
 
 impl Expander<'_> {
@@ -8,12 +8,13 @@ impl Expander<'_> {
         &mut self,
         expand: impl FnOnce(&mut Self) -> Result<T, Diagnostic>,
     ) -> Result<T, Diagnostic> {
-        self.within_source_form(&mut FormBudget::full(), expand)
+        let budget = self.form_budgets.open();
+        self.within_source_form(budget, expand)
     }
 
     pub(super) fn within_source_form<T>(
         &mut self,
-        budget: &mut FormBudget,
+        budget: BudgetId,
         expand: impl FnOnce(&mut Self) -> Result<T, Diagnostic>,
     ) -> Result<T, Diagnostic> {
         let first_recovered = self.recovered_diagnostics.len();
@@ -28,21 +29,22 @@ impl Expander<'_> {
         }
     }
 
-    pub(super) fn within_source_run(
-        &mut self,
-        budget: &mut FormBudget,
-        lower: impl FnOnce(&mut Self),
-    ) {
+    pub(super) fn within_source_run(&mut self, budget: BudgetId, lower: impl FnOnce(&mut Self)) {
         let first_recovered = self.recovered_diagnostics.len();
         self.spending(budget, lower);
         let recovered = self.recovered_diagnostics.split_off(first_recovered);
         self.recover_distinct(recovered);
     }
 
-    fn spending<T>(&mut self, budget: &mut FormBudget, expand: impl FnOnce(&mut Self) -> T) -> T {
-        std::mem::swap(&mut self.form_budget, budget);
+    pub(super) fn spending<T>(
+        &mut self,
+        budget: BudgetId,
+        expand: impl FnOnce(&mut Self) -> T,
+    ) -> T {
+        let outer = self.form_budgets.spending();
+        self.form_budgets.spend_from(budget);
         let expanded = expand(self);
-        std::mem::swap(&mut self.form_budget, budget);
+        self.form_budgets.spend_from(outer);
         expanded
     }
 
