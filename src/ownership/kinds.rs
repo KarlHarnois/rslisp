@@ -1692,4 +1692,13 @@ mod tests {
         let moved: Vec<BindingId> = report.moved.into_keys().collect();
         assert_eq!(moved, [fixture.binding("make")]);
     }
+
+    #[test]
+    fn forgetting_lambda_analyses_drops_every_reusable_report() {
+        let fixture = KindsFixture::new();
+        let mut kinds = fixture.kinds();
+        fixture.analyze(&mut kinds, "shown");
+        kinds.forget_lambda_analyses();
+        assert!(!fixture.has_reusable_report(&kinds, "shown"));
+    }
 }

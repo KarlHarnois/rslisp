@@ -118,4 +118,13 @@ mod tests {
         let second = fixture.definitions_of("describe");
         assert!(Rc::ptr_eq(&first, &second));
     }
+
+    #[test]
+    fn a_lambda_asked_for_after_forgetting_is_collected_again() {
+        let mut fixture = DefinitionFixture::new();
+        let first = fixture.definitions_of("describe");
+        fixture.definitions.forget();
+        let second = fixture.definitions_of("describe");
+        assert!(!Rc::ptr_eq(&first, &second));
+    }
 }
