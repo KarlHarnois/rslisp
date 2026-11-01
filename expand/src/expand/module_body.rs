@@ -1390,7 +1390,7 @@ impl Expander<'_> {
         implementor_span: Span,
     ) -> Result<ImplLoweringParts, Diagnostic> {
         let mut associated = Vec::new();
-        let mut defined = std::collections::HashSet::new();
+        let mut defined = rustc_hash::FxHashSet::default();
         let mut method_forms = Vec::new();
         for entry in entries {
             if !Self::is_associated_entry(entry) {
@@ -1462,9 +1462,9 @@ impl Expander<'_> {
         lowering: &ImplLowering<'_, '_>,
         forms: &[Form],
         core: &mut CoreModule,
-    ) -> Result<(Vec<ImplMethod>, std::collections::HashSet<BindingId>), Diagnostic> {
+    ) -> Result<(Vec<ImplMethod>, rustc_hash::FxHashSet<BindingId>), Diagnostic> {
         let mut methods = Vec::new();
-        let mut implemented = std::collections::HashSet::new();
+        let mut implemented = rustc_hash::FxHashSet::default();
         for method in forms {
             let lowered = self.lower_impl_method(lowering, method, &mut implemented, core);
             if let Some(method) = lowered? {
@@ -1477,7 +1477,7 @@ impl Expander<'_> {
     fn report_missing_methods(
         &mut self,
         lowering: &ImplLowering<'_, '_>,
-        implemented: &std::collections::HashSet<BindingId>,
+        implemented: &rustc_hash::FxHashSet<BindingId>,
         type_name: &str,
         implementor_span: Span,
     ) {
@@ -1499,7 +1499,7 @@ impl Expander<'_> {
         &mut self,
         lowering: &ImplLowering<'_, '_>,
         method: &Form,
-        implemented: &mut std::collections::HashSet<BindingId>,
+        implemented: &mut rustc_hash::FxHashSet<BindingId>,
         core: &mut CoreModule,
     ) -> Result<Option<ImplMethod>, Diagnostic> {
         let method_items = method
@@ -1636,7 +1636,7 @@ impl Expander<'_> {
                     .iter()
                     .map(|method| (method.binding, method.signature.clone()))
                     .collect(),
-                defaults: std::collections::HashSet::new(),
+                defaults: rustc_hash::FxHashSet::default(),
             },
         );
         self.tables.trait_paths.insert(binding, path.clone());

@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use crate::core::BindingId;
 use crate::diagnostic::{Diagnostic, Diagnostics};
@@ -41,7 +41,7 @@ impl ChangingFunctionNames {
         warnings
     }
 
-    pub(super) fn impl_methods(program: &TypedProgram) -> HashSet<BindingId> {
+    pub(super) fn impl_methods(program: &TypedProgram) -> FxHashSet<BindingId> {
         program
             .trait_impls
             .iter()
@@ -50,7 +50,7 @@ impl ChangingFunctionNames {
             .collect()
     }
 
-    pub(super) fn default_methods(program: &TypedProgram) -> HashSet<BindingId> {
+    pub(super) fn default_methods(program: &TypedProgram) -> FxHashSet<BindingId> {
         program
             .trait_definitions
             .iter()

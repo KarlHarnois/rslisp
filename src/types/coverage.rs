@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use super::checker::TypeChecker;
 use super::problems::TypeProblems;
@@ -78,7 +78,7 @@ impl TypeChecker {
             return;
         }
         let missing = self.witnesses(&matrix, &[scrutinee], &mut Vec::new());
-        let mut seen = HashSet::new();
+        let mut seen = FxHashSet::default();
         let cases: Vec<String> = missing
             .iter()
             .map(|row| self.show_witness(&row[0]))

@@ -1,12 +1,13 @@
+use rustc_hash::FxHashMap;
+
 use crate::core::ModuleId;
 use crate::reader::Form;
-use crate::scope::FastHashMap;
 
 type NotesKey = (ModuleId, String);
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct ModuleNotes {
-    notes: FastHashMap<NotesKey, Vec<Form>>,
+    notes: FxHashMap<NotesKey, Vec<Form>>,
     added: Vec<NotesKey>,
 }
 

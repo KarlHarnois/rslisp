@@ -1,14 +1,15 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use super::typed::{TypedExpr, TypedExprKind, TypedLeaf};
 use crate::core::{BindingId, ParsedTemplate, ReferenceKind};
 
 #[derive(Default)]
 pub struct TemplateBorrows {
-    templates: HashMap<BindingId, ParsedTemplate>,
-    inline: RefCell<HashMap<Rc<str>, Option<ParsedTemplate>>>,
+    templates: FxHashMap<BindingId, ParsedTemplate>,
+    inline: RefCell<FxHashMap<Rc<str>, Option<ParsedTemplate>>>,
 }
 
 impl TemplateBorrows {

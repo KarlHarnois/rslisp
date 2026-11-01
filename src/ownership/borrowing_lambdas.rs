@@ -1,18 +1,18 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::core::BindingId;
 use crate::types::{Type, TypedBinder, TypedExpr, TypedLambda, TypedProgram};
 
 pub struct BorrowingLambdas<'p> {
     program: &'p TypedProgram,
-    borrowed_parameters: HashMap<BindingId, HashSet<BindingId>>,
+    borrowed_parameters: FxHashMap<BindingId, FxHashSet<BindingId>>,
 }
 
 impl<'p> BorrowingLambdas<'p> {
-    pub fn in_program(program: &'p TypedProgram) -> HashMap<BindingId, HashSet<BindingId>> {
+    pub fn in_program(program: &'p TypedProgram) -> FxHashMap<BindingId, FxHashSet<BindingId>> {
         let mut found = Self {
             program,
-            borrowed_parameters: HashMap::new(),
+            borrowed_parameters: FxHashMap::default(),
         };
         program
             .modules
@@ -34,7 +34,7 @@ impl<'p> BorrowingLambdas<'p> {
         self.borrowed_parameters.insert(binder.binding, borrowed);
     }
 
-    fn borrowed_parameters_of(&self, lambda: &TypedLambda) -> HashSet<BindingId> {
+    fn borrowed_parameters_of(&self, lambda: &TypedLambda) -> FxHashSet<BindingId> {
         lambda
             .params
             .iter()

@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use super::selection::{ImplementorMatch, PatternMatch};
 use super::traits::Implementor;
@@ -39,8 +40,8 @@ impl ProjectionRule {
 
 #[derive(Default)]
 pub struct ProjectionTable {
-    associated: HashMap<BindingId, AssociatedType>,
-    rules: HashMap<BindingId, Vec<ProjectionRule>>,
+    associated: FxHashMap<BindingId, AssociatedType>,
+    rules: FxHashMap<BindingId, Vec<ProjectionRule>>,
 }
 
 impl ProjectionTable {

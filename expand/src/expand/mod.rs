@@ -29,14 +29,15 @@ mod try_check;
 mod type_expr;
 mod type_parameters;
 
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::core::{BindingArena, CoreModule, ModuleId, ModulePath};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::modules::{ModuleRegistry, ModuleSources};
 use crate::reader::Form;
-use crate::scope::{BindingTable, FastHashMap, FastHashSet, Phase, Scope, ScopeAllocator};
+use crate::scope::{BindingTable, Phase, Scope, ScopeAllocator};
 use crate::source::{SourceId, SourceMap, Span};
 use budget_arena::BudgetArena;
 use globals::GlobalTable;
@@ -51,7 +52,7 @@ pub struct Program {
     pub modules: Vec<CoreModule>,
     pub entry: ModuleId,
     pub bindings: BindingArena,
-    pub macro_origins: HashMap<Span, MacroOrigin>,
+    pub macro_origins: FxHashMap<Span, MacroOrigin>,
     pub warnings: Diagnostics,
 }
 
@@ -70,7 +71,7 @@ pub struct TraitMethods {
     pub self_variable: crate::core::BindingId,
     pub associated: Vec<(crate::core::BindingId, Rc<str>)>,
     pub methods: Vec<(crate::core::BindingId, crate::core::TypeExpr)>,
-    pub defaults: std::collections::HashSet<crate::core::BindingId>,
+    pub defaults: rustc_hash::FxHashSet<crate::core::BindingId>,
 }
 
 pub struct Expander<'s> {
@@ -92,21 +93,21 @@ pub struct Expander<'s> {
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 struct ExpansionTables {
     scopes: ScopeAllocator,
-    local_scopes: FastHashSet<Scope>,
-    use_site_scopes: FastHashSet<Scope>,
+    local_scopes: FxHashSet<Scope>,
+    use_site_scopes: FxHashSet<Scope>,
     table: BindingTable,
     bindings: BindingArena,
     macros: MacroTable,
-    macro_origins: HashMap<Span, MacroOrigin>,
-    introduced_names: FastHashMap<(Span, String), Span>,
-    introduction_scopes: FastHashSet<Scope>,
+    macro_origins: FxHashMap<Span, MacroOrigin>,
+    introduced_names: FxHashMap<(Span, String), Span>,
+    introduction_scopes: FxHashSet<Scope>,
     global_macros: Vec<(crate::core::BindingId, Form)>,
-    trait_paths: HashMap<crate::core::BindingId, Rc<str>>,
-    enum_variants: HashMap<crate::core::BindingId, Vec<crate::core::BindingId>>,
-    trait_methods: HashMap<crate::core::BindingId, TraitMethods>,
+    trait_paths: FxHashMap<crate::core::BindingId, Rc<str>>,
+    enum_variants: FxHashMap<crate::core::BindingId, Vec<crate::core::BindingId>>,
+    trait_methods: FxHashMap<crate::core::BindingId, TraitMethods>,
     globals: GlobalTable,
     module_notes: ModuleNotes,
-    expanded: HashMap<ModuleId, CoreModule>,
+    expanded: FxHashMap<ModuleId, CoreModule>,
     order: Vec<ModuleId>,
 }
 

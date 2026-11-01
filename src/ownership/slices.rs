@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::functions::{FunctionInfo, FunctionTable, ParamMode, ParamSlot};
 use super::names::ChangingFunctionNames;
@@ -41,10 +41,10 @@ struct ShrinkableSlot {
 pub struct ShrinkSelection<'a> {
     program: &'a TypedProgram,
     functions: &'a FunctionTable,
-    modes: &'a HashMap<BindingId, ParamMode>,
-    declared: HashMap<BindingId, Vec<Type>>,
-    values: HashSet<BindingId>,
-    trait_methods: HashSet<BindingId>,
+    modes: &'a FxHashMap<BindingId, ParamMode>,
+    declared: FxHashMap<BindingId, Vec<Type>>,
+    values: FxHashSet<BindingId>,
+    trait_methods: FxHashSet<BindingId>,
     trait_slots: Vec<ShrinkableSlot>,
     slice: BindingId,
 }
@@ -53,13 +53,13 @@ impl<'a> ShrinkSelection<'a> {
     pub fn of(
         program: &'a TypedProgram,
         functions: &'a FunctionTable,
-        modes: &'a HashMap<BindingId, ParamMode>,
+        modes: &'a FxHashMap<BindingId, ParamMode>,
     ) -> Option<Self> {
         let slice = program
             .rust_types
             .binding_with_template(RustType::SLICE_TEMPLATE)?;
-        let mut values = HashSet::new();
-        let declared: HashMap<BindingId, Vec<Type>> = program
+        let mut values = FxHashSet::default();
+        let declared: FxHashMap<BindingId, Vec<Type>> = program
             .modules
             .iter()
             .flat_map(|module| &module.definitions)
@@ -123,9 +123,9 @@ impl<'a> ShrinkSelection<'a> {
 
     fn shrunk_declarations(
         &self,
-        refused: &HashSet<BindingId>,
-    ) -> HashMap<BindingId, Vec<(usize, Type)>> {
-        let mut declarations: HashMap<BindingId, Vec<(usize, Type)>> = HashMap::new();
+        refused: &FxHashSet<BindingId>,
+    ) -> FxHashMap<BindingId, Vec<(usize, Type)>> {
+        let mut declarations: FxHashMap<BindingId, Vec<(usize, Type)>> = FxHashMap::default();
         for ShrinkableSlot { slot, shrink } in &self.trait_slots {
             if !slot.is_refused(refused) {
                 declarations
@@ -361,7 +361,7 @@ impl<'a> ShrinkSelection<'a> {
             })
     }
 
-    fn scan(expr: &TypedExpr, callee: bool, values: &mut HashSet<BindingId>) {
+    fn scan(expr: &TypedExpr, callee: bool, values: &mut FxHashSet<BindingId>) {
         match (&expr.kind, callee) {
             (TypedExprKind::Leaf(TypedLeaf::Global(binding)), false) => {
                 values.insert(*binding);
@@ -515,7 +515,7 @@ impl<'a, 'b> BodyUses<'a, 'b> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::{HashMap, HashSet};
+    use rustc_hash::{FxHashMap, FxHashSet};
 
     use super::ShrinkSelection;
     use crate::core::BindingId;
@@ -526,7 +526,7 @@ mod tests {
     struct SelectionFixture {
         program: TypedProgram,
         functions: FunctionTable,
-        modes: HashMap<BindingId, ParamMode>,
+        modes: FxHashMap<BindingId, ParamMode>,
     }
 
     impl SelectionFixture {
@@ -583,7 +583,7 @@ mod tests {
                 .expect("the prelude defines slices")
         }
 
-        fn walked_bodies(&self) -> HashSet<&str> {
+        fn walked_bodies(&self) -> FxHashSet<&str> {
             let selection = self.selection();
             let candidates = selection.candidates();
             selection
@@ -592,7 +592,7 @@ mod tests {
                 .collect()
         }
 
-        fn shrunk_parameters(&self) -> HashSet<&str> {
+        fn shrunk_parameters(&self) -> FxHashSet<&str> {
             self.selection()
                 .run()
                 .parameters()
@@ -609,25 +609,31 @@ mod tests {
     #[test]
     fn only_the_bodies_that_hold_a_candidate_are_walked() {
         let fixture = SelectionFixture::new(SelectionFixture::CALLER_CHAIN);
-        let holders = HashSet::from(["record-year!", "record-twice!", "oldest-year"]);
+        let holders = FxHashSet::from_iter(["record-year!", "record-twice!", "oldest-year"]);
         assert_eq!(fixture.walked_bodies(), holders);
     }
 
     #[test]
     fn a_vector_only_callee_keeps_the_vector_of_its_caller() {
         let fixture = SelectionFixture::new(SelectionFixture::CALLER_CHAIN);
-        assert_eq!(fixture.shrunk_parameters(), HashSet::from(["years"]));
+        assert_eq!(fixture.shrunk_parameters(), FxHashSet::from_iter(["years"]));
     }
 
     #[test]
     fn a_trait_method_without_bodies_lends_its_slice_to_callers() {
         let fixture = SelectionFixture::new(SelectionFixture::BODILESS_TRAIT_METHOD);
-        assert_eq!(fixture.shrunk_parameters(), HashSet::from(["readings"]));
+        assert_eq!(
+            fixture.shrunk_parameters(),
+            FxHashSet::from_iter(["readings"])
+        );
     }
 
     #[test]
     fn a_trait_argument_follows_the_slot_at_its_own_position() {
         let fixture = SelectionFixture::new(SelectionFixture::TWO_VECTOR_SLOTS);
-        assert_eq!(fixture.shrunk_parameters(), HashSet::from(["readings"]));
+        assert_eq!(
+            fixture.shrunk_parameters(),
+            FxHashSet::from_iter(["readings"])
+        );
     }
 }

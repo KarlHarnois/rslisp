@@ -1,16 +1,16 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::core::BindingId;
 use crate::types::{TypedDefinition, TypedExprKind, TypedLeaf, TypedProgram};
 
 #[derive(Default)]
 pub struct StoredDefinitions {
-    bindings: HashSet<BindingId>,
+    bindings: FxHashSet<BindingId>,
 }
 
 impl StoredDefinitions {
     pub fn of(program: &TypedProgram) -> Self {
-        let definitions: HashMap<BindingId, &TypedDefinition> = program
+        let definitions: FxHashMap<BindingId, &TypedDefinition> = program
             .modules
             .iter()
             .flat_map(|module| &module.definitions)
@@ -30,7 +30,7 @@ impl StoredDefinitions {
 
     fn stores_value(
         definition: &TypedDefinition,
-        definitions: &HashMap<BindingId, &TypedDefinition>,
+        definitions: &FxHashMap<BindingId, &TypedDefinition>,
     ) -> bool {
         match &definition.value.kind {
             TypedExprKind::Fn(_) | TypedExprKind::Leaf(TypedLeaf::Rust(_)) => false,

@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use super::ty::{GenericId, GenericParam, Type};
 use crate::core::BindingId;
@@ -50,7 +51,7 @@ impl StructDefinition {
             .collect()
     }
 
-    fn replacements(&self, arguments: &[Type]) -> HashMap<GenericId, Type> {
+    fn replacements(&self, arguments: &[Type]) -> FxHashMap<GenericId, Type> {
         self.params
             .iter()
             .map(|param| param.id)
@@ -61,7 +62,7 @@ impl StructDefinition {
 
 #[derive(Clone, Default)]
 pub struct StructTable {
-    structs: HashMap<BindingId, StructDefinition>,
+    structs: FxHashMap<BindingId, StructDefinition>,
 }
 
 impl StructTable {

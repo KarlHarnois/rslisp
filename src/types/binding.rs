@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use super::ty::{GenericId, Type};
 
 pub struct GenericBinding {
-    bound: HashMap<GenericId, Type>,
+    bound: FxHashMap<GenericId, Type>,
 }
 
 impl GenericBinding {
@@ -27,14 +27,14 @@ impl GenericBinding {
             .collect()
     }
 
-    pub fn into_bound(self) -> HashMap<GenericId, Type> {
+    pub fn into_bound(self) -> FxHashMap<GenericId, Type> {
         self.bound
     }
 }
 
 struct BindingWalk {
-    exact: HashMap<GenericId, Type>,
-    through_reference: HashMap<GenericId, Type>,
+    exact: FxHashMap<GenericId, Type>,
+    through_reference: FxHashMap<GenericId, Type>,
 }
 
 impl BindingWalk {
@@ -47,8 +47,8 @@ impl BindingWalk {
         used: impl IntoIterator<Item = &'t Type>,
     ) -> Self {
         let mut walk = Self {
-            exact: HashMap::new(),
-            through_reference: HashMap::new(),
+            exact: FxHashMap::default(),
+            through_reference: FxHashMap::default(),
         };
         walk.bind_each(declared, used);
         walk
@@ -72,7 +72,7 @@ impl BindingWalk {
         }
     }
 
-    fn finish(self) -> HashMap<GenericId, Type> {
+    fn finish(self) -> FxHashMap<GenericId, Type> {
         let mut bound = self.through_reference;
         bound.extend(self.exact);
         bound

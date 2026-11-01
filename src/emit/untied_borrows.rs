@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use super::problems::{EmitProblems, UntiedNames};
 use crate::core::BindingId;
@@ -36,7 +36,7 @@ impl<'a> UntiedBorrows<'a> {
         }
     }
 
-    pub fn check(&self, method: &ShownMethod, flows: &HashSet<BindingId>) -> Option<Diagnostic> {
+    pub fn check(&self, method: &ShownMethod, flows: &FxHashSet<BindingId>) -> Option<Diagnostic> {
         method
             .lambda
             .params

@@ -1,4 +1,6 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
+
+use rustc_hash::FxHashMap;
 
 use super::enums::{EnumTable, VariantPayload};
 use super::structs::StructTable;
@@ -36,7 +38,7 @@ pub(super) struct BoxPlanner {
     structs: StructTable,
     enums: EnumTable,
     box_binding: BindingId,
-    stored: HashMap<(BindingId, usize), bool>,
+    stored: FxHashMap<(BindingId, usize), bool>,
     struct_slots: Vec<Slot>,
     enum_slots: Vec<EnumSlot>,
 }
@@ -235,8 +237,8 @@ impl BoxPlanner {
 
     fn stored_parameters(
         declarations: &BTreeMap<BindingId, Declaration<'_>>,
-    ) -> HashMap<(BindingId, usize), bool> {
-        let mut stored = HashMap::new();
+    ) -> FxHashMap<(BindingId, usize), bool> {
+        let mut stored = FxHashMap::default();
         loop {
             let mut changed = false;
             for declaration in declarations.values() {
@@ -264,7 +266,7 @@ impl BoxPlanner {
     fn mentions_at_value(
         ty: &Type,
         generic: GenericId,
-        stored: &HashMap<(BindingId, usize), bool>,
+        stored: &FxHashMap<(BindingId, usize), bool>,
     ) -> bool {
         match ty {
             Type::Generic(found) => *found == generic,

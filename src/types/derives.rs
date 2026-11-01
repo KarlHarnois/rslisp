@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use super::checker::TypeChecker;
 use super::problems::TypeProblems;
@@ -88,8 +89,8 @@ impl TypeChecker {
         &mut self,
         modules: &[CoreModule],
         derivable: &[(BindingId, &'static str)],
-    ) -> HashMap<BindingId, WrittenDerive> {
-        let mut written: HashMap<BindingId, WrittenDerive> = HashMap::new();
+    ) -> FxHashMap<BindingId, WrittenDerive> {
+        let mut written: FxHashMap<BindingId, WrittenDerive> = FxHashMap::default();
         for item in modules.iter().flat_map(|module| &module.items) {
             let ItemKind::Derive(struct_binding, name_span, traits) = &item.kind else {
                 continue;
@@ -159,7 +160,7 @@ impl TypeChecker {
         &mut self,
         types: &[(BindingId, usize, DefinitionKind)],
         derivable: &[(BindingId, &'static str)],
-        written: &HashMap<BindingId, WrittenDerive>,
+        written: &FxHashMap<BindingId, WrittenDerive>,
     ) -> Vec<DeriveCandidate> {
         let mut candidates = Vec::new();
         for (trait_binding, name) in derivable {
@@ -193,7 +194,7 @@ impl TypeChecker {
         &self,
         struct_binding: BindingId,
         name: &str,
-        written: &HashMap<BindingId, WrittenDerive>,
+        written: &FxHashMap<BindingId, WrittenDerive>,
         derivable: &[(BindingId, &'static str)],
     ) -> Option<DeriveSource> {
         match written.get(&struct_binding) {

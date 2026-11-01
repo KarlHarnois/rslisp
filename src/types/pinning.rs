@@ -1,4 +1,6 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::BTreeMap;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::display::TypeDisplay;
 use super::graph::DefinitionGraph;
@@ -34,7 +36,7 @@ struct Target {
 
 pub struct InstantiationReport {
     entries: BTreeMap<BindingId, FunctionUses>,
-    substitutions: HashMap<BindingId, HashMap<GenericId, Type>>,
+    substitutions: FxHashMap<BindingId, FxHashMap<GenericId, Type>>,
 }
 
 impl InstantiationReport {
@@ -51,7 +53,7 @@ impl InstantiationReport {
         }
     }
 
-    pub fn one_type(&self, binding: BindingId) -> Option<HashMap<GenericId, Type>> {
+    pub fn one_type(&self, binding: BindingId) -> Option<FxHashMap<GenericId, Type>> {
         self.substitutions.get(&binding).cloned()
     }
 
@@ -75,7 +77,7 @@ impl InstantiationReport {
             .is_some_and(|entry| !entry.sites.is_empty())
     }
 
-    fn written_signatures(program: &Program) -> HashSet<BindingId> {
+    fn written_signatures(program: &Program) -> FxHashSet<BindingId> {
         program
             .modules
             .iter()
@@ -87,8 +89,8 @@ impl InstantiationReport {
             .collect()
     }
 
-    fn recursive_groups(graph: &DefinitionGraph) -> HashMap<BindingId, usize> {
-        let mut groups = HashMap::new();
+    fn recursive_groups(graph: &DefinitionGraph) -> FxHashMap<BindingId, usize> {
+        let mut groups = FxHashMap::default();
         for (index, component) in graph.components().iter().enumerate() {
             for binding in component {
                 groups.insert(*binding, index);
@@ -97,7 +99,7 @@ impl InstantiationReport {
         groups
     }
 
-    fn targets(typed: &TypedProgram) -> HashMap<BindingId, Target> {
+    fn targets(typed: &TypedProgram) -> FxHashMap<BindingId, Target> {
         typed
             .modules
             .iter()
@@ -133,8 +135,8 @@ impl InstantiationReport {
     }
 
     fn entries(
-        targets: &HashMap<BindingId, Target>,
-        written: &HashSet<BindingId>,
+        targets: &FxHashMap<BindingId, Target>,
+        written: &FxHashSet<BindingId>,
     ) -> BTreeMap<BindingId, FunctionUses> {
         targets
             .iter()
@@ -154,8 +156,8 @@ impl InstantiationReport {
 
     fn collect_uses(
         typed: &TypedProgram,
-        targets: &HashMap<BindingId, Target>,
-        groups: &HashMap<BindingId, usize>,
+        targets: &FxHashMap<BindingId, Target>,
+        groups: &FxHashMap<BindingId, usize>,
         entries: &mut BTreeMap<BindingId, FunctionUses>,
     ) {
         for module in &typed.modules {
@@ -174,8 +176,8 @@ impl InstantiationReport {
     fn collect_expr(
         expr: &TypedExpr,
         enclosing: BindingId,
-        targets: &HashMap<BindingId, Target>,
-        groups: &HashMap<BindingId, usize>,
+        targets: &FxHashMap<BindingId, Target>,
+        groups: &FxHashMap<BindingId, usize>,
         entries: &mut BTreeMap<BindingId, FunctionUses>,
     ) {
         if let TypedExprKind::Call(callee, arguments) = &expr.kind {
@@ -194,8 +196,8 @@ impl InstantiationReport {
         callee: &TypedExpr,
         arguments: &[super::typed::TypedArgument],
         enclosing: BindingId,
-        targets: &HashMap<BindingId, Target>,
-        groups: &HashMap<BindingId, usize>,
+        targets: &FxHashMap<BindingId, Target>,
+        groups: &FxHashMap<BindingId, usize>,
         entries: &mut BTreeMap<BindingId, FunctionUses>,
     ) {
         match &callee.kind {
@@ -213,8 +215,8 @@ impl InstantiationReport {
         target_binding: BindingId,
         actual: &Type,
         enclosing: BindingId,
-        targets: &HashMap<BindingId, Target>,
-        groups: &HashMap<BindingId, usize>,
+        targets: &FxHashMap<BindingId, Target>,
+        groups: &FxHashMap<BindingId, usize>,
         entries: &mut BTreeMap<BindingId, FunctionUses>,
     ) {
         if groups.get(&enclosing) == groups.get(&target_binding) {
@@ -233,7 +235,7 @@ impl InstantiationReport {
     }
 
     fn use_types(body: &Type, params: &[GenericId], actual: &Type) -> UseTypes {
-        let mut bound = HashMap::new();
+        let mut bound = FxHashMap::default();
         let matched = Self::bind(body, actual, &mut bound);
         let types: Vec<Option<Type>> = params
             .iter()
@@ -246,7 +248,7 @@ impl InstantiationReport {
         UseTypes { types, resolved }
     }
 
-    fn bind(scheme: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
+    fn bind(scheme: &Type, actual: &Type, bound: &mut FxHashMap<GenericId, Type>) -> bool {
         match scheme {
             Type::Generic(generic) => {
                 bound.insert(*generic, actual.clone());
@@ -262,7 +264,7 @@ impl InstantiationReport {
         }
     }
 
-    fn bind_named(scheme: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
+    fn bind_named(scheme: &Type, actual: &Type, bound: &mut FxHashMap<GenericId, Type>) -> bool {
         let (Type::Named(left, left_arguments), Type::Named(right, right_arguments)) =
             (scheme, actual)
         else {
@@ -273,7 +275,7 @@ impl InstantiationReport {
             && Self::bind_all(left_arguments, right_arguments, bound)
     }
 
-    fn bind_function(scheme: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
+    fn bind_function(scheme: &Type, actual: &Type, bound: &mut FxHashMap<GenericId, Type>) -> bool {
         let (
             Type::Function(_, left_parameters, left_result),
             Type::Function(_, right_parameters, right_result),
@@ -286,7 +288,11 @@ impl InstantiationReport {
             && Self::bind(left_result, right_result, bound)
     }
 
-    fn bind_reference(scheme: &Type, actual: &Type, bound: &mut HashMap<GenericId, Type>) -> bool {
+    fn bind_reference(
+        scheme: &Type,
+        actual: &Type,
+        bound: &mut FxHashMap<GenericId, Type>,
+    ) -> bool {
         match (scheme, actual) {
             (Type::Ref(_, left), Type::Ref(_, right))
             | (Type::Mut(_, left), Type::Mut(_, right)) => Self::bind(left, right, bound),
@@ -294,7 +300,7 @@ impl InstantiationReport {
         }
     }
 
-    fn bind_all(scheme: &[Type], actual: &[Type], bound: &mut HashMap<GenericId, Type>) -> bool {
+    fn bind_all(scheme: &[Type], actual: &[Type], bound: &mut FxHashMap<GenericId, Type>) -> bool {
         scheme
             .iter()
             .zip(actual)
@@ -304,8 +310,8 @@ impl InstantiationReport {
     fn group_substitutions(
         graph: &DefinitionGraph,
         entries: &mut BTreeMap<BindingId, FunctionUses>,
-    ) -> HashMap<BindingId, HashMap<GenericId, Type>> {
-        let mut substitutions = HashMap::new();
+    ) -> FxHashMap<BindingId, FxHashMap<GenericId, Type>> {
+        let mut substitutions = FxHashMap::default();
         for component in graph.components().iter().rev() {
             let members: Vec<BindingId> = component
                 .iter()
@@ -327,7 +333,7 @@ impl InstantiationReport {
     fn resolve_group_uses(
         members: &[BindingId],
         entries: &mut BTreeMap<BindingId, FunctionUses>,
-        callers: &HashMap<BindingId, HashMap<GenericId, Type>>,
+        callers: &FxHashMap<BindingId, FxHashMap<GenericId, Type>>,
     ) {
         for member in members {
             let entry = entries.get_mut(member).expect("every member has an entry");
@@ -342,7 +348,7 @@ impl InstantiationReport {
     fn resolved_use(
         entry: &FunctionUses,
         site: &UseSite,
-        callers: &HashMap<BindingId, HashMap<GenericId, Type>>,
+        callers: &FxHashMap<BindingId, FxHashMap<GenericId, Type>>,
     ) -> UseTypes {
         match callers.get(&site.enclosing) {
             Some(caller) => {
@@ -356,7 +362,7 @@ impl InstantiationReport {
     fn only_literal_defaults(
         members: &[BindingId],
         entries: &BTreeMap<BindingId, FunctionUses>,
-        substitution: &HashMap<GenericId, Type>,
+        substitution: &FxHashMap<GenericId, Type>,
     ) -> bool {
         substitution.iter().all(|(generic, ty)| {
             members.iter().any(|member| {
@@ -371,7 +377,7 @@ impl InstantiationReport {
     fn decide_group(
         members: &[BindingId],
         entries: &BTreeMap<BindingId, FunctionUses>,
-    ) -> Option<HashMap<GenericId, Type>> {
+    ) -> Option<FxHashMap<GenericId, Type>> {
         if members.iter().any(|member| entries[member].written) {
             return None;
         }
@@ -385,8 +391,8 @@ impl InstantiationReport {
     fn combined_uses(
         members: &[BindingId],
         entries: &BTreeMap<BindingId, FunctionUses>,
-    ) -> Option<HashMap<GenericId, Type>> {
-        let mut combined: HashMap<GenericId, Type> = HashMap::new();
+    ) -> Option<FxHashMap<GenericId, Type>> {
+        let mut combined: FxHashMap<GenericId, Type> = FxHashMap::default();
         let mut uses = 0;
         for member in members {
             for used in &entries[member].uses {
@@ -401,7 +407,7 @@ impl InstantiationReport {
     }
 
     fn merge_use(
-        combined: &mut HashMap<GenericId, Type>,
+        combined: &mut FxHashMap<GenericId, Type>,
         params: &[GenericId],
         used: &UseTypes,
     ) -> Option<()> {
@@ -421,7 +427,7 @@ impl InstantiationReport {
         Some(())
     }
 
-    fn covers_params(entry: &FunctionUses, combined: &HashMap<GenericId, Type>) -> bool {
+    fn covers_params(entry: &FunctionUses, combined: &FxHashMap<GenericId, Type>) -> bool {
         entry
             .params
             .iter()
@@ -431,7 +437,7 @@ impl InstantiationReport {
 
 #[derive(Clone, Default)]
 pub struct LiteralDefaults {
-    entries: HashMap<(BindingId, usize), LiteralDefault>,
+    entries: FxHashMap<(BindingId, usize), LiteralDefault>,
 }
 
 #[derive(Clone)]
@@ -600,9 +606,7 @@ impl Pinning {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
-    use std::collections::HashSet;
+    use rustc_hash::{FxHashMap, FxHashSet};
 
     use super::{InstantiationReport, Pinning};
     use crate::core::{
@@ -611,7 +615,7 @@ mod tests {
     use crate::types::{DefinitionGraph, GenericId, Type, TypeVar, TypedSource};
 
     struct BindFixture {
-        bound: HashMap<GenericId, Type>,
+        bound: FxHashMap<GenericId, Type>,
         named: BindingId,
     }
 
@@ -624,7 +628,7 @@ mod tests {
                 None,
             ));
             Self {
-                bound: HashMap::new(),
+                bound: FxHashMap::default(),
                 named,
             }
         }
@@ -683,7 +687,7 @@ mod tests {
             }
         }
 
-        fn pinned_after_one_run(&self) -> HashSet<String> {
+        fn pinned_after_one_run(&self) -> FxHashSet<String> {
             let program = self.source.program();
             let graph = DefinitionGraph::of(program);
             let typed = self.source.check(&graph);
@@ -699,7 +703,7 @@ mod tests {
     #[test]
     fn one_run_pins_every_wrapper_that_a_pinned_caller_reaches() {
         let pinned = ChainFixture::new().pinned_after_one_run();
-        let expected = HashSet::from(["inner", "middle", "outer"].map(String::from));
+        let expected = FxHashSet::from_iter(["inner", "middle", "outer"].map(String::from));
         assert_eq!(pinned, expected);
     }
 }

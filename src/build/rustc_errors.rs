@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use std::ops::Range;
 
+use rustc_hash::FxHashMap;
 use serde_json::Value;
 
 use crate::diagnostic::{Diagnostic, DiagnosticCode, Diagnostics, Label};
@@ -10,7 +10,7 @@ use crate::source::Span;
 pub struct RustcDiagnosticMapper<'a> {
     emitted: &'a EmittedCrate,
     fallback: Span,
-    user_names: HashMap<&'a str, &'a str>,
+    user_names: FxHashMap<&'a str, &'a str>,
 }
 
 impl<'a> RustcDiagnosticMapper<'a> {

@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use super::checker::{Admissible, TypeChecker};
 use super::literal_fit::LiteralFit;
@@ -12,7 +12,7 @@ use crate::source::Span;
 
 pub struct Finalizer<'c> {
     checker: &'c mut TypeChecker,
-    reported: HashSet<TypeVar>,
+    reported: FxHashSet<TypeVar>,
     earlier_errors: bool,
     closures_in_definition: Vec<Type>,
 }
@@ -22,7 +22,7 @@ impl<'c> Finalizer<'c> {
         let earlier_errors = checker.diagnostics.has_errors();
         Self {
             checker,
-            reported: HashSet::new(),
+            reported: FxHashSet::default(),
             earlier_errors,
             closures_in_definition: Vec::new(),
         }

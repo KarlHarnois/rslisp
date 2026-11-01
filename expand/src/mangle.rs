@@ -267,7 +267,7 @@ impl NameMangler {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
+    use rustc_hash::FxHashSet;
 
     use super::NameMangler;
 
@@ -312,7 +312,7 @@ mod tests {
 
     #[test]
     fn every_printable_character_becomes_a_distinct_identifier() {
-        let names: HashSet<String> = PrintableCharacters::ALL
+        let names: FxHashSet<String> = PrintableCharacters::ALL
             .map(|character| NameMangler::value(&character.to_string()))
             .inspect(|name| assert!(Identifier::is_valid(name), "`{name}` is not valid"))
             .collect();

@@ -1,17 +1,19 @@
-use std::collections::{HashSet, VecDeque};
+use std::collections::VecDeque;
+
+use rustc_hash::FxHashSet;
 
 use crate::core::BindingId;
 
 pub struct Worklist {
     queue: VecDeque<BindingId>,
-    queued: HashSet<BindingId>,
+    queued: FxHashSet<BindingId>,
 }
 
 impl Worklist {
     pub fn of(bindings: impl Iterator<Item = BindingId>) -> Self {
         let mut worklist = Self {
             queue: VecDeque::new(),
-            queued: HashSet::new(),
+            queued: FxHashSet::default(),
         };
         worklist.extend(bindings);
         worklist

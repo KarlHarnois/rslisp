@@ -1,7 +1,9 @@
 use std::ops::Range;
 use std::rc::Rc;
 
-use super::{FastHashMap, Scope, ScopeSet};
+use rustc_hash::FxHashMap;
+
+use super::{Scope, ScopeSet};
 use crate::core::{BindingId, Namespace};
 use crate::reader::Symbol;
 
@@ -205,7 +207,7 @@ impl NameEntries {
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct BindingTable {
-    entries: FastHashMap<(Rc<str>, Namespace), NameEntries>,
+    entries: FxHashMap<(Rc<str>, Namespace), NameEntries>,
 }
 
 impl BindingTable {

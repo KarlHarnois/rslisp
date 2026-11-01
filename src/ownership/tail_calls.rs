@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use crate::core::BindingId;
 use crate::types::{
@@ -9,7 +9,7 @@ use crate::types::{
 pub struct TailCalls<'e> {
     function: Option<BindingId>,
     calls: Vec<&'e [TypedArgument]>,
-    loop_locals: HashSet<BindingId>,
+    loop_locals: FxHashSet<BindingId>,
 }
 
 impl<'e> TailCalls<'e> {
@@ -17,7 +17,7 @@ impl<'e> TailCalls<'e> {
         let mut tail_calls = Self {
             function,
             calls: Vec::new(),
-            loop_locals: HashSet::new(),
+            loop_locals: FxHashSet::default(),
         };
         tail_calls.collect_block(&lambda.body);
         tail_calls
@@ -44,7 +44,7 @@ impl<'e> TailCalls<'e> {
         matches!(callee.kind, TypedExprKind::Leaf(TypedLeaf::Global(binding)) if binding == function)
     }
 
-    pub fn rebuilt_parameters(&self, lambda: &TypedLambda) -> HashSet<BindingId> {
+    pub fn rebuilt_parameters(&self, lambda: &TypedLambda) -> FxHashSet<BindingId> {
         self.calls
             .iter()
             .flat_map(|arguments| {

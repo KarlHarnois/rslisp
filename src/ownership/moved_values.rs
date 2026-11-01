@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use crate::core::BindingId;
 use crate::source::Span;
@@ -41,7 +42,7 @@ struct MovedField {
 
 #[derive(Clone, Default)]
 pub struct MovedValues {
-    values: HashMap<BindingId, MovedValue>,
+    values: FxHashMap<BindingId, MovedValue>,
 }
 
 impl MovedValues {

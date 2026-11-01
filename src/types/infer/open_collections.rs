@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use crate::core::{BindingId, Expr, PrimitiveType};
 use crate::diagnostic::{Diagnostic, Diagnostics};
@@ -29,8 +29,8 @@ impl OpenCollections {
         program: &Program,
         graph: &DefinitionGraph,
         typed: &TypedProgram,
-    ) -> Result<HashSet<Span>, Diagnostics> {
-        let mut vector_bases = HashSet::new();
+    ) -> Result<FxHashSet<Span>, Diagnostics> {
+        let mut vector_bases = FxHashSet::default();
         if self.generics.is_empty() {
             return Ok(vector_bases);
         }
@@ -89,7 +89,7 @@ impl OpenCollections {
 struct SequenceUses<'a> {
     report: &'a InstantiationReport,
     typed: &'a TypedProgram,
-    visited: HashSet<GenericId>,
+    visited: FxHashSet<GenericId>,
 }
 
 impl<'a> SequenceUses<'a> {
@@ -97,7 +97,7 @@ impl<'a> SequenceUses<'a> {
         Self {
             report,
             typed,
-            visited: HashSet::new(),
+            visited: FxHashSet::default(),
         }
     }
 
