@@ -9,7 +9,7 @@ fn add_one<A: std::ops::Add<i64>>(value: A) -> <A as std::ops::Add<i64>>::Output
 
 fn main() {
     crate::rt::restore_default_sigpipe();
-    println!("{}", add_one(41))
+    println!("{}", add_one(41_i64))
 }
 
 mod rt {

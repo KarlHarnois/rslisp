@@ -627,13 +627,6 @@ impl<'a> RustTypes<'a> {
         format!("{path}<{}>", arguments.join(", "))
     }
 
-    pub fn is_opaque(&self, binding: BindingId) -> bool {
-        self.program
-            .rust_types
-            .get(binding)
-            .is_some_and(RustType::is_opaque)
-    }
-
     fn function(
         &self,
         kind: ClosureKind,

@@ -1,0 +1,125 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/open_literal_arguments.rslisp
+---
+fn twice<A: Copy>(x: A) -> (A, A) {
+    (x, x)
+}
+
+fn both<A, B>(a: A, b: B) -> (A, B) {
+    (a, b)
+}
+
+fn larger<A: PartialOrd>(a: A, b: A) -> A {
+    if a > b { a } else { b }
+}
+
+fn square<A: crate::rt::Number>(x: A) -> A {
+    x * x
+}
+
+fn apply_to<A, B>(start: A, f: impl FnOnce(A) -> B) -> B {
+    f(start)
+}
+
+fn wrap<A>(x: A) -> Option<A> {
+    Some(x)
+}
+
+fn first_of<A, B>(a: A, b: B) -> A {
+    wrap(b);
+    a
+}
+
+fn first_code(codes: (i32, i32)) -> i32 {
+    let (code, _) = codes;
+    code
+}
+
+fn count_down(mut n: i64) -> i64 {
+    loop {
+        if n == 0 {
+            return n;
+        } else {
+            n = first_of(n - 1, 3000000000_i64);
+            continue;
+        }
+    }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let is_several = std::env::args().skip(1).collect::<Vec<String>>().len() > 5;
+    let odometer: i64 = 2024;
+    println!("{:?}", twice(3000000000_i64));
+    println!("{:?}", twice(2.5));
+    println!("{}", larger(1.0, 2.5));
+    let codes = twice(7);
+    println!("{}", first_code(codes));
+    println!("{:?}", both(3000000000_i64, 4000000000_i64));
+    println!("{}", larger(3000000000_i64, 1));
+    println!("{}", larger(1, odometer));
+    println!("{}", larger(if is_several { 1 } else { 2 }, odometer));
+    println!(
+        "{}",
+        apply_to(if is_several { 1 } else { 2 }, |n: i64| n * 2)
+    );
+    println!("{}", larger(3, if is_several { 1_i64 } else { 2 }));
+    println!("{}", 0 == odometer);
+    println!("{}", odometer == 0);
+    println!("{}", 0 == odometer);
+    println!("{}", square(100000_i64));
+    println!("{}", count_down(3));
+    let add_one = |n: i64| n + 1;
+    println!("{}", add_one(3000000000));
+    println!("{:?}", twice("Leaf"));
+    println!("{:?}", both("Leaf", 2.5));
+    println!("{}", larger(2.5, 1.5));
+    println!("{:?}", wrap("Leaf"));
+    println!("{}", square(2.5));
+    println!("{}", apply_to("Leaf", |model: &str| model.len()));
+    println!("{}", first_of("Leaf", 2.5))
+}
+
+mod rt {
+    use std::ops::{Add, Div, Mul, Rem, Sub};
+
+    pub trait Number:
+        Copy
+        + PartialOrd
+        + Add<Output = Self>
+        + Sub<Output = Self>
+        + Mul<Output = Self>
+        + Div<Output = Self>
+        + Rem<Output = Self>
+    {
+    }
+
+    macro_rules! numbers {
+        ($($number:ty),*) => {
+            $(
+                impl Number for $number {}
+            )*
+        };
+    }
+
+    numbers!(
+        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+    );
+
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

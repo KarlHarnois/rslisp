@@ -282,6 +282,13 @@ impl TypedBlock {
         self.expressions().any(TypedExpr::repeats)
     }
 
+    pub fn tail(&self) -> Option<&TypedExpr> {
+        match self.items.last() {
+            Some(TypedBodyItem::Expr(tail)) => Some(tail),
+            _ => None,
+        }
+    }
+
     pub fn writes_local(&self, binding: BindingId) -> bool {
         self.expressions().any(|expr| expr.writes_local(binding))
     }

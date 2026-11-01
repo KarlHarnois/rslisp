@@ -1,0 +1,124 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/open_literal_positions.rslisp
+---
+fn twice<A: Copy>(x: A) -> (A, A) {
+    (x, x)
+}
+
+fn same<A>(x: A) -> A {
+    x
+}
+
+fn call_it<A>(f: impl FnOnce() -> A) -> A {
+    f()
+}
+
+fn shown<A: std::fmt::Debug>(x: A) -> A {
+    println!("{:?}", x);
+    x
+}
+
+fn wrap<A>(x: A) -> Option<A> {
+    Some(x)
+}
+
+fn peek<A: std::fmt::Debug + ?Sized>(x: &A) {
+    println!("{:?}", x)
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Holder<A> {
+    value: A,
+    spare: A,
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let is_several = std::env::args().skip(1).collect::<Vec<String>>().len() > 5;
+    let odometer: i64 = 2024;
+    let total: i64 = same(3000000000);
+    println!("{}", total);
+    let reading = || 3000000000_i64;
+    println!("{:?}", reading());
+    shown(3000000000_i64);
+    println!(
+        "{:?}",
+        twice({
+            shown("block");
+            3000000000_i64
+        })
+    );
+    println!("{:?}", twice(if is_several { 1_i64 } else { 3000000000 }));
+    println!(
+        "{:?}",
+        twice(match is_several {
+            true => 1_i64,
+            false => 3000000000,
+        })
+    );
+    match wrap(3000000000_i64) {
+        Some(miles) => println!("{:?}", miles),
+        None => println!("none"),
+    }
+    println!("{:?}", Some(3000000000_i64));
+    let maybe: Option<i64> = Some(3000000000);
+    println!("{:?}", maybe);
+    println!(
+        "{:?}",
+        Holder {
+            value: 3000000000_i64,
+            spare: 1
+        }
+        .value
+    );
+    println!(
+        "{:?}",
+        ({
+            let base = Holder {
+                value: 1_i64,
+                spare: 2,
+            };
+            Holder {
+                value: 3000000000,
+                ..base
+            }
+        })
+        .value
+    );
+    peek(&(if is_several { 1_i64 } else { 3000000000 }));
+    println!("{:?}", call_it(|| 3000000000_i64));
+    println!(
+        "{:?}",
+        twice({
+            shown("call");
+            3000000000_i64
+        })
+    );
+    println!("{:?}", (odometer, 3000000000_i64));
+    println!("{}", if is_several { 1_i64 } else { 3000000000 });
+    println!("{:?}", twice("Leaf"));
+    println!("{}", same("Leaf"));
+    println!("{:?}", call_it(|| "Leaf"));
+    println!("{:?}", wrap("Leaf"));
+    shown("Leaf");
+    peek(&"Leaf");
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

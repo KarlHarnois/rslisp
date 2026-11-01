@@ -16,7 +16,7 @@ fn main() {
     crate::rt::restore_default_sigpipe();
     let p: (String, i64) = make("left".to_string(), 2);
     println!("{}", first_of(p));
-    let (n, text) = make(3, "right".to_string());
+    let (n, text) = make(3_i64, "right".to_string());
     println!("{}{}", n, text)
 }
 

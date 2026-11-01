@@ -12,6 +12,7 @@ use super::mangle::NameMangler;
 use super::method_elisions::{MethodElisions, MethodLifetimes, TraitMethodElisions};
 use super::mutable_locals::MutableLocals;
 use super::opaque_borrows::OpaqueBorrows;
+use super::open_literals::OpenLiterals;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
 use super::result_borrows::{LambdaFlows, ResultBorrows, StoredFlows};
 use super::runtime::RuntimeModule;
@@ -1479,6 +1480,7 @@ impl<'a> ItemEmitter<'a> {
         )
         .with_mutable_locals(mutable.into_set())
         .with_local_closures(local_closures)
+        .with_open_literals(OpenLiterals::of(self.program, self.plan, value))
     }
 
     fn absorb(&mut self, emitter: ExpressionEmitter) {

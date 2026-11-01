@@ -80,7 +80,7 @@ fn main() {
         .for_each(|text: String| println!("{}", text));
     println!("{}", countdown(3, false));
     println!("{}", even_step(4, false));
-    println!("{}", identity(3));
+    println!("{}", identity(3_i64));
     println!("{}", add(1, 2));
     println!("{}", label(42))
 }

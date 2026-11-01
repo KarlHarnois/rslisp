@@ -76,7 +76,7 @@ fn main() {
         let Tagged::Value(text) = Tagged::Value("tagged");
         text
     });
-    println!("{}", choose(1, 2, "hi", "there"))
+    println!("{}", choose(1_i64, 2, "hi", "there"))
 }
 
 mod rt {

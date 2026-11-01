@@ -3,8 +3,8 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/open_literal_positions.rslisp
 ---
--1294967296
-Some(-1294967296)
-(2024, -1294967296)
--1294967296
--1294967296
+3000000000
+Some(3000000000)
+(2024, 3000000000)
+3000000000
+3000000000
