@@ -23,13 +23,16 @@ impl CompileTimeHost for Expander<'_> {
         name: String,
         span: Span,
     ) -> Result<Symbol, Diagnostic> {
-        let binding = self
-            .term_binding(term)
-            .ok_or_else(|| self.unbound(term, Namespace::Value, span))?;
+        let binding = self.bound_term(term, span)?;
         Ok(Symbol::with_scopes(
             name,
             self.definition_scopes(term, binding),
         ))
+    }
+
+    fn definition_call(&self, term: &Symbol, span: Span) -> Result<Option<Form>, Diagnostic> {
+        let binding = self.bound_term(term, span)?;
+        Ok(self.defining_call(binding))
     }
 
     fn type_definition_symbol(&self, term: &Symbol, name: String) -> Symbol {
@@ -84,6 +87,11 @@ impl Expander<'_> {
             BindingKind::KernelForm(_) => term.scopes().clone(),
             _ => ScopeSet::default(),
         }
+    }
+
+    fn bound_term(&self, term: &Symbol, span: Span) -> Result<BindingId, Diagnostic> {
+        self.term_binding(term)
+            .ok_or_else(|| self.unbound(term, Namespace::Value, span))
     }
 
     fn term_binding(&self, term: &Symbol) -> Option<BindingId> {

@@ -24,6 +24,7 @@ pub enum Builtin {
     SameBinding,
     DefinitionSymbol,
     TypeDefinitionSymbol,
+    DefinitionCall,
     ClosestName,
     Fail,
     NumberAdd,
@@ -48,7 +49,7 @@ pub enum Builtin {
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 45] = [
+    const NAMES: [(Builtin, &'static str); 46] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -73,6 +74,7 @@ impl Builtin {
         (Builtin::SameBinding, "same-binding?"),
         (Builtin::DefinitionSymbol, "definition-symbol"),
         (Builtin::TypeDefinitionSymbol, "type-definition-symbol"),
+        (Builtin::DefinitionCall, "definition-call"),
         (Builtin::ClosestName, "closest-name"),
         (Builtin::Fail, "fail"),
         (Builtin::NumberAdd, "number-add"),

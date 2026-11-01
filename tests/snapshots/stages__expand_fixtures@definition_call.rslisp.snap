@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/definition_call.rslisp
+---
+(def twice (fn (x) (mul 2 x)))
+(def helper (fn (x_2) x_2))
+(def limit 10)
+(def twice-call "((defn twice (x) (* 2 x)))")
+(def helper-call "((defn helper (x) x))")
+(def limit-call "()")
+(def if-call "()")
+(def parameter-call (fn (twice_2) "()"))

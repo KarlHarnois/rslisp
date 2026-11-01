@@ -1,0 +1,23 @@
+(use code definition-call string nth)
+
+(def written-call
+  (macro (form)
+    (string (definition-call (nth form 1)))))
+
+(defrule quietly ((definition) definition))
+
+(defn twice (x) (* 2 x))
+
+(quietly (defn helper (x) x))
+
+(def limit 10)
+
+(def twice-call (written-call twice))
+
+(def helper-call (written-call helper))
+
+(def limit-call (written-call limit))
+
+(def if-call (written-call if))
+
+(defn parameter-call (twice) (written-call twice))
