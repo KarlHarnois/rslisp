@@ -5,6 +5,7 @@ use std::rc::Rc;
 use super::expressions::ExpressionEmitter;
 use super::fragment::{Code, Fragment};
 use super::fresh_lifetimes::FreshLifetimes;
+use super::generic_callees::GenericCallees;
 use super::literal_generics::LiteralGenerics;
 use super::local_closures::LocalClosures;
 use super::locals::LocalNames;
@@ -89,6 +90,7 @@ pub struct ItemEmitter<'a> {
     unsized_parameters: &'a UnsizedParameters,
     result_borrows: ResultBorrows<'a>,
     trait_method_elisions: TraitMethodElisions,
+    generic_callees: GenericCallees<'a>,
     pub problems: Vec<Diagnostic>,
     pub names: Vec<(String, String)>,
 }
@@ -109,6 +111,7 @@ impl<'a> ItemEmitter<'a> {
             unsized_parameters,
             result_borrows: ResultBorrows::new(program, plan),
             trait_method_elisions: TraitMethodElisions::new(program),
+            generic_callees: GenericCallees::new(plan),
             problems: Vec::new(),
             names: Vec::new(),
         }
@@ -1480,7 +1483,7 @@ impl<'a> ItemEmitter<'a> {
         )
         .with_mutable_locals(mutable.into_set())
         .with_local_closures(local_closures)
-        .with_open_literals(OpenLiterals::of(self.program, self.plan, value))
+        .with_open_literals(OpenLiterals::of(self.program, &self.generic_callees, value))
     }
 
     fn absorb(&mut self, emitter: ExpressionEmitter) {

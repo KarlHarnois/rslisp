@@ -1,11 +1,9 @@
-use std::collections::BTreeSet;
-
 use super::open_literals::TypeContext;
 use super::type_anchor::TypeAnchor;
 use crate::core::{BindingId, TypeExpr, TypeExprKind};
 use crate::types::{GenericParam, Type, TypedExpr};
 
-type Generics = BTreeSet<usize>;
+type Generics = Vec<usize>;
 
 pub(super) struct GenericPositions {
     parameters: Vec<Generics>,
@@ -90,6 +88,9 @@ impl GenericPositions {
     }
 
     fn linked(parameters: Vec<Generics>, result: Generics, links: &[Generics]) -> Self {
+        if links.iter().all(Generics::is_empty) {
+            return Self { parameters, result };
+        }
         let with_links = |generics: &Generics| -> Generics {
             generics
                 .iter()
