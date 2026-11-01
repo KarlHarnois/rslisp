@@ -74,12 +74,25 @@ pub struct TraitMethods {
 pub struct Expander<'s> {
     sources: &'s mut SourceMap,
     module_sources: ModuleSources,
+    modules: ModuleRegistry,
+    tables: ExpansionTables,
+    current_module: Option<ModuleId>,
+    diagnostics: Diagnostics,
+    warnings: Diagnostics,
+    phase: Phase,
+    expansion_depth: usize,
+    nesting_depth: usize,
+    form_budgets: BudgetArena,
+    recovered_diagnostics: Vec<Diagnostic>,
+}
+
+#[derive(Default)]
+struct ExpansionTables {
     scopes: ScopeAllocator,
     local_scopes: FastHashSet<Scope>,
     use_site_scopes: FastHashSet<Scope>,
     table: BindingTable,
     bindings: BindingArena,
-    modules: ModuleRegistry,
     macros: MacroTable,
     macro_origins: HashMap<Span, MacroOrigin>,
     introduced_names: FastHashMap<(Span, String), Span>,
@@ -92,14 +105,6 @@ pub struct Expander<'s> {
     module_notes: ModuleNotes,
     expanded: HashMap<ModuleId, CoreModule>,
     order: Vec<ModuleId>,
-    current_module: Option<ModuleId>,
-    diagnostics: Diagnostics,
-    warnings: Diagnostics,
-    phase: Phase,
-    expansion_depth: usize,
-    nesting_depth: usize,
-    form_budgets: BudgetArena,
-    recovered_diagnostics: Vec<Diagnostic>,
 }
 
 impl<'s> Expander<'s> {
@@ -107,24 +112,8 @@ impl<'s> Expander<'s> {
         Self {
             sources,
             module_sources,
-            scopes: ScopeAllocator::default(),
-            local_scopes: FastHashSet::default(),
-            use_site_scopes: FastHashSet::default(),
-            table: BindingTable::default(),
-            bindings: BindingArena::default(),
             modules: ModuleRegistry::default(),
-            macros: MacroTable::default(),
-            macro_origins: HashMap::new(),
-            introduced_names: FastHashMap::default(),
-            introduction_scopes: FastHashSet::default(),
-            global_macros: Vec::new(),
-            trait_paths: HashMap::new(),
-            enum_variants: HashMap::new(),
-            trait_methods: HashMap::new(),
-            globals: GlobalTable::default(),
-            module_notes: ModuleNotes::default(),
-            expanded: HashMap::new(),
-            order: Vec::new(),
+            tables: ExpansionTables::default(),
             current_module: None,
             diagnostics: Diagnostics::default(),
             warnings: Diagnostics::default(),
@@ -142,8 +131,8 @@ impl<'s> Expander<'s> {
         let program = Program {
             modules: self.take_modules(),
             entry,
-            bindings: self.bindings,
-            macro_origins: self.macro_origins,
+            bindings: self.tables.bindings,
+            macro_origins: self.tables.macro_origins,
             warnings: self.warnings,
         };
         diagnostics.into_result(program)
@@ -157,23 +146,25 @@ impl<'s> Expander<'s> {
     }
 
     fn fresh_local_scope(&mut self) -> Scope {
-        let scope = self.scopes.fresh();
-        self.local_scopes.insert(scope);
+        let scope = self.tables.scopes.fresh();
+        self.tables.local_scopes.insert(scope);
         scope
     }
 
     fn quoted(&self, datum: &Form) -> Form {
         let mut quoted = datum.clone();
         quoted.retain_scopes(&|scope| {
-            !self.local_scopes.contains(&scope) && !self.use_site_scopes.contains(&scope)
+            !self.tables.local_scopes.contains(&scope)
+                && !self.tables.use_site_scopes.contains(&scope)
         });
         quoted
     }
 
     fn take_modules(&mut self) -> Vec<CoreModule> {
-        self.order
+        self.tables
+            .order
             .iter()
-            .filter_map(|id| self.expanded.remove(id))
+            .filter_map(|id| self.tables.expanded.remove(id))
             .collect()
     }
 }

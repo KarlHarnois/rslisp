@@ -32,7 +32,11 @@ impl Expander<'_> {
     }
 
     pub(super) fn nests_too_deep(&self, span: Span) -> Diagnostic {
-        let expansion = self.macro_origins.get(&span).map(|origin| &*origin.name);
+        let expansion = self
+            .tables
+            .macro_origins
+            .get(&span)
+            .map(|origin| &*origin.name);
         ExpandProblems::expansion_nests_too_deep(span, Form::NESTING_LIMIT, expansion)
     }
 
@@ -123,7 +127,7 @@ impl Expander<'_> {
             symbol.name(),
             span,
             self.macro_function(binding, symbol, span)
-                .map(|function| Rc::from(self.bindings.get(function).name())),
+                .map(|function| Rc::from(self.tables.bindings.get(function).name())),
         )
     }
 
@@ -135,11 +139,11 @@ impl Expander<'_> {
                 Ok(ExprKind::Variant(binding, Vec::new()))
             }
             BindingKind::Variant(_, info) => Err(ExpandProblems::variant_as_value(
-                self.bindings.get(binding).name(),
+                self.tables.bindings.get(binding).name(),
                 info.arity,
                 span,
             )),
-            BindingKind::Local if self.bindings.get(binding).name() == "_" => {
+            BindingKind::Local if self.tables.bindings.get(binding).name() == "_" => {
                 Err(ExpandProblems::ignored_binding_read(span))
             }
             _ => Ok(ExprKind::Leaf(Leaf::Var(binding))),
@@ -724,6 +728,7 @@ impl Expander<'_> {
 
     fn variant_candidates(&self, symbol: &Symbol, nullary: bool) -> Vec<BindingId> {
         let mut candidates: Vec<BindingId> = self
+            .tables
             .table
             .visible_bindings(symbol.scopes(), Namespace::Value, self.phase)
             .into_iter()
@@ -741,7 +746,8 @@ impl Expander<'_> {
         if nullary && info.arity != 0 {
             return false;
         }
-        self.bindings
+        self.tables
+            .bindings
             .get(binding)
             .name()
             .rsplit('/')
@@ -774,7 +780,7 @@ impl Expander<'_> {
         };
         let parameters: Vec<String> = binders
             .iter()
-            .map(|binder| self.bindings.get(binder.variable).name().to_string())
+            .map(|binder| self.tables.bindings.get(binder.variable).name().to_string())
             .collect();
         for name in template.type_placeholders() {
             if !parameters.iter().any(|parameter| parameter == name) {

@@ -31,7 +31,7 @@ impl Expander<'_> {
         let parameterized = self.lower_head(&shape, &head, body)?;
         if let Some(binder) = parameterized.binders.iter().find(|binder| binder.lifetime) {
             return Err(ExpandProblems::wrong_namespace(
-                self.bindings.get(binder.variable).name(),
+                self.tables.bindings.get(binder.variable).name(),
                 "a type parameter",
                 binder.span,
             ));
@@ -41,7 +41,7 @@ impl Expander<'_> {
         Self::check_type_placeholders(
             &template,
             &parameterized.binders,
-            self.bindings.get(binding).name(),
+            self.tables.bindings.get(binding).name(),
             template_form,
         )?;
         let clauses =
