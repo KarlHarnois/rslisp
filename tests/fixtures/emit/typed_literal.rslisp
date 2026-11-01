@@ -21,4 +21,5 @@
   (println (three))
   (println (match (zero) (0 (the u32 9)) (_ (the u32 8))))
   (let year (the u16 2024))
-  (println year))
+  (println year)
+  (println (loop ((i 0) (total (the usize 0))) (if (= i 3) total (recur (+ i 1) (+ total 2))))))
