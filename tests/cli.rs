@@ -36,6 +36,9 @@ const GEOMETRY_ENTRY: &str = "(use geometry area)\n\n(defn main () (println (are
 const UNDOCUMENTED_ENTRY: &str = "(defn twice (x) (* 2 x))\n\n(defn main () (println (twice 2)))\n";
 const SHADOWING_DOC: &str = "(defrule doc ((term) 0))\n\n(defn main () (do))\n";
 const THREADING_HEADER: &str = "(defrule ->)";
+const THREAD_LAST_HEADER: &str = "(defrule ->>)";
+const MINUS_HEADER: &str = "(defrule -)";
+const UNKNOWN_FLAG_ERROR: &str = "error: unexpected argument '--typo' found";
 const ARITHMETIC: &str = include_str!("fixtures/emit/arithmetic.rslisp");
 const EMPTY_MAIN: &str = "(def main (fn () (do)))\n";
 const ONE_BRANCH: &str = "(def main (fn () (if true (do) (do))))\n";
@@ -408,6 +411,49 @@ fn doc_takes_a_term_that_starts_with_a_hyphen() {
     let doc = sandbox.compiler(&["doc", "->"]);
     let page = doc.assert_exit_code(0).stdout();
     assert_eq!(page.lines().next(), Some(THREADING_HEADER));
+}
+
+#[test]
+fn doc_takes_the_thread_last_term() {
+    let sandbox = Sandbox::new("doc_thread_last");
+    let doc = sandbox.compiler(&["doc", "->>"]);
+    let page = doc.assert_exit_code(0).stdout();
+    assert_eq!(page.lines().next(), Some(THREAD_LAST_HEADER));
+}
+
+#[test]
+fn doc_takes_the_minus_term() {
+    let sandbox = Sandbox::new("doc_minus");
+    let doc = sandbox.compiler(&["doc", "-"]);
+    let page = doc.assert_exit_code(0).stdout();
+    assert_eq!(page.lines().next(), Some(MINUS_HEADER));
+}
+
+#[test]
+fn doc_reports_an_unknown_flag_before_the_term() {
+    let sandbox = Sandbox::new("doc_unknown_flag_before_term");
+    let doc = sandbox.compiler(&["doc", "--typo", "twice"]);
+    let stderr = doc.assert_exit_code(2).stderr();
+    assert_eq!(stderr.lines().next(), Some(UNKNOWN_FLAG_ERROR));
+}
+
+#[test]
+fn doc_reports_an_unknown_flag_in_place_of_the_term() {
+    let sandbox = Sandbox::new("doc_unknown_flag_as_term");
+    let doc = sandbox.compiler(&["doc", "--typo"]);
+    let stderr = doc.assert_exit_code(2).stderr();
+    assert_eq!(stderr.lines().next(), Some(UNKNOWN_FLAG_ERROR));
+}
+
+#[test]
+fn doc_reports_a_second_term() {
+    let sandbox = Sandbox::new("doc_second_term");
+    let doc = sandbox.compiler(&["doc", "defn", "defmacro"]);
+    let stderr = doc.assert_exit_code(2).stderr();
+    assert_eq!(
+        stderr.lines().next(),
+        Some("error: unexpected argument 'defmacro' found")
+    );
 }
 
 #[test]
