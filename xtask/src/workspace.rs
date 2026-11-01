@@ -37,6 +37,13 @@ impl CargoWorkspace {
             .collect()
     }
 
+    pub fn crate_names(&self) -> BTreeSet<String> {
+        self.targets
+            .iter()
+            .map(|target| target.crate_name.clone())
+            .collect()
+    }
+
     fn parse(root: &Path, metadata: &str) -> Result<Self, TaskFailure> {
         let targets = serde_json::from_str(metadata)
             .ok()
@@ -66,6 +73,7 @@ impl CargoWorkspace {
 }
 
 struct CrateTarget {
+    crate_name: String,
     source_file: PathBuf,
 }
 
@@ -87,6 +95,7 @@ impl CrateTarget {
             .strip_prefix(workspace_root)
             .unwrap_or(source_file);
         Some(Self {
+            crate_name: target["name"].as_str()?.replace('-', "_"),
             source_file: within_workspace.to_path_buf(),
         })
     }
@@ -138,6 +147,14 @@ mod tests {
         assert_eq!(
             WorkspaceFixture::workspace().source_directories(),
             BTreeSet::from([root.join("src"), root.join("syntax/src")])
+        );
+    }
+
+    #[test]
+    fn names_each_crate_as_its_symbols_do_but_not_its_tooling() {
+        assert_eq!(
+            WorkspaceFixture::workspace().crate_names(),
+            BTreeSet::from(["ledger_lang".to_string(), "ledger_syntax".to_string()])
         );
     }
 

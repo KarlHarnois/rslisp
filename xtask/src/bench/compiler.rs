@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -5,11 +6,12 @@ use serde_json::Value;
 
 use crate::cargo::Cargo;
 use crate::failure::TaskFailure;
+use crate::workspace::CargoWorkspace;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BuiltCompiler {
     pub executable: PathBuf,
-    pub crate_name: String,
+    pub crate_names: BTreeSet<String>,
 }
 
 pub struct CompilerBuild<'a> {
@@ -38,8 +40,13 @@ impl<'a> CompilerBuild<'a> {
     pub fn run(&self) -> Result<BuiltCompiler, TaskFailure> {
         self.clean_root_package()?;
         let messages = self.build_release()?;
-        self.read_artifacts(&messages)
-            .ok_or_else(|| TaskFailure::compiler_missing(self.workspace))
+        let executable = self
+            .read_executable(&messages)
+            .ok_or_else(|| TaskFailure::compiler_missing(self.workspace))?;
+        Ok(BuiltCompiler {
+            executable,
+            crate_names: CargoWorkspace::read(self.workspace)?.crate_names(),
+        })
     }
 
     fn clean_root_package(&self) -> Result<(), TaskFailure> {
@@ -97,27 +104,14 @@ impl<'a> CompilerBuild<'a> {
         command
     }
 
-    fn read_artifacts(&self, messages: &str) -> Option<BuiltCompiler> {
+    fn read_executable(&self, messages: &str) -> Option<PathBuf> {
         let manifest = self.workspace.join(Self::MANIFEST);
-        let artifacts: Vec<Artifact> = messages
+        messages
             .lines()
             .filter_map(|line| serde_json::from_str(line).ok())
             .map(Artifact::new)
             .filter(|artifact| artifact.belongs_to(&manifest))
-            .collect();
-        let binary = artifacts.iter().find_map(Artifact::executable)?;
-        let crate_target = artifacts
-            .iter()
-            .find(|artifact| artifact.is_library())
-            .or_else(|| {
-                artifacts
-                    .iter()
-                    .find(|artifact| artifact.executable().is_some())
-            })?;
-        Some(BuiltCompiler {
-            executable: binary,
-            crate_name: crate_target.crate_name()?,
-        })
+            .find_map(|artifact| artifact.executable())
     }
 }
 
@@ -127,7 +121,6 @@ struct Artifact {
 
 impl Artifact {
     const ARTIFACT_REASON: &'static str = "compiler-artifact";
-    const LIBRARY_KIND: &'static str = "lib";
     const BINARY_KIND: &'static str = "bin";
 
     fn new(message: Value) -> Self {
@@ -145,15 +138,6 @@ impl Artifact {
         executable.filter(|_| is_binary)
     }
 
-    fn is_library(&self) -> bool {
-        self.has_kind(Self::LIBRARY_KIND)
-    }
-
-    fn crate_name(&self) -> Option<String> {
-        let name = self.message["target"]["name"].as_str()?;
-        Some(name.replace('-', "_"))
-    }
-
     fn has_kind(&self, kind: &str) -> bool {
         self.message["target"]["kind"]
             .as_array()
@@ -168,15 +152,12 @@ mod tests {
     const MESSAGES: &str = include_str!("../../fixtures/bench/cargo-build.json");
 
     #[test]
-    fn takes_the_binary_and_library_crate_of_the_checkout_package() {
-        let built = CompilerBuild::new(Path::new("/checkout"), Path::new("/checkout/target"))
-            .read_artifacts(MESSAGES);
+    fn takes_the_binary_of_the_checkout_package() {
+        let executable = CompilerBuild::new(Path::new("/checkout"), Path::new("/checkout/target"))
+            .read_executable(MESSAGES);
         assert_eq!(
-            built,
-            Some(BuiltCompiler {
-                executable: PathBuf::from("/checkout/target/release/ledger-lang"),
-                crate_name: "ledger_lang".to_string(),
-            })
+            executable,
+            Some(PathBuf::from("/checkout/target/release/ledger-lang"))
         );
     }
 
@@ -203,8 +184,9 @@ mod tests {
 
     #[test]
     fn finds_no_compiler_outside_the_checkout() {
-        let built = CompilerBuild::new(Path::new("/elsewhere"), Path::new("/elsewhere/target"))
-            .read_artifacts(MESSAGES);
-        assert_eq!(built, None);
+        let executable =
+            CompilerBuild::new(Path::new("/elsewhere"), Path::new("/elsewhere/target"))
+                .read_executable(MESSAGES);
+        assert_eq!(executable, None);
     }
 }

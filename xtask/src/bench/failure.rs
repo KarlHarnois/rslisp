@@ -41,9 +41,14 @@ impl TaskFailure {
         ))
     }
 
-    pub fn stage_entry_missing(entry_point: &str) -> Self {
+    pub fn stage_entry_missing(candidates: &[String]) -> Self {
+        let entry_point = candidates
+            .iter()
+            .map(|candidate| format!("`{candidate}`"))
+            .collect::<Vec<_>>()
+            .join(" or ");
         Self::new(format!(
-            "the profile has no call from the command-line module into `{entry_point}`, \
+            "the profile has no call from the command-line module into {entry_point}, \
              so that stage's instructions would count as `other`"
         ))
     }

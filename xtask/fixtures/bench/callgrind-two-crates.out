@@ -1,0 +1,45 @@
+# callgrind format
+version: 1
+creator: callgrind-3.26.0
+cmd:  compiler emit fake.lisp
+positions: line
+events: Ir
+summary: 1000
+
+ob=/fake/compiler
+fl=???
+fn=compiler::cli::Terminal::emit
+0 40
+cfn=compiler::cli::Terminal::check
+calls=1 0
+0 900
+cfn=compiler::check::ProgramChecker::check
+calls=1 0
+0 200
+cfn=compiler::emit::RustEmitter::emit
+calls=1 0
+0 50
+cfn=compiler::build::formatting::EmittedFormatting::apply
+calls=1 0
+0 20
+cfn=core::ptr::drop_in_place<compiler_front::expand::Program>
+calls=1 0
+0 60
+
+fn=compiler::cli::Terminal::check
+0 100
+cfn=compiler_front::expand::Expander::expand
+calls=1 0
+0 500
+
+fn=<compiler::cli::Terminal as core::ops::Drop>::drop
+0 0
+cfn=compiler::check::module::<impl compiler::check::ProgramChecker>::finish
+calls=2 0
+0 100
+
+fn=compiler_front::expand::Expander::expand
+0 400
+cfn=compiler::check::ProgramChecker::check
+calls=1 0
+0 100
