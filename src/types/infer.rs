@@ -2149,9 +2149,12 @@ impl TypeChecker {
     }
 
     fn dereference_may_leave_borrow(&self, value: &TypedExpr) -> bool {
-        let result = self.unifier.resolve(&value.ty);
-        matches!(value.kind, TypedExprKind::Deref(_))
-            && (result.is_reference() || self.referent_unknown(&result))
+        matches!(value.kind, TypedExprKind::Deref(_)) && self.may_hold_borrow(&value.ty)
+    }
+
+    fn may_hold_borrow(&self, value: &Type) -> bool {
+        let result = self.unifier.resolve(value);
+        result.is_reference() || self.referent_unknown(&result)
     }
 
     fn dereference_result_unknown(&self, value: &TypedExpr) -> bool {

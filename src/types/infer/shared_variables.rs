@@ -336,17 +336,12 @@ impl TypeChecker {
         shared: &Type,
         arguments: &[TypedArgument],
     ) -> Vec<usize> {
-        let (template_borrows, others): (Vec<usize>, Vec<usize>) =
-            group.positions().partition(|position| {
-                self.place_the_template_borrows(
-                    callee,
-                    *position,
-                    shared,
-                    &arguments[*position].value,
-                )
-                .is_some()
-            });
-        template_borrows.into_iter().chain(others).collect()
+        let mut positions: Vec<usize> = group.positions().collect();
+        positions.sort_by_key(|position| {
+            self.place_the_template_borrows(callee, *position, shared, &arguments[*position].value)
+                .is_none()
+        });
+        positions
     }
 
     fn pass_member(
