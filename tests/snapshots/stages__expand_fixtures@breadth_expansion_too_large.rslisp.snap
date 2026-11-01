@@ -1,0 +1,23 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/breadth_expansion_too_large.rslisp
+---
+error[L0325]: this expression nests too deeply
+  --> expand/breadth_expansion_too_large.rslisp:11:12
+   |
+11 |   (println (spread 1)))
+   |            ^^^^^^^^^^ this expression sits inside 1024 others
+   |
+   = note: expressions nest at most 1024 deep
+   = note: in this expansion of `spread`
+   = help: move the inner expressions into a function of their own
+
+error[L0326]: macro expansion did not finish
+  --> expand/breadth_expansion_too_large.rslisp:11:12
+   |
+11 |   (println (spread 1)))
+   |            ^^^^^^^^^^ expanding this call of `spread` passes 131072 forms
+   |
+   = note: the macro calls in one top-level form expand to at most 131072 forms in all
+   = help: make each recursive macro stop, or split a large expansion across several top-level forms
