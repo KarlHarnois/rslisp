@@ -60,6 +60,9 @@
 (defn flipped-total ()
   (ref (flip (+ 3 4))))
 
+(defn next-process ()
+  (ref (+ (rust "std::process::id() as i64" i64) 1)))
+
 (defn main ()
   (let spot (->point 1 2))
   (let years (vec 2021))
@@ -79,4 +82,5 @@
   (prn (either-arm years))
   (settled-pick true)
   (prn (nothing))
-  (prn (flipped-total)))
+  (prn (flipped-total))
+  (prn (next-process)))

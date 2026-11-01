@@ -29,7 +29,8 @@ impl<'p> PromotedConstants<'p> {
         match &value.kind {
             TypedExprKind::Call(callee, arguments) => self.promotes_operation(callee, arguments),
             TypedExprKind::Leaf(TypedLeaf::Rust(template)) => {
-                ParsedTemplate::parse(&template.template).is_ok_and(|parsed| parsed.is_constant())
+                ParsedTemplate::parse(&template.template)
+                    .is_ok_and(|parsed| self.promotes_template(&parsed, &[]))
             }
             TypedExprKind::Control(TypedControl::Block(block)) => {
                 LocalBorrows::tail_of(block).is_none_or(|tail| self.promotes(tail))
@@ -56,16 +57,21 @@ impl<'p> PromotedConstants<'p> {
 
     fn promotes_template(&self, template: &ParsedTemplate, arguments: &[TypedArgument]) -> bool {
         let operation = template.operation();
-        operation.is_tuple()
-            || operation.is_operator()
-                && self.operates_on_builtins(arguments)
-                && self.divides_by_constants(&operation, arguments)
+        !operation.calls()
+            && self.operates_on_builtins(&operation, arguments)
+            && self.divides_by_constants(&operation, arguments)
     }
 
-    fn operates_on_builtins(&self, arguments: &[TypedArgument]) -> bool {
-        arguments
-            .iter()
-            .all(|argument| self.is_builtin_operand(&argument.value.ty))
+    fn operates_on_builtins(
+        &self,
+        operation: &TemplateOperation,
+        arguments: &[TypedArgument],
+    ) -> bool {
+        operation.operator_arguments().all(|position| {
+            arguments
+                .get(position)
+                .is_some_and(|argument| self.is_builtin_operand(&argument.value.ty))
+        })
     }
 
     fn is_builtin_operand(&self, ty: &Type) -> bool {

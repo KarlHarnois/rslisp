@@ -6,6 +6,10 @@
 
 (def five-over (rust "5 / {0}" (fn (i64) i64)))
 
+(def widen (rust "{0} as i64" (fn (i32) i64)))
+
+(def confirms (rust "{0} == true" (fn (bool) bool)))
+
 (defn sum ()
   (ref (+ 1 2)))
 
@@ -48,6 +52,12 @@
 (defn flipped-five ()
   (ref (five-over -1)))
 
+(defn widened ()
+  (ref (widen 4)))
+
+(defn confirmed ()
+  (ref (confirms false)))
+
 (defn settled ()
   (ref (do (println "settling") (let year 2019))))
 
@@ -65,5 +75,7 @@
   (prn (counted))
   (prn (incremented))
   (prn (halved))
+  (prn (widened))
+  (prn (confirmed))
   (settled)
   (prn (flipped-five)))
