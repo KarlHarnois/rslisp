@@ -28,6 +28,14 @@ impl<'a> UntiedBorrows<'a> {
         }
     }
 
+    pub fn may_report(&self, method: &ShownMethod) -> bool {
+        if self.has_only_implementor_borrows(method.result) {
+            method.result.mentions(self.self_generic)
+        } else {
+            method.static_result
+        }
+    }
+
     pub fn check(&self, method: &ShownMethod, flows: &HashSet<BindingId>) -> Option<Diagnostic> {
         method
             .lambda

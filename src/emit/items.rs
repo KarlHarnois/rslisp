@@ -731,17 +731,24 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn report_untied_borrows(&mut self, method: &ShownMethod, implemented: &ImplementedTrait) {
-        let Some((_, self_generic)) = self.declared_signature(implemented.binding, method.binding)
-        else {
+        let Some(untied) = self.untied_borrows(method, implemented) else {
             return;
         };
         let flows = self.result_borrows.analyse(method.lambda).flows;
-        if let Some(problem) =
-            UntiedBorrows::new(self.program, implemented.implementor, self_generic)
-                .check(method, &flows)
-        {
+        if let Some(problem) = untied.check(method, &flows) {
             self.problems.push(problem);
         }
+    }
+
+    fn untied_borrows<'s>(
+        &'s self,
+        method: &ShownMethod,
+        implemented: &'s ImplementedTrait,
+    ) -> Option<UntiedBorrows<'s>> {
+        let (_, self_generic) =
+            self.borrowing_implementor_signature(method.binding, implemented)?;
+        let untied = UntiedBorrows::new(self.program, implemented.implementor, self_generic);
+        untied.may_report(method).then_some(untied)
     }
 
     fn signature_naming_self(
@@ -750,13 +757,21 @@ impl<'a> ItemEmitter<'a> {
         signature: &Type,
         implemented: &ImplementedTrait,
     ) -> Type {
-        implemented
-            .implementor_lifetime
-            .and_then(|_| self.declared_signature(implemented.binding, method))
+        self.borrowing_implementor_signature(method, implemented)
             .map_or_else(
                 || signature.clone(),
                 |(declared, self_generic)| signature.restore_generic(declared, self_generic),
             )
+    }
+
+    fn borrowing_implementor_signature(
+        &self,
+        method: BindingId,
+        implemented: &ImplementedTrait,
+    ) -> Option<(&'a Type, GenericId)> {
+        implemented
+            .implementor_lifetime
+            .and_then(|_| self.declared_signature(implemented.binding, method))
     }
 
     fn declared_signature(
