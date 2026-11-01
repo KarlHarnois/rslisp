@@ -3,9 +3,6 @@
 (defmacro grow (form)
   (template (grow (do (unquote form) (unquote form)))))
 
-(defmacro spread (form)
-  (template (do (spread (unquote form)) (spread (unquote form)))))
-
 (def doubled
   (fn (items times)
     (if (number-le times 0) items (doubled (concat items items) (number-sub times 1)))))
@@ -15,9 +12,6 @@
 
 (defn main ()
   (println (grow 1)))
-
-(defn spreads ()
-  (println (spread 1)))
 
 (defn padded ()
   (past-the-limit))
