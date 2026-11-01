@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/copy_twice_strings.rslisp
+---
+error[L0404]: `string` does not implement `copy`
+ --> check/copy_twice_strings.rslisp:5:16
+  |
+1 | (defn copy-twice! (names) (set! (at names 1) (at names 0)) (push! names (at names 2)))
+  |                                              ------------               ------------ this copies the borrowed value
+  |                                              |
+  |                                              this copies the borrowed value
+...
+5 |   (copy-twice! (mut names))
+  |                ^^^^^^^^^^^ this needs `copy`
+  |
+  = note: `copy` is implemented for: bool, char, unit, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where (a) (ref a)), (where ((a copy)) (option a)), (where ((a copy) (b copy)) (result a b)), (where ((a copy) (b copy)) (pair a b))
+  = help: to copy a value that is not `copy`, write `(clone ...)` around it

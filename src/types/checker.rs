@@ -693,20 +693,20 @@ impl TypeChecker {
     }
 
     pub(super) fn require_copy(&mut self, value: &Type) {
-        self.require_copy_from(value, BoundOrigin::Unrecorded);
+        self.require_copy_from(value, Vec::new());
     }
 
     pub(super) fn require_copy_at(&mut self, value: &Type, copied: Span) {
-        self.require_copy_from(value, BoundOrigin::BorrowCopied(copied));
+        self.require_copy_from(value, vec![BoundOrigin::BorrowCopied(copied)]);
     }
 
-    fn require_copy_from(&mut self, value: &Type, origin: BoundOrigin) {
+    fn require_copy_from(&mut self, value: &Type, origins: Vec<BoundOrigin>) {
         let Type::Var(var) = self.unifier.shallow(value) else {
             return;
         };
         if let Some(copy) = self.copy_trait {
             self.unifier
-                .add_bound(var, Bound::plain(copy).from_origin(origin));
+                .add_bound(var, Bound::plain(copy).from_origins(origins));
         }
     }
 
@@ -765,7 +765,7 @@ impl TypeChecker {
                 .argument
                 .as_ref()
                 .map(|argument| self.unifier.resolve(argument)),
-            origin: bound.origin,
+            origins: bound.origins.clone(),
         }
     }
 
@@ -2316,15 +2316,24 @@ impl TypeChecker {
             diagnostic = self.type_trait_help(diagnostic, *binding, bound, &display);
         }
         self.diagnostics
-            .push(Self::with_bound_origin(diagnostic, bound.origin));
+            .push(Self::with_bound_origins(diagnostic, &bound.origins));
     }
 
-    fn with_bound_origin(diagnostic: Diagnostic, origin: BoundOrigin) -> Diagnostic {
+    fn with_bound_origins(diagnostic: Diagnostic, origins: &[BoundOrigin]) -> Diagnostic {
+        let labeled = origins.iter().fold(diagnostic, Self::with_origin_label);
+        match origins.first() {
+            Some(BoundOrigin::BorrowCopied(_)) => {
+                labeled.with_help(TypeProblems::clone_copied_help())
+            }
+            None => labeled,
+        }
+    }
+
+    fn with_origin_label(diagnostic: Diagnostic, origin: &BoundOrigin) -> Diagnostic {
         match origin {
-            BoundOrigin::BorrowCopied(copied) => diagnostic
-                .with_label(TypeProblems::borrow_copied(copied))
-                .with_help(TypeProblems::clone_copied_help()),
-            BoundOrigin::Unrecorded => diagnostic,
+            BoundOrigin::BorrowCopied(copied) => {
+                diagnostic.with_label(TypeProblems::borrow_copied(*copied))
+            }
         }
     }
 
