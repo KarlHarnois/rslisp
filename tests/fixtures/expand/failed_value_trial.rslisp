@@ -13,7 +13,7 @@
     (do
       (splice (concat (doubled (list 0) 16) (doubled (list 0) 15)))
       (splice (concat (doubled (list 0) 14) (doubled (list 0) 13)))
-      (splice (zeros (list) 8180)))))
+      (splice (zeros (list) 8172)))))
 
 (def big
   (macro (form)
