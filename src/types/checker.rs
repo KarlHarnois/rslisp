@@ -34,6 +34,12 @@ use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::modules::ModuleSources;
 use crate::source::Span;
 
+struct ReopenedParameter {
+    variable: Type,
+    pinned: Type,
+    span: Span,
+}
+
 pub(super) enum Admissible {
     Unbounded,
     Open(Vec<Type>),
@@ -201,6 +207,7 @@ pub struct TypeChecker {
     pub(super) literal_generics: FxHashMap<GenericId, LiteralKind>,
     default_literal_parameters: bool,
     pub(super) recursive_group: Vec<BindingId>,
+    reopened_parameters: Vec<ReopenedParameter>,
     pub(super) reported_unknown_try_groups: FxHashSet<BindingId>,
     pub(super) prelude_value_names: FxHashSet<String>,
     pub(super) string_view: Option<BindingId>,
@@ -288,6 +295,7 @@ impl TypeChecker {
             literal_generics: FxHashMap::default(),
             default_literal_parameters: false,
             recursive_group: Vec::new(),
+            reopened_parameters: Vec::new(),
             reported_unknown_try_groups: FxHashSet::default(),
             prelude_value_names: FxHashSet::default(),
             string_view: None,
@@ -853,6 +861,7 @@ impl TypeChecker {
         }
         self.close_open_set_ats();
         let decided = self.decide_pending_borrows();
+        self.close_reopened_parameters();
         for (binding, value) in &mut typed {
             decided.patch(value);
             self.borrow_unsized_result(*binding, value);
@@ -983,7 +992,7 @@ impl TypeChecker {
             };
         }
         if let Some(pinned) = self.pinned.get(&member.binding).cloned() {
-            let reopened = self.reopen_borrowed_copy_parameters(pinned);
+            let reopened = self.reopen_borrowed_copy_parameters(pinned, member.span);
             self.component.insert(member.binding, reopened);
             return None;
         }
@@ -992,21 +1001,50 @@ impl TypeChecker {
         None
     }
 
-    fn reopen_borrowed_copy_parameters(&mut self, pinned: Type) -> Type {
+    fn reopen_borrowed_copy_parameters(&mut self, pinned: Type, span: Span) -> Type {
         let Type::Function(kind, parameters, result) = pinned else {
             return pinned;
         };
         let parameters = parameters
             .into_iter()
-            .map(|parameter| {
-                if self.borrows_copy_value(&parameter) {
-                    self.unifier.fresh()
-                } else {
-                    parameter
-                }
-            })
+            .map(|parameter| self.reopen_parameter(parameter, span))
             .collect();
         Type::Function(kind, parameters, result)
+    }
+
+    fn reopen_parameter(&mut self, pinned: Type, span: Span) -> Type {
+        if !self.borrows_copy_value(&pinned) {
+            return pinned;
+        }
+        let variable = self.unifier.fresh();
+        self.reopened_parameters.push(ReopenedParameter {
+            variable: variable.clone(),
+            pinned,
+            span,
+        });
+        variable
+    }
+
+    fn close_reopened_parameters(&mut self) {
+        for reopened in std::mem::take(&mut self.reopened_parameters) {
+            if let Some(pinned) = self.pinned_part_left_open(&reopened) {
+                let closed = self
+                    .unifier
+                    .unify(&reopened.variable, &pinned, reopened.span);
+                debug_assert!(
+                    closed.is_ok(),
+                    "a reopened parameter accepts its pinned type"
+                );
+            }
+        }
+    }
+
+    fn pinned_part_left_open(&self, reopened: &ReopenedParameter) -> Option<Type> {
+        match self.unifier.resolve(&reopened.variable) {
+            Type::Var(_) => Some(reopened.pinned.referent().clone()),
+            Type::Ref(..) => Some(reopened.pinned.clone()),
+            _ => None,
+        }
     }
 
     fn borrows_copy_value(&self, parameter: &Type) -> bool {

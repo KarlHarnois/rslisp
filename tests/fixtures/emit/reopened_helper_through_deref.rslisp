@@ -1,0 +1,15 @@
+(defn same? (a b) (= a b))
+
+(defn check (y)
+  (let v (deref y))
+  (println v)
+  (same? y y))
+
+(defn show (y)
+  (let v (deref y))
+  (println v))
+
+(defn main ()
+  (let x 3)
+  (println (check (ref x)))
+  (show (ref x)))
