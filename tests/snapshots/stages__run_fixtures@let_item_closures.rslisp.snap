@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/let_item_closures.rslisp
+---
+2
+2
+Some(2021)
+true
