@@ -17,6 +17,13 @@ impl<'forms> RestOfBody<'forms> {
         }
     }
 
+    pub(super) fn splice<'spliced>(&self, forms: &'spliced [Form]) -> RestOfBody<'spliced> {
+        RestOfBody {
+            forms: forms.iter(),
+            let_scopes: self.let_scopes.clone(),
+        }
+    }
+
     pub(super) fn add_scope(&mut self, scope: Scope) {
         self.let_scopes.push(scope);
     }

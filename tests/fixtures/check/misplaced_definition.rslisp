@@ -28,7 +28,10 @@
   (let-used-before)
   (malformed)
   (misplaced-macro)
-  (misplaced-typo))
+  (misplaced-typo)
+  (misplaced-struct)
+  (malformed-struct)
+  (do-without-definition))
 
 (defn malformed ()
   (def incomplete)
@@ -46,3 +49,20 @@
   (macro (form)
     (def inner 1)
     inner))
+
+(defn misplaced-struct ()
+  (defstruct point :x i64)
+  (let origin (->point :x 0))
+  (println (:x (the point origin))))
+
+(defn malformed-struct ()
+  (struct))
+
+(defn do-without-definition ()
+  (do (let hidden 1) hidden)
+  hidden)
+
+(def compile-time-struct
+  (macro (form)
+    (struct inner-point (x i64))
+    form))
