@@ -408,7 +408,8 @@ impl OwnershipProblems {
         lent: Span,
         closure: &str,
     ) -> Diagnostic {
-        let (primary, dropped_label) = Self::borrow_labels(borrowed, dropped);
+        let (primary, dropped_label) =
+            Self::borrow_labels(borrowed, dropped, Self::lent_dropped_label(dropped));
         let diagnostic = Diagnostic::error(
             DiagnosticCode::LENT_LOCAL_BORROW,
             format!(
@@ -429,8 +430,11 @@ impl OwnershipProblems {
             ))
     }
 
-    fn borrow_labels(borrowed: Span, dropped: &DroppedValue) -> (Label, Option<Label>) {
-        let dropped_label = Self::dropped_label(dropped);
+    fn borrow_labels(
+        borrowed: Span,
+        dropped: &DroppedValue,
+        dropped_label: Label,
+    ) -> (Label, Option<Label>) {
         if dropped.span() == borrowed {
             return (dropped_label, None);
         }
@@ -439,6 +443,18 @@ impl OwnershipProblems {
             format!("this borrows {}", Self::dropped_noun(dropped)),
         );
         (primary, Some(dropped_label))
+    }
+
+    fn lent_dropped_label(dropped: &DroppedValue) -> Label {
+        match dropped {
+            DroppedValue::Temporary(built) => Label::new(
+                *built,
+                "this temporary value is dropped at the end of the statement",
+            ),
+            DroppedValue::Local(_)
+            | DroppedValue::FunctionParameter(_)
+            | DroppedValue::ClosureParameter(_) => Self::dropped_label(dropped),
+        }
     }
 
     fn dropped_noun(dropped: &DroppedValue) -> &'static str {
@@ -451,7 +467,8 @@ impl OwnershipProblems {
     }
 
     fn returned_local_borrow(borrowed: Span, dropped: &DroppedValue) -> Diagnostic {
-        let (primary, dropped_label) = Self::borrow_labels(borrowed, dropped);
+        let (primary, dropped_label) =
+            Self::borrow_labels(borrowed, dropped, Self::dropped_label(dropped));
         let diagnostic = Diagnostic::error(
             DiagnosticCode::LOCAL_BORROW,
             format!("cannot return a borrow of {}", Self::dropped_noun(dropped)),
