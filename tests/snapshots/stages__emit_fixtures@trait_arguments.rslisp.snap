@@ -9,7 +9,7 @@ fn is_differ<A: PartialEq<B>, B>(a: A, b: B) -> bool {
 
 fn main() {
     crate::rt::restore_default_sigpipe();
-    println!("{}", is_differ(1, 2))
+    println!("{}", is_differ(1_i64, 2))
 }
 
 mod rt {

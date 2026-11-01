@@ -1,0 +1,11 @@
+(struct (holder a) (value a))
+
+(defn main ()
+  (let several? (> (len (command-line-args)) 5))
+  (let odometer (the i64 2024))
+  (let reading (fn () 3000000000))
+  (prn (reading))
+  (prn (some 3000000000))
+  (prn (pair odometer 3000000000))
+  (prn (field (new holder (value 3000000000)) value))
+  (println (if several? 1 3000000000)))
