@@ -1,7 +1,7 @@
 use super::open_literals::TypeContext;
-use super::type_anchor::TypeAnchor;
+use super::type_anchor::{Certainty, TypeAnchor};
 use crate::core::{BindingId, TypeExpr, TypeExprKind};
-use crate::types::{GenericParam, Type, TypedExpr};
+use crate::types::{GenericParam, Type};
 
 type Generics = Vec<usize>;
 
@@ -111,10 +111,14 @@ impl GenericPositions {
             .collect()
     }
 
-    pub(super) fn contexts(&self, values: &[&TypedExpr], outer: TypeContext) -> Vec<TypeContext> {
-        (0..values.len())
+    pub(super) fn contexts(
+        &self,
+        certainties: &[Certainty],
+        outer: TypeContext,
+    ) -> Vec<TypeContext> {
+        (0..certainties.len())
             .map(|position| {
-                if self.is_open(position, values, outer) {
+                if self.is_open(position, certainties, outer) {
                     TypeContext::Unknown
                 } else {
                     TypeContext::Known
@@ -123,11 +127,11 @@ impl GenericPositions {
             .collect()
     }
 
-    fn is_open(&self, position: usize, values: &[&TypedExpr], outer: TypeContext) -> bool {
+    fn is_open(&self, position: usize, certainties: &[Certainty], outer: TypeContext) -> bool {
         self.parameters.get(position).is_some_and(|generics| {
             generics
                 .iter()
-                .any(|generic| !self.is_fixed(*generic, position, values, outer))
+                .any(|generic| !self.is_fixed(*generic, position, certainties, outer))
         })
     }
 
@@ -135,21 +139,21 @@ impl GenericPositions {
         &self,
         generic: usize,
         position: usize,
-        values: &[&TypedExpr],
+        certainties: &[Certainty],
         outer: TypeContext,
     ) -> bool {
         let by_result = outer == TypeContext::Known && self.result.contains(&generic);
-        by_result || self.anchor(generic, values) != Some(position)
+        by_result || self.anchor(generic, certainties) != Some(position)
     }
 
-    fn anchor(&self, generic: usize, values: &[&TypedExpr]) -> Option<usize> {
+    fn anchor(&self, generic: usize, certainties: &[Certainty]) -> Option<usize> {
         TypeAnchor::among(
             self.parameters
                 .iter()
-                .zip(values)
+                .zip(certainties)
                 .enumerate()
                 .filter(|(_, (generics, _))| generics.contains(&generic))
-                .map(|(position, (_, value))| (position, *value)),
+                .map(|(position, (_, certainty))| (position, *certainty)),
         )
     }
 }
