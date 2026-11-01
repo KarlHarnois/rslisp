@@ -98,17 +98,31 @@ pub struct WorkspaceFixture;
 #[cfg(test)]
 impl WorkspaceFixture {
     const METADATA: &'static str = include_str!("../fixtures/workspace/metadata.json");
+    const METADATA_WITHOUT_CRATES: &'static str =
+        r#"{ "packages": [], "workspace_root": "/ledger" }"#;
     const DIRECTORY: &'static str = "fixtures/workspace";
 
     pub fn workspace() -> CargoWorkspace {
-        CargoWorkspace::parse(&Self::root(), Self::METADATA).expect("the fixture metadata parses")
+        Self::parsed(Self::METADATA)
+    }
+
+    pub fn without_crates() -> CargoWorkspace {
+        Self::parsed(Self::METADATA_WITHOUT_CRATES)
+    }
+
+    pub fn this_repository() -> CargoWorkspace {
+        CargoWorkspace::read(Self::repository_root()).expect("this repository's metadata reads")
     }
 
     pub fn root() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join(Self::DIRECTORY)
     }
 
-    fn this_repository() -> &'static Path {
+    fn parsed(metadata: &str) -> CargoWorkspace {
+        CargoWorkspace::parse(&Self::root(), metadata).expect("the fixture metadata parses")
+    }
+
+    fn repository_root() -> &'static Path {
         let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
         manifest.parent().unwrap_or(manifest)
     }
@@ -129,9 +143,7 @@ mod tests {
 
     #[test]
     fn reads_the_crates_of_this_repository_without_its_tooling() {
-        let directories = CargoWorkspace::read(WorkspaceFixture::this_repository())
-            .unwrap()
-            .source_directories();
+        let directories = WorkspaceFixture::this_repository().source_directories();
         let tooling = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
         assert!(!directories.is_empty());
         assert!(!directories.contains(&tooling));

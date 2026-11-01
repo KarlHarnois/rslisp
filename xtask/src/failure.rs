@@ -57,6 +57,12 @@ impl TaskFailure {
         Self::new("cannot read the workspace's crates from `cargo metadata`".to_string())
     }
 
+    pub fn language_missing(file: &str) -> Self {
+        Self::new(format!(
+            "no crate of the workspace has `{file}` in its source directory"
+        ))
+    }
+
     pub fn malformed_tag(tag: &str) -> Self {
         Self::new(format!(
             "cannot read the release tag {tag:?}: expected v<major>.<minor>.<patch>"
