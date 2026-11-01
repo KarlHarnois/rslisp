@@ -290,11 +290,17 @@ impl Type {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Bound {
     pub binding: BindingId,
     pub argument: Option<Type>,
-    pub origin: BoundOrigin,
+    pub origins: Vec<BoundOrigin>,
+}
+
+impl PartialEq for Bound {
+    fn eq(&self, other: &Self) -> bool {
+        self.binding == other.binding && self.argument == other.argument
+    }
 }
 
 impl Bound {
@@ -302,7 +308,7 @@ impl Bound {
         Self {
             binding,
             argument: None,
-            origin: BoundOrigin::default(),
+            origins: Vec::new(),
         }
     }
 
@@ -310,12 +316,16 @@ impl Bound {
         Self {
             binding,
             argument: Some(argument),
-            origin: BoundOrigin::default(),
+            origins: Vec::new(),
         }
     }
 
-    pub fn from_origin(self, origin: BoundOrigin) -> Self {
-        Self { origin, ..self }
+    pub fn from_origins(self, origins: Vec<BoundOrigin>) -> Self {
+        Self { origins, ..self }
+    }
+
+    pub fn merge_origins(&mut self, other: Bound) {
+        self.origins.extend(other.origins);
     }
 
     pub fn substituted(&self, replacements: &FxHashMap<GenericId, Type>) -> Self {
@@ -325,7 +335,7 @@ impl Bound {
                 .argument
                 .as_ref()
                 .map(|argument| argument.substitute(replacements)),
-            origin: self.origin,
+            origins: self.origins.clone(),
         }
     }
 
@@ -336,22 +346,14 @@ impl Bound {
                 .argument
                 .as_ref()
                 .map(|argument| argument.substitute_vars(replacements)),
-            origin: self.origin,
+            origins: self.origins.clone(),
         }
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug)]
 pub enum BoundOrigin {
-    #[default]
-    Unrecorded,
     BorrowCopied(Span),
-}
-
-impl PartialEq for BoundOrigin {
-    fn eq(&self, _: &Self) -> bool {
-        true
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -426,11 +428,12 @@ mod tests {
         }
 
         fn bound_from_copy(&self) -> Bound {
-            Bound::plain(self.binding).from_origin(BoundOrigin::BorrowCopied(self.copy_site()))
+            Bound::plain(self.binding)
+                .from_origins(vec![BoundOrigin::BorrowCopied(self.copy_site())])
         }
 
         fn keeps_copy_site(&self, bound: &Bound) -> bool {
-            matches!(bound.origin, BoundOrigin::BorrowCopied(site) if site == self.copy_site())
+            matches!(bound.origins[..], [BoundOrigin::BorrowCopied(site)] if site == self.copy_site())
         }
     }
 
