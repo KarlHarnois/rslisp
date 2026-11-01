@@ -1,0 +1,6 @@
+(enum reply (some i64) none)
+
+(defn unannotated (found)
+  (match found
+    ((some count) count)
+    (none 0)))

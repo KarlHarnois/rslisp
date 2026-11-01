@@ -1,0 +1,40 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/short_variant_shadowed.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Result2 {
+    Ok(i64),
+    Err(String),
+}
+
+fn settle(outcome: Result2) -> i64 {
+    match outcome {
+        Result2::Ok(value) => value,
+        Result2::Err(_) => 0,
+    }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!("{}", settle(Result2::Ok(4)));
+    println!("{}", settle(Result2::Err("refused".to_string())))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

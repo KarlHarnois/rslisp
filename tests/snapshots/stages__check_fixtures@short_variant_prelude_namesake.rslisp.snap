@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/short_variant_prelude_namesake.rslisp
+---
+error[L0430]: cannot tell which enum this pattern matches
+ --> check/short_variant_prelude_namesake.rslisp:5:6
+  |
+5 |     ((some count) count)
+  |      ^^^^^^^^^^^^ this variant name fits more than one enum
+  |
+  = note: this variant name fits `option` and `reply`
+  = help: qualify one pattern with its enum's name, as in `(option/some ...)`
