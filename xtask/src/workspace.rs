@@ -154,6 +154,17 @@ impl WorkspaceFixture {
         CargoWorkspace::parse(&Self::root(), metadata).expect("the fixture metadata parses")
     }
 
+    fn metadata_without(owner: &str, field: &str) -> String {
+        let mut metadata: Value =
+            serde_json::from_str(Self::METADATA).expect("the fixture metadata is JSON");
+        metadata
+            .pointer_mut(owner)
+            .and_then(Value::as_object_mut)
+            .and_then(|object| object.remove(field))
+            .expect("the fixture metadata holds the field");
+        metadata.to_string()
+    }
+
     fn repository_root() -> &'static Path {
         let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
         manifest.parent().unwrap_or(manifest)
@@ -198,10 +209,25 @@ mod tests {
     }
 
     #[test]
-    fn rejects_metadata_without_packages() {
-        let metadata = r#"{ "workspace_root": "/ledger" }"#;
-        let failure = CargoWorkspace::parse(&WorkspaceFixture::root(), metadata).err();
-        assert!(failure.unwrap().to_string().contains("`cargo metadata`"));
+    fn rejects_metadata_that_lacks_a_field() {
+        const WORKSPACE: &str = "";
+        const MEMBER: &str = "/packages/1";
+        const MEMBER_TARGET: &str = "/packages/1/targets/0";
+        for (owner, field) in [
+            (WORKSPACE, "workspace_root"),
+            (WORKSPACE, "packages"),
+            (MEMBER, "name"),
+            (MEMBER, "targets"),
+            (MEMBER_TARGET, "name"),
+            (MEMBER_TARGET, "src_path"),
+        ] {
+            let metadata = WorkspaceFixture::metadata_without(owner, field);
+            let failure = CargoWorkspace::parse(&WorkspaceFixture::root(), &metadata).err();
+            assert!(
+                failure.is_some_and(|failure| failure.to_string().contains("`cargo metadata`")),
+                "metadata without `{owner}/{field}` parsed"
+            );
+        }
     }
 
     #[test]
