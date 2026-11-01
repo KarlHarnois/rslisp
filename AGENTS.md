@@ -7,9 +7,10 @@ This file and the reference files it names are the living reference for working 
 | Term | Meaning |
 | --- | --- |
 | Project owner | The person you work for in this repository |
-| Kernel form | A form the compiler knows, listed by `KernelForm` in `src/core/kernel.rs` |
+| Kernel form | A form the compiler knows, listed by `KernelForm` in `expand/src/core/kernel.rs` |
 | Prelude | The language's library under `prelude/`, written in the language and embedded in the compiler |
 | Stage | One step of the compiler, such as reading, expansion or emission |
+| Front end | Every stage before rustc |
 | Fixture | A source file under `tests/fixtures/` whose output an insta snapshot records |
 | Corpus entry | A top-level fixture under `tests/fixtures/corpus/`, sized to measure the compiler's performance |
 | Working commands | The three commands at the top of the Commands section |
@@ -93,14 +94,15 @@ The exceptions are:
 - NEVER put an abbreviation or a noise word in a name.
 - Unless a number gives each name's position in a sequence, NEVER tell two names apart by a number.
 - If a value's meaning is not obvious, make the value a named constant.
-- In Rust code, take the language's name and file extension from `Language` in `src/language.rs`: `rslisp` is a placeholder name.
+- In Rust code, take the language's name and file extension from `Language` in `expand/src/language.rs`: `rslisp` is a placeholder name.
 
 ### Stages
 
 - A stage depends only on earlier stages. NEVER make a stage depend on a later one.
 - A stage reports problems as `Diagnostic` values. NEVER print from a stage.
-- Only `src/cli/` prints.
-- Only `src/cli/`, `src/build/`, `ModuleSources` and `xtask/` touch the file system or run processes.
+- Only `src/cli/` prints, except the directives that `build.rs` gives cargo.
+- Only `src/cli/`, `src/build/`, `ModuleSources`, `build.rs`, which writes only to `OUT_DIR`, and `xtask/` touch the file system or run processes.
+- The only `build.rs` builds the prelude state. NEVER add another build script or give this one another job.
 - Write the wording of every diagnostic that a compiler stage reports in the stage's problems type, such as `ExpandProblems` or `TypeProblems`.
 - A prelude `fail` writes its message, help and labels in the prelude.
 
@@ -159,6 +161,7 @@ nix develop -c cargo test <narrowest test>
 | The change touches | `<narrowest test>` |
 | --- | --- |
 | a unit test in `src/` | `--lib <module::path>` |
+| a unit test in `expand/src/` | `-p rslisp-expand --lib <module::path>` |
 | one stage's fixtures | `--test stages <stage>_fixtures` |
 | a corpus entry | `--test stages corpus_fixtures` |
 | a CLI command | `--test cli <test name>` |

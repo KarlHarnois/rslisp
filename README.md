@@ -34,7 +34,7 @@ The project uses a [Nix](https://nixos.org/download/) flake.
    cargo xtask coverage
    ```
 
-   `cargo test` runs the tests alone.
+   `cargo test --workspace` runs the tests alone.
 
 3. Build the compiler:
 
