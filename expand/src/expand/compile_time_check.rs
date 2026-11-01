@@ -26,7 +26,7 @@ impl Expander<'_> {
         match expr.kind() {
             ExprKind::Leaf(Leaf::Var(binding)) => self.check_global(*binding, expr.span(), through),
             ExprKind::Leaf(Leaf::Rust(_)) => {
-                let problem = match self.macro_origins.get(&expr.span()) {
+                let problem = match self.tables.macro_origins.get(&expr.span()) {
                     Some(origin) => ExpandProblems::macro_program_only(
                         &origin.name,
                         expr.span(),
@@ -68,12 +68,12 @@ impl Expander<'_> {
             return Ok(());
         }
         let value = self.lowered_global(binding, span)?;
-        let name = self.bindings.get(binding).name().to_string();
+        let name = self.tables.bindings.get(binding).name().to_string();
         if let ExprKind::Leaf(Leaf::Rust(_)) = value.kind() {
             let problem = ExpandProblems::program_only(&name, span, value.span());
             return Err(Self::routed(problem, through));
         }
-        match self.globals.compile_time_check(binding) {
+        match self.tables.globals.compile_time_check(binding) {
             Some(CompileTimeCheck::InProgress | CompileTimeCheck::Passed) => Ok(()),
             Some(CompileTimeCheck::Failed) => Err(ExpandProblems::broken_definition(&name, span)),
             None => self.check_helper(binding, &value, through.or(Some(span))),
@@ -86,7 +86,8 @@ impl Expander<'_> {
         value: &Expr,
         through: Option<Span>,
     ) -> Result<(), Diagnostic> {
-        self.globals
+        self.tables
+            .globals
             .record_compile_time_check(binding, CompileTimeCheck::InProgress);
         let checked = self.check_expr(value, through);
         let outcome = if checked.is_ok() {
@@ -94,7 +95,9 @@ impl Expander<'_> {
         } else {
             CompileTimeCheck::Failed
         };
-        self.globals.record_compile_time_check(binding, outcome);
+        self.tables
+            .globals
+            .record_compile_time_check(binding, outcome);
         checked
     }
 

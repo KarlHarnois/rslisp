@@ -83,8 +83,8 @@ impl Expander<'_> {
         self.lower_pending_group(module, exports, &budgets, &mut core);
         self.compile_pending_macros();
         self.record_answering_macros(module);
-        self.order.push(module);
-        self.expanded.insert(module, core);
+        self.tables.order.push(module);
+        self.tables.expanded.insert(module, core);
         self.current_module = outer_module;
     }
 
@@ -298,7 +298,7 @@ impl Expander<'_> {
                 context,
             )?);
         }
-        self.enum_variants.insert(binding, constructors);
+        self.tables.enum_variants.insert(binding, constructors);
         Ok(Some(PendingItem::Enum(binding, form)))
     }
 
@@ -510,13 +510,15 @@ impl Expander<'_> {
         if self.is_kernel_form(value, KernelForm::Macro) {
             let binding =
                 self.define_global(name, Namespace::Value, BindingKind::Macro(module), context)?;
-            self.macros.add_pending(binding, value.clone());
+            self.tables.macros.add_pending(binding, value.clone());
             return Ok(None);
         }
         let binding =
             self.define_global(name, Namespace::Value, BindingKind::Global(module), context)?;
         let budget = self.form_budgets.spending();
-        self.globals.add_pending(binding, value.clone(), budget);
+        self.tables
+            .globals
+            .add_pending(binding, value.clone(), budget);
         Ok(Some(PendingItem::Def {
             binding,
             annotation: annotation.cloned(),
@@ -583,7 +585,7 @@ impl Expander<'_> {
         span: Span,
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
-        if self.globals.has_failed(binding) {
+        if self.tables.globals.has_failed(binding) {
             return Ok(());
         }
         if let Some(annotation) = annotation {
@@ -633,7 +635,7 @@ impl Expander<'_> {
             .unwrap_or(written);
         if self.kind(binding) != BindingKind::Global(module) {
             return Err(ExpandProblems::signature_target(
-                self.bindings.get(binding).name(),
+                self.tables.bindings.get(binding).name(),
                 name.span(),
             ));
         }
@@ -729,7 +731,7 @@ impl Expander<'_> {
             Self::check_type_placeholders(
                 &rust.template,
                 binders,
-                self.bindings.get(binding).name(),
+                self.tables.bindings.get(binding).name(),
                 template_form,
             )?;
             Self::check_enum_rust_template(
@@ -899,7 +901,7 @@ impl Expander<'_> {
             BindingKind::Struct(owner) | BindingKind::Enum(owner) if owner == module
         ) {
             return Err(ExpandProblems::derive_target(
-                self.bindings.get(binding).name(),
+                self.tables.bindings.get(binding).name(),
                 items[1].span(),
             ));
         }
@@ -923,7 +925,7 @@ impl Expander<'_> {
         let binding = self.resolve(shape.symbol(item)?, Namespace::Type, item.span())?;
         if !matches!(self.kind(binding), BindingKind::Trait(_)) {
             return Err(ExpandProblems::derive_trait(
-                self.bindings.get(binding).name(),
+                self.tables.bindings.get(binding).name(),
                 item.span(),
             ));
         }
@@ -981,7 +983,7 @@ impl Expander<'_> {
                 name: Rc::clone(name),
             })
             .collect();
-        self.trait_methods.insert(
+        self.tables.trait_methods.insert(
             binding,
             TraitMethods {
                 rust_name: Rc::clone(&rust_name),
@@ -1165,8 +1167,8 @@ impl Expander<'_> {
             .collect();
         let params = Form::new(FormKind::List(parameter_forms), method.span());
         let lambda = self.lower_lambda(lowering.shape, &params, body)?;
-        let binding = self.bindings.add(BindingInfo::new(
-            self.bindings.get(lowering.binding).name().into(),
+        let binding = self.tables.bindings.add(BindingInfo::new(
+            self.tables.bindings.get(lowering.binding).name().into(),
             BindingKind::Local,
             Some(method.span()),
         ));
@@ -1237,10 +1239,10 @@ impl Expander<'_> {
         let items = shape.at_least(3)?;
         let trait_binding = self.impl_trait(&shape, &items[1])?;
         let implementor = self.impl_type(&shape, &items[2], scope)?;
-        let Some(trait_methods) = self.trait_methods.get(&trait_binding).cloned() else {
+        let Some(trait_methods) = self.tables.trait_methods.get(&trait_binding).cloned() else {
             return Err(shape.malformed_with_help(form, "define the trait before implementing it"));
         };
-        let trait_name = self.bindings.get(trait_binding).name().to_string();
+        let trait_name = self.tables.bindings.get(trait_binding).name().to_string();
         let type_name = items[2].to_string();
         let (associated, method_forms) = self.lower_impl_associated(
             &shape,
@@ -1482,7 +1484,7 @@ impl Expander<'_> {
         let trait_methods = lowering.trait_methods;
         for (method, _) in &trait_methods.methods {
             if !implemented.contains(method) && !trait_methods.defaults.contains(method) {
-                let name = self.bindings.get(*method).name().to_string();
+                let name = self.tables.bindings.get(*method).name().to_string();
                 self.diagnostics.push(ExpandProblems::missing_method(
                     &name,
                     lowering.trait_name,
@@ -1510,11 +1512,10 @@ impl Expander<'_> {
             return Err(lowering.shape.malformed(method));
         };
         let method_symbol = lowering.shape.symbol(method_name)?;
-        let Some((method_binding, signature)) = lowering
-            .trait_methods
-            .methods
-            .iter()
-            .find(|(binding, _)| self.bindings.get(*binding).name() == method_symbol.name())
+        let Some((method_binding, signature)) =
+            lowering.trait_methods.methods.iter().find(|(binding, _)| {
+                self.tables.bindings.get(*binding).name() == method_symbol.name()
+            })
         else {
             self.diagnostics.push(ExpandProblems::undeclared_method(
                 method_symbol.name(),
@@ -1543,8 +1544,8 @@ impl Expander<'_> {
             &self.implementor_variables(lowering.implementor),
         );
         let lambda = Rc::new(self.lower_lambda(lowering.shape, params, &method_items[2..])?);
-        let synthetic = self.bindings.add(BindingInfo::new(
-            self.bindings.get(*method_binding).name().into(),
+        let synthetic = self.tables.bindings.add(BindingInfo::new(
+            self.tables.bindings.get(*method_binding).name().into(),
             BindingKind::Local,
             Some(method_name.span()),
         ));
@@ -1564,7 +1565,7 @@ impl Expander<'_> {
         Ok(Some(ImplMethod {
             binding: synthetic,
             trait_method: *method_binding,
-            name: self.bindings.get(*method_binding).name().into(),
+            name: self.tables.bindings.get(*method_binding).name().into(),
             lambda,
         }))
     }
@@ -1624,7 +1625,7 @@ impl Expander<'_> {
         let self_form = Form::new(FormKind::Symbol(self_symbol), items[1].span());
         let self_variable = self.define_binder_variable(&self_form)?;
         let entries = self.lower_rust_trait_entries(&shape, scope, &items[3..])?;
-        self.trait_methods.insert(
+        self.tables.trait_methods.insert(
             binding,
             TraitMethods {
                 rust_name: Rc::clone(&path),
@@ -1638,7 +1639,7 @@ impl Expander<'_> {
                 defaults: std::collections::HashSet::new(),
             },
         );
-        self.trait_paths.insert(binding, path.clone());
+        self.tables.trait_paths.insert(binding, path.clone());
         core.items.push(Item {
             kind: ItemKind::RustTrait(RustTraitDeclaration {
                 binding,
@@ -1758,14 +1759,16 @@ impl Expander<'_> {
         let Some(symbol) = name.as_symbol() else {
             return;
         };
-        let mut visible = self
-            .table
-            .visible_bindings(symbol.scopes(), Namespace::Type, self.phase);
+        let mut visible =
+            self.tables
+                .table
+                .visible_bindings(symbol.scopes(), Namespace::Type, self.phase);
         visible.sort();
         let existing = visible.into_iter().find(|existing| {
             *existing != binding
                 && matches!(self.kind(*existing), BindingKind::Trait(_))
                 && self
+                    .tables
                     .trait_paths
                     .get(existing)
                     .is_some_and(|known| known.as_ref() == path)
@@ -1774,8 +1777,8 @@ impl Expander<'_> {
             return;
         };
         let span = name.span();
-        let name = self.bindings.get(binding).name().to_string();
-        let existing = self.bindings.get(existing).name().to_string();
+        let name = self.tables.bindings.get(binding).name().to_string();
+        let existing = self.tables.bindings.get(existing).name().to_string();
         self.warnings.push(ExpandProblems::second_trait_path(
             &name, &existing, path, span,
         ));
@@ -1825,7 +1828,7 @@ impl Expander<'_> {
         if !matches!(self.kind(trait_binding), BindingKind::Trait(_)) {
             return;
         }
-        let Some(trait_methods) = self.trait_methods.get(&trait_binding) else {
+        let Some(trait_methods) = self.tables.trait_methods.get(&trait_binding) else {
             return;
         };
         let methods: Vec<BindingId> = trait_methods
@@ -1834,7 +1837,7 @@ impl Expander<'_> {
             .map(|(binding, _)| *binding)
             .collect();
         for method in methods {
-            let name = self.bindings.get(method).name().to_string();
+            let name = self.tables.bindings.get(method).name().to_string();
             self.modules
                 .get_mut(module)
                 .export(name.into(), Namespace::Value, method);
@@ -1854,11 +1857,11 @@ impl Expander<'_> {
         if !matches!(self.kind(enum_binding), BindingKind::Enum(_)) {
             return;
         }
-        let Some(constructors) = self.enum_variants.get(&enum_binding).cloned() else {
+        let Some(constructors) = self.tables.enum_variants.get(&enum_binding).cloned() else {
             return;
         };
         for constructor in constructors {
-            let name = self.bindings.get(constructor).name().to_string();
+            let name = self.tables.bindings.get(constructor).name().to_string();
             self.modules
                 .get_mut(module)
                 .export(name.into(), Namespace::Value, constructor);

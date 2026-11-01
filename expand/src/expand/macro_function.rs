@@ -40,9 +40,13 @@ impl Expander<'_> {
     }
 
     fn resolves_to(&self, function: BindingId, reference: &Symbol) -> Option<BindingId> {
-        let name = self.bindings.get(function).name();
+        let name = self.tables.bindings.get(function).name();
         let candidate = Symbol::with_scopes(name, reference.scopes().clone());
-        match self.table.resolve(&candidate, Namespace::Value, self.phase) {
+        match self
+            .tables
+            .table
+            .resolve(&candidate, Namespace::Value, self.phase)
+        {
             Resolution::Bound(resolved) if resolved == function => Some(function),
             _ => None,
         }

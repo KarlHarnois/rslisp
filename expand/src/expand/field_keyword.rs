@@ -28,7 +28,7 @@ impl Expander<'_> {
     }
 
     pub(super) fn lower_field_reader(&mut self, field_name: &str, span: Span) -> ExprKind {
-        let parameter = self.bindings.add(BindingInfo::new(
+        let parameter = self.tables.bindings.add(BindingInfo::new(
             Self::FIELD_READER_PARAMETER.into(),
             BindingKind::Local,
             Some(span),

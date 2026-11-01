@@ -9,7 +9,7 @@ use crate::source::Span;
 
 impl CompileTimeHost for Expander<'_> {
     fn global_value(&mut self, binding: BindingId, span: Span) -> Result<Value, Diagnostic> {
-        let name = self.bindings.get(binding).name().to_string();
+        let name = self.tables.bindings.get(binding).name().to_string();
         match self.kind(binding) {
             BindingKind::CodeBuiltin(builtin) => Ok(Value::Builtin(builtin)),
             BindingKind::Global(_) => self.evaluate_global(binding, span),
@@ -48,13 +48,13 @@ impl CompileTimeHost for Expander<'_> {
         let module = self
             .current_module
             .expect("macro code runs while a module expands");
-        self.module_notes.add(module, key, note);
+        self.tables.module_notes.add(module, key, note);
     }
 
     fn module_notes(&self, context: &Symbol, key: &str) -> Vec<Form> {
         self.modules
             .with_body_scopes(context.scopes())
-            .map_or_else(Vec::new, |module| self.module_notes.of(module, key))
+            .map_or_else(Vec::new, |module| self.tables.module_notes.of(module, key))
     }
 
     fn same_binding(&self, left: &Symbol, right: &Symbol) -> bool {
@@ -62,8 +62,8 @@ impl CompileTimeHost for Expander<'_> {
             .into_iter()
             .map(|namespace| {
                 (
-                    self.table.resolve(left, namespace, Phase::Runtime),
-                    self.table.resolve(right, namespace, Phase::Runtime),
+                    self.tables.table.resolve(left, namespace, Phase::Runtime),
+                    self.tables.table.resolve(right, namespace, Phase::Runtime),
                 )
             })
             .collect();
@@ -101,7 +101,7 @@ impl Expander<'_> {
     }
 
     fn namespace_binding(&self, term: &Symbol, namespace: Namespace) -> Option<BindingId> {
-        match self.table.resolve(term, namespace, Phase::Runtime) {
+        match self.tables.table.resolve(term, namespace, Phase::Runtime) {
             Resolution::Bound(binding) => Some(binding),
             _ => None,
         }

@@ -59,25 +59,34 @@ impl Expander<'_> {
         binding: BindingId,
         span: Span,
     ) -> Result<Rc<Expr>, Diagnostic> {
-        match self.globals.states.insert(binding, GlobalState::Lowering) {
+        match self
+            .tables
+            .globals
+            .states
+            .insert(binding, GlobalState::Lowering)
+        {
             Some(GlobalState::Pending { value, budget }) => {
                 self.spending(budget, |expander| expander.lower_global(binding, &value))
             }
             Some(GlobalState::Lowered(expr)) => {
-                self.globals
+                self.tables
+                    .globals
                     .states
                     .insert(binding, GlobalState::Lowered(Rc::clone(&expr)));
                 Ok(expr)
             }
             Some(GlobalState::Failed) => {
-                self.globals.states.insert(binding, GlobalState::Failed);
+                self.tables
+                    .globals
+                    .states
+                    .insert(binding, GlobalState::Failed);
                 Err(ExpandProblems::broken_definition(
-                    self.bindings.get(binding).name(),
+                    self.tables.bindings.get(binding).name(),
                     span,
                 ))
             }
             Some(GlobalState::Lowering) | None => Err(ExpandProblems::compile_time_cycle(
-                self.bindings.get(binding).name(),
+                self.tables.bindings.get(binding).name(),
                 span,
             )),
         }
@@ -88,21 +97,21 @@ impl Expander<'_> {
         binding: BindingId,
         span: Span,
     ) -> Result<Value, Diagnostic> {
-        if let Some(value) = self.globals.values.get(&binding) {
+        if let Some(value) = self.tables.globals.values.get(&binding) {
             return Ok(value.clone());
         }
-        if !self.globals.evaluating.insert(binding) {
+        if !self.tables.globals.evaluating.insert(binding) {
             return Err(ExpandProblems::compile_time_cycle(
-                self.bindings.get(binding).name(),
+                self.tables.bindings.get(binding).name(),
                 span,
             ));
         }
         let result = self
             .lowered_global(binding, span)
             .and_then(|expr| Interpreter::new(self, span).eval(&expr, &Env::default()));
-        self.globals.evaluating.remove(&binding);
+        self.tables.globals.evaluating.remove(&binding);
         let value = result?;
-        self.globals.values.insert(binding, value.clone());
+        self.tables.globals.values.insert(binding, value.clone());
         Ok(value)
     }
 
@@ -114,19 +123,26 @@ impl Expander<'_> {
         match lowered {
             Ok(expr) => {
                 if self.recovered_diagnostics.len() > errors_before {
-                    self.globals.states.insert(binding, GlobalState::Failed);
+                    self.tables
+                        .globals
+                        .states
+                        .insert(binding, GlobalState::Failed);
                     return Err(self.recovered_diagnostics.remove(errors_before));
                 }
                 RecurCheck::outside().value(&expr)?;
                 TryCheck::outside().value(&expr)?;
                 let expr = Rc::new(expr);
-                self.globals
+                self.tables
+                    .globals
                     .states
                     .insert(binding, GlobalState::Lowered(Rc::clone(&expr)));
                 Ok(expr)
             }
             Err(diagnostic) => {
-                self.globals.states.insert(binding, GlobalState::Failed);
+                self.tables
+                    .globals
+                    .states
+                    .insert(binding, GlobalState::Failed);
                 Err(diagnostic)
             }
         }

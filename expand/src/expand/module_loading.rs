@@ -40,8 +40,8 @@ impl Expander<'_> {
     }
 
     pub(super) fn load_source_module(&mut self, path: ModulePath, source: SourceId) -> ModuleId {
-        let base_scope = self.scopes.fresh();
-        let module_scope = self.scopes.fresh();
+        let base_scope = self.tables.scopes.fresh();
+        let module_scope = self.tables.scopes.fresh();
         let id = self
             .modules
             .register(path.clone(), base_scope, module_scope);
@@ -127,7 +127,8 @@ impl Expander<'_> {
             .collect();
         for (name, namespace, binding) in exports {
             let symbol = Symbol::with_scopes(name, scopes.clone());
-            self.table
+            self.tables
+                .table
                 .bind(&symbol, namespace, binding, Phase::Runtime)
                 .expect("a module's exports have distinct names");
         }
@@ -214,7 +215,7 @@ impl Expander<'_> {
         trait_binding: BindingId,
         span: Span,
     ) -> Result<(), Diagnostic> {
-        let Some(trait_methods) = self.trait_methods.get(&trait_binding) else {
+        let Some(trait_methods) = self.tables.trait_methods.get(&trait_binding) else {
             return Ok(());
         };
         let methods: Vec<BindingId> = trait_methods
@@ -223,7 +224,7 @@ impl Expander<'_> {
             .map(|(binding, _)| *binding)
             .collect();
         for method in methods {
-            let name: Rc<str> = self.bindings.get(method).name().into();
+            let name: Rc<str> = self.tables.bindings.get(method).name().into();
             if self.modules.get(target).exported(&name, Namespace::Value) != Some(method) {
                 continue;
             }
@@ -251,12 +252,15 @@ impl Expander<'_> {
     }
 
     fn create_builtin(&mut self, path: &ModulePath, builtin: BuiltinModule) -> ModuleId {
-        let base_scope = self.scopes.fresh();
+        let base_scope = self.tables.scopes.fresh();
         let id = self
             .modules
-            .register(path.clone(), base_scope, self.scopes.fresh());
+            .register(path.clone(), base_scope, self.tables.scopes.fresh());
         for (name, namespace, kind) in Self::builtin_exports(builtin) {
-            let binding = self.bindings.add(BindingInfo::new(name.into(), kind, None));
+            let binding = self
+                .tables
+                .bindings
+                .add(BindingInfo::new(name.into(), kind, None));
             self.modules
                 .get_mut(id)
                 .export(name.into(), namespace, binding);

@@ -104,15 +104,15 @@ impl Expander<'_> {
         let origin = self.macro_origin(binding, call_site);
         self.record_introduced_names(&form, &origin);
         form.relocate_outside(call_site);
-        self.macro_origins.entry(call_site).or_insert(origin);
+        self.tables.macro_origins.entry(call_site).or_insert(origin);
         form
     }
 
     pub(super) fn discarded_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
-        let checkpoint = self.module_notes.checkpoint();
+        let checkpoint = self.tables.module_notes.checkpoint();
         let budget = self.form_budgets.current().clone();
         let expansion = self.trial_expansion(binding, form);
-        self.module_notes.roll_back(checkpoint);
+        self.tables.module_notes.roll_back(checkpoint);
         *self.form_budgets.current() = budget;
         expansion
     }
@@ -136,10 +136,10 @@ impl Expander<'_> {
         form: Form,
         context: Option<&mut DefinitionContext>,
     ) -> Result<Form, Diagnostic> {
-        let checkpoint = self.module_notes.checkpoint();
+        let checkpoint = self.tables.module_notes.checkpoint();
         let expansion = self.macro_expansion(binding, form, context);
         if expansion.is_err() {
-            self.module_notes.roll_back(checkpoint);
+            self.tables.module_notes.roll_back(checkpoint);
         }
         expansion
     }
@@ -206,12 +206,12 @@ impl Expander<'_> {
     }
 
     fn expansion_too_large(&self, binding: BindingId, call_site: Span) -> Diagnostic {
-        let name = self.bindings.get(binding).name();
+        let name = self.tables.bindings.get(binding).name();
         ExpandProblems::expansion_too_large(name, FormBudget::EXPANSION_LIMIT, call_site)
     }
 
     fn macro_origin(&self, binding: BindingId, call_site: Span) -> MacroOrigin {
-        let info = self.bindings.get(binding);
+        let info = self.tables.bindings.get(binding);
         MacroOrigin {
             name: Rc::from(info.name()),
             defined: info.span().unwrap_or(call_site),
@@ -224,12 +224,12 @@ impl Expander<'_> {
         mut form: Form,
         context: Option<&mut DefinitionContext>,
     ) -> (Form, Scope) {
-        let introduction = self.scopes.fresh();
-        self.introduction_scopes.insert(introduction);
+        let introduction = self.tables.scopes.fresh();
+        self.tables.introduction_scopes.insert(introduction);
         form.flip_scope(introduction);
         if let Some(context) = context {
-            let use_site = self.scopes.fresh();
-            self.use_site_scopes.insert(use_site);
+            let use_site = self.tables.scopes.fresh();
+            self.tables.use_site_scopes.insert(use_site);
             form.add_scope(use_site);
             context.record_use_site(use_site);
         }
@@ -237,14 +237,16 @@ impl Expander<'_> {
     }
 
     pub(super) fn macro_origin_at(&self, span: Span) -> Option<&MacroOrigin> {
-        self.macro_origins
+        self.tables
+            .macro_origins
             .values()
             .filter(|origin| origin.call_site.contains(span))
             .min_by_key(|origin| origin.call_site.range().len())
     }
 
     pub(super) fn introduced_name(&self, call_site: Span, name: &str) -> Option<Span> {
-        self.introduced_names
+        self.tables
+            .introduced_names
             .get(&(call_site, name.to_string()))
             .copied()
     }
@@ -253,7 +255,8 @@ impl Expander<'_> {
         if let Some(symbol) = form.as_symbol()
             && !origin.call_site.contains(form.span())
         {
-            self.introduced_names
+            self.tables
+                .introduced_names
                 .entry((origin.call_site, symbol.name().to_string()))
                 .or_insert(form.span());
         }
@@ -273,10 +276,11 @@ impl Expander<'_> {
     }
 
     fn macro_closure(&mut self, binding: BindingId, span: Span) -> Result<Rc<Closure>, Diagnostic> {
-        let name = self.bindings.get(binding).name().to_string();
-        match self.macros.states.remove(&binding) {
+        let name = self.tables.bindings.get(binding).name().to_string();
+        match self.tables.macros.states.remove(&binding) {
             Some(MacroState::Ready(closure)) => {
-                self.macros
+                self.tables
+                    .macros
                     .states
                     .insert(binding, MacroState::Ready(Rc::clone(&closure)));
                 Ok(closure)
@@ -285,7 +289,10 @@ impl Expander<'_> {
                 self.within_top_level_form(|expander| expander.compile_macro(binding, &definition))
             }
             Some(MacroState::Failed) => {
-                self.macros.states.insert(binding, MacroState::Failed);
+                self.tables
+                    .macros
+                    .states
+                    .insert(binding, MacroState::Failed);
                 Err(ExpandProblems::broken_macro(&name, span))
             }
             None => Err(ExpandProblems::compile_time_cycle(&name, span)),
@@ -293,7 +300,7 @@ impl Expander<'_> {
     }
 
     pub(super) fn compile_pending_macros(&mut self) {
-        for (binding, definition) in self.macros.pending() {
+        for (binding, definition) in self.tables.macros.pending() {
             let compiled =
                 self.within_top_level_form(|expander| expander.compile_macro(binding, &definition));
             if let Err(diagnostic) = compiled {
@@ -318,7 +325,7 @@ impl Expander<'_> {
             Ok(closure) => MacroState::Ready(Rc::clone(closure)),
             Err(_) => MacroState::Failed,
         };
-        self.macros.states.insert(binding, state);
+        self.tables.macros.states.insert(binding, state);
         compiled
     }
 

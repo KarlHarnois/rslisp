@@ -15,13 +15,13 @@ impl Expander<'_> {
         namespace: Namespace,
         span: Span,
     ) -> Result<BindingId, Diagnostic> {
-        match self.table.resolve(symbol, namespace, self.phase) {
+        match self.tables.table.resolve(symbol, namespace, self.phase) {
             Resolution::Bound(binding) => Ok(binding),
             Resolution::Unbound => Err(self.unbound(symbol, namespace, span)),
             Resolution::Ambiguous(bindings) => {
                 let definitions = bindings
                     .iter()
-                    .filter_map(|binding| self.bindings.get(*binding).span())
+                    .filter_map(|binding| self.tables.bindings.get(*binding).span())
                     .collect();
                 Err(ExpandProblems::ambiguous(symbol.name(), span, definitions))
             }
@@ -29,14 +29,14 @@ impl Expander<'_> {
     }
 
     pub(super) fn try_resolve(&self, symbol: &Symbol, namespace: Namespace) -> Option<BindingId> {
-        match self.table.resolve(symbol, namespace, self.phase) {
+        match self.tables.table.resolve(symbol, namespace, self.phase) {
             Resolution::Bound(binding) => Some(binding),
             Resolution::Unbound | Resolution::Ambiguous(_) => None,
         }
     }
 
     pub(super) fn kind(&self, binding: BindingId) -> BindingKind {
-        self.bindings.get(binding).kind()
+        self.tables.bindings.get(binding).kind()
     }
 
     pub(super) fn define_local(
@@ -68,10 +68,15 @@ impl Expander<'_> {
         binding: BindingId,
         span: Span,
     ) -> Result<(), Diagnostic> {
-        self.table
+        self.tables
+            .table
             .bind(symbol, namespace, binding, Phase::Runtime)
             .map_err(|existing| {
-                ExpandProblems::duplicate(symbol.name(), span, self.bindings.get(existing).span())
+                ExpandProblems::duplicate(
+                    symbol.name(),
+                    span,
+                    self.tables.bindings.get(existing).span(),
+                )
             })
     }
 
@@ -93,17 +98,23 @@ impl Expander<'_> {
             .ok_or_else(|| ExpandProblems::wrong_namespace(&binder.to_string(), "a name", span))?;
         Self::reject_keyword_binder(symbol.name(), span)?;
         let info = BindingInfo::new(symbol.shared_name(), kind, Some(span));
-        let binding = self.bindings.add(info);
-        self.table
+        let binding = self.tables.bindings.add(info);
+        self.tables
+            .table
             .bind(symbol, namespace, binding, phase)
             .map_err(|existing| {
-                ExpandProblems::duplicate(symbol.name(), span, self.bindings.get(existing).span())
+                ExpandProblems::duplicate(
+                    symbol.name(),
+                    span,
+                    self.tables.bindings.get(existing).span(),
+                )
             })?;
         Ok(binding)
     }
 
     pub(super) fn unbound(&self, symbol: &Symbol, namespace: Namespace, span: Span) -> Diagnostic {
         let candidates: Vec<_> = self
+            .tables
             .table
             .visible_name_bindings(symbol, namespace, self.phase)
             .into_iter()
@@ -114,7 +125,7 @@ impl Expander<'_> {
         let definition = self.introduced_name(span, symbol.name());
         let primary = definition.unwrap_or(span);
         let diagnostic = ExpandProblems::unbound(symbol.name(), namespace, primary, similar);
-        match (definition, self.macro_origins.get(&span)) {
+        match (definition, self.tables.macro_origins.get(&span)) {
             (Some(_), Some(origin)) => diagnostic
                 .with_note(format!("in this expansion of `{}`", origin.name))
                 .with_label(Label::new(span, "in this macro call")),
