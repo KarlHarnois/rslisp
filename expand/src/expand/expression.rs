@@ -16,7 +16,7 @@ use crate::core::{
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
-use crate::scope::Phase;
+use crate::scope::{Phase, Scope};
 use crate::source::Span;
 use crate::stack::DeepRecursion;
 
@@ -220,14 +220,20 @@ impl Expander<'_> {
     }
 
     fn recover(&mut self, diagnostic: Diagnostic, span: Span) -> Result<Expr, Diagnostic> {
+        self.keep_recovered(diagnostic)?;
+        Ok(Self::placeholder(span))
+    }
+
+    pub(super) fn keep_recovered(&mut self, diagnostic: Diagnostic) -> Result<(), Diagnostic> {
         if self.phase == Phase::CompileTime {
             return Err(diagnostic);
         }
         self.recovered_diagnostics.push(diagnostic);
-        Ok(Expr::new(
-            ExprKind::Leaf(Leaf::Literal(Literal::Bool(false))),
-            span,
-        ))
+        Ok(())
+    }
+
+    pub(super) fn placeholder(span: Span) -> Expr {
+        Expr::new(ExprKind::Leaf(Leaf::Literal(Literal::Bool(false))), span)
     }
 
     fn lower_kernel(&mut self, kernel: KernelForm, form: &Form) -> Result<Expr, Diagnostic> {
@@ -371,7 +377,12 @@ impl Expander<'_> {
         let span = form.span();
         match self.expand_body_head(form, context) {
             Ok(form) if self.is_kernel_form(&form, KernelForm::Let) => {
-                self.lower_let_or_recover(&form, rest_of_body, context, span)
+                let item = self.lower_let(&form, rest_of_body, context);
+                self.recover_body_item(item, span)
+            }
+            Ok(form) if self.is_kernel_form(&form, Self::DEF_FORM) => {
+                let item = self.lower_misplaced_def(&form, rest_of_body, context);
+                self.recover_body_item(item, span)
             }
             Ok(form) => Ok(BodyItem::Expr(self.lower_recovered(&form)?)),
             Err(diagnostic) => Ok(BodyItem::Expr(self.recover(diagnostic, span)?)),
@@ -390,14 +401,12 @@ impl Expander<'_> {
             .map(Cow::Owned)
     }
 
-    fn lower_let_or_recover(
+    fn recover_body_item(
         &mut self,
-        form: &Form,
-        rest_of_body: &mut RestOfBody,
-        context: &DefinitionContext,
+        item: Result<BodyItem, Diagnostic>,
         span: Span,
     ) -> Result<BodyItem, Diagnostic> {
-        match self.lower_let(form, rest_of_body, context) {
+        match item {
             Ok(item) => Ok(item),
             Err(diagnostic) => Ok(BodyItem::Expr(self.recover(diagnostic, span)?)),
         }
@@ -412,16 +421,20 @@ impl Expander<'_> {
         let items = Shape::new(KernelForm::Let, form).exactly(3)?;
         let value = self.lower_recovered(&items[2])?;
         let scope = self.fresh_local_scope();
-        let mut binder = items[1].clone();
-        binder.add_scope(scope);
         rest_of_body.add_scope(scope);
         Ok(BodyItem::Let(
-            self.lower_binder(&binder, Some(context))?,
+            self.lower_binder(&Self::scoped(&items[1], scope), Some(context))?,
             value,
         ))
     }
 
-    fn lower_binder(
+    pub(super) fn scoped(form: &Form, scope: Scope) -> Form {
+        let mut scoped = form.clone();
+        scoped.add_scope(scope);
+        scoped
+    }
+
+    pub(super) fn lower_binder(
         &mut self,
         form: &Form,
         context: Option<&DefinitionContext>,

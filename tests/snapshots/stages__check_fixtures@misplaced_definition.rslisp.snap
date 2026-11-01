@@ -1,0 +1,100 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/misplaced_definition.rslisp
+---
+error[L0208]: `def` can only appear at module level
+ --> check/misplaced_definition.rslisp:2:3
+  |
+2 |   (defn double (x) (* x 2))
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^ not allowed inside an expression
+  |
+  = help: use `let` to bind a name inside a body
+
+error[L0208]: `def` can only appear at module level
+ --> check/misplaced_definition.rslisp:6:3
+  |
+6 |   (defn triple (x) (* x 3))
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^ not allowed inside an expression
+  |
+  = help: use `let` to bind a name inside a body
+
+error[L0208]: `def` can only appear at module level
+  --> check/misplaced_definition.rslisp:10:3
+   |
+10 |   (def limit 10)
+   |   ^^^^^^^^^^^^^^ not allowed inside an expression
+   |
+   = help: use `let` to bind a name inside a body
+
+error[L0208]: `def` can only appear at module level
+  --> check/misplaced_definition.rslisp:14:3
+   |
+14 |   (defn countdown (n) (if (= n 0) 0 (countdown (- n 1))))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not allowed inside an expression
+   |
+   = help: use `let` to bind a name inside a body
+
+error[L0201]: cannot find `halve` in this scope
+  --> check/misplaced_definition.rslisp:18:13
+   |
+18 |   (println (halve 4))
+   |             ^^^^^ not found in this scope
+
+error[L0208]: `def` can only appear at module level
+  --> check/misplaced_definition.rslisp:19:3
+   |
+19 |   (defn halve (x) (/ x 2)))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^ not allowed inside an expression
+   |
+   = help: use `let` to bind a name inside a body
+
+error[L0201]: cannot find `shift` in this scope
+  --> check/misplaced_definition.rslisp:22:12
+   |
+22 |   (println shift)
+   |            ^^^^^ not found in this scope
+
+error[L0208]: `def` can only appear at module level
+  --> check/misplaced_definition.rslisp:34:3
+   |
+34 |   (def incomplete)
+   |   ^^^^^^^^^^^^^^^^ not allowed inside an expression
+   |
+   = help: use `let` to bind a name inside a body
+
+error[L0201]: cannot find `incomplete` in this scope
+  --> check/misplaced_definition.rslisp:35:4
+   |
+35 |   (incomplete))
+   |    ^^^^^^^^^^ not found in this scope
+
+error[L0208]: `def` can only appear at module level
+  --> check/misplaced_definition.rslisp:38:3
+   |
+38 |   (def shout (macro (form) form))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not allowed inside an expression
+   |
+   = help: use `let` to bind a name inside a body
+
+error[L0208]: `def` can only appear at module level
+  --> check/misplaced_definition.rslisp:42:3
+   |
+42 |   (defn wrong () (missing 1))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^ not allowed inside an expression
+   |
+   = help: use `let` to bind a name inside a body
+
+error[L0201]: cannot find `missing` in this scope
+  --> check/misplaced_definition.rslisp:42:19
+   |
+42 |   (defn wrong () (missing 1))
+   |                   ^^^^^^^ not found in this scope
+
+error[L0208]: `def` can only appear at module level
+  --> check/misplaced_definition.rslisp:47:5
+   |
+47 |     (def inner 1)
+   |     ^^^^^^^^^^^^^ not allowed inside an expression
+   |
+   = help: use `let` to bind a name inside a body
