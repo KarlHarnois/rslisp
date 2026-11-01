@@ -1,0 +1,18 @@
+(def fallback-years (vec 2019 2021))
+
+(defn first-of (maybe)
+  (match maybe
+    ((some items) (at items 0))
+    (none (at (vec 0) 0))))
+
+(defn first-fallback ()
+  (at fallback-years 0))
+
+(defn built-years ()
+  (ref (vec 2019 2021)))
+
+(defn main ()
+  (let years (some (vec 2019 2021 2024)))
+  (println (first-of years))
+  (println (first-fallback))
+  (println (len (built-years))))
