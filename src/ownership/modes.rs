@@ -117,8 +117,19 @@ mod tests {
             (defn leaf-range ((kilowatt-hours f64)) (* kilowatt-hours 6.5))
             (defn ariya-range ((kilowatt-hours f64)) (* kilowatt-hours 5.8))
             (defn sakura-range ((kilowatt-hours f64)) (* kilowatt-hours 6.9))
+            (defn kona-range ((kilowatt-hours f64)) (* kilowatt-hours 6.2))
+            (defn niro-range ((kilowatt-hours f64)) (* kilowatt-hours 5.9))
+            (defn bolt-range ((kilowatt-hours f64)) (* kilowatt-hours 6.1))
+            (defn zoe-range ((kilowatt-hours f64)) (* kilowatt-hours 7.1))
+            (defn ioniq-range ((kilowatt-hours f64)) (* kilowatt-hours 6.4))
+            (defn polestar-range ((kilowatt-hours f64)) (* kilowatt-hours 5.2))
+            (defn taycan-range ((kilowatt-hours f64)) (* kilowatt-hours 4.8))
+            (defn enyaq-range ((kilowatt-hours f64)) (* kilowatt-hours 5.5))
             (defn main ()
-              (println (leaf-range 40.0) (ariya-range 63.0) (sakura-range 20.0)))";
+              (println (leaf-range 40.0) (ariya-range 63.0) (sakura-range 20.0))
+              (println (kona-range 64.0) (niro-range 64.8) (bolt-range 65.0))
+              (println (zoe-range 52.0) (ioniq-range 77.4) (polestar-range 78.0))
+              (println (taycan-range 93.4) (enyaq-range 82.0)))";
 
         fn new() -> Self {
             let program = TypedSource::expand(Self::RANGES).typed();
