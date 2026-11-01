@@ -67,11 +67,12 @@ impl<'p> ReturnedBorrows<'p> {
         let tail = LocalBorrows::tail_of(&lambda.body)?;
         let borrows = LocalBorrows::new(lambda, owner);
         let found = borrows.returned(tail)?;
-        let dropped = borrows.dropped(&found);
         let storage = found.holders.iter().find_map(|holder| self.storage(holder));
         Some(match storage {
-            Some(storage) => OwnershipProblems::stored_local_borrow(found.span, &dropped, &storage),
-            None => OwnershipProblems::local_borrow(found.span, &dropped),
+            Some(storage) => {
+                OwnershipProblems::stored_local_borrow(found.span, &found.dropped, &storage)
+            }
+            None => OwnershipProblems::local_borrow(found.span, &found.dropped),
         })
     }
 
@@ -188,15 +189,15 @@ impl BorrowingClosures<'_> {
 
 struct LocalBorrow<'e> {
     span: Span,
-    binding: BindingId,
+    dropped: DroppedValue,
     holders: Vec<BorrowHolder<'e>>,
 }
 
 impl<'e> LocalBorrow<'e> {
-    fn new(span: Span, binding: BindingId) -> Self {
+    fn new(span: Span, dropped: DroppedValue) -> Self {
         Self {
             span,
-            binding,
+            dropped,
             holders: Vec::new(),
         }
     }
@@ -256,8 +257,8 @@ impl<'e> LocalBorrows<'e> {
     fn returned(&self, expr: &'e TypedExpr) -> Option<LocalBorrow<'e>> {
         match &expr.kind {
             TypedExprKind::Borrow(_, inner) => self
-                .local_root(inner)
-                .map(|binding| LocalBorrow::new(expr.span, binding)),
+                .dropped_root(inner)
+                .map(|dropped| LocalBorrow::new(expr.span, dropped)),
             TypedExprKind::Call(callee, arguments) if expr.ty.holds_reference() => {
                 self.borrowing_call(expr.span, callee, arguments)
             }
@@ -280,23 +281,24 @@ impl<'e> LocalBorrows<'e> {
             return None;
         };
         let result_lifetimes = WrittenLifetimes::of(result);
-        let locals: Vec<BindingId> = arguments
+        let dropped: Vec<DroppedValue> = arguments
             .iter()
             .zip(parameters)
             .filter(|(_, parameter)| result_lifetimes.reached_by(parameter))
             .map(|(argument, _)| self.borrowed_by(argument))
             .collect::<Option<_>>()?;
-        locals
-            .first()
-            .map(|binding| LocalBorrow::new(span, *binding))
+        dropped
+            .into_iter()
+            .next()
+            .map(|dropped| LocalBorrow::new(span, dropped))
     }
 
-    fn borrowed_by(&self, argument: &'e TypedArgument) -> Option<BindingId> {
+    fn borrowed_by(&self, argument: &'e TypedArgument) -> Option<DroppedValue> {
         match argument.borrow {
             Borrow::Shared | Borrow::Mutable if !argument.value.ty.holds_reference() => {
-                self.local_root(&argument.value)
+                self.dropped_root(&argument.value)
             }
-            _ => self.returned(&argument.value).map(|found| found.binding),
+            _ => self.returned(&argument.value).map(|found| found.dropped),
         }
     }
 
@@ -335,15 +337,17 @@ impl<'e> LocalBorrows<'e> {
         }
     }
 
-    fn local_root(&self, place: &TypedExpr) -> Option<BindingId> {
-        let binding = place.place_root()?;
-        self.owns(binding).then_some(binding)
+    fn dropped_root(&self, place: &TypedExpr) -> Option<DroppedValue> {
+        self.dropped_value(place.place_root()?)
     }
 
-    fn owns(&self, binding: BindingId) -> bool {
+    fn dropped_value(&self, binding: BindingId) -> Option<DroppedValue> {
         match self.parameter(binding) {
-            Some(parameter) => !parameter.ty.is_reference(),
-            None => self.body_binder(binding).is_some(),
+            Some(parameter) if parameter.ty.is_reference() => None,
+            Some(parameter) => Some(self.owner.dropped_parameter(parameter.span)),
+            None => self
+                .body_binder(binding)
+                .map(|binder| DroppedValue::Local(binder.span)),
         }
     }
 
@@ -375,16 +379,6 @@ impl<'e> LocalBorrows<'e> {
                     .into_iter()
                     .find_map(|child| Self::binder_inside(child, binding))
             })
-    }
-
-    fn dropped(&self, found: &LocalBorrow) -> DroppedValue {
-        match self.parameter(found.binding) {
-            Some(parameter) => self.owner.dropped_parameter(parameter.span),
-            None => DroppedValue::Local(
-                self.body_binder(found.binding)
-                    .map_or(found.span, |binder| binder.span),
-            ),
-        }
     }
 
     fn tail_of(block: &TypedBlock) -> Option<&TypedExpr> {
