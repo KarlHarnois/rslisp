@@ -48,6 +48,23 @@ fn count_down(mut n: i64) -> i64 {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Crate {
+    weight: i64,
+}
+
+fn is_any_big(mut values: impl Iterator<Item = i64>) -> bool {
+    values
+        .find(|value: &i64| *first_of(value, 3000000000_i64) > 1)
+        .is_some()
+}
+
+fn total_weight(crates: Vec<Box<dyn Weighed>>) -> i64 {
+    crates
+        .iter()
+        .fold(0, |total, item| total + item.weight_of())
+}
+
 fn main() {
     crate::rt::restore_default_sigpipe();
     let is_several = std::env::args().skip(1).collect::<Vec<String>>().len() > 5;
@@ -73,6 +90,37 @@ fn main() {
     println!("{}", count_down(3));
     let add_one = |n: i64| n + 1;
     println!("{}", add_one(3000000000));
+    println!("{}", add_one(first_of(1, 3000000000_i64)));
+    println!(
+        "{}",
+        (|text: &str| -> Result<i64, std::num::ParseIntError> {
+            let code: i64 = first_of(text.parse::<i64>(), 3000000000_i64)?;
+            Ok(code)
+        })("7")
+        .unwrap()
+    );
+    println!("{}", is_any_big(1_i64..3_i64));
+    println!(
+        "{}",
+        total_weight(vec![
+            Box::new(first_of(Crate { weight: 4 }, 3000000000_i64)) as Box<dyn Weighed>
+        ])
+    );
+    println!("{:?}", {
+        let mut value = first_of(vec![7_i64, 8_i64], 3000000000_i64);
+        value[0] = 6;
+        value
+    });
+    println!("{:?}", {
+        let mut value = vec![7_i64, 8_i64];
+        value[first_of(0, 3000000000_i64)] = 6;
+        value
+    });
+    println!("{:?}", {
+        let mut value = vec![7_i64, 8_i64];
+        value[0] = first_of(6, 3000000000_i64);
+        value
+    });
     println!("{:?}", twice("Leaf"));
     println!("{:?}", both("Leaf", 2.5));
     println!("{}", larger(2.5, 1.5));
@@ -80,6 +128,16 @@ fn main() {
     println!("{}", square(2.5));
     println!("{}", apply_to("Leaf", |model: &str| model.len()));
     println!("{}", first_of("Leaf", 2.5))
+}
+
+trait Weighed {
+    fn weight_of(&self) -> i64;
+}
+
+impl Weighed for Crate {
+    fn weight_of(&self) -> i64 {
+        self.weight
+    }
 }
 
 mod rt {

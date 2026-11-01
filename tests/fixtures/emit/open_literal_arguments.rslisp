@@ -14,6 +14,20 @@
       n
       (recur (first-of (- n 1) 3000000000))))
 
+(trait weighed
+  (weight-of (fn ((ref self)) i64)))
+
+(struct crate (weight i64))
+(impl weighed crate
+  (weight-of (c) (field c weight)))
+
+(defn any-big? (values)
+  (some? (find values (fn (value) (> (deref (first-of value 3000000000)) 1)))))
+
+(type total-weight (fn ((vec (box weighed))) i64))
+(defn total-weight (crates)
+  (fold crates 0 (fn (total item) (+ total (weight-of item)))))
+
 (defn main ()
   (let several? (> (len (command-line-args)) 5))
   (let odometer (the i64 2024))
@@ -35,6 +49,16 @@
   (println (count-down 3))
   (let add-one (fn (n) (+ n 1)))
   (println (add-one 3000000000))
+  (println (add-one (first-of 1 3000000000)))
+  (println (unwrap-ok ((fn ((text (ref str)))
+                         (let (code i64) (try (first-of (parse text) 3000000000)))
+                         (ok code))
+                       "7")))
+  (println (any-big? (range 1 3)))
+  (println (total-weight (vec (box-new (first-of (new crate (weight 4)) 3000000000)))))
+  (prn (assoc-at (first-of (vec 7 8) 3000000000) (0) 6))
+  (prn (assoc-at (vec 7 8) ((first-of 0 3000000000)) 6))
+  (prn (assoc-at (vec 7 8) (0) (first-of 6 3000000000)))
   (prn (twice "Leaf"))
   (prn (both "Leaf" 2.5))
   (println (larger 2.5 1.5))
