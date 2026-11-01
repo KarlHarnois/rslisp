@@ -1,0 +1,41 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/compare_open_str_items.rslisp
+---
+fn leaves(models: &[&str]) -> usize {
+    models.iter().filter(|m: &&&str| **m == "Leaf").count()
+}
+
+fn leaf_models(models: &[&str]) -> usize {
+    models.iter().filter(|m: &&&str| **m == "Leaf").count()
+}
+
+fn first_leaf<'a>(models: &'a [&'a str]) -> Option<&'a &'a str> {
+    models.iter().find(|m: &&&str| **m == "Leaf")
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let models = vec!["Leaf", "Ariya"];
+    println!("{}", leaves(&models));
+    println!("{}", leaf_models(&models));
+    println!("{:?}", first_leaf(&models))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
