@@ -981,12 +981,34 @@ impl TypeChecker {
             };
         }
         if let Some(pinned) = self.pinned.get(&member.binding).cloned() {
-            self.component.insert(member.binding, pinned);
+            let reopened = self.reopen_borrowed_copy_parameters(pinned);
+            self.component.insert(member.binding, reopened);
             return None;
         }
         let shape = self.unwritten_shape(member.value);
         self.component.insert(member.binding, shape);
         None
+    }
+
+    fn reopen_borrowed_copy_parameters(&mut self, pinned: Type) -> Type {
+        let Type::Function(kind, parameters, result) = pinned else {
+            return pinned;
+        };
+        let parameters = parameters
+            .into_iter()
+            .map(|parameter| {
+                if self.borrows_copy_value(&parameter) {
+                    self.unifier.fresh()
+                } else {
+                    parameter
+                }
+            })
+            .collect();
+        Type::Function(kind, parameters, result)
+    }
+
+    fn borrows_copy_value(&self, parameter: &Type) -> bool {
+        matches!(parameter, Type::Ref(_, referent) if self.copy_rules().is_small_copy(referent))
     }
 
     fn unwritten_shape(&mut self, value: &Expr) -> Type {

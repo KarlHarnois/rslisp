@@ -1,0 +1,54 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/copy_parameters_beside_items.rslisp
+---
+fn recent(years: &[i64], floor: i64) -> usize {
+    years.iter().filter(|y: &&i64| **y > floor).count()
+}
+
+fn is_after(years: &[i64], floor: i64) -> bool {
+    years.iter().any(|y: &i64| *y > floor)
+}
+
+fn typed_recent(years: &[i64], floor: i64) -> usize {
+    years.iter().filter(|y: &&i64| **y > floor).count()
+}
+
+fn written_recent(years: &[i64], floor: &i64) -> usize {
+    years.iter().filter(|y: &&i64| **y > *floor).count()
+}
+
+fn named(names: &[String], wanted: &String) -> usize {
+    names.iter().filter(|n: &&String| **n == *wanted).count()
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let years: Vec<i64> = vec![2019_i64, 2021_i64, 2024_i64];
+    println!("{}", recent(&years, 2020));
+    println!("{}", is_after(&years, 2020));
+    println!("{}", typed_recent(&years, 2020));
+    println!("{}", written_recent(&years, &2020_i64));
+    let names = vec!["Leaf".to_string(), "Ariya".to_string()];
+    let wanted = "Leaf".to_string();
+    println!("{}", named(&names, &wanted));
+    println!("{}", wanted)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

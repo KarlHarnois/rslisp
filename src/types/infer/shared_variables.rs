@@ -268,17 +268,18 @@ impl TypeChecker {
             .iter()
             .map(|position| self.unifier.resolve(&arguments[*position].value.ty))
             .collect();
-        if resolved
-            .iter()
-            .any(|argument| self.referent_unknown(argument))
-        {
-            return self.pass_each(callee, group, arguments);
-        }
-        let referent = self.unify_referents(&positions, &resolved, arguments)?;
         let depths: Vec<usize> = positions
             .iter()
             .map(|position| self.reference_depth_as_written(&arguments[*position]))
             .collect();
+        if resolved
+            .iter()
+            .any(|argument| self.referent_unknown(argument))
+            && !self.copies_known_referent(&resolved, &depths, borrowed_by_rust)
+        {
+            return self.pass_each(callee, group, arguments);
+        }
+        let referent = self.unify_referents(&positions, &resolved, arguments)?;
         let target = self.target_depth(group, &referent, &depths, borrowed_by_rust);
         let span = arguments[positions[0]].value.span;
         let chosen = Self::with_references(referent, target);
@@ -294,6 +295,19 @@ impl TypeChecker {
             arguments[*position].borrow = Self::borrow_for_depth(depth, target);
         }
         Ok(())
+    }
+
+    fn copies_known_referent(
+        &self,
+        resolved: &[Type],
+        depths: &[usize],
+        borrowed_by_rust: bool,
+    ) -> bool {
+        borrowed_by_rust
+            && depths.windows(2).any(|pair| pair[0] != pair[1])
+            && resolved
+                .iter()
+                .any(|argument| self.holds_copy_value(Self::innermost_referent(argument)))
     }
 
     fn pass_each(
