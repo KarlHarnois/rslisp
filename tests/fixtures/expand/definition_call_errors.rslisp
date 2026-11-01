@@ -1,0 +1,19 @@
+(use code definition-call)
+
+(def call-of-nothing
+  (macro (form)
+    (definition-call)))
+
+(def missing (call-of-nothing))
+
+(def call-of-text
+  (macro (form)
+    (definition-call "twice")))
+
+(def text (call-of-text))
+
+(def call-of-unbound
+  (macro (form)
+    (definition-call (quote no-such-term))))
+
+(def unbound (call-of-unbound))

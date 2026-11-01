@@ -1,6 +1,7 @@
 mod budget_arena;
 mod compile_time_check;
 mod context;
+mod defining_call;
 mod distinct_diagnostics;
 mod expression;
 mod field_keyword;

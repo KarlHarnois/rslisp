@@ -117,6 +117,13 @@ impl<'a> TextOperations<'a> {
         Ok(self.symbol_value(symbol))
     }
 
+    pub fn definition_call(&self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(1)?;
+        let term = self.arguments.form(0)?;
+        let call = host.definition_call(self.arguments.symbol(0)?, term.span())?;
+        Ok(Forms::list(call.into_iter().collect(), self.call_site))
+    }
+
     fn expect_symbol_arguments(&self) -> Result<(), Diagnostic> {
         let count = self.arguments.values().len();
         self.arguments
