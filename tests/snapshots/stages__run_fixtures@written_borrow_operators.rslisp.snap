@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/written_borrow_operators.rslisp
+---
+true
+false
+true
+true
+true
+false
