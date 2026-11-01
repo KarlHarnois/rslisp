@@ -5,7 +5,7 @@ use super::terminal::Terminal;
 use crate::core::{Expr, ExprKind, Leaf, Literal};
 use crate::language::Language;
 use crate::reader::{Form, FormKind, Symbol};
-use crate::source::SourceId;
+use crate::source::{SourceId, Span};
 
 pub struct DocCommand {
     environment: DocEnvironment,
@@ -47,17 +47,19 @@ impl<'t> DocLookup<'t> {
         environment: &DocEnvironment,
         term: &str,
     ) -> Result<String, ExitStatus> {
-        let lookup = Self::lookup_call(self.read_term(term)?);
+        let read = Self::read_term(term)?;
         let entry = environment.load(self.terminal)?;
-        let expanded = self
-            .terminal
-            .expand_expression(&environment.entry(), entry, lookup)?;
+        let expanded = self.terminal.expand_expression(
+            &environment.entry(),
+            entry,
+            (Self::TERM_SOURCE, term),
+            |source| Self::lookup_call(&read, source),
+        )?;
         Self::page(&expanded)
     }
 
-    fn read_term(&mut self, term: &str) -> Result<Form, ExitStatus> {
-        let forms = self
-            .terminal
+    fn read_term(term: &str) -> Result<Form, ExitStatus> {
+        let forms = Terminal::new()
             .read_text(Self::TERM_SOURCE, term)
             .map_err(|_| ExitStatus::UsageError)?;
         match forms.as_slice() {
@@ -69,10 +71,11 @@ impl<'t> DocLookup<'t> {
         }
     }
 
-    fn lookup_call(term: Form) -> Form {
-        let span = term.span();
+    fn lookup_call(term: &Form, source: SourceId) -> Form {
+        let span = Span::new(source, term.span().range());
         let head = Form::new(FormKind::Symbol(Symbol::new(DocCommand::NAME)), span);
-        Form::new(FormKind::List(vec![head, term]), span)
+        let name = Form::new(term.kind().clone(), span);
+        Form::new(FormKind::List(vec![head, name]), span)
     }
 
     fn page(expanded: &Expr) -> Result<String, ExitStatus> {

@@ -24,6 +24,10 @@ impl<'s> Expander<'s> {
 }
 
 impl ExpansionSession<'_> {
+    pub fn add_source(&mut self, name: &str, text: &str) -> SourceId {
+        self.expander.sources.add(name, text)
+    }
+
     pub fn expression(&mut self, form: Form) -> Result<Expr, Diagnostics> {
         let scoped = self.in_entry_scope(form);
         let lowered = self.lower_in_entry(&scoped);
