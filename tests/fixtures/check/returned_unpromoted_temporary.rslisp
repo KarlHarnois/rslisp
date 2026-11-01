@@ -50,6 +50,16 @@
 (defn settled-pick (c)
   (ref (if c (do (println "Leaf") (let year 2019)) (do (println "Ariya") (let year 2021)))))
 
+(def by-nothing (rust "{0} / 0" (fn (i64) i64)))
+
+(def flip (rust "{0} / -1" (fn (i64) i64)))
+
+(defn nothing ()
+  (ref (by-nothing 7)))
+
+(defn flipped-total ()
+  (ref (flip (+ 3 4))))
+
 (defn main ()
   (let spot (->point 1 2))
   (let years (vec 2021))
@@ -67,4 +77,6 @@
   (prn (pick spot spot true))
   (prn (either years))
   (prn (either-arm years))
-  (settled-pick true))
+  (settled-pick true)
+  (prn (nothing))
+  (prn (flipped-total)))
