@@ -12,20 +12,8 @@ where
 
 fn main() {
     crate::rt::restore_default_sigpipe();
-    println!(
-        "{}",
-        count_to({
-            let result: i64 = 4;
-            result
-        })
-    );
-    println!(
-        "{}",
-        count_to({
-            let result: u8 = 3;
-            result
-        })
-    )
+    println!("{}", count_to(4_i64));
+    println!("{}", count_to(3_u8))
 }
 
 mod rt {

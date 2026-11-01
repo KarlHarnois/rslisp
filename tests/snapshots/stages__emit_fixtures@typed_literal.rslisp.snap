@@ -1,0 +1,72 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/typed_literal.rslisp
+---
+fn zero() -> u16 {
+    0_u16
+}
+
+fn pick(flag: bool) -> u8 {
+    if flag { 1_u8 } else { 2_u8 }
+}
+
+fn count_down(mut n: i64) -> u8 {
+    loop {
+        if n == 0 {
+            return 7_u8;
+        } else {
+            n -= 1;
+            continue;
+        }
+    }
+}
+
+fn describe(is_running: bool, model: &str) -> String {
+    format!("{}{}", model, if is_running { " runs" } else { " rests" })
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!("{}", 40_u16 + 2);
+    println!("{}", -1_i8);
+    println!("{}", 5_usize);
+    println!("{}", 3.0_f32);
+    println!("{}", 2.5_f64);
+    println!("{}", describe(true, "Leaf"));
+    println!("{}", {
+        let result: String = "Leaf".to_string();
+        result
+    });
+    println!("{}", zero());
+    println!("{}", pick(false));
+    println!("{}", count_down(3));
+    let three = || 3_i16;
+    println!("{}", three());
+    println!(
+        "{}",
+        match zero() {
+            0 => 9_u32,
+            _ => 8_u32,
+        }
+    );
+    let year: u16 = 2024;
+    println!("{}", year)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
