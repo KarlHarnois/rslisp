@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/indexed_receiver.rslisp
+---
+ LEAF 
+4
+ARIYA
+leaf
+Leaf 240

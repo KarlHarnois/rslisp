@@ -1,0 +1,23 @@
+(defstruct car :make str :year u16)
+(defstruct owner :name str :car car)
+
+(type year-of (fn ((ref car)) u16))
+(defn year-of (c) (:year (deref c)))
+
+(type make-of (fn ((ref car)) (ref str)))
+(defn make-of (c) (:make (deref c)))
+
+(type year-through-two (fn ((ref (ref car))) u16))
+(defn year-through-two (c) (:year (deref (deref c))))
+
+(type owner-year (fn ((ref owner)) u16))
+(defn owner-year (o) (:year (:car (deref o))))
+
+(defn main ()
+  (let leaf (->car :make "Nissan" :year 2024))
+  (let ana (->owner :name "ana" :car leaf))
+  (let borrowed (ref leaf))
+  (println (year-of (ref leaf)))
+  (println (make-of (ref leaf)))
+  (println (year-through-two (ref borrowed)))
+  (println (owner-year (ref ana))))
