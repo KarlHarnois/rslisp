@@ -1,0 +1,13 @@
+# method 06258bb4c5f45da70587b945f457665c13cd3d55-a38940b88237c14fdb2b8bfa0232ed2ae235f990-64a751f02ce9015c7d608f0982e7b68b2667e020-43ed6268211d0372ffce65021f6c1c63d79c76c5
+# rustc rustc 1.95.0 (59807616e 2026-04-14) (built from a source tarball)
+# valgrind valgrind-3.26.0
+call_chain	build=23856141	check=590736445	emit=208450629	expand=656026012	modules=19999	source=381	total=1489707451
+deep_nesting	build=26925125	check=3123435378	emit=57268416	expand=1041246064	modules=12329	source=381	total=4255447422
+empty_program	build=23598	check=9629127	emit=601051	expand=56995260	modules=1148	source=1238	total=69791817
+evaluator	build=12482764	check=169842529	emit=20721691	expand=242378748	modules=5488	source=456	total=450258879
+generic_types	build=30659947	check=205990898	emit=90097079	expand=466266215	modules=23117	source=381	total=804314287
+literal_inference	build=22183298	check=215219456	emit=251817393	expand=529731057	modules=20148	source=381	total=1028921601
+macro_heavy	build=26093813	check=250803141	emit=63358920	expand=1643056855	modules=15999	source=381	total=1993030300
+many_modules	build=63167156	check=729779645	emit=76906631	expand=914991704	modules=1541	source=1238	total=1800560566
+matrix_geometry	build=10213230	check=94228552	emit=15941316	expand=170419169	modules=6795	source=456	total=296176259
+warehouse	build=11337733	check=83730640	emit=14562900	expand=170509347	modules=7245	source=456	total=284856116
