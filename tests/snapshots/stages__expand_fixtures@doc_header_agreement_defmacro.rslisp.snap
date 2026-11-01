@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_header_agreement_defmacro.rslisp
+---
+(def noted-header "(defmacro noted (width height))")
+(def plain-header "(defmacro plain (width height))")

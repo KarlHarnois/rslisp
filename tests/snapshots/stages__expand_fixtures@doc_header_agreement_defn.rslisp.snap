@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_header_agreement_defn.rslisp
+---
+(def noted (fn (width height) (mul width height)))
+(def plain (fn (width_2 height_2) (mul width_2 height_2)))
+(def noted-header "(defn noted (width height))")
+(def plain-header "(defn plain (width height))")

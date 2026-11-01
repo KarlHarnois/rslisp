@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_header_agreement_defstruct.rslisp
+---
+(struct (noted a) (width a) (height a))
+(def make-noted (fn (width height) (new noted (width width) (height height))))
+(struct (plain a_2) (width a_2) (height a_2))
+(def make-plain (fn (width_2 height_2) (new plain (width width_2) (height height_2))))
+(def noted-header "(defstruct (noted a))")
+(def plain-header "(defstruct (plain a))")

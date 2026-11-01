@@ -1,0 +1,7 @@
+(defmacro noted (width height) "Multiplies a width by a height." (template (* (unquote width) (unquote height))))
+
+(defmacro plain (width height) (template (* (unquote width) (unquote height))))
+
+(def noted-header (header noted))
+
+(def plain-header (header plain))

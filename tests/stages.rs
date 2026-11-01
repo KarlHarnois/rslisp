@@ -2,7 +2,7 @@ mod support;
 
 use std::path::PathBuf;
 
-use support::{Fixture, FixtureReports};
+use support::{Fixture, FixtureReports, HeaderAgreement};
 
 #[test]
 fn reader_fixtures() {
@@ -68,4 +68,24 @@ fn corpus_fixtures() {
     insta::glob!(fixtures, |path| {
         insta::assert_snapshot!(reports.report(path));
     });
+}
+
+#[test]
+fn defn_headers_agree() {
+    HeaderAgreement::of("defn").assert_headers_agree();
+}
+
+#[test]
+fn defmacro_headers_agree() {
+    HeaderAgreement::of("defmacro").assert_headers_agree();
+}
+
+#[test]
+fn defstruct_headers_agree() {
+    HeaderAgreement::of("defstruct").assert_headers_agree();
+}
+
+#[test]
+fn defrule_headers_agree() {
+    HeaderAgreement::of("defrule").assert_headers_agree();
 }
