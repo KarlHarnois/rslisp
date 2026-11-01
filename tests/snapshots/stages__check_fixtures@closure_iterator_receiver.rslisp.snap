@@ -22,3 +22,23 @@ error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
   = note: Rust names this type only as the type of a function's own parameter or result
   = note: Rust must know a closure parameter's type before the closure calls a method on it
   = help: define the function with `defn`, whose parameters can take an `iterator`
+
+error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
+ --> check/closure_iterator_receiver.rslisp:7:25
+  |
+7 |   (let alias-tally (fn (it) (let items it) (count items)))
+  |                         ^^ this parameter holds `(iterator (ref i64))`, and the closure calls a method on it
+  |
+  = note: Rust names this type only as the type of a function's own parameter or result
+  = note: Rust must know a closure parameter's type before the closure calls a method on it
+  = help: define the function with `defn`, whose parameters can take an `iterator`
+
+error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
+ --> check/closure_iterator_receiver.rslisp:9:32
+  |
+9 |   (let nested-alias-tally (fn (it) (+ 1 (do (let items it) (count items)))))
+  |                                ^^ this parameter holds `(iterator (ref i64))`, and the closure calls a method on it
+  |
+  = note: Rust names this type only as the type of a function's own parameter or result
+  = note: Rust must know a closure parameter's type before the closure calls a method on it
+  = help: define the function with `defn`, whose parameters can take an `iterator`
