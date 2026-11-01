@@ -1,0 +1,28 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/header_shape_errors.rslisp
+---
+error[L0329]: a header shape is a list that starts with the definer's name
+ --> expand/header_shape_errors.rslisp:5:15
+  |
+5 | (header-shape my-defn)
+  |               ^^^^^^^ not a list that starts with a name
+  |
+  = help: write it as `(header-shape (definer name ...))`
+
+error[L0329]: a header shape is a list that starts with the definer's name
+ --> expand/header_shape_errors.rslisp:7:15
+  |
+7 | (header-shape ())
+  |               ^^ not a list that starts with a name
+  |
+  = help: write it as `(header-shape (definer name ...))`
+
+error[L0329]: a header shape is a list that starts with the definer's name
+ --> expand/header_shape_errors.rslisp:9:15
+  |
+9 | (header-shape ("my-defn" name parameters))
+  |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^ not a list that starts with a name
+  |
+  = help: write it as `(header-shape (definer name ...))`

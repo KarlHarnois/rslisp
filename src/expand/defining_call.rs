@@ -11,8 +11,8 @@ impl Expander<'_> {
     }
 
     fn module_level_name(&self, binding: BindingId) -> Option<Span> {
-        self.definition_module(binding)
-            .and_then(|_| self.bindings.get(binding).span())
+        self.definition_module(binding)?;
+        self.bindings.get(binding).span()
     }
 
     fn written_form(&self, span: Span) -> Option<Form> {
