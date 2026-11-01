@@ -448,6 +448,10 @@ impl<'a> ExpressionEmitter<'a> {
         if let Some(literal) = Self::bound_literal(expr) {
             return self.expr_in(literal, TypeContext::Unknown);
         }
+        self.compound_value(expr)
+    }
+
+    fn compound_value(&mut self, expr: &TypedExpr) -> Code {
         match &expr.kind {
             TypedExprKind::Control(control) => self.control(control),
             TypedExprKind::Struct(structure) => self.structure(structure, &expr.ty),
