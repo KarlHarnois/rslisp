@@ -1,0 +1,10 @@
+(type first-after? (fn ((ref (ref i64))) bool))
+(defn first-after? (y) (> (deref (deref y)) 2018))
+
+(defn main ()
+  (let year 2019)
+  (println (first-after? (ref (ref 2019))))
+  (println (first-after? (ref (ref year))))
+  (println (> (deref (ref (ref year))) 2018))
+  (println (> (deref (ref (ref year))) (ref 2018)))
+  (println (> (ref 2018) (deref (ref (ref year))))))
