@@ -366,6 +366,13 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn tail_block_contents(&mut self, expr: &TypedExpr) -> Option<Vec<Fragment>> {
+        if Self::bound_literal(expr).is_some() {
+            return None;
+        }
+        self.inlined_contents(expr)
+    }
+
+    fn inlined_contents(&mut self, expr: &TypedExpr) -> Option<Vec<Fragment>> {
         match &expr.kind {
             TypedExprKind::Control(TypedControl::Block(block)) => Some(self.block_contents(block)),
             TypedExprKind::Control(TypedControl::Match(matched)) => {
@@ -432,6 +439,9 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn value(&mut self, expr: &TypedExpr) -> Code {
+        if let Some(literal) = Self::bound_literal(expr) {
+            return self.expr_in(literal, TypeContext::Unknown);
+        }
         match &expr.kind {
             TypedExprKind::Control(control) => self.control(control),
             TypedExprKind::Struct(structure) => self.structure(structure, &expr.ty),
@@ -442,6 +452,11 @@ impl<'a> ExpressionEmitter<'a> {
             }
             _ => unreachable!("the caller matches a value form"),
         }
+    }
+
+    fn bound_literal(expr: &TypedExpr) -> Option<&TypedExpr> {
+        expr.let_block_value()
+            .filter(|value| matches!(value.kind, TypedExprKind::Leaf(TypedLeaf::Literal(_))))
     }
 
     fn borrow(&mut self, kind: ReferenceKind, value: &TypedExpr) -> Code {
@@ -2330,7 +2345,7 @@ impl<'a> ExpressionEmitter<'a> {
         let mut fragments = Vec::new();
         for (param, argument) in lambda.params.iter().zip(arguments) {
             let binding = self.bind_parameter(param, TypePosition::Value);
-            let value = self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary);
+            let value = self.annotated_binding_value(argument);
             fragments.push(Fragment::Newline);
             fragments.push(Fragment::Text(format!("let {binding} = ")));
             fragments.extend(value.fragments);
@@ -2345,6 +2360,17 @@ impl<'a> ExpressionEmitter<'a> {
         self.locals.leave();
         self.tail_loop = previous;
         fragments
+    }
+
+    fn annotated_binding_value(&mut self, argument: &TypedArgument) -> Code {
+        let Some(literal) = Self::bound_literal(&argument.value) else {
+            return self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary);
+        };
+        let unwrapped = TypedArgument {
+            value: literal.clone(),
+            borrow: argument.borrow,
+        };
+        self.argument(&unwrapped, TypeContext::Known, ArgumentRole::Ordinary)
     }
 
     fn block(&mut self, block: &TypedBlock) -> Code {
@@ -2573,7 +2599,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn field_place(&mut self, value: &TypedExpr, label: &FieldLabel) -> Code {
-        let value = self.place(value, TypeContext::Known);
+        let value = self.field_owner(value);
         let value = if value.is_atomic() {
             value
         } else {
@@ -2586,6 +2612,13 @@ impl<'a> ExpressionEmitter<'a> {
             ],
             Precedence::Atom,
         )
+    }
+
+    fn field_owner(&mut self, owner: &TypedExpr) -> Code {
+        match &owner.kind {
+            TypedExprKind::Deref(referent) => self.field_owner(referent),
+            _ => self.place(owner, TypeContext::Known),
+        }
     }
 
     fn declared_field_type(&self, value: &TypedExpr, label: &FieldLabel) -> Option<Type> {

@@ -2265,7 +2265,7 @@ impl TypeChecker {
             return self.pass(&parameter, &referent, pending.span, Borrow::Deref(levels));
         }
         if Self::borrows_open_parameter_type(&parameter, &argument) {
-            return Ok(self.copy_through_borrow(&parameter, &argument));
+            return Ok(self.copy_through_borrow(&parameter, &argument, pending.span));
         }
         self.pass_types(&parameter, &argument, pending.span)
     }
@@ -2276,8 +2276,8 @@ impl TypeChecker {
             && Self::innermost_referent(argument) == parameter
     }
 
-    fn copy_through_borrow(&mut self, parameter: &Type, argument: &Type) -> Borrow {
-        self.require_copy(parameter);
+    fn copy_through_borrow(&mut self, parameter: &Type, argument: &Type, copied: Span) -> Borrow {
+        self.require_copy_at(parameter, copied);
         Borrow::Deref(Self::reference_depth(argument))
     }
 
@@ -2786,10 +2786,7 @@ impl TypeChecker {
             .first()
             .copied()
             .expect("the prelude defines borrow");
-        let bound = Bound {
-            binding,
-            argument: Some(query),
-        };
+        let bound = Bound::with_argument(binding, query);
         if !self.traits.satisfies(&bound, &key, &|_, _| false) {
             self.report_missing_trait(&bound, &key, span);
         }

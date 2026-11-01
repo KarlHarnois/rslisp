@@ -19,21 +19,9 @@ fn main() {
     crate::rt::restore_default_sigpipe();
     println!("{}", increment(41));
     println!("{}", increment(1.5));
-    println!(
-        "{}",
-        increment({
-            let result: u8 = 254;
-            result
-        })
-    );
+    println!("{}", increment(254_u8));
     println!("{}", halve(5.0));
-    println!(
-        "{}",
-        halve({
-            let result: f32 = 3.0;
-            result
-        })
-    );
+    println!("{}", halve(3.0_f32));
     println!("{}", describe_half(9.0))
 }
 

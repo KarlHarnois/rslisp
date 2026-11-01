@@ -283,6 +283,9 @@ impl ExpressionEmitter<'_> {
     }
 
     fn loop_branch(&mut self, branch: &TypedExpr) -> Vec<Fragment> {
+        if Self::bound_literal(branch).is_some() {
+            return self.loop_return(branch);
+        }
         let TypedExprKind::Control(TypedControl::Block(block)) = &branch.kind else {
             return self.loop_tail(branch);
         };

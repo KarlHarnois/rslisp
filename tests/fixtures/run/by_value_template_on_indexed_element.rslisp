@@ -1,0 +1,9 @@
+(def count-items (rust "{0}.into_iter().count()" (fn ((ref (vec i64))) usize)))
+
+(type first-row-count (fn ((ref (vec (vec i64)))) usize))
+(defn first-row-count (rows) (count-items (at rows 0)))
+
+(defn main ()
+  (let rows (vec (vec 1 2 3)))
+  (push! rows (vec 4))
+  (println (first-row-count rows)))

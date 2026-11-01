@@ -1,0 +1,6 @@
+(defn copy-corner! (grid) (set! (at (at grid 1) 0) (at (at grid 0) 0)))
+
+(defn main ()
+  (let grid (vec (vec (to-string "Leaf")) (vec (to-string "Ariya"))))
+  (copy-corner! (mut grid))
+  (println (at (at grid 1) 0)))

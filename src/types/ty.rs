@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::core::{BindingId, ClosureKind, PrimitiveType};
+use crate::source::Span;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TypeVar(u32);
@@ -288,10 +289,17 @@ impl Type {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Bound {
     pub binding: BindingId,
     pub argument: Option<Type>,
+    pub origins: Vec<BoundOrigin>,
+}
+
+impl PartialEq for Bound {
+    fn eq(&self, other: &Self) -> bool {
+        self.binding == other.binding && self.argument == other.argument
+    }
 }
 
 impl Bound {
@@ -299,7 +307,24 @@ impl Bound {
         Self {
             binding,
             argument: None,
+            origins: Vec::new(),
         }
+    }
+
+    pub fn with_argument(binding: BindingId, argument: Type) -> Self {
+        Self {
+            binding,
+            argument: Some(argument),
+            origins: Vec::new(),
+        }
+    }
+
+    pub fn from_origins(self, origins: Vec<BoundOrigin>) -> Self {
+        Self { origins, ..self }
+    }
+
+    pub fn merge_origins(&mut self, other: Bound) {
+        self.origins.extend(other.origins);
     }
 
     pub fn substituted(&self, replacements: &HashMap<GenericId, Type>) -> Self {
@@ -309,6 +334,7 @@ impl Bound {
                 .argument
                 .as_ref()
                 .map(|argument| argument.substitute(replacements)),
+            origins: self.origins.clone(),
         }
     }
 
@@ -319,8 +345,14 @@ impl Bound {
                 .argument
                 .as_ref()
                 .map(|argument| argument.substitute_vars(replacements)),
+            origins: self.origins.clone(),
         }
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum BoundOrigin {
+    BorrowCopied(Span),
 }
 
 #[derive(Clone, Debug)]
@@ -351,6 +383,7 @@ impl Scheme {
 mod tests {
     use super::*;
     use crate::core::{BindingArena, BindingInfo, BindingKind};
+    use crate::source::SourceId;
 
     struct Substitution {
         replacements: HashMap<TypeVar, Type>,
@@ -388,6 +421,34 @@ mod tests {
         fn substitute(&self, value: &Type) -> Type {
             value.substitute_vars(&self.replacements)
         }
+
+        fn copy_site(&self) -> Span {
+            Span::new(SourceId::new(0), 0..1)
+        }
+
+        fn bound_from_copy(&self) -> Bound {
+            Bound::plain(self.binding)
+                .from_origins(vec![BoundOrigin::BorrowCopied(self.copy_site())])
+        }
+
+        fn keeps_copy_site(&self, bound: &Bound) -> bool {
+            matches!(bound.origins[..], [BoundOrigin::BorrowCopied(site)] if site == self.copy_site())
+        }
+    }
+
+    #[test]
+    fn an_origin_never_tells_two_bounds_apart() {
+        let fixture = Substitution::new();
+        assert_eq!(fixture.bound_from_copy(), Bound::plain(fixture.binding));
+    }
+
+    #[test]
+    fn substitution_keeps_the_origin_of_a_bound() {
+        let fixture = Substitution::new();
+        let bound = fixture.bound_from_copy();
+        let generic = HashMap::from([(GenericId::new(0), fixture.replacement.clone())]);
+        assert!(fixture.keeps_copy_site(&bound.substituted_vars(&fixture.replacements)));
+        assert!(fixture.keeps_copy_site(&bound.substituted(&generic)));
     }
 
     #[test]

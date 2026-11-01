@@ -1,0 +1,25 @@
+(defn zero () (the u16 0))
+
+(defn pick (flag) (if flag (the u8 1) (the u8 2)))
+
+(defn count-down (n) (if (= n 0) (the u8 7) (count-down (- n 1))))
+
+(defn describe (running? model) (str model (if running? " runs" " rests")))
+
+(defn main ()
+  (println (+ (the u16 40) 2))
+  (println (the i8 -1))
+  (println (the usize 5))
+  (println (the f32 3))
+  (println (the f64 2.5))
+  (println (describe (the bool true) (the (ref str) "Leaf")))
+  (println (the string (to-string "Leaf")))
+  (println (zero))
+  (println (pick false))
+  (println (count-down 3))
+  (let three (fn () (the i16 3)))
+  (println (three))
+  (println (match (zero) (0 (the u32 9)) (_ (the u32 8))))
+  (let year (the u16 2024))
+  (println year)
+  (println (loop ((i 0) (total (the usize 0))) (if (= i 3) total (recur (+ i 1) (+ total 2))))))

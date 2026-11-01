@@ -1,0 +1,66 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/field_through_deref.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Owner<'a> {
+    name: &'a str,
+    car: Car<'a>,
+}
+
+fn year_of(c: &Car<'_>) -> u16 {
+    c.year
+}
+
+fn make_of<'a>(c: &'a Car<'a>) -> &'a str {
+    c.make
+}
+
+fn year_through_two(c: &&Car<'_>) -> u16 {
+    c.year
+}
+
+fn owner_year(o: &Owner<'_>) -> u16 {
+    o.car.year
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let leaf = Car {
+        make: "Nissan",
+        year: 2024,
+    };
+    let ana = Owner {
+        name: "ana",
+        car: leaf,
+    };
+    let borrowed = &leaf;
+    println!("{}", year_of(&leaf));
+    println!("{}", make_of(&leaf));
+    println!("{}", year_through_two(&borrowed));
+    println!("{}", owner_year(&ana))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
