@@ -1,0 +1,19 @@
+(use code list concat number-sub number-le)
+
+(def doubled
+  (fn (items times)
+    (if (number-le times 0) items (doubled (concat items items) (number-sub times 1)))))
+
+(def dropped
+  (macro (form) (template 0)))
+
+(defmacro pad ()
+  (template (dropped (splice (doubled (list 0) 16)))))
+
+(defmacro first-unused ()
+  (pad)
+  (template 1))
+
+(defmacro second-unused ()
+  (pad)
+  (template 2))
