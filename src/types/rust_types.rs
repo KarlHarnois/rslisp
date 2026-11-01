@@ -67,6 +67,10 @@ impl RustTypeTable {
         self.types.get(&binding)
     }
 
+    pub fn is_opaque(&self, binding: BindingId) -> bool {
+        self.get(binding).is_some_and(RustType::is_opaque)
+    }
+
     pub fn is_slice(&self, binding: BindingId) -> bool {
         self.has_template(binding, RustType::SLICE_TEMPLATE)
     }

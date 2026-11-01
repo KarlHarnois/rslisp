@@ -3,9 +3,11 @@ use std::rc::Rc;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::fragment::{Code, Fragment, Precedence};
+use super::let_annotation::LetAnnotation;
 use super::local_closures::LocalClosures;
 use super::locals::LocalNames;
 use super::mangle::NameMangler;
+use super::open_literals::{OpenLiterals, TypeContext};
 use super::operator::{RustOperator, Side};
 use super::plan::{EmitPlan, ItemKind};
 use super::problems::EmitProblems;
@@ -30,12 +32,6 @@ use crate::types::{
 
 mod tail_loop;
 use tail_loop::TailLoop;
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum TypeContext {
-    Known,
-    Unknown,
-}
 
 struct UpdateArgument {
     name: Option<String>,
@@ -176,6 +172,7 @@ pub struct ExpressionEmitter<'a> {
     mutable_locals: FxHashSet<BindingId>,
     stored_functions: StoredFunctions<'a>,
     local_closures: LocalClosures<'a>,
+    open_literals: OpenLiterals,
     enclosing_lifetime: Option<String>,
     result_parameters: FxHashSet<BindingId>,
     tail_loop: Option<TailLoop>,
@@ -207,6 +204,7 @@ impl<'a> ExpressionEmitter<'a> {
             mutable_locals: FxHashSet::default(),
             stored_functions: StoredFunctions::new(program),
             local_closures: LocalClosures::new(program),
+            open_literals: OpenLiterals::default(),
             enclosing_lifetime: None,
             result_parameters: FxHashSet::default(),
             tail_loop: None,
@@ -225,6 +223,11 @@ impl<'a> ExpressionEmitter<'a> {
 
     pub fn with_local_closures(mut self, local_closures: LocalClosures<'a>) -> Self {
         self.local_closures = local_closures;
+        self
+    }
+
+    pub fn with_open_literals(mut self, open_literals: OpenLiterals) -> Self {
+        self.open_literals = open_literals;
         self
     }
 
@@ -404,7 +407,9 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn leaf(&mut self, leaf: &TypedLeaf, expr: &TypedExpr, context: TypeContext) -> Code {
         match leaf {
-            TypedLeaf::Literal(literal) => self.literal(literal, &expr.ty, context),
+            TypedLeaf::Literal(literal) => {
+                self.literal(literal, &expr.ty, self.literal_context(expr, context))
+            }
             TypedLeaf::Local(binding) => {
                 Code::atom(self.locals.get(*binding).unwrap_or("_").to_string())
             }
@@ -1408,7 +1413,7 @@ impl<'a> ExpressionEmitter<'a> {
             binder.binding,
             self.program.bindings.get(binder.binding).name(),
         );
-        let annotation = if binder.annotated || self.needs_annotation(&binder.ty) {
+        let annotation = if LetAnnotation::new(self.program).is_emitted(binder) {
             format!(": {}", self.types().show(&binder.ty, TypePosition::Value))
         } else {
             String::new()
@@ -1472,18 +1477,11 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn needs_annotation(&self, bound: &Type) -> bool {
-        match bound {
-            Type::Primitive(primitive) => {
-                primitive.is_integer() && *primitive != PrimitiveType::I32
-            }
-            Type::Named(binding, arguments) => {
-                !self.types().is_opaque(*binding)
-                    && arguments
-                        .iter()
-                        .any(|argument| self.needs_annotation(argument))
-            }
-            _ => false,
+    fn literal_context(&self, literal: &TypedExpr, context: TypeContext) -> TypeContext {
+        if self.open_literals.contains(literal) {
+            TypeContext::Unknown
+        } else {
+            context
         }
     }
 
