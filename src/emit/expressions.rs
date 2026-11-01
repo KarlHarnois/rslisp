@@ -2626,10 +2626,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn field_place(&mut self, value: &TypedExpr, label: &FieldLabel) -> Code {
-        let value = self.place(
-            Self::without_dereferenced_borrows(value),
-            TypeContext::Known,
-        );
+        let value = self.field_owner(value);
         let value = if value.is_atomic() {
             value
         } else {
@@ -2642,6 +2639,14 @@ impl<'a> ExpressionEmitter<'a> {
             ],
             Precedence::Atom,
         )
+    }
+
+    fn field_owner(&mut self, owner: &TypedExpr) -> Code {
+        let owner = Self::without_dereferenced_borrows(owner);
+        match &owner.kind {
+            TypedExprKind::Deref(referent) => self.field_owner(referent),
+            _ => self.place(owner, TypeContext::Known),
+        }
     }
 
     fn declared_field_type(&self, value: &TypedExpr, label: &FieldLabel) -> Option<Type> {
