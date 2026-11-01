@@ -369,6 +369,10 @@ impl<'a> ExpressionEmitter<'a> {
         if Self::bound_literal(expr).is_some() {
             return None;
         }
+        self.inlined_contents(expr)
+    }
+
+    fn inlined_contents(&mut self, expr: &TypedExpr) -> Option<Vec<Fragment>> {
         match &expr.kind {
             TypedExprKind::Control(TypedControl::Block(block)) => Some(self.block_contents(block)),
             TypedExprKind::Control(TypedControl::Match(matched)) => {
