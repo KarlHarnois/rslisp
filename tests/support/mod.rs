@@ -1,11 +1,15 @@
+mod headers;
 mod reports;
 
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use rslisp::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
-use rslisp::core::{CorePrinter, ModulePath};
+use rslisp::core::{
+    BindingArena, CorePrinter, ExprKind, Item, ItemKind, Leaf, Literal, ModulePath,
+};
 use rslisp::diagnostic::{DiagnosticRenderer, Diagnostics};
 use rslisp::emit::{EmittedCrate, RustEmitter};
 use rslisp::expand::Expander;
@@ -14,6 +18,7 @@ use rslisp::reader::Reader;
 use rslisp::source::{SourceId, SourceMap, Span};
 use rslisp::types::TypedProgram;
 
+pub use headers::HeaderAgreement;
 pub use reports::FixtureReports;
 
 pub struct Fixture {
@@ -48,6 +53,28 @@ impl Fixture {
             Ok(program) => CorePrinter::new(&program.bindings).module(program.entry_module()),
             Err(diagnostics) => self.render(&diagnostics),
         }
+    }
+
+    pub fn string_definitions(mut self) -> HashMap<String, String> {
+        let program = self.expand().unwrap_or_else(|diagnostics| {
+            panic!("the fixture expands:\n{}", self.render(&diagnostics))
+        });
+        program
+            .entry_module()
+            .items
+            .iter()
+            .filter_map(|item| Self::string_definition(&program.bindings, item))
+            .collect()
+    }
+
+    fn string_definition(bindings: &BindingArena, item: &Item) -> Option<(String, String)> {
+        let ItemKind::Def(binding, value) = &item.kind else {
+            return None;
+        };
+        let ExprKind::Leaf(Leaf::Literal(Literal::String(text))) = value.kind() else {
+            return None;
+        };
+        Some((bindings.get(*binding).name().to_string(), text.to_string()))
     }
 
     pub fn check_report(mut self) -> String {

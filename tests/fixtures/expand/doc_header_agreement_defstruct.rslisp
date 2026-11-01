@@ -1,0 +1,7 @@
+(defstruct (noted a) "A width and a height." :width a :height a)
+
+(defstruct (plain a) :width a :height a)
+
+(def noted-header (header noted))
+
+(def plain-header (header plain))

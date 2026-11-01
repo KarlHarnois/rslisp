@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_header_agreement_defrule.rslisp
+---
+(def noted-header "(defrule noted)")
+(def plain-header "(defrule plain)")

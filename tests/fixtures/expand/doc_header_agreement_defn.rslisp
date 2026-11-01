@@ -1,0 +1,7 @@
+(defn noted (width height) "Multiplies a width by a height." (* width height))
+
+(defn plain (width height) (* width height))
+
+(def noted-header (header noted))
+
+(def plain-header (header plain))
