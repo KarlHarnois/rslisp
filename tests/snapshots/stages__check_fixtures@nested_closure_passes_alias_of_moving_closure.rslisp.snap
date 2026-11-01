@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/nested_closure_passes_alias_of_moving_closure.rslisp
+---
+error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
+  --> check/nested_closure_passes_alias_of_moving_closure.rslisp:13:12
+   |
+13 |     (twice again)))
+   |            ^^^^^ `model` moves here
+   |
+   = help: clone `model`, or borrow it with `(ref model)`

@@ -1,0 +1,14 @@
+(defn twice (action)
+  (action)
+  (action))
+
+(defn keep (model)
+  model)
+
+(defn main ()
+  (let model (to-string "Leaf"))
+  (let announce (fn () (keep model)))
+  (let later (fn ()
+    (let again announce)
+    (twice again)))
+  (later))
