@@ -48,6 +48,9 @@
 (defn flipped-five ()
   (ref (five-over -1)))
 
+(defn settled ()
+  (ref (do (println "settling") (let year 2019))))
+
 (defn main ()
   (prn (sum))
   (prn (ordered))
@@ -62,4 +65,5 @@
   (prn (counted))
   (prn (incremented))
   (prn (halved))
+  (settled)
   (prn (flipped-five)))
