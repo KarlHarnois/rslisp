@@ -166,6 +166,10 @@ impl<'s> Expander<'s> {
     #[inline(never)]
     pub fn expand(mut self, path: ModulePath, entry: SourceId) -> Result<Program, Diagnostics> {
         let entry = self.load_source_module(path, entry);
+        self.into_program(entry)
+    }
+
+    fn into_program(mut self, entry: ModuleId) -> Result<Program, Diagnostics> {
         let diagnostics = self.take_diagnostics();
         let program = Program {
             modules: self.take_modules(),
