@@ -451,12 +451,15 @@ impl OwnershipProblems {
     }
 
     fn returned_local_borrow(borrowed: Span, dropped: &DroppedValue) -> Diagnostic {
-        Diagnostic::error(
+        let (primary, dropped_label) = Self::borrow_labels(borrowed, dropped);
+        let diagnostic = Diagnostic::error(
             DiagnosticCode::LOCAL_BORROW,
-            "cannot return a borrow of a local value",
-            Label::new(borrowed, "this borrows a local value"),
-        )
-        .with_label(Self::dropped_label(dropped))
+            format!("cannot return a borrow of {}", Self::dropped_noun(dropped)),
+            primary,
+        );
+        dropped_label
+            .into_iter()
+            .fold(diagnostic, Diagnostic::with_label)
     }
 
     fn dropped_label(dropped: &DroppedValue) -> Label {
