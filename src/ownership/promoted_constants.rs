@@ -1,5 +1,5 @@
 use super::local_borrows::LocalBorrows;
-use crate::core::{Division, Literal, ParsedTemplate, PrimitiveType};
+use crate::core::{Division, Literal, Operand, ParsedTemplate, PrimitiveType, TemplateOperation};
 use crate::reader::NumberValue;
 use crate::types::{
     Type, TypedArgument, TypedControl, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram,
@@ -55,10 +55,11 @@ impl<'p> PromotedConstants<'p> {
     }
 
     fn promotes_template(&self, template: &ParsedTemplate, arguments: &[TypedArgument]) -> bool {
-        template.is_tuple()
-            || template.is_operator()
+        let operation = template.operation();
+        operation.is_tuple()
+            || operation.is_operator()
                 && self.operates_on_builtins(arguments)
-                && self.divides_by_constants(template, arguments)
+                && self.divides_by_constants(&operation, arguments)
     }
 
     fn operates_on_builtins(&self, arguments: &[TypedArgument]) -> bool {
@@ -87,20 +88,49 @@ impl<'p> PromotedConstants<'p> {
         }
     }
 
-    fn divides_by_constants(&self, template: &ParsedTemplate, arguments: &[TypedArgument]) -> bool {
-        template
+    fn divides_by_constants(
+        &self,
+        operation: &TemplateOperation,
+        arguments: &[TypedArgument],
+    ) -> bool {
+        operation
             .divisions()
             .iter()
             .all(|division| self.promotes_division(division, arguments))
     }
 
     fn promotes_division(&self, division: &Division, arguments: &[TypedArgument]) -> bool {
-        let operand = |position: usize| arguments.get(position).map(|argument| &argument.value);
-        operand(division.dividend)
-            .zip(operand(division.divisor))
-            .is_some_and(|(dividend, divisor)| {
-                !self.is_integer(&divisor.ty) || self.promotes_integer_division(dividend, divisor)
-            })
+        match division.divisor {
+            Operand::Argument(position) => arguments.get(position).is_some_and(|divisor| {
+                self.promotes_argument_division(division.dividend, &divisor.value, arguments)
+            }),
+            Operand::Constant(value) => {
+                self.promotes_constant_division(division.dividend, value, arguments)
+            }
+        }
+    }
+
+    fn promotes_argument_division(
+        &self,
+        dividend: Option<Operand>,
+        divisor: &TypedExpr,
+        arguments: &[TypedArgument],
+    ) -> bool {
+        !self.is_integer(&divisor.ty)
+            || self.promotes_integer_division(dividend, divisor, arguments)
+    }
+
+    fn promotes_constant_division(
+        &self,
+        dividend: Option<Operand>,
+        divisor: Option<i128>,
+        arguments: &[TypedArgument],
+    ) -> bool {
+        match divisor {
+            Some(Self::ZERO) => false,
+            Some(Self::MINUS_ONE) => self.is_constant_dividend(dividend, arguments),
+            _ => true,
+        }
     }
 
     fn is_integer(&self, ty: &Type) -> bool {
@@ -108,12 +138,26 @@ impl<'p> PromotedConstants<'p> {
             .is_some_and(|primitive| primitive.is_integer())
     }
 
-    fn promotes_integer_division(&self, dividend: &TypedExpr, divisor: &TypedExpr) -> bool {
+    fn promotes_integer_division(
+        &self,
+        dividend: Option<Operand>,
+        divisor: &TypedExpr,
+        arguments: &[TypedArgument],
+    ) -> bool {
         let cannot_divide_by_zero =
             self.is_constant_operand(divisor) && !self.has_value(divisor, Self::ZERO);
-        let cannot_overflow =
-            !self.has_value(divisor, Self::MINUS_ONE) || self.is_constant_operand(dividend);
+        let cannot_overflow = !self.has_value(divisor, Self::MINUS_ONE)
+            || self.is_constant_dividend(dividend, arguments);
         cannot_divide_by_zero && cannot_overflow
+    }
+
+    fn is_constant_dividend(&self, dividend: Option<Operand>, arguments: &[TypedArgument]) -> bool {
+        match dividend {
+            Some(Operand::Argument(position)) => arguments
+                .get(position)
+                .is_some_and(|argument| self.is_constant_operand(&argument.value)),
+            Some(Operand::Constant(_)) | None => true,
+        }
     }
 
     fn is_constant_operand(&self, operand: &TypedExpr) -> bool {
@@ -134,10 +178,10 @@ impl<'p> PromotedConstants<'p> {
         let TypedExprKind::Call(callee, arguments) = &operand.kind else {
             return None;
         };
-        let negates =
-            self.program
-                .template_borrows
-                .read_template(callee, false, ParsedTemplate::is_negation);
+        let negates = self
+            .program
+            .template_borrows
+            .read_template(callee, false, |template| template.operation().is_negation());
         arguments
             .first()
             .filter(|_| negates)
