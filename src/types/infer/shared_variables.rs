@@ -283,7 +283,7 @@ impl TypeChecker {
         if resolved
             .iter()
             .any(|argument| self.referent_unknown(argument))
-            && !self.copies_known_referent(&resolved, &depths, borrowed_by_rust)
+            && !self.copies_known_referent(&resolved, &depths)
         {
             return self.pass_each(callee, group, arguments);
         }
@@ -305,14 +305,8 @@ impl TypeChecker {
         Ok(())
     }
 
-    fn copies_known_referent(
-        &self,
-        resolved: &[Type],
-        depths: &[usize],
-        borrowed_by_rust: bool,
-    ) -> bool {
-        borrowed_by_rust
-            && depths.windows(2).any(|pair| pair[0] != pair[1])
+    fn copies_known_referent(&self, resolved: &[Type], depths: &[usize]) -> bool {
+        depths.windows(2).any(|pair| pair[0] != pair[1])
             && resolved
                 .iter()
                 .any(|argument| self.holds_copy_value(Self::innermost_referent(argument)))

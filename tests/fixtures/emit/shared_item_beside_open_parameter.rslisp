@@ -1,0 +1,8 @@
+(defn later? (a b) (> a b))
+(defn any-later? (years floor)
+  (any (iter years) (fn (y) (later? y floor))))
+(defn main ()
+  (let years (vec 2019 2021 2024))
+  (println (any-later? years 2020))
+  (let r (ref 3))
+  (println (later? r 2)))
