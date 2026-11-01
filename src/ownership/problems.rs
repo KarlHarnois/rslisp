@@ -14,6 +14,7 @@ pub enum FunctionStorage {
 
 pub enum DroppedValue {
     Local(Span),
+    Temporary(Span),
     FunctionParameter(Span),
     ClosureParameter(Span),
 }
@@ -338,6 +339,9 @@ impl OwnershipProblems {
             DroppedValue::Local(_) => {
                 "return an owned value with `(clone ...)`, or borrow from a parameter"
             }
+            DroppedValue::Temporary(_) => {
+                "return an owned value, or borrow from a parameter or a top-level `def`"
+            }
             DroppedValue::FunctionParameter(_) => {
                 "return an owned value with `(clone ...)`, or give this parameter a borrowed type"
             }
@@ -387,6 +391,27 @@ impl OwnershipProblems {
         }
     }
 
+    pub fn lent_local_borrow(
+        borrowed: Span,
+        dropped: &DroppedValue,
+        lent: Span,
+        closure: &str,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::LENT_LOCAL_BORROW,
+            format!("cannot pass a borrow of a local value to `{closure}`"),
+            Label::new(borrowed, "this borrows a local value"),
+        )
+        .with_label(Label::new(
+            lent,
+            format!("the result of `{closure}` borrows this parameter, so it needs a borrow that outlives the function"),
+        ))
+        .with_label(Self::dropped_label(dropped))
+        .with_help(format!(
+            "define `{closure}` with `defn`, where its result can borrow from its argument"
+        ))
+    }
+
     fn returned_local_borrow(borrowed: Span, dropped: &DroppedValue) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::LOCAL_BORROW,
@@ -401,6 +426,10 @@ impl OwnershipProblems {
             DroppedValue::Local(defined) => {
                 Label::new(*defined, "this local is dropped when the function returns")
             }
+            DroppedValue::Temporary(built) => Label::new(
+                *built,
+                "this temporary value is dropped when the function returns",
+            ),
             DroppedValue::FunctionParameter(defined) | DroppedValue::ClosureParameter(defined) => {
                 Label::new(
                     *defined,

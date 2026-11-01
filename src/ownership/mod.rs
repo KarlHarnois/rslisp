@@ -11,6 +11,8 @@ mod kinds;
 mod lambda_address;
 #[cfg(test)]
 mod lambda_source;
+mod lent_borrows;
+mod local_borrows;
 mod modes;
 mod moved_values;
 mod moves;
