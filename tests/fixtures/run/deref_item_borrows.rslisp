@@ -2,6 +2,14 @@
 
 (defn later? (year) (> year 2020))
 
+(type year-of (fn ((ref (ref i64))) i64))
+(defn year-of (y) (deref y))
+
+(type recent? (fn ((ref (ref i64))) bool))
+(defn recent? (y)
+  (let (year i64) (deref y))
+  (> year 2020))
+
 (type report-signed (fn ((ref (slice i64))) unit))
 (defn report-signed (years)
   (println (count (filter (iter years) (fn (y) (> (deref y) 2020))))))
@@ -12,7 +20,9 @@
   (println (count (filter (iter years) (fn (y) (> (deref y) floor)))))
   (println (count (filter (iter years) (fn (y) (> (+ (deref y) 1) 2022)))))
   (println (count (filter (iter years) (fn (y) (later? (deref y))))))
-  (prn (max-by-key (iter years) (fn (y) (- (deref y) 2020)))))
+  (prn (max-by-key (iter years) (fn (y) (- (deref y) 2020))))
+  (println (count (filter (iter years) (fn (y) (> (year-of y) 2020)))))
+  (println (count (filter (iter years) recent?))))
 
 (defn report-cars (cars wanted)
   (println (count (filter (iter cars) (fn (c) (= wanted (deref c)))))))

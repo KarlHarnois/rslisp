@@ -1209,7 +1209,7 @@ impl TypeChecker {
     }
 
     fn copy_out_of_borrow(&self, value: TypedExpr, expected: &Type) -> TypedExpr {
-        if value.is_written_form() {
+        if self.passes_as_written(&value) {
             return value;
         }
         let span = value.span;
