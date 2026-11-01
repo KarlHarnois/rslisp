@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 
 use crate::core::BindingId;
-use crate::types::{TypedBinder, TypedExpr, TypedExprKind, TypedLambda, TypedProgram, TypedSource};
+use crate::types::{
+    TypedBinder, TypedExpr, TypedExprKind, TypedLambda, TypedModule, TypedProgram, TypedSource,
+};
 
 pub struct LambdaSource {
     program: TypedProgram,
@@ -16,6 +18,10 @@ impl LambdaSource {
 
     pub fn program(&self) -> &TypedProgram {
         &self.program
+    }
+
+    pub fn modules_mut(&mut self) -> &mut [TypedModule] {
+        &mut self.program.modules
     }
 
     pub fn lambda(&self, name: &str) -> &TypedLambda {

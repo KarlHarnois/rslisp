@@ -1600,6 +1600,7 @@ impl<'a> ClosureKinds<'a> {
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
+    use std::rc::Rc;
 
     use super::{CaptureReport, ClosureKinds, KindSources};
     use crate::core::BindingId;
@@ -1700,5 +1701,24 @@ mod tests {
         fixture.analyze(&mut kinds, "shown");
         kinds.forget_lambda_analyses();
         assert!(!fixture.has_reusable_report(&kinds, "shown"));
+    }
+
+    #[test]
+    fn forgetting_lambda_analyses_drops_every_collected_definition_set() {
+        let fixture = KindsFixture::new();
+        let mut kinds = fixture.kinds();
+        let shown = fixture.source.lambda("shown");
+        let first = kinds.definitions.of(shown);
+        kinds.forget_lambda_analyses();
+        assert!(!Rc::ptr_eq(&first, &kinds.definitions.of(shown)));
+    }
+
+    #[test]
+    fn recomputing_lambdas_forgets_the_analyses_of_each_definition() {
+        let fixture = KindsFixture::new();
+        let mut kinds = fixture.kinds();
+        let mut patched = LambdaSource::new(KindsFixture::NESTED_CLOSURES);
+        kinds.recompute_lambdas(patched.modules_mut());
+        assert!(kinds.reusable_reports.is_empty());
     }
 }
