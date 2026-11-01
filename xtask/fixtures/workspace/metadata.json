@@ -2,18 +2,21 @@
   "packages": [
     {
       "name": "xtask",
+      "manifest_path": "/ledger/xtask/Cargo.toml",
       "targets": [
         { "kind": ["bin"], "name": "xtask", "src_path": "/ledger/xtask/src/main.rs" }
       ]
     },
     {
       "name": "ledger-syntax",
+      "manifest_path": "/ledger/syntax/Cargo.toml",
       "targets": [
         { "kind": ["lib"], "name": "ledger_syntax", "src_path": "/ledger/syntax/src/lib.rs" }
       ]
     },
     {
       "name": "ledger-lang",
+      "manifest_path": "/ledger/Cargo.toml",
       "targets": [
         { "kind": ["lib"], "name": "ledger_lang", "src_path": "/ledger/src/lib.rs" },
         { "kind": ["bin"], "name": "ledger-lang", "src_path": "/ledger/src/main.rs" },
