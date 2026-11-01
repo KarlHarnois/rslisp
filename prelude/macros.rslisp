@@ -347,8 +347,22 @@
 
   The page of a definition that the definer made shows as many leading
   forms of its call as the shape lists."
-  (add-module-note (quote header-shapes) shape)
-  (quote (do)))
+  (if (header-shape? shape)
+      (do (add-module-note (quote header-shapes) shape)
+          (quote (do)))
+      (malformed-header-shape shape)))
+
+(def header-shape?
+  (fn (shape)
+    (if (list? shape)
+        (if (empty? shape) false (symbol? (first shape)))
+        false)))
+
+(def malformed-header-shape
+  (fn (shape)
+    (fail "a header shape is a list that starts with the definer's name" shape
+          "write it as `(header-shape (definer name ...))`"
+          (template (:code malformed-header-shape :label "not a list that starts with a name")))))
 
 (header-shape (defrule name))
 
@@ -370,12 +384,14 @@
 
 (def documentation-part
   (fn (part term)
-    (doc-part part term (documentation-of term))))
-
-(def documentation-of
-  (fn (term)
     (let notes (concat (value-notes term) (type-notes term)))
-    (if (empty? notes) (undocumented-note term) (first notes))))
+    (if (empty? notes) (undocumented-part part term) (doc-part part (first notes)))))
+
+(def undocumented-part
+  (fn (part term)
+    (if (value-eq part (quote docstring))
+        (undocumented term)
+        (doc-part part (undocumented-note term)))))
 
 (def value-notes
   (fn (term)
@@ -446,17 +462,12 @@
           (template (:code undocumented-term :label "no docstring for this name")))))
 
 (def doc-part
-  (fn (part term note)
+  (fn (part note)
     (if (value-eq part (quote header))
         (string (note-header note))
         (if (value-eq part (quote docstring))
-            (clean-docstring (written-docstring term note))
+            (clean-docstring (first (note-docstrings note)))
             (string (note-header note) "\n\n" (page-text note))))))
-
-(def written-docstring
-  (fn (term note)
-    (let docstrings (note-docstrings note))
-    (if (empty? docstrings) (undocumented term) (first docstrings))))
 
 (def page-text
   (fn (note)
