@@ -18,7 +18,7 @@ use crate::core::{
     TypeExprKind, VariantDeclaration, VariantInfo, VariantPayload,
 };
 use crate::diagnostic::{Counted, Diagnostic};
-use crate::emit::mangle::NameMangler;
+use crate::mangle::NameMangler;
 use crate::reader::{Form, FormKind, Symbol};
 use crate::source::Span;
 

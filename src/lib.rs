@@ -1,16 +1,10 @@
 pub mod build;
 pub mod check;
 pub mod cli;
-pub mod core;
-pub mod diagnostic;
 pub mod emit;
-pub mod expand;
-pub mod interpret;
-pub mod language;
-pub mod modules;
 pub mod ownership;
-pub mod reader;
-pub mod scope;
-pub mod source;
-pub mod stack;
 pub mod types;
+
+pub use rslisp_expand::{
+    core, diagnostic, expand, interpret, language, modules, reader, scope, source, stack,
+};

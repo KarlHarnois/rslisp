@@ -1,0 +1,12 @@
+[package]
+name = "rslisp-expand"
+version = "0.1.0"
+edition = "2024"
+description = "The reading, scoping and expansion stages of rslisp (placeholder name)"
+license = "MIT"
+publish = false
+
+[dependencies]
+annotate-snippets = "0.12"
+stacker = "0.1"
+unicode-ident = "1"
