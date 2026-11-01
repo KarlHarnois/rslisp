@@ -11,6 +11,9 @@
 (defn settle (make model turns)
   (if (= turns 0) (len make) (settle model model (- turns 1))))
 
+(defn swap-years (low high turns)
+  (if (= turns 0) low (recur high low (- turns 1))))
+
 (defn main ()
   (let spare (vec 2019))
   (let years (vec 2021))
@@ -18,4 +21,5 @@
   (println (len spare) " " (len years))
   (let model (to-string "Leaf"))
   (println (alternate "Nissan" (as-str model) 3))
-  (println (settle "Nissan" (as-str model) 2)))
+  (println (settle "Nissan" (as-str model) 2))
+  (println (swap-years 2019 2024 3)))
