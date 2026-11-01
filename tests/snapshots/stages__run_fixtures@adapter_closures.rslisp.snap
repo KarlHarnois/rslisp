@@ -1,0 +1,21 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/adapter_closures.rslisp
+---
+6067
+true
+false
+6064
+2020
+2022
+2025
+1
+4043
+1
+Some(Car { make: "Nissan", year: 2024 })
+true
+false
+4043
+Nissan
+Honda

@@ -1,0 +1,115 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/adapter_closures.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn make_car(make: &str, year: u16) -> Car<'_> {
+    Car { make, year }
+}
+
+fn report_years(years: &[i64]) {
+    println!(
+        "{}",
+        crate::prelude::iterator::sum(years.iter().map(|y: &i64| *y + 1))
+    );
+    println!("{}", years.iter().any(|y: &i64| *y > 2020));
+    println!("{}", years.iter().all(|y: &i64| *y > 2020));
+    println!("{}", years.iter().fold(0, |total: i64, y: &i64| total + *y));
+    years.iter().for_each(|y: &i64| println!("{}", *y + 1))
+}
+
+fn report_cars(cars: &[Car<'_>]) {
+    println!(
+        "{}",
+        cars.iter().filter(|c: &&Car<'_>| c.year > 2020).count()
+    );
+    println!(
+        "{}",
+        crate::prelude::iterator::sum(cars.iter().map(|c: &Car<'_>| c.year))
+    );
+    println!(
+        "{}",
+        cars.iter().take_while(|c: &&Car<'_>| c.year > 2020).count()
+    );
+    println!("{:?}", cars.iter().find(|c: &&Car<'_>| c.year > 2020));
+    println!("{}", cars.iter().any(|c: &Car<'_>| c.year > 2020));
+    println!("{}", cars.iter().all(|c: &Car<'_>| c.year > 2020));
+    println!(
+        "{}",
+        cars.iter()
+            .fold(0, |total: u16, c: &Car<'_>| total + c.year)
+    );
+    cars.iter().for_each(|c: &Car<'_>| println!("{}", c.make))
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let years: Vec<i64> = vec![2019_i64, 2021_i64, 2024_i64];
+    report_years(&years);
+    let cars = vec![make_car("Nissan", 2024), make_car("Honda", 2019)];
+    report_cars(&cars)
+}
+
+mod prelude {
+
+    pub(crate) mod iterator {
+        pub fn sum<N: crate::rt::Number>(values: impl Iterator<Item = N>) -> N {
+            values.fold(N::from_literal(0), |argument_0: N, argument_1: N| {
+                argument_0 + argument_1
+            })
+        }
+    }
+}
+
+mod rt {
+    use std::ops::{Add, Div, Mul, Rem, Sub};
+
+    pub trait Number:
+        Copy
+        + PartialOrd
+        + Add<Output = Self>
+        + Sub<Output = Self>
+        + Mul<Output = Self>
+        + Div<Output = Self>
+        + Rem<Output = Self>
+    {
+        fn from_literal(value: i128) -> Self;
+    }
+
+    macro_rules! numbers {
+        ($($number:ty),*) => {
+            $(
+                impl Number for $number {
+                    fn from_literal(value: i128) -> Self {
+                        value as Self
+                    }
+                }
+            )*
+        };
+    }
+
+    numbers!(
+        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+    );
+
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
