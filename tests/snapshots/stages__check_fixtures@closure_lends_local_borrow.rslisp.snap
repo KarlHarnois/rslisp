@@ -76,6 +76,6 @@ error[L0512]: cannot pass a borrow of a temporary value to `first`
    |                   ----------------------- the result of `first` borrows this parameter, so it needs a borrow that outlives the function
 ...
 18 |   (println (first (vec 2019 2021)))
-   |                   ^^^^^^^^^^^^^^^ this temporary value is dropped when the function returns
+   |                   ^^^^^^^^^^^^^^^ this temporary value is dropped at the end of the statement
    |
    = help: define `first` with `defn`, where its result can borrow from its argument
