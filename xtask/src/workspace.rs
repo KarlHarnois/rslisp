@@ -58,6 +58,12 @@ impl CargoWorkspace {
             .ok()
             .and_then(|metadata| Self::member_packages(&metadata))
             .ok_or_else(TaskFailure::metadata_malformed)?;
+        if let Some(package) = packages
+            .iter()
+            .find(|package| package.keeps_sources_at_root())
+        {
+            return Err(TaskFailure::sources_at_package_root(&package.name));
+        }
         Ok(Self {
             root: root.to_path_buf(),
             packages,
@@ -65,23 +71,41 @@ impl CargoWorkspace {
     }
 
     fn member_packages(metadata: &Value) -> Option<Vec<MemberPackage>> {
-        let workspace_root = Path::new(metadata["workspace_root"].as_str()?);
+        let workspace_root = WorkspaceRoot::new(metadata["workspace_root"].as_str()?);
         metadata["packages"]
             .as_array()?
             .iter()
             .filter(|package| package["name"] != Self::TOOLING_PACKAGE)
-            .map(|package| MemberPackage::read(package, workspace_root))
+            .map(|package| MemberPackage::read(package, &workspace_root))
             .collect()
+    }
+}
+
+struct WorkspaceRoot<'a> {
+    path: &'a Path,
+}
+
+impl<'a> WorkspaceRoot<'a> {
+    fn new(path: &'a str) -> Self {
+        Self {
+            path: Path::new(path),
+        }
+    }
+
+    fn within(&self, path: &str) -> PathBuf {
+        let path = Path::new(path);
+        path.strip_prefix(self.path).unwrap_or(path).to_path_buf()
     }
 }
 
 struct MemberPackage {
     name: String,
+    manifest: PathBuf,
     targets: Vec<CrateTarget>,
 }
 
 impl MemberPackage {
-    fn read(package: &Value, workspace_root: &Path) -> Option<Self> {
+    fn read(package: &Value, workspace_root: &WorkspaceRoot) -> Option<Self> {
         let targets = package["targets"]
             .as_array()?
             .iter()
@@ -90,8 +114,16 @@ impl MemberPackage {
             .collect::<Option<Vec<_>>>()?;
         Some(Self {
             name: package["name"].as_str()?.to_string(),
+            manifest: workspace_root.within(package["manifest_path"].as_str()?),
             targets,
         })
+    }
+
+    fn keeps_sources_at_root(&self) -> bool {
+        let package_root = self.manifest.parent();
+        self.targets
+            .iter()
+            .any(|target| target.source_file.parent() == package_root)
     }
 }
 
@@ -112,14 +144,10 @@ impl CrateTarget {
             .any(|kind| Self::AUXILIARY_KINDS.contains(&kind))
     }
 
-    fn read(target: &Value, workspace_root: &Path) -> Option<Self> {
-        let source_file = Path::new(target["src_path"].as_str()?);
-        let within_workspace = source_file
-            .strip_prefix(workspace_root)
-            .unwrap_or(source_file);
+    fn read(target: &Value, workspace_root: &WorkspaceRoot) -> Option<Self> {
         Some(Self {
             crate_name: target["name"].as_str()?.replace('-', "_"),
-            source_file: within_workspace.to_path_buf(),
+            source_file: workspace_root.within(target["src_path"].as_str()?),
         })
     }
 }
@@ -155,14 +183,25 @@ impl WorkspaceFixture {
     }
 
     fn metadata_without(owner: &str, field: &str) -> String {
-        let mut metadata: Value =
-            serde_json::from_str(Self::METADATA).expect("the fixture metadata is JSON");
+        let mut metadata = Self::editable_metadata();
         metadata
             .pointer_mut(owner)
             .and_then(Value::as_object_mut)
             .and_then(|object| object.remove(field))
             .expect("the fixture metadata holds the field");
         metadata.to_string()
+    }
+
+    fn metadata_with(field: &str, text: &str) -> String {
+        let mut metadata = Self::editable_metadata();
+        *metadata
+            .pointer_mut(field)
+            .expect("the fixture metadata holds the field") = Value::from(text);
+        metadata.to_string()
+    }
+
+    fn editable_metadata() -> Value {
+        serde_json::from_str(Self::METADATA).expect("the fixture metadata is JSON")
     }
 
     fn repository_root() -> &'static Path {
@@ -217,6 +256,7 @@ mod tests {
             (WORKSPACE, "workspace_root"),
             (WORKSPACE, "packages"),
             (MEMBER, "name"),
+            (MEMBER, "manifest_path"),
             (MEMBER, "targets"),
             (MEMBER_TARGET, "name"),
             (MEMBER_TARGET, "src_path"),
@@ -226,6 +266,31 @@ mod tests {
             assert!(
                 failure.is_some_and(|failure| failure.to_string().contains("`cargo metadata`")),
                 "metadata without `{owner}/{field}` parsed"
+            );
+        }
+    }
+
+    #[test]
+    fn refuses_a_crate_whose_sources_sit_at_its_package_root() {
+        for (source_file, path, package) in [
+            (
+                "/packages/1/targets/0/src_path",
+                "/ledger/syntax/lib.rs",
+                "ledger-syntax",
+            ),
+            (
+                "/packages/2/targets/1/src_path",
+                "/ledger/main.rs",
+                "ledger-lang",
+            ),
+        ] {
+            let metadata = WorkspaceFixture::metadata_with(source_file, path);
+            let failure = CargoWorkspace::parse(&WorkspaceFixture::root(), &metadata).err();
+            assert!(
+                failure.is_some_and(|failure| failure.to_string().contains(&format!(
+                    "the package `{package}` keeps a crate's source file at its root"
+                ))),
+                "a source file at `{path}` was accepted"
             );
         }
     }

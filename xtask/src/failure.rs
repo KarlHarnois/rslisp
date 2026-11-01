@@ -57,6 +57,13 @@ impl TaskFailure {
         Self::new("cannot read the workspace's crates from `cargo metadata`".to_string())
     }
 
+    pub fn sources_at_package_root(package: &str) -> Self {
+        Self::new(format!(
+            "the package `{package}` keeps a crate's source file at its root, \
+             so the gates would scan the whole package. Move the file into a directory such as `src`."
+        ))
+    }
+
     pub fn language_missing(file: &str) -> Self {
         Self::new(format!(
             "no crate of the workspace has `{file}` in its source directory"
