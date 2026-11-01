@@ -9,7 +9,7 @@ pub struct TraitSlot {
     pub method: BindingId,
     pub position: usize,
     pub declared: Type,
-    pub parameters: Vec<BindingId>,
+    pub parameters: Vec<(BindingId, Type)>,
 }
 
 impl TraitSlot {
@@ -18,16 +18,19 @@ impl TraitSlot {
     }
 
     pub fn is_refused(&self, refused: &HashSet<BindingId>) -> bool {
-        self.parameters
-            .iter()
-            .any(|parameter| refused.contains(parameter))
+        self.bindings()
+            .any(|parameter| refused.contains(&parameter))
     }
 
     pub fn bind_mates(&self, refusals: &mut Refusals) {
-        let leaders = self.parameters.iter().cycle().skip(1);
-        for (follower, leader) in self.parameters.iter().zip(leaders) {
-            refusals.follow(*follower, *leader);
+        let leaders = self.bindings().cycle().skip(1);
+        for (follower, leader) in self.bindings().zip(leaders) {
+            refusals.follow(follower, leader);
         }
+    }
+
+    fn bindings(&self) -> impl Iterator<Item = BindingId> + Clone + '_ {
+        self.parameters.iter().map(|(binding, _)| *binding)
     }
 }
 
@@ -83,7 +86,7 @@ impl<'a> TraitSlotCollector<'a> {
                 parameters: bodies
                     .iter()
                     .filter_map(|body| body.params.get(position))
-                    .map(|slot| slot.binding)
+                    .map(|slot| (slot.binding, slot.ty.clone()))
                     .collect(),
             })
             .collect()
@@ -116,11 +119,15 @@ mod tests {
         }
 
         fn slot(&mut self, parameters: Vec<BindingId>) -> TraitSlot {
+            let declared = Type::Primitive(PrimitiveType::I64);
             TraitSlot {
                 method: self.binding("total"),
                 position: 1,
-                declared: Type::Primitive(PrimitiveType::I64),
-                parameters,
+                parameters: parameters
+                    .into_iter()
+                    .map(|parameter| (parameter, declared.clone()))
+                    .collect(),
+                declared,
             }
         }
     }
