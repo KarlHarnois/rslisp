@@ -39,6 +39,11 @@ impl ParsedTemplate {
     const MUTABLE: &'static str = "mut ";
     const BINDER: char = '!';
     const DEREFERENCE: &'static str = "*";
+    const QUOTES: [char; 2] = ['\'', '"'];
+    const TUPLE_CHARACTERS: &'static str = "(),";
+    const OPERATOR_CHARACTERS: &'static str = "+-*/%!<>=&|^(),";
+    const NEGATION: &'static str = "-";
+    const DIVISION_OPERATORS: [&'static str; 2] = ["/", "%"];
 
     pub fn parse(text: &str) -> Result<Self, MalformedPlaceholder> {
         let mut pieces = Vec::new();
@@ -331,11 +336,75 @@ impl ParsedTemplate {
             _ => false,
         }
     }
+
+    pub fn is_constant(&self) -> bool {
+        self.is_path() || self.is_quoted_literal()
+    }
+
+    fn is_quoted_literal(&self) -> bool {
+        match self.pieces.as_slice() {
+            [Piece::Literal(literal)] => Self::QUOTES.iter().any(|quote| {
+                literal.len() > 1 && literal.starts_with(*quote) && literal.ends_with(*quote)
+            }),
+            _ => false,
+        }
+    }
+
+    pub fn is_tuple(&self) -> bool {
+        self.consists_of(Self::TUPLE_CHARACTERS)
+    }
+
+    pub fn is_operator(&self) -> bool {
+        !self.is_tuple() && self.consists_of(Self::OPERATOR_CHARACTERS)
+    }
+
+    fn consists_of(&self, characters: &str) -> bool {
+        self.pieces.iter().all(|piece| match piece {
+            Piece::Literal(literal) => literal
+                .chars()
+                .all(|character| character.is_whitespace() || characters.contains(character)),
+            Piece::Placeholder { .. } => true,
+            Piece::TypePlaceholder { .. } | Piece::BinderPlaceholder { .. } => false,
+        })
+    }
+
+    pub fn is_negation(&self) -> bool {
+        matches!(
+            self.pieces.as_slice(),
+            [Piece::Literal(sign), Piece::Placeholder { .. }] if sign.trim() == Self::NEGATION
+        )
+    }
+
+    pub fn divisions(&self) -> Vec<Division> {
+        self.pieces.windows(3).filter_map(Self::division).collect()
+    }
+
+    fn division(pieces: &[Piece]) -> Option<Division> {
+        match pieces {
+            [
+                Piece::Placeholder {
+                    index: dividend, ..
+                },
+                Piece::Literal(operator),
+                Piece::Placeholder { index: divisor, .. },
+            ] if Self::DIVISION_OPERATORS.contains(&operator.trim()) => Some(Division {
+                dividend: *dividend,
+                divisor: *divisor,
+            }),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Division {
+    pub dividend: usize,
+    pub divisor: usize,
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Access, MalformedPlaceholder, ParsedTemplate, Piece};
+    use super::{Access, Division, MalformedPlaceholder, ParsedTemplate, Piece};
 
     #[test]
     fn splits_literals_from_placeholders() {
@@ -545,5 +614,92 @@ mod tests {
             ParsedTemplate::parse("{!}").err(),
             Some(MalformedPlaceholder)
         );
+    }
+
+    #[test]
+    fn names_an_operator_over_placeholders() {
+        for text in ["{0} + {1}", "-{0}", "!{0}", "{&0} <= {&1}"] {
+            let parsed = ParsedTemplate::parse(text).expect("a valid template");
+            assert!(parsed.is_operator(), "{text}");
+            assert!(!parsed.is_tuple(), "{text}");
+        }
+    }
+
+    #[test]
+    fn names_a_tuple_of_placeholders() {
+        let parsed = ParsedTemplate::parse("({0}, {1})").expect("a valid template");
+        assert!(parsed.is_tuple());
+        assert!(!parsed.is_operator());
+    }
+
+    #[test]
+    fn names_unit_as_a_tuple() {
+        let parsed = ParsedTemplate::parse("()").expect("a valid template");
+        assert!(parsed.is_tuple());
+    }
+
+    #[test]
+    fn rejects_a_closure_as_an_operation() {
+        let parsed = ParsedTemplate::parse("|{!item}| {0}").expect("a valid template");
+        assert!(!parsed.is_operator());
+        assert!(!parsed.is_tuple());
+    }
+
+    #[test]
+    fn rejects_calls_and_constants_as_operations() {
+        for text in [
+            "{0}.len()",
+            "vec![{0}]",
+            "&{0}[{1}]",
+            "Box::new({0})",
+            "{0}.parse::<{target}>()",
+            "None",
+        ] {
+            let parsed = ParsedTemplate::parse(text).expect("a valid template");
+            assert!(!parsed.is_operator(), "{text}");
+            assert!(!parsed.is_tuple(), "{text}");
+        }
+    }
+
+    #[test]
+    fn names_a_negation() {
+        let negation = ParsedTemplate::parse("-{0}").expect("a valid template");
+        let subtraction = ParsedTemplate::parse("{0} - {1}").expect("a valid template");
+        assert!(negation.is_negation());
+        assert!(!subtraction.is_negation());
+    }
+
+    #[test]
+    fn finds_each_division() {
+        let quotient = ParsedTemplate::parse("{0} / {1}").expect("a valid template");
+        let remainder = ParsedTemplate::parse("{1} % {0}").expect("a valid template");
+        let sum = ParsedTemplate::parse("{0} + {1}").expect("a valid template");
+        assert_eq!(
+            quotient.divisions(),
+            [Division {
+                dividend: 0,
+                divisor: 1
+            }]
+        );
+        assert_eq!(
+            remainder.divisions(),
+            [Division {
+                dividend: 1,
+                divisor: 0
+            }]
+        );
+        assert!(sum.divisions().is_empty());
+    }
+
+    #[test]
+    fn names_a_path_or_a_quoted_literal_as_a_constant() {
+        for text in ["None", "std::f64::consts::PI", "'a'", "\"Leaf\""] {
+            let parsed = ParsedTemplate::parse(text).expect("a valid template");
+            assert!(parsed.is_constant(), "{text}");
+        }
+        for text in ["Vec::new()", "'", "{0}"] {
+            let parsed = ParsedTemplate::parse(text).expect("a valid template");
+            assert!(!parsed.is_constant(), "{text}");
+        }
     }
 }

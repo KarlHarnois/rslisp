@@ -1,0 +1,50 @@
+(def flag true)
+
+(defn base-year ()
+  2019)
+
+(defn titles-match ()
+  (ref (= "Leaf" "Ariya")))
+
+(defn by-zero ()
+  (ref (/ 7 0)))
+
+(defn by-sum ()
+  (ref (/ 7 (+ 1 1))))
+
+(defn flipped-sum ()
+  (ref (/ (+ 3 4) -1)))
+
+(defn negated-flip ()
+  (ref (/ (+ 3 4) (- 1))))
+
+(defn bumped (year)
+  (ref (+ year 1)))
+
+(defn picked ()
+  (ref (if flag 2019 2021)))
+
+(defn chosen ()
+  (ref (+ (if flag 2019 2021) 1)))
+
+(defn counted-year ()
+  (ref (do (let year 2019) year)))
+
+(defn later ()
+  (ref (+ (base-year) 1)))
+
+(defn spare-list ()
+  (ref (pair (the (vec i64) (vec)) 1)))
+
+(defn main ()
+  (prn (titles-match))
+  (prn (by-zero))
+  (prn (by-sum))
+  (prn (flipped-sum))
+  (prn (negated-flip))
+  (prn (bumped 2019))
+  (prn (picked))
+  (prn (chosen))
+  (prn (counted-year))
+  (prn (later))
+  (prn (spare-list)))

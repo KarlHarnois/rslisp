@@ -27,5 +27,5 @@ pub use module::{
     TraitAssociatedType, TraitMethod, VariantDeclaration, VariantPayload,
 };
 pub use printer::CorePrinter;
-pub use template::{MalformedPlaceholder, ParsedTemplate, Piece};
+pub use template::{Division, MalformedPlaceholder, ParsedTemplate, Piece};
 pub use types::{ClosureKind, TypeBinder, TypeBound, TypeExpr, TypeExprKind};

@@ -20,6 +20,7 @@ mod mutation;
 mod names;
 mod parameter_uses;
 mod problems;
+mod promoted_constants;
 mod refusals;
 mod repeats;
 mod returned;
