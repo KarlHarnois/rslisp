@@ -1,0 +1,27 @@
+(use code length)
+
+(defrule table
+  (((row cell ...) ...) (vec (vec cell ...) ...)))
+
+(defrule pairs
+  (((left right) ...) (vec (pair left right) ...)))
+
+(defrule tagged
+  ((tag item ...) (vec (pair tag item) ...)))
+
+(defmacro labeled (name (field ...) body ...)
+  (template (def (unquote name) (fn (unquote field) (splice body)))))
+
+(defmacro counted (items ...)
+  (length items))
+
+(defmacro lefts ((left right) ...)
+  (template (vec (splice left))))
+
+(defn grid () (table (a 1 2) (b) (c 3)))
+(defn zipped () (pairs (1 2) (3 4)))
+(defn marked () (tagged 0 1 2))
+(labeled point (x y) x y)
+(defn total () (counted 1 2 3))
+(defn firsts () (lefts (1 2) (3 4)))
+(defn main () (do))
