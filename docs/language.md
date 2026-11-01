@@ -2,12 +2,13 @@
 
 `rslisp` is a placeholder name. Source files use the `.rslisp` extension. A source file may start with a UTF-8 byte-order mark, which the compiler skips, as rustc does.
 
-The language is a Lisp that compiles to Rust. Its design follows four principles:
+The language is a Lisp that compiles to Rust. Its design follows five principles:
 
-1. **Few rules, no exceptions.** A feature that needs an exception gets redesigned or left out.
-2. **Small compiler, big prelude.** Anything the language can express lives in the prelude, written in the language itself. The compiler only reads, checks, reports and emits.
-3. **Rust's performance and Rust's model.** Ownership, borrowing, traits and generics work as in Rust. The compiler never adds a hidden clone or allocation, except the `Box` a recursive enum payload requires.
-4. **Few special characters.** The reader treats only `(`, `)`, `"`, `;` and whitespace specially.
+1. **User experience first.** Better output wins over an easier implementation in every trade-off.
+2. **Few rules, no exceptions.** A feature that needs an exception gets redesigned or left out.
+3. **Small compiler, big prelude.** Anything the language can express lives in the prelude, written in the language itself. The compiler only reads, checks, reports and emits.
+4. **Rust's performance and Rust's model.** Ownership, borrowing, traits and generics work as in Rust. The compiler never adds a hidden clone or allocation, except the `Box` a recursive enum payload requires.
+5. **Few special characters.** The reader treats only `(`, `)`, `"`, `;` and whitespace specially.
 
 ## Syntax
 

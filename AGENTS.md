@@ -18,6 +18,11 @@ This file and the reference files it names are the living reference for working 
 
 **If no rule covers a case, choose what these principles favor.** If two principles conflict, the earlier principle wins.
 
+### User experience first
+
+- The end user's experience wins every trade-off. When better output and an easier implementation conflict, build the better output.
+- NEVER accept worse output because it is easier to build, such as a confusing page or a doubled diagnostic.
+
 ### Few rules, no exceptions
 
 - The reader treats only `(`, `)`, `"`, `;` and whitespace specially.
