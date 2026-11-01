@@ -2276,7 +2276,44 @@ impl TypeChecker {
         if Self::borrows_open_parameter_type(&parameter, &argument) {
             return Ok(self.copy_through_borrow(&parameter, &argument));
         }
-        self.pass_types(&parameter, &argument, pending.span)
+        match self.view_for_unknown_referent(&parameter, &argument) {
+            Some(view) => self.pass_as_view(&view, &parameter, &argument, pending.span),
+            None => self.pass_types(&parameter, &argument, pending.span),
+        }
+    }
+
+    fn view_for_unknown_referent(&self, parameter: &Type, argument: &Type) -> Option<Type> {
+        if !self.referent_unknown(argument) {
+            return None;
+        }
+        self.borrowed_view(parameter)
+    }
+
+    fn pass_as_view(
+        &mut self,
+        view: &Type,
+        parameter: &Type,
+        argument: &Type,
+        span: Span,
+    ) -> Result<Borrow, Diagnostic> {
+        let referent = Self::innermost_referent(argument);
+        self.expect(view, referent, span, MismatchContext::Plain)?;
+        let argument = self.unifier.resolve(argument);
+        let parameter = self.unifier.resolve(parameter);
+        let extra =
+            Self::reference_depth(&argument).saturating_sub(Self::reference_depth(&parameter));
+        let stripped = Self::without_references(&argument, extra);
+        self.pass(&parameter, &stripped, span, Borrow::Deref(extra))
+    }
+
+    fn borrowed_view(&self, borrowed: &Type) -> Option<Type> {
+        let view = self.unifier.resolve(borrowed);
+        match &view {
+            Type::Ref(_, referent) if Self::is_unsized_type(&self.rust_types, referent) => {
+                Some(view)
+            }
+            _ => None,
+        }
     }
 
     fn borrows_open_parameter_type(parameter: &Type, argument: &Type) -> bool {
