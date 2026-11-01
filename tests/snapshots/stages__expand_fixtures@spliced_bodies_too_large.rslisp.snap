@@ -3,13 +3,13 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/expand/spliced_bodies_too_large.rslisp
 ---
-error[L0305]: macro expansion did not finish
+error[L0207]: expected a definition at module level
   --> expand/spliced_bodies_too_large.rslisp:13:1
    |
 13 | (defs)
-   | ^^^^^^ expanding this form keeps producing more macro calls
+   | ^^^^^^ this is not a definition
    |
-   = help: check that every recursive macro has a case that stops
+   = help: put expressions inside a function, such as `(def run (fn () ...))`
 
 error[L0326]: macro expansion did not finish
   --> expand/spliced_bodies_too_large.rslisp:13:1

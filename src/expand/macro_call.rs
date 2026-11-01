@@ -154,6 +154,9 @@ impl Expander<'_> {
         if self.expansion_depth >= Self::MAX_EXPANSION_DEPTH {
             return Err(ExpandProblems::expansion_too_deep(call_site));
         }
+        if self.form_budget.is_exhausted() {
+            return Err(self.expansion_too_large(binding, call_site));
+        }
         let closure = self.macro_closure(binding, call_site)?;
         let (input, introduction) = self.prepare_input(form, context);
         self.expansion_depth += 1;
@@ -170,7 +173,7 @@ impl Expander<'_> {
     }
 
     fn output_form(
-        &self,
+        &mut self,
         binding: BindingId,
         output: &Value,
         call_site: Span,
@@ -178,9 +181,10 @@ impl Expander<'_> {
         if !output.is_code() {
             return Err(ExpandProblems::macro_result(output.describe(), call_site));
         }
-        self.form_budget
-            .admitted_form(output)
-            .ok_or_else(|| self.expansion_too_large(binding, call_site))
+        match self.form_budget.admitted_form(output) {
+            Some(form) => Ok(form),
+            None => Err(self.exhaust_budget(binding, call_site)),
+        }
     }
 
     fn introduce_within_budget(
@@ -193,7 +197,12 @@ impl Expander<'_> {
         if self.form_budget.flip_scope(form, introduction) {
             return Ok(());
         }
-        Err(self.expansion_too_large(binding, call_site))
+        Err(self.exhaust_budget(binding, call_site))
+    }
+
+    fn exhaust_budget(&mut self, binding: BindingId, call_site: Span) -> Diagnostic {
+        self.form_budget.exhaust();
+        self.expansion_too_large(binding, call_site)
     }
 
     fn expansion_too_large(&self, binding: BindingId, call_site: Span) -> Diagnostic {
