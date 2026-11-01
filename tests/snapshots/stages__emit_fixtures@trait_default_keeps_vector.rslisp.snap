@@ -1,0 +1,84 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/trait_default_keeps_vector.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Odometer {
+    offset: i64,
+}
+
+fn make_odometer(offset: i64) -> Odometer {
+    Odometer { offset }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Meter {
+    scale: i64,
+}
+
+fn make_meter(scale: i64) -> Meter {
+    Meter { scale }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Gauge {
+    level: i64,
+}
+
+fn make_gauge(level: i64) -> Gauge {
+    Gauge { level }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut readings: Vec<i64> = vec![1200_i64, 3400_i64];
+    let reading_gauge = make_gauge(7);
+    make_odometer(5).record(&mut readings);
+    make_meter(2).record(&mut readings);
+    reading_gauge.record(&mut readings);
+    println!(
+        "{} {} {} {}",
+        readings[0],
+        readings[1],
+        readings.len(),
+        reading_gauge.level
+    )
+}
+
+trait Mileage {
+    fn record(&self, argument_1: &mut Vec<i64>) {
+        argument_1.push(9)
+    }
+}
+
+impl Mileage for Odometer {
+    fn record(&self, readings: &mut Vec<i64>) {
+        readings[0] = self.offset
+    }
+}
+
+impl Mileage for Meter {
+    fn record(&self, readings: &mut Vec<i64>) {
+        readings[1] = self.scale
+    }
+}
+
+impl Mileage for Gauge {}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
