@@ -186,8 +186,36 @@ impl<'e> LocalBorrows<'e> {
         };
         match borrowed.place_root() {
             Some(root) => self.dropped_value(root, owner),
+            None if self.yields_borrowed_parameter(borrowed) => None,
             None => Self::temporary(borrowed, constants),
         }
+    }
+
+    fn yields_borrowed_parameter(&self, value: &TypedExpr) -> bool {
+        match &value.kind {
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self
+                .parameter(*binding)
+                .is_some_and(|parameter| parameter.ty.is_reference()),
+            TypedExprKind::Control(control) => self.branches_yield_borrowed_parameter(control),
+            _ => false,
+        }
+    }
+
+    fn branches_yield_borrowed_parameter(&self, control: &TypedControl) -> bool {
+        match control {
+            TypedControl::Block(block) => self.block_yields_borrowed_parameter(block),
+            TypedControl::If(_, then, otherwise) => {
+                self.yields_borrowed_parameter(then) && self.yields_borrowed_parameter(otherwise)
+            }
+            TypedControl::Match(matched) => matched
+                .arms
+                .iter()
+                .all(|arm| self.block_yields_borrowed_parameter(&arm.body)),
+        }
+    }
+
+    fn block_yields_borrowed_parameter(&self, block: &TypedBlock) -> bool {
+        Self::tail_of(block).is_some_and(|tail| self.yields_borrowed_parameter(tail))
     }
 
     fn temporary(borrowed: &TypedExpr, constants: PromotedConstants) -> Option<DroppedValue> {

@@ -123,3 +123,47 @@ error[L0510]: cannot return a borrow of a temporary value
    |   this borrows a temporary value
    |
    = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a temporary value
+  --> check/returned_unpromoted_temporary.rslisp:42:3
+   |
+42 |   (ref (if c (:x a) (:x b))))
+   |   ^^^^^--------------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a temporary value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a temporary value
+  --> check/returned_unpromoted_temporary.rslisp:45:3
+   |
+45 |   (ref (if (> (len years) 0) years (vec 2019))))
+   |   ^^^^^---------------------------------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a temporary value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a temporary value
+  --> check/returned_unpromoted_temporary.rslisp:48:3
+   |
+48 |   (ref (match (len years) (0 (vec 2019)) (_ years))))
+   |   ^^^^^--------------------------------------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a temporary value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a temporary value
+  --> check/returned_unpromoted_temporary.rslisp:51:3
+   |
+51 |   (ref (if c (do (println "Leaf") (let year 2019)) (do (println "Ariya") (let year 2021)))))
+   |   ^^^^^-----------------------------------------------------------------------------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a temporary value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
