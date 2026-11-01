@@ -167,3 +167,25 @@ error[L0510]: cannot return a borrow of a temporary value
    |   this borrows a temporary value
    |
    = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a temporary value
+  --> check/returned_unpromoted_temporary.rslisp:58:3
+   |
+58 |   (ref (by-nothing 7)))
+   |   ^^^^^--------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a temporary value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a temporary value
+  --> check/returned_unpromoted_temporary.rslisp:61:3
+   |
+61 |   (ref (flip (+ 3 4))))
+   |   ^^^^^--------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a temporary value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`

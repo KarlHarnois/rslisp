@@ -1,5 +1,11 @@
 (def base 2)
 
+(def inc (rust "{0} + 1" (fn (i64) i64)))
+
+(def halve (rust "{0} / 2" (fn (i64) i64)))
+
+(def five-over (rust "5 / {0}" (fn (i64) i64)))
+
 (defn sum ()
   (ref (+ 1 2)))
 
@@ -33,6 +39,15 @@
 (defn counted ()
   (ref (do (println "counting") 5)))
 
+(defn incremented ()
+  (ref (inc 4)))
+
+(defn halved ()
+  (ref (halve 9)))
+
+(defn flipped-five ()
+  (ref (five-over -1)))
+
 (defn main ()
   (prn (sum))
   (prn (ordered))
@@ -44,4 +59,7 @@
   (prn (negated))
   (prn (shared))
   (prn (ratio))
-  (prn (counted)))
+  (prn (counted))
+  (prn (incremented))
+  (prn (halved))
+  (prn (flipped-five)))
