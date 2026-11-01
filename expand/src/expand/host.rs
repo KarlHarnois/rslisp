@@ -101,7 +101,7 @@ impl Expander<'_> {
             .ok_or_else(|| self.unbound(term, Namespace::Value, span))
     }
 
-    fn term_binding(&self, term: &Symbol) -> Option<BindingId> {
+    pub(super) fn term_binding(&self, term: &Symbol) -> Option<BindingId> {
         [Namespace::Value, Namespace::Type]
             .into_iter()
             .find_map(|namespace| self.namespace_binding(term, namespace))
