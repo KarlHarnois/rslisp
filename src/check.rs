@@ -48,9 +48,7 @@ impl<'a> CheckRuns<'a> {
     }
 
     fn finish(&mut self, first: CheckedProgram) -> Result<TypedProgram, Diagnostics> {
-        self.blocked = Self::inferred_copy_changed(&first.program);
-        self.inferred_copies = first.inferred_copies.clone();
-        self.pins.extend(Self::pins(&first.instantiations));
+        self.learn_from(&first);
         if self.is_settled(&first) {
             return Ok(first.program);
         }
@@ -60,6 +58,12 @@ impl<'a> CheckRuns<'a> {
             None => first,
         };
         self.pin_until_stable(LiteralDefaults::of(&latest.instantiations, &latest.program))
+    }
+
+    fn learn_from(&mut self, first: &CheckedProgram) {
+        self.blocked = Self::inferred_copy_changed(&first.program);
+        self.inferred_copies = first.inferred_copies.clone();
+        self.pins.extend(Self::pins(&first.instantiations));
     }
 
     fn is_settled(&self, first: &CheckedProgram) -> bool {
@@ -188,5 +192,140 @@ impl<'a> CheckRuns<'a> {
                 })
             })
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CheckRuns, CheckedProgram};
+    use crate::types::TypedSource;
+
+    struct RunsFixture {
+        source: TypedSource,
+    }
+
+    impl RunsFixture {
+        const WRITTEN_TYPES: &str = "
+            (defn greet ((name str)) (println \"hello \" name))
+            (defn main () (greet \"Ana\"))";
+
+        const UNUSED_OPEN_LITERAL: &str = "
+            (defn triple (n) (* n 3))
+            (defn main () (println \"Leaf\"))";
+
+        const GENERIC_USED_AT_ONE_TYPE: &str = "
+            (defn larger (left right) (if (> left right) left right))
+            (defn main () (println (larger (the u16 2024) (the u16 2019))))";
+
+        const STRUCT_CHANGED_IN_PLACE: &str = "
+            (def add-one! (rust \"std::ops::AddAssign::add_assign({0}, 1)\" (fn ((mut i64)) unit)))
+            (defstruct tally :total i64)
+            (defn bump-tally! (t) (add-one! (field t total)))
+            (defn main ()
+              (let t (->tally 5))
+              (bump-tally! t)
+              (println (:total t)))";
+
+        const COPIED_GENERIC_BESIDE_A_PIN: &str = "
+            (defn twice (x) (pair x x))
+            (defn port () 8080)
+            (defn listen ((p u16)) p)
+            (defn main ()
+              (let-pair (left right) (twice 7) (println left right))
+              (let-pair (left right) (twice 2.5) (println left right))
+              (println (listen (port))))";
+
+        fn new(text: &str) -> Self {
+            Self {
+                source: TypedSource::expand(text),
+            }
+        }
+
+        fn runs(&self) -> CheckRuns<'_> {
+            CheckRuns::new(self.source.program())
+        }
+
+        fn open_run(&self, runs: &CheckRuns) -> CheckedProgram {
+            runs.open_run().expect("the source checks")
+        }
+
+        fn learned_runs(&self) -> (CheckRuns<'_>, CheckedProgram) {
+            let mut runs = self.runs();
+            let first = self.open_run(&runs);
+            runs.learn_from(&first);
+            (runs, first)
+        }
+
+        fn settles_after_the_open_run(&self) -> bool {
+            let (runs, first) = self.learned_runs();
+            runs.is_settled(&first)
+        }
+
+        fn learned_pin_count(&self) -> usize {
+            self.learned_runs().0.pins.len()
+        }
+
+        fn learned_in_place_change_count(&self) -> usize {
+            self.learned_runs().0.blocked.len()
+        }
+
+        fn learns_inferred_copies(&self) -> bool {
+            !self.learned_runs().0.inferred_copies.is_empty()
+        }
+
+        fn open_signatures(&self) -> String {
+            self.open_run(&self.runs()).program.entry_signatures()
+        }
+
+        fn checked_signatures(&self) -> String {
+            self.runs()
+                .typed()
+                .expect("the source checks")
+                .entry_signatures()
+        }
+    }
+
+    #[test]
+    fn a_program_with_written_types_settles_after_the_open_run() {
+        assert!(RunsFixture::new(RunsFixture::WRITTEN_TYPES).settles_after_the_open_run());
+    }
+
+    #[test]
+    fn an_unused_open_literal_needs_a_defaulting_run() {
+        assert!(!RunsFixture::new(RunsFixture::UNUSED_OPEN_LITERAL).settles_after_the_open_run());
+    }
+
+    #[test]
+    fn the_defaulting_run_changes_the_open_literal_signature() {
+        let fixture = RunsFixture::new(RunsFixture::UNUSED_OPEN_LITERAL);
+        let defaulted = "(type triple (fn (i64) i64))";
+        assert!(!fixture.open_signatures().contains(defaulted));
+        assert!(fixture.checked_signatures().contains(defaulted));
+    }
+
+    #[test]
+    fn a_generic_used_at_one_type_needs_a_pin_run() {
+        let fixture = RunsFixture::new(RunsFixture::GENERIC_USED_AT_ONE_TYPE);
+        assert_eq!(fixture.learned_pin_count(), 1);
+    }
+
+    #[test]
+    fn the_pin_run_changes_the_generic_signature() {
+        let fixture = RunsFixture::new(RunsFixture::GENERIC_USED_AT_ONE_TYPE);
+        let pinned = "(type larger (fn (u16 u16) u16))";
+        assert!(!fixture.open_signatures().contains(pinned));
+        assert!(fixture.checked_signatures().contains(pinned));
+    }
+
+    #[test]
+    fn the_open_run_finds_the_in_place_changes_that_the_next_run_reads() {
+        let fixture = RunsFixture::new(RunsFixture::STRUCT_CHANGED_IN_PLACE);
+        assert_eq!(fixture.learned_in_place_change_count(), 1);
+    }
+
+    #[test]
+    fn the_open_run_infers_the_copies_that_the_next_run_reads() {
+        let fixture = RunsFixture::new(RunsFixture::COPIED_GENERIC_BESIDE_A_PIN);
+        assert!(fixture.learns_inferred_copies());
     }
 }
