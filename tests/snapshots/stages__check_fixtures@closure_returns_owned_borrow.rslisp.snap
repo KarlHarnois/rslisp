@@ -42,3 +42,13 @@ error[L0510]: cannot return a borrow of a local value
    |                                 this local is dropped when the function returns
    |
    = help: return an owned value with `(clone ...)`, or borrow from a parameter
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/closure_returns_owned_borrow.rslisp:25:28
+   |
+25 |     (let first (fn (items) (at items 0)))
+   |                     -----  ^^^^^^^^^^^^ this borrows a local value
+   |                     |
+   |                     this parameter owns its value, which is dropped when the function returns
+   |
+   = help: return an owned value with `(clone ...)`, or give this parameter a borrowed type
