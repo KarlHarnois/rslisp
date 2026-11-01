@@ -58,16 +58,22 @@ impl OpenLiteralSearch<'_> {
             }
             TypedExprKind::Fn(lambda) => self.block(&lambda.body, context),
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments, context),
-            TypedExprKind::Borrow(_, value) => self.expr(value, context),
             TypedExprKind::Control(control) => self.control(control, context),
             TypedExprKind::Struct(structure) => self.structure(structure, context),
             TypedExprKind::Variant(binding, payloads) => self.variant(*binding, payloads, context),
+            _ => self.other_kind(expr, context),
+        }
+    }
+
+    fn other_kind(&mut self, expr: &TypedExpr, context: TypeContext) {
+        match &expr.kind {
+            TypedExprKind::Borrow(_, value) => self.expr(value, context),
             TypedExprKind::Recur(arguments) => self.known_arguments(arguments),
             TypedExprKind::Try { value, .. }
             | TypedExprKind::Deref(value)
             | TypedExprKind::TraitObject(value, _) => self.expr(value, TypeContext::Known),
             TypedExprKind::Assoc(value, keys, item) => self.association(value, keys, item),
-            TypedExprKind::Leaf(_) => {}
+            _ => {}
         }
     }
 
