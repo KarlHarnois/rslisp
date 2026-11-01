@@ -1,0 +1,26 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/returned_temporary_borrow.rslisp
+---
+error[L0510]: cannot return a borrow of a temporary value
+ --> check/returned_temporary_borrow.rslisp:6:11
+  |
+6 |     (none (at (vec 0) 0))))
+  |           ^^^^-------^^^
+  |           |   |
+  |           |   this temporary value is dropped when the function returns
+  |           this borrows a temporary value
+  |
+  = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a temporary value
+  --> check/returned_temporary_borrow.rslisp:12:3
+   |
+12 |   (ref (vec 2019 2021)))
+   |   ^^^^^---------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a temporary value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`

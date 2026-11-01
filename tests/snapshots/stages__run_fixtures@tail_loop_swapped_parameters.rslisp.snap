@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/tail_loop_swapped_parameters.rslisp
+---
+filled
+3 2
+Leaf
+4
+2024

@@ -6,6 +6,7 @@ mod keyword;
 mod module;
 mod printer;
 mod template;
+mod template_operation;
 mod types;
 
 pub use binding::{BindingArena, BindingId, BindingInfo, BindingKind, Namespace, VariantInfo};
@@ -28,4 +29,5 @@ pub use module::{
 };
 pub use printer::CorePrinter;
 pub use template::{MalformedPlaceholder, ParsedTemplate, Piece};
+pub use template_operation::{Division, Operand, TemplateOperation};
 pub use types::{ClosureKind, TypeBinder, TypeBound, TypeExpr, TypeExprKind};

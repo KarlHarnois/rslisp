@@ -1,3 +1,5 @@
+use super::template_operation::TemplateOperation;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct MalformedPlaceholder;
 
@@ -39,6 +41,7 @@ impl ParsedTemplate {
     const MUTABLE: &'static str = "mut ";
     const BINDER: char = '!';
     const DEREFERENCE: &'static str = "*";
+    const QUOTES: [char; 2] = ['\'', '"'];
 
     pub fn parse(text: &str) -> Result<Self, MalformedPlaceholder> {
         let mut pieces = Vec::new();
@@ -331,6 +334,23 @@ impl ParsedTemplate {
             _ => false,
         }
     }
+
+    pub fn is_constant(&self) -> bool {
+        self.is_path() || self.is_quoted_literal()
+    }
+
+    fn is_quoted_literal(&self) -> bool {
+        match self.pieces.as_slice() {
+            [Piece::Literal(literal)] => Self::QUOTES.iter().any(|quote| {
+                literal.len() > 1 && literal.starts_with(*quote) && literal.ends_with(*quote)
+            }),
+            _ => false,
+        }
+    }
+
+    pub fn operation(&self) -> TemplateOperation<'_> {
+        TemplateOperation::of(&self.pieces)
+    }
 }
 
 #[cfg(test)]
@@ -545,5 +565,17 @@ mod tests {
             ParsedTemplate::parse("{!}").err(),
             Some(MalformedPlaceholder)
         );
+    }
+
+    #[test]
+    fn names_a_path_or_a_quoted_literal_as_a_constant() {
+        for text in ["None", "std::f64::consts::PI", "'a'", "\"Leaf\""] {
+            let parsed = ParsedTemplate::parse(text).expect("a valid template");
+            assert!(parsed.is_constant(), "{text}");
+        }
+        for text in ["Vec::new()", "'", "{0}"] {
+            let parsed = ParsedTemplate::parse(text).expect("a valid template");
+            assert!(!parsed.is_constant(), "{text}");
+        }
     }
 }

@@ -1,0 +1,69 @@
+(def base 2)
+
+(def inc (rust "{0} + 1" (fn (i64) i64)))
+
+(def halve (rust "{0} / 2" (fn (i64) i64)))
+
+(def five-over (rust "5 / {0}" (fn (i64) i64)))
+
+(defn sum ()
+  (ref (+ 1 2)))
+
+(defn ordered ()
+  (ref (< (char "a") (char "b"))))
+
+(defn badge ()
+  (ref (pair "Leaf" 2019)))
+
+(defn spare ()
+  (ref (pair (some 2019) 2)))
+
+(defn arc ()
+  (ref (+ pi 1.0)))
+
+(defn half ()
+  (ref (/ 7 2)))
+
+(defn flipped ()
+  (ref (/ 7 -1)))
+
+(defn negated ()
+  (ref (/ 7 (- 2))))
+
+(defn shared ()
+  (ref (/ 7 base)))
+
+(defn ratio ()
+  (ref (/ 7.5 (+ 1.0 1.5))))
+
+(defn counted ()
+  (ref (do (println "counting") 5)))
+
+(defn incremented ()
+  (ref (inc 4)))
+
+(defn halved ()
+  (ref (halve 9)))
+
+(defn flipped-five ()
+  (ref (five-over -1)))
+
+(defn settled ()
+  (ref (do (println "settling") (let year 2019))))
+
+(defn main ()
+  (prn (sum))
+  (prn (ordered))
+  (prn (badge))
+  (prn (spare))
+  (prn (arc))
+  (prn (half))
+  (prn (flipped))
+  (prn (negated))
+  (prn (shared))
+  (prn (ratio))
+  (prn (counted))
+  (prn (incremented))
+  (prn (halved))
+  (settled)
+  (prn (flipped-five)))

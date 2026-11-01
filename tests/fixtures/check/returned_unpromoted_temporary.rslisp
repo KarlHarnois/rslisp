@@ -1,0 +1,82 @@
+(def flag true)
+
+(defn base-year ()
+  2019)
+
+(defn titles-match ()
+  (ref (= "Leaf" "Ariya")))
+
+(defn by-zero ()
+  (ref (/ 7 0)))
+
+(defn by-sum ()
+  (ref (/ 7 (+ 1 1))))
+
+(defn flipped-sum ()
+  (ref (/ (+ 3 4) -1)))
+
+(defn negated-flip ()
+  (ref (/ (+ 3 4) (- 1))))
+
+(defn bumped (year)
+  (ref (+ year 1)))
+
+(defn picked ()
+  (ref (if flag 2019 2021)))
+
+(defn chosen ()
+  (ref (+ (if flag 2019 2021) 1)))
+
+(defn counted-year ()
+  (ref (do (let year 2019) year)))
+
+(defn later ()
+  (ref (+ (base-year) 1)))
+
+(defn spare-list ()
+  (ref (pair (the (vec i64) (vec)) 1)))
+
+(defstruct point :x i64 :y i64)
+
+(defn pick ((a (ref point)) (b (ref point)) (c bool))
+  (ref (if c (:x a) (:x b))))
+
+(defn either (years)
+  (ref (if (> (len years) 0) years (vec 2019))))
+
+(defn either-arm (years)
+  (ref (match (len years) (0 (vec 2019)) (_ years))))
+
+(defn settled-pick (c)
+  (ref (if c (do (println "Leaf") (let year 2019)) (do (println "Ariya") (let year 2021)))))
+
+(def by-nothing (rust "{0} / 0" (fn (i64) i64)))
+
+(def flip (rust "{0} / -1" (fn (i64) i64)))
+
+(defn nothing ()
+  (ref (by-nothing 7)))
+
+(defn flipped-total ()
+  (ref (flip (+ 3 4))))
+
+(defn main ()
+  (let spot (->point 1 2))
+  (let years (vec 2021))
+  (prn (titles-match))
+  (prn (by-zero))
+  (prn (by-sum))
+  (prn (flipped-sum))
+  (prn (negated-flip))
+  (prn (bumped 2019))
+  (prn (picked))
+  (prn (chosen))
+  (prn (counted-year))
+  (prn (later))
+  (prn (spare-list))
+  (prn (pick spot spot true))
+  (prn (either years))
+  (prn (either-arm years))
+  (settled-pick true)
+  (prn (nothing))
+  (prn (flipped-total)))

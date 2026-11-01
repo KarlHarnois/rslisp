@@ -1,0 +1,81 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/closure_lends_local_borrow.rslisp
+---
+error[L0510]: cannot return a borrow of a local value
+ --> check/closure_lends_local_borrow.rslisp:7:67
+  |
+7 |   (let fallback (fn ((key (ref str))) (let built (vec 2019 2021)) (at built 0)))
+  |                                            -----                  ^^^^^^^^^^^^ this borrows a local value
+  |                                            |
+  |                                            this local is dropped when the function returns
+  |
+  = help: return an owned value with `(clone ...)`, or borrow from a parameter
+
+error[L0512]: cannot pass a borrow of a local value to `first`
+  --> check/closure_lends_local_borrow.rslisp:11:19
+   |
+ 2 |   (let years (vec 2019 2021 2024))
+   |        ----- this local is dropped when the function returns
+ 3 |   (let year-at (fn (index) (at years index)))
+ 4 |   (let first (fn ((items (ref (vec i64)))) (at items 0)))
+   |                   ----------------------- the result of `first` borrows this parameter, so it needs a borrow that outlives the function
+...
+11 |   (println (first years))
+   |                   ^^^^^ this borrows a local value
+   |
+   = help: define `first` with `defn`, where its result can borrow from its argument
+
+error[L0512]: cannot pass a borrow of a local value to `first`
+  --> check/closure_lends_local_borrow.rslisp:12:19
+   |
+ 2 |   (let years (vec 2019 2021 2024))
+   |        ----- this local is dropped when the function returns
+ 3 |   (let year-at (fn (index) (at years index)))
+ 4 |   (let first (fn ((items (ref (vec i64)))) (at items 0)))
+   |                   ----------------------- the result of `first` borrows this parameter, so it needs a borrow that outlives the function
+...
+12 |   (println (first (ref years)))
+   |                   ^^^^^^^^^^^ this borrows a local value
+   |
+   = help: define `first` with `defn`, where its result can borrow from its argument
+
+error[L0512]: cannot pass a borrow of a local value to `pick`
+  --> check/closure_lends_local_borrow.rslisp:13:18
+   |
+ 2 |   (let years (vec 2019 2021 2024))
+   |        ----- this local is dropped when the function returns
+...
+ 5 |   (let pick (fn ((items (ref (vec i64))) (index usize)) (at items index)))
+   |                  ----------------------- the result of `pick` borrows this parameter, so it needs a borrow that outlives the function
+...
+13 |   (println (pick years 1))
+   |                  ^^^^^ this borrows a local value
+   |
+   = help: define `pick` with `defn`, where its result can borrow from its argument
+
+error[L0512]: cannot pass a borrow of a local value to `longer`
+  --> check/closure_lends_local_borrow.rslisp:14:29
+   |
+ 6 |   (let longer (fn ((a (ref str)) (b (ref str))) (if (> (len a) (len b)) a b)))
+   |                                  ------------- the result of `longer` borrows this parameter, so it needs a borrow that outlives the function
+...
+10 |   (let name (to-string "Ariya"))
+   |        ---- this local is dropped when the function returns
+...
+14 |   (println (longer "Nissan" (as-str name)))
+   |                             ^^^^^^^^^^^^^ this borrows a local value
+   |
+   = help: define `longer` with `defn`, where its result can borrow from its argument
+
+error[L0512]: cannot pass a borrow of a temporary value to `first`
+  --> check/closure_lends_local_borrow.rslisp:18:19
+   |
+ 4 |   (let first (fn ((items (ref (vec i64)))) (at items 0)))
+   |                   ----------------------- the result of `first` borrows this parameter, so it needs a borrow that outlives the function
+...
+18 |   (println (first (vec 2019 2021)))
+   |                   ^^^^^^^^^^^^^^^ this temporary value is dropped at the end of the statement
+   |
+   = help: define `first` with `defn`, where its result can borrow from its argument

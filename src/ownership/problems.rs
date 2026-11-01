@@ -14,8 +14,20 @@ pub enum FunctionStorage {
 
 pub enum DroppedValue {
     Local(Span),
+    Temporary(Span),
     FunctionParameter(Span),
     ClosureParameter(Span),
+}
+
+impl DroppedValue {
+    fn span(&self) -> Span {
+        match self {
+            Self::Local(span)
+            | Self::Temporary(span)
+            | Self::FunctionParameter(span)
+            | Self::ClosureParameter(span) => *span,
+        }
+    }
 }
 
 pub enum BorrowedStorage {
@@ -338,6 +350,9 @@ impl OwnershipProblems {
             DroppedValue::Local(_) => {
                 "return an owned value with `(clone ...)`, or borrow from a parameter"
             }
+            DroppedValue::Temporary(_) => {
+                "return an owned value, or borrow from a parameter or a top-level `def`"
+            }
             DroppedValue::FunctionParameter(_) => {
                 "return an owned value with `(clone ...)`, or give this parameter a borrowed type"
             }
@@ -387,13 +402,81 @@ impl OwnershipProblems {
         }
     }
 
-    fn returned_local_borrow(borrowed: Span, dropped: &DroppedValue) -> Diagnostic {
-        Diagnostic::error(
-            DiagnosticCode::LOCAL_BORROW,
-            "cannot return a borrow of a local value",
-            Label::new(borrowed, "this borrows a local value"),
+    pub fn lent_local_borrow(
+        borrowed: Span,
+        dropped: &DroppedValue,
+        lent: Span,
+        closure: &str,
+    ) -> Diagnostic {
+        let (primary, dropped_label) =
+            Self::borrow_labels(borrowed, dropped, Self::lent_dropped_label(dropped));
+        let diagnostic = Diagnostic::error(
+            DiagnosticCode::LENT_LOCAL_BORROW,
+            format!(
+                "cannot pass a borrow of {} to `{closure}`",
+                Self::dropped_noun(dropped)
+            ),
+            primary,
         )
-        .with_label(Self::dropped_label(dropped))
+        .with_label(Label::new(
+            lent,
+            format!("the result of `{closure}` borrows this parameter, so it needs a borrow that outlives the function"),
+        ));
+        dropped_label
+            .into_iter()
+            .fold(diagnostic, Diagnostic::with_label)
+            .with_help(format!(
+                "define `{closure}` with `defn`, where its result can borrow from its argument"
+            ))
+    }
+
+    fn borrow_labels(
+        borrowed: Span,
+        dropped: &DroppedValue,
+        dropped_label: Label,
+    ) -> (Label, Option<Label>) {
+        if dropped.span() == borrowed {
+            return (dropped_label, None);
+        }
+        let primary = Label::new(
+            borrowed,
+            format!("this borrows {}", Self::dropped_noun(dropped)),
+        );
+        (primary, Some(dropped_label))
+    }
+
+    fn lent_dropped_label(dropped: &DroppedValue) -> Label {
+        match dropped {
+            DroppedValue::Temporary(built) => Label::new(
+                *built,
+                "this temporary value is dropped at the end of the statement",
+            ),
+            DroppedValue::Local(_)
+            | DroppedValue::FunctionParameter(_)
+            | DroppedValue::ClosureParameter(_) => Self::dropped_label(dropped),
+        }
+    }
+
+    fn dropped_noun(dropped: &DroppedValue) -> &'static str {
+        match dropped {
+            DroppedValue::Temporary(_) => "a temporary value",
+            DroppedValue::Local(_)
+            | DroppedValue::FunctionParameter(_)
+            | DroppedValue::ClosureParameter(_) => "a local value",
+        }
+    }
+
+    fn returned_local_borrow(borrowed: Span, dropped: &DroppedValue) -> Diagnostic {
+        let (primary, dropped_label) =
+            Self::borrow_labels(borrowed, dropped, Self::dropped_label(dropped));
+        let diagnostic = Diagnostic::error(
+            DiagnosticCode::LOCAL_BORROW,
+            format!("cannot return a borrow of {}", Self::dropped_noun(dropped)),
+            primary,
+        );
+        dropped_label
+            .into_iter()
+            .fold(diagnostic, Diagnostic::with_label)
     }
 
     fn dropped_label(dropped: &DroppedValue) -> Label {
@@ -401,6 +484,10 @@ impl OwnershipProblems {
             DroppedValue::Local(defined) => {
                 Label::new(*defined, "this local is dropped when the function returns")
             }
+            DroppedValue::Temporary(built) => Label::new(
+                *built,
+                "this temporary value is dropped when the function returns",
+            ),
             DroppedValue::FunctionParameter(defined) | DroppedValue::ClosureParameter(defined) => {
                 Label::new(
                     *defined,

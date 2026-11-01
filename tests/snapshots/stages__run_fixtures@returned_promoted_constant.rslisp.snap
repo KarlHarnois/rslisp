@@ -1,0 +1,21 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/returned_promoted_constant.rslisp
+---
+3
+true
+("Leaf", 2019)
+(Some(2019), 2)
+4.141592653589793
+3
+-7
+-3
+3
+3.0
+counting
+5
+5
+4
+settling
+-5

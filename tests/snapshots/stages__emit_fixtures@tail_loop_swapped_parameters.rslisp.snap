@@ -1,0 +1,79 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/tail_loop_swapped_parameters.rslisp
+---
+fn fill<'a>(mut spare: &'a mut Vec<i64>, mut years: &'a mut Vec<i64>, label: &str, mut count: i64) {
+    loop {
+        if count == 0 {
+            println!("{}", label);
+            return;
+        } else {
+            spare.push(count);
+            (spare, years, count) = (years, spare, count - 1);
+            continue;
+        }
+    }
+}
+
+fn alternate<'a>(mut make: &'a str, mut model: &'a str, mut turns: i64) -> &'a str {
+    loop {
+        if turns == 0 {
+            return make;
+        } else {
+            (make, model, turns) = (model, make, turns - 1);
+            continue;
+        }
+    }
+}
+
+fn settle<'a>(mut make: &'a str, model: &'a str, mut turns: i64) -> usize {
+    loop {
+        if turns == 0 {
+            return make.len();
+        } else {
+            (make, turns) = (model, turns - 1);
+            continue;
+        }
+    }
+}
+
+fn swap_years(mut low: i64, mut high: i64, mut turns: i64) -> i64 {
+    loop {
+        if turns == 0 {
+            return low;
+        } else {
+            (low, high, turns) = (high, low, turns - 1);
+            continue;
+        }
+    }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut spare: Vec<i64> = vec![2019_i64];
+    let mut years: Vec<i64> = vec![2021_i64];
+    fill(&mut spare, &mut years, "filled", 3);
+    println!("{} {}", spare.len(), years.len());
+    let model = "Leaf".to_string();
+    println!("{}", alternate("Nissan", model.as_str(), 3));
+    println!("{}", settle("Nissan", model.as_str(), 2));
+    println!("{}", swap_years(2019, 2024, 3))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
