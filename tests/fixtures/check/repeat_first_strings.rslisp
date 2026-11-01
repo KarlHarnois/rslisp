@@ -1,0 +1,6 @@
+(defn repeat-first! (names) (push! names (at names 0)))
+
+(defn main ()
+  (let names (vec (to-string "Leaf") (to-string "Ariya")))
+  (repeat-first! (mut names))
+  (println (at names 2)))

@@ -1,0 +1,34 @@
+(defstruct car :model string :range u16)
+(defstruct garage :models (vec string))
+
+(trait labeled
+  (label (fn ((ref self)) string)))
+
+(impl labeled car
+  (label (self) (str (:model self) " " (:range self))))
+
+(type shout-first (fn ((ref (vec string))) string))
+(defn shout-first (names) (upper-case (at names 0)))
+
+(type trimmed-length (fn ((ref (vec string))) usize))
+(defn trimmed-length (names) (len (trim (at names 0))))
+
+(type shout-corner (fn ((ref (vec (vec string)))) string))
+(defn shout-corner (grid) (upper-case (at (at grid 0) 1)))
+
+(defn first-model (g) (lower-case (at (:models g) 0)))
+
+(defn first-label (cars) (label (at cars 0)))
+
+(defn main ()
+  (let names (vec (to-string " Leaf ") (to-string "Ariya")))
+  (push! names (to-string "Sakura"))
+  (let grid (vec (vec (to-string "Leaf") (to-string "Ariya"))))
+  (push! grid (vec (to-string "Kicks")))
+  (let cars (vec (->car (to-string "Leaf") 240)))
+  (push! cars (->car (to-string "Ariya") 300))
+  (println (shout-first names))
+  (println (trimmed-length names))
+  (println (shout-corner grid))
+  (println (first-model (->garage :models (vec (to-string "Leaf")))))
+  (println (first-label cars)))
