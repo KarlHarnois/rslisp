@@ -1,0 +1,12 @@
+(enum charge empty full)
+
+(defn describe (level)
+  (match level
+    (empty "empty")
+    (full "full")
+    (_ "unknown")))
+
+(defn main ()
+  (let model (to-string "Leaf"))
+  (let parked model)
+  (println model parked (describe charge/full)))
