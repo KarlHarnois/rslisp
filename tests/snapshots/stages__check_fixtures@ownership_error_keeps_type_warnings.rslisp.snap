@@ -1,0 +1,26 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/ownership_error_keeps_type_warnings.rslisp
+---
+warning[L0434]: unreachable `match` arm
+ --> check/ownership_error_keeps_type_warnings.rslisp:7:6
+  |
+7 |     (_ "unknown")))
+  |      ^ this arm can never match
+  |
+  = note: the earlier arms together cover every value this arm matches
+
+error[L0501]: use of moved value `model`
+  --> check/ownership_error_keeps_type_warnings.rslisp:12:12
+   |
+11 |   (let parked model)
+   |               ----- value moved here
+12 |   (println model parked (describe charge/full)))
+   |            ^^^^^ value used here after it moved
+   |
+help: clone the value if both places need it
+   |
+11 -   (let parked model)
+11 +   (let parked (clone model))
+   |
