@@ -31,7 +31,11 @@
   (misplaced-typo)
   (misplaced-struct)
   (malformed-struct)
-  (do-without-definition))
+  (do-without-definition)
+  (annotated)
+  (unnamed)
+  (overfull)
+  (empty-def))
 
 (defn malformed ()
   (def incomplete)
@@ -66,3 +70,19 @@
   (macro (form)
     (struct inner-point (x i64))
     form))
+
+(defn annotated ()
+  (def (typed i64) 1)
+  (+ typed 1))
+
+(defn unnamed ()
+  (def 7 1))
+
+(defn overfull ()
+  (def extra 1 2)
+  extra)
+
+(defn empty-def ()
+  (def)
+  (def after 1)
+  after)
