@@ -2120,10 +2120,7 @@ impl<'a> ExpressionEmitter<'a> {
         context: TypeContext,
         role: ArgumentRole,
     ) -> Code {
-        if let Some(value) = self.borrowed_index_argument(argument, context) {
-            return value;
-        }
-        if let Some(value) = self.argument_under_written_borrows(argument, context) {
+        if let Some(value) = self.adjusted_argument(argument, context) {
             return value;
         }
         let value = match (&argument.value.kind, role) {
@@ -2139,6 +2136,15 @@ impl<'a> ExpressionEmitter<'a> {
             Some(prefix) => Self::prefixed(&prefix, value).spanned(argument.value.span),
             None => value,
         }
+    }
+
+    fn adjusted_argument(
+        &mut self,
+        argument: &TypedArgument,
+        context: TypeContext,
+    ) -> Option<Code> {
+        self.borrowed_index_argument(argument, context)
+            .or_else(|| self.argument_under_written_borrows(argument, context))
     }
 
     fn argument_under_written_borrows(
