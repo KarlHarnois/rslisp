@@ -25,7 +25,10 @@ impl Measurement {
              counts only the compiler's side of formatting.\n\n\
              The compiler runs with a fixed random seed, so its hash maps lay out the same way \
              and identical runs give identical counts, except that the `build` stage can vary \
-             by a few hundred instructions with the number of reads from `rustfmt`'s output.\n",
+             by a few hundred instructions with the number of reads from `rustfmt`'s output.\n\n\
+             The compiler runs with glibc's fastbins turned off \
+             (`GLIBC_TUNABLES=glibc.malloc.mxfast=0`), so glibc merges freed memory when it is \
+             freed, and no stage pays to merge memory that an earlier stage freed.\n",
             other = Self::OTHER,
         )
     }
