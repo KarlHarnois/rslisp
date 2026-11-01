@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
+use crate::core::ReferenceKind;
 use crate::diagnostic::Diagnostic;
 use crate::types::checker::TypeChecker;
 use crate::types::problems::MismatchContext;
 use crate::types::unifier::Unifier;
-use crate::types::{Borrow, Bound, Type, TypeVar, TypedArgument, TypedExpr};
+use crate::types::{Borrow, Bound, Type, TypeVar, TypedArgument, TypedExpr, TypedExprKind};
 
 pub(super) struct SharedVariables {
     groups: Vec<SharedGroup>,
@@ -314,14 +315,54 @@ impl TypeChecker {
             )?;
         }
         for position in group.positions() {
-            let borrow = self.pass_call_argument(
-                callee,
-                position,
-                &Type::Var(root),
-                &arguments[position].value,
-            )?;
-            arguments[position].borrow = borrow;
+            self.pass_member(callee, position, &Type::Var(root), &mut arguments[position])?;
         }
+        Ok(())
+    }
+
+    fn pass_member(
+        &mut self,
+        callee: Option<&TypedExpr>,
+        position: usize,
+        shared: &Type,
+        argument: &mut TypedArgument,
+    ) -> Result<(), Diagnostic> {
+        match self.place_the_template_borrows(callee, position, shared, &argument.value) {
+            Some(place) => self.pass_template_borrow(shared, place.clone(), argument),
+            None => {
+                argument.borrow =
+                    self.pass_call_argument(callee, position, shared, &argument.value)?;
+                Ok(())
+            }
+        }
+    }
+
+    fn place_the_template_borrows<'v>(
+        &self,
+        callee: Option<&TypedExpr>,
+        position: usize,
+        shared: &Type,
+        value: &'v TypedExpr,
+    ) -> Option<&'v TypedExpr> {
+        let TypedExprKind::Borrow(ReferenceKind::Shared, place) = &value.kind else {
+            return None;
+        };
+        let template_borrows =
+            callee.is_some_and(|callee| self.template_borrows.borrows(callee, position));
+        (template_borrows && !self.unifier.shallow(shared).is_reference()).then_some(place)
+    }
+
+    fn pass_template_borrow(
+        &mut self,
+        shared: &Type,
+        place: TypedExpr,
+        argument: &mut TypedArgument,
+    ) -> Result<(), Diagnostic> {
+        self.expect(shared, &place.ty, place.span, MismatchContext::Plain)?;
+        *argument = TypedArgument {
+            value: place,
+            borrow: Borrow::Shared,
+        };
         Ok(())
     }
 
