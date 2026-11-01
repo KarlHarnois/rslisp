@@ -3,7 +3,6 @@ mod comparison;
 mod compiler;
 mod corpus;
 mod failure;
-mod fixed_seed;
 #[cfg(test)]
 mod fixture;
 mod git;
@@ -29,7 +28,6 @@ use callgrind::Callgrind;
 use comparison::Comparison;
 use compiler::{BuiltCompiler, CompilerBuild};
 use corpus::Corpus;
-use fixed_seed::FixedSeedLibrary;
 use git::Git;
 use header::ResultHeader;
 use history::BenchHistory;
@@ -201,11 +199,9 @@ impl<'a> FrontEndBenchmark<'a> {
         let target_directory = self.root.join(Self::TARGET_DIRECTORY);
         let build = CompilerBuild::new(&self.workspace()?, &target_directory).run()?;
         let compiler = self.place_at_fixed_path(build)?;
-        let fixed_seed = FixedSeedLibrary::new(self.root).build()?;
         Ok(Callgrind::new(
             compiler,
             self.options.entry_point_check(),
-            fixed_seed,
             self.root.join(Self::PROFILES),
         ))
     }
