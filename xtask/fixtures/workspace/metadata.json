@@ -18,6 +18,8 @@
         { "kind": ["lib"], "name": "ledger_lang", "src_path": "/ledger/src/lib.rs" },
         { "kind": ["bin"], "name": "ledger-lang", "src_path": "/ledger/src/main.rs" },
         { "kind": ["test"], "name": "cli", "src_path": "/ledger/tests/cli.rs" },
+        { "kind": ["bench"], "name": "posting", "src_path": "/ledger/benches/posting.rs" },
+        { "kind": ["example"], "name": "balance", "src_path": "/ledger/examples/balance.rs" },
         { "kind": ["custom-build"], "name": "build-script-build", "src_path": "/ledger/build.rs" }
       ]
     }
