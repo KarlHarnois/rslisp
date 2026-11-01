@@ -23,6 +23,10 @@ fn apply_to<A, B>(start: A, f: impl FnOnce(A) -> B) -> B {
     f(start)
 }
 
+fn same<A>(x: A) -> A {
+    x
+}
+
 fn wrap<A>(x: A) -> Option<A> {
     Some(x)
 }
@@ -90,6 +94,9 @@ fn main() {
     println!("{}", count_down(3));
     let add_one = |n: i64| n + 1;
     println!("{}", add_one(3000000000));
+    println!("{}", apply_to(3000000000_i64, same));
+    let pass = same;
+    println!("{}", apply_to(3000000000_i64, pass));
     println!("{}", add_one(first_of(1, 3000000000_i64)));
     println!(
         "{}",
@@ -127,7 +134,8 @@ fn main() {
     println!("{:?}", wrap("Leaf"));
     println!("{}", square(2.5));
     println!("{}", apply_to("Leaf", |model: &str| model.len()));
-    println!("{}", first_of("Leaf", 2.5))
+    println!("{}", first_of("Leaf", 2.5));
+    println!("{}", same("Leaf"))
 }
 
 trait Weighed {

@@ -29,6 +29,7 @@ impl OpenLiterals {
         let mut search = OpenLiteralSearch {
             program,
             callees,
+            anchor: TypeAnchor::new(callees),
             spans: HashSet::new(),
         };
         search.expr(value, TypeContext::Known);
@@ -45,6 +46,7 @@ impl OpenLiterals {
 struct OpenLiteralSearch<'a> {
     program: &'a TypedProgram,
     callees: &'a GenericCallees<'a>,
+    anchor: TypeAnchor<'a>,
     spans: HashSet<Span>,
 }
 
@@ -117,7 +119,7 @@ impl OpenLiteralSearch<'_> {
         context: TypeContext,
     ) {
         let values: Vec<&TypedExpr> = arguments.iter().map(|argument| &argument.value).collect();
-        let contexts = positions.contexts(&values, context);
+        let contexts = positions.contexts(&self.anchor.certainties(&values), context);
         self.positions(&values, contexts);
     }
 
@@ -139,14 +141,14 @@ impl OpenLiteralSearch<'_> {
             TypedControl::If(test, then, otherwise) => {
                 self.expr(test, TypeContext::Known);
                 let branches = [then.as_ref(), otherwise.as_ref()];
-                let contexts = Self::branch_contexts(&branches.map(Some), context);
+                let contexts = self.branch_contexts(&branches.map(Some), context);
                 self.positions(&branches, contexts);
             }
             TypedControl::Match(matched) => {
                 self.expr(&matched.value, TypeContext::Unknown);
                 let tails: Vec<Option<&TypedExpr>> =
                     matched.arms.iter().map(|arm| arm.body.tail()).collect();
-                let contexts = Self::branch_contexts(&tails, context);
+                let contexts = self.branch_contexts(&tails, context);
                 for (arm, context) in matched.arms.iter().zip(contexts) {
                     self.block(&arm.body, context);
                 }
@@ -154,13 +156,15 @@ impl OpenLiteralSearch<'_> {
         }
     }
 
-    fn branch_contexts(tails: &[Option<&TypedExpr>], outer: TypeContext) -> Vec<TypeContext> {
-        let anchor = TypeAnchor::among(
-            tails
-                .iter()
-                .enumerate()
-                .filter_map(|(branch, tail)| tail.map(|tail| (branch, tail))),
-        );
+    fn branch_contexts(
+        &self,
+        tails: &[Option<&TypedExpr>],
+        outer: TypeContext,
+    ) -> Vec<TypeContext> {
+        let anchor =
+            TypeAnchor::among(tails.iter().enumerate().filter_map(|(branch, tail)| {
+                tail.map(|tail| (branch, self.anchor.certainty(tail)))
+            }));
         (0..tails.len())
             .map(|branch| {
                 if anchor == Some(branch) {
@@ -221,8 +225,8 @@ impl OpenLiteralSearch<'_> {
                 .expect("the type stage checked each field label")
         });
         let values: Vec<&TypedExpr> = fields.iter().map(|(_, value)| value).collect();
-        let contexts =
-            GenericPositions::of_fields(&definition.params, declared).contexts(&values, context);
+        let contexts = GenericPositions::of_fields(&definition.params, declared)
+            .contexts(&self.anchor.certainties(&values), context);
         self.positions(&values, contexts);
     }
 
@@ -239,8 +243,8 @@ impl OpenLiteralSearch<'_> {
             .expect("a reached enum has a definition");
         let declared = definition.variants[index].payload_types().into_iter();
         let values: Vec<&TypedExpr> = payloads.iter().collect();
-        let contexts =
-            GenericPositions::of_fields(&definition.params, declared).contexts(&values, context);
+        let contexts = GenericPositions::of_fields(&definition.params, declared)
+            .contexts(&self.anchor.certainties(&values), context);
         self.positions(&values, contexts);
     }
 }

@@ -20,6 +20,8 @@ input_file: tests/fixtures/run/open_literal_arguments.rslisp
 3000000000
 3000000000
 2
+3000000000
+3000000000
 7
 true
 4
@@ -33,3 +35,4 @@ Leaf
 "Leaf"
 Some("Leaf")
 "Leaf"
+4
