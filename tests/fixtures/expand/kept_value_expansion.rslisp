@@ -1,0 +1,15 @@
+(use code list concat number-sub number-le)
+
+(def doubled
+  (fn (items times)
+    (if (number-le times 0) items (doubled (concat items items) (number-sub times 1)))))
+
+(def wide-value
+  (macro (form)
+    (template (do (splice (doubled (list 0) 16))))))
+
+(defmacro pad ()
+  (template (do (splice (doubled (list 0) 16)))))
+
+(defn main ()
+  (do wide-value (pad)))
