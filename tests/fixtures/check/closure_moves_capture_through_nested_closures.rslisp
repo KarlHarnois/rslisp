@@ -1,0 +1,16 @@
+(defn twice (action)
+  (action)
+  (action))
+
+(defn keep (model)
+  model)
+
+(defn main ()
+  (let model (to-string "Leaf"))
+  (let make (to-string "Nissan"))
+  (let describe (fn ()
+    ((fn (year)
+      ((fn (trim)
+        ((fn () (keep model)))) "SV")) 2024)))
+  (twice describe)
+  (println make))
