@@ -1,0 +1,3 @@
+(use undocumented/shapes area)
+
+(def area-page (doc area))

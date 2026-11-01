@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_undocumented_defrule.rslisp
+---
+(def swap-page "(defrule swap)\n\nNo documentation.")

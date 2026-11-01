@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_plain_def.rslisp
+---
+(def limit 10)
+(def limit-page "limit\n\nNo documentation.")
+(def limit-header "limit")

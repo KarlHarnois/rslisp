@@ -1,0 +1,3 @@
+(export area)
+
+(defn area (width height) (* width height))

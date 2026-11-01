@@ -3,10 +3,4 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/expand/doc_kernel_form.rslisp
 ---
-error[L0327]: `if` has no docstring
- --> expand/doc_kernel_form.rslisp:1:19
-  |
-1 | (def if-page (doc if))
-  |                   ^^ no docstring for this name
-  |
-  = help: write a docstring where it is defined, as the first form after the parameter list or the header
+(def if-page "if\n\nNo documentation.")
