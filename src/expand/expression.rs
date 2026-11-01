@@ -31,7 +31,7 @@ impl Expander<'_> {
         lowered
     }
 
-    fn nests_too_deep(&self, span: Span) -> Diagnostic {
+    pub(super) fn nests_too_deep(&self, span: Span) -> Diagnostic {
         let expansion = self.macro_origins.get(&span).map(|origin| &*origin.name);
         ExpandProblems::expansion_nests_too_deep(span, Form::NESTING_LIMIT, expansion)
     }
