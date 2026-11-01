@@ -1,6 +1,6 @@
 # RFC 0041: Docstrings and the doc lookups
 
-**Status:** Accepted. Docstring storage superseded by 0042
+**Status:** Accepted. Docstring storage superseded by 0042. Undocumented lookups superseded by 0043
 **Date:** 2026-10-30
 
 ## Problem
