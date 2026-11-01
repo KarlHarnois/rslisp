@@ -167,10 +167,7 @@ impl TypeChecker {
         };
         self.check_trait_argument(bound.binding, argument.span())?;
         let argument = self.lower_type(argument, scope)?;
-        Ok(Bound {
-            binding: bound.binding,
-            argument: Some(argument),
-        })
+        Ok(Bound::with_argument(bound.binding, argument))
     }
 
     fn check_trait_argument(&self, binding: BindingId, span: Span) -> Result<(), Diagnostic> {

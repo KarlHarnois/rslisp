@@ -1074,6 +1074,14 @@ impl TypeProblems {
         Label::new(span, format!("this `derive` leaves out `{trait_name}`"))
     }
 
+    pub fn borrow_copied(span: Span) -> Label {
+        Label::new(span, "this copies the borrowed value")
+    }
+
+    pub fn clone_copied_help() -> String {
+        "to copy a value that is not `copy`, write `(clone ...)` around it".to_string()
+    }
+
     pub fn add_to_derive_help(trait_name: &str) -> String {
         format!("add `{trait_name}` to the struct's `derive`")
     }

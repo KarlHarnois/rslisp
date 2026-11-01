@@ -3,6 +3,7 @@ use std::rc::Rc;
 use rustc_hash::FxHashMap;
 
 use crate::core::{BindingId, ClosureKind, PrimitiveType};
+use crate::source::Span;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TypeVar(u32);
@@ -293,6 +294,7 @@ impl Type {
 pub struct Bound {
     pub binding: BindingId,
     pub argument: Option<Type>,
+    pub origin: BoundOrigin,
 }
 
 impl Bound {
@@ -300,7 +302,20 @@ impl Bound {
         Self {
             binding,
             argument: None,
+            origin: BoundOrigin::default(),
         }
+    }
+
+    pub fn with_argument(binding: BindingId, argument: Type) -> Self {
+        Self {
+            binding,
+            argument: Some(argument),
+            origin: BoundOrigin::default(),
+        }
+    }
+
+    pub fn from_origin(self, origin: BoundOrigin) -> Self {
+        Self { origin, ..self }
     }
 
     pub fn substituted(&self, replacements: &FxHashMap<GenericId, Type>) -> Self {
@@ -310,6 +325,7 @@ impl Bound {
                 .argument
                 .as_ref()
                 .map(|argument| argument.substitute(replacements)),
+            origin: self.origin,
         }
     }
 
@@ -320,7 +336,21 @@ impl Bound {
                 .argument
                 .as_ref()
                 .map(|argument| argument.substitute_vars(replacements)),
+            origin: self.origin,
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub enum BoundOrigin {
+    #[default]
+    Unrecorded,
+    BorrowCopied(Span),
+}
+
+impl PartialEq for BoundOrigin {
+    fn eq(&self, _: &Self) -> bool {
+        true
     }
 }
 
@@ -352,6 +382,7 @@ impl Scheme {
 mod tests {
     use super::*;
     use crate::core::{BindingArena, BindingInfo, BindingKind};
+    use crate::source::SourceId;
 
     struct Substitution {
         replacements: FxHashMap<TypeVar, Type>,
@@ -389,6 +420,33 @@ mod tests {
         fn substitute(&self, value: &Type) -> Type {
             value.substitute_vars(&self.replacements)
         }
+
+        fn copy_site(&self) -> Span {
+            Span::new(SourceId::new(0), 0..1)
+        }
+
+        fn bound_from_copy(&self) -> Bound {
+            Bound::plain(self.binding).from_origin(BoundOrigin::BorrowCopied(self.copy_site()))
+        }
+
+        fn keeps_copy_site(&self, bound: &Bound) -> bool {
+            matches!(bound.origin, BoundOrigin::BorrowCopied(site) if site == self.copy_site())
+        }
+    }
+
+    #[test]
+    fn an_origin_never_tells_two_bounds_apart() {
+        let fixture = Substitution::new();
+        assert_eq!(fixture.bound_from_copy(), Bound::plain(fixture.binding));
+    }
+
+    #[test]
+    fn substitution_keeps_the_origin_of_a_bound() {
+        let fixture = Substitution::new();
+        let bound = fixture.bound_from_copy();
+        let generic = FxHashMap::from_iter([(GenericId::new(0), fixture.replacement.clone())]);
+        assert!(fixture.keeps_copy_site(&bound.substituted_vars(&fixture.replacements)));
+        assert!(fixture.keeps_copy_site(&bound.substituted(&generic)));
     }
 
     #[test]

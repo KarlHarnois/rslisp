@@ -18,7 +18,7 @@ use super::selfless_methods::SelflessMethods;
 use super::structs::{StructDefinition, StructTable};
 use super::templates::TemplateBorrows;
 use super::traits::{Implementor, RustTrait, TraitTable};
-use super::ty::{Bound, GenericId, GenericParam, Scheme, Type, TypeVar};
+use super::ty::{Bound, BoundOrigin, GenericId, GenericParam, Scheme, Type, TypeVar};
 use super::typed::{
     PendingModeCheck, ReceiverKind, TraitMethodInfo, TypedConversion, TypedDefinition, TypedExpr,
     TypedExprKind, TypedLeaf, TypedTrait, TypedTraitImpl, TypedTraitMethod,
@@ -703,11 +703,20 @@ impl TypeChecker {
     }
 
     pub(super) fn require_copy(&mut self, value: &Type) {
+        self.require_copy_from(value, BoundOrigin::Unrecorded);
+    }
+
+    pub(super) fn require_copy_at(&mut self, value: &Type, copied: Span) {
+        self.require_copy_from(value, BoundOrigin::BorrowCopied(copied));
+    }
+
+    fn require_copy_from(&mut self, value: &Type, origin: BoundOrigin) {
         let Type::Var(var) = self.unifier.shallow(value) else {
             return;
         };
         if let Some(copy) = self.copy_trait {
-            self.unifier.add_bound(var, Bound::plain(copy));
+            self.unifier
+                .add_bound(var, Bound::plain(copy).from_origin(origin));
         }
     }
 
@@ -766,6 +775,7 @@ impl TypeChecker {
                 .argument
                 .as_ref()
                 .map(|argument| self.unifier.resolve(argument)),
+            origin: bound.origin,
         }
     }
 
@@ -1344,10 +1354,7 @@ impl TypeChecker {
                     if argument == Type::Var(var) {
                         Bound::plain(bound.binding)
                     } else {
-                        Bound {
-                            binding: bound.binding,
-                            argument: Some(argument),
-                        }
+                        Bound::with_argument(bound.binding, argument)
                     }
                 }
                 None => bound.clone(),
@@ -2373,7 +2380,17 @@ impl TypeChecker {
         if let Type::Named(binding, _) = implementor {
             diagnostic = self.type_trait_help(diagnostic, *binding, bound, &display);
         }
-        self.diagnostics.push(diagnostic);
+        self.diagnostics
+            .push(Self::with_bound_origin(diagnostic, bound.origin));
+    }
+
+    fn with_bound_origin(diagnostic: Diagnostic, origin: BoundOrigin) -> Diagnostic {
+        match origin {
+            BoundOrigin::BorrowCopied(copied) => diagnostic
+                .with_label(TypeProblems::borrow_copied(copied))
+                .with_help(TypeProblems::clone_copied_help()),
+            BoundOrigin::Unrecorded => diagnostic,
+        }
     }
 
     fn missing_trait_diagnostic(
@@ -2928,13 +2945,9 @@ mod tests {
 
         fn link(&mut self, var: TypeVar, other: TypeVar) -> bool {
             let binding = self.bound_trait();
-            self.checker.unifier.add_bound(
-                var,
-                Bound {
-                    binding,
-                    argument: Some(Type::Var(other)),
-                },
-            );
+            self.checker
+                .unifier
+                .add_bound(var, Bound::with_argument(binding, Type::Var(other)));
             self.checker.link_var(var, &[var, other], self.span)
         }
     }
