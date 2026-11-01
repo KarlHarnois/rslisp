@@ -17,7 +17,7 @@ fn describe_half<N: crate::rt::Float + std::fmt::Display>(x: N) -> String {
 
 fn main() {
     crate::rt::restore_default_sigpipe();
-    println!("{}", increment(41));
+    println!("{}", increment(41_i64));
     println!("{}", increment(1.5));
     println!(
         "{}",

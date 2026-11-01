@@ -13,7 +13,7 @@ fn same(a: i64, b: i64) -> i64 {
 
 fn main() {
     crate::rt::restore_default_sigpipe();
-    println!("{}", bigger(3, 7));
+    println!("{}", bigger(3_i64, 7));
     println!("{}", bigger("pear".to_string(), "apple".to_string()));
     println!("{}", same(4, 4));
     let name = "Ana".to_string();

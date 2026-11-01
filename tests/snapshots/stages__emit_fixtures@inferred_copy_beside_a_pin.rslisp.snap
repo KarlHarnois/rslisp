@@ -18,7 +18,7 @@ fn listen(p: u16) -> u16 {
 fn main() {
     crate::rt::restore_default_sigpipe();
     {
-        let (left, right) = twice(7);
+        let (left, right) = twice(7_i64);
         println!("{}{}", left, right)
     }
     {
