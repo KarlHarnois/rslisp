@@ -1,5 +1,6 @@
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::moved_values::{FieldPath, MoveSite, MovedValues};
 use super::mutation::ChangedValues;
@@ -40,18 +41,18 @@ pub struct MoveChecker<'a> {
     structs: &'a StructTable,
     bindings: &'a BindingArena,
     template_borrows: &'a TemplateBorrows,
-    generics: &'a HashMap<GenericId, GenericParam>,
+    generics: &'a FxHashMap<GenericId, GenericParam>,
     pipelines: Pipelines<'a>,
     stored_definitions: &'a StoredDefinitions,
     changed: ChangedValues,
     moved: MovedValues,
     repeating: Option<RepeatingBody>,
     moved_by_earlier_pass: MovedValues,
-    copy_functions: HashSet<BindingId>,
-    once_functions: HashSet<BindingId>,
-    reported: HashSet<BindingId>,
-    parameters: HashSet<BindingId>,
-    unwritten_parameters: HashSet<BindingId>,
+    copy_functions: FxHashSet<BindingId>,
+    once_functions: FxHashSet<BindingId>,
+    reported: FxHashSet<BindingId>,
+    parameters: FxHashSet<BindingId>,
+    unwritten_parameters: FxHashSet<BindingId>,
     inferred_copies: InferredCopies,
     diagnostics: Vec<Diagnostic>,
 }
@@ -62,7 +63,7 @@ impl<'a> MoveChecker<'a> {
         structs: &'a StructTable,
         bindings: &'a BindingArena,
         template_borrows: &'a TemplateBorrows,
-        generics: &'a HashMap<GenericId, GenericParam>,
+        generics: &'a FxHashMap<GenericId, GenericParam>,
         pipelines: Pipelines<'a>,
         stored_definitions: &'a StoredDefinitions,
     ) -> Self {
@@ -78,11 +79,11 @@ impl<'a> MoveChecker<'a> {
             moved: MovedValues::default(),
             repeating: None,
             moved_by_earlier_pass: MovedValues::default(),
-            copy_functions: HashSet::new(),
-            once_functions: HashSet::new(),
-            reported: HashSet::new(),
-            parameters: HashSet::new(),
-            unwritten_parameters: HashSet::new(),
+            copy_functions: FxHashSet::default(),
+            once_functions: FxHashSet::default(),
+            reported: FxHashSet::default(),
+            parameters: FxHashSet::default(),
+            unwritten_parameters: FxHashSet::default(),
             inferred_copies: InferredCopies::default(),
             diagnostics: Vec::new(),
         }

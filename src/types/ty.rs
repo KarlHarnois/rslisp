@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use crate::core::{BindingId, ClosureKind, PrimitiveType};
 
@@ -154,7 +155,7 @@ impl Type {
         }
     }
 
-    pub fn substitute_vars(&self, replacements: &HashMap<TypeVar, Type>) -> Type {
+    pub fn substitute_vars(&self, replacements: &FxHashMap<TypeVar, Type>) -> Type {
         match self {
             Type::Var(var) => replacements
                 .get(var)
@@ -185,7 +186,7 @@ impl Type {
         }
     }
 
-    pub fn substitute(&self, replacements: &HashMap<GenericId, Type>) -> Type {
+    pub fn substitute(&self, replacements: &FxHashMap<GenericId, Type>) -> Type {
         match self {
             Type::Generic(generic) => replacements
                 .get(generic)
@@ -244,7 +245,7 @@ impl Type {
             .collect()
     }
 
-    fn substitute_all(types: &[Type], replacements: &HashMap<GenericId, Type>) -> Vec<Type> {
+    fn substitute_all(types: &[Type], replacements: &FxHashMap<GenericId, Type>) -> Vec<Type> {
         types
             .iter()
             .map(|part| part.substitute(replacements))
@@ -302,7 +303,7 @@ impl Bound {
         }
     }
 
-    pub fn substituted(&self, replacements: &HashMap<GenericId, Type>) -> Self {
+    pub fn substituted(&self, replacements: &FxHashMap<GenericId, Type>) -> Self {
         Self {
             binding: self.binding,
             argument: self
@@ -312,7 +313,7 @@ impl Bound {
         }
     }
 
-    pub fn substituted_vars(&self, replacements: &HashMap<TypeVar, Type>) -> Self {
+    pub fn substituted_vars(&self, replacements: &FxHashMap<TypeVar, Type>) -> Self {
         Self {
             binding: self.binding,
             argument: self
@@ -353,7 +354,7 @@ mod tests {
     use crate::core::{BindingArena, BindingInfo, BindingKind};
 
     struct Substitution {
-        replacements: HashMap<TypeVar, Type>,
+        replacements: FxHashMap<TypeVar, Type>,
         variable: TypeVar,
         replacement: Type,
         binding: BindingId,
@@ -370,7 +371,7 @@ mod tests {
                 None,
             ));
             Self {
-                replacements: HashMap::from([(variable, replacement.clone())]),
+                replacements: FxHashMap::from_iter([(variable, replacement.clone())]),
                 variable,
                 replacement,
                 binding,

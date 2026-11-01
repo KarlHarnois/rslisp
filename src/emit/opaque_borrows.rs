@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use crate::core::BindingId;
 use crate::types::{Lifetime, RustType, Type, TypedProgram};
@@ -32,13 +32,13 @@ impl<'a> OpaqueBorrows<'a> {
         }
     }
 
-    pub fn written_lifetimes(&self, ty: &Type) -> HashSet<BindingId> {
-        let mut lifetimes = HashSet::new();
+    pub fn written_lifetimes(&self, ty: &Type) -> FxHashSet<BindingId> {
+        let mut lifetimes = FxHashSet::default();
         self.collect_opaque(ty, &mut lifetimes);
         lifetimes
     }
 
-    fn collect_opaque(&self, ty: &Type, lifetimes: &mut HashSet<BindingId>) {
+    fn collect_opaque(&self, ty: &Type, lifetimes: &mut FxHashSet<BindingId>) {
         match ty {
             Type::Named(binding, arguments) if self.is_opaque(*binding) => {
                 for argument in arguments {
@@ -53,7 +53,7 @@ impl<'a> OpaqueBorrows<'a> {
         }
     }
 
-    fn collect_written(ty: &Type, lifetimes: &mut HashSet<BindingId>) {
+    fn collect_written(ty: &Type, lifetimes: &mut FxHashSet<BindingId>) {
         if let Some(Lifetime::Written(binding)) = ty.reference_lifetime() {
             lifetimes.insert(binding);
         }

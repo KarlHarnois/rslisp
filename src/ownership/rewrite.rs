@@ -1,5 +1,6 @@
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::functions::{FunctionTable, ParamMode};
 use crate::core::{BindingId, ReferenceKind};
@@ -9,23 +10,23 @@ use crate::types::{
 };
 
 pub struct ModeRewrite<'a> {
-    param_types: HashMap<BindingId, Type>,
-    binding_types: HashMap<BindingId, Type>,
-    added_references: HashSet<BindingId>,
-    copy_binders: HashSet<BindingId>,
-    function_params: HashMap<BindingId, Vec<Type>>,
-    modes: &'a HashMap<BindingId, ParamMode>,
+    param_types: FxHashMap<BindingId, Type>,
+    binding_types: FxHashMap<BindingId, Type>,
+    added_references: FxHashSet<BindingId>,
+    copy_binders: FxHashSet<BindingId>,
+    function_params: FxHashMap<BindingId, Vec<Type>>,
+    modes: &'a FxHashMap<BindingId, ParamMode>,
 }
 
 impl<'a> ModeRewrite<'a> {
     pub fn new(
         functions: &FunctionTable,
-        modes: &'a HashMap<BindingId, ParamMode>,
-        slices: &'a HashMap<BindingId, Type>,
+        modes: &'a FxHashMap<BindingId, ParamMode>,
+        slices: &'a FxHashMap<BindingId, Type>,
         copy: &CopyRules,
     ) -> Self {
-        let mut param_types = HashMap::new();
-        let mut function_params = HashMap::new();
+        let mut param_types = FxHashMap::default();
+        let mut function_params = FxHashMap::default();
         for (function, info) in functions.iter() {
             let mut types = Vec::new();
             for slot in &info.params {
@@ -48,16 +49,16 @@ impl<'a> ModeRewrite<'a> {
         }
         Self {
             param_types,
-            binding_types: HashMap::new(),
-            added_references: HashSet::new(),
+            binding_types: FxHashMap::default(),
+            added_references: FxHashSet::default(),
             copy_binders: Self::copy_binders(functions, copy),
             function_params,
             modes,
         }
     }
 
-    fn copy_binders(functions: &FunctionTable, copy: &CopyRules) -> HashSet<BindingId> {
-        let mut binders = HashSet::new();
+    fn copy_binders(functions: &FunctionTable, copy: &CopyRules) -> FxHashSet<BindingId> {
+        let mut binders = FxHashSet::default();
         for function in functions.definitions() {
             for expr in function.lambda.body.expressions() {
                 Self::collect_copy_binders(expr, copy, &mut binders);
@@ -66,7 +67,11 @@ impl<'a> ModeRewrite<'a> {
         binders
     }
 
-    fn collect_copy_binders(expr: &TypedExpr, copy: &CopyRules, binders: &mut HashSet<BindingId>) {
+    fn collect_copy_binders(
+        expr: &TypedExpr,
+        copy: &CopyRules,
+        binders: &mut FxHashSet<BindingId>,
+    ) {
         if let TypedExprKind::Control(TypedControl::Match(matched)) = &expr.kind {
             for arm in &matched.arms {
                 for binder in arm.pattern.binders() {
@@ -81,7 +86,7 @@ impl<'a> ModeRewrite<'a> {
         }
     }
 
-    pub fn function_params(&self) -> &HashMap<BindingId, Vec<Type>> {
+    pub fn function_params(&self) -> &FxHashMap<BindingId, Vec<Type>> {
         &self.function_params
     }
 
@@ -218,8 +223,8 @@ impl<'a> ModeRewrite<'a> {
     fn wrap_copy_binders(
         &mut self,
         matched: &mut crate::types::TypedMatch,
-    ) -> HashMap<BindingId, Type> {
-        let mut copies = HashMap::new();
+    ) -> FxHashMap<BindingId, Type> {
+        let mut copies = FxHashMap::default();
         for arm in &mut matched.arms {
             for binder in arm.pattern.binders_mut() {
                 if self.copy_binders.contains(&binder.binding) {
@@ -235,7 +240,7 @@ impl<'a> ModeRewrite<'a> {
 
     fn copy_arm_references(
         matched: &mut crate::types::TypedMatch,
-        copies: &HashMap<BindingId, Type>,
+        copies: &FxHashMap<BindingId, Type>,
     ) {
         for arm in &mut matched.arms {
             for item in &mut arm.body.items {
@@ -247,7 +252,7 @@ impl<'a> ModeRewrite<'a> {
         }
     }
 
-    fn copy_added_references(expr: &mut TypedExpr, copies: &HashMap<BindingId, Type>) {
+    fn copy_added_references(expr: &mut TypedExpr, copies: &FxHashMap<BindingId, Type>) {
         if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &expr.kind
             && let Some(owned) = copies.get(binding)
         {

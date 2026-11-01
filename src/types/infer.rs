@@ -2,8 +2,9 @@ mod open_collections;
 pub(super) use open_collections::{OpenCollections, OpenSetAt};
 mod shared_variables;
 
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use super::borrowed_items::ArgumentSite;
 use super::checker::{TypeChecker, VariantArmReference};
@@ -1294,7 +1295,7 @@ impl TypeChecker {
         expected: Option<(&Type, bool)>,
     ) -> Result<TypedBinder, Diagnostic> {
         let ty = match (&param.annotation, expected) {
-            (Some(annotation), _) => self.lower_type(annotation, &HashMap::new())?,
+            (Some(annotation), _) => self.lower_type(annotation, &FxHashMap::default())?,
             (None, Some((expected, _))) => expected.clone(),
             (None, None) => self.unifier.fresh(),
         };
@@ -1367,7 +1368,7 @@ impl TypeChecker {
     ) -> Result<(TypedBodyItem, Type), Diagnostic> {
         let (value, ty) = match &binder.annotation {
             Some(annotation) => {
-                let ty = self.lower_type(annotation, &HashMap::new())?;
+                let ty = self.lower_type(annotation, &FxHashMap::default())?;
                 let context = MismatchContext::Annotation {
                     annotation: annotation.span(),
                 };
@@ -2242,7 +2243,7 @@ impl TypeChecker {
 
     pub(super) fn decide_pending_borrows(&mut self) -> DecidedBorrows {
         let pending = std::mem::take(&mut self.pending_borrows);
-        let mut decided = HashMap::new();
+        let mut decided = FxHashMap::default();
         for (id, pending) in pending.iter().enumerate() {
             let borrow = self.decide_borrow(pending).unwrap_or_else(|diagnostic| {
                 self.diagnostics.push(diagnostic);

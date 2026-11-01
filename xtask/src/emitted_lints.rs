@@ -22,6 +22,8 @@ impl<'a> EmittedLints<'a> {
     const DIAGNOSTIC_START: &'static str = "error[";
     const WORK_DIRECTORY: &'static str = "target/emitted-lints";
     const CLIPPY: &'static str = "clippy-driver";
+    const CONFIG_DIRECTORY_VARIABLE: &'static str = "CLIPPY_CONF_DIR";
+    const DEFAULT_CONFIG: &'static str = "clippy.toml";
     const EDITION: &'static str = "2024";
     const PROGRAM_CHOICES: [&'static str; 9] = [
         "unused_parens",
@@ -44,6 +46,7 @@ impl<'a> EmittedLints<'a> {
         let directory = self.root.join(Self::WORK_DIRECTORY);
         fs::create_dir_all(&directory)
             .map_err(|error| TaskFailure::unwritable(&directory, error))?;
+        Self::write_default_config(&directory)?;
         let mut linted = Vec::new();
         for (fixture, program) in self.emitted_programs()? {
             if let Some(warnings) = Self::lint(&directory, &fixture, &program)? {
@@ -51,6 +54,11 @@ impl<'a> EmittedLints<'a> {
             }
         }
         Ok(linted)
+    }
+
+    fn write_default_config(directory: &Path) -> Result<(), TaskFailure> {
+        let config = directory.join(Self::DEFAULT_CONFIG);
+        fs::write(&config, "").map_err(|error| TaskFailure::unwritable(&config, error))
     }
 
     fn emitted_programs(&self) -> Result<Vec<(String, String)>, TaskFailure> {
@@ -114,6 +122,7 @@ impl<'a> EmittedLints<'a> {
                     .chain(&Self::UNFIXED)
                     .flat_map(|lint| ["-A", *lint]),
             )
+            .env(Self::CONFIG_DIRECTORY_VARIABLE, directory)
             .arg("--out-dir")
             .arg(directory)
             .arg(source);
@@ -123,6 +132,7 @@ impl<'a> EmittedLints<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::ffi::OsStr;
     use std::path::Path;
 
     use super::EmittedLints;
@@ -148,5 +158,16 @@ mod tests {
     fn a_diagnostic_snapshot_holds_no_program() {
         let snapshot = "---\nsource: tests/stages.rs\n---\nerror[L0401]: mismatched types\n";
         assert_eq!(EmittedLints::program(snapshot), None);
+    }
+
+    #[test]
+    fn lints_with_the_settings_of_its_work_directory() {
+        let directory = Path::new("/checkout/target/emitted-lints");
+        let command = EmittedLints::clippy(directory, &directory.join("person.rs"));
+        let config_directory = command
+            .get_envs()
+            .find(|(variable, _)| *variable == OsStr::new(EmittedLints::CONFIG_DIRECTORY_VARIABLE))
+            .and_then(|(_, value)| value);
+        assert_eq!(config_directory, Some(directory.as_os_str()));
     }
 }

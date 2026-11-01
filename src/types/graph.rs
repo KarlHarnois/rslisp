@@ -1,8 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::core::{BindingArena, BindingId, BindingKind, Expr, ExprKind, ItemKind, Leaf};
 use crate::expand::Program;
-use crate::scope::{FastHashMap, FastHashSet};
 use crate::source::Span;
 
 pub struct Definition<'p> {
@@ -75,18 +74,18 @@ impl<'p> DefinitionGraph<'p> {
 }
 
 pub struct DependencyGraph {
-    edges: HashMap<BindingId, Vec<BindingId>>,
-    compile_time_only: HashSet<BindingId>,
+    edges: FxHashMap<BindingId, Vec<BindingId>>,
+    compile_time_only: FxHashSet<BindingId>,
 }
 
 impl DependencyGraph {
     pub fn build(definitions: &[Definition], bindings: &BindingArena) -> Self {
-        let known: HashSet<BindingId> = definitions
+        let known: FxHashSet<BindingId> = definitions
             .iter()
             .map(|definition| definition.binding)
             .collect();
-        let mut edges = HashMap::new();
-        let mut direct_compile_time = HashSet::new();
+        let mut edges = FxHashMap::default();
+        let mut direct_compile_time = FxHashSet::default();
         for definition in definitions {
             let mut references = References::default();
             references.collect(definition.value, bindings);
@@ -117,7 +116,7 @@ impl DependencyGraph {
     pub fn directly_depends_on_any(
         &self,
         roots: &[BindingId],
-        bindings: &HashSet<BindingId>,
+        bindings: &FxHashSet<BindingId>,
     ) -> bool {
         roots
             .iter()
@@ -126,8 +125,8 @@ impl DependencyGraph {
             .any(|dependency| bindings.contains(dependency))
     }
 
-    pub fn reachable_from(&self, roots: &[BindingId]) -> HashSet<BindingId> {
-        let mut reached: HashSet<BindingId> = HashSet::new();
+    pub fn reachable_from(&self, roots: &[BindingId]) -> FxHashSet<BindingId> {
+        let mut reached: FxHashSet<BindingId> = FxHashSet::default();
         let mut pending: Vec<BindingId> = roots.to_vec();
         while let Some(binding) = pending.pop() {
             if reached.insert(binding) {
@@ -186,22 +185,22 @@ impl References {
 }
 
 struct StronglyConnected<'a> {
-    edges: &'a HashMap<BindingId, Vec<BindingId>>,
-    index: FastHashMap<BindingId, usize>,
-    low_link: FastHashMap<BindingId, usize>,
+    edges: &'a FxHashMap<BindingId, Vec<BindingId>>,
+    index: FxHashMap<BindingId, usize>,
+    low_link: FxHashMap<BindingId, usize>,
     stack: Vec<BindingId>,
-    on_stack: FastHashSet<BindingId>,
+    on_stack: FxHashSet<BindingId>,
     components: Vec<Vec<BindingId>>,
 }
 
 impl<'a> StronglyConnected<'a> {
-    fn new(edges: &'a HashMap<BindingId, Vec<BindingId>>) -> Self {
+    fn new(edges: &'a FxHashMap<BindingId, Vec<BindingId>>) -> Self {
         Self {
             edges,
-            index: FastHashMap::default(),
-            low_link: FastHashMap::default(),
+            index: FxHashMap::default(),
+            low_link: FxHashMap::default(),
             stack: Vec::new(),
-            on_stack: FastHashSet::default(),
+            on_stack: FxHashSet::default(),
             components: Vec::new(),
         }
     }
@@ -256,7 +255,7 @@ impl<'a> StronglyConnected<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::{HashMap, HashSet};
+    use rustc_hash::{FxHashMap, FxHashSet};
 
     use super::{DefinitionGraph, DependencyGraph};
     use crate::core::{BindingArena, BindingId, BindingInfo, BindingKind, ModuleId};
@@ -264,14 +263,14 @@ mod tests {
 
     struct CallGraph {
         bindings: BindingArena,
-        edges: HashMap<BindingId, Vec<BindingId>>,
+        edges: FxHashMap<BindingId, Vec<BindingId>>,
     }
 
     impl CallGraph {
         fn new() -> Self {
             Self {
                 bindings: BindingArena::default(),
-                edges: HashMap::new(),
+                edges: FxHashMap::default(),
             }
         }
 
@@ -285,7 +284,7 @@ mod tests {
         fn dependencies(self) -> DependencyGraph {
             DependencyGraph {
                 edges: self.edges,
-                compile_time_only: HashSet::new(),
+                compile_time_only: FxHashSet::default(),
             }
         }
     }
@@ -295,7 +294,7 @@ mod tests {
         let mut graph = CallGraph::new();
         let last = graph.function("last-step", &[]);
         let caller = graph.function("middle-step", &[last]);
-        let failed = HashSet::from([last]);
+        let failed = FxHashSet::from_iter([last]);
         assert!(
             graph
                 .dependencies()
@@ -309,7 +308,7 @@ mod tests {
         let last = graph.function("last-step", &[]);
         let middle = graph.function("middle-step", &[last]);
         let first = graph.function("first-step", &[middle]);
-        let failed = HashSet::from([last]);
+        let failed = FxHashSet::from_iter([last]);
         assert!(
             !graph
                 .dependencies()

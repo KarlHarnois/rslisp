@@ -23,9 +23,9 @@ impl Measurement {
              reading the entry file, printing, and dropping each stage's result. \
              `rustfmt` runs as a child process that callgrind does not trace, so the `build` stage \
              counts only the compiler's side of formatting.\n\n\
-             The compiler runs with a fixed random seed, so its hash maps lay out the same way \
-             and identical runs give identical counts, except that the `build` stage can vary \
-             by a few hundred instructions with the number of reads from `rustfmt`'s output.\n\n\
+             The compiler hashes with a fixed seed, so its hash maps lay out the same way in \
+             every run. Identical runs still differ by up to about 1,400 instructions, from \
+             glibc's setup and teardown of the threads that read `rustfmt`'s output.\n\n\
              The compiler runs with glibc's fastbins turned off \
              (`GLIBC_TUNABLES=glibc.malloc.mxfast=0`), so glibc merges freed memory when it is \
              freed, and no stage pays to merge memory that an earlier stage freed.\n",

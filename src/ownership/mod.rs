@@ -36,7 +36,7 @@ mod usage;
 mod values;
 mod worklist;
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::core::{BindingArena, BindingId};
 use crate::diagnostic::Diagnostics;
@@ -202,7 +202,7 @@ impl OwnershipChecker {
     fn check_written_modes(
         checks: &[PendingModeCheck],
         functions: &FunctionTable,
-        modes: &HashMap<BindingId, ParamMode>,
+        modes: &FxHashMap<BindingId, ParamMode>,
         bindings: &BindingArena,
         diagnostics: &mut Diagnostics,
     ) {

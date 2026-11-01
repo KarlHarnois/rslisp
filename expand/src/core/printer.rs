@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use super::{
     Arm, Binder, BindingArena, BindingId, Block, BodyItem, ClosureKind, Control, CoreModule, Expr,
@@ -10,8 +10,8 @@ use crate::stack::DeepRecursion;
 
 pub struct CorePrinter<'a> {
     bindings: &'a BindingArena,
-    assigned: HashMap<BindingId, String>,
-    uses_of_name: HashMap<String, usize>,
+    assigned: FxHashMap<BindingId, String>,
+    uses_of_name: FxHashMap<String, usize>,
 }
 
 impl<'a> CorePrinter<'a> {
@@ -22,7 +22,7 @@ impl<'a> CorePrinter<'a> {
             .map(|name| (name.to_string(), 1));
         Self {
             bindings,
-            assigned: HashMap::new(),
+            assigned: FxHashMap::default(),
             uses_of_name: kernel_names.collect(),
         }
     }

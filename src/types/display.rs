@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use super::projection::ProjectionTable;
 use super::ty::{Bound, GenericId, GenericParam, Lifetime, Scheme, Type};
@@ -6,14 +6,17 @@ use crate::core::{BindingArena, BindingId};
 
 pub struct TypeDisplay<'a> {
     bindings: &'a BindingArena,
-    generics: &'a HashMap<GenericId, GenericParam>,
+    generics: &'a FxHashMap<GenericId, GenericParam>,
     projections: Option<&'a ProjectionTable>,
 }
 
 impl<'a> TypeDisplay<'a> {
     const UNKNOWN: &'static str = "_";
 
-    pub fn new(bindings: &'a BindingArena, generics: &'a HashMap<GenericId, GenericParam>) -> Self {
+    pub fn new(
+        bindings: &'a BindingArena,
+        generics: &'a FxHashMap<GenericId, GenericParam>,
+    ) -> Self {
         Self {
             bindings,
             generics,

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::diagnostic::Diagnostic;
 use crate::types::checker::TypeChecker;
@@ -50,7 +50,7 @@ impl SharedGroup {
 
 #[derive(Default)]
 struct VariableLinks {
-    parents: HashMap<TypeVar, TypeVar>,
+    parents: FxHashMap<TypeVar, TypeVar>,
 }
 
 impl VariableLinks {
@@ -216,7 +216,11 @@ impl TypeChecker {
         depths.windows(2).all(|pair| pair[0] == pair[1])
     }
 
-    fn written_types_hold(&self, group: &SharedGroup, assignment: &HashMap<TypeVar, Type>) -> bool {
+    fn written_types_hold(
+        &self,
+        group: &SharedGroup,
+        assignment: &FxHashMap<TypeVar, Type>,
+    ) -> bool {
         !assignment
             .values()
             .any(|argument| self.referent_unknown(argument))
@@ -227,8 +231,8 @@ impl TypeChecker {
         &self,
         group: &SharedGroup,
         arguments: &[TypedArgument],
-    ) -> Option<HashMap<TypeVar, Type>> {
-        let mut assignment = HashMap::new();
+    ) -> Option<FxHashMap<TypeVar, Type>> {
+        let mut assignment = FxHashMap::default();
         for member in &group.members {
             let first = self
                 .unifier
@@ -245,7 +249,11 @@ impl TypeChecker {
         Some(assignment)
     }
 
-    fn group_bounds_hold(&self, group: &SharedGroup, assignment: &HashMap<TypeVar, Type>) -> bool {
+    fn group_bounds_hold(
+        &self,
+        group: &SharedGroup,
+        assignment: &FxHashMap<TypeVar, Type>,
+    ) -> bool {
         group.members.iter().all(|member| {
             let implementor = &assignment[&member.var];
             self.unifier
@@ -380,7 +388,7 @@ impl TypeChecker {
     }
 
     fn group_fails_bounds(&self, group: &SharedGroup, referent: &Type) -> bool {
-        let assignment: HashMap<TypeVar, Type> = group
+        let assignment: FxHashMap<TypeVar, Type> = group
             .members
             .iter()
             .map(|member| (member.var, referent.clone()))
@@ -397,7 +405,7 @@ impl TypeChecker {
         &self,
         bound: &Bound,
         implementor: &Type,
-        assignment: &HashMap<TypeVar, Type>,
+        assignment: &FxHashMap<TypeVar, Type>,
     ) -> bool {
         let bound = bound.substituted_vars(assignment);
         self.traits

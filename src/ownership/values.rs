@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use super::problems::OwnershipProblems;
 use crate::core::{BindingArena, BindingId, FieldLabel};
@@ -38,9 +39,9 @@ impl Adjustment {
 
 pub struct FunctionValueModes<'a> {
     bindings: &'a mut BindingArena,
-    generics: &'a HashMap<GenericId, GenericParam>,
+    generics: &'a FxHashMap<GenericId, GenericParam>,
     structs: &'a StructTable,
-    function_params: &'a HashMap<BindingId, Vec<Type>>,
+    function_params: &'a FxHashMap<BindingId, Vec<Type>>,
     copy: CopyRules<'a>,
     diagnostics: Vec<Diagnostic>,
 }
@@ -48,7 +49,7 @@ pub struct FunctionValueModes<'a> {
 impl<'a> FunctionValueModes<'a> {
     pub fn apply(
         program: &'a mut TypedProgram,
-        function_params: &'a HashMap<BindingId, Vec<Type>>,
+        function_params: &'a FxHashMap<BindingId, Vec<Type>>,
     ) -> Vec<Diagnostic> {
         let copy = CopyRules::new(
             &program.traits,
@@ -440,10 +441,10 @@ mod tests {
 
     struct Adjustments {
         bindings: BindingArena,
-        generics: HashMap<GenericId, GenericParam>,
+        generics: FxHashMap<GenericId, GenericParam>,
         structs: StructTable,
         enums: crate::types::EnumTable,
-        function_params: HashMap<BindingId, Vec<Type>>,
+        function_params: FxHashMap<BindingId, Vec<Type>>,
         traits: TraitTable,
     }
 
@@ -471,10 +472,10 @@ mod tests {
             );
             Self {
                 bindings,
-                generics: HashMap::new(),
+                generics: FxHashMap::default(),
                 structs: StructTable::default(),
                 enums: crate::types::EnumTable::default(),
-                function_params: HashMap::new(),
+                function_params: FxHashMap::default(),
                 traits,
             }
         }

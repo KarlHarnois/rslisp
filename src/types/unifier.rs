@@ -1,6 +1,7 @@
 use std::cell::Cell;
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use super::projection::ProjectionTable;
 use super::ty::{Bound, GenericId, Type, TypeVar};
@@ -71,7 +72,7 @@ struct VarState {
 pub struct Unifier {
     vars: Vec<VarState>,
     obligations: Vec<Obligation>,
-    generic_bounds: HashMap<GenericId, Vec<Bound>>,
+    generic_bounds: FxHashMap<GenericId, Vec<Bound>>,
     projections: Rc<ProjectionTable>,
     deferred: Vec<DeferredEquality>,
 }

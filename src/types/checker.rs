@@ -1,5 +1,7 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::BTreeSet;
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::copy::InferredCopies;
 use super::display::TypeDisplay;
@@ -147,60 +149,60 @@ pub struct TypeChecker {
     pub(super) enums: EnumTable,
     pub(super) rust_types: RustTypeTable,
     pub(super) traits: TraitTable,
-    pub(super) generics: HashMap<GenericId, GenericParam>,
-    pub(super) schemes: HashMap<BindingId, Scheme>,
-    pub(super) component: HashMap<BindingId, Type>,
-    pub(super) locals: HashMap<BindingId, Type>,
-    pub(super) variant_arm: HashMap<BindingId, VariantArmReference>,
-    pub(super) compile_time_only: HashSet<BindingId>,
-    failed_bindings: HashSet<BindingId>,
+    pub(super) generics: FxHashMap<GenericId, GenericParam>,
+    pub(super) schemes: FxHashMap<BindingId, Scheme>,
+    pub(super) component: FxHashMap<BindingId, Type>,
+    pub(super) locals: FxHashMap<BindingId, Type>,
+    pub(super) variant_arm: FxHashMap<BindingId, VariantArmReference>,
+    pub(super) compile_time_only: FxHashSet<BindingId>,
+    failed_bindings: FxHashSet<BindingId>,
     pub(super) diagnostics: Diagnostics,
     pub(super) warnings: Diagnostics,
     missing_annotations: Diagnostics,
     pub(super) unnameable_types: Diagnostics,
     pub(super) closure_types: Vec<super::typed::ClosureType>,
-    pub(super) type_arities: HashMap<BindingId, usize>,
+    pub(super) type_arities: FxHashMap<BindingId, usize>,
     pub(super) written_projections: Vec<super::associated::WrittenProjection>,
     pub(super) checked_projections: usize,
-    trait_arguments: HashSet<BindingId>,
-    signatures: HashMap<BindingId, (TypeExpr, Span)>,
+    trait_arguments: FxHashSet<BindingId>,
+    signatures: FxHashMap<BindingId, (TypeExpr, Span)>,
     monomorphic: Vec<Type>,
-    pub(super) implied_bounds: HashMap<GenericId, Vec<Bound>>,
-    pub(super) associated_generics: HashMap<GenericId, std::rc::Rc<str>>,
-    pub(super) single_field_readers: HashMap<BindingId, Rc<str>>,
+    pub(super) implied_bounds: FxHashMap<GenericId, Vec<Bound>>,
+    pub(super) associated_generics: FxHashMap<GenericId, std::rc::Rc<str>>,
+    pub(super) single_field_readers: FxHashMap<BindingId, Rc<str>>,
     pub(super) pending_borrows: Vec<PendingBorrow>,
     pub(super) open_set_ats: Vec<super::infer::OpenSetAt>,
     pub(super) unsettled_collections: Vec<(Type, Span)>,
-    pub(super) vector_bases: HashSet<Span>,
+    pub(super) vector_bases: FxHashSet<Span>,
     pub(super) template_borrows: TemplateBorrows,
     pub(super) recur_target: Option<super::infer::RecurTarget>,
     pub(super) checking_function_body: bool,
     pub(super) try_target: Option<super::infer::TryTarget>,
-    pub(super) changed_structs: HashSet<BindingId>,
+    pub(super) changed_structs: FxHashSet<BindingId>,
     pub(super) inferred_copies: InferredCopies,
-    macro_origins: HashMap<Span, Rc<str>>,
+    macro_origins: FxHashMap<Span, Rc<str>>,
     copy_trait: Option<BindingId>,
     box_binding: Option<BindingId>,
     inferred_boxes: BTreeSet<(BindingId, usize, usize)>,
-    pub(super) written_parameters: HashMap<BindingId, Vec<bool>>,
+    pub(super) written_parameters: FxHashMap<BindingId, Vec<bool>>,
     pub(super) parameter_call_requests: Vec<ParameterCallRequest>,
     pub(super) pending_mode_checks: Vec<PendingModeCheck>,
     pub(super) trait_definitions: Vec<TypedTrait>,
-    pub(super) rust_trait_paths: HashMap<BindingId, Rc<str>>,
+    pub(super) rust_trait_paths: FxHashMap<BindingId, Rc<str>>,
     pub(super) trait_impls: Vec<TypedTraitImpl>,
-    impl_methods: HashSet<BindingId>,
-    impl_generics: HashSet<GenericId>,
+    impl_methods: FxHashSet<BindingId>,
+    impl_generics: FxHashSet<GenericId>,
     pub(super) conversions: Vec<TypedConversion>,
-    pub(super) trait_methods: HashMap<BindingId, TraitMethodInfo>,
+    pub(super) trait_methods: FxHashMap<BindingId, TraitMethodInfo>,
     pub(super) selfless_methods: SelflessMethods,
-    pub(super) synthetic_bindings: HashSet<BindingId>,
-    pub(super) pinned: HashMap<BindingId, Type>,
+    pub(super) synthetic_bindings: FxHashSet<BindingId>,
+    pub(super) pinned: FxHashMap<BindingId, Type>,
     pub(super) literal_defaults: LiteralDefaults,
-    pub(super) literal_generics: HashMap<GenericId, LiteralKind>,
+    pub(super) literal_generics: FxHashMap<GenericId, LiteralKind>,
     default_literal_parameters: bool,
     pub(super) recursive_group: Vec<BindingId>,
-    pub(super) reported_unknown_try_groups: HashSet<BindingId>,
-    pub(super) prelude_value_names: HashSet<String>,
+    pub(super) reported_unknown_try_groups: FxHashSet<BindingId>,
+    pub(super) prelude_value_names: FxHashSet<String>,
     pub(super) string_view: Option<BindingId>,
 }
 
@@ -234,60 +236,60 @@ impl TypeChecker {
             enums: EnumTable::default(),
             rust_types: RustTypeTable::default(),
             traits: TraitTable::default(),
-            generics: HashMap::new(),
-            schemes: HashMap::new(),
-            component: HashMap::new(),
-            locals: HashMap::new(),
-            variant_arm: HashMap::new(),
-            compile_time_only: HashSet::new(),
-            failed_bindings: HashSet::new(),
+            generics: FxHashMap::default(),
+            schemes: FxHashMap::default(),
+            component: FxHashMap::default(),
+            locals: FxHashMap::default(),
+            variant_arm: FxHashMap::default(),
+            compile_time_only: FxHashSet::default(),
+            failed_bindings: FxHashSet::default(),
             diagnostics: Diagnostics::default(),
             warnings: Diagnostics::default(),
             missing_annotations: Diagnostics::default(),
             unnameable_types: Diagnostics::default(),
             closure_types: Vec::new(),
-            type_arities: HashMap::new(),
+            type_arities: FxHashMap::default(),
             written_projections: Vec::new(),
             checked_projections: 0,
-            trait_arguments: HashSet::new(),
-            signatures: HashMap::new(),
+            trait_arguments: FxHashSet::default(),
+            signatures: FxHashMap::default(),
             monomorphic: Vec::new(),
-            implied_bounds: HashMap::new(),
-            associated_generics: HashMap::new(),
-            single_field_readers: HashMap::new(),
+            implied_bounds: FxHashMap::default(),
+            associated_generics: FxHashMap::default(),
+            single_field_readers: FxHashMap::default(),
             pending_borrows: Vec::new(),
             open_set_ats: Vec::new(),
             unsettled_collections: Vec::new(),
-            vector_bases: HashSet::new(),
+            vector_bases: FxHashSet::default(),
             template_borrows: TemplateBorrows::default(),
             recur_target: None,
             checking_function_body: false,
             try_target: None,
-            changed_structs: HashSet::new(),
+            changed_structs: FxHashSet::default(),
             inferred_copies: InferredCopies::default(),
-            macro_origins: HashMap::new(),
+            macro_origins: FxHashMap::default(),
             copy_trait: None,
             box_binding: None,
             inferred_boxes: BTreeSet::new(),
-            written_parameters: HashMap::new(),
+            written_parameters: FxHashMap::default(),
             parameter_call_requests: Vec::new(),
             pending_mode_checks: Vec::new(),
             trait_definitions: Vec::new(),
-            rust_trait_paths: HashMap::new(),
+            rust_trait_paths: FxHashMap::default(),
             trait_impls: Vec::new(),
-            impl_methods: HashSet::new(),
-            impl_generics: HashSet::new(),
+            impl_methods: FxHashSet::default(),
+            impl_generics: FxHashSet::default(),
             conversions: Vec::new(),
-            trait_methods: HashMap::new(),
+            trait_methods: FxHashMap::default(),
             selfless_methods: SelflessMethods::default(),
-            synthetic_bindings: HashSet::new(),
-            pinned: HashMap::new(),
+            synthetic_bindings: FxHashSet::default(),
+            pinned: FxHashMap::default(),
             literal_defaults: LiteralDefaults::default(),
-            literal_generics: HashMap::new(),
+            literal_generics: FxHashMap::default(),
             default_literal_parameters: false,
             recursive_group: Vec::new(),
-            reported_unknown_try_groups: HashSet::new(),
-            prelude_value_names: HashSet::new(),
+            reported_unknown_try_groups: FxHashSet::default(),
+            prelude_value_names: FxHashSet::default(),
             string_view: None,
         }
     }
@@ -545,7 +547,7 @@ impl TypeChecker {
         modules: &[CoreModule],
         entry: ModuleId,
         graph: &DefinitionGraph,
-    ) -> HashMap<BindingId, TypedDefinition> {
+    ) -> FxHashMap<BindingId, TypedDefinition> {
         let dependencies = graph.dependencies();
         let runtime = dependencies.reachable_from(&self.main_definition(modules, entry));
         self.compile_time_only = graph
@@ -554,12 +556,12 @@ impl TypeChecker {
                 dependencies.is_compile_time_only(*binding) && !runtime.contains(binding)
             })
             .collect();
-        let by_binding: HashMap<BindingId, &Definition> = graph
+        let by_binding: FxHashMap<BindingId, &Definition> = graph
             .definitions()
             .iter()
             .map(|definition| (definition.binding, definition))
             .collect();
-        let mut typed = HashMap::new();
+        let mut typed = FxHashMap::default();
         for component in graph.components() {
             let members: Vec<&Definition> = component
                 .iter()
@@ -832,7 +834,7 @@ impl TypeChecker {
             .copied()
             .filter(|member| !self.assign_rust_scheme(member))
             .collect();
-        let signatures: HashMap<BindingId, Scheme> = inferred
+        let signatures: FxHashMap<BindingId, Scheme> = inferred
             .iter()
             .filter_map(|member| self.prepare_member(member))
             .collect();
@@ -1060,13 +1062,13 @@ impl TypeChecker {
         self.discharge_obligations(ObligationPass::Deferring);
     }
 
-    fn pinnable_vars(&self, members: &[(BindingId, &TypedExpr)]) -> HashSet<TypeVar> {
+    fn pinnable_vars(&self, members: &[(BindingId, &TypedExpr)]) -> FxHashSet<TypeVar> {
         let mut pinnable = self.parameter_vars(members);
         pinnable.extend(self.result_vars(members));
         pinnable
     }
 
-    fn parameter_vars(&self, members: &[(BindingId, &TypedExpr)]) -> HashSet<TypeVar> {
+    fn parameter_vars(&self, members: &[(BindingId, &TypedExpr)]) -> FxHashSet<TypeVar> {
         Self::parameter_types(members)
             .iter()
             .flat_map(|parameter| self.pinnable_parameter_vars(parameter))
@@ -1143,7 +1145,7 @@ impl TypeChecker {
         vars: Vec<TypeVar>,
         start: usize,
         span: Span,
-        pinnable_vars: &HashSet<TypeVar>,
+        pinnable_vars: &FxHashSet<TypeVar>,
     ) {
         let mut position = start;
         for var in vars {
@@ -1239,7 +1241,7 @@ impl TypeChecker {
         var: TypeVar,
         position: usize,
         span: Span,
-        pinnable_vars: &HashSet<TypeVar>,
+        pinnable_vars: &FxHashSet<TypeVar>,
     ) -> Option<GenericParam> {
         if !self.is_unbound(var) {
             return None;
@@ -1297,7 +1299,7 @@ impl TypeChecker {
         bounds
     }
 
-    fn monomorphic_vars(&self) -> HashSet<TypeVar> {
+    fn monomorphic_vars(&self) -> FxHashSet<TypeVar> {
         self.monomorphic
             .iter()
             .flat_map(|monomorphic| self.free_vars(monomorphic))
@@ -1352,7 +1354,7 @@ impl TypeChecker {
     ) -> Result<(), Diagnostic> {
         let params = self.struct_params(binders)?;
         let lifetimes = Self::lifetime_binders(binders);
-        let scope: HashMap<BindingId, GenericId> = binders
+        let scope: FxHashMap<BindingId, GenericId> = binders
             .iter()
             .filter(|binder| !binder.lifetime)
             .zip(&params)
@@ -1389,7 +1391,7 @@ impl TypeChecker {
     ) -> Result<(), Diagnostic> {
         let params = self.struct_params(binders)?;
         let lifetimes = Self::lifetime_binders(binders);
-        let scope: HashMap<BindingId, GenericId> = binders
+        let scope: FxHashMap<BindingId, GenericId> = binders
             .iter()
             .filter(|binder| !binder.lifetime)
             .zip(&params)
@@ -1440,7 +1442,7 @@ impl TypeChecker {
     fn lower_variant_payload(
         &mut self,
         payload: &CoreVariantPayload,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<(VariantPayload, Vec<Span>), Diagnostic> {
         match payload {
             CoreVariantPayload::None => Ok((VariantPayload::None, Vec::new())),
@@ -1509,7 +1511,7 @@ impl TypeChecker {
     fn lower_fields(
         &mut self,
         fields: &[(crate::core::FieldLabel, TypeExpr)],
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<(LoweredFields, Vec<Span>), Diagnostic> {
         let mut lowered = Vec::new();
         let mut spans = Vec::new();
@@ -1550,7 +1552,7 @@ impl TypeChecker {
     fn lower_stored_type(
         &mut self,
         stored_type: &TypeExpr,
-        scope: &HashMap<BindingId, GenericId>,
+        scope: &FxHashMap<BindingId, GenericId>,
     ) -> Result<Type, Diagnostic> {
         let lowered = self.lower_type(stored_type, scope)?;
         Ok(self.borrow_views(lowered))
@@ -1601,7 +1603,10 @@ impl TypeChecker {
         let clauses = clauses
             .iter()
             .map(|(target, template)| {
-                Ok((self.lower_type(target, &HashMap::new())?, template.clone()))
+                Ok((
+                    self.lower_type(target, &FxHashMap::default())?,
+                    template.clone(),
+                ))
             })
             .collect::<Result<Vec<_>, Diagnostic>>()?;
         self.rust_types.add(
@@ -1698,7 +1703,7 @@ impl TypeChecker {
         }
         let supertraits = supertraits
             .iter()
-            .map(|bound| self.lower_type_bound(bound, &HashMap::new()))
+            .map(|bound| self.lower_type_bound(bound, &FxHashMap::default()))
             .collect::<Result<Vec<_>, Diagnostic>>()?;
         self.traits.add(
             binding,
@@ -2014,7 +2019,7 @@ impl TypeChecker {
         associated: &[crate::core::ImplAssociatedType],
     ) -> Result<LoweredImplementor, Diagnostic> {
         let mut params = Vec::new();
-        let mut scope = HashMap::new();
+        let mut scope = FxHashMap::default();
         for variable in self.implementor_variables(implementor) {
             let name = self.bindings.get(variable).name().to_string();
             let param = self.new_generic(&name, Vec::new());
@@ -2151,7 +2156,7 @@ impl TypeChecker {
         Ok(())
     }
 
-    fn absorb_impl_bounds(&mut self, definitions: &HashMap<BindingId, TypedDefinition>) {
+    fn absorb_impl_bounds(&mut self, definitions: &FxHashMap<BindingId, TypedDefinition>) {
         for position in 0..self.trait_impls.len() {
             let params = self.trait_impls[position].params.clone();
             let mut found: Vec<Vec<Bound>> = vec![Vec::new(); params.len()];
@@ -2159,7 +2164,7 @@ impl TypeChecker {
                 let Some(definition) = definitions.get(&method.binding) else {
                     continue;
                 };
-                let replacements: HashMap<GenericId, Type> = definition
+                let replacements: FxHashMap<GenericId, Type> = definition
                     .scheme
                     .params
                     .iter()
@@ -2399,7 +2404,7 @@ impl TypeChecker {
             .into_iter()
             .filter(|(_, entries)| entries.len() > 1)
             .collect();
-        let grouped_positions: HashSet<usize> = groups
+        let grouped_positions: FxHashSet<usize> = groups
             .iter()
             .flat_map(|(_, entries)| entries.iter().map(|(position, _)| *position))
             .collect();
@@ -2691,13 +2696,13 @@ impl TypeChecker {
     pub fn check(
         program: &crate::expand::Program,
         graph: &DefinitionGraph,
-        changed_structs: &HashSet<BindingId>,
+        changed_structs: &FxHashSet<BindingId>,
         inferred_copies: &InferredCopies,
-        pinned: &HashMap<BindingId, Type>,
+        pinned: &FxHashMap<BindingId, Type>,
         literal_defaults: LiteralDefaults,
         default_literal_parameters: bool,
     ) -> Result<super::typed::TypedProgram, Diagnostics> {
-        let configured = |vector_bases: &HashSet<Span>| {
+        let configured = |vector_bases: &FxHashSet<Span>| {
             let mut checker = Self::new(program.bindings.clone());
             checker.changed_structs = changed_structs.clone();
             checker.inferred_copies = inferred_copies.clone();
@@ -2712,7 +2717,7 @@ impl TypeChecker {
                 .collect();
             checker
         };
-        let mut vector_bases = HashSet::new();
+        let mut vector_bases = FxHashSet::default();
         loop {
             let (typed, open_collections) =
                 configured(&vector_bases).check_program(program, graph)?;
@@ -2755,7 +2760,7 @@ impl TypeChecker {
 
     fn typed_module(
         module: &CoreModule,
-        definitions: &mut HashMap<BindingId, TypedDefinition>,
+        definitions: &mut FxHashMap<BindingId, TypedDefinition>,
     ) -> super::typed::TypedModule {
         let mut typed = super::typed::TypedModule {
             id: module.id,
@@ -2813,11 +2818,11 @@ impl TypeChecker {
             implied_bounds: self.implied_bounds,
             template_borrows: self.template_borrows,
             pending_mode_checks: self.pending_mode_checks,
-            borrowed_parameters: HashSet::new(),
-            stored_function_parameters: HashSet::new(),
-            escaping_lambdas: HashSet::new(),
-            borrowing_lambdas: HashMap::new(),
-            mutable_function_bindings: HashSet::new(),
+            borrowed_parameters: FxHashSet::default(),
+            stored_function_parameters: FxHashSet::default(),
+            escaping_lambdas: FxHashSet::default(),
+            borrowing_lambdas: FxHashMap::default(),
+            mutable_function_bindings: FxHashSet::default(),
             literal_generics: self.literal_generics,
             unnameable_types: self.unnameable_types,
             closure_types: self.closure_types,

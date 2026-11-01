@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::enums::EnumTable;
 use super::size::TypeSizes;
@@ -9,7 +9,7 @@ use crate::core::{BindingArena, BindingId, CopyTrait};
 
 #[derive(Clone, Default)]
 pub struct InferredCopies {
-    parameters: HashSet<BindingId>,
+    parameters: FxHashSet<BindingId>,
 }
 
 impl InferredCopies {
@@ -32,7 +32,7 @@ impl InferredCopies {
 
 pub struct CopyRules<'a> {
     traits: &'a TraitTable,
-    generics: &'a HashMap<GenericId, GenericParam>,
+    generics: &'a FxHashMap<GenericId, GenericParam>,
     sizes: TypeSizes<'a>,
     copy_traits: Vec<BindingId>,
 }
@@ -40,7 +40,7 @@ pub struct CopyRules<'a> {
 impl<'a> CopyRules<'a> {
     pub fn new(
         traits: &'a TraitTable,
-        generics: &'a HashMap<GenericId, GenericParam>,
+        generics: &'a FxHashMap<GenericId, GenericParam>,
         structs: &'a StructTable,
         enums: &'a EnumTable,
     ) -> Self {
@@ -104,7 +104,7 @@ impl<'a> CopyRules<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use rustc_hash::FxHashMap;
 
     use super::CopyRules;
     use crate::core::{BindingArena, BindingInfo, BindingKind, ModuleId, PrimitiveType};
@@ -117,7 +117,7 @@ mod tests {
         traits: TraitTable,
         structs: StructTable,
         enums: crate::types::EnumTable,
-        generics: HashMap<crate::types::GenericId, crate::types::GenericParam>,
+        generics: FxHashMap<crate::types::GenericId, crate::types::GenericParam>,
         bound: crate::core::BindingId,
     }
 
@@ -147,7 +147,7 @@ mod tests {
                 traits,
                 structs: StructTable::default(),
                 enums: crate::types::EnumTable::default(),
-                generics: HashMap::new(),
+                generics: FxHashMap::default(),
                 bound,
             }
         }

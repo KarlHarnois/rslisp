@@ -1,6 +1,8 @@
 use std::borrow::Cow;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::BTreeMap;
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::aliases::LetAliases;
 use super::definitions::LocalDefinitions;
@@ -11,7 +13,6 @@ use super::subtree::Subtree;
 use super::update_bases::UpdateBases;
 use crate::core::{BindingArena, BindingId, FieldLabel, ReferenceKind};
 use crate::diagnostic::Diagnostic;
-use crate::scope::FastHashMap;
 use crate::source::Span;
 use crate::types::{
     Borrow, ClosureKind, CopyRules, FieldPlace, StructTable, TemplateBorrows, Type, TypedArgument,
@@ -63,14 +64,14 @@ impl CaptureReport {
         }
     }
 
-    fn outside(&self, own: &HashSet<BindingId>) -> Self {
+    fn outside(&self, own: &FxHashSet<BindingId>) -> Self {
         Self {
             moved: self.moved_outside(own),
             changed: self.changed_outside(own),
         }
     }
 
-    fn moved_outside(&self, own: &HashSet<BindingId>) -> BTreeMap<BindingId, Span> {
+    fn moved_outside(&self, own: &FxHashSet<BindingId>) -> BTreeMap<BindingId, Span> {
         self.moved
             .iter()
             .filter(|(binding, _)| !own.contains(binding))
@@ -78,7 +79,7 @@ impl CaptureReport {
             .collect()
     }
 
-    fn changed_outside(&self, own: &HashSet<BindingId>) -> BTreeMap<BindingId, Span> {
+    fn changed_outside(&self, own: &FxHashSet<BindingId>) -> BTreeMap<BindingId, Span> {
         self.changed
             .iter()
             .filter(|(binding, _)| !own.contains(binding))
@@ -98,21 +99,21 @@ impl CaptureReport {
 }
 
 pub struct KindReport {
-    pub mutable_bindings: HashSet<BindingId>,
+    pub mutable_bindings: FxHashSet<BindingId>,
     pub diagnostics: Vec<Diagnostic>,
 }
 
 pub struct KindSources<'a> {
     pub traits: &'a crate::types::TraitTable,
-    pub generics: &'a HashMap<crate::types::GenericId, crate::types::GenericParam>,
+    pub generics: &'a FxHashMap<crate::types::GenericId, crate::types::GenericParam>,
     pub structs: &'a StructTable,
     pub enums: &'a crate::types::EnumTable,
     pub bindings: &'a BindingArena,
     pub template_borrows: &'a TemplateBorrows,
-    pub function_parameters: HashMap<BindingId, Vec<BindingId>>,
-    pub rust_parameter_kinds: HashMap<BindingId, Vec<ClosureKind>>,
-    pub written_parameter_kinds: HashMap<BindingId, ClosureKind>,
-    pub borrowing_lambdas: &'a HashMap<BindingId, HashSet<BindingId>>,
+    pub function_parameters: FxHashMap<BindingId, Vec<BindingId>>,
+    pub rust_parameter_kinds: FxHashMap<BindingId, Vec<ClosureKind>>,
+    pub written_parameter_kinds: FxHashMap<BindingId, ClosureKind>,
+    pub borrowing_lambdas: &'a FxHashMap<BindingId, FxHashSet<BindingId>>,
 }
 
 pub struct ClosureKinds<'a> {
@@ -120,27 +121,27 @@ pub struct ClosureKinds<'a> {
     structs: &'a crate::types::StructTable,
     bindings: &'a BindingArena,
     template_borrows: &'a TemplateBorrows,
-    parameter_kinds: HashMap<BindingId, ClosureKind>,
-    binding_kinds: HashMap<BindingId, ClosureKind>,
-    binding_captures: HashMap<BindingId, BindingId>,
-    value_parameters: HashMap<BindingId, Vec<BindingId>>,
-    borrowing_lambdas: &'a HashMap<BindingId, HashSet<BindingId>>,
-    function_parameters: HashMap<BindingId, Vec<BindingId>>,
-    pass_edges: HashMap<BindingId, HashSet<BindingId>>,
-    cycle_peers: HashMap<BindingId, Vec<BindingId>>,
-    rust_parameter_kinds: HashMap<BindingId, Vec<ClosureKind>>,
-    written_parameter_kinds: HashMap<BindingId, ClosureKind>,
-    result_kinds: HashMap<BindingId, ClosureKind>,
-    alias_origins: HashMap<BindingId, BindingId>,
+    parameter_kinds: FxHashMap<BindingId, ClosureKind>,
+    binding_kinds: FxHashMap<BindingId, ClosureKind>,
+    binding_captures: FxHashMap<BindingId, BindingId>,
+    value_parameters: FxHashMap<BindingId, Vec<BindingId>>,
+    borrowing_lambdas: &'a FxHashMap<BindingId, FxHashSet<BindingId>>,
+    function_parameters: FxHashMap<BindingId, Vec<BindingId>>,
+    pass_edges: FxHashMap<BindingId, FxHashSet<BindingId>>,
+    cycle_peers: FxHashMap<BindingId, Vec<BindingId>>,
+    rust_parameter_kinds: FxHashMap<BindingId, Vec<ClosureKind>>,
+    written_parameter_kinds: FxHashMap<BindingId, ClosureKind>,
+    result_kinds: FxHashMap<BindingId, ClosureKind>,
+    alias_origins: FxHashMap<BindingId, BindingId>,
     definitions: LocalDefinitions,
-    reusable_reports: FastHashMap<LambdaAddress, CaptureReport>,
+    reusable_reports: FxHashMap<LambdaAddress, CaptureReport>,
     registered_function_bindings: usize,
 }
 
 impl<'a> ClosureKinds<'a> {
     const STRONGEST_CALLABLE_BORROW: ClosureKind = ClosureKind::FnMut;
 
-    pub fn function_parameters(program: &TypedProgram) -> HashMap<BindingId, Vec<BindingId>> {
+    pub fn function_parameters(program: &TypedProgram) -> FxHashMap<BindingId, Vec<BindingId>> {
         program
             .modules
             .iter()
@@ -155,7 +156,7 @@ impl<'a> ClosureKinds<'a> {
             .collect()
     }
 
-    pub fn written_parameter_kinds(program: &TypedProgram) -> HashMap<BindingId, ClosureKind> {
+    pub fn written_parameter_kinds(program: &TypedProgram) -> FxHashMap<BindingId, ClosureKind> {
         program
             .modules
             .iter()
@@ -174,7 +175,7 @@ impl<'a> ClosureKinds<'a> {
             .collect()
     }
 
-    pub fn rust_parameter_kinds(program: &TypedProgram) -> HashMap<BindingId, Vec<ClosureKind>> {
+    pub fn rust_parameter_kinds(program: &TypedProgram) -> FxHashMap<BindingId, Vec<ClosureKind>> {
         program
             .modules
             .iter()
@@ -212,20 +213,20 @@ impl<'a> ClosureKinds<'a> {
             structs: sources.structs,
             bindings: sources.bindings,
             template_borrows: sources.template_borrows,
-            parameter_kinds: HashMap::new(),
-            binding_kinds: HashMap::new(),
-            binding_captures: HashMap::new(),
-            value_parameters: HashMap::new(),
+            parameter_kinds: FxHashMap::default(),
+            binding_kinds: FxHashMap::default(),
+            binding_captures: FxHashMap::default(),
+            value_parameters: FxHashMap::default(),
             borrowing_lambdas: sources.borrowing_lambdas,
             function_parameters: sources.function_parameters,
-            pass_edges: HashMap::new(),
-            cycle_peers: HashMap::new(),
+            pass_edges: FxHashMap::default(),
+            cycle_peers: FxHashMap::default(),
             rust_parameter_kinds: sources.rust_parameter_kinds,
             written_parameter_kinds: sources.written_parameter_kinds,
-            result_kinds: HashMap::new(),
-            alias_origins: HashMap::new(),
+            result_kinds: FxHashMap::default(),
+            alias_origins: FxHashMap::default(),
             definitions: LocalDefinitions::default(),
-            reusable_reports: FastHashMap::default(),
+            reusable_reports: FxHashMap::default(),
             registered_function_bindings: 0,
         }
     }
@@ -253,7 +254,7 @@ impl<'a> ClosureKinds<'a> {
 
     fn build_lambda_pass_edges(&mut self, expr: &TypedExpr) {
         if let TypedExprKind::Fn(lambda) = &expr.kind {
-            let params: HashSet<BindingId> = lambda
+            let params: FxHashSet<BindingId> = lambda
                 .params
                 .iter()
                 .filter(|param| matches!(param.ty, Type::Function(..)))
@@ -268,7 +269,7 @@ impl<'a> ClosureKinds<'a> {
         }
     }
 
-    fn build_body_pass_edges(&mut self, expr: &TypedExpr, params: &HashSet<BindingId>) {
+    fn build_body_pass_edges(&mut self, expr: &TypedExpr, params: &FxHashSet<BindingId>) {
         if let TypedExprKind::Call(callee, arguments) = &expr.kind
             && let TypedExprKind::Leaf(TypedLeaf::Global(function)) = &callee.kind
             && let Some(parameters) = self.function_parameters.get(function)
@@ -374,7 +375,7 @@ impl<'a> ClosureKinds<'a> {
     fn scan_block(
         &mut self,
         block: &TypedBlock,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
         usage: Usage,
     ) -> CaptureReport {
         let last = block.items.len().checked_sub(1);
@@ -413,7 +414,7 @@ impl<'a> ClosureKinds<'a> {
     fn scan_expression(
         &mut self,
         expr: &TypedExpr,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
         usage: Usage,
     ) -> CaptureReport {
         match &expr.kind {
@@ -433,7 +434,7 @@ impl<'a> ClosureKinds<'a> {
         &mut self,
         leaf: &TypedLeaf,
         expr: &TypedExpr,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
         usage: Usage,
     ) -> CaptureReport {
         let mut report = CaptureReport::default();
@@ -446,7 +447,7 @@ impl<'a> ClosureKinds<'a> {
         report
     }
 
-    fn scan_lambda(&mut self, lambda: &TypedLambda, own: &HashSet<BindingId>) -> CaptureReport {
+    fn scan_lambda(&mut self, lambda: &TypedLambda, own: &FxHashSet<BindingId>) -> CaptureReport {
         match self.reusable_reports.get(&LambdaAddress::of(lambda)) {
             Some(report) => report.outside(own),
             None => self.scan_lambda_body(lambda).outside(own),
@@ -457,7 +458,7 @@ impl<'a> ClosureKinds<'a> {
         &mut self,
         expr: &TypedExpr,
         kind: &TypedExprKind,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
     ) -> CaptureReport {
         match kind {
             TypedExprKind::Recur(arguments) => {
@@ -477,7 +478,7 @@ impl<'a> ClosureKinds<'a> {
         &mut self,
         expr: &TypedExpr,
         kind: &TypedExprKind,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
     ) -> CaptureReport {
         match kind {
             TypedExprKind::Try { value, .. } => self.scan_expression(value, own, Usage::Move),
@@ -493,7 +494,7 @@ impl<'a> ClosureKinds<'a> {
         &mut self,
         expr: &TypedExpr,
         kind: &TypedExprKind,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
     ) -> CaptureReport {
         match kind {
             TypedExprKind::Struct(structure) => self.scan_structure(expr, structure, own),
@@ -515,7 +516,7 @@ impl<'a> ClosureKinds<'a> {
         expr: &TypedExpr,
         reference: ReferenceKind,
         value: &TypedExpr,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
     ) -> CaptureReport {
         let mut report = CaptureReport::default();
         if matches!(reference, ReferenceKind::Mutable)
@@ -532,7 +533,7 @@ impl<'a> ClosureKinds<'a> {
         &mut self,
         expr: &TypedExpr,
         structure: &TypedStructExpr,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
     ) -> CaptureReport {
         match structure {
             TypedStructExpr::New(_, fields) => {
@@ -551,7 +552,7 @@ impl<'a> ClosureKinds<'a> {
         update: &TypedExpr,
         base: &TypedExpr,
         fields: &[(FieldLabel, TypedExpr)],
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
     ) -> CaptureReport {
         let mut report = match base.field_place() {
             Some(place) => self.record_unlisted_moves(&place, base.span, update, fields, own),
@@ -568,7 +569,7 @@ impl<'a> ClosureKinds<'a> {
         span: Span,
         update: &TypedExpr,
         fields: &[(FieldLabel, TypedExpr)],
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
     ) -> CaptureReport {
         let bases = UpdateBases::new(self.structs, &self.copy);
         if !bases.moves_any(&bases.unlisted_fields(update, fields)) {
@@ -581,14 +582,14 @@ impl<'a> ClosureKinds<'a> {
         &mut self,
         base: &TypedExpr,
         values: &[&TypedExpr],
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
     ) -> CaptureReport {
         let mut report = self.scan_update_base(base, own);
         report.merge(self.scan_values(values, own));
         report
     }
 
-    fn scan_update_base(&mut self, base: &TypedExpr, own: &HashSet<BindingId>) -> CaptureReport {
+    fn scan_update_base(&mut self, base: &TypedExpr, own: &FxHashSet<BindingId>) -> CaptureReport {
         match base.field_place() {
             Some(place) if place.reads_field() && !self.copy.is_copy(&base.ty) => {
                 self.record_field_move(&place, base.span, own)
@@ -601,7 +602,7 @@ impl<'a> ClosureKinds<'a> {
         &self,
         place: &FieldPlace,
         span: Span,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
     ) -> CaptureReport {
         let mut report = CaptureReport::default();
         if !own.contains(&place.root) {
@@ -610,7 +611,7 @@ impl<'a> ClosureKinds<'a> {
         report
     }
 
-    fn scan_values(&mut self, values: &[&TypedExpr], own: &HashSet<BindingId>) -> CaptureReport {
+    fn scan_values(&mut self, values: &[&TypedExpr], own: &FxHashSet<BindingId>) -> CaptureReport {
         let mut report = CaptureReport::default();
         for value in values {
             report.merge(self.scan_expression(value, own, Usage::Move));
@@ -622,7 +623,7 @@ impl<'a> ClosureKinds<'a> {
         &mut self,
         callee: &TypedExpr,
         arguments: &[TypedArgument],
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
         report: &mut CaptureReport,
     ) {
         self.scan_callee(callee, own, report);
@@ -632,7 +633,7 @@ impl<'a> ClosureKinds<'a> {
     fn scan_callee(
         &mut self,
         callee: &TypedExpr,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
         report: &mut CaptureReport,
     ) {
         let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &callee.kind else {
@@ -661,7 +662,7 @@ impl<'a> ClosureKinds<'a> {
         &mut self,
         callee: Option<&TypedExpr>,
         arguments: &[TypedArgument],
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
         report: &mut CaptureReport,
     ) {
         for (position, argument) in arguments.iter().enumerate() {
@@ -674,7 +675,7 @@ impl<'a> ClosureKinds<'a> {
         callee: Option<&TypedExpr>,
         position: usize,
         argument: &TypedArgument,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
         report: &mut CaptureReport,
     ) {
         let reference = self.argument_reference(callee, position, argument);
@@ -710,7 +711,7 @@ impl<'a> ClosureKinds<'a> {
     fn scan_control(
         &mut self,
         control: &TypedControl,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
         usage: Usage,
     ) -> CaptureReport {
         match control {
@@ -727,7 +728,7 @@ impl<'a> ClosureKinds<'a> {
         test: &TypedExpr,
         then: &TypedExpr,
         otherwise: &TypedExpr,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
         usage: Usage,
     ) -> CaptureReport {
         let mut report = self.scan_expression(test, own, Usage::Borrow);
@@ -739,7 +740,7 @@ impl<'a> ClosureKinds<'a> {
     fn scan_match(
         &mut self,
         matched: &crate::types::TypedMatch,
-        own: &HashSet<BindingId>,
+        own: &FxHashSet<BindingId>,
         usage: Usage,
     ) -> CaptureReport {
         let mut report = self.scan_expression(&matched.value, own, Usage::Move);
@@ -876,8 +877,8 @@ impl<'a> ClosureKinds<'a> {
     fn recompute_parameter_kinds(
         &self,
         modules: &[TypedModule],
-    ) -> HashMap<BindingId, ClosureKind> {
-        let mut kinds: HashMap<BindingId, ClosureKind> = modules
+    ) -> FxHashMap<BindingId, ClosureKind> {
+        let mut kinds: FxHashMap<BindingId, ClosureKind> = modules
             .iter()
             .flat_map(|module| &module.definitions)
             .flat_map(|definition| self.lambdas(&definition.value))
@@ -904,7 +905,7 @@ impl<'a> ClosureKinds<'a> {
         kinds
     }
 
-    fn cap_borrowed_function_parameters(&self, kinds: &mut HashMap<BindingId, ClosureKind>) {
+    fn cap_borrowed_function_parameters(&self, kinds: &mut FxHashMap<BindingId, ClosureKind>) {
         for parameter in self.borrowing_lambdas.values().flatten() {
             if let Some(kind) = kinds.get_mut(parameter) {
                 *kind = (*kind).min(Self::STRONGEST_CALLABLE_BORROW);
@@ -931,7 +932,7 @@ impl<'a> ClosureKinds<'a> {
         }
     }
 
-    fn requirements(&self, expr: &TypedExpr, kinds: &mut HashMap<BindingId, ClosureKind>) {
+    fn requirements(&self, expr: &TypedExpr, kinds: &mut FxHashMap<BindingId, ClosureKind>) {
         if let TypedExprKind::Fn(lambda) = &expr.kind {
             self.lambda_requirements(lambda, kinds);
             for child in lambda.body.expressions() {
@@ -947,7 +948,7 @@ impl<'a> ClosureKinds<'a> {
     fn lambda_requirements(
         &self,
         lambda: &TypedLambda,
-        kinds: &mut HashMap<BindingId, ClosureKind>,
+        kinds: &mut FxHashMap<BindingId, ClosureKind>,
     ) {
         let params: Vec<BindingId> = lambda.params.iter().map(|param| param.binding).collect();
         let mut uses = ParameterUses::default();
@@ -1168,7 +1169,7 @@ impl<'a> ClosureKinds<'a> {
         }
     }
 
-    fn share_cycle_kinds(&self, kinds: &mut HashMap<BindingId, ClosureKind>) {
+    fn share_cycle_kinds(&self, kinds: &mut FxHashMap<BindingId, ClosureKind>) {
         for (parameter, peers) in &self.cycle_peers {
             let shared = peers
                 .iter()
@@ -1186,7 +1187,7 @@ impl<'a> ClosureKinds<'a> {
             return false;
         };
         let mut pending: Vec<BindingId> = targets.iter().copied().collect();
-        let mut visited = HashSet::new();
+        let mut visited = FxHashSet::default();
         while let Some(current) = pending.pop() {
             if current == parameter {
                 return true;
@@ -1481,15 +1482,15 @@ impl<'a> ClosureKinds<'a> {
         lambda.moved_capture.map(|(_, span)| span)
     }
 
-    fn called_mutable_bindings(&self, modules: &[TypedModule]) -> HashSet<BindingId> {
-        let mut bindings = HashSet::new();
+    fn called_mutable_bindings(&self, modules: &[TypedModule]) -> FxHashSet<BindingId> {
+        let mut bindings = FxHashSet::default();
         for definition in modules.iter().flat_map(|module| &module.definitions) {
             self.collect_called(&definition.value, &mut bindings);
         }
         bindings
     }
 
-    fn collect_called(&self, expr: &TypedExpr, bindings: &mut HashSet<BindingId>) {
+    fn collect_called(&self, expr: &TypedExpr, bindings: &mut FxHashSet<BindingId>) {
         if let TypedExprKind::Call(callee, arguments) = &expr.kind {
             if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = &callee.kind
                 && self.kind_of(*binding) == ClosureKind::FnMut
@@ -1568,7 +1569,7 @@ impl<'a> ClosureKinds<'a> {
         parameters: &mut [Type],
         result: &mut Type,
         binders: &[TypedBinder],
-        parameter_kinds: &HashMap<BindingId, ClosureKind>,
+        parameter_kinds: &FxHashMap<BindingId, ClosureKind>,
         returned: ClosureKind,
         patch_result: bool,
     ) {
@@ -1586,7 +1587,7 @@ impl<'a> ClosureKinds<'a> {
     fn patch_parameter(
         binding: BindingId,
         ty: &mut Type,
-        parameter_kinds: &HashMap<BindingId, ClosureKind>,
+        parameter_kinds: &FxHashMap<BindingId, ClosureKind>,
     ) {
         if let Type::Function(kind, _, _) = ty {
             *kind = parameter_kinds

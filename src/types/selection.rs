@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use super::traits::Implementor;
 use super::ty::{Bound, GenericId, Type};
@@ -28,14 +28,14 @@ impl Selection {
 }
 
 pub enum PatternMatch {
-    Matched(HashMap<GenericId, Type>),
+    Matched(FxHashMap<GenericId, Type>),
     Undecided,
     Missing,
 }
 
 pub struct ImplementorMatch<'s> {
     implementor: &'s Implementor,
-    bindings: HashMap<GenericId, Type>,
+    bindings: FxHashMap<GenericId, Type>,
     undecided: bool,
 }
 
@@ -48,7 +48,7 @@ impl<'s> ImplementorMatch<'s> {
     ) -> Selection {
         let mut matcher = Self {
             implementor,
-            bindings: HashMap::new(),
+            bindings: FxHashMap::default(),
             undecided: false,
         };
         if !matcher.matches(&implementor.scheme.body, target) {
@@ -68,7 +68,7 @@ impl<'s> ImplementorMatch<'s> {
     ) -> PatternMatch {
         let mut matcher = Self {
             implementor,
-            bindings: HashMap::new(),
+            bindings: FxHashMap::default(),
             undecided: false,
         };
         match (matcher.matches(pattern, target), matcher.undecided) {

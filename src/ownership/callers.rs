@@ -1,15 +1,15 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::core::BindingId;
 
 #[derive(Default)]
 pub struct Callers {
-    callers: HashMap<BindingId, Vec<BindingId>>,
-    recorded: HashSet<BindingId>,
+    callers: FxHashMap<BindingId, Vec<BindingId>>,
+    recorded: FxHashSet<BindingId>,
 }
 
 impl Callers {
-    pub fn record(&mut self, caller: BindingId, callees: &HashSet<BindingId>) {
+    pub fn record(&mut self, caller: BindingId, callees: &FxHashSet<BindingId>) {
         if !self.recorded.insert(caller) {
             return;
         }
@@ -25,7 +25,7 @@ impl Callers {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
+    use rustc_hash::FxHashSet;
 
     use super::Callers;
     use crate::core::{BindingArena, BindingId, BindingInfo, BindingKind, ModuleId};
@@ -49,7 +49,7 @@ mod tests {
         }
 
         fn record(&mut self, caller: BindingId, callees: &[BindingId]) {
-            let callees: HashSet<BindingId> = callees.iter().copied().collect();
+            let callees: FxHashSet<BindingId> = callees.iter().copied().collect();
             self.callers.record(caller, &callees);
         }
     }

@@ -1,15 +1,15 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use crate::core::BindingId;
 use crate::types::{TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
 
 pub struct EscapingLambdas {
-    let_bound_lambdas: HashSet<BindingId>,
-    escaping: HashSet<BindingId>,
+    let_bound_lambdas: FxHashSet<BindingId>,
+    escaping: FxHashSet<BindingId>,
 }
 
 impl EscapingLambdas {
-    pub fn in_program(program: &TypedProgram) -> HashSet<BindingId> {
+    pub fn in_program(program: &TypedProgram) -> FxHashSet<BindingId> {
         let definitions = || {
             program
                 .modules
@@ -22,7 +22,7 @@ impl EscapingLambdas {
                 .filter(|(_, value)| value.lambda_value().is_some())
                 .map(|(binder, _)| binder.binding)
                 .collect(),
-            escaping: HashSet::new(),
+            escaping: FxHashSet::default(),
         };
         if !found.let_bound_lambdas.is_empty() {
             definitions().for_each(|definition| found.expr(&definition.value));

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use super::ty::{Type, TypeVar};
 use super::typed::{Borrow, TypedExpr, TypedExprKind};
@@ -11,11 +11,11 @@ pub struct PendingBorrow {
 }
 
 pub struct DecidedBorrows {
-    decided: HashMap<usize, Borrow>,
+    decided: FxHashMap<usize, Borrow>,
 }
 
 impl DecidedBorrows {
-    pub fn new(decided: HashMap<usize, Borrow>) -> Self {
+    pub fn new(decided: FxHashMap<usize, Borrow>) -> Self {
         Self { decided }
     }
 

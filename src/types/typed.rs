@@ -1,5 +1,6 @@
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::display::TypeDisplay;
 use super::enums::{EnumTable, VariantDefinition, VariantPayload};
@@ -356,22 +357,22 @@ pub struct TypedProgram {
     pub box_binding: Option<BindingId>,
     pub traits: TraitTable,
     pub trait_definitions: Vec<TypedTrait>,
-    pub rust_trait_paths: HashMap<BindingId, Rc<str>>,
+    pub rust_trait_paths: FxHashMap<BindingId, Rc<str>>,
     pub trait_impls: Vec<TypedTraitImpl>,
     pub conversions: Vec<TypedConversion>,
-    pub trait_methods: HashMap<BindingId, TraitMethodInfo>,
-    pub synthetic_bindings: HashSet<BindingId>,
-    pub generics: HashMap<GenericId, GenericParam>,
-    pub implied_bounds: HashMap<GenericId, Vec<Bound>>,
-    pub associated_generics: HashMap<GenericId, Rc<str>>,
+    pub trait_methods: FxHashMap<BindingId, TraitMethodInfo>,
+    pub synthetic_bindings: FxHashSet<BindingId>,
+    pub generics: FxHashMap<GenericId, GenericParam>,
+    pub implied_bounds: FxHashMap<GenericId, Vec<Bound>>,
+    pub associated_generics: FxHashMap<GenericId, Rc<str>>,
     pub template_borrows: TemplateBorrows,
     pub pending_mode_checks: Vec<PendingModeCheck>,
-    pub borrowed_parameters: HashSet<BindingId>,
-    pub stored_function_parameters: HashSet<BindingId>,
-    pub escaping_lambdas: HashSet<BindingId>,
-    pub borrowing_lambdas: HashMap<BindingId, HashSet<BindingId>>,
-    pub mutable_function_bindings: HashSet<BindingId>,
-    pub literal_generics: HashMap<GenericId, LiteralKind>,
+    pub borrowed_parameters: FxHashSet<BindingId>,
+    pub stored_function_parameters: FxHashSet<BindingId>,
+    pub escaping_lambdas: FxHashSet<BindingId>,
+    pub borrowing_lambdas: FxHashMap<BindingId, FxHashSet<BindingId>>,
+    pub mutable_function_bindings: FxHashSet<BindingId>,
+    pub literal_generics: FxHashMap<GenericId, LiteralKind>,
     pub unnameable_types: Diagnostics,
     pub closure_types: Vec<ClosureType>,
     pub warnings: Diagnostics,
@@ -416,13 +417,13 @@ impl TypedProgram {
     }
 
     pub fn has_lifetime_parameter(&self, binding: BindingId) -> bool {
-        self.has_lifetime_parameter_with(binding, &mut HashSet::new())
+        self.has_lifetime_parameter_with(binding, &mut FxHashSet::default())
     }
 
     fn has_lifetime_parameter_with(
         &self,
         binding: BindingId,
-        visiting: &mut HashSet<BindingId>,
+        visiting: &mut FxHashSet<BindingId>,
     ) -> bool {
         if let Some(definition) = self.structs.get(binding) {
             return !definition.lifetimes.is_empty()
@@ -441,27 +442,27 @@ impl TypedProgram {
     }
 
     pub fn function_type_needs_outer_lifetime(&self, parameters: &[Type], result: &Type) -> bool {
-        self.function_type_needs_outer_lifetime_with(parameters, result, &mut HashSet::new())
+        self.function_type_needs_outer_lifetime_with(parameters, result, &mut FxHashSet::default())
     }
 
     fn function_type_needs_outer_lifetime_with(
         &self,
         parameters: &[Type],
         result: &Type,
-        visiting: &mut HashSet<BindingId>,
+        visiting: &mut FxHashSet<BindingId>,
     ) -> bool {
         self.function_type_returns_borrow_with(result, visiting)
             && self.parameter_lifetimes_with(parameters, visiting) == 0
     }
 
     fn parameter_lifetimes(&self, parameters: &[Type]) -> usize {
-        self.parameter_lifetimes_with(parameters, &mut HashSet::new())
+        self.parameter_lifetimes_with(parameters, &mut FxHashSet::default())
     }
 
     fn parameter_lifetimes_with(
         &self,
         parameters: &[Type],
-        visiting: &mut HashSet<BindingId>,
+        visiting: &mut FxHashSet<BindingId>,
     ) -> usize {
         parameters
             .iter()
@@ -470,13 +471,13 @@ impl TypedProgram {
     }
 
     pub fn function_type_returns_borrow(&self, result: &Type) -> bool {
-        self.function_type_returns_borrow_with(result, &mut HashSet::new())
+        self.function_type_returns_borrow_with(result, &mut FxHashSet::default())
     }
 
     fn function_type_returns_borrow_with(
         &self,
         result: &Type,
-        visiting: &mut HashSet<BindingId>,
+        visiting: &mut FxHashSet<BindingId>,
     ) -> bool {
         self.borrow_lifetimes_with(result, visiting) > 0
             || self.type_needs_outer_lifetime_with(result, visiting)
@@ -487,10 +488,10 @@ impl TypedProgram {
     }
 
     pub fn borrow_lifetimes(&self, ty: &Type) -> usize {
-        self.borrow_lifetimes_with(ty, &mut HashSet::new())
+        self.borrow_lifetimes_with(ty, &mut FxHashSet::default())
     }
 
-    fn borrow_lifetimes_with(&self, ty: &Type, visiting: &mut HashSet<BindingId>) -> usize {
+    fn borrow_lifetimes_with(&self, ty: &Type, visiting: &mut FxHashSet<BindingId>) -> usize {
         match ty {
             Type::Ref(lifetime, inner) | Type::Mut(lifetime, inner) => {
                 usize::from(*lifetime == Lifetime::Elided)
@@ -509,10 +510,10 @@ impl TypedProgram {
     }
 
     pub fn type_holds_borrow(&self, ty: &Type) -> bool {
-        self.type_holds_borrow_with(ty, &mut HashSet::new())
+        self.type_holds_borrow_with(ty, &mut FxHashSet::default())
     }
 
-    fn type_holds_borrow_with(&self, ty: &Type, visiting: &mut HashSet<BindingId>) -> bool {
+    fn type_holds_borrow_with(&self, ty: &Type, visiting: &mut FxHashSet<BindingId>) -> bool {
         match ty {
             Type::Ref(..) | Type::Mut(..) => true,
             Type::Function(_, parameters, result) => {
@@ -529,13 +530,13 @@ impl TypedProgram {
     }
 
     pub fn definition_holds_borrow(&self, binding: BindingId) -> bool {
-        self.definition_holds_borrow_with(binding, &mut HashSet::new())
+        self.definition_holds_borrow_with(binding, &mut FxHashSet::default())
     }
 
     fn definition_holds_borrow_with(
         &self,
         binding: BindingId,
-        visiting: &mut HashSet<BindingId>,
+        visiting: &mut FxHashSet<BindingId>,
     ) -> bool {
         if !visiting.insert(binding) {
             return false;
@@ -557,7 +558,11 @@ impl TypedProgram {
         holds
     }
 
-    fn type_needs_outer_lifetime_with(&self, ty: &Type, visiting: &mut HashSet<BindingId>) -> bool {
+    fn type_needs_outer_lifetime_with(
+        &self,
+        ty: &Type,
+        visiting: &mut FxHashSet<BindingId>,
+    ) -> bool {
         match ty {
             Type::Function(_, parameters, result) => {
                 self.function_type_needs_outer_lifetime_with(parameters, result, visiting)

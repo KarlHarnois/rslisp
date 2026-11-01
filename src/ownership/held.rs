@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use super::aliases::LetAliases;
 use crate::core::BindingId;
@@ -70,7 +70,7 @@ impl<'h, 'e> HeldClosures<'h, 'e> {
 }
 
 pub struct RustTemplates {
-    bindings: HashSet<BindingId>,
+    bindings: FxHashSet<BindingId>,
 }
 
 impl RustTemplates {
