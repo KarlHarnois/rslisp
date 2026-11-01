@@ -1,0 +1,56 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/borrowing_impl_elided.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let leaf = Car {
+        make: "Nissan",
+        year: 2024,
+    };
+    println!("{}", Badged::badge(2024, &leaf));
+    println!("{}", Badged::pick("classic", &leaf));
+    println!("{}", leaf.make())
+}
+
+trait Badged {
+    fn badge(_: i64, _: &Self) -> &str;
+    fn pick<'a>(_: &'a str, _: &'a Self) -> &'a str;
+    fn make(&self) -> &str;
+}
+
+impl<'a> Badged for Car<'a> {
+    fn badge(year: i64, c: &Self) -> &str {
+        if year > 2020 { c.make } else { "classic" }
+    }
+    fn pick<'b>(fallback: &'b str, c: &'b Self) -> &'b str {
+        if c.year > 2020 { c.make } else { fallback }
+    }
+    fn make(&self) -> &str {
+        self.make
+    }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
