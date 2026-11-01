@@ -328,10 +328,31 @@ impl TypeChecker {
                 MismatchContext::Plain,
             )?;
         }
-        for position in group.positions() {
-            self.pass_member(callee, position, &Type::Var(root), &mut arguments[position])?;
+        let shared = Type::Var(root);
+        for position in self.template_borrows_first(callee, group, &shared, arguments) {
+            self.pass_member(callee, position, &shared, &mut arguments[position])?;
         }
         Ok(())
+    }
+
+    fn template_borrows_first(
+        &self,
+        callee: Option<&TypedExpr>,
+        group: &SharedGroup,
+        shared: &Type,
+        arguments: &[TypedArgument],
+    ) -> Vec<usize> {
+        let (template_borrows, others): (Vec<usize>, Vec<usize>) =
+            group.positions().partition(|position| {
+                self.place_the_template_borrows(
+                    callee,
+                    *position,
+                    shared,
+                    &arguments[*position].value,
+                )
+                .is_some()
+            });
+        template_borrows.into_iter().chain(others).collect()
     }
 
     fn pass_member(

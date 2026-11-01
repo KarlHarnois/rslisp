@@ -448,7 +448,7 @@ impl<'a> ExpressionEmitter<'a> {
         if Self::passes_through_reference(self.program, kind, value) {
             return self.expr_in(value, TypeContext::Known);
         }
-        let place = self.place(value, TypeContext::Unknown);
+        let place = self.borrowed_operand(value, TypeContext::Unknown);
         let prefix = match kind {
             ReferenceKind::Shared => "&",
             ReferenceKind::Mutable => "&mut ",
@@ -474,11 +474,18 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn deref(&mut self, value: &TypedExpr) -> Code {
         match &value.kind {
-            TypedExprKind::Borrow(_, place) => self.place(place, TypeContext::Known),
+            TypedExprKind::Borrow(_, place) => self.borrowed_operand(place, TypeContext::Known),
             TypedExprKind::Call(callee, _) if self.borrowed_index_template(callee).is_some() => {
                 self.place(value, TypeContext::Known)
             }
             _ => Self::prefixed("*", self.expr_in(value, TypeContext::Known)),
+        }
+    }
+
+    fn borrowed_operand(&mut self, value: &TypedExpr, context: TypeContext) -> Code {
+        match &value.kind {
+            TypedExprKind::Borrow(..) => self.expr_in(value, context),
+            _ => self.place(value, context),
         }
     }
 
@@ -2116,6 +2123,9 @@ impl<'a> ExpressionEmitter<'a> {
         if let Some(value) = self.borrowed_index_argument(argument, context) {
             return value;
         }
+        if let Some(place) = Self::copied_out_of_written_borrows(argument) {
+            return self.place(place, context).spanned(argument.value.span);
+        }
         let value = match (&argument.value.kind, role) {
             (TypedExprKind::Borrow(_, place), ArgumentRole::Receiver) => self.place(place, context),
             _ => self.argument_value(&argument.value, context, role),
@@ -2128,6 +2138,29 @@ impl<'a> ExpressionEmitter<'a> {
         match prefix {
             Some(prefix) => Self::prefixed(&prefix, value).spanned(argument.value.span),
             None => value,
+        }
+    }
+
+    fn copied_out_of_written_borrows(argument: &TypedArgument) -> Option<&TypedExpr> {
+        let Borrow::Deref(levels) = argument.borrow else {
+            return None;
+        };
+        (0..levels).try_fold(
+            Self::without_dereferenced_borrows(&argument.value),
+            |value, _| match &value.kind {
+                TypedExprKind::Borrow(_, place) => Some(place.as_ref()),
+                _ => None,
+            },
+        )
+    }
+
+    fn without_dereferenced_borrows(value: &TypedExpr) -> &TypedExpr {
+        match &value.kind {
+            TypedExprKind::Deref(inner) => match &inner.kind {
+                TypedExprKind::Borrow(_, place) => Self::without_dereferenced_borrows(place),
+                _ => value,
+            },
+            _ => value,
         }
     }
 
