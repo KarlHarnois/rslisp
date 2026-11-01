@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_values_over_items.rslisp
+---
+20
+true
+7
+1
+true
+Some("kiwi")
+9
+1
+true
+true
