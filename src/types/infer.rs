@@ -2117,7 +2117,7 @@ impl TypeChecker {
     fn pass_argument(&mut self, parameter: &Type, value: &TypedExpr) -> Result<Borrow, Diagnostic> {
         let parameter = self.unifier.shallow(parameter);
         let argument = self.slice_argument(&parameter, &value.ty, value.span);
-        if value.is_written_form() {
+        if self.passes_as_written(value) {
             return self.pass(&parameter, &argument, value.span, Borrow::None);
         }
         match (&parameter, &argument) {
@@ -2139,6 +2139,15 @@ impl TypeChecker {
             }
             _ => self.pass_types(&parameter, &argument, value.span),
         }
+    }
+
+    pub(super) fn passes_as_written(&self, value: &TypedExpr) -> bool {
+        value.is_written_form() && !self.dereference_leaves_borrow(value)
+    }
+
+    fn dereference_leaves_borrow(&self, value: &TypedExpr) -> bool {
+        matches!(value.kind, TypedExprKind::Deref(_))
+            && self.unifier.resolve(&value.ty).is_reference()
     }
 
     fn string_as_str_help(

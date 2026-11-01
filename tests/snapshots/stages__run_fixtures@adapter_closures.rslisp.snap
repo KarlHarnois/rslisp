@@ -3,7 +3,12 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/adapter_closures.rslisp
 ---
+2
 6067
+2
+6067
+2
+Some(2021)
 true
 false
 6064

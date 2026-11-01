@@ -1,0 +1,27 @@
+(defstruct car :make string :year u16)
+
+(defn later? (year) (> year 2020))
+
+(type report-signed (fn ((ref (slice i64))) unit))
+(defn report-signed (years)
+  (println (count (filter (iter years) (fn (y) (> (deref y) 2020))))))
+
+(defn report-years (years floor)
+  (println (count (filter (iter years) (fn (y) (< 2020 (deref y))))))
+  (println (count (filter (iter years) (fn (y) (= (deref y) 2021)))))
+  (println (count (filter (iter years) (fn (y) (> (deref y) floor)))))
+  (println (count (filter (iter years) (fn (y) (> (+ (deref y) 1) 2022)))))
+  (println (count (filter (iter years) (fn (y) (later? (deref y))))))
+  (prn (max-by-key (iter years) (fn (y) (- (deref y) 2020)))))
+
+(defn report-cars (cars wanted)
+  (println (count (filter (iter cars) (fn (c) (= wanted (deref c)))))))
+
+(defn main ()
+  (let years (vec 2019 2021 2024))
+  (report-signed years)
+  (report-years years 2020)
+  (let leaf (->car (to-string "Nissan") 2024))
+  (let cars (vec (clone leaf) (->car (to-string "Honda") 2019)))
+  (println (count (filter (iter cars) (fn (c) (= leaf (deref c))))))
+  (report-cars cars leaf))
