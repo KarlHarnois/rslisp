@@ -107,10 +107,20 @@ impl Builtin {
     }
 
     pub fn name(self) -> &'static str {
-        Self::NAMES
-            .iter()
-            .find(|(builtin, _)| *builtin == self)
-            .map(|(_, name)| *name)
-            .expect("every builtin has a row in the name table")
+        let (_, name) = Self::NAMES[self.position()];
+        name
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Builtin;
+
+    #[test]
+    fn each_builtin_finds_its_own_name_row() {
+        for builtin in Builtin::all() {
+            let (named, _) = Builtin::NAMES[builtin.position()];
+            assert_eq!(named, builtin);
+        }
     }
 }
