@@ -365,21 +365,22 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
             .params
             .iter()
             .zip(arguments)
-            .flat_map(|(param, argument)| {
-                self.joined_by_reassignment(param.binding, &argument.value)
-            })
+            .flat_map(|(param, argument)| self.joined_by_reassignment(param, &argument.value))
             .collect()
     }
 
     fn joined_by_reassignment(
         &mut self,
-        param: BindingId,
+        param: &TypedBinder,
         value: &TypedExpr,
     ) -> FxHashSet<BindingId> {
+        if !self.carries_borrow(&param.ty) {
+            return FxHashSet::default();
+        }
         let mut sources = self.bound(value);
-        sources.remove(&param);
+        sources.remove(&param.binding);
         if !sources.is_empty() {
-            sources.insert(param);
+            sources.insert(param.binding);
         }
         sources
     }
