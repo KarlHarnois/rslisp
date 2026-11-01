@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/unequal_outer_repetitions.rslisp
+---
+error[L0330]: `a` has length 2 but `b` has length 1
+ --> expand/unequal_outer_repetitions.rslisp:2:39
+  |
+2 |   ((((a ...) ...) ((b ...) ...)) (vec (vec (pair a b) ...) ...)))
+  |                                       ^^^^^^^^^^^^^^^^^^^^ `a` and `b` repeat together here
+3 |
+4 | (defn grids () (zip-grids ((1) (2)) ((3))))
+  |                --------------------------- in this macro call
+  |
+  = help: give `a` and `b` the same length

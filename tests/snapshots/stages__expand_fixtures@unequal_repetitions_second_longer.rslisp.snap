@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/unequal_repetitions_second_longer.rslisp
+---
+error[L0330]: `a` has length 2 but `b` has length 3
+ --> expand/unequal_repetitions_second_longer.rslisp:4:40
+  |
+4 | (defn longer-second () (zip (1 2) (4 5 6)))
+  |                                        ^ this `b` has no matching `a`
+  |
+  = help: give `a` and `b` the same length

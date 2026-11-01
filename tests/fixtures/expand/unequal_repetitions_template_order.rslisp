@@ -1,0 +1,4 @@
+(defrule zip-flip
+  (((a ...) (b ...)) (vec (pair b a) ...)))
+
+(defn flipped () (zip-flip (1 2) (4 5 6)))

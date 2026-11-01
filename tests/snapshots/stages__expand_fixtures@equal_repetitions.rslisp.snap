@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/equal_repetitions.rslisp
+---
+(def equal (fn () ((rust "vec![{0}, {1}]" (where (item) (fn (item item) (vec item)))) (pair 1 4) (pair 2 5))))
