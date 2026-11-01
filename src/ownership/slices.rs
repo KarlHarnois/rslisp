@@ -168,11 +168,11 @@ impl<'a> ShrinkSelection<'a> {
                 }
             }
         }
-        for ShrinkableSlot { slot, shrink } in &self.trait_slots {
+        for ShrinkableSlot { slot, .. } in &self.trait_slots {
             found.extend(
                 slot.parameters
                     .iter()
-                    .map(|parameter| (*parameter, shrink.clone())),
+                    .filter_map(|(parameter, ty)| Some((*parameter, self.written_shrink(ty)?))),
             );
         }
         Candidates::sorted(found)
@@ -382,7 +382,9 @@ impl ShrinkableSlot {
         self.slot
             .parameters
             .first()
-            .map_or(ArgumentUse::Accepted, |mate| ArgumentUse::Follows(*mate))
+            .map_or(ArgumentUse::Accepted, |(mate, _)| {
+                ArgumentUse::Follows(*mate)
+            })
     }
 }
 

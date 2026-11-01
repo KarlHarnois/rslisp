@@ -1,0 +1,14 @@
+(defstruct alpha :score i64)
+
+(trait ranked
+  (base (fn ((ref self)) i64))
+  (rank (fn ((ref self) (ref (vec self))) i64)
+    (fold (iter argument-1) (base self) (fn (total other) (+ total (base other))))))
+
+(impl ranked alpha
+  (base (a) (:score a)))
+
+(defn main ()
+  (let alphas (vec (->alpha 1) (->alpha 2)))
+  (push! alphas (->alpha 3))
+  (println (rank (->alpha 5) alphas)))
