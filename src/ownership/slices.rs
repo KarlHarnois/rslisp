@@ -168,14 +168,18 @@ impl<'a> ShrinkSelection<'a> {
                 }
             }
         }
-        for ShrinkableSlot { slot, .. } in &self.trait_slots {
-            found.extend(
+        found.extend(self.trait_slot_candidates());
+        Candidates::sorted(found)
+    }
+
+    fn trait_slot_candidates(&self) -> impl Iterator<Item = (BindingId, Shrink)> + '_ {
+        self.trait_slots
+            .iter()
+            .flat_map(|ShrinkableSlot { slot, .. }| {
                 slot.parameters
                     .iter()
-                    .filter_map(|(parameter, ty)| Some((*parameter, self.written_shrink(ty)?))),
-            );
-        }
-        Candidates::sorted(found)
+                    .filter_map(|(parameter, ty)| Some((*parameter, self.written_shrink(ty)?)))
+            })
     }
 
     fn slot_shrink(&self, slot: &ParamSlot) -> Option<Shrink> {
