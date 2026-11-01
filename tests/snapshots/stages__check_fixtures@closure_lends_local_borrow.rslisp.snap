@@ -68,3 +68,14 @@ error[L0512]: cannot pass a borrow of a local value to `longer`
    |                             ^^^^^^^^^^^^^ this borrows a local value
    |
    = help: define `longer` with `defn`, where its result can borrow from its argument
+
+error[L0512]: cannot pass a borrow of a temporary value to `first`
+  --> check/closure_lends_local_borrow.rslisp:18:19
+   |
+ 4 |   (let first (fn ((items (ref (vec i64)))) (at items 0)))
+   |                   ----------------------- the result of `first` borrows this parameter, so it needs a borrow that outlives the function
+...
+18 |   (println (first (vec 2019 2021)))
+   |                   ^^^^^^^^^^^^^^^ this temporary value is dropped when the function returns
+   |
+   = help: define `first` with `defn`, where its result can borrow from its argument
