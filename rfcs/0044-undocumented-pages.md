@@ -1,4 +1,4 @@
-# RFC 0043: Pages for undocumented definitions
+# RFC 0044: Pages for undocumented definitions
 
 **Status:** Accepted
 **Date:** 2026-10-31
