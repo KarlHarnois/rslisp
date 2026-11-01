@@ -1,3 +1,4 @@
+mod budget_arena;
 mod compile_time_check;
 mod context;
 mod distinct_diagnostics;
@@ -35,7 +36,7 @@ use crate::modules::{ModuleRegistry, ModuleSources};
 use crate::reader::Form;
 use crate::scope::{BindingTable, FastHashMap, FastHashSet, Phase, Scope, ScopeAllocator};
 use crate::source::{SourceId, SourceMap, Span};
-use form_budget::FormBudget;
+use budget_arena::BudgetArena;
 use globals::GlobalTable;
 pub use macro_call::MacroOrigin;
 use macro_call::MacroTable;
@@ -96,7 +97,7 @@ pub struct Expander<'s> {
     phase: Phase,
     expansion_depth: usize,
     nesting_depth: usize,
-    form_budget: FormBudget,
+    form_budgets: BudgetArena,
     recovered_diagnostics: Vec<Diagnostic>,
 }
 
@@ -129,7 +130,7 @@ impl<'s> Expander<'s> {
             phase: Phase::Runtime,
             expansion_depth: 0,
             nesting_depth: 0,
-            form_budget: FormBudget::full(),
+            form_budgets: BudgetArena::default(),
             recovered_diagnostics: Vec::new(),
         }
     }

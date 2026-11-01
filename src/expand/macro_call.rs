@@ -110,22 +110,22 @@ impl Expander<'_> {
 
     pub(super) fn discarded_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
         let checkpoint = self.module_notes.checkpoint();
-        let budget = self.form_budget.clone();
+        let budget = self.form_budgets.current().clone();
         let expansion = self.trial_expansion(binding, form);
         self.module_notes.roll_back(checkpoint);
-        self.form_budget = budget;
+        *self.form_budgets.current() = budget;
         expansion
     }
 
     fn trial_expansion(&mut self, binding: BindingId, form: Form) -> Option<Form> {
         let diagnostics = self.diagnostics.len();
         let recovered = self.recovered_diagnostics.len();
-        let budget_before = self.form_budget.clone();
+        let budget_before = self.form_budgets.current().clone();
         let result = self.run_macro(binding, form, None).ok();
         self.diagnostics.truncate(diagnostics);
         self.recovered_diagnostics.truncate(recovered);
         if result.is_none() {
-            self.form_budget = budget_before;
+            *self.form_budgets.current() = budget_before;
         }
         result
     }
@@ -154,7 +154,7 @@ impl Expander<'_> {
         if self.expansion_depth >= Self::MAX_EXPANSION_DEPTH {
             return Err(ExpandProblems::expansion_too_deep(call_site));
         }
-        if self.form_budget.is_exhausted() {
+        if self.form_budgets.current().is_exhausted() {
             return Err(self.expansion_too_large(binding, call_site));
         }
         let closure = self.macro_closure(binding, call_site)?;
@@ -181,7 +181,7 @@ impl Expander<'_> {
         if !output.is_code() {
             return Err(ExpandProblems::macro_result(output.describe(), call_site));
         }
-        match self.form_budget.admitted_form(output) {
+        match self.form_budgets.current().admitted_form(output) {
             Some(form) => Ok(form),
             None => Err(self.exhaust_budget(binding, call_site)),
         }
@@ -194,14 +194,14 @@ impl Expander<'_> {
         introduction: Scope,
         call_site: Span,
     ) -> Result<(), Diagnostic> {
-        if self.form_budget.flip_scope(form, introduction) {
+        if self.form_budgets.current().flip_scope(form, introduction) {
             return Ok(());
         }
         Err(self.exhaust_budget(binding, call_site))
     }
 
     fn exhaust_budget(&mut self, binding: BindingId, call_site: Span) -> Diagnostic {
-        self.form_budget.exhaust();
+        self.form_budgets.current().exhaust();
         self.expansion_too_large(binding, call_site)
     }
 

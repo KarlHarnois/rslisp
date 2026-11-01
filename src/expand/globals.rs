@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use super::Expander;
+use super::budget_arena::BudgetId;
 use super::problems::ExpandProblems;
 use super::recur_check::RecurCheck;
 use super::try_check::TryCheck;
@@ -12,7 +13,7 @@ use crate::scope::{FastHashMap, FastHashSet, Phase};
 use crate::source::Span;
 
 enum GlobalState {
-    Pending(Form),
+    Pending { value: Form, budget: BudgetId },
     Lowering,
     Lowered(Rc<Expr>),
     Failed,
@@ -34,8 +35,9 @@ pub enum CompileTimeCheck {
 }
 
 impl GlobalTable {
-    pub fn add_pending(&mut self, binding: BindingId, value: Form) {
-        self.states.insert(binding, GlobalState::Pending(value));
+    pub fn add_pending(&mut self, binding: BindingId, value: Form, budget: BudgetId) {
+        self.states
+            .insert(binding, GlobalState::Pending { value, budget });
     }
 
     pub fn compile_time_check(&self, binding: BindingId) -> Option<CompileTimeCheck> {
@@ -58,7 +60,9 @@ impl Expander<'_> {
         span: Span,
     ) -> Result<Rc<Expr>, Diagnostic> {
         match self.globals.states.insert(binding, GlobalState::Lowering) {
-            Some(GlobalState::Pending(form)) => self.lower_global(binding, &form),
+            Some(GlobalState::Pending { value, budget }) => {
+                self.spending(budget, |expander| expander.lower_global(binding, &value))
+            }
             Some(GlobalState::Lowered(expr)) => {
                 self.globals
                     .states
