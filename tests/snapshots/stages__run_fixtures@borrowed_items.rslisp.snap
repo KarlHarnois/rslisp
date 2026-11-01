@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/borrowed_items.rslisp
+---
+6067
+true
+2
+1
+true
+false
+true
+1
+1
+1
+Leaf
