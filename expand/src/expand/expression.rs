@@ -90,7 +90,7 @@ impl Expander<'_> {
         })
     }
 
-    fn kernel_head(&self, form: &Form) -> Option<KernelForm> {
+    pub(super) fn kernel_head(&self, form: &Form) -> Option<KernelForm> {
         let head = form.as_list()?.first()?.as_symbol()?;
         match self.kind(self.try_resolve(head, Namespace::Value)?) {
             BindingKind::KernelForm(kernel) => Some(kernel),
@@ -360,12 +360,20 @@ impl Expander<'_> {
 
     fn lower_body(&mut self, forms: &[Form]) -> Result<Block, Diagnostic> {
         let mut context = DefinitionContext::default();
-        let mut rest_of_body = RestOfBody::new(forms);
+        let items = self.lower_body_items(&mut RestOfBody::new(forms), &mut context)?;
+        Ok(Block { items })
+    }
+
+    pub(super) fn lower_body_items(
+        &mut self,
+        rest_of_body: &mut RestOfBody,
+        context: &mut DefinitionContext,
+    ) -> Result<Vec<BodyItem>, Diagnostic> {
         let mut items = Vec::new();
         while let Some(form) = rest_of_body.next() {
-            items.push(self.lower_body_item(form, &mut rest_of_body, &mut context)?);
+            items.push(self.lower_body_item(form, rest_of_body, context)?);
         }
-        Ok(Block { items })
+        Ok(items)
     }
 
     fn lower_body_item(
@@ -376,17 +384,27 @@ impl Expander<'_> {
     ) -> Result<BodyItem, Diagnostic> {
         let span = form.span();
         match self.expand_body_head(form, context) {
-            Ok(form) if self.is_kernel_form(&form, KernelForm::Let) => {
-                let item = self.lower_let(&form, rest_of_body, context);
-                self.recover_body_item(item, span)
-            }
-            Ok(form) if self.is_kernel_form(&form, Self::DEF_FORM) => {
-                let item = self.lower_misplaced_def(&form, rest_of_body, context);
-                self.recover_body_item(item, span)
-            }
-            Ok(form) => Ok(BodyItem::Expr(self.lower_recovered(&form)?)),
+            Ok(form) => self.lower_body_form(&form, rest_of_body, context),
             Err(diagnostic) => Ok(BodyItem::Expr(self.recover(diagnostic, span)?)),
         }
+    }
+
+    fn lower_body_form(
+        &mut self,
+        form: &Form,
+        rest_of_body: &mut RestOfBody,
+        context: &mut DefinitionContext,
+    ) -> Result<BodyItem, Diagnostic> {
+        let item = match self.kernel_head(form) {
+            Some(KernelForm::Let) => self.lower_let(form, rest_of_body, context),
+            Some(Self::DEF_FORM) => self.lower_misplaced_def(form, rest_of_body, context),
+            Some(Self::STRUCT_FORM) => self.lower_misplaced_struct(form, rest_of_body, context),
+            Some(Self::DO_FORM) if self.holds_definition(form) => {
+                self.lower_spliced_do(form, rest_of_body, context)
+            }
+            _ => return Ok(BodyItem::Expr(self.lower_recovered(form)?)),
+        };
+        self.recover_body_item(item, form.span())
     }
 
     fn expand_body_head<'form>(
