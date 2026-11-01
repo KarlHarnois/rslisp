@@ -189,3 +189,14 @@ error[L0510]: cannot return a borrow of a temporary value
    |   this borrows a temporary value
    |
    = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a temporary value
+  --> check/returned_unpromoted_temporary.rslisp:64:3
+   |
+64 |   (ref (+ (rust "std::process::id() as i64" i64) 1)))
+   |   ^^^^^--------------------------------------------^
+   |   |    |
+   |   |    this temporary value is dropped when the function returns
+   |   this borrows a temporary value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
