@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/repeated_patterns.rslisp
+---
+(def grid (fn () ((rust "vec![{0}, {1}, {2}]" (where (item) (fn (item item item) (vec item)))) ((rust "vec![{0}, {1}]" (where (item_2) (fn (item_2 item_2) (vec item_2)))) 1 2) (rust "Vec::new()" (where (item_3) (vec item_3))) ((rust "vec![{0}]" (where (item_4) (fn (item_4) (vec item_4)))) 3))))
+(def zipped (fn () ((rust "vec![{0}, {1}]" (where (item_5) (fn (item_5 item_5) (vec item_5)))) (pair 1 2) (pair 3 4))))
+(def marked (fn () ((rust "vec![{0}, {1}]" (where (item_6) (fn (item_6 item_6) (vec item_6)))) (pair 0 1) (pair 0 2))))
+(def point (fn (x y) x y))
+(def total (fn () 3))
+(def firsts (fn () ((rust "vec![{0}, {1}]" (where (item_7) (fn (item_7 item_7) (vec item_7)))) 1 3)))
+(def main (fn () (do)))

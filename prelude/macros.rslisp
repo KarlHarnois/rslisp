@@ -1,6 +1,6 @@
 (use code first rest list prepend concat length empty? nth take drop
           symbol? list? string? symbol-name string same-binding? fail
-          definition-symbol type-definition-symbol add-module-note module-notes value-eq number-add number-sub number-lt
+          definition-symbol type-definition-symbol add-module-note module-notes value-eq bool-not number-add number-sub number-lt
           string-lines string-trim-start string-length string-drop string-strip-suffix)
 
 (export defrule defmacro template map-list whole-pairs? note-docstring value-doc-key type-doc-key
@@ -71,9 +71,9 @@
 
 (def entry-value
   (fn (entry)
-    (if (entry-kind? entry "one")
-        (nth entry 2)
-        (map-list entry-value (nth entry 2)))))
+    (if (entry-kind? entry "many")
+        (map-list entry-value (nth entry 2))
+        (nth entry 2))))
 
 (def binding-value
   (fn (bindings variable)
@@ -83,8 +83,8 @@
   (fn (pattern)
     (if (literal-pattern? pattern)
         (list)
-        (if (symbol? pattern)
-            (if (ellipsis? pattern) (list) (list pattern))
+        (if (pattern-variable? pattern)
+            (list pattern)
             (if (list? pattern) (concat-all (map-list pattern-variables pattern)) (list))))))
 
 (def template-variables
@@ -132,13 +132,22 @@
 
 (def match-repeated
   (fn (repeated inputs)
-    (let matches (match-each repeated inputs))
+    (if (pattern-variable? repeated)
+        (list (list (quote forms) repeated inputs))
+        (group-matches repeated (match-each repeated inputs)))))
+
+(def group-matches
+  (fn (repeated matches)
     (if (list? matches)
         (map-list (fn (variable)
                     (list (quote many) variable
                           (map-list (fn (bindings) (lookup variable bindings)) matches)))
                   (pattern-variables repeated))
         false)))
+
+(def pattern-variable?
+  (fn (pattern)
+    (if (symbol? pattern) (bool-not (ellipsis? pattern)) false)))
 
 (def match-each
   (fn (pattern inputs)
@@ -163,7 +172,7 @@
     (let entry (lookup template bindings))
     (if (entry-kind? entry "one")
         (nth entry 2)
-        (if (entry-kind? entry "many")
+        (if (repeated-entry? entry)
             (fail "this pattern variable needs `...` after it" template)
             template))))
 
@@ -189,14 +198,23 @@
   (fn (candidates bindings)
     (if (empty? candidates)
         (list)
-        (if (entry-kind? (lookup (first candidates) bindings) "many")
+        (if (repeated-entry? (lookup (first candidates) bindings))
             (prepend (first candidates) (repeated-variables (rest candidates) bindings))
             (repeated-variables (rest candidates) bindings)))))
 
+(def repeated-entry?
+  (fn (entry)
+    (if (entry-kind? entry "many") true (entry-kind? entry "forms"))))
+
 (def iteration-bindings
   (fn (variables bindings index)
-    (concat (map-list (fn (variable) (nth (nth (lookup variable bindings) 2) index)) variables)
+    (concat (map-list (fn (variable) (iteration-entry (lookup variable bindings) index)) variables)
             bindings)))
+
+(def iteration-entry
+  (fn (entry index)
+    (let item (nth (nth entry 2) index))
+    (if (entry-kind? entry "forms") (list (quote one) (nth entry 1) item) item)))
 
 (def expand-rules
   (fn (clauses form)

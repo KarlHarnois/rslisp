@@ -1,0 +1,31 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/repeated_pattern_errors.rslisp
+---
+error[L0301]: this pattern variable needs `...` after it
+  --> expand/repeated_pattern_errors.rslisp:2:19
+   |
+ 2 |   ((item ...) (do item)))
+   |                   ^^^^ here
+...
+10 | (def a (fn () (flat 1 2)))
+   |               ---------- in this macro call
+
+error[L0301]: this pattern variable needs `...` after it
+  --> expand/repeated_pattern_errors.rslisp:5:27
+   |
+ 5 |   (((left right) ...) (do left)))
+   |                           ^^^^ here
+...
+11 | (def b (fn () (flat-pairs (1 2))))
+   |               ------------------ in this macro call
+
+error[L0301]: nothing before this `...` repeats
+  --> expand/repeated_pattern_errors.rslisp:8:19
+   |
+ 8 |   ((item ...) (do 1 ...)))
+   |                   ^ here
+...
+12 | (def c (fn () (empty-repeat 1 2)))
+   |               ------------------ in this macro call
