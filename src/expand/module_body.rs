@@ -185,10 +185,10 @@ impl Expander<'_> {
         context: &mut DefinitionContext,
         queue: &mut SplicedForms,
     ) -> Result<Option<PendingItem>, Diagnostic> {
-        let enclosing_depth = std::mem::replace(&mut self.expansion_depth, spliced_form.depth);
-        let registered = self.register_top_level(module, spliced_form.form, context, queue);
-        self.expansion_depth = enclosing_depth;
-        registered
+        if spliced_form.splices > Form::NESTING_LIMIT {
+            return Err(self.nests_too_deep(spliced_form.form.span()));
+        }
+        self.register_top_level(module, spliced_form.form, context, queue)
     }
 
     fn register_top_level(
@@ -198,14 +198,13 @@ impl Expander<'_> {
         context: &mut DefinitionContext,
         queue: &mut SplicedForms,
     ) -> Result<Option<PendingItem>, Diagnostic> {
-        let written = form.clone();
         let form = self.expand_head(form, Some(context))?;
         match self.definition_head(&form)? {
             KernelForm::Definition(definition) => {
                 self.register_definition(definition, module, form, context)
             }
             KernelForm::Expression(ExpressionForm::Control(ControlForm::Do)) => {
-                self.splice(&written, &form, queue);
+                Self::splice(&form, queue);
                 Ok(None)
             }
             _ => Err(ExpandProblems::not_a_definition(form.span())),
@@ -495,17 +494,9 @@ impl Expander<'_> {
         }
     }
 
-    fn splice(&self, written: &Form, expanded: &Form, queue: &mut SplicedForms) {
-        let items = expanded.as_list().unwrap_or_default();
-        let spliced = items.get(1..).unwrap_or_default();
-        queue.splice(spliced, self.splice_depth(written));
-    }
-
-    fn splice_depth(&self, written: &Form) -> usize {
-        match self.macro_head(written) {
-            Some(_) => self.expansion_depth + 1,
-            None => self.expansion_depth,
-        }
+    fn splice(form: &Form, queue: &mut SplicedForms) {
+        let items = form.as_list().unwrap_or_default();
+        queue.splice_into_taken(items.get(1..).unwrap_or_default());
     }
 
     fn register_def(
