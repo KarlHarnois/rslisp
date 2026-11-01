@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/typed_literal.rslisp
+---
+42
+-1
+5
+3
+2.5
+Leaf runs
+Leaf
+0
+2
+7
+3
+9
+2024
