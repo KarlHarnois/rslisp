@@ -164,11 +164,14 @@ impl<'a> CheckRuns<'a> {
 
     fn check_ownership(typed: &mut TypedProgram) -> Result<InferredCopies, Diagnostics> {
         let mut diagnostics = std::mem::take(&mut typed.unnameable_types);
-        match OwnershipChecker::check(typed) {
-            Ok(inferred_copies) if diagnostics.is_empty() => return Ok(inferred_copies),
-            Ok(_) => diagnostics.extend(std::mem::take(&mut typed.warnings)),
-            Err(ownership_errors) => diagnostics.extend(ownership_errors),
+        let checked = OwnershipChecker::check(typed);
+        if diagnostics.is_empty() {
+            return checked;
         }
+        if let Err(ownership_errors) = checked {
+            diagnostics.extend(ownership_errors);
+        }
+        diagnostics.extend(std::mem::take(&mut typed.warnings));
         Err(diagnostics)
     }
 

@@ -1,0 +1,11 @@
+(defstruct tally :counter (fn ((iterator (ref i64))) usize))
+(enum shape (circle f64) point)
+(defn area (s)
+  (match s
+    (_ 0.0)
+    (point 1.0)))
+(defn consume (items) (push! items 1) items)
+(defn main ()
+  (let years (vec 2019))
+  (let moved (consume years))
+  (println (len years)))
