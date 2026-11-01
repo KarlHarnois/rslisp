@@ -10,7 +10,7 @@ pub enum EntryPointCheck {
 }
 
 pub struct ProfileReader<'a> {
-    crate_name: &'a str,
+    crate_names: &'a BTreeSet<String>,
     entry_point_check: EntryPointCheck,
 }
 
@@ -23,9 +23,9 @@ impl<'a> ProfileReader<'a> {
         "build::formatting::EmittedFormatting::apply",
     ];
 
-    pub fn new(crate_name: &'a str, entry_point_check: EntryPointCheck) -> Self {
+    pub fn new(crate_names: &'a BTreeSet<String>, entry_point_check: EntryPointCheck) -> Self {
         Self {
-            crate_name,
+            crate_names,
             entry_point_check,
         }
     }
@@ -36,14 +36,25 @@ impl<'a> ProfileReader<'a> {
         scan.finish()
     }
 
-    fn missing_entry_point(&self, entered: &BTreeSet<&str>) -> Option<String> {
+    fn missing_entry_point(&self, entered: &BTreeSet<&str>) -> Option<Vec<String>> {
         if self.entry_point_check == EntryPointCheck::Skipped {
             return None;
         }
         Self::STAGE_ENTRY_POINTS
             .iter()
-            .map(|entry_point| format!("{}::{entry_point}", self.crate_name))
-            .find(|entry_point| !entered.contains(entry_point.as_str()))
+            .map(|entry_point| self.in_each_crate(entry_point))
+            .find(|candidates| {
+                !candidates
+                    .iter()
+                    .any(|candidate| entered.contains(candidate.as_str()))
+            })
+    }
+
+    fn in_each_crate(&self, path: &str) -> Vec<String> {
+        self.crate_names
+            .iter()
+            .map(|crate_name| format!("{crate_name}::{path}"))
+            .collect()
     }
 
     fn stage_of_call(&self, caller: &str, callee: &str) -> Option<String> {
@@ -54,10 +65,14 @@ impl<'a> ProfileReader<'a> {
     }
 
     fn module_of<'name>(&self, function: &'name str) -> Option<&'name str> {
-        let path = function
-            .trim_start_matches('<')
-            .strip_prefix(self.crate_name)?
-            .strip_prefix("::")?;
+        let item = function.trim_start_matches('<');
+        self.crate_names
+            .iter()
+            .find_map(|crate_name| Self::module_within(item, crate_name))
+    }
+
+    fn module_within<'name>(item: &'name str, crate_name: &str) -> Option<&'name str> {
+        let path = item.strip_prefix(crate_name)?.strip_prefix("::")?;
         let length = path
             .find(|character: char| !character.is_alphanumeric() && character != '_')
             .unwrap_or(path.len());
@@ -154,8 +169,8 @@ impl<'reader, 'text> ProfileScan<'reader, 'text> {
         let summary = self
             .summary
             .ok_or(TaskFailure::malformed_profile("summary"))?;
-        if let Some(entry_point) = self.reader.missing_entry_point(&self.entered) {
-            return Err(TaskFailure::stage_entry_missing(&entry_point));
+        if let Some(candidates) = self.reader.missing_entry_point(&self.entered) {
+            return Err(TaskFailure::stage_entry_missing(&candidates));
         }
         Ok(Measurement::new(
             self.stages,
@@ -185,18 +200,15 @@ impl<'reader, 'text> ProfileScan<'reader, 'text> {
 mod tests {
     use super::*;
 
-    const PROFILE: &str = include_str!("../../fixtures/bench/callgrind.out");
+    struct ProfileFixture;
 
-    #[test]
-    fn charges_calls_out_of_the_entry_module_to_the_callee_module() {
-        let measurement = ProfileReader::new("compiler", EntryPointCheck::Enforced)
-            .read(PROFILE)
-            .unwrap();
-        let rows: Vec<(String, u64)> = measurement
-            .rows()
-            .map(|(stage, instructions)| (stage.to_string(), instructions))
-            .collect();
-        let expected = [
+    impl ProfileFixture {
+        const ONE_CRATE: &'static str = include_str!("../../fixtures/bench/callgrind.out");
+        const TWO_CRATES: &'static str =
+            include_str!("../../fixtures/bench/callgrind-two-crates.out");
+        const COMPILER: [&'static str; 1] = ["compiler"];
+        const COMPILER_AND_FRONT_END: [&'static str; 2] = ["compiler", "compiler_front"];
+        const STAGE_ROWS: [(&'static str, u64); 6] = [
             ("build", 20),
             ("check", 300),
             ("emit", 50),
@@ -204,37 +216,108 @@ mod tests {
             ("other", 130),
             ("total", 1000),
         ];
-        let expected: Vec<(String, u64)> = expected
-            .iter()
-            .map(|(stage, instructions)| (stage.to_string(), *instructions))
-            .collect();
-        assert_eq!(rows, expected);
+
+        fn read(
+            profile: &str,
+            crate_names: &[&str],
+            entry_point_check: EntryPointCheck,
+        ) -> Result<Measurement, TaskFailure> {
+            let crate_names = crate_names.iter().map(ToString::to_string).collect();
+            ProfileReader::new(&crate_names, entry_point_check).read(profile)
+        }
+
+        fn rows(measurement: &Measurement) -> Vec<(String, u64)> {
+            measurement
+                .rows()
+                .map(|(stage, instructions)| (stage.to_string(), instructions))
+                .collect()
+        }
+
+        fn stage_rows() -> Vec<(String, u64)> {
+            Self::STAGE_ROWS
+                .iter()
+                .map(|(stage, instructions)| (stage.to_string(), *instructions))
+                .collect()
+        }
+
+        fn without_emit_entry(profile: &str) -> String {
+            profile.replace("RustEmitter::emit\n", "RustEmitter::lower\n")
+        }
     }
 
     #[test]
-    fn rejects_a_profile_that_never_enters_a_stage() {
-        let inlined = PROFILE.replace("RustEmitter::emit\n", "RustEmitter::lower\n");
-        let failure = ProfileReader::new("compiler", EntryPointCheck::Enforced)
-            .read(&inlined)
-            .unwrap_err();
-        assert!(
-            failure
-                .to_string()
-                .contains("`compiler::emit::RustEmitter::emit`")
+    fn charges_calls_out_of_the_entry_module_to_the_callee_module() {
+        let measurement = ProfileFixture::read(
+            ProfileFixture::ONE_CRATE,
+            &ProfileFixture::COMPILER,
+            EntryPointCheck::Enforced,
+        )
+        .unwrap();
+        assert_eq!(
+            ProfileFixture::rows(&measurement),
+            ProfileFixture::stage_rows()
         );
     }
 
     #[test]
+    fn charges_calls_into_another_workspace_crate_to_the_callee_module() {
+        let measurement = ProfileFixture::read(
+            ProfileFixture::TWO_CRATES,
+            &ProfileFixture::COMPILER_AND_FRONT_END,
+            EntryPointCheck::Enforced,
+        )
+        .unwrap();
+        assert_eq!(
+            ProfileFixture::rows(&measurement),
+            ProfileFixture::stage_rows()
+        );
+    }
+
+    #[test]
+    fn rejects_a_profile_that_never_enters_a_stage() {
+        let failure = ProfileFixture::read(
+            &ProfileFixture::without_emit_entry(ProfileFixture::ONE_CRATE),
+            &ProfileFixture::COMPILER,
+            EntryPointCheck::Enforced,
+        )
+        .unwrap_err();
+        assert!(
+            failure
+                .to_string()
+                .contains("into `compiler::emit::RustEmitter::emit`,")
+        );
+    }
+
+    #[test]
+    fn names_the_missing_entry_point_in_each_workspace_crate() {
+        let failure = ProfileFixture::read(
+            &ProfileFixture::without_emit_entry(ProfileFixture::TWO_CRATES),
+            &ProfileFixture::COMPILER_AND_FRONT_END,
+            EntryPointCheck::Enforced,
+        )
+        .unwrap_err();
+        assert!(failure.to_string().contains(
+            "into `compiler::emit::RustEmitter::emit` or `compiler_front::emit::RustEmitter::emit`,"
+        ));
+    }
+
+    #[test]
     fn skips_the_entry_points_of_a_baseline() {
-        let inlined = PROFILE.replace("RustEmitter::emit\n", "RustEmitter::lower\n");
-        let measurement = ProfileReader::new("compiler", EntryPointCheck::Skipped).read(&inlined);
+        let measurement = ProfileFixture::read(
+            &ProfileFixture::without_emit_entry(ProfileFixture::ONE_CRATE),
+            &ProfileFixture::COMPILER,
+            EntryPointCheck::Skipped,
+        );
         assert!(measurement.is_ok());
     }
 
     #[test]
     fn rejects_a_profile_without_a_summary() {
-        let failure =
-            ProfileReader::new("compiler", EntryPointCheck::Enforced).read("events: Ir\n");
+        let failure = ProfileFixture::read(
+            "events: Ir\n",
+            &ProfileFixture::COMPILER,
+            EntryPointCheck::Enforced,
+        );
         assert!(failure.unwrap_err().to_string().contains("summary"));
     }
 }

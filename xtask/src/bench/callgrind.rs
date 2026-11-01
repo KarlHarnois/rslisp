@@ -122,7 +122,7 @@ impl Callgrind {
     ) -> Result<Measurement, TaskFailure> {
         let text = fs::read_to_string(profile)
             .map_err(|_| TaskFailure::profile_missing(program, stderr))?;
-        ProfileReader::new(&self.compiler.crate_name, self.entry_point_check)
+        ProfileReader::new(&self.compiler.crate_names, self.entry_point_check)
             .read(&text)
             .map_err(|failure| failure.while_measuring(program))
     }
