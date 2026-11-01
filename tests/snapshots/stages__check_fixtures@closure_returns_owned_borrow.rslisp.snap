@@ -11,7 +11,7 @@ error[L0510]: cannot return a borrow of a local value
   |                   |
   |                   this parameter owns its value, which is dropped when the function returns
   |
-  = help: return an owned value with `(clone ...)`, or give this parameter a borrowed type
+  = help: return an owned value with `(clone ...)`, or capture the value instead of passing it
 
 error[L0510]: cannot return a borrow of a local value
  --> check/closure_returns_owned_borrow.rslisp:6:27
@@ -51,4 +51,4 @@ error[L0510]: cannot return a borrow of a local value
    |                     |
    |                     this parameter owns its value, which is dropped when the function returns
    |
-   = help: return an owned value with `(clone ...)`, or give this parameter a borrowed type
+   = help: return an owned value with `(clone ...)`, or capture the value instead of passing it

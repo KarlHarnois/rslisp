@@ -29,26 +29,43 @@ impl<'p> ReturnedBorrows<'p> {
     pub fn check_definition(&self, definition: &TypedDefinition) -> Vec<Diagnostic> {
         self.checked_functions(definition)
             .into_iter()
-            .filter_map(|lambda| self.check(lambda))
+            .filter_map(|(lambda, owner)| self.check(lambda, owner))
             .collect()
     }
 
-    fn checked_functions<'d>(&self, definition: &'d TypedDefinition) -> Vec<&'d TypedLambda> {
+    fn checked_functions<'d>(
+        &self,
+        definition: &'d TypedDefinition,
+    ) -> Vec<(&'d TypedLambda, ParameterOwner)> {
+        let function =
+            Self::function_of(definition).map(|lambda| (lambda, ParameterOwner::Function));
+        let closures = self
+            .closures_to_check(definition)
+            .into_iter()
+            .map(|closure| (closure, ParameterOwner::Closure));
+        function.into_iter().chain(closures).collect()
+    }
+
+    fn function_of(definition: &TypedDefinition) -> Option<&TypedLambda> {
+        match &definition.value.kind {
+            TypedExprKind::Fn(lambda) => Some(lambda),
+            _ => None,
+        }
+    }
+
+    fn closures_to_check<'d>(&self, definition: &'d TypedDefinition) -> Vec<&'d TypedLambda> {
         if self
             .owners_of_borrowing_closures
             .contains(&definition.binding)
         {
-            return LocalBorrows::lambdas_in(&definition.value);
+            return LocalBorrows::closures_in(&definition.value);
         }
-        match &definition.value.kind {
-            TypedExprKind::Fn(lambda) => vec![lambda.as_ref()],
-            _ => Vec::new(),
-        }
+        Vec::new()
     }
 
-    fn check(&self, lambda: &TypedLambda) -> Option<Diagnostic> {
+    fn check(&self, lambda: &TypedLambda, owner: ParameterOwner) -> Option<Diagnostic> {
         let tail = LocalBorrows::tail_of(&lambda.body)?;
-        let borrows = LocalBorrows::new(lambda);
+        let borrows = LocalBorrows::new(lambda, owner);
         let found = borrows.returned(tail)?;
         let dropped = borrows.dropped(&found);
         let storage = found.holders.iter().find_map(|holder| self.storage(holder));
@@ -195,13 +212,37 @@ enum BorrowHolder<'e> {
     Payload(BindingId, usize),
 }
 
+#[derive(Clone, Copy)]
+enum ParameterOwner {
+    Function,
+    Closure,
+}
+
+impl ParameterOwner {
+    fn dropped_parameter(self, span: Span) -> DroppedValue {
+        match self {
+            Self::Function => DroppedValue::FunctionParameter(span),
+            Self::Closure => DroppedValue::ClosureParameter(span),
+        }
+    }
+}
+
 struct LocalBorrows<'e> {
     lambda: &'e TypedLambda,
+    owner: ParameterOwner,
 }
 
 impl<'e> LocalBorrows<'e> {
-    fn new(lambda: &'e TypedLambda) -> Self {
-        Self { lambda }
+    fn new(lambda: &'e TypedLambda, owner: ParameterOwner) -> Self {
+        Self { lambda, owner }
+    }
+
+    fn closures_in(value: &TypedExpr) -> Vec<&TypedLambda> {
+        value
+            .children()
+            .into_iter()
+            .flat_map(Self::lambdas_in)
+            .collect()
     }
 
     fn lambdas_in(value: &TypedExpr) -> Vec<&TypedLambda> {
@@ -338,7 +379,7 @@ impl<'e> LocalBorrows<'e> {
 
     fn dropped(&self, found: &LocalBorrow) -> DroppedValue {
         match self.parameter(found.binding) {
-            Some(parameter) => DroppedValue::Parameter(parameter.span),
+            Some(parameter) => self.owner.dropped_parameter(parameter.span),
             None => DroppedValue::Local(
                 self.body_binder(found.binding)
                     .map_or(found.span, |binder| binder.span),

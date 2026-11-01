@@ -14,7 +14,8 @@ pub enum FunctionStorage {
 
 pub enum DroppedValue {
     Local(Span),
-    Parameter(Span),
+    FunctionParameter(Span),
+    ClosureParameter(Span),
 }
 
 pub enum BorrowedStorage {
@@ -337,8 +338,11 @@ impl OwnershipProblems {
             DroppedValue::Local(_) => {
                 "return an owned value with `(clone ...)`, or borrow from a parameter"
             }
-            DroppedValue::Parameter(_) => {
+            DroppedValue::FunctionParameter(_) => {
                 "return an owned value with `(clone ...)`, or give this parameter a borrowed type"
+            }
+            DroppedValue::ClosureParameter(_) => {
+                "return an owned value with `(clone ...)`, or capture the value instead of passing it"
             }
         })
     }
@@ -397,10 +401,12 @@ impl OwnershipProblems {
             DroppedValue::Local(defined) => {
                 Label::new(*defined, "this local is dropped when the function returns")
             }
-            DroppedValue::Parameter(defined) => Label::new(
-                *defined,
-                "this parameter owns its value, which is dropped when the function returns",
-            ),
+            DroppedValue::FunctionParameter(defined) | DroppedValue::ClosureParameter(defined) => {
+                Label::new(
+                    *defined,
+                    "this parameter owns its value, which is dropped when the function returns",
+                )
+            }
         }
     }
 
