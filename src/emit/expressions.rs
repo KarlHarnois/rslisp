@@ -2345,7 +2345,7 @@ impl<'a> ExpressionEmitter<'a> {
         let mut fragments = Vec::new();
         for (param, argument) in lambda.params.iter().zip(arguments) {
             let binding = self.bind_parameter(param, TypePosition::Value);
-            let value = self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary);
+            let value = self.annotated_binding_value(argument);
             fragments.push(Fragment::Newline);
             fragments.push(Fragment::Text(format!("let {binding} = ")));
             fragments.extend(value.fragments);
@@ -2360,6 +2360,17 @@ impl<'a> ExpressionEmitter<'a> {
         self.locals.leave();
         self.tail_loop = previous;
         fragments
+    }
+
+    fn annotated_binding_value(&mut self, argument: &TypedArgument) -> Code {
+        let Some(literal) = Self::bound_literal(&argument.value) else {
+            return self.argument(argument, TypeContext::Known, ArgumentRole::Ordinary);
+        };
+        let unwrapped = TypedArgument {
+            value: literal.clone(),
+            borrow: argument.borrow,
+        };
+        self.argument(&unwrapped, TypeContext::Known, ArgumentRole::Ordinary)
     }
 
     fn block(&mut self, block: &TypedBlock) -> Code {

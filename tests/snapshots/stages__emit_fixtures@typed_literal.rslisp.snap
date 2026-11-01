@@ -51,7 +51,19 @@ fn main() {
         }
     );
     let year: u16 = 2024;
-    println!("{}", year)
+    println!("{}", year);
+    println!("{}", {
+        let mut i: i64 = 0;
+        let mut total: usize = 0;
+        loop {
+            if i == 3 {
+                break total;
+            } else {
+                (i, total) = (i + 1, total + 2);
+                continue;
+            }
+        }
+    })
 }
 
 mod rt {
