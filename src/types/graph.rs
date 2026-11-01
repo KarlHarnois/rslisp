@@ -19,19 +19,8 @@ pub struct DefinitionGraph<'p> {
 
 impl<'p> DefinitionGraph<'p> {
     pub fn of(program: &'p Program) -> Self {
-        let definitions: Vec<Definition<'p>> = program
-            .modules
-            .iter()
-            .flat_map(|module| &module.items)
-            .filter_map(|item| match &item.kind {
-                ItemKind::Def(binding, value) => Some(Definition {
-                    binding: *binding,
-                    value,
-                    span: item.span,
-                }),
-                _ => None,
-            })
-            .collect();
+        let mut definitions = Vec::with_capacity(Self::item_count(program));
+        definitions.extend(Self::definitions_in(program));
         let dependencies = DependencyGraph::build(&definitions, &program.bindings);
         let order: Vec<BindingId> = definitions
             .iter()
@@ -43,6 +32,29 @@ impl<'p> DefinitionGraph<'p> {
             dependencies,
             components,
         }
+    }
+
+    fn item_count(program: &Program) -> usize {
+        program
+            .modules
+            .iter()
+            .map(|module| module.items.len())
+            .sum()
+    }
+
+    fn definitions_in(program: &'p Program) -> impl Iterator<Item = Definition<'p>> {
+        program
+            .modules
+            .iter()
+            .flat_map(|module| &module.items)
+            .filter_map(|item| match &item.kind {
+                ItemKind::Def(binding, value) => Some(Definition {
+                    binding: *binding,
+                    value,
+                    span: item.span,
+                }),
+                _ => None,
+            })
     }
 
     pub fn definitions(&self) -> &[Definition<'p>] {
@@ -246,8 +258,9 @@ impl<'a> StronglyConnected<'a> {
 mod tests {
     use std::collections::{HashMap, HashSet};
 
-    use super::DependencyGraph;
+    use super::{DefinitionGraph, DependencyGraph};
     use crate::core::{BindingArena, BindingId, BindingInfo, BindingKind, ModuleId};
+    use crate::types::TypedSource;
 
     struct CallGraph {
         bindings: BindingArena,
@@ -302,5 +315,14 @@ mod tests {
                 .dependencies()
                 .directly_depends_on_any(&[first], &failed)
         );
+    }
+
+    #[test]
+    fn reserves_the_definition_list_once_for_every_item() {
+        let source = TypedSource::expand("(def rate 3)\n(def total (* rate 2))\n");
+        let program = source.program();
+        let items = program.modules.iter().flat_map(|module| &module.items);
+        let graph = DefinitionGraph::of(program);
+        assert_eq!(graph.definitions.capacity(), items.count());
     }
 }
