@@ -566,7 +566,7 @@ At each of them, the compiler adds one borrow, removes borrows, or copies a Copy
 - If a function passed as a value needs an adjustment of its parameters, the compiler wraps it in a closure.
 - If a body copies a generic parameter, the compiler infers the parameter's `copy` bound.
 - If the name of a function that changes an argument does not end with `!`, the compiler warns. The emitted Rust drops the `!`.
-- `deref` copies a Copy value out of a borrow. A `deref` whose result is still a borrow, as `(deref y)` on a `(ref (ref i64))` is, removes its one borrow and leaves the rest to the rule.
+- `deref` copies a Copy value out of a borrow. A `deref` whose result is still a borrow, as `(deref y)` on a `(ref (ref i64))` is, removes its one borrow and leaves the rest to the rule. A `deref` whose result type is still unknown at the call, as in a closure bound by `let` before its use, waits for that type, so `(let recent? (fn (y) (> (deref y) 2020)))` passed to `filter` emits `|y: &&i64| **y > 2020`.
 - A command prints each function's inferred signature, so that a `type` form can pin it.
 
 Rust adjusts a receiver's references automatically, but rslisp has no receivers, so the rule covers every call. A Copy value of 16 bytes or less travels in registers, so copying it costs no more than borrowing it.

@@ -2137,17 +2137,26 @@ impl TypeChecker {
             (Type::Var(var), Type::Ref(_, _)) if self.referent_unknown(&argument) => {
                 Ok(self.defer_borrow(*var, &argument, value.span))
             }
+            (Type::Var(var), Type::Var(_)) if self.dereference_result_unknown(value) => {
+                Ok(self.defer_borrow(*var, &argument, value.span))
+            }
             _ => self.pass_types(&parameter, &argument, value.span),
         }
     }
 
     pub(super) fn passes_as_written(&self, value: &TypedExpr) -> bool {
-        value.is_written_form() && !self.dereference_leaves_borrow(value)
+        value.is_written_form() && !self.dereference_may_leave_borrow(value)
     }
 
-    fn dereference_leaves_borrow(&self, value: &TypedExpr) -> bool {
+    fn dereference_may_leave_borrow(&self, value: &TypedExpr) -> bool {
+        let result = self.unifier.resolve(&value.ty);
         matches!(value.kind, TypedExprKind::Deref(_))
-            && self.unifier.resolve(&value.ty).is_reference()
+            && (result.is_reference() || self.referent_unknown(&result))
+    }
+
+    fn dereference_result_unknown(&self, value: &TypedExpr) -> bool {
+        matches!(value.kind, TypedExprKind::Deref(_))
+            && self.referent_unknown(&self.unifier.resolve(&value.ty))
     }
 
     fn string_as_str_help(
