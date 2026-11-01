@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
+use super::generic_callees::GenericCallees;
 use super::generic_positions::GenericPositions;
 use super::let_annotation::LetAnnotation;
-use super::plan::EmitPlan;
 use super::rust_fallback::RustFallback;
 use super::type_anchor::TypeAnchor;
 use crate::core::{BindingId, BindingKind, FieldLabel, Literal, VariantInfo};
@@ -25,10 +25,10 @@ pub(super) struct OpenLiterals {
 }
 
 impl OpenLiterals {
-    pub(super) fn of(program: &TypedProgram, plan: &EmitPlan, value: &TypedExpr) -> Self {
+    pub(super) fn of(program: &TypedProgram, callees: &GenericCallees, value: &TypedExpr) -> Self {
         let mut search = OpenLiteralSearch {
             program,
-            plan,
+            callees,
             spans: HashSet::new(),
         };
         search.expr(value, TypeContext::Known);
@@ -44,7 +44,7 @@ impl OpenLiterals {
 
 struct OpenLiteralSearch<'a> {
     program: &'a TypedProgram,
-    plan: &'a EmitPlan<'a>,
+    callees: &'a GenericCallees<'a>,
     spans: HashSet<Span>,
 }
 
@@ -60,7 +60,12 @@ impl OpenLiteralSearch<'_> {
             TypedExprKind::Control(control) => self.control(control, context),
             TypedExprKind::Struct(structure) => self.structure(structure, context),
             TypedExprKind::Variant(binding, payloads) => self.variant(*binding, payloads, context),
-            _ => self.children(expr),
+            TypedExprKind::Recur(arguments) => self.known_arguments(arguments),
+            TypedExprKind::Try { value, .. }
+            | TypedExprKind::Deref(value)
+            | TypedExprKind::TraitObject(value, _) => self.expr(value, TypeContext::Known),
+            TypedExprKind::Assoc(value, keys, item) => self.association(value, keys, item),
+            TypedExprKind::Leaf(_) => {}
         }
     }
 
@@ -70,32 +75,55 @@ impl OpenLiteralSearch<'_> {
         }
     }
 
-    fn children(&mut self, expr: &TypedExpr) {
-        for child in expr.children() {
-            self.expr(child, TypeContext::Known);
+    fn association(&mut self, value: &TypedExpr, keys: &[TypedExpr], item: &TypedExpr) {
+        self.expr(value, TypeContext::Known);
+        for key in keys {
+            self.expr(key, TypeContext::Known);
         }
+        self.expr(item, TypeContext::Known);
     }
 
     fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument], context: TypeContext) {
         self.expr(callee, context);
+        match &callee.kind {
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
+                let positions = self.callees.positions_of(*binding);
+                self.arguments(positions.as_deref(), arguments, context);
+            }
+            TypedExprKind::Leaf(TypedLeaf::Rust(template)) => {
+                let positions = GenericPositions::of_template(&template.type_expr);
+                self.arguments(positions.as_ref(), arguments, context);
+            }
+            _ => self.arguments(None, arguments, context),
+        }
+    }
+
+    fn arguments(
+        &mut self,
+        positions: Option<&GenericPositions>,
+        arguments: &[TypedArgument],
+        context: TypeContext,
+    ) {
+        match positions {
+            Some(positions) => self.generic_arguments(positions, arguments, context),
+            None => self.known_arguments(arguments),
+        }
+    }
+
+    fn generic_arguments(
+        &mut self,
+        positions: &GenericPositions,
+        arguments: &[TypedArgument],
+        context: TypeContext,
+    ) {
         let values: Vec<&TypedExpr> = arguments.iter().map(|argument| &argument.value).collect();
-        let contexts = match self.declared_parameters(callee) {
-            Some(positions) => positions.contexts(&values, context),
-            None => vec![TypeContext::Known; values.len()],
-        };
+        let contexts = positions.contexts(&values, context);
         self.positions(&values, contexts);
     }
 
-    fn declared_parameters(&self, callee: &TypedExpr) -> Option<GenericPositions> {
-        match &callee.kind {
-            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
-                let scheme = &self.plan.definition(*binding)?.scheme;
-                GenericPositions::of_function(&scheme.params, &scheme.body)
-            }
-            TypedExprKind::Leaf(TypedLeaf::Rust(template)) => {
-                GenericPositions::of_template(&template.type_expr)
-            }
-            _ => None,
+    fn known_arguments(&mut self, arguments: &[TypedArgument]) {
+        for argument in arguments {
+            self.expr(&argument.value, TypeContext::Known);
         }
     }
 

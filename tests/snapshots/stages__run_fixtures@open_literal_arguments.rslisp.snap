@@ -19,6 +19,13 @@ input_file: tests/fixtures/run/open_literal_arguments.rslisp
 3000000000
 3000000000
 3000000000
+2
+7
+true
+4
+[6, 8]
+[6, 8]
+[6, 8]
 ("Leaf", "Leaf")
 ("Leaf", 2.5)
 2.5

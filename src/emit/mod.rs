@@ -3,6 +3,7 @@ mod expressions;
 mod fragment;
 mod fresh_lifetimes;
 mod function_borrow;
+mod generic_callees;
 mod generic_positions;
 mod items;
 mod let_annotation;
