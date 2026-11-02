@@ -1,8 +1,8 @@
 use rustc_hash::FxHashMap;
 
-use super::aliases::LetAliases;
+use super::aliases::{LetAlias, LetAliases};
 use super::local_borrows::{LocalBorrows, ParameterOwner};
-use super::problems::{LentParameter, OwnershipProblems};
+use super::problems::{AliasLabel, LentCall, LentParameter, OwnershipProblems};
 use super::promoted_constants::PromotedConstants;
 use crate::core::BindingId;
 use crate::diagnostic::Diagnostic;
@@ -15,8 +15,14 @@ pub struct LentBorrows<'p> {
 }
 
 struct LendingClosure<'d> {
-    origin: BindingId,
+    links: Vec<LetAlias<'d>>,
     parameters: Vec<Option<&'d TypedBinder>>,
+}
+
+impl LendingClosure<'_> {
+    fn origin(&self, called: BindingId) -> BindingId {
+        self.links.last().map_or(called, |link| link.target)
+    }
 }
 
 type LocalCall<'e> = (BindingId, &'e [TypedArgument]);
@@ -49,7 +55,7 @@ impl<'p> LentBorrows<'p> {
             .filter(|(binder, _)| !binder.annotated)
             .map(|(binder, bound)| {
                 let closure = LendingClosure {
-                    origin: aliases.origin(binder.binding),
+                    links: aliases.links(binder.binding),
                     parameters: Self::lent_parameters(aliases.resolve(bound)),
                 };
                 (binder.binding, closure)
@@ -105,8 +111,15 @@ impl<'p> LentBorrows<'p> {
         closure: &LendingClosure,
         arguments: &[TypedArgument],
     ) -> Vec<Diagnostic> {
-        let called_name = self.program.bindings.get(called).name();
-        let closure_name = self.program.bindings.get(closure.origin).name();
+        let call = LentCall {
+            called: self.name(called),
+            aliases: closure
+                .links
+                .iter()
+                .map(|link| self.alias_label(link))
+                .collect(),
+        };
+        let closure_name = self.name(closure.origin(called));
         arguments
             .iter()
             .zip(&closure.parameters)
@@ -120,9 +133,21 @@ impl<'p> LentBorrows<'p> {
                     argument.value.span,
                     &dropped,
                     lent,
-                    called_name,
+                    &call,
                 ))
             })
             .collect()
+    }
+
+    fn alias_label(&self, link: &LetAlias) -> AliasLabel<'p> {
+        AliasLabel {
+            span: link.bound.span,
+            alias: self.name(link.alias),
+            target: self.name(link.target),
+        }
+    }
+
+    fn name(&self, binding: BindingId) -> &'p str {
+        self.program.bindings.get(binding).name()
     }
 }

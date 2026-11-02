@@ -83,6 +83,17 @@ pub struct LentParameter<'n> {
     pub closure: &'n str,
 }
 
+pub struct LentCall<'n> {
+    pub called: &'n str,
+    pub aliases: Vec<AliasLabel<'n>>,
+}
+
+pub struct AliasLabel<'n> {
+    pub span: Span,
+    pub alias: &'n str,
+    pub target: &'n str,
+}
+
 pub struct OwnershipProblems;
 
 impl OwnershipProblems {
@@ -411,9 +422,10 @@ impl OwnershipProblems {
         borrowed: Span,
         dropped: &DroppedValue,
         lent: LentParameter,
-        called: &str,
+        call: &LentCall,
     ) -> Diagnostic {
         let LentParameter { span, closure } = lent;
+        let called = call.called;
         let (primary, dropped_label) =
             Self::borrow_labels(borrowed, dropped, Self::lent_dropped_label(dropped));
         let diagnostic = Diagnostic::error(
@@ -430,10 +442,18 @@ impl OwnershipProblems {
         ));
         dropped_label
             .into_iter()
+            .chain(call.aliases.iter().map(Self::alias_label))
             .fold(diagnostic, Diagnostic::with_label)
             .with_help(format!(
                 "define `{closure}` with `defn`, where its result can borrow from its argument"
             ))
+    }
+
+    fn alias_label(alias: &AliasLabel) -> Label {
+        Label::new(
+            alias.span,
+            format!("`{}` is `{}`", alias.alias, alias.target),
+        )
     }
 
     fn borrow_labels(
