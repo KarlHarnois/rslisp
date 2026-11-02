@@ -30,7 +30,6 @@ mod try_check;
 mod type_expr;
 mod type_parameters;
 
-use std::collections::HashSet;
 use std::rc::Rc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -55,7 +54,7 @@ pub struct Program {
     pub entry: ModuleId,
     pub bindings: BindingArena,
     pub macro_origins: FxHashMap<Span, MacroOrigin>,
-    pub macro_helpers: HashSet<BindingId>,
+    pub macro_helpers: FxHashSet<BindingId>,
     pub warnings: Diagnostics,
 }
 

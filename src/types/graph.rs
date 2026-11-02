@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::core::{BindingArena, BindingId, BindingKind, Expr, ExprKind, ItemKind, Leaf, ModuleId};
@@ -25,10 +23,10 @@ impl<'p> DefinitionGraph<'p> {
     }
 
     pub fn with_every_definition(program: &'p Program) -> Self {
-        Self::deferring(program, HashSet::new())
+        Self::deferring(program, FxHashSet::default())
     }
 
-    fn deferring(program: &'p Program, macro_helpers: HashSet<BindingId>) -> Self {
+    fn deferring(program: &'p Program, macro_helpers: FxHashSet<BindingId>) -> Self {
         let walked = ReferenceWalk::new(&program.bindings, &macro_helpers)
             .run(Self::definitions_in(program));
         let mut definitions = Vec::with_capacity(Self::item_count(program));
@@ -49,8 +47,8 @@ impl<'p> DefinitionGraph<'p> {
         }
     }
 
-    fn prelude_macro_helpers(program: &Program) -> HashSet<BindingId> {
-        let prelude: HashSet<ModuleId> = program
+    fn prelude_macro_helpers(program: &Program) -> FxHashSet<BindingId> {
+        let prelude: FxHashSet<ModuleId> = program
             .modules
             .iter()
             .filter(|module| ModuleSources::is_prelude(&module.path))
@@ -109,27 +107,27 @@ impl<'p> DefinitionGraph<'p> {
 
 struct ReferenceWalk<'a, 'p> {
     bindings: &'a BindingArena,
-    deferred: &'a HashSet<BindingId>,
-    waiting: HashMap<BindingId, &'p Expr>,
+    deferred: &'a FxHashSet<BindingId>,
+    waiting: FxHashMap<BindingId, &'p Expr>,
     reached: Vec<BindingId>,
-    walked: HashMap<BindingId, References>,
+    walked: FxHashMap<BindingId, References>,
 }
 
 impl<'a, 'p> ReferenceWalk<'a, 'p> {
-    fn new(bindings: &'a BindingArena, deferred: &'a HashSet<BindingId>) -> Self {
+    fn new(bindings: &'a BindingArena, deferred: &'a FxHashSet<BindingId>) -> Self {
         Self {
             bindings,
             deferred,
-            waiting: HashMap::new(),
+            waiting: FxHashMap::default(),
             reached: Vec::new(),
-            walked: HashMap::new(),
+            walked: FxHashMap::default(),
         }
     }
 
     fn run(
         mut self,
         definitions: impl Iterator<Item = Definition<'p>>,
-    ) -> HashMap<BindingId, References> {
+    ) -> FxHashMap<BindingId, References> {
         for root in self.set_aside_deferred(definitions) {
             self.walk(root.binding, root.value);
         }
@@ -170,11 +168,14 @@ impl<'a, 'p> ReferenceWalk<'a, 'p> {
 pub struct DependencyGraph {
     edges: FxHashMap<BindingId, Vec<BindingId>>,
     compile_time_only: FxHashSet<BindingId>,
-    macro_helpers: HashSet<BindingId>,
+    macro_helpers: FxHashSet<BindingId>,
 }
 
 impl DependencyGraph {
-    fn build(walked: HashMap<BindingId, References>, macro_helpers: HashSet<BindingId>) -> Self {
+    fn build(
+        walked: FxHashMap<BindingId, References>,
+        macro_helpers: FxHashSet<BindingId>,
+    ) -> Self {
         let mut edges = FxHashMap::with_capacity_and_hasher(walked.len(), Default::default());
         let mut direct_compile_time = FxHashSet::default();
         for (binding, references) in &walked {
@@ -373,8 +374,6 @@ impl<'a> StronglyConnected<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-
     use rustc_hash::{FxHashMap, FxHashSet};
 
     use super::{DefinitionGraph, DependencyGraph};
@@ -385,7 +384,7 @@ mod tests {
         bindings: BindingArena,
         edges: FxHashMap<BindingId, Vec<BindingId>>,
         compile_time_code: FxHashSet<BindingId>,
-        macro_helpers: HashSet<BindingId>,
+        macro_helpers: FxHashSet<BindingId>,
     }
 
     impl CallGraph {
@@ -394,7 +393,7 @@ mod tests {
                 bindings: BindingArena::default(),
                 edges: FxHashMap::default(),
                 compile_time_code: FxHashSet::default(),
-                macro_helpers: HashSet::new(),
+                macro_helpers: FxHashSet::default(),
             }
         }
 
@@ -523,7 +522,7 @@ mod tests {
     impl PreludeFixture {
         const EMPTY_PROGRAM: &str = "(defn main ())";
 
-        fn typed_bindings(program: &TypedProgram) -> HashSet<BindingId> {
+        fn typed_bindings(program: &TypedProgram) -> FxHashSet<BindingId> {
             program
                 .modules
                 .iter()
