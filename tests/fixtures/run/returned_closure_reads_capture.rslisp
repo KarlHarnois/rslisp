@@ -1,0 +1,6 @@
+(defn main ()
+  (let model (to-string "Leaf"))
+  (let make-getter (fn () (fn () (println model))))
+  (let getter (make-getter))
+  (getter)
+  (getter))

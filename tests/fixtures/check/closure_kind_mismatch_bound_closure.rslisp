@@ -1,0 +1,7 @@
+(defn twice (action) (action) (action))
+(defn keep (model) model)
+(defn main ()
+  (let model (to-string "Leaf"))
+  (let getter (fn () (keep model)))
+  (twice getter)
+  (println "done"))

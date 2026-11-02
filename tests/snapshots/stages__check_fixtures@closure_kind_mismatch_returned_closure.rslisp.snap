@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/closure_kind_mismatch_returned_closure.rslisp
+---
+(type twice (fn ((fn () string)) string))
+(type keep (fn (string) string))
+(type main (fn () unit))
