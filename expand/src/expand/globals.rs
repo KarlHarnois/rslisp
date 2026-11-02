@@ -30,6 +30,9 @@ pub struct GlobalTable {
     compile_time_checks: FxHashMap<BindingId, CompileTimeCheck>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct LoweredGlobals(Vec<BindingId>);
+
 #[derive(Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum CompileTimeCheck {
     InProgress,
@@ -61,6 +64,51 @@ impl GlobalTable {
 
     pub fn has_failed(&self, binding: BindingId) -> bool {
         matches!(self.states.get(&binding), Some(GlobalState::Failed))
+    }
+
+    pub fn take_lowered<'m>(
+        &mut self,
+        definitions: impl Iterator<Item = (BindingId, &'m Rc<Expr>)>,
+    ) -> LoweredGlobals {
+        let states = std::mem::take(&mut self.states);
+        let mut lowered: Vec<BindingId> = definitions
+            .filter(|(binding, value)| {
+                states
+                    .get(binding)
+                    .is_some_and(|state| state.is_lowered_to(value))
+            })
+            .map(|(binding, _)| binding)
+            .collect();
+        assert_eq!(
+            lowered.len(),
+            states.len(),
+            "every global to take is lowered to the expression of its definition"
+        );
+        lowered.sort_unstable();
+        LoweredGlobals(lowered)
+    }
+
+    pub fn restore_lowered<'m>(
+        &mut self,
+        lowered: &LoweredGlobals,
+        definitions: impl Iterator<Item = (BindingId, &'m Rc<Expr>)>,
+    ) {
+        for (binding, value) in definitions.filter(|(binding, _)| lowered.contains(*binding)) {
+            self.states
+                .insert(binding, GlobalState::Lowered(Rc::clone(value)));
+        }
+    }
+}
+
+impl GlobalState {
+    fn is_lowered_to(&self, value: &Rc<Expr>) -> bool {
+        matches!(self, Self::Lowered(expr) if Rc::ptr_eq(expr, value))
+    }
+}
+
+impl LoweredGlobals {
+    fn contains(&self, binding: BindingId) -> bool {
+        self.0.binary_search(&binding).is_ok()
     }
 }
 
@@ -157,5 +205,101 @@ impl Expander<'_> {
                 Err(diagnostic)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::{BindingArena, BindingInfo, BindingKind, ExprKind, Leaf, Literal, ModuleId};
+    use crate::source::SourceId;
+
+    struct Definitions {
+        bindings: BindingArena,
+        values: Vec<(BindingId, Rc<Expr>)>,
+    }
+
+    impl Definitions {
+        fn new() -> Self {
+            Self {
+                bindings: BindingArena::default(),
+                values: Vec::new(),
+            }
+        }
+
+        fn define(&mut self, name: &str) -> BindingId {
+            let kind = BindingKind::Global(ModuleId::new(0));
+            let binding = self.bindings.add(BindingInfo::new(name.into(), kind, None));
+            let span = Span::new(SourceId::new(0), 0..0);
+            let value = Expr::new(ExprKind::Leaf(Leaf::Literal(Literal::Bool(true))), span);
+            self.values.push((binding, Rc::new(value)));
+            binding
+        }
+
+        fn lower(&self, table: &mut GlobalTable, binding: BindingId) {
+            table.states.insert(
+                binding,
+                GlobalState::Lowered(Rc::clone(self.value(binding))),
+            );
+        }
+
+        fn value(&self, binding: BindingId) -> &Rc<Expr> {
+            &self
+                .values
+                .iter()
+                .find(|(defined, _)| *defined == binding)
+                .expect("the binding is defined")
+                .1
+        }
+
+        fn newest_first(&self) -> impl Iterator<Item = (BindingId, &Rc<Expr>)> {
+            self.values
+                .iter()
+                .rev()
+                .map(|(binding, value)| (*binding, value))
+        }
+    }
+
+    #[test]
+    fn a_restore_brings_back_only_the_lowered_globals() {
+        let mut definitions = Definitions::new();
+        let lowered = [definitions.define("fuel"), definitions.define("range")];
+        let method = definitions.define("charge");
+        let mut built = GlobalTable::default();
+        lowered
+            .iter()
+            .for_each(|binding| definitions.lower(&mut built, *binding));
+        let taken = built.take_lowered(definitions.newest_first());
+        let mut restored = GlobalTable::default();
+        restored.restore_lowered(&taken, definitions.newest_first());
+        assert!(lowered.iter().all(|binding| {
+            restored.states[binding].is_lowered_to(definitions.value(*binding))
+        }));
+        assert!(!restored.states.contains_key(&method));
+    }
+
+    #[test]
+    fn a_take_leaves_no_state_behind() {
+        let mut definitions = Definitions::new();
+        let binding = definitions.define("fuel");
+        let mut table = GlobalTable::default();
+        definitions.lower(&mut table, binding);
+        table.take_lowered(definitions.newest_first());
+        assert!(table.states.is_empty());
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "every global to take is lowered to the expression of its definition"
+    )]
+    fn a_global_lowered_to_another_expression_stops_the_take() {
+        let mut definitions = Definitions::new();
+        let binding = definitions.define("fuel");
+        let mut table = GlobalTable::default();
+        let copy = Expr::clone(definitions.value(binding));
+        table
+            .states
+            .insert(binding, GlobalState::Lowered(Rc::new(copy)));
+        table.take_lowered(definitions.newest_first());
     }
 }

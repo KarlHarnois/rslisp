@@ -598,7 +598,7 @@ impl Expander<'_> {
         }
         let value = self.lowered_global(binding, span)?;
         core.items.push(Item {
-            kind: ItemKind::Def(binding, (*value).clone()),
+            kind: ItemKind::Def(binding, value),
             span,
             hidden: false,
         });
@@ -1120,7 +1120,7 @@ impl Expander<'_> {
             signature_form.span(),
         );
         core.items.push(Item {
-            kind: ItemKind::Def(method_binding, value),
+            kind: ItemKind::Def(method_binding, Rc::new(value)),
             span: signature_form.span(),
             hidden: true,
         });
@@ -1180,7 +1180,7 @@ impl Expander<'_> {
         core.items.push(Item {
             kind: ItemKind::Def(
                 binding,
-                Expr::new(ExprKind::Fn(Rc::new(lambda)), method.span()),
+                Rc::new(Expr::new(ExprKind::Fn(Rc::new(lambda)), method.span())),
             ),
             span: method.span(),
             hidden: true,
@@ -1557,7 +1557,7 @@ impl Expander<'_> {
         core.items.push(Item {
             kind: ItemKind::Def(
                 synthetic,
-                Expr::new(ExprKind::Fn(Rc::clone(&lambda)), method.span()),
+                Rc::new(Expr::new(ExprKind::Fn(Rc::clone(&lambda)), method.span())),
             ),
             span: method.span(),
             hidden: true,
