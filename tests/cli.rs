@@ -225,6 +225,13 @@ fn counters_flag_prints_one_json_object_after_the_command() {
         .expect("the counters follow the command");
     let report: serde_json::Value = serde_json::from_str(last_line).expect("the last line is JSON");
     assert!(report.is_object(), "{last_line}");
+    #[cfg(not(feature = "counters"))]
+    assert!(
+        report
+            .as_object()
+            .is_some_and(|counters| !counters.keys().any(|key| key.starts_with("allocator."))),
+        "{last_line}"
+    );
 }
 
 #[test]
