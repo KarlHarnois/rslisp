@@ -2,7 +2,7 @@ use std::fmt;
 use std::io::{self, Read, Write};
 use std::process::{Child, Command, Stdio};
 use std::sync::mpsc::{self, Receiver};
-use std::thread;
+use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use super::token_alignment::TokenAlignment;
@@ -84,9 +84,22 @@ impl Rustfmt {
         let mut child = Self::spawn()?;
         let output = PipeReader::start(child.stdout.take().expect("standard output is piped"));
         let errors = PipeReader::start(child.stderr.take().expect("standard error is piped"));
-        let formatted = Self::send(&mut child, source)
+        let formatted = self.communicate(&mut child, source, &output, &errors);
+        output.join();
+        errors.join();
+        formatted
+    }
+
+    fn communicate(
+        &self,
+        child: &mut Child,
+        source: &str,
+        output: &PipeReader,
+        errors: &PipeReader,
+    ) -> Result<String, FormattingError> {
+        let formatted = Self::send(child, source)
             .and_then(|()| self.read_within_limit(output))
-            .inspect_err(|_| Self::stop(&mut child))?;
+            .inspect_err(|_| Self::stop(child))?;
         let status = child.wait().map_err(FormattingError::Unavailable)?;
         if !status.success() {
             return Err(FormattingError::Failed(errors.read_message()));
@@ -112,7 +125,7 @@ impl Rustfmt {
             .map_err(|error| FormattingError::Failed(error.to_string()))
     }
 
-    fn read_within_limit(&self, output: PipeReader) -> Result<Vec<u8>, FormattingError> {
+    fn read_within_limit(&self, output: &PipeReader) -> Result<Vec<u8>, FormattingError> {
         output
             .read_within(self.time_limit)
             .ok_or(FormattingError::TimedOut(self.time_limit))?
@@ -127,17 +140,18 @@ impl Rustfmt {
 
 struct PipeReader {
     contents: Receiver<io::Result<Vec<u8>>>,
+    thread: JoinHandle<()>,
 }
 
 impl PipeReader {
     fn start(mut pipe: impl Read + Send + 'static) -> Self {
         let (sender, contents) = mpsc::channel();
-        thread::spawn(move || {
+        let thread = thread::spawn(move || {
             let mut bytes = Vec::new();
             let read = pipe.read_to_end(&mut bytes).map(|_| bytes);
             sender.send(read).ok();
         });
-        Self { contents }
+        Self { contents, thread }
     }
 
     fn read_within(&self, time_limit: Duration) -> Option<io::Result<Vec<u8>>> {
@@ -150,11 +164,49 @@ impl PipeReader {
             .trim()
             .to_string()
     }
+
+    fn join(self) {
+        self.thread.join().ok();
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
     use super::*;
+
+    struct EmptyPipe {
+        dropped: Arc<AtomicBool>,
+    }
+
+    impl EmptyPipe {
+        fn new(dropped: &Arc<AtomicBool>) -> Self {
+            Self {
+                dropped: Arc::clone(dropped),
+            }
+        }
+    }
+
+    impl Read for EmptyPipe {
+        fn read(&mut self, _buffer: &mut [u8]) -> io::Result<usize> {
+            Ok(0)
+        }
+    }
+
+    impl Drop for EmptyPipe {
+        fn drop(&mut self) {
+            self.dropped.store(true, Ordering::SeqCst);
+        }
+    }
+
+    #[test]
+    fn join_waits_until_the_reader_drops_its_pipe() {
+        let dropped = Arc::new(AtomicBool::new(false));
+        PipeReader::start(EmptyPipe::new(&dropped)).join();
+        assert!(dropped.load(Ordering::SeqCst));
+    }
 
     #[test]
     fn describes_each_formatting_failure() {
