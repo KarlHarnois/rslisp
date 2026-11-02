@@ -34,6 +34,9 @@ impl<'a> CounterComparison<'a> {
         if !self.gate.baseline_has_counters() {
             return CounterGate::NO_BASELINE_COUNTERS.to_string();
         }
+        if let Some(missing) = self.gate.missing_gated_counter() {
+            return format!("The check fails: {missing}.\n");
+        }
         let rises = self.gate.rises();
         if rises.is_empty() {
             return format!(
@@ -259,5 +262,22 @@ mod tests {
             CounterComparisonFixture::report(&empty, &empty, &[]),
             "The base has no counters, so no counter is checked for growth.\n"
         );
+    }
+
+    #[test]
+    fn names_a_gated_counter_that_the_candidate_lacks() {
+        let before =
+            CounterComparisonFixture::results(&[("warehouse", "allocator.allocated_bytes", 1_000)]);
+        let after = ResultSet::new(vec![ProgramResult {
+            program: "warehouse".to_string(),
+            measurement: None,
+            counters: Counters::new(),
+        }]);
+        let report = CounterComparisonFixture::report(&before, &after, &[]);
+        assert!(report.starts_with(
+            "The check fails: the candidate has no `allocator.allocated_bytes` for `warehouse`, \
+             so its growth cannot be checked.\n"
+        ));
+        assert!(!report.contains("rose"), "{report}");
     }
 }
