@@ -49,6 +49,24 @@ const STAGE_WORK_KEYS: [&str; 4] = [
     "emit.emitted_expressions",
     "build.scanned_tokens",
 ];
+const TYPED_PROGRAM: &str = "(defn twice (x) \"Doubles a number.\" (* 2 x))\n(defn same (x) x)\n(defstruct point :x i64 :y i64)\n(def limit 10)\n(defn area (:width i64 :height i64) (* width height))\n(defn main () (println (twice limit)))\n";
+const DOCUMENTED_STRUCT_BESIDE_A_FUNCTION: &str = "(defstruct point \"A point on a grid.\" :x i64 :y i64)\n(defn point () (->point 1 2))\n(defn main () (do))\n";
+const DOCUMENTED_FUNCTION_BESIDE_A_STRUCT: &str = "(defstruct point :x i64 :y i64)\n(defn point () \"Makes the origin.\" (->point 0 0))\n(defn main () (do))\n";
+const UNDOCUMENTED_DEF_BESIDE_A_STRUCT: &str =
+    "(defstruct point :x i64 :y i64)\n(def point 3)\n(defn main () (do))\n";
+const UNDOCUMENTED_FUNCTION_BESIDE_A_STRUCT: &str =
+    "(defstruct point :x i64 :y i64)\n(defn point () (->point 1 2))\n(defn main () (do))\n";
+const OTHER_DEFINITION_FAILS: &str = "(defn twice (x) \"Doubles a number.\" (* 2 x))\n(defn bad () (+ 1 \"a\"))\n(defn main () (println (twice 2)))\n";
+const OWN_DEFINITION_FAILS: &str =
+    "(defn twice (x) \"Doubles a number.\" (+ x \"a\"))\n(defn main () (do))\n";
+const PAGE_PROGRAM: &str = "(defn twice (x) \"Doubles a number.\" (* 2 x))\n(def page (doc twice))\n(defn main () (println page))\n";
+const SHADOWING_SUM: &str =
+    "(defn sum (left right) (+ left right))\n(defn main () (println (sum 1 2)))\n";
+const NUMBERS: &str = "(export twice)\n\n(defn twice (x) \"Doubles a number.\" (* 2 x))\n";
+const NUMBERS_ENTRY: &str = "(use lib/numbers twice)\n\n(defn main () (println (twice 21)))\n";
+const TWICE_TYPE: &str = "(type twice (fn (i64) i64))";
+const TWICE_PAGE: &str = "(defn twice (x))\n\nDoubles a number.\n";
+const POINT_TYPE: &str = "(type point (fn () point))";
 
 const UNBOUND_NAMES_PAST_THE_CAP: usize = 25;
 
@@ -94,6 +112,19 @@ impl Sandbox {
 
     fn compiler(&self, arguments: &[&str]) -> Outcome {
         Outcome::of(&mut self.command(Path::new(Self::COMPILER), arguments))
+    }
+
+    fn typed_page(&self, arguments: &[&str]) -> String {
+        self.typed_lookup(arguments).assert_exit_code(0).stdout()
+    }
+
+    fn typed_lookup(&self, arguments: &[&str]) -> Outcome {
+        let typed: Vec<&str> = ["doc", "--types"]
+            .iter()
+            .chain(arguments)
+            .copied()
+            .collect();
+        self.compiler(&typed)
     }
 
     fn compiler_in(&self, working_directory: &str, arguments: &[&str]) -> Outcome {
@@ -530,6 +561,194 @@ fn doc_rejects_a_shadowing_doc_that_returns_no_string() {
     assert_eq!(
         doc.assert_exit_code(1).stderr(),
         "error: `doc` did not expand to a string\n"
+    );
+}
+
+#[test]
+fn doc_types_prints_the_inferred_type_above_the_page() {
+    let sandbox = Sandbox::new("doc_types").with_file("prog.rslisp", TYPED_PROGRAM);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "prog.rslisp", "twice"]),
+        format!("{TWICE_TYPE}\n{TWICE_PAGE}")
+    );
+}
+
+#[test]
+fn doc_types_takes_the_flag_after_the_term() {
+    let sandbox = Sandbox::new("doc_types_after_term").with_file("prog.rslisp", TYPED_PROGRAM);
+    let doc = sandbox.compiler(&["doc", "twice", "--file", "prog.rslisp", "--types"]);
+    assert_eq!(
+        doc.assert_exit_code(0).stdout(),
+        format!("{TWICE_TYPE}\n{TWICE_PAGE}")
+    );
+}
+
+#[test]
+fn doc_types_prints_the_generic_type_of_an_uncalled_function() {
+    let sandbox = Sandbox::new("doc_types_generic").with_file("prog.rslisp", TYPED_PROGRAM);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "prog.rslisp", "same"]),
+        "(type same (where (a) (fn (a) a)))\n(defn same (x))\n\nNo documentation.\n"
+    );
+}
+
+#[test]
+fn doc_types_prints_no_type_for_a_macro() {
+    let sandbox = Sandbox::new("doc_types_macro");
+    assert_eq!(
+        sandbox.typed_page(&["when"]),
+        "(defrule when)\n\nNo documentation.\n"
+    );
+}
+
+#[test]
+fn doc_types_prints_no_type_for_a_kernel_form() {
+    let sandbox = Sandbox::new("doc_types_kernel_form");
+    assert_eq!(sandbox.typed_page(&["if"]), "if\n\nNo documentation.\n");
+}
+
+#[test]
+fn doc_types_prints_the_type_of_a_prelude_function() {
+    let sandbox = Sandbox::new("doc_types_prelude");
+    assert_eq!(
+        sandbox.typed_page(&["sum"]),
+        "(type sum (where ((n number)) (fn ((iterator n)) n)))\n(defn sum (values))\n\nNo documentation.\n"
+    );
+}
+
+#[test]
+fn doc_types_prints_no_type_for_a_struct() {
+    let sandbox = Sandbox::new("doc_types_struct").with_file("prog.rslisp", TYPED_PROGRAM);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "prog.rslisp", "point"]),
+        "(defstruct point)\n\nNo documentation.\n"
+    );
+}
+
+#[test]
+fn doc_types_prints_the_type_of_a_struct_constructor() {
+    let sandbox = Sandbox::new("doc_types_constructor").with_file("prog.rslisp", TYPED_PROGRAM);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "prog.rslisp", "->point"]),
+        "(type ->point (fn (i64 i64) point))\n(defstruct point)\n\nNo documentation.\n"
+    );
+}
+
+#[test]
+fn doc_types_prints_the_type_of_a_function_with_keyword_parameters() {
+    let sandbox = Sandbox::new("doc_types_keyword").with_file("prog.rslisp", TYPED_PROGRAM);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "prog.rslisp", "area"]),
+        "(type area (fn (i64 i64) i64))\n(defn area (:width i64 :height i64))\n\nNo documentation.\n"
+    );
+}
+
+#[test]
+fn doc_types_prints_the_type_of_a_plain_definition() {
+    let sandbox = Sandbox::new("doc_types_plain").with_file("prog.rslisp", TYPED_PROGRAM);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "prog.rslisp", "limit"]),
+        "(type limit i64)\nlimit\n\nNo documentation.\n"
+    );
+}
+
+#[test]
+fn doc_types_prints_no_type_for_a_value_that_no_definition_binds() {
+    let sandbox = Sandbox::new("doc_types_literal");
+    assert_eq!(sandbox.typed_page(&["true"]), "true\n\nNo documentation.\n");
+}
+
+#[test]
+fn doc_types_prints_no_type_above_a_documented_struct_beside_a_function() {
+    let sandbox = Sandbox::new("doc_types_documented_struct")
+        .with_file("prog.rslisp", DOCUMENTED_STRUCT_BESIDE_A_FUNCTION);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "prog.rslisp", "point"]),
+        "(defstruct point)\n\nA point on a grid.\n"
+    );
+}
+
+#[test]
+fn doc_types_prints_the_type_of_a_documented_function_beside_a_struct() {
+    let sandbox = Sandbox::new("doc_types_documented_function")
+        .with_file("prog.rslisp", DOCUMENTED_FUNCTION_BESIDE_A_STRUCT);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "prog.rslisp", "point"]),
+        format!("{POINT_TYPE}\n(defn point ())\n\nMakes the origin.\n")
+    );
+}
+
+#[test]
+fn doc_types_prints_the_type_of_an_undocumented_function_beside_a_struct() {
+    let sandbox = Sandbox::new("doc_types_undocumented_function")
+        .with_file("prog.rslisp", UNDOCUMENTED_FUNCTION_BESIDE_A_STRUCT);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "prog.rslisp", "point"]),
+        format!("{POINT_TYPE}\n(defn point ())\n\nNo documentation.\n")
+    );
+}
+
+#[test]
+fn doc_types_prints_the_type_of_an_undocumented_def_beside_a_struct() {
+    let sandbox = Sandbox::new("doc_types_undocumented_def")
+        .with_file("prog.rslisp", UNDOCUMENTED_DEF_BESIDE_A_STRUCT);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "prog.rslisp", "point"]),
+        "(type point i64)\npoint\n\nNo documentation.\n"
+    );
+}
+
+#[test]
+fn doc_types_prints_the_page_alone_when_another_definition_fails_to_type_check() {
+    let sandbox =
+        Sandbox::new("doc_types_other_fails").with_file("prog.rslisp", OTHER_DEFINITION_FAILS);
+    let doc = sandbox.typed_lookup(&["--file", "prog.rslisp", "twice"]);
+    assert!(doc.assert_exit_code(1).stderr().starts_with("error[L0401]"));
+    assert_eq!(doc.stdout(), TWICE_PAGE);
+}
+
+#[test]
+fn doc_types_prints_the_page_alone_when_its_own_definition_fails_to_type_check() {
+    let sandbox =
+        Sandbox::new("doc_types_own_fails").with_file("prog.rslisp", OWN_DEFINITION_FAILS);
+    let doc = sandbox.typed_lookup(&["--file", "prog.rslisp", "twice"]);
+    assert!(doc.assert_exit_code(1).stderr().starts_with("error[L0404]"));
+    assert_eq!(doc.stdout(), TWICE_PAGE);
+}
+
+#[test]
+fn doc_types_prints_the_type_of_an_imported_term() {
+    let sandbox = Sandbox::new("doc_types_imported")
+        .with_file("lib/numbers.rslisp", NUMBERS)
+        .with_file("main.rslisp", NUMBERS_ENTRY);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "main.rslisp", "twice"]),
+        format!("{TWICE_TYPE}\n{TWICE_PAGE}")
+    );
+}
+
+#[test]
+fn doc_types_prints_the_type_of_the_definition_that_shadows_a_prelude_name() {
+    let sandbox = Sandbox::new("doc_types_shadowing").with_file("main.rslisp", SHADOWING_SUM);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "main.rslisp", "sum"]),
+        "(type sum (fn (i64 i64) i64))\n(defn sum (left right))\n\nNo documentation.\n"
+    );
+}
+
+#[test]
+fn doc_types_leaves_a_page_in_the_program_untyped() {
+    let sandbox = Sandbox::new("doc_types_in_program").with_file("prog.rslisp", PAGE_PROGRAM);
+    let expanded = sandbox.compiler(&["expand", "prog.rslisp"]);
+    assert!(
+        expanded
+            .assert_exit_code(0)
+            .stdout()
+            .contains(r#"(def page "(defn twice (x))\n\nDoubles a number.")"#)
+    );
+    assert_eq!(
+        sandbox.typed_page(&["--file", "prog.rslisp", "page"]),
+        "(type page (ref str))\npage\n\nNo documentation.\n"
     );
 }
 

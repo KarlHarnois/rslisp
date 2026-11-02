@@ -375,7 +375,9 @@ A docstring is Markdown. A lookup removes the indentation that every written con
 - Continuation lines are indented to the body.
 - Markdown conventions apply.
 
-`rslisp doc [--file <entry>] <term>` prints the page that `(doc <term>)` returns, for a prelude term or, with `--file`, for a term the entry module defines or imports.
+`rslisp doc [--types] [--file <entry>] <term>` prints the page that `(doc <term>)` returns, for a prelude term or, with `--file`, for a term the entry module defines or imports.
+
+`--types` also type checks the program and prints the inferred type of the definition that the page describes above the page, as the line that `rslisp signatures` prints: `--types twice` prints `(type twice (fn (i64) i64))`, then the page. A macro that answers for a function, such as `->point` or a `defn` with keyword parameters, gets that function's type under the macro's name. A term with no type of its own, such as a struct, another macro or a kernel form, gets the page alone. A documented struct `point` beside an undocumented function `point` gets the struct's page, so it gets no type line. When the program does not type check, `--types` prints the page with no type line, the errors on stderr, and exits 1. `(doc term)` never shows a type, because a lookup expands before the type checker runs.
 
 ### The `code` module
 

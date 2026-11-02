@@ -1,7 +1,7 @@
 use super::{Expander, Program};
-use crate::core::{BindingId, Expr, ModuleId, ModulePath};
+use crate::core::{BindingId, BindingKind, Expr, ModuleId, ModulePath, Namespace};
 use crate::diagnostic::{Diagnostic, Diagnostics};
-use crate::reader::Form;
+use crate::reader::{Form, Symbol};
 use crate::source::SourceId;
 
 pub struct ExpansionSession<'s> {
@@ -39,8 +39,26 @@ impl ExpansionSession<'_> {
         self.expander.term_binding(scoped.as_symbol()?)
     }
 
+    pub fn hide_type(&mut self, term: &Form) -> Option<Form> {
+        let mut hidden = self.in_entry_scope(term.clone());
+        if !self.names_a_value_and_a_type(hidden.as_symbol()?) {
+            return None;
+        }
+        hidden.add_scope(self.expander.fresh_local_scope());
+        self.expander
+            .define_local(&hidden, Namespace::Type, BindingKind::TypeVariable, None)
+            .expect("a fresh scope holds no binding");
+        Some(hidden)
+    }
+
     pub fn finish(self) -> Result<Program, Diagnostics> {
         self.expander.into_program(self.entry)
+    }
+
+    fn names_a_value_and_a_type(&self, term: &Symbol) -> bool {
+        [Namespace::Value, Namespace::Type]
+            .into_iter()
+            .all(|namespace| self.expander.namespace_binding(term, namespace).is_some())
     }
 
     fn in_entry_scope(&self, mut form: Form) -> Form {
@@ -89,13 +107,17 @@ mod tests {
 
     impl SessionFixture {
         const ENTRY: &str = "entry";
-        const PROGRAM: &str = "(defn twice (x) (* 2 x))";
+        const DOUBLING: &str = "(defn twice (x) (* 2 x))";
+        const POINTS: &str = "(defstruct point :x i64 :y i64)\n(defn point () (->point 1 2))";
+        const GRID: &str = "(defstruct cell :row i64)";
         const DEFINED_NAME: &str = "twice";
         const UNBOUND_NAME: &str = "thrice";
+        const SHARED_NAME: &str = "point";
+        const TYPE_NAME: &str = "cell";
 
-        fn new() -> Self {
+        fn new(program: &str) -> Self {
             let mut sources = SourceMap::default();
-            let entry = sources.add(Self::ENTRY, Self::PROGRAM);
+            let entry = sources.add(Self::ENTRY, program);
             Self { sources, entry }
         }
 
@@ -152,11 +174,18 @@ mod tests {
         fn entry_module_text(program: &Program) -> String {
             format!("{:?}", program.entry_module())
         }
+
+        fn type_binding(session: &ExpansionSession<'_>, term: &Form) -> Option<BindingId> {
+            let scoped = session.in_entry_scope(term.clone());
+            session
+                .expander
+                .namespace_binding(scoped.as_symbol()?, Namespace::Type)
+        }
     }
 
     #[test]
     fn a_session_resolves_a_name_to_the_definition_it_finishes_with() {
-        let mut fixture = SessionFixture::new();
+        let mut fixture = SessionFixture::new(SessionFixture::DOUBLING);
         let name = fixture.symbol(SessionFixture::DEFINED_NAME);
         let session = fixture.session();
         let binding = session.binding(&name);
@@ -167,25 +196,65 @@ mod tests {
 
     #[test]
     fn a_session_resolves_no_binding_for_an_unbound_name() {
-        let mut fixture = SessionFixture::new();
+        let mut fixture = SessionFixture::new(SessionFixture::DOUBLING);
         let name = fixture.symbol(SessionFixture::UNBOUND_NAME);
         assert_eq!(fixture.session().binding(&name), None);
     }
 
     #[test]
     fn a_session_resolves_no_binding_for_a_list() {
-        let mut fixture = SessionFixture::new();
+        let mut fixture = SessionFixture::new(SessionFixture::DOUBLING);
         let list = fixture.list(SessionFixture::DEFINED_NAME);
         assert_eq!(fixture.session().binding(&list), None);
     }
 
     #[test]
     fn a_finished_session_holds_the_program_that_expansion_returns() {
-        let finished = SessionFixture::finished(SessionFixture::new().session());
-        let expanded = SessionFixture::new().expanded();
+        let finished =
+            SessionFixture::finished(SessionFixture::new(SessionFixture::DOUBLING).session());
+        let expanded = SessionFixture::new(SessionFixture::DOUBLING).expanded();
         assert_eq!(
             SessionFixture::entry_module_text(&finished),
             SessionFixture::entry_module_text(&expanded)
         );
+    }
+
+    #[test]
+    fn a_session_hides_the_type_of_a_name_that_also_names_a_value() {
+        let mut fixture = SessionFixture::new(SessionFixture::POINTS);
+        let name = fixture.symbol(SessionFixture::SHARED_NAME);
+        let mut session = fixture.session();
+        let value = session.binding(&name);
+        let named_type = SessionFixture::type_binding(&session, &name);
+        let hidden = session
+            .hide_type(&name)
+            .unwrap_or_else(|| panic!("a name of a value and a type hides its type"));
+        let hiding_type = SessionFixture::type_binding(&session, &hidden);
+        assert!(named_type.is_some());
+        assert!(hiding_type.is_some());
+        assert_ne!(hiding_type, named_type);
+        assert_eq!(session.binding(&hidden), value);
+        assert_eq!(SessionFixture::type_binding(&session, &name), named_type);
+    }
+
+    #[test]
+    fn a_session_hides_nothing_of_a_name_that_names_only_a_value() {
+        let mut fixture = SessionFixture::new(SessionFixture::DOUBLING);
+        let name = fixture.symbol(SessionFixture::DEFINED_NAME);
+        assert!(fixture.session().hide_type(&name).is_none());
+    }
+
+    #[test]
+    fn a_session_hides_nothing_of_a_name_that_names_only_a_type() {
+        let mut fixture = SessionFixture::new(SessionFixture::GRID);
+        let name = fixture.symbol(SessionFixture::TYPE_NAME);
+        assert!(fixture.session().hide_type(&name).is_none());
+    }
+
+    #[test]
+    fn a_session_hides_nothing_of_a_list() {
+        let mut fixture = SessionFixture::new(SessionFixture::POINTS);
+        let list = fixture.list(SessionFixture::SHARED_NAME);
+        assert!(fixture.session().hide_type(&list).is_none());
     }
 }

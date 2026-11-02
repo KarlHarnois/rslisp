@@ -107,7 +107,11 @@ impl Expander<'_> {
             .find_map(|namespace| self.namespace_binding(term, namespace))
     }
 
-    fn namespace_binding(&self, term: &Symbol, namespace: Namespace) -> Option<BindingId> {
+    pub(super) fn namespace_binding(
+        &self,
+        term: &Symbol,
+        namespace: Namespace,
+    ) -> Option<BindingId> {
         match self.tables.table.resolve(term, namespace, Phase::Runtime) {
             Resolution::Bound(binding) => Some(binding),
             _ => None,
