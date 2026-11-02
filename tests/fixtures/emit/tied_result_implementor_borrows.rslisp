@@ -1,0 +1,37 @@
+(defstruct car :model str :year i64)
+(defstruct van :model str :seats i64)
+(enum ride (cab (ref str)) bike)
+
+(type model-of (fn (car) (ref str)))
+(defn model-of (c) (:model c))
+
+(trait garage
+  (echo (fn (self (ref str)) (ref str)))
+  (tag (fn ((ref str) self) (ref str)))
+  (maybe (fn (self (ref str)) (option (ref str))))
+  (brand (fn (self (ref str)) (ref str))))
+
+(impl garage car
+  (echo (c name) (:model c))
+  (tag (name c) (:model c))
+  (maybe (c name) (some (:model c)))
+  (brand (c name) (model-of c)))
+
+(impl garage van
+  (echo (v label)
+    (let name (:model v))
+    name)
+  (tag (label v) label)
+  (maybe (v label) (some label))
+  (brand (v label) label))
+
+(trait valet
+  (park (fn (self (ref str)) (ref str))))
+
+(impl valet ride
+  (park (r name) (match r ((cab m) m) (bike name))))
+
+(defn main ()
+  (println (echo (->car "Leaf" 2024) "Nissan"))
+  (println (tag "Nissan" (->van "e-NV200" 7)))
+  (prn (maybe (->car "Leaf" 2024) "Nissan")))
