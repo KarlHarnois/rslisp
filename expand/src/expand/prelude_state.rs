@@ -1,7 +1,7 @@
 use std::fmt;
 use std::path::PathBuf;
 
-use super::{Expander, ExpansionTables};
+use super::{Expander, ExpansionTables, LoweredGlobals};
 use crate::core::{ModuleId, ModulePath};
 use crate::diagnostic::DiagnosticRenderer;
 use crate::modules::{ModuleRecord, ModuleSource, ModuleSources};
@@ -13,6 +13,7 @@ pub struct PreludeState {
     prelude: ModuleId,
     modules: Vec<ModuleRecord>,
     tables: ExpansionTables,
+    lowered_globals: LoweredGlobals,
 }
 
 #[derive(Debug)]
@@ -57,6 +58,9 @@ impl PreludeState {
             expander.modules.adopt(record);
         }
         expander.tables = self.tables;
+        expander
+            .tables
+            .restore_lowered_globals(&self.lowered_globals);
         self.prelude
     }
 }
@@ -73,11 +77,13 @@ impl Expander<'_> {
             )
             .expect("the prelude loads");
         self.assert_no_problems();
+        let lowered_globals = self.tables.take_lowered_globals();
         PreludeState {
             first_source,
             prelude,
             modules: self.modules.into_records_after(placeholder),
             tables: self.tables,
+            lowered_globals,
         }
     }
 

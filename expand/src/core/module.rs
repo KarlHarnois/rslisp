@@ -80,7 +80,7 @@ pub struct RustTraitDeclaration {
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum ItemKind {
-    Def(BindingId, Expr),
+    Def(BindingId, Rc<Expr>),
     Signature(BindingId, TypeExpr),
     Struct(BindingId, Vec<TypeBinder>, Vec<(FieldLabel, TypeExpr)>),
     Enum(
@@ -171,4 +171,13 @@ pub struct CoreModule {
     pub path: ModulePath,
     pub items: Vec<Item>,
     pub exports: Vec<BindingId>,
+}
+
+impl CoreModule {
+    pub fn definitions(&self) -> impl Iterator<Item = (BindingId, &Rc<Expr>)> {
+        self.items.iter().filter_map(|item| match &item.kind {
+            ItemKind::Def(binding, value) => Some((*binding, value)),
+            _ => None,
+        })
+    }
 }

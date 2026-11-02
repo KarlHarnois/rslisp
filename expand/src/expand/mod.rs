@@ -41,7 +41,7 @@ use crate::reader::Form;
 use crate::scope::{BindingTable, Phase, Scope, ScopeAllocator};
 use crate::source::{SourceId, SourceMap, Span};
 use budget_arena::BudgetArena;
-use globals::GlobalTable;
+use globals::{GlobalTable, LoweredGlobals};
 pub use macro_call::MacroOrigin;
 use macro_call::MacroTable;
 use module_notes::ModuleNotes;
@@ -118,6 +118,18 @@ struct ExpansionTables {
     module_notes: ModuleNotes,
     expanded: FxHashMap<ModuleId, CoreModule>,
     order: Vec<ModuleId>,
+}
+
+impl ExpansionTables {
+    fn take_lowered_globals(&mut self) -> LoweredGlobals {
+        let definitions = self.expanded.values().flat_map(CoreModule::definitions);
+        self.globals.take_lowered(definitions)
+    }
+
+    fn restore_lowered_globals(&mut self, lowered: &LoweredGlobals) {
+        let definitions = self.expanded.values().flat_map(CoreModule::definitions);
+        self.globals.restore_lowered(lowered, definitions);
+    }
 }
 
 impl<'s> Expander<'s> {
