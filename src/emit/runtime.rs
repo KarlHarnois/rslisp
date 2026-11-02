@@ -75,9 +75,9 @@ impl RuntimePart {
             | RuntimePart::Sequence
             | RuntimePart::Io
             | RuntimePart::Source
-            | RuntimePart::Lines
             | RuntimePart::Signal => None,
             RuntimePart::MapSequence => Some(RuntimePart::Sequence),
+            RuntimePart::Lines => Some(RuntimePart::Io),
         }
     }
 }
