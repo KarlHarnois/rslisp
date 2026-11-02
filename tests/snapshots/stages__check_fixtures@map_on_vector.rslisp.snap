@@ -1,10 +1,10 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/map_on_vector.rslisp
 ---
 error[L0401]: mismatched types
- --> check/map_on_vector.rslisp:2:11
+ --> check/map_on_vector.rslisp:2:9
   |
-2 |   (lookup (vec 1 2) 0))
-  |           ^^^^^^^^^ expected a map, found (vec _)
+2 |   (vals (vec 1 2)))
+  |         ^^^^^^^^^ expected a map, found (vec _)

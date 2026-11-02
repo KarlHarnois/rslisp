@@ -1,2 +1,0 @@
-(defn main ()
-  (map-at lookup (sorted-map "a" 1)))

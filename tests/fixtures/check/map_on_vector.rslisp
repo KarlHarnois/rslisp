@@ -1,2 +1,2 @@
 (defn main ()
-  (lookup (vec 1 2) 0))
+  (vals (vec 1 2)))

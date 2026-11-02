@@ -43,11 +43,11 @@
 
 (type find-item (fn ((ref (sorted-map string item)) (ref string)) (result (ref item) ledger-error)))
 (defn find-item (stock sku)
-  (ok-or (lookup stock (as-str sku)) (ledger-error/unknown-sku (clone sku))))
+  (ok-or (get stock (as-str sku)) (ledger-error/unknown-sku (clone sku))))
 
 (type quantity-of (fn ((ref (sorted-map string item)) (ref string)) u32))
 (defn quantity-of (stock sku)
-  (match (lookup stock (as-str sku))
+  (match (get stock (as-str sku))
     ((some current) (:quantity current))
     (none 0)))
 

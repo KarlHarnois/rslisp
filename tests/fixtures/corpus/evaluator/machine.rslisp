@@ -38,7 +38,7 @@
 
 (type look-up (fn ((ref (sorted-map string i64)) (ref string)) (result i64 string)))
 (defn look-up (names name)
-  (match (lookup names (as-str name))
+  (match (get names (as-str name))
     ((some value) (ok (deref value)))
     (none (err (str "unknown name `" name "`")))))
 

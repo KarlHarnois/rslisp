@@ -2,5 +2,5 @@
 
 (defn main ()
   (let dealer (->dealer :prices (hash-map "Leaf" 30000) :ranking (sorted-map 1 "Leaf")))
-  (println (unwrap (lookup (:prices dealer) "Leaf")))
-  (println (unwrap (lookup (:ranking dealer) 1))))
+  (println (unwrap (get (:prices dealer) "Leaf")))
+  (println (unwrap (get (:ranking dealer) 1))))
