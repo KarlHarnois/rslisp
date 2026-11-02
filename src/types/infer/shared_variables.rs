@@ -26,7 +26,7 @@ impl SharedGroup {
         self.members.len() > 1
     }
 
-    fn positions(&self) -> impl Iterator<Item = usize> + '_ {
+    fn positions(&self) -> impl Iterator<Item = usize> + Clone + '_ {
         self.members
             .iter()
             .flat_map(|member| member.positions.iter().copied())
@@ -330,8 +330,7 @@ impl TypeChecker {
                 MismatchContext::Plain,
             )?;
         }
-        let positions: Vec<usize> = group.positions().collect();
-        self.view_borrowed_strings_beside_views(&positions, arguments)?;
+        self.view_borrowed_strings_beside_views(group.positions(), arguments)?;
         let shared = Type::Var(root);
         for position in self.passing_order(callee, group, &shared, arguments) {
             self.pass_member(callee, position, &shared, &mut arguments[position])?;
