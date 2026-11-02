@@ -15,7 +15,7 @@
         (where ((s source)) (fn ((ref s)) (result string io-error)))))
 
 (def line-seq
-  (rust "std::io::BufRead::lines({&0}.lock())"
+  (rust "crate::rt::lines({&0}.lock())"
         (fn ((ref stdin)) (iterator (result string io-error)))))
 
 (def read-line

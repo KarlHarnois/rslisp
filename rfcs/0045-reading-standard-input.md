@@ -29,7 +29,7 @@ or write a recursive `read-line` loop:
 
 ### A: `stdin` as a value, `slurp` over a source trait, and `line-seq`
 
-`stdin` names both a type and a value. `slurp` takes any type of the runtime's `source` trait, which `str`, `string` and `stdin` implement. `slurp` takes the source by reference, so an owned path stays usable after the read. `line-seq` streams standard input and yields each line as a `result`.
+`stdin` names both a type and a value. `slurp` takes any type of the runtime's `source` trait, which `str`, `string` and `stdin` implement. `slurp` takes the source by reference, so an owned path stays usable after the read. `line-seq` streams standard input and yields each line as a `result`. After a failed read it yields that `err` and ends, because Rust's `Lines` returns the same error forever when a read keeps failing, and `for-each` cannot stop it.
 
 ```lisp
 (rust-type stdin "std::io::Stdin")
@@ -39,7 +39,7 @@ or write a recursive `read-line` loop:
 (def slurp (rust "crate::rt::Source::slurp({0})"
                  (where ((s source)) (fn ((ref s)) (result string io-error)))))
 
-(def line-seq (rust "std::io::BufRead::lines({&0}.lock())"
+(def line-seq (rust "crate::rt::lines({&0}.lock())"
                     (fn ((ref stdin)) (iterator (result string io-error)))))
 ```
 
@@ -53,12 +53,12 @@ or write a recursive `read-line` loop:
 ```
 
 ```rust
-std::io::BufRead::lines(std::io::stdin().lock()).for_each(
-    |line: Result<String, std::io::Error>| match line {
+crate::rt::lines(std::io::stdin().lock()).for_each(|line: Result<String, std::io::Error>| {
+    match line {
         Ok(text) => println!("{} {}", text.len(), text),
         Err(error) => eprintln!("{}", error),
-    },
-)
+    }
+})
 ```
 
 `(slurp stdin)`, `(slurp "cars.txt")` and `(slurp path)` on an owned `string` emit:
@@ -92,6 +92,19 @@ impl Source for std::io::Stdin {
     fn slurp(&self) -> std::io::Result<String> {
         std::io::read_to_string(self.lock())
     }
+}
+```
+
+The runtime's `Lines` part ends the stream after its first error:
+
+```rust
+pub fn lines(reader: impl std::io::BufRead) -> impl Iterator<Item = std::io::Result<String>> {
+    let mut failed = false;
+    reader.lines().take_while(move |line| {
+        let before_failure = !failed;
+        failed = line.is_err();
+        before_failure
+    })
 }
 ```
 
@@ -156,13 +169,13 @@ std::io::BufRead::lines(std::io::stdin().lock()).map_while(Result::ok)
 
 ## Recommendation
 
-Option A. One name, `slurp`, reads every source, and `line-seq` streams standard input with one line in memory. Each read failure reaches the program as an `err`. `lines` keeps working on any string, an untyped parameter included.
+Option A. One name, `slurp`, reads every source, and `line-seq` streams standard input with one line in memory. Each read failure reaches the program as an `err`, and a read that keeps failing ends the stream instead of looping. `lines` keeps working on any string, an untyped parameter included.
 
 The cost: `slurp` now emits `crate::rt::Source::slurp(path)` instead of `std::fs::read_to_string(path)`, and a program that calls `slurp` carries the runtime's `Source` part: the trait and its three implementations. The trait has a runtime part of its own because a program that called `slurp` and not `read-line` would otherwise carry an unused `read_line`, and clippy rejects that dead code in the emitted Rust.
 
 ## Decision
 
-The project owner accepted option A. `slurp-stdin` is removed, and a program that called it now writes `(slurp stdin)`. `lines` stays a function of strings only.
+The project owner accepted option A. Review found that the plain `std::io::BufRead::lines` loops forever on a read that keeps failing, such as a directory as standard input, so the owner chose that `line-seq` yields the first `err` and then ends. `slurp-stdin` is removed, and a program that called it now writes `(slurp stdin)`. `lines` stays a function of strings only.
 
 ## Rejected options and why
 
