@@ -1,6 +1,7 @@
 pub mod build;
 pub mod check;
 pub mod cli;
+pub mod counters;
 pub mod emit;
 pub mod ownership;
 pub mod types;
