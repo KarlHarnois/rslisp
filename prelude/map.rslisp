@@ -1,6 +1,6 @@
-(use code list prepend string len empty? number-add number-lt)
+(use code list prepend rest string len empty? symbol? number-add number-lt)
 (use prelude/macros defmacro defrule)
-(use prelude/types vec sorted-map hash-map)
+(use prelude/types vec option slice sorted-map hash-map)
 (use prelude/pair pair)
 (use prelude/number ord hash eq)
 
@@ -65,8 +65,13 @@
         (where ((key hash eq) (value))
           (fn ((vec (pair key value))) (hash-map key value)))))
 
-(defrule get
-  ((collection key) (map-at get collection key)))
+(def get
+  (macro (form)
+    (if (symbol? form)
+        (quote slice-get)
+        (prepend (quote map-at) (prepend (quote get) (rest form))))))
+
+(def slice-get (rust "{0}.get({1})" (where (a) (fn ((ref (slice a)) usize) (option (ref a))))))
 
 (defrule keys
   ((m) (map-at keys m)))
