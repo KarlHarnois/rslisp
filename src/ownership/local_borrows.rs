@@ -124,16 +124,33 @@ impl<'e> LocalBorrows<'e> {
             return None;
         };
         let result_lifetimes = WrittenLifetimes::of(result);
-        let dropped: Vec<DroppedValue> = arguments
+        let reached = arguments
             .iter()
             .zip(parameters)
             .filter(|(_, parameter)| result_lifetimes.reached_by(parameter))
-            .map(|(argument, _)| self.borrowed_by(argument))
-            .collect::<Option<_>>()?;
-        dropped
-            .into_iter()
-            .next()
+            .map(|(argument, _)| argument);
+        self.reached_borrow(reached)
             .map(|dropped| LocalBorrow::new(span, dropped))
+    }
+
+    fn reached_borrow(
+        &self,
+        mut reached: impl Iterator<Item = &'e TypedArgument>,
+    ) -> Option<DroppedValue> {
+        match self.roots {
+            BorrowRoots::Dropped(..) => self.borrow_of_every(reached),
+            BorrowRoots::Lent(_) => reached.find_map(|argument| self.borrowed_by(argument)),
+        }
+    }
+
+    fn borrow_of_every(
+        &self,
+        reached: impl Iterator<Item = &'e TypedArgument>,
+    ) -> Option<DroppedValue> {
+        let dropped: Vec<DroppedValue> = reached
+            .map(|argument| self.borrowed_by(argument))
+            .collect::<Option<_>>()?;
+        dropped.into_iter().next()
     }
 
     pub(super) fn borrowed_by(&self, argument: &'e TypedArgument) -> Option<DroppedValue> {
