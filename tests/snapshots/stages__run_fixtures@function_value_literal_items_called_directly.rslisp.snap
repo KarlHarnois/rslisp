@@ -3,12 +3,11 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/function_value_literal_items_called_directly.rslisp
 ---
-error[E0308]: mismatched types
+error[L0401]: mismatched types
  --> run/function_value_literal_items_called_directly.rslisp:6:44
   |
 6 |   (println (count (take-while (iter bytes) small?))))
-  |                                            ^^^^^^ expected `i64`, found `u8`
+  |                                            ^^^^^^ expected `u8`, found `i64`
   |
-  = note: function defined here
-  = note: reported by rustc while compiling the generated Rust
-  = help: you can convert a `u8` to an `i64`
+  = note: `b` defaulted to `i64`, because `small?` is called with `i64` and with `u8`
+  = help: give `small?` one parameter type with a `type` signature, such as `(type small? (fn (i64) bool))`, and pass that type at every call

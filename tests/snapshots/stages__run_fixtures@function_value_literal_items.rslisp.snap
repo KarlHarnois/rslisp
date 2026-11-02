@@ -3,42 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/function_value_literal_items.rslisp
 ---
-error[E0308]: mismatched types
-  --> run/function_value_literal_items.rslisp:11:44
-   |
-11 |   (println (count (take-while (iter bytes) small-byte?)))
-   |                                            ^^^^^^^^^^^ expected `i64`, found `u8`
-   |
-   = note: function defined here
-   = note: reported by rustc while compiling the generated Rust
-   = help: you can convert a `u8` to an `i64`
-
-error[E0308]: mismatched types
-  --> run/function_value_literal_items.rslisp:12:47
-   |
-12 |   (println (count (take-while (iter readings) small-reading?)))
-   |                                               ^^^^^^^^^^^^^^ expected `i64`, found `u16`
-   |
-   = note: function defined here
-   = note: reported by rustc while compiling the generated Rust
-   = help: you can convert a `u16` to an `i64`
-
-error[E0308]: mismatched types
-  --> run/function_value_literal_items.rslisp:13:46
-   |
-13 |   (println (count (take-while (iter offsets) small-offset?)))
-   |                                              ^^^^^^^^^^^^^ expected `i64`, found `i32`
-   |
-   = note: function defined here
-   = note: reported by rustc while compiling the generated Rust
-   = help: you can convert an `i32` to an `i64`
-
-error[E0308]: mismatched types
-  --> run/function_value_literal_items.rslisp:14:45
-   |
-14 |   (println (count (take-while (iter ratios) small-ratio?))))
-   |                                             ^^^^^^^^^^^^ expected `f64`, found `f32`
-   |
-   = note: function defined here
-   = note: reported by rustc while compiling the generated Rust
-   = help: you can convert an `f32` to an `f64`
+2
+3
+2
+2
