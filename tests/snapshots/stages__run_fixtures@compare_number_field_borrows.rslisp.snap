@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/compare_number_field_borrows.rslisp
+---
+true
+true
+false
+false
+false
+false
+true
+true
+false
+false
+true
+true
