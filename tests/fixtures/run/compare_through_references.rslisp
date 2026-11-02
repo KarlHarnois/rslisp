@@ -7,4 +7,4 @@
   (let bo (->person (str "Bo")))
   (println (same-name? ana bo))
   (println (< (:name ana) (:name bo)))
-  (println (!= (:name ana) (:name bo))))
+  (println (not= (:name ana) (:name bo))))

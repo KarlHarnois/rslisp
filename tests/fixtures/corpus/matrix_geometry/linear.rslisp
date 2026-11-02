@@ -52,7 +52,7 @@
   (let n (size m))
   (->matrix (collect (map (range 1 n)
                           (fn (row)
-                            (collect (map (filter (range 0 n) (fn (column) (!= (deref column) skipped)))
+                            (collect (map (filter (range 0 n) (fn (column) (not= (deref column) skipped)))
                                           (fn (column) (cell m row column)))))))))
 
 (type determinant (fn ((ref matrix)) f64))
