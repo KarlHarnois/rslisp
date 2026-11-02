@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_wrapped_definer_expanding_to_doc.rslisp
+---
+(def twice (fn (x) (mul 2 x)))
+(def twice-page "twice\n\nNo documentation.")
+(def thrice (fn (x_2) (mul 3 x_2)))
+(def thrice-page "thrice\n\nNo documentation.")
