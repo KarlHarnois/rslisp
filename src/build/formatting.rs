@@ -140,7 +140,7 @@ impl Rustfmt {
 
 struct PipeReader {
     contents: Receiver<io::Result<Vec<u8>>>,
-    thread: JoinHandle<()>,
+    thread: Option<JoinHandle<()>>,
 }
 
 impl PipeReader {
@@ -151,7 +151,10 @@ impl PipeReader {
             let read = pipe.read_to_end(&mut bytes).map(|_| bytes);
             sender.send(read).ok();
         });
-        Self { contents, thread }
+        Self {
+            contents,
+            thread: Some(thread),
+        }
     }
 
     fn read_within(&self, time_limit: Duration) -> Option<io::Result<Vec<u8>>> {
@@ -165,8 +168,18 @@ impl PipeReader {
             .to_string()
     }
 
-    fn join(self) {
-        self.thread.join().ok();
+    fn join(mut self) {
+        let thread = self.thread.take().expect("only join takes the thread");
+        thread.join().ok();
+    }
+}
+
+impl Drop for PipeReader {
+    fn drop(&mut self) {
+        debug_assert!(
+            self.thread.is_none(),
+            "each pipe reader is joined before it drops"
+        );
     }
 }
 
