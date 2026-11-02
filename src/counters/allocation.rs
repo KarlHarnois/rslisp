@@ -85,6 +85,8 @@ unsafe impl GlobalAlloc for CountingAllocator {
 
 #[cfg(test)]
 mod tests {
+    use std::slice;
+
     use super::*;
 
     struct AllocatorFixture {
@@ -107,6 +109,16 @@ mod tests {
 
         fn allocate(&self, size: usize) -> *mut u8 {
             unsafe { self.allocator.alloc(Self::layout(size)) }
+        }
+
+        fn allocate_zeroed(&self, size: usize) -> *mut u8 {
+            unsafe { self.allocator.alloc_zeroed(Self::layout(size)) }
+        }
+
+        fn holds_only_zeros(pointer: *const u8, size: usize) -> bool {
+            unsafe { slice::from_raw_parts(pointer, size) }
+                .iter()
+                .all(|byte| *byte == 0)
         }
 
         fn release(&self, pointer: *mut u8, size: usize) {
@@ -165,5 +177,24 @@ mod tests {
                 peak_live_bytes: AllocatorFixture::LARGE,
             }
         );
+    }
+
+    #[test]
+    fn a_zeroed_allocation_counts_like_any_other() {
+        let fixture = AllocatorFixture::new();
+        let small = fixture.allocate_zeroed(AllocatorFixture::SMALL);
+        assert_eq!(
+            fixture.allocator.counts(),
+            AllocationCounts {
+                allocations: 1,
+                allocated_bytes: AllocatorFixture::SMALL,
+                peak_live_bytes: AllocatorFixture::SMALL,
+            }
+        );
+        assert!(AllocatorFixture::holds_only_zeros(
+            small,
+            AllocatorFixture::SMALL
+        ));
+        fixture.release(small, AllocatorFixture::SMALL);
     }
 }
