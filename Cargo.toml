@@ -25,6 +25,9 @@ rslisp-expand = { path = "expand" }
 [dev-dependencies]
 insta = { version = "1", features = ["glob"] }
 
+[features]
+counters = []
+
 [profile.dist]
 inherits = "release"
 codegen-units = 1
