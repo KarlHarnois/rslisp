@@ -1,0 +1,12 @@
+(enum shape (circle f64) point)
+
+(def geometry/circle 2)
+(def geometry/point 1)
+
+(defn radius (value)
+  (match value
+    ((circle r) r)
+    (point 0.0)))
+
+(defn main ()
+  (println (radius shape/point)))
