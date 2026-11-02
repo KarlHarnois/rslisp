@@ -28,6 +28,7 @@ pub trait CompileTimeHost {
     ) -> Result<Symbol, Diagnostic>;
     fn type_definition_symbol(&self, term: &Symbol, name: String) -> Symbol;
     fn definition_call(&self, term: &Symbol, span: Span) -> Result<Option<Form>, Diagnostic>;
+    fn expand_call(&mut self, call: Form) -> Option<Form>;
     fn add_module_note(&mut self, key: &str, note: Form);
     fn module_notes(&self, context: &Symbol, key: &str) -> Vec<Form>;
 }

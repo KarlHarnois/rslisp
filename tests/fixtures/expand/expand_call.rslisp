@@ -1,0 +1,35 @@
+(use code expand-call string nth add-module-note module-notes definition-symbol)
+
+(def expanded
+  (macro (form)
+    (string (expand-call (nth form 1)))))
+
+(def noted
+  (macro (form)
+    (string (module-notes (definition-symbol (quote noted) "notes") (quote noted)))))
+
+(defrule swap-call ((f a b) (f b a)))
+
+(defrule one-argument ((x) x))
+
+(defmacro noting (x)
+  (do (add-module-note (quote noted) x)
+      x))
+
+(defn add-two (x y) (+ x y))
+
+(def swapped (expanded (swap-call add-two 1 2)))
+
+(def not-a-macro (expanded (add-two 1 2)))
+
+(def failed (expanded (one-argument 1 2)))
+
+(def symbol-call (expanded add-two))
+
+(def number-call (expanded 7))
+
+(def empty-call (expanded ()))
+
+(def noting-expansion (expanded (noting 5)))
+
+(def notes-after-expansion (noted))

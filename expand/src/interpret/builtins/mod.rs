@@ -26,7 +26,7 @@ pub struct BuiltinCall {
 }
 
 impl BuiltinCall {
-    const IMPLEMENTATIONS: [(Builtin, Implementation); 46] = [
+    const IMPLEMENTATIONS: [(Builtin, Implementation); 47] = [
         (Builtin::First, |operations, _| operations.lists.first()),
         (Builtin::Rest, |operations, _| operations.lists.rest()),
         (Builtin::List, |operations, _| operations.lists.list()),
@@ -87,6 +87,9 @@ impl BuiltinCall {
         }),
         (Builtin::DefinitionCall, |operations, host| {
             operations.text.definition_call(host)
+        }),
+        (Builtin::ExpandCall, |operations, host| {
+            operations.text.expand_call(host)
         }),
         (Builtin::ClosestName, |operations, _| {
             operations.text.closest_name()
