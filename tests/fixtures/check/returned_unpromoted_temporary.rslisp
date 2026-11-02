@@ -63,6 +63,9 @@
 (defn next-process ()
   (ref (+ (rust "std::process::id() as i64" i64) 1)))
 
+(defn owned-noted ((years (vec i64)))
+  (at (do (println "noting") years) 0))
+
 (defn main ()
   (let spot (->point 1 2))
   (let years (vec 2021))
@@ -83,4 +86,5 @@
   (settled-pick true)
   (prn (nothing))
   (prn (flipped-total))
-  (prn (next-process)))
+  (prn (next-process))
+  (prn (owned-noted (vec 2019))))
