@@ -323,12 +323,12 @@ impl<'a> ModeRewrite<'a> {
         let TypedExprKind::Leaf(TypedLeaf::Global(function)) = callee.kind else {
             return;
         };
+        let instantiated = Self::instantiated_params(callee);
         let params = self
             .function_params
             .get(&function)
             .cloned()
-            .unwrap_or_else(|| Self::instantiated_params(callee).to_vec());
-        let instantiated = Self::instantiated_params(callee);
+            .unwrap_or_else(|| instantiated.to_vec());
         for (position, (argument, param)) in arguments.iter_mut().zip(&params).enumerate() {
             let param = Self::at_shared_instantiation(param, instantiated.get(position));
             self.borrow_for(argument, param);
