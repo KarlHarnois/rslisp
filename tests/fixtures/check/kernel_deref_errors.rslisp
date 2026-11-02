@@ -3,6 +3,6 @@
   (deref n))
 
 (defn bad-copy ()
-  (deref (ref (to-string "a"))))
+  (deref (ref (str "a"))))
 
 (defn main () (do))

@@ -2,6 +2,6 @@
 (defn later? (a b) (> a b))
 
 (defn main ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (println (later? "Civic" (ref model)))
-  (println (later? (ref model) (to-string "Civic"))))
+  (println (later? (ref model) (str "Civic"))))

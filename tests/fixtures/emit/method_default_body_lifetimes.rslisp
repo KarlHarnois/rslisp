@@ -4,7 +4,7 @@
 
 (trait garage
   (park (fn ((ref self) (fn ((ref str) u16) car)) u16)
-    (let make (to-string "Nissan"))
+    (let make (str "Nissan"))
     (let parked (argument-1 (as-str make) 2024))
     (println (:make parked))
     (:year parked)))

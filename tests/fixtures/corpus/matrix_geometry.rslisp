@@ -34,7 +34,7 @@
 
 (type joined (fn ((ref (vec f64))) string))
 (defn joined (values)
-  (reduce (iter values) (to-string "")
+  (reduce (iter values) (str "")
         (fn (text value) (str text " " (rounded (deref value))))))
 
 (defn report-transforms ()

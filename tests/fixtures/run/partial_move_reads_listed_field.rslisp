@@ -3,9 +3,9 @@
 (defstruct garage :name string :badge badge)
 
 (defn main ()
-  (let g (->garage (to-string "Leaf Garage") (->badge (to-string "open") 12)))
+  (let g (->garage (str "Leaf Garage") (->badge (str "open") 12)))
   (let b (assoc (:badge g) :size 14))
   (println (:text b) " " (:size b) " " (:size (:badge g)) " " (:name g))
-  (let k (->garage (to-string "Leaf Depot") (->badge (to-string "shut") 9)))
-  (let h (assoc k :name (to-string "x")))
+  (let k (->garage (str "Leaf Depot") (->badge (str "shut") 9)))
+  (let h (assoc k :name (str "x")))
   (println (:name h) " " (:size (:badge h)) " " (:name k)))

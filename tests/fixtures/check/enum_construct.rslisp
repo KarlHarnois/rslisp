@@ -8,7 +8,7 @@
 (defn main ()
   (let _ (shape/circle 1.0))
   (let _ (shape/rect 2.0 3.0))
-  (let _ (shape/labeled (to-string "box") 2.0))
+  (let _ (shape/labeled (str "box") 2.0))
   (let _ shape/point)
   (let _ marker/empty)
   (do))

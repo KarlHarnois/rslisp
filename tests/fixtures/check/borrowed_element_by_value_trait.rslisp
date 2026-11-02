@@ -5,5 +5,5 @@
   (scrap (self) (:range self)))
 (defn scrap-all (cars) (collect (map (iter cars) (fn (car) (scrap car)))))
 (defn main ()
-  (let cars (vec (->car (to-string "Leaf") 240) (->car (to-string "Ariya") 300)))
+  (let cars (vec (->car (str "Leaf") 240) (->car (str "Ariya") 300)))
   (prn (scrap-all cars)))

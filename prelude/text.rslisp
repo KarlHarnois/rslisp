@@ -7,7 +7,7 @@
 (use prelude/types vec option result iterator box)
 (use prelude/io io-error)
 
-(export display debug to-string print println eprintln prn pr-str str char chars lines split trim subs as-str parse parse-error from-str parse-int-error parse-bool-error parse-char-error parse-float-error infallible lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!)
+(export display debug print println eprintln prn pr-str str char chars lines split trim subs as-str parse parse-error from-str parse-int-error parse-bool-error parse-char-error parse-float-error infallible lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!)
 
 (rust-type formatter "std::fmt::Formatter<'_>")
 (rust-type fmt-result "std::fmt::Result")
@@ -27,7 +27,7 @@
   (where ((a debug)) (box a))
   (where ((a debug) (b debug)) (pair a b)))
 
-(def to-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
+(def display-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
 (def prn (rust "println!(\"{{:?}}\", {&0})" (where ((a debug)) (fn ((ref a)) unit))))
 (def pr-str (rust "format!(\"{{:?}}\", {&0})" (where ((a debug)) (fn ((ref a)) string))))
 
@@ -214,6 +214,20 @@
 (def string-form
   (fn (parts)
     (let pieces (flatten-parts parts))
+    (if (one-value? pieces)
+        (list (quote display-string) (nth (first pieces) 1))
+        (format-string-form pieces))))
+
+(def one-value?
+  (fn (pieces)
+    (if (empty? pieces)
+        false
+        (if (empty? (rest pieces))
+            (value-eq (first (first pieces)) (quote value))
+            false))))
+
+(def format-string-form
+  (fn (pieces)
     (let count (placeholder-count pieces))
     (let formatted (format-pieces pieces 0
                       (if (number-lt 0 count) escape-format escape-string)))
@@ -228,8 +242,11 @@
                     (string "\"" (nth formatted 0) "\".to_string()")
                     (format-type (quote string) variables))))))
 
-(defmacro str (parts ...)
-  (string-form parts))
+(def str
+  (macro (form)
+    (if (symbol? form)
+        (quote display-string)
+        (string-form (rest form)))))
 
 (defmacro print (parts ...)
   (let pieces (flatten-parts parts))

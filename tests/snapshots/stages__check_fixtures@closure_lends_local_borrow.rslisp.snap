@@ -61,7 +61,7 @@ error[L0512]: cannot pass a borrow of a local value to `longer`
  6 |   (let longer (fn ((a (ref str)) (b (ref str))) (if (> (len a) (len b)) a b)))
    |                                  ------------- `longer` ties this parameter to its result, so it needs a borrow that outlives the function
 ...
-10 |   (let name (to-string "Ariya"))
+10 |   (let name (str "Ariya"))
    |        ---- this local is dropped when the function returns
 ...
 14 |   (println (longer "Nissan" (as-str name)))

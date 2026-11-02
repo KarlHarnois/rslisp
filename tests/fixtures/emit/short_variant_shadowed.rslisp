@@ -8,4 +8,4 @@
 
 (defn main ()
   (println (settle (result/ok 4)))
-  (println (settle (result/err (to-string "refused")))))
+  (println (settle (result/err (str "refused")))))

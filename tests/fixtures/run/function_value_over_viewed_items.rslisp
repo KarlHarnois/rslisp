@@ -3,6 +3,6 @@
 
 (defn main ()
   (let grid (vec (vec 1 2) (vec 3 4 5)))
-  (let models (vec (to-string "Leaf") (to-string "Ariya")))
+  (let models (vec (str "Leaf") (str "Ariya")))
   (println (sum (map (iter grid) width)))
   (println (count (filter (iter models) long?))))

@@ -9,5 +9,5 @@
 
 (defn main ()
   (let words (new stack (items (vec))))
-  (put (mut words) (to-string "alpha"))
+  (put (mut words) (str "alpha"))
   (println (len (field words items))))

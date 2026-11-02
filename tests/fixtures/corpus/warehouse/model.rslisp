@@ -52,5 +52,5 @@
 (type category (fn ((ref str)) string))
 (defn category (sku)
   (match (first (collect (split sku "-")))
-    ((some prefix) (to-string prefix))
-    (none (to-string "misc"))))
+    ((some prefix) (str prefix))
+    (none (str "misc"))))

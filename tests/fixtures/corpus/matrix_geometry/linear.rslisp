@@ -6,12 +6,12 @@
 
 (type matrix-text (fn ((ref matrix)) string))
 (defn matrix-text (m)
-  (reduce (iter (:rows m)) (to-string "")
+  (reduce (iter (:rows m)) (str "")
         (fn (text row) (str text "[" (row-text row) "]"))))
 
 (type row-text (fn ((ref (vec f64))) string))
 (defn row-text (row)
-  (reduce (enumerate (iter row)) (to-string "")
+  (reduce (enumerate (iter row)) (str "")
         (fn (text entry)
           (let-pair (index value) entry
             (if (= index 0) (str (rounded (deref value))) (str text " " (rounded (deref value))))))))

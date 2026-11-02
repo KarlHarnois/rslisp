@@ -18,14 +18,14 @@
 
 (type measure (fn ((fn ((ref str)) (ref str))) u16))
 (defn measure (pick)
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (if (= (pick (as-str model)) "Leaf") 4 0))
 
 (type measure-through (fn ((fn ((ref str)) (ref str))) u16))
 (defn measure-through (pick) (measure pick))
 
 (defn main ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (let borrowing (fn (make year) (->car :make (as-str model) :year year)))
   (println (:make (build-through borrowing)))
   (println (:make (build-further borrowing)))

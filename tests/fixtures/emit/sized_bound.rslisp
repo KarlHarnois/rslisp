@@ -3,8 +3,8 @@
 (defn copy-into! (target source) (assign! target source))
 
 (defn main ()
-  (let first (to-string "Ana"))
-  (let second (to-string "Bo"))
+  (let first (str "Ana"))
+  (let second (str "Bo"))
   (copy-into! first second)
   (println first)
   (let left (vec 1 2))

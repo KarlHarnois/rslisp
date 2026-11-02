@@ -11,5 +11,5 @@
 
 (defn main ()
   (println (token/number 1))
-  (println (token/word (to-string "hello")))
+  (println (token/word (str "hello")))
   (println token/end))

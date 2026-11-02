@@ -3,5 +3,5 @@
 (defn adult? (p) (>= (:age p) 18))
 
 (defn main ()
-  (let people (vec (->person (to-string "Ana") 30) (->person (to-string "Ben") 12)))
+  (let people (vec (->person (str "Ana") 30) (->person (str "Ben") 12)))
   (println (count (filter (iter people) adult?))))

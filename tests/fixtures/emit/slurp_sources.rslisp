@@ -9,7 +9,7 @@
     ((err error) (eprintln error))))
 
 (defn main ()
-  (let path (to-string "garage.txt"))
+  (let path (str "garage.txt"))
   (report (slurp "cars.txt"))
   (report (slurp path))
   (report (slurp stdin))

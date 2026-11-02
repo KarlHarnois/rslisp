@@ -5,5 +5,5 @@
   (let origin (->point 0 0))
   (prn origin)
   (println (= origin (->point 0 0)))
-  (prn (->person (to-string "Ada") 36))
-  (println (pr-str (->person (to-string "Bo") 7))))
+  (prn (->person (str "Ada") 36))
+  (println (pr-str (->person (str "Bo") 7))))

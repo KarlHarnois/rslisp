@@ -10,7 +10,7 @@
   (later? (ref model) 2020))
 
 (defn string-literal-first ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (later? 2020 (ref model)))
 
 (defn vector-literal-first ()

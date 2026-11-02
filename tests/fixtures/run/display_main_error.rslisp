@@ -11,7 +11,7 @@
 (defn fail (missing?)
   (if missing?
       (err app-error/missing)
-      (err (app-error/bad-input (to-string "oops")))))
+      (err (app-error/bad-input (str "oops")))))
 
 (type main (fn () (result unit app-error)))
 (defn main () (fail true))

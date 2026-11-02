@@ -1,8 +1,8 @@
 (defstruct person :name string)
 
 (defn main ()
-  (let ana (->person (to-string "Ana")))
-  (let name (to-string "Ana"))
+  (let ana (->person (str "Ana")))
+  (let name (str "Ana"))
   (println (= (:name ana) name))
   (println (= name (:name ana)))
   (println (< name (:name ana))))

@@ -1,6 +1,6 @@
 (defn main ()
-  (let text (to-string "fake"))
+  (let text (str "fake"))
   (let consume (fn (ignored) text))
   (map (iter (vec 1 2)) consume)
-  (let other (to-string "other"))
+  (let other (str "other"))
   (map (iter (vec 1 2)) (if true (fn (ignored) other) (fn (ignored) other))))

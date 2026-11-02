@@ -4,8 +4,8 @@
   (println word))
 
 (defn from-local ()
-  (let name (to-string "x"))
+  (let name (str "x"))
   (shout name))
 
 (defn from-call ()
-  (shout (to-string "y")))
+  (shout (str "y")))

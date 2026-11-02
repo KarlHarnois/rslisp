@@ -1,5 +1,5 @@
 (defstruct person :name string)
 
 (defn main ()
-  (let p (->person (to-string "Ana")))
+  (let p (->person (str "Ana")))
   (println (= (:name p) "Ana")))

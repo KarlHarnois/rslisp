@@ -30,7 +30,7 @@
 (defn reject (current problem)
   (let-fields (book (stock entries rejected)) current
     (let growing rejected)
-    (push! growing (to-string problem))
+    (push! growing (str problem))
     (->book stock entries growing)))
 
 (type step (fn ((ref (sorted-map string item)) (ref event)) (result item ledger-error)))

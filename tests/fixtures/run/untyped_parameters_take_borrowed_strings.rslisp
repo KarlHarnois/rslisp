@@ -1,7 +1,7 @@
 (defn longer (a b) (if (> (len a) (len b)) a b))
 
 (defn announce ((make (ref str)))
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (println (longer make (as-str model))))
 
 (defn main ()

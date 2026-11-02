@@ -1,10 +1,10 @@
 (defstruct car :model string)
 
 (defn main ()
-  (let model (to-string "Leaf"))
-  (let other (to-string "Civic"))
+  (let model (str "Leaf"))
+  (let other (str "Civic"))
   (let make "Nissan")
-  (let leaf (->car :model (to-string "Leaf")))
+  (let leaf (->car :model (str "Leaf")))
   (println (> "Civic" (ref model)))
   (println (> (ref model) "Civic"))
   (println (= (ref model) "Leaf"))

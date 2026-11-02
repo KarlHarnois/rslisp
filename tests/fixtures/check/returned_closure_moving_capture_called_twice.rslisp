@@ -1,6 +1,6 @@
 (defn keep (model) model)
 (defn main ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (let make-getter (fn () (fn () (keep model))))
   (let getter (make-getter))
   (println (getter))

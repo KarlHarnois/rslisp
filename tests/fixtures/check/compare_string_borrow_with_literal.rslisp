@@ -1,23 +1,23 @@
 (defn greater-after-literal? ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (> "Civic" (ref model)))
 
 (defn greater-before-literal? ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (> (ref model) "Civic"))
 
 (defn less-after-literal? ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (< "Civic" (ref model)))
 
 (defn less-before-literal? ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (< (ref model) "Civic"))
 
 (defn equal-after-literal? ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (= "Leaf" (ref model)))
 
 (defn equal-before-literal? ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (= (ref model) "Leaf"))

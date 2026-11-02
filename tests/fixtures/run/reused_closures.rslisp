@@ -9,7 +9,7 @@
   (let shift (fn (x) (+ x offset)))
   (println (apply-to-ten shift))
   (println (apply-to-ten shift))
-  (let name (to-string "Ada"))
+  (let name (str "Ada"))
   (let greet (fn (greeting) (str greeting ", " name)))
   (println (greet-with greet))
   (println (greet-with greet))

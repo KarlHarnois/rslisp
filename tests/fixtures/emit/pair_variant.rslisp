@@ -9,6 +9,6 @@
   (match (thing/of 2)
     ((of n) (println n))
     ((other _) (println 0)))
-  (match (thing/other (to-string "beta"))
+  (match (thing/other (str "beta"))
     ((of _) (println 0))
     ((other s) (println s))))

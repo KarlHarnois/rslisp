@@ -28,7 +28,7 @@
 
 (defn choose ()
   (let (value (result i64 string)) (ok 1))
-  (let (bad (result i64 string)) (err (to-string "bad")))
+  (let (bad (result i64 string)) (err (str "bad")))
   (match value
     ((ok n) (println n))
     ((err e) (println e))))

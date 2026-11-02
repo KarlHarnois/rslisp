@@ -6,8 +6,8 @@
   model)
 
 (defn main ()
-  (let model (to-string "Leaf"))
-  (let make (to-string "Nissan"))
+  (let model (str "Leaf"))
+  (let make (str "Nissan"))
   (let describe (fn ()
     ((fn (year)
       ((fn (trim)

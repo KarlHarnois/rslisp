@@ -6,4 +6,4 @@
       (count-up limit (assoc state :count (+ (:count state) 1)))))
 
 (defn main ()
-  (println (count-up 3 (->counter :label (to-string "c") :count 0))))
+  (println (count-up 3 (->counter :label (str "c") :count 0))))

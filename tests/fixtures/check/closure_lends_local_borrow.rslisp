@@ -7,7 +7,7 @@
   (let fallback (fn ((key (ref str))) (let built (vec 2019 2021)) (at built 0)))
   (let remember (fn ((items (ref (vec i64)))) (let kept (at items 0))))
   (let (second (fn ((ref (vec i64))) (ref i64))) (fn (items) (at items 1)))
-  (let name (to-string "Ariya"))
+  (let name (str "Ariya"))
   (println (first years))
   (println (first (ref years)))
   (println (pick years 1))

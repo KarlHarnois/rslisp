@@ -3,8 +3,8 @@
 (defn count-up (limit state)
   (if (= (:count state) limit)
       (:count state)
-      (do (let next (->counter :label (to-string "c") :count (+ (:count state) 1)))
+      (do (let next (->counter :label (str "c") :count (+ (:count state) 1)))
           (count-up limit next))))
 
 (defn main ()
-  (println (count-up 3 (->counter :label (to-string "c") :count 0))))
+  (println (count-up 3 (->counter :label (str "c") :count 0))))

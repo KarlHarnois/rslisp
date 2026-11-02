@@ -2,5 +2,5 @@
 (defn shout-all (models) (count models))
 
 (defn main ()
-  (let models (vec (to-string "Leaf") (to-string "Ariya")))
+  (let models (vec (str "Leaf") (str "Ariya")))
   (println (shout-all models)))

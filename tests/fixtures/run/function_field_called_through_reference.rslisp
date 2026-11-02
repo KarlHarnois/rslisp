@@ -5,5 +5,5 @@
 
 (defn main ()
   (let by-age (->sorter :age "by age"))
-  (let ana (->user :name (to-string "ana") :age 34))
+  (let ana (->user :name (str "ana") :age 34))
   (println (:label by-age) ": " (key-of by-age ana)))

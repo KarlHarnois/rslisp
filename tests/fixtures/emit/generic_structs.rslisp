@@ -4,7 +4,7 @@
 (defn swap (p) (new pair (first (clone (field p second))) (second (clone (field p first)))))
 
 (defn main ()
-  (let counted (->pair 7 (to-string "seven")))
+  (let counted (->pair 7 (str "seven")))
   (println (:first counted))
   (println (:first (swap counted)))
   (let named (->pair "pear" 3))

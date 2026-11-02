@@ -13,7 +13,7 @@
   (g))
 
 (defn nested-mover ()
-  (let text (to-string "nested"))
+  (let text (str "nested"))
   (let consume (fn () text))
   (let start (fn () (consume)))
   (start))
@@ -31,7 +31,7 @@
     (push! borrowed 2)))
 
 (defn make-mover ()
-  (let text (to-string "fake"))
+  (let text (str "fake"))
   (fn () text))
 
 (defn choose (flag)
@@ -46,7 +46,7 @@
   (do (fn () 3)))
 
 (defn main ()
-  (let text (to-string "captured"))
+  (let text (str "captured"))
   (println (apply (fn (ignored) text) 0))
   (let items (vec 1))
   (let add (fn (x) (push! items x)))

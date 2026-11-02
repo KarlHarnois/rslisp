@@ -5,7 +5,7 @@
 (defstruct garage :badge badge)
 
 (defn build ()
-  (->garage (->badge (to-string "open") (->point 0 0))))
+  (->garage (->badge (str "open") (->point 0 0))))
 
 (defn main ()
   (let moved (assoc-in (:badge (build)) (:at :x) 4))

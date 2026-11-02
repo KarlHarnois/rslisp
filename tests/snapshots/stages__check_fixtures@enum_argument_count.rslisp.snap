@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/enum_argument_count.rslisp
 ---
 error[L0402]: this function takes 1 argument but 2 were given
@@ -12,5 +12,5 @@ error[L0402]: this function takes 1 argument but 2 were given
 error[L0402]: this function takes 2 arguments but 1 was given
  --> check/enum_argument_count.rslisp:3:14
   |
-3 | (def too-few (shape/labeled (to-string "box")))
-  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 2 arguments
+3 | (def too-few (shape/labeled (str "box")))
+  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 2 arguments

@@ -1,0 +1,36 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/str_one_part_and_value.rslisp
+---
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let year: i64 = 2025;
+    let label = year.to_string();
+    println!("{}", label);
+    println!("Leaf");
+    let empty = "".to_string();
+    println!("{:?}", empty);
+    println!("{}-{}", year, 1_i64);
+    vec![1_i64, 2_i64]
+        .iter()
+        .map(|argument_0: &i64| argument_0.to_string())
+        .for_each(|text: String| println!("{}", text))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

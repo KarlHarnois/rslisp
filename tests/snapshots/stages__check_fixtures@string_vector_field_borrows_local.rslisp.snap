@@ -9,7 +9,7 @@ error[L0510]: cannot return a borrow of a local value
 1 | (defstruct car :models (vec str))
   |                        --------- declared as a borrow here
 ...
-4 |   (let model (to-string line))
+4 |   (let model (str line))
   |        ----- this local is dropped when the function returns
 5 |   (->car :models (vec (as-str model))))
   |                  ^^^^^^^^^^^^^^^^^^^^ this borrows a local value

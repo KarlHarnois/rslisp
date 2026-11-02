@@ -4,7 +4,7 @@
 (defn build-with (constructor) (constructor "Nissan" 2024))
 
 (defn build-twice (constructor)
-  (let make (to-string "Nissan"))
+  (let make (str "Nissan"))
   (let local (constructor (as-str make) 2011))
   (let built (build-with constructor))
   (println (:make built))

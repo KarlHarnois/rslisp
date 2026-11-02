@@ -1,7 +1,7 @@
 (type describe-error (where ((target display from-str)) (fn ((parse-error target) target) string)))
 
 (defn describe-error (reason value)
-  (to-string value))
+  (str value))
 
 (defn main ()
   (let (answer (result i64 parse-int-error)) (parse "oops"))

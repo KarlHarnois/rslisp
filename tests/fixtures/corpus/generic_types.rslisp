@@ -155,7 +155,7 @@
 (defn heaviest-label (crate)
   (match (max-by-key (iter (:items crate)) (fn (item) (whole-grams (weight item))))
     ((some item) (label item))
-    (none (to-string "empty"))))
+    (none (str "empty"))))
 
 (type fragile-count (where ((a cargo)) (fn ((ref (crate a))) usize)))
 (defn fragile-count (crate)

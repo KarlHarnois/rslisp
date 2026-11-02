@@ -17,7 +17,7 @@
   (println (:x shifted) (:y shifted))
   (let nested (assoc (->line (->point 1 2) (->point 5 6)) :start (assoc (->point 0 0) :y 9)))
   (println (:y (:start nested)) (:x (:end nested)))
-  (let leaf (assoc (->car "Nissan" (to-string "Leaf") 2024) :year 2025))
+  (let leaf (assoc (->car "Nissan" (str "Leaf") 2024) :year 2025))
   (println (:make leaf) " " (:model leaf) " " (:year leaf))
   (let grid (assoc-in (vec (vec 1 2) (vec 3 4)) (1 0) 7))
   (println (at (at grid 1) 0)))

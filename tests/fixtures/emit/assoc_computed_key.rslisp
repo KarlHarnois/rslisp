@@ -5,7 +5,7 @@
   (upper-case letter))
 
 (defn main ()
-  (let counts (sorted-map (to-string "A") 0))
+  (let counts (sorted-map (str "A") 0))
   (let counted (assoc counts (initial "ana") 1))
   (println (unwrap (get counted "A")))
   (let user (->user :name "ana" :admin? false))
