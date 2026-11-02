@@ -584,7 +584,7 @@ impl TypeChecker {
             }
             let reported_before = self.diagnostics.len();
             typed.extend(self.check_component(&members));
-            self.note_reported_errors(reported_before, &bindings);
+            self.note_reported_errors(reported_before, dependencies, &bindings);
             self.fail_group_when_a_member_failed(bindings);
         }
         typed
@@ -605,8 +605,15 @@ impl TypeChecker {
         }
     }
 
-    fn note_reported_errors(&mut self, reported_before: usize, bindings: &[BindingId]) {
-        if self.diagnostics.len() > reported_before {
+    fn note_reported_errors(
+        &mut self,
+        reported_before: usize,
+        dependencies: &DependencyGraph,
+        bindings: &[BindingId],
+    ) {
+        if self.diagnostics.len() > reported_before
+            || dependencies.directly_depends_on_any(bindings, &self.reported_bindings)
+        {
             self.reported_bindings.extend(bindings);
         }
     }
