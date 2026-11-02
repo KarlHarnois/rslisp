@@ -330,7 +330,7 @@ impl<'a> ModeRewrite<'a> {
             .cloned()
             .unwrap_or_else(|| instantiated.to_vec());
         for (position, (argument, param)) in arguments.iter_mut().zip(&params).enumerate() {
-            let param = Self::at_shared_instantiation(param, instantiated.get(position));
+            let param = Self::instantiated_at_shared_reference(param, instantiated.get(position));
             self.borrow_for(argument, param);
         }
     }
@@ -342,7 +342,10 @@ impl<'a> ModeRewrite<'a> {
         }
     }
 
-    fn at_shared_instantiation<'t>(param: &'t Type, instantiated: Option<&'t Type>) -> &'t Type {
+    fn instantiated_at_shared_reference<'t>(
+        param: &'t Type,
+        instantiated: Option<&'t Type>,
+    ) -> &'t Type {
         match (param, instantiated) {
             (Type::Generic(_), Some(instantiated @ Type::Ref(..))) => instantiated,
             _ => param,
