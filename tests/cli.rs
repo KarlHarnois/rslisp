@@ -35,6 +35,7 @@ const GEOMETRY_ENTRY: &str = "(use geometry area)\n\n(defn main () (println (are
 const UNDOCUMENTED_ENTRY: &str = "(defn twice (x) (* 2 x))\n\n(defn main () (println (twice 2)))\n";
 const SHADOWING_DOC: &str = "(defrule doc ((term) 0))\n\n(defn main () (do))\n";
 const THREADING_HEADER: &str = "(defrule ->)";
+const ARITHMETIC: &str = include_str!("fixtures/emit/arithmetic.rslisp");
 
 const UNBOUND_NAMES_PAST_THE_CAP: usize = 25;
 
@@ -209,6 +210,28 @@ fn help_lists_every_command() {
     let sandbox = Sandbox::new("help");
     let help = sandbox.compiler(&["--help"]);
     insta::assert_snapshot!(help.assert_exit_code(0).stdout());
+}
+
+#[test]
+fn counters_flag_prints_one_json_object_after_the_command() {
+    let sandbox = Sandbox::new("counters").with_file("arithmetic.rslisp", ARITHMETIC);
+    let plain = sandbox.compiler(&["emit", "arithmetic.rslisp"]);
+    let counted = sandbox.compiler(&["--counters", "emit", "arithmetic.rslisp"]);
+    assert_eq!(counted.assert_exit_code(0).stdout(), plain.stdout());
+    let stderr = counted.stderr();
+    let last_line = stderr
+        .lines()
+        .last()
+        .expect("the counters follow the command");
+    let report: serde_json::Value = serde_json::from_str(last_line).expect("the last line is JSON");
+    assert!(report.is_object(), "{last_line}");
+}
+
+#[test]
+fn counters_flag_stays_out_of_the_help() {
+    let sandbox = Sandbox::new("counters-help");
+    let help = sandbox.compiler(&["--help"]);
+    assert!(!help.assert_exit_code(0).stdout().contains("--counters"));
 }
 
 #[test]
