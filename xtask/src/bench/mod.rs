@@ -1,7 +1,9 @@
 mod callgrind;
+mod change;
 mod comparison;
 mod compiler;
 mod corpus;
+mod counter_comparison;
 mod counter_gate;
 mod counter_run;
 mod failure;
@@ -17,6 +19,7 @@ mod profile;
 mod results;
 mod table;
 
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -51,6 +54,12 @@ pub enum BenchTask {
         candidate: PathBuf,
         #[arg(long, value_enum, default_value_t = ReportLength::Full)]
         length: ReportLength,
+        #[arg(
+            long,
+            num_args = 0..,
+            help = "The programs whose counter rises a `Counters-Accepted:` trailer names"
+        )]
+        accepted: Vec<String>,
     },
     #[command(
         about = "Print the key of what besides the compiler's code decides the counts: the toolchain lock, the dev shell, the benchmark code and the corpus"
@@ -114,7 +123,13 @@ impl BenchTask {
                 baseline,
                 candidate,
                 length,
-            } => Self::compare(&baseline, &candidate, length),
+                accepted,
+            } => Self::compare(
+                &baseline,
+                &candidate,
+                length,
+                &accepted.into_iter().collect(),
+            ),
             Self::Method => MeasurementMethod::new(Git::new(root))
                 .key()
                 .map(|key| format!("{key}\n")),
@@ -133,10 +148,11 @@ impl BenchTask {
         baseline: &Path,
         candidate: &Path,
         length: ReportLength,
+        accepted: &BTreeSet<String>,
     ) -> Result<String, TaskFailure> {
         let baseline = ResultSet::load(baseline)?;
         let candidate = ResultSet::load(candidate)?;
-        Ok(length.render(&Comparison::new(&baseline, &candidate)))
+        Ok(length.render(&Comparison::new(&baseline, &candidate, accepted)))
     }
 }
 

@@ -1,12 +1,15 @@
 use std::collections::BTreeSet;
 
+use super::change::Change;
+use super::counter_comparison::CounterComparison;
 use super::measurement::Measurement;
 use super::results::{ProgramResult, ResultSet};
-use super::table::{GroupedCount, MarkdownTable};
+use super::table::MarkdownTable;
 
 pub struct Comparison<'a> {
     baseline: &'a ResultSet,
     candidate: &'a ResultSet,
+    counters: CounterComparison<'a>,
 }
 
 impl<'a> Comparison<'a> {
@@ -20,10 +23,15 @@ impl<'a> Comparison<'a> {
 
     const LARGEST_CHANGES: usize = 20;
 
-    pub fn new(baseline: &'a ResultSet, candidate: &'a ResultSet) -> Self {
+    pub fn new(
+        baseline: &'a ResultSet,
+        candidate: &'a ResultSet,
+        accepted: &'a BTreeSet<String>,
+    ) -> Self {
         Self {
             baseline,
             candidate,
+            counters: CounterComparison::new(baseline, candidate, accepted),
         }
     }
 
@@ -31,15 +39,20 @@ impl<'a> Comparison<'a> {
         let programs = self.programs();
         let rows = programs.iter().flat_map(ProgramComparison::rows);
         format!(
-            "{}\n<details><summary>Every stage of every program</summary>\n\n{}\n</details>\n\n{}\n\n{}",
+            "{}\n<details><summary>Every stage of every program</summary>\n\n{}\n</details>\n\n{}\n{}\n\n{}",
             Self::list_notes(&programs),
             Self::table(rows),
+            self.counters.report(),
             Self::criterion(),
             Measurement::method()
         )
     }
 
     pub fn brief_report(&self) -> String {
+        format!("{}\n{}", self.brief_instructions(), self.counters.report())
+    }
+
+    fn brief_instructions(&self) -> String {
         let programs = self.programs();
         let changed = Self::changed_stages(&programs);
         if changed.is_empty() && Self::note_count(&programs) == 0 {
@@ -249,59 +262,6 @@ impl<'a> StageChange<'a> {
     }
 }
 
-struct Change {
-    before: u64,
-    after: u64,
-}
-
-impl Change {
-    const NOTABLE_RISE_PERCENT: f64 = 1.0;
-    const PERCENT: f64 = 100.0;
-
-    fn new(before: u64, after: u64) -> Self {
-        Self { before, after }
-    }
-
-    fn of(before: &Measurement, after: &Measurement, stage: &str) -> Self {
-        let count_of = |measurement: &Measurement| measurement.instructions_of(stage).unwrap_or(0);
-        Self::new(count_of(before), count_of(after))
-    }
-
-    fn counts(&self) -> [String; 2] {
-        [
-            GroupedCount::new(self.before).to_string(),
-            GroupedCount::new(self.after).to_string(),
-        ]
-    }
-
-    fn exceeds_notable_rise(&self) -> bool {
-        match self.ratio() {
-            Some(percent) => percent > Self::NOTABLE_RISE_PERCENT,
-            None => self.after > 0,
-        }
-    }
-
-    fn differs(&self) -> bool {
-        self.before != self.after
-    }
-
-    fn difference(&self) -> f64 {
-        self.after as f64 - self.before as f64
-    }
-
-    fn percent(&self) -> String {
-        match self.ratio() {
-            Some(percent) => format!("{percent:+.2}%"),
-            None if self.after == 0 => "0.00%".to_string(),
-            None => "new".to_string(),
-        }
-    }
-
-    fn ratio(&self) -> Option<f64> {
-        (self.before > 0).then(|| self.difference() / self.before as f64 * Self::PERCENT)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
@@ -348,11 +308,11 @@ mod tests {
         }
 
         fn report(before: &ResultSet, after: &ResultSet) -> String {
-            Comparison::new(before, after).full_report()
+            Comparison::new(before, after, &BTreeSet::new()).full_report()
         }
 
         fn brief(before: &ResultSet, after: &ResultSet) -> String {
-            Comparison::new(before, after).brief_report()
+            Comparison::new(before, after, &BTreeSet::new()).brief_report()
         }
     }
 
@@ -383,7 +343,8 @@ mod tests {
         let after = ComparisonFixture::measured_only(&[ComparisonFixture::expand(500_000)]);
         assert_eq!(
             ComparisonFixture::brief(&before, &after),
-            "No instruction count changed.\n"
+            "No instruction count changed.\n\n\
+             The base has no counters, so no counter is checked for growth.\n"
         );
         assert!(
             ComparisonFixture::report(&before, &after)
@@ -417,7 +378,8 @@ mod tests {
         let results = ComparisonFixture::with_unmeasured(&[ComparisonFixture::expand(500_000)]);
         assert_eq!(
             ComparisonFixture::brief(&results, &results),
-            "Stages that rose notably, or could not be compared: 1.\n\n"
+            "Stages that rose notably, or could not be compared: 1.\n\n\n\
+             The base has no counters, so no counter is checked for growth.\n"
         );
     }
 
@@ -433,9 +395,12 @@ mod tests {
     }
 
     #[test]
-    fn describes_a_change_from_zero() {
-        assert_eq!(Change::new(0, 0).percent(), "0.00%");
-        assert_eq!(Change::new(0, 5).percent(), "new");
-        assert_eq!(Change::new(200, 100).percent(), "-50.00%");
+    fn tables_the_counters_in_both_reports() {
+        let mut inventory = ComparisonFixture::inventory(&[ComparisonFixture::expand(500_000)]);
+        inventory.counters = Counters::from([("allocator.allocated_bytes".to_string(), 4096)]);
+        let results = ResultSet::new(vec![inventory]);
+        let row = "| inventory | allocator.allocated_bytes | 4,096 | 4,096 | +0.00% |";
+        assert!(ComparisonFixture::report(&results, &results).contains(row));
+        assert!(ComparisonFixture::brief(&results, &results).contains(row));
     }
 }
