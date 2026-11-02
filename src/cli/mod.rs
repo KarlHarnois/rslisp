@@ -2,6 +2,7 @@ mod build;
 mod build_directory;
 mod capped_report;
 mod check;
+mod counter_report;
 mod doc;
 mod emit;
 mod exit_status;
@@ -16,9 +17,11 @@ use std::process::ExitCode;
 use clap::{Args, Parser, Subcommand};
 
 use crate::build::BuildProfile;
+use crate::counters::CountingAllocator;
 use crate::language::Language;
 use build::BuildCommand;
 use check::CheckCommand;
+use counter_report::CounterReport;
 use doc::{DocCommand, DocEnvironment};
 use emit::EmitCommand;
 use exit_status::ExitStatus;
@@ -32,6 +35,8 @@ use terminal::BuildOptions;
 pub struct Cli {
     #[command(subcommand)]
     command: Command,
+    #[arg(long, global = true, hide = true)]
+    counters: bool,
 }
 
 #[derive(Subcommand)]
@@ -79,8 +84,12 @@ struct ReleaseFlag {
 }
 
 impl Cli {
-    pub fn run(self) -> ExitCode {
-        self.command.execute().into()
+    pub fn run(self, allocator: Option<&CountingAllocator>) -> ExitCode {
+        let status = self.command.execute();
+        if self.counters {
+            CounterReport::new(allocator).print();
+        }
+        status.into()
     }
 }
 
