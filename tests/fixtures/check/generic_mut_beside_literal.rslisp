@@ -1,0 +1,10 @@
+(type later? (where ((a partial-ord)) (fn (a a) bool)))
+(defn later? (a b) (> a b))
+
+(defn literal-first ()
+  (let year 2024)
+  (later? 2020 (mut year)))
+
+(defn literal-last ()
+  (let year 2024)
+  (later? (mut year) 2020))
