@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/closure_whole_parameter_borrow_result.rslisp
+---
+error[L0512]: cannot pass a borrow of a local value to `whole`
+ --> run/closure_whole_parameter_borrow_result.rslisp:6:26
+  |
+4 |   (let leaf (->car :make "Nissan" :year 2025))
+  |        ---- this local is dropped when the function returns
+5 |   (let whole (fn ((leaf (ref car))) leaf))
+  |                   ---------------- `whole` ties this parameter to its result, so it needs a borrow that outlives the function
+6 |   (println (:year (whole (ref leaf)))))
+  |                          ^^^^^^^^^^ this borrows a local value
+  |
+  = help: define `whole` with `defn`, where its result can borrow from its argument
