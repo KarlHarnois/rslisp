@@ -7,4 +7,4 @@
 (defn take (value) (do))
 
 (defn main ()
-  (take (box-new (new circle (radius 1.0)))))
+  (take (box (new circle (radius 1.0)))))

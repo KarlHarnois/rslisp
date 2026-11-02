@@ -13,5 +13,5 @@
   (reduce shapes 0.0 (fn (total shape) (+ total (area shape)))))
 
 (defn main ()
-  (println (total (vec (box-new (new circle (radius 1.0)))
-                       (box-new (new square (side 2.0)))))))
+  (println (total (vec (box (new circle (radius 1.0)))
+                       (box (new square (side 2.0)))))))

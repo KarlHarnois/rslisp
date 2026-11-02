@@ -12,4 +12,4 @@
 (defn take (value) (do))
 
 (defn main ()
-  (take (identity (box-new (new circle (radius 1.0))))))
+  (take (identity (box (new circle (radius 1.0))))))
