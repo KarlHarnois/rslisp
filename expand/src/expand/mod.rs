@@ -30,11 +30,12 @@ mod try_check;
 mod type_expr;
 mod type_parameters;
 
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::core::{BindingArena, CoreModule, ModuleId, ModulePath};
+use crate::core::{BindingArena, BindingId, CoreModule, ModuleId, ModulePath};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::modules::{ModuleRegistry, ModuleSources};
 use crate::reader::Form;
@@ -54,6 +55,7 @@ pub struct Program {
     pub entry: ModuleId,
     pub bindings: BindingArena,
     pub macro_origins: FxHashMap<Span, MacroOrigin>,
+    pub macro_helpers: HashSet<BindingId>,
     pub warnings: Diagnostics,
 }
 
@@ -149,6 +151,7 @@ impl<'s> Expander<'s> {
             modules: self.take_modules(),
             entry,
             bindings: self.tables.bindings,
+            macro_helpers: self.tables.globals.macro_helpers(),
             macro_origins: self.tables.macro_origins,
             warnings: self.warnings,
         };
