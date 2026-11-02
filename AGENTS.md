@@ -122,6 +122,7 @@ The exceptions are:
 - Give fixtures fake data only.
 - A run fixture MAY carry a `<fixture>.arguments` sidecar with one argument per line.
 - The harness runs the compiled fixture with those arguments in the fixture's directory.
+- A run fixture MAY carry a `<fixture>.stdin` sidecar. The harness writes the sidecar to the compiled fixture's standard input, which is empty otherwise.
 - If a fixture writes to standard error or exits nonzero, its snapshot appends the standard error and the exit code.
 - The standard error and the exit code follow the standard output in the snapshot.
 - Create or update snapshots with `INSTA_UPDATE=always`.
