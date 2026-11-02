@@ -6,4 +6,6 @@
   (let empty (str))
   (prn empty)
   (println (str year "-" 1))
-  (for-each (map (iter (vec 1 2)) str) (fn (text) (println text))))
+  (let years (vec 2019))
+  (push! (mut years) year)
+  (for-each (map (iter years) str) (fn (text) (println text))))
