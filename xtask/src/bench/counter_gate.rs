@@ -34,6 +34,7 @@ impl<'a> CounterGate<'a> {
         if !self.baseline_has_counters() {
             return Ok(Self::NO_BASELINE_COUNTERS.to_string());
         }
+        self.require_gated_counters()?;
         let unaccepted: Vec<String> = self
             .rises()
             .iter()
@@ -50,6 +51,26 @@ impl<'a> CounterGate<'a> {
                 &unaccepted,
             )),
         }
+    }
+
+    fn require_gated_counters(&self) -> Result<(), TaskFailure> {
+        match self.missing_gated_counter() {
+            Some((program, counter)) => Err(TaskFailure::gated_counter_missing(program, counter)),
+            None => Ok(()),
+        }
+    }
+
+    fn missing_gated_counter(&self) -> Option<(&'a str, &'static str)> {
+        self.candidate.programs().iter().find_map(|candidate| {
+            let baseline = self.baseline.find(&candidate.program)?;
+            Self::GATED_COUNTERS
+                .into_iter()
+                .find(|counter| {
+                    baseline.counters.contains_key(*counter)
+                        && !candidate.counters.contains_key(*counter)
+                })
+                .map(|counter| (candidate.program.as_str(), counter))
+        })
     }
 
     pub fn baseline_has_counters(&self) -> bool {
@@ -284,5 +305,18 @@ mod tests {
             &[],
         );
         assert_eq!(checked.unwrap(), CounterGate::NO_BASELINE_COUNTERS);
+    }
+
+    #[test]
+    fn the_check_fails_a_candidate_without_a_gated_counter_of_the_baseline() {
+        let failure = GateFixture::check(
+            &GateFixture::results("warehouse", 1_000),
+            &GateFixture::uncounted("warehouse"),
+            &[],
+        )
+        .unwrap_err();
+        let message = failure.to_string();
+        assert!(message.contains("`warehouse`"), "{message}");
+        assert!(message.contains("`allocator.allocated_bytes`"), "{message}");
     }
 }
