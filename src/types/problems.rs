@@ -496,13 +496,13 @@ impl TypeProblems {
         format!("`{struct_name}` cannot derive `{trait_name}`: field `{field}` is `{field_type}`")
     }
 
-    pub fn sort_by_key_help(field: Option<&str>) -> String {
+    pub fn sort_by_help(field: Option<&str>) -> String {
         match field {
             Some(field) => format!(
-                "to sort by one field instead, use `sort-by-key!` with the field keyword `{}{field}`",
+                "to sort by one field instead, use `sort-by!` with the field keyword `{}{field}`",
                 Keyword::MARKER
             ),
-            None => "to sort by one field instead, use `sort-by-key!`".to_string(),
+            None => "to sort by one field instead, use `sort-by!`".to_string(),
         }
     }
 
