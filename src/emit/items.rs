@@ -714,6 +714,7 @@ impl<'a> ItemEmitter<'a> {
             lambda,
             parameters: shown_parameters,
             result: shown_result,
+            signature: &signature,
             static_result: position == TypePosition::StaticResult
                 && self.program.type_holds_borrow(shown_result),
         };
@@ -741,8 +742,7 @@ impl<'a> ItemEmitter<'a> {
         let Some(untied) = self.untied_borrows(method, implemented) else {
             return;
         };
-        let flows = self.result_borrows.analyse(method.lambda).flows;
-        if let Some(problem) = untied.check(method, &flows) {
+        if let Some(problem) = untied.check(method, &self.result_borrows) {
             self.problems.push(problem);
         }
     }

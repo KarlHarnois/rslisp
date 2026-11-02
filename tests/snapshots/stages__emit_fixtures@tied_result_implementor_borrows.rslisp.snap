@@ -3,107 +3,83 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/tied_result_implementor_borrows.rslisp
 ---
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-struct Car<'a> {
-    model: &'a str,
-    year: i64,
-}
+error[L0605]: `echo` returns a borrow that cannot come from `c`
+  --> emit/tied_result_implementor_borrows.rslisp:18:10
+   |
+18 |   (echo (c name) (:model c))
+   |          ^ the result borrows from this value
+   |
+   = note: the trait's signature lets the result borrow only from its reference parameters
+   = help: take this parameter as `(ref self)` in the trait's signature `(fn (self (ref str)) (ref str))`, so the result can borrow from it
 
-fn make_car(model: &str, year: i64) -> Car<'_> {
-    Car { model, year }
-}
+error[L0605]: `tag` returns a borrow that cannot come from `c`
+  --> emit/tied_result_implementor_borrows.rslisp:19:14
+   |
+19 |   (tag (name c) (:model c))
+   |              ^ the result borrows from this value
+   |
+   = note: the trait's signature lets the result borrow only from its reference parameters
+   = help: take this parameter as `(ref self)` in the trait's signature `(fn ((ref str) self) (ref str))`, so the result can borrow from it
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-struct Van<'a> {
-    model: &'a str,
-    seats: i64,
-}
+error[L0605]: `maybe` returns a borrow that cannot come from `c`
+  --> emit/tied_result_implementor_borrows.rslisp:20:11
+   |
+20 |   (maybe (c name) (some (:model c)))
+   |           ^ the result borrows from this value
+   |
+   = note: the trait's signature lets the result borrow only from its reference parameters
+   = help: take this parameter as `(ref self)` in the trait's signature `(fn (self (ref str)) (option (ref str)))`, so the result can borrow from it
 
-fn make_van(model: &str, seats: i64) -> Van<'_> {
-    Van { model, seats }
-}
+error[L0605]: `brand` returns a borrow that cannot come from `c`
+  --> emit/tied_result_implementor_borrows.rslisp:21:11
+   |
+21 |   (brand (c name) (model-of c))
+   |           ^ the result borrows from this value
+   |
+   = note: the trait's signature lets the result borrow only from its reference parameters
+   = help: take this parameter as `(ref self)` in the trait's signature `(fn (self (ref str)) (ref str))`, so the result can borrow from it
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-enum Ride<'a> {
-    Cab(&'a str),
-    Bike,
-}
+error[L0605]: `stamp` returns a borrow that cannot come from `c`
+  --> emit/tied_result_implementor_borrows.rslisp:22:16
+   |
+22 |   (stamp (year c) ((fn (x) (model-of x)) c))
+   |                ^ the result borrows from this value
+   |
+   = note: no parameter of the trait's signature holds a borrow, so the result takes the `'static` lifetime
+   = help: take this parameter as `(ref self)` in the trait, so the result can borrow from it
 
-fn model_of(c: Car<'_>) -> &str {
-    c.model
-}
+error[L0605]: `swap` returns a `car`, which cannot hold the borrow in `other`
+  --> emit/tied_result_implementor_borrows.rslisp:23:12
+   |
+23 |   (swap (c other) ((fn (x) x) other))
+   |            ^^^^^ this borrow reaches the result
+   |
+   = note: a trait signature cannot name the lifetime that `car` holds
+   = help: write `self` in place of `car` for this parameter in the trait
 
-fn main() {
-    crate::rt::restore_default_sigpipe();
-    println!("{}", make_car("Leaf", 2024).echo("Nissan"));
-    println!("{}", Garage::tag("Nissan", make_van("e-NV200", 7)));
-    println!("{:?}", make_car("Leaf", 2024).maybe("Nissan"))
-}
+error[L0605]: `trade` returns a `car`, which cannot hold the borrow in `other`
+  --> emit/tied_result_implementor_borrows.rslisp:24:13
+   |
+24 |   (trade (c other) (match (some other) ((some o) o) ((none) c))))
+   |             ^^^^^ this borrow reaches the result
+   |
+   = note: a trait signature cannot name the lifetime that `car` holds
+   = help: write `self` in place of `car` for this parameter in the trait
 
-trait Garage {
-    fn echo(self, _: &str) -> &str;
-    fn tag(_: &str, _: Self) -> &str;
-    fn maybe(self, _: &str) -> Option<&str>;
-    fn brand(self, _: &str) -> &str;
-}
+error[L0605]: `echo` returns a borrow that cannot come from `v`
+  --> emit/tied_result_implementor_borrows.rslisp:27:10
+   |
+27 |   (echo (v label)
+   |          ^ the result borrows from this value
+   |
+   = note: the trait's signature lets the result borrow only from its reference parameters
+   = help: take this parameter as `(ref self)` in the trait's signature `(fn (self (ref str)) (ref str))`, so the result can borrow from it
 
-trait Valet {
-    fn park(self, _: &str) -> &str;
-}
-
-impl<'a> Garage for Car<'a> {
-    fn echo(self, name: &str) -> &str {
-        self.model
-    }
-    fn tag(name: &str, c: Self) -> &str {
-        c.model
-    }
-    fn maybe(self, name: &str) -> Option<&str> {
-        Some(self.model)
-    }
-    fn brand(self, name: &str) -> &str {
-        model_of(self)
-    }
-}
-
-impl<'a> Garage for Van<'a> {
-    fn echo(self, label: &str) -> &str {
-        let name = self.model;
-        name
-    }
-    fn tag(label: &str, v: Self) -> &str {
-        label
-    }
-    fn maybe(self, label: &str) -> Option<&str> {
-        Some(label)
-    }
-    fn brand(self, label: &str) -> &str {
-        label
-    }
-}
-
-impl<'a> Valet for Ride<'a> {
-    fn park(self, name: &str) -> &str {
-        match self {
-            Ride::Cab(m) => m,
-            Ride::Bike => name,
-        }
-    }
-}
-
-mod rt {
-    #[cfg(unix)]
-    pub fn restore_default_sigpipe() {
-        const SIGPIPE: i32 = 13;
-        const DEFAULT_HANDLER: usize = 0;
-        unsafe extern "C" {
-            fn signal(signal: i32, handler: usize) -> usize;
-        }
-        unsafe {
-            signal(SIGPIPE, DEFAULT_HANDLER);
-        }
-    }
-
-    #[cfg(not(unix))]
-    pub fn restore_default_sigpipe() {}
-}
+error[L0605]: `park` returns a borrow that cannot come from `r`
+  --> emit/tied_result_implementor_borrows.rslisp:41:10
+   |
+41 |   (park (r name) (match r ((cab m) m) (bike name))))
+   |          ^ the result borrows from this value
+   |
+   = note: the trait's signature lets the result borrow only from its reference parameters
+   = help: take this parameter as `(ref self)` in the trait's signature `(fn (self (ref str)) (ref str))`, so the result can borrow from it

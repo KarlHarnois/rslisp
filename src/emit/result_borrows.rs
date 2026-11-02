@@ -45,6 +45,10 @@ impl<'a> ResultBorrows<'a> {
         BodyFlows::of(self, lambda, None)
     }
 
+    pub fn analyse_shared_arguments(&self, lambda: &TypedLambda) -> LambdaFlows {
+        BodyFlows::of_shared_arguments(self, lambda)
+    }
+
     fn stored_at_sites(&self, lambda: &TypedLambda) -> StoredFlows {
         let sites = StoreSites::of(self, lambda);
         if sites.is_empty() {
@@ -190,8 +194,15 @@ impl<'a> ResultBorrows<'a> {
     }
 }
 
+#[derive(Clone, Copy, PartialEq)]
+enum CallFlows {
+    EveryArgument,
+    SharedArguments,
+}
+
 struct BodyFlows<'r, 'a> {
     rules: &'r ResultBorrows<'a>,
+    calls: CallFlows,
     parameters: FxHashSet<BindingId>,
     aliases: FxHashMap<BindingId, FxHashSet<BindingId>>,
     earliest_reached: Option<usize>,
@@ -289,6 +300,14 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
         Self::new(rules, lambda, order).lambda_flows(lambda)
     }
 
+    fn of_shared_arguments(rules: &'r ResultBorrows<'a>, lambda: &TypedLambda) -> LambdaFlows {
+        let mut borrows = Self {
+            calls: CallFlows::SharedArguments,
+            ..Self::new(rules, lambda, None)
+        };
+        borrows.lambda_flows(lambda)
+    }
+
     fn of_function(
         rules: &'r ResultBorrows<'a>,
         lambda: &TypedLambda,
@@ -322,6 +341,7 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
     fn new(rules: &'r ResultBorrows<'a>, lambda: &TypedLambda, order: Option<usize>) -> Self {
         Self {
             rules,
+            calls: CallFlows::EveryArgument,
             parameters: lambda.params.iter().map(|param| param.binding).collect(),
             aliases: FxHashMap::default(),
             earliest_reached: order,
@@ -451,8 +471,10 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
         arguments: &[TypedArgument],
         call: &TypedExpr,
     ) -> FxHashSet<BindingId> {
-        let mut flows = self.children(call);
-        flows.extend(self.callee(callee, arguments));
+        let mut flows = self.callee(callee, arguments);
+        if self.calls == CallFlows::EveryArgument {
+            flows.extend(self.children(call));
+        }
         flows
     }
 
@@ -526,11 +548,28 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
     }
 
     fn matched(&mut self, matched: &TypedMatch) -> FxHashSet<BindingId> {
-        let mut flows = self.value(&matched.value);
+        let checked = self.value(&matched.value);
+        let mut flows = match self.calls {
+            CallFlows::EveryArgument => checked,
+            CallFlows::SharedArguments => self.lend_to_pattern_bindings(matched, &checked),
+        };
         for arm in &matched.arms {
             flows.extend(self.block(&arm.body));
         }
         flows
+    }
+
+    fn lend_to_pattern_bindings(
+        &mut self,
+        matched: &TypedMatch,
+        checked: &FxHashSet<BindingId>,
+    ) -> FxHashSet<BindingId> {
+        for arm in &matched.arms {
+            for binder in arm.pattern.binders() {
+                self.aliases.insert(binder.binding, checked.clone());
+            }
+        }
+        FxHashSet::default()
     }
 
     fn children(&mut self, expr: &TypedExpr) -> FxHashSet<BindingId> {

@@ -9,13 +9,19 @@
   (echo (fn (self (ref str)) (ref str)))
   (tag (fn ((ref str) self) (ref str)))
   (maybe (fn (self (ref str)) (option (ref str))))
-  (brand (fn (self (ref str)) (ref str))))
+  (brand (fn (self (ref str)) (ref str)))
+  (stamp (fn (i64 self) (ref str)))
+  (swap (fn (self car) self))
+  (trade (fn (self car) self)))
 
 (impl garage car
   (echo (c name) (:model c))
   (tag (name c) (:model c))
   (maybe (c name) (some (:model c)))
-  (brand (c name) (model-of c)))
+  (brand (c name) (model-of c))
+  (stamp (year c) ((fn (x) (model-of x)) c))
+  (swap (c other) ((fn (x) x) other))
+  (trade (c other) (match (some other) ((some o) o) ((none) c))))
 
 (impl garage van
   (echo (v label)
@@ -23,7 +29,10 @@
     name)
   (tag (label v) label)
   (maybe (v label) (some label))
-  (brand (v label) label))
+  (brand (v label) label)
+  (stamp (year v) "van")
+  (swap (v other) v)
+  (trade (v other) v))
 
 (trait valet
   (park (fn (self (ref str)) (ref str))))
