@@ -13,8 +13,8 @@ impl BuildCommand {
         Self { file, options }
     }
 
-    pub fn run(self) -> ExitStatus {
-        match Terminal::new().build(&self.file, &self.options) {
+    pub fn run(self, terminal: &mut Terminal) -> ExitStatus {
+        match terminal.build(&self.file, &self.options) {
             Ok(_) => ExitStatus::Success,
             Err(status) => status,
         }

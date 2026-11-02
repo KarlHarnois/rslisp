@@ -9,6 +9,7 @@ mod exit_status;
 mod expand;
 mod run;
 mod signatures;
+mod stage_work;
 mod terminal;
 
 use std::path::PathBuf;
@@ -28,7 +29,7 @@ use exit_status::ExitStatus;
 use expand::ExpandCommand;
 use run::RunCommand;
 use signatures::SignaturesCommand;
-use terminal::BuildOptions;
+use terminal::{BuildOptions, Terminal};
 
 #[derive(Parser)]
 #[command(name = Language::NAME, version, about = "Compile Lisp source files to Rust")]
@@ -85,22 +86,27 @@ struct ReleaseFlag {
 
 impl Cli {
     pub fn run(self, allocator: Option<&CountingAllocator>) -> ExitCode {
-        let status = self.command.execute();
+        let mut terminal = Terminal::new();
+        let status = self.command.execute(&mut terminal);
         if self.counters {
-            CounterReport::new(allocator).print();
+            let mut report = CounterReport::new(allocator);
+            report.add_stage_work(terminal.work());
+            report.print();
         }
         status.into()
     }
 }
 
 impl Command {
-    fn execute(self) -> ExitStatus {
+    fn execute(self, terminal: &mut Terminal) -> ExitStatus {
         match self {
-            Command::Check { file } => CheckCommand::new(file).run(),
-            Command::Signatures { file } => SignaturesCommand::new(file).run(),
-            Command::Doc { term, file } => DocCommand::new(DocEnvironment::new(file), term).run(),
-            Command::Expand { file } => ExpandCommand::new(file).run(),
-            Command::Emit { file } => EmitCommand::new(file).run(),
+            Command::Check { file } => CheckCommand::new(file).run(terminal),
+            Command::Signatures { file } => SignaturesCommand::new(file).run(terminal),
+            Command::Doc { term, file } => {
+                DocCommand::new(DocEnvironment::new(file), term).run(terminal)
+            }
+            Command::Expand { file } => ExpandCommand::new(file).run(terminal),
+            Command::Emit { file } => EmitCommand::new(file).run(terminal),
             Command::Build {
                 file,
                 release,
@@ -112,7 +118,7 @@ impl Command {
                     output,
                 },
             )
-            .run(),
+            .run(terminal),
             Command::Run {
                 file,
                 release,
@@ -125,7 +131,7 @@ impl Command {
                 },
                 args,
             )
-            .run(),
+            .run(terminal),
         }
     }
 }

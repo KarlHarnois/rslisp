@@ -21,8 +21,8 @@ impl RunCommand {
         }
     }
 
-    pub fn run(self) -> ExitStatus {
-        match Terminal::new().build(&self.file, &self.options) {
+    pub fn run(self, terminal: &mut Terminal) -> ExitStatus {
+        match terminal.build(&self.file, &self.options) {
             Ok(binary) => self.execute(&binary),
             Err(status) => status,
         }

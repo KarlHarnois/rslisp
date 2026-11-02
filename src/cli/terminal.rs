@@ -6,6 +6,7 @@ use std::time::Duration;
 use super::build_directory::BuildDirectory;
 use super::capped_report::CappedReport;
 use super::exit_status::ExitStatus;
+use super::stage_work::StageWork;
 use crate::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use crate::core::{Expr, ModulePath};
 use crate::diagnostic::{DiagnosticRenderer, Diagnostics};
@@ -24,6 +25,7 @@ pub struct BuildOptions {
 
 pub struct Terminal {
     sources: SourceMap,
+    work: StageWork,
 }
 
 impl Terminal {
@@ -34,7 +36,12 @@ impl Terminal {
     pub fn new() -> Self {
         Self {
             sources: SourceMap::default(),
+            work: StageWork::default(),
         }
+    }
+
+    pub fn work(&self) -> &StageWork {
+        &self.work
     }
 
     pub fn load(&mut self, path: &Path) -> Result<SourceId, ExitStatus> {
@@ -71,13 +78,18 @@ impl Terminal {
         let program = self.check(path)?;
         let emitted = RustEmitter::emit(&program, Self::entry_span())
             .map_err(|diagnostics| self.report(&diagnostics))?;
-        match formatting.apply(&emitted) {
-            Ok(formatted) => Ok(formatted),
+        self.work.emitted_expressions = Some(emitted.emission.emitted_expressions);
+        let written = match formatting.apply(&emitted) {
+            Ok(formatted) => formatted,
             Err(error) => {
                 eprintln!("note: {error}; writing unformatted Rust");
-                Ok(emitted)
+                emitted
             }
-        }
+        };
+        self.work.scanned_tokens = written
+            .formatting
+            .map(|formatting| formatting.scanned_tokens);
+        Ok(written)
     }
 
     fn formatting() -> Result<EmittedFormatting, ExitStatus> {
@@ -100,15 +112,19 @@ impl Terminal {
         let program = self.expand(path)?;
         let typed = crate::check::ProgramChecker::check(&program)
             .map_err(|diagnostics| self.report(&diagnostics))?;
+        self.work.inferred_expressions = Some(typed.checking.inferred_expressions);
         self.print_warnings(&typed.warnings);
         Ok(typed)
     }
 
     pub fn expand(&mut self, path: &Path) -> Result<Program, ExitStatus> {
         let entry = self.load(path)?;
-        self.expander(path)
+        let program = self
+            .expander(path)
             .expand(Self::module_path(path), entry)
-            .map_err(|diagnostics| self.report(&diagnostics))
+            .map_err(|diagnostics| self.report(&diagnostics))?;
+        self.work.lowered_forms = Some(program.expansion.lowered_forms);
+        Ok(program)
     }
 
     pub fn read_text(&mut self, name: &str, text: &str) -> Result<Vec<Form>, ExitStatus> {

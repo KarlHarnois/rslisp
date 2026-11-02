@@ -1,5 +1,6 @@
 use serde_json::{Map, Value};
 
+use super::stage_work::StageWork;
 use crate::counters::{AllocationCounts, CountingAllocator};
 
 pub struct CounterReport {
@@ -19,6 +20,13 @@ impl CounterReport {
         report
     }
 
+    pub fn add_stage_work(&mut self, work: &StageWork) {
+        self.add_stage_count("expand", "lowered_forms", work.lowered_forms);
+        self.add_stage_count("check", "inferred_expressions", work.inferred_expressions);
+        self.add_stage_count("emit", "emitted_expressions", work.emitted_expressions);
+        self.add_stage_count("build", "scanned_tokens", work.scanned_tokens);
+    }
+
     pub fn print(self) {
         eprintln!("{}", self.into_json());
     }
@@ -32,6 +40,10 @@ impl CounterReport {
                 ("peak_live_bytes", counts.peak_live_bytes),
             ],
         );
+    }
+
+    fn add_stage_count(&mut self, stage: &str, counter: &'static str, count: Option<usize>) {
+        self.add_group(stage, count.map(|count| (counter, count)));
     }
 
     fn add_group(
