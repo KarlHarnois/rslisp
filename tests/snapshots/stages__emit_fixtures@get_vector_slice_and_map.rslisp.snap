@@ -15,11 +15,11 @@ fn main() {
         map.insert("leaf", 30_i64);
         map
     };
-    println!("{}", years.get(0).unwrap());
+    println!("{}", years.get(1).unwrap());
     println!("{}", second(&years).unwrap());
-    println!("{}", years.get(5).is_none());
+    println!("{:?}", years.get(5));
     println!("{}", prices.get("leaf").unwrap());
-    println!("{}", prices.get("ariya").is_none())
+    println!("{:?}", prices.get("ariya"))
 }
 
 mod rt {

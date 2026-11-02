@@ -12,7 +12,9 @@ fn main() {
     let empty = "".to_string();
     println!("{:?}", empty);
     println!("{}-{}", year, 1_i64);
-    vec![1_i64, 2_i64]
+    let mut years: Vec<i64> = vec![2019_i64];
+    years.push(year);
+    years
         .iter()
         .map(|argument_0: &i64| argument_0.to_string())
         .for_each(|text: String| println!("{}", text))
