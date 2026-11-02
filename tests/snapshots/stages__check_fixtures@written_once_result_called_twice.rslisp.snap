@@ -3,5 +3,12 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/written_once_result_called_twice.rslisp
 ---
-(type make (fn () (fn () string)))
-(type main (fn () unit))
+error[L0501]: use of moved value `getter`
+ --> check/written_once_result_called_twice.rslisp:6:13
+  |
+5 |   (println (getter))
+  |             ------ value moved here
+6 |   (println (getter)))
+  |             ^^^^^^ value used here after it moved
+  |
+  = help: this closure moves a captured value, so it cannot be copied

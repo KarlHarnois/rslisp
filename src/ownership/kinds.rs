@@ -16,8 +16,8 @@ use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
     Borrow, ClosureKind, CopyRules, FieldPlace, StructTable, TemplateBorrows, Type, TypedArgument,
-    TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda,
-    TypedLeaf, TypedModule, TypedProgram, TypedStructExpr,
+    TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedDefinition, TypedExpr,
+    TypedExprKind, TypedLambda, TypedLeaf, TypedModule, TypedProgram, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -905,17 +905,26 @@ impl<'a> ClosureKinds<'a> {
     fn recompute_result_kinds(&mut self, modules: &[TypedModule]) {
         self.result_kinds.clear();
         for definition in modules.iter().flat_map(|module| &module.definitions) {
-            let TypedExprKind::Fn(lambda) = &definition.value.kind else {
-                continue;
-            };
-            let Type::Function(_, _, result) = &definition.value.ty else {
-                continue;
-            };
-            if matches!(result.as_ref(), Type::Function(..)) {
-                self.result_kinds
-                    .insert(definition.binding, self.block_value_kind(&lambda.body));
+            if let Some(kind) = self.definition_result_kind(definition) {
+                self.result_kinds.insert(definition.binding, kind);
             }
         }
+    }
+
+    fn definition_result_kind(&self, definition: &TypedDefinition) -> Option<ClosureKind> {
+        let TypedExprKind::Fn(lambda) = &definition.value.kind else {
+            return None;
+        };
+        let Type::Function(_, _, result) = &definition.value.ty else {
+            return None;
+        };
+        let Type::Function(written, _, _) = result.as_ref() else {
+            return None;
+        };
+        if definition.written_result {
+            return Some(*written);
+        }
+        Some(self.block_value_kind(&lambda.body))
     }
 
     fn recompute_parameter_kinds(
