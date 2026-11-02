@@ -333,7 +333,7 @@ impl TypeChecker {
         self.report_supertraits();
         self.check_trait_claims(modules);
         self.copy_trait = self.traits.with_paths(&[CopyTrait::PATH]).first().copied();
-        self.record_definition_shapes(definitions);
+        self.record_readers_and_written_parameters(definitions);
         self.record_string_view(modules);
     }
 
@@ -351,7 +351,7 @@ impl TypeChecker {
         }
     }
 
-    fn record_definition_shapes(&mut self, definitions: &[Definition]) {
+    fn record_readers_and_written_parameters(&mut self, definitions: &[Definition]) {
         for definition in definitions {
             self.record_single_field_reader(definition.binding, definition.value);
             self.record_written_parameters(definition.binding, definition.value);
