@@ -2,6 +2,7 @@ use std::io;
 use std::path::Path;
 use std::process::ExitStatus;
 
+use super::counter_gate::MissingGatedCounter;
 use crate::failure::TaskFailure;
 
 impl TaskFailure {
@@ -56,10 +57,8 @@ impl TaskFailure {
         ))
     }
 
-    pub fn gated_counter_missing(program: &str, counter: &str) -> Self {
-        Self::new(format!(
-            "the candidate has no `{counter}` for `{program}`, so its growth cannot be checked"
-        ))
+    pub fn gated_counter_missing(missing: &MissingGatedCounter) -> Self {
+        Self::new(missing.to_string())
     }
 
     pub fn stage_entry_missing(candidates: &[String]) -> Self {

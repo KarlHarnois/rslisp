@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use std::fmt;
 
 use super::change::Change;
 use super::results::{ProgramResult, ResultSet};
@@ -55,12 +56,12 @@ impl<'a> CounterGate<'a> {
 
     fn require_gated_counters(&self) -> Result<(), TaskFailure> {
         match self.missing_gated_counter() {
-            Some((program, counter)) => Err(TaskFailure::gated_counter_missing(program, counter)),
+            Some(missing) => Err(TaskFailure::gated_counter_missing(&missing)),
             None => Ok(()),
         }
     }
 
-    fn missing_gated_counter(&self) -> Option<(&'a str, &'static str)> {
+    pub fn missing_gated_counter(&self) -> Option<MissingGatedCounter<'a>> {
         self.candidate.programs().iter().find_map(|candidate| {
             let baseline = self.baseline.find(&candidate.program)?;
             Self::GATED_COUNTERS
@@ -69,7 +70,10 @@ impl<'a> CounterGate<'a> {
                     baseline.counters.contains_key(*counter)
                         && !candidate.counters.contains_key(*counter)
                 })
-                .map(|counter| (candidate.program.as_str(), counter))
+                .map(|counter| MissingGatedCounter {
+                    program: &candidate.program,
+                    counter,
+                })
         })
     }
 
@@ -101,6 +105,21 @@ impl<'a> CounterGate<'a> {
             .filter_map(|counter| CounterRise::of(counter, baseline, candidate))
             .filter(|rise| rise.exceeds_tolerance())
             .collect()
+    }
+}
+
+pub struct MissingGatedCounter<'a> {
+    program: &'a str,
+    counter: &'static str,
+}
+
+impl fmt::Display for MissingGatedCounter<'_> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "the candidate has no `{}` for `{}`, so its growth cannot be checked",
+            self.counter, self.program
+        )
     }
 }
 
