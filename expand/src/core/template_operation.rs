@@ -375,6 +375,7 @@ mod tests {
             "{0}..10",
             "&{0}[{1}]",
             "{0}.line != 1",
+            "[true, {0} < 2, 3 > (1)]",
         ] {
             assert!(!OperationFixture::calls(text), "{text}");
         }
