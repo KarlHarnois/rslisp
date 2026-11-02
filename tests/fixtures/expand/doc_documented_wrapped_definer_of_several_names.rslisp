@@ -1,0 +1,11 @@
+(defrule with-alias ((n a p d b) (do (defn n p d b) (defn a p b))))
+
+(defrule with-alias-bare ((n a p b) (do (defn n p b) (defn a p b))))
+
+(with-alias twice double (x) "Doubles." (* 2 x))
+
+(with-alias-bare thrice triple (x) (* 3 x))
+
+(def p1 (doc twice))
+
+(def p2 (doc thrice))

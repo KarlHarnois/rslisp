@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_wrapped_definer_with_argument_head.rslisp
+---
+(def twice (fn (x) (mul 2 x)))
+(def half (fn (x_2) (div x_2 2)))
+(def twice-page "(defn twice (x))\n\nNo documentation.")
+(def half-page "(defn half (x))\n\nHalves.")

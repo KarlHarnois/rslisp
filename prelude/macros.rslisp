@@ -1,6 +1,6 @@
 (use code first rest list prepend concat length empty? nth take drop
           symbol? list? string? symbol-name string same-binding? fail
-          definition-symbol type-definition-symbol definition-call add-module-note module-notes symbol
+          definition-symbol type-definition-symbol definition-call expand-call add-module-note module-notes symbol
           value-eq bool-not number-add number-sub number-lt
           string-lines string-trim-start string-length string-drop string-strip-suffix)
 
@@ -405,12 +405,12 @@
 
   The page of a definition that the definer made shows as many leading
   forms of its call as the shape lists."
-  (if (header-shape? shape)
+  (if (symbol-headed-list? shape)
       (do (add-module-note (quote header-shapes) shape)
           (quote (do)))
       (malformed-header-shape shape)))
 
-(def header-shape?
+(def symbol-headed-list?
   (fn (shape)
     (if (list? shape)
         (if (empty? shape) false (symbol? (first shape)))
@@ -458,7 +458,7 @@
 
 (def with-call-header
   (fn (term note)
-    (concat (take 2 note) (prepend (shaped-header (note-header note) term) (note-docstrings note)))))
+    (concat (take 2 note) (prepend (written-header term) (note-docstrings note)))))
 
 (def type-notes
   (fn (term)
@@ -490,17 +490,39 @@
 
 (def written-header
   (fn (term)
-    (shaped-header term term)))
-
-(def shaped-header
-  (fn (fallback term)
     (let calls (definition-call term))
-    (if (empty? calls) fallback (call-header fallback term (first calls)))))
+    (if (empty? calls)
+        term
+        (call-header term (scoped-form (definition-symbol term "doc") (first calls)) header-expansion-limit))))
+
+(def header-expansion-limit 32)
+
+(def scoped-form
+  (fn (context form)
+    (if (symbol? form)
+        (symbol context form)
+        (if (list? form) (map-list (fn (item) (scoped-form context item)) form) form))))
 
 (def call-header
-  (fn (fallback term call)
-    (let shapes (header-shapes (symbol (definition-symbol term "doc") (first call))))
-    (if (empty? shapes) fallback (take (length (first shapes)) call))))
+  (fn (term call expansions-left)
+    (let shapes (header-shapes (first call)))
+    (if (empty? shapes)
+        (expansion-header term call expansions-left)
+        (take (length (first shapes)) call))))
+
+(def expansion-header
+  (fn (term call expansions-left)
+    (if (number-lt 0 expansions-left)
+        (expanded-header term (expand-call call) (number-sub expansions-left 1))
+        term)))
+
+(def expanded-header
+  (fn (term expansions expansions-left)
+    (if (named-call? expansions) (call-header term (first expansions) expansions-left) term)))
+
+(def named-call?
+  (fn (calls)
+    (if (empty? calls) false (symbol-headed-list? (first calls)))))
 
 (def header-shapes
   (fn (definer)

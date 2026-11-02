@@ -1,0 +1,5 @@
+(defrule my-def ((n v) (def n v)))
+
+(my-def limit 10)
+
+(def limit-page (doc limit))

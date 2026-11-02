@@ -4,4 +4,4 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/doc_undocumented_wrapped_definer.rslisp
 ---
 (def twice (fn (x) (mul 2 x)))
-(def twice-page "twice\n\nNo documentation.")
+(def twice-page "(defn twice (x))\n\nNo documentation.")

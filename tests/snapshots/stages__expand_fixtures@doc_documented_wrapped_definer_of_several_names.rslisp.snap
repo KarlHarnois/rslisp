@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_documented_wrapped_definer_of_several_names.rslisp
+---
+(def twice (fn (x) (mul 2 x)))
+(def double (fn (x_2) (mul 2 x_2)))
+(def thrice (fn (x_3) (mul 3 x_3)))
+(def triple (fn (x_4) (mul 3 x_4)))
+(def p1 "twice\n\nDoubles.")
+(def p2 "thrice\n\nNo documentation.")
