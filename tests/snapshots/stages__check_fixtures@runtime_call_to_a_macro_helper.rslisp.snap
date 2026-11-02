@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/runtime_call_to_a_macro_helper.rslisp
+---
+(type parameter-record (where (a) (fn () (fn ((fn ((ref str) (ref str) i64 i64) a)) a))))
+(type main (fn () unit))
