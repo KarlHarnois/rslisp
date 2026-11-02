@@ -2,7 +2,7 @@
 (defn first-big (values) (find values (fn (value) (> (deref value) 50))))
 
 (type has-big? (fn ((iterator i64)) bool))
-(defn has-big? (values) (any values (fn (value) (> value 50))))
+(defn has-big? (values) (any? values (fn (value) (> value 50))))
 
 (type all-small? (fn ((iterator i64)) bool))
 (defn all-small? (values) (all values (fn (value) (< value 50))))

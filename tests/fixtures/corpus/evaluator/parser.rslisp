@@ -155,7 +155,7 @@
 (defn operator-at (tokens position operators)
   (match (get tokens position)
     ((some (symbol text))
-     (if (any (iter operators) (fn (operator) (= (deref operator) (as-str text))))
+     (if (any? (iter operators) (fn (operator) (= (deref operator) (as-str text))))
          (some (clone text))
          none))
     (_ none)))
