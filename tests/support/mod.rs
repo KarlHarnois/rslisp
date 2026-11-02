@@ -4,7 +4,8 @@ mod reports;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output, Stdio};
+use std::process::{ChildStdin, Command, Output, Stdio};
+use std::thread::{self, JoinHandle};
 
 use rslisp::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use rslisp::core::{
@@ -201,16 +202,21 @@ impl Fixture {
             .stderr(Stdio::piped())
             .spawn()
             .expect("the compiled fixture runs");
-        let mut input = child.stdin.take().expect("the fixture's stdin is piped");
-        input
-            .write_all(self.standard_input().as_bytes())
-            .expect("the fixture reads its standard input");
-        drop(input);
-        child.wait_with_output().expect("the compiled fixture runs")
+        let input = child.stdin.take().expect("the fixture's stdin is piped");
+        let offer = Self::offer(input, self.standard_input());
+        let output = child.wait_with_output().expect("the compiled fixture runs");
+        offer.join().expect("the standard input offer ends");
+        output
     }
 
     fn standard_input(&self) -> String {
         fs::read_to_string(self.path.with_extension("stdin")).unwrap_or_default()
+    }
+
+    fn offer(mut input: ChildStdin, text: String) -> JoinHandle<()> {
+        thread::spawn(move || {
+            let _ignored_by_a_program_that_stops_reading = input.write_all(text.as_bytes());
+        })
     }
 
     fn expand(&mut self) -> Result<rslisp::expand::Program, Diagnostics> {
