@@ -202,7 +202,7 @@ impl<'a> CheckRuns<'a> {
 #[cfg(test)]
 mod tests {
     use super::{CheckRuns, CheckedProgram};
-    use crate::types::TypedSource;
+    use crate::types::{LiteralDefaults, TypedSource};
 
     struct RunsFixture {
         source: TypedSource,
@@ -287,6 +287,21 @@ mod tests {
                 .expect("the source checks")
                 .entry_signatures()
         }
+
+        fn checked_inferred_expressions(&self) -> usize {
+            self.runs()
+                .typed()
+                .expect("the source checks")
+                .checking
+                .inferred_expressions
+        }
+
+        fn inferred_expressions_of_the_open_and_defaulting_runs(&self) -> [usize; 2] {
+            let (mut runs, open) = self.learned_runs();
+            let defaults = LiteralDefaults::of(&open.instantiations, &open.program);
+            let defaulted = runs.defaulting_run(defaults).expect("the source checks");
+            [open, defaulted].map(|run| run.program.checking.inferred_expressions)
+        }
     }
 
     #[test]
@@ -297,6 +312,16 @@ mod tests {
     #[test]
     fn an_unused_open_literal_needs_a_defaulting_run() {
         assert!(!RunsFixture::new(RunsFixture::UNUSED_OPEN_LITERAL).settles_after_the_open_run());
+    }
+
+    #[test]
+    fn the_checked_program_counts_the_inferred_expressions_of_every_run() {
+        let fixture = RunsFixture::new(RunsFixture::UNUSED_OPEN_LITERAL);
+        let separate_runs: usize = fixture
+            .inferred_expressions_of_the_open_and_defaulting_runs()
+            .iter()
+            .sum();
+        assert_eq!(fixture.checked_inferred_expressions(), separate_runs);
     }
 
     #[test]
