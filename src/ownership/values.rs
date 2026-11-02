@@ -7,9 +7,9 @@ use crate::core::{BindingArena, BindingId, FieldLabel};
 use crate::diagnostic::Diagnostic;
 use crate::types::{
     Borrow, CopyRules, FunctionValueWrapper, GenericBinding, GenericId, GenericParam,
-    RustTypeTable, StructTable, Type, TypeDisplay, TypedArgument, TypedBlock, TypedBodyItem,
-    TypedControl, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram,
-    TypedStructExpr,
+    RustTypeTable, StructTable, Type, TypeChecker, TypeDisplay, TypedArgument, TypedBlock,
+    TypedBodyItem, TypedControl, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf,
+    TypedProgram, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -387,8 +387,13 @@ impl<'a> FunctionValueModes<'a> {
             return None;
         };
         let owner = Self::without_references(owner, Self::reference_depth(owner));
-        self.rust_types
-            .views(view, &owner)
+        if TypeChecker::views_string(view, &owner) {
+            return Some(Adjustment::None);
+        }
+        let items = TypeChecker::viewed_items(self.rust_types, view, &owner)?;
+        items
+            .iter()
+            .all(|(item, element)| item == element)
             .then_some(Adjustment::None)
     }
 

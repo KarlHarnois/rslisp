@@ -1,6 +1,7 @@
 use rustc_hash::FxHashMap;
 
 use super::checker::TypeChecker;
+use super::rust_types::RustTypeTable;
 use super::ty::Type;
 use super::typed::{TypedArgument, TypedBlock, TypedBodyItem, TypedExpr, TypedExprKind, TypedLeaf};
 use crate::core::{
@@ -73,7 +74,7 @@ impl TypeChecker {
         self.unifier.resolve(&self.place_type(place)) == Self::owned_string()
     }
 
-    pub(super) fn views_string(view: &Type, owned: &Type) -> bool {
+    pub(crate) fn views_string(view: &Type, owned: &Type) -> bool {
         matches!(
             (view, owned),
             (
@@ -81,6 +82,27 @@ impl TypeChecker {
                 Type::Primitive(PrimitiveType::String)
             )
         )
+    }
+
+    pub(crate) fn viewed_items(
+        rust_types: &RustTypeTable,
+        view: &Type,
+        owned: &Type,
+    ) -> Option<Vec<(Type, Type)>> {
+        match (view, owned) {
+            (Type::Named(slice, items), Type::Named(vector, elements))
+                if rust_types.is_slice(*slice) && rust_types.is_vector(*vector) =>
+            {
+                Some(
+                    items
+                        .iter()
+                        .cloned()
+                        .zip(elements.iter().cloned())
+                        .collect(),
+                )
+            }
+            _ => None,
+        }
     }
 
     fn prelude_templates(
@@ -150,5 +172,87 @@ impl TypeChecker {
             ty: Type::str_ref(),
             span,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::core::PrimitiveType;
+    use crate::types::{Type, TypeChecker, TypedProgram, TypedSource};
+
+    struct ViewFixture {
+        program: TypedProgram,
+    }
+
+    impl ViewFixture {
+        const SOURCE: &str = "
+            (defn readings ((items (vec i64))) items)
+            (defn window ((items (ref (slice u8)))) (len items))
+            (defn reading ((value (option i64))) value)
+            (defn main () (println \"Leaf\"))";
+
+        fn new() -> Self {
+            Self {
+                program: TypedSource::expand(Self::SOURCE).typed(),
+            }
+        }
+
+        fn viewed_items(&self, view: &Type, owned: &Type) -> Option<Vec<(Type, Type)>> {
+            TypeChecker::viewed_items(&self.program.rust_types, view, owned)
+        }
+
+        fn parameter(&self, function: &str) -> Type {
+            let definition = self
+                .program
+                .modules
+                .iter()
+                .flat_map(|module| &module.definitions)
+                .find(|definition| self.program.bindings.get(definition.binding).name() == function)
+                .expect("the source defines the function");
+            let Type::Function(_, parameters, _) = &definition.scheme.body else {
+                panic!("a defn has a function type");
+            };
+            parameters[0].referent().clone()
+        }
+    }
+
+    #[test]
+    fn a_slice_relates_its_items_to_the_elements_of_a_vector() {
+        let fixture = ViewFixture::new();
+        let items =
+            fixture.viewed_items(&fixture.parameter("window"), &fixture.parameter("readings"));
+        assert_eq!(
+            format!("{items:?}"),
+            format!(
+                "{:?}",
+                Some(vec![(
+                    Type::Primitive(PrimitiveType::U8),
+                    Type::Primitive(PrimitiveType::I64)
+                )])
+            )
+        );
+    }
+
+    #[test]
+    fn a_type_that_is_not_a_slice_views_no_vector() {
+        let fixture = ViewFixture::new();
+        assert!(
+            fixture
+                .viewed_items(
+                    &fixture.parameter("reading"),
+                    &fixture.parameter("readings")
+                )
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn a_slice_views_no_type_that_is_not_a_vector() {
+        let fixture = ViewFixture::new();
+        assert!(
+            fixture
+                .viewed_items(&fixture.parameter("window"), &fixture.parameter("reading"))
+                .is_none()
+        );
     }
 }

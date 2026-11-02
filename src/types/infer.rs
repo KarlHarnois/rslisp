@@ -1019,13 +1019,6 @@ impl TypeChecker {
 
     fn coerces(&mut self, expected: &Type, found: &Type, span: Span) -> bool {
         match (self.unifier.resolve(expected), self.unifier.resolve(found)) {
-            (Type::Named(slice, slice_arguments), Type::Named(vector, vector_arguments))
-                if self.rust_types.is_slice(slice) && self.rust_types.is_vector(vector) =>
-            {
-                self.unifier
-                    .unify(&slice_arguments[0], &vector_arguments[0], span)
-                    .is_ok()
-            }
             (Type::Ref(_, shared), Type::Ref(_, owned)) => {
                 Self::views_string(&shared, &owned) || self.coerces(&shared, &owned, span)
             }
@@ -1033,8 +1026,17 @@ impl TypeChecker {
                 self.unifier.unify(&shared, &mutable, span).is_ok()
             }
             (Type::Mut(_, slice), Type::Mut(_, vector)) => self.coerces(&slice, &vector, span),
-            _ => false,
+            (view, owned) => self.unifies_viewed_items(&view, &owned, span),
         }
+    }
+
+    fn unifies_viewed_items(&mut self, view: &Type, owned: &Type, span: Span) -> bool {
+        let Some(items) = Self::viewed_items(&self.rust_types, view, owned) else {
+            return false;
+        };
+        items
+            .iter()
+            .all(|(item, element)| self.unifier.unify(item, element, span).is_ok())
     }
 
     fn unify_problem(
