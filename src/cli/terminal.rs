@@ -11,7 +11,7 @@ use crate::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use crate::core::{Expr, ModulePath};
 use crate::diagnostic::{DiagnosticRenderer, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
-use crate::expand::{Expander, PreludeState, Program};
+use crate::expand::{Expander, ExpansionSession, PreludeState, Program};
 use crate::modules::ModuleSources;
 use crate::reader::{Form, Reader};
 use crate::source::Span;
@@ -110,7 +110,11 @@ impl Terminal {
 
     pub fn check(&mut self, path: &Path) -> Result<TypedProgram, ExitStatus> {
         let program = self.expand(path)?;
-        let typed = crate::check::ProgramChecker::check(&program)
+        self.check_expanded(&program)
+    }
+
+    pub fn check_expanded(&mut self, program: &Program) -> Result<TypedProgram, ExitStatus> {
+        let typed = crate::check::ProgramChecker::check(program)
             .map_err(|diagnostics| self.report(&diagnostics))?;
         self.work.inferred_expressions = Some(typed.checking.inferred_expressions);
         self.print_warnings(&typed.warnings);
@@ -141,12 +145,21 @@ impl Terminal {
         (name, text): (&str, &str),
         expression: impl FnOnce(SourceId) -> Form,
     ) -> Result<Expr, ExitStatus> {
+        self.within_session(path, entry, |mut session| {
+            let source = session.add_source(name, text);
+            session.expression(expression(source))
+        })
+    }
+
+    pub fn within_session<T>(
+        &mut self,
+        path: &Path,
+        entry: SourceId,
+        work: impl FnOnce(ExpansionSession<'_>) -> Result<T, Diagnostics>,
+    ) -> Result<T, ExitStatus> {
         self.expander(path)
             .open(Self::module_path(path), entry)
-            .and_then(|mut session| {
-                let source = session.add_source(name, text);
-                session.expression(expression(source))
-            })
+            .and_then(work)
             .map_err(|diagnostics| self.report(&diagnostics))
     }
 

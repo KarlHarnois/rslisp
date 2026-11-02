@@ -25,7 +25,7 @@ use crate::language::Language;
 use build::BuildCommand;
 use check::CheckCommand;
 use counter_report::CounterReport;
-use doc::{DocCommand, DocEnvironment};
+use doc::{DocCommand, DocEnvironment, DocPage};
 use emit::EmitCommand;
 use exit_status::ExitStatus;
 use expand::ExpandCommand;
@@ -60,6 +60,8 @@ enum Command {
         surplus: Vec<Infallible>,
         #[arg(long)]
         file: Option<PathBuf>,
+        #[command(flatten)]
+        types: TypesFlag,
     },
     #[command(about = "Print a program as kernel forms after macro expansion")]
     Expand { file: PathBuf },
@@ -89,6 +91,12 @@ struct ReleaseFlag {
     release: bool,
 }
 
+#[derive(Args)]
+struct TypesFlag {
+    #[arg(long, help = "Print the inferred type above the page")]
+    types: bool,
+}
+
 impl Cli {
     pub fn run(self, allocator: Option<&CountingAllocator>) -> ExitCode {
         let mut terminal = Terminal::new();
@@ -107,9 +115,9 @@ impl Command {
         match self {
             Command::Check { file } => CheckCommand::new(file).run(terminal),
             Command::Signatures { file } => SignaturesCommand::new(file).run(terminal),
-            Command::Doc { term, file, .. } => {
-                DocCommand::new(DocEnvironment::new(file), term).run(terminal)
-            }
+            Command::Doc {
+                term, file, types, ..
+            } => DocCommand::new(DocEnvironment::new(file), term, types.page()).run(terminal),
             Command::Expand { file } => ExpandCommand::new(file).run(terminal),
             Command::Emit { file } => EmitCommand::new(file).run(terminal),
             Command::Build {
@@ -147,6 +155,16 @@ impl ReleaseFlag {
             BuildProfile::Release
         } else {
             BuildProfile::Debug
+        }
+    }
+}
+
+impl TypesFlag {
+    fn page(&self) -> DocPage {
+        if self.types {
+            DocPage::Typed
+        } else {
+            DocPage::Written
         }
     }
 }

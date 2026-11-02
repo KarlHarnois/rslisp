@@ -603,8 +603,7 @@ impl TypedProgram {
     }
 
     pub fn entry_signatures(&self) -> String {
-        let display = TypeDisplay::new(&self.bindings, &self.generics)
-            .with_projections(self.traits.projections());
+        let display = self.type_display();
         let structs = self
             .entry_module()
             .structs
@@ -627,16 +626,43 @@ impl TypedProgram {
             .entry_module()
             .definitions
             .iter()
-            .filter(|definition| !self.synthetic_bindings.contains(&definition.binding))
-            .filter_map(|definition| {
-                let name = self.writable_name(definition.binding)?;
-                Some(format!(
-                    "(type {name} {})\n",
-                    display.scheme(&definition.scheme)
-                ))
-            })
+            .filter_map(|definition| self.signature_line(&display, definition))
+            .map(|line| format!("{line}\n"))
             .collect();
         format!("{structs}{definitions}")
+    }
+
+    pub fn signature(&self, binding: BindingId) -> Option<String> {
+        let definition = self
+            .modules
+            .iter()
+            .flat_map(|module| &module.definitions)
+            .find(|definition| self.answers_to(definition, binding))?;
+        self.signature_line(&self.type_display(), definition)
+    }
+
+    fn answers_to(&self, definition: &TypedDefinition, binding: BindingId) -> bool {
+        definition.binding == binding
+            || self.bindings.answering_macro(definition.binding) == Some(binding)
+    }
+
+    fn signature_line(
+        &self,
+        display: &TypeDisplay<'_>,
+        definition: &TypedDefinition,
+    ) -> Option<String> {
+        if self.synthetic_bindings.contains(&definition.binding) {
+            return None;
+        }
+        let name = self.writable_name(definition.binding)?;
+        Some(format!(
+            "(type {name} {})",
+            display.scheme(&definition.scheme)
+        ))
+    }
+
+    fn type_display(&self) -> TypeDisplay<'_> {
+        TypeDisplay::new(&self.bindings, &self.generics).with_projections(self.traits.projections())
     }
 
     fn writable_name(&self, binding: BindingId) -> Option<&str> {
@@ -655,8 +681,7 @@ impl TypedProgram {
         {
             return None;
         }
-        let display = TypeDisplay::new(&self.bindings, &self.generics)
-            .with_projections(self.traits.projections());
+        let display = self.type_display();
         let name = self.bindings.get(binding).name();
         let head = if definition.params.is_empty() {
             name.to_string()
