@@ -1,0 +1,8 @@
+(defn keep (model) model)
+(defn make ()
+  (let model (to-string "Leaf"))
+  (let mk (fn () (fn () (keep model))))
+  (mk))
+(defn main ()
+  (let g (make))
+  (println (g)))
