@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
-use super::checker::TypeChecker;
 use super::ty::Type;
 use crate::core::{BindingId, ParsedTemplate};
 
@@ -80,15 +79,6 @@ impl RustTypeTable {
         self.has_template(binding, RustType::VECTOR_TEMPLATE)
     }
 
-    pub fn views(&self, view: &Type, owner: &Type) -> bool {
-        match (view, owner) {
-            (Type::Named(slice, items), Type::Named(vector, elements)) => {
-                self.is_slice(*slice) && self.is_vector(*vector) && items == elements
-            }
-            _ => TypeChecker::views_string(view, owner),
-        }
-    }
-
     pub fn is_box(&self, binding: BindingId) -> bool {
         self.has_template(binding, RustType::BOX_TEMPLATE)
     }
@@ -136,69 +126,5 @@ impl RustTypeTable {
     fn has_template(&self, binding: BindingId, template: &str) -> bool {
         self.get(binding)
             .is_some_and(|rust_type| rust_type.has_template(template))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::types::{Type, TypedProgram, TypedSource};
-
-    struct ViewFixture {
-        program: TypedProgram,
-    }
-
-    impl ViewFixture {
-        const SOURCE: &str = "
-            (defn readings ((items (vec i64))) items)
-            (defn window ((items (ref (slice i64)))) (len items))
-            (defn byte-window ((items (ref (slice u8)))) (len items))
-            (defn reading ((value (option i64))) value)
-            (defn main () (println \"Leaf\"))";
-
-        fn new() -> Self {
-            Self {
-                program: TypedSource::expand(Self::SOURCE).typed(),
-            }
-        }
-
-        fn views(&self, view: &str, owner: &str) -> bool {
-            self.program
-                .rust_types
-                .views(&self.parameter(view), &self.parameter(owner))
-        }
-
-        fn parameter(&self, function: &str) -> Type {
-            let definition = self
-                .program
-                .modules
-                .iter()
-                .flat_map(|module| &module.definitions)
-                .find(|definition| self.program.bindings.get(definition.binding).name() == function)
-                .expect("the source defines the function");
-            let Type::Function(_, parameters, _) = &definition.scheme.body else {
-                panic!("a defn has a function type");
-            };
-            parameters[0].referent().clone()
-        }
-    }
-
-    #[test]
-    fn a_slice_views_a_vector_of_its_elements() {
-        assert!(ViewFixture::new().views("window", "readings"));
-    }
-
-    #[test]
-    fn a_slice_does_not_view_a_vector_of_other_elements() {
-        assert!(!ViewFixture::new().views("byte-window", "readings"));
-    }
-
-    #[test]
-    fn a_type_that_is_not_a_slice_views_no_vector() {
-        assert!(!ViewFixture::new().views("reading", "readings"));
-    }
-
-    #[test]
-    fn a_slice_views_no_type_that_is_not_a_vector() {
-        assert!(!ViewFixture::new().views("window", "reading"));
     }
 }
