@@ -209,7 +209,7 @@ jobs:
         run: |
           read -ra accepted <<< "$ACCEPTED_PROGRAMS"
           compare() {
-            nix develop .#ci -c cargo xtask bench compare --length "$1" "$2" target/bench/candidate.tsv --accepted "${accepted[@]}"
+            nix develop .#ci -c cargo xtask bench compare --length "$1" "$2" target/bench/candidate.tsv "${accepted[@]/#/--accepted=}"
           }
           full=$(compare full target/bench/baseline.tsv)
           brief=$(compare brief target/bench/baseline.tsv)
@@ -262,7 +262,7 @@ jobs:
           ACCEPTED_PROGRAMS: ${{ steps.trailers.outputs.programs }}
         run: |
           read -ra accepted <<< "$ACCEPTED_PROGRAMS"
-          nix develop .#ci -c cargo xtask bench check-counters target/bench/baseline.tsv target/bench/candidate.tsv --accepted "${accepted[@]}"
+          nix develop .#ci -c cargo xtask bench check-counters target/bench/baseline.tsv target/bench/candidate.tsv "${accepted[@]/#/--accepted=}"
       - name: Save cargo cache
         if: ${{ !cancelled() && steps.measure.outcome != 'skipped' && steps.cargo-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
