@@ -1,0 +1,6 @@
+(defn main ()
+  (let numbers (vec 3 1 2))
+  (sort! (mut numbers) >)
+  (println (str (at numbers 0) (at numbers 1) (at numbers 2)))
+  (sort! (mut numbers) <)
+  (println (str (at numbers 0) (at numbers 1) (at numbers 2))))
