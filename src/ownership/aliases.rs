@@ -21,6 +21,16 @@ impl<'e> LetAliases<'e> {
         }
     }
 
+    pub fn unannotated_in(value: &'e TypedExpr) -> Self {
+        Self {
+            values: value
+                .let_bindings()
+                .filter(|(binder, _)| !binder.annotated)
+                .map(|(binder, bound)| (binder.binding, bound))
+                .collect(),
+        }
+    }
+
     pub fn functions_in(expressions: &[&'e TypedExpr]) -> Vec<(BindingId, &'e TypedLambda)> {
         expressions
             .iter()
@@ -61,7 +71,7 @@ impl<'e> LetAliases<'e> {
             .collect()
     }
 
-    fn origin(&self, alias: BindingId) -> BindingId {
+    pub fn origin(&self, alias: BindingId) -> BindingId {
         let mut origin = alias;
         while let Some(TypedExprKind::Leaf(TypedLeaf::Local(bound))) =
             self.values.get(&origin).map(|value| &value.kind)

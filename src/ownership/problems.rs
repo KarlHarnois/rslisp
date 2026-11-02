@@ -78,6 +78,11 @@ impl MoveLabels {
     };
 }
 
+pub struct LentParameter<'n> {
+    pub span: Span,
+    pub closure: &'n str,
+}
+
 pub struct OwnershipProblems;
 
 impl OwnershipProblems {
@@ -405,21 +410,22 @@ impl OwnershipProblems {
     pub fn lent_local_borrow(
         borrowed: Span,
         dropped: &DroppedValue,
-        lent: Span,
-        closure: &str,
+        lent: LentParameter,
+        called: &str,
     ) -> Diagnostic {
+        let LentParameter { span, closure } = lent;
         let (primary, dropped_label) =
             Self::borrow_labels(borrowed, dropped, Self::lent_dropped_label(dropped));
         let diagnostic = Diagnostic::error(
             DiagnosticCode::LENT_LOCAL_BORROW,
             format!(
-                "cannot pass a borrow of {} to `{closure}`",
+                "cannot pass a borrow of {} to `{called}`",
                 Self::dropped_noun(dropped)
             ),
             primary,
         )
         .with_label(Label::new(
-            lent,
+            span,
             format!("the result of `{closure}` borrows this parameter, so it needs a borrow that outlives the function"),
         ));
         dropped_label

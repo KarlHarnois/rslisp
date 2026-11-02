@@ -1,7 +1,8 @@
 use rustc_hash::FxHashMap;
 
+use super::aliases::LetAliases;
 use super::local_borrows::{LocalBorrows, ParameterOwner};
-use super::problems::OwnershipProblems;
+use super::problems::{LentParameter, OwnershipProblems};
 use super::promoted_constants::PromotedConstants;
 use crate::core::BindingId;
 use crate::diagnostic::Diagnostic;
@@ -13,7 +14,10 @@ pub struct LentBorrows<'p> {
     program: &'p TypedProgram,
 }
 
-type LentParameters<'d> = Vec<Option<&'d TypedBinder>>;
+struct LendingClosure<'d> {
+    origin: BindingId,
+    parameters: Vec<Option<&'d TypedBinder>>,
+}
 
 type LocalCall<'e> = (BindingId, &'e [TypedArgument]);
 
@@ -31,22 +35,29 @@ impl<'p> LentBorrows<'p> {
         let borrows = LocalBorrows::dropped_in(function, ParameterOwner::Function, constants);
         Self::local_calls(&definition.value)
             .into_iter()
-            .filter_map(|(closure, arguments)| Some((closure, closures.get(&closure)?, arguments)))
-            .flat_map(|(closure, lent, arguments)| {
-                self.lent_locals(&borrows, closure, lent, arguments)
+            .filter_map(|(called, arguments)| Some((called, closures.get(&called)?, arguments)))
+            .flat_map(|(called, closure, arguments)| {
+                self.lent_locals(&borrows, called, closure, arguments)
             })
             .collect()
     }
 
-    fn lending_closures(value: &TypedExpr) -> FxHashMap<BindingId, LentParameters<'_>> {
+    fn lending_closures(value: &TypedExpr) -> FxHashMap<BindingId, LendingClosure<'_>> {
+        let aliases = LetAliases::unannotated_in(value);
         value
             .let_bindings()
             .filter(|(binder, _)| !binder.annotated)
-            .map(|(binder, value)| (binder.binding, Self::lent_parameters(value)))
+            .map(|(binder, bound)| {
+                let closure = LendingClosure {
+                    origin: aliases.origin(binder.binding),
+                    parameters: Self::lent_parameters(aliases.resolve(bound)),
+                };
+                (binder.binding, closure)
+            })
             .collect()
     }
 
-    fn lent_parameters(value: &TypedExpr) -> LentParameters<'_> {
+    fn lent_parameters(value: &TypedExpr) -> Vec<Option<&TypedBinder>> {
         let TypedExprKind::Fn(lambda) = &value.kind else {
             return Vec::new();
         };
@@ -90,22 +101,26 @@ impl<'p> LentBorrows<'p> {
     fn lent_locals(
         &self,
         borrows: &LocalBorrows,
-        closure: BindingId,
-        lent: &LentParameters,
+        called: BindingId,
+        closure: &LendingClosure,
         arguments: &[TypedArgument],
     ) -> Vec<Diagnostic> {
-        let name = self.program.bindings.get(closure).name();
+        let called_name = self.program.bindings.get(called).name();
+        let closure_name = self.program.bindings.get(closure.origin).name();
         arguments
             .iter()
-            .zip(lent)
+            .zip(&closure.parameters)
             .filter_map(|(argument, parameter)| {
-                let parameter = (*parameter)?;
+                let lent = LentParameter {
+                    span: (*parameter)?.span,
+                    closure: closure_name,
+                };
                 let dropped = borrows.borrowed_by(argument)?;
                 Some(OwnershipProblems::lent_local_borrow(
                     argument.value.span,
                     &dropped,
-                    parameter.span,
-                    name,
+                    lent,
+                    called_name,
                 ))
             })
             .collect()
