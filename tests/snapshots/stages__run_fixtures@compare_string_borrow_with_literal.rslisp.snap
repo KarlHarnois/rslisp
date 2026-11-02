@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/compare_string_borrow_with_literal.rslisp
+---
+error[L0401]: mismatched types
+ --> run/compare_string_borrow_with_literal.rslisp:3:15
+  |
+3 |   (println (> "Civic" (ref model)))
+  |               ^^^^^^^ expected `string`, found `str`
