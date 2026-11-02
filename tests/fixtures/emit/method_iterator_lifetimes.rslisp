@@ -11,5 +11,5 @@
 (defn main ()
   (let lot (->depot 1))
   (let (models (vec (ref str))) (vec "Leaf" "Ariya"))
-  (println (tally lot (values models)))
-  (println (total (values models) lot)))
+  (println (tally lot (copied models)))
+  (println (total (copied models) lot)))

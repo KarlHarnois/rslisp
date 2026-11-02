@@ -12,7 +12,7 @@
 
 (defn first-even (values) (find values (fn (value) (= (rem (deref value) 2) 0))))
 
-(defn even-year (years) (find (values years) (fn (year) (= (rem year 2) 0))))
+(defn even-year (years) (find (copied years) (fn (year) (= (rem year 2) 0))))
 
 (defn main ()
   (prn (first-big (range 1 100)))

@@ -6,7 +6,7 @@
 (use prelude/assoc assoc assoc-in)
 (use prelude/map sorted-map hash-map get keys vals entries update into-sorted-map into-hash-map)
 (use prelude/sequence empty?)
-(use prelude/vec vec push! len iter values collect
+(use prelude/vec vec push! len iter copied collect
                pop! remove-at! sort! sort-by-key! windows at dedup!
                first last reverse reverse! sort-descending!)
 (use prelude/iterator range map filter reduce for-each enumerate zip
@@ -44,7 +44,7 @@
         io-error stdin source slurp line-seq read-line command-line-args exit
         sorted-map hash-map get keys vals entries update into-sorted-map into-hash-map empty?
         pair let-pair let-fields assoc assoc-in
-        vec option result iterator slice sequence box box-new push! len iter values collect
+        vec option result iterator slice sequence box box-new push! len iter copied collect
         pop! remove-at! sort! sort-by-key! windows at dedup!
         first last reverse reverse! sort-descending!
         range map filter reduce for-each enumerate zip
