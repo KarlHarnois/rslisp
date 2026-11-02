@@ -7,6 +7,12 @@ pub struct LetAliases<'e> {
     values: FxHashMap<BindingId, &'e TypedExpr>,
 }
 
+pub struct LetAlias<'e> {
+    pub alias: BindingId,
+    pub target: BindingId,
+    pub bound: &'e TypedExpr,
+}
+
 impl<'e> LetAliases<'e> {
     pub fn in_expressions(expressions: &[&'e TypedExpr]) -> Self {
         Self {
@@ -63,6 +69,22 @@ impl<'e> LetAliases<'e> {
         resolved
     }
 
+    pub fn links(&self, alias: BindingId) -> Vec<LetAlias<'e>> {
+        let mut links = Vec::new();
+        let mut current = alias;
+        while let Some(bound) = self.values.get(&current)
+            && let TypedExprKind::Leaf(TypedLeaf::Local(target)) = bound.kind
+        {
+            links.push(LetAlias {
+                alias: current,
+                target,
+                bound,
+            });
+            current = target;
+        }
+        links
+    }
+
     pub fn origins(&self) -> FxHashMap<BindingId, BindingId> {
         self.values
             .keys()
@@ -71,7 +93,7 @@ impl<'e> LetAliases<'e> {
             .collect()
     }
 
-    pub fn origin(&self, alias: BindingId) -> BindingId {
+    fn origin(&self, alias: BindingId) -> BindingId {
         let mut origin = alias;
         while let Some(TypedExprKind::Leaf(TypedLeaf::Local(bound))) =
             self.values.get(&origin).map(|value| &value.kind)

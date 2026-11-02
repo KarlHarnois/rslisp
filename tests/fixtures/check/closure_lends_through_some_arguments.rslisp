@@ -14,4 +14,6 @@
   (println (first-year (ref years)))
   (let (fixed (fn ((option (ref str))) (ref str))) pick)
   (let third fixed)
-  (println (third (some (as-str name)))))
+  (println (third (some (as-str name))))
+  (let more again)
+  (println (more years)))
