@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/slurp_owned_path.rslisp
+---
+input_output/data.txt: 3 lines
