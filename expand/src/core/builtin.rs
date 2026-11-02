@@ -25,6 +25,7 @@ pub enum Builtin {
     DefinitionSymbol,
     TypeDefinitionSymbol,
     DefinitionCall,
+    ExpandCall,
     ClosestName,
     Fail,
     NumberAdd,
@@ -49,7 +50,7 @@ pub enum Builtin {
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 46] = [
+    const NAMES: [(Builtin, &'static str); 47] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -75,6 +76,7 @@ impl Builtin {
         (Builtin::DefinitionSymbol, "definition-symbol"),
         (Builtin::TypeDefinitionSymbol, "type-definition-symbol"),
         (Builtin::DefinitionCall, "definition-call"),
+        (Builtin::ExpandCall, "expand-call"),
         (Builtin::ClosestName, "closest-name"),
         (Builtin::Fail, "fail"),
         (Builtin::NumberAdd, "number-add"),

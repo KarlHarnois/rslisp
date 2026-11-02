@@ -124,6 +124,12 @@ impl<'a> TextOperations<'a> {
         Ok(Forms::list(call.into_iter().collect(), self.call_site))
     }
 
+    pub fn expand_call(&self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(1)?;
+        let expansion = host.expand_call(self.arguments.form(0)?);
+        Ok(Forms::list(expansion.into_iter().collect(), self.call_site))
+    }
+
     fn expect_symbol_arguments(&self) -> Result<(), Diagnostic> {
         let count = self.arguments.values().len();
         self.arguments

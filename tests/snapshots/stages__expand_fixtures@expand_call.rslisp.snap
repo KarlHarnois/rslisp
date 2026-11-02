@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/expand_call.rslisp
+---
+(def add-two (fn (x y) (add x y)))
+(def swapped "((add-two 2 1))")
+(def not-a-macro "()")
+(def failed "()")
+(def symbol-call "()")
+(def number-call "()")
+(def empty-call "()")
+(def noting-expansion "(5)")
+(def notes-after-expansion "()")
