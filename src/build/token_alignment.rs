@@ -21,6 +21,10 @@ impl TokenAlignment {
         }
     }
 
+    pub(crate) fn scanned_tokens(&self) -> usize {
+        self.original.len() + self.formatted.len()
+    }
+
     pub(crate) fn remap(&self, span_map: &SpanMap) -> Option<SpanMap> {
         Some(span_map.moved(&self.boundaries()?))
     }

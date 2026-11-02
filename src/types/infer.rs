@@ -103,6 +103,7 @@ impl TrySourceKind {
 
 impl TypeChecker {
     pub(super) fn infer(&mut self, expr: &Expr) -> Result<TypedExpr, Diagnostic> {
+        self.checking.inferred_expressions += 1;
         let span = expr.span();
         match expr.kind() {
             ExprKind::Leaf(leaf) => self.infer_leaf(leaf, span),

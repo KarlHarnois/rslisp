@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
+use super::EmissionWork;
 use super::fragment::{Code, Fragment, Precedence};
 use super::let_annotation::LetAnnotation;
 use super::local_closures::LocalClosures;
@@ -177,6 +178,7 @@ pub struct ExpressionEmitter<'a> {
     result_parameters: FxHashSet<BindingId>,
     tail_loop: Option<TailLoop>,
     loop_exit: LoopExit,
+    emission: EmissionWork,
 }
 
 impl<'a> ExpressionEmitter<'a> {
@@ -209,7 +211,12 @@ impl<'a> ExpressionEmitter<'a> {
             result_parameters: FxHashSet::default(),
             tail_loop: None,
             loop_exit: LoopExit::Return,
+            emission: EmissionWork::default(),
         }
+    }
+
+    pub fn emission(&self) -> EmissionWork {
+        self.emission
     }
 
     pub fn prepare_tail_loop(&mut self, function: BindingId, lambda: &TypedLambda) {
@@ -398,6 +405,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn expr_in(&mut self, expr: &TypedExpr, context: TypeContext) -> Code {
+        self.emission.emitted_expressions += 1;
         match &expr.kind {
             TypedExprKind::Leaf(leaf) => self.leaf(leaf, expr, context),
             TypedExprKind::Fn(lambda) => self.closure(lambda, &expr.ty),
