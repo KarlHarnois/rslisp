@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
-input_file: tests/fixtures/run/fold_map.rslisp
+input_file: tests/fixtures/run/reduce_collection.rslisp
 ---
-3
+6

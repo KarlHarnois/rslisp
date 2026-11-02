@@ -23,7 +23,7 @@
 
 (defrule tally
   ((counter (item ...) test)
-   (fold (iter (vec item ...)) 0 (fn (counter element) (if (test (deref element)) (+ counter 1) counter)))))
+   (reduce (iter (vec item ...)) 0 (fn (counter element) (if (test (deref element)) (+ counter 1) counter)))))
 
 (defmacro defcounter (name start step)
   (let next-name (symbol name "next-" (symbol-name name)))

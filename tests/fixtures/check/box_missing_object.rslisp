@@ -6,7 +6,7 @@
   (area (c) (field c radius)))
 
 (defn total (shapes)
-  (fold shapes 0.0 (fn (sum shape) (+ sum (area shape)))))
+  (reduce shapes 0.0 (fn (sum shape) (+ sum (area shape)))))
 
 (defn main ()
   (println (total (vec (box-new (new circle (radius 1.0)))))))

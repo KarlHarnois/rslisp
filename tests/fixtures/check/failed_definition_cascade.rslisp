@@ -6,7 +6,7 @@
       (pair (vec) "x")))
 
 (defn count-word (word words)
-  (fold (iter words) 0
+  (reduce (iter words) 0
         (fn (total candidate)
           (if (= candidate word) (+ total 1) total))))
 

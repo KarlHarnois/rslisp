@@ -74,7 +74,7 @@
   (match (as-str function)
     ("max" (ok-or (max (values numbers)) (to-string "max needs an argument")))
     ("min" (ok-or (min (values numbers)) (to-string "min needs an argument")))
-    ("sum" (ok (fold (iter numbers) 0 (fn (total value) (+ total (deref value))))))
+    ("sum" (ok (reduce (iter numbers) 0 (fn (total value) (+ total (deref value))))))
     ("abs" (match (first numbers)
              ((some value) (ok (if (< (deref value) 0) (- 0 (deref value)) (deref value))))
              (none (err (to-string "abs needs an argument")))))

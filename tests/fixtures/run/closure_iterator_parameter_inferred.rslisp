@@ -1,4 +1,4 @@
-(defn sum-of (it) (fold it 0 (fn (total year) (+ total year))))
+(defn sum-of (it) (reduce it 0 (fn (total year) (+ total year))))
 
 (defn main ()
   (let through-function (fn (it) (sum-of it)))

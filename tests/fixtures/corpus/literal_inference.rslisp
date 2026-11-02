@@ -1562,7 +1562,7 @@
 
 (type checksum (fn ((ref (vec u8))) u32))
 (defn checksum (bytes)
-  (fold (iter bytes) 0 (fn (total byte) (+ total (widen (deref byte))))))
+  (reduce (iter bytes) 0 (fn (total byte) (+ total (widen (deref byte))))))
 
 (def widen (rust "u32::from({0})" (fn (u8) u32)))
 

@@ -1,16 +1,25 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).emit_report()"
-input_file: tests/fixtures/emit/fold_collection.rslisp
+expression: reports.report(path)
+input_file: tests/fixtures/emit/reduce_arities.rslisp
 ---
 fn main() {
     crate::rt::restore_default_sigpipe();
-    let items: Vec<i64> = vec![1_i64, 2_i64, 3_i64];
     println!(
         "{}",
-        items
-            .iter()
-            .fold(0, |argument: i64, argument_2: &i64| argument + argument_2)
+        (1_i64..5_i64).fold(10, |total: i64, n: i64| total + n)
+    );
+    println!(
+        "{}",
+        (1_i64..5_i64)
+            .reduce(|product: i64, n: i64| product * n)
+            .unwrap_or(0)
+    );
+    println!(
+        "{}",
+        (1_i64..1_i64)
+            .reduce(|argument_0: i64, argument_1: i64| argument_0 + argument_1)
+            .is_none()
     )
 }
 

@@ -10,7 +10,7 @@
 
 (type total (fn ((vec (box shape))) f64))
 (defn total (shapes)
-  (fold shapes 0.0 (fn (total shape) (+ total (area shape)))))
+  (reduce shapes 0.0 (fn (total shape) (+ total (area shape)))))
 
 (defn main ()
   (println (total (vec (box-new (new circle (radius 1.0)))

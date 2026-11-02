@@ -21,7 +21,7 @@
 
 (type chain-of (fn ((ref (vec point))) (vec point)))
 (defn chain-of (points)
-  (fold (iter points) (vec) (fn (chain p) (push-turning chain (deref p)))))
+  (reduce (iter points) (vec) (fn (chain p) (push-turning chain (deref p)))))
 
 (type push-turning (fn ((vec point) point) (vec point)))
 (defn push-turning (chain p)

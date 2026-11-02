@@ -149,7 +149,7 @@
 
 (type crate-weight (where ((a measured)) (fn ((ref (crate a))) f64)))
 (defn crate-weight (crate)
-  (fold (iter (:items crate)) 0.0 (fn (total item) (+ total (weight item)))))
+  (reduce (iter (:items crate)) 0.0 (fn (total item) (+ total (weight item)))))
 
 (type heaviest-label (where ((a cargo)) (fn ((ref (crate a))) string)))
 (defn heaviest-label (crate)
@@ -1091,4 +1091,4 @@
 
 (type total-weight (fn ((ref (vec (box measured)))) f64))
 (defn total-weight (items)
-  (fold (iter items) 0.0 (fn (total item) (+ total (weight item)))))
+  (reduce (iter items) 0.0 (fn (total item) (+ total (weight item)))))
