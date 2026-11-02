@@ -7,6 +7,7 @@ use std::process::{Command, Output, Stdio};
 use std::time::{Duration, Instant};
 
 use rslisp::build::EmittedFormatting;
+use serde_json::{Map, Value, json};
 
 const GREETING: &str = "(defn main ()\n  (println \"hello from the sandbox\"))\n";
 const PRINTS_A: &str = "(defn main () (println \"A\"))\n";
@@ -36,6 +37,15 @@ const UNDOCUMENTED_ENTRY: &str = "(defn twice (x) (* 2 x))\n\n(defn main () (pri
 const SHADOWING_DOC: &str = "(defrule doc ((term) 0))\n\n(defn main () (do))\n";
 const THREADING_HEADER: &str = "(defrule ->)";
 const ARITHMETIC: &str = include_str!("fixtures/emit/arithmetic.rslisp");
+const ONE_BRANCH: &str = "(def main (fn () (if true (do) (do))))\n";
+
+const STAGE_WORK_KEYS: [&str; 4] = [
+    "expand.lowered_forms",
+    "check.inferred_expressions",
+    "emit.emitted_expressions",
+    "build.scanned_tokens",
+];
+const PRELUDE_INFERRED_EXPRESSIONS: usize = 22;
 
 const UNBOUND_NAMES_PAST_THE_CAP: usize = 25;
 
@@ -203,6 +213,22 @@ impl Outcome {
     fn stderr(&self) -> String {
         String::from_utf8_lossy(&self.output.stderr).into_owned()
     }
+
+    fn counter_report(&self) -> Map<String, Value> {
+        let stderr = self.stderr();
+        let last_line = stderr
+            .lines()
+            .last()
+            .expect("the counters follow the command");
+        serde_json::from_str(last_line).expect("the last line is one JSON object")
+    }
+
+    fn stage_work(&self) -> Map<String, Value> {
+        self.counter_report()
+            .into_iter()
+            .filter(|(key, _)| !key.starts_with("allocator."))
+            .collect()
+    }
 }
 
 #[test]
@@ -239,6 +265,60 @@ fn counters_flag_stays_out_of_the_help() {
     let sandbox = Sandbox::new("counters-help");
     let help = sandbox.compiler(&["--help"]);
     assert!(!help.assert_exit_code(0).stdout().contains("--counters"));
+}
+
+#[test]
+fn counters_flag_counts_a_program_small_enough_to_count_by_hand() {
+    let sandbox = Sandbox::new("counters-by-hand").with_file("branch.rslisp", ONE_BRANCH);
+    let emit = sandbox.compiler(&["--counters", "emit", "branch.rslisp"]);
+    assert_eq!(
+        Value::Object(emit.assert_exit_code(0).stage_work()),
+        json!({
+            "expand.lowered_forms": 5,
+            "check.inferred_expressions": 4 + PRELUDE_INFERRED_EXPRESSIONS,
+            "emit.emitted_expressions": 2,
+            "build.scanned_tokens": 20,
+        })
+    );
+}
+
+#[test]
+fn counters_flag_prints_no_build_work_when_rustfmt_fails() {
+    let sandbox = Sandbox::new("counters-unformatted")
+        .with_file("branch.rslisp", ONE_BRANCH)
+        .with_executable("tools/rustfmt", FAILING_RUSTFMT);
+    let emit = sandbox.compiler_with_path("tools", &["--counters", "emit", "branch.rslisp"]);
+    let work = emit.assert_exit_code(0).stage_work();
+    assert_eq!(
+        work.keys().map(String::as_str).collect::<Vec<_>>(),
+        [
+            "check.inferred_expressions",
+            "emit.emitted_expressions",
+            "expand.lowered_forms"
+        ]
+    );
+}
+
+#[test]
+fn counters_flag_prints_the_work_of_each_stage_that_ran() {
+    let sandbox = Sandbox::new("counters-stages").with_file("arithmetic.rslisp", ARITHMETIC);
+    let emit = ["--counters", "emit", "arithmetic.rslisp"];
+    let emitted = sandbox.compiler(&emit).assert_exit_code(0).counter_report();
+    for key in STAGE_WORK_KEYS {
+        assert!(
+            emitted[key].as_u64().is_some_and(|count| count > 0),
+            "{key} in {emitted:?}"
+        );
+    }
+    let checked = sandbox
+        .compiler(&["--counters", "check", "arithmetic.rslisp"])
+        .assert_exit_code(0)
+        .stage_work();
+    assert_eq!(
+        checked.keys().map(String::as_str).collect::<Vec<_>>(),
+        ["check.inferred_expressions", "expand.lowered_forms"]
+    );
+    assert_eq!(sandbox.compiler(&emit).counter_report(), emitted);
 }
 
 #[test]

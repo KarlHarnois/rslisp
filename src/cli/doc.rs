@@ -19,9 +19,8 @@ impl DocCommand {
         Self { environment, term }
     }
 
-    pub fn run(self) -> ExitStatus {
-        let mut terminal = Terminal::new();
-        match DocLookup::new(&mut terminal).describe(&self.environment, &self.term) {
+    pub fn run(self, terminal: &mut Terminal) -> ExitStatus {
+        match DocLookup::new(terminal).describe(&self.environment, &self.term) {
             Ok(page) => {
                 println!("{page}");
                 ExitStatus::Success

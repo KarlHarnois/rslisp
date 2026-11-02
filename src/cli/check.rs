@@ -12,8 +12,8 @@ impl CheckCommand {
         Self { file }
     }
 
-    pub fn run(self) -> ExitStatus {
-        match Terminal::new().check(&self.file) {
+    pub fn run(self, terminal: &mut Terminal) -> ExitStatus {
+        match terminal.check(&self.file) {
             Ok(_) => ExitStatus::Success,
             Err(status) => status,
         }

@@ -13,8 +13,8 @@ impl ExpandCommand {
         Self { file }
     }
 
-    pub fn run(self) -> ExitStatus {
-        match Terminal::new().expand(&self.file) {
+    pub fn run(self, terminal: &mut Terminal) -> ExitStatus {
+        match terminal.expand(&self.file) {
             Ok(program) => {
                 print!(
                     "{}",
