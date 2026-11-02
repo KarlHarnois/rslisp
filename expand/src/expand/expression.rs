@@ -656,7 +656,7 @@ impl Expander<'_> {
             return Ok(kind);
         }
         let outer = self.try_resolve(symbol, Namespace::Value);
-        let candidates = self.variant_candidates(symbol, true);
+        let candidates = self.nullary_variant_candidates(symbol);
         let binding = self.define_local(form, Namespace::Value, BindingKind::Local, None)?;
         if candidates.is_empty() {
             return Ok(PatternKind::Bind(binding));
@@ -742,7 +742,7 @@ impl Expander<'_> {
         arguments: &[Form],
         span: Span,
     ) -> Result<PatternKind, Diagnostic> {
-        let candidates = self.variant_candidates(head, false);
+        let candidates = self.variant_candidates(head);
         if candidates.is_empty() {
             return Err(ExpandProblems::not_a_pattern(span));
         }
@@ -757,33 +757,31 @@ impl Expander<'_> {
         forms.iter().map(|form| self.lower_pattern(form)).collect()
     }
 
-    fn variant_candidates(&self, symbol: &Symbol, nullary: bool) -> Vec<BindingId> {
-        let mut candidates: Vec<BindingId> = self
-            .tables
-            .table
-            .visible_bindings(symbol.scopes(), Namespace::Value, self.phase)
-            .into_iter()
-            .filter(|binding| self.is_variant_candidate(*binding, symbol.name(), nullary))
-            .collect();
-        candidates.sort();
-        candidates.dedup();
-        candidates
+    fn variant_candidates(&self, symbol: &Symbol) -> Vec<BindingId> {
+        self.visible_variants_ending_in(symbol, |_| true)
     }
 
-    fn is_variant_candidate(&self, binding: BindingId, name: &str, nullary: bool) -> bool {
-        let BindingKind::Variant(_, info) = self.kind(binding) else {
-            return false;
-        };
-        if nullary && info.arity != 0 {
-            return false;
-        }
-        self.tables
-            .bindings
-            .get(binding)
-            .name()
-            .rsplit('/')
-            .next()
-            .is_some_and(|short| short == name)
+    fn nullary_variant_candidates(&self, symbol: &Symbol) -> Vec<BindingId> {
+        self.visible_variants_ending_in(symbol, |info| info.arity == 0)
+    }
+
+    fn visible_variants_ending_in(
+        &self,
+        symbol: &Symbol,
+        accepts: impl Fn(VariantInfo) -> bool,
+    ) -> Vec<BindingId> {
+        let mut variants: Vec<BindingId> = self
+            .tables
+            .table
+            .visible_bindings_ending_in(symbol, Namespace::Value, self.phase)
+            .into_iter()
+            .filter(|binding| {
+                matches!(self.kind(*binding), BindingKind::Variant(_, info) if accepts(info))
+            })
+            .collect();
+        variants.sort();
+        variants.dedup();
+        variants
     }
 
     fn lower_rust(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {

@@ -1,3 +1,4 @@
+use std::collections::hash_map;
 use std::ops::Range;
 use std::rc::Rc;
 
@@ -208,6 +209,7 @@ impl NameEntries {
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct BindingTable {
     entries: FxHashMap<(Rc<str>, Namespace), NameEntries>,
+    qualified_names: QualifiedNames,
 }
 
 impl BindingTable {
@@ -218,10 +220,14 @@ impl BindingTable {
         binding: BindingId,
         phase: Phase,
     ) -> Result<(), BindingId> {
-        self.entries
-            .entry((symbol.shared_name(), namespace))
-            .or_default()
-            .bind(symbol.scopes(), binding, phase)
+        let entries = match self.entries.entry((symbol.shared_name(), namespace)) {
+            hash_map::Entry::Occupied(occupied) => occupied.into_mut(),
+            hash_map::Entry::Vacant(vacant) => {
+                self.qualified_names.record(vacant.key());
+                vacant.insert(NameEntries::default())
+            }
+        };
+        entries.bind(symbol.scopes(), binding, phase)
     }
 
     pub fn resolve(&self, symbol: &Symbol, namespace: Namespace, phase: Phase) -> Resolution {
@@ -262,6 +268,50 @@ impl BindingTable {
             .flat_map(|(_, entries)| entries.visible(scopes, phase))
             .map(|entry| entry.binding)
             .collect()
+    }
+
+    pub fn visible_bindings_ending_in(
+        &self,
+        last_segment: &Symbol,
+        namespace: Namespace,
+        phase: Phase,
+    ) -> Vec<BindingId> {
+        let mut visible = Vec::new();
+        for name in self
+            .qualified_names
+            .ending_in(last_segment.shared_name(), namespace)
+        {
+            self.entries[&(Rc::clone(name), namespace)].visit_visible(
+                last_segment.scopes(),
+                phase,
+                |entry| visible.push(entry.binding),
+            );
+        }
+        visible
+    }
+}
+
+#[derive(Default, serde::Serialize, serde::Deserialize)]
+struct QualifiedNames {
+    by_last_segment: FxHashMap<(Rc<str>, Namespace), Vec<Rc<str>>>,
+}
+
+impl QualifiedNames {
+    const SEPARATOR: char = '/';
+
+    fn record(&mut self, (name, namespace): &(Rc<str>, Namespace)) {
+        if let Some((_, last_segment)) = name.rsplit_once(Self::SEPARATOR) {
+            self.by_last_segment
+                .entry((last_segment.into(), *namespace))
+                .or_default()
+                .push(Rc::clone(name));
+        }
+    }
+
+    fn ending_in(&self, last_segment: Rc<str>, namespace: Namespace) -> &[Rc<str>] {
+        self.by_last_segment
+            .get(&(last_segment, namespace))
+            .map_or(&[], Vec::as_slice)
     }
 }
 
@@ -430,6 +480,16 @@ mod tests {
             bindings
         }
 
+        fn visible_ending_in(&self, last_segment: &str, scopes: &[Scope]) -> Vec<BindingId> {
+            let mut bindings = self.table.visible_bindings_ending_in(
+                &Self::symbol(last_segment, scopes),
+                Namespace::Value,
+                Phase::Runtime,
+            );
+            bindings.sort();
+            bindings
+        }
+
         fn resolve(&self, name: &str, scopes: &[Scope], phase: Phase) -> Resolution {
             self.table
                 .resolve(&Self::symbol(name, scopes), Namespace::Value, phase)
@@ -542,6 +602,40 @@ mod tests {
         assert_eq!(
             world.resolve("x", &reference, Phase::Runtime),
             Resolution::Bound(*exact)
+        );
+    }
+
+    #[test]
+    fn a_qualified_binding_is_found_by_its_last_segment() {
+        let mut world = World::new();
+        let module = world.scope();
+        let circle = world.define("shape/circle", &[module], Phase::Runtime);
+        let nested = world.define("geometry/shape/circle", &[module], Phase::Runtime);
+        world.define("circle", &[module], Phase::Runtime);
+        world.define("shape/square", &[module], Phase::Runtime);
+        assert_eq!(
+            world.visible_ending_in("circle", &[module]),
+            [circle, nested]
+        );
+    }
+
+    #[test]
+    fn a_qualified_binding_outside_the_reference_scopes_is_not_found() {
+        let mut world = World::new();
+        let (module, inner) = (world.scope(), world.scope());
+        world.define("shape/circle", &[module, inner], Phase::Runtime);
+        assert_eq!(world.visible_ending_in("circle", &[module]), []);
+    }
+
+    #[test]
+    fn a_qualified_name_bound_twice_finds_each_binding_once() {
+        let mut world = World::new();
+        let (module, inner) = (world.scope(), world.scope());
+        let outer = world.define("shape/circle", &[module], Phase::Runtime);
+        let shadow = world.define("shape/circle", &[module, inner], Phase::Runtime);
+        assert_eq!(
+            world.visible_ending_in("circle", &[module, inner]),
+            [outer, shadow]
         );
     }
 

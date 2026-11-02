@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/short_variant_qualified_value.rslisp
+---
+error[L0231]: this is not a pattern
+ --> expand/short_variant_qualified_value.rslisp:7:6
+  |
+7 |     ((square side) side)
+  |      ^^^^^^^^^^^^^ a pattern names a binding, a literal or a variant
+  |
+  = help: write a binding name, `_`, a literal, or `(variant pattern ...)`
