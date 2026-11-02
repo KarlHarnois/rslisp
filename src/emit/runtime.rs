@@ -11,12 +11,13 @@ enum RuntimePart {
     Sequence,
     MapSequence,
     Io,
+    Source,
     Signal,
 }
 
 impl RuntimePart {
     const STDOUT_MARKERS: &'static [&'static str] = &["print!(", "println!(", "std::io::stdout("];
-    const ALL: [(RuntimePart, &'static [&'static str]); 10] = [
+    const ALL: [(RuntimePart, &'static [&'static str]); 11] = [
         (RuntimePart::Number, &["crate::rt::Number"]),
         (RuntimePart::FromLiteral, &["::from_literal("]),
         (RuntimePart::FromFloatLiteral, &["::from_float_literal("]),
@@ -25,10 +26,8 @@ impl RuntimePart {
         (RuntimePart::Integer, &["crate::rt::Integer"]),
         (RuntimePart::Sequence, &["crate::rt::Sequence"]),
         (RuntimePart::MapSequence, &["std::collections::BTreeMap"]),
-        (
-            RuntimePart::Io,
-            &["crate::rt::read_line", "crate::rt::Source"],
-        ),
+        (RuntimePart::Io, &["crate::rt::read_line"]),
+        (RuntimePart::Source, &["crate::rt::Source"]),
         (RuntimePart::Signal, Self::STDOUT_MARKERS),
     ];
 
@@ -70,9 +69,11 @@ impl RuntimePart {
             | RuntimePart::Signed
             | RuntimePart::Integer => Some(RuntimePart::Number),
             RuntimePart::Float => Some(RuntimePart::Signed),
-            RuntimePart::Number | RuntimePart::Sequence | RuntimePart::Io | RuntimePart::Signal => {
-                None
-            }
+            RuntimePart::Number
+            | RuntimePart::Sequence
+            | RuntimePart::Io
+            | RuntimePart::Source
+            | RuntimePart::Signal => None,
             RuntimePart::MapSequence => Some(RuntimePart::Sequence),
         }
     }
@@ -95,15 +96,17 @@ impl RuntimeModule {
     const SEQUENCE: &'static str = include_str!("../../prelude/runtime/sequence.rs");
     const MAP_SEQUENCE: &'static str = include_str!("../../prelude/runtime/map_sequence.rs");
     const IO: &'static str = include_str!("../../prelude/runtime/io.rs");
+    const SOURCE: &'static str = include_str!("../../prelude/runtime/source.rs");
     const SIGNAL: &'static str = include_str!("../../prelude/runtime/signal.rs");
     const START_UP_CALL: &'static str = "crate::rt::restore_default_sigpipe();";
-    const FIXED_PARTS: [(RuntimePart, &'static str); 7] = [
+    const FIXED_PARTS: [(RuntimePart, &'static str); 8] = [
         (RuntimePart::Signed, Self::SIGNED),
         (RuntimePart::Float, Self::FLOAT),
         (RuntimePart::Integer, Self::INTEGER),
         (RuntimePart::Sequence, Self::SEQUENCE),
         (RuntimePart::MapSequence, Self::MAP_SEQUENCE),
         (RuntimePart::Io, Self::IO),
+        (RuntimePart::Source, Self::SOURCE),
         (RuntimePart::Signal, Self::SIGNAL),
     ];
     const CONVERSIONS: &'static [Conversion] = &[
