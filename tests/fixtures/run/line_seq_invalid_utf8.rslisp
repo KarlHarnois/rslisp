@@ -3,4 +3,8 @@
     (fn (line)
       (match line
         ((ok text) (println text))
-        ((err error) (eprintln error))))))
+        ((err error) (eprintln error)))))
+  (match (read-line)
+    ((ok (some text)) (println "after: " text))
+    ((ok none) (println "after: end of input"))
+    ((err error) (eprintln error))))
