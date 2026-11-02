@@ -773,7 +773,7 @@ impl Expander<'_> {
         let mut variants: Vec<BindingId> = self
             .tables
             .table
-            .visible_bindings_ending_in(symbol, Namespace::Value, self.phase)
+            .visible_qualified_bindings_ending_in(symbol, Namespace::Value, self.phase)
             .into_iter()
             .filter(|binding| {
                 matches!(self.kind(*binding), BindingKind::Variant(_, info) if accepts(info))

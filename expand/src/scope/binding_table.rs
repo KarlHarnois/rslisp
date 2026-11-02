@@ -270,7 +270,7 @@ impl BindingTable {
             .collect()
     }
 
-    pub fn visible_bindings_ending_in(
+    pub fn visible_qualified_bindings_ending_in(
         &self,
         last_segment: &Symbol,
         namespace: Namespace,
@@ -480,8 +480,12 @@ mod tests {
             bindings
         }
 
-        fn visible_ending_in(&self, last_segment: &str, scopes: &[Scope]) -> Vec<BindingId> {
-            let mut bindings = self.table.visible_bindings_ending_in(
+        fn visible_qualified_ending_in(
+            &self,
+            last_segment: &str,
+            scopes: &[Scope],
+        ) -> Vec<BindingId> {
+            let mut bindings = self.table.visible_qualified_bindings_ending_in(
                 &Self::symbol(last_segment, scopes),
                 Namespace::Value,
                 Phase::Runtime,
@@ -614,7 +618,7 @@ mod tests {
         world.define("circle", &[module], Phase::Runtime);
         world.define("shape/square", &[module], Phase::Runtime);
         assert_eq!(
-            world.visible_ending_in("circle", &[module]),
+            world.visible_qualified_ending_in("circle", &[module]),
             [circle, nested]
         );
     }
@@ -624,7 +628,7 @@ mod tests {
         let mut world = World::new();
         let (module, inner) = (world.scope(), world.scope());
         world.define("shape/circle", &[module, inner], Phase::Runtime);
-        assert_eq!(world.visible_ending_in("circle", &[module]), []);
+        assert_eq!(world.visible_qualified_ending_in("circle", &[module]), []);
     }
 
     #[test]
@@ -634,7 +638,7 @@ mod tests {
         let outer = world.define("shape/circle", &[module], Phase::Runtime);
         let shadow = world.define("shape/circle", &[module, inner], Phase::Runtime);
         assert_eq!(
-            world.visible_ending_in("circle", &[module, inner]),
+            world.visible_qualified_ending_in("circle", &[module, inner]),
             [outer, shadow]
         );
     }
