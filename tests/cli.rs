@@ -37,6 +37,7 @@ const UNDOCUMENTED_ENTRY: &str = "(defn twice (x) (* 2 x))\n\n(defn main () (pri
 const SHADOWING_DOC: &str = "(defrule doc ((term) 0))\n\n(defn main () (do))\n";
 const THREADING_HEADER: &str = "(defrule ->)";
 const ARITHMETIC: &str = include_str!("fixtures/emit/arithmetic.rslisp");
+const EMPTY_MAIN: &str = "(def main (fn () (do)))\n";
 const ONE_BRANCH: &str = "(def main (fn () (if true (do) (do))))\n";
 
 const STAGE_WORK_KEYS: [&str; 4] = [
@@ -45,7 +46,6 @@ const STAGE_WORK_KEYS: [&str; 4] = [
     "emit.emitted_expressions",
     "build.scanned_tokens",
 ];
-const PRELUDE_INFERRED_EXPRESSIONS: usize = 22;
 
 const UNBOUND_NAMES_PAST_THE_CAP: usize = 25;
 
@@ -229,6 +229,21 @@ impl Outcome {
             .filter(|(key, _)| !key.starts_with("allocator."))
             .collect()
     }
+
+    fn work_beyond(&self, baseline: &Outcome) -> Value {
+        let baseline = baseline.stage_work();
+        self.stage_work()
+            .into_iter()
+            .map(|(key, count)| {
+                let added = Self::count_of(&count) - Self::count_of(&baseline[key.as_str()]);
+                (key, Value::from(added))
+            })
+            .collect()
+    }
+
+    fn count_of(count: &Value) -> i64 {
+        count.as_i64().expect("each work count is a whole number")
+    }
 }
 
 #[test]
@@ -269,15 +284,20 @@ fn counters_flag_stays_out_of_the_help() {
 
 #[test]
 fn counters_flag_counts_a_program_small_enough_to_count_by_hand() {
-    let sandbox = Sandbox::new("counters-by-hand").with_file("branch.rslisp", ONE_BRANCH);
-    let emit = sandbox.compiler(&["--counters", "emit", "branch.rslisp"]);
+    let sandbox = Sandbox::new("counters-by-hand")
+        .with_file("empty.rslisp", EMPTY_MAIN)
+        .with_file("branch.rslisp", ONE_BRANCH);
+    let empty = sandbox.compiler(&["--counters", "emit", "empty.rslisp"]);
+    let branch = sandbox.compiler(&["--counters", "emit", "branch.rslisp"]);
     assert_eq!(
-        Value::Object(emit.assert_exit_code(0).stage_work()),
+        branch
+            .assert_exit_code(0)
+            .work_beyond(empty.assert_exit_code(0)),
         json!({
-            "expand.lowered_forms": 5,
-            "check.inferred_expressions": 4 + PRELUDE_INFERRED_EXPRESSIONS,
+            "expand.lowered_forms": 3,
+            "check.inferred_expressions": 3,
             "emit.emitted_expressions": 2,
-            "build.scanned_tokens": 20,
+            "build.scanned_tokens": 8,
         })
     );
 }
