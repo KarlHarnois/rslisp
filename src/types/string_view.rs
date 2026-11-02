@@ -38,20 +38,20 @@ impl TypeChecker {
 
     pub(super) fn view_borrowed_strings_beside_views(
         &mut self,
-        positions: &[usize],
+        positions: impl Iterator<Item = usize> + Clone,
         arguments: &mut [TypedArgument],
     ) -> Result<(), Diagnostic> {
         let Some(view) = self.string_view else {
             return Ok(());
         };
         if !positions
-            .iter()
-            .any(|position| self.is_string_view(&arguments[*position].value.ty))
+            .clone()
+            .any(|position| self.is_string_view(&arguments[position].value.ty))
         {
             return Ok(());
         }
         for position in positions {
-            let argument = &mut arguments[*position];
+            let argument = &mut arguments[position];
             if self.borrows_string_as_written(&argument.value) {
                 argument.value = self.call_string_view(view, argument.value.clone())?;
             }
