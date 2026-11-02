@@ -345,6 +345,9 @@ impl TypeChecker {
         arguments: &[TypedArgument],
     ) -> Vec<usize> {
         let mut positions: Vec<usize> = group.positions().collect();
+        if self.holds_mut_borrow(group, arguments) {
+            return positions;
+        }
         positions.sort_by_key(|position| {
             let value = &arguments[*position].value;
             (
@@ -354,6 +357,15 @@ impl TypeChecker {
             )
         });
         positions
+    }
+
+    fn holds_mut_borrow(&self, group: &SharedGroup, arguments: &[TypedArgument]) -> bool {
+        group.positions().any(|position| {
+            matches!(
+                self.unifier.shallow(&arguments[position].value.ty),
+                Type::Mut(..)
+            )
+        })
     }
 
     fn pass_member(
