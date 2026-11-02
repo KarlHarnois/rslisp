@@ -22,12 +22,12 @@ fn main() {
         Ok(text) => println!("{}", text.as_str().lines().count()),
         Err(error) => eprintln!("{}", error),
     }
-    std::io::BufRead::lines(std::io::stdin().lock()).for_each(
-        |line: Result<String, std::io::Error>| match line {
+    crate::rt::lines(std::io::stdin().lock()).for_each(|line: Result<String, std::io::Error>| {
+        match line {
             Ok(text) => println!("{}", text),
             Err(error) => eprintln!("{}", error),
-        },
-    )
+        }
+    })
 }
 
 mod rt {
@@ -51,6 +51,15 @@ mod rt {
         fn slurp(&self) -> std::io::Result<String> {
             std::io::read_to_string(self.lock())
         }
+    }
+
+    pub fn lines(reader: impl std::io::BufRead) -> impl Iterator<Item = std::io::Result<String>> {
+        let mut failed = false;
+        reader.lines().take_while(move |line| {
+            let before_failure = !failed;
+            failed = line.is_err();
+            before_failure
+        })
     }
 
     #[cfg(unix)]
