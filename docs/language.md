@@ -520,6 +520,21 @@ The associated type is a type constructor of one argument, the implementor: `(pa
 
 The emitted Rust is formatted by `rustfmt` when `rslisp emit`, `rslisp build` or `rslisp run` writes it, not by a compiler stage. `rustfmt` reads the nearest `rustfmt.toml`, so the program's directory chooses the layout. If `rustfmt` is missing or fails, or runs past `EmittedFormatting::TIME_LIMIT` and the command stops it, the command prints one note and writes the unformatted Rust.
 
+## Names
+
+Every prelude name follows five rules ([RFC 0046](../rfcs/0046-names.md)):
+
+1. A name is kebab-case.
+2. A predicate ends with `?`.
+3. A function that changes an argument ends with `!`. A `!` name next to a plain name is the plain name's in-place form, as `reverse!` is to `reverse`.
+4. A prelude type constructs by its own name, as `vec` and `pair` do. A `defstruct` type constructs by `->name`, as `->car` does.
+5. One concept has one name.
+
+These names break a rule:
+
+- `(str ...)` builds a `string`, an exception to rule 4.
+- `then-some` and `then-ok` break rule 5 until one `then` replaces them, which needs type-checker work that [issue #280](https://github.com/KarlHarnois/rslisp/issues/280) tracks.
+
 ## Names in Rust
 
 | rslisp | Rust |
