@@ -39,29 +39,29 @@ pub enum MapOperation {
 }
 
 impl MapOperation {
+    const KEYWORDS: [(Self, &'static str); 7] = [
+        (Self::Get, "get"),
+        (Self::Keys, "keys"),
+        (Self::Vals, "vals"),
+        (Self::Entries, "entries"),
+        (Self::Iter, "iter"),
+        (Self::Update, "update"),
+        (Self::Push, "push"),
+    ];
+
     pub fn of(name: &str) -> Option<Self> {
-        match name {
-            "get" => Some(Self::Get),
-            "keys" => Some(Self::Keys),
-            "vals" => Some(Self::Vals),
-            "entries" => Some(Self::Entries),
-            "iter" => Some(Self::Iter),
-            "update" => Some(Self::Update),
-            "push" => Some(Self::Push),
-            _ => None,
-        }
+        Self::KEYWORDS
+            .iter()
+            .find(|(_, keyword)| *keyword == name)
+            .map(|(operation, _)| *operation)
     }
 
     pub fn keyword(self) -> &'static str {
-        match self {
-            Self::Get => "get",
-            Self::Keys => "keys",
-            Self::Vals => "vals",
-            Self::Entries => "entries",
-            Self::Iter => "iter",
-            Self::Update => "update",
-            Self::Push => "push",
-        }
+        Self::KEYWORDS
+            .iter()
+            .find(|(operation, _)| *operation == self)
+            .map(|(_, keyword)| *keyword)
+            .expect("every map operation has a keyword")
     }
 }
 
