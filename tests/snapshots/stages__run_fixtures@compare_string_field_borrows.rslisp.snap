@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/compare_string_field_borrows.rslisp
+---
+error[L0401]: mismatched types
+ --> run/compare_string_field_borrows.rslisp:9:32
+  |
+9 |   (println (= (ref model) (ref (:model leaf))))
+  |                                ^^^^^^^^^^^^^ expected `string`, found `(ref string)`
