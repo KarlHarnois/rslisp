@@ -1,0 +1,9 @@
+(defn width (row) (count (iter row)))
+(defn long? (model) (> (len model) 4))
+
+(defn models () (vec (to-string "Leaf") (to-string "Ariya")))
+
+(defn main ()
+  (let grid (vec (vec 1 2) (vec 3 4 5)))
+  (println (sum (map (iter grid) width)))
+  (println (count (filter (iter (models)) long?))))
