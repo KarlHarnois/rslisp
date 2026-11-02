@@ -1,0 +1,28 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/generic_borrow_beside_view.rslisp
+---
+error[L0401]: mismatched types
+ --> check/generic_borrow_beside_view.rslisp:6:22
+  |
+6 |   (later? (ref make) "Honda"))
+  |                      ^^^^^^^ expected `(ref (ref str))`, found `(ref str)`
+
+error[L0401]: mismatched types
+  --> check/generic_borrow_beside_view.rslisp:10:19
+   |
+10 |   (later? "Honda" (ref make)))
+   |                   ^^^^^^^^^^ expected `(ref str)`, found `(ref (ref str))`
+
+error[L0401]: mismatched types
+  --> check/generic_borrow_beside_view.rslisp:14:23
+   |
+14 |   (later? (ref model) "Civic"))
+   |                       ^^^^^^^ expected `(ref string)`, found `(ref str)`
+
+error[L0401]: mismatched types
+  --> check/generic_borrow_beside_view.rslisp:18:22
+   |
+18 |   (later? (char "a") (ref grade)))
+   |                      ^^^^^^^^^^^ expected `char`, found `(ref char)`
