@@ -4,7 +4,7 @@ use crate::core::ReferenceKind;
 use crate::diagnostic::Diagnostic;
 use crate::types::checker::TypeChecker;
 use crate::types::problems::MismatchContext;
-use crate::types::unifier::Unifier;
+use crate::types::unifier::{LiteralKind, Unifier};
 use crate::types::{Borrow, Bound, Type, TypeVar, TypedArgument, TypedExpr, TypedExprKind};
 
 pub(super) struct SharedVariables {
@@ -353,7 +353,7 @@ impl TypeChecker {
             (
                 self.place_the_template_borrows(callee, *position, shared, value)
                     .is_none(),
-                self.takes_type_from_others(callee, *position, value),
+                self.takes_type_from_others(callee, group, *position, arguments),
             )
         });
         positions
@@ -420,15 +420,42 @@ impl TypeChecker {
     fn takes_type_from_others(
         &self,
         callee: Option<&TypedExpr>,
+        group: &SharedGroup,
         position: usize,
-        value: &TypedExpr,
+        arguments: &[TypedArgument],
     ) -> bool {
-        self.is_open_literal(&value.ty) && !self.template_borrows_at(callee, position)
+        let Some(kind) = self.open_literal_kind(&arguments[position].value.ty) else {
+            return false;
+        };
+        !self.template_borrows_at(callee, position)
+            && self.others_take_literal(kind, group, position, arguments)
     }
 
-    fn is_open_literal(&self, value: &Type) -> bool {
+    fn open_literal_kind(&self, value: &Type) -> Option<LiteralKind> {
         match self.unifier.shallow(value) {
-            Type::Var(var) => self.unifier.literal_kind(var).is_some(),
+            Type::Var(var) => self.unifier.literal_kind(var),
+            _ => None,
+        }
+    }
+
+    fn others_take_literal(
+        &self,
+        kind: LiteralKind,
+        group: &SharedGroup,
+        position: usize,
+        arguments: &[TypedArgument],
+    ) -> bool {
+        group
+            .positions()
+            .filter(|other| *other != position)
+            .all(|other| self.referent_takes_literal(kind, &arguments[other].value.ty))
+    }
+
+    fn referent_takes_literal(&self, kind: LiteralKind, value: &Type) -> bool {
+        let resolved = self.unifier.resolve(value);
+        match Self::innermost_referent(&resolved) {
+            Type::Primitive(primitive) => kind.accepts(*primitive),
+            Type::Var(var) => self.unifier.literal_kind(*var).is_some(),
             _ => false,
         }
     }

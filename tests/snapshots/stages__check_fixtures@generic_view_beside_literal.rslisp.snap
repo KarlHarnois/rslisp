@@ -1,0 +1,28 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/generic_view_beside_literal.rslisp
+---
+error[L0401]: mismatched types
+ --> check/generic_view_beside_literal.rslisp:6:16
+  |
+6 |   (later? 2020 (ref model)))
+  |                ^^^^^^^^^^^ expected an integer, found `(ref (ref str))`
+
+error[L0401]: mismatched types
+  --> check/generic_view_beside_literal.rslisp:10:23
+   |
+10 |   (later? (ref model) 2020))
+   |                       ^^^^ expected `(ref str)`, found an integer
+
+error[L0401]: mismatched types
+  --> check/generic_view_beside_literal.rslisp:14:16
+   |
+14 |   (later? 2020 (ref model)))
+   |                ^^^^^^^^^^^ expected an integer, found `(ref string)`
+
+error[L0401]: mismatched types
+  --> check/generic_view_beside_literal.rslisp:18:16
+   |
+18 |   (later? 2020 (ref years)))
+   |                ^^^^^^^^^^^ expected an integer, found `(ref (vec _))`

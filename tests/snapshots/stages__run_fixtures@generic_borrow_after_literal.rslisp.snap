@@ -5,3 +5,4 @@ input_file: tests/fixtures/run/generic_borrow_after_literal.rslisp
 ---
 false
 true
+false
