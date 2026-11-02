@@ -1,0 +1,6 @@
+(defn small? (b) (< b 10))
+
+(defn main ()
+  (let bytes (the (vec u8) (vec 3 7 12 4)))
+  (println (small? 5))
+  (println (count (take-while (iter bytes) small?))))
