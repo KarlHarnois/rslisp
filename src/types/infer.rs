@@ -1116,7 +1116,7 @@ impl TypeChecker {
         name: &str,
         span: Span,
     ) -> Result<(TypedExprKind, Type), Diagnostic> {
-        if self.compile_time_only.contains(&binding) {
+        if self.unchecked.contains(&binding) {
             return Err(TypeProblems::compile_time_only(name, span));
         }
         if let Some(method) = self.selfless_methods.get(binding) {
@@ -3447,7 +3447,7 @@ mod tests {
                 BindingKind::Global(ModuleId::new(0)),
                 None,
             ));
-            self.checker.compile_time_only.insert(binding);
+            self.checker.unchecked.insert(binding);
             self.checker.infer_variable(binding, self.span).is_err()
         }
 

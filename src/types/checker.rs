@@ -160,7 +160,7 @@ pub struct TypeChecker {
     pub(super) component: FxHashMap<BindingId, Type>,
     pub(super) locals: FxHashMap<BindingId, Type>,
     pub(super) variant_arm: FxHashMap<BindingId, VariantArmReference>,
-    pub(super) compile_time_only: FxHashSet<BindingId>,
+    pub(super) unchecked: FxHashSet<BindingId>,
     failed_bindings: FxHashSet<BindingId>,
     pub(super) diagnostics: Diagnostics,
     pub(super) warnings: Diagnostics,
@@ -248,7 +248,7 @@ impl TypeChecker {
             component: FxHashMap::default(),
             locals: FxHashMap::default(),
             variant_arm: FxHashMap::default(),
-            compile_time_only: FxHashSet::default(),
+            unchecked: FxHashSet::default(),
             failed_bindings: FxHashSet::default(),
             diagnostics: Diagnostics::default(),
             warnings: Diagnostics::default(),
@@ -560,7 +560,7 @@ impl TypeChecker {
         graph: &DefinitionGraph,
     ) -> FxHashMap<BindingId, TypedDefinition> {
         let dependencies = graph.dependencies();
-        self.compile_time_only = dependencies.unchecked(&self.main_definition(modules, entry));
+        self.unchecked = dependencies.unchecked(&self.main_definition(modules, entry));
         let by_binding: FxHashMap<BindingId, &Definition> = graph
             .definitions()
             .iter()
@@ -570,7 +570,7 @@ impl TypeChecker {
         for component in graph.components() {
             let members: Vec<&Definition> = component
                 .iter()
-                .filter(|binding| !self.compile_time_only.contains(binding))
+                .filter(|binding| !self.unchecked.contains(binding))
                 .map(|binding| by_binding[binding])
                 .collect();
             let bindings: Vec<BindingId> = members.iter().map(|member| member.binding).collect();
