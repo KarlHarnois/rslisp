@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_field_borrow_result.rslisp
+---
+error[E0621]: explicit lifetime required in the type of `leaf`
+ --> run/function_field_borrow_result.rslisp:3:34
+  |
+3 | (defn year-of ((leaf (ref car))) (ref (:year leaf)))
+  |                                  ^^^^^^^^^^^^^^^^^^ lifetime `'a` required
+  |
+  = note: reported by rustc while compiling the generated Rust
+  = help: add explicit lifetime `'a` to the type of `leaf`

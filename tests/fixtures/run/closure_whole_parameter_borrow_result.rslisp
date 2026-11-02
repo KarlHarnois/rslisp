@@ -1,0 +1,6 @@
+(defstruct car :make str :year u16)
+
+(defn main ()
+  (let leaf (->car :make "Nissan" :year 2025))
+  (let whole (fn ((leaf (ref car))) leaf))
+  (println (:year (whole (ref leaf)))))

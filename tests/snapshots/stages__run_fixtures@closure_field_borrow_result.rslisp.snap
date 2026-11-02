@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/closure_field_borrow_result.rslisp
+---
+error[L0604]: lifetime may not live long enough
+ --> run/closure_field_borrow_result.rslisp:5:39
+  |
+5 |   (let year-of (fn ((leaf (ref car))) (ref (:year leaf))))
+  |                                       ^^^^^^^^^^^^^^^^^^ returning this value requires that `'1` must outlive `'2`
+  |
+  = note: reported by rustc while compiling the generated Rust
