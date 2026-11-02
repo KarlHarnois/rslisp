@@ -313,3 +313,82 @@ impl<'a> FrontEndBenchmark<'a> {
             .map_err(|error| TaskFailure::unreadable(path, error))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use clap::{Command, FromArgMatches};
+
+    use super::*;
+
+    struct BenchArgumentsFixture;
+
+    impl BenchArgumentsFixture {
+        const COMMAND: &'static str = "bench";
+
+        fn accepted(arguments: &[&str]) -> Vec<String> {
+            match Self::parse(arguments) {
+                BenchTask::Compare { accepted, .. } | BenchTask::CheckCounters { accepted, .. } => {
+                    accepted
+                }
+                _ => panic!("{arguments:?} parsed to another task"),
+            }
+        }
+
+        fn parse(arguments: &[&str]) -> BenchTask {
+            let command = BenchTask::augment_subcommands(Command::new(Self::COMMAND));
+            let matches = command
+                .try_get_matches_from([Self::COMMAND].iter().chain(arguments))
+                .unwrap();
+            BenchTask::from_arg_matches(&matches).unwrap()
+        }
+    }
+
+    #[test]
+    fn check_counters_accepts_no_program_by_default() {
+        let accepted = BenchArgumentsFixture::accepted(&["check-counters", "a", "b"]);
+        assert!(accepted.is_empty());
+    }
+
+    #[test]
+    fn check_counters_collects_each_accepted_program() {
+        let accepted = BenchArgumentsFixture::accepted(&[
+            "check-counters",
+            "a",
+            "b",
+            "--accepted=warehouse",
+            "--accepted=orders",
+        ]);
+        assert_eq!(accepted, ["warehouse", "orders"]);
+    }
+
+    #[test]
+    fn check_counters_takes_an_accepted_program_that_looks_like_a_flag() {
+        let accepted =
+            BenchArgumentsFixture::accepted(&["check-counters", "a", "b", "--accepted=--help"]);
+        assert_eq!(accepted, ["--help"]);
+    }
+
+    #[test]
+    fn compare_accepts_no_program_by_default() {
+        let accepted = BenchArgumentsFixture::accepted(&["compare", "a", "b"]);
+        assert!(accepted.is_empty());
+    }
+
+    #[test]
+    fn compare_collects_each_accepted_program() {
+        let accepted = BenchArgumentsFixture::accepted(&[
+            "compare",
+            "a",
+            "b",
+            "--accepted=warehouse",
+            "--accepted=orders",
+        ]);
+        assert_eq!(accepted, ["warehouse", "orders"]);
+    }
+
+    #[test]
+    fn compare_takes_an_accepted_program_that_looks_like_a_flag() {
+        let accepted = BenchArgumentsFixture::accepted(&["compare", "a", "b", "--accepted=--help"]);
+        assert_eq!(accepted, ["--help"]);
+    }
+}
