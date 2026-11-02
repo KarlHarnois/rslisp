@@ -302,7 +302,11 @@ impl TypeChecker {
         }
     }
 
-    pub(super) fn collect_declarations(&mut self, modules: &[CoreModule]) {
+    pub(super) fn collect_declarations(
+        &mut self,
+        modules: &[CoreModule],
+        definitions: &[Definition],
+    ) {
         self.record_prelude_value_names(modules);
         self.record_type_arities(modules);
         self.record_projections(modules);
@@ -329,7 +333,7 @@ impl TypeChecker {
         self.report_supertraits();
         self.check_trait_claims(modules);
         self.copy_trait = self.traits.with_paths(&[CopyTrait::PATH]).first().copied();
-        self.record_written_parameters(modules);
+        self.record_definition_shapes(definitions);
         self.record_string_view(modules);
     }
 
@@ -347,28 +351,33 @@ impl TypeChecker {
         }
     }
 
-    fn record_written_parameters(&mut self, modules: &[CoreModule]) {
-        for item in modules.iter().flat_map(|module| &module.items) {
-            let ItemKind::Def(binding, value) = &item.kind else {
-                continue;
-            };
-            let ExprKind::Fn(lambda) = value.kind() else {
-                continue;
-            };
-            let signature = self.signatures.get(binding).map(|(signature, _)| signature);
-            let written = lambda
-                .params
-                .iter()
-                .enumerate()
-                .map(|(position, param)| {
-                    param.annotation.is_some()
-                        || signature.is_some_and(|signature| {
-                            Self::signature_parameter_is_written(signature, position)
-                        })
-                })
-                .collect();
-            self.written_parameters.insert(*binding, written);
+    fn record_definition_shapes(&mut self, definitions: &[Definition]) {
+        for definition in definitions {
+            self.record_single_field_reader(definition.binding, definition.value);
+            self.record_written_parameters(definition.binding, definition.value);
         }
+    }
+
+    fn record_written_parameters(&mut self, binding: BindingId, value: &Expr) {
+        let ExprKind::Fn(lambda) = value.kind() else {
+            return;
+        };
+        let signature = self
+            .signatures
+            .get(&binding)
+            .map(|(signature, _)| signature);
+        let written = lambda
+            .params
+            .iter()
+            .enumerate()
+            .map(|(position, param)| {
+                param.annotation.is_some()
+                    || signature.is_some_and(|signature| {
+                        Self::signature_parameter_is_written(signature, position)
+                    })
+            })
+            .collect();
+        self.written_parameters.insert(binding, written);
     }
 
     fn signature_parameter_is_written(signature: &TypeExpr, position: usize) -> bool {
@@ -394,12 +403,6 @@ impl TypeChecker {
             self.signatures
                 .insert(*binding, (signature.clone(), item.span));
             return Ok(());
-        }
-        if let ItemKind::Derive(..) = &item.kind {
-            return Ok(());
-        }
-        if let ItemKind::Def(binding, value) = &item.kind {
-            self.record_single_field_reader(*binding, value);
         }
         Ok(())
     }
@@ -557,13 +560,7 @@ impl TypeChecker {
         graph: &DefinitionGraph,
     ) -> FxHashMap<BindingId, TypedDefinition> {
         let dependencies = graph.dependencies();
-        let runtime = dependencies.reachable_from(&self.main_definition(modules, entry));
-        self.compile_time_only = graph
-            .order()
-            .filter(|binding| {
-                dependencies.is_compile_time_only(*binding) && !runtime.contains(binding)
-            })
-            .collect();
+        self.compile_time_only = dependencies.unchecked(&self.main_definition(modules, entry));
         let by_binding: FxHashMap<BindingId, &Definition> = graph
             .definitions()
             .iter()
@@ -2820,7 +2817,7 @@ impl TypeChecker {
         program: &crate::expand::Program,
         graph: &DefinitionGraph,
     ) -> Result<(super::typed::TypedProgram, OpenCollections), Diagnostics> {
-        self.collect_declarations(&program.modules);
+        self.collect_declarations(&program.modules, graph.definitions());
         let mut definitions = self.check_definitions(&program.modules, program.entry, graph);
         let mut finalizer = super::finalize::Finalizer::new(&mut self);
         for binding in graph.order() {
