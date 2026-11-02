@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/compare_mut_beside_borrow.rslisp
+---
+error[L0401]: mismatched types
+ --> check/compare_mut_beside_borrow.rslisp:4:6
+  |
+4 |   (> (mut year) (ref floor)))
+  |      ^^^^^^^^^^ expected an integer, found `(mut _)`
