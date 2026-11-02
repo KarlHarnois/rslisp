@@ -9,7 +9,7 @@
 (use prelude/vec vec push! len iter values collect
                get pop! remove-at! sort! sort-by-key! windows at dedup!
                first last reverse reverse! sort-descending!)
-(use prelude/iterator range map filter fold for-each enumerate zip
+(use prelude/iterator range map filter reduce for-each enumerate zip
                       sum count max min max-by-key any all find take take-while)
 (use prelude/option some none some? none? unwrap-or unwrap expect map-some then-some)
 (use prelude/result ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
@@ -47,7 +47,7 @@
         vec option result iterator slice sequence box box-new push! len iter values collect
         get pop! remove-at! sort! sort-by-key! windows at dedup!
         first last reverse reverse! sort-descending!
-        range map filter fold for-each enumerate zip
+        range map filter reduce for-each enumerate zip
         sum count max min max-by-key any all find take take-while
         some none some? none? unwrap-or unwrap expect map-some then-some
         ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)

@@ -43,14 +43,14 @@
   (swap! (a b) (do (let _b b))))
 
 (defn total-area (shapes)
-  (fold (iter shapes) 0.0 (fn (total shape) (+ total (area shape)))))
+  (reduce (iter shapes) 0.0 (fn (total shape) (+ total (area shape)))))
 
 (defn areas (items)
   (let shapes (iter items))
   (collect (map shapes area)))
 
 (defn total-of (areas)
-  (fold areas 0.0 (fn (total area) (+ total area))))
+  (reduce areas 0.0 (fn (total area) (+ total area))))
 
 (defn main ()
   (let shapes (vec (new circle (radius 1.0)) (new circle (radius 2.0))))

@@ -20,7 +20,7 @@
 
 (type total-weight (fn ((vec (box weighed))) i64))
 (defn total-weight (crates)
-  (fold crates 0 (fn (total item) (+ total (weight-of item)))))
+  (reduce crates 0 (fn (total item) (+ total (weight-of item)))))
 
 (defn main ()
   (let several? (> (len (command-line-args)) 5))

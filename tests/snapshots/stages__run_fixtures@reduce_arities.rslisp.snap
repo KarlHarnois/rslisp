@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/reduce_arities.rslisp
+---
+20
+24
+true

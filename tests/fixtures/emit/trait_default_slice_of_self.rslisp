@@ -3,7 +3,7 @@
 (trait ranked
   (base (fn ((ref self)) i64))
   (rank (fn ((ref self) (ref (vec self))) i64)
-    (fold (iter argument-1) (base self) (fn (total other) (+ total (base other))))))
+    (reduce (iter argument-1) (base self) (fn (total other) (+ total (base other))))))
 
 (impl ranked alpha
   (base (a) (:score a)))

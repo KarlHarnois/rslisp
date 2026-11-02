@@ -3,7 +3,7 @@
   (len fields))
 
 (defn count-lines (lines)
-  (fold (enumerate (values lines))
+  (reduce (enumerate (values lines))
         0
         (fn (state entry)
           (let-pair (index line) entry

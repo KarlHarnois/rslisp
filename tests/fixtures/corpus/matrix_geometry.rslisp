@@ -34,7 +34,7 @@
 
 (type joined (fn ((ref (vec f64))) string))
 (defn joined (values)
-  (fold (iter values) (to-string "")
+  (reduce (iter values) (to-string "")
         (fn (text value) (str text " " (rounded (deref value))))))
 
 (defn report-transforms ()
@@ -76,7 +76,7 @@
                                                         (->point 0.0 4.0) (->point -2.0 1.0)))))))
   (for-each (iter shapes)
             (fn (s) (println (str (title s) ": area " (rounded (area s)) ", perimeter " (rounded (perimeter s))))))
-  (let total (fold (iter shapes) 0.0 (fn (sum s) (+ sum (area s)))))
+  (let total (reduce (iter shapes) 0.0 (fn (sum s) (+ sum (area s)))))
   (println (str "total area: " (rounded total))))
 
 (defn report-hull ()
@@ -97,9 +97,9 @@
 
 (type widest-gap (fn ((ref (vec point))) f64))
 (defn widest-gap (cloud)
-  (fold (iter cloud) 0.0
+  (reduce (iter cloud) 0.0
         (fn (best from)
-          (fold (iter cloud) best
+          (reduce (iter cloud) best
                 (fn (inner to) (larger inner (distance (deref from) (deref to))))))))
 
 (defn larger (left right)

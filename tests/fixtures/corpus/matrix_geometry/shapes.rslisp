@@ -33,14 +33,14 @@
 
 (type shoelace (fn ((ref (vec point))) f64))
 (defn shoelace (corners)
-  (fold (edges corners) 0.0
+  (reduce (edges corners) 0.0
         (fn (total edge)
           (let-pair (from to) edge
             (+ total (- (* (:x from) (:y to)) (* (:x to) (:y from))))))))
 
 (type edge-length (fn ((ref (vec point))) f64))
 (defn edge-length (corners)
-  (fold (edges corners) 0.0
+  (reduce (edges corners) 0.0
         (fn (total edge)
           (let-pair (from to) edge
             (+ total (distance from to))))))

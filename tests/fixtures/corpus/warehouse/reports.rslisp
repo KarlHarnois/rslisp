@@ -4,8 +4,8 @@
 
 (type print-summary (fn ((ref (sorted-map string item))) unit))
 (defn print-summary (stock)
-  (let units (fold (vals stock) 0 (fn (total current) (+ total (widen (:quantity current))))))
-  (let worth (fold (vals stock) 0 (fn (total current) (+ total (value-cents current)))))
+  (let units (reduce (vals stock) 0 (fn (total current) (+ total (widen (:quantity current))))))
+  (let worth (reduce (vals stock) 0 (fn (total current) (+ total (value-cents current)))))
   (println (str "items: " (len stock) ", units: " units ", value: " (dollars worth))))
 
 (type print-low-stock (fn ((ref (sorted-map string item))) unit))
@@ -19,7 +19,7 @@
 
 (type print-categories (fn ((ref (sorted-map string item))) unit))
 (defn print-categories (stock)
-  (let totals (fold (vals stock)
+  (let totals (reduce (vals stock)
                     (sorted-map)
                     (fn (totals current)
                       (update totals (category (as-str (:sku current)))
@@ -40,7 +40,7 @@
 
 (type print-activity (fn ((ref (vec entry))) unit))
 (defn print-activity (ledger)
-  (let moves (fold (iter ledger)
+  (let moves (reduce (iter ledger)
                    (sorted-map)
                    (fn (moves current)
                      (update moves (clone (:sku current)) (fn (count) (+ count 1)) 0))))

@@ -1,1 +1,1 @@
-(defn main () (println (fold (range 1 4) 0 +)))
+(defn main () (println (reduce (range 1 4) 0 +)))
