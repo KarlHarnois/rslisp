@@ -29,7 +29,9 @@
 
 ## CI failures
 
-**The `front-end instruction counts` job posts a comparison of instruction counts and NEVER fails on a rise in a count.** If the job fails, its tooling broke: treat the failure as a CI failure.
+**The `front-end instruction counts` job posts a comparison of instruction counts and counters, and NEVER fails on a rise in an instruction count.** The job fails when a corpus program's allocated bytes or peak live bytes rise more than 1% and no `Counters-Accepted:` trailer in a commit of the pull request names the program. If the job fails in any other step, its tooling broke: treat the failure as a CI failure.
+
+**If the job fails on allocation growth, stop and report each program and counter that the failure names to the manager.** NEVER add a `Counters-Accepted:` trailer yourself: only the manager adds the trailer, after the project owner approves the rise.
 
 **If CI fails, run these steps:**
 

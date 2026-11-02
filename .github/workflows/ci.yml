@@ -128,7 +128,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-          fetch-depth: 2
+          fetch-depth: 0
       - name: Find the commit the pull request merges into
         id: base
         run: echo "sha=$(git rev-parse HEAD^1)" >> "$GITHUB_OUTPUT"
@@ -190,6 +190,12 @@ jobs:
           else
             echo "found=note-missing" >> "$GITHUB_OUTPUT"
           fi
+      - name: Read the programs whose counter rises the pull request accepts
+        id: trailers
+        shell: bash
+        run: |
+          programs=$(git log --format='%(trailers:key=Counters-Accepted,valueonly)' HEAD^1..HEAD^2 | tr -s '[:space:]' ' ')
+          echo "programs=${programs# }" >> "$GITHUB_OUTPUT"
       - name: Compare
         shell: bash
         env:
@@ -199,9 +205,11 @@ jobs:
           BASE_RECALLED: ${{ steps.recall-base.outputs.recalled }}
           ACCEPTED_FOUND: ${{ steps.accepted.outputs.found }}
           ACCEPTED_SHA: ${{ steps.accepted.outputs.sha }}
+          ACCEPTED_PROGRAMS: ${{ steps.trailers.outputs.programs }}
         run: |
+          read -ra accepted <<< "$ACCEPTED_PROGRAMS"
           compare() {
-            nix develop .#ci -c cargo xtask bench compare --length "$1" "$2" target/bench/candidate.tsv
+            nix develop .#ci -c cargo xtask bench compare --length "$1" "$2" target/bench/candidate.tsv --accepted "${accepted[@]}"
           }
           full=$(compare full target/bench/baseline.tsv)
           brief=$(compare brief target/bench/baseline.tsv)
@@ -248,6 +256,13 @@ jobs:
           else
             gh api --method POST "$COMMENTS" -F body=@"$REPORT" --silent
           fi
+      - name: Check allocation growth
+        shell: bash
+        env:
+          ACCEPTED_PROGRAMS: ${{ steps.trailers.outputs.programs }}
+        run: |
+          read -ra accepted <<< "$ACCEPTED_PROGRAMS"
+          nix develop .#ci -c cargo xtask bench check-counters target/bench/baseline.tsv target/bench/candidate.tsv --accepted "${accepted[@]}"
       - name: Save cargo cache
         if: ${{ !cancelled() && steps.measure.outcome != 'skipped' && steps.cargo-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
