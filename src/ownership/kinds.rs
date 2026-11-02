@@ -98,6 +98,12 @@ impl CaptureReport {
     }
 }
 
+struct ClosureValue {
+    kind: ClosureKind,
+    capture: Option<BindingId>,
+    returned: Option<Rc<ClosureValue>>,
+}
+
 pub struct KindReport {
     pub mutable_bindings: FxHashSet<BindingId>,
     pub diagnostics: Vec<Diagnostic>,
@@ -125,6 +131,7 @@ pub struct ClosureKinds<'a> {
     binding_kinds: FxHashMap<BindingId, ClosureKind>,
     binding_captures: FxHashMap<BindingId, BindingId>,
     value_parameters: FxHashMap<BindingId, Vec<BindingId>>,
+    returned_closures: FxHashMap<BindingId, Rc<ClosureValue>>,
     borrowing_lambdas: &'a FxHashMap<BindingId, FxHashSet<BindingId>>,
     function_parameters: FxHashMap<BindingId, Vec<BindingId>>,
     pass_edges: FxHashMap<BindingId, FxHashSet<BindingId>>,
@@ -217,6 +224,7 @@ impl<'a> ClosureKinds<'a> {
             binding_kinds: FxHashMap::default(),
             binding_captures: FxHashMap::default(),
             value_parameters: FxHashMap::default(),
+            returned_closures: FxHashMap::default(),
             borrowing_lambdas: sources.borrowing_lambdas,
             function_parameters: sources.function_parameters,
             pass_edges: FxHashMap::default(),
@@ -317,6 +325,7 @@ impl<'a> ClosureKinds<'a> {
     fn recompute_lambdas(&mut self, modules: &mut [TypedModule]) {
         self.binding_captures.clear();
         self.value_parameters.clear();
+        self.returned_closures.clear();
         for definition in modules
             .iter_mut()
             .flat_map(|module| module.definitions.iter_mut())
@@ -408,6 +417,9 @@ impl<'a> ClosureKinds<'a> {
         }
         if let Some(parameters) = self.value_parameters_of(value) {
             self.value_parameters.insert(binding, parameters);
+        }
+        if let Some(returned) = self.returned_closure_of(value) {
+            self.returned_closures.insert(binding, returned);
         }
     }
 
@@ -814,8 +826,39 @@ impl<'a> ClosureKinds<'a> {
     fn call_result_kind(&self, callee: &TypedExpr) -> ClosureKind {
         match &callee.kind {
             TypedExprKind::Leaf(TypedLeaf::Global(binding)) => self.result_kind(*binding),
-            _ => ClosureKind::Fn,
+            _ => self
+                .returned_closure_of(callee)
+                .map_or(ClosureKind::Fn, |returned| returned.kind),
         }
+    }
+
+    fn returned_closure_of(&self, callee: &TypedExpr) -> Option<Rc<ClosureValue>> {
+        match &callee.kind {
+            TypedExprKind::Fn(lambda) => self.block_closure(&lambda.body),
+            TypedExprKind::Leaf(TypedLeaf::Local(binding)) => {
+                self.returned_closures.get(binding).cloned()
+            }
+            TypedExprKind::Call(inner, _) => self.returned_closure_of(inner)?.returned.clone(),
+            _ => None,
+        }
+    }
+
+    fn block_closure(&self, block: &TypedBlock) -> Option<Rc<ClosureValue>> {
+        match block.items.last() {
+            Some(TypedBodyItem::Expr(expr)) => self.closure_of(expr),
+            _ => None,
+        }
+    }
+
+    fn closure_of(&self, value: &TypedExpr) -> Option<Rc<ClosureValue>> {
+        if !matches!(value.ty, Type::Function(..)) {
+            return None;
+        }
+        Some(Rc::new(ClosureValue {
+            kind: self.function_value_kind(value),
+            capture: self.value_capture(value),
+            returned: self.returned_closure_of(value),
+        }))
     }
 
     fn result_kind(&self, binding: BindingId) -> ClosureKind {
@@ -831,6 +874,7 @@ impl<'a> ClosureKinds<'a> {
             TypedExprKind::Leaf(TypedLeaf::Local(binding)) => {
                 self.binding_captures.get(binding).copied()
             }
+            TypedExprKind::Call(callee, _) => self.returned_closure_of(callee)?.capture,
             _ => None,
         }
     }
@@ -1560,8 +1604,19 @@ impl<'a> ClosureKinds<'a> {
             }
             return;
         }
+        self.patch_call_result_type(expr);
         for child in expr.children_mut() {
             self.patch_expression_types(child, true);
+        }
+    }
+
+    fn patch_call_result_type(&self, expr: &mut TypedExpr) {
+        let TypedExprKind::Call(callee, _) = &expr.kind else {
+            return;
+        };
+        let returned = self.call_result_kind(callee);
+        if let Type::Function(kind, _, _) = &mut expr.ty {
+            *kind = returned;
         }
     }
 
