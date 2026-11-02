@@ -1,0 +1,87 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/reading_standard_input.rslisp
+---
+fn load(path: &str) -> Result<String, std::io::Error> {
+    crate::rt::Source::slurp(path)
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let path = "cars.txt".to_string();
+    match crate::rt::Source::slurp(&path) {
+        Ok(text) => println!("{}: {}", path, text),
+        Err(error) => eprintln!("{}", error),
+    }
+    match load("garage.txt") {
+        Ok(text) => println!("{}", text),
+        Err(error) => eprintln!("{}", error),
+    }
+    match crate::rt::Source::slurp(&std::io::stdin()) {
+        Ok(text) => println!("{}", text.as_str().lines().count()),
+        Err(error) => eprintln!("{}", error),
+    }
+    std::io::BufRead::lines(std::io::stdin().lock()).for_each(
+        |line: Result<String, std::io::Error>| match line {
+            Ok(text) => println!("{}", text),
+            Err(error) => eprintln!("{}", error),
+        },
+    )
+}
+
+mod rt {
+    pub fn read_line() -> std::io::Result<Option<String>> {
+        let mut line = String::new();
+        match std::io::stdin().read_line(&mut line) {
+            Ok(0) => Ok(None),
+            Ok(_) => {
+                if line.ends_with('\n') {
+                    line.pop();
+                }
+                if line.ends_with('\r') {
+                    line.pop();
+                }
+                Ok(Some(line))
+            }
+            Err(error) => Err(error),
+        }
+    }
+
+    pub trait Source {
+        fn slurp(&self) -> std::io::Result<String>;
+    }
+
+    impl Source for str {
+        fn slurp(&self) -> std::io::Result<String> {
+            std::fs::read_to_string(self)
+        }
+    }
+
+    impl Source for String {
+        fn slurp(&self) -> std::io::Result<String> {
+            std::fs::read_to_string(self)
+        }
+    }
+
+    impl Source for std::io::Stdin {
+        fn slurp(&self) -> std::io::Result<String> {
+            std::io::read_to_string(self.lock())
+        }
+    }
+
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

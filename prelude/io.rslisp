@@ -1,16 +1,22 @@
-(use prelude/types vec option result)
+(use prelude/types vec option result iterator)
 
-(export io-error slurp slurp-stdin read-line command-line-args exit)
+(export io-error stdin source slurp line-seq read-line command-line-args exit)
 
 (rust-type io-error "std::io::Error")
 
-(def slurp
-  (rust "std::fs::read_to_string({0})"
-        (fn ((ref str)) (result string io-error))))
+(rust-type stdin "std::io::Stdin")
 
-(def slurp-stdin
-  (rust "std::io::read_to_string(std::io::stdin())"
-        (fn () (result string io-error))))
+(def stdin (rust "std::io::stdin()" stdin))
+
+(rust-trait source "crate::rt::Source" str string stdin)
+
+(def slurp
+  (rust "crate::rt::Source::slurp({0})"
+        (where ((s source)) (fn ((ref s)) (result string io-error)))))
+
+(def line-seq
+  (rust "std::io::BufRead::lines({&0}.lock())"
+        (fn ((ref stdin)) (iterator (result string io-error)))))
 
 (def read-line
   (rust "crate::rt::read_line()"

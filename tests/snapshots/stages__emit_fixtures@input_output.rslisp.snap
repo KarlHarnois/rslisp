@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).emit_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/emit/input_output.rslisp
 ---
 fn main() {
@@ -12,7 +12,7 @@ fn main() {
         },
         Err(error) => println!("{}", error),
     }
-    match std::io::read_to_string(std::io::stdin()) {
+    match crate::rt::Source::slurp(&std::io::stdin()) {
         Ok(text) => println!("{}", text.as_str().lines().count()),
         Err(error) => println!("{}", error),
     }
@@ -34,6 +34,28 @@ mod rt {
                 Ok(Some(line))
             }
             Err(error) => Err(error),
+        }
+    }
+
+    pub trait Source {
+        fn slurp(&self) -> std::io::Result<String>;
+    }
+
+    impl Source for str {
+        fn slurp(&self) -> std::io::Result<String> {
+            std::fs::read_to_string(self)
+        }
+    }
+
+    impl Source for String {
+        fn slurp(&self) -> std::io::Result<String> {
+            std::fs::read_to_string(self)
+        }
+    }
+
+    impl Source for std::io::Stdin {
+        fn slurp(&self) -> std::io::Result<String> {
+            std::io::read_to_string(self.lock())
         }
     }
 

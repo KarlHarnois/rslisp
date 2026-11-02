@@ -1,0 +1,18 @@
+(defn load (path) (slurp path))
+
+(defn main ()
+  (let path (to-string "cars.txt"))
+  (match (slurp path)
+    ((ok text) (println path ": " text))
+    ((err error) (eprintln error)))
+  (match (load "garage.txt")
+    ((ok text) (println text))
+    ((err error) (eprintln error)))
+  (match (slurp stdin)
+    ((ok text) (println (count (lines (as-str text)))))
+    ((err error) (eprintln error)))
+  (for-each (line-seq stdin)
+    (fn (line)
+      (match line
+        ((ok text) (println text))
+        ((err error) (eprintln error))))))

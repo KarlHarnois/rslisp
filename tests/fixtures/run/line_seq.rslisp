@@ -1,0 +1,6 @@
+(defn main ()
+  (for-each (line-seq stdin)
+    (fn (line)
+      (match line
+        ((ok text) (println (len text) " " text))
+        ((err error) (eprintln error))))))

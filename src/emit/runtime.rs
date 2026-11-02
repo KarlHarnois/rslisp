@@ -25,7 +25,10 @@ impl RuntimePart {
         (RuntimePart::Integer, &["crate::rt::Integer"]),
         (RuntimePart::Sequence, &["crate::rt::Sequence"]),
         (RuntimePart::MapSequence, &["std::collections::BTreeMap"]),
-        (RuntimePart::Io, &["crate::rt::read_line"]),
+        (
+            RuntimePart::Io,
+            &["crate::rt::read_line", "crate::rt::Source"],
+        ),
         (RuntimePart::Signal, Self::STDOUT_MARKERS),
     ];
 
