@@ -196,7 +196,7 @@ This file records the decisions the project owner made before RFCs existed. Each
 - **Decision:** Add the input and output, map, sequence and string functions from dogfooding round 2. `slurp`, `slurp-stdin`, `read-line`, `command-line-args` without the program name, `exit` and `io-error` cover input and output, `sorted-map` and `hash-map` share one API that the compiler picks by type, and sequences and strings gain their Clojure-style functions; a `main` that returns an error prints it with `display` and exits 1.
 - **Rejected:** Separate names per map kind; a hidden runtime map trait that emits unreadable generic Rust; Rust's `Debug` output for `main`'s error; the program name in `command-line-args`.
 - **Why:** The API reads like Clojure, hides Rust's details, and copies nothing the source does not write.
-- **Rule:** [Standard types](../docs/language.md#standard-types)
+- **Rule:** Superseded by [RFC 0045](0045-reading-standard-input.md) for `slurp-stdin`; [Standard types](../docs/language.md#standard-types) for the rest
 
 ## D29. Helpers used at one type
 
