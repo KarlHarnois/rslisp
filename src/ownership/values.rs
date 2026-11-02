@@ -6,9 +6,10 @@ use super::problems::OwnershipProblems;
 use crate::core::{BindingArena, BindingId, FieldLabel};
 use crate::diagnostic::Diagnostic;
 use crate::types::{
-    Borrow, CopyRules, FunctionValueWrapper, GenericBinding, GenericId, GenericParam, StructTable,
-    Type, TypeDisplay, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedDefinition,
-    TypedExpr, TypedExprKind, TypedLeaf, TypedProgram, TypedStructExpr,
+    Borrow, CopyRules, FunctionValueWrapper, GenericBinding, GenericId, GenericParam,
+    RustTypeTable, StructTable, Type, TypeDisplay, TypedArgument, TypedBlock, TypedBodyItem,
+    TypedControl, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram,
+    TypedStructExpr,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -41,6 +42,7 @@ pub struct FunctionValueModes<'a> {
     bindings: &'a mut BindingArena,
     generics: &'a FxHashMap<GenericId, GenericParam>,
     structs: &'a StructTable,
+    rust_types: &'a RustTypeTable,
     function_params: &'a FxHashMap<BindingId, Vec<Type>>,
     copy: CopyRules<'a>,
     diagnostics: Vec<Diagnostic>,
@@ -61,6 +63,7 @@ impl<'a> FunctionValueModes<'a> {
             bindings: &mut program.bindings,
             generics: &program.generics,
             structs: &program.structs,
+            rust_types: &program.rust_types,
             function_params,
             copy,
             diagnostics: Vec::new(),
@@ -376,6 +379,17 @@ impl<'a> FunctionValueModes<'a> {
             .or_else(|| self.copied_value(expected, actual))
             .or_else(|| self.reborrowed(expected, actual))
             .or_else(|| self.removed_borrows(expected, actual))
+            .or_else(|| self.coerced_view(expected, actual))
+    }
+
+    fn coerced_view(&self, expected: &Type, actual: &Type) -> Option<Adjustment> {
+        let (Type::Ref(_, owner), Type::Ref(_, view)) = (expected, actual) else {
+            return None;
+        };
+        let owner = Self::without_references(owner, Self::reference_depth(owner));
+        self.rust_types
+            .views(view, &owner)
+            .then_some(Adjustment::None)
     }
 
     fn added_borrow(&self, expected: &Type, actual: &Type) -> Option<Adjustment> {
@@ -447,6 +461,7 @@ mod tests {
         generics: FxHashMap<GenericId, GenericParam>,
         structs: StructTable,
         enums: crate::types::EnumTable,
+        rust_types: crate::types::RustTypeTable,
         function_params: FxHashMap<BindingId, Vec<Type>>,
         traits: TraitTable,
     }
@@ -478,6 +493,7 @@ mod tests {
                 generics: FxHashMap::default(),
                 structs: StructTable::default(),
                 enums: crate::types::EnumTable::default(),
+                rust_types: crate::types::RustTypeTable::default(),
                 function_params: FxHashMap::default(),
                 traits,
             }
@@ -517,6 +533,7 @@ mod tests {
                 bindings: &mut self.bindings,
                 generics: &self.generics,
                 structs: &self.structs,
+                rust_types: &self.rust_types,
                 function_params: &self.function_params,
                 copy,
                 diagnostics: Vec::new(),
