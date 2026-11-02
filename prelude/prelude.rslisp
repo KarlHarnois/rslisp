@@ -19,7 +19,7 @@
 (use prelude/text display debug print println eprintln prn pr-str str char
                   chars lines split trim subs as-str parse parse-error from-str
                   parse-int-error parse-bool-error parse-char-error parse-float-error infallible
-                  lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!)
+                  lower-case upper-case alphanumeric? whitespace? digit? split-when)
 (use prelude/struct defstruct)
 (use prelude/ownership clone copy)
 (use prelude/io io-error stdin source slurp line-seq read-line command-line-args exit)
@@ -38,7 +38,7 @@
         display debug print println eprintln prn pr-str str char
         chars lines split trim subs as-str parse parse-error from-str
         parse-int-error parse-bool-error parse-char-error parse-float-error infallible
-        lower-case upper-case alphanumeric? whitespace? digit? split-when append! append-char!
+        lower-case upper-case alphanumeric? whitespace? digit? split-when
         defstruct
         clone copy set!
         io-error stdin source slurp line-seq read-line command-line-args exit

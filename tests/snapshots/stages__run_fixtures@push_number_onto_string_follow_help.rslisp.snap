@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/push_number_onto_string_follow_help.rslisp
+---
+a5b

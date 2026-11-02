@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/push_number_onto_string.rslisp
+---
+error[L0401]: mismatched types
+ --> check/push_number_onto_string.rslisp:3:24
+  |
+3 |   (push! (mut message) 5))
+  |                        ^ expected a `char` or a `(ref str)`, found an integer
+  |
+  = help: pass the item's text as `(ref (str ...))`

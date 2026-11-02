@@ -1,0 +1,8 @@
+(defn add-with (adder items item) (adder items item))
+
+(defn main ()
+  (let years (vec 2019))
+  (let add push!)
+  (add (mut years) 2022)
+  (add-with push! (mut years) 2025)
+  (prn years))

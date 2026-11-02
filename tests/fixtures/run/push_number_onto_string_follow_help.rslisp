@@ -1,0 +1,6 @@
+(defn main ()
+  (let message (str "a"))
+  (push! (mut message) (ref (str 5)))
+  (let suffix (str "b"))
+  (push! (mut message) (ref suffix))
+  (println message))
