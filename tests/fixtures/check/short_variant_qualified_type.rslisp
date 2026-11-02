@@ -1,0 +1,11 @@
+(enum shape (circle f64) point)
+
+(defstruct geo/circle :r f64)
+
+(defn area (s)
+  (match s
+    ((circle r) r)
+    (point 0.0)))
+
+(defn main ()
+  (println (area shape/point)))
