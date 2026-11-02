@@ -1,0 +1,9 @@
+(defrule via ((m n p b ...) (m n p b ...)))
+
+(via defn twice (x) (* 2 x))
+
+(via defn half (x) "Halves." (/ x 2))
+
+(def twice-page (doc twice))
+
+(def half-page (doc half))

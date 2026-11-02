@@ -1,0 +1,5 @@
+(defrule my-defn-pair ((left right p b ...) (do (defn left p b ...) (defn right p b ...))))
+
+(my-defn-pair twice double (x) (* 2 x))
+
+(def twice-page (doc twice))
