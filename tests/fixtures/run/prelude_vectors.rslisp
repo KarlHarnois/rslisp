@@ -2,7 +2,7 @@
   (let items (vec 3 1 2))
   (sort! items)
   (for-each (copied items) (fn (n) (println n)))
-  (sort-by-key! items (fn (n) (- n)))
+  (sort-by! items (fn (n) (- n)))
   (for-each (copied items) (fn (n) (println n)))
   (println (some? (get items 1)))
   (pop! items)

@@ -2741,7 +2741,7 @@ impl TypeChecker {
                     &display.show(&field_type),
                     trait_name,
                 ))
-                .with_help(TypeProblems::sort_by_key_help(sortable)),
+                .with_help(TypeProblems::sort_by_help(sortable)),
             None => {
                 let fields: Vec<Rc<str>> = definition
                     .fields
@@ -2760,7 +2760,7 @@ impl TypeChecker {
                         &derives,
                         &fields,
                     ))
-                    .with_help(TypeProblems::sort_by_key_help(sortable))
+                    .with_help(TypeProblems::sort_by_help(sortable))
             }
         }
     }

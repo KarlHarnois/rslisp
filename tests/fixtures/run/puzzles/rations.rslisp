@@ -24,4 +24,4 @@
   (sum (take (copied totals) podium-size)))
 
 (defn sort-descending ((items (mut (vec i64))))
-  (sort-by-key! items (fn (value) (- value))))
+  (sort-by! items (fn (value) (- value))))

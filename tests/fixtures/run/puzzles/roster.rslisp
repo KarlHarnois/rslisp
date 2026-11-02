@@ -12,7 +12,7 @@
   (for-each (copied (departments people)) (fn (dept) (print-top-scorer people dept)))
   (println (str "Cleo present: " (present? people "Cleo")))
   (println (str "first two equal: " (same-employee? (unwrap (get people 0)) (unwrap (get people 1)))))
-  (sort-by-key! people :score)
+  (sort-by! people :score)
   (for-each (iter people) (fn (person) (println (:name person)))))
 
 (defn parse-roster (text)
