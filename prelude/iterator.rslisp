@@ -3,7 +3,8 @@
 (use prelude/number integer number ord add)
 (use prelude/syntax defn)
 (use prelude/macros defrule)
-(use prelude/vec len iter)
+(use prelude/vec iter)
+(use prelude/sequence len)
 (use code first rest list prepend empty? symbol? list? same-binding?)
 
 (export range map filter reduce for-each enumerate zip

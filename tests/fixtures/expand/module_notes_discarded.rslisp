@@ -1,5 +1,5 @@
 (use notes/heron bird)
-(use code add-module-note module-notes definition-symbol length nth)
+(use code add-module-note module-notes definition-symbol len nth)
 
 (def remember-crane
   (macro (form)
@@ -8,7 +8,7 @@
 
 (def count-sightings
   (macro (form)
-    (length (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))))
+    (len (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))))
 
 (remember-crane)
 

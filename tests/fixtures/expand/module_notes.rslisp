@@ -1,4 +1,4 @@
-(use code add-module-note module-notes definition-symbol first length nth)
+(use code add-module-note module-notes definition-symbol first len nth)
 
 (def remember
   (macro (form)
@@ -12,7 +12,7 @@
 
 (def count-sightings
   (macro (form)
-    (length (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))))
+    (len (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))))
 
 (remember "a heron")
 

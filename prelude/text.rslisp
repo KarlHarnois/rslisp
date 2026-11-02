@@ -1,6 +1,6 @@
 (use prelude/macros defmacro template map-list)
 (use prelude/pair pair)
-(use code first rest list prepend concat length empty? nth take drop
+(use code first rest list prepend concat len empty? nth take drop
           symbol symbol? list? string? string same-binding? value-eq
           number-add number-sub number-lt bool-not
           escape-string escape-char escape-format string-strip-suffix)
@@ -174,7 +174,7 @@
 
 (def last-piece
   (fn (pieces)
-    (nth pieces (number-sub (length pieces) 1))))
+    (nth pieces (number-sub (len pieces) 1))))
 
 (def ends-with-newline?
   (fn (pieces)
@@ -187,7 +187,7 @@
 (def without-trailing-newline
   (fn (pieces)
     (let text (nth (last-piece pieces) 1))
-    (concat (take (number-sub (length pieces) 1) pieces)
+    (concat (take (number-sub (len pieces) 1) pieces)
             (list (list (quote literal) (string-strip-suffix text "\n"))))))
 
 (def print-call
@@ -195,7 +195,7 @@
     (let formatted (format-pieces pieces 0 escape-format))
     (prepend
       (list (quote rust)
-            (format-template "print!" (nth formatted 0) (length (nth formatted 2)))
+            (format-template "print!" (nth formatted 0) (len (nth formatted 2)))
             (format-type (quote unit) (nth formatted 2)))
       (nth formatted 1))))
 
@@ -207,7 +207,7 @@
       (list (quote rust)
             (if (value-eq (nth formatted 0) "")
                 (string function "()")
-                (format-template function (nth formatted 0) (length variables)))
+                (format-template function (nth formatted 0) (len variables)))
             (format-type (quote unit) variables))
       (nth formatted 1))))
 

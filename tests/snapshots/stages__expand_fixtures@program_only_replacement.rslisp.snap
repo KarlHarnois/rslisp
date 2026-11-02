@@ -1,13 +1,13 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/program_only_replacement.rslisp
 ---
 error[L0306]: `add` belongs to the program, so macro code cannot run it
   --> expand/program_only_replacement.rslisp:4:10
    |
- 4 |   (let n (+ (length forms) 1))
-   |          ^^^^^^^^^^^^^^^^^^^^ macro code runs this
+ 4 |   (let n (+ (len forms) 1))
+   |          ^^^^^^^^^^^^^^^^^ macro code runs this
    |
   ::: prelude/number.rslisp:46:10
    |

@@ -1,4 +1,4 @@
-(use code add-module-note module-notes definition-symbol fail length nth string)
+(use code add-module-note module-notes definition-symbol fail len nth string)
 
 (def note-then-fail
   (macro (form)
@@ -8,7 +8,7 @@
 (def report-sightings
   (macro (form)
     (let notes (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))
-    (fail (string "sightings noted: " (length notes)) form)))
+    (fail (string "sightings noted: " (len notes)) form)))
 
 (def unconfirmed (note-then-fail))
 

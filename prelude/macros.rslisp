@@ -1,4 +1,4 @@
-(use code first rest list prepend concat length empty? nth take drop
+(use code first rest list prepend concat len empty? nth take drop
           symbol? list? string? symbol-name string same-binding? fail
           definition-symbol type-definition-symbol definition-call type-definition-call expand-call add-module-note module-notes symbol
           value-eq bool-not number-add number-sub number-lt
@@ -52,11 +52,11 @@
 
 (def literal-pattern?
   (fn (pattern)
-    (if (headed-by? pattern (quote quote)) (value-eq (length pattern) 2) false)))
+    (if (headed-by? pattern (quote quote)) (value-eq (len pattern) 2) false)))
 
 (def followed-by-ellipsis?
   (fn (forms)
-    (if (number-lt 1 (length forms)) (ellipsis? (nth forms 1)) false)))
+    (if (number-lt 1 (len forms)) (ellipsis? (nth forms 1)) false)))
 
 (def entry-kind?
   (fn (entry kind)
@@ -125,7 +125,7 @@
 
 (def match-ellipsis
   (fn (repeated tail inputs)
-    (let repeat-count (number-sub (length inputs) (length tail)))
+    (let repeat-count (number-sub (len inputs) (len tail)))
     (if (number-lt repeat-count 0)
         false
         (join-matches (match-repeated repeated (take repeat-count inputs))
@@ -212,7 +212,7 @@
 
 (def entry-length
   (fn (entry)
-    (length (nth entry 2))))
+    (len (nth entry 2))))
 
 (def mismatched-entry
   (fn (count entries)
@@ -375,7 +375,7 @@
 
 (def docstring-before-body?
   (fn (body)
-    (if (number-lt 1 (length body)) (string? (first body)) false)))
+    (if (number-lt 1 (len body)) (string? (first body)) false)))
 
 (def macro-definition
   (fn (name pattern body)
@@ -519,7 +519,7 @@
 
 (def shaped-header
   (fn (shape call)
-    (if (number-lt (length call) (length shape)) call (take (length shape) call))))
+    (if (number-lt (len call) (len shape)) call (take (len shape) call))))
 
 (def expansion-header
   (fn (term expand expansions-left)

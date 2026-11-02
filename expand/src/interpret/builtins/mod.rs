@@ -32,7 +32,7 @@ impl BuiltinCall {
         (Builtin::List, |operations, _| operations.lists.list()),
         (Builtin::Prepend, |operations, _| operations.lists.prepend()),
         (Builtin::Concat, |operations, _| operations.lists.concat()),
-        (Builtin::Length, |operations, _| operations.lists.length()),
+        (Builtin::Len, |operations, _| operations.lists.len()),
         (Builtin::IsEmpty, |operations, _| {
             operations.lists.is_empty()
         }),
