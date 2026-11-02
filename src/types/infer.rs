@@ -2694,11 +2694,20 @@ impl TypeChecker {
     ) -> Result<TypedExpr, Diagnostic> {
         let value = self.infer(value)?;
         match operation {
-            MapOperation::Iter => return self.infer_iter(value, arguments, span),
-            MapOperation::Get => return self.infer_get(value, arguments, span),
-            MapOperation::Push => return self.infer_push(value, arguments, span),
-            _ => {}
+            MapOperation::Iter => self.infer_iter(value, arguments, span),
+            MapOperation::Get => self.infer_get(value, arguments, span),
+            MapOperation::Push => self.infer_push(value, arguments, span),
+            _ => self.infer_map_only(operation, value, arguments, span),
         }
+    }
+
+    fn infer_map_only(
+        &mut self,
+        operation: MapOperation,
+        value: TypedExpr,
+        arguments: &[Expr],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
         let collection = self.map_collection(&value)?;
         self.check_map_key(&collection, value.span);
         match operation {
