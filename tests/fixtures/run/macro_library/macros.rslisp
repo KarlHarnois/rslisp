@@ -1,4 +1,4 @@
-(use code first rest list prepend concat length empty? nth symbol symbol-name string number-add
+(use code first rest list prepend concat len empty? nth symbol symbol-name string number-add
           symbol? same-binding? value-eq field-keyword)
 (use prelude/macros map-list)
 
@@ -35,7 +35,7 @@
 (defmacro defenum (name variants ...)
   (let count-name (symbol name (symbol-name name) "-count"))
   (template
-    (do (def (unquote count-name) (unquote (length variants)))
+    (do (def (unquote count-name) (unquote (len variants)))
         (splice (enum-definitions variants 0)))))
 
 (def enum-definitions

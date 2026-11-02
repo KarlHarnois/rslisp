@@ -1,5 +1,5 @@
 (use prelude/macros defmacro whole-pairs?)
-(use code first rest list prepend concat length empty? list? nth drop number-sub symbol?
+(use code first rest list prepend concat len empty? list? nth drop number-sub symbol?
           string fail keyword? keyword-name field-keyword value-eq symbol
           bool-not)
 
@@ -44,7 +44,7 @@
 (def unpaired-key-error
   (fn (value arguments)
     (let message "a collection update takes keys and values in pairs")
-    (let unpaired-key (nth arguments (number-sub (length arguments) 1)))
+    (let unpaired-key (nth arguments (number-sub (len arguments) 1)))
     (if (every-field-group? arguments)
         (fail message unpaired-key
               (string "to update a field, write "
@@ -60,7 +60,7 @@
 (def field-group?
   (fn (form)
     (if (list? form)
-        (if (value-eq (length form) 2) (field-name? (first form)) false)
+        (if (value-eq (len form) 2) (field-name? (first form)) false)
         false)))
 
 (def field-name?
@@ -95,7 +95,7 @@
 (def read-root
   (fn (form)
     (if (list? form)
-        (if (value-eq (length form) 2)
+        (if (value-eq (len form) 2)
             (if (keyword? (first form)) (read-root (nth form 1)) form)
             form)
         form)))

@@ -1,6 +1,6 @@
 (use prelude/macros defrule defmacro template map-list whole-pairs? note-docstring value-doc-key docstring-before-body?
                     docstring-before-parameters header-shape)
-(use code first rest list nth take drop length empty? list? symbol? string? symbol symbol-name value-eq prepend
+(use code first rest list nth take drop len empty? list? symbol? string? symbol symbol-name value-eq prepend
           concat string fail closest-name keyword? keyword-name keyword-field field-keyword number-sub bool-not)
 
 (export defn the -> ->> try-> let-try loop
@@ -96,7 +96,7 @@
   (fn (forms)
     (if (empty? forms)
         false
-        (defaults-clause? (nth forms (number-sub (length forms) 1))))))
+        (defaults-clause? (nth forms (number-sub (len forms) 1))))))
 
 (def defaults-clause?
   (fn (form)
@@ -111,13 +111,13 @@
 (def declared-forms
   (fn (forms)
     (if (ends-with-defaults? forms)
-        (take (number-sub (length forms) 1) forms)
+        (take (number-sub (len forms) 1) forms)
         forms)))
 
 (def default-pairs
   (fn (forms)
     (if (ends-with-defaults? forms)
-        (rest (nth forms (number-sub (length forms) 1)))
+        (rest (nth forms (number-sub (len forms) 1)))
         (list))))
 
 (def type-missing?
@@ -353,7 +353,7 @@
 
 (def keywords-land-on-functions?
   (fn (arguments types)
-    (if (value-eq (length arguments) (length types))
+    (if (value-eq (len arguments) (len types))
         (every-function-type? (pair-keys types))
         false)))
 
@@ -424,14 +424,14 @@
     (let arguments (rest form))
     (if (reads-by-name? arguments signature)
         (by-name form)
-        (if (value-eq (length arguments) (length (signature-names signature)))
+        (if (value-eq (len arguments) (len (signature-names signature)))
             (prepend positional arguments)
             (call-arity-error form signature owner)))))
 
 (def call-arity-error
   (fn (form signature owner)
     (let noun (definition-noun owner))
-    (fail (string "`" (symbol-name (first form)) "` takes " (length (signature-names signature))
+    (fail (string "`" (symbol-name (first form)) "` takes " (len (signature-names signature))
                   " arguments, one per " noun ", or a `:" noun " value` pair for each " noun " without a default")
           form
           (string "write it as `" (prepend (first form) (signature-names signature)) "`"))))
@@ -482,7 +482,7 @@
     (let missing (names-without-argument (required-names signature) keys))
     (if (empty? missing)
         missing
-        (fail (string (if (value-eq (length missing) 1) "missing parameter " "missing parameters ")
+        (fail (string (if (value-eq (len missing) 1) "missing parameter " "missing parameters ")
                       (joined-names missing "`") " in `" (signature-name signature) "`")
               form
               (string "name every parameter without a default: " (joined-names missing ""))))))

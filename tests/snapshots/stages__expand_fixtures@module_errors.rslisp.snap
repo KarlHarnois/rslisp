@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/module_errors.rslisp
 ---
 error[L0204]: cannot find module `geometry`
@@ -11,16 +11,16 @@ error[L0204]: cannot find module `geometry`
   |
   = help: a module path names a file relative to the entry file, without its extension
 
-error[L0205]: module `code` does not export `lenght`
+error[L0205]: module `code` does not export `lenn`
  --> expand/module_errors.rslisp:2:17
   |
-2 | (use code first lenght)
-  |                 ^^^^^^ not exported
+2 | (use code first lenn)
+  |                 ^^^^ not exported
   |
 help: an export with a similar name exists
   |
-2 - (use code first lenght)
-2 + (use code first length)
+2 - (use code first lenn)
+2 + (use code first len)
   |
 
 error[L0201]: cannot find `missing-name` in this scope

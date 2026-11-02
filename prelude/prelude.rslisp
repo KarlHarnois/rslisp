@@ -5,8 +5,8 @@
 (use prelude/pair pair let-pair let-fields)
 (use prelude/assoc assoc assoc-in)
 (use prelude/map sorted-map hash-map get keys vals entries update into-sorted-map into-hash-map)
-(use prelude/sequence empty?)
-(use prelude/vec vec push! len iter copied collect
+(use prelude/sequence empty? len)
+(use prelude/vec vec push! iter copied collect
                pop! remove-at! sort! sort-by! windows at dedup!
                first last reverse reverse!)
 (use prelude/iterator range map filter reduce for-each enumerate zip

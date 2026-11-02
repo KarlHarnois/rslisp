@@ -381,11 +381,11 @@ A docstring is Markdown. A lookup removes the indentation that every written con
 
 ### The `code` module
 
-The compiler provides the `code` module for macro bodies. Code that uses it exists only at compile time.
+The compiler provides the `code` module for macro bodies. Code that uses it exists only at compile time. Importing `code len` hides the runtime `len` in that module, so a call to `len` on a program value there is `L0412`.
 
 | Built-ins | Purpose |
 |---|---|
-| `first rest list prepend concat length empty? nth take drop` | Build and take apart lists of forms. |
+| `first rest list prepend concat len empty? nth take drop` | Build and take apart lists of forms. |
 | `symbol? keyword? list? string? number?` | Test what kind of form a value is. |
 | `symbol-name`, `keyword-name`, `keyword-field`, `field-keyword`, `(symbol context part...)`, `(string part...)` | Read and build names and strings. |
 | `escape-string`, `escape-char`, `escape-format`, `string-strip-suffix`, `string-strip-prefix` | Escape a string for a Rust string literal, a Rust character literal or a format string in a template, and drop a suffix or a prefix. |
@@ -403,7 +403,7 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 | `number-add number-sub number-lt number-le number-gt number-ge` | Count and compare positions in code. They take integers. |
 | `value-eq bool-not` | Compare forms and negate booleans. |
 
-`first`, `rest`, `nth`, `take`, `drop`, `length` and `empty?` take constant time: a list that `rest`, `take` or `drop` returns shares its items with the list it reads. `concat` appends to its first list in place when `list`, `concat` or `prepend` built that list and no other `concat` has grown it since. Otherwise it copies the first list too. So a loop that builds a list with `(recur (concat built (list item)) ...)` takes linear time. `prepend` copies its list.
+`first`, `rest`, `nth`, `take`, `drop`, `len` and `empty?` take constant time: a list that `rest`, `take` or `drop` returns shares its items with the list it reads. `concat` appends to its first list in place when `list`, `concat` or `prepend` built that list and no other `concat` has grown it since. Otherwise it copies the first list too. So a loop that builds a list with `(recur (concat built (list item)) ...)` takes linear time. `prepend` copies its list.
 
 A keyword is a symbol whose name is `:` followed by at least one character, such as `:year`. `keyword?` tests for one, and `keyword-name` returns its name without the `:`, so `(keyword-name (quote :year))` is `"year"`. `keyword-field` returns the field symbol, so `(keyword-field (quote :year))` is `year`, with the keyword's location and hygiene, so an error about the field points at the keyword the user wrote. `field-keyword` is its inverse: `(field-keyword (quote year))` is `:year`, with the field's location and hygiene. The compiler states the `:` marker once, so macro code never compares names with it.
 

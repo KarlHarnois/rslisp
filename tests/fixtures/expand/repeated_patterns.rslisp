@@ -1,4 +1,4 @@
-(use code length)
+(use code len)
 
 (defrule table
   (((row cell ...) ...) (vec (vec cell ...) ...)))
@@ -13,7 +13,7 @@
   (template (def (unquote name) (fn (unquote field) (splice body)))))
 
 (defmacro counted (items ...)
-  (length items))
+  (len items))
 
 (defmacro lefts ((left right) ...)
   (template (vec (splice left))))

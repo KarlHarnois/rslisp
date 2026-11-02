@@ -55,7 +55,7 @@ impl<'a> ListOperations<'a> {
         Ok(Value::List(head.appended(extra, self.call_site)))
     }
 
-    pub fn length(&self) -> Result<Value, Diagnostic> {
+    pub fn len(&self) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(1)?;
         Ok(Forms::count(self.arguments.list(0)?.len(), self.call_site))
     }

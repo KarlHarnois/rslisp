@@ -1,4 +1,4 @@
-(use code list prepend string length empty? number-add number-lt)
+(use code list prepend string len empty? number-add number-lt)
 (use prelude/macros defmacro defrule)
 (use prelude/types vec sorted-map hash-map)
 (use prelude/pair pair)
@@ -41,7 +41,7 @@
               (list (quote where) (list (prepend (quote key) bounds) (quote value))
                     (list name (quote key) (quote value))))
         (do
-          (let count (length pairs))
+          (let count (len pairs))
           (prepend
             (list (quote rust)
                   (string "{{ let mut map = " rust-type "::new(); "

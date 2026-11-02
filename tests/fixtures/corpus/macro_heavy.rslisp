@@ -1,4 +1,4 @@
-(use code symbol symbol-name length number-add empty? first rest list concat)
+(use code symbol symbol-name len number-add empty? first rest list concat)
 
 (defrule dotimes
   (((index count) body ...) (for-each (range 0 count) (fn (index) body ...))))
