@@ -2,6 +2,8 @@ mod callgrind;
 mod comparison;
 mod compiler;
 mod corpus;
+mod counter_gate;
+mod counter_run;
 mod failure;
 #[cfg(test)]
 mod fixture;
@@ -28,13 +30,14 @@ use callgrind::Callgrind;
 use comparison::Comparison;
 use compiler::{BuiltCompiler, CompilerBuild};
 use corpus::Corpus;
+use counter_run::CounterRun;
 use git::Git;
 use header::ResultHeader;
 use history::BenchHistory;
 use method::MeasurementMethod;
 use output_file::OutputFile;
 use profile::EntryPointCheck;
-use results::ResultSet;
+use results::{Counters, ProgramResult, ResultSet};
 
 #[derive(Subcommand)]
 pub enum BenchTask {
@@ -169,6 +172,7 @@ struct FrontEndBenchmark<'a> {
 impl<'a> FrontEndBenchmark<'a> {
     const PROFILES: &'static str = "target/bench";
     const EXTENSION_CONSTANT: &'static str = "EXTENSION";
+    const NAME_CONSTANT: &'static str = "NAME";
     const FIXED_COMPILER: &'static str = "target/bench/compiler/front-end";
     const TARGET_DIRECTORY: &'static str = "target";
 
@@ -178,7 +182,7 @@ impl<'a> FrontEndBenchmark<'a> {
 
     fn measure(&self) -> Result<String, TaskFailure> {
         let saved_header = self.saved_header()?;
-        let results = self.profile_corpus(&self.callgrind()?)?;
+        let results = self.measure_corpus()?;
         let report = results.to_string();
         if let (Some(path), Some(header)) = (&self.options.save, saved_header) {
             results.with_header(header).save(path)?;
@@ -195,9 +199,21 @@ impl<'a> FrontEndBenchmark<'a> {
         }
     }
 
+    fn measure_corpus(&self) -> Result<ResultSet, TaskFailure> {
+        let language = LanguageSource::find(&CargoWorkspace::read(self.root)?)?;
+        let extension = language.constant(Self::EXTENSION_CONSTANT)?;
+        let programs = self.corpus(&extension)?.programs()?;
+        let measured = self.callgrind()?.measure_all(&programs)?;
+        let counted = self
+            .counter_run(language.constant(Self::NAME_CONSTANT)?)?
+            .count_all(&programs)?;
+        Ok(ResultSet::new(Self::attach_counters(measured, counted)))
+    }
+
     fn callgrind(&self) -> Result<Callgrind, TaskFailure> {
+        let workspace = self.workspace()?;
         let target_directory = self.root.join(Self::TARGET_DIRECTORY);
-        let build = CompilerBuild::new(&self.workspace()?, &target_directory).run()?;
+        let build = CompilerBuild::new(&workspace, &target_directory).run()?;
         let compiler = self.place_at_fixed_path(build)?;
         Ok(Callgrind::new(
             compiler,
@@ -206,18 +222,28 @@ impl<'a> FrontEndBenchmark<'a> {
         ))
     }
 
+    fn counter_run(&self, language_name: String) -> Result<CounterRun, TaskFailure> {
+        let workspace = self.workspace()?;
+        let target_directory = self.root.join(Self::TARGET_DIRECTORY);
+        let build = CompilerBuild::new(&workspace, &target_directory)
+            .with_counters()
+            .run()?;
+        Ok(CounterRun::new(build.executable, language_name))
+    }
+
+    fn attach_counters(measured: Vec<ProgramResult>, counted: Vec<Counters>) -> Vec<ProgramResult> {
+        measured
+            .into_iter()
+            .zip(counted)
+            .map(|(result, counters)| ProgramResult { counters, ..result })
+            .collect()
+    }
+
     fn workspace(&self) -> Result<PathBuf, TaskFailure> {
         match &self.options.workspace {
             Some(workspace) => Self::absolute(workspace),
             None => Self::absolute(self.root),
         }
-    }
-
-    fn profile_corpus(&self, callgrind: &Callgrind) -> Result<ResultSet, TaskFailure> {
-        let language = LanguageSource::find(&CargoWorkspace::read(self.root)?)?;
-        let extension = language.constant(Self::EXTENSION_CONSTANT)?;
-        let programs = self.corpus(&extension)?.programs()?;
-        Ok(ResultSet::new(callgrind.measure_all(&programs)?))
     }
 
     fn corpus(&self, extension: &str) -> Result<Corpus, TaskFailure> {

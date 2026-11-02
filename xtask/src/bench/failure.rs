@@ -41,6 +41,14 @@ impl TaskFailure {
         ))
     }
 
+    pub fn counters_malformed(program: &Path, stderr: &[u8]) -> Self {
+        Self::new(format!(
+            "the counters build of the compiler ended its run on `{}` without a JSON object of counts\n{}",
+            program.display(),
+            String::from_utf8_lossy(stderr)
+        ))
+    }
+
     pub fn stage_entry_missing(candidates: &[String]) -> Self {
         let entry_point = candidates
             .iter()

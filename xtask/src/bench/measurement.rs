@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use super::counter_gate::CounterGate;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Measurement {
     stages: BTreeMap<String, u64>,
@@ -28,8 +30,17 @@ impl Measurement {
              glibc's setup and teardown of the threads that read `rustfmt`'s output.\n\n\
              The compiler runs with glibc's fastbins turned off \
              (`GLIBC_TUNABLES=glibc.malloc.mxfast=0`), so glibc merges freed memory when it is \
-             freed, and no stage pays to merge memory that an earlier stage freed.\n",
+             freed, and no stage pays to merge memory that an earlier stage freed.\n\n\
+             The bench then builds each compiler again with the `counters` feature and runs it \
+             once on each corpus program, without valgrind, as `--counters emit` on the \
+             program's file name from the program's directory, with only `PATH` set. Each counter \
+             of that run is recorded. The check fails when a program's `{allocated}` or \
+             `{peak}` rises more than {tolerance}% above the base commit, unless a commit of \
+             the pull request names the program in a `Counters-Accepted:` trailer.\n",
             other = Self::OTHER,
+            allocated = CounterGate::GATED_COUNTERS[0],
+            peak = CounterGate::GATED_COUNTERS[1],
+            tolerance = CounterGate::TOLERANCE_PERCENT,
         )
     }
 
