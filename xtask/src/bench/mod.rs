@@ -271,7 +271,7 @@ impl<'a> FrontEndBenchmark<'a> {
         let workspace = self.workspace()?;
         let target_directory = self.root.join(Self::TARGET_DIRECTORY);
         let build = CompilerBuild::new(&workspace, &target_directory)
-            .with_counters()
+            .with_counters_over_plain_build()
             .run()?;
         Ok(CounterRun::new(build.executable, language_name))
     }

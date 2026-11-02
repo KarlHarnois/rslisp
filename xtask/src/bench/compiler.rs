@@ -17,7 +17,31 @@ pub struct BuiltCompiler {
 pub struct CompilerBuild<'a> {
     workspace: &'a Path,
     target_directory: &'a Path,
-    features: &'static [&'static str],
+    variant: BuildVariant,
+}
+
+#[derive(Clone, Copy)]
+enum BuildVariant {
+    Plain,
+    CountersOverPlain,
+}
+
+impl BuildVariant {
+    const COUNTERS_FEATURE: [&'static str; 2] = ["--features", "counters"];
+
+    fn features(self) -> &'static [&'static str] {
+        match self {
+            Self::Plain => &[],
+            Self::CountersOverPlain => &Self::COUNTERS_FEATURE,
+        }
+    }
+
+    fn cleans_first(self) -> bool {
+        match self {
+            Self::Plain => true,
+            Self::CountersOverPlain => false,
+        }
+    }
 }
 
 impl<'a> CompilerBuild<'a> {
@@ -26,7 +50,6 @@ impl<'a> CompilerBuild<'a> {
     const UNPARTITIONED_CODEGEN: [&'static str; 2] =
         ["--config", "profile.release.codegen-units=1"];
     const RELEASE_CLEAN: [&'static str; 3] = ["clean", "--release", "--quiet"];
-    const COUNTERS_FEATURE: [&'static str; 2] = ["--features", "counters"];
     const PACKAGE_FLAG: &'static str = "--package";
     const TARGET_DIRECTORY_FLAG: &'static str = "--target-dir";
     const MANIFEST: &'static str = "Cargo.toml";
@@ -35,20 +58,20 @@ impl<'a> CompilerBuild<'a> {
         Self {
             workspace,
             target_directory,
-            features: &[],
+            variant: BuildVariant::Plain,
         }
     }
 
-    pub fn with_counters(self) -> Self {
+    pub fn with_counters_over_plain_build(self) -> Self {
         Self {
-            features: &Self::COUNTERS_FEATURE,
+            variant: BuildVariant::CountersOverPlain,
             ..self
         }
     }
 
     pub fn run(&self) -> Result<BuiltCompiler, TaskFailure> {
         let workspace = CargoWorkspace::read(self.workspace)?;
-        self.clean_workspace_packages(&workspace.package_names())?;
+        self.prepare_target(&workspace.package_names())?;
         let messages = self.build_release()?;
         let executable = self
             .read_executable(&messages)
@@ -59,15 +82,21 @@ impl<'a> CompilerBuild<'a> {
         })
     }
 
-    fn clean_workspace_packages(
-        &self,
-        package_names: &BTreeSet<String>,
-    ) -> Result<(), TaskFailure> {
-        let mut clean = self.release_clean(package_names);
-        Cargo::run(&mut clean, |stderr| {
-            TaskFailure::tool_failed("cargo clean", stderr)
-        })?;
-        Ok(())
+    fn prepare_target(&self, package_names: &BTreeSet<String>) -> Result<(), TaskFailure> {
+        self.preparation(package_names)
+            .into_iter()
+            .try_for_each(|mut clean| {
+                Cargo::run(&mut clean, |stderr| {
+                    TaskFailure::tool_failed("cargo clean", stderr)
+                })
+                .map(drop)
+            })
+    }
+
+    fn preparation(&self, package_names: &BTreeSet<String>) -> Option<Command> {
+        self.variant
+            .cleans_first()
+            .then(|| self.release_clean(package_names))
     }
 
     fn release_clean(&self, package_names: &BTreeSet<String>) -> Command {
@@ -89,7 +118,7 @@ impl<'a> CompilerBuild<'a> {
         let arguments = Self::RELEASE_BUILD
             .into_iter()
             .chain(Self::UNPARTITIONED_CODEGEN)
-            .chain(self.features.iter().copied());
+            .chain(self.variant.features().iter().copied());
         self.cargo_in_target(arguments)
     }
 
@@ -151,6 +180,8 @@ impl Artifact {
 
 #[cfg(test)]
 mod tests {
+    use std::ffi::OsStr;
+
     use super::*;
     use crate::workspace::WorkspaceFixture;
 
@@ -203,7 +234,7 @@ mod tests {
     #[test]
     fn builds_the_counters_compiler_with_the_counters_feature() {
         let build = CompilerBuild::new(Path::new("/checkout"), Path::new("/checkout/target"))
-            .with_counters()
+            .with_counters_over_plain_build()
             .release_build();
         let arguments: Vec<_> = build.get_args().collect();
         assert!(
@@ -211,6 +242,24 @@ mod tests {
                 .windows(2)
                 .any(|pair| pair == ["--features", "counters"])
         );
+    }
+
+    #[test]
+    fn cleans_before_the_plain_build() {
+        let package_names = WorkspaceFixture::workspace().package_names();
+        let preparation = CompilerBuild::new(Path::new("/checkout"), Path::new("/checkout/target"))
+            .preparation(&package_names);
+        let arguments: Vec<_> = preparation.iter().flat_map(Command::get_args).collect();
+        assert!(arguments.contains(&OsStr::new("clean")));
+    }
+
+    #[test]
+    fn builds_the_counters_compiler_without_a_clean() {
+        let package_names = WorkspaceFixture::workspace().package_names();
+        let preparation = CompilerBuild::new(Path::new("/checkout"), Path::new("/checkout/target"))
+            .with_counters_over_plain_build()
+            .preparation(&package_names);
+        assert!(preparation.is_none());
     }
 
     #[test]
