@@ -69,6 +69,12 @@ impl<'e> LetAliases<'e> {
         resolved
     }
 
+    pub fn entries(&self) -> impl Iterator<Item = (BindingId, &'e TypedExpr)> + '_ {
+        self.values
+            .iter()
+            .map(|(binding, bound)| (*binding, *bound))
+    }
+
     pub fn links(&self, alias: BindingId) -> Vec<LetAlias<'e>> {
         let mut links = Vec::new();
         let mut current = alias;
