@@ -330,6 +330,8 @@ impl TypeChecker {
                 MismatchContext::Plain,
             )?;
         }
+        let positions: Vec<usize> = group.positions().collect();
+        self.view_borrowed_strings_beside_views(&positions, arguments)?;
         let shared = Type::Var(root);
         for position in self.passing_order(callee, group, &shared, arguments) {
             self.pass_member(callee, position, &shared, &mut arguments[position])?;

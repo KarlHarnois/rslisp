@@ -208,7 +208,7 @@ impl TypeChecker {
         })
     }
 
-    fn place_type(&self, value: &TypedExpr) -> Type {
+    pub(super) fn place_type(&self, value: &TypedExpr) -> Type {
         let TypedExprKind::Struct(TypedStructExpr::Field(owner, label)) = &value.kind else {
             return value.ty.clone();
         };

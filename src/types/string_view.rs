@@ -4,8 +4,8 @@ use super::checker::TypeChecker;
 use super::ty::Type;
 use super::typed::{TypedArgument, TypedBlock, TypedBodyItem, TypedExpr, TypedExprKind, TypedLeaf};
 use crate::core::{
-    BindingId, ClosureKind, CoreModule, ExprKind, ItemKind, Leaf, PrimitiveType, RustTemplate,
-    TypeExpr, TypeExprKind,
+    BindingId, ClosureKind, CoreModule, ExprKind, ItemKind, Leaf, PrimitiveType, ReferenceKind,
+    RustTemplate, TypeExpr, TypeExprKind,
 };
 use crate::diagnostic::Diagnostic;
 use crate::modules::ModuleSources;
@@ -34,6 +34,46 @@ impl TypeChecker {
             *last = self.call_string_view(view, last.clone())?;
         }
         Ok(body)
+    }
+
+    pub(super) fn view_borrowed_strings_beside_views(
+        &mut self,
+        positions: &[usize],
+        arguments: &mut [TypedArgument],
+    ) -> Result<(), Diagnostic> {
+        let Some(view) = self.string_view else {
+            return Ok(());
+        };
+        if !positions
+            .iter()
+            .any(|position| self.is_string_view(&arguments[*position].value.ty))
+        {
+            return Ok(());
+        }
+        for position in positions {
+            let argument = &mut arguments[*position];
+            if self.borrows_string_as_written(&argument.value) {
+                argument.value = self.call_string_view(view, argument.value.clone())?;
+            }
+        }
+        Ok(())
+    }
+
+    fn is_string_view(&self, value: &Type) -> bool {
+        match self.unifier.resolve(value) {
+            Type::Ref(_, view) => matches!(*view, Type::Primitive(PrimitiveType::Str)),
+            _ => false,
+        }
+    }
+
+    fn borrows_string_as_written(&self, value: &TypedExpr) -> bool {
+        let TypedExprKind::Borrow(ReferenceKind::Shared, place) = &value.kind else {
+            return false;
+        };
+        matches!(
+            self.unifier.resolve(&self.place_type(place)),
+            Type::Primitive(PrimitiveType::String)
+        )
     }
 
     pub(super) fn views_string(view: &Type, owned: &Type) -> bool {
