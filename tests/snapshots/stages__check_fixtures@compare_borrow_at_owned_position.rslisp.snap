@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/compare_borrow_at_owned_position.rslisp
+---
+error[L0503]: this value is borrowed, but the call needs to own it
+ --> check/compare_borrow_at_owned_position.rslisp:7:37
+  |
+7 |   (println (same-owned? (ref model) r)))
+  |                                     ^ only a borrow is available here
+  |
+  = help: pass a copy with `(clone ...)`

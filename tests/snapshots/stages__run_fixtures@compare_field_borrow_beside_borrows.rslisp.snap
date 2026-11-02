@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/compare_field_borrow_beside_borrows.rslisp
+---
+false
+true
+false
+false
+false
+true
+true

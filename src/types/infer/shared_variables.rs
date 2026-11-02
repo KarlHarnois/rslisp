@@ -367,11 +367,25 @@ impl TypeChecker {
         match self.place_the_template_borrows(callee, position, shared, &argument.value) {
             Some(place) => self.pass_template_borrow(shared, place.clone(), argument),
             None => {
+                let borrow = self.pass_call_argument(callee, position, shared, &argument.value)?;
                 argument.borrow =
-                    self.pass_call_argument(callee, position, shared, &argument.value)?;
+                    self.dereference_where_rust_borrows(callee, position, borrow, argument);
                 Ok(())
             }
         }
+    }
+
+    fn dereference_where_rust_borrows(
+        &self,
+        callee: Option<&TypedExpr>,
+        position: usize,
+        borrow: Borrow,
+        argument: &TypedArgument,
+    ) -> Borrow {
+        if borrow != Borrow::Passthrough || !self.template_borrows_at(callee, position) {
+            return borrow;
+        }
+        Self::borrow_for_depth(self.reference_depth_as_written(argument), 0)
     }
 
     fn place_the_template_borrows<'v>(
@@ -398,7 +412,12 @@ impl TypeChecker {
         place: TypedExpr,
         argument: &mut TypedArgument,
     ) -> Result<(), Diagnostic> {
-        self.expect(shared, &place.ty, place.span, MismatchContext::Plain)?;
+        self.expect(
+            shared,
+            &self.place_type(&place),
+            place.span,
+            MismatchContext::Plain,
+        )?;
         *argument = TypedArgument {
             value: place,
             borrow: Borrow::Shared,

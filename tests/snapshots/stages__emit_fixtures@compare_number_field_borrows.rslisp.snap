@@ -1,0 +1,53 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/compare_number_field_borrows.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Car {
+    model: String,
+    year: i64,
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let year: i64 = 2024;
+    let floor: i64 = 2020;
+    let leaf = Car {
+        model: "Leaf".to_string(),
+        year: 2024,
+    };
+    let civic = Car {
+        model: "Civic".to_string(),
+        year: 2019,
+    };
+    println!("{}", leaf.year == year);
+    println!("{}", year == leaf.year);
+    println!("{}", leaf.year == civic.year);
+    println!("{}", year == floor);
+    println!("{}", leaf.year != year);
+    println!("{}", year != leaf.year);
+    println!("{}", leaf.year != civic.year);
+    println!("{}", year != floor);
+    println!("{}", leaf.year > year);
+    println!("{}", year > leaf.year);
+    println!("{}", leaf.year > civic.year);
+    println!("{}", year > floor)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

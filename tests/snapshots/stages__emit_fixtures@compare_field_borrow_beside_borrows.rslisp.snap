@@ -1,0 +1,50 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/compare_field_borrow_beside_borrows.rslisp
+---
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct Car {
+    model: String,
+}
+
+fn is_same_model(leaf: &Car, model: &String) -> bool {
+    leaf.model == *model
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let model = "Leaf".to_string();
+    let other = "Civic".to_string();
+    let r = &other;
+    let leaf = Car {
+        model: "Leaf".to_string(),
+    };
+    let civic = Car {
+        model: "Civic".to_string(),
+    };
+    println!("{}", leaf.model == civic.model);
+    println!("{}", leaf.model == model);
+    println!("{}", model == civic.model);
+    println!("{}", model == *r);
+    println!("{}", *r == model);
+    println!("{}", model > *r);
+    println!("{}", is_same_model(&leaf, &model))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
