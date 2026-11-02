@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/written_mut_result_called_twice.rslisp
+---
+error[E0596]: cannot borrow `getter` as mutable, as it is not declared as mutable
+ --> run/written_mut_result_called_twice.rslisp:3:1
+  |
+3 | / (defn main ()
+4 | |   (let getter (make))
+5 | |   (println (getter))
+6 | |   (println (getter)))
+  | |_____________________^ not mutable
+  |
+  = note: reported by rustc while compiling the generated Rust
+  = help: consider changing this to be mutable

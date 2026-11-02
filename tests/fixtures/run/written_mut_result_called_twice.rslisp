@@ -1,0 +1,6 @@
+(type make (fn () (fn-mut () string)))
+(defn make () (fn () (to-string "Leaf")))
+(defn main ()
+  (let getter (make))
+  (println (getter))
+  (println (getter)))

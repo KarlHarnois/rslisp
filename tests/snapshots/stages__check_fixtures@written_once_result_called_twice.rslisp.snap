@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/written_once_result_called_twice.rslisp
+---
+(type make (fn () (fn () string)))
+(type main (fn () unit))
