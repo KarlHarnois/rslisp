@@ -18,6 +18,7 @@ enum Lexeme<'t> {
     Argument(usize),
     Number(&'t str),
     Word(&'t str),
+    Text,
     Symbol(char),
     Other,
 }
@@ -220,28 +221,32 @@ impl<'t> TemplateOperation<'t> {
         let mut lexemes = Vec::new();
         let mut rest = literal.trim_start();
         while let Some(first) = rest.chars().next() {
-            let length = Self::lexeme_length(rest, first);
-            lexemes.push(Self::lexeme(&rest[..length], first));
+            let (lexeme, length) = Self::next_lexeme(rest, first);
+            lexemes.push(lexeme);
             rest = rest[length..].trim_start();
         }
         lexemes
     }
 
-    fn lexeme_length(rest: &str, first: char) -> usize {
+    fn next_lexeme(rest: &'t str, first: char) -> (Lexeme<'t>, usize) {
         match first {
-            Self::QUOTE => Self::quoted_length(rest),
-            digit if digit.is_ascii_digit() => Self::number_length(rest),
-            letter if Self::starts_word(letter) => Self::alphanumeric_length(rest),
-            symbol => symbol.len_utf8(),
+            Self::QUOTE => (Lexeme::Text, Self::quoted_length(rest)),
+            digit if digit.is_ascii_digit() => {
+                Self::spanning(rest, Self::number_length(rest), Lexeme::Number)
+            }
+            letter if Self::starts_word(letter) => {
+                Self::spanning(rest, Self::alphanumeric_length(rest), Lexeme::Word)
+            }
+            symbol => (Lexeme::Symbol(symbol), symbol.len_utf8()),
         }
     }
 
-    fn lexeme(text: &'t str, first: char) -> Lexeme<'t> {
-        match first {
-            digit if digit.is_ascii_digit() => Lexeme::Number(text),
-            letter if Self::starts_word(letter) => Lexeme::Word(text),
-            symbol => Lexeme::Symbol(symbol),
-        }
+    fn spanning(
+        rest: &'t str,
+        length: usize,
+        lexeme: fn(&'t str) -> Lexeme<'t>,
+    ) -> (Lexeme<'t>, usize) {
+        (lexeme(&rest[..length]), length)
     }
 
     fn quoted_length(rest: &str) -> usize {
@@ -313,7 +318,7 @@ impl<'t> TemplateOperation<'t> {
         match self.lexemes.get(position)? {
             Lexeme::Argument(index) => Some(Operand::Argument(*index)),
             Lexeme::Number(text) => Some(Operand::Constant(Self::integer_value(text))),
-            Lexeme::Word(_) | Lexeme::Symbol(_) | Lexeme::Other => None,
+            Lexeme::Word(_) | Lexeme::Text | Lexeme::Symbol(_) | Lexeme::Other => None,
         }
     }
 
