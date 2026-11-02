@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/trait_result_borrows.rslisp
+---
+Nissan
+hauler
+Leaf flatbed
+dealer lot bye
+Some("deal")
+valet walk lot

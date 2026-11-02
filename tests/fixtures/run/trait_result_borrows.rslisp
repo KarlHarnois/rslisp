@@ -1,0 +1,63 @@
+(defstruct car :model str :year i64)
+(defstruct truck :load i64)
+(enum ride (cab (ref str)) bike)
+
+(trait garage
+  (echo (fn (self (ref str)) (ref str))))
+
+(impl garage car
+  (echo (c name) name))
+
+(impl garage truck
+  (echo (t name) name))
+
+(trait lot
+  (show (fn ((ref self) (ref str)) (ref str))))
+
+(impl lot car
+  (show (c name) (:model c)))
+
+(impl lot truck
+  (show (t name) name))
+
+(defn relay (g label) (echo g label))
+
+(defn second (c name) (if (> (:year c) 0) name name))
+
+(defn pick (c name) (if (> (:year c) 2000) name "old"))
+
+(trait dealer
+  (greet (fn (self (ref str)) (ref str)))
+  (call-out (fn (self (ref str)) (ref str)))
+  (shout (fn (self (ref str)) (ref str)))
+  (offer (fn (self (ref str)) (option (ref str))))
+  (wave (fn (self (ref str)) (ref str))))
+
+(impl dealer car
+  (greet (c name) (second c name))
+  (call-out (c name) (shout c name))
+  (shout (c name) name)
+  (offer (c name) (some (pick c name)))
+  (wave (c name) ((fn (x) name) c)))
+
+(trait valet
+  (park (fn (self (ref str)) (ref str))))
+
+(impl valet ride
+  (park (r name) (match r ((cab m) name) (bike name))))
+
+(impl valet car
+  (park (c name)
+    (let held (some c))
+    (match (some (:model c))
+      ((some m) (match held ((some d) name) ((none) name)))
+      ((none) name))))
+
+(defn main ()
+  (let leaf (->car "Leaf" 2024))
+  (println (echo leaf "Nissan"))
+  (println (relay (->truck 3) "hauler"))
+  (println (show (->car "Leaf" 2024) "Nissan") " " (show (->truck 3) "flatbed"))
+  (println (greet leaf "dealer") " " (call-out leaf "lot") " " (wave leaf "bye"))
+  (prn (offer leaf "deal"))
+  (println (park (ride/cab "Leaf") "valet") " " (park ride/bike "walk") " " (park leaf "lot")))

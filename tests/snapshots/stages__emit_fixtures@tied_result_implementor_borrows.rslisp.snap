@@ -1,0 +1,109 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/tied_result_implementor_borrows.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    model: &'a str,
+    year: i64,
+}
+
+fn make_car(model: &str, year: i64) -> Car<'_> {
+    Car { model, year }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Van<'a> {
+    model: &'a str,
+    seats: i64,
+}
+
+fn make_van(model: &str, seats: i64) -> Van<'_> {
+    Van { model, seats }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Ride<'a> {
+    Cab(&'a str),
+    Bike,
+}
+
+fn model_of(c: Car<'_>) -> &str {
+    c.model
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!("{}", make_car("Leaf", 2024).echo("Nissan"));
+    println!("{}", Garage::tag("Nissan", make_van("e-NV200", 7)));
+    println!("{:?}", make_car("Leaf", 2024).maybe("Nissan"))
+}
+
+trait Garage {
+    fn echo(self, _: &str) -> &str;
+    fn tag(_: &str, _: Self) -> &str;
+    fn maybe(self, _: &str) -> Option<&str>;
+    fn brand(self, _: &str) -> &str;
+}
+
+trait Valet {
+    fn park(self, _: &str) -> &str;
+}
+
+impl<'a> Garage for Car<'a> {
+    fn echo(self, name: &str) -> &str {
+        self.model
+    }
+    fn tag(name: &str, c: Self) -> &str {
+        c.model
+    }
+    fn maybe(self, name: &str) -> Option<&str> {
+        Some(self.model)
+    }
+    fn brand(self, name: &str) -> &str {
+        model_of(self)
+    }
+}
+
+impl<'a> Garage for Van<'a> {
+    fn echo(self, label: &str) -> &str {
+        let name = self.model;
+        name
+    }
+    fn tag(label: &str, v: Self) -> &str {
+        label
+    }
+    fn maybe(self, label: &str) -> Option<&str> {
+        Some(label)
+    }
+    fn brand(self, label: &str) -> &str {
+        label
+    }
+}
+
+impl<'a> Valet for Ride<'a> {
+    fn park(self, name: &str) -> &str {
+        match self {
+            Ride::Cab(m) => m,
+            Ride::Bike => name,
+        }
+    }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
