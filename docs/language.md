@@ -183,7 +183,7 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 |---|---|---|
 | `(vec a)` | `Vec<A>` | `vec push! len iter copied collect get pop! remove-at! sort! sort-by-key! windows at dedup! first last empty? reverse reverse! sort-descending!` |
 | `(slice a)` | `[A]` | `iter windows at first last empty? reverse` |
-| `(box a)` | `Box<A>` | `box-new` |
+| `(box a)` | `Box<A>` | `box` |
 | `(pair a b)` | `(A, B)` | `pair pair/pair let-pair` |
 | `(option a)` | `Option<A>` | `some none option/some option/none some? none? unwrap-or unwrap expect map-some then-some` |
 | `(result a b)` | `Result<A, B>` | `ok err result/ok result/err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok` |
@@ -790,7 +790,7 @@ A trait emits in its own module's Rust `mod`, with the visibility the emitter gi
 
 A method is an ordinary function: `(area c)` is a call, and `(map shapes area)` passes the method as a value. A call on an unknown type adds the trait's bound, as `<` adds `ord`, and a written signature stays exact.
 
-In a type position, `(box shape)` where `shape` is a trait emits `Box<dyn Shape>`. A `(box-new value)` whose expected type is `(box shape)` emits the coercion to the trait object, and the only allocation is the `box-new` the source writes. A boxed value calls the trait's methods as any value does, as `(area shape)` does. A trait is boxable when every method takes `(ref self)` or `(mut self)`, no method is generic, no method returns `self` by value, and the trait declares no associated type. A trait that is not boxable is an error at the `(box ...)` type, `L0448`. A trait object needs the compiler because only the compiler knows a trait's implementors and emits the coercion.
+In a type position, `(box shape)` where `shape` is a trait emits `Box<dyn Shape>`. A `(box value)` whose expected type is `(box shape)` emits the coercion to the trait object, and the only allocation is the `box` the source writes. A boxed value calls the trait's methods as any value does, as `(area shape)` does. A trait is boxable when every method takes `(ref self)` or `(mut self)`, no method is generic, no method returns `self` by value, and the trait declares no associated type. A trait that is not boxable is an error at the `(box ...)` type, `L0448`. A trait object needs the compiler because only the compiler knows a trait's implementors and emits the coercion.
 
 `trait` and `impl` are kernel forms. A macro returns a form and cannot emit a Rust `trait` or `impl` item, and only the compiler can add a trait and its implementors to the trait table. A method call needs no kernel form: each method is an ordinary generic function, so the existing call, inference and emission paths handle it.
 

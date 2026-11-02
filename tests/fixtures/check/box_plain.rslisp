@@ -2,4 +2,4 @@
 (defn take (value) (do))
 
 (defn main ()
-  (take (box-new 1)))
+  (take (box 1)))

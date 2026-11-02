@@ -10,11 +10,11 @@
 
 (type make (fn () outcome))
 (defn make ()
-  (outcome/made (box-new (new circle (radius 1.0)))))
+  (outcome/made (box (new circle (radius 1.0)))))
 
 (type parse (fn (str) (result (box shape) string)))
 (defn parse (text)
-  (ok (box-new (new circle (radius 1.0)))))
+  (ok (box (new circle (radius 1.0)))))
 
 (defn main ()
   (match (make)
