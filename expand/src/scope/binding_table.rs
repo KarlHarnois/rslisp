@@ -438,10 +438,24 @@ mod tests {
         }
 
         fn define(&mut self, name: &str, scopes: &[Scope], phase: Phase) -> BindingId {
+            self.define_in(name, scopes, Namespace::Value, phase)
+        }
+
+        fn define_type(&mut self, name: &str, scopes: &[Scope]) -> BindingId {
+            self.define_in(name, scopes, Namespace::Type, Phase::Runtime)
+        }
+
+        fn define_in(
+            &mut self,
+            name: &str,
+            scopes: &[Scope],
+            namespace: Namespace,
+            phase: Phase,
+        ) -> BindingId {
             let binding = self.new_binding(name);
             let symbol = Self::symbol(name, scopes);
             self.table
-                .bind(&symbol, Namespace::Value, binding, phase)
+                .bind(&symbol, namespace, binding, phase)
                 .expect("no duplicate");
             binding
         }
@@ -628,6 +642,14 @@ mod tests {
         let mut world = World::new();
         let (module, inner) = (world.scope(), world.scope());
         world.define("shape/circle", &[module, inner], Phase::Runtime);
+        assert_eq!(world.visible_qualified_ending_in("circle", &[module]), []);
+    }
+
+    #[test]
+    fn a_qualified_name_in_another_namespace_is_not_found() {
+        let mut world = World::new();
+        let module = world.scope();
+        world.define_type("shape/circle", &[module]);
         assert_eq!(world.visible_qualified_ending_in("circle", &[module]), []);
     }
 
