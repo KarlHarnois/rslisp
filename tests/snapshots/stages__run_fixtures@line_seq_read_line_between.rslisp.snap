@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/line_seq_read_line_between.rslisp
+---
+Leaf = 40
+Ariya = 63
