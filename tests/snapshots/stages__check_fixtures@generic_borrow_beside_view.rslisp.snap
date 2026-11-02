@@ -16,12 +16,6 @@ error[L0401]: mismatched types
    |                   ^^^^^^^^^^ expected `(ref str)`, found `(ref (ref str))`
 
 error[L0401]: mismatched types
-  --> check/generic_borrow_beside_view.rslisp:14:23
-   |
-14 |   (later? (ref model) "Civic"))
-   |                       ^^^^^^^ expected `(ref string)`, found `(ref str)`
-
-error[L0401]: mismatched types
   --> check/generic_borrow_beside_view.rslisp:18:22
    |
 18 |   (later? (char "a") (ref grade)))
