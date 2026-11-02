@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/function_value_literal_items.rslisp
+---
+(type small-byte? (fn (i64) bool))
+(type small-reading? (fn (i64) bool))
+(type small-offset? (fn (i64) bool))
+(type small-ratio? (fn (f64) bool))
+(type main (fn () unit))
