@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -49,6 +50,14 @@ impl GlobalTable {
 
     pub fn record_compile_time_check(&mut self, binding: BindingId, check: CompileTimeCheck) {
         self.compile_time_checks.insert(binding, check);
+    }
+
+    pub fn macro_helpers(&self) -> HashSet<BindingId> {
+        self.compile_time_checks
+            .iter()
+            .filter(|(_, check)| **check == CompileTimeCheck::Passed)
+            .map(|(binding, _)| *binding)
+            .collect()
     }
 
     pub fn has_failed(&self, binding: BindingId) -> bool {
