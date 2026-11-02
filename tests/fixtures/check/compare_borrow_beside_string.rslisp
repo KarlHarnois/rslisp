@@ -1,0 +1,3 @@
+(defn string-last ()
+  (let model (to-string "Leaf"))
+  (> "Civic" (ref model)))

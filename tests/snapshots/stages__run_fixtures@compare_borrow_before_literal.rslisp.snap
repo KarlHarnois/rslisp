@@ -3,8 +3,5 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/compare_borrow_before_literal.rslisp
 ---
-error[L0401]: mismatched types
- --> run/compare_borrow_before_literal.rslisp:7:15
-  |
-7 |   (println (> "Civic" (ref model))))
-  |               ^^^^^^^ expected `string`, found `str`
+true
+true
