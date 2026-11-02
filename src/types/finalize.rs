@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use rustc_hash::FxHashSet;
 
 use super::checker::{Admissible, TypeChecker};
@@ -53,6 +55,15 @@ impl<'c> Finalizer<'c> {
         }
         for binder in expr.binders_mut() {
             self.finalize_type(&mut binder.ty, binder.span);
+        }
+        self.finalize_wrapped_function(expr);
+    }
+
+    fn finalize_wrapped_function(&mut self, expr: &mut TypedExpr) {
+        if let TypedExprKind::Fn(lambda) = &mut expr.kind
+            && let Some(wrapped) = &mut Rc::make_mut(lambda).wraps
+        {
+            self.finalize_type(&mut wrapped.ty, expr.span);
         }
     }
 

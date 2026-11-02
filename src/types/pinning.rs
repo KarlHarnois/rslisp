@@ -9,14 +9,22 @@ use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedPr
 use crate::core::{BindingId, ItemKind, PrimitiveType};
 use crate::expand::Program;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum UseKind {
+    Call,
+    Value,
+}
+
 struct UseTypes {
     types: Vec<Option<Type>>,
     resolved: bool,
+    kind: UseKind,
 }
 
 struct UseSite {
     enclosing: BindingId,
     actual: Type,
+    kind: UseKind,
 }
 
 struct FunctionUses {
@@ -184,8 +192,14 @@ impl InstantiationReport {
             Self::collect_callee(callee, arguments, enclosing, targets, groups, entries);
             return;
         }
-        if let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = &expr.kind {
-            Self::record(*binding, &expr.ty, enclosing, targets, groups, entries);
+        if let Some((binding, actual)) = expr.function_value() {
+            let site = UseSite {
+                enclosing,
+                actual: actual.clone(),
+                kind: UseKind::Value,
+            };
+            Self::record(binding, site, targets, groups, entries);
+            return;
         }
         for child in expr.children() {
             Self::collect_expr(child, enclosing, targets, groups, entries);
@@ -202,7 +216,12 @@ impl InstantiationReport {
     ) {
         match &callee.kind {
             TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
-                Self::record(*binding, &callee.ty, enclosing, targets, groups, entries);
+                let site = UseSite {
+                    enclosing,
+                    actual: callee.ty.clone(),
+                    kind: UseKind::Call,
+                };
+                Self::record(*binding, site, targets, groups, entries);
             }
             _ => Self::collect_expr(callee, enclosing, targets, groups, entries),
         }
@@ -213,13 +232,12 @@ impl InstantiationReport {
 
     fn record(
         target_binding: BindingId,
-        actual: &Type,
-        enclosing: BindingId,
+        site: UseSite,
         targets: &FxHashMap<BindingId, Target>,
         groups: &FxHashMap<BindingId, usize>,
         entries: &mut BTreeMap<BindingId, FunctionUses>,
     ) {
-        if groups.get(&enclosing) == groups.get(&target_binding) {
+        if groups.get(&site.enclosing) == groups.get(&target_binding) {
             return;
         }
         if !targets.contains_key(&target_binding) {
@@ -228,13 +246,10 @@ impl InstantiationReport {
         let entry = entries
             .get_mut(&target_binding)
             .expect("every target has an entry");
-        entry.sites.push(UseSite {
-            enclosing,
-            actual: actual.clone(),
-        });
+        entry.sites.push(site);
     }
 
-    fn use_types(body: &Type, params: &[GenericId], actual: &Type) -> UseTypes {
+    fn use_types(body: &Type, params: &[GenericId], actual: &Type, kind: UseKind) -> UseTypes {
         let mut bound = FxHashMap::default();
         let matched = Self::bind(body, actual, &mut bound);
         let types: Vec<Option<Type>> = params
@@ -245,7 +260,11 @@ impl InstantiationReport {
             && types
                 .iter()
                 .all(|ty| ty.as_ref().is_some_and(Type::is_concrete));
-        UseTypes { types, resolved }
+        UseTypes {
+            types,
+            resolved,
+            kind,
+        }
     }
 
     fn bind(scheme: &Type, actual: &Type, bound: &mut FxHashMap<GenericId, Type>) -> bool {
@@ -353,9 +372,9 @@ impl InstantiationReport {
         match callers.get(&site.enclosing) {
             Some(caller) => {
                 let actual = site.actual.substitute(caller);
-                Self::use_types(&entry.body, &entry.params, &actual)
+                Self::use_types(&entry.body, &entry.params, &actual, site.kind)
             }
-            None => Self::use_types(&entry.body, &entry.params, &site.actual),
+            None => Self::use_types(&entry.body, &entry.params, &site.actual, site.kind),
         }
     }
 
@@ -445,6 +464,7 @@ pub struct LiteralDefault {
     pub parameter: String,
     pub default: String,
     pub calls: Vec<String>,
+    pub values: Vec<String>,
     pub signature: String,
 }
 
@@ -493,8 +513,7 @@ impl LiteralDefaults {
             let Some(generic_index) = Self::generic_index(definition, *generic) else {
                 continue;
             };
-            let calls = Self::call_types(entry, generic_index, display);
-            if calls.len() < 2 {
+            if Self::use_types(entry, generic_index, display).len() < 2 {
                 continue;
             }
             let Some(binder) = lambda.params.get(position) else {
@@ -505,7 +524,8 @@ impl LiteralDefaults {
                 LiteralDefault {
                     parameter: typed.bindings.get(binder.binding).name().to_string(),
                     default: default.name().to_string(),
-                    calls,
+                    calls: Self::kind_types(entry, generic_index, UseKind::Call, display),
+                    values: Self::kind_types(entry, generic_index, UseKind::Value, display),
                     signature: Self::signature(
                         definition, entry, typed, parameters, result, display,
                     ),
@@ -522,22 +542,42 @@ impl LiteralDefaults {
             .position(|param| param.id == generic)
     }
 
-    fn call_types(
+    fn use_types(
         entry: &FunctionUses,
         generic_index: usize,
         display: &TypeDisplay<'_>,
     ) -> Vec<String> {
-        let mut calls = Vec::new();
-        for used in &entry.uses {
-            let Some(Some(call)) = used.types.get(generic_index) else {
+        let values = entry.uses.iter().filter(|used| used.kind == UseKind::Value);
+        let calls = entry.uses.iter().filter(|used| used.kind == UseKind::Call);
+        Self::distinct_types(values.chain(calls), generic_index, display)
+    }
+
+    fn kind_types(
+        entry: &FunctionUses,
+        generic_index: usize,
+        kind: UseKind,
+        display: &TypeDisplay<'_>,
+    ) -> Vec<String> {
+        let uses = entry.uses.iter().filter(|used| used.kind == kind);
+        Self::distinct_types(uses, generic_index, display)
+    }
+
+    fn distinct_types<'b>(
+        uses: impl Iterator<Item = &'b UseTypes>,
+        generic_index: usize,
+        display: &TypeDisplay<'_>,
+    ) -> Vec<String> {
+        let mut types = Vec::new();
+        for used in uses {
+            let Some(Some(ty)) = used.types.get(generic_index) else {
                 continue;
             };
-            let shown = display.show(call);
-            if !calls.contains(&shown) {
-                calls.push(shown);
+            let shown = display.show(ty);
+            if !types.contains(&shown) {
+                types.push(shown);
             }
         }
-        calls
+        types
     }
 
     fn signature(
@@ -575,7 +615,7 @@ impl LiteralDefaults {
         let Some(generic_index) = Self::generic_index(definition, *generic) else {
             return display.show(shown);
         };
-        Self::call_types(entry, generic_index, display)
+        Self::use_types(entry, generic_index, display)
             .first()
             .cloned()
             .unwrap_or_else(|| literal.default_type().name().to_string())

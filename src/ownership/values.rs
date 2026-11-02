@@ -316,11 +316,8 @@ impl<'a> FunctionValueModes<'a> {
         adjustments: Vec<Adjustment>,
     ) {
         let original = self.global(binding, wrapped.actual, value.span);
-        let mut prepared = FunctionValueWrapper::new(self.bindings).prepare(
-            wrapped.parameters,
-            original,
-            Some(binding),
-        );
+        let mut prepared =
+            FunctionValueWrapper::new(self.bindings).prepare(wrapped.parameters, original, binding);
         for (argument, adjustment) in prepared.arguments.iter_mut().zip(adjustments) {
             argument.borrow = adjustment.borrow();
         }
@@ -362,7 +359,10 @@ impl<'a> FunctionValueModes<'a> {
     fn function_value(&self, value: &TypedExpr) -> Option<(BindingId, Type)> {
         let (binding, used_type) = match &value.kind {
             TypedExprKind::Leaf(TypedLeaf::Global(binding)) => (*binding, &value.ty),
-            TypedExprKind::Fn(lambda) => (lambda.wraps?, Self::wrapped_callee_type(lambda)?),
+            TypedExprKind::Fn(lambda) => (
+                lambda.wraps.as_ref()?.binding,
+                Self::wrapped_callee_type(lambda)?,
+            ),
             _ => return None,
         };
         let Type::Function(_, used, result) = used_type else {

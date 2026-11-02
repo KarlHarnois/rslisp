@@ -1972,7 +1972,7 @@ impl TypeChecker {
         }
         self.give_items_to_parameters(binding, &expected, &found, value.span)?;
         let mut wrapped =
-            FunctionValueWrapper::new(&mut self.bindings).prepare(&expected, value, Some(binding));
+            FunctionValueWrapper::new(&mut self.bindings).prepare(&expected, value, binding);
         for argument in &mut wrapped.arguments {
             argument.borrow = Borrow::None;
         }
@@ -2088,16 +2088,8 @@ impl TypeChecker {
         };
         let function = self.bindings.get(callee).name();
         diagnostic
-            .with_note(TypeProblems::literal_default_note(
-                &default.parameter,
-                &default.default,
-                function,
-                &default.calls,
-            ))
-            .with_help(TypeProblems::literal_default_help(
-                function,
-                &default.signature,
-            ))
+            .with_note(TypeProblems::literal_default_note(default, function))
+            .with_help(TypeProblems::literal_default_help(default, function))
     }
 
     fn request_parameter_call_label(
