@@ -17,6 +17,7 @@ pub struct BuiltCompiler {
 pub struct CompilerBuild<'a> {
     workspace: &'a Path,
     target_directory: &'a Path,
+    features: &'static [&'static str],
 }
 
 impl<'a> CompilerBuild<'a> {
@@ -25,6 +26,7 @@ impl<'a> CompilerBuild<'a> {
     const UNPARTITIONED_CODEGEN: [&'static str; 2] =
         ["--config", "profile.release.codegen-units=1"];
     const RELEASE_CLEAN: [&'static str; 3] = ["clean", "--release", "--quiet"];
+    const COUNTERS_FEATURE: [&'static str; 2] = ["--features", "counters"];
     const PACKAGE_FLAG: &'static str = "--package";
     const TARGET_DIRECTORY_FLAG: &'static str = "--target-dir";
     const MANIFEST: &'static str = "Cargo.toml";
@@ -33,6 +35,14 @@ impl<'a> CompilerBuild<'a> {
         Self {
             workspace,
             target_directory,
+            features: &[],
+        }
+    }
+
+    pub fn with_counters(self) -> Self {
+        Self {
+            features: &Self::COUNTERS_FEATURE,
+            ..self
         }
     }
 
@@ -78,7 +88,8 @@ impl<'a> CompilerBuild<'a> {
     fn release_build(&self) -> Command {
         let arguments = Self::RELEASE_BUILD
             .into_iter()
-            .chain(Self::UNPARTITIONED_CODEGEN);
+            .chain(Self::UNPARTITIONED_CODEGEN)
+            .chain(self.features.iter().copied());
         self.cargo_in_target(arguments)
     }
 
@@ -179,6 +190,26 @@ mod tests {
             arguments
                 .windows(2)
                 .any(|pair| pair == ["--config", "profile.release.codegen-units=1"])
+        );
+    }
+
+    #[test]
+    fn builds_the_plain_compiler_without_features() {
+        let build = CompilerBuild::new(Path::new("/checkout"), Path::new("/checkout/target"))
+            .release_build();
+        assert!(!build.get_args().any(|argument| argument == "--features"));
+    }
+
+    #[test]
+    fn builds_the_counters_compiler_with_the_counters_feature() {
+        let build = CompilerBuild::new(Path::new("/checkout"), Path::new("/checkout/target"))
+            .with_counters()
+            .release_build();
+        let arguments: Vec<_> = build.get_args().collect();
+        assert!(
+            arguments
+                .windows(2)
+                .any(|pair| pair == ["--features", "counters"])
         );
     }
 

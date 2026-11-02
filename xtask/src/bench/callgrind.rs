@@ -24,7 +24,7 @@ impl Callgrind {
     pub const VALGRIND: &'static str = "valgrind";
     const ALLOCATOR_TUNING: &'static str = "GLIBC_TUNABLES";
     const NO_FASTBINS: &'static str = "glibc.malloc.mxfast=0";
-    const SEARCH_PATH: &'static str = "PATH";
+    pub const SEARCH_PATH: &'static str = "PATH";
     const OPTIONS: [&'static str; 7] = [
         "--tool=callgrind",
         "--quiet",
@@ -34,7 +34,7 @@ impl Callgrind {
         "--compress-pos=no",
         "--dump-instr=no",
     ];
-    const FRONT_END_COMMAND: &'static str = "emit";
+    pub const FRONT_END_COMMAND: &'static str = "emit";
     const PROFILE_EXTENSION: &'static str = "callgrind";
 
     pub fn new(
@@ -183,7 +183,7 @@ impl Callgrind {
     }
 }
 
-enum RunOutcome {
+pub enum RunOutcome {
     Accepted,
     Rejected,
     Crashed,
@@ -192,7 +192,7 @@ enum RunOutcome {
 impl RunOutcome {
     const PROGRAM_ERRORS_EXIT_CODE: i32 = 1;
 
-    fn of(status: ExitStatus) -> Self {
+    pub fn of(status: ExitStatus) -> Self {
         match status.code() {
             Some(0) => Self::Accepted,
             Some(Self::PROGRAM_ERRORS_EXIT_CODE) => Self::Rejected,
