@@ -9,8 +9,8 @@
 
 (defn main ()
   (let numbers (vec 1 2 3 4))
-  (let words (vec (to-string "kiwi") (to-string "fig")))
-  (let cars (vec (->car (to-string "Leaf") 2023) (->car (to-string "Civic") 2015)))
+  (let words (vec (str "kiwi") (str "fig")))
+  (let cars (vec (->car (str "Leaf") 2023) (->car (str "Civic") 2015)))
   (println (sum (map (iter numbers) double)))
   (println (any (iter numbers) big?))
   (println (sum (map (iter words) shout)))

@@ -11,7 +11,7 @@
 (enum plaque (engraved (struct (text str) (count u16))) empty)
 
 (defn grouped (year)
-  (let make (to-string "Nissan"))
+  (let make (str "Nissan"))
   (new car (make (as-str make)) (year year)))
 
 (defn pinned ()
@@ -19,15 +19,15 @@
   (->pin :at (ref origin)))
 
 (defn titled (year)
-  (let title (to-string "Leaf"))
+  (let title (str "Leaf"))
   (badge/titled (as-str title) year))
 
 (defn held ()
-  (let make (to-string "Nissan"))
+  (let make (str "Nissan"))
   (new holder (held (as-str make))))
 
 (defn stamped (year)
-  (let make (to-string "Nissan"))
+  (let make (str "Nissan"))
   (plaque/engraved (as-str make) year))
 
 (defn main ()

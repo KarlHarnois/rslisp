@@ -1,3 +1,3 @@
 (defn main ()
-  (let names (vec (to-string "ana") (to-string "bo")))
+  (let names (vec (str "ana") (str "bo")))
   (println (sum names)))

@@ -29,7 +29,7 @@
   (bump! (mut state))
   (println (area (shape/circle 1.0)))
   (println (area (shape/rect 2.0 3.0)))
-  (println (area (shape/labeled (to-string "box") 2.0)))
+  (println (area (shape/labeled (str "box") 2.0)))
   (println (area shape/point))
   (prn counter-state/idle)
   (match state

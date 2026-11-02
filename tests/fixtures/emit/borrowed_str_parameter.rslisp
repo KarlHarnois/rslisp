@@ -3,4 +3,4 @@
 
 (defn main ()
   (show "x")
-  (show (as-str (to-string "y"))))
+  (show (as-str (str "y"))))

@@ -1,4 +1,4 @@
 (defn main ()
-  (let s (to-string "Leaf"))
+  (let s (str "Leaf"))
   (let f (fn () s))
   (println (f) (f)))

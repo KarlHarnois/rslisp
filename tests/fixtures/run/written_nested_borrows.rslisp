@@ -17,6 +17,6 @@
   (println (shallow (deref (ref (ref r)))))
   (println (shallow (deref (ref (ref year)))))
   (println (shallow (deref (ref (ref (ref year))))))
-  (let leaf (->car (to-string "Leaf") 2019))
+  (let leaf (->car (str "Leaf") 2019))
   (println (:make (deref (ref (ref leaf)))))
   (println (:year (deref (ref (ref leaf))))))

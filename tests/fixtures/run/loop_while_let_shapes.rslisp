@@ -68,7 +68,7 @@
   (let-arm! (mut let-arm-items))
   (let let-tail-items (vec 1 2))
   (let-tail! (mut let-tail-items))
-  (let guarded-items (vec (to-string "stop") (to-string "again")))
+  (let guarded-items (vec (str "stop") (str "again")))
   (guarded! (mut guarded-items))
   (let plain-items (vec 1))
   (plain! (mut plain-items))

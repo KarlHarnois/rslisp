@@ -2,10 +2,10 @@
   (label (fn ((ref self)) string)))
 
 (impl label i64
-  (label (number) (to-string number)))
+  (label (number) (str number)))
 
 (impl label string
-  (label (text) (to-string text)))
+  (label (text) (str text)))
 
 (impl label (vec i64)
   (label (numbers) (pr-str numbers)))
@@ -15,6 +15,6 @@
 
 (defn main ()
   (println (label 3))
-  (let name (to-string "Ada"))
+  (let name (str "Ada"))
   (println (label name))
   (println (label (make-numbers))))

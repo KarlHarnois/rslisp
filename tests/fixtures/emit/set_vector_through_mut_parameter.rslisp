@@ -10,8 +10,8 @@
   (push! years year))
 
 (defn main ()
-  (let cars (vec (->car (to-string "Nissan Leaf") 2011)))
-  (replace-first! (mut cars) (->car (to-string "Toyota Prius") 1997) (->car (to-string "Honda Civic") 1999))
+  (let cars (vec (->car (str "Nissan Leaf") 2011)))
+  (replace-first! (mut cars) (->car (str "Toyota Prius") 1997) (->car (str "Honda Civic") 1999))
   (let years (vec 2011 1997))
   (reset-year! (mut years) 2024)
   (println (:make (at cars 0)) " " (at years 0)))

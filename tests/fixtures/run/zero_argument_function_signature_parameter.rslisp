@@ -6,5 +6,5 @@
   (println (:make built) " " (:model built)))
 
 (defn main ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (describe (fn () (->car :make "Nissan" :model (as-str model)))))

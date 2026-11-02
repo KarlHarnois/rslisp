@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/str_one_part_and_value.rslisp
+---
+2025
+Leaf
+""
+2025-1
+1
+2

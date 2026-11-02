@@ -1,5 +1,5 @@
 (defmacro set-entry (m)
-  (set! (at m (to-string "x")) 1))
+  (set! (at m (str "x")) 1))
 
 (defn main ()
   (println "unused"))

@@ -1,5 +1,5 @@
 (defn main ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (println (> "Civic" (ref model)))
   (println (> (ref model) "Civic"))
   (println (< "Civic" (ref model)))

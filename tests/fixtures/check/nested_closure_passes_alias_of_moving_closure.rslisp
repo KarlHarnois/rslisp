@@ -6,7 +6,7 @@
   model)
 
 (defn main ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (let announce (fn () (keep model)))
   (let later (fn ()
     (let again announce)

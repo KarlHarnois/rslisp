@@ -1,7 +1,7 @@
 (def left (rust "{0}" (where (a b) (fn (a b) a))))
 
 (defn label ((other (ref str)))
-  (let name (to-string "Ariya"))
+  (let name (str "Ariya"))
   (left other (as-str name)))
 
 (defn main ()

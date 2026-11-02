@@ -1680,8 +1680,8 @@ mod tests {
         const NESTED_CLOSURES: &str = "
             (defn keep (model) model)
             (defn main ()
-              (let model (to-string \"Leaf\"))
-              (let make (to-string \"Nissan\"))
+              (let model (str \"Leaf\"))
+              (let make (str \"Nissan\"))
               (let announce (fn ()
                 (let shown (fn () (keep model)))
                 (shown)))

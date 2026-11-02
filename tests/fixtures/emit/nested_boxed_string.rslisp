@@ -7,6 +7,6 @@
     ((expr/name label) label)))
 
 (defn main ()
-  (println (call-label (expr/call (expr/name (to-string "x")) (to-string "hit"))))
-  (println (call-label (expr/call (expr/name (to-string "y")) (to-string "miss"))))
-  (println (call-label (expr/name (to-string "name")))))
+  (println (call-label (expr/call (expr/name (str "x")) (str "hit"))))
+  (println (call-label (expr/call (expr/name (str "y")) (str "miss"))))
+  (println (call-label (expr/name (str "name")))))

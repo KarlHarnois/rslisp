@@ -1,7 +1,7 @@
 (defn width (row) (count (iter row)))
 (defn long? (model) (> (len model) 4))
 
-(defn models () (vec (to-string "Leaf") (to-string "Ariya")))
+(defn models () (vec (str "Leaf") (str "Ariya")))
 
 (defn main ()
   (let grid (vec (vec 1 2) (vec 3 4 5)))

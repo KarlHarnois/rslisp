@@ -5,5 +5,5 @@
 
 (defn main ()
   (let ages (vec 34 12))
-  (for-each (adult-ages (map ages (fn (age) (->user (to-string "Ana") age))))
+  (for-each (adult-ages (map ages (fn (age) (->user (str "Ana") age))))
     (fn (age) (println age))))

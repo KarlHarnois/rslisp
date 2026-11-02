@@ -1,5 +1,5 @@
 (defn main ()
-  (let path (to-string "input_output/data.txt"))
+  (let path (str "input_output/data.txt"))
   (let-try ((text (slurp path)))
     (do
       (println path ": " (count (lines (as-str text))) " lines")

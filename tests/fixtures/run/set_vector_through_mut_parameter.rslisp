@@ -5,6 +5,6 @@
   (set! (at cars 0) car))
 
 (defn main ()
-  (let cars (vec (->car (to-string "Nissan Leaf") 2011) (->car (to-string "Honda Civic") 1999)))
-  (replace-first! (mut cars) (->car (to-string "Toyota Prius") 1997))
+  (let cars (vec (->car (str "Nissan Leaf") 2011) (->car (str "Honda Civic") 1999)))
+  (replace-first! (mut cars) (->car (str "Toyota Prius") 1997))
   (println (:make (at cars 0))))

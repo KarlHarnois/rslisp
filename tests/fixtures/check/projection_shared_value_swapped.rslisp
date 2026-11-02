@@ -5,7 +5,7 @@
 (type show-error (fn ((parse-error i64)) string))
 
 (defn show-error (reason)
-  (to-string reason))
+  (str reason))
 
 (defn main ()
   (match (parse "4")

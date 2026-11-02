@@ -3,7 +3,7 @@
 
 (defn main ()
   (let year 2024)
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (println (later? (ref year) 2020))
   (println (later? 2020 (ref year)))
-  (println (later? (ref model) (to-string "Civic"))))
+  (println (later? (ref model) (str "Civic"))))

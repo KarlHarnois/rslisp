@@ -2,4 +2,4 @@
 
 (defn main ()
   (println (len (twice 3)))
-  (println (len (twice (to-string "a")))))
+  (println (len (twice (str "a")))))

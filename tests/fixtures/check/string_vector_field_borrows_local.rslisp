@@ -1,7 +1,7 @@
 (defstruct car :models (vec str))
 
 (defn build (line)
-  (let model (to-string line))
+  (let model (str line))
   (->car :models (vec (as-str model))))
 
 (defn main ()

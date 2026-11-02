@@ -23,7 +23,7 @@
          (scan characters (+ position 2)
                (append tokens (token/symbol (slice-text characters position (+ position 2))))))
         ((symbol-character? c)
-         (scan characters (+ position 1) (append tokens (token/symbol (to-string c)))))
+         (scan characters (+ position 1) (append tokens (token/symbol (str c)))))
         (else (err (str "unexpected character `" c "` at " position)))))
 
 (defn scan-number (characters start tokens)

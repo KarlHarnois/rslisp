@@ -5,6 +5,6 @@
 (defn measure-model-year (constructor) (:year (constructor 2025)))
 
 (defn main ()
-  (let make (to-string "Nissan"))
+  (let make (str "Nissan"))
   (println (measure (fn () (->car :make (as-str make) :year 2024))))
   (println (measure-model-year (fn (year) (->car :make (as-str make) :year year)))))

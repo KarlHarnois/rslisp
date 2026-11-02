@@ -41,7 +41,7 @@
 
 (defn divide (tokens left right)
   (if (= (:value right) 0)
-      (err (to-string "division by zero"))
+      (err (str "division by zero"))
       (parse-products tokens (combine left right div))))
 
 (defn parse-factor (tokens position)

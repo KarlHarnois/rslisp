@@ -7,7 +7,7 @@
   (->person new-name (:age someone)))
 
 (defn main ()
-  (let ada (->person (to-string "Ada") 36))
+  (let ada (->person (str "Ada") 36))
   (println (:name ada))
   (println (:name ada))
   (println (introduce ada))

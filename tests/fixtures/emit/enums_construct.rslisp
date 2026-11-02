@@ -15,7 +15,7 @@
 (defn main ()
   (let circle (shape/circle 1.0))
   (let rect (shape/rect 2.0 3.0))
-  (let labeled (shape/labeled (to-string "box") 2.0))
+  (let labeled (shape/labeled (str "box") 2.0))
   (let point (make-point))
   (let both (pair-of/both 1 2))
   (let neither (make-neither))

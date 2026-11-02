@@ -6,8 +6,8 @@ input_file: tests/fixtures/check/closure_update_moves_capture_passed_twice.rslis
 error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
  --> check/closure_update_moves_capture_passed_twice.rslisp:8:24
   |
-8 |   (twice (fn () (assoc g :name (to-string "x")))))
-  |          --------------^------------------------
+8 |   (twice (fn () (assoc g :name (str "x")))))
+  |          --------------^------------------
   |          |             |
   |          |             `g` moves here
   |          this closure is passed here

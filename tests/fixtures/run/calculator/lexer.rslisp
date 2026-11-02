@@ -17,7 +17,7 @@
 (defn scan-character (characters position tokens c)
   (cond ((whitespace? c) (scan characters (+ position 1) tokens))
         ((symbol-character? c)
-         (scan characters (+ position 1) (append tokens (token/symbol (to-string c)))))
+         (scan characters (+ position 1) (append tokens (token/symbol (str c)))))
         ((digit? c) (scan-number characters position tokens))
         (else (err (str "unknown character `" c "` at position " position)))))
 

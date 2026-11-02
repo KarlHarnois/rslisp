@@ -2,5 +2,5 @@
 (defn differ? (a b) (!= a b))
 
 (defn main ()
-  (let command (to-string "quit"))
+  (let command (str "quit"))
   (println (differ? command "quit")))

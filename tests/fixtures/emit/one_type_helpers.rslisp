@@ -11,7 +11,7 @@
   (len items))
 
 (defn shout (value)
-  (to-string value))
+  (str value))
 
 (defn countdown (value done?)
   (if done? value (countdown value true)))
@@ -30,7 +30,7 @@
   (+ x y))
 
 (defn show-cell (cell)
-  (to-string cell))
+  (str cell))
 
 (defn label (value)
   (show-cell value))
@@ -39,7 +39,7 @@
   (let grid (vec (vec true false) (vec false true)))
   (println (is-alive grid 1 0))
   (print-generation 42)
-  (let word (to-string "one"))
+  (let word (str "one"))
   (println (size word))
   (println (size-many word))
   (println (size-many (vec 1 2)))

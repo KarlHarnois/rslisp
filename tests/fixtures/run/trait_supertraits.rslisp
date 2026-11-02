@@ -12,7 +12,7 @@
   (area (s) (* (field s side) (field s side))))
 
 (defn show (s)
-  (do (area s) (to-string s)))
+  (do (area s) (str s)))
 
 (defn main ()
   (println (show (new circle (radius 1.0))))

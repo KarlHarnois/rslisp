@@ -4,4 +4,4 @@
   (println (getter))
   (println (getter)))
 (defn main ()
-  (show-twice (fn () (fn () (to-string "Leaf")))))
+  (show-twice (fn () (fn () (str "Leaf")))))

@@ -5,7 +5,7 @@
 (defn bump! (x) (do (mut x)))
 
 (defn main ()
-  (let names (vec (to-string "ana")))
+  (let names (vec (str "ana")))
   (vec-size (mut names))
   (let n 4)
   (bump! (ref n)))

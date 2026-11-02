@@ -1,7 +1,7 @@
 (defn show-error (text)
   (let (parsed (result i64 _)) (parse text))
   (let reason (unwrap-err parsed))
-  (let message (to-string reason))
+  (let message (str reason))
   (println message)
   (prn reason))
 

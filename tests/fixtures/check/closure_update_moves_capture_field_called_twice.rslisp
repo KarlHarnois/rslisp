@@ -3,6 +3,6 @@
 (defstruct garage :name string :badge badge)
 
 (defn main ()
-  (let g (->garage (to-string "Leaf Garage") (->badge (to-string "open") 12)))
+  (let g (->garage (str "Leaf Garage") (->badge (str "open") 12)))
   (let f (fn () (assoc (:badge g) :size 3)))
   (println (:size (f)) (:size (f))))

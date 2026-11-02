@@ -2,4 +2,4 @@
 (defn apply-two (f a b) (f a b))
 (defn main ()
   (let count 3)
-  (println (apply-two label (to-string "Leaf") count)))
+  (println (apply-two label (str "Leaf") count)))

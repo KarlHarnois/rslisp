@@ -10,7 +10,7 @@
   (later? "Honda" (ref make)))
 
 (defn string-first ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (later? (ref model) "Civic"))
 
 (defn char-last ()

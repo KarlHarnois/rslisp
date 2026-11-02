@@ -1,7 +1,7 @@
 (defn load (path) (slurp path))
 
 (defn main ()
-  (let path (to-string "cars.txt"))
+  (let path (str "cars.txt"))
   (match (slurp path)
     ((ok text) (println path ": " text))
     ((err error) (eprintln error)))

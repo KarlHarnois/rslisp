@@ -22,11 +22,11 @@
 
 (impl builder yard
   (assemble (constructor lot)
-    (let make (to-string "Nissan"))
+    (let make (str "Nissan"))
     (+ (:rows lot) (:year (constructor (as-str make) 2025)))))
 
 (defn main ()
-  (let model (to-string "Leaf"))
+  (let model (str "Leaf"))
   (let lot (->depot 1))
   (println (park (fn (make year) (->car :make (as-str model) :year year)) lot))
   (println (restock (fn () (->car :make (as-str model) :year 2025)) lot))

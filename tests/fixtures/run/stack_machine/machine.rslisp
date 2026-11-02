@@ -63,4 +63,4 @@
 (defn pop-value! (stack)
   (match (pop! stack)
     ((some value) (ok value))
-    (none (err (to-string "stack underflow")))))
+    (none (err (str "stack underflow")))))

@@ -9,7 +9,7 @@ error[L0510]: cannot return a borrow of a local value
 1 | (enum label (named str) blank)
   |                    --- declared as a borrow here
 ...
-4 |   (let text (to-string "Leaf"))
+4 |   (let text (str "Leaf"))
   |        ---- this local is dropped when the function returns
 5 |   (label/named (as-str text)))
   |                ^^^^^^^^^^^^^ this borrows a local value
