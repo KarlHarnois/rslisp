@@ -1970,6 +1970,7 @@ impl TypeChecker {
         if expected.len() != found.len() || !Self::needs_wrapper(&expected, &found) {
             return Ok(value);
         }
+        self.give_items_to_parameters(binding, &expected, &found, value.span)?;
         let mut wrapped =
             FunctionValueWrapper::new(&mut self.bindings).prepare(&expected, value, Some(binding));
         for argument in &mut wrapped.arguments {
@@ -1985,6 +1986,25 @@ impl TypeChecker {
             MismatchContext::Plain,
         )?;
         Ok(wrapped.finish(&expected_result, &found_result))
+    }
+
+    fn give_items_to_parameters(
+        &mut self,
+        function: BindingId,
+        expected: &[Type],
+        found: &[Type],
+        span: Span,
+    ) -> Result<(), Diagnostic> {
+        for (position, (expected, found)) in expected.iter().zip(found).enumerate() {
+            if !found.is_reference() {
+                let (item, _) = self.peeled_reference(expected);
+                self.expect(&item, found, span, MismatchContext::Plain)
+                    .map_err(|diagnostic| {
+                        self.explain_literal_default(function, position, diagnostic)
+                    })?;
+            }
+        }
+        Ok(())
     }
 
     fn needs_wrapper(expected: &[Type], found: &[Type]) -> bool {

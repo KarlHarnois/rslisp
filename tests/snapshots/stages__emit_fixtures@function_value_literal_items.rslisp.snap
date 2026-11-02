@@ -1,0 +1,89 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/function_value_literal_items.rslisp
+---
+fn is_small_byte(b: u8) -> bool {
+    b < 10
+}
+
+fn is_small_reading(r: u16) -> bool {
+    r < 10
+}
+
+fn is_small_offset(o: i32) -> bool {
+    o < 10
+}
+
+fn is_small_ratio(x: f32) -> bool {
+    x < 10.0
+}
+
+fn bytes() -> Vec<u8> {
+    let result: Vec<u8> = vec![3_u8, 7_u8, 12_u8, 4_u8];
+    result
+}
+
+fn readings() -> Vec<u16> {
+    let result: Vec<u16> = vec![1_u16, 2_u16, 3_u16, 40_u16, 5_u16];
+    result
+}
+
+fn offsets() -> Vec<i32> {
+    let result: Vec<i32> = vec![-2_i32, 9_i32, 10_i32];
+    result
+}
+
+fn ratios() -> Vec<f32> {
+    let result: Vec<f32> = vec![0.5_f32, 9.5_f32, 10.5_f32];
+    result
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!(
+        "{}",
+        bytes()
+            .iter()
+            .take_while(|argument: &&u8| is_small_byte(**argument))
+            .count()
+    );
+    println!(
+        "{}",
+        readings()
+            .iter()
+            .take_while(|argument: &&u16| is_small_reading(**argument))
+            .count()
+    );
+    println!(
+        "{}",
+        offsets()
+            .iter()
+            .take_while(|argument: &&i32| is_small_offset(**argument))
+            .count()
+    );
+    println!(
+        "{}",
+        ratios()
+            .iter()
+            .take_while(|argument: &&f32| is_small_ratio(**argument))
+            .count()
+    )
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
