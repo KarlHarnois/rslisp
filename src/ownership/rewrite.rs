@@ -323,16 +323,29 @@ impl<'a> ModeRewrite<'a> {
         let TypedExprKind::Leaf(TypedLeaf::Global(function)) = callee.kind else {
             return;
         };
-        let params =
-            self.function_params
-                .get(&function)
-                .cloned()
-                .unwrap_or_else(|| match &callee.ty {
-                    Type::Function(_, parameters, _) => parameters.clone(),
-                    _ => Vec::new(),
-                });
-        for (argument, param) in arguments.iter_mut().zip(&params) {
+        let params = self
+            .function_params
+            .get(&function)
+            .cloned()
+            .unwrap_or_else(|| Self::instantiated_params(callee).to_vec());
+        let instantiated = Self::instantiated_params(callee);
+        for (position, (argument, param)) in arguments.iter_mut().zip(&params).enumerate() {
+            let param = Self::at_shared_instantiation(param, instantiated.get(position));
             self.borrow_for(argument, param);
+        }
+    }
+
+    fn instantiated_params(callee: &TypedExpr) -> &[Type] {
+        match &callee.ty {
+            Type::Function(_, parameters, _) => parameters,
+            _ => &[],
+        }
+    }
+
+    fn at_shared_instantiation<'t>(param: &'t Type, instantiated: Option<&'t Type>) -> &'t Type {
+        match (param, instantiated) {
+            (Type::Generic(_), Some(instantiated @ Type::Ref(..))) => instantiated,
+            _ => param,
         }
     }
 

@@ -1,0 +1,9 @@
+(type later? (where ((a partial-ord)) (fn (a a) bool)))
+(defn later? (a b) (> a b))
+
+(defn main ()
+  (let year 2024)
+  (let model (to-string "Leaf"))
+  (println (later? (ref year) 2020))
+  (println (later? 2020 (ref year)))
+  (println (later? (ref model) (to-string "Civic"))))

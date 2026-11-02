@@ -3,8 +3,5 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/generic_borrow_after_literal.rslisp
 ---
-error[L0401]: mismatched types
- --> run/generic_borrow_after_literal.rslisp:7:25
-  |
-7 |   (println (later? 2020 (ref year)))
-  |                         ^^^^^^^^^^ expected an integer, found `(ref _)`
+false
+true
