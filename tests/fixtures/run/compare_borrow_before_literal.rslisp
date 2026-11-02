@@ -1,0 +1,7 @@
+(defn main ()
+  (let year 2024)
+  (let grade (char "b"))
+  (let model (to-string "Leaf"))
+  (println (> (ref year) 2020))
+  (println (> (ref grade) (char "a")))
+  (println (> "Civic" (ref model))))

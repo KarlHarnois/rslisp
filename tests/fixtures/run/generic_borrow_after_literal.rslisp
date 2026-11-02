@@ -1,0 +1,8 @@
+(type later? (where ((a partial-ord)) (fn (a a) bool)))
+(defn later? (a b) (> a b))
+
+(defn main ()
+  (let year 2024)
+  (let range 240.5)
+  (println (later? 2020 (ref year)))
+  (println (later? 300.0 (ref range))))
