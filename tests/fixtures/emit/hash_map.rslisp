@@ -8,7 +8,7 @@
   (let collected (into-hash-map pairs))
   (let next (update changed "a" (fn (n) (+ n 1)) 0))
   (println (len next) " " (empty? empty))
-  (println (unwrap (lookup next "a")))
+  (println (unwrap (get next "a")))
   (for-each (keys next) (fn (key) (println key)))
   (for-each (vals next) (fn (value) (println value)))
   (for-each (entries next)

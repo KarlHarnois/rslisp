@@ -29,7 +29,7 @@ pub enum ExprKind {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum MapOperation {
-    Lookup,
+    Get,
     Keys,
     Vals,
     Entries,
@@ -40,7 +40,7 @@ pub enum MapOperation {
 impl MapOperation {
     pub fn of(name: &str) -> Option<Self> {
         match name {
-            "lookup" => Some(Self::Lookup),
+            "get" => Some(Self::Get),
             "keys" => Some(Self::Keys),
             "vals" => Some(Self::Vals),
             "entries" => Some(Self::Entries),
@@ -52,7 +52,7 @@ impl MapOperation {
 
     pub fn keyword(self) -> &'static str {
         match self {
-            Self::Lookup => "lookup",
+            Self::Get => "get",
             Self::Keys => "keys",
             Self::Vals => "vals",
             Self::Entries => "entries",

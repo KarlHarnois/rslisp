@@ -1,6 +1,6 @@
 (defn main ()
   (let m (sorted-map "a" 1))
-  (let found (lookup m "a"))
+  (let found (get m "a"))
   (for-each (keys m) (fn (key) (println key)))
   (for-each (vals m) (fn (value) (println value)))
   (for-each (entries m) (fn (entry) (println entry)))

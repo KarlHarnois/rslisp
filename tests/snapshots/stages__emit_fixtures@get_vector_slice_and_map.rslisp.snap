@@ -1,0 +1,40 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/get_vector_slice_and_map.rslisp
+---
+fn second(items: &[i64]) -> Option<&i64> {
+    items.get(1)
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let years: Vec<i64> = vec![2019_i64, 2025_i64];
+    let prices: std::collections::HashMap<&str, i64> = {
+        let mut map = std::collections::HashMap::new();
+        map.insert("leaf", 30_i64);
+        map
+    };
+    println!("{}", years.get(0).unwrap());
+    println!("{}", second(&years).unwrap());
+    println!("{}", years.get(5).is_none());
+    println!("{}", prices.get("leaf").unwrap());
+    println!("{}", prices.get("ariya").is_none())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

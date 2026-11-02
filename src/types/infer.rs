@@ -2693,13 +2693,14 @@ impl TypeChecker {
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
         let value = self.infer(value)?;
-        if operation == MapOperation::Iter {
-            return self.infer_iter(value, arguments, span);
+        match operation {
+            MapOperation::Iter => return self.infer_iter(value, arguments, span),
+            MapOperation::Get => return self.infer_get(value, arguments, span),
+            _ => {}
         }
         let collection = self.map_collection(&value)?;
         self.check_map_key(&collection, value.span);
         match operation {
-            MapOperation::Lookup => self.infer_map_lookup(value, collection, arguments, span),
             MapOperation::Update => self.infer_map_update(value, collection, arguments, span),
             _ => self.infer_map_iterator_operation(operation, value, collection, arguments, span),
         }
@@ -2751,6 +2752,40 @@ impl TypeChecker {
         let result = self.iterator_type(item);
         let parameters = vec![Type::shared(collection_type)];
         self.synthetic_call_with_value("{0}.iter()", parameters, result, value, arguments, span)
+    }
+
+    fn infer_get(
+        &mut self,
+        value: TypedExpr,
+        arguments: &[Expr],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let resolved = self.unifier.resolve(&value.ty);
+        match Collection::of_referent(&resolved, &self.rust_types).filter(Collection::is_map) {
+            Some(collection) => {
+                self.check_map_key(&collection, value.span);
+                self.infer_map_lookup(value, collection, arguments, span)
+            }
+            None => self.infer_slice_get(value, arguments, span),
+        }
+    }
+
+    fn infer_slice_get(
+        &mut self,
+        value: TypedExpr,
+        arguments: &[Expr],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        if arguments.len() != 1 {
+            return Err(TypeProblems::wrong_argument_count(1, arguments.len(), span));
+        }
+        let element = self.unifier.fresh();
+        let parameters = vec![
+            Type::shared(self.slice_of(element.clone())),
+            Type::Primitive(PrimitiveType::Usize),
+        ];
+        let result = self.option_type(element);
+        self.synthetic_call_with_value("{0}.get({1})", parameters, result, value, arguments, span)
     }
 
     fn infer_iter_slice(&mut self, value: TypedExpr, span: Span) -> Result<TypedExpr, Diagnostic> {

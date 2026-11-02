@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/get_vector_slice_and_map.rslisp
+---
+2019
+2025
+true
+30
+true
