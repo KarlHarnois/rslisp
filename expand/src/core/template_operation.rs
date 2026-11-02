@@ -29,6 +29,7 @@ pub struct TemplateOperation<'t> {
 impl<'t> TemplateOperation<'t> {
     const OPERATORS: &'static str = "+-*/%!<>=&|^";
     const DIVISIONS: &'static str = "/%";
+    const CAST: &'static str = "as";
     const NEGATION: char = '-';
     const CALL: char = '(';
     const MACRO: char = '!';
@@ -165,7 +166,7 @@ impl<'t> TemplateOperation<'t> {
     fn callee(&self, open: usize) -> Option<&'t str> {
         let before = open.checked_sub(1)?;
         match self.lexemes[before] {
-            Lexeme::Word(name) => Some(name),
+            Lexeme::Word(name) if name != Self::CAST => Some(name),
             Lexeme::Symbol(Self::GENERICS_END) => self.turbofish_callee(before),
             _ => None,
         }
@@ -365,6 +366,7 @@ mod tests {
             "{0} * 1.5",
             "{0} * 2.",
             "{0} as i64",
+            "{0} as (i64)",
             "{0} as f64 / 2.0",
             "{0} == true",
             "{0} == 'a'",
