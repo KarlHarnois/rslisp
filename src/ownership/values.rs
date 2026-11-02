@@ -16,7 +16,7 @@ enum Adjustment {
     None,
     Shared,
     Mutable,
-    Deref,
+    Deref(usize),
 }
 
 struct WrappedType<'a> {
@@ -32,7 +32,7 @@ impl Adjustment {
             Self::None => Borrow::None,
             Self::Shared => Borrow::Shared,
             Self::Mutable => Borrow::Mutable,
-            Self::Deref => Borrow::Deref(1),
+            Self::Deref(levels) => Borrow::Deref(levels),
         }
     }
 }
@@ -400,7 +400,17 @@ impl<'a> FunctionValueModes<'a> {
         if !expected.is_reference() || actual.is_reference() {
             return None;
         }
-        self.copy.is_small_copy(actual).then_some(Adjustment::Deref)
+        self.copy
+            .is_small_copy(actual)
+            .then(|| Adjustment::Deref(Self::borrow_depth(expected)))
+    }
+
+    fn borrow_depth(value: &Type) -> usize {
+        if value.is_reference() {
+            1 + Self::borrow_depth(value.referent())
+        } else {
+            0
+        }
     }
 
     fn reborrowed(&self, expected: &Type, actual: &Type) -> Option<Adjustment> {
@@ -526,7 +536,7 @@ mod tests {
         assert_eq!(Adjustment::None.borrow(), Borrow::None);
         assert_eq!(Adjustment::Shared.borrow(), Borrow::Shared);
         assert_eq!(Adjustment::Mutable.borrow(), Borrow::Mutable);
-        assert_eq!(Adjustment::Deref.borrow(), Borrow::Deref(1));
+        assert_eq!(Adjustment::Deref(2).borrow(), Borrow::Deref(2));
     }
 
     #[test]
@@ -568,11 +578,24 @@ mod tests {
         let number = fixture.number();
         assert_eq!(
             fixture.decide(&fixture.borrowed(number.clone()), &number),
-            Some(Adjustment::Deref)
+            Some(Adjustment::Deref(1))
         );
         assert_eq!(
             fixture.decide(&fixture.changed(number.clone()), &number),
-            Some(Adjustment::Deref)
+            Some(Adjustment::Deref(1))
+        );
+    }
+
+    #[test]
+    fn a_doubly_borrowed_parameter_copies_through_each_borrow() {
+        let mut fixture = Adjustments::new();
+        let number = fixture.number();
+        let twice = fixture.borrowed(fixture.borrowed(number.clone()));
+        let changed_borrow = fixture.changed(fixture.borrowed(number.clone()));
+        assert_eq!(fixture.decide(&twice, &number), Some(Adjustment::Deref(2)));
+        assert_eq!(
+            fixture.decide(&changed_borrow, &number),
+            Some(Adjustment::Deref(2))
         );
     }
 
