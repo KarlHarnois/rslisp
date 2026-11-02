@@ -27,7 +27,7 @@ const PASSTHROUGH_RUSTFMT: &str =
 const FAILING_RUSTFMT: &str = "#!/bin/sh\nprintf 'rustfmt failed in the sandbox\\n' >&2\nexit 1\n";
 const BOUND_MODULE: &str = "(export person)\n\n(defstruct person :name string)\n";
 const MILLION_LINES: &str = "(defn main ()\n  (for-each (range 0 1000000) (fn (i) (println i))))\n";
-const COUNT_INPUT_LINES: &str = "(defn main ()\n  (println (count (line-seq stdin))))\n";
+const COUNT_INPUT_LINES: &str = "(defn main ()\n  (println (count (take (line-seq stdin) 2))))\n";
 const STRUCTS: &str = "(defstruct person :name string :age i64)\n(defstruct ticket :id u32)\n(derive ticket debug)\n\n(defn main () (do))\n";
 const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::ops::Add\" i64 (with i64 person))\n\n(type matches (where ((a (same person))) (fn (a) bool)))\n(defn matches (x) true)\n\n(defn main () (println (matches 1)))\n";
 
