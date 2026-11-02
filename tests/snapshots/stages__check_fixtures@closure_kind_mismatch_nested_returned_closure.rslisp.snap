@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/closure_kind_mismatch_nested_returned_closure.rslisp
+---
+error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
+ --> check/closure_kind_mismatch_nested_returned_closure.rslisp:7:19
+  |
+7 |   (println (twice (middle))))
+  |                   ^^^^^^^^ `model` moves here
+  |
+  = help: clone `model`, or borrow it with `(ref model)`

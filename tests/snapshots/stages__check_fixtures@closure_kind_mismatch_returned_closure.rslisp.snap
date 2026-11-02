@@ -3,6 +3,10 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/closure_kind_mismatch_returned_closure.rslisp
 ---
-(type twice (fn ((fn () string)) string))
-(type keep (fn (string) string))
-(type main (fn () unit))
+error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
+ --> check/closure_kind_mismatch_returned_closure.rslisp:7:10
+  |
+7 |   (twice getter)
+  |          ^^^^^^ `model` moves here
+  |
+  = help: clone `model`, or borrow it with `(ref model)`

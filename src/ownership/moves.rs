@@ -383,10 +383,21 @@ impl<'a> MoveChecker<'a> {
                 self.expr(value, Usage::Move);
                 kind
             }
+            TypedExprKind::Call(..) => {
+                self.expr(value, Usage::Move);
+                Self::once_call_result(&value.ty)
+            }
             _ => {
                 self.expr(value, Usage::Move);
                 None
             }
+        }
+    }
+
+    fn once_call_result(ty: &Type) -> Option<ClosureKind> {
+        match ty {
+            Type::Function(ClosureKind::FnOnce, _, _) => Some(ClosureKind::FnOnce),
+            _ => None,
         }
     }
 

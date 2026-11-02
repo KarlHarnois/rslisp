@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/written_once_result_of_parameter_called_twice.rslisp
+---
+Leaf
+Leaf
