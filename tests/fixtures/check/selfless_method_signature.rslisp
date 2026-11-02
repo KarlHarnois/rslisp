@@ -4,7 +4,7 @@
   (check (fn (str) bool)))
 
 (impl vetting badge
-  (check (word) (!= word "")))
+  (check (word) (not= word "")))
 
 (defn main ()
   (println (check "visitor")))

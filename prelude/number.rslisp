@@ -5,7 +5,7 @@
 
 (export number signed float integer partial-eq hash partial-ord
         add sub mul div rem neg sqrt pi lt le gt ge eq ne
-        + - * / < <= > >= = != ord)
+        + - * / < <= > >= = not= ord)
 
 (rust-trait number "crate::rt::Number" i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
 (rust-trait signed "crate::rt::Signed" i8 i16 i32 i64 i128 isize f32 f64)
@@ -98,7 +98,7 @@
   ((a b) (eq a b))
   ((a b c more ...) (do (let left a) (let middle b) (and (eq left middle) (= middle c more ...)))))
 
-(defrule !=
+(defrule not=
   ((a b) (ne a b)))
 
 (rust-trait ord "Ord"
