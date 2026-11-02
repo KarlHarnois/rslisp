@@ -5,7 +5,7 @@
 (defn has-big? (values) (any? values (fn (value) (> value 50))))
 
 (type all-small? (fn ((iterator i64)) bool))
-(defn all-small? (values) (all values (fn (value) (< value 50))))
+(defn all-small? (values) (every? values (fn (value) (< value 50))))
 
 (type how-many (fn ((iterator i64)) usize))
 (defn how-many (values) (count values))
