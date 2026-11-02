@@ -59,7 +59,7 @@ impl<'a> Comparison<'a> {
             return "No instruction count changed.\n".to_string();
         }
         format!(
-            "{}\n{}",
+            "{}{}",
             Self::count_notes(&programs),
             Self::largest_changes(changed)
         )
@@ -154,7 +154,7 @@ impl<'a> Comparison<'a> {
         let shown = changed.len().min(Self::LARGEST_CHANGES);
         let rows = changed.iter().take(shown).map(|stage| stage.row());
         format!(
-            "The {shown} largest of {} changes:\n\n{}",
+            "\nThe {shown} largest of {} changes:\n\n{}",
             changed.len(),
             Self::table(rows)
         )
@@ -378,7 +378,7 @@ mod tests {
         let results = ComparisonFixture::with_unmeasured(&[ComparisonFixture::expand(500_000)]);
         assert_eq!(
             ComparisonFixture::brief(&results, &results),
-            "Stages that rose notably, or could not be compared: 1.\n\n\n\
+            "Stages that rose notably, or could not be compared: 1.\n\n\
              The base has no counters, so no counter is checked for growth.\n"
         );
     }
