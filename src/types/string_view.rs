@@ -61,7 +61,7 @@ impl TypeChecker {
 
     fn is_string_view(&self, value: &Type) -> bool {
         match self.unifier.resolve(value) {
-            Type::Ref(_, view) => matches!(*view, Type::Primitive(PrimitiveType::Str)),
+            Type::Ref(_, view) => Self::views_string(&view, &Self::owned_string()),
             _ => false,
         }
     }
@@ -70,10 +70,7 @@ impl TypeChecker {
         let TypedExprKind::Borrow(ReferenceKind::Shared, place) = &value.kind else {
             return false;
         };
-        matches!(
-            self.unifier.resolve(&self.place_type(place)),
-            Type::Primitive(PrimitiveType::String)
-        )
+        self.unifier.resolve(&self.place_type(place)) == Self::owned_string()
     }
 
     pub(super) fn views_string(view: &Type, owned: &Type) -> bool {
@@ -118,7 +115,11 @@ impl TypeChecker {
     }
 
     fn viewed_string() -> Type {
-        Type::shared(Type::Primitive(PrimitiveType::String))
+        Type::shared(Self::owned_string())
+    }
+
+    fn owned_string() -> Type {
+        Type::Primitive(PrimitiveType::String)
     }
 
     fn sits_in_function_body(&self) -> bool {
