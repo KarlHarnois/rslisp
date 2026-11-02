@@ -56,6 +56,12 @@ impl TaskFailure {
         ))
     }
 
+    pub fn gated_counter_missing(program: &str, counter: &str) -> Self {
+        Self::new(format!(
+            "the candidate has no `{counter}` for `{program}`, so its growth cannot be checked"
+        ))
+    }
+
     pub fn stage_entry_missing(candidates: &[String]) -> Self {
         let entry_point = candidates
             .iter()
