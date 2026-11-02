@@ -189,10 +189,7 @@ impl DependencyGraph {
             );
         }
         let mut graph = Self {
-            macro_helpers: macro_helpers
-                .into_iter()
-                .filter(|helper| walked.contains_key(helper))
-                .collect(),
+            macro_helpers,
             edges,
             compile_time_only: direct_compile_time,
         };
