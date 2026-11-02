@@ -453,7 +453,12 @@
 
 (def value-notes
   (fn (term)
-    (docstring-notes (definition-symbol term "doc") (value-doc-key term))))
+    (map-list (fn (note) (with-call-header term note))
+              (docstring-notes (definition-symbol term "doc") (value-doc-key term)))))
+
+(def with-call-header
+  (fn (term note)
+    (concat (take 2 note) (prepend (shaped-header (note-header note) term) (note-docstrings note)))))
 
 (def type-notes
   (fn (term)
@@ -485,13 +490,17 @@
 
 (def written-header
   (fn (term)
+    (shaped-header term term)))
+
+(def shaped-header
+  (fn (fallback term)
     (let calls (definition-call term))
-    (if (empty? calls) term (call-header term (first calls)))))
+    (if (empty? calls) fallback (call-header fallback term (first calls)))))
 
 (def call-header
-  (fn (term call)
+  (fn (fallback term call)
     (let shapes (header-shapes (symbol (definition-symbol term "doc") (first call))))
-    (if (empty? shapes) term (take (length (first shapes)) call))))
+    (if (empty? shapes) fallback (take (length (first shapes)) call))))
 
 (def header-shapes
   (fn (definer)
