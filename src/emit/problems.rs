@@ -85,6 +85,25 @@ impl EmitProblems {
         .with_help("take this parameter as `(ref self)` in the trait, so the result can borrow from it")
     }
 
+    pub fn implementor_borrow_in_tied_result(
+        names: &UntiedNames,
+        signature: &str,
+        span: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::UNTIED_IMPLEMENTOR_BORROW,
+            format!(
+                "`{}` returns a borrow that cannot come from `{}`",
+                names.method, names.parameter
+            ),
+            Label::new(span, "the result borrows from this value"),
+        )
+        .with_note("the trait's signature lets the result borrow only from its reference parameters")
+        .with_help(format!(
+            "take this parameter as `(ref self)` in the trait's signature `{signature}`, so the result can borrow from it"
+        ))
+    }
+
     pub fn bad_template(problem: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::BAD_TEMPLATE,
