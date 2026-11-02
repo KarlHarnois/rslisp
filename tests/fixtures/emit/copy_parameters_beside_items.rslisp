@@ -2,7 +2,7 @@
   (count (filter (iter years) (fn (y) (> (deref y) floor)))))
 
 (defn after? (years floor)
-  (any (iter years) (fn (y) (> y floor))))
+  (any? (iter years) (fn (y) (> y floor))))
 
 (defn typed-recent ((years (ref (slice i64))) floor)
   (count (filter (iter years) (fn (y) (> (deref y) floor)))))

@@ -1,4 +1,4 @@
-(defn both (values) (let first (find values (fn (value) (> (deref value) 5)))) (and (some? first) (any values (fn (value) (> value 50)))))
+(defn both (values) (let first (find values (fn (value) (> (deref value) 5)))) (and (some? first) (any? values (fn (value) (> value 50)))))
 
 (defn main ()
   (prn (both (range 0 100)))

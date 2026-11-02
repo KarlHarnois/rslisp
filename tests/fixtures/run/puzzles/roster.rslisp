@@ -42,7 +42,7 @@
   (= (as-str (:dept person)) dept))
 
 (defn present? (people name)
-  (any (iter people) (fn (person) (= (as-str (:name person)) name))))
+  (any? (iter people) (fn (person) (= (as-str (:name person)) name))))
 
 (defn same-employee? (left right)
   (and (= (as-str (:name left)) (as-str (:name right)))

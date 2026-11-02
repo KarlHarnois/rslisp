@@ -4,10 +4,10 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/consumed_iterator_used_again.rslisp
 ---
 error[L0501]: use of moved value `values`
- --> check/consumed_iterator_used_again.rslisp:1:56
+ --> check/consumed_iterator_used_again.rslisp:1:57
   |
-1 | (defn counted (values) (let total (count values)) (any values (fn (value) (> value 50))))
-  |                                          ------        ^^^^^^ value used here after it moved
+1 | (defn counted (values) (let total (count values)) (any? values (fn (value) (> value 50))))
+  |                                          ------         ^^^^^^ value used here after it moved
   |                                          |
   |                                          value moved here
   |
