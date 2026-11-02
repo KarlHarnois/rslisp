@@ -1,5 +1,5 @@
 (defn total (numbers)
-  (sum (values numbers)))
+  (sum (copied numbers)))
 
 (defn first-number (numbers)
   (at numbers 0))

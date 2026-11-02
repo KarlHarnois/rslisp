@@ -7,4 +7,4 @@
   (println (sum prices))
   (let users (vec (->user "ana" 34) (->user "bo" 27)))
   (println (sum (map users :age)))
-  (println (sum (values scores))))
+  (println (sum (copied scores))))

@@ -181,7 +181,7 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 
 | Type | Rust | Functions |
 |---|---|---|
-| `(vec a)` | `Vec<A>` | `vec push! len iter values collect get pop! remove-at! sort! sort-by-key! windows at dedup! first last empty? reverse reverse! sort-descending!` |
+| `(vec a)` | `Vec<A>` | `vec push! len iter copied collect get pop! remove-at! sort! sort-by-key! windows at dedup! first last empty? reverse reverse! sort-descending!` |
 | `(slice a)` | `[A]` | `iter windows at first last empty? reverse` |
 | `(box a)` | `Box<A>` | `box-new` |
 | `(pair a b)` | `(A, B)` | `pair pair/pair let-pair` |
@@ -205,7 +205,7 @@ Program input and output use Rust's standard library through the prelude. `stdin
 
 A `main` whose inferred type is a `result` emits an inner function for its body and a `fn main()` that prints its error with `display` to standard error and exits 1. The success path exits 0. The error type must implement `display`; a program's own enum implements it with `display`. A `main` whose inferred type is neither `unit` nor a `result` is an error, because Rust requires `main` to return a type that implements `Termination`.
 
-- `iter` yields `(ref a)` for a vector or a slice, and `(pair (ref key) (ref value))` for a map. `values` yields copies, so its elements must be `copy`.
+- `iter` yields `(ref a)` for a vector or a slice, and `(pair (ref key) (ref value))` for a map. `copied` yields copies, so its elements must be `copy`.
 - `(count (iter coll))` emits `coll.len()`, because the collection already knows its length. `count` is a prelude macro that rewrites only that written form, so `count` on any other iterator, and on a vector that the compiler iterates for it, emits `.count()`. `count` as a value, as in `(let counter count)`, emits the path `Iterator::count`, because rustc cannot infer the parameter type of a closure that calls a method.
 - `filter` passes each element to its test as a reference, as Rust does, and so do `find`, `take-while` and `max-by-key`. Over `(iter years)` the test's parameter is `(ref (ref i64))`, so `(filter (iter years) (fn (y) (> (deref y) 2020)))` emits `years.iter().filter(|y: &&i64| **y > 2020)`: the comparison copies the year out of the borrow that `deref` leaves, as the Adjustment bullet says.
 - `range` takes an `integer`, a prelude trait of the integer types.

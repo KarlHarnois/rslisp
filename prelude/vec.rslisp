@@ -4,7 +4,7 @@
 (use prelude/ownership copy)
 (use code list prepend concat length empty? string number-add number-sub number-lt)
 
-(export vec push! len iter values collect pop! remove-at! sort! sort-by-key! windows at dedup!
+(export vec push! len iter copied collect pop! remove-at! sort! sort-by-key! windows at dedup!
         first last reverse reverse! sort-descending!)
 
 (def element-placeholders
@@ -44,7 +44,7 @@
 (def len (rust "{0}.len()" (where ((a sequence)) (fn ((ref a)) usize))))
 (defrule iter
   ((collection) (map-at iter collection)))
-(def values (rust "{0}.iter().copied()" (where ((a copy)) (fn ((ref (slice a))) (iterator a)))))
+(def copied (rust "{0}.iter().copied()" (where ((a copy)) (fn ((ref (slice a))) (iterator a)))))
 (def collect (rust "{0}.collect::<Vec<_>>()" (where (a) (fn ((iterator a)) (vec a)))))
 (def pop! (rust "{0}.pop()" (where (a) (fn ((mut (vec a))) (option a)))))
 (def remove-at! (rust "{0}.remove({1})" (where (a) (fn ((mut (vec a)) usize) a))))
