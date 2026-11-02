@@ -10,7 +10,7 @@ error[L0512]: cannot pass a borrow of a local value to `pick`
    |        ---- this local is dropped when the function returns
  7 |   (let years (vec 2019 2021 2024))
  8 |   (let pick (fn (maybe) (unwrap-or maybe "none")))
-   |                  ----- the result of `pick` borrows this parameter, so it needs a borrow that outlives the function
+   |                  ----- `pick` ties this parameter to its result, so it needs a borrow that outlives the function
 ...
 11 |   (println (pick (some (as-str name))))
    |                  ^^^^^^^^^^^^^^^^^^^^ this borrows a local value
@@ -24,7 +24,7 @@ error[L0512]: cannot pass a borrow of a local value to `first`
    |        ----- this local is dropped when the function returns
  8 |   (let pick (fn (maybe) (unwrap-or maybe "none")))
  9 |   (let first (fn ((items (ref (vec i64)))) (at items 0)))
-   |                   ----------------------- the result of `first` borrows this parameter, so it needs a borrow that outlives the function
+   |                   ----------------------- `first` ties this parameter to its result, so it needs a borrow that outlives the function
 ...
 12 |   (println (first years))
    |                   ^^^^^ this borrows a local value
@@ -38,7 +38,7 @@ error[L0512]: cannot pass a borrow of a local value to `again`
    |        ----- this local is dropped when the function returns
  8 |   (let pick (fn (maybe) (unwrap-or maybe "none")))
  9 |   (let first (fn ((items (ref (vec i64)))) (at items 0)))
-   |                   ----------------------- the result of `first` borrows this parameter, so it needs a borrow that outlives the function
+   |                   ----------------------- `first` ties this parameter to its result, so it needs a borrow that outlives the function
 10 |   (let again first)
    |              ----- `again` is `first`
 ...
@@ -54,7 +54,7 @@ error[L0512]: cannot pass a borrow of a local value to `more`
    |        ----- this local is dropped when the function returns
  8 |   (let pick (fn (maybe) (unwrap-or maybe "none")))
  9 |   (let first (fn ((items (ref (vec i64)))) (at items 0)))
-   |                   ----------------------- the result of `first` borrows this parameter, so it needs a borrow that outlives the function
+   |                   ----------------------- `first` ties this parameter to its result, so it needs a borrow that outlives the function
 10 |   (let again first)
    |              ----- `again` is `first`
 ...
