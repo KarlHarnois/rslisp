@@ -51,6 +51,7 @@ pub struct EmittedCrate {
 pub struct RustEmitter;
 
 impl RustEmitter {
+    #[inline(never)]
     pub fn emit(program: &TypedProgram, entry: Span) -> Result<EmittedCrate, Diagnostics> {
         let plan = EmitPlan::build(program, entry)?;
         let unsized_parameters = UnsizedParameters::of(program, &plan);

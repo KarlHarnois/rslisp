@@ -12,6 +12,7 @@ use crate::types::{
 pub struct ProgramChecker;
 
 impl ProgramChecker {
+    #[inline(never)]
     pub fn check(program: &Program) -> Result<TypedProgram, Diagnostics> {
         CheckRuns::new(program).typed().and_then(MainResult::check)
     }
