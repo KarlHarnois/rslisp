@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use super::parameter_calls::ParameterCall;
+use super::pinning::LiteralDefault;
 use crate::core::{FieldLabel, Keyword};
 use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
@@ -239,29 +240,48 @@ impl TypeProblems {
         ))
     }
 
-    pub fn literal_default_note(
-        parameter: &str,
-        default: &str,
-        function: &str,
-        calls: &[String],
-    ) -> String {
+    pub fn literal_default_note(default: &LiteralDefault, function: &str) -> String {
         format!(
-            "`{parameter}` defaulted to `{default}`, because `{function}` is called with {}",
-            Self::literal_calls(calls)
+            "`{}` defaulted to `{}`, because `{function}` is {}",
+            default.parameter,
+            default.default,
+            Self::literal_uses(default)
         )
     }
 
-    fn literal_calls(calls: &[String]) -> String {
+    fn literal_uses(default: &LiteralDefault) -> String {
+        let calls = (!default.calls.is_empty())
+            .then(|| format!("called with {}", Self::listed_types(&default.calls)));
+        let values = (!default.values.is_empty()).then(|| {
+            format!(
+                "passed as a value with {}",
+                Self::listed_types(&default.values)
+            )
+        });
         calls
+            .into_iter()
+            .chain(values)
+            .collect::<Vec<_>>()
+            .join(" and ")
+    }
+
+    fn listed_types(types: &[String]) -> String {
+        types
             .iter()
-            .map(|call| format!("`{call}`"))
+            .map(|ty| format!("`{ty}`"))
             .collect::<Vec<_>>()
             .join(" and with ")
     }
 
-    pub fn literal_default_help(function: &str, signature: &str) -> String {
+    pub fn literal_default_help(default: &LiteralDefault, function: &str) -> String {
+        if default.values.len() > 1 {
+            return format!(
+                "give `{function}` a `type` signature whose parameter is a type parameter with its traits in a `where`, so that each use takes its own type"
+            );
+        }
         format!(
-            "give `{function}` one parameter type with a `type` signature, such as `(type {function} {signature})`, and pass that type at every call"
+            "give `{function}` one parameter type with a `type` signature, such as `(type {function} {})`, and pass that type at every call",
+            default.signature
         )
     }
 

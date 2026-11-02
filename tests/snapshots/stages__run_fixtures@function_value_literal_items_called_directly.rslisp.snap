@@ -9,5 +9,5 @@ error[L0401]: mismatched types
 6 |   (println (count (take-while (iter bytes) small?))))
   |                                            ^^^^^^ expected `u8`, found `i64`
   |
-  = note: `b` defaulted to `i64`, because `small?` is called with `i64` and with `u8`
-  = help: give `small?` one parameter type with a `type` signature, such as `(type small? (fn (i64) bool))`, and pass that type at every call
+  = note: `b` defaulted to `i64`, because `small?` is called with `i64` and passed as a value with `u8`
+  = help: give `small?` one parameter type with a `type` signature, such as `(type small? (fn (u8) bool))`, and pass that type at every call

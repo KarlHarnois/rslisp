@@ -3,7 +3,7 @@ use std::rc::Rc;
 use super::ty::Type;
 use super::typed::{
     Borrow, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedExpr, TypedExprKind,
-    TypedLambda, TypedLeaf,
+    TypedLambda, TypedLeaf, WrappedFunction,
 };
 use crate::core::{BindingArena, BindingId, BindingInfo, BindingKind};
 use crate::source::Span;
@@ -21,9 +21,13 @@ impl<'a> FunctionValueWrapper<'a> {
         &mut self,
         expected_parameters: &[Type],
         value: TypedExpr,
-        wraps: Option<BindingId>,
+        function: BindingId,
     ) -> PreparedFunctionValue {
         let span = value.span;
+        let wraps = WrappedFunction {
+            binding: function,
+            ty: value.ty.clone(),
+        };
         let mut params = Vec::new();
         let mut arguments = Vec::new();
         for expected in expected_parameters {
@@ -63,7 +67,7 @@ pub struct PreparedFunctionValue {
     pub arguments: Vec<TypedArgument>,
     value: TypedExpr,
     span: Span,
-    wraps: Option<BindingId>,
+    wraps: WrappedFunction,
 }
 
 impl PreparedFunctionValue {
@@ -83,7 +87,7 @@ impl PreparedFunctionValue {
             body: TypedBlock {
                 items: vec![TypedBodyItem::Expr(call)],
             },
-            wraps: self.wraps,
+            wraps: Some(self.wraps),
             kind: crate::types::ClosureKind::Fn,
             moved_capture: None,
             changed_capture: None,

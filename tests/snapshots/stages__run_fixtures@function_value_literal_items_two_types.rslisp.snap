@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_value_literal_items_two_types.rslisp
+---
+error[L0401]: mismatched types
+ --> run/function_value_literal_items_two_types.rslisp:6:44
+  |
+6 |   (println (count (take-while (iter bytes) small?)))
+  |                                            ^^^^^^ expected `u8`, found `i64`
+  |
+  = note: `b` defaulted to `i64`, because `small?` is passed as a value with `u8` and with `u16`
+  = help: give `small?` a `type` signature whose parameter is a type parameter with its traits in a `where`, so that each use takes its own type

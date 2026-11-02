@@ -29,6 +29,17 @@ impl TypedExpr {
         self.place_root().is_some()
     }
 
+    pub fn function_value(&self) -> Option<(BindingId, &Type)> {
+        match &self.kind {
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => Some((*binding, &self.ty)),
+            TypedExprKind::Fn(lambda) => lambda
+                .wraps
+                .as_ref()
+                .map(|wrapped| (wrapped.binding, &wrapped.ty)),
+            _ => None,
+        }
+    }
+
     pub fn is_written_form(&self) -> bool {
         matches!(
             self.kind,
@@ -220,10 +231,16 @@ impl TypedBinder {
 pub struct TypedLambda {
     pub params: Vec<TypedBinder>,
     pub body: TypedBlock,
-    pub wraps: Option<BindingId>,
+    pub wraps: Option<WrappedFunction>,
     pub kind: ClosureKind,
     pub moved_capture: Option<(BindingId, Span)>,
     pub changed_capture: Option<(BindingId, Span)>,
+}
+
+#[derive(Clone, Debug)]
+pub struct WrappedFunction {
+    pub binding: BindingId,
+    pub ty: Type,
 }
 
 #[derive(Clone, Debug, Default)]
