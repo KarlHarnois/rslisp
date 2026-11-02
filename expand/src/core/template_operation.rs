@@ -40,6 +40,8 @@ impl<'t> TemplateOperation<'t> {
     const QUOTE: char = '"';
     const ESCAPE: char = '\\';
     const UNDERSCORE: char = '_';
+    const OPENING_BRACKETS: &'static str = "([{";
+    const CLOSING_BRACKETS: &'static str = ")]}";
     const PROMOTABLE_FUNCTIONS: [&'static str; 6] = [
         "align_of",
         "max_value",
@@ -63,8 +65,9 @@ impl<'t> TemplateOperation<'t> {
     ];
 
     pub fn of(pieces: &'t [Piece]) -> Self {
+        let lexemes = pieces.iter().flat_map(Self::lexemes_of).collect();
         Self {
-            lexemes: pieces.iter().flat_map(Self::lexemes_of).collect(),
+            lexemes: Self::without_literal_macro_arguments(lexemes),
         }
     }
 
@@ -98,6 +101,45 @@ impl<'t> TemplateOperation<'t> {
             .filter(|(_, lexeme)| Self::divides(lexeme))
             .filter_map(|(position, _)| self.division_at(position))
             .collect()
+    }
+
+    fn without_literal_macro_arguments(mut lexemes: Vec<Lexeme<'t>>) -> Vec<Lexeme<'t>> {
+        let mut position = 0;
+        while position < lexemes.len() {
+            if Self::opens_literal_macro(&lexemes[position..]) {
+                let open = position + 2;
+                let close = Self::matching_close(&lexemes, open);
+                lexemes.drain(open + 1..close);
+            }
+            position += 1;
+        }
+        lexemes
+    }
+
+    fn opens_literal_macro(lexemes: &[Lexeme]) -> bool {
+        matches!(
+            lexemes,
+            [Lexeme::Word(name), Lexeme::Symbol(Self::MACRO), Lexeme::Symbol(open), ..]
+                if Self::LITERAL_MACROS.contains(name) && Self::OPENING_BRACKETS.contains(*open)
+        )
+    }
+
+    fn matching_close(lexemes: &[Lexeme], open: usize) -> usize {
+        let mut depth = 0;
+        (open..lexemes.len())
+            .find(|&position| {
+                depth += Self::bracket_depth(&lexemes[position]);
+                depth == 0
+            })
+            .unwrap_or(lexemes.len())
+    }
+
+    fn bracket_depth(lexeme: &Lexeme) -> i32 {
+        match lexeme {
+            Lexeme::Symbol(symbol) if Self::OPENING_BRACKETS.contains(*symbol) => 1,
+            Lexeme::Symbol(symbol) if Self::CLOSING_BRACKETS.contains(*symbol) => -1,
+            _ => 0,
+        }
     }
 
     fn calls_function(&self) -> bool {
@@ -330,6 +372,7 @@ mod tests {
             "true != {0}",
             "{0}..10",
             "&{0}[{1}]",
+            "{0}.line != 1",
         ] {
             assert!(!OperationFixture::calls(text), "{text}");
         }
@@ -347,6 +390,9 @@ mod tests {
             "std::mem::size_of::<i64>() + {0}",
             "stringify!({0})",
             "|{!item}| {0}",
+            "cfg!(any(unix, windows)) == {0}",
+            "(stringify!(f({0})), 1)",
+            "(stringify!(vec![{0}]), 1)",
         ] {
             assert!(!OperationFixture::calls(text), "{text}");
         }
@@ -363,6 +409,7 @@ mod tests {
             "{0} + 1.max(2)",
             "{0} + 1 .max(2)",
             "(\"Leaf\", 1.max({0}))",
+            "(stringify!(f({0})), {0}.len())",
         ] {
             assert!(OperationFixture::calls(text), "{text}");
         }
@@ -441,6 +488,18 @@ mod tests {
             [Division {
                 dividend: None,
                 divisor: Operand::Argument(1),
+            }]
+        );
+    }
+
+    #[test]
+    fn reads_a_division_only_where_it_runs() {
+        assert!(OperationFixture::divisions("stringify!({0} / 0)").is_empty());
+        assert_eq!(
+            OperationFixture::divisions("vec![{0} / 0]"),
+            [Division {
+                dividend: Some(Operand::Argument(0)),
+                divisor: Operand::Constant(Some(0)),
             }]
         );
     }
