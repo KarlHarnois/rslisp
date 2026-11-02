@@ -1,0 +1,2 @@
+inventory	expand=60	total=100	allocator.allocated_bytes=4096	allocator.peak_live_bytes=1024
+unsupported	allocator.allocations=7

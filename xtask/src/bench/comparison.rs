@@ -307,6 +307,7 @@ mod tests {
     use std::collections::BTreeMap;
 
     use super::*;
+    use crate::bench::results::Counters;
 
     struct ComparisonFixture;
 
@@ -317,6 +318,7 @@ mod tests {
             let orders = ProgramResult {
                 program: "orders".to_string(),
                 measurement: None,
+                counters: Counters::new(),
             };
             ResultSet::new(vec![Self::inventory(stages), orders])
         }
@@ -333,6 +335,7 @@ mod tests {
             ProgramResult {
                 program: "inventory".to_string(),
                 measurement: Some(Measurement::new(stages, Self::PROGRAM_INSTRUCTIONS)),
+                counters: Counters::new(),
             }
         }
 

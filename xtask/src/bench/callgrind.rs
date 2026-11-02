@@ -11,7 +11,7 @@ use std::thread;
 use super::compiler::BuiltCompiler;
 use super::measurement::Measurement;
 use super::profile::{EntryPointCheck, ProfileReader};
-use super::results::ProgramResult;
+use super::results::{Counters, ProgramResult};
 use crate::failure::TaskFailure;
 
 pub struct Callgrind {
@@ -109,6 +109,7 @@ impl Callgrind {
         Ok(ProgramResult {
             program: Self::name_of(program),
             measurement,
+            counters: Counters::new(),
         })
     }
 
