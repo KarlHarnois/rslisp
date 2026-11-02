@@ -331,13 +331,13 @@ impl TypeChecker {
             )?;
         }
         let shared = Type::Var(root);
-        for position in self.template_borrows_first(callee, group, &shared, arguments) {
+        for position in self.passing_order(callee, group, &shared, arguments) {
             self.pass_member(callee, position, &shared, &mut arguments[position])?;
         }
         Ok(())
     }
 
-    fn template_borrows_first(
+    fn passing_order(
         &self,
         callee: Option<&TypedExpr>,
         group: &SharedGroup,
@@ -346,8 +346,12 @@ impl TypeChecker {
     ) -> Vec<usize> {
         let mut positions: Vec<usize> = group.positions().collect();
         positions.sort_by_key(|position| {
-            self.place_the_template_borrows(callee, *position, shared, &arguments[*position].value)
-                .is_none()
+            let value = &arguments[*position].value;
+            (
+                self.place_the_template_borrows(callee, *position, shared, value)
+                    .is_none(),
+                self.takes_type_from_others(callee, *position, value),
+            )
         });
         positions
     }
@@ -379,9 +383,12 @@ impl TypeChecker {
         let TypedExprKind::Borrow(ReferenceKind::Shared, place) = &value.kind else {
             return None;
         };
-        let template_borrows =
-            callee.is_some_and(|callee| self.template_borrows.borrows(callee, position));
-        (template_borrows && !self.unifier.shallow(shared).is_reference()).then_some(place)
+        (self.template_borrows_at(callee, position) && !self.unifier.shallow(shared).is_reference())
+            .then_some(place)
+    }
+
+    fn template_borrows_at(&self, callee: Option<&TypedExpr>, position: usize) -> bool {
+        callee.is_some_and(|callee| self.template_borrows.borrows(callee, position))
     }
 
     fn pass_template_borrow(
@@ -396,6 +403,22 @@ impl TypeChecker {
             borrow: Borrow::Shared,
         };
         Ok(())
+    }
+
+    fn takes_type_from_others(
+        &self,
+        callee: Option<&TypedExpr>,
+        position: usize,
+        value: &TypedExpr,
+    ) -> bool {
+        self.is_open_literal(&value.ty) && !self.template_borrows_at(callee, position)
+    }
+
+    fn is_open_literal(&self, value: &Type) -> bool {
+        match self.unifier.shallow(value) {
+            Type::Var(var) => self.unifier.literal_kind(var).is_some(),
+            _ => false,
+        }
     }
 
     fn unify_referents(
