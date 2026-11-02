@@ -405,12 +405,12 @@
 
   The page of a definition that the definer made shows as many leading
   forms of its call as the shape lists."
-  (if (symbol-headed-list? shape)
+  (if (header-shape? shape)
       (do (add-module-note (quote header-shapes) shape)
           (quote (do)))
       (malformed-header-shape shape)))
 
-(def symbol-headed-list?
+(def header-shape?
   (fn (shape)
     (if (list? shape)
         (if (empty? shape) false (symbol? (first shape)))
@@ -490,10 +490,10 @@
 
 (def written-header
   (fn (term)
-    (let calls (definition-call term))
+    (let calls (scoped-form (definition-symbol term "doc") (definition-call term)))
     (if (empty? calls)
         term
-        (call-header term (scoped-form (definition-symbol term "doc") (first calls)) header-expansion-limit))))
+        (call-header term (first calls) (fn () (expand-call (first calls))) header-expansion-limit))))
 
 (def header-expansion-limit 32)
 
@@ -504,25 +504,31 @@
         (if (list? form) (map-list (fn (item) (scoped-form context item)) form) form))))
 
 (def call-header
-  (fn (term call expansions-left)
+  (fn (term call expand expansions-left)
     (let shapes (header-shapes (first call)))
     (if (empty? shapes)
-        (expansion-header term call expansions-left)
-        (take (length (first shapes)) call))))
+        (expansion-header term expand expansions-left)
+        (shaped-header (first shapes) call))))
+
+(def shaped-header
+  (fn (shape call)
+    (if (number-lt (length call) (length shape)) call (take (length shape) call))))
 
 (def expansion-header
-  (fn (term call expansions-left)
+  (fn (term expand expansions-left)
     (if (number-lt 0 expansions-left)
-        (expanded-header term (expand-call call) (number-sub expansions-left 1))
+        (expanded-header term (expand) (number-sub expansions-left 1))
         term)))
 
 (def expanded-header
   (fn (term expansions expansions-left)
-    (if (named-call? expansions) (call-header term (first expansions) expansions-left) term)))
+    (if (empty? expansions)
+        term
+        (macro-call-header term (first expansions) (expand-call (first expansions)) expansions-left))))
 
-(def named-call?
-  (fn (calls)
-    (if (empty? calls) false (symbol-headed-list? (first calls)))))
+(def macro-call-header
+  (fn (term call expansions expansions-left)
+    (if (empty? expansions) term (call-header term call (fn () expansions) expansions-left))))
 
 (def header-shapes
   (fn (definer)

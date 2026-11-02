@@ -1,0 +1,13 @@
+(use prelude/macros header-shape)
+
+(defrule my-defn ((n p d b) (defn n p d b)) ((n p b) (defn n p b)) ((n) (defn n () 0)))
+
+(header-shape (my-defn name parameters body extra more))
+
+(my-defn zero)
+
+(def zero-page (doc zero))
+
+(my-defn half (x) "Halves." (/ x 2))
+
+(def half-page (doc half))

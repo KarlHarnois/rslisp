@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_wrapped_definer_shorter_than_shape.rslisp
+---
+(def zero (fn () 0))
+(def zero-page "(my-defn zero)\n\nNo documentation.")
+(def half (fn (x) (div x 2)))
+(def half-page "(my-defn half (x) \"Halves.\" (/ x 2))\n\nHalves.")
