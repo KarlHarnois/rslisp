@@ -321,6 +321,7 @@ mod tests {
             "{0} + 1",
             "{0} * 2_i64",
             "{0} * 1.5",
+            "{0} * 2.",
             "{0} as i64",
             "{0} as f64 / 2.0",
             "{0} == true",
@@ -413,6 +414,7 @@ mod tests {
             ("{0} % -1", Some(-1)),
             ("{0} / 1_000_i64", Some(1000)),
             ("{0} / 2.5", None),
+            ("{0} / 0.", None),
         ] {
             assert_eq!(
                 OperationFixture::divisions(text),
