@@ -1,0 +1,52 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/copy_out_through_borrows.rslisp
+---
+fn is_recent(y: i64) -> bool {
+    y > 2020
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let years: Vec<i64> = vec![2021_i64, 2023_i64, 2018_i64, 2024_i64];
+    println!(
+        "{}",
+        years
+            .iter()
+            .filter(|argument: &&i64| is_recent(**argument))
+            .count()
+    );
+    println!(
+        "{}",
+        years.iter().any(|argument: &i64| is_recent(*argument))
+    );
+    println!(
+        "{:?}",
+        years.iter().find(|argument: &&i64| is_recent(**argument))
+    );
+    println!(
+        "{}",
+        years
+            .iter()
+            .take_while(|argument: &&i64| is_recent(**argument))
+            .count()
+    )
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
