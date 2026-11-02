@@ -46,6 +46,18 @@ pub struct EmittedCrate {
     pub code: String,
     pub span_map: SpanMap,
     pub names: Vec<(String, String)>,
+    pub emission: EmissionWork,
+    pub formatting: Option<FormattingWork>,
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct EmissionWork {
+    pub emitted_expressions: usize,
+}
+
+#[derive(Clone, Copy)]
+pub struct FormattingWork {
+    pub scanned_tokens: usize,
 }
 
 pub struct RustEmitter;
@@ -57,6 +69,7 @@ impl RustEmitter {
         let unsized_parameters = UnsizedParameters::of(program, &plan);
         let mut items = ItemEmitter::new(program, &plan, &unsized_parameters);
         let fragments = items.crate_fragments();
+        let emission = items.emission();
         let mut problems = Diagnostics::default();
         items
             .problems
@@ -74,6 +87,8 @@ impl RustEmitter {
             code,
             span_map,
             names,
+            emission,
+            formatting: None,
         })
     }
 }

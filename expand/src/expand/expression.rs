@@ -41,6 +41,7 @@ impl Expander<'_> {
     }
 
     fn lower_form(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
+        self.expansion.lowered_forms += 1;
         let span = form.span();
         let kind = match form.kind() {
             FormKind::Symbol(symbol) => return self.lower_symbol(symbol, form),

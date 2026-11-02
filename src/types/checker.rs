@@ -211,6 +211,7 @@ pub struct TypeChecker {
     pub(super) reported_unknown_try_groups: FxHashSet<BindingId>,
     pub(super) prelude_value_names: FxHashSet<String>,
     pub(super) string_view: Option<BindingId>,
+    pub(super) checking: super::typed::CheckWork,
 }
 
 struct UserTrait<'a> {
@@ -299,6 +300,7 @@ impl TypeChecker {
             reported_unknown_try_groups: FxHashSet::default(),
             prelude_value_names: FxHashSet::default(),
             string_view: None,
+            checking: super::typed::CheckWork::default(),
         }
     }
 
@@ -2785,8 +2787,9 @@ impl TypeChecker {
         literal_defaults: LiteralDefaults,
         default_literal_parameters: bool,
     ) -> Result<super::typed::TypedProgram, Diagnostics> {
-        let configured = |vector_bases: &FxHashSet<Span>| {
+        let configured = |vector_bases: &FxHashSet<Span>, checking| {
             let mut checker = Self::new(program.bindings.clone());
+            checker.checking = checking;
             checker.changed_structs = changed_structs.clone();
             checker.inferred_copies = inferred_copies.clone();
             checker.pinned = pinned.clone();
@@ -2801,9 +2804,11 @@ impl TypeChecker {
             checker
         };
         let mut vector_bases = FxHashSet::default();
+        let mut checking = super::typed::CheckWork::default();
         loop {
             let (typed, open_collections) =
-                configured(&vector_bases).check_program(program, graph)?;
+                configured(&vector_bases, checking).check_program(program, graph)?;
+            checking = typed.checking;
             let found = open_collections.vector_bases(program, graph, &typed)?;
             if found.is_empty() {
                 return Ok(typed);
@@ -2910,6 +2915,7 @@ impl TypeChecker {
             unnameable_types: self.unnameable_types,
             closure_types: self.closure_types,
             warnings,
+            checking: self.checking,
         })
     }
 }

@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
+use super::EmissionWork;
 use super::expressions::ExpressionEmitter;
 use super::fragment::{Code, Fragment};
 use super::fresh_lifetimes::FreshLifetimes;
@@ -95,6 +96,7 @@ pub struct ItemEmitter<'a> {
     generic_callees: GenericCallees<'a>,
     pub problems: Vec<Diagnostic>,
     pub names: Vec<(String, String)>,
+    emission: EmissionWork,
 }
 
 impl<'a> ItemEmitter<'a> {
@@ -116,7 +118,12 @@ impl<'a> ItemEmitter<'a> {
             generic_callees: GenericCallees::new(plan),
             problems: Vec::new(),
             names: Vec::new(),
+            emission: EmissionWork::default(),
         }
+    }
+
+    pub fn emission(&self) -> EmissionWork {
+        self.emission
     }
 
     pub fn crate_fragments(&mut self) -> Vec<Fragment> {
@@ -1482,6 +1489,7 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn absorb(&mut self, emitter: ExpressionEmitter) {
+        self.emission.emitted_expressions += emitter.emission().emitted_expressions;
         for (binding, name) in emitter.locals.pairs() {
             self.names.push((
                 name.to_string(),

@@ -56,6 +56,12 @@ pub struct Program {
     pub macro_origins: FxHashMap<Span, MacroOrigin>,
     pub macro_helpers: FxHashSet<BindingId>,
     pub warnings: Diagnostics,
+    pub expansion: ExpansionWork,
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct ExpansionWork {
+    pub lowered_forms: usize,
 }
 
 impl Program {
@@ -90,6 +96,7 @@ pub struct Expander<'s> {
     form_budgets: BudgetArena,
     recovered_diagnostics: Vec<Diagnostic>,
     saved_prelude: Option<PreludeState>,
+    expansion: ExpansionWork,
 }
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
@@ -129,6 +136,7 @@ impl<'s> Expander<'s> {
             form_budgets: BudgetArena::default(),
             recovered_diagnostics: Vec::new(),
             saved_prelude: None,
+            expansion: ExpansionWork::default(),
         }
     }
 
@@ -154,6 +162,7 @@ impl<'s> Expander<'s> {
             macro_helpers: self.tables.globals.macro_helpers(),
             macro_origins: self.tables.macro_origins,
             warnings: self.warnings,
+            expansion: self.expansion,
         };
         diagnostics.into_result(program)
     }

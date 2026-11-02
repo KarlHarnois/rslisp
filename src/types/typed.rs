@@ -376,6 +376,12 @@ pub struct TypedProgram {
     pub unnameable_types: Diagnostics,
     pub closure_types: Vec<ClosureType>,
     pub warnings: Diagnostics,
+    pub checking: CheckWork,
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct CheckWork {
+    pub inferred_expressions: usize,
 }
 
 impl TypedProgram {

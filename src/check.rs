@@ -24,6 +24,7 @@ struct CheckRuns<'a> {
     blocked: FxHashSet<BindingId>,
     inferred_copies: InferredCopies,
     pins: FxHashMap<BindingId, Type>,
+    inferred_expressions: usize,
 }
 
 struct CheckedProgram {
@@ -40,12 +41,15 @@ impl<'a> CheckRuns<'a> {
             blocked: FxHashSet::default(),
             inferred_copies: InferredCopies::default(),
             pins: FxHashMap::default(),
+            inferred_expressions: 0,
         }
     }
 
     fn typed(mut self) -> Result<TypedProgram, Diagnostics> {
         let first = self.open_run()?;
-        self.finish(first)
+        let mut typed = self.finish(first)?;
+        typed.checking.inferred_expressions = self.inferred_expressions;
+        Ok(typed)
     }
 
     fn finish(&mut self, first: CheckedProgram) -> Result<TypedProgram, Diagnostics> {
@@ -113,24 +117,25 @@ impl<'a> CheckRuns<'a> {
             .collect()
     }
 
-    fn open_run(&self) -> Result<CheckedProgram, Diagnostics> {
+    fn open_run(&mut self) -> Result<CheckedProgram, Diagnostics> {
         self.attempt(LiteralDefaults::default(), false)
     }
 
     fn defaulting_run(
-        &self,
+        &mut self,
         literal_defaults: LiteralDefaults,
     ) -> Result<CheckedProgram, Diagnostics> {
         self.attempt(literal_defaults, true)
     }
 
     fn attempt(
-        &self,
+        &mut self,
         literal_defaults: LiteralDefaults,
         default_literal_parameters: bool,
     ) -> Result<CheckedProgram, Diagnostics> {
         match self.typed_and_owned(literal_defaults, default_literal_parameters) {
             Ok(mut checked) => {
+                self.inferred_expressions += checked.program.checking.inferred_expressions;
                 checked
                     .program
                     .warnings
@@ -246,13 +251,13 @@ mod tests {
             CheckRuns::new(self.source.program())
         }
 
-        fn open_run(&self, runs: &CheckRuns) -> CheckedProgram {
+        fn open_run(&self, runs: &mut CheckRuns) -> CheckedProgram {
             runs.open_run().expect("the source checks")
         }
 
         fn learned_runs(&self) -> (CheckRuns<'_>, CheckedProgram) {
             let mut runs = self.runs();
-            let first = self.open_run(&runs);
+            let first = self.open_run(&mut runs);
             runs.learn_from(&first);
             (runs, first)
         }
@@ -275,7 +280,7 @@ mod tests {
         }
 
         fn open_signatures(&self) -> String {
-            self.open_run(&self.runs()).program.entry_signatures()
+            self.open_run(&mut self.runs()).program.entry_signatures()
         }
 
         fn checked_signatures(&self) -> String {

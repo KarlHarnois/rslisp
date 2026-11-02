@@ -6,7 +6,7 @@ use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use super::token_alignment::TokenAlignment;
-use crate::emit::EmittedCrate;
+use crate::emit::{EmittedCrate, FormattingWork};
 use crate::language::Language;
 
 pub struct EmittedFormatting {
@@ -33,6 +33,10 @@ impl EmittedFormatting {
             code,
             span_map,
             names: emitted.names.clone(),
+            emission: emitted.emission,
+            formatting: Some(FormattingWork {
+                scanned_tokens: alignment.scanned_tokens(),
+            }),
         })
     }
 
