@@ -69,47 +69,7 @@ crate::rt::Source::slurp("cars.txt")
 crate::rt::Source::slurp(&path)
 ```
 
-The runtime's `Source` part defines the trait:
-
-```rust
-pub trait Source {
-    fn slurp(&self) -> std::io::Result<String>;
-}
-
-impl Source for str {
-    fn slurp(&self) -> std::io::Result<String> {
-        std::fs::read_to_string(self)
-    }
-}
-
-impl Source for String {
-    fn slurp(&self) -> std::io::Result<String> {
-        std::fs::read_to_string(self)
-    }
-}
-
-impl Source for std::io::Stdin {
-    fn slurp(&self) -> std::io::Result<String> {
-        std::io::read_to_string(self.lock())
-    }
-}
-```
-
-The runtime's `Lines` part locks standard input for one line at a time, so `read-line` and `(slurp stdin)` may read between its lines, and it ends the stream after its first error:
-
-```rust
-pub fn lines(_: &std::io::Stdin) -> impl Iterator<Item = std::io::Result<String>> + use<> {
-    let mut failed = false;
-    std::iter::from_fn(move || {
-        if failed {
-            return None;
-        }
-        let line = read_line().transpose()?;
-        failed = line.is_err();
-        Some(line)
-    })
-}
-```
+The runtime's `Source` part, `prelude/runtime/source.rs`, implements the trait for `str`, `String` and `std::io::Stdin`. The runtime's `Lines` part, `prelude/runtime/lines.rs`, reads each line with the `read_line` of the `Io` part, so it locks standard input for one line at a time and `read-line` and `(slurp stdin)` may read between its lines. It ends the stream after its first error.
 
 A prototype that took the source by value failed: a `string` path did not satisfy a trait implemented for `(ref string)`.
 
