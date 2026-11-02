@@ -8,7 +8,7 @@ use crate::diagnostic::Diagnostic;
 use crate::types::{
     Borrow, CopyRules, FunctionValueWrapper, GenericBinding, GenericId, GenericParam, StructTable,
     Type, TypeDisplay, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedDefinition,
-    TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedProgram, TypedStructExpr,
+    TypedExpr, TypedExprKind, TypedLeaf, TypedProgram, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -357,14 +357,7 @@ impl<'a> FunctionValueModes<'a> {
     }
 
     fn function_value(&self, value: &TypedExpr) -> Option<(BindingId, Type)> {
-        let (binding, used_type) = match &value.kind {
-            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => (*binding, &value.ty),
-            TypedExprKind::Fn(lambda) => (
-                lambda.wraps.as_ref()?.binding,
-                Self::wrapped_callee_type(lambda)?,
-            ),
-            _ => return None,
-        };
+        let (binding, used_type) = value.function_value()?;
         let Type::Function(_, used, result) = used_type else {
             return None;
         };
@@ -373,18 +366,6 @@ impl<'a> FunctionValueModes<'a> {
             binding,
             Type::Function(crate::types::ClosureKind::Fn, parameters, result.clone()),
         ))
-    }
-
-    fn wrapped_callee_type(lambda: &TypedLambda) -> Option<&Type> {
-        match lambda.body.items.as_slice() {
-            [
-                TypedBodyItem::Expr(TypedExpr {
-                    kind: TypedExprKind::Call(callee, _),
-                    ..
-                }),
-            ] => Some(&callee.ty),
-            _ => None,
-        }
     }
 
     fn adjustment(&self, expected: &Type, actual: &Type) -> Option<Adjustment> {
