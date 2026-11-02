@@ -57,7 +57,7 @@ pub enum BenchTask {
         length: ReportLength,
         #[arg(
             long,
-            num_args = 0..,
+            action = clap::ArgAction::Append,
             help = "The programs whose counter rises a `Counters-Accepted:` trailer names"
         )]
         accepted: Vec<String>,
@@ -70,7 +70,7 @@ pub enum BenchTask {
         candidate: PathBuf,
         #[arg(
             long,
-            num_args = 0..,
+            action = clap::ArgAction::Append,
             help = "The programs whose counter rises a `Counters-Accepted:` trailer names"
         )]
         accepted: Vec<String>,
