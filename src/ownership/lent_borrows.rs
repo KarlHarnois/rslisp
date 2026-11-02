@@ -50,15 +50,14 @@ impl<'p> LentBorrows<'p> {
 
     fn lending_closures(value: &TypedExpr) -> FxHashMap<BindingId, LendingClosure<'_>> {
         let aliases = LetAliases::unannotated_in(value);
-        value
-            .let_bindings()
-            .filter(|(binder, _)| !binder.annotated)
-            .map(|(binder, bound)| {
+        aliases
+            .entries()
+            .map(|(binding, bound)| {
                 let closure = LendingClosure {
-                    links: aliases.links(binder.binding),
+                    links: aliases.links(binding),
                     parameters: Self::lent_parameters(aliases.resolve(bound)),
                 };
-                (binder.binding, closure)
+                (binding, closure)
             })
             .collect()
     }
