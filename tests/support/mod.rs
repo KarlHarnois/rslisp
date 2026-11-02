@@ -209,13 +209,13 @@ impl Fixture {
         output
     }
 
-    fn standard_input(&self) -> String {
-        fs::read_to_string(self.path.with_extension("stdin")).unwrap_or_default()
+    fn standard_input(&self) -> Vec<u8> {
+        fs::read(self.path.with_extension("stdin")).unwrap_or_default()
     }
 
-    fn offer(mut input: ChildStdin, text: String) -> JoinHandle<()> {
+    fn offer(mut input: ChildStdin, bytes: Vec<u8>) -> JoinHandle<()> {
         thread::spawn(move || {
-            let _ignored_by_a_program_that_stops_reading = input.write_all(text.as_bytes());
+            let _ignored_by_a_program_that_stops_reading = input.write_all(&bytes);
         })
     }
 
