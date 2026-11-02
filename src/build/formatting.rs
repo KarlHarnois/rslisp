@@ -22,6 +22,7 @@ impl EmittedFormatting {
         }
     }
 
+    #[inline(never)]
     pub fn apply(&self, emitted: &EmittedCrate) -> Result<EmittedCrate, FormattingError> {
         let code = self.rustfmt.format(&emitted.code)?;
         let alignment = TokenAlignment::new(&emitted.code, &code);
