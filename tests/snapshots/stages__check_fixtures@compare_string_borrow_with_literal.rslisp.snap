@@ -1,0 +1,40 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/compare_string_borrow_with_literal.rslisp
+---
+error[L0401]: mismatched types
+ --> check/compare_string_borrow_with_literal.rslisp:3:6
+  |
+3 |   (> "Civic" (ref model)))
+  |      ^^^^^^^ expected `string`, found `str`
+
+error[L0401]: mismatched types
+ --> check/compare_string_borrow_with_literal.rslisp:7:18
+  |
+7 |   (> (ref model) "Civic"))
+  |                  ^^^^^^^ expected `string`, found `str`
+
+error[L0401]: mismatched types
+  --> check/compare_string_borrow_with_literal.rslisp:11:6
+   |
+11 |   (< "Civic" (ref model)))
+   |      ^^^^^^^ expected `string`, found `str`
+
+error[L0401]: mismatched types
+  --> check/compare_string_borrow_with_literal.rslisp:15:18
+   |
+15 |   (< (ref model) "Civic"))
+   |                  ^^^^^^^ expected `string`, found `str`
+
+error[L0401]: mismatched types
+  --> check/compare_string_borrow_with_literal.rslisp:19:6
+   |
+19 |   (= "Leaf" (ref model)))
+   |      ^^^^^^ expected `string`, found `str`
+
+error[L0401]: mismatched types
+  --> check/compare_string_borrow_with_literal.rslisp:23:18
+   |
+23 |   (= (ref model) "Leaf"))
+   |                  ^^^^^^ expected `string`, found `str`

@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/compare_str_borrow_with_literal.rslisp
+---
+false
+true
+true
+false
+true
+true

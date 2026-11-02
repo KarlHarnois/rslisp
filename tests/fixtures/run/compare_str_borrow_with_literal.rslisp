@@ -1,0 +1,8 @@
+(defn main ()
+  (let make "Nissan")
+  (println (> "Honda" (ref make)))
+  (println (> (ref make) "Honda"))
+  (println (< "Honda" (ref make)))
+  (println (< (ref make) "Honda"))
+  (println (= "Nissan" (ref make)))
+  (println (= (ref make) "Nissan")))
