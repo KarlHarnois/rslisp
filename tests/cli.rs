@@ -323,7 +323,7 @@ fn counters_flag_prints_no_build_work_when_rustfmt_fails() {
 fn counters_flag_prints_the_work_of_each_stage_that_ran() {
     let sandbox = Sandbox::new("counters-stages").with_file("arithmetic.rslisp", ARITHMETIC);
     let emit = ["--counters", "emit", "arithmetic.rslisp"];
-    let emitted = sandbox.compiler(&emit).assert_exit_code(0).counter_report();
+    let emitted = sandbox.compiler(&emit).assert_exit_code(0).stage_work();
     for key in STAGE_WORK_KEYS {
         assert!(
             emitted[key].as_u64().is_some_and(|count| count > 0),
@@ -338,7 +338,7 @@ fn counters_flag_prints_the_work_of_each_stage_that_ran() {
         checked.keys().map(String::as_str).collect::<Vec<_>>(),
         ["check.inferred_expressions", "expand.lowered_forms"]
     );
-    assert_eq!(sandbox.compiler(&emit).counter_report(), emitted);
+    assert_eq!(sandbox.compiler(&emit).stage_work(), emitted);
 }
 
 #[test]
