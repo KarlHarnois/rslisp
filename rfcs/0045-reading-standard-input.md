@@ -69,7 +69,7 @@ crate::rt::Source::slurp("cars.txt")
 crate::rt::Source::slurp(&path)
 ```
 
-The runtime's IO part defines the trait:
+The runtime's `Source` part defines the trait:
 
 ```rust
 pub trait Source {
@@ -158,7 +158,7 @@ std::io::BufRead::lines(std::io::stdin().lock()).map_while(Result::ok)
 
 Option A. One name, `slurp`, reads every source, and `line-seq` streams standard input with one line in memory. Each read failure reaches the program as an `err`. `lines` keeps working on any string, an untyped parameter included.
 
-The cost: `slurp` now emits `crate::rt::Source::slurp(path)` instead of `std::fs::read_to_string(path)`, and a program that calls `slurp` carries the runtime's IO part, the `read_line` helper included.
+The cost: `slurp` now emits `crate::rt::Source::slurp(path)` instead of `std::fs::read_to_string(path)`, and a program that calls `slurp` carries the runtime's `Source` part: the trait and its three implementations. The trait has a runtime part of its own because a program that called `slurp` and not `read-line` would otherwise carry an unused `read_line`, and clippy rejects that dead code in the emitted Rust.
 
 ## Decision
 
