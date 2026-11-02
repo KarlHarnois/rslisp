@@ -2,8 +2,9 @@ mod headers;
 mod reports;
 
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Output, Stdio};
 
 use rslisp::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use rslisp::core::{
@@ -126,7 +127,7 @@ impl Fixture {
             &binary,
             self.entry_span(),
         ) {
-            Ok(()) => Self::report_of(&binary, &self.arguments(), &self.directory()),
+            Ok(()) => self.report_of(&binary),
             Err(BuildError::Program(diagnostics)) => self.render(&diagnostics),
             Err(BuildError::Environment(message)) => {
                 panic!("the build environment failed: {message}")
@@ -176,12 +177,8 @@ impl Fixture {
         Span::new(self.entry, 0..0)
     }
 
-    fn report_of(binary: &Path, arguments: &[String], directory: &Path) -> String {
-        let output = Command::new(binary)
-            .args(arguments)
-            .current_dir(directory)
-            .output()
-            .expect("the compiled fixture runs");
+    fn report_of(&self, binary: &Path) -> String {
+        let output = self.run(binary);
         let stdout = String::from_utf8(output.stdout).expect("fixtures print text");
         let stderr = String::from_utf8(output.stderr).expect("fixtures print text");
         if stderr.is_empty() && output.status.success() {
@@ -193,6 +190,27 @@ impl Fixture {
                 .map_or_else(|| "a signal".to_string(), |code| code.to_string());
             format!("{stdout}stderr:\n{stderr}exit code: {code}\n")
         }
+    }
+
+    fn run(&self, binary: &Path) -> Output {
+        let mut child = Command::new(binary)
+            .args(self.arguments())
+            .current_dir(self.directory())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("the compiled fixture runs");
+        let mut input = child.stdin.take().expect("the fixture's stdin is piped");
+        input
+            .write_all(self.standard_input().as_bytes())
+            .expect("the fixture reads its standard input");
+        drop(input);
+        child.wait_with_output().expect("the compiled fixture runs")
+    }
+
+    fn standard_input(&self) -> String {
+        fs::read_to_string(self.path.with_extension("stdin")).unwrap_or_default()
     }
 
     fn expand(&mut self) -> Result<rslisp::expand::Program, Diagnostics> {
