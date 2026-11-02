@@ -10,7 +10,7 @@
                pop! remove-at! sort! sort-by-key! windows at dedup!
                first last reverse reverse! sort-descending!)
 (use prelude/iterator range map filter reduce for-each enumerate zip
-                      sum count max min max-by-key any? all find take take-while)
+                      sum count max min max-by-key any? every? find take take-while)
 (use prelude/option some none some? none? unwrap-or unwrap expect map-some then-some)
 (use prelude/result ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
 (use prelude/number number signed float integer partial-eq hash partial-ord
@@ -48,6 +48,6 @@
         pop! remove-at! sort! sort-by-key! windows at dedup!
         first last reverse reverse! sort-descending!
         range map filter reduce for-each enumerate zip
-        sum count max min max-by-key any? all find take take-while
+        sum count max min max-by-key any? every? find take take-while
         some none some? none? unwrap-or unwrap expect map-some then-some
         ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
