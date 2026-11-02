@@ -39,7 +39,7 @@ or write a recursive `read-line` loop:
 (def slurp (rust "crate::rt::Source::slurp({0})"
                  (where ((s source)) (fn ((ref s)) (result string io-error)))))
 
-(def line-seq (rust "crate::rt::lines({&0}.lock())"
+(def line-seq (rust "crate::rt::lines({0})"
                     (fn ((ref stdin)) (iterator (result string io-error)))))
 ```
 
@@ -53,12 +53,12 @@ or write a recursive `read-line` loop:
 ```
 
 ```rust
-crate::rt::lines(std::io::stdin().lock()).for_each(|line: Result<String, std::io::Error>| {
-    match line {
+crate::rt::lines(&std::io::stdin()).for_each(
+    |line: Result<String, std::io::Error>| match line {
         Ok(text) => println!("{} {}", text.len(), text),
         Err(error) => eprintln!("{}", error),
-    }
-})
+    },
+)
 ```
 
 `(slurp stdin)`, `(slurp "cars.txt")` and `(slurp path)` on an owned `string` emit:
@@ -95,20 +95,33 @@ impl Source for std::io::Stdin {
 }
 ```
 
-The runtime's `Lines` part ends the stream after its first error:
+The runtime's `Lines` part locks standard input for one line at a time, so `read-line` and `(slurp stdin)` may read between its lines, and it ends the stream after its first error:
 
 ```rust
-pub fn lines(reader: impl std::io::BufRead) -> impl Iterator<Item = std::io::Result<String>> {
-    let mut lines = reader.lines();
+pub fn lines(_: &std::io::Stdin) -> impl Iterator<Item = std::io::Result<String>> + use<> {
     let mut failed = false;
     std::iter::from_fn(move || {
         if failed {
             return None;
         }
-        let line = lines.next()?;
+        let line = next_line().transpose()?;
         failed = line.is_err();
         Some(line)
     })
+}
+
+fn next_line() -> std::io::Result<Option<String>> {
+    let mut line = String::new();
+    if std::io::stdin().read_line(&mut line)? == 0 {
+        return Ok(None);
+    }
+    if line.ends_with('\n') {
+        line.pop();
+        if line.ends_with('\r') {
+            line.pop();
+        }
+    }
+    Ok(Some(line))
 }
 ```
 
