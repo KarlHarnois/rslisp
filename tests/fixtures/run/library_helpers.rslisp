@@ -4,7 +4,7 @@
 (defn main ()
   (let numbers (vec 3 1 2))
   (println (empty? numbers))
-  (sort-descending! numbers)
+  (sort! numbers >)
   (println (unwrap (first numbers)))
   (println (unwrap (last numbers)))
   (reverse! numbers)

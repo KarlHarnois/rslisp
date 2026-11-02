@@ -1,11 +1,11 @@
 (use prelude/macros defmacro defrule)
 (use prelude/types vec option iterator slice sequence)
-(use prelude/number ord partial-eq)
+(use prelude/number ord partial-eq < >)
 (use prelude/ownership copy)
 (use code list prepend concat length empty? string number-add number-sub number-lt)
 
 (export vec push! len iter copied collect pop! remove-at! sort! sort-by! windows at dedup!
-        first last reverse reverse! sort-descending!)
+        first last reverse reverse!)
 
 (def element-placeholders
   (fn (count)
@@ -53,6 +53,8 @@
                      (where (a) (fn ((mut (vec a)) (fn ((ref a) (ref a)) i64)) unit))))
 (defrule sort!
   ((items) (sort-ascending! items))
+  ((items (quote <)) (sort-ascending! items))
+  ((items (quote >)) (sort-descending! items))
   ((items compare) (sort-with! items compare)))
 (def sort-by! (rust "{0}.sort_by_key({1})" (where (a (k ord)) (fn ((mut (vec a)) (fn-mut ((ref a)) k)) unit))))
 (def windows (rust "{0}.windows({1})" (where (a) (fn ((ref (slice a)) usize) (iterator (ref (slice a)))))))

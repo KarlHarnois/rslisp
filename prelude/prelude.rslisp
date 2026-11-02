@@ -8,7 +8,7 @@
 (use prelude/sequence empty?)
 (use prelude/vec vec push! len iter copied collect
                pop! remove-at! sort! sort-by! windows at dedup!
-               first last reverse reverse! sort-descending!)
+               first last reverse reverse!)
 (use prelude/iterator range map filter reduce for-each enumerate zip
                       sum count max min max-by-key any? every? find take take-while)
 (use prelude/option some none some? none? unwrap-or unwrap expect map-some then-some)
@@ -46,7 +46,7 @@
         pair let-pair let-fields assoc assoc-in
         vec option result iterator slice sequence box push! len iter copied collect
         pop! remove-at! sort! sort-by! windows at dedup!
-        first last reverse reverse! sort-descending!
+        first last reverse reverse!
         range map filter reduce for-each enumerate zip
         sum count max min max-by-key any? every? find take take-while
         some none some? none? unwrap-or unwrap expect map-some then-some
