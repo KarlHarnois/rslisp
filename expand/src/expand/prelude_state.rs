@@ -182,6 +182,13 @@ mod tests {
     }
 
     #[test]
+    fn two_saves_of_the_prelude_state_match() {
+        let first_save = PreludeState::build().save();
+        let second_save = PreludeState::build().save();
+        assert!(first_save == second_save, "the two saves differ");
+    }
+
+    #[test]
     #[should_panic(expected = "the entry is the only source before the prelude")]
     fn a_source_before_the_entry_stops_the_install() {
         let program = UserProgram::MACROS_AND_NAMES;
