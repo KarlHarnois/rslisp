@@ -1,0 +1,7 @@
+(def same-owned? (rust "{&0} == std::convert::identity({1})" (where ((a partial-eq)) (fn (a a) bool))))
+
+(defn main ()
+  (let model (to-string "Leaf"))
+  (let other (to-string "Civic"))
+  (let r (ref other))
+  (println (same-owned? (ref model) r)))

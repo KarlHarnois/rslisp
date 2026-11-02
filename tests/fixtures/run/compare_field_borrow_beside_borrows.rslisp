@@ -1,0 +1,18 @@
+(defstruct car :model string)
+
+(defn same-model? ((leaf (ref car)) (model (ref string)))
+  (= (ref (:model leaf)) model))
+
+(defn main ()
+  (let model (to-string "Leaf"))
+  (let other (to-string "Civic"))
+  (let r (ref other))
+  (let leaf (->car :model (to-string "Leaf")))
+  (let civic (->car :model (to-string "Civic")))
+  (println (= (ref (:model leaf)) (:model civic)))
+  (println (= (:model leaf) (ref model)))
+  (println (= (ref model) (:model civic)))
+  (println (= (ref model) r))
+  (println (= r (ref model)))
+  (println (> (ref model) r))
+  (println (same-model? leaf model)))
