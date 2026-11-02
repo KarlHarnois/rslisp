@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use super::generic_callees::GenericCallees;
 use super::generic_positions::GenericPositions;
@@ -21,7 +21,7 @@ pub(super) enum TypeContext {
 
 #[derive(Default)]
 pub(super) struct OpenLiterals {
-    spans: HashSet<Span>,
+    spans: FxHashSet<Span>,
 }
 
 impl OpenLiterals {
@@ -30,7 +30,7 @@ impl OpenLiterals {
             program,
             callees,
             anchor: TypeAnchor::new(callees),
-            spans: HashSet::new(),
+            spans: FxHashSet::default(),
         };
         search.expr(value, TypeContext::Known);
         Self {
@@ -47,7 +47,7 @@ struct OpenLiteralSearch<'a> {
     program: &'a TypedProgram,
     callees: &'a GenericCallees<'a>,
     anchor: TypeAnchor<'a>,
-    spans: HashSet<Span>,
+    spans: FxHashSet<Span>,
 }
 
 impl OpenLiteralSearch<'_> {

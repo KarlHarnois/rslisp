@@ -1,5 +1,5 @@
+use rustc_hash::FxHashMap;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use super::generic_positions::GenericPositions;
@@ -8,14 +8,14 @@ use crate::core::BindingId;
 
 pub(super) struct GenericCallees<'a> {
     plan: &'a EmitPlan<'a>,
-    positions: RefCell<HashMap<BindingId, Option<Rc<GenericPositions>>>>,
+    positions: RefCell<FxHashMap<BindingId, Option<Rc<GenericPositions>>>>,
 }
 
 impl<'a> GenericCallees<'a> {
     pub(super) fn new(plan: &'a EmitPlan<'a>) -> Self {
         Self {
             plan,
-            positions: RefCell::new(HashMap::new()),
+            positions: RefCell::new(FxHashMap::default()),
         }
     }
 
