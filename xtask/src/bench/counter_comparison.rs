@@ -32,7 +32,7 @@ impl<'a> CounterComparison<'a> {
 
     fn rise_report(&self) -> String {
         if !self.gate.baseline_has_counters() {
-            return "The base has no counters, so no counter is checked for growth.\n".to_string();
+            return CounterGate::NO_BASELINE_COUNTERS.to_string();
         }
         let rises = self.gate.rises();
         if rises.is_empty() {

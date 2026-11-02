@@ -33,6 +33,7 @@ use callgrind::Callgrind;
 use comparison::Comparison;
 use compiler::{BuiltCompiler, CompilerBuild};
 use corpus::Corpus;
+use counter_gate::CounterGate;
 use counter_run::CounterRun;
 use git::Git;
 use header::ResultHeader;
@@ -54,6 +55,19 @@ pub enum BenchTask {
         candidate: PathBuf,
         #[arg(long, value_enum, default_value_t = ReportLength::Full)]
         length: ReportLength,
+        #[arg(
+            long,
+            num_args = 0..,
+            help = "The programs whose counter rises a `Counters-Accepted:` trailer names"
+        )]
+        accepted: Vec<String>,
+    },
+    #[command(
+        about = "Fail when a program's allocated bytes or peak live bytes rose past the tolerance, unless `--accepted` names the program"
+    )]
+    CheckCounters {
+        baseline: PathBuf,
+        candidate: PathBuf,
         #[arg(
             long,
             num_args = 0..,
@@ -130,6 +144,11 @@ impl BenchTask {
                 length,
                 &accepted.into_iter().collect(),
             ),
+            Self::CheckCounters {
+                baseline,
+                candidate,
+                accepted,
+            } => Self::check_counters(&baseline, &candidate, &accepted.into_iter().collect()),
             Self::Method => MeasurementMethod::new(Git::new(root))
                 .key()
                 .map(|key| format!("{key}\n")),
@@ -153,6 +172,16 @@ impl BenchTask {
         let baseline = ResultSet::load(baseline)?;
         let candidate = ResultSet::load(candidate)?;
         Ok(length.render(&Comparison::new(&baseline, &candidate, accepted)))
+    }
+
+    fn check_counters(
+        baseline: &Path,
+        candidate: &Path,
+        accepted: &BTreeSet<String>,
+    ) -> Result<String, TaskFailure> {
+        let baseline = ResultSet::load(baseline)?;
+        let candidate = ResultSet::load(candidate)?;
+        CounterGate::new(&baseline, &candidate, accepted).check()
     }
 }
 

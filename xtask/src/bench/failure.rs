@@ -49,6 +49,13 @@ impl TaskFailure {
         ))
     }
 
+    pub fn counters_rose(tolerance_percent: u64, rises: &[String]) -> Self {
+        let list: String = rises.iter().map(|rise| format!("\n- {rise}")).collect();
+        Self::new(format!(
+            "these counters rose more than {tolerance_percent}%, and no `Counters-Accepted:` trailer names their program:{list}"
+        ))
+    }
+
     pub fn stage_entry_missing(candidates: &[String]) -> Self {
         let entry_point = candidates
             .iter()

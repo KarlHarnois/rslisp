@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 use super::change::Change;
 use super::results::{ProgramResult, ResultSet};
 use super::table::GroupedCount;
+use crate::failure::TaskFailure;
 
 pub struct CounterGate<'a> {
     baseline: &'a ResultSet,
@@ -14,6 +15,8 @@ impl<'a> CounterGate<'a> {
     pub const GATED_COUNTERS: [&'static str; 2] =
         ["allocator.allocated_bytes", "allocator.peak_live_bytes"];
     pub const TOLERANCE_PERCENT: u64 = 1;
+    pub const NO_BASELINE_COUNTERS: &'static str =
+        "The base has no counters, so no counter is checked for growth.\n";
 
     pub fn new(
         baseline: &'a ResultSet,
@@ -24,6 +27,28 @@ impl<'a> CounterGate<'a> {
             baseline,
             candidate,
             accepted,
+        }
+    }
+
+    pub fn check(&self) -> Result<String, TaskFailure> {
+        if !self.baseline_has_counters() {
+            return Ok(Self::NO_BASELINE_COUNTERS.to_string());
+        }
+        let unaccepted: Vec<String> = self
+            .rises()
+            .iter()
+            .filter(|rise| !self.accepts(rise))
+            .map(CounterRise::describe)
+            .collect();
+        match unaccepted.is_empty() {
+            true => Ok(format!(
+                "No gated counter rose more than {}% without a `Counters-Accepted:` trailer that names its program.\n",
+                Self::TOLERANCE_PERCENT
+            )),
+            false => Err(TaskFailure::counters_rose(
+                Self::TOLERANCE_PERCENT,
+                &unaccepted,
+            )),
         }
     }
 
@@ -129,6 +154,15 @@ mod tests {
             }
         }
 
+        fn check(
+            baseline: &ResultSet,
+            candidate: &ResultSet,
+            accepted: &[&str],
+        ) -> Result<String, TaskFailure> {
+            let accepted = accepted.iter().map(|program| program.to_string()).collect();
+            CounterGate::new(baseline, candidate, &accepted).check()
+        }
+
         fn rises(baseline: &ResultSet, candidate: &ResultSet) -> Vec<String> {
             CounterGate::new(baseline, candidate, &BTreeSet::new())
                 .rises()
@@ -185,5 +219,70 @@ mod tests {
         let gate = CounterGate::new(&baseline, &candidate, &accepted);
         assert!(!gate.baseline_has_counters());
         assert!(CounterGate::new(&candidate, &baseline, &accepted).baseline_has_counters());
+    }
+
+    #[test]
+    fn the_check_passes_a_rise_of_exactly_the_tolerance() {
+        let checked = GateFixture::check(
+            &GateFixture::results("warehouse", 1_000),
+            &GateFixture::results("warehouse", 1_010),
+            &[],
+        );
+        assert!(checked.is_ok());
+    }
+
+    #[test]
+    fn the_check_fails_a_rise_above_the_tolerance() {
+        let failure = GateFixture::check(
+            &GateFixture::results("warehouse", 1_000),
+            &GateFixture::results("warehouse", 1_011),
+            &["orders"],
+        )
+        .unwrap_err();
+        assert!(
+            failure
+                .to_string()
+                .contains("- `warehouse` `allocator.allocated_bytes`: 1,000 to 1,011 (+1.10%)")
+        );
+    }
+
+    #[test]
+    fn the_check_passes_an_accepted_rise() {
+        let checked = GateFixture::check(
+            &GateFixture::results("warehouse", 1_000),
+            &GateFixture::results("warehouse", 2_000),
+            &["warehouse"],
+        );
+        assert!(checked.is_ok());
+    }
+
+    #[test]
+    fn the_check_passes_a_fall() {
+        let checked = GateFixture::check(
+            &GateFixture::results("warehouse", 1_000),
+            &GateFixture::results("warehouse", 500),
+            &[],
+        );
+        assert!(checked.is_ok());
+    }
+
+    #[test]
+    fn the_check_passes_a_new_program() {
+        let checked = GateFixture::check(
+            &GateFixture::results("warehouse", 1_000),
+            &GateFixture::results("orders", 9_000),
+            &[],
+        );
+        assert!(checked.is_ok());
+    }
+
+    #[test]
+    fn the_check_passes_a_baseline_without_counters_and_says_so() {
+        let checked = GateFixture::check(
+            &GateFixture::uncounted("warehouse"),
+            &GateFixture::results("warehouse", 9_000),
+            &[],
+        );
+        assert_eq!(checked.unwrap(), CounterGate::NO_BASELINE_COUNTERS);
     }
 }
