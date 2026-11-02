@@ -229,6 +229,24 @@ impl TypeProblems {
         )
     }
 
+    pub fn string_push_item(found: &str, span: Span) -> Diagnostic {
+        Self::string_push_mismatch(found, span)
+            .with_help("pass the item's text as `(ref (str ...))`")
+    }
+
+    pub fn owned_string_push_item(span: Span) -> Diagnostic {
+        Self::string_push_mismatch("`string`", span).with_help("borrow the item with `(ref ...)`")
+    }
+
+    fn string_push_mismatch(found: &str, span: Span) -> Diagnostic {
+        Self::mismatch(
+            "a `char` or a `(ref str)`",
+            found,
+            span,
+            MismatchContext::Plain,
+        )
+    }
+
     pub fn generic_mismatch(generic: &str, found: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MISMATCHED_TYPES,

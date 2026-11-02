@@ -1,0 +1,3 @@
+(defn main ()
+  (let message (str "a"))
+  (push! (mut message) 5))

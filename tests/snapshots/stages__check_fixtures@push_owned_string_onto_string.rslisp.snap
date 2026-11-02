@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/push_owned_string_onto_string.rslisp
+---
+error[L0401]: mismatched types
+ --> check/push_owned_string_onto_string.rslisp:4:24
+  |
+4 |   (push! (mut message) suffix)
+  |                        ^^^^^^ expected a `char` or a `(ref str)`, found `string`
+  |
+  = help: borrow the item with `(ref ...)`

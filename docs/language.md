@@ -61,7 +61,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `derive` | `(derive type trait...)` | `#[derive(...)]` | type: reference to a `struct` or `enum` of this module. traits: references to traits. |
 | `new` | `(new name (field value)...)` or `(new _ base (field value)...)` | struct literal or struct update | name: type, or `_` with a base expression. base: expression. fields: field labels with expressions. A label is a field name or a keyword, as in `(new car (:year 2025))`. |
 | `assoc-at` | `(assoc-at value (key...) item)` | block | value: expression. keys: expressions. item: expression. |
-| `map-at` | `(map-at operation value argument...)` | method call or block | operation: `get`, `keys`, `vals`, `entries`, `iter` or `update`. value: expression. arguments: expressions. |
+| `map-at` | `(map-at operation value argument...)` | method call or block | operation: `get`, `keys`, `vals`, `entries`, `iter`, `update` or `push`. value: expression. arguments: expressions. |
 | `set-at` | `(set-at value (key...) item)` | assignment | value: expression. keys: expressions. item: expression. |
 | `field` | `(field value name)` | `value.name` | value: expression. name: field label. |
 | `ref` | `(ref value)` | `&value` | value: expression. |
@@ -87,7 +87,7 @@ In expression positions, the kernel provides `ref`, `mut` and `deref`, and the c
 
 `assoc-at` is a kernel form because only the compiler knows a collection's inferred type. A prelude macro cannot choose between a vector and a map, so the `assoc-at` collection rule picks the emitted Rust by type. The rule knows `(vec a)`, `(sorted-map k v)` and `(hash-map k v)`.
 
-`map-at` and `set-at` are kernel forms for the same reason. Only the compiler knows a map's key and value types, so one rule picks the emitted Rust for `get`, `keys`, `vals`, `entries`, `update` and `set!` from the inferred map type. `map-at` also carries `iter`: it accepts a vector, a slice or a map and emits `.iter()`, yielding `(ref a)` for a vector or a slice and `(pair (ref key) (ref value))` for a map. `get` accepts the same collections: it reads a vector or a slice by a `usize` index and emits `.get(index)`, returning `(option (ref a))`, and it reads a map by key. A collection whose type is still unknown is a slice for both. The prelude cannot express `iter` or `get` as a function, because one signature cannot accept both a slice and a map without an iterable trait, and only the compiler knows the collection's inferred type and the item type to yield. The prelude macros expand to these forms, and the collection rules for `assoc-at`, `map-at` and `set-at` share the map type test.
+`map-at` and `set-at` are kernel forms for the same reason. Only the compiler knows a map's key and value types, so one rule picks the emitted Rust for `get`, `keys`, `vals`, `entries`, `update` and `set!` from the inferred map type. `map-at` also carries `iter`: it accepts a vector, a slice or a map and emits `.iter()`, yielding `(ref a)` for a vector or a slice and `(pair (ref key) (ref value))` for a map. `get` accepts the same collections: it reads a vector or a slice by a `usize` index and emits `.get(index)`, returning `(option (ref a))`, and it reads a map by key. A collection whose type is still unknown is a slice for both. `push` adds an item to a vector, emitting `.push(item)`, or to a `string`: a `char` emits `.push(c)`, and any other item is a `(ref str)` and emits `.push_str(text)`. A target whose type is still unknown is a vector. The prelude cannot express `iter`, `get` or `push` as a function, because one signature cannot accept both a slice and a map without an iterable trait, and only the compiler knows the collection's inferred type and the item type to yield. Rust has no trait method that covers `Vec::push`, `String::push` and `String::push_str`, so a trait would not give `push!` one template. The prelude macros expand to these forms, and the collection rules for `assoc-at`, `map-at` and `set-at` share the map type test.
 
 ### Module bodies
 
@@ -189,7 +189,7 @@ The prelude binds these Rust types, the traits that abstract them, and the funct
 | `(result a b)` | `Result<A, B>` | `ok err result/ok result/err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok` |
 | `(iterator a)` | `impl Iterator<Item = A>` | `range map filter reduce for-each enumerate zip sum count max min max-by-key any? every? find take take-while` |
 | `char` | `char` | `alphanumeric? whitespace? digit?` |
-| `str`, `string` | `&str`, `String` | `display str char print println eprintln chars lines split trim subs as-str parse parse-error from-str lower-case upper-case split-when append! append-char! empty?` |
+| `str`, `string` | `&str`, `String` | `display str char print println eprintln chars lines split trim subs as-str parse parse-error from-str lower-case upper-case split-when push! empty?` |
 | `(sorted-map key value)` | `std::collections::BTreeMap<K, V>` | `sorted-map get keys vals entries iter update into-sorted-map assoc set! len empty?` |
 | `(hash-map key value)` | `std::collections::HashMap<K, V>` | `hash-map get keys vals entries iter update into-hash-map assoc set! len empty?` |
 

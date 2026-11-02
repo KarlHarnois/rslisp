@@ -2696,6 +2696,7 @@ impl TypeChecker {
         match operation {
             MapOperation::Iter => return self.infer_iter(value, arguments, span),
             MapOperation::Get => return self.infer_get(value, arguments, span),
+            MapOperation::Push => return self.infer_push(value, arguments, span),
             _ => {}
         }
         let collection = self.map_collection(&value)?;
@@ -2786,6 +2787,89 @@ impl TypeChecker {
         ];
         let result = self.option_type(element);
         self.synthetic_call_with_value("{0}.get({1})", parameters, result, value, arguments, span)
+    }
+
+    fn infer_push(
+        &mut self,
+        value: TypedExpr,
+        arguments: &[Expr],
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let [item] = arguments else {
+            return Err(TypeProblems::wrong_argument_count(1, arguments.len(), span));
+        };
+        if self.is_string_target(&value.ty) {
+            let item = self.infer(item)?;
+            return self.infer_string_push(value, item, span);
+        }
+        let element = self.unifier.fresh();
+        let parameters = vec![Type::mutable(self.vector_of(element.clone())), element];
+        self.synthetic_call_with_value(
+            "{0}.push({1})",
+            parameters,
+            Type::unit(),
+            value,
+            arguments,
+            span,
+        )
+    }
+
+    fn is_string_target(&self, target: &Type) -> bool {
+        let referent = match self.unifier.resolve(target) {
+            Type::Ref(_, inner) | Type::Mut(_, inner) => *inner,
+            other => other,
+        };
+        referent == Type::Primitive(PrimitiveType::String)
+    }
+
+    fn infer_string_push(
+        &mut self,
+        value: TypedExpr,
+        item: TypedExpr,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        let character = Type::Primitive(PrimitiveType::Char);
+        let (template, parameter) = if self.unifier.resolve(&item.ty) == character {
+            ("{0}.push({1})", character)
+        } else {
+            ("{0}.push_str({1})", Type::str_ref())
+        };
+        let parameters = vec![
+            Type::mutable(Type::Primitive(PrimitiveType::String)),
+            parameter,
+        ];
+        let target = self.pass_call_argument(None, 0, &parameters[0], &value)?;
+        let pushed = self.pass_string_push_item(&parameters[1], &item)?;
+        let arguments = vec![
+            TypedArgument { value, borrow: target },
+            TypedArgument { value: item, borrow: pushed },
+        ];
+        Ok(self.finish_synthetic_call(template, &parameters, &Type::unit(), arguments, span))
+    }
+
+    fn pass_string_push_item(
+        &mut self,
+        parameter: &Type,
+        item: &TypedExpr,
+    ) -> Result<Borrow, Diagnostic> {
+        self.pass_call_argument(None, 1, parameter, item)
+            .map_err(|_| self.string_push_item_problem(item))
+    }
+
+    fn string_push_item_problem(&self, item: &TypedExpr) -> Diagnostic {
+        let found = self.unifier.resolve(&item.ty);
+        if found == Type::Primitive(PrimitiveType::String) {
+            return TypeProblems::owned_string_push_item(item.span);
+        }
+        TypeProblems::string_push_item(&self.describe(&found), item.span)
+    }
+
+    fn vector_of(&self, element: Type) -> Type {
+        let vector = self
+            .rust_types
+            .binding_with_template(RustType::VECTOR_TEMPLATE)
+            .expect("the prelude defines a vector type");
+        Type::Named(vector, vec![element])
     }
 
     fn infer_iter_slice(&mut self, value: TypedExpr, span: Span) -> Result<TypedExpr, Diagnostic> {
@@ -3087,17 +3171,28 @@ impl TypeChecker {
             let borrow = self.pass_call_argument(None, index, parameter, &value)?;
             typed_arguments.push(TypedArgument { value, borrow });
         }
+        Ok(self.finish_synthetic_call(template, &parameters, &result, typed_arguments, span))
+    }
+
+    fn finish_synthetic_call(
+        &mut self,
+        template: &str,
+        parameters: &[Type],
+        result: &Type,
+        typed_arguments: Vec<TypedArgument>,
+        span: Span,
+    ) -> TypedExpr {
         let parameters: Vec<Type> = parameters
             .iter()
             .map(|parameter| self.unifier.resolve(parameter))
             .collect();
-        let result = self.unifier.resolve(&result);
+        let result = self.unifier.resolve(result);
         let callee = self.rust_template(template, parameters, result.clone(), span);
-        Ok(TypedExpr {
+        TypedExpr {
             kind: TypedExprKind::Call(Box::new(callee), typed_arguments),
             ty: result,
             span,
-        })
+        }
     }
 
     fn rust_template(

@@ -35,6 +35,7 @@ pub enum MapOperation {
     Entries,
     Iter,
     Update,
+    Push,
 }
 
 impl MapOperation {
@@ -46,6 +47,7 @@ impl MapOperation {
             "entries" => Some(Self::Entries),
             "iter" => Some(Self::Iter),
             "update" => Some(Self::Update),
+            "push" => Some(Self::Push),
             _ => None,
         }
     }
@@ -58,6 +60,7 @@ impl MapOperation {
             Self::Entries => "entries",
             Self::Iter => "iter",
             Self::Update => "update",
+            Self::Push => "push",
         }
     }
 }

@@ -1,0 +1,38 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/push_as_value.rslisp
+---
+fn add_with(adder: impl FnOnce(&mut Vec<i64>, i64), items: &mut Vec<i64>, item: i64) {
+    adder(items, item)
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut years: Vec<i64> = vec![2019_i64];
+    let add = |argument_0: &mut Vec<i64>, argument_1: i64| argument_0.push(argument_1);
+    add(&mut years, 2022);
+    add_with(
+        |argument_0: &mut Vec<i64>, argument_1: i64| argument_0.push(argument_1),
+        &mut years,
+        2025,
+    );
+    println!("{:?}", years)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
