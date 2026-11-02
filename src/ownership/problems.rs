@@ -438,7 +438,7 @@ impl OwnershipProblems {
         )
         .with_label(Label::new(
             span,
-            format!("the result of `{closure}` borrows this parameter, so it needs a borrow that outlives the function"),
+            format!("`{closure}` ties this parameter to its result, so it needs a borrow that outlives the function"),
         ));
         dropped_label
             .into_iter()

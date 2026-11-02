@@ -20,7 +20,7 @@ error[L0512]: cannot pass a borrow of a local value to `first`
    |        ----- this local is dropped when the function returns
  3 |   (let year-at (fn (index) (at years index)))
  4 |   (let first (fn ((items (ref (vec i64)))) (at items 0)))
-   |                   ----------------------- the result of `first` borrows this parameter, so it needs a borrow that outlives the function
+   |                   ----------------------- `first` ties this parameter to its result, so it needs a borrow that outlives the function
 ...
 11 |   (println (first years))
    |                   ^^^^^ this borrows a local value
@@ -34,7 +34,7 @@ error[L0512]: cannot pass a borrow of a local value to `first`
    |        ----- this local is dropped when the function returns
  3 |   (let year-at (fn (index) (at years index)))
  4 |   (let first (fn ((items (ref (vec i64)))) (at items 0)))
-   |                   ----------------------- the result of `first` borrows this parameter, so it needs a borrow that outlives the function
+   |                   ----------------------- `first` ties this parameter to its result, so it needs a borrow that outlives the function
 ...
 12 |   (println (first (ref years)))
    |                   ^^^^^^^^^^^ this borrows a local value
@@ -48,7 +48,7 @@ error[L0512]: cannot pass a borrow of a local value to `pick`
    |        ----- this local is dropped when the function returns
 ...
  5 |   (let pick (fn ((items (ref (vec i64))) (index usize)) (at items index)))
-   |                  ----------------------- the result of `pick` borrows this parameter, so it needs a borrow that outlives the function
+   |                  ----------------------- `pick` ties this parameter to its result, so it needs a borrow that outlives the function
 ...
 13 |   (println (pick years 1))
    |                  ^^^^^ this borrows a local value
@@ -59,7 +59,7 @@ error[L0512]: cannot pass a borrow of a local value to `longer`
   --> check/closure_lends_local_borrow.rslisp:14:29
    |
  6 |   (let longer (fn ((a (ref str)) (b (ref str))) (if (> (len a) (len b)) a b)))
-   |                                  ------------- the result of `longer` borrows this parameter, so it needs a borrow that outlives the function
+   |                                  ------------- `longer` ties this parameter to its result, so it needs a borrow that outlives the function
 ...
 10 |   (let name (to-string "Ariya"))
    |        ---- this local is dropped when the function returns
@@ -73,7 +73,7 @@ error[L0512]: cannot pass a borrow of a temporary value to `first`
   --> check/closure_lends_local_borrow.rslisp:18:19
    |
  4 |   (let first (fn ((items (ref (vec i64)))) (at items 0)))
-   |                   ----------------------- the result of `first` borrows this parameter, so it needs a borrow that outlives the function
+   |                   ----------------------- `first` ties this parameter to its result, so it needs a borrow that outlives the function
 ...
 18 |   (println (first (vec 2019 2021)))
    |                   ^^^^^^^^^^^^^^^ this temporary value is dropped at the end of the statement
