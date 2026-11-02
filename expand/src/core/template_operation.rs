@@ -20,7 +20,6 @@ enum Lexeme<'t> {
     Word(&'t str),
     Text,
     Symbol(char),
-    Other,
 }
 
 pub struct TemplateOperation<'t> {
@@ -52,14 +51,12 @@ impl<'t> TemplateOperation<'t> {
         "null_mut",
         "size_of",
     ];
-    const LITERAL_MACROS: [&'static str; 11] = [
+    const LITERAL_MACROS: [&'static str; 9] = [
         "cfg",
         "column",
         "concat",
         "env",
         "file",
-        "include_bytes",
-        "include_str",
         "line",
         "module_path",
         "option_env",
@@ -213,7 +210,7 @@ impl<'t> TemplateOperation<'t> {
         match piece {
             Piece::Literal(literal) => Self::lex(literal),
             Piece::Placeholder { index, .. } => vec![Lexeme::Argument(*index)],
-            Piece::TypePlaceholder { .. } | Piece::BinderPlaceholder { .. } => vec![Lexeme::Other],
+            Piece::TypePlaceholder { .. } | Piece::BinderPlaceholder { .. } => Vec::new(),
         }
     }
 
@@ -318,7 +315,7 @@ impl<'t> TemplateOperation<'t> {
         match self.lexemes.get(position)? {
             Lexeme::Argument(index) => Some(Operand::Argument(*index)),
             Lexeme::Number(text) => Some(Operand::Constant(Self::integer_value(text))),
-            Lexeme::Word(_) | Lexeme::Text | Lexeme::Symbol(_) | Lexeme::Other => None,
+            Lexeme::Word(_) | Lexeme::Text | Lexeme::Symbol(_) => None,
         }
     }
 
