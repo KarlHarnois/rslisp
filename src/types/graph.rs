@@ -22,10 +22,6 @@ impl<'p> DefinitionGraph<'p> {
         Self::deferring(program, Self::prelude_macro_helpers(program))
     }
 
-    pub fn with_every_definition(program: &'p Program) -> Self {
-        Self::deferring(program, FxHashSet::default())
-    }
-
     fn deferring(program: &'p Program, macro_helpers: FxHashSet<BindingId>) -> Self {
         let walked = ReferenceWalk::new(&program.bindings, &macro_helpers)
             .run(Self::definitions_in(program));
@@ -508,7 +504,7 @@ mod tests {
     #[test]
     fn every_prelude_macro_helper_outside_compile_time_code_type_checks_once() {
         let source = TypedSource::expand(PreludeFixture::EMPTY_PROGRAM);
-        let graph = DefinitionGraph::with_every_definition(source.program());
+        let graph = DefinitionGraph::deferring(source.program(), FxHashSet::default());
         let typed = PreludeFixture::typed_bindings(&source.check(&graph));
         let unchecked = DefinitionGraph::prelude_macro_helpers(source.program())
             .into_iter()
