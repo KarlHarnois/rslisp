@@ -1995,6 +1995,9 @@ impl TypeChecker {
         found: &[Type],
         span: Span,
     ) -> Result<(), Diagnostic> {
+        if self.has_reported_errors(function) {
+            return Ok(());
+        }
         for (position, (expected, found)) in expected.iter().zip(found).enumerate() {
             if !found.is_reference() {
                 let (item, _) = self.peeled_reference(expected);
