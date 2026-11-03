@@ -2,10 +2,11 @@ mod headers;
 mod reports;
 
 use std::fs;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::{ChildStdin, Command, Output, Stdio};
+use std::process::{Child, ChildStdin, Command, ExitStatus, Output, Stdio};
 use std::thread::{self, JoinHandle};
+use std::time::{Duration, Instant};
 
 use rslisp::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use rslisp::core::{
@@ -32,6 +33,8 @@ pub struct Fixture {
 
 impl Fixture {
     const FIXTURE_ROOT: &str = "tests/fixtures";
+    const RUN_DEADLINE: Duration = Duration::from_secs(10);
+    const EXIT_POLL_INTERVAL: Duration = Duration::from_millis(10);
 
     pub fn load(path: &Path) -> Self {
         let text = fs::read_to_string(path).expect("fixture is readable");
@@ -204,9 +207,46 @@ impl Fixture {
             .expect("the compiled fixture runs");
         let input = child.stdin.take().expect("the fixture's stdin is piped");
         let offer = Self::offer(input, self.standard_input());
-        let output = child.wait_with_output().expect("the compiled fixture runs");
+        let stdout = Self::collect(child.stdout.take().expect("the fixture's stdout is piped"));
+        let stderr = Self::collect(child.stderr.take().expect("the fixture's stderr is piped"));
+        let status = Self::await_exit(&mut child);
         offer.join().expect("the standard input offer ends");
-        output
+        Output {
+            status,
+            stdout: stdout.join().expect("the fixture's stdout is collected"),
+            stderr: stderr.join().expect("the fixture's stderr is collected"),
+        }
+    }
+
+    fn collect(mut stream: impl Read + Send + 'static) -> JoinHandle<Vec<u8>> {
+        thread::spawn(move || {
+            let mut bytes = Vec::new();
+            stream
+                .read_to_end(&mut bytes)
+                .expect("the fixture's output is readable");
+            bytes
+        })
+    }
+
+    fn await_exit(child: &mut Child) -> ExitStatus {
+        let deadline = Instant::now() + Self::RUN_DEADLINE;
+        loop {
+            if let Some(status) = child
+                .try_wait()
+                .expect("the compiled fixture's status is readable")
+            {
+                return status;
+            }
+            if Instant::now() >= deadline {
+                Self::stop_past_deadline(child);
+            }
+            thread::sleep(Self::EXIT_POLL_INTERVAL);
+        }
+    }
+
+    fn stop_past_deadline(child: &mut Child) -> ! {
+        child.kill().expect("the compiled fixture stops");
+        panic!("the compiled fixture ran past its deadline");
     }
 
     fn standard_input(&self) -> Vec<u8> {
