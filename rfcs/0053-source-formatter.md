@@ -502,6 +502,16 @@ The project owner decided on 2026-11-03 that the formatter reads shapes by name 
 
 Comparing layouts, as layout rule 5 does when it moves a call's arguments below its head, needs a printer that searches for the layout with the fewest lines within the width, as `raco fmt` does with pretty-expressive. The build writes that printer or takes a library for it.
 
+### Prototype
+
+After the decisions above, a prototype formatter applied every layout rule to the repository. It reads through a lossless syntax tree, collects shapes from the kernel, the prelude and the modules a file reaches through `use`, searches for the layout with the fewest lines, and runs the meaning and stability checks on each file. It lives outside the repository and is not part of this RFC.
+
+- It formatted 1,604 files, and every one passed both checks. It skipped 1 file that the reader rejects and 1 nested deeper than the prototype's recursion allows.
+- The files grow from 27,548 lines to 44,303, 61% more, mostly because the 40-column limit breaks forms that fit in 80. `raco fmt`, which keeps any form that fits on one line, lays out `warehouse/reports.rslisp` in 77 lines without blank lines, against about 130 for the prototype.
+- 12 lines stay longer than 80 columns, where a single atom or string does not fit.
+
+The project owner reviewed six formatted files on 2026-11-03 and kept the rules as decided: the 40-column limit applies at every depth, a `str` puts one part per line as `raco fmt` does, and an `fn` type in a signature keeps the `fn` shape, so a long signature puts its return type on its own line.
+
 ## Rejected options and why
 
 The project owner chose 1B on 2026-11-03, which rejects 1A, and chose 4B, which rejects 4A, 4C, 4D and 4E, and chose to follow `use` for open question 2, which rejects reading the file alone and reading the whole directory, and chose a shape for `use` for open question 3, which rejects lining its names up under the module path, and chose 2B and 3A, which reject 2A, 2C and 3B.
