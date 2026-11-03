@@ -1,0 +1,25 @@
+(use code type-definition-call string nth)
+
+(def written-type-call
+  (macro (form)
+    (string (type-definition-call (nth form 1)))))
+
+(defrule quietly ((definition) definition))
+
+(defstruct point :x i64 :y i64)
+
+(quietly (defstruct size :w i64 :h i64))
+
+(defn twice (x) (* 2 x))
+
+(struct plain (x i64))
+
+(def point-call (written-type-call point))
+
+(def size-call (written-type-call size))
+
+(def twice-call (written-type-call twice))
+
+(def plain-call (written-type-call plain))
+
+(def i64-call (written-type-call i64))

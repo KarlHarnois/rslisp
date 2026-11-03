@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/type_definition_call.rslisp
+---
+(struct point (x i64) (y i64))
+(def make-point (fn (x y) (new point (x x) (y y))))
+(struct size (w i64) (h i64))
+(def make-size (fn (w h) (new size (w w) (h h))))
+(def twice (fn (x_2) (mul 2 x_2)))
+(struct plain (x i64))
+(def point-call "((defstruct point :x i64 :y i64))")
+(def size-call "((defstruct size :w i64 :h i64))")
+(def twice-call "()")
+(def plain-call "()")
+(def i64-call "()")

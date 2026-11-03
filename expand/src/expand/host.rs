@@ -37,6 +37,11 @@ impl CompileTimeHost for Expander<'_> {
         Ok(self.defining_call(binding))
     }
 
+    fn type_definition_call(&self, term: &Symbol) -> Option<Form> {
+        let binding = self.namespace_binding(term, Namespace::Type)?;
+        self.defining_call(binding)
+    }
+
     fn expand_call(&mut self, call: Form) -> Option<Form> {
         let binding = self.macro_head(&call)?;
         self.discarded_expansion(binding, call)
