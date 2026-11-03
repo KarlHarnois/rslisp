@@ -418,7 +418,7 @@ A docstring is Markdown. A lookup removes the indentation that every written con
 
 `(header-shape (form name ...))` states the header of a form's calls: the leading forms that belong with the form's name, before its body. `(header-shape (defn name parameters))` says that the header of a `defn` call is its name and its parameter list. `doc` shows the header of an undocumented definition (see Docstrings), and the source formatter that [RFC 0053](../rfcs/0053-source-formatter.md) designs reads the same shapes to keep a header on a call's first line.
 
-A `:docstring` after the shape states that the form takes a docstring as the first form after its header, when another form follows it: `(header-shape (defn name parameters) :docstring)`. A shape adds its header to its module's notes under `header-shapes`, and a `:docstring` adds the form's name under `docstring-forms`, so macro code and the formatter read both with `module-notes`.
+A `:docstring` after the shape states that the form takes a docstring as the first form after its header, when another form follows it: `(header-shape (defn name parameters) :docstring)`. A shape adds itself, such as `(defn name parameters)`, to its module's notes under `header-shapes`, and a `:docstring` adds the form's name under `docstring-forms`, so macro code and the formatter read both with `module-notes`.
 
 The prelude states the shapes of its four definers, each with `:docstring`, and of the kernel forms whose bodies indent 2 columns, such as `(header-shape (match value))` and `(header-shape (impl trait type))`. `prelude/prelude.rslisp` states the kernel's shapes, beside its re-export of the kernel.
 
