@@ -422,11 +422,7 @@ impl ExpressionEmitter<'_> {
         let TypedExprKind::Leaf(TypedLeaf::Global(binding)) = callee.kind else {
             return None;
         };
-        let TypedExprKind::Leaf(TypedLeaf::Rust(template)) =
-            &self.plan.definition(binding)?.value.kind
-        else {
-            return None;
-        };
+        let template = self.definition_template(binding, &callee.ty)?;
         Self::COMPOUND_OPERATORS
             .into_iter()
             .find(|operator| *template.template == *format!("{{0}} {operator} {{1}}"))

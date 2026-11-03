@@ -13,7 +13,7 @@ pub use binding::{BindingArena, BindingId, BindingInfo, BindingKind, Namespace, 
 pub use builtin::Builtin;
 pub use expr::{
     Arm, Binder, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, FieldSpelling, Lambda, Leaf,
-    Literal, MapOperation, Pattern, PatternKind, RustTemplate, StructExpr,
+    Literal, MapOperation, Pattern, PatternKind, RustClause, RustTemplate, StructExpr,
 };
 pub use kernel::{
     ControlForm, CopyTrait, DefinitionForm, ExpressionForm, FunctionFieldTraits, KernelConstants,
@@ -28,6 +28,6 @@ pub use module::{
     TraitAssociatedType, TraitMethod, VariantDeclaration, VariantPayload,
 };
 pub use printer::CorePrinter;
-pub use template::{MalformedPlaceholder, ParsedTemplate, Piece};
+pub use template::{MalformedPlaceholder, ParsedTemplate, PassingAspect, PassingDifference, Piece};
 pub use template_operation::{Division, Operand, TemplateOperation};
 pub use types::{ClosureKind, TypeBinder, TypeBound, TypeExpr, TypeExprKind};

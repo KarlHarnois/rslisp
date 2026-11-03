@@ -3075,6 +3075,7 @@ impl TypeChecker {
         let template = RustTemplate {
             template: Rc::from(template),
             type_expr: TypeExpr::new(TypeExprKind::Hole, span),
+            clauses: Vec::new(),
         };
         TypedExpr {
             kind: TypedExprKind::Leaf(TypedLeaf::Rust(Rc::new(template))),

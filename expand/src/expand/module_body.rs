@@ -1114,6 +1114,7 @@ impl Expander<'_> {
                 NameMangler::value(method_symbol.name())
             )),
             type_expr: scheme.clone(),
+            clauses: Vec::new(),
         };
         let value = Expr::new(
             ExprKind::Leaf(Leaf::Rust(Rc::new(template))),

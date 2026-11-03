@@ -16,6 +16,7 @@ use super::rust_types::{RustType, RustTypeTable};
 use super::selection::Selection;
 use super::selfless_methods::SelflessMethods;
 use super::structs::{StructDefinition, StructTable};
+use super::template_clauses::TemplateClauses;
 use super::templates::TemplateBorrows;
 use super::traits::{Implementor, RustTrait, TraitTable};
 use super::ty::{Bound, BoundOrigin, GenericId, GenericParam, Scheme, Type, TypeVar};
@@ -26,8 +27,8 @@ use super::typed::{
 use super::unifier::{LiteralKind, Obligation, Unifier};
 use crate::core::{
     BindingArena, BindingId, BindingKind, BodyItem, CopyTrait, CoreModule, Expr, ExprKind, Item,
-    ItemKind, Leaf, ModuleId, ParsedTemplate, PrimitiveType, ReferenceKind, StructDerives,
-    StructExpr, TypeBinder, TypeExpr, TypeExprKind, VariantDeclaration,
+    ItemKind, Leaf, ModuleId, ParsedTemplate, PrimitiveType, ReferenceKind, RustTemplate,
+    StructDerives, StructExpr, TypeBinder, TypeExpr, TypeExprKind, VariantDeclaration,
     VariantPayload as CoreVariantPayload,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
@@ -182,6 +183,7 @@ pub struct TypeChecker {
     pub(super) unsettled_collections: Vec<(Type, Span)>,
     pub(super) vector_bases: FxHashSet<Span>,
     pub(super) template_borrows: TemplateBorrows,
+    template_clauses: TemplateClauses,
     pub(super) recur_target: Option<super::infer::RecurTarget>,
     pub(super) checking_function_body: bool,
     pub(super) try_target: Option<super::infer::TryTarget>,
@@ -272,6 +274,7 @@ impl TypeChecker {
             unsettled_collections: Vec::new(),
             vector_bases: FxHashSet::default(),
             template_borrows: TemplateBorrows::default(),
+            template_clauses: TemplateClauses::default(),
             recur_target: None,
             checking_function_body: false,
             try_target: None,
@@ -969,6 +972,7 @@ impl TypeChecker {
         };
         self.template_borrows
             .register(member.binding, &template.template);
+        self.collect_template_clauses(member.binding, template);
         let scheme = match self.lower_scheme(&template.type_expr) {
             Ok(scheme) => scheme,
             Err(diagnostic) => {
@@ -978,6 +982,21 @@ impl TypeChecker {
         };
         self.schemes.insert(member.binding, scheme);
         true
+    }
+
+    fn collect_template_clauses(&mut self, binding: BindingId, template: &RustTemplate) {
+        let lowered = template
+            .clauses
+            .iter()
+            .map(|clause| {
+                let target = self.lower_type(&clause.target, &FxHashMap::default())?;
+                Ok((target, Rc::clone(&clause.template)))
+            })
+            .collect::<Result<Vec<_>, Diagnostic>>();
+        match lowered {
+            Ok(clauses) => self.template_clauses.add(binding, clauses),
+            Err(diagnostic) => self.diagnostics.push(diagnostic),
+        }
     }
 
     fn rust_definition(&self, member: &Definition) -> Option<(BindingId, TypedDefinition)> {
@@ -2926,6 +2945,7 @@ impl TypeChecker {
             generics: self.generics,
             implied_bounds: self.implied_bounds,
             template_borrows: self.template_borrows,
+            template_clauses: self.template_clauses,
             pending_mode_checks: self.pending_mode_checks,
             borrowed_parameters: FxHashSet::default(),
             stored_function_parameters: FxHashSet::default(),
