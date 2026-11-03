@@ -124,6 +124,15 @@ impl<'a> TextOperations<'a> {
         Ok(Forms::list(call.into_iter().collect(), self.call_site))
     }
 
+    pub fn type_definition_call(
+        &self,
+        host: &mut dyn CompileTimeHost,
+    ) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(1)?;
+        let call = host.type_definition_call(self.arguments.symbol(0)?);
+        Ok(Forms::list(call.into_iter().collect(), self.call_site))
+    }
+
     pub fn expand_call(&self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(1)?;
         let expansion = host.expand_call(self.arguments.form(0)?);
