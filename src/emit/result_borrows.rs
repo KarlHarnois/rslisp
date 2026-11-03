@@ -457,8 +457,17 @@ impl<'r, 'a> BodyFlows<'r, 'a> {
             TypedExprKind::Leaf(TypedLeaf::Local(binding)) => self.local(*binding),
             TypedExprKind::Control(control) => self.control(control),
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments, expr),
+            TypedExprKind::Borrow(_, place) => self.borrowed(place),
             _ => self.children(expr),
         }
+    }
+
+    fn borrowed(&mut self, place: &TypedExpr) -> FxHashSet<BindingId> {
+        let mut flows = self.value(place);
+        if let Some(root) = place.place_root() {
+            flows.extend(self.local(root));
+        }
+        flows
     }
 
     fn carries_borrow(&self, ty: &Type) -> bool {
