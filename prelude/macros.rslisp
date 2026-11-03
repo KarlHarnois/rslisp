@@ -442,7 +442,8 @@
 
 (def documentation-part
   (fn (part term)
-    (let notes (concat (value-notes term) (type-notes term)))
+    (let documented-values (value-notes term))
+    (let notes (if (empty? documented-values) (type-notes term) documented-values))
     (if (empty? notes) (undocumented-part part term) (doc-part part (first notes)))))
 
 (def undocumented-part

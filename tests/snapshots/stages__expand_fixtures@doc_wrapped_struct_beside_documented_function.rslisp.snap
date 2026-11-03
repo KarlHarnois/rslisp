@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_wrapped_struct_beside_documented_function.rslisp
+---
+(struct point (x i64) (y i64))
+(def make-point (fn (x y) (new point (x x) (y y))))
+(def point_2 (fn (x_2) (new point (x x_2) (y x_2))))
+(def point-page "(defn point (x))\n\nMakes a point.")
+(def point-header "(defn point (x))")
+(def point-docstring "Makes a point.")
