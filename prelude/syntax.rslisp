@@ -20,7 +20,7 @@
               (function-definition name parameters (rest body)))
           (function-definition name parameters body))))
 
-(header-shape (defn name parameters))
+(header-shape (defn name parameters) :docstring)
 
 (def function-definition
   (fn (name parameters body)

@@ -393,7 +393,7 @@ The prelude's string lookups, `docstring`, `header`, `page-body` and `doc-page`,
 
 A lookup finds the docstring in the module that defines the binding `term` refers to, so an imported or re-exported term needs no other export. Each definer stores the docstring of a documented definition as a note under `docstrings` in its module's notes, with `add-module-note`, and defines no other name, so a program may define `doc/twice` beside a documented `twice`. An undocumented definition stores nothing. A lookup reads the notes of the defining module with `module-notes` and takes the note whose name refers to the same binding as `term`, so a documented name that a macro introduces never answers for a user's name of the same spelling. A lookup reads the docstring of the type binding only when the value binding has none, so a documented struct keeps its page beside an undocumented function of the same name.
 
-Every bound term has a page, as in `go doc`. A term without a docstring gets its header, a blank line, then `No documentation.`. The lookup rebuilds the header of every page from the macro call that defined the term, which `definition-call` returns, or `type-definition-call` for a documented struct. The header is as many leading forms of the call as the shape that the call's macro states with `header-shape`, or the whole call when the call is shorter than the shape. The prelude states `(header-shape (defn name parameters))`, `(header-shape (defmacro name pattern))`, `(header-shape (defstruct head))` and `(header-shape (defrule name))`, so `(doc-page twice)` after `(defn twice (x) (* 2 x))` is `"(defn twice (x))\n\nNo documentation."`. A user macro that defines names may state its own shape with `(use prelude/macros header-shape)`. State the shape in the module that defines the definer: a lookup reads the shapes of that module only. A shape that is not a list that starts with the definer's name is `L0329`. When the call's macro states no shape, the lookup expands the call one step with `expand-call` and tries the expansion's macro, until a macro states a shape, for at most 32 expansions. A definition made through a user macro thus shows the same header with or without a docstring:
+Every bound term has a page, as in `go doc`. A term without a docstring gets its header, a blank line, then `No documentation.`. The lookup rebuilds the header of every page from the macro call that defined the term, which `definition-call` returns, or `type-definition-call` for a documented struct. The header is as many leading forms of the call as the shape that the call's macro states with `header-shape` (see Header shapes), or the whole call when the call is shorter than the shape, so `(doc-page twice)` after `(defn twice (x) (* 2 x))` is `"(defn twice (x))\n\nNo documentation."`. A lookup reads the shapes of the module that defines the definer only, so a user definer states its shape in its own module. When the call's macro states no shape, the lookup expands the call one step with `expand-call` and tries the expansion's macro, until a macro states a shape, for at most 32 expansions. A definition made through a user macro thus shows the same header with or without a docstring:
 
 ```lisp
 (defrule my-defn ((n p b ...) (defn n p b ...)))
@@ -413,6 +413,23 @@ A docstring is Markdown. A lookup removes the indentation that every written con
 `rslisp doc [--types] [--file <entry>] <term>` prints the page that `(doc-page <term>)` returns, for a prelude term or, with `--file`, for a term the entry module defines or imports. It expands `(header <term>)` and `(page-body <term>)` and prints the first followed by the second, so it can color the header apart from the docstring, as [Colors](#colors) states.
 
 `--types` also type checks the program and prints the inferred type of the definition that the page describes above the page, as the line that `rslisp signatures` prints: `--types twice` prints `(type twice (fn (i64) i64))`, then the page. A macro that answers for a function, such as `->point` or a `defn` with keyword parameters, gets that function's type under the macro's name. A term with no type of its own, such as a struct, another macro or a kernel form, gets the page alone. A documented struct `point` beside an undocumented function `point` gets the struct's page, so it gets no type line. When the program does not type check, `--types` prints the page with no type line, the errors on stderr, and exits 1. `(doc term)` and `(doc-page term)` never show a type, because a lookup expands before the type checker runs.
+
+### Header shapes
+
+`(header-shape (form name ...))` states the header of a form's calls: the leading forms that belong with the form's name, before its body. `(header-shape (defn name parameters))` says that the header of a `defn` call is its name and its parameter list. `doc` shows the header of an undocumented definition (see Docstrings), and the source formatter that [RFC 0053](../rfcs/0053-source-formatter.md) designs reads the same shapes to keep a header on a call's first line.
+
+A `:docstring` after the shape states that the form takes a docstring as the first form after its header, when another form follows it: `(header-shape (defn name parameters) :docstring)`.
+
+The prelude states the shapes of its four definers, each with `:docstring`:
+
+```lisp
+(header-shape (defn name parameters) :docstring)
+(header-shape (defmacro name pattern) :docstring)
+(header-shape (defstruct head) :docstring)
+(header-shape (defrule name) :docstring)
+```
+
+A user macro states its own shape with `(use prelude/macros header-shape)`, below the macro's definition. A shape that is not a list that starts with a name is `L0329`. The name must refer to a binding where the shape is written, so a misspelled name is `L0201` with the closest name, and so is a shape above the definition of the macro it names, as a call above that definition is. Any form after the shape other than one `:docstring` is `L0331`.
 
 ### The `code` module
 

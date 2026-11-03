@@ -1,5 +1,5 @@
 (use code first rest list prepend concat len empty? nth take drop
-          symbol? list? string? symbol-name string same-binding? fail
+          symbol? list? string? keyword? keyword-name symbol-name string same-binding? fail
           definition-symbol type-definition-symbol definition-call type-definition-call expand-call add-module-note module-notes symbol
           value-eq bool-not number-add number-sub number-lt
           string-lines string-trim-start string-length string-drop string-strip-suffix)
@@ -400,14 +400,14 @@
         true
         (if (empty? (rest arguments)) false (recur (drop 2 arguments))))))
 
-(defmacro header-shape (shape)
-  "States the header of a definer's calls: (header-shape (definer name ...)).
+(defmacro header-shape (shape markers ...)
+  "States the header of a form's calls: (header-shape (form name ...)).
 
-  The page of a definition that the definer made shows as many leading
-  forms of its call as the shape lists."
+  The page of a definition that a definer made shows as many leading
+  forms of its call as the shape lists. A `:docstring` after the shape
+  states that the form takes a docstring right after its header."
   (if (header-shape? shape)
-      (do (add-module-note (quote header-shapes) shape)
-          (quote (do)))
+      (stated-header-shape shape markers)
       (malformed-header-shape shape)))
 
 (def header-shape?
@@ -416,20 +416,48 @@
         (if (empty? shape) false (symbol? (first shape)))
         false)))
 
+(def stated-header-shape
+  (fn (shape markers)
+    (definition-symbol (first shape) "shape")
+    (check-shape-markers markers)
+    (add-module-note (quote header-shapes) shape)
+    (quote (do))))
+
+(def check-shape-markers
+  (fn (markers)
+    (let unexpected (unexpected-shape-marker markers))
+    (if (empty? unexpected) (do) (misplaced-shape-marker (first unexpected)))))
+
+(def unexpected-shape-marker
+  (fn (markers)
+    (if (empty? markers)
+        markers
+        (if (docstring-marker? (first markers)) (rest markers) markers))))
+
+(def docstring-marker?
+  (fn (form)
+    (if (keyword? form) (value-eq (keyword-name form) "docstring") false)))
+
 (def malformed-header-shape
   (fn (shape)
     (fail "a header shape is a list that starts with the definer's name" shape
           "write it as `(header-shape (definer name ...))`"
           (template (:code malformed-header-shape :label "not a list that starts with a name")))))
 
+(def misplaced-shape-marker
+  (fn (marker)
+    (fail "`header-shape` takes only one `:docstring` after its shape" marker
+          "remove it, or write `:docstring` once to state that the form takes a docstring"
+          (template (:code unexpected-header-shape-marker :label "not expected here")))))
+
 (defmacro document (name text)
   "Documents a definition that no definer documents, such as a `def` of a macro."
   (do (note-docstring (value-doc-key name) text)
       (quote (do))))
 
-(header-shape (defrule name))
+(header-shape (defrule name) :docstring)
 
-(header-shape (defmacro name pattern))
+(header-shape (defmacro name pattern) :docstring)
 
 (defmacro doc-page (term)
   "Returns the page of a term as a string: its header, a blank line, then its docstring.

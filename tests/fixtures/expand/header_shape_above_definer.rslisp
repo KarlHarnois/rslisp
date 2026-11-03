@@ -1,0 +1,9 @@
+(use prelude/macros header-shape)
+
+(header-shape (my-defn name parameters))
+
+(defrule my-defn ((n p b ...) (defn n p b ...)))
+
+(my-defn twice (x) (* 2 x))
+
+(def twice-page (doc-page twice))
