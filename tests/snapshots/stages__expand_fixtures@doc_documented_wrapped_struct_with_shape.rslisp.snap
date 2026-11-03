@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_documented_wrapped_struct_with_shape.rslisp
+---
+(struct point (x i64) (y i64))
+(def make-point (fn (x y) (new point (x x) (y y))))
+(struct size (w i64) (h i64))
+(def make-size (fn (w h) (new size (w w) (h h))))
+(def p1 "(my-struct point)\n\nNo documentation.")
+(def p2 "(my-struct size)\n\nA size.")
