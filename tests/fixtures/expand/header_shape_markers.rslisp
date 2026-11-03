@@ -7,3 +7,5 @@
 (header-shape (my-defn name parameters) :docstring :docstring)
 
 (header-shape (my-defn name parameters) "text")
+
+(header-shape (my-defn name parameters) :docstring :doc)
