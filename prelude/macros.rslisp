@@ -444,8 +444,8 @@
 
 (def malformed-header-shape
   (fn (shape)
-    (fail "a header shape is a list that starts with the definer's name" shape
-          "write it as `(header-shape (definer name ...))`"
+    (fail "a header shape is a list that starts with the form's name" shape
+          "write it as `(header-shape (form name ...))`"
           (template (:code malformed-header-shape :label "not a list that starts with a name")))))
 
 (def unexpected-header-shape-marker
