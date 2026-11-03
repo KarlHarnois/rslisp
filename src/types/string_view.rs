@@ -222,14 +222,11 @@ mod tests {
         let items =
             fixture.viewed_items(&fixture.parameter("window"), &fixture.parameter("readings"));
         assert_eq!(
-            format!("{items:?}"),
-            format!(
-                "{:?}",
-                Some(vec![(
-                    Type::Primitive(PrimitiveType::U8),
-                    Type::Primitive(PrimitiveType::I64)
-                )])
-            )
+            items,
+            Some(vec![(
+                Type::Primitive(PrimitiveType::U8),
+                Type::Primitive(PrimitiveType::I64)
+            )])
         );
     }
 
