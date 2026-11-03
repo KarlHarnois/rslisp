@@ -1,6 +1,6 @@
 (use code first rest list prepend concat length empty? nth take drop
           symbol? list? string? symbol-name string same-binding? fail
-          definition-symbol type-definition-symbol definition-call expand-call add-module-note module-notes symbol
+          definition-symbol type-definition-symbol definition-call type-definition-call expand-call add-module-note module-notes symbol
           value-eq bool-not number-add number-sub number-lt
           string-lines string-trim-start string-length string-drop string-strip-suffix)
 
@@ -453,16 +453,18 @@
 
 (def value-notes
   (fn (term)
-    (map-list (fn (note) (with-call-header term note))
+    (map-list (fn (note) (with-call-header (written-header term) note))
               (docstring-notes (definition-symbol term "doc") (value-doc-key term)))))
 
 (def with-call-header
-  (fn (term note)
-    (concat (take 2 note) (prepend (written-header term) (note-docstrings note)))))
+  (fn (header note)
+    (concat (take 2 note) (prepend header (note-docstrings note)))))
 
 (def type-notes
   (fn (term)
-    (docstring-notes (type-definition-symbol term "doc") (type-doc-key term))))
+    (let context (type-definition-symbol term "doc"))
+    (map-list (fn (note) (with-call-header (calls-header term context (type-definition-call term)) note))
+              (docstring-notes context (type-doc-key term)))))
 
 (def docstring-notes
   (fn (context key)
@@ -490,7 +492,11 @@
 
 (def written-header
   (fn (term)
-    (let calls (scoped-form (definition-symbol term "doc") (definition-call term)))
+    (calls-header term (definition-symbol term "doc") (definition-call term))))
+
+(def calls-header
+  (fn (term context written-calls)
+    (let calls (scoped-form context written-calls))
     (if (empty? calls)
         term
         (call-header term (first calls) (fn () (expand-call (first calls))) header-expansion-limit))))

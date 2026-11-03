@@ -1,0 +1,13 @@
+(use prelude/macros header-shape)
+
+(defrule my-struct ((h f ...) (defstruct h f ...)))
+
+(header-shape (my-struct head))
+
+(my-struct point :x i64 :y i64)
+
+(my-struct size "A size." :w i64 :h i64)
+
+(def p1 (doc point))
+
+(def p2 (doc size))
