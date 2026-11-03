@@ -1,4 +1,4 @@
-(use prelude/macros defmacro defrule template doc-page docstring header page-body)
+(use prelude/macros defmacro defrule template doc-page docstring header page-body header-shape)
 (use prelude/logic not when unless and or cond)
 (use prelude/syntax defn the -> ->> try-> let-try loop)
 (use prelude/types vec option result iterator slice sequence box)
@@ -51,3 +51,17 @@
         sum count max min max-by-key any? every? find take take-while
         some none some? none? unwrap-or unwrap expect map-some then-some
         ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
+
+(header-shape (def name))
+(header-shape (let name))
+(header-shape (type name))
+(header-shape (fn parameters))
+(header-shape (macro parameters))
+(header-shape (match value))
+(header-shape (new name))
+(header-shape (enum name))
+(header-shape (trait name))
+(header-shape (rust-type name))
+(header-shape (rust-trait name path))
+(header-shape (impl trait type))
+(header-shape (use module))
