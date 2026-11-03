@@ -86,6 +86,8 @@ impl Sandbox {
     }
 
     const EXECUTABLE: u32 = 0o755;
+    #[cfg(target_os = "linux")]
+    const FULL_DEVICE: &str = "/dev/full";
 
     fn with_file(self, name: &str, source: &str) -> Self {
         let path = self.directory.join(name);
@@ -126,6 +128,27 @@ impl Sandbox {
             .copied()
             .collect();
         self.compiler(&typed)
+    }
+
+    fn compiler_writing_to_a_closed_pipe(&self, arguments: &[&str]) -> Outcome {
+        let (reader, writer) = std::io::pipe().expect("the test opens a pipe");
+        drop(reader);
+        self.compiler_writing_to(Stdio::from(writer), arguments)
+    }
+
+    #[cfg(target_os = "linux")]
+    fn compiler_writing_to_a_full_device(&self, arguments: &[&str]) -> Outcome {
+        let full_device = fs::OpenOptions::new()
+            .write(true)
+            .open(Self::FULL_DEVICE)
+            .expect("the full device opens");
+        self.compiler_writing_to(Stdio::from(full_device), arguments)
+    }
+
+    fn compiler_writing_to(&self, standard_output: Stdio, arguments: &[&str]) -> Outcome {
+        let mut command = self.command(Path::new(Self::COMPILER), arguments);
+        command.stdout(standard_output);
+        Outcome::of(&mut command)
     }
 
     fn compiler_in(&self, working_directory: &str, arguments: &[&str]) -> Outcome {
@@ -246,6 +269,12 @@ impl Outcome {
             self.stderr()
         );
         assert!(!self.stderr().contains("panicked"), "{}", self.stderr());
+        self
+    }
+
+    fn assert_silent_success(&self) -> &Self {
+        self.assert_exit_code(0);
+        assert_eq!(self.stderr(), "");
         self
     }
 
@@ -433,6 +462,52 @@ fn signatures_prints_inferred_struct_derives() {
     let sandbox = Sandbox::new("signatures_structs").with_file("structs.rslisp", STRUCTS);
     let signatures = sandbox.compiler(&["signatures", "structs.rslisp"]);
     insta::assert_snapshot!(signatures.assert_exit_code(0).stdout());
+}
+
+#[test]
+fn doc_ends_quietly_when_its_reader_closes() {
+    let sandbox = Sandbox::new("doc_closed_pipe");
+    sandbox
+        .compiler_writing_to_a_closed_pipe(&["doc", "if"])
+        .assert_silent_success();
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+fn doc_reports_a_standard_output_it_cannot_write() {
+    let sandbox = Sandbox::new("doc_unwritable");
+    let doc = sandbox.compiler_writing_to_a_full_device(&["doc", "if"]);
+    assert!(
+        doc.assert_exit_code(2)
+            .stderr()
+            .starts_with("error: cannot write standard output: "),
+        "{}",
+        doc.stderr()
+    );
+}
+
+#[test]
+fn emit_ends_quietly_when_its_reader_closes() {
+    let sandbox = Sandbox::new("emit_closed_pipe").with_file("greeting.rslisp", GREETING);
+    sandbox
+        .compiler_writing_to_a_closed_pipe(&["emit", "greeting.rslisp"])
+        .assert_silent_success();
+}
+
+#[test]
+fn expand_ends_quietly_when_its_reader_closes() {
+    let sandbox = Sandbox::new("expand_closed_pipe").with_file("greeting.rslisp", GREETING);
+    sandbox
+        .compiler_writing_to_a_closed_pipe(&["expand", "greeting.rslisp"])
+        .assert_silent_success();
+}
+
+#[test]
+fn signatures_ends_quietly_when_its_reader_closes() {
+    let sandbox = Sandbox::new("signatures_closed_pipe").with_file("greeting.rslisp", GREETING);
+    sandbox
+        .compiler_writing_to_a_closed_pipe(&["signatures", "greeting.rslisp"])
+        .assert_silent_success();
 }
 
 #[test]

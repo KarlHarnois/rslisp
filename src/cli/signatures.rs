@@ -14,10 +14,7 @@ impl SignaturesCommand {
 
     pub fn run(self, terminal: &mut Terminal) -> ExitStatus {
         match terminal.check(&self.file) {
-            Ok(program) => {
-                print!("{}", program.entry_signatures());
-                ExitStatus::Success
-            }
+            Ok(program) => terminal.write_output(program.entry_signatures()),
             Err(status) => status,
         }
     }

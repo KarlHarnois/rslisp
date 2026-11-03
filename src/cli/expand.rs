@@ -15,13 +15,8 @@ impl ExpandCommand {
 
     pub fn run(self, terminal: &mut Terminal) -> ExitStatus {
         match terminal.expand(&self.file) {
-            Ok(program) => {
-                print!(
-                    "{}",
-                    CorePrinter::new(&program.bindings).module(program.entry_module())
-                );
-                ExitStatus::Success
-            }
+            Ok(program) => terminal
+                .write_output(CorePrinter::new(&program.bindings).module(program.entry_module())),
             Err(status) => status,
         }
     }

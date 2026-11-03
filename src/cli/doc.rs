@@ -41,7 +41,7 @@ impl DocCommand {
             DocPage::Typed => lookup.describe_with_type(&self.environment, &self.term),
         };
         match output {
-            Ok(output) => output.print(),
+            Ok(output) => output.print(terminal),
             Err(status) => status,
         }
     }
@@ -75,12 +75,19 @@ impl DocOutput {
         }
     }
 
-    fn print(self) -> ExitStatus {
-        if let Some(type_line) = self.type_line {
-            println!("{type_line}");
+    fn print(&self, terminal: &Terminal) -> ExitStatus {
+        match terminal.write_output(self.text()) {
+            ExitStatus::Success => self.status,
+            failure => failure,
         }
-        println!("{}", self.page);
-        self.status
+    }
+
+    fn text(&self) -> String {
+        self.type_line
+            .iter()
+            .chain([&self.page])
+            .map(|line| format!("{line}\n"))
+            .collect()
     }
 }
 
