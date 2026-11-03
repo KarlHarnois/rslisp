@@ -1,4 +1,4 @@
-(type small? (where ((n number)) (fn (n) bool)))
+(type small? (where ((a partial-ord number)) (fn (a) bool)))
 (defn small? (b) (< b 10))
 
 (defn main ()

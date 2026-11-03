@@ -1,4 +1,4 @@
-(type small? (where ((n float)) (fn (n) bool)))
+(type small? (where ((a partial-ord float)) (fn (a) bool)))
 (defn small? (x) (< x 10.5))
 
 (defn main ()

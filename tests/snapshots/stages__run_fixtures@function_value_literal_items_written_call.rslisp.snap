@@ -10,4 +10,4 @@ error[L0401]: mismatched types
   |                    ^^^^^^^^^^^ expected `i64`, found `u16`
   |
   = note: `b` defaulted to `i64`, because `small?` is called with `u16` and passed as a value with `u8`
-  = help: give `small?` a type parameter with a `type` signature, such as `(type small? (where ((n number)) (fn (n) bool)))`, so that each use takes its own type
+  = help: give `small?` a type parameter with a `type` signature, such as `(type small? (where ((a partial-ord number)) (fn (a) bool)))`, so that each use takes its own type
