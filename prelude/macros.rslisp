@@ -450,9 +450,19 @@
 
 (def unexpected-header-shape-marker
   (fn (marker)
-    (fail "`header-shape` takes only one `:docstring` after its shape" marker
-          "remove it, or write `:docstring` once to state that the form takes a docstring"
-          (template (:code unexpected-header-shape-marker :label "not expected here")))))
+    (if (replaceable-by-docstring-marker? marker)
+        (fail unexpected-header-shape-marker-title marker
+              "write `:docstring` to state that the form takes a docstring"
+              (template (:code unexpected-header-shape-marker :label "not `:docstring`" :suggest :docstring)))
+        (fail unexpected-header-shape-marker-title marker
+              "remove it: only one `:docstring` may follow a header shape"
+              (template (:code unexpected-header-shape-marker :label "not expected here"))))))
+
+(def replaceable-by-docstring-marker?
+  (fn (marker)
+    (if (keyword? marker) (bool-not (docstring-marker? marker)) false)))
+
+(def unexpected-header-shape-marker-title "unexpected form after a header shape")
 
 (defmacro document (name text)
   "Documents a definition that no definer documents, such as a `def` of a macro."
