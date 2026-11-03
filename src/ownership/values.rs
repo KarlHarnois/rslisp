@@ -390,13 +390,7 @@ impl<'a> FunctionValueModes<'a> {
         if TypeChecker::views_string(view, &owner) {
             return Some(Adjustment::None);
         }
-        let items = TypeChecker::viewed_items(self.rust_types, view, &owner)?;
-        Self::binds_viewed_items(&items).then_some(Adjustment::None)
-    }
-
-    fn binds_viewed_items(items: &[(Type, Type)]) -> bool {
-        let (viewed, owned): (Vec<Type>, Vec<Type>) = items.iter().cloned().unzip();
-        GenericBinding::of_each(&viewed, &owned).substitute(&viewed) == owned
+        TypeChecker::viewed_items(self.rust_types, view, &owner).map(|_| Adjustment::None)
     }
 
     fn added_borrow(&self, expected: &Type, actual: &Type) -> Option<Adjustment> {
@@ -512,14 +506,6 @@ mod tests {
 
         fn text(&self) -> Type {
             Type::Primitive(PrimitiveType::String)
-        }
-
-        fn item(&self) -> Type {
-            Type::Generic(GenericId::new(0))
-        }
-
-        fn binds(&self, viewed: Type, owned: Type) -> bool {
-            FunctionValueModes::binds_viewed_items(&[(viewed, owned)])
         }
 
         fn borrowed(&self, value: Type) -> Type {
@@ -679,17 +665,5 @@ mod tests {
             fixture.decide(&borrowed, &fixture.borrowed(borrowed.clone())),
             None
         );
-    }
-
-    #[test]
-    fn a_generic_view_item_binds_to_the_owned_element() {
-        let fixture = Adjustments::new();
-        assert!(fixture.binds(fixture.item(), fixture.number()));
-    }
-
-    #[test]
-    fn a_view_item_of_another_type_does_not_bind() {
-        let fixture = Adjustments::new();
-        assert!(!fixture.binds(fixture.text(), fixture.number()));
     }
 }
