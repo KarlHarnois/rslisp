@@ -10,4 +10,4 @@ error[L0401]: mismatched types
   |                                            ^^^^^^ expected `u8`, found `i64`
   |
   = note: `b` defaulted to `i64`, because `small?` is called with `i64` and passed as a value with `u8`
-  = help: give `small?` one parameter type with a `type` signature, such as `(type small? (fn (u8) bool))`, and pass that type at every call
+  = help: give `small?` a type parameter with a `type` signature, such as `(type small? (where ((n number)) (fn (n) bool)))`, so that each use takes its own type

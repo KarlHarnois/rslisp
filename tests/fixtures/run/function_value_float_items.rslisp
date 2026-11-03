@@ -1,0 +1,6 @@
+(defn small? (x) (< x 10.5))
+
+(defn main ()
+  (let ratios (the (vec f32) (vec 0.5 19.5)))
+  (println (small? (the f64 1.0)))
+  (println (count (filter (iter ratios) small?))))

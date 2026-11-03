@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_value_float_items_follow_help.rslisp
+---
+true
+1

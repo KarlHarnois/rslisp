@@ -123,6 +123,24 @@ impl TraitTable {
         }
     }
 
+    pub fn implemented_exactly_by(&self, types: &[Type]) -> Option<BindingId> {
+        self.traits
+            .iter()
+            .filter(|(_, rust_trait)| Self::implementors_are(rust_trait, types))
+            .map(|(binding, _)| *binding)
+            .min()
+    }
+
+    fn implementors_are(rust_trait: &RustTrait, types: &[Type]) -> bool {
+        rust_trait.implementors.len() == types.len()
+            && types.iter().all(|ty| {
+                rust_trait
+                    .implementors
+                    .iter()
+                    .any(|implementor| implementor.scheme.body == *ty)
+            })
+    }
+
     pub fn with_paths(&self, paths: &[&str]) -> Vec<BindingId> {
         let mut found: Vec<BindingId> = self
             .traits
@@ -169,5 +187,64 @@ impl TraitTable {
         {
             implementor.scheme = scheme;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::core::{BindingArena, BindingId, BindingInfo, BindingKind, ModuleId, PrimitiveType};
+    use crate::types::{Implementor, RustTrait, Scheme, TraitTable, Type};
+
+    struct TraitsFixture {
+        bindings: BindingArena,
+        traits: TraitTable,
+    }
+
+    impl TraitsFixture {
+        fn new() -> Self {
+            Self {
+                bindings: BindingArena::default(),
+                traits: TraitTable::default(),
+            }
+        }
+
+        fn add(&mut self, name: &str, implementors: &[PrimitiveType]) -> BindingId {
+            let binding = self.bindings.add(BindingInfo::new(
+                name.into(),
+                BindingKind::Trait(ModuleId::new(0)),
+                None,
+            ));
+            self.traits.add(
+                binding,
+                RustTrait {
+                    path: std::rc::Rc::from(name),
+                    implementors: implementors
+                        .iter()
+                        .map(|primitive| Implementor {
+                            scheme: Scheme::monomorphic(Type::Primitive(*primitive)),
+                            argument: None,
+                        })
+                        .collect(),
+                    help: None,
+                    supertraits: Vec::new(),
+                    associated: None,
+                },
+            );
+            binding
+        }
+    }
+
+    #[test]
+    fn the_trait_implemented_by_exactly_the_types_is_found() {
+        let mut fixture = TraitsFixture::new();
+        let numbers = [PrimitiveType::I64, PrimitiveType::U8];
+        fixture.add(
+            "printable",
+            &[PrimitiveType::I64, PrimitiveType::U8, PrimitiveType::Bool],
+        );
+        fixture.add("textual", &[PrimitiveType::Char, PrimitiveType::Bool]);
+        let integer = fixture.add("integer", &numbers);
+        let types = numbers.map(Type::Primitive);
+        assert_eq!(fixture.traits.implemented_exactly_by(&types), Some(integer));
     }
 }
