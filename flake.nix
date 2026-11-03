@@ -42,12 +42,12 @@
           pkgs.nixfmt
           pkgs.rust-analyzer
           pkgs.sccache
-        ]
-        ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.mold ];
+        ];
 
       moldLinker =
         pkgs:
         pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+          nativeBuildInputs = [ pkgs.mold ];
           "CARGO_TARGET_${pkgs.stdenv.hostPlatform.rust.cargoEnvVarTarget}_RUSTFLAGS" =
             "-C link-arg=-fuse-ld=mold";
         };
