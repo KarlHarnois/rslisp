@@ -308,7 +308,7 @@
     (let name (nth form 1))
     (let body (drop 2 form))
     (if (documented-body? body)
-        (do (note-docstring (value-doc-key name) (list (quote defrule) name) (first body))
+        (do (note-docstring (value-doc-key name) (first body))
             (rule-definition name (rest body)))
         (rule-definition name body))))
 
@@ -363,7 +363,7 @@
     (if (string? pattern)
         (docstring-before-parameters pattern)
         (if (docstring-before-body? body)
-            (do (note-docstring (value-doc-key name) (list (quote defmacro) name pattern) (first body))
+            (do (note-docstring (value-doc-key name) (first body))
                 (macro-definition name pattern (rest body)))
             (macro-definition name pattern body)))))
 
@@ -387,8 +387,8 @@
                   body))))
 
 (def note-docstring
-  (fn (key header text)
-    (add-module-note (quote docstrings) (concat key (list header text)))))
+  (fn (key text)
+    (add-module-note (quote docstrings) (concat key (list text)))))
 
 (def value-doc-key
   (fn (name)
@@ -458,7 +458,7 @@
 
 (def with-call-header
   (fn (header note)
-    (concat (take 2 note) (prepend header (note-docstrings note)))))
+    (prepend header (drop 2 note))))
 
 (def type-notes
   (fn (term)
@@ -488,7 +488,7 @@
 
 (def undocumented-note
   (fn (term)
-    (concat (value-doc-key term) (list (written-header term)))))
+    (list (written-header term))))
 
 (def written-header
   (fn (term)
@@ -550,11 +550,11 @@
 
 (def note-header
   (fn (note)
-    (nth note 2)))
+    (first note)))
 
 (def note-docstrings
   (fn (note)
-    (drop 3 note)))
+    (rest note)))
 
 (def undocumented
   (fn (term)
