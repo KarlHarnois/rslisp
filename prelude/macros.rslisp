@@ -418,10 +418,14 @@
 
 (def stated-header-shape
   (fn (shape markers)
-    (definition-symbol (first shape) "shape")
+    (require-bound-form (first shape))
     (check-shape-markers markers)
     (add-module-note (quote header-shapes) shape)
     (quote (do))))
+
+(def require-bound-form
+  (fn (form-name)
+    (definition-symbol form-name "shape")))
 
 (def check-shape-markers
   (fn (markers)
