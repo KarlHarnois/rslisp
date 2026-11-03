@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/header_shape_docstring_notes.rslisp
+---
+(def docstring-form-count 1)
+(def docstring-form-name "documented-defn")

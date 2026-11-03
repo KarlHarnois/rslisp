@@ -1,0 +1,18 @@
+(use prelude/macros header-shape)
+(use code module-notes definition-symbol len first string value-eq)
+
+(defrule documented-defn ((n p b ...) (defn n p b ...)))
+
+(header-shape (documented-defn name parameters) :docstring)
+
+(defrule plain-defn ((n p b ...) (defn n p b ...)))
+
+(header-shape (plain-defn name parameters))
+
+(defmacro docstring-form-notes (part)
+  (let notes (module-notes (definition-symbol (quote documented-defn) "notes") (quote docstring-forms)))
+  (if (value-eq part (quote count)) (len notes) (string (first notes))))
+
+(def docstring-form-count (docstring-form-notes count))
+
+(def docstring-form-name (docstring-form-notes name))
