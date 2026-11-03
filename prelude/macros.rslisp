@@ -429,14 +429,19 @@
 
 (def check-shape-markers
   (fn (markers)
-    (let unexpected (unexpected-shape-markers markers))
-    (if (empty? unexpected) (do) (unexpected-header-shape-marker (first unexpected)))))
-
-(def unexpected-shape-markers
-  (fn (markers)
     (if (empty? markers)
-        markers
-        (if (docstring-marker? (first markers)) (rest markers) markers))))
+        (do)
+        (if (docstring-marker? (first markers))
+            (check-markers-after-docstring (rest markers))
+            (misplaced-header-shape-marker (first markers))))))
+
+(def check-markers-after-docstring
+  (fn (markers)
+    (if (empty? markers) (do) (extra-header-shape-marker (first markers)))))
+
+(def misplaced-header-shape-marker
+  (fn (marker)
+    (if (keyword? marker) (misspelled-header-shape-marker marker) (extra-header-shape-marker marker))))
 
 (def docstring-marker?
   (fn (form)
@@ -448,19 +453,17 @@
           "write it as `(header-shape (form name ...))`"
           (template (:code malformed-header-shape :label "not a list that starts with a name")))))
 
-(def unexpected-header-shape-marker
+(def misspelled-header-shape-marker
   (fn (marker)
-    (if (replaceable-by-docstring-marker? marker)
-        (fail unexpected-header-shape-marker-title marker
-              "write `:docstring` to state that the form takes a docstring"
-              (template (:code unexpected-header-shape-marker :label "not `:docstring`" :suggest :docstring)))
-        (fail unexpected-header-shape-marker-title marker
-              "remove it: only one `:docstring` may follow a header shape"
-              (template (:code unexpected-header-shape-marker :label "not expected here"))))))
+    (fail unexpected-header-shape-marker-title marker
+          "write `:docstring` to state that the form takes a docstring"
+          (template (:code unexpected-header-shape-marker :label "not `:docstring`" :suggest :docstring)))))
 
-(def replaceable-by-docstring-marker?
+(def extra-header-shape-marker
   (fn (marker)
-    (if (keyword? marker) (bool-not (docstring-marker? marker)) false)))
+    (fail unexpected-header-shape-marker-title marker
+          "remove it: only one `:docstring` may follow a header shape"
+          (template (:code unexpected-header-shape-marker :label "not expected here")))))
 
 (def unexpected-header-shape-marker-title "unexpected form after a header shape")
 
