@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/slurp_sources.rslisp
+---
+11
+11
+11
+11
+6
+0

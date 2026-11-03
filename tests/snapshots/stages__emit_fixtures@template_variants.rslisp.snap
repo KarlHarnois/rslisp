@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: reports.report(path)
+expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/template_variants.rslisp
 ---
 #[derive(Debug)]
@@ -18,7 +18,7 @@ fn read_number(text: &str) -> Result<i64, AppError> {
 }
 
 fn read_file(path: &str) -> Result<String, AppError> {
-    let text = crate::rt::Source::slurp(path)?;
+    let text = std::fs::read_to_string(path)?;
     Ok(text)
 }
 
@@ -73,28 +73,6 @@ impl From<std::io::Error> for AppError {
 }
 
 mod rt {
-    pub trait Source {
-        fn slurp(&self) -> std::io::Result<String>;
-    }
-
-    impl Source for str {
-        fn slurp(&self) -> std::io::Result<String> {
-            std::fs::read_to_string(self)
-        }
-    }
-
-    impl Source for String {
-        fn slurp(&self) -> std::io::Result<String> {
-            std::fs::read_to_string(self)
-        }
-    }
-
-    impl Source for std::io::Stdin {
-        fn slurp(&self) -> std::io::Result<String> {
-            std::io::read_to_string(self.lock())
-        }
-    }
-
     #[cfg(unix)]
     pub fn restore_default_sigpipe() {
         const SIGPIPE: i32 = 13;

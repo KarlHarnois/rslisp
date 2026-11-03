@@ -36,8 +36,12 @@ or write a recursive `read-line` loop:
 (def stdin (rust "std::io::stdin()" stdin))
 
 (rust-trait source "crate::rt::Source" str string stdin)
-(def slurp (rust "crate::rt::Source::slurp({0})"
-                 (where ((s source)) (fn ((ref s)) (result string io-error)))))
+(def slurp
+  (rust "crate::rt::Source::slurp({0})"
+        (where ((s source)) (fn ((ref s)) (result string io-error)))
+        (str "std::fs::read_to_string({0})")
+        (string "std::fs::read_to_string({0})")
+        (stdin "std::io::read_to_string({0})")))
 
 (def line-seq (rust "crate::rt::lines({0})"
                     (fn ((ref stdin)) (iterator (result string io-error)))))
@@ -64,12 +68,14 @@ crate::rt::lines(&std::io::stdin()).for_each(
 `(slurp stdin)`, `(slurp "cars.txt")` and `(slurp path)` on an owned `string` emit:
 
 ```rust
-crate::rt::Source::slurp(&std::io::stdin())
-crate::rt::Source::slurp("cars.txt")
-crate::rt::Source::slurp(&path)
+std::io::read_to_string(&std::io::stdin())
+std::fs::read_to_string("cars.txt")
+std::fs::read_to_string(&path)
 ```
 
-The runtime's `Source` part, `prelude/runtime/source.rs`, implements the trait for `str`, `String` and `std::io::Stdin`. The runtime's `Lines` part, `prelude/runtime/lines.rs`, reads each line with the `read_line` of the `Io` part, so it locks standard input for one line at a time and `read-line` and `(slurp stdin)` may read between its lines. It ends the stream after its first error.
+Each call takes the clause of `slurp` whose type the binder `s` takes at that call. A clause is a type and a template, as in a `rust-type`, and it changes only the Rust text: it passes each argument as the template does. A function generic over `source` takes the template itself, so it emits `crate::rt::Source::slurp(source)`, and only such a program carries the runtime's `Source` part, `prelude/runtime/source.rs`, which implements the trait for `str`, `String` and `std::io::Stdin`.
+
+The prelude alone cannot choose a template by type. A macro sees forms and not types, so it could only match the written symbol `stdin`, and `(let input stdin) (slurp input)` would then fail. A runtime trait chooses by type, but every program that calls `slurp` then carries the trait's call and its three implementations, which a program that reads only files never uses. So the `rust` kernel form takes clauses, as `rust-type` already does. The runtime's `Lines` part, `prelude/runtime/lines.rs`, reads each line with the `read_line` of the `Io` part, so it locks standard input for one line at a time and `read-line` and `(slurp stdin)` may read between its lines. It ends the stream after its first error.
 
 A prototype that took the source by value failed: a `string` path did not satisfy a trait implemented for `(ref string)`.
 
@@ -134,11 +140,11 @@ std::io::BufRead::lines(std::io::stdin().lock()).map_while(Result::ok)
 
 Option A. One name, `slurp`, reads every source, and `line-seq` streams standard input with one line in memory. Each read failure reaches the program as an `err`, and a read that keeps failing ends the stream instead of looping. `lines` keeps working on any string, an untyped parameter included.
 
-The cost: `slurp` now emits `crate::rt::Source::slurp(path)` instead of `std::fs::read_to_string(path)`, and a program that calls `slurp` carries the runtime's `Source` part: the trait and its three implementations. The trait has a runtime part of its own because a program that called `slurp` and not `read-line` would otherwise carry an unused `read_line`, and clippy rejects that dead code in the emitted Rust.
+The cost: the `rust` kernel form grows clauses, two diagnostics and a rule that a clause passes its arguments as its template does. A program that reads only files emits what it emitted before, `std::fs::read_to_string(path)`, and carries no runtime part. `(slurp stdin)` emits `std::io::read_to_string(&std::io::stdin())`. Only a function generic over `source` carries the runtime's `Source` part: the trait and its three implementations. The trait has a runtime part of its own because a program that called it and not `read-line` would otherwise carry an unused `read_line`, and clippy rejects that dead code in the emitted Rust.
 
 ## Decision
 
-The project owner accepted option A. Review found that the plain `std::io::BufRead::lines` loops forever on a read that keeps failing, such as a directory as standard input, so the owner chose that `line-seq` yields the first `err` and then ends. A line that is not valid UTF-8 is such an `err` too, so `line-seq` reads no line after it, although plain `Lines` would go on to them, and a later `read-line` reads the next one. `slurp-stdin` is removed, and a program that called it now writes `(slurp stdin)`. `lines` stays a function of strings only.
+The project owner accepted option A. Review found that the plain `std::io::BufRead::lines` loops forever on a read that keeps failing, such as a directory as standard input, so the owner chose that `line-seq` yields the first `err` and then ends. A line that is not valid UTF-8 is such an `err` too, so `line-seq` reads no line after it, although plain `Lines` would go on to them, and a later `read-line` reads the next one. Review found that the first build made every program that reads a file emit `crate::rt::Source::slurp` and carry the `Source` part, so the owner chose that a program that reads only files must emit what it emitted before, through clauses on `rust`. `slurp-stdin` is removed, and a program that called it now writes `(slurp stdin)`. `lines` stays a function of strings only.
 
 ## Rejected options and why
 
@@ -149,4 +155,4 @@ The project owner accepted option A. Review found that the plain `std::io::BufRe
 
 ## Rule
 
-[docs/language.md: Standard types](../docs/language.md#standard-types)
+[docs/language.md: Standard types](../docs/language.md#standard-types) and [docs/language.md: Rust interop](../docs/language.md#rust-interop)
