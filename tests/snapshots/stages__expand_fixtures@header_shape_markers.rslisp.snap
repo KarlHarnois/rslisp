@@ -1,0 +1,28 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/header_shape_markers.rslisp
+---
+error[L0331]: `header-shape` takes only one `:docstring` after its shape
+ --> expand/header_shape_markers.rslisp:5:41
+  |
+5 | (header-shape (my-defn name parameters) :documented)
+  |                                         ^^^^^^^^^^^ not expected here
+  |
+  = help: remove it, or write `:docstring` once to state that the form takes a docstring
+
+error[L0331]: `header-shape` takes only one `:docstring` after its shape
+ --> expand/header_shape_markers.rslisp:7:52
+  |
+7 | (header-shape (my-defn name parameters) :docstring :docstring)
+  |                                                    ^^^^^^^^^^ not expected here
+  |
+  = help: remove it, or write `:docstring` once to state that the form takes a docstring
+
+error[L0331]: `header-shape` takes only one `:docstring` after its shape
+ --> expand/header_shape_markers.rslisp:9:41
+  |
+9 | (header-shape (my-defn name parameters) "text")
+  |                                         ^^^^^^ not expected here
+  |
+  = help: remove it, or write `:docstring` once to state that the form takes a docstring

@@ -91,7 +91,7 @@
           (struct-definition head (rest body)))
       (struct-definition head body)))
 
-(header-shape (defstruct head))
+(header-shape (defstruct head) :docstring)
 
 (def struct-definition
   (fn (head body)

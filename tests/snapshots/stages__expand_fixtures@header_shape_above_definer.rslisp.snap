@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/header_shape_above_definer.rslisp
+---
+error[L0201]: cannot find `my-defn` in this scope
+ --> expand/header_shape_above_definer.rslisp:3:16
+  |
+3 | (header-shape (my-defn name parameters))
+  |                ^^^^^^^ not found in this scope

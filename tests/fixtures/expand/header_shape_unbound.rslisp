@@ -1,0 +1,7 @@
+(use prelude/macros header-shape)
+
+(defrule unless-zero ((value body ...) (unless (= value 0) body ...)))
+
+(header-shape (unles-zero value))
+
+(header-shape (no-such-form name))
