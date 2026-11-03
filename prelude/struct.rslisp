@@ -87,7 +87,7 @@
 (defmacro defstruct (head body ...)
   "Defines a struct and its keyword constructor: (defstruct name :field type ...)."
   (if (documented-body? body)
-      (do (note-docstring (type-doc-key (head-name head)) (list (quote defstruct) head) (first body))
+      (do (note-docstring (type-doc-key (head-name head)) (first body))
           (struct-definition head (rest body)))
       (struct-definition head body)))
 

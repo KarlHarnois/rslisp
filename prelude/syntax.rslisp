@@ -15,7 +15,7 @@
   (if (string? parameters)
       (docstring-before-parameters parameters)
       (if (docstring-before-body? body)
-          (do (note-docstring (value-doc-key name) (list (quote defn) name parameters) (first body))
+          (do (note-docstring (value-doc-key name) (first body))
               (function-definition name parameters (rest body)))
           (function-definition name parameters body))))
 
