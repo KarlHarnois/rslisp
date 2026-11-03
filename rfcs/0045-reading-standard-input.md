@@ -138,7 +138,7 @@ The cost: `slurp` now emits `crate::rt::Source::slurp(path)` instead of `std::fs
 
 ## Decision
 
-The project owner accepted option A. Review found that the plain `std::io::BufRead::lines` loops forever on a read that keeps failing, such as a directory as standard input, so the owner chose that `line-seq` yields the first `err` and then ends. A line that is not valid UTF-8 is such an `err` too, so the lines after it are not read, although plain `Lines` would go on to them. `slurp-stdin` is removed, and a program that called it now writes `(slurp stdin)`. `lines` stays a function of strings only.
+The project owner accepted option A. Review found that the plain `std::io::BufRead::lines` loops forever on a read that keeps failing, such as a directory as standard input, so the owner chose that `line-seq` yields the first `err` and then ends. A line that is not valid UTF-8 is such an `err` too, so `line-seq` reads no line after it, although plain `Lines` would go on to them, and a later `read-line` reads the next one. `slurp-stdin` is removed, and a program that called it now writes `(slurp stdin)`. `lines` stays a function of strings only.
 
 ## Rejected options and why
 
