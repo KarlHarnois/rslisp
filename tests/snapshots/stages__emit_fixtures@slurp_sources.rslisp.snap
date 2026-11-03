@@ -1,0 +1,64 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/slurp_sources.rslisp
+---
+fn read_source<S: crate::rt::Source + ?Sized>(source: &S) -> Result<String, std::io::Error> {
+    crate::rt::Source::slurp(source)
+}
+
+fn report(read: &Result<String, std::io::Error>) {
+    match read {
+        Ok(text) => println!("{}", text.len()),
+        Err(error) => eprintln!("{}", error),
+    }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let path = "garage.txt".to_string();
+    report(&std::fs::read_to_string("cars.txt"));
+    report(&std::fs::read_to_string(&path));
+    report(&std::io::read_to_string(&std::io::stdin()));
+    report(&read_source("cars.txt"));
+    report(&read_source(&std::io::stdin()))
+}
+
+mod rt {
+    pub trait Source {
+        fn slurp(&self) -> std::io::Result<String>;
+    }
+
+    impl Source for str {
+        fn slurp(&self) -> std::io::Result<String> {
+            std::fs::read_to_string(self)
+        }
+    }
+
+    impl Source for String {
+        fn slurp(&self) -> std::io::Result<String> {
+            std::fs::read_to_string(self)
+        }
+    }
+
+    impl Source for std::io::Stdin {
+        fn slurp(&self) -> std::io::Result<String> {
+            std::io::read_to_string(self.lock())
+        }
+    }
+
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

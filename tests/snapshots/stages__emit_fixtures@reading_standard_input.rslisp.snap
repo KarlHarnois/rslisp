@@ -4,13 +4,13 @@ expression: reports.report(path)
 input_file: tests/fixtures/emit/reading_standard_input.rslisp
 ---
 fn load(path: &str) -> Result<String, std::io::Error> {
-    crate::rt::Source::slurp(path)
+    std::fs::read_to_string(path)
 }
 
 fn main() {
     crate::rt::restore_default_sigpipe();
     let path = "cars.txt".to_string();
-    match crate::rt::Source::slurp(&path) {
+    match std::fs::read_to_string(&path) {
         Ok(text) => println!("{}: {}", path, text),
         Err(error) => eprintln!("{}", error),
     }
@@ -18,7 +18,7 @@ fn main() {
         Ok(text) => println!("{}", text),
         Err(error) => eprintln!("{}", error),
     }
-    match crate::rt::Source::slurp(&std::io::stdin()) {
+    match std::io::read_to_string(&std::io::stdin()) {
         Ok(text) => println!("{}", text.as_str().lines().count()),
         Err(error) => eprintln!("{}", error),
     }
@@ -45,28 +45,6 @@ mod rt {
                 Ok(Some(line))
             }
             Err(error) => Err(error),
-        }
-    }
-
-    pub trait Source {
-        fn slurp(&self) -> std::io::Result<String>;
-    }
-
-    impl Source for str {
-        fn slurp(&self) -> std::io::Result<String> {
-            std::fs::read_to_string(self)
-        }
-    }
-
-    impl Source for String {
-        fn slurp(&self) -> std::io::Result<String> {
-            std::fs::read_to_string(self)
-        }
-    }
-
-    impl Source for std::io::Stdin {
-        fn slurp(&self) -> std::io::Result<String> {
-            std::io::read_to_string(self.lock())
         }
     }
 
