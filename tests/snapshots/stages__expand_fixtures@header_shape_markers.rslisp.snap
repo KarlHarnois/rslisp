@@ -38,3 +38,11 @@ error[L0331]: unexpected form after a header shape
    |                                                    ^^^^ not expected here
    |
    = help: remove it: only one `:docstring` may follow a header shape
+
+error[L0331]: unexpected form after a header shape
+  --> expand/header_shape_markers.rslisp:13:41
+   |
+13 | (header-shape (my-defn name parameters) :documented :docstring)
+   |                                         ^^^^^^^^^^^ not expected here
+   |
+   = help: remove it: only one `:docstring` may follow a header shape

@@ -438,15 +438,21 @@
         (do)
         (if (docstring-marker? (first markers))
             (check-markers-after-docstring (rest markers))
-            (misplaced-header-shape-marker (first markers))))))
+            (misplaced-header-shape-marker markers)))))
 
 (def check-markers-after-docstring
   (fn (markers)
     (if (empty? markers) (do) (extra-header-shape-marker (first markers)))))
 
 (def misplaced-header-shape-marker
-  (fn (marker)
-    (if (keyword? marker) (misspelled-header-shape-marker marker) (extra-header-shape-marker marker))))
+  (fn (markers)
+    (if (sole-keyword? markers)
+        (misspelled-header-shape-marker (first markers))
+        (extra-header-shape-marker (first markers)))))
+
+(def sole-keyword?
+  (fn (markers)
+    (if (keyword? (first markers)) (empty? (rest markers)) false)))
 
 (def docstring-marker?
   (fn (form)
