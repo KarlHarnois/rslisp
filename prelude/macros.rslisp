@@ -421,7 +421,12 @@
     (require-bound-form (first shape))
     (check-shape-markers markers)
     (add-module-note (quote header-shapes) shape)
+    (note-docstring-form (first shape) markers)
     (quote (do))))
+
+(def note-docstring-form
+  (fn (form-name markers)
+    (if (empty? markers) (do) (add-module-note (quote docstring-forms) form-name))))
 
 (def require-bound-form
   (fn (form-name)
