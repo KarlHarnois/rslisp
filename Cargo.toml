@@ -28,6 +28,12 @@ insta = { version = "1", features = ["glob"] }
 [features]
 counters = []
 
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
 [profile.dist]
 inherits = "release"
 codegen-units = 1
