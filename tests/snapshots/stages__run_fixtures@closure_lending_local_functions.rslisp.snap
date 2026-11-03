@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/closure_lending_local_functions.rslisp
+---
+6
+Leaf
+Ariya
+Nissan
+42
+5
+5yes
+4044
+Leaf
+Ariya

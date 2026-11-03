@@ -666,6 +666,11 @@ impl<'a> RustTypes<'a> {
         )
     }
 
+    pub fn local_function_result(&self, result: &Type, lifetime: Option<&str>) -> String {
+        let scope = LifetimeScope::default().with_elided(lifetime.map(str::to_string));
+        self.show_in(result, TypePosition::Value, &scope)
+    }
+
     pub(super) fn closure_parameter_scope(
         enclosing_lifetime: Option<&str>,
     ) -> (TypePosition, LifetimeScope) {

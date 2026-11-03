@@ -1,0 +1,39 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/closure_field_borrow_result.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let leaf = Car {
+        make: "Nissan",
+        year: 2025,
+    };
+    fn year_of<'a>(leaf_2: &'a Car<'a>) -> &'a u16 {
+        &leaf_2.year
+    }
+    println!("{}", year_of(&leaf))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

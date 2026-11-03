@@ -285,7 +285,7 @@ impl Type {
         same_constructor && self.parts().len() == other.parts().len()
     }
 
-    fn any_part(&self, test: &dyn Fn(&Type) -> bool) -> bool {
+    pub fn any_part(&self, test: &dyn Fn(&Type) -> bool) -> bool {
         test(self) || self.parts().into_iter().any(|part| part.any_part(test))
     }
 }

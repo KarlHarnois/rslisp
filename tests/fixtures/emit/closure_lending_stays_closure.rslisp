@@ -1,0 +1,17 @@
+(defn total (it) (count it))
+
+(defn longer-head (a b)
+  (let same (fn (xs) xs))
+  (if (> (len a) (len b)) (at (same a) 0) (at b 0)))
+
+(type longer-head (where (t) (fn ((ref (vec t)) (ref (vec t))) (ref t))))
+
+(defn main ()
+  (let years (vec 2019 2021))
+  (let (first (fn ((ref str)) (ref str))) (fn (s) s))
+  (let apply (fn (pick (s (ref str))) (pick s)))
+  (let label (fn ((s (ref str)) it) (println (total it)) s))
+  (println (first "Leaf"))
+  (println (apply (fn (x) x) "Ariya"))
+  (println (label "Nissan" (iter years)))
+  (println (longer-head (ref years) (ref years))))

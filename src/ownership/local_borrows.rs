@@ -40,10 +40,10 @@ pub(super) enum ParameterOwner {
 }
 
 impl ParameterOwner {
-    fn dropped_parameter(self, span: Span) -> DroppedValue {
+    fn dropped_parameter(self, parameter: &TypedBinder) -> DroppedValue {
         match self {
-            Self::Function => DroppedValue::FunctionParameter(span),
-            Self::Closure => DroppedValue::ClosureParameter(span),
+            Self::Function => DroppedValue::FunctionParameter(parameter.span, parameter.binding),
+            Self::Closure => DroppedValue::ClosureParameter(parameter.span, parameter.binding),
         }
     }
 }
@@ -101,6 +101,7 @@ impl<'e> LocalBorrows<'e> {
                 .map(|lent| LocalBorrow::new(expr.span, lent)),
             TypedExprKind::Borrow(_, inner) => self
                 .dropped_root(inner)
+                .or_else(|| self.lent_place(inner))
                 .map(|dropped| LocalBorrow::new(expr.span, dropped)),
             TypedExprKind::Call(callee, arguments) if expr.ty.holds_reference() => {
                 self.borrowing_call(expr.span, callee, arguments)
@@ -244,18 +245,26 @@ impl<'e> LocalBorrows<'e> {
     fn dropped_value(&self, binding: BindingId, owner: ParameterOwner) -> Option<DroppedValue> {
         match self.parameter(binding) {
             Some(parameter) if parameter.ty.is_reference() => None,
-            Some(parameter) => Some(owner.dropped_parameter(parameter.span)),
+            Some(parameter) => Some(owner.dropped_parameter(parameter)),
             None => self
                 .body_binder(binding)
-                .map(|binder| DroppedValue::Local(binder.span)),
+                .map(|binder| DroppedValue::Local(binder.span, binder.binding)),
         }
+    }
+
+    fn lent_place(&self, place: &TypedExpr) -> Option<DroppedValue> {
+        let borrowed = place.field_place()?;
+        if borrowed.root_type.is_reference() {
+            return self.lent_reference(borrowed.root);
+        }
+        None
     }
 
     fn lent_reference(&self, binding: BindingId) -> Option<DroppedValue> {
         match self.roots {
             BorrowRoots::Lent(parameter) if parameter == binding => self
                 .parameter(binding)
-                .map(|lent| DroppedValue::ClosureParameter(lent.span)),
+                .map(|lent| DroppedValue::ClosureParameter(lent.span, lent.binding)),
             _ => None,
         }
     }

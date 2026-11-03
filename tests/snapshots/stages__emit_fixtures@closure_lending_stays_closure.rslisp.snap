@@ -1,0 +1,49 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/closure_lending_stays_closure.rslisp
+---
+fn total<'a>(it: impl Iterator<Item = &'a i64>) -> usize {
+    it.count()
+}
+
+fn longer_head<'a, T>(a: &'a Vec<T>, b: &'a [T]) -> &'a T {
+    let same = |xs: &'a Vec<T>| xs;
+    if a.len() > b.len() {
+        &same(a)[0]
+    } else {
+        &b[0]
+    }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let years: Vec<i64> = vec![2019_i64, 2021_i64];
+    let first: fn(&str) -> &str = |s: &str| s;
+    let apply = |pick: &mut dyn FnMut(&str) -> &str, s: &'static str| pick(s);
+    let label = |s: &'static str, it: _| {
+        println!("{}", total(it));
+        s
+    };
+    println!("{}", first("Leaf"));
+    println!("{}", apply(&mut |x: &str| x, "Ariya"));
+    println!("{}", label("Nissan", years.iter()));
+    println!("{}", longer_head(&years, &years))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

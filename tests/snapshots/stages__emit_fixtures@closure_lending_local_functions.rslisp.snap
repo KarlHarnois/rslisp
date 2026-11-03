@@ -1,0 +1,159 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/closure_lending_local_functions.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Car<'a> {
+    make: &'a str,
+    year: u16,
+}
+
+fn make_car(make: &str, year: u16) -> Car<'_> {
+    Car { make, year }
+}
+
+fn first(s: &str) -> usize {
+    s.len()
+}
+
+fn fleet() -> Vec<Car<'static>> {
+    vec![make_car("Nissan", 2025), make_car("Leaf", 2019)]
+}
+
+fn fill<'a>(out: &mut Vec<&'a str>, name: &'a str) {
+    fn pick(s: &str) -> &str {
+        s
+    }
+    out.push(pick(name))
+}
+
+fn count_names(name: String) -> usize {
+    fn pick(s: &str) -> &str {
+        s
+    }
+    let mut out = vec!["Leaf"];
+    out.push(pick(name.as_str()));
+    out.len()
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!("{}", first("Nissan"));
+    fn first_2(s: &str) -> &str {
+        s
+    }
+    println!("{}", first_2("Leaf"));
+    fn first_3(s: &str) -> &str {
+        s
+    }
+    println!("{}", first_3("Ariya"));
+    {
+        let model = "Ariya".to_string();
+        first_3(model.as_str())
+    };
+    {
+        let model = "Nissan".to_string();
+        let shown = first_3(model.as_str());
+        println!("{}", shown)
+    }
+    let earlier = "Ariya".to_string();
+    let mut names = vec!["Leaf"];
+    let later = "Nissan".to_string();
+    names.push(first_3(earlier.as_str()));
+    names.push(first_3(later.as_str()));
+    fill(&mut names, "Leaf");
+    println!("{}{}", names.len(), count_names("Ariya".to_string()));
+    let length: usize = {
+        let model = "Ariya".to_string();
+        let picked = first_3(model.as_str());
+        picked.len()
+    };
+    println!("{}", {
+        let model = "Ariya".to_string();
+        first_3(first_3(model.as_str())).len()
+    });
+    println!("{}", length);
+    let cars = fleet();
+    fn year_of<'a>(leaf: &'a Car<'a>) -> &'a u16 {
+        &leaf.year
+    }
+    println!(
+        "{}",
+        crate::prelude::iterator::sum(cars.iter().map(|c: &Car<'_>| *year_of(c)))
+    );
+    fn make_of<'a>(c: &'a Car<'a>) -> &'a str {
+        let inner = |d: &'a Car<'a>| d.make;
+        inner(c)
+    }
+    println!("{}", make_of(&cars[1]));
+    fn skip(model: &str, mut n: usize) -> &str {
+        loop {
+            if n == 0 {
+                return model;
+            } else {
+                n -= 1;
+                continue;
+            }
+        }
+    }
+    println!("{}", skip("Ariya", 3))
+}
+
+mod prelude {
+
+    pub(crate) mod iterator {
+        pub fn sum<N: crate::rt::Number>(values: impl Iterator<Item = N>) -> N {
+            values.fold(N::from_literal(0), |argument_0: N, argument_1: N| {
+                argument_0 + argument_1
+            })
+        }
+    }
+}
+
+mod rt {
+    use std::ops::{Add, Div, Mul, Rem, Sub};
+
+    pub trait Number:
+        Copy
+        + PartialOrd
+        + Add<Output = Self>
+        + Sub<Output = Self>
+        + Mul<Output = Self>
+        + Div<Output = Self>
+        + Rem<Output = Self>
+    {
+        fn from_literal(value: i128) -> Self;
+    }
+
+    macro_rules! numbers {
+        ($($number:ty),*) => {
+            $(
+                impl Number for $number {
+                    fn from_literal(value: i128) -> Self {
+                        value as Self
+                    }
+                }
+            )*
+        };
+    }
+
+    numbers!(
+        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+    );
+
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

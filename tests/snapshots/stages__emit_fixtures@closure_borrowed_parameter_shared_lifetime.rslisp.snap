@@ -14,7 +14,9 @@ fn make_car(make: &str, year: i64) -> Car<'_> {
 }
 
 fn pick<'a>(a: &'a str, b: &'a str) -> Car<'a> {
-    let first = |s: &'a str| s;
+    fn first(s: &str) -> &str {
+        s
+    }
     make_car(if a.len() > b.len() { first(a) } else { b }, 2025)
 }
 

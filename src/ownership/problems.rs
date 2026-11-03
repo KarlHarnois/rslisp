@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use super::functions::ParamMode;
-use crate::core::ReferenceKind;
+use crate::core::{BindingId, ReferenceKind};
 use crate::diagnostic::{Diagnostic, DiagnosticCode, Label, Suggestion};
 use crate::source::Span;
 use crate::types::ClosureKind;
@@ -13,19 +13,32 @@ pub enum FunctionStorage {
 }
 
 pub enum DroppedValue {
-    Local(Span),
+    Local(Span, BindingId),
     Temporary(Span),
-    FunctionParameter(Span),
-    ClosureParameter(Span),
+    FunctionParameter(Span, BindingId),
+    ClosureParameter(Span, BindingId),
 }
 
 impl DroppedValue {
+    pub(super) fn is_temporary(&self) -> bool {
+        matches!(self, Self::Temporary(_))
+    }
+
+    pub(super) fn binding(&self) -> Option<BindingId> {
+        match self {
+            Self::Local(_, binding)
+            | Self::FunctionParameter(_, binding)
+            | Self::ClosureParameter(_, binding) => Some(*binding),
+            Self::Temporary(_) => None,
+        }
+    }
+
     fn span(&self) -> Span {
         match self {
-            Self::Local(span)
+            Self::Local(span, _)
             | Self::Temporary(span)
-            | Self::FunctionParameter(span)
-            | Self::ClosureParameter(span) => *span,
+            | Self::FunctionParameter(span, _)
+            | Self::ClosureParameter(span, _) => *span,
         }
     }
 }
@@ -81,6 +94,12 @@ impl MoveLabels {
 pub struct LentParameter<'n> {
     pub span: Span,
     pub closure: &'n str,
+}
+
+struct LentWording {
+    dropped: Label,
+    tie: String,
+    help: Option<String>,
 }
 
 pub struct LentCall<'n> {
@@ -363,16 +382,16 @@ impl OwnershipProblems {
 
     pub fn local_borrow(borrowed: Span, dropped: &DroppedValue) -> Diagnostic {
         Self::returned_local_borrow(borrowed, dropped).with_help(match dropped {
-            DroppedValue::Local(_) => {
+            DroppedValue::Local(..) => {
                 "return an owned value with `(clone ...)`, or borrow from a parameter"
             }
             DroppedValue::Temporary(_) => {
                 "return an owned value, or borrow from a parameter or a top-level `def`"
             }
-            DroppedValue::FunctionParameter(_) => {
+            DroppedValue::FunctionParameter(..) => {
                 "return an owned value with `(clone ...)`, or give this parameter a borrowed type"
             }
-            DroppedValue::ClosureParameter(_) => {
+            DroppedValue::ClosureParameter(..) => {
                 "return an owned value with `(clone ...)`, or capture the value instead of passing it"
             }
         })
@@ -424,10 +443,57 @@ impl OwnershipProblems {
         lent: LentParameter,
         call: &LentCall,
     ) -> Diagnostic {
-        let LentParameter { span, closure } = lent;
+        let closure = lent.closure;
+        let wording = LentWording {
+            dropped: Self::lent_dropped_label(dropped),
+            tie: format!(
+                "`{closure}` ties this parameter to its result, so it needs a borrow that outlives the function"
+            ),
+            help: Some(format!(
+                "define `{closure}` with `defn`, where its result can borrow from its argument"
+            )),
+        };
+        Self::lent_borrow(borrowed, dropped, lent, call, wording)
+    }
+
+    pub fn outlived_lent_borrow(
+        borrowed: Span,
+        dropped: &DroppedValue,
+        lent: LentParameter,
+        call: &LentCall,
+    ) -> Diagnostic {
+        let closure = lent.closure;
+        let wording = LentWording {
+            dropped: Self::outlived_dropped_label(dropped),
+            tie: format!(
+                "`{closure}` ties this parameter to its result, and the result outlives the borrowed value"
+            ),
+            help: Self::outlived_help(dropped, closure),
+        };
+        Self::lent_borrow(borrowed, dropped, lent, call, wording)
+    }
+
+    fn outlived_help(dropped: &DroppedValue, closure: &str) -> Option<String> {
+        match dropped {
+            DroppedValue::FunctionParameter(..) => Some(
+                "take the parameter as a `ref`, so that its value outlives the result".to_string(),
+            ),
+            DroppedValue::ClosureParameter(..) => None,
+            DroppedValue::Local(..) | DroppedValue::Temporary(_) => Some(format!(
+                "bind the borrowed value with `let` in the block where the result of `{closure}` is used"
+            )),
+        }
+    }
+
+    fn lent_borrow(
+        borrowed: Span,
+        dropped: &DroppedValue,
+        lent: LentParameter,
+        call: &LentCall,
+        wording: LentWording,
+    ) -> Diagnostic {
         let called = call.called;
-        let (primary, dropped_label) =
-            Self::borrow_labels(borrowed, dropped, Self::lent_dropped_label(dropped));
+        let (primary, dropped_label) = Self::borrow_labels(borrowed, dropped, wording.dropped);
         let diagnostic = Diagnostic::error(
             DiagnosticCode::LENT_LOCAL_BORROW,
             format!(
@@ -436,17 +502,24 @@ impl OwnershipProblems {
             ),
             primary,
         )
-        .with_label(Label::new(
-            span,
-            format!("`{closure}` ties this parameter to its result, so it needs a borrow that outlives the function"),
-        ));
-        dropped_label
+        .with_label(Label::new(lent.span, wording.tie));
+        let labelled = dropped_label
             .into_iter()
             .chain(call.aliases.iter().map(Self::alias_label))
-            .fold(diagnostic, Diagnostic::with_label)
-            .with_help(format!(
-                "define `{closure}` with `defn`, where its result can borrow from its argument"
-            ))
+            .fold(diagnostic, Diagnostic::with_label);
+        wording
+            .help
+            .into_iter()
+            .fold(labelled, Diagnostic::with_help)
+    }
+
+    fn outlived_dropped_label(dropped: &DroppedValue) -> Label {
+        match dropped {
+            DroppedValue::Local(defined, _) => {
+                Label::new(*defined, "this local is dropped at the end of its block")
+            }
+            _ => Self::lent_dropped_label(dropped),
+        }
     }
 
     fn alias_label(alias: &AliasLabel) -> Label {
@@ -477,18 +550,18 @@ impl OwnershipProblems {
                 *built,
                 "this temporary value is dropped at the end of the statement",
             ),
-            DroppedValue::Local(_)
-            | DroppedValue::FunctionParameter(_)
-            | DroppedValue::ClosureParameter(_) => Self::dropped_label(dropped),
+            DroppedValue::Local(..)
+            | DroppedValue::FunctionParameter(..)
+            | DroppedValue::ClosureParameter(..) => Self::dropped_label(dropped),
         }
     }
 
     fn dropped_noun(dropped: &DroppedValue) -> &'static str {
         match dropped {
             DroppedValue::Temporary(_) => "a temporary value",
-            DroppedValue::Local(_)
-            | DroppedValue::FunctionParameter(_)
-            | DroppedValue::ClosureParameter(_) => "a local value",
+            DroppedValue::Local(..)
+            | DroppedValue::FunctionParameter(..)
+            | DroppedValue::ClosureParameter(..) => "a local value",
         }
     }
 
@@ -507,19 +580,18 @@ impl OwnershipProblems {
 
     fn dropped_label(dropped: &DroppedValue) -> Label {
         match dropped {
-            DroppedValue::Local(defined) => {
+            DroppedValue::Local(defined, _) => {
                 Label::new(*defined, "this local is dropped when the function returns")
             }
             DroppedValue::Temporary(built) => Label::new(
                 *built,
                 "this temporary value is dropped when the function returns",
             ),
-            DroppedValue::FunctionParameter(defined) | DroppedValue::ClosureParameter(defined) => {
-                Label::new(
-                    *defined,
-                    "this parameter owns its value, which is dropped when the function returns",
-                )
-            }
+            DroppedValue::FunctionParameter(defined, _)
+            | DroppedValue::ClosureParameter(defined, _) => Label::new(
+                *defined,
+                "this parameter owns its value, which is dropped when the function returns",
+            ),
         }
     }
 

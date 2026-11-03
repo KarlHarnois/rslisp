@@ -3,10 +3,15 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/closure_capturing_field_borrow_result.rslisp
 ---
-error[E0597]: `leaf` does not live long enough
+error[L0512]: cannot pass a borrow of a local value to `year-of`
  --> run/closure_capturing_field_borrow_result.rslisp:7:21
   |
+4 |   (let leaf (->car :make "Nissan" :year 2025))
+  |        ---- this local is dropped when the function returns
+5 |   (let label "year")
+6 |   (let year-of (fn ((leaf (ref car))) (println label) (ref (:year leaf))))
+  |                     ---------------- `year-of` ties this parameter to its result, so it needs a borrow that outlives the function
 7 |   (println (year-of (ref leaf))))
-  |                     ^^^^^^^^^^ borrowed value does not live long enough
+  |                     ^^^^^^^^^^ this borrows a local value
   |
-  = note: reported by rustc while compiling the generated Rust
+  = help: define `year-of` with `defn`, where its result can borrow from its argument

@@ -31,6 +31,7 @@ use crate::types::{
     TypedMatch, TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr, VariantPayload,
 };
 
+mod local_function;
 mod tail_loop;
 use tail_loop::TailLoop;
 
@@ -1442,6 +1443,9 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn let_statement(&mut self, binder: &TypedBinder, value: &TypedExpr) -> Code {
+        if let Some(function) = self.local_function(binder, value) {
+            return function;
+        }
         let value = self.let_value(binder, value);
         let name = self.locals.bind(
             binder.binding,
@@ -2313,13 +2317,46 @@ impl<'a> ExpressionEmitter<'a> {
         bind: fn(&mut Self, &TypedBinder) -> String,
     ) -> Code {
         let annotated = Self::contains_try(&lambda.body);
+        let (params, body) = self.lambda_parts(
+            lambda,
+            |emitter| emitter.closure_parameters(lambda, bind),
+            |emitter| emitter.closure_body(lambda, annotated),
+        );
+        let head = match (annotated, ty) {
+            (true, Type::Function(_, _, result)) => {
+                let result = self.types().show(result, TypePosition::Value);
+                Code::atom(format!("|{}| -> {result} ", params.join(", ")))
+            }
+            _ => Code::atom(format!("|{}| ", params.join(", "))),
+        };
+        Code::joined(vec![head, body], Precedence::Operator)
+    }
+
+    fn lambda_parts(
+        &mut self,
+        lambda: &TypedLambda,
+        parameters: impl FnOnce(&mut Self) -> Vec<String>,
+        body: impl FnOnce(&mut Self) -> Code,
+    ) -> (Vec<String>, Code) {
         let previous = std::mem::replace(&mut self.tail_loop, TailLoop::of_closure(lambda));
         self.locals.enter();
+        let params = parameters(self);
+        let body = body(self);
+        self.locals.leave();
+        self.tail_loop = previous;
+        (params, body)
+    }
+
+    fn closure_parameters(
+        &mut self,
+        lambda: &TypedLambda,
+        bind: fn(&mut Self, &TypedBinder) -> String,
+    ) -> Vec<String> {
         let inferred = lambda
             .params
             .iter()
             .any(|param| self.is_boxed_object_reference(&param.ty));
-        let params: Vec<String> = lambda
+        lambda
             .params
             .iter()
             .map(|param| {
@@ -2332,18 +2369,7 @@ impl<'a> ExpressionEmitter<'a> {
                     bind(self, param)
                 }
             })
-            .collect();
-        let body = self.closure_body(lambda, annotated);
-        self.locals.leave();
-        self.tail_loop = previous;
-        let head = match (annotated, ty) {
-            (true, Type::Function(_, _, result)) => {
-                let result = self.types().show(result, TypePosition::Value);
-                Code::atom(format!("|{}| -> {result} ", params.join(", ")))
-            }
-            _ => Code::atom(format!("|{}| ", params.join(", "))),
-        };
-        Code::joined(vec![head, body], Precedence::Operator)
+            .collect()
     }
 
     fn is_boxed_object_reference(&self, ty: &Type) -> bool {
@@ -2362,21 +2388,23 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn closure_body(&mut self, lambda: &TypedLambda, annotated: bool) -> Code {
-        if self.tail_loop.is_some() {
-            let fragments = self.loop_expression(&lambda.body, LoopExit::Return);
-            return if annotated {
-                Self::braced(fragments)
-            } else {
-                Code::block(fragments)
-            };
-        }
         if annotated {
-            return self.block(&lambda.body);
+            return self.braced_lambda_body(lambda);
+        }
+        if self.tail_loop.is_some() {
+            return Code::block(self.loop_expression(&lambda.body, LoopExit::Return));
         }
         match lambda.body.items.as_slice() {
             [TypedBodyItem::Expr(only)] => self.expr(only),
             _ => self.block(&lambda.body),
         }
+    }
+
+    fn braced_lambda_body(&mut self, lambda: &TypedLambda) -> Code {
+        if self.tail_loop.is_some() {
+            return Self::braced(self.loop_expression(&lambda.body, LoopExit::Return));
+        }
+        self.block(&lambda.body)
     }
 
     fn braced(fragments: Vec<Fragment>) -> Code {

@@ -1,0 +1,12 @@
+(defstruct car :make str :year i64)
+
+(defn pick (a b)
+  (let year 2025)
+  (let first (fn ((s (ref str))) (println year) s))
+  (->car (if (> (len a) (len b)) (first a) b) year))
+
+(defn main ()
+  (let label "model")
+  (let echo (fn ((s (ref str))) (println label) s))
+  (println (echo "Leaf"))
+  (println (:make (pick "Nissan" "Leaf"))))

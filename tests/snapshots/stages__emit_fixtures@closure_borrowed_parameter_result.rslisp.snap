@@ -5,7 +5,9 @@ input_file: tests/fixtures/emit/closure_borrowed_parameter_result.rslisp
 ---
 fn main() {
     crate::rt::restore_default_sigpipe();
-    let first = |s: &'static str| s;
+    fn first(s: &str) -> &str {
+        s
+    }
     println!("{}", first("Leaf"))
 }
 

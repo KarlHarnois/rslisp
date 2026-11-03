@@ -1,0 +1,239 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/local_function_outlived_borrows.rslisp
+---
+error[L0512]: cannot pass a borrow of a local value to `pick`
+ --> check/local_function_outlived_borrows.rslisp:3:20
+  |
+1 | (defn fill! ((out (mut (vec (ref str)))) (name string))
+  |                                          ------------- this parameter owns its value, which is dropped when the function returns
+2 |   (let pick (fn ((s (ref str))) s))
+  |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+3 |   (push! out (pick (as-str name))))
+  |                    ^^^^^^^^^^^^^ this borrows a local value
+  |
+  = help: take the parameter as a `ref`, so that its value outlives the result
+
+error[L0512]: cannot pass a borrow of a local value to `pick`
+ --> check/local_function_outlived_borrows.rslisp:9:53
+  |
+6 |   (let pick (fn ((s (ref str))) s))
+  |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+9 |   (let got (do (let name (to-string "Ariya")) (pick (as-str name))))
+  |                     ----                            ^^^^^^^^^^^^^ this borrows a local value
+  |                     |
+  |                     this local is dropped at the end of its block
+  |
+  = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a temporary value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:10:24
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+10 |   (let temporary (pick (as-str (to-string "Ariya"))))
+   |                        ^^^^^^^^-------------------^
+   |                        |       |
+   |                        |       this temporary value is dropped at the end of the statement
+   |                        this borrows a temporary value
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a temporary value to `first`
+  --> check/local_function_outlived_borrows.rslisp:11:20
+   |
+ 7 |   (let first (fn ((items (ref (vec i64)))) (at items 0)))
+   |                   ----------------------- `first` ties this parameter to its result, and the result outlives the borrowed value
+...
+11 |   (let year (first (vec 2019 2021)))
+   |                    ^^^^^^^^^^^^^^^ this temporary value is dropped at the end of the statement
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `first` is used
+
+error[L0512]: cannot pass a borrow of a local value to `first`
+  --> check/local_function_outlived_borrows.rslisp:12:50
+   |
+ 7 |   (let first (fn ((items (ref (vec i64)))) (at items 0)))
+   |                   ----------------------- `first` ties this parameter to its result, and the result outlives the borrowed value
+...
+12 |   (let inner (do (let ys (vec 2019 2021)) (first (ref ys))))
+   |                       --                         ^^^^^^^^ this borrows a local value
+   |                       |
+   |                       this local is dropped at the end of its block
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `first` is used
+
+error[L0512]: cannot pass a borrow of a temporary value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:13:25
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+13 |   (let held (some (pick (as-str (to-string "Leaf")))))
+   |                         ^^^^^^^^------------------^
+   |                         |       |
+   |                         |       this temporary value is dropped at the end of the statement
+   |                         this borrows a temporary value
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a temporary value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:14:30
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+14 |   (let branch (if flag (pick (as-str (to-string "Nissan"))) "Leaf"))
+   |                              ^^^^^^^^--------------------^
+   |                              |       |
+   |                              |       this temporary value is dropped at the end of the statement
+   |                              this borrows a temporary value
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a temporary value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:17:44
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+17 |   (let arm (match (some 1) ((some n) (pick (as-str (to-string "Leaf")))) (none "Ariya")))
+   |                                            ^^^^^^^^------------------^
+   |                                            |       |
+   |                                            |       this temporary value is dropped at the end of the statement
+   |                                            this borrows a temporary value
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a local value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:18:82
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+18 |   (let nested (do (let model (to-string "Leaf")) (match (some 1) ((some n) (pick (as-str model))) (none "Ariya"))))
+   |                        ----- this local is dropped at the end of its block       ^^^^^^^^^^^^^^ this borrows a local value
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a temporary value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:20:22
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+20 |   (push! names (pick (as-str (to-string "Ariya"))))
+   |                      ^^^^^^^^-------------------^
+   |                      |       |
+   |                      |       this temporary value is dropped at the end of the statement
+   |                      this borrows a temporary value
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a temporary value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:21:28
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+21 |   (set! (at names 0) (pick (as-str (to-string "Nissan"))))
+   |                            ^^^^^^^^--------------------^
+   |                            |       |
+   |                            |       this temporary value is dropped at the end of the statement
+   |                            this borrows a temporary value
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a temporary value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:22:37
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+22 |   (let scrutinee (match (some (pick (as-str (to-string "Ariya")))) ((some n) n) (none "x")))
+   |                                     ^^^^^^^^-------------------^
+   |                                     |       |
+   |                                     |       this temporary value is dropped at the end of the statement
+   |                                     this borrows a temporary value
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a local value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:23:69
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+23 |   (let through (do (let model (to-string "Ariya")) (let inner (pick (as-str model))) inner))
+   |                         -----                                       ^^^^^^^^^^^^^^ this borrows a local value
+   |                         |
+   |                         this local is dropped at the end of its block
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a local value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:24:76
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+24 |   (let kept-some (do (let model (to-string "Ariya")) (let held (some (pick (as-str model)))) (unwrap-or held "x")))
+   |                           -----                                            ^^^^^^^^^^^^^^ this borrows a local value
+   |                           |
+   |                           this local is dropped at the end of its block
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a local value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:25:51
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+25 |   (let add (fn ((item string)) (push! names (pick (as-str item)))))
+   |                 -------------                     ^^^^^^^^^^^^^ this borrows a local value
+   |                 |
+   |                 this parameter owns its value, which is dropped when the function returns
+
+error[L0512]: cannot pass a borrow of a temporary value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:28:16
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+28 |   (store (pick (as-str (to-string "Ariya"))))
+   |                ^^^^^^^^-------------------^
+   |                |       |
+   |                |       this temporary value is dropped at the end of the statement
+   |                this borrows a temporary value
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a local value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:31:50
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+31 |   (some (do (let model (to-string "Leaf")) (pick (as-str model))))
+   |                  -----                           ^^^^^^^^^^^^^^ this borrows a local value
+   |                  |
+   |                  this local is dropped at the end of its block
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used
+
+error[L0512]: cannot pass a borrow of a local value to `pick`
+  --> check/local_function_outlived_borrows.rslisp:32:57
+   |
+ 6 |   (let pick (fn ((s (ref str))) s))
+   |                  ------------- `pick` ties this parameter to its result, and the result outlives the borrowed value
+...
+32 |   (do (let model (to-string "Leaf")) (push! names (pick (as-str model))))
+   |            -----                                        ^^^^^^^^^^^^^^ this borrows a local value
+   |            |
+   |            this local is dropped at the end of its block
+   |
+   = help: bind the borrowed value with `let` in the block where the result of `pick` is used

@@ -1,5 +1,6 @@
 mod aliases;
 mod borrowing_lambdas;
+mod call_scopes;
 mod callers;
 mod changes;
 mod checks;
@@ -13,6 +14,7 @@ mod lambda_address;
 mod lambda_source;
 mod lent_borrows;
 mod local_borrows;
+mod local_functions;
 mod modes;
 mod moved_values;
 mod moves;
@@ -63,6 +65,7 @@ use stored_definitions::StoredDefinitions;
 use values::FunctionValueModes;
 
 pub use changes::InPlaceChanges;
+pub use local_functions::LocalFunctions;
 pub use mutation::ChangedValues;
 pub use tail_calls::TailCalls;
 pub use update_order::StructUpdateOrder;
