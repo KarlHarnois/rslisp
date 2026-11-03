@@ -124,11 +124,13 @@ impl TraitTable {
     }
 
     pub fn implemented_exactly_by(&self, types: &[Type]) -> Option<BindingId> {
-        self.traits
+        let mut matching = self
+            .traits
             .iter()
             .filter(|(_, rust_trait)| Self::implementors_are(rust_trait, types))
-            .map(|(binding, _)| *binding)
-            .min()
+            .map(|(binding, _)| *binding);
+        let found = matching.next()?;
+        matching.next().is_none().then_some(found)
     }
 
     fn implementors_are(rust_trait: &RustTrait, types: &[Type]) -> bool {
@@ -246,5 +248,15 @@ mod tests {
         let integer = fixture.add("integer", &numbers);
         let types = numbers.map(Type::Primitive);
         assert_eq!(fixture.traits.implemented_exactly_by(&types), Some(integer));
+    }
+
+    #[test]
+    fn two_traits_implemented_by_exactly_the_types_find_none() {
+        let mut fixture = TraitsFixture::new();
+        let numbers = [PrimitiveType::I64, PrimitiveType::U8];
+        fixture.add("integer", &numbers);
+        fixture.add("countable", &numbers);
+        let types = numbers.map(Type::Primitive);
+        assert_eq!(fixture.traits.implemented_exactly_by(&types), None);
     }
 }
