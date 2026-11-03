@@ -1703,14 +1703,8 @@ impl<'a> ExpressionEmitter<'a> {
         {
             return self.trait_method_call(*binding, arguments);
         }
-        if let TypedExprKind::Leaf(TypedLeaf::Rust(template)) = &callee.kind
-            && !template.clauses.is_empty()
-        {
-            return self.report_inline_clauses(callee.span);
-        }
         if let Some(template) = self.called_template(callee) {
-            let types = self.callee_type_arguments(callee);
-            return self.template_call(&template, arguments, types, span);
+            return self.rust_call(callee, &template, arguments, span);
         }
         if let Some(last) = self
             .last_argument_mentioning_mutable_callee(callee, arguments)
@@ -1724,6 +1718,24 @@ impl<'a> ExpressionEmitter<'a> {
             .map(|(position, argument)| self.call_argument(callee, position, argument))
             .collect();
         self.call_code(callee, arguments)
+    }
+
+    fn rust_call(
+        &mut self,
+        callee: &TypedExpr,
+        template: &RustTemplate,
+        arguments: &[TypedArgument],
+        span: Span,
+    ) -> Code {
+        if Self::is_inline_with_clauses(callee) {
+            return self.report_inline_clauses(callee.span);
+        }
+        let types = self.callee_type_arguments(callee);
+        self.template_call(template, arguments, types, span)
+    }
+
+    fn is_inline_with_clauses(callee: &TypedExpr) -> bool {
+        matches!(&callee.kind, TypedExprKind::Leaf(TypedLeaf::Rust(template)) if !template.clauses.is_empty())
     }
 
     fn call_argument(
