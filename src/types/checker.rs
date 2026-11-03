@@ -162,7 +162,7 @@ pub struct TypeChecker {
     pub(super) variant_arm: FxHashMap<BindingId, VariantArmReference>,
     pub(super) unchecked: FxHashSet<BindingId>,
     failed_bindings: FxHashSet<BindingId>,
-    reported_bindings: FxHashSet<BindingId>,
+    bindings_after_errors: FxHashSet<BindingId>,
     pub(super) diagnostics: Diagnostics,
     pub(super) warnings: Diagnostics,
     missing_annotations: Diagnostics,
@@ -252,7 +252,7 @@ impl TypeChecker {
             variant_arm: FxHashMap::default(),
             unchecked: FxHashSet::default(),
             failed_bindings: FxHashSet::default(),
-            reported_bindings: FxHashSet::default(),
+            bindings_after_errors: FxHashSet::default(),
             diagnostics: Diagnostics::default(),
             warnings: Diagnostics::default(),
             missing_annotations: Diagnostics::default(),
@@ -584,7 +584,7 @@ impl TypeChecker {
             }
             let reported_before = self.diagnostics.len();
             typed.extend(self.check_component(&members));
-            self.note_reported_errors(reported_before, dependencies, &bindings);
+            self.note_bindings_after_errors(reported_before, dependencies, &bindings);
             self.fail_group_when_a_member_failed(bindings);
         }
         typed
@@ -605,21 +605,21 @@ impl TypeChecker {
         }
     }
 
-    fn note_reported_errors(
+    fn note_bindings_after_errors(
         &mut self,
         reported_before: usize,
         dependencies: &DependencyGraph,
         bindings: &[BindingId],
     ) {
         if self.diagnostics.len() > reported_before
-            || dependencies.directly_depends_on_any(bindings, &self.reported_bindings)
+            || dependencies.directly_depends_on_any(bindings, &self.bindings_after_errors)
         {
-            self.reported_bindings.extend(bindings);
+            self.bindings_after_errors.extend(bindings);
         }
     }
 
-    pub(super) fn has_reported_errors(&self, binding: BindingId) -> bool {
-        self.reported_bindings.contains(&binding)
+    pub(super) fn follows_reported_error(&self, binding: BindingId) -> bool {
+        self.bindings_after_errors.contains(&binding)
     }
 
     fn has_failed_member(&self, bindings: &[BindingId]) -> bool {

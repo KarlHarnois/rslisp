@@ -1997,7 +1997,7 @@ impl TypeChecker {
         found: &[Type],
         span: Span,
     ) -> Result<(), Diagnostic> {
-        if self.has_reported_errors(function) {
+        if self.follows_reported_error(function) {
             return Ok(());
         }
         for (position, (expected, found)) in expected.iter().zip(found).enumerate() {
