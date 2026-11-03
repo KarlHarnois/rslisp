@@ -14,10 +14,7 @@ impl EmitCommand {
 
     pub fn run(self, terminal: &mut Terminal) -> ExitStatus {
         match terminal.emit(&self.file) {
-            Ok(emitted) => {
-                print!("{}", emitted.code);
-                ExitStatus::Success
-            }
+            Ok(emitted) => terminal.write_output(&emitted.code),
             Err(status) => status,
         }
     }

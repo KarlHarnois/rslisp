@@ -1,5 +1,6 @@
 use std::env::{self, VarError};
-use std::io::IsTerminal;
+use std::fmt::Display;
+use std::io::{self, ErrorKind, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -57,6 +58,19 @@ impl Terminal {
 
     fn add_source(&mut self, path: &Path, text: String) -> SourceId {
         self.sources.add(path.display().to_string(), text)
+    }
+
+    pub fn write_output(&self, output: impl Display) -> ExitStatus {
+        match Self::write_standard_output(output) {
+            Err(error) if error.kind() != ErrorKind::BrokenPipe => Self::report_unwritable(&error),
+            _ => ExitStatus::Success,
+        }
+    }
+
+    fn write_standard_output(output: impl Display) -> io::Result<()> {
+        let mut standard_output = io::stdout().lock();
+        write!(standard_output, "{output}")?;
+        standard_output.flush()
     }
 
     pub fn build(&mut self, path: &Path, options: &BuildOptions) -> Result<PathBuf, ExitStatus> {
@@ -256,6 +270,11 @@ impl Terminal {
 
     fn report_malformed_variable(variable: &str) -> ExitStatus {
         eprintln!("error: `{variable}` must be a whole number of milliseconds");
+        ExitStatus::UsageError
+    }
+
+    fn report_unwritable(error: &io::Error) -> ExitStatus {
+        eprintln!("error: cannot write standard output: {error}");
         ExitStatus::UsageError
     }
 
