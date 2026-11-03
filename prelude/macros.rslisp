@@ -429,10 +429,10 @@
 
 (def check-shape-markers
   (fn (markers)
-    (let unexpected (unexpected-shape-marker markers))
-    (if (empty? unexpected) (do) (misplaced-shape-marker (first unexpected)))))
+    (let unexpected (unexpected-shape-markers markers))
+    (if (empty? unexpected) (do) (unexpected-header-shape-marker (first unexpected)))))
 
-(def unexpected-shape-marker
+(def unexpected-shape-markers
   (fn (markers)
     (if (empty? markers)
         markers
@@ -448,7 +448,7 @@
           "write it as `(header-shape (definer name ...))`"
           (template (:code malformed-header-shape :label "not a list that starts with a name")))))
 
-(def misplaced-shape-marker
+(def unexpected-header-shape-marker
   (fn (marker)
     (fail "`header-shape` takes only one `:docstring` after its shape" marker
           "remove it, or write `:docstring` once to state that the form takes a docstring"
