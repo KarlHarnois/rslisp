@@ -420,7 +420,7 @@ A docstring is Markdown. A lookup removes the indentation that every written con
 
 A `:docstring` after the shape states that the form takes a docstring as the first form after its header, when another form follows it: `(header-shape (defn name parameters) :docstring)`. A shape adds its header to its module's notes under `header-shapes`, and a `:docstring` adds the form's name under `docstring-forms`, so macro code and the formatter read both with `module-notes`.
 
-The prelude states the shapes of its four definers, each with `:docstring`, and of the kernel forms whose calls have a body, such as `(header-shape (match value))` and `(header-shape (impl trait type))`. `prelude/prelude.rslisp` states the kernel's shapes, beside its re-export of the kernel.
+The prelude states the shapes of its four definers, each with `:docstring`, and of the kernel forms whose bodies indent 2 columns, such as `(header-shape (match value))` and `(header-shape (impl trait type))`. `prelude/prelude.rslisp` states the kernel's shapes, beside its re-export of the kernel.
 
 A user macro states its own shape with `(use prelude/macros header-shape)`, below the macro's definition. A shape that is not a list that starts with a name is `L0329`. The name must refer to a binding where the shape is written, so a misspelled name is `L0201` with the closest name, and so is a shape above the definition of the macro it names, as a call above that definition is. Any form after the shape other than one `:docstring` is `L0331`.
 
