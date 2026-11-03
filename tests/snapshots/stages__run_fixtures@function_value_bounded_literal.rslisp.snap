@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_value_bounded_literal.rslisp
+---
+error[L0401]: mismatched types
+ --> run/function_value_bounded_literal.rslisp:6:36
+  |
+6 |   (println (sum (map (iter shorts) flip))))
+  |                                    ^^^^ expected `i16`, found `i64`
+  |
+  = note: `b` defaulted to `i64`, because `flip` is called with `i64` and passed as a value with `i16`
+  = help: give `flip` a type parameter with a `type` signature, such as `(type flip (where ((a number signed)) (fn (a) a)))`, so that each use takes its own type

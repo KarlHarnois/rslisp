@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_value_literal_beside_generic_follow_help.rslisp
+---
+1
+0

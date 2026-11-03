@@ -10,4 +10,4 @@ error[L0401]: mismatched types
   |                                         ^^^^^^ expected `f32`, found `f64`
   |
   = note: `x` defaulted to `f64`, because `small?` is called with `f64` and passed as a value with `f32`
-  = help: give `small?` a type parameter with a `type` signature, such as `(type small? (where ((n float)) (fn (n) bool)))`, so that each use takes its own type
+  = help: give `small?` a type parameter with a `type` signature, such as `(type small? (where ((a partial-ord float)) (fn (a) bool)))`, so that each use takes its own type

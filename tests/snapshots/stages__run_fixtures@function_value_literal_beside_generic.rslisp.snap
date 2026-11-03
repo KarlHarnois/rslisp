@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/function_value_literal_beside_generic.rslisp
+---
+error[L0401]: mismatched types
+ --> run/function_value_literal_beside_generic.rslisp:6:46
+  |
+6 |   (println (fold (iter ratios) (the f32 0.0) mix)))
+  |                                              ^^^ expected `f32`, found `f64`
+  |
+  = note: `acc` defaulted to `f64`, because `mix` is called with `f64` and passed as a value with `f32`
+  = help: give `mix` a type parameter with a `type` signature, such as `(type mix (where ((a number float) b) (fn (a (ref b)) a)))`, so that each use takes its own type

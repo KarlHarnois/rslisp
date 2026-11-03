@@ -4,9 +4,8 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::display::TypeDisplay;
 use super::graph::DefinitionGraph;
-use super::ty::{GenericId, Type};
+use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
 use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
-use super::unifier::LiteralKind;
 use crate::core::{BindingId, ItemKind, PrimitiveType};
 use crate::expand::Program;
 
@@ -535,9 +534,7 @@ impl LiteralDefaults {
                     default: default.name().to_string(),
                     calls: Self::kind_types(entry, generic_index, UseKind::Call, display),
                     values: Self::kind_types(entry, generic_index, UseKind::Value, display),
-                    generic_signature: Self::literal_bound(typed, *literal)
-                        .map(|bound| signature.generic(parameters, result, *generic, &bound))
-                        .unwrap_or_else(|| concrete.clone()),
+                    generic_signature: signature.generic(),
                     signature: concrete,
                 },
             );
@@ -589,15 +586,6 @@ impl LiteralDefaults {
         }
         types
     }
-
-    fn literal_bound(typed: &TypedProgram, literal: LiteralKind) -> Option<String> {
-        let accepted: Vec<Type> = PrimitiveType::all()
-            .filter(|primitive| literal.accepts(*primitive))
-            .map(Type::Primitive)
-            .collect();
-        let bound = typed.traits.implemented_exactly_by(&accepted)?;
-        Some(typed.bindings.get(bound).name().to_string())
-    }
 }
 
 struct LiteralSignature<'a> {
@@ -608,38 +596,55 @@ struct LiteralSignature<'a> {
 }
 
 impl LiteralSignature<'_> {
-    const TYPE_PARAMETER: &'static str = "n";
-
     fn concrete(&self, parameters: &[Type], result: &Type) -> String {
-        self.function(parameters, result, &|shown| self.shown_type(shown))
+        let parameters: Vec<String> = parameters
+            .iter()
+            .map(|parameter| self.shown_type(parameter))
+            .collect();
+        format!(
+            "(fn ({}) {})",
+            parameters.join(" "),
+            self.shown_type(result)
+        )
     }
 
-    fn generic(
-        &self,
-        parameters: &[Type],
-        result: &Type,
-        generic: GenericId,
-        bound: &str,
-    ) -> String {
-        let parameter = Type::Generic(generic);
-        let function = self.function(parameters, result, &|shown| {
-            if *shown == parameter {
-                Self::TYPE_PARAMETER.to_string()
-            } else {
-                self.shown_type(shown)
-            }
+    fn generic(&self) -> String {
+        let scheme = Scheme {
+            params: self
+                .definition
+                .scheme
+                .params
+                .iter()
+                .map(|param| self.with_literal_bound(param))
+                .collect(),
+            ..self.definition.scheme.clone()
+        };
+        self.display.scheme(&scheme)
+    }
+
+    fn with_literal_bound(&self, param: &GenericParam) -> GenericParam {
+        let mut bounded = param.clone();
+        let literal_bound = self.literal_bound(param.id).filter(|bound| {
+            !param
+                .bounds
+                .iter()
+                .any(|known| known.binding == bound.binding)
         });
-        format!("(where (({} {bound})) {function})", Self::TYPE_PARAMETER)
+        bounded.bounds.extend(literal_bound);
+        bounded
     }
 
-    fn function(
-        &self,
-        parameters: &[Type],
-        result: &Type,
-        show: &dyn Fn(&Type) -> String,
-    ) -> String {
-        let parameters: Vec<String> = parameters.iter().map(show).collect();
-        format!("(fn ({}) {})", parameters.join(" "), show(result))
+    fn literal_bound(&self, generic: GenericId) -> Option<Bound> {
+        let literal = self.typed.literal_generics.get(&generic)?;
+        let accepted: Vec<Type> = PrimitiveType::all()
+            .filter(|primitive| literal.accepts(*primitive))
+            .map(Type::Primitive)
+            .collect();
+        Some(Bound {
+            binding: self.typed.traits.implemented_exactly_by(&accepted)?,
+            argument: None,
+            origins: Vec::new(),
+        })
     }
 
     fn shown_type(&self, shown: &Type) -> String {
