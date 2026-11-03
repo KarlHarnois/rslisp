@@ -180,6 +180,13 @@ pub enum BodyItem {
 pub struct RustTemplate {
     pub template: Rc<str>,
     pub type_expr: TypeExpr,
+    pub clauses: Vec<RustClause>,
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct RustClause {
+    pub target: TypeExpr,
+    pub template: Rc<str>,
 }
 
 impl Expr {

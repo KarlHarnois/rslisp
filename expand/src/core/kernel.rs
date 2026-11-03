@@ -168,7 +168,7 @@ impl KernelForm {
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Leaf(LeafForm::Rust)),
             name: "rust",
-            shape: "(rust \"template\" type)",
+            shape: "(rust \"template\" type (type \"template\") ...)",
         },
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::RustTrait),

@@ -30,6 +30,56 @@ impl Access {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PassingDifference {
+    Argument(usize, PassingAspect),
+    CallOnlyInClause,
+    CallOnlyInTemplate,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PassingAspect {
+    Use,
+    Borrow,
+    Receiver,
+    Index,
+    Dereference,
+    Call,
+    Operand,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct ArgumentPassing<'t> {
+    accesses: Vec<Access>,
+    receives: bool,
+    indexes: bool,
+    dereferences: bool,
+    called: Option<Vec<&'t str>>,
+    operand: bool,
+}
+
+impl ArgumentPassing<'_> {
+    fn differing_aspect(&self, clause: &ArgumentPassing) -> Option<PassingAspect> {
+        [
+            (
+                PassingAspect::Use,
+                self.accesses.is_empty() != clause.accesses.is_empty(),
+            ),
+            (PassingAspect::Borrow, self.accesses != clause.accesses),
+            (PassingAspect::Receiver, self.receives != clause.receives),
+            (PassingAspect::Index, self.indexes != clause.indexes),
+            (
+                PassingAspect::Dereference,
+                self.dereferences != clause.dereferences,
+            ),
+            (PassingAspect::Call, self.called != clause.called),
+            (PassingAspect::Operand, self.operand != clause.operand),
+        ]
+        .into_iter()
+        .find_map(|(aspect, differs)| differs.then_some(aspect))
+    }
+}
+
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ParsedTemplate {
     pieces: Vec<Piece>,
@@ -336,6 +386,42 @@ impl ParsedTemplate {
 
     pub fn operation(&self) -> TemplateOperation<'_> {
         TemplateOperation::of(&self.pieces)
+    }
+
+    pub fn passing_difference(&self, clause: &ParsedTemplate) -> Option<PassingDifference> {
+        let mut arguments: Vec<usize> = self.placeholders().chain(clause.placeholders()).collect();
+        arguments.sort_unstable();
+        arguments.dedup();
+        arguments
+            .into_iter()
+            .find_map(|argument| {
+                self.passing(argument)
+                    .differing_aspect(&clause.passing(argument))
+                    .map(|aspect| PassingDifference::Argument(argument, aspect))
+            })
+            .or_else(|| self.call_difference(clause))
+    }
+
+    fn call_difference(&self, clause: &ParsedTemplate) -> Option<PassingDifference> {
+        match (self.operation().calls(), clause.operation().calls()) {
+            (false, true) => Some(PassingDifference::CallOnlyInClause),
+            (true, false) => Some(PassingDifference::CallOnlyInTemplate),
+            _ => None,
+        }
+    }
+
+    fn passing(&self, argument: usize) -> ArgumentPassing<'_> {
+        ArgumentPassing {
+            accesses: self.accesses(argument),
+            receives: self.receives(argument),
+            indexes: self.indexes(argument),
+            dereferences: self.dereferences(argument),
+            called: self.called_arguments(argument),
+            operand: self
+                .operation()
+                .operator_arguments()
+                .any(|operand| operand == argument),
+        }
     }
 }
 

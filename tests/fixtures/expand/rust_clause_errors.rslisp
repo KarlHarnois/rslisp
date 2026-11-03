@@ -1,0 +1,46 @@
+(def without-binder
+  (rust "measure({0})" (fn (i64) i64) (i64 "count({0})")))
+
+(def two-binders
+  (rust "measure({0}, {1})"
+        (where ((a sequence) (b sequence)) (fn ((ref a) (ref b)) usize))
+        (str "count({0}, {1})")))
+
+(def bare-clause
+  (rust "measure({0})" (where ((s sequence)) (fn ((ref s)) usize)) str))
+
+(def numbered-clause
+  (rust "measure({0})" (where ((s sequence)) (fn ((ref s)) usize)) (str 5)))
+
+(def broken-clause
+  (rust "measure({0})" (where ((s sequence)) (fn ((ref s)) usize)) (str "count({0")))
+
+(def unknown-placeholder
+  (rust "measure({0})" (where ((s sequence)) (fn ((ref s)) usize)) (str "count::<{t}>({0})")))
+
+(def borrowed-in-clause
+  (rust "measure({0})" (where ((s sequence)) (fn ((ref s)) usize)) (str "count({&0})")))
+
+(def receiver-in-clause
+  (rust "measure({0})" (where ((s sequence)) (fn ((ref s)) usize)) (str "{0}.count()")))
+
+(def extra-argument-in-clause
+  (rust "measure({0})" (where ((s sequence)) (fn ((ref s)) usize)) (str "count({0}, {1})")))
+
+(def operand-only-in-template
+  (rust "{0} + 1" (where ((n number)) (fn (n) n)) (i64 "add({0}, 1)")))
+
+(def call-only-in-clause
+  (rust "{0}.len" (where ((s sequence)) (fn ((ref s)) usize)) (str "{0}.len()")))
+
+(def call-only-in-template
+  (rust "{0}.len()" (where ((s sequence)) (fn ((ref s)) usize)) (str "{0}.len")))
+
+(def index-in-clause
+  (rust "measure({0})" (where ((s sequence)) (fn ((ref s)) usize)) (str "count({0}[0])")))
+
+(def dereference-in-clause
+  (rust "measure({0})" (where ((s sequence)) (fn ((ref s)) usize)) (str "count(*{0})")))
+
+(def call-of-argument-in-clause
+  (rust "measure({0})" (where ((s sequence)) (fn ((ref s)) usize)) (str "count({0}(1))")))

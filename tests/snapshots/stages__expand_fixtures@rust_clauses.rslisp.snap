@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/rust_clauses.rslisp
+---
+(def measure (rust "crate::rt::Sequence::len({0})" (where ((s sequence)) (fn ((ref s)) usize)) (str "str::len({0})")))
+(def main (fn () ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0 display)) (fn ((ref part-type-0)) unit))) (measure "Leaf"))))
+(def measure-borrowed (rust "crate::rt::Sequence::len({0})" (where ('a (s_2 sequence)) (fn ((ref 'a s_2)) usize)) (str "str::len({0})")))
+(def count-letters (fn () (measure-borrowed "Leaf")))

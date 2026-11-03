@@ -429,6 +429,9 @@ impl<'a> ExpressionEmitter<'a> {
                 Code::atom(self.locals.get(*binding).unwrap_or("_").to_string())
             }
             TypedLeaf::Global(binding) => self.global(*binding, &expr.ty, expr.span),
+            TypedLeaf::Rust(template) if !template.clauses.is_empty() => {
+                self.report_inline_clauses(expr.span)
+            }
             TypedLeaf::Rust(template) => self.rust_value(template, &expr.ty, Vec::new(), expr.span),
         }
     }
@@ -548,6 +551,7 @@ impl<'a> ExpressionEmitter<'a> {
         Some(RustTemplate {
             template: Rc::from(place),
             type_expr: template.type_expr.clone(),
+            clauses: Vec::new(),
         })
     }
 
@@ -1578,13 +1582,9 @@ impl<'a> ExpressionEmitter<'a> {
             };
             return Code::atom(format!("{path}::{name}"));
         }
-        if let Some(TypedExprKind::Leaf(TypedLeaf::Rust(template))) = self
-            .plan
-            .definition(binding)
-            .map(|definition| &definition.value.kind)
-        {
+        if let Some(template) = self.definition_template(binding, ty) {
             let types = self.definition_type_arguments(binding, ty);
-            return self.rust_value(template, ty, types, span);
+            return self.rust_value(&template, ty, types, span);
         }
         let path = self.plan.path_to(binding, self.module);
         match self.plan.item(binding).map(|item| item.kind) {
@@ -1676,8 +1676,19 @@ impl<'a> ExpressionEmitter<'a> {
                 format!("`{{!{name}}}` has no fresh name")
             }
         };
+        self.report_bad_template(&message, span)
+    }
+
+    fn report_inline_clauses(&mut self, span: Span) -> Code {
+        self.report_bad_template(
+            "a template with clauses needs a `def`, whose calls give the type that chooses a clause",
+            span,
+        )
+    }
+
+    fn report_bad_template(&mut self, message: &str, span: Span) -> Code {
         self.problems
-            .push(EmitProblems::bad_template(&message, span));
+            .push(EmitProblems::bad_template(message, span));
         Code::atom("unreachable!()")
     }
 
@@ -1691,6 +1702,11 @@ impl<'a> ExpressionEmitter<'a> {
             && self.program.trait_methods.contains_key(binding)
         {
             return self.trait_method_call(*binding, arguments);
+        }
+        if let TypedExprKind::Leaf(TypedLeaf::Rust(template)) = &callee.kind
+            && !template.clauses.is_empty()
+        {
+            return self.report_inline_clauses(callee.span);
         }
         if let Some(template) = self.called_template(callee) {
             let types = self.callee_type_arguments(callee);
@@ -1869,16 +1885,34 @@ impl<'a> ExpressionEmitter<'a> {
     fn called_template(&self, callee: &TypedExpr) -> Option<Rc<RustTemplate>> {
         match &callee.kind {
             TypedExprKind::Leaf(TypedLeaf::Rust(template)) => Some(template.clone()),
-            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => match self
-                .plan
-                .definition(*binding)
-                .map(|definition| &definition.value.kind)
-            {
-                Some(TypedExprKind::Leaf(TypedLeaf::Rust(template))) => Some(template.clone()),
-                _ => None,
-            },
+            TypedExprKind::Leaf(TypedLeaf::Global(binding)) => {
+                self.definition_template(*binding, &callee.ty)
+            }
             _ => None,
         }
+    }
+
+    fn definition_template(
+        &self,
+        binding: BindingId,
+        instantiated: &Type,
+    ) -> Option<Rc<RustTemplate>> {
+        let TypedExprKind::Leaf(TypedLeaf::Rust(template)) =
+            &self.plan.definition(binding)?.value.kind
+        else {
+            return None;
+        };
+        let chosen = self
+            .definition_type_bindings(binding, instantiated)
+            .first()
+            .and_then(|(_, parameter)| self.program.template_clauses.chosen(binding, parameter));
+        Some(match chosen {
+            Some(clause) => Rc::new(RustTemplate {
+                template: Rc::clone(clause),
+                ..RustTemplate::clone(template)
+            }),
+            None => Rc::clone(template),
+        })
     }
 
     fn callee_type_arguments(&self, callee: &TypedExpr) -> Vec<(String, Code)> {
@@ -1895,6 +1929,22 @@ impl<'a> ExpressionEmitter<'a> {
         binding: BindingId,
         instantiated: &Type,
     ) -> Vec<(String, Code)> {
+        self.definition_type_bindings(binding, instantiated)
+            .into_iter()
+            .map(|(name, ty)| {
+                (
+                    name,
+                    Code::atom(self.types().show(&ty, TypePosition::Value)),
+                )
+            })
+            .collect()
+    }
+
+    fn definition_type_bindings(
+        &self,
+        binding: BindingId,
+        instantiated: &Type,
+    ) -> Vec<(String, Type)> {
         let Some(definition) = self.plan.definition(binding) else {
             return Vec::new();
         };
@@ -1904,13 +1954,7 @@ impl<'a> ExpressionEmitter<'a> {
             .scheme
             .params
             .iter()
-            .filter_map(|param| {
-                let ty = bindings.get(&param.id)?;
-                Some((
-                    param.name.to_string(),
-                    Code::atom(self.types().show(ty, TypePosition::Value)),
-                ))
-            })
+            .filter_map(|param| Some((param.name.to_string(), bindings.remove(&param.id)?)))
             .collect()
     }
 

@@ -20,6 +20,7 @@ mod prelude_state;
 mod problems;
 mod recur_check;
 mod rest_of_body;
+mod rust_clauses;
 mod rust_type;
 mod session;
 mod shape;

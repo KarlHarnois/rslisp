@@ -6,6 +6,7 @@ use super::display::TypeDisplay;
 use super::enums::{EnumTable, VariantDefinition, VariantPayload};
 use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
+use super::template_clauses::TemplateClauses;
 use super::templates::TemplateBorrows;
 use super::traits::TraitTable;
 use super::ty::{Bound, GenericId, GenericParam, Lifetime, Scheme, Type};
@@ -383,6 +384,7 @@ pub struct TypedProgram {
     pub implied_bounds: FxHashMap<GenericId, Vec<Bound>>,
     pub associated_generics: FxHashMap<GenericId, Rc<str>>,
     pub template_borrows: TemplateBorrows,
+    pub template_clauses: TemplateClauses,
     pub pending_mode_checks: Vec<PendingModeCheck>,
     pub borrowed_parameters: FxHashSet<BindingId>,
     pub stored_function_parameters: FxHashSet<BindingId>,

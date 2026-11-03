@@ -1,0 +1,6 @@
+(def step (rust "{0} + {1}" (where ((n number)) (fn (n n) n)) (i64 "{0} - {1}")))
+
+(defn drain (total)
+  (if (< total 0) total (recur (step total 3))))
+
+(defn main () (println (drain 7)))

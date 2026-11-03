@@ -1,0 +1,4 @@
+(def measure
+  (rust "measure({0})" (where ((s sequence)) (fn ((ref s)) usize)) ((vec) "count({0})")))
+
+(defn main () (println (measure "Leaf")))

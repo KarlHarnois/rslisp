@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/inline_rust_clauses.rslisp
+---
+error[L0603]: invalid Rust template: a template with clauses needs a `def`, whose calls give the type that chooses a clause
+ --> emit/inline_rust_clauses.rslisp:2:13
+  |
+2 |   (println ((rust "{0}.len()" (where ((s sequence)) (fn ((ref s)) usize)) (str "{0}.len()")) "Leaf"))
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ in this template
+
+error[L0603]: invalid Rust template: a template with clauses needs a `def`, whose calls give the type that chooses a clause
+ --> emit/inline_rust_clauses.rslisp:3:16
+  |
+3 |   (let measure (rust "{0}.len()" (where ((s sequence)) (fn ((ref s)) usize)) (str "{0}.len()")))
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ in this template

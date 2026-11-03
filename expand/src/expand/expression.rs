@@ -6,13 +6,14 @@ use super::context::DefinitionContext;
 use super::problems::ExpandProblems;
 use super::recur_check::RecurCheck;
 use super::rest_of_body::RestOfBody;
+use super::rust_clauses::ClausedTemplate;
 use super::shape::Shape;
 use super::try_check::TryCheck;
 use crate::core::{
     Arm, Binder, BindingId, BindingKind, Block, BodyItem, Control, ControlForm, Expr, ExprKind,
     ExpressionForm, FieldLabel, FieldSpelling, KernelForm, Keyword, Lambda, Leaf, LeafForm,
     Literal, MapOperation, Namespace, ParsedTemplate, Pattern, PatternKind, ReferenceKind,
-    RustTemplate, StructExpr, StructForm, TypeExpr, TypeExprKind, VariantInfo,
+    RustTemplate, StructExpr, StructForm, TypeExpr, VariantInfo,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
@@ -786,29 +787,32 @@ impl Expander<'_> {
     }
 
     fn lower_rust(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
-        let items = shape.exactly(3)?;
+        let items = shape.at_least(Self::RUST_PARTS)?;
         let text = shape.string(&items[1])?;
-        let template = ParsedTemplate::parse(text)
-            .map_err(|_| ExpandProblems::malformed_template(items[1].span()))?;
+        let template = Self::parse_rust_template(text, items[1].span())?;
         let type_expr = self.lower_type(&items[2])?;
         self.check_template_type_placeholders(&template, &type_expr, items[1].span())?;
+        let claused = ClausedTemplate {
+            parsed: &template,
+            span: items[1].span(),
+            type_expr: &type_expr,
+            type_span: items[2].span(),
+        };
+        let clauses = self.lower_rust_clauses(shape, &claused, &items[Self::RUST_PARTS..])?;
         Ok(ExprKind::Leaf(Leaf::Rust(Rc::new(RustTemplate {
             template: text.into(),
             type_expr,
+            clauses,
         }))))
     }
 
-    fn check_template_type_placeholders(
+    pub(super) fn check_template_type_placeholders(
         &self,
         template: &ParsedTemplate,
         type_expr: &TypeExpr,
         span: Span,
     ) -> Result<(), Diagnostic> {
-        let binders = match type_expr.kind() {
-            TypeExprKind::Where(binders, _) => binders.as_slice(),
-            _ => &[],
-        };
-        let parameters: Vec<String> = binders
+        let parameters: Vec<String> = Self::where_binders(type_expr)
             .iter()
             .map(|binder| self.tables.bindings.get(binder.variable).name().to_string())
             .collect();

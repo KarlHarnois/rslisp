@@ -69,7 +69,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `deref` | `(deref value)` | `*value` | value: expression. |
 | `quote` | `(quote form)` | none | form: data. |
 | `macro` | `(def name (macro (form) body...))` | none | form: binder. body: expressions. |
-| `rust` | `(rust "template" type)` | the inlined template | type: type. |
+| `rust` | `(rust "template" type (type "template")...)` | the inlined template | type: type. clauses: a type and a template. |
 | `recur` | `(recur argument...)` | `loop` | arguments: expressions. |
 | `try` | `(try expression)` | `expression?` | expression: expression. |
 | `rust-trait` | `(rust-trait name "Path" (method name type)? (help "text")? type...)` | trait bound, or a Rust `impl` for a program type when it declares a method | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. help: the help line a missing implementor shows. types: types, `(with type type)`, or `(where (param...) type)`. |
@@ -458,6 +458,19 @@ Field names are not hygienic. They are looked up through the struct type.
 ```
 
 A `rust` template names a type parameter of its `where` by name, as `{target}` in `"{0}.parse::<{target}>()"`. The emitter fills it with the Rust type that the binder takes at that call. The name must be a binder of the template's `where`; a name with no matching binder is an error.
+
+A `rust` form may list clauses after its type, as a `rust-type` does. A clause is a type and a template, and a call uses the first clause whose type equals the type that the `where`'s one binder takes at that call. Every other call, such as a call from a function generic over the binder's trait, uses the template after the string. A `rust` with clauses binds exactly one type parameter, `L0246`. A clause changes only the Rust text: each placeholder passes its argument as the template passes it, with the same borrow, receiver, index, operator or call, and the clause calls a function exactly when the template does, `L0247`, so every check before emission reads the template alone. A template with clauses is bound by a `def`, because only a `def`'s calls give the binder's type; an inline one is `L0603`.
+
+```lisp
+(def slurp
+  (rust "crate::rt::Source::slurp({0})"
+        (where ((s source)) (fn ((ref s)) (result string io-error)))
+        (str "std::fs::read_to_string({0})")
+        (string "std::fs::read_to_string({0})")
+        (stdin "std::io::read_to_string({0})")))
+```
+
+Clauses belong to the `rust` kernel form because a macro sees forms and not types, so only the compiler can choose a template by the type that a binder takes at a call. A runtime trait chooses by type too, but its call and its implementations stay in every program that calls it.
 
 `rust-type` binds a type name to a Rust type. `{0}` in the template is the first type parameter in the head, as `{0}` in a `rust` template is the first argument. A parameter that may be unsized is written `(name unsized)`, as `(rust-type (box (item unsized)) "Box<{0}>")` does. The mark says that the type accepts its argument behind a pointer, so a field's view in that position keeps its view instead of becoming a borrow. A program's own `Rc` or `Arc` type marks its parameter the same way that `box` does. A `rust-type` may also list clauses after its template. A clause is a type and a template, and it applies when the type's first argument equals the clause's type. Every other argument uses the template after the name. A `rust-type` with clauses takes exactly one type parameter.
 
