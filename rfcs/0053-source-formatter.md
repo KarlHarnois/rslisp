@@ -512,6 +512,13 @@ After the decisions above, a prototype formatter applied every layout rule to th
 
 The project owner reviewed six formatted files on 2026-11-03, added the blank-line rule above, and otherwise kept the rules as decided: the 40-column limit applies at every depth, a `str` puts one part per line as `raco fmt` does, and an `fn` type in a signature keeps the `fn` shape, so a long signature puts its return type on its own line.
 
+### Later work
+
+The project owner deferred two changes to later phases on 2026-11-03. Neither is part of this RFC, and each needs its own design.
+
+- **Import order.** The formatter keeps `use` and `export` forms in the order the author wrote them. A later phase may sort them, for example one-line forms before multi-line ones so that they group, or names in each list. Sorting changes which forms sit next to each other, so it interacts with the grouping rule above.
+- **The newspaper order.** AGENTS.md places each caller above the functions it calls. A later phase may have the formatter enforce that order for top-level definitions. Moving a definition can change what a program means, because a macro must be defined before code that calls it expands, so that phase needs the call graph and the order that expansion requires. Both come from expansion, which this RFC's formatter does not run (Choice 2B).
+
 ## Rejected options and why
 
 The project owner chose 1B on 2026-11-03, which rejects 1A, and chose 4B, which rejects 4A, 4C, 4D and 4E, and chose to follow `use` for open question 2, which rejects reading the file alone and reading the whole directory, and chose a shape for `use` for open question 3, which rejects lining its names up under the module path, and chose 2B and 3A, which reject 2A, 2C and 3B.
