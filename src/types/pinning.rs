@@ -515,7 +515,7 @@ impl LiteralDefaults {
             let Some(generic_index) = Self::generic_index(definition, *generic) else {
                 continue;
             };
-            if Self::use_types(entry, generic_index, display).len() < 2 {
+            if Self::distinct_use_types(entry, generic_index, display).len() < 2 {
                 continue;
             }
             let Some(binder) = lambda.params.get(position) else {
@@ -552,7 +552,7 @@ impl LiteralDefaults {
             .position(|param| param.id == generic)
     }
 
-    fn use_types(
+    fn distinct_use_types(
         entry: &FunctionUses,
         generic_index: usize,
         display: &TypeDisplay<'_>,
@@ -652,7 +652,7 @@ impl LiteralSignature<'_> {
         let Some(generic_index) = LiteralDefaults::generic_index(self.definition, *generic) else {
             return self.display.show(shown);
         };
-        LiteralDefaults::use_types(self.entry, generic_index, self.display)
+        LiteralDefaults::distinct_use_types(self.entry, generic_index, self.display)
             .first()
             .cloned()
             .unwrap_or_else(|| literal.default_type().name().to_string())
