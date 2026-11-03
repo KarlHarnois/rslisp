@@ -25,13 +25,13 @@
 
 **If a fix changes emitted Rust that rustc refused, leave the label off.** That fix is a patch.
 
-**The manager is the session that merges the pull request.** The manager applies the release label. NEVER apply a release label in any other session.
+**The person who merges the pull request applies the release label.** NEVER apply a release label to a pull request you do not merge.
 
 ## CI failures
 
 **The `front-end instruction counts` job posts a comparison of instruction counts and counters, and NEVER fails on a rise in an instruction count.** The job fails when a corpus program's allocated bytes or peak live bytes rise more than 1% and no `Counters-Accepted:` trailer in a commit of the pull request names the program. If the job fails in any other step, its tooling broke: treat the failure as a CI failure.
 
-**If the job fails on allocation growth, stop and report each program and counter that the failure names to the manager.** NEVER add a `Counters-Accepted:` trailer yourself: only the manager adds the trailer, after the project owner approves the rise.
+**If the job fails on allocation growth, stop and report the programs and counters it names to the project owner.** NEVER add a `Counters-Accepted:` trailer before the project owner approves the rise.
 
 **If CI fails, run these steps:**
 
