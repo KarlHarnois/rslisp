@@ -9,3 +9,5 @@
 (header-shape (my-defn name parameters) "text")
 
 (header-shape (my-defn name parameters) :docstring :doc)
+
+(header-shape (my-defn name parameters) :documented :docstring)
