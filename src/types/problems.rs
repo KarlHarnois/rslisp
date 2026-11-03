@@ -274,14 +274,15 @@ impl TypeProblems {
     }
 
     pub fn literal_default_help(default: &LiteralDefault, function: &str) -> String {
-        if default.values.len() > 1 {
+        if default.values.is_empty() {
             return format!(
-                "give `{function}` a `type` signature whose parameter is a type parameter with its traits in a `where`, so that each use takes its own type"
+                "give `{function}` one parameter type with a `type` signature, such as `(type {function} {})`, and pass that type at every call",
+                default.signature
             );
         }
         format!(
-            "give `{function}` one parameter type with a `type` signature, such as `(type {function} {})`, and pass that type at every call",
-            default.signature
+            "give `{function}` a type parameter with a `type` signature, such as `(type {function} {})`, so that each use takes its own type",
+            default.generic_signature
         )
     }
 

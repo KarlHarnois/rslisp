@@ -6,6 +6,7 @@ use super::display::TypeDisplay;
 use super::graph::DefinitionGraph;
 use super::ty::{GenericId, Type};
 use super::typed::{TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf, TypedProgram};
+use super::unifier::LiteralKind;
 use crate::core::{BindingId, ItemKind, PrimitiveType};
 use crate::expand::Program;
 
@@ -466,6 +467,7 @@ pub struct LiteralDefault {
     pub calls: Vec<String>,
     pub values: Vec<String>,
     pub signature: String,
+    pub generic_signature: String,
 }
 
 impl LiteralDefaults {
@@ -519,6 +521,13 @@ impl LiteralDefaults {
             let Some(binder) = lambda.params.get(position) else {
                 continue;
             };
+            let signature = LiteralSignature {
+                definition,
+                entry,
+                typed,
+                display,
+            };
+            let concrete = signature.concrete(parameters, result);
             self.entries.insert(
                 (definition.binding, position),
                 LiteralDefault {
@@ -526,9 +535,10 @@ impl LiteralDefaults {
                     default: default.name().to_string(),
                     calls: Self::kind_types(entry, generic_index, UseKind::Call, display),
                     values: Self::kind_types(entry, generic_index, UseKind::Value, display),
-                    signature: Self::signature(
-                        definition, entry, typed, parameters, result, display,
-                    ),
+                    generic_signature: Self::literal_bound(typed, *literal)
+                        .map(|bound| signature.generic(parameters, result, *generic, &bound))
+                        .unwrap_or_else(|| concrete.clone()),
+                    signature: concrete,
                 },
             );
         }
@@ -580,42 +590,69 @@ impl LiteralDefaults {
         types
     }
 
-    fn signature(
-        definition: &TypedDefinition,
-        entry: &FunctionUses,
-        typed: &TypedProgram,
-        parameters: &[Type],
-        result: &Type,
-        display: &TypeDisplay<'_>,
-    ) -> String {
-        let parameters: Vec<String> = parameters
-            .iter()
-            .map(|parameter| Self::shown_type(definition, entry, typed, parameter, display))
+    fn literal_bound(typed: &TypedProgram, literal: LiteralKind) -> Option<String> {
+        let accepted: Vec<Type> = PrimitiveType::all()
+            .filter(|primitive| literal.accepts(*primitive))
+            .map(Type::Primitive)
             .collect();
-        format!(
-            "(fn ({}) {})",
-            parameters.join(" "),
-            Self::shown_type(definition, entry, typed, result, display)
-        )
+        let bound = typed.traits.implemented_exactly_by(&accepted)?;
+        Some(typed.bindings.get(bound).name().to_string())
+    }
+}
+
+struct LiteralSignature<'a> {
+    definition: &'a TypedDefinition,
+    entry: &'a FunctionUses,
+    typed: &'a TypedProgram,
+    display: &'a TypeDisplay<'a>,
+}
+
+impl LiteralSignature<'_> {
+    const TYPE_PARAMETER: &'static str = "n";
+
+    fn concrete(&self, parameters: &[Type], result: &Type) -> String {
+        self.function(parameters, result, &|shown| self.shown_type(shown))
     }
 
-    fn shown_type(
-        definition: &TypedDefinition,
-        entry: &FunctionUses,
-        typed: &TypedProgram,
-        shown: &Type,
-        display: &TypeDisplay<'_>,
+    fn generic(
+        &self,
+        parameters: &[Type],
+        result: &Type,
+        generic: GenericId,
+        bound: &str,
     ) -> String {
+        let parameter = Type::Generic(generic);
+        let function = self.function(parameters, result, &|shown| {
+            if *shown == parameter {
+                Self::TYPE_PARAMETER.to_string()
+            } else {
+                self.shown_type(shown)
+            }
+        });
+        format!("(where (({} {bound})) {function})", Self::TYPE_PARAMETER)
+    }
+
+    fn function(
+        &self,
+        parameters: &[Type],
+        result: &Type,
+        show: &dyn Fn(&Type) -> String,
+    ) -> String {
+        let parameters: Vec<String> = parameters.iter().map(show).collect();
+        format!("(fn ({}) {})", parameters.join(" "), show(result))
+    }
+
+    fn shown_type(&self, shown: &Type) -> String {
         let Type::Generic(generic) = shown else {
-            return display.show(shown);
+            return self.display.show(shown);
         };
-        let Some(literal) = typed.literal_generics.get(generic) else {
-            return display.show(shown);
+        let Some(literal) = self.typed.literal_generics.get(generic) else {
+            return self.display.show(shown);
         };
-        let Some(generic_index) = Self::generic_index(definition, *generic) else {
-            return display.show(shown);
+        let Some(generic_index) = LiteralDefaults::generic_index(self.definition, *generic) else {
+            return self.display.show(shown);
         };
-        Self::use_types(entry, generic_index, display)
+        LiteralDefaults::use_types(self.entry, generic_index, self.display)
             .first()
             .cloned()
             .unwrap_or_else(|| literal.default_type().name().to_string())

@@ -1,4 +1,4 @@
-(type small? (fn (u8) bool))
+(type small? (where ((n number)) (fn (n) bool)))
 (defn small? (b) (< b 10))
 
 (defn main ()
