@@ -111,6 +111,8 @@ impl Sandbox {
     }
 
     const EXECUTABLE: u32 = 0o755;
+    const TERMINAL_RECORDER: &str = "script";
+    const COLOR_VARIABLES: [&str; 5] = ["NO_COLOR", "CLICOLOR_FORCE", "CLICOLOR", "TERM", "CI"];
     const TEMPORARY_DIRECTORY_VARIABLE: &str = "TMPDIR";
     #[cfg(target_os = "linux")]
     const FULL_DEVICE: &str = "/dev/full";
@@ -276,6 +278,58 @@ impl Sandbox {
         )
     }
 
+    fn compiler_with_colors(&self, environment: &[(&str, &str)], arguments: &[&str]) -> Outcome {
+        Outcome::of(&mut self.color_command(Path::new(Self::COMPILER), environment, arguments))
+    }
+
+    fn compiler_on_a_terminal(&self, environment: &[(&str, &str)], arguments: &[&str]) -> Outcome {
+        let recorded = Self::recorded_arguments(arguments);
+        let recorded: Vec<&str> = recorded.iter().map(String::as_str).collect();
+        Outcome::of(&mut self.color_command(
+            Path::new(Self::TERMINAL_RECORDER),
+            environment,
+            &recorded,
+        ))
+    }
+
+    #[cfg(target_os = "linux")]
+    fn recorded_arguments(arguments: &[&str]) -> Vec<String> {
+        let command_line = Self::compiler_command_line(arguments);
+        vec!["-qec".to_string(), command_line, "/dev/null".to_string()]
+    }
+
+    #[cfg(target_os = "macos")]
+    fn recorded_arguments(arguments: &[&str]) -> Vec<String> {
+        let command_line = Self::compiler_command_line(arguments);
+        ["-q", "/dev/null", "sh", "-c", &command_line]
+            .iter()
+            .map(|argument| argument.to_string())
+            .collect()
+    }
+
+    fn compiler_command_line(arguments: &[&str]) -> String {
+        let words: Vec<&str> = [Self::COMPILER].iter().chain(arguments).copied().collect();
+        words.join(" ")
+    }
+
+    fn written_file(&self, name: &str) -> String {
+        fs::read_to_string(self.directory.join(name)).expect("the command wrote the file")
+    }
+
+    fn color_command(
+        &self,
+        program: &Path,
+        environment: &[(&str, &str)],
+        arguments: &[&str],
+    ) -> Command {
+        let mut command = self.command(program, arguments);
+        for variable in Self::COLOR_VARIABLES {
+            command.env_remove(variable);
+        }
+        command.envs(environment.iter().copied());
+        command
+    }
+
     fn command(&self, program: &Path, arguments: &[&str]) -> Command {
         let mut command = Command::new(program);
         command.args(arguments).current_dir(&self.directory);
@@ -295,6 +349,7 @@ struct Outcome {
 
 impl Outcome {
     const SIGPIPE: i32 = 13;
+    const ESCAPE: &str = "\u{1b}[";
 
     fn of(command: &mut Command) -> Self {
         let output = command
@@ -333,6 +388,14 @@ impl Outcome {
 
     fn stdout(&self) -> String {
         String::from_utf8_lossy(&self.output.stdout).into_owned()
+    }
+
+    fn stdout_is_colored(&self) -> bool {
+        self.stdout().contains(Self::ESCAPE)
+    }
+
+    fn stderr_is_colored(&self) -> bool {
+        self.stderr().contains(Self::ESCAPE)
     }
 
     fn stderr(&self) -> String {
@@ -1907,4 +1970,114 @@ fn eval_json_reports_a_reader_error_in_the_forms() {
     assert_eq!(replies[0]["diagnostics"][0]["code"], "L0101");
     assert_eq!(replies[1], json!({"status": "done", "exit": 1}));
     assert_eq!(eval.stderr(), "");
+}
+
+#[test]
+fn color_diagnostics_on_a_terminal() {
+    let sandbox = Sandbox::new("color_terminal").with_file("unbound.rslisp", UNBOUND_NAME);
+    let check = sandbox.compiler_on_a_terminal(&[("TERM", "xterm")], &["check", "unbound.rslisp"]);
+    assert!(check.stdout_is_colored(), "{}", check.stdout());
+}
+
+#[test]
+fn color_stays_off_diagnostics_on_a_dumb_terminal() {
+    let sandbox = Sandbox::new("color_dumb").with_file("unbound.rslisp", UNBOUND_NAME);
+    let check = sandbox.compiler_on_a_terminal(&[("TERM", "dumb")], &["check", "unbound.rslisp"]);
+    assert!(
+        check.stdout().contains("error[L0201]"),
+        "{}",
+        check.stdout()
+    );
+    assert!(!check.stdout_is_colored(), "{}", check.stdout());
+}
+
+#[test]
+fn color_stays_off_diagnostics_on_a_terminal_when_clicolor_is_zero() {
+    let sandbox = Sandbox::new("color_clicolor").with_file("unbound.rslisp", UNBOUND_NAME);
+    let environment = [("TERM", "xterm"), ("CLICOLOR", "0")];
+    let check = sandbox.compiler_on_a_terminal(&environment, &["check", "unbound.rslisp"]);
+    assert!(
+        check.stdout().contains("error[L0201]"),
+        "{}",
+        check.stdout()
+    );
+    assert!(!check.stdout_is_colored(), "{}", check.stdout());
+}
+
+#[test]
+fn color_stays_off_diagnostics_on_a_terminal_when_no_color_is_set() {
+    let sandbox = Sandbox::new("color_no_color").with_file("unbound.rslisp", UNBOUND_NAME);
+    let environment = [("TERM", "xterm"), ("NO_COLOR", "1")];
+    let check = sandbox.compiler_on_a_terminal(&environment, &["check", "unbound.rslisp"]);
+    assert!(
+        check.stdout().contains("error[L0201]"),
+        "{}",
+        check.stdout()
+    );
+    assert!(!check.stdout_is_colored(), "{}", check.stdout());
+}
+
+#[test]
+fn color_stays_off_diagnostics_written_to_a_file_from_a_terminal() {
+    let sandbox = Sandbox::new("color_file").with_file("unbound.rslisp", UNBOUND_NAME);
+    let arguments = ["check", "unbound.rslisp", "2>", "errors.log"];
+    sandbox.compiler_on_a_terminal(&[("TERM", "xterm")], &arguments);
+    let errors = sandbox.written_file("errors.log");
+    assert!(errors.contains("error[L0201]"), "{errors}");
+    assert!(!errors.contains(Outcome::ESCAPE), "{errors}");
+}
+
+#[test]
+fn color_stays_off_diagnostics_in_a_pipe() {
+    let sandbox = Sandbox::new("color_pipe").with_file("unbound.rslisp", UNBOUND_NAME);
+    let check = sandbox.compiler_with_colors(&[("TERM", "xterm")], &["check", "unbound.rslisp"]);
+    assert!(
+        !check.assert_exit_code(1).stderr_is_colored(),
+        "{}",
+        check.stderr()
+    );
+}
+
+#[test]
+fn color_diagnostics_in_a_pipe_when_clicolor_force_is_set() {
+    let sandbox = Sandbox::new("color_force").with_file("unbound.rslisp", UNBOUND_NAME);
+    let check =
+        sandbox.compiler_with_colors(&[("CLICOLOR_FORCE", "1")], &["check", "unbound.rslisp"]);
+    assert!(
+        check.assert_exit_code(1).stderr_is_colored(),
+        "{}",
+        check.stderr()
+    );
+}
+
+#[test]
+fn color_no_color_wins_over_clicolor_force() {
+    let sandbox = Sandbox::new("color_no_color_force").with_file("unbound.rslisp", UNBOUND_NAME);
+    let environment = [("CLICOLOR_FORCE", "1"), ("NO_COLOR", "1")];
+    let check = sandbox.compiler_with_colors(&environment, &["check", "unbound.rslisp"]);
+    assert!(
+        !check.assert_exit_code(1).stderr_is_colored(),
+        "{}",
+        check.stderr()
+    );
+}
+
+#[test]
+fn color_follows_the_decision_in_a_doc_term_that_does_not_read() {
+    let sandbox = Sandbox::new("color_doc_term");
+    let doc = sandbox.compiler_with_colors(&[("CLICOLOR_FORCE", "1")], &["doc", "("]);
+    assert!(
+        doc.assert_exit_code(2).stderr_is_colored(),
+        "{}",
+        doc.stderr()
+    );
+}
+
+#[test]
+fn color_follows_the_decision_in_eval_forms_that_do_not_read() {
+    let sandbox = Sandbox::new("color_eval_forms").with_file("session.rslisp", SESSION);
+    let environment = [("CLICOLOR_FORCE", "1")];
+    let eval = sandbox.compiler_with_colors(&environment, &["eval", "session.rslisp", "("]);
+    assert!(eval.stderr().contains("L0101"), "{}", eval.stderr());
+    assert!(eval.stderr_is_colored(), "{}", eval.stderr());
 }

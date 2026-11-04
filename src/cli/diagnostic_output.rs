@@ -1,5 +1,6 @@
-use std::io::IsTerminal;
 use std::sync::Arc;
+
+use anstream::ColorChoice;
 
 use super::capped_report::CappedReport;
 use super::json_replies::{JsonObject, JsonReplies};
@@ -10,7 +11,9 @@ pub trait DiagnosticOutput {
     fn write(&self, sources: &SourceMap, diagnostics: &Diagnostics);
 }
 
-pub struct RenderedDiagnostics;
+pub struct RenderedDiagnostics {
+    standard_error: ColorChoice,
+}
 
 pub struct JsonDiagnostics {
     replies: Arc<JsonReplies>,
@@ -25,17 +28,20 @@ impl DiagnosticOutput for RenderedDiagnostics {
     fn write(&self, sources: &SourceMap, diagnostics: &Diagnostics) {
         eprintln!(
             "{}",
-            CappedReport::new(Self::renderer(sources)).render(diagnostics)
+            CappedReport::new(self.renderer(sources)).render(diagnostics)
         );
     }
 }
 
 impl RenderedDiagnostics {
-    fn renderer(sources: &SourceMap) -> DiagnosticRenderer<'_> {
-        if std::io::stderr().is_terminal() {
-            DiagnosticRenderer::styled(sources)
-        } else {
-            DiagnosticRenderer::plain(sources)
+    pub fn new(standard_error: ColorChoice) -> Self {
+        Self { standard_error }
+    }
+
+    fn renderer<'a>(&self, sources: &'a SourceMap) -> DiagnosticRenderer<'a> {
+        match self.standard_error {
+            ColorChoice::Never => DiagnosticRenderer::plain(sources),
+            _ => DiagnosticRenderer::styled(sources),
         }
     }
 }
