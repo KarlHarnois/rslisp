@@ -447,6 +447,72 @@ impl ExpandProblems {
             .with_help(format!("give `{name}` another name to keep `{dropped}`"))
     }
 
+    pub fn set_aside(input: &SetAsideInput<'_>, error: &Diagnostic) -> Diagnostic {
+        let primary = error.primary();
+        let warning = Diagnostic::warning(
+            DiagnosticCode::INPUT_SET_ASIDE,
+            input.title(),
+            Label::new(primary.span(), primary.message()),
+        );
+        let labeled = error
+            .labels()
+            .skip(1)
+            .fold(warning, |warning, label| warning.with_label(label.clone()));
+        let noted = error.notes().iter().fold(
+            labeled.with_note(Self::error_line(error)),
+            |warning, note| warning.with_note(note.clone()),
+        );
+        Self::with_helps_of(noted, error).with_help(input.enter_again())
+    }
+
+    pub fn dropped(input: &SetAsideInput<'_>, replacing: &str, span: Span) -> Diagnostic {
+        Diagnostic::warning(
+            DiagnosticCode::INPUT_SET_ASIDE,
+            input.title(),
+            Label::new(span, "set aside"),
+        )
+        .with_note(format!(
+            "`{replacing}` replaced the input that defined {}",
+            input.listed_names()
+        ))
+        .with_help(input.enter_again())
+    }
+
+    pub fn set_aside_reason(replacing: &str, dropped: &str) -> String {
+        format!("`{replacing}` replaced the input that defined `{dropped}`")
+    }
+
+    pub fn set_aside_note(setter: &str, name: &str, reason: &str) -> String {
+        format!("`{setter}` set aside `{name}`: {reason}")
+    }
+
+    pub fn would_set_aside_note(setter: &str, name: &str, reason: &str) -> String {
+        format!("`{setter}` would set aside `{name}`: {reason}")
+    }
+
+    pub fn no_longer_defines_note(input: &str, name: &str, setter: &str) -> String {
+        format!("`{input}` no longer defines `{name}` after `{setter}`")
+    }
+
+    pub fn checks_no_longer(diagnostic: Diagnostic) -> Diagnostic {
+        diagnostic.with_help("enter a definition to set aside the inputs that no longer check")
+    }
+
+    fn error_line(error: &Diagnostic) -> String {
+        let code = error.code().expect("an error has a code");
+        format!("error[{}]: {}", code.as_str(), error.title())
+    }
+
+    fn with_helps_of(warning: Diagnostic, error: &Diagnostic) -> Diagnostic {
+        error
+            .helps()
+            .iter()
+            .fold(warning, |warning, help| match help.suggestion() {
+                Some(suggestion) => warning.with_suggestion(help.message(), suggestion.clone()),
+                None => warning.with_help(help.message()),
+            })
+    }
+
     pub fn unknown_module(path: &ModulePath, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::UNKNOWN_MODULE,
@@ -1012,12 +1078,96 @@ impl ExpandProblems {
     }
 }
 
+pub struct SetAsideInput<'a> {
+    names: &'a [&'a str],
+    source: &'a str,
+    setter: &'a str,
+}
+
+impl<'a> SetAsideInput<'a> {
+    const LISTED_NAMES: usize = 3;
+
+    pub fn new(names: &'a [&'a str], source: &'a str, setter: &'a str) -> Self {
+        Self {
+            names,
+            source,
+            setter,
+        }
+    }
+
+    fn title(&self) -> String {
+        format!("set aside {} after `{}`", self.listed_names(), self.setter)
+    }
+
+    fn enter_again(&self) -> String {
+        let pronoun = if self.names.len() > 1 { "them" } else { "it" };
+        format!("enter {} again to use {pronoun}", self.listed_names())
+    }
+
+    fn listed_names(&self) -> String {
+        let quoted: Vec<String> = self.names.iter().map(|name| format!("`{name}`")).collect();
+        match quoted.as_slice() {
+            [] => format!("`{}`", self.source),
+            [only] => only.clone(),
+            shown if shown.len() <= Self::LISTED_NAMES => {
+                let (last, rest) = shown.split_last().expect("two names or more");
+                format!("{} and {last}", rest.join(", "))
+            }
+            more => format!(
+                "{} and {} more",
+                more[..Self::LISTED_NAMES].join(", "),
+                more.len() - Self::LISTED_NAMES
+            ),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::ExpandProblems;
+    use super::{ExpandProblems, SetAsideInput};
     use crate::core::Namespace;
     use crate::diagnostic::MissingName;
     use crate::source::{SourceId, Span};
+
+    struct SetAsideFixture;
+
+    impl SetAsideFixture {
+        fn title(names: &[&str]) -> String {
+            SetAsideInput::new(names, "<input 2>", "<input 4>").title()
+        }
+    }
+
+    #[test]
+    fn an_input_that_bound_no_name_is_named_by_its_source() {
+        assert_eq!(
+            SetAsideFixture::title(&[]),
+            "set aside `<input 2>` after `<input 4>`"
+        );
+    }
+
+    #[test]
+    fn the_title_lists_one_name() {
+        assert_eq!(
+            SetAsideFixture::title(&["karl"]),
+            "set aside `karl` after `<input 4>`"
+        );
+    }
+
+    #[test]
+    fn the_title_lists_three_names() {
+        assert_eq!(
+            SetAsideFixture::title(&["a", "b", "c"]),
+            "set aside `a`, `b` and `c` after `<input 4>`"
+        );
+    }
+
+    #[test]
+    fn the_title_counts_the_names_past_three() {
+        assert_eq!(
+            SetAsideFixture::title(&["a", "b", "c", "d", "e"]),
+            "set aside `a`, `b`, `c` and 2 more after `<input 4>`"
+        );
+    }
 
     #[test]
     fn an_unbound_name_carries_the_name_and_its_namespace() {
