@@ -1,0 +1,13 @@
+(defstruct user :name str :email: str)
+
+(defn greet (:name str :greeting: str) (str greeting name))
+
+(defn shout (:volume:: u8) volume)
+
+(defn welcome (:name str :greeting str) (str greeting name))
+
+(defn welcome-ana () (welcome :name "ana" :greeting: "hello"))
+
+(defstruct marker :: str)
+
+(defn mark (:size i64 ::: str) size)

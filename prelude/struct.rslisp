@@ -1,9 +1,9 @@
 (use prelude/macros defmacro template map-list documented-body? note-docstring type-doc-key header-shape)
-(use prelude/syntax defn definition declared-forms default-pairs type-missing? defaults-clause?
+(use prelude/syntax defn definition declared-forms declared-name default-pairs type-missing? defaults-clause?
                     default-bindings call-signature signature-name signature-defaults
                     read-call has-argument? pair-keys)
 (use code first rest list nth drop empty? list? symbol? symbol symbol-name prepend
-          concat string fail keyword? keyword-field)
+          concat string fail keyword?)
 
 (export defstruct)
 
@@ -29,7 +29,7 @@
 (def field-group
   (fn (keyword more)
     (if (keyword? keyword)
-        (list (keyword-field keyword) (field-type keyword more))
+        (list (declared-name keyword "field") (field-type keyword more))
         (field-start-error keyword))))
 
 (def field-type

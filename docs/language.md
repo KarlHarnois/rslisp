@@ -247,7 +247,7 @@ A `main` whose inferred type is a `result` emits an inner function for its body 
 
 ## Structs
 
-Programs write structs with the prelude's `defstruct`, which takes flat fields. `(defstruct point :x f64 :y f64)` declares each field as a keyword followed by one type form, so `:tags (vec str)` is one field. It expands to the kernel `struct` form and defines one constructor, `->point`.
+Programs write structs with the prelude's `defstruct`, which takes flat fields. `(defstruct point :x f64 :y f64)` declares each field as a keyword followed by one type form, so `:tags (vec str)` is one field. It expands to the kernel `struct` form and defines one constructor, `->point`. A field keyword whose name ends with `:` is `L0332`. `(defstruct user :name str :email: str)` gets help that writes `:email`, and a keyword made only of `:` characters, such as `::`, gets help that asks for a name.
 
 The constructor `->point` is a macro, and it reads a call in this order:
 
@@ -320,7 +320,7 @@ The prelude also provides `defn` for a function definition, `the` for a typed va
 
 ### Keyword parameters
 
-A `defn` parameter list whose first element is a keyword declares keyword parameters, read like `defstruct` fields. Each `:name` takes an optional type, so `(:x :y)`, `(:x i64 :y i64)` and a mix declare two parameters. A type is never a keyword. The body names each parameter without the `:`. A list headed by `defaults` is always the defaults clause, even right after a keyword, and it comes last, as in `defstruct`. Any other parameter list keeps its plain meaning.
+A `defn` parameter list whose first element is a keyword declares keyword parameters, read like `defstruct` fields. Each `:name` takes an optional type, so `(:x :y)`, `(:x i64 :y i64)` and a mix declare two parameters. A parameter keyword whose name ends with `:` is `L0332`, as a field keyword is. A type is never a keyword. The body names each parameter without the `:`. A list headed by `defaults` is always the defaults clause, even right after a keyword, and it comes last, as in `defstruct`. Any other parameter list keeps its plain meaning.
 
 ```lisp
 (defn add (:x i64 :y i64) (+ x y))
