@@ -11,7 +11,7 @@
   (println (unwrap (get next "a")))
   (for-each (keys next) (fn (key) (println key)))
   (for-each (vals next) (fn (value) (println value)))
-  (for-each (entries next)
+  (for-each (iter next)
             (fn (entry)
               (let-pair (key value) entry
                 (println key " " value))))

@@ -40,7 +40,6 @@ use shared_variables::SharedVariables;
 enum MapIterator {
     Keys,
     Vals,
-    Entries,
 }
 
 struct ExpectedFunction<'a> {
@@ -2726,8 +2725,7 @@ impl TypeChecker {
     ) -> Result<TypedExpr, Diagnostic> {
         let iterator = match operation {
             MapOperation::Keys => MapIterator::Keys,
-            MapOperation::Vals => MapIterator::Vals,
-            _ => MapIterator::Entries,
+            _ => MapIterator::Vals,
         };
         self.infer_map_iterator(value, collection, iterator, arguments, span)
     }
@@ -3002,15 +3000,10 @@ impl TypeChecker {
         let result = match iterator {
             MapIterator::Keys => self.iterator_type(Type::shared(collection.key().clone())),
             MapIterator::Vals => self.iterator_type(Type::shared(collection.value().clone())),
-            MapIterator::Entries => self.iterator_type(self.pair_type(
-                Type::shared(collection.key().clone()),
-                Type::shared(collection.value().clone()),
-            )),
         };
         let template = match iterator {
             MapIterator::Keys => "{0}.keys()",
             MapIterator::Vals => "{0}.values()",
-            MapIterator::Entries => "{0}.iter()",
         };
         let parameters = vec![Type::shared(collection.ty().clone())];
         self.synthetic_call_with_value(template, parameters, result, value, arguments, span)

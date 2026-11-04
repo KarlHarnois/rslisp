@@ -32,18 +32,16 @@ pub enum MapOperation {
     Get,
     Keys,
     Vals,
-    Entries,
     Iter,
     Update,
     Push,
 }
 
 impl MapOperation {
-    const KEYWORDS: [(Self, &'static str); 7] = [
+    const KEYWORDS: [(Self, &'static str); 6] = [
         (Self::Get, "get"),
         (Self::Keys, "keys"),
         (Self::Vals, "vals"),
-        (Self::Entries, "entries"),
         (Self::Iter, "iter"),
         (Self::Update, "update"),
         (Self::Push, "push"),

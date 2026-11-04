@@ -38,7 +38,7 @@
 
 (type report-names (fn ((ref (sorted-map string i64))) unit))
 (defn report-names (names)
-  (for-each (entries names)
+  (for-each (iter names)
             (fn (entry)
               (let-pair (name value) entry
                 (println (str "  " name " = " value))))))

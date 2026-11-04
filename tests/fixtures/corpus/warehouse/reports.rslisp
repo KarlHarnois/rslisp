@@ -25,7 +25,7 @@
                       (update totals (category (as-str (:sku current)))
                               (fn (sum) (+ sum (value-cents current)))
                               0))))
-  (for-each (entries totals)
+  (for-each (iter totals)
             (fn (entry)
               (let-pair (name worth) entry
                 (println (str "  " name ": " (dollars (deref worth))))))))
@@ -44,7 +44,7 @@
                    (sorted-map)
                    (fn (moves current)
                      (update moves (clone (:sku current)) (fn (count) (+ count 1)) 0))))
-  (let busiest (max-by-key (entries moves) (fn (pair) (deref (second-of pair)))))
+  (let busiest (max-by-key (iter moves) (fn (pair) (deref (second-of pair)))))
   (match busiest
     ((some found) (let-pair (sku count) found (println (str "busiest: " sku " with " count " moves"))))
     (none (println "no moves"))))
