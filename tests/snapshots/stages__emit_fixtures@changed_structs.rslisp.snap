@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/changed_structs.rslisp
 ---
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Counter {
     count: i64,
 }
@@ -12,7 +12,7 @@ fn make_counter(count: i64) -> Counter {
     Counter { count }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Tally {
     total: i64,
 }
@@ -21,7 +21,7 @@ fn make_tally(total: i64) -> Tally {
     Tally { total }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Mark {
     x: i64,
 }
@@ -30,7 +30,7 @@ fn make_mark(x: i64) -> Mark {
     Mark { x }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Spot {
     x: i64,
 }

@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/expect_ok_panics.rslisp
+---
+stderr:
+
+thread 'main' panicked at main.rs:14:9:
+needs a count: (err (->failure :line 7))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+exit code: 101

@@ -3,25 +3,25 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/inferred_box.rslisp
 ---
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 enum Tree<A> {
     Node(Box<Tree<A>>, A, Box<Tree<A>>),
     Leaf,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 enum Wrapped<A> {
     Holds(Box<Option<Wrapped<A>>>, A),
     Empty,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 enum VectorTree<A> {
     Many(Vec<VectorTree<A>>),
     None(A),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 enum NamedTree<A> {
     Node { left: Box<NamedTree<A>>, value: A },
     Leaf,

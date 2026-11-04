@@ -10,5 +10,5 @@ error[L0404]: `score` does not implement `ord`
   |          ^^^^^^ this needs `ord`
   |
   = note: `ord` is never inferred for a struct, so the struct needs a written `derive`
-  = help: add `(derive score clone debug partial-eq eq hash show ord)` to compare fields in this order: `points`, then `name`
+  = help: add `(derive score clone partial-eq eq hash show ord)` to compare fields in this order: `points`, then `name`
   = help: to sort by one field instead, use `sort-by!` with the field keyword `:points`

@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/assoc_in_copy_field_call_base.rslisp
 ---
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Point {
     x: i64,
     y: i64,
@@ -13,7 +13,7 @@ fn make_point(x: i64, y: i64) -> Point {
     Point { x, y }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Sticker {
     text: String,
     at: Point,

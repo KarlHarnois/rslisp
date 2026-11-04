@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/unwrap_err_panics.rslisp
+---
+stderr:
+
+thread 'main' panicked at main.rs:5:9:
+called unwrap-err on (ok (vec 1 2))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+exit code: 101

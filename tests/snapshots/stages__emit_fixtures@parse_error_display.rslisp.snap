@@ -5,7 +5,7 @@ input_file: tests/fixtures/emit/parse_error_display.rslisp
 ---
 fn show_error(text: &str) {
     let parsed: Result<i64, std::num::ParseIntError> = text.parse::<i64>();
-    let reason: std::num::ParseIntError = parsed.unwrap_err();
+    let reason: std::num::ParseIntError = crate::rt::unwrap_err(parsed);
     let message = reason.to_string();
     println!("{}", message);
     println!("{}", crate::rt::Shown(&reason))
@@ -267,6 +267,14 @@ mod rt {
                     record.text(key).part(*value)
                 })
                 .close()
+        }
+    }
+
+    #[track_caller]
+    pub fn unwrap_err<T: Show, E>(result: std::result::Result<T, E>) -> E {
+        match result {
+            Ok(value) => panic!("called unwrap-err on (ok {})", Shown(&value)),
+            Err(error) => error,
         }
     }
 }

@@ -3,13 +3,13 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/struct_patterns.rslisp
 ---
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 enum Tree {
     Leaf,
     Branch(Box<Tree>),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Parsed {
     node: Tree,
     next: usize,
@@ -24,7 +24,7 @@ fn wrap(p: Parsed) -> Tree {
     Tree::Branch(Box::new(node))
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 enum Wrapper {
     Wrapped(Parsed),
     Empty,

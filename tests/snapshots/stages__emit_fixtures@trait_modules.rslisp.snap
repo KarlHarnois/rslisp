@@ -50,7 +50,7 @@ fn main() {
 mod trait_modules {
 
     pub(crate) mod circles {
-        #[derive(Clone, Debug, PartialEq)]
+        #[derive(Clone, PartialEq)]
         pub struct Circle {
             pub radius: f64,
         }
@@ -74,7 +74,7 @@ mod trait_modules {
     }
 
     pub(crate) mod squares {
-        #[derive(Clone, Debug, PartialEq)]
+        #[derive(Clone, PartialEq)]
         pub struct Square {
             pub side: f64,
         }

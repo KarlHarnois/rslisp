@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/box_already_object.rslisp
 ---
-(derive circle clone copy debug partial-eq show)
+(derive circle clone copy partial-eq show)
 (type identity (fn ((box shape)) (box shape)))
 (type take (fn ((box shape)) unit))
 (type main (fn () unit))

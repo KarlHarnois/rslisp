@@ -15,11 +15,14 @@ enum RuntimePart {
     Lines,
     Signal,
     Show,
+    UnwrapOk,
+    UnwrapErr,
+    ExpectOk,
 }
 
 impl RuntimePart {
     const STDOUT_MARKERS: &'static [&'static str] = &["print!(", "println!(", "std::io::stdout("];
-    const ALL: [(RuntimePart, &'static [&'static str]); 13] = [
+    const ALL: [(RuntimePart, &'static [&'static str]); 16] = [
         (RuntimePart::Number, &["crate::rt::Number"]),
         (RuntimePart::FromLiteral, &["::from_literal("]),
         (RuntimePart::FromFloatLiteral, &["::from_float_literal("]),
@@ -32,7 +35,10 @@ impl RuntimePart {
         (RuntimePart::Source, &["crate::rt::Source"]),
         (RuntimePart::Lines, &["crate::rt::lines("]),
         (RuntimePart::Signal, Self::STDOUT_MARKERS),
-        (RuntimePart::Show, &["crate::rt::Show", "crate::rt::Record"]),
+        (RuntimePart::Show, &["crate::rt::Show"]),
+        (RuntimePart::UnwrapOk, &["crate::rt::unwrap_ok("]),
+        (RuntimePart::UnwrapErr, &["crate::rt::unwrap_err("]),
+        (RuntimePart::ExpectOk, &["crate::rt::expect_ok("]),
     ];
 
     fn present(self, code: &str) -> bool {
@@ -81,6 +87,9 @@ impl RuntimePart {
             | RuntimePart::Show => None,
             RuntimePart::MapSequence => Some(RuntimePart::Sequence),
             RuntimePart::Lines => Some(RuntimePart::Io),
+            RuntimePart::UnwrapOk | RuntimePart::UnwrapErr | RuntimePart::ExpectOk => {
+                Some(RuntimePart::Show)
+            }
         }
     }
 }
@@ -106,8 +115,11 @@ impl RuntimeModule {
     const LINES: &'static str = include_str!("../../prelude/runtime/lines.rs");
     const SIGNAL: &'static str = include_str!("../../prelude/runtime/signal.rs");
     const SHOW: &'static str = include_str!("../../prelude/runtime/show.rs");
+    const UNWRAP_OK: &'static str = include_str!("../../prelude/runtime/unwrap_ok.rs");
+    const UNWRAP_ERR: &'static str = include_str!("../../prelude/runtime/unwrap_err.rs");
+    const EXPECT_OK: &'static str = include_str!("../../prelude/runtime/expect_ok.rs");
     const START_UP_CALL: &'static str = "crate::rt::restore_default_sigpipe();";
-    const FIXED_PARTS: [(RuntimePart, &'static str); 10] = [
+    const FIXED_PARTS: [(RuntimePart, &'static str); 13] = [
         (RuntimePart::Signed, Self::SIGNED),
         (RuntimePart::Float, Self::FLOAT),
         (RuntimePart::Integer, Self::INTEGER),
@@ -118,6 +130,9 @@ impl RuntimeModule {
         (RuntimePart::Lines, Self::LINES),
         (RuntimePart::Signal, Self::SIGNAL),
         (RuntimePart::Show, Self::SHOW),
+        (RuntimePart::UnwrapOk, Self::UNWRAP_OK),
+        (RuntimePart::UnwrapErr, Self::UNWRAP_ERR),
+        (RuntimePart::ExpectOk, Self::EXPECT_OK),
     ];
     const CONVERSIONS: &'static [Conversion] = &[
         Conversion {

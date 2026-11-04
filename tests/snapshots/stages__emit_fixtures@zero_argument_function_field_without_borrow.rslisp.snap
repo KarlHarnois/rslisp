@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/zero_argument_function_field_without_borrow.rslisp
 ---
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 struct Counter<'a> {
     next: fn() -> i64,
     label: &'a str,

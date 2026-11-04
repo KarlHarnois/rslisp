@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/string_field_equality.rslisp
 ---
-(derive person clone debug partial-eq eq hash show)
+(derive person clone partial-eq eq hash show)
 (type ->person (fn (string u32) person))
 (type ana? (fn ((ref person)) bool))
 (type main (fn () unit))

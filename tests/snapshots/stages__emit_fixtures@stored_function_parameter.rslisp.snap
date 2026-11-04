@@ -3,13 +3,13 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/stored_function_parameter.rslisp
 ---
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct User {
     name: String,
     age: u16,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 struct Sorter<'a> {
     key: fn(&User) -> u16,
     label: &'a str,
@@ -19,7 +19,7 @@ fn make_sorter(key: fn(&User) -> u16, label: &str) -> Sorter<'_> {
     Sorter { key, label }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 enum Order {
     Ascending(fn(&User) -> u16),
     Unordered,

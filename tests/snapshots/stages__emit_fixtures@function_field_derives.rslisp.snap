@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/function_field_derives.rslisp
 ---
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 struct Handler {
     callback: fn(i64) -> i64,
     tag: i64,

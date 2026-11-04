@@ -14,7 +14,7 @@ fn main() {
 mod trait_method_namesakes {
 
     pub(crate) mod counters {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
         struct Counter {
             step: i64,
         }
@@ -39,7 +39,7 @@ mod trait_method_namesakes {
     }
 
     pub(crate) mod odometers {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
         struct Odometer {
             offset: i64,
         }

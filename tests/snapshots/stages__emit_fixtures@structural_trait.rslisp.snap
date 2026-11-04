@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/structural_trait.rslisp
 ---
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Mode {
     owner: u32,
     group: u32,
@@ -22,7 +22,7 @@ fn make_listed(mask: u32) -> Listed {
     Listed { mask }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Written {
     mask: u32,
 }
@@ -31,7 +31,7 @@ fn make_written(mask: u32) -> Written {
     Written { mask }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct InnerMode {
     owner: u32,
 }
@@ -40,7 +40,7 @@ fn make_inner_mode(owner: u32) -> InnerMode {
     InnerMode { owner }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Holder {
     inner: InnerMode,
     written: Written,
@@ -50,19 +50,19 @@ fn make_holder(inner: InnerMode, written: Written) -> Holder {
     Holder { inner, written }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 enum Tree<A> {
     Leaf,
     Node(Box<Tree<A>>, A, Box<Tree<A>>),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum Shape {
     Labeled { width: u32, height: u32 },
     Empty,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Unprinted {
     mask: u32,
 }
@@ -93,7 +93,7 @@ fn main() {
     println!("{}", make_unprinted(3).mask)
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum Never {}
 
 fn absurd_each(values: Vec<Never>) {

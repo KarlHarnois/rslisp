@@ -25,7 +25,7 @@ fn main() {
 mod short_variant_import {
 
     pub(crate) mod palette {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
         pub enum Color {
             Red,
             Custom(i64),

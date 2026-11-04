@@ -3,14 +3,14 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/inferred_box.rslisp
 ---
-(derive holder clone copy debug partial-eq eq hash show)
-(derive tree clone debug partial-eq eq hash show)
-(derive named-tree clone debug partial-eq eq hash show)
-(derive wrapped clone debug partial-eq eq hash show)
-(derive boxed-tree clone debug partial-eq eq hash show)
-(derive left clone debug partial-eq eq hash show)
-(derive right clone debug partial-eq eq hash show)
-(derive vector-tree clone debug partial-eq eq hash show)
+(derive holder clone copy partial-eq eq hash show)
+(derive tree clone partial-eq eq hash show)
+(derive named-tree clone partial-eq eq hash show)
+(derive wrapped clone partial-eq eq hash show)
+(derive boxed-tree clone partial-eq eq hash show)
+(derive left clone partial-eq eq hash show)
+(derive right clone partial-eq eq hash show)
+(derive vector-tree clone partial-eq eq hash show)
 (enum (tree a) (node (box (tree a)) a (box (tree a))) leaf)
 (enum (named-tree a) (node (struct (left (box (named-tree a))) (value a))) leaf)
 (enum (wrapped a) (holds (box (option (wrapped a))) a) empty)

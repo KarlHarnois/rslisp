@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/trait_default_keeps_vector.rslisp
 ---
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Odometer {
     offset: i64,
 }
@@ -12,7 +12,7 @@ fn make_odometer(offset: i64) -> Odometer {
     Odometer { offset }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Meter {
     scale: i64,
 }
@@ -21,7 +21,7 @@ fn make_meter(scale: i64) -> Meter {
     Meter { scale }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Gauge {
     level: i64,
 }

@@ -29,7 +29,7 @@ fn main() {
 mod enums_module {
 
     pub(crate) mod shape {
-        #[derive(Clone, Debug, PartialEq)]
+        #[derive(Clone, PartialEq)]
         pub enum Shape {
             Circle(f64),
             Rect(f64, f64),

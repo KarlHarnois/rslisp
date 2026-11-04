@@ -17,7 +17,7 @@ fn main() {
 mod shapes {
 
     pub(crate) mod geometry {
-        #[derive(Clone, Copy, Debug, PartialEq)]
+        #[derive(Clone, Copy, PartialEq)]
         pub struct Point {
             pub x: f64,
             pub y: f64,

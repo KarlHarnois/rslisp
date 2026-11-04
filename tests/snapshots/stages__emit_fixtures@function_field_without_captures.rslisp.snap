@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/function_field_without_captures.rslisp
 ---
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct User<'a> {
     name: &'a str,
     age: u16,
@@ -13,7 +13,7 @@ fn make_user(name: &str, age_2: u16) -> User<'_> {
     User { name, age: age_2 }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 struct Sorter<'a> {
     key: fn(&User<'_>) -> u16,
     label: &'a str,
