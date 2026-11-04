@@ -1,5 +1,6 @@
 use super::Expander;
 use super::context::DefinitionContext;
+use super::evaluated_forms::BoundName;
 use super::problems::ExpandProblems;
 use crate::core::{BindingId, BindingInfo, BindingKind, ModuleId, Namespace};
 use crate::diagnostic::SimilarName;
@@ -56,6 +57,7 @@ impl Expander<'_> {
         kind: BindingKind,
         context: &DefinitionContext,
     ) -> Result<BindingId, Diagnostic> {
+        self.note_bound(binder, namespace);
         let binding = self.define(binder, namespace, kind, Phase::Runtime, Some(context))?;
         self.note_global(binding, binder);
         Ok(binding)
@@ -68,6 +70,13 @@ impl Expander<'_> {
         binding: BindingId,
         span: Span,
     ) -> Result<(), Diagnostic> {
+        self.evaluated_forms.note_bound(span, || {
+            Some(BoundName {
+                name: symbol.shared_name(),
+                namespace,
+                span,
+            })
+        });
         self.tables
             .table
             .bind(symbol, namespace, binding, Phase::Runtime)
@@ -78,6 +87,20 @@ impl Expander<'_> {
                     self.tables.bindings.get(existing).span(),
                 )
             })
+    }
+
+    fn note_bound(&mut self, binder: &Form, namespace: Namespace) {
+        let tables = &self.tables;
+        self.evaluated_forms.note_bound(binder.span(), || {
+            let symbol = binder
+                .as_symbol()
+                .filter(|_| !tables.carries_introduction_scope(binder))?;
+            Some(BoundName {
+                name: symbol.shared_name(),
+                namespace,
+                span: binder.span(),
+            })
+        });
     }
 
     fn define(
