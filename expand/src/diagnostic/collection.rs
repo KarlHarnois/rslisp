@@ -26,6 +26,10 @@ impl Diagnostics {
         self.items.len()
     }
 
+    pub fn retain(&mut self, keep: impl FnMut(&Diagnostic) -> bool) {
+        self.items.retain(keep);
+    }
+
     pub fn truncate(&mut self, len: usize) {
         self.items.truncate(len);
     }
