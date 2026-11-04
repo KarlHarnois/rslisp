@@ -1,0 +1,21 @@
+---
+source: tests/cli.rs
+expression: repl.transcript()
+---
+exit code: Some(0)
+--- stdout
+(->point :x 1 :y 2)
+--- stderr
+error[L0203]: `->point` is defined more than once
+ --> <input 2>:1:7
+  |
+1 | (defn ->point (x) x)
+  |       ^^^^^^^ defined again here
+  |
+ ::: <input 1>:1:1
+  |
+1 | (defstruct point :x i64 :y i64)
+  | ------------------------------- first defined here
+  |
+  = note: replacing the earlier input would drop `point`
+  = help: give `->point` another name to keep `point`

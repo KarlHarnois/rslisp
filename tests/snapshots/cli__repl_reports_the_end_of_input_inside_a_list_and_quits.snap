@@ -1,0 +1,15 @@
+---
+source: tests/cli.rs
+expression: repl.transcript()
+---
+exit code: Some(0)
+--- stdout
+3
+--- stderr
+error[L0101]: this list is never closed
+ --> <input 2>:1:1
+  |
+1 | (defn twice (x)
+  | ^ this `(` has no matching `)`
+  |
+  = help: add a `)` where the list ends

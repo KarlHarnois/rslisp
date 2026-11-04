@@ -1,0 +1,8 @@
+---
+source: tests/cli.rs
+expression: repl.transcript()
+---
+exit code: Some(0)
+--- stdout
+--- stderr
+note: the program exited with code 3

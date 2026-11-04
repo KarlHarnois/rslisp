@@ -1,0 +1,22 @@
+---
+source: tests/cli.rs
+expression: repl.transcript()
+---
+exit code: Some(0)
+--- stdout
+12
+9
+--- stderr
+error[L0203]: `circle` is defined more than once
+ --> <input 3>:1:13
+  |
+1 | (use shapes circle)
+  |             ^^^^^^ defined again here
+  |
+ ::: <input 1>:1:13
+  |
+1 | (use shapes circle square)
+  |             ------ first defined here
+  |
+  = note: replacing the earlier input would drop `square`
+  = help: give `circle` another name to keep `square`

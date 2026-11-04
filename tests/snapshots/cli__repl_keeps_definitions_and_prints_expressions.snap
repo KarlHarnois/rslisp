@@ -1,0 +1,9 @@
+---
+source: tests/cli.rs
+expression: repl.transcript()
+---
+exit code: Some(0)
+--- stdout
+(->point :x 4 :y 3)
+side 9
+--- stderr
