@@ -545,17 +545,31 @@ Field names are not hygienic. They are looked up through the struct type.
 `rslisp repl` reads inputs from standard input. Its only state is a buffer of the definitions entered so far, as text. Each form is one input, so a line of three forms is three inputs, and each input is its own source, named `<input N>`.
 
 - The expander classifies each input. An input that a file accepts at its top level, `use` included, is a definition. Any other input is an expression.
-- A definition replaces every earlier input that defines or imports a name it defines or imports, and takes the place of the first one. If a replaced input defines or imports a name that the new input does not, the prompt rejects the input with `L0203`. Otherwise the prompt checks the buffer as `check` checks a file, and rejects the input if the check fails. A rejected input leaves the buffer as it was.
+- A definition replaces every earlier input that defines or imports a name it defines or imports, and takes the place of the first one. The redefinition takes effect, even when it drops a name ([RFC 0051](../rfcs/0051-repl-redefinition.md)).
 - An expression runs as one form of `eval` against the buffer, and its result prints by the table above. A program that panics or exits nonzero gets a `note` with its exit code, and the buffer keeps its definitions.
 - `--root <directory>`, which defaults to the current directory, resolves `use`.
 - While the reader reports an unclosed list, `L0101`, or an unclosed string, `L0103`, the prompt reads the next line into the same text. Any other reader error rejects the text at once.
 - On a terminal, the prompt is `> ` and a continuation line starts with two spaces. Piped input shows no prompt.
 - The end of input quits with exit code 0, also after failed inputs. An unclosed list or string at the end is reported first.
 
+**A definition takes effect, and each earlier input that no longer checks is set aside.** The prompt checks the buffer as `check` checks a file, and locates each error at one input:
+
+1. An error whose primary label, or one of whose `in this macro call` labels, lies in the new input is the new input's.
+2. Otherwise the error is located at the input of its outermost `in this macro call` label, then at the input of its primary label, then at the earliest input whose `use` reaches the file of its primary label.
+3. An error located at no input, as one in the prelude, is the new input's. Secondary labels never decide.
+
+If an error is located at the new input, the prompt rejects the input, prints those errors, and keeps the buffer as it was. If errors are located at earlier inputs, the prompt sets each of those inputs aside and checks again. A round removes at least one input, so the check ends. Once the buffer checks, the new input joins it, and the prompt prints one `L0249` for each input set aside and for each replaced input that binds a name the new input does not, with the new input's own warnings, as one report.
+
+`L0249` names the input's names, at most three and then `and N more`, or the input's source when it bound none. It carries the error that set the input aside as its own label, a note and helps, or for a dropped name the note that the new input replaced it, and ends with the help to enter the names again.
+
+**The prompt records each name that leaves the buffer,** in its namespace, and an `L0201` for a recorded name gets a note: `` `<input 4>` set aside `greet`: cannot find `karl` in this scope ``, or, for a name an input stops binding while it still checks, `` `<input 3>` no longer defines `foo` after `<input 4>` ``. A rejected input changes no record, and its `L0201` for a name of an input it would set aside reads `would set aside`. After each definition that joins, the prompt forgets the record of each name the buffer binds.
+
+An expression never changes the buffer. After a module file changes on disk, an expression's error located at an earlier input gets the help `enter a definition to set aside the inputs that no longer check`, and the next definition sets those inputs aside.
+
 **The prompt differs from a file in three ways:**
 
 1. An input that is not a definition runs once, as the body of a generated `main`.
-2. A definition replaces the earlier definition of the same name, where a file reports `L0203`, unless the replacement would drop a name.
+2. A definition replaces the earlier definition of the same name, where a file reports `L0203`, and sets aside each earlier input that no longer checks.
 3. Each definition is checked when it is entered, so it comes after the definitions it uses. Mutually recursive functions go in one input, as `(do (defn even? ...) (defn odd? ...))`.
 
 ### Colors

@@ -1,11 +1,13 @@
-use crate::diagnostic::Diagnostic;
-use crate::expand::{BoundName, ExpandProblems};
-use crate::source::SourceId;
+use std::rc::Rc;
+
+use crate::expand::BoundName;
+use crate::source::{SourceId, Span};
 
 #[derive(Clone)]
 pub struct BufferedInput {
-    pub source: SourceId,
-    pub names: Vec<BoundName>,
+    name: String,
+    span: Span,
+    names: Vec<BoundName>,
 }
 
 #[derive(Clone, Default)]
@@ -18,9 +20,49 @@ pub struct Replacement {
     replaced: Vec<usize>,
 }
 
+pub struct DroppedNames {
+    pub input: BufferedInput,
+    pub dropped: Vec<BoundName>,
+    pub replacing: Rc<str>,
+}
+
+impl BufferedInput {
+    pub fn new(name: String, span: Span, names: Vec<BoundName>) -> Self {
+        Self { name, span, names }
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn names(&self) -> &[BoundName] {
+        &self.names
+    }
+
+    pub fn source(&self) -> SourceId {
+        self.span.source()
+    }
+
+    pub fn binds(&self, name: &BoundName) -> bool {
+        self.names.iter().any(|bound| bound.names_the_same(name))
+    }
+}
+
 impl DefinitionBuffer {
+    pub fn inputs(&self) -> &[BufferedInput] {
+        &self.inputs
+    }
+
     pub fn sources(&self) -> Vec<SourceId> {
         self.sources_kept_by(&Replacement::default())
+    }
+
+    pub fn spans(&self) -> Vec<Span> {
+        self.inputs.iter().map(|input| input.span).collect()
+    }
+
+    pub fn bound_names(&self) -> impl Iterator<Item = &BoundName> {
+        self.inputs.iter().flat_map(|input| &input.names)
     }
 
     pub fn sources_kept_by(&self, replacement: &Replacement) -> Vec<SourceId> {
@@ -28,7 +70,7 @@ impl DefinitionBuffer {
             .iter()
             .enumerate()
             .filter(|(position, _)| !replacement.replaces(*position))
-            .map(|(_, input)| input.source)
+            .map(|(_, input)| input.source())
             .collect()
     }
 
@@ -50,15 +92,16 @@ impl DefinitionBuffer {
         Some(Replacement { replaced })
     }
 
-    pub fn dropped_definition(
+    pub fn dropped_by(
         &self,
-        input: &BufferedInput,
         replacement: &Replacement,
-    ) -> Option<Diagnostic> {
+        entered: &BufferedInput,
+    ) -> Vec<DroppedNames> {
         replacement
             .replaced
             .iter()
-            .find_map(|position| Self::drop_of(&self.inputs[*position], input))
+            .filter_map(|position| Self::drop_of(&self.inputs[*position], entered))
+            .collect()
     }
 
     pub fn replaced(&self, replacement: &Replacement, input: BufferedInput) -> Self {
@@ -77,24 +120,46 @@ impl DefinitionBuffer {
         Self { inputs }
     }
 
-    fn drop_of(earlier: &BufferedInput, input: &BufferedInput) -> Option<Diagnostic> {
-        let dropped = earlier
+    pub fn renamed(&self, names: Vec<Vec<BoundName>>) -> Self {
+        let inputs = self
+            .inputs
+            .iter()
+            .zip(names)
+            .map(|(input, names)| BufferedInput {
+                names,
+                ..input.clone()
+            })
+            .collect();
+        Self { inputs }
+    }
+
+    pub fn without(&self, set_aside: &[SourceId]) -> Self {
+        let inputs = self
+            .inputs
+            .iter()
+            .filter(|input| !set_aside.contains(&input.source()))
+            .cloned()
+            .collect();
+        Self { inputs }
+    }
+
+    pub fn input(&self, source: SourceId) -> Option<&BufferedInput> {
+        self.inputs.iter().find(|input| input.source() == source)
+    }
+
+    fn drop_of(earlier: &BufferedInput, entered: &BufferedInput) -> Option<DroppedNames> {
+        let dropped: Vec<BoundName> = earlier
             .names
             .iter()
-            .find(|name| !input.names.iter().any(|bound| bound.names_the_same(name)))?;
-        let (repeated, previous) = input.names.iter().find_map(|bound| {
-            let previous = earlier
-                .names
-                .iter()
-                .find(|name| name.names_the_same(bound))?;
-            Some((bound, previous))
-        })?;
-        Some(ExpandProblems::dropped_by_replacement(
-            &repeated.name,
-            repeated.span,
-            previous.span,
-            &dropped.name,
-        ))
+            .filter(|name| !entered.binds(name))
+            .cloned()
+            .collect();
+        let replacing = entered.names.iter().find(|bound| earlier.binds(bound))?;
+        (!dropped.is_empty()).then(|| DroppedNames {
+            input: earlier.clone(),
+            dropped,
+            replacing: Rc::clone(&replacing.name),
+        })
     }
 
     fn shares_a_name(earlier: &[BoundName], names: &[BoundName]) -> bool {
@@ -118,7 +183,6 @@ impl Replacement {
 mod tests {
     use super::*;
     use crate::core::Namespace;
-    use crate::source::Span;
 
     struct BufferFixture;
 
@@ -133,7 +197,11 @@ mod tests {
                     span: Span::new(source, 0..0),
                 })
                 .collect();
-            BufferedInput { source, names }
+            BufferedInput::new(
+                format!("<input {}>", source.index()),
+                Span::new(source, 0..1),
+                names,
+            )
         }
 
         fn buffer(inputs: &[(usize, &[&str])]) -> DefinitionBuffer {
@@ -203,7 +271,7 @@ mod tests {
         let replacement = buffer
             .widened(&entered.names, &Replacement::default())
             .expect("`a` is defined earlier");
-        assert!(buffer.dropped_definition(&entered, &replacement).is_none());
+        assert!(buffer.dropped_by(&replacement, &entered).is_empty());
     }
 
     #[test]
@@ -213,12 +281,26 @@ mod tests {
         let replacement = buffer
             .widened(&entered.names, &Replacement::default())
             .expect("`b` is defined earlier");
-        let dropped = buffer
-            .dropped_definition(&entered, &replacement)
-            .expect("`a` would be dropped");
-        assert_eq!(
-            dropped.notes(),
-            ["replacing the earlier input would drop `a`"]
-        );
+        let dropped = buffer.dropped_by(&replacement, &entered);
+        let names: Vec<&str> = dropped[0].dropped.iter().map(|name| &*name.name).collect();
+        assert_eq!(names, ["a"]);
+        assert_eq!(&*dropped[0].replacing, "b");
+    }
+
+    #[test]
+    fn a_renamed_buffer_takes_each_inputs_new_names() {
+        let buffer = BufferFixture::buffer(&[(0, &["a"]), (1, &["b"])]);
+        let renamed = buffer.renamed(vec![Vec::new(), BufferFixture::input(1, &["c"]).names]);
+        let names: Vec<&str> = renamed.bound_names().map(|name| &*name.name).collect();
+        assert_eq!(names, ["c"]);
+    }
+
+    #[test]
+    fn a_buffer_without_an_input_keeps_the_others_in_order() {
+        let buffer = BufferFixture::buffer(&[(0, &["a"]), (1, &["b"]), (2, &["c"])]);
+        let kept = buffer.without(&[SourceId::new(1)]);
+        assert_eq!(BufferFixture::sources(&kept), [0, 2]);
+        assert!(kept.input(SourceId::new(1)).is_none());
+        assert!(kept.input(SourceId::new(2)).is_some());
     }
 }

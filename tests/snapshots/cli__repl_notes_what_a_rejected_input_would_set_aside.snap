@@ -1,0 +1,15 @@
+---
+source: tests/cli.rs
+expression: "RedefinitionSession::transcript(\"repl_would_set_aside\",\nPROMPT_WOULD_SET_ASIDE)"
+---
+exit code: Some(0)
+--- stdout
+"karl"
+--- stderr
+error[L0201]: cannot find `karl` in this scope
+ --> <input 3>:1:64
+  |
+1 | (do (defstruct user :name str :email str) (defn show () (:name karl)))
+  |                                                                ^^^^ not found in this scope
+  |
+  = note: `<input 3>` would set aside `karl`: missing field `email` in `user`

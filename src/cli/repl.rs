@@ -1,12 +1,20 @@
+use std::cell::RefCell;
 use std::path::PathBuf;
+use std::rc::Rc;
 
 use super::definition_buffer::{BufferedInput, DefinitionBuffer, Replacement};
+use super::definition_rounds::{AcceptedDefinition, DefinitionOutcome, DefinitionRounds};
+use super::error_location::{InputLocator, ModuleLoader};
 use super::eval::{EvalCommand, EvaluationSettings, FormsText, ModuleText};
 use super::evaluation_output::PrintedEvaluation;
 use super::exit_status::ExitStatus;
+use super::name_records::NameRecords;
+use super::prompt_diagnostics::{PromptAnnotations, PromptDiagnostics};
 use super::prompt_lines::{EnteredText, PromptLines};
-use super::terminal::{ModuleOfSources, Terminal};
+use super::prompt_module::PromptModule;
+use super::terminal::Terminal;
 use crate::build::BuildProfile;
+use crate::diagnostic::Diagnostics;
 use crate::expand::ClassifiedForm;
 use crate::source::{SourceId, Span};
 
@@ -16,10 +24,11 @@ pub struct ReplCommand {
 }
 
 struct PromptSession {
-    root: PathBuf,
+    module: PromptModule,
     profile: BuildProfile,
-    anchor: SourceId,
     buffer: DefinitionBuffer,
+    annotations: Rc<RefCell<PromptAnnotations>>,
+    loaders: Vec<ModuleLoader>,
     entered: usize,
 }
 
@@ -57,24 +66,31 @@ impl ReplCommand {
 }
 
 impl PromptSession {
-    const MODULE: &str = "<prompt>";
-
     fn new(terminal: &mut Terminal, root: PathBuf, profile: BuildProfile) -> Self {
+        let anchor = terminal.add_named_source(PromptModule::PATH, "");
         let session = Self {
-            root,
+            module: PromptModule::new(anchor, root),
             profile,
-            anchor: terminal.add_named_source(Self::MODULE, ""),
             buffer: DefinitionBuffer::default(),
+            annotations: Rc::default(),
+            loaders: Vec::new(),
             entered: 0,
         };
         session.place_prelude_sources_before_the_inputs(terminal);
+        session.annotate_diagnostics(terminal);
         session
     }
 
     fn place_prelude_sources_before_the_inputs(&self, terminal: &mut Terminal) {
         terminal
-            .check_sources(&self.module_of(Vec::new()), |_| false)
+            .check_sources(&self.module.of(Vec::new()), |_| false)
             .ok();
+    }
+
+    fn annotate_diagnostics(&self, terminal: &mut Terminal) {
+        let annotated =
+            PromptDiagnostics::new(terminal.diagnostic_output(), Rc::clone(&self.annotations));
+        terminal.report_diagnostics_to(Rc::new(annotated));
     }
 
     fn enter(&mut self, terminal: &mut Terminal, text: String) {
@@ -120,45 +136,52 @@ impl PromptSession {
         loop {
             let mut sources = self.buffer.sources_kept_by(&replacement);
             sources.push(input.source);
-            let module = self.module_of(sources);
+            let module = self.module.of(sources);
             let ClassifiedForm::Definition(names) = terminal.classify(&module, form) else {
                 return ClassifiedInput::Expression;
             };
             match self.buffer.widened(&names, &replacement) {
                 Some(wider) => replacement = wider,
                 None => {
-                    let source = input.source;
-                    return ClassifiedInput::Definition(
-                        BufferedInput { source, names },
-                        replacement,
-                    );
+                    let buffered = BufferedInput::new(input.name.clone(), form, names);
+                    return ClassifiedInput::Definition(buffered, replacement);
                 }
             }
         }
     }
 
     fn define(&mut self, terminal: &mut Terminal, input: BufferedInput, replacement: &Replacement) {
-        if let Some(dropped) = self.buffer.dropped_definition(&input, replacement) {
-            terminal.report(&dropped.into());
-            return;
-        }
-        let source = input.source;
-        let candidate = self.buffer.replaced(replacement, input);
-        let module = self.module_of(candidate.sources());
-        let checked = terminal.check_sources(&module, |warning| {
-            warning.primary().span().source() == source
-        });
-        if checked.is_ok() {
-            self.buffer = candidate;
+        let rounds = DefinitionRounds::new(&self.module, &self.buffer, input, replacement);
+        match rounds.run(terminal) {
+            DefinitionOutcome::Accepted(accepted) => self.accept(terminal, accepted),
+            DefinitionOutcome::Rejected { errors, pending } => {
+                self.reject(terminal, &errors, pending)
+            }
         }
     }
 
+    fn accept(&mut self, terminal: &Terminal, accepted: AcceptedDefinition) {
+        self.annotations
+            .borrow_mut()
+            .commit(accepted.records, accepted.buffer.bound_names());
+        self.buffer = accepted.buffer;
+        self.loaders = accepted.loaders;
+        terminal.print_diagnostics(&accepted.report);
+    }
+
+    fn reject(&self, terminal: &Terminal, errors: &Diagnostics, pending: NameRecords) {
+        self.annotations.borrow_mut().hold_pending(pending);
+        terminal.report(errors);
+        self.annotations.borrow_mut().drop_pending();
+    }
+
     fn evaluate(&self, terminal: &mut Terminal, input: EnteredInput) {
-        let module = self.module_of(self.buffer.sources());
+        let module = self.module.of(self.buffer.sources());
+        self.locate_expression_errors(&input.name);
         let forms = FormsText::named(input.name, input.text, None);
         let status = EvalCommand::new(
             ModuleText::Loaded(module.path, module.sources),
-            Some(self.root.clone()),
+            Some(self.module.root().to_path_buf()),
             forms,
             EvaluationSettings {
                 profile: self.profile,
@@ -166,22 +189,22 @@ impl PromptSession {
             },
         )
         .run(terminal);
+        self.annotations.borrow_mut().forget_expression();
         Self::note_failed_program(terminal, status);
+    }
+
+    fn locate_expression_errors(&self, expression: &str) {
+        let locator = InputLocator::new(
+            self.buffer.sources(),
+            expression.to_string(),
+            self.loaders.clone(),
+        );
+        self.annotations.borrow_mut().locate_expression(locator);
     }
 
     fn note_failed_program(terminal: &Terminal, status: ExitStatus) {
         if let ExitStatus::Program(code @ 1..) = status {
             terminal.print_note(&format!("the program exited with code {code}"));
-        }
-    }
-
-    fn module_of(&self, inputs: Vec<SourceId>) -> ModuleOfSources {
-        let mut sources = vec![self.anchor];
-        sources.extend(inputs);
-        ModuleOfSources {
-            path: PathBuf::from(Self::MODULE),
-            root: self.root.clone(),
-            sources,
         }
     }
 }

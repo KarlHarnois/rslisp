@@ -1,0 +1,20 @@
+---
+source: tests/cli.rs
+expression: repl.transcript()
+---
+exit code: Some(0)
+--- stdout
+--- stderr
+warning[L0249]: set aside `point` after `<input 2>`
+ --> <input 1>:1:12
+  |
+1 | (defstruct point :x i64 :y i64)
+  |            ^^^^^ set aside
+  |
+  = note: `->point` replaced the input that defined `point`
+  = help: enter `point` again to use it
+error[L0201]: cannot find type `point` in this scope
+ --> ./geo.rslisp:2:16
+  |
+2 | (defn area (:p point) 1)
+  |                ^^^^^ not found in this scope

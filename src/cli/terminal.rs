@@ -9,13 +9,14 @@ use anstream::ColorChoice;
 
 use super::build_directory::BuildDirectory;
 use super::diagnostic_output::{DiagnosticOutput, RenderedDiagnostics};
+use super::error_location::ModuleLoader;
 use super::exit_status::ExitStatus;
 use super::stage_work::StageWork;
 use crate::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use crate::core::{Expr, ModulePath};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
-use crate::expand::{ClassifiedForm, Expander, ExpansionSession, PreludeState, Program};
+use crate::expand::{BoundName, ClassifiedForm, Expander, ExpansionSession, PreludeState, Program};
 use crate::modules::ModuleSources;
 use crate::reader::{Form, Reader};
 use crate::source::Span;
@@ -42,6 +43,12 @@ impl ModuleOfSources {
     pub fn anchor(&self) -> SourceId {
         self.sources[0]
     }
+}
+
+pub struct SourcesSurvey {
+    pub diagnostics: Diagnostics,
+    pub names: Vec<Vec<BoundName>>,
+    pub loaders: Vec<ModuleLoader>,
 }
 
 pub struct BuildTarget<'a> {
@@ -302,6 +309,40 @@ impl Terminal {
             &module.sources,
             form,
         )
+    }
+
+    pub fn survey_sources(&mut self, module: &ModuleOfSources, inputs: &[Span]) -> SourcesSurvey {
+        let survey = self.expander_rooted(&module.root).survey(
+            Self::module_path(&module.path),
+            &module.sources,
+            inputs,
+        );
+        let loaders = survey
+            .loaded
+            .iter()
+            .map(|loaded| ModuleLoader {
+                file: self.source_name(loaded.source).to_string(),
+                input: loaded.input.source(),
+            })
+            .collect();
+        SourcesSurvey {
+            diagnostics: survey
+                .program
+                .map_or_else(|errors| errors, |program| Self::check_quietly(&program)),
+            names: survey.names,
+            loaders,
+        }
+    }
+
+    pub fn source_name(&self, source: SourceId) -> &str {
+        self.sources.file(source).name()
+    }
+
+    fn check_quietly(program: &Program) -> Diagnostics {
+        match crate::check::ProgramChecker::check(program) {
+            Ok(typed) => typed.warnings,
+            Err(diagnostics) => diagnostics,
+        }
     }
 
     pub fn check_sources(

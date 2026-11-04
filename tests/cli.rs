@@ -99,8 +99,10 @@ const PROMPT_DEFINITIONS: &str = "(defn square (n) (* n n))\n(defstruct point :x
 const PROMPT_DOC: &str =
     "(defn twice (x) \"Doubles a number.\" (* 2 x))\n(doc twice)\n(doc-page twice)\n";
 const PROMPT_REDEFINITION: &str = "(defn square (n) (* n n))\n(defn cube (n) (* n (square n)))\n(cube 3)\n(defn square (n) (+ n n))\n(cube 3)\n";
-const PROMPT_DROPPING_REPLACEMENT: &str =
-    "(defstruct point :x i64 :y i64)\n(defn ->point (x) x)\n(->point 1 2)\n";
+const PROMPT_DROPPING_REPLACEMENT: &str = "(defstruct point :x i64 :y i64)
+(defn ->point (x y) (vec x y))
+(->point 1 2)
+";
 const PROMPT_REPLACEMENT_OF_TWO: &str = "(defn circle (r) r)\n(defn square (s) s)\n(do (defn circle (r) (+ r 1)) (defn square (s) (+ s 2)))\n(+ (circle 1) (square 1))\n";
 const PROMPT_FAILING_DEFINITION: &str =
     "(defn twice (x) (* 2 x))\n(defn twice (x) (+ x \"a\"))\n(twice 4)\n";
@@ -116,6 +118,24 @@ const PROMPT_UNCLOSED_END: &str = "(+ 1 2)\n(defn twice (x)\n  (* 2 x)\n";
 const PROMPT_NOT_UTF8: &[u8] = b"(+ 1 1)\n\xff\n";
 const PROMPT_EXIT_ON_A_TERMINAL: &str =
     "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n(exit 3)\n\u{4}";
+const PROMPT_REDEFINED_STRUCT: &str = "(defstruct user :name str)\n(def karl (->user :name \"karl\"))\n(defstruct user :name str :email str)\n(karl)\n";
+const PROMPT_CASCADE: &str = "(defstruct user :name str)\n(def karl (->user :name \"karl\"))\n(defn greet () (str \"hi \" (:name karl)))\n(defstruct user :name str :email str)\n(greet)\n";
+const PROMPT_BROKEN_MACRO_CALLED: &str =
+    "(defmacro bad () (template (missing-helper 1)))\n(+ 1 2)\n(defn f () (bad))\n(f)\n";
+const PROMPT_BROKEN_MACRO_REDEFINED: &str = "(defmacro bad () (template 1))\n(defn f () (bad))\n(defmacro bad () (template (missing-helpr 1)))\n(f)\n";
+const PROMPT_STOPS_BINDING: &str = "(defn pick (a b) a)\n(defmacro mk (a b) (template (defn (unquote (pick a b)) () 1)))\n(mk foo bar)\n(defn pick (a b) b)\n(foo)\n(bar)\n";
+const PROMPT_TWO_BINDERS: &str = "(defn pick (a b) a)\n(defmacro mk (a b) (template (defn (unquote (pick a b)) () 1)))\n(mk foo bar)\n(defn bar () 2)\n(defn pick (a b) b)\n(bar)\n";
+const PROMPT_WOULD_SET_ASIDE: &str = "(defstruct user :name str)\n(def karl (->user :name \"karl\"))\n(do (defstruct user :name str :email str) (defn show () (:name karl)))\n(:name karl)\n";
+const PROMPT_RE_ENTERED_TYPE: &str = "(defstruct point :x i64 :y i64)\n(defn ->point (x y) (vec x y))\n(defstruct point :x i64 :y i64)\n(use geo area)\n";
+const GEO_WITHOUT_POINT: &str = "(export area)\n(defn area (:p point) 1)\n";
+const PROMPT_EXPRESSION_CALLING_A_BROKEN_MACRO: &str =
+    "(defmacro bad () (template (missing-helper 1)))\n(bad)\n";
+const PROMPT_TWO_ERRORS_IN_ONE_INPUT: &str = "(defstruct user :name str)\n(def karl (->user :name \"karl\"))\n(defn greet () (str (:name karl) (:name karl)))\n(defstruct user :name str :email str)\n";
+const SHAPES_WITH_A_TYPO: &str =
+    "(write-file \"shapes.rslisp\" \"(export circle)\\n(defn circle (r) (nope r))\\n\")\n";
+const WRITE_FILE: &str = "(def write-file (rust \"std::fs::write({0}, {1}).unwrap()\" (fn ((ref str) (ref str)) unit)))\n";
+const SHAPES_WITHOUT_SQUARE: &str =
+    "(write-file \"shapes.rslisp\" \"(export circle)\\n(defn circle (r) r)\\n\")\n";
 const PROMPT_EXTRA_CLOSE: &str = "(+ 1 2))\n(+ 3 4)\n(+ 3 \"a\")\n";
 const PROMPT_ENUM_REDEFINITION: &str = "(enum shape circle square)\n(enum shape circle square triangle)\n(match shape/triangle (triangle 3) (_ 0))\n";
 const PROMPT_WARNING: &str = "(defn pick (x) (match x (_ 1) (_ 2)))\n(pick 1)\n(defn other () 1)\n(defn another () 2)\n(pick 2)\n";
@@ -2375,7 +2395,7 @@ fn repl_replaces_an_earlier_definition_of_the_same_name() {
 }
 
 #[test]
-fn repl_rejects_a_replacement_that_would_drop_a_name() {
+fn repl_sets_aside_a_name_that_a_replacement_drops() {
     let sandbox = Sandbox::new("repl_dropping_replacement");
     let repl = sandbox.compiler_reading(PROMPT_DROPPING_REPLACEMENT, &["repl"]);
     insta::assert_snapshot!(repl.transcript());
@@ -2417,7 +2437,7 @@ fn repl_ends_an_input_at_an_extra_close() {
 }
 
 #[test]
-fn repl_resolves_use_from_the_root_and_replaces_by_the_same_rule() {
+fn repl_resolves_use_from_the_root_and_sets_aside_an_import_it_drops() {
     let sandbox = Sandbox::new("repl_uses").with_file("lib/shapes.rslisp", SHAPES_OF_TWO);
     let repl = sandbox.compiler_reading(PROMPT_USES, &["repl", "--root", "lib"]);
     insta::assert_snapshot!(repl.transcript());
@@ -2548,4 +2568,131 @@ fn color_never_keeps_the_repl_prompt_and_exit_note_plain() {
         session.contains(&PromptColors::plain_exit_note()),
         "{session:?}"
     );
+}
+
+struct RedefinitionSession;
+
+impl RedefinitionSession {
+    fn transcript(name: &str, input: &str) -> String {
+        let sandbox = Sandbox::new(name).with_file("shapes.rslisp", SHAPES_OF_TWO);
+        sandbox.compiler_reading(input, &["repl"]).transcript()
+    }
+
+    fn after_a_module_change(rest: &str) -> String {
+        format!(
+            "{WRITE_FILE}(use shapes circle square)\n(defn area () (square 2))\n{SHAPES_WITHOUT_SQUARE}{rest}"
+        )
+    }
+}
+
+#[test]
+fn repl_sets_aside_an_input_that_a_redefinition_breaks() {
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_redefined_struct",
+        PROMPT_REDEFINED_STRUCT
+    ));
+}
+
+#[test]
+fn repl_sets_aside_the_inputs_that_a_set_aside_input_breaks() {
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_cascade",
+        PROMPT_CASCADE
+    ));
+}
+
+#[test]
+fn repl_rejects_a_call_to_a_broken_macro() {
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_broken_macro_called",
+        PROMPT_BROKEN_MACRO_CALLED
+    ));
+}
+
+#[test]
+fn repl_rejects_a_broken_macro_that_an_earlier_input_calls() {
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_broken_macro_redefined",
+        PROMPT_BROKEN_MACRO_REDEFINED
+    ));
+}
+
+#[test]
+fn repl_notes_a_name_that_an_input_stops_binding() {
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_stops_binding",
+        PROMPT_STOPS_BINDING
+    ));
+}
+
+#[test]
+fn repl_sets_aside_the_later_of_two_inputs_that_bind_one_name() {
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_two_binders",
+        PROMPT_TWO_BINDERS
+    ));
+}
+
+#[test]
+fn repl_notes_what_a_rejected_input_would_set_aside() {
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_would_set_aside",
+        PROMPT_WOULD_SET_ASIDE
+    ));
+}
+
+#[test]
+fn repl_sets_aside_the_inputs_of_a_module_changed_on_disk() {
+    let input = RedefinitionSession::after_a_module_change("(defn z () 1)\n(area)\n");
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_module_changed",
+        &input
+    ));
+}
+
+#[test]
+fn repl_helps_an_expression_after_a_module_change() {
+    let input = RedefinitionSession::after_a_module_change("(circle 2)\n");
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_expression_after_module_change",
+        &input
+    ));
+}
+
+#[test]
+fn repl_forgets_the_record_of_a_name_entered_again() {
+    let sandbox = Sandbox::new("repl_re_entered_type").with_file("geo.rslisp", GEO_WITHOUT_POINT);
+    let repl = sandbox.compiler_reading(PROMPT_RE_ENTERED_TYPE, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_gives_an_expression_calling_a_broken_macro_no_module_help() {
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_expression_broken_macro",
+        PROMPT_EXPRESSION_CALLING_A_BROKEN_MACRO
+    ));
+}
+
+#[test]
+fn repl_warns_once_for_an_input_with_two_errors() {
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_two_errors_in_one_input",
+        PROMPT_TWO_ERRORS_IN_ONE_INPUT
+    ));
+}
+
+#[test]
+fn repl_keeps_the_suggestion_of_a_module_typo_before_the_help_to_enter_again() {
+    let input = format!("{WRITE_FILE}(use shapes circle)\n{SHAPES_WITH_A_TYPO}(defn z () 1)\n");
+    insta::assert_snapshot!(RedefinitionSession::transcript("repl_module_typo", &input));
+}
+
+#[test]
+fn repl_helps_an_expression_whose_error_lies_in_a_changed_module() {
+    let input = format!("{WRITE_FILE}(use shapes circle)\n{SHAPES_WITH_A_TYPO}(circle 2)\n");
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_expression_module_typo",
+        &input
+    ));
 }
