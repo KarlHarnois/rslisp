@@ -1,0 +1,21 @@
+---
+source: tests/cli.rs
+expression: "RedefinitionSession::transcript(\"repl_two_binders\", PROMPT_TWO_BINDERS)"
+---
+exit code: Some(0)
+--- stdout
+1
+--- stderr
+warning[L0249]: set aside `bar` after `<input 5>`
+ --> <input 4>:1:7
+  |
+1 | (defn bar () 2)
+  |       ^^^ defined again here
+  |
+ ::: <input 3>:1:9
+  |
+1 | (mk foo bar)
+  |         --- first defined here
+  |
+  = note: error[L0203]: `bar` is defined more than once
+  = help: enter `bar` again to use it

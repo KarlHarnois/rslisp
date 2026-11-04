@@ -1,0 +1,20 @@
+---
+source: tests/cli.rs
+expression: "RedefinitionSession::transcript(\"repl_module_typo\", &input)"
+---
+exit code: Some(0)
+--- stdout
+--- stderr
+warning[L0249]: set aside `circle` after `<input 4>`
+ --> ./shapes.rslisp:2:19
+  |
+2 | (defn circle (r) (nope r))
+  |                   ^^^^ not found in this scope
+  |
+  = note: error[L0201]: cannot find `nope` in this scope
+help: a name with a similar spelling exists
+  |
+2 - (defn circle (r) (nope r))
+2 + (defn circle (r) (none r))
+  |
+help: enter `circle` again to use it

@@ -434,19 +434,6 @@ impl ExpandProblems {
         }
     }
 
-    pub fn dropped_by_replacement(
-        name: &str,
-        span: Span,
-        previous: Span,
-        dropped: &str,
-    ) -> Diagnostic {
-        Self::duplicate(name, span, Some(previous))
-            .with_note(format!(
-                "replacing the earlier input would drop `{dropped}`"
-            ))
-            .with_help(format!("give `{name}` another name to keep `{dropped}`"))
-    }
-
     pub fn set_aside(input: &SetAsideInput<'_>, error: &Diagnostic) -> Diagnostic {
         let primary = error.primary();
         let warning = Diagnostic::warning(
@@ -462,7 +449,11 @@ impl ExpandProblems {
             labeled.with_note(Self::error_line(error)),
             |warning, note| warning.with_note(note.clone()),
         );
-        Self::with_helps_of(noted, error).with_help(input.enter_again())
+        let helped = Self::with_helps_of(noted, error).with_help(input.enter_again());
+        match error.missing_name() {
+            Some(missing) => helped.with_missing_name(missing.clone()),
+            None => helped,
+        }
     }
 
     pub fn dropped(input: &SetAsideInput<'_>, replacing: &str, span: Span) -> Diagnostic {

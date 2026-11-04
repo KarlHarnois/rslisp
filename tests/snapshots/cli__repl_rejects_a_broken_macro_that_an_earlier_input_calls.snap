@@ -1,0 +1,20 @@
+---
+source: tests/cli.rs
+expression: "RedefinitionSession::transcript(\"repl_broken_macro_redefined\",\nPROMPT_BROKEN_MACRO_REDEFINED)"
+---
+exit code: Some(0)
+--- stdout
+1
+--- stderr
+error[L0201]: cannot find `missing-helpr` in this scope
+ --> <input 3>:1:29
+  |
+1 | (defmacro bad () (template (missing-helpr 1)))
+  |                             ^^^^^^^^^^^^^ not found in this scope
+  |
+ ::: <input 2>:1:12
+  |
+1 | (defn f () (bad))
+  |            ----- in this macro call
+  |
+  = note: in this expansion of `bad`

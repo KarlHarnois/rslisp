@@ -1,0 +1,23 @@
+---
+source: tests/cli.rs
+expression: repl.transcript()
+---
+exit code: Some(0)
+--- stdout
+12
+--- stderr
+warning[L0249]: set aside `square` after `<input 3>`
+ --> <input 1>:1:20
+  |
+1 | (use shapes circle square)
+  |                    ^^^^^^ set aside
+  |
+  = note: `circle` replaced the input that defined `square`
+  = help: enter `square` again to use it
+error[L0201]: cannot find `square` in this scope
+ --> <input 4>:1:2
+  |
+1 | (square 3)
+  |  ^^^^^^ not found in this scope
+  |
+  = note: `<input 3>` set aside `square`: `circle` replaced the input that defined `square`

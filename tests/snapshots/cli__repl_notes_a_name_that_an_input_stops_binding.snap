@@ -1,0 +1,15 @@
+---
+source: tests/cli.rs
+expression: "RedefinitionSession::transcript(\"repl_stops_binding\", PROMPT_STOPS_BINDING)"
+---
+exit code: Some(0)
+--- stdout
+1
+--- stderr
+error[L0201]: cannot find `foo` in this scope
+ --> <input 5>:1:2
+  |
+1 | (foo)
+  |  ^^^ not found in this scope
+  |
+  = note: `<input 3>` no longer defines `foo` after `<input 4>`

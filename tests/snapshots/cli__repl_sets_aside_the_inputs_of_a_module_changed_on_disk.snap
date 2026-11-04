@@ -1,0 +1,33 @@
+---
+source: tests/cli.rs
+expression: "RedefinitionSession::transcript(\"repl_module_changed\", &input)"
+---
+exit code: Some(0)
+--- stdout
+--- stderr
+warning[L0249]: set aside `circle` and `square` after `<input 5>`
+ --> <input 2>:1:20
+  |
+1 | (use shapes circle square)
+  |                    ^^^^^^ not exported
+  |
+  = note: error[L0205]: module `shapes` does not export `square`
+  = help: add `square` to the `export` list of `shapes`
+  = help: enter `circle` and `square` again to use them
+
+warning[L0249]: set aside `area` after `<input 5>`
+ --> <input 3>:1:16
+  |
+1 | (defn area () (square 2))
+  |                ^^^^^^ not found in this scope
+  |
+  = note: error[L0201]: cannot find `square` in this scope
+  = note: `<input 5>` set aside `square`: module `shapes` does not export `square`
+  = help: enter `area` again to use it
+error[L0201]: cannot find `area` in this scope
+ --> <input 6>:1:2
+  |
+1 | (area)
+  |  ^^^^ not found in this scope
+  |
+  = note: `<input 5>` set aside `area`: cannot find `square` in this scope

@@ -1,0 +1,25 @@
+---
+source: tests/cli.rs
+expression: "RedefinitionSession::transcript(\"repl_two_errors_in_one_input\",\nPROMPT_TWO_ERRORS_IN_ONE_INPUT)"
+---
+exit code: Some(0)
+--- stdout
+--- stderr
+warning[L0249]: set aside `karl` after `<input 4>`
+ --> <input 2>:1:11
+  |
+1 | (def karl (->user :name "karl"))
+  |           ^^^^^^^^^^^^^^^^^^^^^ each missing field needs a value
+  |
+  = note: error[L0409]: missing field `email` in `user`
+  = help: enter `karl` again to use it
+
+warning[L0249]: set aside `greet` after `<input 4>`
+ --> <input 3>:1:28
+  |
+1 | (defn greet () (str (:name karl) (:name karl)))
+  |                            ^^^^ not found in this scope
+  |
+  = note: error[L0201]: cannot find `karl` in this scope
+  = note: `<input 4>` set aside `karl`: missing field `email` in `user`
+  = help: enter `greet` again to use it
