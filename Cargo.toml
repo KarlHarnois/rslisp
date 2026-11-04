@@ -14,9 +14,11 @@ rustc-hash = "2.1"
 
 [dependencies]
 anstream = "1.0.0"
+anstyle = "1.0.14"
 clap = { version = "4.6", features = ["derive"] }
 rslisp-expand = { path = "expand" }
 rustc-hash = { workspace = true }
+rustyline = { version = "19.0.0", default-features = false, features = ["buffer-redux", "custom-bindings", "with-file-history"] }
 serde_json = "1"
 similar = "2.7"
 
