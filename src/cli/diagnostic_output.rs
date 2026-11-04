@@ -9,6 +9,7 @@ use crate::source::{SourceMap, TextPosition};
 
 pub trait DiagnosticOutput {
     fn write(&self, sources: &SourceMap, diagnostics: &Diagnostics);
+    fn write_note(&self, sources: &SourceMap, message: &str);
 }
 
 pub struct RenderedDiagnostics {
@@ -30,6 +31,10 @@ impl DiagnosticOutput for RenderedDiagnostics {
             "{}",
             CappedReport::new(self.renderer(sources)).render(diagnostics)
         );
+    }
+
+    fn write_note(&self, sources: &SourceMap, message: &str) {
+        eprintln!("{}", self.renderer(sources).render_note(message));
     }
 }
 
@@ -64,6 +69,13 @@ impl DiagnosticOutput for JsonDiagnostics {
             .collect();
         let reply = JsonObject::listing(Self::FIELD, entries);
         let _ = self.replies.send(reply);
+    }
+
+    fn write_note(&self, sources: &SourceMap, message: &str) {
+        eprintln!(
+            "{}",
+            DiagnosticRenderer::plain(sources).render_note(message)
+        );
     }
 }
 

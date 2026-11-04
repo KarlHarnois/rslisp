@@ -571,6 +571,15 @@ Field names are not hygienic. They are looked up through the struct type.
 
 **`eval --json` never colors, whatever the decision:** an editor parses each `rendered` field.
 
+**The prompt colors two lines of its own:**
+
+| Line | Color | Follows |
+| --- | --- | --- |
+| the prompt `> ` | bold bright blue, the style of the diagnostics' line numbers | standard output's decision |
+| `note: the program exited with code N` | a diagnostic note | standard error's decision |
+
+The continuation prompt of two spaces stays plain.
+
 ## Rust interop
 
 `rust` binds a name to a piece of Rust:

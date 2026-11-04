@@ -1,6 +1,8 @@
 use std::io::{self, BufRead, IsTerminal, Write};
 
-use crate::diagnostic::DiagnosticCode;
+use anstream::{AutoStream, ColorChoice};
+
+use crate::diagnostic::{DiagnosticCode, DiagnosticRenderer};
 use crate::reader::Reader;
 use crate::source::SourceMap;
 
@@ -12,6 +14,7 @@ pub enum EnteredText {
 pub struct PromptLines<R> {
     input: R,
     shows_prompts: bool,
+    prompt: String,
 }
 
 impl PromptLines<io::StdinLock<'static>> {
@@ -21,6 +24,7 @@ impl PromptLines<io::StdinLock<'static>> {
         Self {
             input: input.lock(),
             shows_prompts,
+            prompt: Self::prompt_for(AutoStream::choice(&io::stdout())),
         }
     }
 }
@@ -35,7 +39,7 @@ impl<R: BufRead> PromptLines<R> {
 
     pub fn next_text(&mut self) -> io::Result<Option<EnteredText>> {
         let mut text = String::new();
-        self.show(Self::PROMPT)?;
+        self.show(&self.prompt)?;
         while self.input.read_line(&mut text)? > 0 {
             if !Self::awaits_more(&text) {
                 return Ok(Some(EnteredText::Complete(text)));
@@ -43,6 +47,16 @@ impl<R: BufRead> PromptLines<R> {
             self.show(Self::CONTINUATION)?;
         }
         Ok((!text.is_empty()).then_some(EnteredText::Unfinished(text)))
+    }
+
+    fn prompt_for(standard_output: ColorChoice) -> String {
+        match standard_output {
+            ColorChoice::Never => Self::PROMPT.to_string(),
+            _ => {
+                let style = DiagnosticRenderer::GUTTER_STYLE;
+                format!("{style}{}{style:#}", Self::PROMPT)
+            }
+        }
     }
 
     fn awaits_more(text: &str) -> bool {
@@ -82,6 +96,7 @@ mod tests {
             let mut lines = PromptLines {
                 input: input.as_bytes(),
                 shows_prompts: false,
+                prompt: String::new(),
             };
             let mut texts = Vec::new();
             while let Some(text) = lines.next_text().expect("a byte slice reads") {
@@ -96,6 +111,20 @@ mod tests {
                 EnteredText::Unfinished(text) => format!("unfinished {text:?}"),
             }
         }
+    }
+
+    #[test]
+    fn the_prompt_is_plain_when_standard_output_is_not_colored() {
+        assert_eq!(PromptLines::<&[u8]>::prompt_for(ColorChoice::Never), "> ");
+    }
+
+    #[test]
+    fn the_prompt_takes_the_gutter_style_when_standard_output_is_colored() {
+        let style = DiagnosticRenderer::GUTTER_STYLE;
+        assert_eq!(
+            PromptLines::<&[u8]>::prompt_for(ColorChoice::Always),
+            format!("{style}> {style:#}")
+        );
     }
 
     #[test]
