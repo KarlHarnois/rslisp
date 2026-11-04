@@ -542,11 +542,16 @@ Field names are not hygienic. They are looked up through the struct type.
 
 **The CLI decides once at start-up, for each output stream, whether to color it** ([RFC 0050](../rfcs/0050-repl-colors.md)). The diagnostics and the help follow the same decision. The first step that applies decides:
 
-1. A non-empty `NO_COLOR` turns color off.
-2. A non-empty `CLICOLOR_FORCE` turns color on.
-3. `CLICOLOR=0` turns color off.
-4. A stream that is a terminal is colored when `TERM` is set and is not `dumb`, when `CLICOLOR` is set and is not `0`, or when `CI` is set.
-5. Otherwise the stream is plain.
+1. `--color always` or `--color never` decides.
+2. A non-empty `NO_COLOR` turns color off.
+3. A non-empty `CLICOLOR_FORCE` turns color on.
+4. `CLICOLOR=0` turns color off.
+5. A stream that is a terminal is colored when `TERM` is set and is not `dumb`, when `CLICOLOR` is set and is not `0`, or when `CI` is set.
+6. Otherwise the stream is plain.
+
+**`--color auto|always|never` is a global argument, so it MAY follow the subcommand.** The CLI reads it before it parses the other arguments, up to a `--`, so the help and a usage error follow it too. `auto` is the default. A value other than `auto`, `always` or `never` is a usage error, colored by `auto`'s rule.
+
+**`eval --json` never colors, whatever the decision:** an editor parses each `rendered` field.
 
 ## Rust interop
 

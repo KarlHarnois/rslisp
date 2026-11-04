@@ -2081,3 +2081,149 @@ fn color_follows_the_decision_in_eval_forms_that_do_not_read() {
     assert!(eval.stderr().contains("L0101"), "{}", eval.stderr());
     assert!(eval.stderr_is_colored(), "{}", eval.stderr());
 }
+
+#[test]
+fn color_always_colors_diagnostics_in_a_pipe() {
+    let sandbox = Sandbox::new("color_always").with_file("unbound.rslisp", UNBOUND_NAME);
+    let check =
+        sandbox.compiler_with_colors(&[], &["--color", "always", "check", "unbound.rslisp"]);
+    assert!(
+        check.assert_exit_code(1).stderr_is_colored(),
+        "{}",
+        check.stderr()
+    );
+}
+
+#[test]
+fn color_never_wins_over_clicolor_force_after_the_subcommand() {
+    let sandbox = Sandbox::new("color_never").with_file("unbound.rslisp", UNBOUND_NAME);
+    let environment = [("CLICOLOR_FORCE", "1")];
+    let check =
+        sandbox.compiler_with_colors(&environment, &["check", "unbound.rslisp", "--color=never"]);
+    assert!(
+        !check.assert_exit_code(1).stderr_is_colored(),
+        "{}",
+        check.stderr()
+    );
+}
+
+#[test]
+fn color_never_keeps_the_help_plain_before_the_subcommand() {
+    let sandbox = Sandbox::new("color_never_help");
+    let environment = [("CLICOLOR_FORCE", "1")];
+    let help = sandbox.compiler_with_colors(&environment, &["--color", "never", "--help"]);
+    assert!(
+        !help.assert_exit_code(0).stdout_is_colored(),
+        "{}",
+        help.stdout()
+    );
+}
+
+#[test]
+fn color_never_keeps_the_help_plain_after_the_subcommand() {
+    let sandbox = Sandbox::new("color_never_command_help");
+    let environment = [("CLICOLOR_FORCE", "1")];
+    let help = sandbox.compiler_with_colors(&environment, &["check", "--help", "--color=never"]);
+    assert!(
+        !help.assert_exit_code(0).stdout_is_colored(),
+        "{}",
+        help.stdout()
+    );
+}
+
+#[test]
+fn color_always_colors_the_help_after_the_subcommand() {
+    let sandbox = Sandbox::new("color_always_command_help");
+    let help = sandbox.compiler_with_colors(&[], &["check", "--help", "--color", "always"]);
+    assert!(
+        help.assert_exit_code(0).stdout_is_colored(),
+        "{}",
+        help.stdout()
+    );
+}
+
+#[test]
+fn color_never_keeps_a_usage_error_plain() {
+    let sandbox = Sandbox::new("color_never_usage");
+    let environment = [("CLICOLOR_FORCE", "1")];
+    let usage = sandbox.compiler_with_colors(&environment, &["--color", "never", "nonsense"]);
+    assert!(
+        !usage.assert_exit_code(2).stderr_is_colored(),
+        "{}",
+        usage.stderr()
+    );
+}
+
+#[test]
+fn color_always_colors_a_usage_error() {
+    let sandbox = Sandbox::new("color_always_usage");
+    let usage = sandbox.compiler_with_colors(&[], &["--color", "always", "nonsense"]);
+    assert!(
+        usage.assert_exit_code(2).stderr_is_colored(),
+        "{}",
+        usage.stderr()
+    );
+}
+
+#[test]
+fn color_after_the_end_of_options_is_not_read() {
+    let sandbox = Sandbox::new("color_after_end");
+    let usage = sandbox.compiler_with_colors(&[], &["nonsense", "--", "--color", "always"]);
+    assert!(
+        !usage.assert_exit_code(2).stderr_is_colored(),
+        "{}",
+        usage.stderr()
+    );
+}
+
+#[test]
+fn color_with_an_unknown_value_is_a_usage_error_under_auto() {
+    let sandbox = Sandbox::new("color_unknown").with_file("unbound.rslisp", UNBOUND_NAME);
+    let environment = [("CLICOLOR_FORCE", "1")];
+    let arguments = ["--color", "sometimes", "check", "unbound.rslisp"];
+    let forced = sandbox.compiler_with_colors(&environment, &arguments);
+    let piped = sandbox.compiler_with_colors(&[], &arguments);
+    assert!(
+        forced.assert_exit_code(2).stderr().contains("sometimes"),
+        "{}",
+        forced.stderr()
+    );
+    assert!(forced.stderr_is_colored(), "{}", forced.stderr());
+    assert!(
+        !piped.assert_exit_code(2).stderr_is_colored(),
+        "{}",
+        piped.stderr()
+    );
+}
+
+#[test]
+fn color_follows_the_last_color_argument() {
+    let sandbox = Sandbox::new("color_last");
+    let arguments = ["--color", "always", "check", "--help", "--color", "never"];
+    let help = sandbox.compiler_with_colors(&[], &arguments);
+    assert!(
+        !help.assert_exit_code(0).stdout_is_colored(),
+        "{}",
+        help.stdout()
+    );
+}
+
+#[test]
+fn color_always_keeps_eval_json_plain() {
+    let sandbox = Sandbox::new("color_json").with_file("session.rslisp", SESSION);
+    let arguments = [
+        "--color",
+        "always",
+        "eval",
+        "--json",
+        "session.rslisp",
+        "(+ 1 \"b\")",
+    ];
+    let eval = sandbox.compiler_with_colors(&[], &arguments);
+    let replies = eval.assert_exit_code(1).json_replies();
+    let rendered = replies[0]["diagnostics"][0]["rendered"].as_str();
+    assert!(
+        rendered.is_some_and(|text| text.starts_with("error[L0401]")),
+        "{rendered:?}"
+    );
+}
