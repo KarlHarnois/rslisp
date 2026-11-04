@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use super::evaluation_output::EvaluationOutput;
 use super::exit_status::ExitStatus;
 use super::temporary_directory::TemporaryDirectory;
-use super::terminal::{BuildTarget, EvaluationRequest, Terminal};
+use super::terminal::{BuildTarget, EvaluationRequest, ModuleOfSources, Terminal};
 use crate::build::BuildProfile;
 use crate::check::ProgramChecker;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, Diagnostics};
@@ -31,9 +31,11 @@ pub struct EvaluationSettings {
 pub enum ModuleText {
     File(PathBuf),
     StandardInput(PathBuf),
+    Loaded(PathBuf, Vec<SourceId>),
 }
 
 pub struct FormsText {
+    name: String,
     text: String,
     position: Option<TextPosition>,
 }
@@ -64,15 +66,16 @@ impl EvalCommand {
     }
 
     fn evaluate(&self, terminal: &mut Terminal) -> Result<ExitStatus, ExitStatus> {
-        let module = self.module.load(terminal)?;
-        let ranges = self.forms.ranges(terminal, self.module.path(), module)?;
+        let module = self.load_module(terminal)?;
+        let anchor = module.anchor();
+        let ranges = self.forms.ranges(terminal, self.module.path(), anchor)?;
         let expanded = self.expand(terminal, module, &ranges)?;
-        let module_warnings = terminal.check_expanded(&expanded.program)?.warnings;
+        let module_warnings = self.module.check(terminal, &expanded.program)?.warnings;
         terminal.print_diagnostics(&expanded.definition_notes());
         let Some(entry) = expanded.entry(terminal)? else {
             return Ok(ExitStatus::Success);
         };
-        let enclosing = self.forms.enclosing(module);
+        let enclosing = self.forms.enclosing(anchor);
         let shown = ShownWarnings::new(expanded.forms_source, enclosing, module_warnings);
         let checked = expanded.checked_with_printing(terminal, &entry, &shown)?;
         let emitted = terminal.emit_checked(&checked.program)?;
@@ -82,17 +85,23 @@ impl EvalCommand {
     fn expand(
         &self,
         terminal: &mut Terminal,
-        module: SourceId,
+        module: ModuleOfSources,
         ranges: &[Range<usize>],
     ) -> Result<ExpandedEvaluation, ExitStatus> {
         let request = EvaluationRequest {
-            module: self.module.path().to_path_buf(),
-            root: self.root(),
-            entry: module,
-            evaluated: self.forms.module_spans(module, ranges),
+            evaluated: self.forms.module_spans(module.anchor(), ranges),
+            module,
         };
         terminal.within_evaluation(&request, |session| {
             ExpandedEvaluation::new(session, &request, &self.forms, self.output.as_ref())
+        })
+    }
+
+    fn load_module(&self, terminal: &mut Terminal) -> Result<ModuleOfSources, ExitStatus> {
+        Ok(ModuleOfSources {
+            path: self.module.path().to_path_buf(),
+            root: self.root(),
+            sources: self.module.load(terminal)?,
         })
     }
 
@@ -129,17 +138,29 @@ impl EvalCommand {
 impl ModuleText {
     fn path(&self) -> &Path {
         match self {
-            Self::File(path) | Self::StandardInput(path) => path,
+            Self::File(path) | Self::StandardInput(path) | Self::Loaded(path, _) => path,
         }
     }
 
-    fn load(&self, terminal: &mut Terminal) -> Result<SourceId, ExitStatus> {
+    fn load(&self, terminal: &mut Terminal) -> Result<Vec<SourceId>, ExitStatus> {
         match self {
-            Self::File(path) => terminal.load(path),
+            Self::File(path) => Ok(vec![terminal.load(path)?]),
             Self::StandardInput(path) => match ModuleSources::read_standard_input() {
-                Ok(text) => Ok(terminal.add_source(path, text)),
+                Ok(text) => Ok(vec![terminal.add_source(path, text)]),
                 Err(error) => Err(Self::report_unreadable_input(&error)),
             },
+            Self::Loaded(_, sources) => Ok(sources.clone()),
+        }
+    }
+
+    fn check(
+        &self,
+        terminal: &mut Terminal,
+        program: &Program,
+    ) -> Result<TypedProgram, ExitStatus> {
+        match self {
+            Self::Loaded(..) => terminal.check_showing(program, |_| false),
+            Self::File(_) | Self::StandardInput(_) => terminal.check_expanded(program),
         }
     }
 
@@ -153,7 +174,15 @@ impl FormsText {
     const SOURCE_NAME: &'static str = "<eval>";
 
     pub fn new(text: String, position: Option<TextPosition>) -> Self {
-        Self { text, position }
+        Self::named(Self::SOURCE_NAME.to_string(), text, position)
+    }
+
+    pub fn named(name: String, text: String, position: Option<TextPosition>) -> Self {
+        Self {
+            name,
+            text,
+            position,
+        }
     }
 
     fn ranges(
@@ -176,7 +205,7 @@ impl FormsText {
         module: &Path,
     ) -> Result<SourceId, ExitStatus> {
         let Some(position) = self.position else {
-            return Ok(scratch.add_named_source(Self::SOURCE_NAME, &self.text));
+            return Ok(scratch.add_named_source(&self.name, &self.text));
         };
         scratch
             .add_source_inside(enclosing, position, &self.text)
@@ -188,7 +217,7 @@ impl FormsText {
             Some(position) => session
                 .add_source_inside(module, position, &self.text)
                 .expect("the forms were found at their position before expansion"),
-            None => session.add_source(Self::SOURCE_NAME, &self.text),
+            None => session.add_source(&self.name, &self.text),
         }
     }
 
@@ -236,7 +265,7 @@ impl ExpandedEvaluation {
         text: &FormsText,
         output: &dyn EvaluationOutput,
     ) -> Result<Self, Diagnostics> {
-        let forms_source = text.add_to_session(&mut session, request.entry);
+        let forms_source = text.add_to_session(&mut session, request.module.anchor());
         let forms = session.read(forms_source)?;
         let definitions = Self::definitions(&session, request);
         let (form_numbers, running): (Vec<usize>, Vec<Form>) = (1..)

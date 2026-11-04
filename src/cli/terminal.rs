@@ -28,10 +28,20 @@ pub struct BuildOptions {
 }
 
 pub struct EvaluationRequest {
-    pub module: PathBuf,
-    pub root: PathBuf,
-    pub entry: SourceId,
+    pub module: ModuleOfSources,
     pub evaluated: Vec<Span>,
+}
+
+pub struct ModuleOfSources {
+    pub path: PathBuf,
+    pub root: PathBuf,
+    pub sources: Vec<SourceId>,
+}
+
+impl ModuleOfSources {
+    pub fn anchor(&self) -> SourceId {
+        self.sources[0]
+    }
 }
 
 pub struct BuildTarget<'a> {
@@ -278,9 +288,10 @@ impl Terminal {
         request: &EvaluationRequest,
         work: impl FnOnce(ExpansionSession<'_>) -> Result<T, Diagnostics>,
     ) -> Result<T, ExitStatus> {
-        self.expander_rooted(&request.root)
+        let module = &request.module;
+        self.expander_rooted(&module.root)
             .evaluating(request.evaluated.iter().copied())
-            .open(Self::module_path(&request.module), &[request.entry])
+            .open(Self::module_path(&module.path), &module.sources)
             .and_then(work)
             .map_err(|diagnostics| self.report(&diagnostics))
     }
