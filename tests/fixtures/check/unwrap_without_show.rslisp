@@ -1,0 +1,6 @@
+(defstruct failure :retry (fn () i64))
+
+(defn retry-now () 1)
+
+(defn main ()
+  (println (unwrap-ok (the (result i64 failure) (err (->failure retry-now))))))

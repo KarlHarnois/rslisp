@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/unwrap_shows_error.rslisp
+---
+1
+e
+2

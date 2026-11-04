@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/box_annotation.rslisp
 ---
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 struct Circle {
     radius: f64,
 }

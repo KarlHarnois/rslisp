@@ -13,6 +13,10 @@ const GREETING: &str = "(defn main ()\n  (println \"hello from the sandbox\"))\n
 const PRINTS_A: &str = "(defn main () (println \"A\"))\n";
 const PRINTS_B: &str = "(defn main () (println \"B\"))\n";
 const MARKED_PROGRAM: &str = "\u{feff}(defn main () (println 1))\n";
+const UNWRAPPED_FAILURE: &str = "(defstruct failure :line i64)
+(defn main ()
+  (println (unwrap-ok (the (result i64 failure) (err (->failure 3))))))
+";
 const UNBOUND_NAME: &str = "(defn main ()\n  (println greeting))\n";
 const ECHO: &str = "(def first-argument (rust \"std::env::args().nth(1).unwrap_or_default()\" string))\n\n(defn main ()\n  (println first-argument))\n";
 const EXIT_THREE: &str =
@@ -908,6 +912,17 @@ fn run_keeps_a_trait_method_vector_parameter_as_written() {
     let sandbox = Sandbox::new("trait_vector").with_file("mileage.rslisp", TRAIT_SHARED_VECTOR);
     let run = sandbox.compiler(&["run", "mileage.rslisp"]);
     assert_eq!(run.assert_exit_code(0).stdout(), "1210\n");
+}
+
+#[test]
+fn run_panics_with_the_printed_form_of_an_unwrapped_error() {
+    let sandbox = Sandbox::new("unwrapped_failure").with_file("failure.rslisp", UNWRAPPED_FAILURE);
+    let run = sandbox.compiler(&["run", "failure.rslisp"]);
+    assert!(
+        run.assert_exit_code(101)
+            .stderr()
+            .contains("called unwrap-ok on (err (->failure :line 3))")
+    );
 }
 
 #[test]

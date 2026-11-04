@@ -35,6 +35,9 @@ impl Fixture {
     const FIXTURE_ROOT: &str = "tests/fixtures";
     const RUN_DEADLINE: Duration = Duration::from_secs(10);
     const EXIT_POLL_INTERVAL: Duration = Duration::from_millis(10);
+    const PANIC_THREAD: &str = "thread '";
+    const PANIC_LOCATION: &str = " panicked at ";
+    const PATH_SEPARATOR: char = '/';
 
     pub fn load(path: &Path) -> Self {
         let text = fs::read_to_string(path).expect("fixture is readable");
@@ -192,8 +195,28 @@ impl Fixture {
                 .status
                 .code()
                 .map_or_else(|| "a signal".to_string(), |code| code.to_string());
+            let stderr = Self::without_run_details(&stderr);
             format!("{stdout}stderr:\n{stderr}exit code: {code}\n")
         }
+    }
+
+    fn without_run_details(stderr: &str) -> String {
+        stderr
+            .split_inclusive('\n')
+            .map(|line| Self::panic_header(line).unwrap_or_else(|| line.to_string()))
+            .collect()
+    }
+
+    fn panic_header(line: &str) -> Option<String> {
+        let rest = line.strip_prefix(Self::PANIC_THREAD)?;
+        let (thread, location) = rest.split_once(Self::PANIC_LOCATION)?;
+        let name = thread.split(Self::PANIC_THREAD.chars().last()?).next()?;
+        let file = location.rsplit(Self::PATH_SEPARATOR).next()?;
+        Some(format!(
+            "{}{name}'{}{file}",
+            Self::PANIC_THREAD,
+            Self::PANIC_LOCATION
+        ))
     }
 
     fn run(&self, binary: &Path) -> Output {
@@ -295,5 +318,19 @@ impl Fixture {
             .unwrap_or(path)
             .display()
             .to_string()
+    }
+}
+
+#[cfg(test)]
+mod run_details_tests {
+    use super::Fixture;
+
+    #[test]
+    fn stripping_run_details_keeps_every_line_ending() {
+        let stderr = "first\r\nthread 'main' (42) panicked at /tmp/run/main.rs:3:9:\nlast";
+        assert_eq!(
+            Fixture::without_run_details(stderr),
+            "first\r\nthread 'main' panicked at main.rs:3:9:\nlast"
+        );
     }
 }

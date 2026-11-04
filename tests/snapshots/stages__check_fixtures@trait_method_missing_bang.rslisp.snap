@@ -11,5 +11,5 @@ warning[L0504]: `put` changes an argument, so its name should end with `!`
   |
   = help: rename it `put!`
 
-(derive bag clone debug partial-eq eq hash show)
+(derive bag clone partial-eq eq hash show)
 (type main (fn () unit))

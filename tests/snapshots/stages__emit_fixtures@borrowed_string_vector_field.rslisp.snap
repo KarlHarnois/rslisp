@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/borrowed_string_vector_field.rslisp
 ---
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Car<'a> {
     make: &'a str,
     models: Vec<&'a str>,

@@ -1,0 +1,2 @@
+(defn main ()
+  (println (unwrap-err (the (result (vec i64) string) (ok (vec 1 2))))))

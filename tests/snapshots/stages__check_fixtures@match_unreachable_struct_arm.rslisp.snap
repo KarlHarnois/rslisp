@@ -11,6 +11,6 @@ warning[L0434]: unreachable `match` arm
 6 |     ((range _ end) end)))
   |      ^^^^^^^^^^^^^ this arm can never match
 
-(derive range clone copy debug partial-eq eq hash show)
+(derive range clone copy partial-eq eq hash show)
 (type ->range (fn (i64 i64) range))
 (type total (fn (range) i64))

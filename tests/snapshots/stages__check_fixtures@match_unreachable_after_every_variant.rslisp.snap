@@ -11,5 +11,5 @@ warning[L0434]: unreachable `match` arm
    |
    = note: the earlier arms together cover every value this arm matches
 
-(derive shape clone debug partial-eq show)
+(derive shape clone partial-eq show)
 (type area (fn ((ref shape)) f64))

@@ -15,7 +15,7 @@ fn first<'a>(a: &'a str, b: &str) -> &'a str {
     a
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Snippet<'a> {
     text: &'a str,
 }
@@ -28,7 +28,7 @@ fn literal_snippet() -> Snippet<'static> {
     Snippet { text: "hi" }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Label<'a> {
     text: &'a str,
 }
@@ -37,13 +37,13 @@ fn label_of(source: &str) -> Label<'_> {
     Label { text: source }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum Token<'a> {
     Symbol(&'a str),
     Number(&'a str),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum Tagged<'a> {
     Value(&'a str),
 }

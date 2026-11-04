@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/match_shapes.rslisp
 ---
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 enum Shape {
     Circle(f64),
     Rect(f64, f64),

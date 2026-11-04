@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/trait_default_self.rslisp
 ---
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Car<'a> {
     model: &'a str,
     year: i64,
@@ -13,7 +13,7 @@ fn make_car(model: &str, year: i64) -> Car<'_> {
     Car { model, year }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Truck {
     load: i64,
 }
@@ -22,7 +22,7 @@ fn make_truck(load: i64) -> Truck {
     Truck { load }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Van {
     seats: i64,
 }

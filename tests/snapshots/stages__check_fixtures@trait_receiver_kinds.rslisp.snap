@@ -3,5 +3,5 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/trait_receiver_kinds.rslisp
 ---
-(derive point clone debug partial-eq eq hash show)
+(derive point clone partial-eq eq hash show)
 (type main (fn () unit))

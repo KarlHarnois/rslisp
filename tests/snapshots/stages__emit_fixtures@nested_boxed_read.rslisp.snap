@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/nested_boxed_read.rslisp
 ---
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 enum Tree<A> {
     Node(Box<Tree<A>>, A, Box<Tree<A>>),
     Leaf,

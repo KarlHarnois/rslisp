@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/function_field_returns_its_borrowed_struct.rslisp
 ---
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 struct Node<'a> {
     next: fn() -> Node<'a>,
     label: &'a str,

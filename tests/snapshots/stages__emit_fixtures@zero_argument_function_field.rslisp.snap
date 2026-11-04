@@ -3,29 +3,29 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/zero_argument_function_field.rslisp
 ---
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Car<'a> {
     make: &'a str,
     model: &'a str,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 struct Factory<'a> {
     make: fn() -> Car<'a>,
     label: &'a str,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 struct Line<'a> {
     make: fn() -> Car<'a>,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 struct Dealer<'a> {
     order: fn(bool) -> Car<'a>,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 struct Spare<'a> {
     maker: Option<fn() -> Car<'a>>,
 }

@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/main_body_collision.rslisp
 ---
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum AppError {
     Missing,
 }

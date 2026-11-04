@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: "Fixture::load(path).emit_report()"
 input_file: tests/fixtures/emit/match_references.rslisp
 ---
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 enum Shape {
     Circle(f64),
     Rect(f64, f64),
@@ -20,7 +20,7 @@ fn area(s: &Shape) -> f64 {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 enum CounterState {
     Value(i64),
     Idle,

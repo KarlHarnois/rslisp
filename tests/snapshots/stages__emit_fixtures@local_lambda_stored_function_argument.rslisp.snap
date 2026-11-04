@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/local_lambda_stored_function_argument.rslisp
 ---
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 struct Sorter {
     key: fn(i64) -> i64,
 }

@@ -3,13 +3,13 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/field_through_deref.rslisp
 ---
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Car<'a> {
     make: &'a str,
     year: u16,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Owner<'a> {
     name: &'a str,
     car: Car<'a>,

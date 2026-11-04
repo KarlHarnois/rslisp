@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/field_defaults.rslisp
 ---
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct User<'a> {
     name: &'a str,
     email: &'a str,
@@ -18,13 +18,13 @@ fn make_user<'a>(name: &'a str, email: &'a str, is_admin: bool) -> User<'a> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Client<'a> {
     host: &'a str,
     retries: u8,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Basket<'a> {
     owner: &'a str,
     items: Vec<i64>,

@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/stored_function_option_parameter.rslisp
 ---
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 struct Spare {
     maker: Option<fn() -> i64>,
 }

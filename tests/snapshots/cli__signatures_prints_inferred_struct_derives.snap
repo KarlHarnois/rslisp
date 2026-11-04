@@ -2,7 +2,7 @@
 source: tests/cli.rs
 expression: signatures.assert_exit_code(0).stdout()
 ---
-(derive person clone debug partial-eq eq hash show)
+(derive person clone partial-eq eq hash show)
 (type ->person (fn (string i64) person))
 (type ->ticket (fn (u32) ticket))
 (type main (fn () unit))

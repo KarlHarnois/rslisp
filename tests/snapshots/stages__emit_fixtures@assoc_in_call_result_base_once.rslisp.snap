@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/emit/assoc_in_call_result_base_once.rslisp
 ---
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Point {
     x: i64,
     y: i64,
@@ -13,7 +13,7 @@ fn make_point(x: i64, y: i64) -> Point {
     Point { x, y }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Badge {
     text: String,
     at: Point,
@@ -23,7 +23,7 @@ fn make_badge(text: String, at: Point) -> Badge {
     Badge { text, at }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Garage {
     badge: Badge,
 }
@@ -32,7 +32,7 @@ fn make_garage(badge: Badge) -> Garage {
     Garage { badge }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Lot {
     garage: Garage,
 }

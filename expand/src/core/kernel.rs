@@ -480,7 +480,7 @@ pub struct StructDerives;
 
 impl StructDerives {
     pub const COPY: &'static str = "Copy";
-    pub const INFERRED: [&'static str; 6] = ["Clone", "Copy", "Debug", "PartialEq", "Eq", "Hash"];
+    pub const INFERRED: [&'static str; 5] = ["Clone", "Copy", "PartialEq", "Eq", "Hash"];
     pub const DERIVABLE: [&'static str; 8] = [
         "Clone",
         "Copy",

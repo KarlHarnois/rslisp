@@ -3,5 +3,5 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/recursive_enum.rslisp
 ---
-(derive node clone debug partial-eq eq hash show)
+(derive node clone partial-eq eq hash show)
 (enum node (leaf i64) (branch (box node) (box node)))
