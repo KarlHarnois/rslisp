@@ -4,8 +4,10 @@ mod number;
 mod problems;
 mod string_literal;
 mod syntax;
+mod token;
 
 pub use form::{Form, FormKind, Number, NumberValue, Symbol};
+pub use token::{Token, TokenKind, TokenScan};
 
 use std::ops::Range;
 
@@ -60,12 +62,11 @@ impl<'a> Reader<'a> {
 
     fn skip_trivia(&mut self) -> Option<char> {
         loop {
-            self.cursor.advance_while(char::is_whitespace);
+            self.cursor.skip_whitespace();
             if self.cursor.peek()? != Syntax::COMMENT {
                 return self.cursor.peek();
             }
-            self.cursor
-                .advance_while(|character| character != Syntax::NEWLINE);
+            self.cursor.advance_to_line_end();
         }
     }
 
@@ -184,9 +185,7 @@ impl<'a> Reader<'a> {
 
     fn read_atom(&mut self) -> Option<Form> {
         let start = self.cursor.position();
-        let text = self
-            .cursor
-            .advance_while(|character| !Syntax::ends_atom(character));
+        let text = self.cursor.advance_atom();
         let span = self.span_from(start);
         let literal = NumberLiteral::new(text);
         if !literal.is_number_shaped() {
