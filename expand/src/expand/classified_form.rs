@@ -1,5 +1,6 @@
 use super::Expander;
-use super::evaluated_forms::{BoundName, EvaluatedForms};
+use super::evaluated_forms::EvaluatedForms;
+use super::recorded_inputs::{BoundName, RecordedInputs};
 use crate::core::ModulePath;
 use crate::source::{SourceId, Span};
 
@@ -17,9 +18,10 @@ impl Expander<'_> {
         form: Span,
     ) -> ClassifiedForm {
         self.evaluated_forms = EvaluatedForms::new([form]);
+        self.recorded_inputs = RecordedInputs::new(vec![form]);
         self.load_source_module(path, sources);
         if self.evaluated_forms.is_definition(form) {
-            ClassifiedForm::Definition(self.evaluated_forms.bound_by(form))
+            ClassifiedForm::Definition(self.recorded_inputs.bound_by(form))
         } else {
             ClassifiedForm::Expression
         }

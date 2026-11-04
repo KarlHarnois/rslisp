@@ -1,7 +1,7 @@
 use super::Expander;
 use super::context::DefinitionContext;
-use super::evaluated_forms::BoundName;
 use super::problems::ExpandProblems;
+use super::recorded_inputs::BoundName;
 use crate::core::{BindingId, BindingInfo, BindingKind, ModuleId, Namespace};
 use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
@@ -70,7 +70,7 @@ impl Expander<'_> {
         binding: BindingId,
         span: Span,
     ) -> Result<(), Diagnostic> {
-        self.evaluated_forms.note_bound(span, || {
+        self.recorded_inputs.note_bound(span, || {
             Some(BoundName {
                 name: symbol.shared_name(),
                 namespace,
@@ -91,7 +91,7 @@ impl Expander<'_> {
 
     fn note_bound(&mut self, binder: &Form, namespace: Namespace) {
         let tables = &self.tables;
-        self.evaluated_forms.note_bound(binder.span(), || {
+        self.recorded_inputs.note_bound(binder.span(), || {
             let symbol = binder
                 .as_symbol()
                 .filter(|_| !tables.carries_introduction_scope(binder))?;

@@ -155,6 +155,20 @@ impl Expander<'_> {
         pending: &mut Vec<PendingItem>,
     ) -> Result<(), Diagnostic> {
         let written_span = form.span();
+        let outer = self.recorded_inputs.enter(written_span);
+        let registered = self.register_written_form(module, form, context, pending);
+        self.recorded_inputs.leave(outer);
+        registered
+    }
+
+    fn register_written_form(
+        &mut self,
+        module: ModuleId,
+        form: Form,
+        context: &mut DefinitionContext,
+        pending: &mut Vec<PendingItem>,
+    ) -> Result<(), Diagnostic> {
+        let written_span = form.span();
         let mut spliced = SplicedForms::default();
         pending.extend(self.register_top_level(module, form, context, &mut spliced)?);
         self.register_spliced_forms(module, spliced, context, pending);
