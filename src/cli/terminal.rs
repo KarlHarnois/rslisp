@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::Duration;
 
+use anstream::ColorChoice;
+
 use super::build_directory::BuildDirectory;
 use super::diagnostic_output::{DiagnosticOutput, RenderedDiagnostics};
 use super::exit_status::ExitStatus;
@@ -49,8 +51,12 @@ impl Terminal {
     const WORKING_DIRECTORY: &str = ".";
     const SAVED_PRELUDE: &[u8] = include_bytes!(env!("PRELUDE_STATE"));
 
-    pub fn new() -> Self {
-        Self::reporting_to(Rc::new(RenderedDiagnostics))
+    pub fn new(standard_error: ColorChoice) -> Self {
+        Self::reporting_to(Rc::new(RenderedDiagnostics::new(standard_error)))
+    }
+
+    pub fn scratch(&self) -> Self {
+        Self::reporting_to(self.diagnostic_output())
     }
 
     pub fn reporting_to(diagnostics: Rc<dyn DiagnosticOutput>) -> Self {

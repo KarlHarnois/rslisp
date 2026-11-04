@@ -22,9 +22,11 @@ mod term_parser;
 mod terminal;
 
 use std::convert::Infallible;
+use std::io;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+use anstream::AutoStream;
 use clap::{Args, Parser, Subcommand};
 
 use crate::build::BuildProfile;
@@ -178,7 +180,7 @@ struct TypesFlag {
 
 impl Cli {
     pub fn run(self, allocator: Option<&CountingAllocator>) -> ExitCode {
-        let mut terminal = Terminal::new();
+        let mut terminal = Terminal::new(AutoStream::choice(&io::stderr()));
         let status = self.command.execute(&mut terminal);
         if self.counters {
             let mut report = CounterReport::new(allocator);

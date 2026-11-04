@@ -538,6 +538,16 @@ Field names are not hygienic. They are looked up through the struct type.
 - A `unit` result and a result without the printing bound get no marker and no `value`. The second gets its note in `diagnostics`.
 - A usage error, such as a missing file or forms that are not the module's text at `--line` and `--column`, writes no JSON object: it prints to standard error and exits 2. A build environment that fails, such as a missing `rustc`, prints its error to standard error and ends with `status` and exit 2.
 
+### Colors
+
+**The CLI decides once at start-up, for each output stream, whether to color it** ([RFC 0050](../rfcs/0050-repl-colors.md)). The diagnostics and the help follow the same decision. The first step that applies decides:
+
+1. A non-empty `NO_COLOR` turns color off.
+2. A non-empty `CLICOLOR_FORCE` turns color on.
+3. `CLICOLOR=0` turns color off.
+4. A stream that is a terminal is colored when `TERM` is set and is not `dumb`, when `CLICOLOR` is set and is not `0`, or when `CI` is set.
+5. Otherwise the stream is plain.
+
 ## Rust interop
 
 `rust` binds a name to a piece of Rust:

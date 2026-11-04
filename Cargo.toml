@@ -13,6 +13,7 @@ members = ["expand", "xtask"]
 rustc-hash = "2.1"
 
 [dependencies]
+anstream = "1.0.0"
 clap = { version = "4.6", features = ["derive"] }
 rslisp-expand = { path = "expand" }
 rustc-hash = { workspace = true }

@@ -17,6 +17,8 @@ This guide covers every error the compiler prints. A diagnostic uses rustc's lay
 
 A warning does not stop the build: the compiler prints it and continues.
 
+**The CLI colors diagnostics only when standard error's color decision is to color.** [docs/language.md: Colors](language.md#colors) states the decision.
+
 **The CLI prints at most `CappedReport::MAXIMUM_PRINTED_DIAGNOSTICS` diagnostics, in source order, then one `note:` line that counts the rest.** Every stage still returns every diagnostic.
 
 ```text

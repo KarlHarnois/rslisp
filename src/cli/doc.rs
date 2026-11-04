@@ -107,7 +107,7 @@ impl<'t> DocLookup<'t> {
         environment: &DocEnvironment,
         term: &str,
     ) -> Result<String, ExitStatus> {
-        let read = Self::read_term(term)?;
+        let read = self.read_term(term)?;
         let entry = environment.load(self.terminal)?;
         let expanded = self.terminal.expand_expression(
             &environment.entry(),
@@ -123,7 +123,7 @@ impl<'t> DocLookup<'t> {
         environment: &DocEnvironment,
         term: &str,
     ) -> Result<DocOutput, ExitStatus> {
-        let read = Self::read_term(term)?;
+        let read = self.read_term(term)?;
         let entry = environment.load(self.terminal)?;
         let lookup = self
             .terminal
@@ -138,8 +138,10 @@ impl<'t> DocLookup<'t> {
         Ok(DocOutput::typed(page, type_line))
     }
 
-    fn read_term(term: &str) -> Result<Form, ExitStatus> {
-        let forms = Terminal::new()
+    fn read_term(&self, term: &str) -> Result<Form, ExitStatus> {
+        let forms = self
+            .terminal
+            .scratch()
             .read_text(Self::TERM_SOURCE, term)
             .map_err(|_| ExitStatus::UsageError)?;
         match forms.as_slice() {
