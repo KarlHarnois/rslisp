@@ -29,11 +29,16 @@ impl<'a> Reader<'a> {
     pub fn new(source: &'a SourceFile) -> Self {
         Self {
             source,
-            cursor: Cursor::new(source.text()),
+            cursor: Self::excerpt_cursor(source),
             diagnostics: Diagnostics::default(),
             string_ran_to_end: false,
             open_lists: 0,
         }
+    }
+
+    fn excerpt_cursor(source: &'a SourceFile) -> Cursor<'a> {
+        let excerpt = source.excerpt_range();
+        Cursor::starting_at(&source.text()[..excerpt.end], excerpt.start)
     }
 
     pub fn read(mut self) -> Result<Vec<Form>, Diagnostics> {
@@ -228,5 +233,27 @@ impl<'a> Reader<'a> {
 
     fn span(&self, range: Range<usize>) -> Span {
         Span::new(self.source.id(), range)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Reader;
+    use crate::source::{SourceMap, TextPosition};
+
+    #[test]
+    fn a_source_inside_another_reads_only_its_own_forms_at_their_offsets() {
+        let text = "(defn area (w h) (* w h))\n(area 2 3)\n(area 4 5)\n";
+        let mut sources = SourceMap::default();
+        let module = sources.add("geometry.rslisp", text);
+        let inside = sources
+            .add_inside(module, TextPosition::new(2, 1), "(area 2 3)")
+            .expect("the forms sit at that position");
+        let forms = Reader::new(sources.file(inside))
+            .read()
+            .unwrap_or_else(|_| panic!("the forms read"));
+        let start = text.find("(area 2").expect("the text holds the call");
+        let starts: Vec<usize> = forms.iter().map(|form| form.span().range().start).collect();
+        assert_eq!(starts, [start]);
     }
 }
