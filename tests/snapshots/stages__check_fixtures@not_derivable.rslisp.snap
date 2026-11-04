@@ -9,4 +9,4 @@ error[L0422]: `display` cannot be derived
 2 | (derive ticket display)
   |                ^^^^^^^ not a derivable trait
   |
-  = help: a `derive` lists any of: clone, copy, debug, partial-eq, eq, partial-ord, ord, hash
+  = help: a `derive` lists any of: clone, copy, debug, partial-eq, eq, partial-ord, ord, hash, show

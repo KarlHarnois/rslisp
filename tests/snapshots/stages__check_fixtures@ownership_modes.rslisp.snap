@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/ownership_modes.rslisp
 ---
-(derive person clone debug partial-eq eq hash)
+(derive person clone debug partial-eq eq hash show)
 (type ->person (fn (string i64) person))
 (type label (fn ((ref person)) string))
 (type forward (fn ((ref person)) string))

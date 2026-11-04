@@ -3,10 +3,10 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/inferred_box.rslisp
 ---
-Node(Leaf, 1, Leaf)
+(tree/node tree/leaf 1 tree/leaf)
 1
-Leaf
+tree/leaf
 2
 1
-Holds(Some(Empty), 1)
-Many([None(1)])
+(wrapped/holds (some wrapped/empty) 1)
+(vector-tree/many (vec (vector-tree/none 1)))

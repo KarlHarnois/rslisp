@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/impl_bound_show.rslisp
+---
+(vec (->point :x 1))
+(vec (some (->mark :y 2)))

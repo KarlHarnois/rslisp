@@ -487,6 +487,13 @@ impl TypeProblems {
         ))
     }
 
+    pub fn replacing_impl(span: Span, trait_name: &str, head: &str) -> Label {
+        Label::new(
+            span,
+            format!("this `{trait_name}` replaces the inferred one for every `{head}`"),
+        )
+    }
+
     pub fn first_impl(span: Span) -> Label {
         Label::new(span, "first implemented here")
     }

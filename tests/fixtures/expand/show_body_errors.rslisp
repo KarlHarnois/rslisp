@@ -1,0 +1,10 @@
+(defstruct price :cents i64)
+(show price (p) 42)
+
+(defstruct tag :label str)
+(show tag (t) ((fn () tag)))
+
+(defn main () (prn (->price 1)))
+
+(defstruct blank :x i64)
+(show blank (b) ())

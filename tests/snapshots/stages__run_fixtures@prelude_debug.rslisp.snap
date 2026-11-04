@@ -4,5 +4,5 @@ expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/prelude_debug.rslisp
 ---
 "text"
-[1, 2]
-Some(3)
+(vec 1 2)
+(some 3)

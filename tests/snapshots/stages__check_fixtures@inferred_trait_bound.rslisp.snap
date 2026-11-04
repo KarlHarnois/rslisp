@@ -3,6 +3,6 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/inferred_trait_bound.rslisp
 ---
-(derive circle clone copy debug partial-eq)
+(derive circle clone copy debug partial-eq show)
 (type total-area (fn ((ref (slice circle))) f64))
 (type main (fn () unit))

@@ -11,5 +11,5 @@ warning[L0434]: unreachable `match` arm
 6 |     (point 1.0)))
   |      ^^^^^ this arm can never match
 
-(derive shape clone copy debug partial-eq)
+(derive shape clone copy debug partial-eq show)
 (type area (fn (shape) f64))

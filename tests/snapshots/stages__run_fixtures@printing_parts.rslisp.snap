@@ -6,6 +6,6 @@ input_file: tests/fixtures/run/printing_parts.rslisp
 hello
 total: 3
 n=3
-Point { x: 1, y: 2 }
+(->point :x 1 :y 2)
 50% {done}
 x=3, y=3

@@ -5,4 +5,4 @@ input_file: tests/fixtures/run/compare_open_str_items.rslisp
 ---
 1
 1
-Some("Leaf")
+(some "Leaf")

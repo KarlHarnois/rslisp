@@ -3,4 +3,4 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/match_arm_result.rslisp
 ---
-Ok(3)
+(ok 3)

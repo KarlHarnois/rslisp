@@ -3,6 +3,6 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/match_bind_name.rslisp
 ---
-(derive a clone copy debug partial-eq eq hash)
-(derive b clone copy debug partial-eq)
+(derive a clone copy debug partial-eq eq hash show)
+(derive b clone copy debug partial-eq show)
 (type describe (fn (b) b))

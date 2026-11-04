@@ -1223,7 +1223,7 @@ fn eval_prints_a_value_through_prn() {
     let eval = sandbox.compiler(&["eval", "session.rslisp", "(->point (square 2) 3)"]);
     assert_eq!(
         eval.assert_silent_success().stdout(),
-        "Point { x: 4, y: 3 }\n"
+        "(->point :x 4 :y 3)\n"
     );
 }
 
@@ -1249,8 +1249,8 @@ fn eval_runs_every_form_once_in_order_as_one_body() {
 }
 
 #[test]
-fn eval_notes_a_value_whose_type_does_not_implement_debug() {
-    let sandbox = Sandbox::new("eval_no_debug").with_file("session.rslisp", SESSION);
+fn eval_notes_a_value_whose_type_does_not_implement_show() {
+    let sandbox = Sandbox::new("eval_no_show").with_file("session.rslisp", SESSION);
     let eval = sandbox.compiler(&["eval", "session.rslisp", "(square 2) (fn ((x i64)) x)"]);
     insta::assert_snapshot!(eval.assert_exit_code(0).stderr());
     assert_eq!(eval.stdout(), "4\n");
@@ -1548,7 +1548,7 @@ fn eval_prints_a_warning_of_a_form_inside_a_definition_once() {
 fn eval_prints_a_value_behind_a_mutable_borrow() {
     let sandbox = Sandbox::new("eval_mutable").with_file("session.rslisp", SESSION);
     let eval = sandbox.compiler(&["eval", "session.rslisp", "(let v (vec 1)) (mut v)"]);
-    assert_eq!(eval.assert_silent_success().stdout(), "[1]\n");
+    assert_eq!(eval.assert_silent_success().stdout(), "(vec 1)\n");
 }
 
 #[test]
@@ -1878,7 +1878,7 @@ fn eval_json_prints_values_of_two_types_in_one_call() {
         eval.assert_silent_success().json_replies(),
         [
             json!({"value": "9", "form": 1}),
-            json!({"value": "Point { x: 4, y: 3 }", "form": 2}),
+            json!({"value": "(->point :x 4 :y 3)", "form": 2}),
             json!({"status": "done", "exit": 0}),
         ]
     );

@@ -3,4 +3,4 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/borrowed_element_debug.rslisp
 ---
-Some("Bartholomew")
+(some "Bartholomew")

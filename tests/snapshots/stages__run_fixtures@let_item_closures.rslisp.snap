@@ -5,5 +5,5 @@ input_file: tests/fixtures/run/let_item_closures.rslisp
 ---
 2
 2
-Some(2021)
+(some 2021)
 true

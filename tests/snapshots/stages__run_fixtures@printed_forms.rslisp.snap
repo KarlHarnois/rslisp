@@ -1,0 +1,45 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/printed_forms.rslisp
+---
+42
+7
+-3
+1.0
+0.1
+1e100
+(/ 1.0 0.0)
+(/ -1.0 0.0)
+(/ 0.0 0.0)
+true
+(char "a")
+(char "\"")
+"hello \"ana\"\n"
+"\\ \r \t \0 \u{1} é"
+"owned"
+(do)
+(some 3)
+none
+(ok 1)
+(err "bad")
+(pair 1 "a")
+(vec 1 2 3)
+(vec)
+(box 5)
+(sorted-map "a" 1 "b" 2)
+(hash-map "amy" 2 "zed" 1)
+(->point :x 4 :y 3)
+(shape/circle 1.0)
+shape/empty
+(shape/labeled "box" 2.0)
+(tree/node tree/leaf 1 tree/leaf)
+(->holder :item (some (->point :x 1 :y 2)) :label "box")
+(err (io-error "No such file or directory (os error 2)"))
+(err (parse-int-error "invalid digit found in string"))
+(err (parse-bool-error "provided string was not `true` or `false`"))
+(err (parse-char-error "too many characters in string"))
+(err (parse-float-error "invalid float literal"))
+part (vec "a") end
+(->point :x 1 :y 2)
+true

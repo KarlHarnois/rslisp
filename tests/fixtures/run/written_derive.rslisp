@@ -1,5 +1,5 @@
 (defstruct ticket :id u32 :seat u32)
-(derive ticket copy ord hash debug)
+(derive ticket copy ord hash debug show)
 
 (defstruct tag :label string)
 (derive tag)
