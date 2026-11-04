@@ -27,6 +27,9 @@ const PASSTHROUGH_RUSTFMT: &str =
 const FAILING_RUSTFMT: &str = "#!/bin/sh\nprintf 'rustfmt failed in the sandbox\\n' >&2\nexit 1\n";
 const BOUND_MODULE: &str = "(export person)\n\n(defstruct person :name string)\n";
 const MILLION_LINES: &str = "(defn main ()\n  (for-each (range 0 1000000) (fn (i) (println i))))\n";
+const THOUSAND_LINES: &str = "(defn main ()\n  (for-each (range 0 1000) (fn (i) (println i))))\n";
+const ABORT: &str =
+    "(def abort (rust \"std::process::abort()\" (fn () unit)))\n\n(defn main ()\n  (abort))\n";
 const COUNT_INPUT_LINES: &str = "(defn main ()\n  (println (count (take (line-seq stdin) 2))))\n";
 const STRUCTS: &str = "(defstruct person :name string :age i64)\n(defstruct ticket :id u32)\n(derive ticket debug)\n\n(defn main () (do))\n";
 const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::ops::Add\" i64 (with i64 person))\n\n(type matches (where ((a (same person))) (fn (a) bool)))\n(defn matches (x) true)\n\n(defn main () (println (matches 1)))\n";
@@ -1069,6 +1072,21 @@ fn run_exits_with_the_program_exit_code() {
     sandbox
         .compiler(&["run", "exit.rslisp"])
         .assert_exit_code(3);
+}
+
+#[test]
+fn run_ends_quietly_when_its_reader_closes() {
+    let sandbox = Sandbox::new("run_closed_pipe").with_file("lines.rslisp", THOUSAND_LINES);
+    sandbox
+        .compiler_writing_to_a_closed_pipe(&["run", "lines.rslisp"])
+        .assert_silent_success();
+}
+
+#[test]
+fn run_fails_when_the_program_dies_of_another_signal() {
+    let sandbox = Sandbox::new("run_abort").with_file("abort.rslisp", ABORT);
+    let run = sandbox.compiler(&["run", "abort.rslisp"]);
+    assert_eq!(run.assert_exit_code(1).stderr(), "");
 }
 
 #[test]
