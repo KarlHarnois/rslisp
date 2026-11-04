@@ -8,6 +8,7 @@ use super::error_location::{InputLocator, ModuleLoader};
 use super::eval::{EvalCommand, EvaluationSettings, FormsText, ModuleText};
 use super::evaluation_output::PrintedEvaluation;
 use super::exit_status::ExitStatus;
+use super::interruption::Interruption;
 use super::name_records::NameRecords;
 use super::prompt_diagnostics::{PromptAnnotations, PromptDiagnostics};
 use super::prompt_lines::{EnteredText, PromptLines};
@@ -30,6 +31,7 @@ struct PromptSession {
     annotations: Rc<RefCell<PromptAnnotations>>,
     loaders: Vec<ModuleLoader>,
     entered: usize,
+    interruption: Interruption,
 }
 
 struct EnteredInput {
@@ -53,7 +55,11 @@ impl ReplCommand {
             Ok(lines) => lines,
             Err(error) => return ExitStatus::report_unreadable_input(&error),
         };
-        let session = PromptSession::new(terminal, self.root, self.profile);
+        let interruption = lines
+            .catch_interrupts()
+            .unwrap_or_else(|error| Self::note_uncaught_interrupts(terminal, &error));
+        terminal.stop_before_rustc_on(interruption.clone());
+        let session = PromptSession::new(terminal, self.root, self.profile, interruption);
         Self::answer(&mut lines, session, terminal)
     }
 
@@ -74,10 +80,22 @@ impl ReplCommand {
             }
         }
     }
+
+    fn note_uncaught_interrupts(terminal: &Terminal, error: &ctrlc::Error) -> Interruption {
+        terminal.print_note(&format!("Ctrl-C will end the session: {error}"));
+        Interruption::default()
+    }
 }
 
 impl PromptSession {
-    fn new(terminal: &mut Terminal, root: PathBuf, profile: BuildProfile) -> Self {
+    const INTERRUPTED: &str = "interrupted";
+
+    fn new(
+        terminal: &mut Terminal,
+        root: PathBuf,
+        profile: BuildProfile,
+        interruption: Interruption,
+    ) -> Self {
         let anchor = terminal.add_named_source(PromptModule::PATH, "");
         let session = Self {
             module: PromptModule::new(anchor, root),
@@ -86,6 +104,7 @@ impl PromptSession {
             annotations: Rc::default(),
             loaders: Vec::new(),
             entered: 0,
+            interruption,
         };
         session.place_prelude_sources_before_the_inputs(terminal);
         session.annotate_diagnostics(terminal);
@@ -112,8 +131,15 @@ impl PromptSession {
         };
         for form in forms {
             let input = self.next_input(terminal, text[form.span().range()].to_string());
-            self.enter_input(terminal, input);
+            self.interruption.clear();
+            if self.enter_input(terminal, input) == ExitStatus::Interrupted {
+                return Self::report_interruption();
+            }
         }
+    }
+
+    fn report_interruption() {
+        eprintln!("{}", Self::INTERRUPTED);
     }
 
     fn report_unfinished(&mut self, terminal: &mut Terminal, text: String) {
@@ -132,11 +158,12 @@ impl PromptSession {
         format!("<input {number}>")
     }
 
-    fn enter_input(&mut self, terminal: &mut Terminal, input: EnteredInput) {
+    fn enter_input(&mut self, terminal: &mut Terminal, input: EnteredInput) -> ExitStatus {
         match self.classify(terminal, &input) {
             ClassifiedInput::Expression => self.evaluate(terminal, input),
             ClassifiedInput::Definition(definition, replacement) => {
                 self.define(terminal, definition, &replacement);
+                ExitStatus::Success
             }
         }
     }
@@ -186,7 +213,7 @@ impl PromptSession {
         self.annotations.borrow_mut().drop_pending();
     }
 
-    fn evaluate(&self, terminal: &mut Terminal, input: EnteredInput) {
+    fn evaluate(&self, terminal: &mut Terminal, input: EnteredInput) -> ExitStatus {
         let module = self.module.of(self.buffer.sources());
         self.locate_expression_errors(&input.name);
         let forms = FormsText::named(input.name, input.text, None);
@@ -202,6 +229,7 @@ impl PromptSession {
         .run(terminal);
         self.annotations.borrow_mut().forget_expression();
         Self::note_failed_program(terminal, status);
+        status
     }
 
     fn locate_expression_errors(&self, expression: &str) {

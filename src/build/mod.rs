@@ -1,4 +1,5 @@
 mod formatting;
+mod interrupt_signal;
 mod profile;
 mod rustc_errors;
 mod token_alignment;
@@ -12,12 +13,14 @@ use crate::diagnostic::Diagnostics;
 use crate::emit::EmittedCrate;
 use crate::source::Span;
 pub use formatting::{EmittedFormatting, FormattingError};
+pub use interrupt_signal::InterruptSignal;
 pub use profile::BuildProfile;
 use rustc_errors::RustcDiagnosticMapper;
 
 pub enum BuildError {
     Program(Diagnostics),
     Environment(String),
+    Interrupted,
 }
 
 pub struct RustCompiler {
@@ -51,6 +54,9 @@ impl RustCompiler {
             .map_err(|error| Self::environment("run rustc", &error))?;
         if result.status.success() {
             return Ok(());
+        }
+        if InterruptSignal::stopped(result.status) {
+            return Err(BuildError::Interrupted);
         }
         let stderr = String::from_utf8_lossy(&result.stderr);
         Err(BuildError::Program(

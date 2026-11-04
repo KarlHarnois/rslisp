@@ -3,6 +3,7 @@ use std::path::Path;
 use std::process::{self, Command};
 
 use super::exit_status::ExitStatus;
+use crate::build::InterruptSignal;
 
 pub enum FinishedProgram {
     Exited(process::ExitStatus),
@@ -11,7 +12,6 @@ pub enum FinishedProgram {
 
 impl FinishedProgram {
     const KILLED_BY_SIGNAL: u8 = 1;
-    const SHELL_SIGNAL_BASE: i32 = 128;
     #[cfg(unix)]
     const SIGPIPE: i32 = 13;
 
@@ -38,11 +38,18 @@ impl FinishedProgram {
     }
 
     pub fn shell_status(&self) -> ExitStatus {
+        if self.was_interrupted() {
+            return ExitStatus::Interrupted;
+        }
         self.status_or(|status| {
             Self::signal(status)
-                .and_then(|signal| u8::try_from(Self::SHELL_SIGNAL_BASE + signal).ok())
+                .and_then(|signal| u8::try_from(i32::from(ExitStatus::SIGNAL_BASE) + signal).ok())
                 .unwrap_or(Self::KILLED_BY_SIGNAL)
         })
+    }
+
+    fn was_interrupted(&self) -> bool {
+        matches!(self, Self::Exited(status) if InterruptSignal::stopped(*status))
     }
 
     fn status_or(&self, killed: impl FnOnce(process::ExitStatus) -> u8) -> ExitStatus {

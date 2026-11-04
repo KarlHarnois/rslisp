@@ -552,7 +552,7 @@ Field names are not hygienic. They are looked up through the struct type.
 - On a terminal, the prompt is `> `. Piped input shows no prompt.
 - The end of input quits with exit code 0, also after failed inputs. An unclosed list or string at the end of piped input is reported first.
 
-**On a terminal, the prompt edits the line and keeps a history** ([RFC 0047](../rfcs/0047-first-repl.md)). Piped input reads plain lines. So does a terminal whose `TERM` is `dumb`, `cons25` or `emacs`, which the line editor does not support: there the prompt shows `> `, a continuation line shows two spaces, an unclosed list or string at the end of input is reported, and Ctrl-C ends the session.
+**On a terminal, the prompt edits the line and keeps a history** ([RFC 0047](../rfcs/0047-first-repl.md)). Piped input reads plain lines. So does a terminal whose `TERM` is `dumb`, `cons25` or `emacs`, which the line editor does not support: there the prompt shows `> `, a continuation line shows two spaces, an unclosed list or string at the end of input is reported, Ctrl-C while typing drops the line, and Ctrl-C while rustc, rustfmt or the program runs acts as below.
 
 | Key | Effect |
 | --- | --- |
@@ -562,6 +562,8 @@ Field names are not hygienic. They are looked up through the struct type.
 | Enter inside an unclosed list | inserts a newline and two spaces into the text, at any depth |
 | Enter inside an unclosed string | inserts a bare newline into the text |
 | Ctrl-C while typing | drops the text, finished or not, and shows a new prompt |
+| Ctrl-C while rustc, rustfmt or the program runs | stops it, prints `interrupted`, skips the rest of the text's inputs, and keeps the definitions |
+| Ctrl-C while the front end handles an expression | lets it finish, skips rustc, prints `interrupted`, and skips the rest of the text's inputs |
 | Ctrl-D at an empty prompt | quits with exit code 0 |
 | Ctrl-D in a text that is not empty | deletes the character under the cursor, if any, and never quits |
 
@@ -569,6 +571,8 @@ Field names are not hygienic. They are looked up through the struct type.
 - A bracketed paste of several lines shows once, as one text, with no spaces inserted, and Enter ends it. Lines typed while an input runs wait for the next prompt.
 - The history holds the last 1000 texts, in `$XDG_STATE_HOME/rslisp/history`, or in `~/.local/state/rslisp/history` when `XDG_STATE_HOME` is unset or empty. The prompt adds each text to the file as it is entered.
 - If neither variable is set, or the file cannot be read or written, the prompt works without history and prints one `note` that says why.
+- If the prompt cannot catch Ctrl-C, it prints one `note` that Ctrl-C will end the session.
+- A rustc or rustfmt that Ctrl-C stops reports no diagnostic and no note, under every command, whether it dies of the signal or catches it and fails, as rustc does. A command other than `repl` then exits with code 130, as for a program that Ctrl-C stops.
 
 **A definition takes effect, and each earlier input that no longer checks is set aside.** The prompt checks the buffer as `check` checks a file, and locates each error at one input:
 
