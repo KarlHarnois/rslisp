@@ -17,7 +17,7 @@ impl TypeChecker {
         found: &Type,
         diagnostic: Diagnostic,
     ) -> Diagnostic {
-        if *diagnostic.code() != DiagnosticCode::MISMATCHED_TYPES {
+        if diagnostic.code() != Some(&DiagnosticCode::MISMATCHED_TYPES) {
             return diagnostic;
         }
         match self.borrowing_help(site, found) {

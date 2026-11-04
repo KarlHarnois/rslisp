@@ -52,14 +52,11 @@ impl<'a> DiagnosticRenderer<'a> {
     }
 
     fn main_group<'d>(&'d self, diagnostic: &'d Diagnostic) -> Group<'d> {
-        let level = if diagnostic.is_error() {
-            Level::ERROR
-        } else {
-            Level::WARNING
+        let title = Self::level(diagnostic).primary_title(diagnostic.title());
+        let title = match diagnostic.code() {
+            Some(code) => title.id(code.as_str()),
+            None => title,
         };
-        let title = level
-            .primary_title(diagnostic.title())
-            .id(diagnostic.code().as_str());
         let snippets = self
             .label_sources(diagnostic)
             .into_iter()
@@ -77,6 +74,16 @@ impl<'a> DiagnosticRenderer<'a> {
             .elements(snippets)
             .elements(notes)
             .elements(plain_helps)
+    }
+
+    fn level(diagnostic: &Diagnostic) -> Level<'static> {
+        if diagnostic.is_error() {
+            Level::ERROR
+        } else if diagnostic.is_note() {
+            Level::NOTE
+        } else {
+            Level::WARNING
+        }
     }
 
     fn label_sources(&self, diagnostic: &Diagnostic) -> Vec<SourceId> {

@@ -3,9 +3,11 @@ mod compile_time_check;
 mod context;
 mod defining_call;
 mod distinct_diagnostics;
+mod evaluated_forms;
 mod expression;
 mod field_keyword;
 mod form_budget;
+mod generated_entry;
 mod globals;
 mod host;
 mod introduced;
@@ -42,6 +44,8 @@ use crate::reader::Form;
 use crate::scope::{BindingTable, Phase, Scope, ScopeAllocator};
 use crate::source::{SourceId, SourceMap, Span};
 use budget_arena::BudgetArena;
+use evaluated_forms::EvaluatedForms;
+pub use generated_entry::{GeneratedEntry, WrittenForm};
 use globals::{GlobalTable, LoweredGlobals};
 pub use macro_call::MacroOrigin;
 use macro_call::MacroTable;
@@ -54,6 +58,7 @@ pub struct Program {
     pub modules: Vec<CoreModule>,
     pub entry: ModuleId,
     pub entry_function: Option<BindingId>,
+    pub evaluated_forms: Vec<WrittenForm>,
     pub bindings: BindingArena,
     pub macro_origins: FxHashMap<Span, MacroOrigin>,
     pub macro_helpers: FxHashSet<BindingId>,
@@ -67,7 +72,7 @@ pub struct ExpansionWork {
 }
 
 impl Program {
-    const WRITTEN_ENTRY_FUNCTION: &str = "main";
+    pub(super) const WRITTEN_ENTRY_FUNCTION: &str = "main";
 
     pub fn entry_module(&self) -> &CoreModule {
         self.modules
@@ -108,6 +113,7 @@ pub struct Expander<'s> {
     recovered_diagnostics: Vec<Diagnostic>,
     saved_prelude: Option<PreludeState>,
     expansion: ExpansionWork,
+    evaluated_forms: EvaluatedForms,
 }
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
@@ -160,6 +166,14 @@ impl<'s> Expander<'s> {
             recovered_diagnostics: Vec::new(),
             saved_prelude: None,
             expansion: ExpansionWork::default(),
+            evaluated_forms: EvaluatedForms::default(),
+        }
+    }
+
+    pub fn evaluating(self, spans: impl IntoIterator<Item = Span>) -> Self {
+        Self {
+            evaluated_forms: EvaluatedForms::new(spans),
+            ..self
         }
     }
 
@@ -186,6 +200,7 @@ impl<'s> Expander<'s> {
             modules: self.take_modules(),
             entry,
             entry_function: None,
+            evaluated_forms: Vec::new(),
             bindings: self.tables.bindings,
             macro_helpers: self.tables.globals.macro_helpers(),
             macro_origins: self.tables.macro_origins,

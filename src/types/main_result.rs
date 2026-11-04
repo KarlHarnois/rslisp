@@ -100,10 +100,9 @@ mod tests {
             let mut source = TypedSource::expand(Self::TWO_VALUED_FUNCTIONS);
             source.enter_at(entry);
             MainResult::check(source.typed()).is_err_and(|diagnostics| {
-                diagnostics
-                    .in_source_order()
-                    .iter()
-                    .any(|diagnostic| *diagnostic.code() == DiagnosticCode::MAIN_RETURNS_VALUE)
+                diagnostics.in_source_order().iter().any(|diagnostic| {
+                    diagnostic.code() == Some(&DiagnosticCode::MAIN_RETURNS_VALUE)
+                })
             })
         }
     }

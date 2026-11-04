@@ -1,8 +1,13 @@
+use super::generated_entry::{GeneratedEntry, WrittenForm};
 use super::{Expander, Program};
-use crate::core::{BindingId, BindingKind, Expr, ModuleId, ModulePath, Namespace};
+use crate::core::{
+    BindingId, BindingInfo, BindingKind, Block, BodyItem, Control, Expr, ExprKind, ModuleId,
+    ModulePath, Namespace,
+};
 use crate::diagnostic::{Diagnostic, Diagnostics};
-use crate::reader::{Form, Symbol};
-use crate::source::SourceId;
+use crate::modules::ModuleSources;
+use crate::reader::{Form, Reader, Symbol};
+use crate::source::{SourceId, Span, TextPosition};
 
 pub struct ExpansionSession<'s> {
     expander: Expander<'s>,
@@ -28,10 +33,59 @@ impl ExpansionSession<'_> {
         self.expander.sources.add(name, text)
     }
 
+    pub fn add_source_inside(
+        &mut self,
+        enclosing: SourceId,
+        position: TextPosition,
+        text: &str,
+    ) -> Option<SourceId> {
+        self.expander.sources.add_inside(enclosing, position, text)
+    }
+
+    pub fn read(&self, source: SourceId) -> Result<Vec<Form>, Diagnostics> {
+        Reader::new(self.expander.sources.file(source)).read()
+    }
+
     pub fn expression(&mut self, form: Form) -> Result<Expr, Diagnostics> {
         let scoped = self.in_entry_scope(form);
-        let lowered = self.lower_in_entry(&scoped);
+        let lowered = self.lower_in_entry(|expander| expander.lower_expr(&scoped));
         self.collect_diagnostics(lowered)
+    }
+
+    pub fn generated_entry(
+        &mut self,
+        forms: &[Form],
+        span: Span,
+    ) -> Result<GeneratedEntry, Diagnostics> {
+        let scoped: Vec<Form> = forms
+            .iter()
+            .map(|form| self.in_entry_scope(form.clone()))
+            .collect();
+        let lowered = self.lower_in_entry(|expander| expander.lower_body(&scoped));
+        let mut body = self.collect_diagnostics(lowered)?;
+        body.items.push(Self::unit(span));
+        let written = forms.iter().map(Self::written).collect();
+        Ok(GeneratedEntry::new(
+            self.entry_binding(span),
+            body,
+            written,
+            span,
+        ))
+    }
+
+    pub fn defines(&self, span: Span) -> bool {
+        self.expander.evaluated_forms.is_definition(span)
+    }
+
+    pub fn prelude_value(&self, name: &str) -> Option<BindingId> {
+        let prelude = self
+            .expander
+            .modules
+            .find(&ModulePath::new(ModuleSources::PRELUDE))?;
+        self.expander
+            .modules
+            .get(prelude)
+            .exported(name, Namespace::Value)
     }
 
     pub fn binding(&self, term: &Form) -> Option<BindingId> {
@@ -68,17 +122,41 @@ impl ExpansionSession<'_> {
         form
     }
 
-    fn lower_in_entry(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
+    fn lower_in_entry<T>(
+        &mut self,
+        lower: impl FnOnce(&mut Expander) -> Result<T, Diagnostic>,
+    ) -> Result<T, Diagnostic> {
         let outer_module = self.expander.current_module.replace(self.entry);
-        let lowered = self.expander.lower_expr(form);
+        let lowered = lower(&mut self.expander);
         self.expander.current_module = outer_module;
         lowered
     }
 
-    fn collect_diagnostics(
-        &mut self,
-        lowered: Result<Expr, Diagnostic>,
-    ) -> Result<Expr, Diagnostics> {
+    fn entry_binding(&mut self, span: Span) -> BindingId {
+        let info = BindingInfo::new(
+            Program::WRITTEN_ENTRY_FUNCTION.into(),
+            BindingKind::Global(self.entry),
+            Some(span),
+        );
+        let bindings = &mut self.expander.tables.bindings;
+        let binding = bindings.add(info);
+        bindings.mark_introduced(binding);
+        binding
+    }
+
+    fn unit(span: Span) -> BodyItem {
+        let empty = Control::Block(Block::default());
+        BodyItem::Expr(Expr::new(ExprKind::Control(empty), span))
+    }
+
+    fn written(form: &Form) -> WrittenForm {
+        WrittenForm {
+            span: form.span(),
+            text: form.to_string().into(),
+        }
+    }
+
+    fn collect_diagnostics<T>(&mut self, lowered: Result<T, Diagnostic>) -> Result<T, Diagnostics> {
         let mut diagnostics = self.expander.take_diagnostics();
         match lowered {
             Ok(expression) => diagnostics.into_result(expression),
@@ -192,6 +270,26 @@ mod tests {
         let program = SessionFixture::finished(session);
         assert!(binding.is_some());
         assert_eq!(binding, SessionFixture::defined_binding(&program));
+    }
+
+    #[test]
+    fn entering_a_generated_entry_again_replaces_its_definition() {
+        let mut fixture = SessionFixture::new(SessionFixture::DOUBLING);
+        let call = fixture.list(SessionFixture::DEFINED_NAME);
+        let span = fixture.span();
+        let mut session = fixture.session();
+        let entry = session
+            .generated_entry(&[call], span)
+            .unwrap_or_else(|_| panic!("the call lowers"));
+        let mut program = SessionFixture::finished(session);
+        program.enter(&entry);
+        program.enter(&entry);
+        let entries = program
+            .entry_module()
+            .definitions()
+            .filter(|(binding, _)| Some(*binding) == program.entry_function)
+            .count();
+        assert_eq!(entries, 1);
     }
 
     #[test]

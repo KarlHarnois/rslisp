@@ -22,12 +22,13 @@ pub struct Diagnostic {
 enum Severity {
     Error,
     Warning,
+    Note,
 }
 
 #[derive(Clone, Debug)]
 struct Report {
     severity: Severity,
-    code: DiagnosticCode,
+    code: Option<DiagnosticCode>,
     title: String,
     primary: Label,
     secondary: Vec<Label>,
@@ -37,16 +38,20 @@ struct Report {
 
 impl Diagnostic {
     pub fn error(code: DiagnosticCode, title: impl Into<String>, primary: Label) -> Self {
-        Self::new(Severity::Error, code, title, primary)
+        Self::new(Severity::Error, Some(code), title, primary)
     }
 
     pub fn warning(code: DiagnosticCode, title: impl Into<String>, primary: Label) -> Self {
-        Self::new(Severity::Warning, code, title, primary)
+        Self::new(Severity::Warning, Some(code), title, primary)
+    }
+
+    pub fn note(title: impl Into<String>, primary: Label) -> Self {
+        Self::new(Severity::Note, None, title, primary)
     }
 
     fn new(
         severity: Severity,
-        code: DiagnosticCode,
+        code: Option<DiagnosticCode>,
         title: impl Into<String>,
         primary: Label,
     ) -> Self {
@@ -65,6 +70,10 @@ impl Diagnostic {
 
     pub fn is_error(&self) -> bool {
         self.report.severity == Severity::Error
+    }
+
+    pub fn is_note(&self) -> bool {
+        self.report.severity == Severity::Note
     }
 
     pub fn with_label(mut self, label: Label) -> Self {
@@ -89,8 +98,8 @@ impl Diagnostic {
         self
     }
 
-    pub fn code(&self) -> &DiagnosticCode {
-        &self.report.code
+    pub fn code(&self) -> Option<&DiagnosticCode> {
+        self.report.code.as_ref()
     }
 
     pub fn title(&self) -> &str {
