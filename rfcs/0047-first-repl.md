@@ -1,6 +1,6 @@
 # RFC 0047: A first REPL
 
-**Status:** Accepted
+**Status:** Accepted. Its `debug` bound in rules 3 and 5, including rule 3's "A result prints when its type implements `debug`" and rule 5's `pr-str` bound, and the `note` and `value` rows of its `--json` table, are superseded by 0048.
 **Date:** 2026-11-03
 
 ## Problem
