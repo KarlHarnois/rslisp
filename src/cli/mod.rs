@@ -45,6 +45,14 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    #[command(flatten)]
+    Inspection(InspectionCommand),
+    #[command(flatten)]
+    Program(ProgramCommand),
+}
+
+#[derive(Subcommand)]
+enum InspectionCommand {
     #[command(about = "Read, expand and check a program, then print its diagnostics")]
     Check { file: PathBuf },
     #[command(about = "Print the inferred signature of each function in a program")]
@@ -67,6 +75,10 @@ enum Command {
     Expand { file: PathBuf },
     #[command(about = "Print the Rust code generated for a program")]
     Emit { file: PathBuf },
+}
+
+#[derive(Subcommand)]
+enum ProgramCommand {
     #[command(about = "Compile a program to a native binary")]
     Build {
         file: PathBuf,
@@ -113,14 +125,30 @@ impl Cli {
 impl Command {
     fn execute(self, terminal: &mut Terminal) -> ExitStatus {
         match self {
-            Command::Check { file } => CheckCommand::new(file).run(terminal),
-            Command::Signatures { file } => SignaturesCommand::new(file).run(terminal),
-            Command::Doc {
+            Command::Inspection(command) => command.execute(terminal),
+            Command::Program(command) => command.execute(terminal),
+        }
+    }
+}
+
+impl InspectionCommand {
+    fn execute(self, terminal: &mut Terminal) -> ExitStatus {
+        match self {
+            Self::Check { file } => CheckCommand::new(file).run(terminal),
+            Self::Signatures { file } => SignaturesCommand::new(file).run(terminal),
+            Self::Doc {
                 term, file, types, ..
             } => DocCommand::new(DocEnvironment::new(file), term, types.page()).run(terminal),
-            Command::Expand { file } => ExpandCommand::new(file).run(terminal),
-            Command::Emit { file } => EmitCommand::new(file).run(terminal),
-            Command::Build {
+            Self::Expand { file } => ExpandCommand::new(file).run(terminal),
+            Self::Emit { file } => EmitCommand::new(file).run(terminal),
+        }
+    }
+}
+
+impl ProgramCommand {
+    fn execute(self, terminal: &mut Terminal) -> ExitStatus {
+        match self {
+            Self::Build {
                 file,
                 release,
                 output,
@@ -132,7 +160,7 @@ impl Command {
                 },
             )
             .run(terminal),
-            Command::Run {
+            Self::Run {
                 file,
                 release,
                 args,
