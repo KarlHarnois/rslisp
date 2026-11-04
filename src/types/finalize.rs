@@ -9,6 +9,7 @@ use super::ty::{GenericId, Type, TypeVar};
 use super::typed::{ClosureType, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::LiteralKind;
 use crate::core::{BindingId, Literal, PrimitiveType};
+use crate::diagnostic::Diagnostic;
 use crate::reader::Number;
 use crate::source::Span;
 
@@ -75,19 +76,19 @@ impl<'c> Finalizer<'c> {
 
     fn finalize_type(&mut self, ty: &mut Type, span: Span) {
         for var in self.checker.free_vars(ty) {
-            self.default_var(var, span);
+            self.default_var(var, span, ty);
         }
         *ty = self.checker.unifier.resolve(ty);
     }
 
-    fn default_var(&mut self, var: TypeVar, span: Span) {
+    fn default_var(&mut self, var: TypeVar, span: Span, ty: &Type) {
         let default = match self.checker.unifier.literal_kind(var) {
             Some(LiteralKind::Integer) => PrimitiveType::I64,
             Some(LiteralKind::Float) => PrimitiveType::F64,
             None => {
                 if self.reported.insert(var) && !self.earlier_errors {
-                    self.checker
-                        .defer_missing_annotation(TypeProblems::cannot_infer(span));
+                    let problem = self.missing_annotation(span, ty);
+                    self.checker.defer_missing_annotation(problem);
                 }
                 return;
             }
@@ -100,6 +101,19 @@ impl<'c> Finalizer<'c> {
             defaulted.is_ok(),
             "a literal variable accepts its default type"
         );
+    }
+
+    fn missing_annotation(&self, span: Span, ty: &Type) -> Diagnostic {
+        match self.checker.evaluated_form(span) {
+            Some(form) => {
+                let open_type = self
+                    .checker
+                    .display()
+                    .show(&self.checker.unifier.resolve(ty));
+                TypeProblems::cannot_infer_evaluated(&open_type, form, span)
+            }
+            None => TypeProblems::cannot_infer(span),
+        }
     }
 
     fn check_range(&mut self, number: &Number, ty: &Type, span: Span) {

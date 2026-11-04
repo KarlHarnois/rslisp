@@ -623,6 +623,30 @@ impl TypeProblems {
         )
     }
 
+    pub fn unprintable_value(shown_type: &str, missing_trait: &str, span: Span) -> Diagnostic {
+        Diagnostic::note(
+            format!(
+                "the value has type `{shown_type}`, which does not implement `{missing_trait}`"
+            ),
+            Label::new(span, "this value does not print"),
+        )
+    }
+
+    pub fn cannot_infer_evaluated(open_type: &str, form: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::CANNOT_INFER,
+            "type annotations needed",
+            Label::new(
+                span,
+                format!("cannot infer the type `{open_type}` of this value"),
+            ),
+        )
+        .with_suggestion(
+            "write the type with `the`, and replace each `_` with a type",
+            Suggestion::new(span, format!("(the {open_type} {form})")),
+        )
+    }
+
     pub fn unnameable_type(opaque: &str, span: Span) -> Diagnostic {
         let label = Label::new(
             span,

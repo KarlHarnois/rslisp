@@ -191,6 +191,7 @@ pub struct TypeChecker {
     pub(super) changed_structs: FxHashSet<BindingId>,
     pub(super) inferred_copies: InferredCopies,
     macro_origins: FxHashMap<Span, Rc<str>>,
+    evaluated_forms: FxHashMap<Span, Rc<str>>,
     copy_trait: Option<BindingId>,
     box_binding: Option<BindingId>,
     inferred_boxes: BTreeSet<(BindingId, usize, usize)>,
@@ -282,6 +283,7 @@ impl TypeChecker {
             changed_structs: FxHashSet::default(),
             inferred_copies: InferredCopies::default(),
             macro_origins: FxHashMap::default(),
+            evaluated_forms: FxHashMap::default(),
             copy_trait: None,
             box_binding: None,
             inferred_boxes: BTreeSet::new(),
@@ -734,6 +736,10 @@ impl TypeChecker {
 
     pub(super) fn display(&self) -> TypeDisplay<'_> {
         TypeDisplay::new(&self.bindings, &self.generics).with_projections(self.traits.projections())
+    }
+
+    pub(super) fn evaluated_form(&self, span: Span) -> Option<&str> {
+        self.evaluated_forms.get(&span).map(Rc::as_ref)
     }
 
     pub(super) fn defer_missing_annotation(&mut self, diagnostic: Diagnostic) {
@@ -2829,6 +2835,11 @@ impl TypeChecker {
                 .macro_origins
                 .iter()
                 .map(|(span, origin)| (*span, Rc::clone(&origin.name)))
+                .collect();
+            checker.evaluated_forms = program
+                .evaluated_forms
+                .iter()
+                .map(|form| (form.span, Rc::clone(&form.text)))
                 .collect();
             checker
         };

@@ -1,12 +1,12 @@
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::core::{BindingId, StructDerives};
-use crate::diagnostic::Diagnostics;
+use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::expand::Program;
 use crate::ownership::{InPlaceChanges, OwnershipChecker};
 use crate::types::{
-    DefinitionGraph, InferredCopies, InstantiationReport, LiteralDefaults, MainResult, Pinning,
-    Type, TypeChecker, TypedProgram,
+    DefinitionGraph, FormResult, FormResults, InferredCopies, InstantiationReport, LiteralDefaults,
+    MainResult, Pinning, Type, TypeChecker, TypedProgram,
 };
 
 pub struct ProgramChecker;
@@ -15,6 +15,28 @@ impl ProgramChecker {
     #[inline(never)]
     pub fn check(program: &Program) -> Result<TypedProgram, Diagnostics> {
         CheckRuns::new(program).typed().and_then(MainResult::check)
+    }
+
+    pub fn form_results(
+        program: &Program,
+        printer: BindingId,
+    ) -> Result<Vec<FormResult>, Diagnostics> {
+        let typed = TypeChecker::check(
+            program,
+            &DefinitionGraph::of(program),
+            &FxHashSet::default(),
+            &InferredCopies::default(),
+            &FxHashMap::default(),
+            LiteralDefaults::default(),
+            false,
+        )
+        .map_err(Self::errors_only)?;
+        Ok(FormResults::of(&typed, printer))
+    }
+
+    fn errors_only(mut diagnostics: Diagnostics) -> Diagnostics {
+        diagnostics.retain(Diagnostic::is_error);
+        diagnostics
     }
 }
 
