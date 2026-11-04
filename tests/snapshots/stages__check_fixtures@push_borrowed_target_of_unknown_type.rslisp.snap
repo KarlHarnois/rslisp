@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/push_borrowed_target_of_unknown_type.rslisp
+---
+error[L0401]: mismatched types
+ --> check/push_borrowed_target_of_unknown_type.rslisp:4:18
+  |
+4 |   (prn (add-year (str "a") 2025)))
+  |                  ^^^^^^^^^ expected `(vec _)`, found `string`
+  |
+  = help: `push!` reads a target of unknown type as a vector, so write a `type` signature for `add-year`, such as `(type add-year (fn (string _) _))`

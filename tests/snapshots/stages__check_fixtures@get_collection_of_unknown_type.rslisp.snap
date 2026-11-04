@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/get_collection_of_unknown_type.rslisp
+---
+error[L0401]: mismatched types
+ --> check/get_collection_of_unknown_type.rslisp:5:18
+  |
+5 |   (prn (score-of (ref scores) "ada")))
+  |                  ^^^^^^^^^^^^ expected `(vec _)`, found `(sorted-map string _)`
+  |
+  = help: `get` reads a collection of unknown type as a vector or a slice, so write a `type` signature for `score-of`, such as `(type score-of (fn ((ref (sorted-map string _)) _) _))`

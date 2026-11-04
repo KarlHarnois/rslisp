@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
+use super::assumed_collections::AssumedCollections;
 use super::copy::InferredCopies;
 use super::display::TypeDisplay;
 use super::enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};
@@ -207,6 +208,7 @@ pub struct TypeChecker {
     pub(super) synthetic_bindings: FxHashSet<BindingId>,
     pub(super) pinned: FxHashMap<BindingId, Type>,
     pub(super) literal_defaults: LiteralDefaults,
+    pub(super) assumed_collections: AssumedCollections,
     pub(super) literal_generics: FxHashMap<GenericId, LiteralKind>,
     default_literal_parameters: bool,
     pub(super) recursive_group: Vec<BindingId>,
@@ -298,6 +300,7 @@ impl TypeChecker {
             synthetic_bindings: FxHashSet::default(),
             pinned: FxHashMap::default(),
             literal_defaults: LiteralDefaults::default(),
+            assumed_collections: AssumedCollections::default(),
             literal_generics: FxHashMap::default(),
             default_literal_parameters: false,
             recursive_group: Vec::new(),
@@ -340,7 +343,7 @@ impl TypeChecker {
         self.report_supertraits();
         self.check_trait_claims(modules);
         self.copy_trait = self.traits.with_paths(&[CopyTrait::PATH]).first().copied();
-        self.record_readers_and_written_parameters(definitions);
+        self.record_definition_facts(definitions);
         self.record_string_view(modules);
     }
 
@@ -358,10 +361,12 @@ impl TypeChecker {
         }
     }
 
-    fn record_readers_and_written_parameters(&mut self, definitions: &[Definition]) {
+    fn record_definition_facts(&mut self, definitions: &[Definition]) {
         for definition in definitions {
             self.record_single_field_reader(definition.binding, definition.value);
             self.record_written_parameters(definition.binding, definition.value);
+            self.assumed_collections
+                .record_parameters(definition.binding, definition.value);
         }
     }
 
