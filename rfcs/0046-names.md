@@ -93,10 +93,11 @@ The owner chose these meanings:
 - `find`, `any?` and `every?` consume their iterator, as `count` and `reduce` do. A binding emits `values.into_iter().find(...)`, and a temporary such as `(iter years)` emits `years.iter().find(...)`. No binding becomes `mut` for them, and a reused iterator is a use after move.
 - `iter` is the one name for walking a map.
 
-This build chose two designs:
+This build chose three designs:
 
 - `get` extends the `map-at` kernel form. `map-at get` accepts a vector or a slice beside a map, as `map-at iter` already does, and emits `.get(index)` for a slice. A trait would need an index type that depends on the collection, and each call on an unknown collection would then make a function generic over that trait. One `map-at` operation adds no trait and no runtime part.
 - `push!` extends `map-at` too, with a `push` operation. A Rust trait method would need one name for `Vec::push`, `String::push` and `String::push_str`, and Rust resolves `push` on a `String` to the inherent method that takes a `char`, so a `(ref str)` argument would not compile. `map-at push` picks the method from the inferred types, and the emitted Rust stays `.push(x)` and `.push_str(text)`.
+- `sort!` reads its order from a written `<` or `>`, matched by binding as a `defrule` literal pattern matches, and emits `.sort()` or `.sort_by(|left, right| right.cmp(left))`. `>` is a macro and has no value, and passing a comparison function would emit a comparator closure in place of the readable `sort_by`. Any other second argument stays a comparator.
 
 ## Rejected options and why
 
