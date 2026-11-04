@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/keyword_trim_end.rslisp
+---
+(def answers (fn () (quote (:email :email :email :))))

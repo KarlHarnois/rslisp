@@ -1,0 +1,8 @@
+(use code keyword-field keyword-trim-end)
+
+(def total 5)
+
+(defmacro hidden-total ()
+  (keyword-field (keyword-trim-end (quote :total:))))
+
+(defn read-total () (hidden-total))

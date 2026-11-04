@@ -93,6 +93,14 @@ impl Value {
         Some(Form::new(FormKind::Symbol(field), form.span()))
     }
 
+    pub fn keyword_trim_end(&self) -> Option<Form> {
+        let form = self.as_form()?;
+        let keyword = form.as_symbol()?;
+        let trimmed = Keyword::trim_end(keyword.name())?;
+        let trimmed = Symbol::with_scopes(trimmed, keyword.scopes().clone());
+        Some(Form::new(FormKind::Symbol(trimmed), form.span()))
+    }
+
     pub fn field_keyword(&self) -> Option<Form> {
         let form = self.as_form()?;
         let field = form.as_symbol()?;

@@ -77,6 +77,11 @@ impl<'a> TextOperations<'a> {
         Ok(Value::Form(self.arguments.field_keyword(0)?))
     }
 
+    pub fn keyword_trim_end(&self) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(1)?;
+        Ok(Value::Form(self.arguments.keyword_trim_end(0)?))
+    }
+
     pub fn make_symbol(&self) -> Result<Value, Diagnostic> {
         self.expect_symbol_arguments()?;
         let context = self.arguments.symbol(0)?;
