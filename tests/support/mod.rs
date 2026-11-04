@@ -139,6 +139,7 @@ impl Fixture {
             Err(BuildError::Environment(message)) => {
                 panic!("the build environment failed: {message}")
             }
+            Err(BuildError::Interrupted) => panic!("rustc was interrupted"),
         }
     }
 

@@ -18,6 +18,7 @@ mod exit_status;
 mod expand;
 mod finished_program;
 mod input_helper;
+mod interruption;
 mod json_replies;
 mod name_records;
 mod open_input;

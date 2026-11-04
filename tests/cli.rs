@@ -30,6 +30,14 @@ const RUSTC_SYNTAX_ERROR: &str = "(def doubled-sign (rust \"{0} + + 1\" (fn (i64
 const CRASHING_RUSTC: &str =
     "#!/bin/sh\necho 'rustc crashed before reporting anything' >&2\nexit 101\n";
 const SILENT_RUSTC: &str = "#!/bin/sh\nexit 0\n";
+const INTERRUPTED_RUSTC: &str = "#!/bin/sh\nkill -INT $$\n";
+const WAITING_RUSTC: &str = "#!/bin/sh\necho compiling > /dev/tty\nexec sleep 30\n";
+const WAITING_RUSTFMT: &str = "#!/bin/sh\necho formatting > /dev/tty\nexec sleep 30\n";
+const SIGNAL_CATCHING_RUSTC: &str = "#!/bin/sh\nsleep 30 > /dev/null 2>&1 &\nsleeper=$!\ntrap 'kill $sleeper; echo \"error: compilation was interrupted\" >&2; exit 1' INT\necho compiling > /dev/tty\nwait\n";
+const SIGNAL_CATCHING_RUSTFMT: &str = "#!/bin/sh\nsleep 30 > /dev/null 2>&1 &\nsleeper=$!\ntrap 'kill $sleeper; exit 1' INT\necho formatting > /dev/tty\nwait\n";
+const INTERRUPTED_RUSTFMT: &str = "#!/bin/sh\nkill -INT $$\n";
+const UNINTERRUPTED_RUSTFMT: &str =
+    "#!/bin/sh\ntrap '' INT\necho formatting > /dev/tty\nsleep 1\nexec cat\n";
 const PASSTHROUGH_RUSTFMT: &str =
     "#!/bin/sh\nwhile IFS= read -r line; do printf '%s\\n' \"$line\"; done\n";
 const FAILING_RUSTFMT: &str = "#!/bin/sh\nprintf 'rustfmt failed in the sandbox\\n' >&2\nexit 1\n";
@@ -2928,6 +2936,22 @@ impl EditedSession {
         self.typing(typed, environment).assert_exit_code(0).stdout()
     }
 
+    fn with_tool(self, name: &str, script: &str) -> Self {
+        Self {
+            sandbox: self
+                .sandbox
+                .with_executable(&format!("tools/{name}"), script),
+        }
+    }
+
+    fn path_with_tools(&self) -> String {
+        format!(
+            "{}:{}",
+            self.sandbox.directory.join("tools").display(),
+            std::env::var("PATH").expect("the tests run with a PATH")
+        )
+    }
+
     fn history(&self) -> String {
         self.sandbox
             .written_file(&Self::history_path(Sandbox::STATE_DIRECTORY))
@@ -3235,4 +3259,187 @@ fn repl_says_once_that_history_cannot_be_written() {
     );
     assert_eq!(EditedSession::history_notes(&session), 1, "{session:?}");
     assert!(session.contains("\r\n7\r\n"), "{session:?}");
+}
+
+#[test]
+fn build_stops_quietly_when_rustc_is_interrupted() {
+    let sandbox = Sandbox::new("build_rustc_interrupted")
+        .with_file("greeting.rslisp", GREETING)
+        .with_executable("tools/rustc", INTERRUPTED_RUSTC)
+        .with_executable("tools/rustfmt", PASSTHROUGH_RUSTFMT);
+    let build = sandbox.compiler_with_path("tools", &["build", "greeting.rslisp"]);
+    assert_eq!(build.assert_exit_code(130).stderr(), "");
+}
+
+#[test]
+fn repl_interrupts_a_running_program_and_keeps_the_definitions() {
+    let edited = EditedSession::new("repl_interrupt_program");
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(defn spin (i) (if (< i 0) i (recur (+ i 1))))\r"),
+            Keys::AtPrompt("(do (println \"spinning\") (spin 0)) (+ 40 2)\r"),
+            Keys::AfterOutput("spinning\r\n", Keys::INTERRUPT),
+            Keys::AtPromptAfter("interrupted\r\n", "(spin -2)\r"),
+            Keys::AtPromptAfter("\r\n-2\r\n", Keys::END_OF_INPUT),
+        ],
+        &[("NO_COLOR", "1")],
+    );
+    assert!(!session.contains("exited with code"), "{session:?}");
+    assert!(!session.contains("\r\n42\r\n"), "{session:?}");
+    assert_eq!(session.matches("interrupted").count(), 1, "{session:?}");
+}
+
+#[test]
+fn repl_interrupts_rustc_without_an_error() {
+    let edited = EditedSession::new("repl_interrupt_rustc").with_tool("rustc", WAITING_RUSTC);
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(+ 1 2)\r"),
+            Keys::AfterOutput("compiling\r\n", Keys::INTERRUPT),
+            Keys::AtPromptAfter("interrupted\r\n", Keys::END_OF_INPUT),
+        ],
+        &[("NO_COLOR", "1"), ("PATH", &edited.path_with_tools())],
+    );
+    assert!(!session.contains("error"), "{session:?}");
+}
+
+#[test]
+fn repl_interrupts_a_rustc_that_catches_the_signal() {
+    let edited = EditedSession::new("repl_interrupt_catching_rustc")
+        .with_tool("rustc", SIGNAL_CATCHING_RUSTC);
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(+ 1 2)\r"),
+            Keys::AfterOutput("compiling\r\n", Keys::INTERRUPT),
+            Keys::AtPromptAfter("interrupted\r\n", Keys::END_OF_INPUT),
+        ],
+        &[("NO_COLOR", "1"), ("PATH", &edited.path_with_tools())],
+    );
+    assert!(!session.contains("error"), "{session:?}");
+}
+
+#[test]
+fn repl_reports_a_rustc_failure_on_a_terminal() {
+    let edited = EditedSession::new("repl_rustc_failure_terminal")
+        .with_tool("rustc", CRASHING_RUSTC)
+        .with_tool("rustfmt", FAILING_RUSTFMT);
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(+ 1 2)\r"),
+            Keys::AtPromptAfter("rustc crashed", Keys::END_OF_INPUT),
+        ],
+        &[("NO_COLOR", "1"), ("PATH", &edited.path_with_tools())],
+    );
+    assert!(session.contains("note: rustfmt failed"), "{session:?}");
+    assert!(!session.contains("interrupted"), "{session:?}");
+}
+
+#[test]
+fn repl_interrupts_a_rustfmt_that_catches_the_signal() {
+    let edited = EditedSession::new("repl_interrupt_catching_rustfmt")
+        .with_tool("rustfmt", SIGNAL_CATCHING_RUSTFMT);
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(+ 40 2)\r"),
+            Keys::AfterOutput("formatting\r\n", Keys::INTERRUPT),
+            Keys::AtPromptAfter("interrupted\r\n", Keys::END_OF_INPUT),
+        ],
+        &[("NO_COLOR", "1"), ("PATH", &edited.path_with_tools())],
+    );
+    assert!(!session.contains("note"), "{session:?}");
+    assert!(!session.contains("\r\n42\r\n"), "{session:?}");
+}
+
+#[test]
+fn repl_interrupts_a_running_program_on_an_unsupported_terminal() {
+    let edited = EditedSession::new("repl_interrupt_dumb_terminal");
+    let session = edited.session(
+        &[
+            Keys::AfterOutput("> ", "(defn spin (i) (if (< i 0) i (recur (+ i 1))))\n"),
+            Keys::AfterOutput("> ", "(do (println \"spinning\") (spin 0))\n"),
+            Keys::AfterOutput("spinning\r\n", Keys::INTERRUPT),
+            Keys::AfterOutput("interrupted\r\n> ", "(spin -2)\n"),
+            Keys::AfterOutput("\r\n-2\r\n> ", Keys::END_OF_INPUT),
+        ],
+        &[("TERM", "dumb")],
+    );
+    assert!(!session.contains("exited with code"), "{session:?}");
+}
+
+#[test]
+fn emit_stops_quietly_when_rustfmt_is_interrupted() {
+    let sandbox = Sandbox::new("emit_rustfmt_interrupted")
+        .with_file("greeting.rslisp", GREETING)
+        .with_executable("tools/rustfmt", INTERRUPTED_RUSTFMT);
+    let emit = sandbox.compiler_with_path("tools", &["emit", "greeting.rslisp"]);
+    assert_eq!(emit.assert_exit_code(130).stderr(), "");
+}
+
+#[test]
+fn repl_interrupts_rustfmt_and_skips_the_input() {
+    let edited = EditedSession::new("repl_interrupt_rustfmt").with_tool("rustfmt", WAITING_RUSTFMT);
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(+ 40 2)\r"),
+            Keys::AfterOutput("formatting\r\n", Keys::INTERRUPT),
+            Keys::AtPromptAfter("interrupted\r\n", Keys::END_OF_INPUT),
+        ],
+        &[("NO_COLOR", "1"), ("PATH", &edited.path_with_tools())],
+    );
+    assert!(!session.contains("note"), "{session:?}");
+    assert!(!session.contains("\r\n42\r\n"), "{session:?}");
+}
+
+#[test]
+fn repl_skips_rustc_after_an_interrupt_in_the_front_end() {
+    let edited =
+        EditedSession::new("repl_interrupt_front_end").with_tool("rustfmt", UNINTERRUPTED_RUSTFMT);
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(+ 40 2)\r"),
+            Keys::AfterOutput("formatting\r\n", Keys::INTERRUPT),
+            Keys::AtPromptAfter("interrupted\r\n", "(+ 1 2)\r"),
+            Keys::AtPromptAfter("\r\n3\r\n", Keys::END_OF_INPUT),
+        ],
+        &[("NO_COLOR", "1"), ("PATH", &edited.path_with_tools())],
+    );
+    assert!(!session.contains("\r\n42\r\n"), "{session:?}");
+}
+
+#[test]
+fn repl_on_piped_input_stops_at_an_interrupt() {
+    let sandbox = Sandbox::new("repl_piped_interrupt");
+    let mut child = sandbox
+        .command(Path::new(Sandbox::COMPILER), &["repl"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("the compiler starts");
+    let mut input = child.stdin.take().expect("stdin is piped");
+    std::io::Write::write_all(&mut input, b"(+ 1 2)\n").expect("the compiler reads its input");
+    let mut first_value = String::new();
+    BufReader::new(child.stdout.take().expect("stdout is piped"))
+        .read_line(&mut first_value)
+        .expect("the compiler prints the value");
+    assert_eq!(first_value, "3\n");
+    let interrupt = Command::new("kill")
+        .args(["-INT", &child.id().to_string()])
+        .status()
+        .expect("kill runs");
+    assert!(interrupt.success());
+    let deadline = Instant::now() + Duration::from_secs(30);
+    while child
+        .try_wait()
+        .expect("the compiler is waitable")
+        .is_none()
+    {
+        if Instant::now() > deadline {
+            child.kill().ok();
+            panic!("the piped prompt kept running after an interrupt");
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    drop(input);
+    let status = child.wait().expect("the compiler finishes");
+    assert_eq!(status.signal(), Some(2));
 }

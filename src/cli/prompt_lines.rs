@@ -7,6 +7,7 @@ use anstream::{AutoStream, ColorChoice};
 use super::diagnostic_output::DiagnosticOutput;
 use super::edited_lines::EditedLines;
 use super::input_helper::InputHelper;
+use super::interruption::Interruption;
 use super::open_input::OpenInput;
 
 pub enum EnteredText {
@@ -43,6 +44,13 @@ impl PromptLines {
         )?)))
     }
 
+    pub fn catch_interrupts(&self) -> Result<Interruption, ctrlc::Error> {
+        match self {
+            Self::Piped(lines) if !lines.reads_a_terminal() => Ok(Interruption::default()),
+            Self::Piped(_) | Self::Edited(_) => Interruption::catch(),
+        }
+    }
+
     pub fn next_text(&mut self) -> io::Result<Option<EnteredText>> {
         match self {
             Self::Piped(lines) => lines.next_text(),
@@ -57,6 +65,10 @@ impl<R: BufRead> PipedLines<R> {
 
     fn new(input: R, prompt: Option<String>) -> Self {
         Self { input, prompt }
+    }
+
+    fn reads_a_terminal(&self) -> bool {
+        self.prompt.is_some()
     }
 
     pub fn next_text(&mut self) -> io::Result<Option<EnteredText>> {

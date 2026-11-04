@@ -11,8 +11,9 @@ use super::build_directory::BuildDirectory;
 use super::diagnostic_output::{DiagnosticOutput, RenderedDiagnostics};
 use super::error_location::ModuleLoader;
 use super::exit_status::ExitStatus;
+use super::interruption::Interruption;
 use super::stage_work::StageWork;
-use crate::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
+use crate::build::{BuildError, BuildProfile, EmittedFormatting, FormattingError, RustCompiler};
 use crate::core::{Expr, ModulePath};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
@@ -61,6 +62,7 @@ pub struct Terminal {
     sources: SourceMap,
     work: StageWork,
     diagnostics: Rc<dyn DiagnosticOutput>,
+    interruption: Interruption,
 }
 
 impl Terminal {
@@ -81,7 +83,12 @@ impl Terminal {
             sources: SourceMap::default(),
             work: StageWork::default(),
             diagnostics,
+            interruption: Interruption::default(),
         }
+    }
+
+    pub fn stop_before_rustc_on(&mut self, interruption: Interruption) {
+        self.interruption = interruption;
     }
 
     pub fn report_diagnostics_to(&mut self, diagnostics: Rc<dyn DiagnosticOutput>) {
@@ -170,6 +177,9 @@ impl Terminal {
         target: &BuildTarget<'_>,
         profile: BuildProfile,
     ) -> Result<(), ExitStatus> {
+        if self.interruption.is_raised() {
+            return Err(self.report_build(BuildError::Interrupted));
+        }
         RustCompiler::new(target.directory.clone(), profile)
             .compile(
                 emitted,
@@ -177,7 +187,14 @@ impl Terminal {
                 target.output,
                 Self::entry_span(),
             )
-            .map_err(|error| self.report_build(error))
+            .map_err(|error| self.report_build(self.interrupted_or(error)))
+    }
+
+    fn interrupted_or(&self, error: BuildError) -> BuildError {
+        if self.interruption.caused_a_failure() {
+            return BuildError::Interrupted;
+        }
+        error
     }
 
     pub fn emit(&mut self, path: &Path) -> Result<EmittedCrate, ExitStatus> {
@@ -201,6 +218,12 @@ impl Terminal {
         self.work.emitted_expressions = Some(emitted.emission.emitted_expressions);
         let written = match formatting.apply(&emitted) {
             Ok(formatted) => formatted,
+            Err(FormattingError::Interrupted) => {
+                return Err(self.report_build(BuildError::Interrupted));
+            }
+            Err(_) if self.interruption.caused_a_failure() => {
+                return Err(self.report_build(BuildError::Interrupted));
+            }
             Err(error) => {
                 eprintln!("note: {error}; writing unformatted Rust");
                 emitted
@@ -403,6 +426,7 @@ impl Terminal {
                 eprintln!("error: {message}");
                 ExitStatus::Environment
             }
+            BuildError::Interrupted => ExitStatus::Interrupted,
         }
     }
 

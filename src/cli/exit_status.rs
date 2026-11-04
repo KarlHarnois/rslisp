@@ -1,6 +1,8 @@
 use std::io;
 use std::process::ExitCode;
 
+use crate::build::InterruptSignal;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ExitStatus {
     Success,
@@ -8,15 +10,19 @@ pub enum ExitStatus {
     UsageError,
     Environment,
     Program(u8),
+    Interrupted,
 }
 
 impl ExitStatus {
+    pub const SIGNAL_BASE: u8 = 128;
+
     pub fn code(self) -> u8 {
         match self {
             ExitStatus::Success => 0,
             ExitStatus::ProgramErrors => 1,
             ExitStatus::UsageError | ExitStatus::Environment => 2,
             ExitStatus::Program(code) => code,
+            ExitStatus::Interrupted => Self::SIGNAL_BASE + InterruptSignal::NUMBER,
         }
     }
 

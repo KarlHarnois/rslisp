@@ -5,6 +5,7 @@ use std::sync::mpsc::{self, Receiver};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
+use super::interrupt_signal::InterruptSignal;
 use super::token_alignment::TokenAlignment;
 use crate::emit::{EmittedCrate, FormattingWork};
 use crate::language::Language;
@@ -54,6 +55,7 @@ pub enum FormattingError {
     Failed(String),
     TimedOut(Duration),
     Misaligned,
+    Interrupted,
 }
 
 impl fmt::Display for FormattingError {
@@ -63,6 +65,7 @@ impl fmt::Display for FormattingError {
             Self::Failed(message) if message.is_empty() => write!(formatter, "rustfmt failed"),
             Self::Failed(message) => write!(formatter, "rustfmt failed: {message}"),
             Self::TimedOut(limit) => write!(formatter, "rustfmt did not finish within {limit:?}"),
+            Self::Interrupted => write!(formatter, "rustfmt was interrupted"),
             Self::Misaligned => {
                 write!(
                     formatter,
@@ -106,6 +109,9 @@ impl Rustfmt {
             .and_then(|()| self.read_within_limit(output))
             .inspect_err(|_| Self::stop(child))?;
         let status = child.wait().map_err(FormattingError::Unavailable)?;
+        if InterruptSignal::stopped(status) {
+            return Err(FormattingError::Interrupted);
+        }
         if !status.success() {
             return Err(FormattingError::Failed(errors.read_message()));
         }
@@ -217,6 +223,14 @@ mod tests {
         fn drop(&mut self) {
             self.dropped.store(true, Ordering::SeqCst);
         }
+    }
+
+    #[test]
+    fn an_interrupted_rustfmt_names_the_interruption() {
+        assert_eq!(
+            FormattingError::Interrupted.to_string(),
+            "rustfmt was interrupted"
+        );
     }
 
     #[test]
