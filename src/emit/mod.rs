@@ -25,6 +25,7 @@ mod signature_borrows;
 mod store_sites;
 mod stored_arguments;
 mod stored_functions;
+mod structural_impls;
 mod template;
 mod type_anchor;
 mod types;

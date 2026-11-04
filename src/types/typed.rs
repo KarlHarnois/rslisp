@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::rc::Rc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -6,6 +7,7 @@ use super::display::TypeDisplay;
 use super::enums::{EnumTable, VariantDefinition, VariantPayload};
 use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
+use super::structural::{StructuralTrait, StructuralUses};
 use super::template_clauses::TemplateClauses;
 use super::templates::TemplateBorrows;
 use super::traits::TraitTable;
@@ -374,6 +376,9 @@ pub struct TypedProgram {
     pub enums: EnumTable,
     pub rust_types: RustTypeTable,
     pub box_binding: Option<BindingId>,
+    pub inferred_boxes: BTreeSet<(BindingId, usize, usize)>,
+    pub structural_traits: Vec<StructuralTrait>,
+    pub structural_uses: StructuralUses,
     pub traits: TraitTable,
     pub trait_definitions: Vec<TypedTrait>,
     pub rust_trait_paths: FxHashMap<BindingId, Rc<str>>,

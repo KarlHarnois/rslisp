@@ -48,6 +48,12 @@ impl VariantDefinition {
     }
 }
 
+#[derive(Clone, Copy)]
+pub struct PayloadPosition {
+    pub variant: usize,
+    pub payload: usize,
+}
+
 #[derive(Clone)]
 pub struct EnumDefinition {
     pub lifetimes: Vec<BindingId>,
@@ -110,14 +116,27 @@ impl EnumDefinition {
             .flat_map(|variant| variant.payload_types())
     }
 
-    pub fn blocking_variant(&self, satisfies: &dyn Fn(&Type) -> bool) -> Option<(Rc<str>, Type)> {
-        self.variants.iter().find_map(|variant| {
-            variant
-                .payload_types()
-                .into_iter()
-                .find(|payload| !satisfies(payload))
-                .map(|payload| (variant.name.clone(), payload.clone()))
-        })
+    pub fn blocking_variant(
+        &self,
+        satisfies: &dyn Fn(PayloadPosition, &Type) -> bool,
+    ) -> Option<(Rc<str>, Type)> {
+        self.variants
+            .iter()
+            .enumerate()
+            .find_map(|(variant_position, variant)| {
+                variant
+                    .payload_types()
+                    .into_iter()
+                    .enumerate()
+                    .find(|(payload_position, payload)| {
+                        let position = PayloadPosition {
+                            variant: variant_position,
+                            payload: *payload_position,
+                        };
+                        !satisfies(position, payload)
+                    })
+                    .map(|(_, payload)| (variant.name.clone(), payload.clone()))
+            })
     }
 
     fn replacements(&self, arguments: &[Type]) -> FxHashMap<GenericId, Type> {
@@ -265,7 +284,9 @@ mod tests {
             ),
         ]);
         let blocking = definition
-            .blocking_variant(&|payload| matches!(payload, Type::Primitive(PrimitiveType::String)))
+            .blocking_variant(&|_, payload| {
+                matches!(payload, Type::Primitive(PrimitiveType::String))
+            })
             .expect("the number payload does not satisfy the test");
         assert_eq!(blocking.0.as_ref(), "number");
         assert_eq!(blocking.1, Type::Primitive(PrimitiveType::F64));

@@ -1,0 +1,212 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/structural_trait.rslisp
+---
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Mode {
+    owner: u32,
+    group: u32,
+}
+
+fn make_mode(owner: u32, group: u32) -> Mode {
+    Mode { owner, group }
+}
+
+#[derive(Clone)]
+struct Listed {
+    mask: u32,
+}
+
+fn make_listed(mask: u32) -> Listed {
+    Listed { mask }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Written {
+    mask: u32,
+}
+
+fn make_written(mask: u32) -> Written {
+    Written { mask }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct InnerMode {
+    owner: u32,
+}
+
+fn make_inner_mode(owner: u32) -> InnerMode {
+    InnerMode { owner }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Holder {
+    inner: InnerMode,
+    written: Written,
+}
+
+fn make_holder(inner: InnerMode, written: Written) -> Holder {
+    Holder { inner, written }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum Tree<A> {
+    Leaf,
+    Node(Box<Tree<A>>, A, Box<Tree<A>>),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Shape {
+    Labeled { width: u32, height: u32 },
+    Empty,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Unprinted {
+    mask: u32,
+}
+
+fn make_unprinted(mask: u32) -> Unprinted {
+    Unprinted { mask }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!("{:o}", make_mode(8, 9));
+    println!("{:o}", make_listed(64));
+    println!("{:o}", make_written(1));
+    println!("{:o}", make_holder(make_inner_mode(1), make_written(2)));
+    println!(
+        "{:o}",
+        Tree::Node(Box::new(Tree::Leaf), 8_u32, Box::new(Tree::Leaf))
+    );
+    println!(
+        "{:o}",
+        Shape::Labeled {
+            width: 8,
+            height: 16
+        }
+    );
+    println!("{:o}", Shape::Empty);
+    absurd_each(Vec::new());
+    println!("{}", make_unprinted(3).mask)
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Never {}
+
+fn absurd_each(values: Vec<Never>) {
+    values
+        .iter()
+        .for_each(|argument_0: &Never| println!("{:o}", argument_0))
+}
+
+impl std::fmt::Octal for Written {
+    fn fmt(&self, out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(out, "written")
+    }
+}
+
+impl std::fmt::Octal for Mode {
+    fn fmt(&self, octal_out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        {
+            let out = octal_out;
+            write!(out, "(mode")?;
+            write!(out, " :owner {:o}", &self.owner)?;
+            write!(out, " :group {:o}", &self.group)?;
+            write!(out, ")")
+        }
+    }
+}
+
+impl std::fmt::Octal for Listed {
+    fn fmt(&self, octal_out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        {
+            let out = octal_out;
+            write!(out, "(listed")?;
+            write!(out, " :mask {:o}", &self.mask)?;
+            write!(out, ")")
+        }
+    }
+}
+
+impl std::fmt::Octal for InnerMode {
+    fn fmt(&self, octal_out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        {
+            let out = octal_out;
+            write!(out, "(inner-mode")?;
+            write!(out, " :owner {:o}", &self.owner)?;
+            write!(out, ")")
+        }
+    }
+}
+
+impl std::fmt::Octal for Holder {
+    fn fmt(&self, octal_out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        {
+            let out = octal_out;
+            write!(out, "(holder")?;
+            write!(out, " :inner {:o}", &self.inner)?;
+            write!(out, " :written {:o}", &self.written)?;
+            write!(out, ")")
+        }
+    }
+}
+
+impl<A: std::fmt::Octal> std::fmt::Octal for Tree<A> {
+    fn fmt(&self, octal_out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Tree::Leaf => write!(octal_out, "tree/leaf"),
+            Tree::Node(part_0, part_1, part_2) => {
+                let out = octal_out;
+                write!(out, "(tree/node")?;
+                write!(out, " {:o}", &**part_0)?;
+                write!(out, " {:o}", part_1)?;
+                write!(out, " {:o}", &**part_2)?;
+                write!(out, ")")
+            }
+        }
+    }
+}
+
+impl std::fmt::Octal for Shape {
+    fn fmt(&self, octal_out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Shape::Labeled {
+                width: part_0,
+                height: part_1,
+            } => {
+                let out = octal_out;
+                write!(out, "(shape/labeled")?;
+                write!(out, " {:o}", part_0)?;
+                write!(out, " {:o}", part_1)?;
+                write!(out, ")")
+            }
+            Shape::Empty => write!(octal_out, "shape/empty"),
+        }
+    }
+}
+
+impl std::fmt::Octal for Never {
+    fn fmt(&self, octal_out: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {}
+    }
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

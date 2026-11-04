@@ -194,7 +194,9 @@ pub struct TypeChecker {
     evaluated_forms: FxHashMap<Span, Rc<str>>,
     copy_trait: Option<BindingId>,
     box_binding: Option<BindingId>,
-    inferred_boxes: BTreeSet<(BindingId, usize, usize)>,
+    pub(super) inferred_boxes: BTreeSet<(BindingId, usize, usize)>,
+    pub(super) structural_traits: Vec<super::structural::StructuralTrait>,
+    pub(super) structural_uses: super::structural::StructuralUses,
     pub(super) written_parameters: FxHashMap<BindingId, Vec<bool>>,
     pub(super) parameter_call_requests: Vec<ParameterCallRequest>,
     pub(super) pending_mode_checks: Vec<PendingModeCheck>,
@@ -287,6 +289,8 @@ impl TypeChecker {
             copy_trait: None,
             box_binding: None,
             inferred_boxes: BTreeSet::new(),
+            structural_traits: Vec::new(),
+            structural_uses: super::structural::StructuralUses::default(),
             written_parameters: FxHashMap::default(),
             parameter_call_requests: Vec::new(),
             pending_mode_checks: Vec::new(),
@@ -340,6 +344,7 @@ impl TypeChecker {
             );
         }
         self.collect_trait_impls(modules);
+        self.record_structural_traits(modules);
         self.register_derived_traits(modules);
         self.report_supertraits();
         self.check_trait_claims(modules);
@@ -841,6 +846,7 @@ impl TypeChecker {
             self.report_missing_trait(&bound, implementor, span);
             return;
         }
+        self.record_structural_use(&bound, implementor);
         for requirement in requirements {
             let required = Obligation {
                 bound: requirement.bound,
@@ -2805,10 +2811,11 @@ impl TypeChecker {
     }
 
     fn is_derivable(&self, bound: BindingId) -> bool {
-        self.traits.get(bound).is_some_and(|rust_trait| {
+        let written = self.traits.get(bound).is_some_and(|rust_trait| {
             let name = StructDerives::derive_name(&rust_trait.path);
             StructDerives::DERIVABLE.contains(&name)
-        })
+        });
+        written || self.is_structural_trait(bound)
     }
 }
 
@@ -2871,6 +2878,7 @@ impl TypeChecker {
             }
         }
         self.absorb_impl_bounds(&definitions);
+        self.record_uses_through_impls();
         self.discharge_obligations(ObligationPass::Final);
         self.check_written_projections();
         self.resolve_missing_annotations();
@@ -2935,6 +2943,9 @@ impl TypeChecker {
             enums: self.enums,
             rust_types: self.rust_types,
             box_binding: self.box_binding,
+            inferred_boxes: self.inferred_boxes,
+            structural_traits: self.structural_traits,
+            structural_uses: self.structural_uses,
             traits: self.traits,
             trait_definitions: self.trait_definitions,
             rust_trait_paths: self.rust_trait_paths,

@@ -1,0 +1,45 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/structural_trait_errors.rslisp
+---
+error[L0423]: `named` cannot derive `octal`
+  --> check/structural_trait_errors.rslisp:17:15
+   |
+17 | (derive named octal)
+   |               ^^^^^ field `label` is `string`, which is not `octal`
+   |
+   = help: change the type of field `label`, or leave this trait out of the `derive`
+
+error[L0422]: `display` cannot be derived
+  --> check/structural_trait_errors.rslisp:20:21
+   |
+20 | (derive shown clone display)
+   |                     ^^^^^^^ not a derivable trait
+   |
+   = help: a `derive` lists any of: clone, copy, debug, partial-eq, eq, partial-ord, ord, hash, octal
+
+error[L0404]: `closed` does not implement `octal`
+  --> check/structural_trait_errors.rslisp:25:15
+   |
+12 | (derive closed clone)
+   | --------------------- this `derive` leaves out `octal`
+...
+25 |   (show-octal (->closed 1))
+   |               ^^^^^^^^^^^^ this needs `octal`
+   |
+   = help: add `octal` to the struct's `derive`
+
+error[L0404]: `op` does not implement `octal`
+  --> check/structural_trait_errors.rslisp:26:15
+   |
+26 |   (show-octal (->op twice)))
+   |               ^^^^^^^^^^^^ this needs `octal`
+   |
+   = note: `op` cannot derive `octal`: field `run` is `(fn (u32) u32)`
+
+error[L0404]: `(wrap (wrap u32))` does not implement `octal`
+  --> check/structural_trait_errors.rslisp:33:15
+   |
+33 |   (show-octal (wrap/wrapped (wrap/wrapped (the u32 1)))))
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `octal`
