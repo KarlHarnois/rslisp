@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::core::{
     KernelForm, KernelType, Keyword, ModulePath, Namespace, PassingAspect, PassingDifference,
 };
-use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, Suggestion};
+use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, MissingName, Suggestion};
 use crate::interpret::InterpretProblems;
 use crate::source::Span;
 
@@ -339,6 +339,18 @@ impl ExpandProblems {
     }
 
     pub fn unbound(
+        name: &str,
+        namespace: Namespace,
+        span: Span,
+        similar: Option<Rc<str>>,
+    ) -> Diagnostic {
+        Self::unbound_report(name, namespace, span, similar).with_missing_name(MissingName {
+            name: name.into(),
+            namespace,
+        })
+    }
+
+    fn unbound_report(
         name: &str,
         namespace: Namespace,
         span: Span,
@@ -997,5 +1009,26 @@ impl ExpandProblems {
             Namespace::Value => "",
             Namespace::Type => "type ",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ExpandProblems;
+    use crate::core::Namespace;
+    use crate::diagnostic::MissingName;
+    use crate::source::{SourceId, Span};
+
+    #[test]
+    fn an_unbound_name_carries_the_name_and_its_namespace() {
+        let span = Span::new(SourceId::new(0), 0..4);
+        let diagnostic = ExpandProblems::unbound("user", Namespace::Type, span, None);
+        assert_eq!(
+            diagnostic.missing_name(),
+            Some(&MissingName {
+                name: "user".into(),
+                namespace: Namespace::Type,
+            })
+        );
     }
 }
