@@ -1,6 +1,6 @@
 use super::fragment::{Code, Fragment, Precedence};
 use super::operator::{RustOperator, RustText, Side};
-use crate::core::{ParsedTemplate, Piece};
+use crate::core::{Access, ParsedTemplate, Piece};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TemplateError {
@@ -15,6 +15,7 @@ pub struct Template {
 
 impl Template {
     const TEMPORARY_PREFIX: &str = "template_argument_";
+    const INTO_ITERATOR: &str = ".into_iter()";
     const UNARY_OPERATORS: [char; 4] = ['-', '!', '*', '&'];
     const POSTFIX_OPERATORS: [char; 4] = ['.', '[', '(', '?'];
     const SEPARATORS_BEFORE: [char; 3] = ['(', ',', '['];
@@ -123,11 +124,12 @@ impl Template {
         for (position, piece) in pieces.iter().enumerate() {
             match piece {
                 Piece::Literal(literal) => fragments.push(Fragment::Text(literal.clone())),
-                Piece::Placeholder { index, .. } => {
+                Piece::Placeholder { index, access } => {
                     let argument = self.argument_in_place(&arguments[*index], position);
                     bare_struct_literal |= argument.bare_struct_literal
                         && Self::is_outside_delimiters(&pieces[..position]);
                     fragments.extend(argument.fragments);
+                    fragments.extend(Self::conversion_to_owned(*access, &arguments[*index]));
                 }
                 Piece::TypePlaceholder { name } => {
                     let (_, code) = types
@@ -146,6 +148,11 @@ impl Template {
             precedence: self.precedence(),
             bare_struct_literal,
         })
+    }
+
+    fn conversion_to_owned(access: Access, argument: &Code) -> Option<Fragment> {
+        (access == Access::Owned && argument.is_plain_name())
+            .then(|| Fragment::Text(Self::INTO_ITERATOR.to_string()))
     }
 
     fn is_outside_delimiters(preceding: &[Piece]) -> bool {
@@ -346,6 +353,26 @@ mod tests {
         assert_eq!(
             inline("println!(\"{{}}\", {0})", vec![Code::atom("x")]),
             "println!(\"{}\", x)"
+        );
+    }
+
+    #[test]
+    fn converts_an_owned_binding_into_an_iterator() {
+        assert_eq!(
+            inline(
+                "{owned 0}.any({1})",
+                vec![Code::atom("values"), Code::atom("big")]
+            ),
+            "values.into_iter().any(big)"
+        );
+    }
+
+    #[test]
+    fn passes_an_owned_temporary_as_written() {
+        let temporary = Code::atom("years.iter()");
+        assert_eq!(
+            inline("{owned 0}.any({1})", vec![temporary, Code::atom("big")]),
+            "years.iter().any(big)"
         );
     }
 

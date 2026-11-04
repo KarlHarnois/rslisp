@@ -126,6 +126,7 @@ impl OwnershipChecker {
             rust_parameter_kinds: ClosureKinds::rust_parameter_kinds(program),
             written_parameter_kinds: ClosureKinds::written_parameter_kinds(program),
             borrowing_lambdas: &program.borrowing_lambdas,
+            pipelines: Pipelines::new(&program.rust_types),
         });
         let report = kinds.run(&mut program.modules);
         Self::apply_kinds(program, report, &mut diagnostics);

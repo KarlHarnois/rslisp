@@ -7,8 +7,8 @@ fn apply(f: impl FnOnce() -> Option<i64>) -> Option<i64> {
     f()
 }
 
-fn later(mut values: impl Iterator<Item = i64>) -> Option<i64> {
-    apply(|| values.find(|value: &i64| *value > 5))
+fn later(values: impl Iterator<Item = i64>) -> Option<i64> {
+    apply(|| values.into_iter().find(|value: &i64| *value > 5))
 }
 
 fn main() {

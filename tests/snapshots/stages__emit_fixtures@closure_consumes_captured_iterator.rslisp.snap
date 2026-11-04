@@ -1,20 +1,17 @@
 ---
 source: tests/stages.rs
 expression: reports.report(path)
-input_file: tests/fixtures/emit/advanced_iterator_used_again.rslisp
+input_file: tests/fixtures/emit/closure_consumes_captured_iterator.rslisp
 ---
-fn both(mut values: impl Iterator<Item = i64>) -> bool {
-    let first: Option<i64> = values.find(|value: &i64| *value > 5);
-    first.is_some() && values.any(|value: i64| value > 50)
+fn later(values: impl Iterator<Item = i64>) -> Option<i64> {
+    let pick = || values.into_iter().find(|value: &i64| *value > 5);
+    pick()
 }
 
 fn main() {
     crate::rt::restore_default_sigpipe();
-    println!("{:?}", both(0_i64..100_i64));
-    println!("{:?}", both(0_i64..10_i64));
-    let mut steps = 0_i64..10_i64;
-    println!("{:?}", steps.find(|step: &i64| *step > 2));
-    println!("{:?}", steps.find(|step: &i64| *step > 2))
+    println!("{:?}", later(0_i64..10_i64));
+    println!("{:?}", later(0_i64..3_i64))
 }
 
 mod rt {

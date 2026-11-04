@@ -257,6 +257,29 @@ impl OwnershipProblems {
         capture_span: Option<Span>,
     ) -> Diagnostic {
         let (primary, secondary) = Self::closure_kind_labels(actual, capture, passed, capture_span);
+        Self::closure_kind_error(actual, required, primary, secondary)
+            .with_help(Self::closure_kind_help(actual, required, capture, callee))
+    }
+
+    pub fn pipeline_capture_mismatch(
+        actual: ClosureKind,
+        required: ClosureKind,
+        capture: &str,
+        passed: Span,
+        capture_span: Option<Span>,
+    ) -> Diagnostic {
+        let (primary, secondary) =
+            Self::closure_kind_labels(actual, Some(capture), passed, capture_span);
+        let diagnostic = Self::closure_kind_error(actual, required, primary, secondary);
+        Self::pipeline_help(diagnostic, capture)
+    }
+
+    fn closure_kind_error(
+        actual: ClosureKind,
+        required: ClosureKind,
+        primary: Label,
+        secondary: Option<Label>,
+    ) -> Diagnostic {
         let diagnostic = Diagnostic::error(
             DiagnosticCode::CLOSURE_KIND_MISMATCH,
             format!(
@@ -265,8 +288,7 @@ impl OwnershipProblems {
                 required.keyword()
             ),
             primary,
-        )
-        .with_help(Self::closure_kind_help(actual, required, capture, callee));
+        );
         match secondary {
             Some(label) => diagnostic.with_label(label),
             None => diagnostic,

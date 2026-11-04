@@ -3,21 +3,19 @@ use rustc_hash::FxHashSet;
 use crate::core::{BindingId, ReferenceKind};
 use crate::ownership::ChangedValues;
 use crate::types::{
-    Borrow, TemplateBorrows, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr,
-    TypedExprKind, TypedLambda, TypedLeaf,
+    Borrow, TypedArgument, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind,
+    TypedLambda, TypedLeaf,
 };
 
-pub struct MutableLocals<'a> {
-    templates: &'a TemplateBorrows,
+pub struct MutableLocals {
     bindings: FxHashSet<BindingId>,
     mutating_closures: FxHashSet<BindingId>,
     called_closures: FxHashSet<BindingId>,
 }
 
-impl<'a> MutableLocals<'a> {
-    pub fn of(value: &TypedExpr, templates: &'a TemplateBorrows) -> Self {
+impl MutableLocals {
+    pub fn of(value: &TypedExpr) -> Self {
         let mut found = Self {
-            templates,
             bindings: FxHashSet::default(),
             mutating_closures: FxHashSet::default(),
             called_closures: FxHashSet::default(),
@@ -68,7 +66,7 @@ impl<'a> MutableLocals<'a> {
     }
 
     fn let_closure(&mut self, binding: BindingId, closure: &TypedExpr, lambda: &TypedLambda) {
-        let inside = MutableLocals::of(closure, self.templates);
+        let inside = MutableLocals::of(closure);
         if inside.changes_capture(binding, closure, lambda) {
             self.mutating_closures.insert(binding);
         }
@@ -100,7 +98,6 @@ impl<'a> MutableLocals<'a> {
 
     fn call(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) {
         self.record_call(callee);
-        self.record_advanced_locals(callee, arguments);
         self.arguments(arguments);
         self.expr(callee);
     }
@@ -121,17 +118,6 @@ impl<'a> MutableLocals<'a> {
     fn record_call(&mut self, callee: &TypedExpr) {
         if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = callee.kind {
             self.called_closures.insert(binding);
-        }
-    }
-
-    fn record_advanced_locals(&mut self, callee: &TypedExpr, arguments: &[TypedArgument]) {
-        for (position, argument) in arguments.iter().enumerate() {
-            if let TypedExprKind::Leaf(TypedLeaf::Local(binding)) = argument.value.kind
-                && !argument.value.ty.is_reference()
-                && self.templates.advances(callee, position)
-            {
-                self.bindings.insert(binding);
-            }
         }
     }
 

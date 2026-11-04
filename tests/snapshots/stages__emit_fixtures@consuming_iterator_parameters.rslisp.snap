@@ -1,26 +1,26 @@
 ---
 source: tests/stages.rs
 expression: reports.report(path)
-input_file: tests/fixtures/emit/advancing_iterator_parameters.rslisp
+input_file: tests/fixtures/emit/consuming_iterator_parameters.rslisp
 ---
-fn first_big(mut values: impl Iterator<Item = i64>) -> Option<i64> {
-    values.find(|value: &i64| *value > 50)
+fn first_big(values: impl Iterator<Item = i64>) -> Option<i64> {
+    values.into_iter().find(|value: &i64| *value > 50)
 }
 
-fn is_has_big(mut values: impl Iterator<Item = i64>) -> bool {
-    values.any(|value: i64| value > 50)
+fn is_has_big(values: impl Iterator<Item = i64>) -> bool {
+    values.into_iter().any(|value: i64| value > 50)
 }
 
-fn is_all_small(mut values: impl Iterator<Item = i64>) -> bool {
-    values.all(|value: i64| value < 50)
+fn is_all_small(values: impl Iterator<Item = i64>) -> bool {
+    values.into_iter().all(|value: i64| value < 50)
 }
 
 fn how_many(values: impl Iterator<Item = i64>) -> usize {
     values.count()
 }
 
-fn first_even(mut values: impl Iterator<Item = i64>) -> Option<i64> {
-    values.find(|value: &i64| *value % 2 == 0)
+fn first_even(values: impl Iterator<Item = i64>) -> Option<i64> {
+    values.into_iter().find(|value: &i64| *value % 2 == 0)
 }
 
 fn even_year(years: &[i64]) -> Option<i64> {
@@ -35,7 +35,10 @@ fn main() {
     println!("{:?}", how_many(1_i64..100_i64));
     println!("{:?}", first_even(2041_i64..2045_i64));
     let years: Vec<i64> = vec![2017_i64, 2018_i64, 2019_i64];
-    println!("{:?}", even_year(&years))
+    println!("{:?}", even_year(&years));
+    let recent = years.iter().filter(|year: &&i64| **year > 2017);
+    println!("{:?}", recent.into_iter().all(|year: &i64| *year > 2018));
+    println!("{:?}", years.iter().any(|year: &i64| *year > 2018))
 }
 
 mod rt {
