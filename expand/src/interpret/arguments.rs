@@ -100,6 +100,12 @@ impl Arguments {
             .ok_or_else(|| self.wrong(index, "a keyword"))
     }
 
+    pub fn keyword_trim_end(&self, index: usize) -> Result<Form, Diagnostic> {
+        self.values[index]
+            .keyword_trim_end()
+            .ok_or_else(|| self.wrong(index, "a keyword"))
+    }
+
     pub fn field_keyword(&self, index: usize) -> Result<Form, Diagnostic> {
         self.values[index]
             .field_keyword()

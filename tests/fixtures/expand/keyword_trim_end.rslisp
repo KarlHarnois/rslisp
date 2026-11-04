@@ -1,0 +1,11 @@
+(use code list keyword-trim-end)
+
+(def trimmed-keywords
+  (macro (form)
+    (list (quote quote)
+          (list (keyword-trim-end (quote :email:))
+                (keyword-trim-end (quote :email::))
+                (keyword-trim-end (quote :email))
+                (keyword-trim-end (quote ::))))))
+
+(def answers (fn () (trimmed-keywords)))

@@ -1,0 +1,5 @@
+(use code keyword-trim-end)
+
+(def trim-symbol (macro (form) (keyword-trim-end (quote email:))))
+
+(trim-symbol)

@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/keyword_trim_end_hygiene.rslisp
+---
+(def total 5)
+(def read-total (fn () total))

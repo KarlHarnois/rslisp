@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/keyword_trim_end_errors.rslisp
+---
+error[L0303]: `keyword-trim-end` expects a keyword as argument 1, found a symbol
+ --> expand/keyword_trim_end_errors.rslisp:3:32
+  |
+3 | (def trim-symbol (macro (form) (keyword-trim-end (quote email:))))
+  |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ a symbol given here
+4 |
+5 | (trim-symbol)
+  | ------------- in this macro call
