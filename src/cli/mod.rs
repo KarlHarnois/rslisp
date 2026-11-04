@@ -5,11 +5,14 @@ mod check;
 mod counter_report;
 mod doc;
 mod emit;
+mod eval;
 mod exit_status;
 mod expand;
+mod finished_program;
 mod run;
 mod signatures;
 mod stage_work;
+mod temporary_directory;
 mod term_parser;
 mod terminal;
 
@@ -22,11 +25,13 @@ use clap::{Args, Parser, Subcommand};
 use crate::build::BuildProfile;
 use crate::counters::CountingAllocator;
 use crate::language::Language;
+use crate::source::TextPosition;
 use build::BuildCommand;
 use check::CheckCommand;
 use counter_report::CounterReport;
 use doc::{DocCommand, DocEnvironment, DocPage};
 use emit::EmitCommand;
+use eval::{EvalCommand, FormsText, ModuleText};
 use exit_status::ExitStatus;
 use expand::ExpandCommand;
 use run::RunCommand;
@@ -87,6 +92,23 @@ enum ProgramCommand {
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
+    #[command(about = "Check a module, then run forms once in its scope and print their values")]
+    Eval {
+        file: PathBuf,
+        #[arg(allow_hyphen_values = true)]
+        forms: String,
+        #[command(flatten)]
+        stdin: StdinFlag,
+        #[arg(
+            long,
+            help = "Resolve `use` from this directory [default: the file's directory]"
+        )]
+        root: Option<PathBuf>,
+        #[command(flatten)]
+        position: PositionFlags,
+        #[command(flatten)]
+        release: ReleaseFlag,
+    },
     #[command(about = "Build a program and run it")]
     Run {
         file: PathBuf,
@@ -101,6 +123,28 @@ enum ProgramCommand {
 struct ReleaseFlag {
     #[arg(long)]
     release: bool,
+}
+
+#[derive(Args)]
+struct StdinFlag {
+    #[arg(long, help = "Read the module's text from standard input")]
+    stdin: bool,
+}
+
+#[derive(Args)]
+struct PositionFlags {
+    #[arg(
+        long,
+        requires = "column",
+        help = "The line where the forms start in the module's text"
+    )]
+    line: Option<usize>,
+    #[arg(
+        long,
+        requires = "line",
+        help = "The byte column where the forms start, from 1"
+    )]
+    column: Option<usize>,
 }
 
 #[derive(Args)]
@@ -160,6 +204,20 @@ impl ProgramCommand {
                 },
             )
             .run(terminal),
+            Self::Eval {
+                file,
+                forms,
+                stdin,
+                root,
+                position,
+                release,
+            } => EvalCommand::new(
+                stdin.module_text(file),
+                root,
+                FormsText::new(forms, position.position()),
+                release.profile(),
+            )
+            .run(terminal),
             Self::Run {
                 file,
                 release,
@@ -184,6 +242,22 @@ impl ReleaseFlag {
         } else {
             BuildProfile::Debug
         }
+    }
+}
+
+impl StdinFlag {
+    fn module_text(&self, file: PathBuf) -> ModuleText {
+        if self.stdin {
+            ModuleText::StandardInput(file)
+        } else {
+            ModuleText::File(file)
+        }
+    }
+}
+
+impl PositionFlags {
+    fn position(&self) -> Option<TextPosition> {
+        Some(TextPosition::new(self.line?, self.column?))
     }
 }
 

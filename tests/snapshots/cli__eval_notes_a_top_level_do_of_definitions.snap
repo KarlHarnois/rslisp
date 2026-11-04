@@ -1,0 +1,9 @@
+---
+source: tests/cli.rs
+expression: eval.assert_exit_code(0).stderr()
+---
+note: the module defines this form, so it does not run
+ --> geometry.rslisp:4:1
+  |
+4 | (do (defn twice (n) (* 2 n)))
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ a definition of the module

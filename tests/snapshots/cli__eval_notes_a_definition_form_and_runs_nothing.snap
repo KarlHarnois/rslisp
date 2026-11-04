@@ -1,0 +1,9 @@
+---
+source: tests/cli.rs
+expression: eval.assert_exit_code(0).stderr()
+---
+note: the module defines this form, so it does not run
+ --> geometry.rslisp:1:1
+  |
+1 | (defn area (w h) (* w h))
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^ a definition of the module

@@ -1,0 +1,9 @@
+---
+source: tests/cli.rs
+expression: eval.assert_exit_code(0).stderr()
+---
+note: the value has type `(fn (i64) i64)`, which does not implement `debug`
+ --> <eval>:1:12
+  |
+1 | (square 2) (fn ((x i64)) x)
+  |            ^^^^^^^^^^^^^^^^ this value does not print

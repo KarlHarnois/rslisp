@@ -1,0 +1,11 @@
+---
+source: tests/cli.rs
+expression: eval.assert_exit_code(1).stderr()
+---
+error[L0207]: expected a definition at module level
+ --> mixed.rslisp:2:38
+  |
+2 | (do (defn cube (n) (* n (square n))) (prn 7))
+  |                                      ^^^^^^^ this is not a definition
+  |
+  = help: put expressions inside a function, such as `(def run (fn () ...))`

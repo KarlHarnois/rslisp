@@ -72,6 +72,21 @@ const TWICE_TYPE: &str = "(type twice (fn (i64) i64))";
 const TWICE_PAGE: &str = "(defn twice (x))\n\nDoubles a number.\n";
 const POINT_TYPE: &str = "(type point (fn () point))";
 
+const SESSION: &str = "(defn square (n) (* n n))\n(defstruct point :x i64 :y i64)\n(defn main () (println \"written main\"))\n";
+const EVALUATED_GEOMETRY: &str = "(defn area (w h) (* w h))\n(area 2 3)\n(defn report ()\n  (println (area 4 5)))\n(do (defn twice (n) (* 2 n)))\n";
+const GEOMETRY_DEFINITIONS: &str = "(defn area (w h) (* w h))\n(defn report ()\n  (println (area 4 5)))\n(do (defn twice (n) (* 2 n)))\n";
+const AREA_OF_A_STRING: &str = "(defn area (w h) (* w h))\n(defn report () (area 2 \"3\"))\n";
+const TOP_LEVEL_AREA_OF_A_STRING: &str = "(defn area (w h) (* w h))\n(area 2 \"3\")\n";
+const EXITS: &str = "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n(def abort (rust \"std::process::abort()\" (fn () unit)))\n";
+const TOP_LEVEL_DO_OF_EXPRESSIONS: &str = "(defn square (n) (* n n))\n(do (prn (square 3)))\n";
+const UNREACHABLE_ARM_IN_A_BODY: &str =
+    "(defn square (n) (* n n))\n(defn pick ()\n  (match 3 (_ 1) (_ 2)))\n";
+const MIXED_TOP_LEVEL_DO: &str =
+    "(defn square (n) (* n n))\n(do (defn cube (n) (* n (square n))) (prn 7))\n";
+const UNREACHABLE_ARM: &str = "(defn pick (x) (match x (_ 1) (_ 2)))\n";
+const SHAPES: &str = "(export circle)\n(defn circle (r) (* 3 r r))\n";
+const SHAPES_USER: &str = "(use shapes circle)\n";
+
 const UNBOUND_NAMES_PAST_THE_CAP: usize = 25;
 
 struct Sandbox {
@@ -131,6 +146,24 @@ impl Sandbox {
             .copied()
             .collect();
         self.compiler(&typed)
+    }
+
+    fn compiler_reading(&self, input: &str, arguments: &[&str]) -> Outcome {
+        let mut child = self
+            .command(Path::new(Self::COMPILER), arguments)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("the compiler starts");
+        std::io::Write::write_all(
+            &mut child.stdin.take().expect("stdin is piped"),
+            input.as_bytes(),
+        )
+        .expect("the compiler reads its input");
+        Outcome {
+            output: child.wait_with_output().expect("the compiler finishes"),
+        }
     }
 
     fn compiler_writing_to_a_closed_pipe(&self, arguments: &[&str]) -> Outcome {
@@ -1162,4 +1195,364 @@ fn run_reports_a_program_that_cannot_start() {
             .stderr()
             .starts_with("error: cannot run `target/rslisp/greeting/greeting`")
     );
+}
+
+#[test]
+fn eval_prints_a_value_through_prn() {
+    let sandbox = Sandbox::new("eval_value").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "session.rslisp", "(->point (square 2) 3)"]);
+    assert_eq!(
+        eval.assert_silent_success().stdout(),
+        "Point { x: 4, y: 3 }\n"
+    );
+}
+
+#[test]
+fn eval_prints_nothing_for_a_unit_result() {
+    let sandbox = Sandbox::new("eval_unit").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "session.rslisp", "(println \"side \" (square 3))"]);
+    assert_eq!(eval.assert_silent_success().stdout(), "side 9\n");
+}
+
+#[test]
+fn eval_runs_every_form_once_in_order_as_one_body() {
+    let sandbox = Sandbox::new("eval_body").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "session.rslisp",
+        "(let x 5) (println \"x\") (* x 2) (main)",
+    ]);
+    assert_eq!(
+        eval.assert_silent_success().stdout(),
+        "x\n10\nwritten main\n"
+    );
+}
+
+#[test]
+fn eval_notes_a_value_whose_type_does_not_implement_debug() {
+    let sandbox = Sandbox::new("eval_no_debug").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "session.rslisp", "(square 2) (fn ((x i64)) x)"]);
+    insta::assert_snapshot!(eval.assert_exit_code(0).stderr());
+    assert_eq!(eval.stdout(), "4\n");
+}
+
+#[test]
+fn eval_reports_an_open_type_on_the_form() {
+    let sandbox = Sandbox::new("eval_open_type").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "session.rslisp", "(println \"never\") none"]);
+    insta::assert_snapshot!(eval.assert_exit_code(1).stderr());
+    assert_eq!(eval.stdout(), "");
+}
+
+#[test]
+fn eval_reports_a_diagnostic_of_the_module_and_runs_nothing() {
+    let sandbox = Sandbox::new("eval_module_error").with_file("geometry.rslisp", AREA_OF_A_STRING);
+    let eval = sandbox.compiler(&["eval", "geometry.rslisp", "(println \"never\")"]);
+    insta::assert_snapshot!(eval.assert_exit_code(1).stderr());
+    assert_eq!(eval.stdout(), "");
+}
+
+#[test]
+fn eval_reports_a_diagnostic_of_a_form_at_its_own_line() {
+    let sandbox =
+        Sandbox::new("eval_form_error").with_file("geometry.rslisp", TOP_LEVEL_AREA_OF_A_STRING);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--line",
+        "2",
+        "--column",
+        "1",
+        "geometry.rslisp",
+        "(area 2 \"3\")",
+    ]);
+    insta::assert_snapshot!(eval.assert_exit_code(1).stderr());
+}
+
+#[test]
+fn eval_reports_a_diagnostic_inside_a_definition_once() {
+    let sandbox = Sandbox::new("eval_form_in_definition_error")
+        .with_file("geometry.rslisp", AREA_OF_A_STRING);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--line",
+        "2",
+        "--column",
+        "17",
+        "geometry.rslisp",
+        "(area 2 \"3\")",
+    ]);
+    insta::assert_snapshot!(eval.assert_exit_code(1).stderr());
+}
+
+#[test]
+fn eval_runs_a_top_level_form_that_the_module_check_leaves_out() {
+    let sandbox = Sandbox::new("eval_top_level").with_file("geometry.rslisp", EVALUATED_GEOMETRY);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--line",
+        "2",
+        "--column",
+        "1",
+        "geometry.rslisp",
+        "(area 2 3)",
+    ]);
+    assert_eq!(eval.assert_silent_success().stdout(), "6\n");
+}
+
+#[test]
+fn eval_notes_a_definition_form_and_runs_nothing() {
+    let sandbox =
+        Sandbox::new("eval_definition").with_file("geometry.rslisp", GEOMETRY_DEFINITIONS);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--line",
+        "1",
+        "--column",
+        "1",
+        "geometry.rslisp",
+        "(defn area (w h) (* w h))",
+    ]);
+    insta::assert_snapshot!(eval.assert_exit_code(0).stderr());
+    assert_eq!(eval.stdout(), "");
+}
+
+#[test]
+fn eval_notes_a_definition_inside_a_top_level_do() {
+    let sandbox =
+        Sandbox::new("eval_definition_in_do").with_file("geometry.rslisp", GEOMETRY_DEFINITIONS);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--line",
+        "4",
+        "--column",
+        "5",
+        "geometry.rslisp",
+        "(defn twice (n) (* 2 n))",
+    ]);
+    insta::assert_snapshot!(eval.assert_exit_code(0).stderr());
+}
+
+#[test]
+fn eval_runs_a_form_inside_a_definition() {
+    let sandbox = Sandbox::new("eval_inside").with_file("geometry.rslisp", GEOMETRY_DEFINITIONS);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--line",
+        "3",
+        "--column",
+        "12",
+        "geometry.rslisp",
+        "(area 4 5)",
+    ]);
+    assert_eq!(eval.assert_silent_success().stdout(), "20\n");
+}
+
+#[test]
+fn eval_rejects_forms_that_are_not_the_text_at_their_position() {
+    let sandbox = Sandbox::new("eval_misplaced").with_file("geometry.rslisp", EVALUATED_GEOMETRY);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--line",
+        "2",
+        "--column",
+        "2",
+        "geometry.rslisp",
+        "(area 2 3)",
+    ]);
+    assert_eq!(
+        eval.assert_exit_code(2).stderr(),
+        "error: the forms are not the text of `geometry.rslisp` at 2:2\n"
+    );
+}
+
+#[test]
+fn eval_rejects_a_line_without_a_column() {
+    let sandbox = Sandbox::new("eval_line_only").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "--line", "2", "session.rslisp", "1"]);
+    assert!(
+        eval.assert_exit_code(2)
+            .stderr()
+            .contains("--column <COLUMN>")
+    );
+}
+
+#[test]
+fn eval_reads_the_module_from_standard_input() {
+    let sandbox = Sandbox::new("eval_stdin");
+    let eval = sandbox.compiler_reading(
+        SESSION,
+        &["eval", "--stdin", "unsaved.rslisp", "(square 7)"],
+    );
+    assert_eq!(eval.assert_silent_success().stdout(), "49\n");
+}
+
+#[test]
+fn eval_resolves_use_from_the_root() {
+    let sandbox = Sandbox::new("eval_root")
+        .with_file("shapes.rslisp", SHAPES)
+        .with_file("src/user.rslisp", SHAPES_USER);
+    let eval = sandbox.compiler(&["eval", "--root", ".", "src/user.rslisp", "(circle 2)"]);
+    assert_eq!(eval.assert_silent_success().stdout(), "12\n");
+}
+
+#[test]
+fn eval_exits_with_the_program_exit_code() {
+    let sandbox = Sandbox::new("eval_exit").with_file("exits.rslisp", EXITS);
+    sandbox
+        .compiler(&["eval", "exits.rslisp", "(exit 3)"])
+        .assert_exit_code(3);
+}
+
+#[test]
+fn eval_exits_with_the_code_of_a_panic() {
+    let sandbox = Sandbox::new("eval_panic").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "session.rslisp", "(at (vec 1) 5)"]);
+    assert!(
+        eval.assert_exit_code(101)
+            .stderr()
+            .contains("index out of bounds")
+    );
+}
+
+#[test]
+fn eval_exits_with_128_plus_the_signal_that_stops_the_program() {
+    let sandbox = Sandbox::new("eval_signal").with_file("exits.rslisp", EXITS);
+    sandbox
+        .compiler(&["eval", "exits.rslisp", "(abort)"])
+        .assert_exit_code(134);
+}
+
+#[test]
+fn eval_succeeds_when_its_output_closes() {
+    let sandbox = Sandbox::new("eval_closed_output").with_file("session.rslisp", SESSION);
+    let forms = "(for-each (range 0 1000000) (fn (i) (println i)))";
+    sandbox
+        .compiler_writing_to_a_closed_pipe(&["eval", "session.rslisp", forms])
+        .assert_exit_code(0);
+}
+
+#[test]
+fn eval_leaves_no_build_directory_beside_the_module() {
+    let sandbox = Sandbox::new("eval_no_target").with_file("session.rslisp", SESSION);
+    sandbox
+        .compiler(&["eval", "session.rslisp", "(square 2)"])
+        .assert_exit_code(0);
+    assert!(!sandbox.directory.join("target").exists());
+}
+
+#[test]
+fn eval_prints_a_warning_of_the_module_once_beside_a_warning_of_a_form() {
+    let sandbox = Sandbox::new("eval_warnings").with_file("pick.rslisp", UNREACHABLE_ARM);
+    let eval = sandbox.compiler(&["eval", "pick.rslisp", "(match 3 (_ 1) (_ 2))"]);
+    let stderr = eval.assert_exit_code(0).stderr();
+    assert_eq!(stderr.matches("--> pick.rslisp").count(), 1, "{stderr}");
+    assert_eq!(stderr.matches("--> <eval>").count(), 1, "{stderr}");
+    assert_eq!(eval.stdout(), "1\n");
+}
+
+#[test]
+fn eval_prints_a_borrowed_value() {
+    let sandbox = Sandbox::new("eval_borrowed").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "session.rslisp", "(as-str (str \"ab\"))"]);
+    assert_eq!(eval.assert_silent_success().stdout(), "\"ab\"\n");
+}
+
+#[test]
+fn eval_notes_a_top_level_do_of_definitions() {
+    let sandbox =
+        Sandbox::new("eval_do_of_definitions").with_file("geometry.rslisp", GEOMETRY_DEFINITIONS);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--line",
+        "4",
+        "--column",
+        "1",
+        "geometry.rslisp",
+        "(do (defn twice (n) (* 2 n)))",
+    ]);
+    insta::assert_snapshot!(eval.assert_exit_code(0).stderr());
+}
+
+#[test]
+fn eval_runs_a_top_level_do_of_expressions() {
+    let sandbox = Sandbox::new("eval_do_of_expressions")
+        .with_file("square.rslisp", TOP_LEVEL_DO_OF_EXPRESSIONS);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--line",
+        "2",
+        "--column",
+        "1",
+        "square.rslisp",
+        "(do (prn (square 3)))",
+    ]);
+    assert_eq!(eval.assert_silent_success().stdout(), "9\n");
+}
+
+#[test]
+fn eval_prints_a_warning_of_the_module_once_beside_a_failing_form() {
+    let sandbox = Sandbox::new("eval_warning_beside_error")
+        .with_file("pick.rslisp", UNREACHABLE_ARM_IN_A_BODY);
+    let eval = sandbox.compiler(&["eval", "pick.rslisp", "(square \"a\")"]);
+    let stderr = eval.assert_exit_code(1).stderr();
+    assert_eq!(
+        stderr.matches("unreachable `match` arm").count(),
+        1,
+        "{stderr}"
+    );
+}
+
+#[test]
+fn eval_prints_a_warning_of_a_form_inside_a_definition_once() {
+    let sandbox =
+        Sandbox::new("eval_warning_inside").with_file("pick.rslisp", UNREACHABLE_ARM_IN_A_BODY);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--line",
+        "3",
+        "--column",
+        "3",
+        "pick.rslisp",
+        "(match 3 (_ 1) (_ 2))",
+    ]);
+    let stderr = eval.assert_exit_code(0).stderr();
+    assert_eq!(
+        stderr.matches("unreachable `match` arm").count(),
+        1,
+        "{stderr}"
+    );
+    assert_eq!(eval.stdout(), "1\n");
+}
+
+#[test]
+fn eval_prints_a_value_behind_a_mutable_borrow() {
+    let sandbox = Sandbox::new("eval_mutable").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "session.rslisp", "(let v (vec 1)) (mut v)"]);
+    assert_eq!(eval.assert_silent_success().stdout(), "[1]\n");
+}
+
+#[test]
+fn eval_reports_an_expression_beside_a_definition_in_a_top_level_do() {
+    let sandbox = Sandbox::new("eval_mixed_do").with_file("mixed.rslisp", MIXED_TOP_LEVEL_DO);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--line",
+        "2",
+        "--column",
+        "1",
+        "mixed.rslisp",
+        "(do (defn cube (n) (* n (square n))) (prn 7))",
+    ]);
+    insta::assert_snapshot!(eval.assert_exit_code(1).stderr());
+    assert_eq!(eval.stdout(), "");
+}
+
+#[test]
+fn eval_prints_a_warning_of_a_form_at_the_range_of_a_module_warning() {
+    let sandbox = Sandbox::new("eval_warning_same_range").with_file("pick.rslisp", UNREACHABLE_ARM);
+    let indented = format!("{}(match 3 (_ 1) (_ 2))", " ".repeat(15));
+    let eval = sandbox.compiler(&["eval", "pick.rslisp", &indented]);
+    let stderr = eval.assert_exit_code(0).stderr();
+    assert_eq!(stderr.matches("--> pick.rslisp").count(), 1, "{stderr}");
+    assert_eq!(stderr.matches("--> <eval>").count(), 1, "{stderr}");
 }

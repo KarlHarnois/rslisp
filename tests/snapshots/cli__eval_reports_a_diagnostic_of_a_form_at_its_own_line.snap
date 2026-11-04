@@ -1,0 +1,9 @@
+---
+source: tests/cli.rs
+expression: eval.assert_exit_code(1).stderr()
+---
+error[L0401]: mismatched types
+ --> geometry.rslisp:2:9
+  |
+2 | (area 2 "3")
+  |         ^^^ expected an integer, found `str`

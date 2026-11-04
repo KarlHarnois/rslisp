@@ -1,0 +1,359 @@
+use std::ops::Range;
+use std::path::{Path, PathBuf};
+
+use super::exit_status::ExitStatus;
+use super::finished_program::FinishedProgram;
+use super::temporary_directory::TemporaryDirectory;
+use super::terminal::{BuildTarget, EvaluationRequest, Terminal};
+use crate::build::BuildProfile;
+use crate::check::ProgramChecker;
+use crate::core::BindingId;
+use crate::diagnostic::{Diagnostic, DiagnosticCode, Diagnostics};
+use crate::emit::EmittedCrate;
+use crate::expand::{ExpandProblems, ExpansionSession, GeneratedEntry, Program};
+use crate::modules::ModuleSources;
+use crate::reader::Form;
+use crate::source::{SourceId, Span, TextPosition};
+use crate::types::{FormResult, TypedProgram};
+
+pub struct EvalCommand {
+    module: ModuleText,
+    root: Option<PathBuf>,
+    forms: FormsText,
+    profile: BuildProfile,
+}
+
+pub enum ModuleText {
+    File(PathBuf),
+    StandardInput(PathBuf),
+}
+
+pub struct FormsText {
+    text: String,
+    position: Option<TextPosition>,
+}
+
+impl EvalCommand {
+    pub fn new(
+        module: ModuleText,
+        root: Option<PathBuf>,
+        forms: FormsText,
+        profile: BuildProfile,
+    ) -> Self {
+        Self {
+            module,
+            root,
+            forms,
+            profile,
+        }
+    }
+
+    pub fn run(self, terminal: &mut Terminal) -> ExitStatus {
+        match self.evaluate(terminal) {
+            Ok(status) | Err(status) => status,
+        }
+    }
+
+    fn evaluate(&self, terminal: &mut Terminal) -> Result<ExitStatus, ExitStatus> {
+        let module = self.module.load(terminal)?;
+        let ranges = self
+            .forms
+            .ranges(self.module.path(), &terminal.text_of(module))?;
+        let expanded = self.expand(terminal, module, &ranges)?;
+        let module_warnings = terminal.check_expanded(&expanded.program)?.warnings;
+        terminal.print_diagnostics(&expanded.definition_notes());
+        let Some(entry) = expanded.entry(terminal)? else {
+            return Ok(ExitStatus::Success);
+        };
+        let enclosing = self.forms.enclosing(module);
+        let shown = ShownWarnings::new(expanded.forms_source, enclosing, module_warnings);
+        let typed = expanded.checked_with_printing(terminal, &entry, &shown)?;
+        let emitted = terminal.emit_checked(&typed)?;
+        self.build_and_run(terminal, &emitted)
+    }
+
+    fn expand(
+        &self,
+        terminal: &mut Terminal,
+        module: SourceId,
+        ranges: &[Range<usize>],
+    ) -> Result<ExpandedEvaluation, ExitStatus> {
+        let request = EvaluationRequest {
+            module: self.module.path().to_path_buf(),
+            root: self.root(),
+            entry: module,
+            evaluated: self.forms.module_spans(module, ranges),
+        };
+        terminal.within_evaluation(&request, |session| {
+            ExpandedEvaluation::new(session, &request, &self.forms)
+        })
+    }
+
+    fn build_and_run(
+        &self,
+        terminal: &mut Terminal,
+        emitted: &EmittedCrate,
+    ) -> Result<ExitStatus, ExitStatus> {
+        let directory = TemporaryDirectory::create().map_err(Self::report_no_build_directory)?;
+        let crate_name = Terminal::crate_name(self.module.path());
+        let binary = directory.path().join(&crate_name);
+        let target = BuildTarget {
+            directory: directory.path().to_path_buf(),
+            crate_name: &crate_name,
+            output: &binary,
+        };
+        terminal.compile(emitted, &target, self.profile)?;
+        Ok(FinishedProgram::run(&binary).shell_status())
+    }
+
+    fn root(&self) -> PathBuf {
+        self.root
+            .clone()
+            .unwrap_or_else(|| Terminal::directory_of(self.module.path()))
+    }
+
+    fn report_no_build_directory(error: std::io::Error) -> ExitStatus {
+        eprintln!("error: cannot create a build directory: {error}");
+        ExitStatus::UsageError
+    }
+}
+
+impl ModuleText {
+    fn path(&self) -> &Path {
+        match self {
+            Self::File(path) | Self::StandardInput(path) => path,
+        }
+    }
+
+    fn load(&self, terminal: &mut Terminal) -> Result<SourceId, ExitStatus> {
+        match self {
+            Self::File(path) => terminal.load(path),
+            Self::StandardInput(path) => match ModuleSources::read_standard_input() {
+                Ok(text) => Ok(terminal.add_source(path, text)),
+                Err(error) => Err(Self::report_unreadable_input(&error)),
+            },
+        }
+    }
+
+    fn report_unreadable_input(error: &std::io::Error) -> ExitStatus {
+        eprintln!("error: cannot read standard input: {error}");
+        ExitStatus::UsageError
+    }
+}
+
+impl FormsText {
+    const SOURCE_NAME: &'static str = "<eval>";
+
+    pub fn new(text: String, position: Option<TextPosition>) -> Self {
+        Self { text, position }
+    }
+
+    fn ranges(&self, module: &Path, module_text: &str) -> Result<Vec<Range<usize>>, ExitStatus> {
+        let mut scratch = Terminal::new();
+        let enclosing = scratch.add_source(module, module_text.to_string());
+        let source = self.add_to(&mut scratch, enclosing, module)?;
+        let forms = scratch.read_source(source)?;
+        Ok(forms.iter().map(|form| form.span().range()).collect())
+    }
+
+    fn add_to(
+        &self,
+        scratch: &mut Terminal,
+        enclosing: SourceId,
+        module: &Path,
+    ) -> Result<SourceId, ExitStatus> {
+        let Some(position) = self.position else {
+            return Ok(scratch.add_named_source(Self::SOURCE_NAME, &self.text));
+        };
+        scratch
+            .add_source_inside(enclosing, position, &self.text)
+            .ok_or_else(|| Self::report_misplaced(module, position))
+    }
+
+    fn add_to_session(&self, session: &mut ExpansionSession<'_>, module: SourceId) -> SourceId {
+        match self.position {
+            Some(position) => session
+                .add_source_inside(module, position, &self.text)
+                .expect("the forms were found at their position before expansion"),
+            None => session.add_source(Self::SOURCE_NAME, &self.text),
+        }
+    }
+
+    fn enclosing(&self, module: SourceId) -> Option<SourceId> {
+        self.position.map(|_| module)
+    }
+
+    fn module_spans(&self, module: SourceId, ranges: &[Range<usize>]) -> Vec<Span> {
+        if self.position.is_none() {
+            return Vec::new();
+        }
+        ranges
+            .iter()
+            .map(|range| Span::new(module, range.clone()))
+            .collect()
+    }
+
+    fn report_misplaced(module: &Path, position: TextPosition) -> ExitStatus {
+        eprintln!(
+            "error: the forms are not the text of `{}` at {position}",
+            module.display()
+        );
+        ExitStatus::UsageError
+    }
+}
+
+struct ExpandedEvaluation {
+    program: Program,
+    forms_source: SourceId,
+    entry: Option<Result<GeneratedEntry, Diagnostics>>,
+    definitions: Vec<Span>,
+    printer: BindingId,
+}
+
+impl ExpandedEvaluation {
+    const PRINTER: &'static str = "prn";
+
+    fn new(
+        mut session: ExpansionSession<'_>,
+        request: &EvaluationRequest,
+        text: &FormsText,
+    ) -> Result<Self, Diagnostics> {
+        let forms_source = text.add_to_session(&mut session, request.entry);
+        let forms = session.read(forms_source)?;
+        let definitions = Self::definitions(&session, request);
+        let running: Vec<Form> = forms
+            .iter()
+            .filter(|form| !Self::is_definition(&definitions, form))
+            .cloned()
+            .collect();
+        let entry = Self::generated_entry(&mut session, &running);
+        let printer = session
+            .prelude_value(Self::PRINTER)
+            .expect("the prelude defines the printer");
+        Ok(Self {
+            program: session.finish()?,
+            forms_source,
+            entry,
+            definitions,
+            printer,
+        })
+    }
+
+    fn definitions(session: &ExpansionSession<'_>, request: &EvaluationRequest) -> Vec<Span> {
+        request
+            .evaluated
+            .iter()
+            .copied()
+            .filter(|span| session.defines(*span))
+            .collect()
+    }
+
+    fn is_definition(definitions: &[Span], form: &Form) -> bool {
+        definitions
+            .iter()
+            .any(|definition| definition.range() == form.span().range())
+    }
+
+    fn generated_entry(
+        session: &mut ExpansionSession<'_>,
+        running: &[Form],
+    ) -> Option<Result<GeneratedEntry, Diagnostics>> {
+        let span = Self::span_of(running)?;
+        Some(session.generated_entry(running, span))
+    }
+
+    fn span_of(forms: &[Form]) -> Option<Span> {
+        let first = forms.first()?.span();
+        let last = forms.last()?.span();
+        Some(Span::new(
+            first.source(),
+            first.range().start..last.range().end,
+        ))
+    }
+
+    fn definition_notes(&self) -> Diagnostics {
+        let mut notes = Diagnostics::default();
+        for span in &self.definitions {
+            notes.push(ExpandProblems::evaluated_definition(*span));
+        }
+        notes
+    }
+
+    fn entry(&self, terminal: &Terminal) -> Result<Option<GeneratedEntry>, ExitStatus> {
+        self.entry
+            .clone()
+            .transpose()
+            .map_err(|diagnostics| terminal.report(&diagnostics))
+    }
+
+    fn checked_with_printing(
+        self,
+        terminal: &mut Terminal,
+        entry: &GeneratedEntry,
+        shown: &ShownWarnings,
+    ) -> Result<TypedProgram, ExitStatus> {
+        let mut program = self.program;
+        program.enter(entry);
+        let results = ProgramChecker::form_results(&program, self.printer)
+            .map_err(|diagnostics| terminal.report(&diagnostics))?;
+        terminal.print_diagnostics(&Self::result_notes(&results));
+        program.enter(&entry.printing(self.printer, &Self::printed(&results)));
+        terminal.check_showing(&program, |warning| shown.shows(warning))
+    }
+
+    fn result_notes(results: &[FormResult]) -> Diagnostics {
+        let mut notes = Diagnostics::default();
+        for result in results {
+            if let FormResult::Unprintable(note) = result {
+                notes.push(note.clone());
+            }
+        }
+        notes
+    }
+
+    fn printed(results: &[FormResult]) -> Vec<usize> {
+        results
+            .iter()
+            .enumerate()
+            .filter(|(_, result)| matches!(result, FormResult::Printable))
+            .map(|(position, _)| position)
+            .collect()
+    }
+}
+
+struct ShownWarnings {
+    forms_source: SourceId,
+    enclosing: Option<SourceId>,
+    module_warnings: Vec<(Option<DiagnosticCode>, Span)>,
+}
+
+impl ShownWarnings {
+    fn new(
+        forms_source: SourceId,
+        enclosing: Option<SourceId>,
+        module_warnings: Diagnostics,
+    ) -> Self {
+        Self {
+            forms_source,
+            enclosing,
+            module_warnings: module_warnings
+                .in_source_order()
+                .into_iter()
+                .map(|warning| (warning.code().cloned(), warning.primary().span()))
+                .collect(),
+        }
+    }
+
+    fn shows(&self, warning: &Diagnostic) -> bool {
+        warning.primary().span().source() == self.forms_source && !self.module_reported(warning)
+    }
+
+    fn module_reported(&self, warning: &Diagnostic) -> bool {
+        let Some(enclosing) = self.enclosing else {
+            return false;
+        };
+        let place = Span::new(enclosing, warning.primary().span().range());
+        self.module_warnings
+            .contains(&(warning.code().cloned(), place))
+    }
+}
