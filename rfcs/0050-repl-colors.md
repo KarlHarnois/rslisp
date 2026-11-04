@@ -1,6 +1,6 @@
 # RFC 0050: Colors at the prompt
 
-**Status:** Accepted
+**Status:** Accepted. Rule 3's page from the prelude's `doc`, and its statement of `doc` as the header followed by `page-body`, are superseded by 0052: both apply to `doc-page`.
 **Date:** 2026-11-04
 
 ## Problem

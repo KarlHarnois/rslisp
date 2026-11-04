@@ -1,6 +1,6 @@
 # RFC 0041: Docstrings and the doc lookups
 
-**Status:** Accepted. Docstring storage superseded by 0042. Undocumented lookups superseded by 0044
+**Status:** Accepted. Docstring storage superseded by 0042. Undocumented lookups superseded by 0044. D5's `(doc term)` returning the page as a string is superseded by 0052, which names that lookup `doc-page`.
 **Date:** 2026-10-30
 
 ## Problem
