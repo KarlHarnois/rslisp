@@ -1,6 +1,7 @@
 # rslisp
 
 [![CI](https://github.com/KarlHarnois/rslisp/actions/workflows/ci.yml/badge.svg)](https://github.com/KarlHarnois/rslisp/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/KarlHarnois/rslisp)](https://github.com/KarlHarnois/rslisp/releases/latest)
 ![line coverage](https://img.shields.io/badge/line%20coverage-99%25-brightgreen)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Nix flake](https://img.shields.io/badge/nix-flake-5277C3?logo=nixos&logoColor=white)](#set-up)
