@@ -49,17 +49,26 @@ impl<'a> DiagnosticRenderer<'a> {
     }
 
     pub fn render(&self, diagnostic: &Diagnostic) -> String {
-        let mut report = vec![self.main_group(diagnostic)];
-        report.extend(
-            diagnostic
-                .helps()
-                .iter()
-                .filter_map(|help| self.suggestion_group(help)),
-        );
+        let (leading, trailing) = Self::split_helps(diagnostic.helps());
+        let mut report = vec![self.main_group(diagnostic, leading)];
+        report.extend(trailing.iter().map(|help| self.help_group(help)));
         self.renderer.render(&report)
     }
 
-    fn main_group<'d>(&'d self, diagnostic: &'d Diagnostic) -> Group<'d> {
+    fn split_helps(helps: &[Help]) -> (&[Help], &[Help]) {
+        let first_suggestion = helps
+            .iter()
+            .position(|help| help.suggestion().is_some())
+            .unwrap_or(helps.len());
+        helps.split_at(first_suggestion)
+    }
+
+    fn help_group<'d>(&'d self, help: &'d Help) -> Group<'d> {
+        self.suggestion_group(help)
+            .unwrap_or_else(|| Group::with_title(Level::HELP.secondary_title(help.message())))
+    }
+
+    fn main_group<'d>(&'d self, diagnostic: &'d Diagnostic, helps: &'d [Help]) -> Group<'d> {
         let title = Self::level(diagnostic).primary_title(diagnostic.title());
         let title = match diagnostic.code() {
             Some(code) => title.id(code.as_str()),
@@ -73,11 +82,7 @@ impl<'a> DiagnosticRenderer<'a> {
             .notes()
             .iter()
             .map(|note| Level::NOTE.message(note.as_str()));
-        let plain_helps = diagnostic
-            .helps()
-            .iter()
-            .filter(|help| help.suggestion().is_none())
-            .map(|help| Level::HELP.message(help.message()));
+        let plain_helps = helps.iter().map(|help| Level::HELP.message(help.message()));
         title
             .elements(snippets)
             .elements(notes)
@@ -172,7 +177,7 @@ impl<'a> DiagnosticRenderer<'a> {
 #[cfg(test)]
 mod tests {
     use super::DiagnosticRenderer;
-    use crate::diagnostic::{Diagnostic, DiagnosticCode, Diagnostics, Label};
+    use crate::diagnostic::{Diagnostic, DiagnosticCode, Diagnostics, Label, Suggestion};
     use crate::source::{SourceMap, Span};
 
     const ESCAPE: char = '\u{1b}';
@@ -191,5 +196,27 @@ mod tests {
         let plain = DiagnosticRenderer::plain(&sources).render_all(&diagnostics);
         assert!(styled.contains(ESCAPE));
         assert!(!plain.contains(ESCAPE));
+    }
+
+    #[test]
+    fn helps_render_in_the_order_they_were_added() {
+        let mut sources = SourceMap::default();
+        let source = sources.add("sample.rslisp", "(prnt 1)");
+        let span = Span::new(source, 1..5);
+        let diagnostic = Diagnostic::error(
+            DiagnosticCode::UNBOUND_NAME,
+            "cannot find `prnt` in this scope",
+            Label::new(span, "not found in this scope"),
+        )
+        .with_help("first help")
+        .with_suggestion("a suggestion", Suggestion::new(span, "prn"))
+        .with_help("last help");
+        let rendered = DiagnosticRenderer::plain(&sources).render(&diagnostic);
+        let first = rendered.find("first help").expect("the first help renders");
+        let suggestion = rendered
+            .find("a suggestion")
+            .expect("the suggestion renders");
+        let last = rendered.find("last help").expect("the last help renders");
+        assert!(first < suggestion && suggestion < last, "{rendered}");
     }
 }

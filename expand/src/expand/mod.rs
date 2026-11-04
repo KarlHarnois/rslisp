@@ -58,7 +58,7 @@ use macro_call::MacroTable;
 use module_notes::ModuleNotes;
 pub use module_survey::ModuleSurvey;
 pub use prelude_state::{PreludeState, UnreadablePrelude};
-pub use problems::ExpandProblems;
+pub use problems::{ExpandProblems, SetAsideInput};
 use recorded_inputs::RecordedInputs;
 pub use recorded_inputs::{BoundName, LoadedModule};
 pub use result_printer::{GeneratedFunction, ResultPrinter};
