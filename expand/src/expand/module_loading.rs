@@ -37,6 +37,7 @@ impl Expander<'_> {
             Some(ModuleSource::Builtin(builtin)) => Ok(self.create_builtin(path, builtin)),
             Some(ModuleSource::Text { name, text }) => {
                 let source = self.sources.add(name, text);
+                self.recorded_inputs.note_loaded(source);
                 Ok(DeepRecursion::guard(|| {
                     self.load_source_module(path.clone(), &[source])
                 }))

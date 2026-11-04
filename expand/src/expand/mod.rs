@@ -18,9 +18,11 @@ mod misplaced_definition;
 mod module_body;
 mod module_loading;
 mod module_notes;
+mod module_survey;
 mod names;
 mod prelude_state;
 mod problems;
+mod recorded_inputs;
 mod recur_check;
 mod rest_of_body;
 mod result_printer;
@@ -48,15 +50,17 @@ use crate::scope::{BindingTable, Phase, Scope, ScopeAllocator};
 use crate::source::{SourceId, SourceMap, Span};
 use budget_arena::BudgetArena;
 pub use classified_form::ClassifiedForm;
-pub use evaluated_forms::BoundName;
 use evaluated_forms::EvaluatedForms;
 pub use generated_entry::{GeneratedEntry, WrittenForm};
 use globals::{GlobalTable, LoweredGlobals};
 pub use macro_call::MacroOrigin;
 use macro_call::MacroTable;
 use module_notes::ModuleNotes;
+pub use module_survey::ModuleSurvey;
 pub use prelude_state::{PreludeState, UnreadablePrelude};
 pub use problems::ExpandProblems;
+use recorded_inputs::RecordedInputs;
+pub use recorded_inputs::{BoundName, LoadedModule};
 pub use result_printer::{GeneratedFunction, ResultPrinter};
 pub use session::ExpansionSession;
 
@@ -120,6 +124,7 @@ pub struct Expander<'s> {
     saved_prelude: Option<PreludeState>,
     expansion: ExpansionWork,
     evaluated_forms: EvaluatedForms,
+    recorded_inputs: RecordedInputs,
 }
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
@@ -174,6 +179,7 @@ impl<'s> Expander<'s> {
             saved_prelude: None,
             expansion: ExpansionWork::default(),
             evaluated_forms: EvaluatedForms::default(),
+            recorded_inputs: RecordedInputs::default(),
         }
     }
 

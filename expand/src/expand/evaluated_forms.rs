@@ -1,8 +1,5 @@
-use std::rc::Rc;
-
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::core::Namespace;
 use crate::source::Span;
 
 #[derive(Default)]
@@ -11,20 +8,6 @@ pub(super) struct EvaluatedForms {
     definitions: FxHashSet<Span>,
     left_out: FxHashSet<Span>,
     spliced: FxHashMap<Span, Vec<Span>>,
-    bound: Vec<BoundName>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BoundName {
-    pub name: Rc<str>,
-    pub namespace: Namespace,
-    pub span: Span,
-}
-
-impl BoundName {
-    pub fn names_the_same(&self, other: &BoundName) -> bool {
-        self.name == other.name && self.namespace == other.namespace
-    }
 }
 
 impl EvaluatedForms {
@@ -34,28 +17,7 @@ impl EvaluatedForms {
             definitions: FxHashSet::default(),
             left_out: FxHashSet::default(),
             spliced: FxHashMap::default(),
-            bound: Vec::new(),
         }
-    }
-
-    pub(super) fn surrounds(&self, span: Span) -> bool {
-        self.evaluated
-            .iter()
-            .any(|evaluated| evaluated.contains(span))
-    }
-
-    pub(super) fn note_bound(&mut self, span: Span, name: impl FnOnce() -> Option<BoundName>) {
-        if self.surrounds(span) {
-            self.bound.extend(name());
-        }
-    }
-
-    pub(super) fn bound_by(&self, span: Span) -> Vec<BoundName> {
-        self.bound
-            .iter()
-            .filter(|name| span.contains(name.span))
-            .cloned()
-            .collect()
     }
 
     pub(super) fn holds(&self, span: Span) -> bool {
@@ -112,8 +74,7 @@ impl EvaluatedForms {
 
 #[cfg(test)]
 mod tests {
-    use super::{BoundName, EvaluatedForms};
-    use crate::core::Namespace;
+    use super::EvaluatedForms;
     use crate::source::{SourceId, Span};
 
     struct SpanFixture;
@@ -195,22 +156,6 @@ mod tests {
         forms.leave_out(nested[0]);
         let misplaced = forms.misplaced_expressions(SpanFixture::span(SpanFixture::DO_FORM));
         assert_eq!(misplaced, nested);
-    }
-
-    #[test]
-    fn a_name_bound_outside_every_evaluated_form_is_not_recorded() {
-        let form = SpanFixture::span(SpanFixture::DO_FORM);
-        let mut forms = EvaluatedForms::new([form]);
-        let outside = SpanFixture::span(SpanFixture::UNEVALUATED);
-        forms.note_bound(outside, || {
-            Some(BoundName {
-                name: "outside".into(),
-                namespace: Namespace::Value,
-                span: outside,
-            })
-        });
-        let covering = Span::new(form.source(), form.range().start..outside.range().end);
-        assert!(forms.bound_by(covering).is_empty());
     }
 
     #[test]
