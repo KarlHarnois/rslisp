@@ -166,12 +166,12 @@ impl PromptSession {
             },
         )
         .run(terminal);
-        Self::note_failed_program(status);
+        Self::note_failed_program(terminal, status);
     }
 
-    fn note_failed_program(status: ExitStatus) {
+    fn note_failed_program(terminal: &Terminal, status: ExitStatus) {
         if let ExitStatus::Program(code @ 1..) = status {
-            eprintln!("note: the program exited with code {code}");
+            terminal.print_note(&format!("the program exited with code {code}"));
         }
     }
 

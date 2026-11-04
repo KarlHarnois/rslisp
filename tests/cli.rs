@@ -7,6 +7,8 @@ use std::process::{Command, Output, Stdio};
 use std::time::{Duration, Instant};
 
 use rslisp::build::EmittedFormatting;
+use rslisp::diagnostic::DiagnosticRenderer;
+use rslisp::source::SourceMap;
 use serde_json::{Map, Value, json};
 
 const GREETING: &str = "(defn main ()\n  (println \"hello from the sandbox\"))\n";
@@ -110,6 +112,8 @@ const PROMPT_EXIT: &str =
     "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n(exit 3)\n(exit 0)\n";
 const PROMPT_UNCLOSED_END: &str = "(+ 1 2)\n(defn twice (x)\n  (* 2 x)\n";
 const PROMPT_NOT_UTF8: &[u8] = b"(+ 1 1)\n\xff\n";
+const PROMPT_EXIT_ON_A_TERMINAL: &str =
+    "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n(exit 3)\n\u{4}";
 const PROMPT_EXTRA_CLOSE: &str = "(+ 1 2))\n(+ 3 4)\n(+ 3 \"a\")\n";
 const PROMPT_ENUM_REDEFINITION: &str = "(enum shape circle square)\n(enum shape circle square triangle)\n(match shape/triangle (triangle 3) (_ 0))\n";
 const PROMPT_WARNING: &str = "(defn pick (x) (match x (_ 1) (_ 2)))\n(pick 1)\n(defn other () 1)\n(defn another () 2)\n(pick 2)\n";
@@ -182,8 +186,67 @@ impl Sandbox {
     }
 
     fn compiler_reading(&self, input: impl AsRef<[u8]>, arguments: &[&str]) -> Outcome {
-        let mut child = self
-            .command(Path::new(Self::COMPILER), arguments)
+        Self::reading(
+            &mut self.command(Path::new(Self::COMPILER), arguments),
+            input,
+        )
+    }
+
+    fn compiler_on_a_terminal_reading(
+        &self,
+        input: &str,
+        environment: &[(&str, &str)],
+        arguments: &[&str],
+    ) -> Outcome {
+        let recorded = Self::recorded_arguments(arguments);
+        let recorded: Vec<&str> = recorded.iter().map(String::as_str).collect();
+        let mut command =
+            self.color_command(Path::new(Self::TERMINAL_RECORDER), environment, &recorded);
+        Self::reading_until_the_end(&mut command, input)
+    }
+
+    fn reading_until_the_end(command: &mut Command, input: &str) -> Outcome {
+        let mut child = command
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("the terminal recorder starts");
+        let mut held_input = child.stdin.take().expect("stdin is piped");
+        std::io::Write::write_all(&mut held_input, input.as_bytes())
+            .expect("the terminal recorder reads its input");
+        let mut stdout = child.stdout.take().expect("stdout is piped");
+        let mut stderr = child.stderr.take().expect("stderr is piped");
+        let (stdout, stderr, status) = std::thread::scope(|scope| {
+            let stdout = scope.spawn(move || Self::read_all(&mut stdout));
+            let stderr = scope.spawn(move || Self::read_all(&mut stderr));
+            let status = child.wait().expect("the terminal recorder finishes");
+            (
+                stdout.join().expect("stdout is read"),
+                stderr.join().expect("stderr is read"),
+                status,
+            )
+        });
+        drop(held_input);
+        Outcome {
+            output: Output {
+                status,
+                stdout,
+                stderr,
+            },
+        }
+    }
+
+    fn read_all(stream: &mut impl std::io::Read) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        stream
+            .read_to_end(&mut bytes)
+            .expect("the stream is readable");
+        bytes
+    }
+
+    fn reading(command: &mut Command, input: impl AsRef<[u8]>) -> Outcome {
+        let mut child = command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -2398,5 +2461,69 @@ fn eval_reports_unreadable_input() {
     assert_eq!(
         eval.stderr(),
         "error: cannot read standard input: stream did not contain valid UTF-8\n"
+    );
+}
+
+struct PromptColors;
+
+impl PromptColors {
+    const EXIT_NOTE: &str = "the program exited with code 3";
+
+    fn prompt() -> String {
+        let style = DiagnosticRenderer::GUTTER_STYLE;
+        format!("{style}> {style:#}")
+    }
+
+    fn exit_note() -> String {
+        DiagnosticRenderer::styled(&SourceMap::default()).render_note(Self::EXIT_NOTE)
+    }
+
+    fn plain_exit_note() -> String {
+        format!("note: {}", Self::EXIT_NOTE)
+    }
+
+    fn session(name: &str, environment: &[(&str, &str)], arguments: &[&str]) -> String {
+        let sandbox = Sandbox::new(name);
+        sandbox
+            .compiler_on_a_terminal_reading(PROMPT_EXIT_ON_A_TERMINAL, environment, arguments)
+            .assert_exit_code(0)
+            .stdout()
+    }
+}
+
+#[test]
+fn color_repl_prompt_and_exit_note_on_a_terminal() {
+    let session = PromptColors::session("color_repl", &[("TERM", "xterm")], &["repl"]);
+    assert!(session.contains(&PromptColors::prompt()), "{session:?}");
+    assert!(session.contains(&PromptColors::exit_note()), "{session:?}");
+}
+
+#[test]
+fn color_stays_off_the_repl_prompt_and_exit_note_when_no_color_is_set() {
+    let session = PromptColors::session(
+        "color_repl_no_color",
+        &[("TERM", "xterm"), ("NO_COLOR", "1")],
+        &["repl"],
+    );
+    assert!(!session.contains('\u{1b}'), "{session:?}");
+    assert!(session.contains("> "), "{session:?}");
+    assert!(
+        session.contains(&PromptColors::plain_exit_note()),
+        "{session:?}"
+    );
+}
+
+#[test]
+fn color_never_keeps_the_repl_prompt_and_exit_note_plain() {
+    let session = PromptColors::session(
+        "color_repl_never",
+        &[("TERM", "xterm")],
+        &["--color", "never", "repl"],
+    );
+    assert!(!session.contains('\u{1b}'), "{session:?}");
+    assert!(session.contains("> "), "{session:?}");
+    assert!(
+        session.contains(&PromptColors::plain_exit_note()),
+        "{session:?}"
     );
 }

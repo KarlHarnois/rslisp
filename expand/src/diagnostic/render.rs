@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::ops::Range;
 
+use annotate_snippets::renderer::{DEFAULT_LINE_NUM_STYLE, Style};
 use annotate_snippets::{AnnotationKind, Group, Level, Patch, Renderer, Snippet};
 use rustc_hash::FxHashMap;
 
@@ -15,6 +16,8 @@ pub struct DiagnosticRenderer<'a> {
 }
 
 impl<'a> DiagnosticRenderer<'a> {
+    pub const GUTTER_STYLE: Style = DEFAULT_LINE_NUM_STYLE;
+
     pub fn plain(sources: &'a SourceMap) -> Self {
         Self {
             sources,
@@ -38,6 +41,11 @@ impl<'a> DiagnosticRenderer<'a> {
             .map(|diagnostic| self.render(diagnostic))
             .collect();
         rendered.join("\n\n")
+    }
+
+    pub fn render_note(&self, message: &str) -> String {
+        self.renderer
+            .render(&[Group::with_title(Level::NOTE.primary_title(message))])
     }
 
     pub fn render(&self, diagnostic: &Diagnostic) -> String {

@@ -343,6 +343,10 @@ impl Terminal {
         self.diagnostics.write(&self.sources, diagnostics);
     }
 
+    pub fn print_note(&self, message: &str) {
+        self.diagnostics.write_note(&self.sources, message);
+    }
+
     pub fn report(&self, diagnostics: &Diagnostics) -> ExitStatus {
         if !diagnostics.has_errors() {
             return ExitStatus::Success;
