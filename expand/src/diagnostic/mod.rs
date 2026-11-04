@@ -76,6 +76,14 @@ impl Diagnostic {
         self.report.severity == Severity::Note
     }
 
+    pub fn severity_name(&self) -> &'static str {
+        match self.report.severity {
+            Severity::Error => "error",
+            Severity::Warning => "warning",
+            Severity::Note => "note",
+        }
+    }
+
     pub fn with_label(mut self, label: Label) -> Self {
         self.report.secondary.push(label);
         self

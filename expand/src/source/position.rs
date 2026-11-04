@@ -11,6 +11,20 @@ impl TextPosition {
         Self { line, column }
     }
 
+    pub fn of_offset(text: &str, offset: usize) -> Self {
+        let before = &text[..offset];
+        let line_start = before.rfind('\n').map_or(0, |newline| newline + 1);
+        Self::new(before.matches('\n').count() + 1, offset - line_start + 1)
+    }
+
+    pub fn line(self) -> usize {
+        self.line
+    }
+
+    pub fn column(self) -> usize {
+        self.column
+    }
+
     pub fn offset_in(self, text: &str) -> Option<usize> {
         let line_start = self.line_start_in(text)?;
         let line_end = text[line_start..]
@@ -92,5 +106,32 @@ mod tests {
     fn line_and_column_zero_have_no_offset() {
         assert_eq!(PositionFixture::offset(0, 1), None);
         assert_eq!(PositionFixture::offset(1, 0), None);
+    }
+
+    #[test]
+    fn an_offset_on_the_first_line_counts_its_column_from_one() {
+        let position = TextPosition::of_offset(PositionFixture::TEXT, 6);
+        assert_eq!((position.line(), position.column()), (1, 7));
+    }
+
+    #[test]
+    fn an_offset_after_a_multibyte_character_counts_its_column_in_bytes() {
+        let offset = PositionFixture::TEXT
+            .find(" 1")
+            .expect("the text holds a 1");
+        let position = TextPosition::of_offset(PositionFixture::TEXT, offset);
+        assert_eq!(position, TextPosition::new(2, 13));
+    }
+
+    #[test]
+    fn the_offset_of_a_position_gives_the_position_back() {
+        let position = TextPosition::new(2, 3);
+        let offset = position
+            .offset_in(PositionFixture::TEXT)
+            .expect("the position is in the text");
+        assert_eq!(
+            TextPosition::of_offset(PositionFixture::TEXT, offset),
+            position
+        );
     }
 }
