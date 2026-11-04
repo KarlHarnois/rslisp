@@ -1,4 +1,5 @@
 mod budget_arena;
+mod classified_form;
 mod compile_time_check;
 mod context;
 mod defining_call;
@@ -46,6 +47,8 @@ use crate::reader::Form;
 use crate::scope::{BindingTable, Phase, Scope, ScopeAllocator};
 use crate::source::{SourceId, SourceMap, Span};
 use budget_arena::BudgetArena;
+pub use classified_form::ClassifiedForm;
+pub use evaluated_forms::BoundName;
 use evaluated_forms::EvaluatedForms;
 pub use generated_entry::{GeneratedEntry, WrittenForm};
 use globals::{GlobalTable, LoweredGlobals};
