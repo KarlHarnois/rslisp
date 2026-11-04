@@ -2,4 +2,4 @@
 
 (my-def limit 10)
 
-(def limit-page (doc limit))
+(def limit-page (doc-page limit))

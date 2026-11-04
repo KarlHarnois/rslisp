@@ -6,6 +6,6 @@
 
 (my-defn twice (x) "Doubles." (* 2 x))
 
-(def twice-page (doc twice))
+(def twice-page (doc-page twice))
 
 (def twice-header (header twice))

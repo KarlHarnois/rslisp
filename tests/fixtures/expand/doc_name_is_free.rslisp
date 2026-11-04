@@ -2,4 +2,4 @@
 
 (def doc/twice 1)
 
-(def twice-page (doc twice))
+(def twice-page (doc-page twice))

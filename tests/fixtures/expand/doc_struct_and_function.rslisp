@@ -4,6 +4,6 @@
 
 (defstruct size "A width and a height." :width i64 :height i64)
 
-(def point-page (doc point))
+(def point-page (doc-page point))
 
-(def size-page (doc size))
+(def size-page (doc-page size))

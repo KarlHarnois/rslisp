@@ -97,6 +97,7 @@ pub struct DocLookup<'t> {
 
 impl<'t> DocLookup<'t> {
     const TERM_SOURCE: &'static str = "<term>";
+    const PAGE_MACRO: &'static str = "doc-page";
 
     pub fn new(terminal: &'t mut Terminal) -> Self {
         Self { terminal }
@@ -155,7 +156,7 @@ impl<'t> DocLookup<'t> {
 
     fn lookup_call(term: &Form, source: SourceId) -> Form {
         let span = Span::new(source, term.span().range());
-        let head = Form::new(FormKind::Symbol(Symbol::new(DocCommand::NAME)), span);
+        let head = Form::new(FormKind::Symbol(Symbol::new(Self::PAGE_MACRO)), span);
         let name = Form::new(term.kind().clone(), span);
         Form::new(FormKind::List(vec![head, name]), span)
     }
@@ -164,7 +165,7 @@ impl<'t> DocLookup<'t> {
         match Self::page_text(expanded) {
             Some(text) => Ok(text.to_string()),
             None => {
-                eprintln!("error: `{}` did not expand to a string", DocCommand::NAME);
+                eprintln!("error: `{}` did not expand to a string", Self::PAGE_MACRO);
                 Err(ExitStatus::ProgramErrors)
             }
         }

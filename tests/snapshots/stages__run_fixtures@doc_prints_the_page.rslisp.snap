@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/doc_prints_the_page.rslisp
+---
+(defn twice (x))
+
+Doubles a number.
+42

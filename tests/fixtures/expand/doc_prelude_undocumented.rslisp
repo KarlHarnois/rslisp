@@ -1,5 +1,5 @@
-(def when-page (doc when))
+(def when-page (doc-page when))
 
-(def sum-page (doc sum))
+(def sum-page (doc-page sum))
 
-(def assoc-page (doc assoc))
+(def assoc-page (doc-page assoc))

@@ -1,6 +1,6 @@
 (use documented/shapes area)
 
-(def area-page (doc area))
+(def area-page (doc-page area))
 
 (def area-docstring (docstring area))
 

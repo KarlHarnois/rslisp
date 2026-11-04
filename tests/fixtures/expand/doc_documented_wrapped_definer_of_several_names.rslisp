@@ -6,6 +6,6 @@
 
 (with-alias-bare thrice triple (x) (* 3 x))
 
-(def p1 (doc twice))
+(def p1 (doc-page twice))
 
-(def p2 (doc thrice))
+(def p2 (doc-page thrice))

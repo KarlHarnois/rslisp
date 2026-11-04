@@ -3,6 +3,6 @@
 
 (defn main () (println (swap - 1 10)))
 
-(def swap-page (doc swap))
+(def swap-page (doc-page swap))
 
 (defrule nothing)

@@ -4,6 +4,6 @@
 
 (document twice "Doubles a number: `(twice x)`.")
 
-(def twice-page (doc twice))
+(def twice-page (doc-page twice))
 
 (defn main () (println (twice 2) twice-page))

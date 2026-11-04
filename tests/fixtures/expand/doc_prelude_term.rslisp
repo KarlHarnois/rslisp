@@ -1,4 +1,4 @@
-(def defn-page (doc defn))
+(def defn-page (doc-page defn))
 
 (def threading-docstring (docstring ->))
 
