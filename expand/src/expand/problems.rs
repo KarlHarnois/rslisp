@@ -441,7 +441,9 @@ impl ExpandProblems {
             format!("cannot find module `{path}`"),
             Label::new(span, "no module with this path"),
         )
-        .with_help("a module path names a file relative to the entry file, without its extension")
+        .with_help(
+            "a module path names a file relative to the root directory, without its extension",
+        )
     }
 
     pub fn missing_export(
