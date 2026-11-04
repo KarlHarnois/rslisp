@@ -1,0 +1,7 @@
+(def str-page (doc str))
+
+(def get-page (doc get))
+
+(def push-page (doc push!))
+
+(defn main () (println str-page get-page push-page))

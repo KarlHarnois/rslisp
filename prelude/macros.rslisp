@@ -4,7 +4,7 @@
           value-eq bool-not number-add number-sub number-lt
           string-lines string-trim-start string-length string-drop string-strip-suffix)
 
-(export defrule defmacro template map-list whole-pairs? note-docstring value-doc-key type-doc-key header-shape
+(export defrule defmacro template map-list whole-pairs? note-docstring value-doc-key type-doc-key header-shape document
         docstring-before-body? documented-body? docstring-before-parameters
         doc docstring header)
 
@@ -421,6 +421,11 @@
     (fail "a header shape is a list that starts with the definer's name" shape
           "write it as `(header-shape (definer name ...))`"
           (template (:code malformed-header-shape :label "not a list that starts with a name")))))
+
+(defmacro document (name text)
+  "Documents a definition that no definer documents, such as a `def` of a macro."
+  (do (note-docstring (value-doc-key name) text)
+      (quote (do))))
 
 (header-shape (defrule name))
 

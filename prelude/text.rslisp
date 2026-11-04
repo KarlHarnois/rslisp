@@ -1,4 +1,4 @@
-(use prelude/macros defmacro template map-list)
+(use prelude/macros defmacro template map-list document)
 (use prelude/pair pair)
 (use code first rest list prepend concat len empty? nth take drop
           symbol symbol? list? string? string same-binding? value-eq
@@ -247,6 +247,14 @@
     (if (symbol? form)
         (quote display-string)
         (string-form (rest form)))))
+
+(document str
+  "Builds a `string` from its parts: `(str part ...)`.
+
+  A string literal part is literal text, and any other part prints with
+  `display`. `(str x)` emits `x.to_string()`, and `str` as a value is that
+  one-part function, so `(map (iter years) str)` turns each year into a
+  `string`.")
 
 (defmacro print (parts ...)
   (let pieces (flatten-parts parts))

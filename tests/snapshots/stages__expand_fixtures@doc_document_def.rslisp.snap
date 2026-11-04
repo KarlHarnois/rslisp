@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_document_def.rslisp
+---
+(def twice (fn (x) (mul 2 x)))
+(def twice-page "twice\n\nDoubles a number: `(twice x)`.")
+(def main (fn () ((rust "println!(\"{{}}{{}}\", {&0}, {&1})" (where ((part-type-0 display) (part-type-1 display)) (fn ((ref part-type-0) (ref part-type-1)) unit))) (twice 2) twice-page)))
