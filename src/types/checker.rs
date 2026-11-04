@@ -239,7 +239,6 @@ pub(super) struct VariantArmReference {
 
 impl TypeChecker {
     const PARAMETER_NAMES: &str = "abcdefghijklmnopqrstuvwxyz";
-    pub const MAIN: &str = "main";
 
     pub(super) fn new(bindings: BindingArena) -> Self {
         Self {
@@ -567,12 +566,11 @@ impl TypeChecker {
 
     pub(super) fn check_definitions(
         &mut self,
-        modules: &[CoreModule],
-        entry: ModuleId,
+        entry_function: Option<BindingId>,
         graph: &DefinitionGraph,
     ) -> FxHashMap<BindingId, TypedDefinition> {
         let dependencies = graph.dependencies();
-        self.unchecked = dependencies.unchecked(&self.main_definition(modules, entry));
+        self.unchecked = dependencies.unchecked(entry_function.as_slice());
         let by_binding: FxHashMap<BindingId, &Definition> = graph
             .definitions()
             .iter()
@@ -634,20 +632,6 @@ impl TypeChecker {
         bindings
             .iter()
             .any(|binding| self.failed_bindings.contains(binding))
-    }
-
-    fn main_definition(&self, modules: &[CoreModule], entry: ModuleId) -> Vec<BindingId> {
-        modules
-            .iter()
-            .filter(|module| module.id == entry)
-            .flat_map(|module| &module.items)
-            .filter_map(|item| match &item.kind {
-                ItemKind::Def(binding, _) if self.bindings.get(*binding).name() == Self::MAIN => {
-                    Some(*binding)
-                }
-                _ => None,
-            })
-            .collect()
     }
 
     pub(super) fn admissible_types(&self, generic: GenericId) -> Admissible {
@@ -2868,7 +2852,7 @@ impl TypeChecker {
         graph: &DefinitionGraph,
     ) -> Result<(super::typed::TypedProgram, OpenCollections), Diagnostics> {
         self.collect_declarations(&program.modules, graph.definitions());
-        let mut definitions = self.check_definitions(&program.modules, program.entry, graph);
+        let mut definitions = self.check_definitions(program.entry_function, graph);
         let mut finalizer = super::finalize::Finalizer::new(&mut self);
         for binding in graph.order() {
             if let Some(definition) = definitions.get_mut(&binding) {
@@ -2887,7 +2871,7 @@ impl TypeChecker {
             .iter()
             .map(|module| Self::typed_module(module, &mut definitions))
             .collect();
-        let typed = self.into_program(typed_modules, program.entry)?;
+        let typed = self.into_program(typed_modules, program)?;
         Ok((typed, open_collections))
     }
 
@@ -2922,7 +2906,7 @@ impl TypeChecker {
     fn into_program(
         self,
         modules: Vec<super::typed::TypedModule>,
-        entry: crate::core::ModuleId,
+        program: &crate::expand::Program,
     ) -> Result<super::typed::TypedProgram, Diagnostics> {
         let warnings = self.warnings;
         let mut diagnostics = self.diagnostics;
@@ -2933,7 +2917,8 @@ impl TypeChecker {
         }
         Ok(super::typed::TypedProgram {
             modules,
-            entry,
+            entry: program.entry,
+            entry_function: program.entry_function,
             bindings: self.bindings,
             structs: self.structs,
             enums: self.enums,

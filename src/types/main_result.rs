@@ -1,4 +1,3 @@
-use super::checker::TypeChecker;
 use super::display::TypeDisplay;
 use super::problems::TypeProblems;
 use super::ty::Type;
@@ -38,7 +37,7 @@ impl<'a> MainResult<'a> {
     }
 
     fn is_main(&self, definition: &TypedDefinition) -> bool {
-        self.program.bindings.get(definition.binding).name() == TypeChecker::MAIN
+        self.program.entry_function == Some(definition.binding)
     }
 
     fn definition_problem(&self, definition: &TypedDefinition) -> Option<Diagnostic> {
@@ -81,5 +80,41 @@ impl<'a> MainResult<'a> {
             },
             _ => expr,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MainResult;
+    use crate::diagnostic::DiagnosticCode;
+    use crate::types::TypedSource;
+
+    struct EntryFixture;
+
+    impl EntryFixture {
+        const TWO_VALUED_FUNCTIONS: &str = "
+            (defn main () 1)
+            (defn start () 2)";
+
+        fn reports_a_returned_value(entry: &str) -> bool {
+            let mut source = TypedSource::expand(Self::TWO_VALUED_FUNCTIONS);
+            source.enter_at(entry);
+            MainResult::check(source.typed()).is_err_and(|diagnostics| {
+                diagnostics
+                    .in_source_order()
+                    .iter()
+                    .any(|diagnostic| *diagnostic.code() == DiagnosticCode::MAIN_RETURNS_VALUE)
+            })
+        }
+    }
+
+    #[test]
+    fn the_entry_binding_must_return_unit_whatever_its_name() {
+        assert!(EntryFixture::reports_a_returned_value("start"));
+    }
+
+    #[test]
+    fn a_main_that_is_not_the_entry_may_return_a_value() {
+        assert!(!EntryFixture::reports_a_returned_value("absent"));
     }
 }

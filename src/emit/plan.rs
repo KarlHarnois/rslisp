@@ -59,7 +59,7 @@ pub struct EmitPlan<'p> {
 }
 
 impl<'p> EmitPlan<'p> {
-    const MAIN: &'static str = "main";
+    const ENTRY_RUST_NAME: &'static str = "main";
     const MODULE_SEPARATOR: char = '/';
     const MACRO_CALLS: [&'static str; 3] = ["!(", "![", "!{"];
     const FIRST_RENAME_SUFFIX: usize = 2;
@@ -105,6 +105,10 @@ impl<'p> EmitPlan<'p> {
 
     pub fn item(&self, binding: BindingId) -> Option<&ItemInfo> {
         self.items.get(&binding)
+    }
+
+    pub fn entry_function(&self) -> BindingId {
+        self.main
     }
 
     pub fn is_result_main(&self, binding: BindingId) -> bool {
@@ -295,7 +299,7 @@ impl<'p> EmitPlan<'p> {
             .definitions
             .iter()
             .find(|definition| {
-                program.bindings.get(definition.binding).name() == Self::MAIN
+                program.entry_function == Some(definition.binding)
                     && matches!(definition.value.kind, TypedExprKind::Fn(_))
             })
             .map(|definition| definition.binding)
@@ -496,7 +500,7 @@ impl<'p> EmitPlan<'p> {
     fn assign_items(&mut self) -> Result<(), Diagnostics> {
         let mut taken: FxHashMap<(ModuleId, String), BindingId> = FxHashMap::default();
         let mut diagnostics = Diagnostics::default();
-        for binding in self.written_items_first() {
+        for binding in self.entry_and_written_items_first() {
             let info = self.item_info(binding);
             let key = (info.module, info.name.clone());
             match taken
@@ -504,7 +508,7 @@ impl<'p> EmitPlan<'p> {
                 .copied()
                 .or_else(|| self.shadowed_rust_type(&info))
             {
-                Some(_) if self.program.bindings.is_introduced(binding) => {
+                Some(other) if self.yields_name(binding, other) => {
                     let renamed = Self::next_free_name(info, &taken);
                     self.claim(&mut taken, binding, renamed);
                 }
@@ -515,14 +519,22 @@ impl<'p> EmitPlan<'p> {
         diagnostics.into_result(())
     }
 
-    fn written_items_first(&self) -> Vec<BindingId> {
+    fn yields_name(&self, binding: BindingId, holder: BindingId) -> bool {
+        holder == self.main || self.program.bindings.is_introduced(binding)
+    }
+
+    fn entry_and_written_items_first(&self) -> Vec<BindingId> {
         let (introduced, written): (Vec<BindingId>, Vec<BindingId>) = self
             .reached
             .iter()
             .copied()
+            .filter(|binding| *binding != self.main)
             .filter(|binding| !self.program.synthetic_bindings.contains(binding))
             .partition(|binding| self.program.bindings.is_introduced(*binding));
-        written.into_iter().chain(introduced).collect()
+        std::iter::once(self.main)
+            .chain(written)
+            .chain(introduced)
+            .collect()
     }
 
     fn claim(
@@ -575,6 +587,7 @@ impl<'p> EmitPlan<'p> {
         };
         let rust_name = match (kind, binding == self.main, &self.main_body) {
             (ItemKind::Function, true, Some(body)) => body.clone(),
+            (ItemKind::Function, true, None) => Self::ENTRY_RUST_NAME.to_string(),
             (ItemKind::Function, ..) => NameMangler::value(name),
             (ItemKind::Const | ItemKind::Static, ..) => NameMangler::constant(name),
             (ItemKind::Struct | ItemKind::Enum, ..) => NameMangler::type_name(name),
@@ -658,5 +671,49 @@ impl<'p> EmitPlan<'p> {
             span,
             first_info.span(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::emit::RustEmitter;
+    use crate::source::{SourceId, Span};
+    use crate::types::TypedSource;
+
+    struct EntryFixture {
+        source: TypedSource,
+    }
+
+    impl EntryFixture {
+        const ENTRY_BESIDE_A_WRITTEN_MAIN: &str = "
+            (defn main () (println \"written\"))
+            (defn start () (main))";
+
+        fn entering_at(name: &str) -> Self {
+            let mut source = TypedSource::expand(Self::ENTRY_BESIDE_A_WRITTEN_MAIN);
+            source.enter_at(name);
+            Self { source }
+        }
+
+        fn emitted(&self) -> String {
+            RustEmitter::emit(&self.source.typed(), Span::new(SourceId::new(0), 0..0))
+                .unwrap_or_else(|_| panic!("the fixture emits"))
+                .code
+        }
+    }
+
+    #[test]
+    fn the_entry_takes_the_rust_name_main_from_a_written_main() {
+        let emitted = EntryFixture::entering_at("start").emitted();
+        assert!(emitted.contains("fn main() {"), "{emitted}");
+        assert!(emitted.contains("fn main_2() {"), "{emitted}");
+        assert!(!emitted.contains("fn start"), "{emitted}");
+    }
+
+    #[test]
+    fn a_written_main_that_is_the_entry_keeps_its_name() {
+        let emitted = EntryFixture::entering_at("main").emitted();
+        assert!(emitted.contains("fn main() {"), "{emitted}");
+        assert!(!emitted.contains("main_2"), "{emitted}");
     }
 }
