@@ -4,4 +4,4 @@
 
 (my-public-defn twice (x) (* 2 x))
 
-(def twice-page (doc twice))
+(def twice-page (doc-page twice))

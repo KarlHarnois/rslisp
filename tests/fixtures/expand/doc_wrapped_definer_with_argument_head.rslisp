@@ -4,6 +4,6 @@
 
 (via defn half (x) "Halves." (/ x 2))
 
-(def twice-page (doc twice))
+(def twice-page (doc-page twice))
 
-(def half-page (doc half))
+(def half-page (doc-page half))

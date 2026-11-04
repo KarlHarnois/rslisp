@@ -2,4 +2,4 @@
 
 (quietly (defn helper (x) x))
 
-(def helper-page (doc helper))
+(def helper-page (doc-page helper))

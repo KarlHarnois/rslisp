@@ -1,4 +1,4 @@
-(use prelude/macros defmacro template map-list document)
+(use prelude/macros defmacro template map-list document doc-page)
 (use prelude/pair pair)
 (use code first rest list prepend concat len empty? nth take drop
           symbol symbol? list? string? string same-binding? value-eq
@@ -8,7 +8,7 @@
 (use prelude/types vec option result iterator box slice sorted-map hash-map)
 (use prelude/io io-error)
 
-(export display debug show print println eprintln prn pr-str str char chars lines split trim subs as-str parse parse-error from-str parse-int-error parse-bool-error parse-char-error parse-float-error infallible lower-case upper-case alphanumeric? whitespace? digit? split-when)
+(export display debug show print println eprintln doc prn pr-str str char chars lines split trim subs as-str parse parse-error from-str parse-int-error parse-bool-error parse-char-error parse-float-error infallible lower-case upper-case alphanumeric? whitespace? digit? split-when)
 
 (rust-type formatter "std::fmt::Formatter<'_>")
 (rust-type fmt-result "std::fmt::Result")
@@ -296,6 +296,12 @@
 
 (defmacro eprintln (parts ...)
   (line-call "eprintln!" (flatten-parts parts)))
+
+(defmacro doc (term)
+  "Prints the page of a term to standard output and returns unit: its header, a blank line, then its docstring.
+
+  A term without a docstring has `No documentation.` in its place. Write (doc-page term) to keep the page as a string."
+  (template (println (doc-page (unquote term)))))
 
 (def display-type
   (fn (variables)

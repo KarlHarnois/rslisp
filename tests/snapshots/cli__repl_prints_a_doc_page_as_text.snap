@@ -1,0 +1,11 @@
+---
+source: tests/cli.rs
+expression: repl.transcript()
+---
+exit code: Some(0)
+--- stdout
+(defn twice (x))
+
+Doubles a number.
+"(defn twice (x))\n\nDoubles a number."
+--- stderr

@@ -6,7 +6,7 @@
 
 (export defrule defmacro template map-list whole-pairs? note-docstring value-doc-key type-doc-key header-shape document
         docstring-before-body? documented-body? docstring-before-parameters
-        doc docstring header)
+        doc-page docstring header)
 
 (def map-list
   (fn (function items)
@@ -431,7 +431,7 @@
 
 (header-shape (defmacro name pattern))
 
-(defmacro doc (term)
+(defmacro doc-page (term)
   "Returns the page of a term as a string: its header, a blank line, then its docstring.
 
   A term without a docstring has `No documentation.` in its place."

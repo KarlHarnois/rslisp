@@ -8,7 +8,7 @@
 
 (defn point (x) "Makes a point." (->point :x x :y x))
 
-(def point-page (doc point))
+(def point-page (doc-page point))
 
 (def point-header (header point))
 

@@ -1,1 +1,1 @@
-(def if-page (doc if))
+(def if-page (doc-page if))

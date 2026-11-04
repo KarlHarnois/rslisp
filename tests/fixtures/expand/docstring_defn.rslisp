@@ -2,4 +2,4 @@
 
 (defn main () (println (twice 21)))
 
-(def twice-page (doc twice))
+(def twice-page (doc-page twice))

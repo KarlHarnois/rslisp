@@ -2,4 +2,4 @@
 
 (defn main () (println (:x (->point :x 1 :y 2))))
 
-(def point-page (doc point))
+(def point-page (doc-page point))

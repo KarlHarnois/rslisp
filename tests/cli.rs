@@ -44,7 +44,7 @@ const TRAIT_SHARED_VECTOR: &str = "(struct odometer (offset i64))\n\n(trait mile
 const GEOMETRY: &str = "(export area)\n\n(defn area (width height) \"Multiplies a width by a height.\" (* width height))\n";
 const GEOMETRY_ENTRY: &str = "(use geometry area)\n\n(defn main () (println (area 3 4)))\n";
 const UNDOCUMENTED_ENTRY: &str = "(defn twice (x) (* 2 x))\n\n(defn main () (println (twice 2)))\n";
-const SHADOWING_DOC: &str = "(defrule doc ((term) 0))\n\n(defn main () (do))\n";
+const SHADOWING_DOC_PAGE: &str = "(defrule doc-page ((term) 0))\n\n(defn main () (do))\n";
 const THREADING_HEADER: &str = "(defrule ->)";
 const THREAD_LAST_HEADER: &str = "(defrule ->>)";
 const MINUS_HEADER: &str = "(defrule -)";
@@ -69,7 +69,7 @@ const UNDOCUMENTED_FUNCTION_BESIDE_A_STRUCT: &str =
 const OTHER_DEFINITION_FAILS: &str = "(defn twice (x) \"Doubles a number.\" (* 2 x))\n(defn bad () (+ 1 \"a\"))\n(defn main () (println (twice 2)))\n";
 const OWN_DEFINITION_FAILS: &str =
     "(defn twice (x) \"Doubles a number.\" (+ x \"a\"))\n(defn main () (do))\n";
-const PAGE_PROGRAM: &str = "(defn twice (x) \"Doubles a number.\" (* 2 x))\n(def page (doc twice))\n(defn main () (println page))\n";
+const PAGE_PROGRAM: &str = "(defn twice (x) \"Doubles a number.\" (* 2 x))\n(def page (doc-page twice))\n(defn main () (println page))\n";
 const SHADOWING_SUM: &str =
     "(defn sum (left right) (+ left right))\n(defn main () (println (sum 1 2)))\n";
 const NUMBERS: &str = "(export twice)\n\n(defn twice (x) \"Doubles a number.\" (* 2 x))\n";
@@ -96,6 +96,8 @@ const SHAPES_OF_TWO: &str =
     "(export circle square)\n(defn circle (r) (* 3 r r))\n(defn square (s) (* s s))\n";
 const POINTS: &str = "(defstruct point :x i64 :y i64)\n";
 const PROMPT_DEFINITIONS: &str = "(defn square (n) (* n n))\n(defstruct point :x i64 :y i64)\n(->point (square 2) 3)\n(println \"side \" (square 3))\n";
+const PROMPT_DOC: &str =
+    "(defn twice (x) \"Doubles a number.\" (* 2 x))\n(doc twice)\n(doc-page twice)\n";
 const PROMPT_REDEFINITION: &str = "(defn square (n) (* n n))\n(defn cube (n) (* n (square n)))\n(cube 3)\n(defn square (n) (+ n n))\n(cube 3)\n";
 const PROMPT_DROPPING_REPLACEMENT: &str =
     "(defstruct point :x i64 :y i64)\n(defn ->point (x) x)\n(->point 1 2)\n";
@@ -857,12 +859,12 @@ fn doc_rejects_a_term_that_is_not_one_name_before_reading_the_file() {
 }
 
 #[test]
-fn doc_rejects_a_shadowing_doc_that_returns_no_string() {
-    let sandbox = Sandbox::new("doc_shadowed").with_file("main.rslisp", SHADOWING_DOC);
+fn doc_rejects_a_shadowing_doc_page_that_returns_no_string() {
+    let sandbox = Sandbox::new("doc_shadowed").with_file("main.rslisp", SHADOWING_DOC_PAGE);
     let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "main"]);
     assert_eq!(
         doc.assert_exit_code(1).stderr(),
-        "error: `doc` did not expand to a string\n"
+        "error: `doc-page` did not expand to a string\n"
     );
 }
 
@@ -1816,6 +1818,19 @@ fn eval_json_prints_a_value_that_borrows_a_temporary() {
 }
 
 #[test]
+fn eval_json_streams_a_doc_page_as_out() {
+    let sandbox = Sandbox::new("eval_json_doc").with_file("page.rslisp", PAGE_PROGRAM);
+    let eval = sandbox.compiler(&["eval", "--json", "page.rslisp", "(doc twice)"]);
+    assert_eq!(
+        eval.assert_silent_success().json_replies(),
+        [
+            json!({"out": TWICE_PAGE}),
+            json!({"status": "done", "exit": 0})
+        ]
+    );
+}
+
+#[test]
 fn eval_json_streams_standard_error_as_err() {
     let sandbox = Sandbox::new("eval_json_err").with_file("session.rslisp", SESSION);
     let eval = sandbox.compiler(&["eval", "--json", "session.rslisp", "(eprintln \"oops\")"]);
@@ -2342,6 +2357,13 @@ fn eval_notes_a_struct_that_the_module_defines() {
 fn repl_keeps_definitions_and_prints_expressions() {
     let sandbox = Sandbox::new("repl_definitions");
     let repl = sandbox.compiler_reading(PROMPT_DEFINITIONS, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_prints_a_doc_page_as_text() {
+    let sandbox = Sandbox::new("repl_doc");
+    let repl = sandbox.compiler_reading(PROMPT_DOC, &["repl"]);
     insta::assert_snapshot!(repl.transcript());
 }
 

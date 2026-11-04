@@ -3,4 +3,4 @@
 
 (defn main () (unless false (println "ran")))
 
-(def unless-page (doc unless))
+(def unless-page (doc-page unless))

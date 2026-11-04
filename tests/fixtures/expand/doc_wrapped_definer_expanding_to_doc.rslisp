@@ -4,11 +4,11 @@
   (if (empty? (module-notes (definition-symbol (quote defn-once) "notes") (quote defined)))
       (do (add-module-note (quote defined) name)
           (template (defn (unquote name) (unquote parameters) (unquote body))))
-      (template (doc (unquote name)))))
+      (template (doc-page (unquote name)))))
 
 (defn-once twice (x) (* 2 x))
 
-(def twice-page (doc twice))
+(def twice-page (doc-page twice))
 
 (defmacro defn-once-into-header (name parameters body)
   (if (empty? (module-notes (definition-symbol (quote defn-once-into-header) "notes") (quote headed)))
@@ -18,4 +18,4 @@
 
 (defn-once-into-header thrice (x) (* 3 x))
 
-(def thrice-page (doc thrice))
+(def thrice-page (doc-page thrice))

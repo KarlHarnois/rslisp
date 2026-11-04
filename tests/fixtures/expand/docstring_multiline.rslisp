@@ -6,4 +6,4 @@
   "
   (* size factor))
 
-(def scale-page (doc scale))
+(def scale-page (doc-page scale))

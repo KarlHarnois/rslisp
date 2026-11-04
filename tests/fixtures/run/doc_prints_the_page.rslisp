@@ -1,0 +1,5 @@
+(defn twice (x) "Doubles a number." (* 2 x))
+
+(defn main ()
+  (doc twice)
+  (println (twice 21)))
