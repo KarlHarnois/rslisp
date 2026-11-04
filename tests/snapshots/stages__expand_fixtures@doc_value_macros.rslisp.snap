@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_value_macros.rslisp
+---
+(def str-page "str\n\nBuilds a `string` from its parts: `(str part ...)`.\n\nA string literal part is literal text, and any other part prints with\n`display`. `(str x)` emits `x.to_string()`, and `str` as a value is that\none-part function, so `(map (iter years) str)` turns each year into a\n`string`.")
+(def get-page "get\n\nReads a slice by index or a map by key: `(get items index)` or `(get map key)`.\n\nIt returns an `option` of a borrow, and `none` for a missing index or\nkey. `get` as a value is the slice reader.")
+(def push-page "push!\n\nAdds an item to a vector or a string: `(push! target item)`.\n\nA vector takes an element, and a `string` takes a `char` or a\n`(ref str)`. `push!` as a value is the vector push.")
+(def main (fn () ((rust "println!(\"{{}}{{}}{{}}\", {&0}, {&1}, {&2})" (where ((part-type-0 display) (part-type-1 display) (part-type-2 display)) (fn ((ref part-type-0) (ref part-type-1) (ref part-type-2)) unit))) str-page get-page push-page)))

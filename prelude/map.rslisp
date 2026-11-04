@@ -1,5 +1,5 @@
 (use code list prepend rest string len empty? symbol? number-add number-lt)
-(use prelude/macros defmacro defrule)
+(use prelude/macros defmacro defrule document)
 (use prelude/types vec option slice sorted-map hash-map)
 (use prelude/pair pair)
 (use prelude/number ord hash eq)
@@ -70,6 +70,12 @@
     (if (symbol? form)
         (quote slice-get)
         (prepend (quote map-at) (prepend (quote get) (rest form))))))
+
+(document get
+  "Reads a slice by index or a map by key: `(get items index)` or `(get map key)`.
+
+  It returns an `option` of a borrow, and `none` for a missing index or
+  key. `get` as a value is the slice reader.")
 
 (def slice-get (rust "{0}.get({1})" (where (a) (fn ((ref (slice a)) usize) (option (ref a))))))
 

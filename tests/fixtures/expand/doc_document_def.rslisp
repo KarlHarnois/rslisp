@@ -1,0 +1,9 @@
+(use prelude/macros document)
+
+(def twice (fn (x) (* 2 x)))
+
+(document twice "Doubles a number: `(twice x)`.")
+
+(def twice-page (doc twice))
+
+(defn main () (println (twice 2) twice-page))

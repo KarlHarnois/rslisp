@@ -1,4 +1,4 @@
-(use prelude/macros defmacro defrule)
+(use prelude/macros defmacro defrule document)
 (use prelude/types vec option iterator slice)
 (use prelude/number ord partial-eq < >)
 (use prelude/ownership copy)
@@ -45,6 +45,12 @@
     (if (symbol? form)
         (quote vec-push!)
         (prepend (quote map-at) (prepend (quote push) (rest form))))))
+
+(document push!
+  "Adds an item to a vector or a string: `(push! target item)`.
+
+  A vector takes an element, and a `string` takes a `char` or a
+  `(ref str)`. `push!` as a value is the vector push.")
 
 (def vec-push! (rust "{0}.push({1})" (where (a) (fn ((mut (vec a)) a) unit))))
 (defrule iter
