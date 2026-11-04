@@ -39,6 +39,17 @@ impl PreludeState {
         Expander::new(&mut sources, module_sources).capture_prelude(entry)
     }
 
+    fn add_sources(&self, expander: &mut Expander<'_>) {
+        assert_eq!(
+            expander.sources.next_id(),
+            self.first_source,
+            "the entry is the only source before the prelude"
+        );
+        for record in &self.modules {
+            expander.add_prelude_source(record.path());
+        }
+    }
+
     pub fn save(&self) -> Vec<u8> {
         bincode::serialize(self).expect("every saved table serializes")
     }
@@ -48,13 +59,10 @@ impl PreludeState {
     }
 
     pub(super) fn install(self, expander: &mut Expander<'_>) -> ModuleId {
-        assert_eq!(
-            expander.sources.next_id(),
-            self.first_source,
-            "the entry is the only source before the prelude"
-        );
+        if !expander.holds_prelude_sources(self.first_source, &self.modules) {
+            self.add_sources(expander);
+        }
         for record in self.modules {
-            expander.add_prelude_source(record.path());
             expander.modules.adopt(record);
         }
         expander.tables = self.tables;
@@ -101,6 +109,20 @@ impl Expander<'_> {
         if let Some(ModuleSource::Text { name, text }) = self.module_sources.find(path) {
             self.sources.add(name, text);
         }
+    }
+
+    fn holds_prelude_sources(&self, first_source: SourceId, modules: &[ModuleRecord]) -> bool {
+        if self.sources.next_id().index() <= first_source.index() {
+            return false;
+        }
+        let held = self.sources.file(first_source).name();
+        modules
+            .iter()
+            .find_map(|record| match self.module_sources.find(record.path()) {
+                Some(ModuleSource::Text { name, .. }) => Some(name),
+                _ => None,
+            })
+            .is_some_and(|name| name == held)
     }
 }
 
@@ -192,6 +214,26 @@ mod tests {
         let first_save = PreludeState::build().save();
         let second_save = PreludeState::build().save();
         assert!(first_save == second_save, "the two saves differ");
+    }
+
+    #[test]
+    fn a_second_install_into_the_same_sources_reuses_the_prelude_sources() {
+        let program = UserProgram::MACROS_AND_NAMES;
+        let (mut sources, entry) = program.sources();
+        let first = Expander::with_prelude(
+            &mut sources,
+            UserProgram::module_sources(),
+            UserProgram::loaded_state(),
+        );
+        let first_entry = program.entry_module(first, entry);
+        let installed = sources.next_id();
+        let second = Expander::with_prelude(
+            &mut sources,
+            UserProgram::module_sources(),
+            UserProgram::loaded_state(),
+        );
+        assert_eq!(program.entry_module(second, entry), first_entry);
+        assert_eq!(sources.next_id(), installed);
     }
 
     #[test]
