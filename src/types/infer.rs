@@ -6,6 +6,7 @@ use std::rc::Rc;
 
 use rustc_hash::FxHashMap;
 
+use super::assumed_collections::CollectionAssumption;
 use super::borrowed_items::ArgumentSite;
 use super::checker::{TypeChecker, VariantArmReference};
 use super::collection::{Collection, CollectionKind};
@@ -2060,7 +2061,10 @@ impl TypeChecker {
             && !self.unifier.shallow(parameter).is_reference()
             && let Type::Ref(_, referent) | Type::Mut(_, referent) = &value.ty
         {
-            self.pass(parameter, referent, value.span, Borrow::None)?;
+            self.pass(parameter, referent, value.span, Borrow::None)
+                .map_err(|diagnostic| {
+                    self.explain_assumed_collection(call, position, &value.ty, diagnostic)
+                })?;
             self.pending_mode_checks.push(PendingModeCheck {
                 callee: call,
                 position,
@@ -2076,6 +2080,41 @@ impl TypeChecker {
                 self.request_parameter_call_label(call, position, &value.ty, diagnostic)
             })
             .map_err(|diagnostic| self.explain_borrowed_items(&site, &value.ty, diagnostic))
+            .map_err(|diagnostic| {
+                self.explain_assumed_collection(call, position, &value.ty, diagnostic)
+            })
+    }
+
+    fn explain_assumed_collection(
+        &self,
+        callee: BindingId,
+        position: usize,
+        found: &Type,
+        diagnostic: Diagnostic,
+    ) -> Diagnostic {
+        let Some(assumption) = self.assumed_collections.get(callee, position) else {
+            return diagnostic;
+        };
+        let function = self.bindings.get(callee).name();
+        let signature = self.signature_with_parameter(callee, position, found);
+        diagnostic.with_help(TypeProblems::assumed_collection_help(
+            assumption, function, &signature,
+        ))
+    }
+
+    fn signature_with_parameter(&self, callee: BindingId, position: usize, found: &Type) -> String {
+        let count = self.written_parameters.get(&callee).map_or(0, Vec::len);
+        let shown = self.display().show(&self.unifier.resolve(found));
+        let parameters: Vec<&str> = (0..count)
+            .map(|index| {
+                if index == position {
+                    shown.as_str()
+                } else {
+                    "_"
+                }
+            })
+            .collect();
+        format!("(fn ({}) _)", parameters.join(" "))
     }
 
     fn explain_literal_default(
@@ -2787,6 +2826,7 @@ impl TypeChecker {
         if arguments.len() != 1 {
             return Err(TypeProblems::wrong_argument_count(1, arguments.len(), span));
         }
+        self.note_unknown_collection(&value, CollectionAssumption::GetCollection);
         let element = self.unifier.fresh();
         let parameters = vec![
             Type::shared(self.slice_of(element.clone())),
@@ -2809,6 +2849,7 @@ impl TypeChecker {
             let item = self.infer(item)?;
             return self.infer_string_push(value, item, span);
         }
+        self.note_unknown_collection(&value, CollectionAssumption::PushTarget);
         let element = self.unifier.fresh();
         let parameters = vec![Type::mutable(self.vector_of(element.clone())), element];
         self.synthetic_call_with_value(
@@ -2819,6 +2860,13 @@ impl TypeChecker {
             arguments,
             span,
         )
+    }
+
+    fn note_unknown_collection(&mut self, target: &TypedExpr, assumption: CollectionAssumption) {
+        let referent = self.unifier.resolve(&target.ty).without_reference();
+        if matches!(referent, Type::Var(_)) {
+            self.assumed_collections.assume(target, assumption);
+        }
     }
 
     fn is_string_target(&self, target: &Type) -> bool {
@@ -2848,8 +2896,14 @@ impl TypeChecker {
         let target = self.pass_call_argument(None, 0, &parameters[0], &value)?;
         let pushed = self.pass_string_push_item(&parameters[1], &item)?;
         let arguments = vec![
-            TypedArgument { value, borrow: target },
-            TypedArgument { value: item, borrow: pushed },
+            TypedArgument {
+                value,
+                borrow: target,
+            },
+            TypedArgument {
+                value: item,
+                borrow: pushed,
+            },
         ];
         Ok(self.finish_synthetic_call(template, &parameters, &Type::unit(), arguments, span))
     }

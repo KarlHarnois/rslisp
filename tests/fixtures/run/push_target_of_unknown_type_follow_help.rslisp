@@ -1,0 +1,7 @@
+(type add-text! (fn ((mut string) _) _))
+(defn add-text! (message text) (push! message text))
+
+(defn main ()
+  (let message (str "a"))
+  (add-text! (mut message) "b")
+  (println message))

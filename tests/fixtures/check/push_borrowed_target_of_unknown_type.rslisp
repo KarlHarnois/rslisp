@@ -1,0 +1,4 @@
+(defn add-year (years year) (push! (mut years) year) years)
+
+(defn main ()
+  (prn (add-year (str "a") 2025)))

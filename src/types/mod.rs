@@ -1,4 +1,5 @@
 mod associated;
+mod assumed_collections;
 mod binding;
 mod borrowed_items;
 mod boxes;

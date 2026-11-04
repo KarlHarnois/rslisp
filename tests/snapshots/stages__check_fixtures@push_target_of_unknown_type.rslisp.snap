@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/push_target_of_unknown_type.rslisp
+---
+error[L0401]: mismatched types
+ --> check/push_target_of_unknown_type.rslisp:5:14
+  |
+5 |   (add-text! (mut message) "b")
+  |              ^^^^^^^^^^^^^ expected `(vec _)`, found `string`
+  |
+  = help: `push!` reads a target of unknown type as a vector, so write a `type` signature for `add-text!`, such as `(type add-text! (fn ((mut string) _) _))`

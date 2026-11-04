@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use super::assumed_collections::CollectionAssumption;
 use super::parameter_calls::ParameterCall;
 use super::pinning::LiteralDefault;
 use crate::core::{FieldLabel, Keyword};
@@ -226,6 +227,18 @@ impl TypeProblems {
             found,
             span,
             MismatchContext::Plain,
+        )
+    }
+
+    pub fn assumed_collection_help(
+        assumption: CollectionAssumption,
+        function: &str,
+        signature: &str,
+    ) -> String {
+        format!(
+            "`{}` reads {}, so write a `type` signature for `{function}`, such as `(type {function} {signature})`",
+            assumption.operation(),
+            assumption.reading(),
         )
     }
 
