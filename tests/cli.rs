@@ -4,10 +4,12 @@ use std::os::unix::fs::PermissionsExt;
 use std::os::unix::process::ExitStatusExt;
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Output, Stdio};
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
 
 use rslisp::build::EmittedFormatting;
 use rslisp::diagnostic::DiagnosticRenderer;
+use rslisp::language::Language;
 use rslisp::source::SourceMap;
 use serde_json::{Map, Value, json};
 
@@ -116,8 +118,6 @@ const PROMPT_EXIT: &str =
     "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n(exit 3)\n(exit 0)\n";
 const PROMPT_UNCLOSED_END: &str = "(+ 1 2)\n(defn twice (x)\n  (* 2 x)\n";
 const PROMPT_NOT_UTF8: &[u8] = b"(+ 1 1)\n\xff\n";
-const PROMPT_EXIT_ON_A_TERMINAL: &str =
-    "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n(exit 3)\n\u{4}";
 const PROMPT_REDEFINED_STRUCT: &str = "(defstruct user :name str)\n(def karl (->user :name \"karl\"))\n(defstruct user :name str :email str)\n(karl)\n";
 const PROMPT_CASCADE: &str = "(defstruct user :name str)\n(def karl (->user :name \"karl\"))\n(defn greet () (str \"hi \" (:name karl)))\n(defstruct user :name str :email str)\n(greet)\n";
 const PROMPT_BROKEN_MACRO_CALLED: &str =
@@ -136,6 +136,11 @@ const SHAPES_WITH_A_TYPO: &str =
 const WRITE_FILE: &str = "(def write-file (rust \"std::fs::write({0}, {1}).unwrap()\" (fn ((ref str) (ref str)) unit)))\n";
 const SHAPES_WITHOUT_SQUARE: &str =
     "(write-file \"shapes.rslisp\" \"(export circle)\\n(defn circle (r) r)\\n\")\n";
+const PROMPT_EXIT_ON_A_TERMINAL: &[Keys] = &[
+    Keys::AtPrompt("(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\r"),
+    Keys::AtPrompt("(exit 3)\r"),
+    Keys::AtPrompt(Keys::END_OF_INPUT),
+];
 const PROMPT_EXTRA_CLOSE: &str = "(+ 1 2))\n(+ 3 4)\n(+ 3 \"a\")\n";
 const PROMPT_ENUM_REDEFINITION: &str = "(enum shape circle square)\n(enum shape circle square triangle)\n(match shape/triangle (triangle 3) (_ 0))\n";
 const PROMPT_WARNING: &str = "(defn pick (x) (match x (_ 1) (_ 2)))\n(pick 1)\n(defn other () 1)\n(defn another () 2)\n(pick 2)\n";
@@ -160,7 +165,10 @@ impl Sandbox {
     }
 
     const EXECUTABLE: u32 = 0o755;
+    const READ_ONLY: u32 = 0o444;
     const TERMINAL_RECORDER: &str = "script";
+    const STATE_HOME_VARIABLE: &str = "XDG_STATE_HOME";
+    const STATE_DIRECTORY: &str = "state";
     const COLOR_VARIABLES: [&str; 5] = ["NO_COLOR", "CLICOLOR_FORCE", "CLICOLOR", "TERM", "CI"];
     const TEMPORARY_DIRECTORY_VARIABLE: &str = "TMPDIR";
     #[cfg(target_os = "linux")]
@@ -216,32 +224,44 @@ impl Sandbox {
 
     fn compiler_on_a_terminal_reading(
         &self,
-        input: &str,
+        typed: &[Keys],
         environment: &[(&str, &str)],
         arguments: &[&str],
     ) -> Outcome {
         let recorded = Self::recorded_arguments(arguments);
         let recorded: Vec<&str> = recorded.iter().map(String::as_str).collect();
+        let state = self.directory.join(Self::STATE_DIRECTORY);
+        let state = state.to_str().expect("the sandbox path is UTF-8");
+        let environment: Vec<(&str, &str)> = [(Self::STATE_HOME_VARIABLE, state)]
+            .into_iter()
+            .chain(environment.iter().copied())
+            .collect();
         let mut command =
-            self.color_command(Path::new(Self::TERMINAL_RECORDER), environment, &recorded);
-        Self::reading_until_the_end(&mut command, input)
+            self.color_command(Path::new(Self::TERMINAL_RECORDER), &environment, &recorded);
+        Self::typing_until_the_end(&mut command, typed)
     }
 
-    fn reading_until_the_end(command: &mut Command, input: &str) -> Outcome {
+    fn typing_until_the_end(command: &mut Command, typed: &[Keys]) -> Outcome {
         let mut child = command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
             .expect("the terminal recorder starts");
-        let mut held_input = child.stdin.take().expect("stdin is piped");
-        std::io::Write::write_all(&mut held_input, input.as_bytes())
-            .expect("the terminal recorder reads its input");
+        let mut keyboard = child.stdin.take().expect("stdin is piped");
         let mut stdout = child.stdout.take().expect("stdout is piped");
         let mut stderr = child.stderr.take().expect("stderr is piped");
         let (stdout, stderr, status) = std::thread::scope(|scope| {
-            let stdout = scope.spawn(move || Self::read_all(&mut stdout));
+            let (sender, updates) = mpsc::channel();
+            let stdout = scope.spawn(move || TerminalScreen::forward(&mut stdout, &sender));
             let stderr = scope.spawn(move || Self::read_all(&mut stderr));
+            let mut screen = TerminalScreen::new(updates);
+            for keys in typed {
+                if let Err(missing) = screen.type_keys(keys, &mut keyboard) {
+                    child.kill().ok();
+                    panic!("{missing}");
+                }
+            }
             let status = child.wait().expect("the terminal recorder finishes");
             (
                 stdout.join().expect("stdout is read"),
@@ -249,7 +269,7 @@ impl Sandbox {
                 status,
             )
         });
-        drop(held_input);
+        drop(keyboard);
         Outcome {
             output: Output {
                 status,
@@ -453,6 +473,177 @@ impl Drop for Sandbox {
 
 struct Outcome {
     output: Output,
+}
+
+enum Keys<'a> {
+    AtPrompt(&'a str),
+    AtPromptAfter(&'a str, &'a str),
+    AfterOutput(&'a str, &'a str),
+    BytesAtPrompt(&'a [u8]),
+}
+
+impl Keys<'_> {
+    const END_OF_INPUT: &'static str = "\u{4}";
+    const INTERRUPT: &'static str = "\u{3}";
+    const LEFT: &'static str = "\u{1b}[D";
+    const PASTE_START: &'static str = "\u{1b}[200~";
+    const PASTE_END: &'static str = "\u{1b}[201~";
+}
+
+struct RenderedScreen {
+    rows: Vec<Vec<char>>,
+    row: usize,
+    column: usize,
+}
+
+impl RenderedScreen {
+    const ESCAPE: char = '\u{1b}';
+
+    fn of(session: &str) -> String {
+        let mut screen = Self {
+            rows: vec![Vec::new()],
+            row: 0,
+            column: 0,
+        };
+        let mut characters = session.chars();
+        while let Some(character) = characters.next() {
+            screen.apply(character, &mut characters);
+        }
+        screen.text()
+    }
+
+    fn apply(&mut self, character: char, rest: &mut std::str::Chars) {
+        match character {
+            Self::ESCAPE => self.apply_sequence(rest),
+            '\r' => self.column = 0,
+            '\n' => self.move_down(),
+            _ => self.write(character),
+        }
+    }
+
+    fn apply_sequence(&mut self, rest: &mut std::str::Chars) {
+        rest.next();
+        let mut parameters = String::new();
+        for character in rest.by_ref() {
+            if character.is_ascii_alphabetic() {
+                return self.apply_final(character, parameters.parse().unwrap_or(1));
+            }
+            parameters.push(character);
+        }
+    }
+
+    fn apply_final(&mut self, last: char, count: usize) {
+        match last {
+            'A' => self.row = self.row.saturating_sub(count),
+            'C' => self.column += count,
+            'D' => self.column = self.column.saturating_sub(count),
+            'K' => self.rows[self.row].truncate(self.column),
+            _ => {}
+        }
+    }
+
+    fn move_down(&mut self) {
+        self.row += 1;
+        if self.row == self.rows.len() {
+            self.rows.push(Vec::new());
+        }
+    }
+
+    fn write(&mut self, character: char) {
+        let row = &mut self.rows[self.row];
+        if row.len() <= self.column {
+            row.resize(self.column, ' ');
+            row.push(character);
+        } else {
+            row[self.column] = character;
+        }
+        self.column += 1;
+    }
+
+    fn text(&self) -> String {
+        let rows: Vec<String> = self.rows.iter().map(|row| row.iter().collect()).collect();
+        rows.join("\n")
+    }
+}
+
+struct TerminalScreen {
+    updates: Receiver<Vec<u8>>,
+    shown: Vec<u8>,
+    seen: usize,
+}
+
+impl TerminalScreen {
+    const PROMPT_READY: &str = "\u{1b}[?2004h";
+    const PATIENCE: Duration = Duration::from_secs(60);
+    const CHUNK: usize = 4096;
+
+    fn new(updates: Receiver<Vec<u8>>) -> Self {
+        Self {
+            updates,
+            shown: Vec::new(),
+            seen: 0,
+        }
+    }
+
+    fn forward(stream: &mut impl std::io::Read, sender: &Sender<Vec<u8>>) -> Vec<u8> {
+        let mut everything = Vec::new();
+        let mut chunk = [0; Self::CHUNK];
+        while let Ok(read @ 1..) = stream.read(&mut chunk) {
+            everything.extend_from_slice(&chunk[..read]);
+            sender.send(chunk[..read].to_vec()).ok();
+        }
+        everything
+    }
+
+    fn type_keys(&mut self, keys: &Keys, keyboard: &mut impl std::io::Write) -> Result<(), String> {
+        let keys = match keys {
+            Keys::AtPrompt(keys) => keys.as_bytes(),
+            Keys::AtPromptAfter(output, keys) => {
+                self.wait_for(output)?;
+                keys.as_bytes()
+            }
+            Keys::AfterOutput(output, keys) => {
+                self.wait_for(output)?;
+                Self::press(keys.as_bytes(), keyboard);
+                return Ok(());
+            }
+            Keys::BytesAtPrompt(bytes) => bytes,
+        };
+        self.wait_for(Self::PROMPT_READY)?;
+        Self::press(keys, keyboard);
+        Ok(())
+    }
+
+    fn press(keys: &[u8], keyboard: &mut impl std::io::Write) {
+        keyboard
+            .write_all(keys)
+            .and_then(|()| keyboard.flush())
+            .expect("the terminal recorder reads its input");
+    }
+
+    fn wait_for(&mut self, awaited: &str) -> Result<(), String> {
+        while self.end_of_next(awaited).is_none() {
+            let update = self.updates.recv_timeout(Self::PATIENCE).map_err(|_| {
+                format!(
+                    "the terminal never showed {awaited:?}: {:?}",
+                    String::from_utf8_lossy(&self.shown)
+                )
+            })?;
+            self.shown.extend(update);
+        }
+        self.seen = self
+            .end_of_next(awaited)
+            .expect("the awaited text was shown");
+        Ok(())
+    }
+
+    fn end_of_next(&self, awaited: &str) -> Option<usize> {
+        let awaited = awaited.as_bytes();
+        self.shown[self.seen..]
+            .windows(awaited.len())
+            .position(|window| window == awaited)
+            .map(|start| self.seen + start + awaited.len())
+    }
 }
 
 impl Outcome {
@@ -2510,6 +2701,7 @@ struct PromptColors;
 
 impl PromptColors {
     const EXIT_NOTE: &str = "the program exited with code 3";
+    const CONTROL_SEQUENCE: &str = "\u{1b}[";
 
     fn prompt() -> String {
         let style = DiagnosticRenderer::GUTTER_STYLE;
@@ -2522,6 +2714,19 @@ impl PromptColors {
 
     fn plain_exit_note() -> String {
         format!("note: {}", Self::EXIT_NOTE)
+    }
+
+    fn is_styled(session: &str) -> bool {
+        session
+            .split(Self::CONTROL_SEQUENCE)
+            .skip(1)
+            .any(|sequence| {
+                sequence
+                    .trim_start_matches(|character: char| {
+                        character.is_ascii_digit() || character == ';'
+                    })
+                    .starts_with('m')
+            })
     }
 
     fn session(name: &str, environment: &[(&str, &str)], arguments: &[&str]) -> String {
@@ -2547,7 +2752,7 @@ fn color_stays_off_the_repl_prompt_and_exit_note_when_no_color_is_set() {
         &[("TERM", "xterm"), ("NO_COLOR", "1")],
         &["repl"],
     );
-    assert!(!session.contains('\u{1b}'), "{session:?}");
+    assert!(!PromptColors::is_styled(&session), "{session:?}");
     assert!(session.contains("> "), "{session:?}");
     assert!(
         session.contains(&PromptColors::plain_exit_note()),
@@ -2562,7 +2767,7 @@ fn color_never_keeps_the_repl_prompt_and_exit_note_plain() {
         &[("TERM", "xterm")],
         &["--color", "never", "repl"],
     );
-    assert!(!session.contains('\u{1b}'), "{session:?}");
+    assert!(!PromptColors::is_styled(&session), "{session:?}");
     assert!(session.contains("> "), "{session:?}");
     assert!(
         session.contains(&PromptColors::plain_exit_note()),
@@ -2695,4 +2900,339 @@ fn repl_helps_an_expression_whose_error_lies_in_a_changed_module() {
         "repl_expression_module_typo",
         &input
     ));
+}
+
+struct EditedSession {
+    sandbox: Sandbox,
+}
+
+impl EditedSession {
+    const INPUT_LINE: &str = "(f :x 1 \"s\") ; c\r";
+
+    fn new(name: &str) -> Self {
+        Self {
+            sandbox: Sandbox::new(name),
+        }
+    }
+
+    fn typing(&self, typed: &[Keys], environment: &[(&str, &str)]) -> Outcome {
+        let environment: Vec<(&str, &str)> = [("TERM", "xterm")]
+            .into_iter()
+            .chain(environment.iter().copied())
+            .collect();
+        self.sandbox
+            .compiler_on_a_terminal_reading(typed, &environment, &["repl"])
+    }
+
+    fn session(&self, typed: &[Keys], environment: &[(&str, &str)]) -> String {
+        self.typing(typed, environment).assert_exit_code(0).stdout()
+    }
+
+    fn history(&self) -> String {
+        self.sandbox
+            .written_file(&Self::history_path(Sandbox::STATE_DIRECTORY))
+    }
+
+    fn history_path(state: &str) -> String {
+        format!("{state}/{}/history", Language::NAME)
+    }
+
+    fn styled(style: anstyle::Style, text: &str) -> String {
+        format!("{style}{text}{style:#}")
+    }
+
+    fn history_notes(session: &str) -> usize {
+        session.matches("history is off").count()
+    }
+}
+
+#[test]
+fn repl_edits_a_line_on_a_terminal() {
+    let edited = EditedSession::new("repl_edited_line");
+    let typed = format!("(+ 2){} 5\r", Keys::LEFT);
+    let session = edited.session(
+        &[Keys::AtPrompt(&typed), Keys::AtPrompt(Keys::END_OF_INPUT)],
+        &[("NO_COLOR", "1")],
+    );
+    assert!(session.contains("(+ 2 5)"), "{session:?}");
+    assert!(session.contains("\r\n7\r\n"), "{session:?}");
+}
+
+#[test]
+fn repl_indents_a_typed_line_inside_an_unclosed_list() {
+    let edited = EditedSession::new("repl_typed_continuation");
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(defn twice (x)\r(* 2 x))\r"),
+            Keys::AtPrompt("(twice 4)\r"),
+            Keys::AtPromptAfter("\r\n8\r\n", Keys::END_OF_INPUT),
+        ],
+        &[("NO_COLOR", "1")],
+    );
+    let screen = RenderedScreen::of(&session);
+    assert!(
+        screen.contains("> (defn twice (x)\n  (* 2 x))\n"),
+        "{screen}"
+    );
+}
+
+#[test]
+fn repl_adds_no_spaces_inside_an_unclosed_string() {
+    let edited = EditedSession::new("repl_string_continuation");
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(println \"a\rb\")\r"),
+            Keys::AtPromptAfter("\r\na\r\nb\r\n", Keys::END_OF_INPUT),
+        ],
+        &[("NO_COLOR", "1")],
+    );
+    let screen = RenderedScreen::of(&session);
+    assert!(screen.contains("> (println \"a\nb\")\na\nb\n"), "{screen}");
+}
+
+#[test]
+fn repl_reads_plain_lines_on_an_unsupported_terminal() {
+    let edited = EditedSession::new("repl_dumb_terminal");
+    let session = edited.session(
+        &[
+            Keys::AfterOutput("> ", "(+ 1 2)\n"),
+            Keys::AfterOutput("\r\n3\r\n> ", "(+ 1\n"),
+            Keys::AfterOutput("  ", Keys::END_OF_INPUT),
+        ],
+        &[("TERM", "dumb")],
+    );
+    assert!(session.contains("error[L0101]"), "{session:?}");
+    assert!(
+        !session.contains(TerminalScreen::PROMPT_READY),
+        "{session:?}"
+    );
+}
+
+#[test]
+fn repl_shows_a_multi_line_paste_once() {
+    let edited = EditedSession::new("repl_paste");
+    let paste = format!(
+        "{}(defn twice (x)\n  (* 2 x))\n(twice 4)\n{}\r",
+        Keys::PASTE_START,
+        Keys::PASTE_END
+    );
+    let session = edited.session(
+        &[Keys::AtPrompt(&paste), Keys::AtPrompt(Keys::END_OF_INPUT)],
+        &[("NO_COLOR", "1")],
+    );
+    assert!(
+        session.contains("> (defn twice (x)\r\n  (* 2 x))\r\n(twice 4)\r\n"),
+        "{session:?}"
+    );
+    assert!(session.contains("\r\n8\r\n"), "{session:?}");
+    assert!(!session.contains("  > "), "{session:?}");
+}
+
+#[test]
+fn repl_keeps_lines_typed_ahead_of_the_prompt() {
+    let edited = EditedSession::new("repl_typed_ahead");
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(+ 1 2)\r(+ 3\r 4)\r"),
+            Keys::AtPromptAfter("\r\n7\r\n", Keys::END_OF_INPUT),
+        ],
+        &[("NO_COLOR", "1")],
+    );
+    assert!(session.contains("\r\n3\r\n"), "{session:?}");
+    assert!(session.contains(" 4)\u{1b}[?2004l\r\n7\r\n"), "{session:?}");
+}
+
+#[test]
+fn repl_colors_the_input_as_it_is_typed() {
+    let edited = EditedSession::new("repl_input_colors");
+    let session = edited
+        .typing(
+            &[
+                Keys::AtPrompt(EditedSession::INPUT_LINE),
+                Keys::AtPrompt(Keys::END_OF_INPUT),
+            ],
+            &[],
+        )
+        .stdout();
+    for (color, text) in [
+        (anstyle::AnsiColor::Cyan.on_default(), ":x"),
+        (anstyle::AnsiColor::Yellow.on_default(), "1"),
+        (anstyle::AnsiColor::Green.on_default(), "\"s\""),
+        (anstyle::Style::new().dimmed(), "; c"),
+    ] {
+        let styled = EditedSession::styled(color, text);
+        assert!(session.contains(&styled), "{styled:?} in {session:?}");
+    }
+}
+
+#[test]
+fn repl_leaves_the_input_plain_when_color_is_off() {
+    let edited = EditedSession::new("repl_input_plain");
+    let session = edited
+        .typing(
+            &[
+                Keys::AtPrompt(EditedSession::INPUT_LINE),
+                Keys::AtPrompt(Keys::END_OF_INPUT),
+            ],
+            &[("NO_COLOR", "1")],
+        )
+        .stdout();
+    assert!(session.contains("(f :x 1 \"s\") ; c"), "{session:?}");
+    assert!(!PromptColors::is_styled(&session), "{session:?}");
+}
+
+#[test]
+fn repl_quits_at_an_empty_prompt_on_end_of_input() {
+    let edited = EditedSession::new("repl_end_of_input");
+    let quit = edited.typing(&[Keys::AtPrompt(Keys::END_OF_INPUT)], &[]);
+    assert_eq!(quit.assert_exit_code(0).stderr(), "");
+}
+
+#[test]
+fn repl_drops_the_typed_input_on_interrupt() {
+    let edited = EditedSession::new("repl_interrupt_typing");
+    let interrupted = format!("(+ 1{}", Keys::INTERRUPT);
+    let session = edited.session(
+        &[
+            Keys::AtPrompt(&interrupted),
+            Keys::AtPrompt("(+ 2 3)\r"),
+            Keys::AtPrompt(Keys::END_OF_INPUT),
+        ],
+        &[],
+    );
+    assert!(session.contains("\r\n5\r\n"), "{session:?}");
+    assert_eq!(edited.history(), "#V2\n(+ 2 3)\n");
+}
+
+#[test]
+fn repl_reports_unreadable_input_on_a_terminal() {
+    let edited = EditedSession::new("repl_unreadable_terminal");
+    let session = edited
+        .typing(&[Keys::BytesAtPrompt(b"\xff\r")], &[("NO_COLOR", "1")])
+        .assert_exit_code(2)
+        .stdout();
+    assert!(
+        session.contains("error: cannot read standard input: invalid data"),
+        "{session:?}"
+    );
+}
+
+#[test]
+fn repl_keeps_history_under_the_state_home() {
+    let edited = EditedSession::new("repl_history");
+    edited.session(
+        &[
+            Keys::AtPrompt("(+ 1 2)\r"),
+            Keys::AtPrompt(Keys::END_OF_INPUT),
+        ],
+        &[],
+    );
+    let recalled = edited.session(
+        &[
+            Keys::AtPrompt("\u{1b}[A\r"),
+            Keys::AtPrompt(Keys::END_OF_INPUT),
+        ],
+        &[],
+    );
+    assert!(recalled.contains("\r\n3\r\n"), "{recalled:?}");
+    assert_eq!(edited.history(), "#V2\n(+ 1 2)\n");
+}
+
+#[test]
+fn repl_keeps_history_under_the_home_directory() {
+    let edited = EditedSession::new("repl_history_home");
+    let home = edited.sandbox.directory.join("home");
+    let home = home.to_str().expect("the sandbox path is UTF-8");
+    edited.session(
+        &[
+            Keys::AtPrompt("(+ 1 2)\r"),
+            Keys::AtPrompt(Keys::END_OF_INPUT),
+        ],
+        &[("XDG_STATE_HOME", ""), ("HOME", home)],
+    );
+    let path = EditedSession::history_path("home/.local/state");
+    assert_eq!(edited.sandbox.written_file(&path), "#V2\n(+ 1 2)\n");
+}
+
+#[test]
+fn repl_works_without_history_when_no_state_directory_is_known() {
+    let edited = EditedSession::new("repl_history_unknown");
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(+ 1 2)\r"),
+            Keys::AtPrompt(Keys::END_OF_INPUT),
+        ],
+        &[("XDG_STATE_HOME", ""), ("HOME", "")],
+    );
+    assert!(
+        session.contains("history is off: no state directory"),
+        "{session:?}"
+    );
+    assert!(session.contains("\r\n3\r\n"), "{session:?}");
+}
+
+#[test]
+fn repl_works_without_history_when_the_state_directory_cannot_be_made() {
+    let edited = EditedSession::new("repl_history_blocked");
+    fs::write(edited.sandbox.directory.join("blocked"), "").expect("the sandbox accepts files");
+    let blocked = edited.sandbox.directory.join("blocked");
+    let blocked = blocked.to_str().expect("the sandbox path is UTF-8");
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(+ 1 2)\r"),
+            Keys::AtPrompt(Keys::END_OF_INPUT),
+        ],
+        &[("XDG_STATE_HOME", blocked)],
+    );
+    assert!(
+        session.contains("history is off: cannot write"),
+        "{session:?}"
+    );
+    assert_eq!(EditedSession::history_notes(&session), 1, "{session:?}");
+}
+
+#[test]
+fn repl_works_without_history_when_the_history_cannot_be_read() {
+    let edited = EditedSession::new("repl_history_unreadable");
+    let path = EditedSession::history_path(Sandbox::STATE_DIRECTORY);
+    fs::create_dir_all(edited.sandbox.directory.join(&path))
+        .expect("the sandbox accepts directories");
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(+ 1 2)\r"),
+            Keys::AtPrompt(Keys::END_OF_INPUT),
+        ],
+        &[],
+    );
+    assert!(
+        session.contains("history is off: cannot read"),
+        "{session:?}"
+    );
+    assert!(session.contains("\r\n3\r\n"), "{session:?}");
+}
+
+#[test]
+fn repl_says_once_that_history_cannot_be_written() {
+    let edited = EditedSession::new("repl_history_read_only");
+    let path = EditedSession::history_path(Sandbox::STATE_DIRECTORY);
+    let file = edited.sandbox.directory.join(&path);
+    fs::create_dir_all(file.parent().expect("the history has a directory"))
+        .expect("the sandbox accepts directories");
+    fs::write(&file, "#V2\n").expect("the sandbox accepts files");
+    fs::set_permissions(&file, fs::Permissions::from_mode(Sandbox::READ_ONLY))
+        .expect("the sandbox sets permissions");
+    let session = edited.session(
+        &[
+            Keys::AtPrompt("(+ 1 2)\r"),
+            Keys::AtPrompt("(+ 3 4)\r"),
+            Keys::AtPrompt(Keys::END_OF_INPUT),
+        ],
+        &[],
+    );
+    assert!(
+        session.contains("history is off: cannot write"),
+        "{session:?}"
+    );
+    assert_eq!(EditedSession::history_notes(&session), 1, "{session:?}");
+    assert!(session.contains("\r\n7\r\n"), "{session:?}");
 }

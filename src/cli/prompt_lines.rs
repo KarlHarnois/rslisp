@@ -1,50 +1,72 @@
+use std::env;
 use std::io::{self, BufRead, IsTerminal, Write};
+use std::rc::Rc;
 
 use anstream::{AutoStream, ColorChoice};
 
-use crate::diagnostic::{DiagnosticCode, DiagnosticRenderer};
-use crate::reader::Reader;
-use crate::source::SourceMap;
+use super::diagnostic_output::DiagnosticOutput;
+use super::edited_lines::EditedLines;
+use super::input_helper::InputHelper;
+use super::open_input::OpenInput;
 
 pub enum EnteredText {
     Complete(String),
     Unfinished(String),
 }
 
-pub struct PromptLines<R> {
-    input: R,
-    shows_prompts: bool,
-    prompt: String,
+pub enum PromptLines {
+    Piped(PipedLines<io::StdinLock<'static>>),
+    Edited(Box<EditedLines>),
 }
 
-impl PromptLines<io::StdinLock<'static>> {
-    pub fn standard_input() -> Self {
+pub struct PipedLines<R> {
+    input: R,
+    prompt: Option<String>,
+}
+
+struct UnsupportedTerminal;
+
+impl PromptLines {
+    pub fn standard_input(notes: Rc<dyn DiagnosticOutput>) -> io::Result<Self> {
         let input = io::stdin();
-        let shows_prompts = input.is_terminal();
-        Self {
-            input: input.lock(),
-            shows_prompts,
-            prompt: Self::prompt_for(AutoStream::choice(&io::stdout())),
+        if !input.is_terminal() {
+            return Ok(Self::Piped(PipedLines::new(input.lock(), None)));
+        }
+        let standard_output = AutoStream::choice(&io::stdout());
+        if UnsupportedTerminal::is_current() {
+            let prompt = PipedLines::<io::StdinLock>::prompt_for(standard_output);
+            return Ok(Self::Piped(PipedLines::new(input.lock(), Some(prompt))));
+        }
+        Ok(Self::Edited(Box::new(EditedLines::new(
+            standard_output,
+            notes,
+        )?)))
+    }
+
+    pub fn next_text(&mut self) -> io::Result<Option<EnteredText>> {
+        match self {
+            Self::Piped(lines) => lines.next_text(),
+            Self::Edited(lines) => lines.next_text(),
         }
     }
 }
 
-impl<R: BufRead> PromptLines<R> {
+impl<R: BufRead> PipedLines<R> {
     const PROMPT: &str = "> ";
     const CONTINUATION: &str = "  ";
-    const CONTINUING_CODES: [DiagnosticCode; 2] = [
-        DiagnosticCode::UNCLOSED_LIST,
-        DiagnosticCode::UNTERMINATED_STRING,
-    ];
+
+    fn new(input: R, prompt: Option<String>) -> Self {
+        Self { input, prompt }
+    }
 
     pub fn next_text(&mut self) -> io::Result<Option<EnteredText>> {
         let mut text = String::new();
-        self.show(&self.prompt)?;
+        self.show_prompt()?;
         while self.input.read_line(&mut text)? > 0 {
-            if !Self::awaits_more(&text) {
+            if !OpenInput::awaits_more(&text) {
                 return Ok(Some(EnteredText::Complete(text)));
             }
-            self.show(Self::CONTINUATION)?;
+            self.show_continuation()?;
         }
         Ok((!text.is_empty()).then_some(EnteredText::Unfinished(text)))
     }
@@ -52,36 +74,41 @@ impl<R: BufRead> PromptLines<R> {
     fn prompt_for(standard_output: ColorChoice) -> String {
         match standard_output {
             ColorChoice::Never => Self::PROMPT.to_string(),
-            _ => {
-                let style = DiagnosticRenderer::GUTTER_STYLE;
-                format!("{style}{}{style:#}", Self::PROMPT)
-            }
+            _ => InputHelper::styled_prompt(Self::PROMPT),
         }
     }
 
-    fn awaits_more(text: &str) -> bool {
-        let mut scratch = SourceMap::default();
-        let source = scratch.add("", text);
-        match Reader::new(scratch.file(source)).read() {
-            Ok(_) => false,
-            Err(diagnostics) => diagnostics
-                .in_source_order()
-                .iter()
-                .all(|diagnostic| Self::continues(diagnostic.code())),
+    fn show_prompt(&self) -> io::Result<()> {
+        match &self.prompt {
+            Some(prompt) => Self::show(prompt),
+            None => Ok(()),
         }
     }
 
-    fn continues(code: Option<&DiagnosticCode>) -> bool {
-        code.is_some_and(|code| Self::CONTINUING_CODES.contains(code))
+    fn show_continuation(&self) -> io::Result<()> {
+        match &self.prompt {
+            Some(_) => Self::show(Self::CONTINUATION),
+            None => Ok(()),
+        }
     }
 
-    fn show(&self, prompt: &str) -> io::Result<()> {
-        if !self.shows_prompts {
-            return Ok(());
-        }
+    fn show(text: &str) -> io::Result<()> {
         let mut output = io::stdout().lock();
-        write!(output, "{prompt}")?;
+        write!(output, "{text}")?;
         output.flush()
+    }
+}
+
+impl UnsupportedTerminal {
+    const VARIABLE: &str = "TERM";
+    const NAMES: [&str; 3] = ["dumb", "cons25", "emacs"];
+
+    fn is_current() -> bool {
+        env::var(Self::VARIABLE).is_ok_and(|term| {
+            Self::NAMES
+                .iter()
+                .any(|name| name.eq_ignore_ascii_case(&term))
+        })
     }
 }
 
@@ -93,11 +120,7 @@ mod tests {
 
     impl LinesFixture {
         fn texts(input: &str) -> Vec<String> {
-            let mut lines = PromptLines {
-                input: input.as_bytes(),
-                shows_prompts: false,
-                prompt: String::new(),
-            };
+            let mut lines = PipedLines::new(input.as_bytes(), None);
             let mut texts = Vec::new();
             while let Some(text) = lines.next_text().expect("a byte slice reads") {
                 texts.push(Self::describe(text));
@@ -111,20 +134,6 @@ mod tests {
                 EnteredText::Unfinished(text) => format!("unfinished {text:?}"),
             }
         }
-    }
-
-    #[test]
-    fn the_prompt_is_plain_when_standard_output_is_not_colored() {
-        assert_eq!(PromptLines::<&[u8]>::prompt_for(ColorChoice::Never), "> ");
-    }
-
-    #[test]
-    fn the_prompt_takes_the_gutter_style_when_standard_output_is_colored() {
-        let style = DiagnosticRenderer::GUTTER_STYLE;
-        assert_eq!(
-            PromptLines::<&[u8]>::prompt_for(ColorChoice::Always),
-            format!("{style}> {style:#}")
-        );
     }
 
     #[test]

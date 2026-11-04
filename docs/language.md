@@ -549,8 +549,26 @@ Field names are not hygienic. They are looked up through the struct type.
 - An expression runs as one form of `eval` against the buffer, and its result prints by the table above. A program that panics or exits nonzero gets a `note` with its exit code, and the buffer keeps its definitions.
 - `--root <directory>`, which defaults to the current directory, resolves `use`.
 - While the reader reports an unclosed list, `L0101`, or an unclosed string, `L0103`, the prompt reads the next line into the same text. Any other reader error rejects the text at once.
-- On a terminal, the prompt is `> ` and a continuation line starts with two spaces. Piped input shows no prompt.
-- The end of input quits with exit code 0, also after failed inputs. An unclosed list or string at the end is reported first.
+- On a terminal, the prompt is `> `. Piped input shows no prompt.
+- The end of input quits with exit code 0, also after failed inputs. An unclosed list or string at the end of piped input is reported first.
+
+**On a terminal, the prompt edits the line and keeps a history** ([RFC 0047](../rfcs/0047-first-repl.md)). Piped input reads plain lines. So does a terminal whose `TERM` is `dumb`, `cons25` or `emacs`, which the line editor does not support: there the prompt shows `> `, a continuation line shows two spaces, an unclosed list or string at the end of input is reported, and Ctrl-C ends the session.
+
+| Key | Effect |
+| --- | --- |
+| arrows, Home, End, Backspace, and the Emacs keys such as Ctrl-A and Ctrl-E | move and edit within the text |
+| Up and Down | step through the history |
+| Enter | ends the text while the reader reports no unclosed list or string |
+| Enter inside an unclosed list | inserts a newline and two spaces into the text, at any depth |
+| Enter inside an unclosed string | inserts a bare newline into the text |
+| Ctrl-C while typing | drops the text, finished or not, and shows a new prompt |
+| Ctrl-D at an empty prompt | quits with exit code 0 |
+| Ctrl-D in a text that is not empty | deletes the character under the cursor, if any, and never quits |
+
+- The two spaces after Enter are text, not a prompt: the input holds them, and a diagnostic counts them in its columns.
+- A bracketed paste of several lines shows once, as one text, with no spaces inserted, and Enter ends it. Lines typed while an input runs wait for the next prompt.
+- The history holds the last 1000 texts, in `$XDG_STATE_HOME/rslisp/history`, or in `~/.local/state/rslisp/history` when `XDG_STATE_HOME` is unset or empty. The prompt adds each text to the file as it is entered.
+- If neither variable is set, or the file cannot be read or written, the prompt works without history and prints one `note` that says why.
 
 **A definition takes effect, and each earlier input that no longer checks is set aside.** The prompt checks the buffer as `check` checks a file, and locates each error at one input:
 
@@ -594,7 +612,15 @@ An expression never changes the buffer. After a module file changes on disk, an 
 | the prompt `> ` | bold bright blue, the style of the diagnostics' line numbers | standard output's decision |
 | `note: the program exited with code N` | a diagnostic note | standard error's decision |
 
-The continuation prompt of two spaces stays plain.
+**On a terminal, the prompt colors the input as it is typed, by standard output's decision.** The colors key on the reader's tokens, so a partial line such as `(defn f "abc` colors too:
+
+| Token | Color |
+| --- | --- |
+| a string, quotes included, or an unclosed string to the end of the text | green |
+| a number, any atom that starts with a digit after an optional sign | yellow |
+| a keyword, a symbol `:name` | cyan |
+| a comment, `;` to the end of the line | dim |
+| parentheses and every other symbol | plain |
 
 ## Rust interop
 

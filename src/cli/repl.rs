@@ -49,8 +49,19 @@ impl ReplCommand {
     }
 
     pub fn run(self, terminal: &mut Terminal) -> ExitStatus {
-        let mut lines = PromptLines::standard_input();
-        let mut session = PromptSession::new(terminal, self.root, self.profile);
+        let mut lines = match PromptLines::standard_input(terminal.diagnostic_output()) {
+            Ok(lines) => lines,
+            Err(error) => return ExitStatus::report_unreadable_input(&error),
+        };
+        let session = PromptSession::new(terminal, self.root, self.profile);
+        Self::answer(&mut lines, session, terminal)
+    }
+
+    fn answer(
+        lines: &mut PromptLines,
+        mut session: PromptSession,
+        terminal: &mut Terminal,
+    ) -> ExitStatus {
         loop {
             match lines.next_text() {
                 Ok(Some(EnteredText::Complete(text))) => session.enter(terminal, text),
