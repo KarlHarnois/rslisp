@@ -97,11 +97,18 @@ impl ModuleSources {
     }
 
     pub fn read_file(path: &Path) -> io::Result<String> {
-        let mut text = fs::read_to_string(path)?;
+        fs::read_to_string(path).map(Self::without_byte_order_mark)
+    }
+
+    pub fn read_standard_input() -> io::Result<String> {
+        io::read_to_string(io::stdin()).map(Self::without_byte_order_mark)
+    }
+
+    fn without_byte_order_mark(mut text: String) -> String {
         if text.starts_with(Self::BYTE_ORDER_MARK) {
             text.drain(..Self::BYTE_ORDER_MARK.len_utf8());
         }
-        Ok(text)
+        text
     }
 
     pub fn find(&self, path: &ModulePath) -> Option<ModuleSource> {

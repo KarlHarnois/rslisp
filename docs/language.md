@@ -447,6 +447,49 @@ Field names are not hygienic. They are looked up through the struct type.
 - Every prelude module imports the kernel.
 - Import cycles are an error.
 
+## Evaluation
+
+`rslisp eval <file> <forms>` checks a module, then runs forms once in its scope ([RFC 0047](../rfcs/0047-first-repl.md)). `<forms>` is one argument that holds one or more forms.
+
+- `eval` reads the module's text from `<file>`. With `--stdin`, it reads the text from standard input, and `<file>` still names the module.
+- `eval` checks the text as `rslisp check` does, so a module with no `main` checks. It resolves `use` from `--root <directory>`, which defaults to the directory of `<file>`.
+- The forms are the body of a generated `main` in the module's scope. That `main` ends with `(do)`, so every form is a statement.
+- The generated `main` is the program's entry. No source name refers to it, and it takes the Rust name `main`. A module's own `main` is checked as `check` checks it, does not run, and becomes `main_2` in Rust if a form calls it.
+- A form sees every definition of the module and of the prelude. Every rule of a body holds, so `(let x 5) (* x 2)` prints `10` and a definition as a form is `L0208`.
+- The forms run once, in order, in one program, so one call pays one rustc run.
+- Nothing persists between two runs. A `def` whose value is computed runs again in each run that uses it.
+- The program reads `eval`'s standard input, as under `run`.
+
+**A form's result prints by its type:**
+
+| Result | Output |
+| --- | --- |
+| `unit` | nothing |
+| a type that the parameter of the prelude's `prn` accepts | the value, as `prn` prints it |
+| any other type, such as a closure or an `iterator` | a `note` on standard error that names the type and the trait it lacks |
+| a type still open after inference, such as `none` | `L0407` on the form, with a fix that wraps the form in `the` |
+
+**The forms are their own source, named `<eval>`, so a diagnostic points at the form.** `--line <n> --column <n>` give the position where the forms start in the module's text. Lines and columns count from 1, and columns count UTF-8 bytes. The forms then MUST be the module's text at that position, or `eval` exits 2. Their diagnostics carry the module's name and the forms' own lines.
+
+**With `--line` and `--column`, each form's place in the module decides what happens to it:**
+
+| The form | `eval` |
+| --- | --- |
+| is a definition at the module's top level, or inside a top-level `do` | checks the module, prints a `note` that the module defines the form, and runs nothing for it |
+| is a top-level `do` that holds a definition beside other forms | reports `L0207` on each other form, as `check` does |
+| is any other form at the module's top level | leaves the form out of the module check and runs it |
+| sits inside a definition | keeps the form in that definition for the module check and runs it again, where it sees only the module's definitions and the prelude |
+
+**If the module has an error, `eval` reports the module's diagnostics and runs nothing.**
+
+| Exit code | When |
+| --- | --- |
+| 1 | the module or the forms have errors |
+| 2 | a usage error |
+| 0 | a closed output stops the program, as under `run` |
+| 128 + N | signal N stops the program |
+| the program's code | otherwise |
+
 ## Rust interop
 
 `rust` binds a name to a piece of Rust:

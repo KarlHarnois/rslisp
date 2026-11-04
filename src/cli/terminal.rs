@@ -10,18 +10,31 @@ use super::exit_status::ExitStatus;
 use super::stage_work::StageWork;
 use crate::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use crate::core::{Expr, ModulePath};
-use crate::diagnostic::{DiagnosticRenderer, Diagnostics};
+use crate::diagnostic::{Diagnostic, DiagnosticRenderer, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
 use crate::expand::{Expander, ExpansionSession, PreludeState, Program};
 use crate::modules::ModuleSources;
 use crate::reader::{Form, Reader};
 use crate::source::Span;
-use crate::source::{SourceId, SourceMap};
+use crate::source::{SourceId, SourceMap, TextPosition};
 use crate::types::TypedProgram;
 
 pub struct BuildOptions {
     pub profile: BuildProfile,
     pub output: Option<PathBuf>,
+}
+
+pub struct EvaluationRequest {
+    pub module: PathBuf,
+    pub root: PathBuf,
+    pub entry: SourceId,
+    pub evaluated: Vec<Span>,
+}
+
+pub struct BuildTarget<'a> {
+    pub directory: PathBuf,
+    pub crate_name: &'a str,
+    pub output: &'a Path,
 }
 
 pub struct Terminal {
@@ -56,8 +69,31 @@ impl Terminal {
         self.add_source(path, String::new())
     }
 
-    fn add_source(&mut self, path: &Path, text: String) -> SourceId {
+    pub fn add_source(&mut self, path: &Path, text: String) -> SourceId {
         self.sources.add(path.display().to_string(), text)
+    }
+
+    pub fn text_of(&self, source: SourceId) -> String {
+        self.sources.file(source).text().to_string()
+    }
+
+    pub fn add_named_source(&mut self, name: &str, text: &str) -> SourceId {
+        self.sources.add(name, text)
+    }
+
+    pub fn add_source_inside(
+        &mut self,
+        enclosing: SourceId,
+        position: TextPosition,
+        text: &str,
+    ) -> Option<SourceId> {
+        self.sources.add_inside(enclosing, position, text)
+    }
+
+    pub fn read_source(&mut self, source: SourceId) -> Result<Vec<Form>, ExitStatus> {
+        Reader::new(self.sources.file(source))
+            .read()
+            .map_err(|diagnostics| self.report(&diagnostics))
     }
 
     pub fn write_output(&self, output: impl Display) -> ExitStatus {
@@ -81,16 +117,48 @@ impl Terminal {
             .output
             .clone()
             .unwrap_or_else(|| directory.join(&crate_name));
-        RustCompiler::new(directory, options.profile)
-            .compile(&emitted, &crate_name, &output, Self::entry_span())
-            .map(|()| output)
+        let target = BuildTarget {
+            directory,
+            crate_name: &crate_name,
+            output: &output,
+        };
+        self.compile(&emitted, &target, options.profile)?;
+        Ok(output)
+    }
+
+    pub fn compile(
+        &self,
+        emitted: &EmittedCrate,
+        target: &BuildTarget<'_>,
+        profile: BuildProfile,
+    ) -> Result<(), ExitStatus> {
+        RustCompiler::new(target.directory.clone(), profile)
+            .compile(
+                emitted,
+                target.crate_name,
+                target.output,
+                Self::entry_span(),
+            )
             .map_err(|error| self.report_build(error))
     }
 
     pub fn emit(&mut self, path: &Path) -> Result<EmittedCrate, ExitStatus> {
         let formatting = Self::formatting()?;
         let program = self.check(path)?;
-        let emitted = RustEmitter::emit(&program, Self::entry_span())
+        self.emit_formatted(&program, &formatting)
+    }
+
+    pub fn emit_checked(&mut self, program: &TypedProgram) -> Result<EmittedCrate, ExitStatus> {
+        let formatting = Self::formatting()?;
+        self.emit_formatted(program, &formatting)
+    }
+
+    fn emit_formatted(
+        &mut self,
+        program: &TypedProgram,
+        formatting: &EmittedFormatting,
+    ) -> Result<EmittedCrate, ExitStatus> {
+        let emitted = RustEmitter::emit(program, Self::entry_span())
             .map_err(|diagnostics| self.report(&diagnostics))?;
         self.work.emitted_expressions = Some(emitted.emission.emitted_expressions);
         let written = match formatting.apply(&emitted) {
@@ -128,10 +196,19 @@ impl Terminal {
     }
 
     pub fn check_expanded(&mut self, program: &Program) -> Result<TypedProgram, ExitStatus> {
-        let typed = crate::check::ProgramChecker::check(program)
+        self.check_showing(program, |_| true)
+    }
+
+    pub fn check_showing(
+        &mut self,
+        program: &Program,
+        shown_warning: impl FnMut(&Diagnostic) -> bool,
+    ) -> Result<TypedProgram, ExitStatus> {
+        let mut typed = crate::check::ProgramChecker::check(program)
             .map_err(|diagnostics| self.report(&diagnostics))?;
         self.work.inferred_expressions = Some(typed.checking.inferred_expressions);
-        self.print_warnings(&typed.warnings);
+        typed.warnings.retain(shown_warning);
+        self.print_diagnostics(&typed.warnings);
         Ok(typed)
     }
 
@@ -147,9 +224,7 @@ impl Terminal {
 
     pub fn read_text(&mut self, name: &str, text: &str) -> Result<Vec<Form>, ExitStatus> {
         let source = self.sources.add(name, text);
-        Reader::new(self.sources.file(source))
-            .read()
-            .map_err(|diagnostics| self.report(&diagnostics))
+        self.read_source(source)
     }
 
     pub fn expand_expression(
@@ -177,8 +252,24 @@ impl Terminal {
             .map_err(|diagnostics| self.report(&diagnostics))
     }
 
+    pub fn within_evaluation<T>(
+        &mut self,
+        request: &EvaluationRequest,
+        work: impl FnOnce(ExpansionSession<'_>) -> Result<T, Diagnostics>,
+    ) -> Result<T, ExitStatus> {
+        self.expander_rooted(&request.root)
+            .evaluating(request.evaluated.iter().copied())
+            .open(Self::module_path(&request.module), request.entry)
+            .and_then(work)
+            .map_err(|diagnostics| self.report(&diagnostics))
+    }
+
     fn expander(&mut self, path: &Path) -> Expander<'_> {
-        let directory = Self::directory_of(path);
+        self.expander_rooted(&Self::directory_of(path))
+    }
+
+    fn expander_rooted(&mut self, root: &Path) -> Expander<'_> {
+        let directory = root.to_path_buf();
         let prelude =
             PreludeState::load(Self::SAVED_PRELUDE).expect("the embedded prelude state loads");
         Expander::with_prelude(
@@ -192,11 +283,11 @@ impl Terminal {
         ModulePath::new(Self::module_name(path))
     }
 
-    fn print_warnings(&self, warnings: &Diagnostics) {
-        if warnings.is_empty() {
+    pub fn print_diagnostics(&self, diagnostics: &Diagnostics) {
+        if diagnostics.is_empty() {
             return;
         }
-        eprintln!("{}", self.capped_report().render(warnings));
+        eprintln!("{}", self.capped_report().render(diagnostics));
     }
 
     pub fn report(&self, diagnostics: &Diagnostics) -> ExitStatus {
@@ -249,11 +340,11 @@ impl Terminal {
         Span::new(SourceId::new(0), 0..0)
     }
 
-    fn crate_name(path: &Path) -> String {
+    pub fn crate_name(path: &Path) -> String {
         Self::module_name(path).replace(|character: char| !character.is_ascii_alphanumeric(), "_")
     }
 
-    fn directory_of(path: &Path) -> std::path::PathBuf {
+    pub fn directory_of(path: &Path) -> std::path::PathBuf {
         path.parent().map(Path::to_path_buf).unwrap_or_default()
     }
 
