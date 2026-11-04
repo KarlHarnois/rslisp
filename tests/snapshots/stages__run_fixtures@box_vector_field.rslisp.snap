@@ -3,4 +3,4 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/box_vector_field.rslisp
 ---
-["Leaf", "Ariya"]
+(box (vec "Leaf" "Ariya"))

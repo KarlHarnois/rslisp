@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/constructor_signatures.rslisp
 ---
-(derive car clone copy debug partial-eq eq hash)
+(derive car clone copy debug partial-eq eq hash show)
 (type ->car (fn ((ref str) (ref str) u16 bool) car))
 (type make-car (fn ((ref str)) car))
 (type main (fn () unit))

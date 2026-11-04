@@ -4,4 +4,4 @@ expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/mutable_box.rslisp
 ---
 7
-Node(Node(Leaf, 7, Leaf), 2, Leaf)
+(tree/node (tree/node tree/leaf 7 tree/leaf) 2 tree/leaf)

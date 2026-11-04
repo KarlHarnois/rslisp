@@ -3,9 +3,9 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/struct_patterns.rslisp
 ---
-Branch(Leaf)
-Branch(Leaf)
-Leaf
+(tree/branch tree/leaf)
+(tree/branch tree/leaf)
+tree/leaf
 2
-Branch(Leaf)
-Branch(Branch(Branch(Leaf)))
+(tree/branch tree/leaf)
+(tree/branch (tree/branch (tree/branch tree/leaf)))

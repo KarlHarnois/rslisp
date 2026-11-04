@@ -3,4 +3,4 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/closure_item_through_generic_call_signed.rslisp
 ---
-Some(6)
+(some 6)

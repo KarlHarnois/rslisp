@@ -32,8 +32,11 @@ fn count_doors() -> i64 {
 
 fn main() {
     crate::rt::restore_default_sigpipe();
-    println!("{:?}", Spare { maker: None });
-    println!("{:?}", Line::Stations(Vec::new()));
+    println!("{}", Spare { maker: None }.maker.is_none());
+    {
+        let Line::Stations(steps) = Line::Stations(Vec::new());
+        println!("{}", steps.len())
+    }
     let backup = Spare {
         maker: Some(build_leaf),
     };

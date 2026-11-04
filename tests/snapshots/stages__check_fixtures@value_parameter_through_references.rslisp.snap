@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/value_parameter_through_references.rslisp
 ---
-(derive employee clone debug partial-eq eq hash)
+(derive employee clone debug partial-eq eq hash show)
 (type ->employee (fn (string u32) employee))
 (type high? (fn ((ref employee)) bool))
 (type big? (fn (i64) bool))

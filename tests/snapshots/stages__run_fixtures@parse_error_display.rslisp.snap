@@ -4,4 +4,4 @@ expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/parse_error_display.rslisp
 ---
 invalid digit found in string
-ParseIntError { kind: InvalidDigit }
+(parse-int-error "invalid digit found in string")

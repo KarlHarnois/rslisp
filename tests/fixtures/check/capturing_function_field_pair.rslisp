@@ -3,4 +3,4 @@
 (defn main ()
   (let base 4)
   (let gold (->badge :maker (pair (fn () (+ base 1)) "gold")))
-  (prn gold))
+  (println "stored" (len (vec gold))))

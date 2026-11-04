@@ -1,0 +1,20 @@
+(defstruct ticket :id i64)
+(derive ticket clone)
+
+(enum (tree a) leaf (node a))
+(show (tree i64) (t) leaf)
+(display (tree i64) (t) "tree")
+
+(enum task (run (fn () i64)))
+(defstruct spare :maker (option (fn () i64)))
+
+(defn twice (x) (* x 2))
+(defn one () 1)
+
+(defn main ()
+  (prn (->ticket 1))
+  (prn (the (tree bool) tree/leaf))
+  (println (the (tree bool) tree/leaf))
+  (prn (task/run one))
+  (prn (vec twice))
+  (prn (->spare (some one))))

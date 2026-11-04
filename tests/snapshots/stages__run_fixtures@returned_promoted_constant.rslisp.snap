@@ -5,8 +5,8 @@ input_file: tests/fixtures/run/returned_promoted_constant.rslisp
 ---
 3
 true
-("Leaf", 2019)
-(Some(2019), 2)
+(pair "Leaf" 2019)
+(pair (some 2019) 2)
 4.141592653589793
 3
 -7

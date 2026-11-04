@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/generic_structs.rslisp
 ---
-(derive pair clone copy debug partial-eq eq hash)
+(derive pair clone copy debug partial-eq eq hash show)
 (type ->pair (where (a b) (fn (a b) (pair a b))))
 (type origin (pair i64 f64))
 (type first-of (where (a b) (fn ((ref (pair a b))) (ref a))))

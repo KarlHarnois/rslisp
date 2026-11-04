@@ -1,0 +1,15 @@
+(defstruct money :cents i64)
+(defn dollars (amount) (->money :cents (* amount 100)))
+(show money (m) (dollars (/ (:cents m) 100)))
+
+(defstruct price :cents i64)
+(show price (p) (->price :cents (:cents p)))
+
+(defstruct origin :x i64)
+(show origin (o) origin)
+
+(defn main ()
+  (prn (->money :cents 1200))
+  (prn (->price :cents 12))
+  (prn (vec (->origin 1) (->origin 2)))
+  (println "total " (pr-str (->money :cents 300))))

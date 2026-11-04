@@ -2456,6 +2456,7 @@ impl TypeChecker {
         let mut diagnostic = self.missing_trait_diagnostic(bound, implementor, span, &display);
         if let Type::Named(binding, _) = implementor {
             diagnostic = self.type_trait_help(diagnostic, *binding, bound, &display);
+            diagnostic = self.with_replacing_impl(diagnostic, *binding, bound.binding);
         }
         self.diagnostics
             .push(Self::with_bound_origins(diagnostic, &bound.origins));
@@ -2507,7 +2508,7 @@ impl TypeChecker {
                 }
             },
         };
-        if !program_type {
+        if !self.shows_trait_help(bound.binding, implementor, program_type) {
             return diagnostic;
         }
         match self

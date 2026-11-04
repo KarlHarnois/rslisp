@@ -12,6 +12,6 @@ warning[L0217]: `partial-eq` binds `PartialEq` again
   = note: two traits that bind one Rust path can disagree about its implementors
   = help: remove the second `partial-eq`, or give it a different Rust path
 
-(derive point clone copy debug partial-eq eq hash)
+(derive point clone copy debug partial-eq eq hash show)
 (type ->point (fn (i64 i64) point))
 (type main (fn () unit))

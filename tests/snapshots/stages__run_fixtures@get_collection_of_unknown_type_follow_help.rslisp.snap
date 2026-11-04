@@ -3,4 +3,4 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/get_collection_of_unknown_type_follow_help.rslisp
 ---
-Some(3)
+(some 3)

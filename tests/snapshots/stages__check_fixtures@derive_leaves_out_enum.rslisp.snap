@@ -3,6 +3,17 @@ source: tests/stages.rs
 expression: "Fixture::load(path).check_report()"
 input_file: tests/fixtures/check/derive_leaves_out_enum.rslisp
 ---
+error[L0404]: `value` does not implement `show`
+ --> check/derive_leaves_out_enum.rslisp:5:8
+  |
+2 | (derive value debug)
+  | -------------------- this `derive` leaves out `show`
+...
+5 |   (prn (clone (value/number 1.0))))
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `show`
+  |
+  = help: add `show` to the enum's `derive`
+
 error[L0404]: `value` does not implement `clone`
  --> check/derive_leaves_out_enum.rslisp:5:15
   |

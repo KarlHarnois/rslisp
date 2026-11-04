@@ -5,5 +5,5 @@ input_file: tests/fixtures/run/copy_out_through_borrows.rslisp
 ---
 3
 true
-Some(2021)
+(some 2021)
 2

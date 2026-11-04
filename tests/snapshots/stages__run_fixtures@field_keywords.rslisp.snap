@@ -4,7 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/run/field_keywords.rslisp
 ---
 2024
-[2024, 2019]
-["ana", "bo"]
+(vec 2024 2019)
+(vec "ana" "bo")
 2
 cy

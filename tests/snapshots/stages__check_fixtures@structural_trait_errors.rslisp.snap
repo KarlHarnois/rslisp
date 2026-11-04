@@ -17,7 +17,7 @@ error[L0422]: `display` cannot be derived
 20 | (derive shown clone display)
    |                     ^^^^^^^ not a derivable trait
    |
-   = help: a `derive` lists any of: clone, copy, debug, partial-eq, eq, partial-ord, ord, hash, octal
+   = help: a `derive` lists any of: clone, copy, debug, partial-eq, eq, partial-ord, ord, hash, show, octal
 
 error[L0404]: `closed` does not implement `octal`
   --> check/structural_trait_errors.rslisp:25:15
@@ -41,5 +41,8 @@ error[L0404]: `op` does not implement `octal`
 error[L0404]: `(wrap (wrap u32))` does not implement `octal`
   --> check/structural_trait_errors.rslisp:33:15
    |
+30 | (impl octal (wrap u32) (fmt (value out) (write-wrap out)))
+   |             ---------- this `octal` replaces the inferred one for every `wrap`
+...
 33 |   (show-octal (wrap/wrapped (wrap/wrapped (the u32 1)))))
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `octal`

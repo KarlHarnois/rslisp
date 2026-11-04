@@ -3,8 +3,8 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/short_variant_qualified_type.rslisp
 ---
-(derive geo/circle clone copy debug partial-eq)
-(derive shape clone copy debug partial-eq)
+(derive geo/circle clone copy debug partial-eq show)
+(derive shape clone copy debug partial-eq show)
 (type ->geo/circle (fn (f64) geo/circle))
 (type area (fn (shape) f64))
 (type main (fn () unit))

@@ -3,9 +3,9 @@ source: tests/stages.rs
 expression: "Fixture::load(path).run_report()"
 input_file: tests/fixtures/run/enums.rslisp
 ---
-Circle(1.0)
-Rect(2.0, 3.0)
-Labeled { text: "box", size: 2.0 }
-Point
-Both("left", "right")
-Neither
+(shape/circle 1.0)
+(shape/rect 2.0 3.0)
+(shape/labeled "box" 2.0)
+shape/point
+(pair-of/both "left" "right")
+pair-of/neither

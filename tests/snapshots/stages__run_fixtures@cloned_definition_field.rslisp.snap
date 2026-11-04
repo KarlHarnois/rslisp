@@ -3,4 +3,4 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/cloned_definition_field.rslisp
 ---
-["Black Lotus", "Counterspell"]
+(vec "Black Lotus" "Counterspell")

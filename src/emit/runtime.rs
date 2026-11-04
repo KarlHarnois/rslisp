@@ -14,11 +14,12 @@ enum RuntimePart {
     Source,
     Lines,
     Signal,
+    Show,
 }
 
 impl RuntimePart {
     const STDOUT_MARKERS: &'static [&'static str] = &["print!(", "println!(", "std::io::stdout("];
-    const ALL: [(RuntimePart, &'static [&'static str]); 12] = [
+    const ALL: [(RuntimePart, &'static [&'static str]); 13] = [
         (RuntimePart::Number, &["crate::rt::Number"]),
         (RuntimePart::FromLiteral, &["::from_literal("]),
         (RuntimePart::FromFloatLiteral, &["::from_float_literal("]),
@@ -31,6 +32,7 @@ impl RuntimePart {
         (RuntimePart::Source, &["crate::rt::Source"]),
         (RuntimePart::Lines, &["crate::rt::lines("]),
         (RuntimePart::Signal, Self::STDOUT_MARKERS),
+        (RuntimePart::Show, &["crate::rt::Show", "crate::rt::Record"]),
     ];
 
     fn present(self, code: &str) -> bool {
@@ -75,7 +77,8 @@ impl RuntimePart {
             | RuntimePart::Sequence
             | RuntimePart::Io
             | RuntimePart::Source
-            | RuntimePart::Signal => None,
+            | RuntimePart::Signal
+            | RuntimePart::Show => None,
             RuntimePart::MapSequence => Some(RuntimePart::Sequence),
             RuntimePart::Lines => Some(RuntimePart::Io),
         }
@@ -102,8 +105,9 @@ impl RuntimeModule {
     const SOURCE: &'static str = include_str!("../../prelude/runtime/source.rs");
     const LINES: &'static str = include_str!("../../prelude/runtime/lines.rs");
     const SIGNAL: &'static str = include_str!("../../prelude/runtime/signal.rs");
+    const SHOW: &'static str = include_str!("../../prelude/runtime/show.rs");
     const START_UP_CALL: &'static str = "crate::rt::restore_default_sigpipe();";
-    const FIXED_PARTS: [(RuntimePart, &'static str); 9] = [
+    const FIXED_PARTS: [(RuntimePart, &'static str); 10] = [
         (RuntimePart::Signed, Self::SIGNED),
         (RuntimePart::Float, Self::FLOAT),
         (RuntimePart::Integer, Self::INTEGER),
@@ -113,6 +117,7 @@ impl RuntimeModule {
         (RuntimePart::Source, Self::SOURCE),
         (RuntimePart::Lines, Self::LINES),
         (RuntimePart::Signal, Self::SIGNAL),
+        (RuntimePart::Show, Self::SHOW),
     ];
     const CONVERSIONS: &'static [Conversion] = &[
         Conversion {

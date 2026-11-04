@@ -1,0 +1,34 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/print_without_form.rslisp
+---
+error[L0404]: `(iterator (ref i64))` does not implement `show`
+ --> check/print_without_form.rslisp:5:8
+  |
+5 |   (prn (iter years))
+  |        ^^^^^^^^^^^^ this needs `show`
+  |
+  = note: `show` is implemented for: bool, char, str, string, unit, io-error, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where ((a show)) (ref a)), (where ((a show)) (vec a)), (where ((a show)) (slice a)), (where ((a show)) (option a)), (where ((a show) (b show)) (result a b)), (where ((a show)) (box a)), (where ((a show) (b show)) (pair a b)), (where ((k show) (v show)) (sorted-map k v)), (where ((k show) (v show)) (hash-map k v))
+  = note: `show` is implemented for `(parse-error target)` for each `target` in: bool, char, string, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+  = help: a closure, an iterator or a function has no printed form
+
+error[L0404]: `(fn (i64) i64)` does not implement `show`
+ --> check/print_without_form.rslisp:6:8
+  |
+6 |   (prn twice)
+  |        ^^^^^ this needs `show`
+  |
+  = note: `show` is implemented for: bool, char, str, string, unit, io-error, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where ((a show)) (ref a)), (where ((a show)) (vec a)), (where ((a show)) (slice a)), (where ((a show)) (option a)), (where ((a show) (b show)) (result a b)), (where ((a show)) (box a)), (where ((a show) (b show)) (pair a b)), (where ((k show) (v show)) (sorted-map k v)), (where ((k show) (v show)) (hash-map k v))
+  = note: `show` is implemented for `(parse-error target)` for each `target` in: bool, char, string, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+  = help: a closure, an iterator or a function has no printed form
+
+error[L0404]: `(iterator (ref i64))` does not implement `show`
+ --> check/print_without_form.rslisp:7:29
+  |
+7 |   (println "years " (pr-str (iter years))))
+  |                             ^^^^^^^^^^^^ this needs `show`
+  |
+  = note: `show` is implemented for: bool, char, str, string, unit, io-error, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where ((a show)) (ref a)), (where ((a show)) (vec a)), (where ((a show)) (slice a)), (where ((a show)) (option a)), (where ((a show) (b show)) (result a b)), (where ((a show)) (box a)), (where ((a show) (b show)) (pair a b)), (where ((k show) (v show)) (sorted-map k v)), (where ((k show) (v show)) (hash-map k v))
+  = note: `show` is implemented for `(parse-error target)` for each `target` in: bool, char, string, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+  = help: a closure, an iterator or a function has no printed form

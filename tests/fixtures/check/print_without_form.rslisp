@@ -1,0 +1,7 @@
+(defn twice (x) (* x 2))
+
+(defn main ()
+  (let years (vec 2019 2024))
+  (prn (iter years))
+  (prn twice)
+  (println "years " (pr-str (iter years))))

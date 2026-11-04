@@ -101,6 +101,67 @@ impl TypeChecker {
         Ok(())
     }
 
+    pub(super) fn shows_trait_help(
+        &self,
+        trait_binding: BindingId,
+        implementor: &Type,
+        program_type: bool,
+    ) -> bool {
+        if !self.is_structural_trait(trait_binding) {
+            return program_type;
+        }
+        self.lacks_source_form(implementor)
+            || self
+                .blocking_types(implementor)
+                .any(|blocking| self.lacks_source_form(blocking))
+    }
+
+    fn blocking_types<'t>(&'t self, implementor: &Type) -> impl Iterator<Item = &'t Type> + 't {
+        let blocked = match implementor {
+            Type::Named(binding, _) => match self.structs.get(*binding) {
+                Some(definition) => definition.blocked.as_slice(),
+                None => self
+                    .enums
+                    .get(*binding)
+                    .map_or(&[][..], |definition| definition.blocked.as_slice()),
+            },
+            _ => &[],
+        };
+        blocked.iter().map(|(_, _, ty)| ty)
+    }
+
+    fn lacks_source_form(&self, ty: &Type) -> bool {
+        let opaque = matches!(ty, Type::Named(binding, _) if self.rust_types.is_opaque(*binding));
+        opaque
+            || matches!(ty, Type::Function(..))
+            || ty
+                .parts()
+                .into_iter()
+                .any(|part| self.lacks_source_form(part))
+    }
+
+    pub(super) fn with_replacing_impl(
+        &self,
+        diagnostic: Diagnostic,
+        head: BindingId,
+        trait_binding: BindingId,
+    ) -> Diagnostic {
+        let replacing = self
+            .is_structural_trait(trait_binding)
+            .then(|| self.written_impl(trait_binding, head))
+            .flatten();
+        let Some(replacing) = replacing else {
+            return diagnostic;
+        };
+        let trait_name = self.bindings.get(trait_binding).name();
+        let head_name = self.bindings.get(head).name();
+        diagnostic.with_label(TypeProblems::replacing_impl(
+            replacing.implementor_span,
+            trait_name,
+            head_name,
+        ))
+    }
+
     pub(super) fn is_structural_trait(&self, trait_binding: BindingId) -> bool {
         self.structural_traits
             .iter()

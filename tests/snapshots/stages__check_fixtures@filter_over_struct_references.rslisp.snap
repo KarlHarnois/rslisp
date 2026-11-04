@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/filter_over_struct_references.rslisp
 ---
-(derive person clone debug partial-eq eq hash)
+(derive person clone debug partial-eq eq hash show)
 (type ->person (fn (string u32) person))
 (type adults (fn ((ref (slice person))) (vec (ref person))))
 (type main (fn () unit))
