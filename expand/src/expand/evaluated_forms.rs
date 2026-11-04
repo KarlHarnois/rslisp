@@ -38,7 +38,7 @@ impl EvaluatedForms {
         if !self.holds(span) {
             return;
         }
-        let items: Vec<Span> = items.collect();
+        let items: Vec<Span> = items.filter(|item| *item != span).collect();
         self.evaluated.extend(items.iter().copied());
         self.spliced.insert(span, items);
     }
@@ -156,6 +156,16 @@ mod tests {
         forms.leave_out(nested[0]);
         let misplaced = forms.misplaced_expressions(SpanFixture::span(SpanFixture::DO_FORM));
         assert_eq!(misplaced, nested);
+    }
+
+    #[test]
+    fn a_do_whose_items_carry_its_own_span_misplaces_nothing() {
+        let do_form = SpanFixture::span(SpanFixture::DO_FORM);
+        let mut forms = EvaluatedForms::new([do_form]);
+        forms.splice(do_form, [do_form, do_form].into_iter());
+        forms.note_definition(do_form);
+        forms.leave_out(do_form);
+        assert!(forms.misplaced_expressions(do_form).is_empty());
     }
 
     #[test]
