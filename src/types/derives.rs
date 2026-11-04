@@ -3,6 +3,7 @@ use std::rc::Rc;
 use rustc_hash::FxHashMap;
 
 use super::checker::TypeChecker;
+use super::enums::PayloadPosition;
 use super::problems::TypeProblems;
 use super::selection::Selection;
 use super::traits::Implementor;
@@ -28,6 +29,12 @@ enum DefinitionKind {
     Enum,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum DerivedTrait {
+    Written(&'static str),
+    Structural,
+}
+
 #[derive(Clone, Copy)]
 struct DeriveCandidate {
     binding: BindingId,
@@ -39,7 +46,7 @@ struct DeriveCandidate {
 impl TypeChecker {
     pub(super) fn register_derived_traits(&mut self, modules: &[CoreModule]) {
         let types = Self::type_arities(modules);
-        let derivable = Self::derivable_traits(modules);
+        let derivable = self.derivable_traits(modules);
         let written = self.written_derives(modules, &derivable);
         let mut candidates = self.add_derive_candidates(&types, &derivable, &written);
         self.remove_blocked_derives(&mut candidates);
@@ -62,7 +69,7 @@ impl TypeChecker {
             .collect()
     }
 
-    fn derivable_traits(modules: &[CoreModule]) -> Vec<(BindingId, &'static str)> {
+    fn derivable_traits(&self, modules: &[CoreModule]) -> Vec<(BindingId, DerivedTrait)> {
         let prelude_traits: Vec<(BindingId, &str)> = modules
             .iter()
             .filter(|module| ModuleSources::is_prelude(&module.path))
@@ -74,21 +81,23 @@ impl TypeChecker {
                 _ => None,
             })
             .collect();
-        StructDerives::DERIVABLE
+        let written = StructDerives::DERIVABLE.iter().flat_map(|derived| {
+            prelude_traits
+                .iter()
+                .filter(move |(_, path)| StructDerives::derive_name(path) == *derived)
+                .map(move |(binding, _)| (*binding, DerivedTrait::Written(derived)))
+        });
+        let structural = self
+            .structural_traits
             .iter()
-            .flat_map(|derived| {
-                prelude_traits
-                    .iter()
-                    .filter(move |(_, path)| StructDerives::derive_name(path) == *derived)
-                    .map(move |(binding, _)| (*binding, *derived))
-            })
-            .collect()
+            .map(|structural| (structural.binding, DerivedTrait::Structural));
+        written.chain(structural).collect()
     }
 
     fn written_derives(
         &mut self,
         modules: &[CoreModule],
-        derivable: &[(BindingId, &'static str)],
+        derivable: &[(BindingId, DerivedTrait)],
     ) -> FxHashMap<BindingId, WrittenDerive> {
         let mut written: FxHashMap<BindingId, WrittenDerive> = FxHashMap::default();
         for item in modules.iter().flat_map(|module| &module.items) {
@@ -138,7 +147,7 @@ impl TypeChecker {
         &mut self,
         trait_binding: BindingId,
         span: Span,
-        derivable: &[(BindingId, &'static str)],
+        derivable: &[(BindingId, DerivedTrait)],
     ) -> bool {
         if derivable
             .iter()
@@ -159,16 +168,18 @@ impl TypeChecker {
     fn add_derive_candidates(
         &mut self,
         types: &[(BindingId, usize, DefinitionKind)],
-        derivable: &[(BindingId, &'static str)],
+        derivable: &[(BindingId, DerivedTrait)],
         written: &FxHashMap<BindingId, WrittenDerive>,
     ) -> Vec<DeriveCandidate> {
         let mut candidates = Vec::new();
-        for (trait_binding, name) in derivable {
+        for (trait_binding, derived) in derivable {
             for (binding, arity, kind) in types {
                 if self.is_rust_enum(*binding) {
                     continue;
                 }
-                let Some(source) = self.derive_source(*binding, name, written, derivable) else {
+                let Some(source) =
+                    self.derive_source(*binding, *trait_binding, *derived, written, derivable)
+                else {
                     continue;
                 };
                 let implementor = self.derived_implementor(*binding, *arity, *trait_binding);
@@ -193,38 +204,66 @@ impl TypeChecker {
     fn derive_source(
         &self,
         struct_binding: BindingId,
-        name: &str,
+        trait_binding: BindingId,
+        derived: DerivedTrait,
         written: &FxHashMap<BindingId, WrittenDerive>,
-        derivable: &[(BindingId, &'static str)],
+        derivable: &[(BindingId, DerivedTrait)],
     ) -> Option<DeriveSource> {
-        match written.get(&struct_binding) {
-            Some(derive) => Self::listing_span(derive, name, derivable).map(DeriveSource::Listed),
-            None if name == StructDerives::COPY
-                && self.changed_structs.contains(&struct_binding) =>
+        match (written.get(&struct_binding), derived) {
+            (Some(derive), _) => Self::listing_span(derive, trait_binding, derived, derivable)
+                .map(DeriveSource::Listed),
+            (None, DerivedTrait::Structural) => (!self
+                .has_written_impl(trait_binding, struct_binding))
+            .then_some(DeriveSource::Inferred),
+            (None, DerivedTrait::Written(name))
+                if name == StructDerives::COPY
+                    && self.changed_structs.contains(&struct_binding) =>
             {
                 None
             }
-            None => StructDerives::INFERRED
+            (None, DerivedTrait::Written(name)) => StructDerives::INFERRED
                 .contains(&name)
                 .then_some(DeriveSource::Inferred),
         }
     }
 
+    fn has_written_impl(&self, trait_binding: BindingId, head: BindingId) -> bool {
+        self.trait_impls.iter().any(|implementation| {
+            implementation.trait_binding == trait_binding
+                && matches!(implementation.implementor, Type::Named(binding, _) if binding == head)
+        })
+    }
+
     fn listing_span(
         derive: &WrittenDerive,
-        name: &str,
-        derivable: &[(BindingId, &'static str)],
+        trait_binding: BindingId,
+        derived: DerivedTrait,
+        derivable: &[(BindingId, DerivedTrait)],
     ) -> Option<Span> {
         derive
             .traits
             .iter()
             .find(|(listed, _)| {
-                derivable
-                    .iter()
-                    .find(|(binding, _)| binding == listed)
-                    .is_some_and(|(_, listed_name)| StructDerives::brings(listed_name, name))
+                *listed == trait_binding || Self::brings(*listed, derived, derivable)
             })
             .map(|(_, span)| *span)
+    }
+
+    fn brings(
+        listed: BindingId,
+        derived: DerivedTrait,
+        derivable: &[(BindingId, DerivedTrait)],
+    ) -> bool {
+        let listed = derivable
+            .iter()
+            .find(|(binding, _)| *binding == listed)
+            .map(|(_, listed)| *listed);
+        match (listed, derived) {
+            (Some(DerivedTrait::Written(listed)), DerivedTrait::Written(name)) => {
+                StructDerives::brings(listed, name)
+            }
+            _ => false,
+        }
     }
 
     fn remove_blocked_derives(&mut self, candidates: &mut Vec<DeriveCandidate>) {
@@ -308,31 +347,32 @@ impl TypeChecker {
     fn record_derives(
         &mut self,
         candidates: &[DeriveCandidate],
-        derivable: &[(BindingId, &'static str)],
+        derivable: &[(BindingId, DerivedTrait)],
     ) {
         for candidate in candidates {
-            let name = derivable
+            let written_name = derivable
                 .iter()
                 .find(|(binding, _)| *binding == candidate.trait_binding)
-                .map(|(_, name)| *name);
-            match candidate.kind {
+                .and_then(|(_, derived)| match derived {
+                    DerivedTrait::Written(name) => Some(*name),
+                    DerivedTrait::Structural => None,
+                });
+            let (derives, derived_traits) = match candidate.kind {
                 DefinitionKind::Struct => {
-                    if let (Some(name), Some(definition)) =
-                        (name, self.structs.get_mut(candidate.binding))
-                    {
-                        definition.derives.push(name);
-                        definition.derived_traits.push(candidate.trait_binding);
-                    }
+                    let Some(definition) = self.structs.get_mut(candidate.binding) else {
+                        continue;
+                    };
+                    (&mut definition.derives, &mut definition.derived_traits)
                 }
                 DefinitionKind::Enum => {
-                    if let (Some(name), Some(definition)) =
-                        (name, self.enums.get_mut(candidate.binding))
-                    {
-                        definition.derives.push(name);
-                        definition.derived_traits.push(candidate.trait_binding);
-                    }
+                    let Some(definition) = self.enums.get_mut(candidate.binding) else {
+                        continue;
+                    };
+                    (&mut definition.derives, &mut definition.derived_traits)
                 }
-            }
+            };
+            derives.extend(written_name);
+            derived_traits.push(candidate.trait_binding);
         }
     }
 
@@ -355,8 +395,30 @@ impl TypeChecker {
     ) -> Option<(Rc<str>, Type)> {
         let definition = self.enums.get(binding)?;
         let params: Vec<GenericId> = definition.params.iter().map(|param| param.id).collect();
-        definition
-            .blocking_variant(&|payload| self.payload_satisfies(trait_binding, payload, &params))
+        definition.blocking_variant(&|position, payload| {
+            let written = self.written_payload(binding, position, payload, trait_binding);
+            self.payload_satisfies(trait_binding, written, &params)
+        })
+    }
+
+    fn written_payload<'p>(
+        &self,
+        binding: BindingId,
+        position: PayloadPosition,
+        payload: &'p Type,
+        trait_binding: BindingId,
+    ) -> &'p Type {
+        let inferred_box =
+            self.inferred_boxes
+                .contains(&(binding, position.variant, position.payload));
+        match payload {
+            Type::Named(_, arguments)
+                if inferred_box && self.is_structural_trait(trait_binding) =>
+            {
+                &arguments[0]
+            }
+            _ => payload,
+        }
     }
 
     pub(super) fn blocking_field(

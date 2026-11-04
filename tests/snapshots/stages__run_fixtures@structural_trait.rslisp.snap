@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/structural_trait.rslisp
+---
+(mode :owner 10 :group 11)
+(listed :mask 100)
+written
+(holder :inner (inner-mode :owner 1) :written written)
+(tree/node tree/leaf 10 tree/leaf)
+(shape/labeled 10 20)
+shape/empty
+3

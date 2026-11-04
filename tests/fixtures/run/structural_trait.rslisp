@@ -1,0 +1,36 @@
+(rust-type octal-out "std::fmt::Formatter<'_>")
+(rust-type octal-result "std::fmt::Result")
+
+(rust-trait octal "std::fmt::Octal"
+  (method fmt (fn ((ref self) (mut octal-out)) octal-result))
+  (structural
+    :struct "{{ let out = {1}; write!(out, \"({name}\")?{parts}; write!(out, \")\") }}"
+    :field "; write!(out, \" :{field} {{:o}}\", {value})?"
+    :variant "{{ let out = {1}; write!(out, \"({name}\")?{parts}; write!(out, \")\") }}"
+    :part "; write!(out, \" {{:o}}\", {value})?"
+    :bare "write!({1}, \"{name}\")")
+  u32)
+
+(defstruct mode :owner u32 :group u32)
+(defstruct listed :mask u32)
+(derive listed clone octal)
+(defstruct written :mask u32)
+(def write-written (rust "write!({0}, \"written\")" (fn ((mut octal-out)) octal-result)))
+(impl octal written (fmt (value out) (write-written out)))
+(defstruct inner-mode :owner u32)
+(defstruct holder :inner inner-mode :written written)
+(enum (tree a) leaf (node (tree a) a (tree a)))
+(enum shape (labeled (struct (width u32) (height u32))) empty)
+(defstruct unprinted :mask u32)
+
+(def show-octal (rust "println!(\"{{:o}}\", {&0})" (where ((a octal)) (fn ((ref a)) unit))))
+
+(defn main ()
+  (show-octal (->mode 8 9))
+  (show-octal (->listed 64))
+  (show-octal (->written 1))
+  (show-octal (->holder (->inner-mode 1) (->written 2)))
+  (show-octal (tree/node tree/leaf (the u32 8) tree/leaf))
+  (show-octal (shape/labeled 8 16))
+  (show-octal shape/empty)
+  (println (:mask (->unprinted 3))))

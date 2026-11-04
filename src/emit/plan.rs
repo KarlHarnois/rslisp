@@ -103,6 +103,10 @@ impl<'p> EmitPlan<'p> {
         Ok(plan)
     }
 
+    pub fn reached(&self) -> &[BindingId] {
+        &self.reached
+    }
+
     pub fn item(&self, binding: BindingId) -> Option<&ItemInfo> {
         self.items.get(&binding)
     }

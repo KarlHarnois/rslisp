@@ -21,6 +21,7 @@ use super::plan::{EmitPlan, ItemInfo, ItemKind};
 use super::result_borrows::{FunctionFlows, LambdaFlows, ResultBorrows, StoredFlows};
 use super::runtime::RuntimeModule;
 use super::signature_borrows::SignatureBorrows;
+use super::structural_impls::StructuralImpls;
 use super::types::{LifetimeScope, RustTypes, TypePosition};
 use super::unsized_parameters::UnsizedParameters;
 use super::untied_borrows::{ShownMethod, UntiedBorrows};
@@ -94,6 +95,7 @@ pub struct ItemEmitter<'a> {
     result_borrows: ResultBorrows<'a>,
     trait_method_elisions: TraitMethodElisions,
     generic_callees: GenericCallees<'a>,
+    structural_impls: StructuralImpls<'a>,
     pub problems: Vec<Diagnostic>,
     pub names: Vec<(String, String)>,
     emission: EmissionWork,
@@ -116,6 +118,7 @@ impl<'a> ItemEmitter<'a> {
             result_borrows: ResultBorrows::new(program, plan),
             trait_method_elisions: TraitMethodElisions::new(program),
             generic_callees: GenericCallees::new(plan),
+            structural_impls: StructuralImpls::new(program, plan, unsized_parameters),
             problems: Vec::new(),
             names: Vec::new(),
             emission: EmissionWork::default(),
@@ -222,6 +225,7 @@ impl<'a> ItemEmitter<'a> {
             .collect();
         items.extend(self.traits(module));
         items.extend(self.trait_impls(module));
+        items.extend(self.structural_impls.of_module(module));
         items.extend(self.conversions(module));
         items
     }
@@ -1474,7 +1478,7 @@ impl<'a> ItemEmitter<'a> {
         lifetimes
     }
 
-    fn with_lifetimes(lifetimes: &[String], generics: String) -> String {
+    pub(super) fn with_lifetimes(lifetimes: &[String], generics: String) -> String {
         if lifetimes.is_empty() {
             return generics;
         }
@@ -1486,23 +1490,30 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn implementor_lifetime(&self, implementor: &Type) -> Option<String> {
+        Self::implementor_lifetime_of(self.program, implementor)
+    }
+
+    pub(super) fn implementor_lifetime_of(
+        program: &TypedProgram,
+        implementor: &Type,
+    ) -> Option<String> {
         let Type::Named(binding, _) = implementor else {
             return None;
         };
-        if !self.program.has_lifetime_parameter(*binding) {
+        if !program.has_lifetime_parameter(*binding) {
             return None;
         }
-        let written = if let Some(definition) = self.program.structs.get(*binding) {
+        let written = if let Some(definition) = program.structs.get(*binding) {
             definition.lifetimes.first().copied()
         } else {
-            self.program
+            program
                 .enums
                 .get(*binding)
                 .and_then(|definition| definition.lifetimes.first().copied())
         };
         Some(written.map_or_else(
-            || Self::unused_lifetime_name(self.program, &[]),
-            |binding| RustTypes::binding_lifetime(self.program, binding),
+            || Self::unused_lifetime_name(program, &[]),
+            |binding| RustTypes::binding_lifetime(program, binding),
         ))
     }
 

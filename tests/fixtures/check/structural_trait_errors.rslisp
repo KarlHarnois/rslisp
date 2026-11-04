@@ -1,0 +1,33 @@
+(rust-type octal-out "std::fmt::Formatter<'_>")
+(rust-type octal-result "std::fmt::Result")
+
+(rust-trait octal "std::fmt::Octal"
+  (method fmt (fn ((ref self) (mut octal-out)) octal-result))
+  (structural :struct "write!({1}, \"{name}\")" :field "" :variant "write!({1}, \"{name}\")" :part "" :bare "write!({1}, \"{name}\")")
+  u32)
+
+(def show-octal (rust "println!(\"{{:o}}\", {&0})" (where ((a octal)) (fn ((ref a)) unit))))
+
+(defstruct closed :mask u32)
+(derive closed clone)
+
+(defstruct op :run (fn (u32) u32))
+
+(defstruct named :label string)
+(derive named octal)
+
+(defstruct shown :mask u32)
+(derive shown clone display)
+
+(defn twice (x) (* x 2))
+
+(defn main ()
+  (show-octal (->closed 1))
+  (show-octal (->op twice)))
+
+(enum (wrap a) (wrapped a))
+(def write-wrap (rust "write!({0}, \"wrap\")" (fn ((mut octal-out)) octal-result)))
+(impl octal (wrap u32) (fmt (value out) (write-wrap out)))
+
+(defn nested ()
+  (show-octal (wrap/wrapped (wrap/wrapped (the u32 1)))))
