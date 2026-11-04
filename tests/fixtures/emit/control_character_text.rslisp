@@ -1,0 +1,6 @@
+(defn main ()
+  (let count 2)
+  (let label (str "tag" count))
+  (println "count" count)
+  (print (str "items" count "\n"))
+  (println "label" label))

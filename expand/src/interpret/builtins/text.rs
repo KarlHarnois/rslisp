@@ -245,6 +245,10 @@ impl<'a> TextOperations<'a> {
         Ok(self.string_value(text.strip_prefix(prefix).unwrap_or(text).to_string()))
     }
 
+    fn template_escape(character: char) -> String {
+        format!("\\u{{{{{:x}}}}}", u32::from(character))
+    }
+
     fn escape(&self, braces: &[(char, &'static str); 2]) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(1)?;
         let text = self.arguments.string(0)?;
@@ -256,6 +260,9 @@ impl<'a> TextOperations<'a> {
                 .find(|(from, _)| *from == character)
             {
                 Some((_, escape)) => escaped.push_str(escape),
+                None if character.is_control() => {
+                    escaped.push_str(&Self::template_escape(character))
+                }
                 None => escaped.push(character),
             }
         }

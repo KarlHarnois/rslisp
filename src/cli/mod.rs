@@ -3,15 +3,20 @@ mod build_directory;
 mod capped_report;
 mod check;
 mod counter_report;
+mod diagnostic_output;
 mod doc;
 mod emit;
 mod eval;
+mod evaluation_output;
 mod exit_status;
 mod expand;
 mod finished_program;
+mod json_replies;
+mod program_stream;
 mod run;
 mod signatures;
 mod stage_work;
+mod streamed_program;
 mod temporary_directory;
 mod term_parser;
 mod terminal;
@@ -31,7 +36,8 @@ use check::CheckCommand;
 use counter_report::CounterReport;
 use doc::{DocCommand, DocEnvironment, DocPage};
 use emit::EmitCommand;
-use eval::{EvalCommand, FormsText, ModuleText};
+use eval::{EvalCommand, EvaluationSettings, FormsText, ModuleText};
+use evaluation_output::{EvaluationOutput, JsonEvaluation, PrintedEvaluation};
 use exit_status::ExitStatus;
 use expand::ExpandCommand;
 use run::RunCommand;
@@ -108,6 +114,8 @@ enum ProgramCommand {
         position: PositionFlags,
         #[command(flatten)]
         release: ReleaseFlag,
+        #[command(flatten)]
+        json: JsonFlags,
     },
     #[command(about = "Build a program and run it")]
     Run {
@@ -145,6 +153,21 @@ struct PositionFlags {
         help = "The byte column where the forms start, from 1"
     )]
     column: Option<usize>,
+}
+
+#[derive(Args)]
+struct JsonFlags {
+    #[arg(
+        long,
+        help = "Write one JSON object per line for each output, value and diagnostic"
+    )]
+    json: bool,
+    #[arg(
+        long,
+        requires = "json",
+        help = "Echo this text as `id` on every JSON object"
+    )]
+    id: Option<String>,
 }
 
 #[derive(Args)]
@@ -211,11 +234,15 @@ impl ProgramCommand {
                 root,
                 position,
                 release,
+                json,
             } => EvalCommand::new(
                 stdin.module_text(file),
                 root,
                 FormsText::new(forms, position.position()),
-                release.profile(),
+                EvaluationSettings {
+                    profile: release.profile(),
+                    output: json.output(),
+                },
             )
             .run(terminal),
             Self::Run {
@@ -258,6 +285,16 @@ impl StdinFlag {
 impl PositionFlags {
     fn position(&self) -> Option<TextPosition> {
         Some(TextPosition::new(self.line?, self.column?))
+    }
+}
+
+impl JsonFlags {
+    fn output(self) -> Box<dyn EvaluationOutput> {
+        if self.json {
+            Box::new(JsonEvaluation::new(self.id))
+        } else {
+            Box::new(PrintedEvaluation)
+        }
     }
 }
 

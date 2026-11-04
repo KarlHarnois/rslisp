@@ -87,6 +87,9 @@ const UNREACHABLE_ARM: &str = "(defn pick (x) (match x (_ 1) (_ 2)))\n";
 const SHAPES: &str = "(export circle)\n(defn circle (r) (* 3 r r))\n";
 const SHAPES_USER: &str = "(use shapes circle)\n";
 
+const SHADOWED_PRINTLN: &str = "(defn println (x) x)\n(defn square (n) (* n n))\n";
+const COUNT_THEN_FAIL: &str = "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n(type count-up (fn (i64) unit))\n(defn count-up (i)\n  (println i)\n  (if (< i 1000000) (recur (+ i 1)) (exit 7)))\n";
+
 const UNBOUND_NAMES_PAST_THE_CAP: usize = 25;
 
 struct Sandbox {
@@ -104,6 +107,7 @@ impl Sandbox {
     }
 
     const EXECUTABLE: u32 = 0o755;
+    const TEMPORARY_DIRECTORY_VARIABLE: &str = "TMPDIR";
     #[cfg(target_os = "linux")]
     const FULL_DEVICE: &str = "/dev/full";
 
@@ -196,6 +200,15 @@ impl Sandbox {
     fn compiler_with_path(&self, path_directory: &str, arguments: &[&str]) -> Outcome {
         let mut command = self.command(Path::new(Self::COMPILER), arguments);
         command.env("PATH", self.directory.join(path_directory));
+        Outcome::of(&mut command)
+    }
+
+    fn compiler_with_temporary_directory(&self, directory: &str, arguments: &[&str]) -> Outcome {
+        let mut command = self.command(Path::new(Self::COMPILER), arguments);
+        command.env(
+            Self::TEMPORARY_DIRECTORY_VARIABLE,
+            self.directory.join(directory),
+        );
         Outcome::of(&mut command)
     }
 
@@ -329,6 +342,13 @@ impl Outcome {
             .last()
             .expect("the counters follow the command");
         serde_json::from_str(last_line).expect("the last line is one JSON object")
+    }
+
+    fn json_replies(&self) -> Vec<Value> {
+        self.stdout()
+            .lines()
+            .map(|line| serde_json::from_str(line).expect("each line is one JSON object"))
+            .collect()
     }
 
     fn stage_work(&self) -> Map<String, Value> {
@@ -1555,4 +1575,321 @@ fn eval_prints_a_warning_of_a_form_at_the_range_of_a_module_warning() {
     let stderr = eval.assert_exit_code(0).stderr();
     assert_eq!(stderr.matches("--> pick.rslisp").count(), 1, "{stderr}");
     assert_eq!(stderr.matches("--> <eval>").count(), 1, "{stderr}");
+}
+
+#[test]
+fn eval_json_streams_output_and_values_in_order() {
+    let sandbox = Sandbox::new("eval_json_streams").with_file("session.rslisp", SESSION);
+    let forms = "(do (print \"x\") 6) (println \"hi\") (square 3)";
+    let eval = sandbox.compiler(&["eval", "--json", "session.rslisp", forms]);
+    assert_eq!(
+        eval.assert_silent_success().json_replies(),
+        [
+            json!({"out": "x"}),
+            json!({"value": "6", "form": 1}),
+            json!({"out": "hi\n"}),
+            json!({"value": "9", "form": 3}),
+            json!({"status": "done", "exit": 0}),
+        ]
+    );
+}
+
+#[test]
+fn eval_json_echoes_the_id_on_every_object() {
+    let sandbox = Sandbox::new("eval_json_id").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--json",
+        "--id",
+        "7",
+        "session.rslisp",
+        "(println \"a\") (square 2)",
+    ]);
+    let replies = eval.assert_silent_success().json_replies();
+    assert_eq!(replies.len(), 3);
+    assert!(
+        replies.iter().all(|reply| reply["id"] == "7"),
+        "{replies:?}"
+    );
+}
+
+#[test]
+fn eval_json_numbers_a_value_by_its_form_among_definitions() {
+    let sandbox =
+        Sandbox::new("eval_json_numbers").with_file("geometry.rslisp", EVALUATED_GEOMETRY);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--json",
+        "--line",
+        "1",
+        "--column",
+        "1",
+        "geometry.rslisp",
+        "(defn area (w h) (* w h))\n(area 2 3)",
+    ]);
+    let replies = eval.assert_exit_code(0).json_replies();
+    assert_eq!(replies[1], json!({"value": "6", "form": 2}));
+}
+
+#[test]
+fn eval_json_prints_a_value_that_borrows_a_temporary() {
+    let sandbox = Sandbox::new("eval_json_temporary").with_file("session.rslisp", SESSION);
+    let forms = "(trim (as-str (str \" a\" \"b \")))";
+    let eval = sandbox.compiler(&["eval", "--json", "session.rslisp", forms]);
+    assert_eq!(
+        eval.assert_silent_success().json_replies()[0],
+        json!({"value": "\"ab\"", "form": 1})
+    );
+}
+
+#[test]
+fn eval_json_streams_standard_error_as_err() {
+    let sandbox = Sandbox::new("eval_json_err").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "--json", "session.rslisp", "(eprintln \"oops\")"]);
+    assert_eq!(
+        eval.assert_silent_success().json_replies(),
+        [
+            json!({"err": "oops\n"}),
+            json!({"status": "done", "exit": 0})
+        ]
+    );
+}
+
+#[test]
+fn eval_json_reports_a_note_as_a_diagnostic_without_a_code() {
+    let sandbox = Sandbox::new("eval_json_note").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "--json", "session.rslisp", "(fn ((x i64)) x)"]);
+    let replies = eval.assert_silent_success().json_replies();
+    let note = &replies[0]["diagnostics"][0];
+    assert_eq!(note["severity"], "note");
+    assert!(note.get("code").is_none(), "{note}");
+    assert_eq!(
+        (
+            &note["file"],
+            &note["line"],
+            &note["column"],
+            &note["end_column"]
+        ),
+        (&json!("<eval>"), &json!(1), &json!(1), &json!(17))
+    );
+    assert!(
+        note["rendered"]
+            .as_str()
+            .is_some_and(|rendered| rendered.starts_with("note: the value has type"))
+    );
+    assert_eq!(replies[1], json!({"status": "done", "exit": 0}));
+}
+
+#[test]
+fn eval_json_places_an_error_in_the_module_text_in_bytes() {
+    let sandbox = Sandbox::new("eval_json_error").with_file(
+        "geometry.rslisp",
+        "(defn area (w h) (* w h))\n(do \"☃\" (area 2 \"3\"))\n",
+    );
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--json",
+        "--line",
+        "2",
+        "--column",
+        "1",
+        "geometry.rslisp",
+        "(do \"☃\" (area 2 \"3\"))",
+    ]);
+    let replies = eval.assert_exit_code(1).json_replies();
+    let error = &replies[0]["diagnostics"][0];
+    assert_eq!(
+        (&error["severity"], &error["code"], &error["file"]),
+        (&json!("error"), &json!("L0401"), &json!("geometry.rslisp"))
+    );
+    assert_eq!(
+        (
+            &error["line"],
+            &error["column"],
+            &error["end_line"],
+            &error["end_column"]
+        ),
+        (&json!(2), &json!(19), &json!(2), &json!(22))
+    );
+    assert!(eval.stdout().starts_with(
+        r#"{"diagnostics":[{"severity":"error","code":"L0401","message":"mismatched types","file":"geometry.rslisp","line":2,"column":19,"end_line":2,"end_column":22,"rendered":"#
+    ));
+    assert_eq!(replies[1], json!({"status": "done", "exit": 1}));
+}
+
+#[test]
+fn eval_json_reports_a_diagnostic_of_the_module_and_runs_nothing() {
+    let sandbox =
+        Sandbox::new("eval_json_module_error").with_file("geometry.rslisp", AREA_OF_A_STRING);
+    let eval = sandbox.compiler(&["eval", "--json", "geometry.rslisp", "(println \"never\")"]);
+    let replies = eval.assert_exit_code(1).json_replies();
+    assert_eq!(replies.len(), 2, "{replies:?}");
+    assert_eq!(replies[0]["diagnostics"][0]["code"], "L0401");
+    assert_eq!(replies[1], json!({"status": "done", "exit": 1}));
+    assert_eq!(eval.stderr(), "");
+}
+
+#[test]
+fn eval_json_ends_with_the_exit_code_of_the_program() {
+    let sandbox = Sandbox::new("eval_json_exit").with_file("exits.rslisp", EXITS);
+    let eval = sandbox.compiler(&["eval", "--json", "exits.rslisp", "(exit 3)"]);
+    assert_eq!(
+        eval.assert_exit_code(3).json_replies(),
+        [json!({"status": "done", "exit": 3})]
+    );
+}
+
+#[test]
+fn eval_json_ends_with_128_plus_the_signal_that_stops_the_program() {
+    let sandbox = Sandbox::new("eval_json_signal").with_file("exits.rslisp", EXITS);
+    let eval = sandbox.compiler(&["eval", "--json", "exits.rslisp", "(abort)"]);
+    assert_eq!(
+        eval.assert_exit_code(134).json_replies(),
+        [json!({"status": "done", "exit": 134})]
+    );
+}
+
+#[test]
+fn eval_json_succeeds_when_its_output_closes() {
+    let sandbox = Sandbox::new("eval_json_closed_output").with_file("session.rslisp", SESSION);
+    let forms = "(for-each (range 0 1000000) (fn (i) (println i)))";
+    sandbox
+        .compiler_writing_to_a_closed_pipe(&["eval", "--json", "session.rslisp", forms])
+        .assert_exit_code(0);
+}
+
+#[test]
+fn eval_json_writes_no_json_for_misplaced_forms() {
+    let sandbox =
+        Sandbox::new("eval_json_misplaced").with_file("geometry.rslisp", EVALUATED_GEOMETRY);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--json",
+        "--line",
+        "9",
+        "--column",
+        "1",
+        "geometry.rslisp",
+        "(area 2 3)",
+    ]);
+    assert_eq!(eval.assert_exit_code(2).stdout(), "");
+    assert!(
+        eval.stderr()
+            .starts_with("error: the forms are not the text")
+    );
+}
+
+#[test]
+fn eval_json_writes_no_json_for_a_missing_module() {
+    let sandbox = Sandbox::new("eval_json_missing");
+    let eval = sandbox.compiler(&["eval", "--json", "missing.rslisp", "1"]);
+    assert_eq!(eval.assert_exit_code(2).stdout(), "");
+    assert!(
+        eval.stderr()
+            .starts_with("error: cannot read `missing.rslisp`")
+    );
+}
+
+#[test]
+fn eval_rejects_an_id_without_json() {
+    let sandbox = Sandbox::new("eval_id_without_json").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "--id", "7", "session.rslisp", "1"]);
+    assert_eq!(eval.assert_exit_code(2).stdout(), "");
+}
+
+#[test]
+fn eval_json_prints_a_value_beside_a_module_println() {
+    let sandbox = Sandbox::new("eval_json_shadowed").with_file("square.rslisp", SHADOWED_PRINTLN);
+    let eval = sandbox.compiler(&["eval", "--json", "square.rslisp", "(square 2)"]);
+    assert_eq!(
+        eval.assert_silent_success().json_replies()[0],
+        json!({"value": "4", "form": 1})
+    );
+}
+
+#[test]
+fn eval_json_reports_a_warning_with_its_severity_and_code() {
+    let sandbox = Sandbox::new("eval_json_warning").with_file("pick.rslisp", UNREACHABLE_ARM);
+    let eval = sandbox.compiler(&["eval", "--json", "pick.rslisp", "(do)"]);
+    let replies = eval.assert_silent_success().json_replies();
+    let warning = &replies[0]["diagnostics"][0];
+    assert_eq!(warning["severity"], "warning");
+    assert!(warning["code"].is_string(), "{warning}");
+}
+
+#[test]
+fn eval_json_stops_a_program_whose_output_closes() {
+    let sandbox = Sandbox::new("eval_json_closed_count").with_file("count.rslisp", COUNT_THEN_FAIL);
+    sandbox
+        .compiler_writing_to_a_closed_pipe(&["eval", "--json", "count.rslisp", "(count-up 0)"])
+        .assert_exit_code(0);
+}
+
+#[test]
+fn eval_json_ends_with_status_2_for_a_program_that_cannot_start() {
+    let sandbox = Sandbox::new("eval_json_missing_program")
+        .with_file("session.rslisp", SESSION)
+        .with_executable("tools/rustc", SILENT_RUSTC)
+        .with_executable("tools/rustfmt", PASSTHROUGH_RUSTFMT);
+    let eval = sandbox.compiler_with_path("tools", &["eval", "--json", "session.rslisp", "1"]);
+    assert_eq!(
+        eval.assert_exit_code(2).json_replies(),
+        [json!({"status": "done", "exit": 2})]
+    );
+    assert!(eval.stderr().starts_with("error: cannot run"));
+}
+
+#[test]
+fn eval_json_ends_with_status_2_without_rustc() {
+    let sandbox = Sandbox::new("eval_json_missing_rustc")
+        .with_file("pick.rslisp", UNREACHABLE_ARM)
+        .with_executable("tools/rustfmt", PASSTHROUGH_RUSTFMT);
+    let eval = sandbox.compiler_with_path("tools", &["eval", "--json", "pick.rslisp", "(pick 1)"]);
+    let replies = eval.assert_exit_code(2).json_replies();
+    assert_eq!(replies[0]["diagnostics"][0]["severity"], "warning");
+    assert_eq!(replies[1], json!({"status": "done", "exit": 2}));
+}
+
+#[test]
+fn eval_json_ends_with_status_2_without_a_build_directory() {
+    let sandbox = Sandbox::new("eval_json_no_temporary").with_file("session.rslisp", SESSION);
+    let eval = sandbox
+        .compiler_with_temporary_directory("missing", &["eval", "--json", "session.rslisp", "1"]);
+    assert_eq!(
+        eval.assert_exit_code(2).json_replies(),
+        [json!({"status": "done", "exit": 2})]
+    );
+    assert!(
+        eval.stderr()
+            .starts_with("error: cannot create a build directory")
+    );
+}
+
+#[test]
+fn eval_json_prints_values_of_two_types_in_one_call() {
+    let sandbox = Sandbox::new("eval_json_two_types").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--json",
+        "session.rslisp",
+        "(square 3) (->point :x 4 :y 3)",
+    ]);
+    assert_eq!(
+        eval.assert_silent_success().json_replies(),
+        [
+            json!({"value": "9", "form": 1}),
+            json!({"value": "Point { x: 4, y: 3 }", "form": 2}),
+            json!({"status": "done", "exit": 0}),
+        ]
+    );
+}
+
+#[test]
+fn eval_json_reports_a_reader_error_in_the_forms() {
+    let sandbox = Sandbox::new("eval_json_reader_error").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "--json", "session.rslisp", "(square 2"]);
+    let replies = eval.assert_exit_code(1).json_replies();
+    assert_eq!(replies[0]["diagnostics"][0]["code"], "L0101");
+    assert_eq!(replies[1], json!({"status": "done", "exit": 1}));
+    assert_eq!(eval.stderr(), "");
 }

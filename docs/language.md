@@ -388,7 +388,7 @@ The compiler provides the `code` module for macro bodies. Code that uses it exis
 | `first rest list prepend concat len empty? nth take drop` | Build and take apart lists of forms. |
 | `symbol? keyword? list? string? number?` | Test what kind of form a value is. |
 | `symbol-name`, `keyword-name`, `keyword-field`, `field-keyword`, `(symbol context part...)`, `(string part...)` | Read and build names and strings. |
-| `escape-string`, `escape-char`, `escape-format`, `string-strip-suffix`, `string-strip-prefix` | Escape a string for a Rust string literal, a Rust character literal or a format string in a template, and drop a suffix or a prefix. |
+| `escape-string`, `escape-char`, `escape-format`, `string-strip-suffix`, `string-strip-prefix` | Escape a string for a Rust string literal, a Rust character literal or a format string in a template, and drop a suffix or a prefix. `escape-string` and `escape-format` write a control character as a `\u{..}` escape, so `"count\u{1e}"` stays readable. |
 | `(string-lines text)`, `(string-trim-start text)`, `(string-length text)`, `(string-drop count text)` | Split a string at each newline into a list of strings, drop its leading whitespace, count its characters, and drop its first `count` characters. A `count` past the end is an error. |
 | `(same-binding? left right)` | Test whether two symbols refer to the same binding. |
 | `(definition-symbol term part...)` | Build a symbol, as `symbol` does, with the scopes of the module that defines the binding `term` refers to. An unbound `term` is an unbound-name error at `term`. A kernel form keeps the scopes of `term`. Any other binding that no module defines, such as a local, gives a symbol with no scopes. |
@@ -489,6 +489,22 @@ Field names are not hygienic. They are looked up through the struct type.
 | 0 | a closed output stops the program, as under `run` |
 | 128 + N | signal N stops the program |
 | the program's code | otherwise |
+
+**`eval --json` writes one JSON object per line on standard output, so an editor can tell output, values and diagnostics apart** ([RFC 0049](../rfcs/0049-eval-amendments.md)). With `--id <text>`, every object also carries `id` with that text. `--id` requires `--json`.
+
+| Object | Carries |
+| --- | --- |
+| `out`, `err` | the program's standard output and standard error, as they stream |
+| `value`, with `form` | one form's result, as `pr-str` prints it, and the number of the form from 1, definitions included |
+| `diagnostics` | the diagnostics of one report, notes included |
+| `status`, with `exit` | `"done"` and the exit code, as the last object |
+
+- Each diagnostic carries `severity`, which is `error`, `warning` or `note`, `code`, which a note lacks, `message`, `file`, `line`, `column`, `end_line`, `end_column` and `rendered`, the plain text that `eval` prints without `--json`.
+- Lines and columns count from 1, and columns count UTF-8 bytes, as `--line` and `--column` do. The end is one past the span.
+- A form that prints its result becomes `(print-value form)`, where `print-value` is one generated function, `(fn (value) (println "<marker>" (pr-str value)))`, with `println` and `pr-str` resolved in the prelude's scope. It is generic over the value, so one function prints forms of every type, and it emits one `println!` with no added `String`: `(square 3) (->point :x 1 :y 2)` emits `print_value(&square(3)); print_value(&Point { x: 1, y: 2 });` through `fn print_value<A: std::fmt::Debug>(value: &A)`. With one printed type the function takes that type. The argument runs before the marker prints, so a form's own output comes first, and its temporaries live until the value prints.
+- `eval` sends the program's standard output as `out` up to a marker, and the rest of that line as `value`. It holds back an end of the output that could start a marker until the next read shows whether it does.
+- A `unit` result and a result without the printing bound get no marker and no `value`. The second gets its note in `diagnostics`.
+- A usage error, such as a missing file or forms that are not the module's text at `--line` and `--column`, writes no JSON object: it prints to standard error and exits 2. A build environment that fails, such as a missing `rustc`, prints its error to standard error and ends with `status` and exit 2.
 
 ## Rust interop
 

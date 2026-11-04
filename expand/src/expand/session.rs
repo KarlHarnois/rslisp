@@ -1,11 +1,12 @@
 use super::generated_entry::{GeneratedEntry, WrittenForm};
+use super::result_printer::GeneratedFunction;
 use super::{Expander, Program};
 use crate::core::{
     BindingId, BindingInfo, BindingKind, Block, BodyItem, Control, Expr, ExprKind, ModuleId,
     ModulePath, Namespace,
 };
 use crate::diagnostic::{Diagnostic, Diagnostics};
-use crate::modules::ModuleSources;
+use crate::modules::{ModuleRecord, ModuleSources};
 use crate::reader::{Form, Reader, Symbol};
 use crate::source::{SourceId, Span, TextPosition};
 
@@ -73,15 +74,26 @@ impl ExpansionSession<'_> {
         ))
     }
 
+    pub fn prelude_function(
+        &mut self,
+        name: &str,
+        source: SourceId,
+    ) -> Result<GeneratedFunction, Diagnostics> {
+        let prelude = self.prelude().expect("the session loads the prelude");
+        let mut form = self.read_one(source)?;
+        Self::add_module_scopes(self.expander.modules.get(prelude), &mut form);
+        let lowered = self.lower_in(prelude, |expander| expander.lower_expr(&form));
+        let value = self.collect_diagnostics(lowered)?;
+        let binding = self.introduced_global(name, value.span());
+        Ok(GeneratedFunction::new(binding, value))
+    }
+
     pub fn defines(&self, span: Span) -> bool {
         self.expander.evaluated_forms.is_definition(span)
     }
 
     pub fn prelude_value(&self, name: &str) -> Option<BindingId> {
-        let prelude = self
-            .expander
-            .modules
-            .find(&ModulePath::new(ModuleSources::PRELUDE))?;
+        let prelude = self.prelude()?;
         self.expander
             .modules
             .get(prelude)
@@ -115,29 +127,52 @@ impl ExpansionSession<'_> {
             .all(|namespace| self.expander.namespace_binding(term, namespace).is_some())
     }
 
+    fn prelude(&self) -> Option<ModuleId> {
+        self.expander
+            .modules
+            .find(&ModulePath::new(ModuleSources::PRELUDE))
+    }
+
+    fn read_one(&self, source: SourceId) -> Result<Form, Diagnostics> {
+        let forms = self.read(source)?;
+        let [form] = <[Form; 1]>::try_from(forms).expect("a generated function is one form");
+        Ok(form)
+    }
+
     fn in_entry_scope(&self, mut form: Form) -> Form {
-        let module = self.expander.modules.get(self.entry);
+        Self::add_module_scopes(self.expander.modules.get(self.entry), &mut form);
+        form
+    }
+
+    fn add_module_scopes(module: &ModuleRecord, form: &mut Form) {
         form.add_scope(module.base_scope());
         form.add_scope(module.body_scope());
-        form
     }
 
     fn lower_in_entry<T>(
         &mut self,
         lower: impl FnOnce(&mut Expander) -> Result<T, Diagnostic>,
     ) -> Result<T, Diagnostic> {
-        let outer_module = self.expander.current_module.replace(self.entry);
+        self.lower_in(self.entry, lower)
+    }
+
+    fn lower_in<T>(
+        &mut self,
+        module: ModuleId,
+        lower: impl FnOnce(&mut Expander) -> Result<T, Diagnostic>,
+    ) -> Result<T, Diagnostic> {
+        let outer_module = self.expander.current_module.replace(module);
         let lowered = lower(&mut self.expander);
         self.expander.current_module = outer_module;
         lowered
     }
 
     fn entry_binding(&mut self, span: Span) -> BindingId {
-        let info = BindingInfo::new(
-            Program::WRITTEN_ENTRY_FUNCTION.into(),
-            BindingKind::Global(self.entry),
-            Some(span),
-        );
+        self.introduced_global(Program::WRITTEN_ENTRY_FUNCTION, span)
+    }
+
+    fn introduced_global(&mut self, name: &str, span: Span) -> BindingId {
+        let info = BindingInfo::new(name.into(), BindingKind::Global(self.entry), Some(span));
         let bindings = &mut self.expander.tables.bindings;
         let binding = bindings.add(info);
         bindings.mark_introduced(binding);
@@ -173,7 +208,8 @@ mod tests {
     use std::path::PathBuf;
 
     use super::*;
-    use crate::core::ItemKind;
+    use crate::core::{ItemKind, Leaf};
+    use crate::expand::ResultPrinter;
     use crate::modules::ModuleSources;
     use crate::reader::{FormKind, Symbol};
     use crate::source::{SourceMap, Span};
@@ -192,6 +228,9 @@ mod tests {
         const UNBOUND_NAME: &str = "thrice";
         const SHARED_NAME: &str = "point";
         const TYPE_NAME: &str = "cell";
+        const PRINTER_NAME: &str = "print-value";
+        const PRINTER: &str = "(fn (value) (println \"marker\" (pr-str value)))";
+        const VALUE_TEXT: &str = "pr-str";
 
         fn new(program: &str) -> Self {
             let mut sources = SourceMap::default();
@@ -249,6 +288,55 @@ mod tests {
                 })
         }
 
+        fn printing(&mut self) -> (Program, GeneratedEntry) {
+            let call = self.list(Self::DEFINED_NAME);
+            let span = self.span();
+            let mut session = self.session();
+            let entry = session
+                .generated_entry(&[call], span)
+                .unwrap_or_else(|_| panic!("the call lowers"));
+            let source = session.add_source(Self::PRINTER_NAME, Self::PRINTER);
+            let printer = session
+                .prelude_function(Self::PRINTER_NAME, source)
+                .unwrap_or_else(|_| panic!("the printer lowers"));
+            let text = session
+                .prelude_value(Self::VALUE_TEXT)
+                .expect("the prelude defines the value's text");
+            let printing = entry.printing(&ResultPrinter::through(printer, text), &[0]);
+            (Self::finished(session), printing)
+        }
+
+        fn first_entry_form(program: &Program) -> &Expr {
+            let entry = program.entry_function.expect("the program has an entry");
+            let (_, value) = program
+                .entry_module()
+                .definitions()
+                .find(|(binding, _)| *binding == entry)
+                .expect("the entry module defines the entry");
+            let ExprKind::Fn(lambda) = value.kind() else {
+                panic!("the entry is a function");
+            };
+            lambda.body.items[0].expr()
+        }
+
+        fn called(expr: &Expr) -> Option<(BindingId, &[Expr])> {
+            let ExprKind::Call(callee, arguments) = expr.kind() else {
+                return None;
+            };
+            let ExprKind::Leaf(Leaf::Var(binding)) = callee.kind() else {
+                return None;
+            };
+            Some((*binding, arguments))
+        }
+
+        fn definitions_named(program: &Program, name: &str) -> usize {
+            program
+                .entry_module()
+                .definitions()
+                .filter(|(binding, _)| program.bindings.get(*binding).name() == name)
+                .count()
+        }
+
         fn entry_module_text(program: &Program) -> String {
             format!("{:?}", program.entry_module())
         }
@@ -290,6 +378,38 @@ mod tests {
             .filter(|(binding, _)| Some(*binding) == program.entry_function)
             .count();
         assert_eq!(entries, 1);
+    }
+
+    #[test]
+    fn entering_a_printing_entry_again_replaces_its_functions() {
+        let mut fixture = SessionFixture::new(SessionFixture::DOUBLING);
+        let (mut program, printing) = fixture.printing();
+        program.enter(&printing);
+        program.enter(&printing);
+        assert_eq!(
+            SessionFixture::definitions_named(&program, SessionFixture::PRINTER_NAME),
+            1
+        );
+    }
+
+    #[test]
+    fn a_printed_form_is_the_whole_argument_of_the_generated_printer() {
+        let mut fixture = SessionFixture::new(SessionFixture::DOUBLING);
+        let (mut program, printing) = fixture.printing();
+        program.enter(&printing);
+        let printed = SessionFixture::first_entry_form(&program);
+        let (printer, arguments) = SessionFixture::called(printed).expect("the form is a call");
+        let form = arguments.first().expect("the printer takes the form");
+        assert_eq!(
+            program.bindings.get(printer).name(),
+            SessionFixture::PRINTER_NAME
+        );
+        assert_eq!(arguments.len(), 1);
+        let (callee, _) = SessionFixture::called(form).expect("the form is a call");
+        assert_eq!(
+            program.bindings.get(callee).name(),
+            SessionFixture::DEFINED_NAME
+        );
     }
 
     #[test]

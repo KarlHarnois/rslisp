@@ -1,16 +1,17 @@
 use std::env::{self, VarError};
 use std::fmt::Display;
-use std::io::{self, ErrorKind, IsTerminal, Write};
+use std::io::{self, ErrorKind, Write};
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use std::time::Duration;
 
 use super::build_directory::BuildDirectory;
-use super::capped_report::CappedReport;
+use super::diagnostic_output::{DiagnosticOutput, RenderedDiagnostics};
 use super::exit_status::ExitStatus;
 use super::stage_work::StageWork;
 use crate::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use crate::core::{Expr, ModulePath};
-use crate::diagnostic::{Diagnostic, DiagnosticRenderer, Diagnostics};
+use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
 use crate::expand::{Expander, ExpansionSession, PreludeState, Program};
 use crate::modules::ModuleSources;
@@ -40,6 +41,7 @@ pub struct BuildTarget<'a> {
 pub struct Terminal {
     sources: SourceMap,
     work: StageWork,
+    diagnostics: Rc<dyn DiagnosticOutput>,
 }
 
 impl Terminal {
@@ -48,10 +50,23 @@ impl Terminal {
     const SAVED_PRELUDE: &[u8] = include_bytes!(env!("PRELUDE_STATE"));
 
     pub fn new() -> Self {
+        Self::reporting_to(Rc::new(RenderedDiagnostics))
+    }
+
+    pub fn reporting_to(diagnostics: Rc<dyn DiagnosticOutput>) -> Self {
         Self {
             sources: SourceMap::default(),
             work: StageWork::default(),
+            diagnostics,
         }
+    }
+
+    pub fn report_diagnostics_to(&mut self, diagnostics: Rc<dyn DiagnosticOutput>) {
+        self.diagnostics = diagnostics;
+    }
+
+    pub fn diagnostic_output(&self) -> Rc<dyn DiagnosticOutput> {
+        Rc::clone(&self.diagnostics)
     }
 
     pub fn work(&self) -> &StageWork {
@@ -287,27 +302,15 @@ impl Terminal {
         if diagnostics.is_empty() {
             return;
         }
-        eprintln!("{}", self.capped_report().render(diagnostics));
+        self.diagnostics.write(&self.sources, diagnostics);
     }
 
     pub fn report(&self, diagnostics: &Diagnostics) -> ExitStatus {
         if !diagnostics.has_errors() {
             return ExitStatus::Success;
         }
-        eprintln!("{}", self.capped_report().render(diagnostics));
+        self.diagnostics.write(&self.sources, diagnostics);
         ExitStatus::ProgramErrors
-    }
-
-    fn capped_report(&self) -> CappedReport<'_> {
-        CappedReport::new(self.renderer())
-    }
-
-    fn renderer(&self) -> DiagnosticRenderer<'_> {
-        if std::io::stderr().is_terminal() {
-            DiagnosticRenderer::styled(&self.sources)
-        } else {
-            DiagnosticRenderer::plain(&self.sources)
-        }
     }
 
     fn report_build(&self, error: BuildError) -> ExitStatus {
@@ -315,7 +318,7 @@ impl Terminal {
             BuildError::Program(diagnostics) => self.report(&diagnostics),
             BuildError::Environment(message) => {
                 eprintln!("error: {message}");
-                ExitStatus::UsageError
+                ExitStatus::Environment
             }
         }
     }
