@@ -1,0 +1,30 @@
+(rust-type octal-out "std::fmt::Formatter<'_>")
+(rust-type octal-result "std::fmt::Result")
+
+(rust-trait octal "std::fmt::Octal"
+  (method fmt (fn ((ref self) (mut octal-out)) octal-result))
+  (structural :struct "write!({1}, \"{name}\")" :field "" :variant "write!({1}, \"{name}\")" :part "" :bare "write!({1}, \"{name}\")"))
+
+(defstruct p :x i64)
+(display p (value) "p")
+(display p (value) "again")
+
+(enum (tree a) leaf (node a))
+(display (tree a) (value) "tree")
+(display (tree i64) (value) "tree of i64")
+
+(enum (wrap a) (wrapped a))
+(display (wrap i64) (value) "wrap of i64")
+(display (wrap bool) (value) "wrap of bool")
+
+(defstruct listed :mask u32)
+(derive listed clone octal)
+(def write-listed (rust "write!({0}, \"listed\")" (fn ((mut octal-out)) octal-result)))
+(impl octal listed (fmt (value out) (write-listed out)))
+
+(defn main () (println (wrap/wrapped 1) (wrap/wrapped true)))
+
+(defstruct q :x i64)
+(display q (value) "q")
+(def write-q (rust "write!({0}, \"q\")" (fn ((mut octal-out)) octal-result)))
+(impl octal q (fmt (value out) (write-q out)))

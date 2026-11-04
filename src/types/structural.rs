@@ -3,10 +3,13 @@ use std::collections::BTreeSet;
 use rustc_hash::FxHashMap;
 
 use super::checker::TypeChecker;
+use super::problems::TypeProblems;
 use super::selection::Selection;
 use super::ty::{Bound, Type};
+use super::typed::TypedTraitImpl;
 use crate::core::{BindingId, CoreModule, ItemKind, RustTraitDeclaration, StructuralClause};
 use crate::diagnostic::Diagnostic;
+use crate::source::Span;
 
 #[derive(Clone)]
 pub struct StructuralTrait {
@@ -28,6 +31,7 @@ struct ImplBoundUse {
     definitions: Vec<BindingId>,
     bound: Bound,
     implementor: Type,
+    span: Span,
 }
 
 #[derive(Default)]
@@ -103,16 +107,17 @@ impl TypeChecker {
             .any(|structural| structural.binding == trait_binding)
     }
 
-    pub(super) fn record_structural_use(&mut self, bound: &Bound, implementor: &Type) {
+    pub(super) fn record_structural_use(&mut self, bound: &Bound, implementor: &Type, span: Span) {
         let definitions = self.recursive_group.clone();
         if self.has_generic_program_impl(bound.binding) {
             self.structural_uses.through_impls.push(ImplBoundUse {
                 definitions: definitions.clone(),
                 bound: bound.clone(),
                 implementor: implementor.clone(),
+                span,
             });
         }
-        self.record_use_in(&definitions, bound.binding, implementor);
+        self.record_use_in(&definitions, bound.binding, implementor, span);
     }
 
     fn has_generic_program_impl(&self, trait_binding: BindingId) -> bool {
@@ -137,11 +142,17 @@ impl TypeChecker {
         };
         for requirement in requirements {
             let required = self.unifier.resolve(&requirement.implementor);
-            self.record_use_in(&pending.definitions, requirement.bound.binding, &required);
+            self.record_use_in(
+                &pending.definitions,
+                requirement.bound.binding,
+                &required,
+                pending.span,
+            );
             self.record_requirements(&ImplBoundUse {
                 definitions: pending.definitions.clone(),
                 bound: requirement.bound,
                 implementor: required,
+                span: pending.span,
             });
         }
     }
@@ -151,6 +162,7 @@ impl TypeChecker {
         definitions: &[BindingId],
         trait_binding: BindingId,
         implementor: &Type,
+        span: Span,
     ) {
         let Type::Named(head, _) = implementor else {
             return;
@@ -158,11 +170,52 @@ impl TypeChecker {
         if !self.is_structural_trait(trait_binding) {
             return;
         }
+        self.report_path_clash(trait_binding, *head, span);
         let used = StructuralUse {
             trait_binding,
             head: *head,
         };
         self.structural_uses.record(definitions, used);
+    }
+
+    fn report_path_clash(&mut self, trait_binding: BindingId, head: BindingId, span: Span) {
+        let Some(written) = self.written_impl_of_path(trait_binding, head) else {
+            return;
+        };
+        let (written_binding, written_span) = (written.trait_binding, written.implementor_span);
+        let clash = StructuralUse {
+            trait_binding,
+            head,
+        };
+        if !self.reported_path_clashes.insert(clash) {
+            return;
+        }
+        let path = self.rust_trait_paths[&trait_binding].to_string();
+        let written_trait = self.bindings.get(written_binding).name().to_string();
+        let trait_name = self.bindings.get(trait_binding).name().to_string();
+        let implementor = self.bindings.get(head).name().to_string();
+        let diagnostic = TypeProblems::inferred_impl_clash(
+            &implementor,
+            &trait_name,
+            &written_trait,
+            &path,
+            span,
+            written_span,
+        );
+        self.diagnostics.push(diagnostic);
+    }
+
+    fn written_impl_of_path(
+        &self,
+        trait_binding: BindingId,
+        head: BindingId,
+    ) -> Option<&TypedTraitImpl> {
+        let path = self.rust_trait_paths.get(&trait_binding)?;
+        self.trait_impls.iter().find(|implementation| {
+            implementation.trait_binding != trait_binding
+                && self.rust_trait_paths.get(&implementation.trait_binding) == Some(path)
+                && matches!(implementation.implementor, Type::Named(binding, _) if binding == head)
+        })
     }
 }
 

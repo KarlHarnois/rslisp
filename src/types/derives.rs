@@ -8,6 +8,7 @@ use super::problems::TypeProblems;
 use super::selection::Selection;
 use super::traits::Implementor;
 use super::ty::{Bound, GenericId, GenericParam, Scheme, Type};
+use super::typed::TypedTraitImpl;
 use crate::core::{BindingId, CoreModule, FunctionFieldTraits, ItemKind, StructDerives};
 use crate::modules::ModuleSources;
 use crate::source::Span;
@@ -124,6 +125,7 @@ impl TypeChecker {
                 .copied()
                 .filter(|(trait_binding, span)| {
                     self.accepts_derive(*trait_binding, *span, derivable)
+                        && !self.report_derived_written_impl(*struct_binding, *trait_binding, *span)
                 })
                 .collect();
             if let Some(definition) = self.structs.get_mut(*struct_binding) {
@@ -228,10 +230,39 @@ impl TypeChecker {
     }
 
     fn has_written_impl(&self, trait_binding: BindingId, head: BindingId) -> bool {
-        self.trait_impls.iter().any(|implementation| {
+        self.written_impl(trait_binding, head).is_some()
+    }
+
+    pub(super) fn written_impl(
+        &self,
+        trait_binding: BindingId,
+        head: BindingId,
+    ) -> Option<&TypedTraitImpl> {
+        self.trait_impls.iter().find(|implementation| {
             implementation.trait_binding == trait_binding
                 && matches!(implementation.implementor, Type::Named(binding, _) if binding == head)
         })
+    }
+
+    fn report_derived_written_impl(
+        &mut self,
+        head: BindingId,
+        trait_binding: BindingId,
+        listed: Span,
+    ) -> bool {
+        let Some(written) = self.written_impl(trait_binding, head) else {
+            return false;
+        };
+        let trait_name = self.bindings.get(trait_binding).name().to_string();
+        let implementor = self.display().show(&written.implementor);
+        let diagnostic = TypeProblems::second_impl(
+            &implementor,
+            &trait_name,
+            written.implementor_span,
+            TypeProblems::derive_lists(listed, &trait_name),
+        );
+        self.diagnostics.push(diagnostic);
+        true
     }
 
     fn listing_span(

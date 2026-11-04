@@ -447,6 +447,54 @@ impl TypeProblems {
         ))
     }
 
+    pub fn second_impl(
+        implementor: &str,
+        trait_name: &str,
+        span: Span,
+        first: Label,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::SECOND_IMPL,
+            format!("`{implementor}` already implements `{trait_name}`"),
+            Label::new(span, format!("this implements `{trait_name}` again")),
+        )
+        .with_label(first)
+        .with_help("remove one of the two")
+    }
+
+    pub fn inferred_impl_clash(
+        implementor: &str,
+        trait_name: &str,
+        written_trait: &str,
+        path: &str,
+        span: Span,
+        written: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::SECOND_IMPL,
+            format!("`{implementor}` already implements `{path}` through `{written_trait}`"),
+            Label::new(
+                span,
+                format!("this needs the inferred `{trait_name}`, a second impl of `{path}`"),
+            ),
+        )
+        .with_label(Label::new(
+            written,
+            format!("`{written_trait}` implements `{path}` here"),
+        ))
+        .with_help(format!(
+            "use `{written_trait}` here, or remove one of the two"
+        ))
+    }
+
+    pub fn first_impl(span: Span) -> Label {
+        Label::new(span, "first implemented here")
+    }
+
+    pub fn derive_lists(span: Span, trait_name: &str) -> Label {
+        Label::new(span, format!("this `derive` lists `{trait_name}`"))
+    }
+
     pub fn foreign_implementor(trait_name: &str, found: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::FOREIGN_IMPLEMENTOR,

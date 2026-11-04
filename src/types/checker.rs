@@ -8,6 +8,7 @@ use super::copy::InferredCopies;
 use super::display::TypeDisplay;
 use super::enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};
 use super::graph::{Definition, DefinitionGraph, DependencyGraph};
+use super::impl_overlap::ImplementorOverlap;
 use super::infer::OpenCollections;
 use super::parameter_calls::ParameterCallRequest;
 use super::pending::PendingBorrow;
@@ -197,6 +198,7 @@ pub struct TypeChecker {
     pub(super) inferred_boxes: BTreeSet<(BindingId, usize, usize)>,
     pub(super) structural_traits: Vec<super::structural::StructuralTrait>,
     pub(super) structural_uses: super::structural::StructuralUses,
+    pub(super) reported_path_clashes: FxHashSet<super::structural::StructuralUse>,
     pub(super) written_parameters: FxHashMap<BindingId, Vec<bool>>,
     pub(super) parameter_call_requests: Vec<ParameterCallRequest>,
     pub(super) pending_mode_checks: Vec<PendingModeCheck>,
@@ -291,6 +293,7 @@ impl TypeChecker {
             inferred_boxes: BTreeSet::new(),
             structural_traits: Vec::new(),
             structural_uses: super::structural::StructuralUses::default(),
+            reported_path_clashes: FxHashSet::default(),
             written_parameters: FxHashMap::default(),
             parameter_call_requests: Vec::new(),
             pending_mode_checks: Vec::new(),
@@ -846,7 +849,7 @@ impl TypeChecker {
             self.report_missing_trait(&bound, implementor, span);
             return;
         }
-        self.record_structural_use(&bound, implementor);
+        self.record_structural_use(&bound, implementor, span);
         for requirement in requirements {
             let required = Obligation {
                 bound: requirement.bound,
@@ -1988,7 +1991,7 @@ impl TypeChecker {
                             continue;
                         }
                     };
-                if self.report_foreign_implementor(*trait_binding, &implementor, implementor_span) {
+                if self.rejects_implementor(*trait_binding, &implementor, implementor_span) {
                     continue;
                 }
                 self.report_unsized_implementor(&implementor, implementor_span, methods);
@@ -2211,6 +2214,40 @@ impl TypeChecker {
             &trait_name,
             &implementor_name,
             span,
+        ));
+        true
+    }
+
+    fn rejects_implementor(
+        &mut self,
+        trait_binding: BindingId,
+        implementor: &Type,
+        span: Span,
+    ) -> bool {
+        self.report_foreign_implementor(trait_binding, implementor, span)
+            || self.report_second_impl(trait_binding, implementor, span)
+    }
+
+    fn report_second_impl(
+        &mut self,
+        trait_binding: BindingId,
+        implementor: &Type,
+        span: Span,
+    ) -> bool {
+        let Some(first) = self.trait_impls.iter().find(|implementation| {
+            implementation.trait_binding == trait_binding
+                && ImplementorOverlap::overlaps(&implementation.implementor, implementor)
+        }) else {
+            return false;
+        };
+        let first = TypeProblems::first_impl(first.implementor_span);
+        let implementor_name = self.display().show(implementor);
+        let trait_name = self.bindings.get(trait_binding).name().to_string();
+        self.diagnostics.push(TypeProblems::second_impl(
+            &implementor_name,
+            &trait_name,
+            span,
+            first,
         ));
         true
     }
