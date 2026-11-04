@@ -1,0 +1,16 @@
+---
+source: tests/cli.rs
+expression: repl.transcript()
+---
+exit code: Some(0)
+--- stdout
+1
+1
+--- stderr
+warning[L0434]: unreachable `match` arm
+ --> <input 1>:1:32
+  |
+1 | (defn pick (x) (match x (_ 1) (_ 2)))
+  |                          -     ^ this arm can never match
+  |                          |
+  |                          this arm covers it

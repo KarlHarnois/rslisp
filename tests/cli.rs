@@ -90,7 +90,29 @@ const MIXED_TOP_LEVEL_DO: &str =
 const UNREACHABLE_ARM: &str = "(defn pick (x) (match x (_ 1) (_ 2)))\n";
 const SHAPES: &str = "(export circle)\n(defn circle (r) (* 3 r r))\n";
 const SHAPES_USER: &str = "(use shapes circle)\n";
+const SHAPES_OF_TWO: &str =
+    "(export circle square)\n(defn circle (r) (* 3 r r))\n(defn square (s) (* s s))\n";
 const POINTS: &str = "(defstruct point :x i64 :y i64)\n";
+const PROMPT_DEFINITIONS: &str = "(defn square (n) (* n n))\n(defstruct point :x i64 :y i64)\n(->point (square 2) 3)\n(println \"side \" (square 3))\n";
+const PROMPT_REDEFINITION: &str = "(defn square (n) (* n n))\n(defn cube (n) (* n (square n)))\n(cube 3)\n(defn square (n) (+ n n))\n(cube 3)\n";
+const PROMPT_DROPPING_REPLACEMENT: &str =
+    "(defstruct point :x i64 :y i64)\n(defn ->point (x) x)\n(->point 1 2)\n";
+const PROMPT_REPLACEMENT_OF_TWO: &str = "(defn circle (r) r)\n(defn square (s) s)\n(do (defn circle (r) (+ r 1)) (defn square (s) (+ s 2)))\n(+ (circle 1) (square 1))\n";
+const PROMPT_FAILING_DEFINITION: &str =
+    "(defn twice (x) (* 2 x))\n(defn twice (x) (+ x \"a\"))\n(twice 4)\n";
+const PROMPT_FORMS_ON_ONE_LINE: &str = "(defn twice (x) (* 2 x)) (twice 4) (twice 5)\n";
+const PROMPT_MULTI_LINE: &str =
+    "(defn greet (name)\n  (println \"hello, \"\n    name))\n(greet \"line\nbreak\")\n";
+const PROMPT_USES: &str =
+    "(use shapes circle square)\n(circle 2)\n(use shapes circle)\n(square 3)\n";
+const PROMPT_PANIC: &str = "(defn twice (x) (* 2 x))\n(at (vec 1 2) 5)\n(twice 4)\n";
+const PROMPT_EXIT: &str =
+    "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n(exit 3)\n(exit 0)\n";
+const PROMPT_UNCLOSED_END: &str = "(+ 1 2)\n(defn twice (x)\n  (* 2 x)\n";
+const PROMPT_NOT_UTF8: &[u8] = b"(+ 1 1)\n\xff\n";
+const PROMPT_EXTRA_CLOSE: &str = "(+ 1 2))\n(+ 3 4)\n(+ 3 \"a\")\n";
+const PROMPT_ENUM_REDEFINITION: &str = "(enum shape circle square)\n(enum shape circle square triangle)\n(match shape/triangle (triangle 3) (_ 0))\n";
+const PROMPT_WARNING: &str = "(defn pick (x) (match x (_ 1) (_ 2)))\n(pick 1)\n(defn other () 1)\n(defn another () 2)\n(pick 2)\n";
 
 const SHADOWED_PRINTLN: &str = "(defn println (x) x)\n(defn square (n) (* n n))\n";
 const COUNT_THEN_FAIL: &str = "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n(type count-up (fn (i64) unit))\n(defn count-up (i)\n  (println i)\n  (if (< i 1000000) (recur (+ i 1)) (exit 7)))\n";
@@ -159,7 +181,7 @@ impl Sandbox {
         self.compiler(&typed)
     }
 
-    fn compiler_reading(&self, input: &str, arguments: &[&str]) -> Outcome {
+    fn compiler_reading(&self, input: impl AsRef<[u8]>, arguments: &[&str]) -> Outcome {
         let mut child = self
             .command(Path::new(Self::COMPILER), arguments)
             .stdin(Stdio::piped())
@@ -169,7 +191,7 @@ impl Sandbox {
             .expect("the compiler starts");
         std::io::Write::write_all(
             &mut child.stdin.take().expect("stdin is piped"),
-            input.as_bytes(),
+            input.as_ref(),
         )
         .expect("the compiler reads its input");
         Outcome {
@@ -385,6 +407,15 @@ impl Outcome {
         self.assert_exit_code(0);
         assert_eq!(self.stderr(), "");
         self
+    }
+
+    fn transcript(&self) -> String {
+        format!(
+            "exit code: {:?}\n--- stdout\n{}--- stderr\n{}",
+            self.output.status.code(),
+            self.stdout(),
+            self.stderr()
+        )
     }
 
     fn stdout(&self) -> String {
@@ -2242,4 +2273,130 @@ fn eval_notes_a_struct_that_the_module_defines() {
         "(defstruct point :x i64 :y i64)",
     ]);
     assert_eq!(eval.assert_exit_code(0).stdout(), "");
+}
+
+#[test]
+fn repl_keeps_definitions_and_prints_expressions() {
+    let sandbox = Sandbox::new("repl_definitions");
+    let repl = sandbox.compiler_reading(PROMPT_DEFINITIONS, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_replaces_an_earlier_definition_of_the_same_name() {
+    let sandbox = Sandbox::new("repl_redefinition");
+    let repl = sandbox.compiler_reading(PROMPT_REDEFINITION, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_rejects_a_replacement_that_would_drop_a_name() {
+    let sandbox = Sandbox::new("repl_dropping_replacement");
+    let repl = sandbox.compiler_reading(PROMPT_DROPPING_REPLACEMENT, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_replaces_every_earlier_input_that_shares_a_name() {
+    let sandbox = Sandbox::new("repl_replacement_of_two");
+    let repl = sandbox.compiler_reading(PROMPT_REPLACEMENT_OF_TWO, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_rejects_a_failing_definition_and_keeps_the_buffer() {
+    let sandbox = Sandbox::new("repl_failing_definition");
+    let repl = sandbox.compiler_reading(PROMPT_FAILING_DEFINITION, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_enters_each_form_of_a_line_as_its_own_input() {
+    let sandbox = Sandbox::new("repl_forms_on_one_line");
+    let repl = sandbox.compiler_reading(PROMPT_FORMS_ON_ONE_LINE, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_reads_an_unclosed_list_or_string_across_lines() {
+    let sandbox = Sandbox::new("repl_multi_line");
+    let repl = sandbox.compiler_reading(PROMPT_MULTI_LINE, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_ends_an_input_at_an_extra_close() {
+    let sandbox = Sandbox::new("repl_extra_close");
+    let repl = sandbox.compiler_reading(PROMPT_EXTRA_CLOSE, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_resolves_use_from_the_root_and_replaces_by_the_same_rule() {
+    let sandbox = Sandbox::new("repl_uses").with_file("lib/shapes.rslisp", SHAPES_OF_TWO);
+    let repl = sandbox.compiler_reading(PROMPT_USES, &["repl", "--root", "lib"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_shows_a_panic_and_keeps_its_definitions() {
+    let sandbox = Sandbox::new("repl_panic");
+    let repl = sandbox.compiler_reading(PROMPT_PANIC, &["repl"]);
+    let stderr = repl.assert_exit_code(0).stderr();
+    assert!(stderr.contains("index out of bounds"), "{stderr}");
+    assert!(
+        stderr.ends_with("note: the program exited with code 101\n"),
+        "{stderr}"
+    );
+    assert_eq!(repl.stdout(), "8\n");
+}
+
+#[test]
+fn repl_notes_a_nonzero_exit_of_a_program() {
+    let sandbox = Sandbox::new("repl_exit");
+    let repl = sandbox.compiler_reading(PROMPT_EXIT, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_reports_the_end_of_input_inside_a_list_and_quits() {
+    let sandbox = Sandbox::new("repl_unclosed_end");
+    let repl = sandbox.compiler_reading(PROMPT_UNCLOSED_END, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_replaces_an_enum_by_every_name_it_defines() {
+    let sandbox = Sandbox::new("repl_enum_redefinition");
+    let repl = sandbox.compiler_reading(PROMPT_ENUM_REDEFINITION, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_prints_a_warning_of_a_definition_once() {
+    let sandbox = Sandbox::new("repl_warning");
+    let repl = sandbox.compiler_reading(PROMPT_WARNING, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_reports_unreadable_input() {
+    let sandbox = Sandbox::new("repl_unreadable_input");
+    let repl = sandbox.compiler_reading(PROMPT_NOT_UTF8, &["repl"]);
+    assert_eq!(repl.assert_exit_code(2).stdout(), "2\n");
+    assert_eq!(
+        repl.stderr(),
+        "error: cannot read standard input: stream did not contain valid UTF-8\n"
+    );
+}
+
+#[test]
+fn eval_reports_unreadable_input() {
+    let sandbox = Sandbox::new("eval_unreadable_input");
+    let eval = sandbox.compiler_reading(b"\xff", &["eval", "--stdin", "buffer.rslisp", "1"]);
+    assert_eq!(eval.assert_exit_code(2).stdout(), "");
+    assert_eq!(
+        eval.stderr(),
+        "error: cannot read standard input: stream did not contain valid UTF-8\n"
+    );
 }

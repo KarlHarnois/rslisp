@@ -422,6 +422,19 @@ impl ExpandProblems {
         }
     }
 
+    pub fn dropped_by_replacement(
+        name: &str,
+        span: Span,
+        previous: Span,
+        dropped: &str,
+    ) -> Diagnostic {
+        Self::duplicate(name, span, Some(previous))
+            .with_note(format!(
+                "replacing the earlier input would drop `{dropped}`"
+            ))
+            .with_help(format!("give `{name}` another name to keep `{dropped}`"))
+    }
+
     pub fn unknown_module(path: &ModulePath, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::UNKNOWN_MODULE,

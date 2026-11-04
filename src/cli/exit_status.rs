@@ -1,3 +1,4 @@
+use std::io;
 use std::process::ExitCode;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -17,6 +18,11 @@ impl ExitStatus {
             ExitStatus::UsageError | ExitStatus::Environment => 2,
             ExitStatus::Program(code) => code,
         }
+    }
+
+    pub fn report_unreadable_input(error: &io::Error) -> Self {
+        eprintln!("error: cannot read standard input: {error}");
+        Self::UsageError
     }
 }
 

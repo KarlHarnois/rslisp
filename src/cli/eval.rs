@@ -147,7 +147,7 @@ impl ModuleText {
             Self::File(path) => Ok(vec![terminal.load(path)?]),
             Self::StandardInput(path) => match ModuleSources::read_standard_input() {
                 Ok(text) => Ok(vec![terminal.add_source(path, text)]),
-                Err(error) => Err(Self::report_unreadable_input(&error)),
+                Err(error) => Err(ExitStatus::report_unreadable_input(&error)),
             },
             Self::Loaded(_, sources) => Ok(sources.clone()),
         }
@@ -162,11 +162,6 @@ impl ModuleText {
             Self::Loaded(..) => terminal.check_showing(program, |_| false),
             Self::File(_) | Self::StandardInput(_) => terminal.check_expanded(program),
         }
-    }
-
-    fn report_unreadable_input(error: &std::io::Error) -> ExitStatus {
-        eprintln!("error: cannot read standard input: {error}");
-        ExitStatus::UsageError
     }
 }
 

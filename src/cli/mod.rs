@@ -4,6 +4,7 @@ mod capped_report;
 mod check;
 mod color_when;
 mod counter_report;
+mod definition_buffer;
 mod diagnostic_output;
 mod doc;
 mod emit;
@@ -14,6 +15,8 @@ mod expand;
 mod finished_program;
 mod json_replies;
 mod program_stream;
+mod prompt_lines;
+mod repl;
 mod run;
 mod signatures;
 mod stage_work;
@@ -46,6 +49,7 @@ use eval::{EvalCommand, EvaluationSettings, FormsText, ModuleText};
 use evaluation_output::{EvaluationOutput, JsonEvaluation, PrintedEvaluation};
 use exit_status::ExitStatus;
 use expand::ExpandCommand;
+use repl::ReplCommand;
 use run::RunCommand;
 use signatures::SignaturesCommand;
 use term_parser::{SurplusParser, TermParser};
@@ -131,6 +135,13 @@ enum ProgramCommand {
         release: ReleaseFlag,
         #[command(flatten)]
         json: JsonFlags,
+    },
+    #[command(about = "Read forms at a prompt, keep the definitions and run the rest")]
+    Repl {
+        #[arg(long, default_value = ".", help = "Resolve `use` from this directory")]
+        root: PathBuf,
+        #[command(flatten)]
+        release: ReleaseFlag,
     },
     #[command(about = "Build a program and run it")]
     Run {
@@ -275,6 +286,7 @@ impl ProgramCommand {
                 },
             )
             .run(terminal),
+            Self::Repl { root, release } => ReplCommand::new(root, release.profile()).run(terminal),
             Self::Run {
                 file,
                 release,

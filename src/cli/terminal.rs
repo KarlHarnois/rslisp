@@ -15,7 +15,7 @@ use crate::build::{BuildError, BuildProfile, EmittedFormatting, RustCompiler};
 use crate::core::{Expr, ModulePath};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
-use crate::expand::{Expander, ExpansionSession, PreludeState, Program};
+use crate::expand::{ClassifiedForm, Expander, ExpansionSession, PreludeState, Program};
 use crate::modules::ModuleSources;
 use crate::reader::{Form, Reader};
 use crate::source::Span;
@@ -294,6 +294,27 @@ impl Terminal {
             .open(Self::module_path(&module.path), &module.sources)
             .and_then(work)
             .map_err(|diagnostics| self.report(&diagnostics))
+    }
+
+    pub fn classify(&mut self, module: &ModuleOfSources, form: Span) -> ClassifiedForm {
+        self.expander_rooted(&module.root).classify(
+            Self::module_path(&module.path),
+            &module.sources,
+            form,
+        )
+    }
+
+    pub fn check_sources(
+        &mut self,
+        module: &ModuleOfSources,
+        shown_warning: impl FnMut(&Diagnostic) -> bool,
+    ) -> Result<TypedProgram, ExitStatus> {
+        let program = self
+            .expander_rooted(&module.root)
+            .open(Self::module_path(&module.path), &module.sources)
+            .and_then(ExpansionSession::finish)
+            .map_err(|diagnostics| self.report(&diagnostics))?;
+        self.check_showing(&program, shown_warning)
     }
 
     fn expander(&mut self, path: &Path) -> Expander<'_> {

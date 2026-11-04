@@ -538,6 +538,24 @@ Field names are not hygienic. They are looked up through the struct type.
 - A `unit` result and a result without the printing bound get no marker and no `value`. The second gets its note in `diagnostics`.
 - A usage error, such as a missing file or forms that are not the module's text at `--line` and `--column`, writes no JSON object: it prints to standard error and exits 2. A build environment that fails, such as a missing `rustc`, prints its error to standard error and ends with `status` and exit 2.
 
+### The prompt
+
+`rslisp repl` reads inputs from standard input. Its only state is a buffer of the definitions entered so far, as text. Each form is one input, so a line of three forms is three inputs, and each input is its own source, named `<input N>`.
+
+- The expander classifies each input. An input that a file accepts at its top level, `use` included, is a definition. Any other input is an expression.
+- A definition replaces every earlier input that defines or imports a name it defines or imports, and takes the place of the first one. If a replaced input defines or imports a name that the new input does not, the prompt rejects the input with `L0203`. Otherwise the prompt checks the buffer as `check` checks a file, and rejects the input if the check fails. A rejected input leaves the buffer as it was.
+- An expression runs as one form of `eval` against the buffer, and its result prints by the table above. A program that panics or exits nonzero gets a `note` with its exit code, and the buffer keeps its definitions.
+- `--root <directory>`, which defaults to the current directory, resolves `use`.
+- While the reader reports an unclosed list, `L0101`, or an unclosed string, `L0103`, the prompt reads the next line into the same text. Any other reader error rejects the text at once.
+- On a terminal, the prompt is `> ` and a continuation line starts with two spaces. Piped input shows no prompt.
+- The end of input quits with exit code 0, also after failed inputs. An unclosed list or string at the end is reported first.
+
+**The prompt differs from a file in three ways:**
+
+1. An input that is not a definition runs once, as the body of a generated `main`.
+2. A definition replaces the earlier definition of the same name, where a file reports `L0203`, unless the replacement would drop a name.
+3. Each definition is checked when it is entered, so it comes after the definitions it uses. Mutually recursive functions go in one input, as `(do (defn even? ...) (defn odd? ...))`.
+
 ### Colors
 
 **The CLI decides once at start-up, for each output stream, whether to color it** ([RFC 0050](../rfcs/0050-repl-colors.md)). The diagnostics and the help follow the same decision. The first step that applies decides:
