@@ -29,6 +29,7 @@ mod session;
 mod shape;
 mod sourced_items;
 mod spliced_forms;
+mod structural_clause;
 mod top_level_form;
 mod try_check;
 mod type_expr;
@@ -131,6 +132,7 @@ struct ExpansionTables {
     introduction_scopes: FxHashSet<Scope>,
     global_macros: Vec<(crate::core::BindingId, Form)>,
     trait_paths: FxHashMap<crate::core::BindingId, Rc<str>>,
+    structural_paths: FxHashMap<Rc<str>, (crate::core::BindingId, Span)>,
     enum_variants: FxHashMap<crate::core::BindingId, Vec<crate::core::BindingId>>,
     trait_methods: FxHashMap<crate::core::BindingId, TraitMethods>,
     globals: GlobalTable,

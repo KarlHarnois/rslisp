@@ -1,7 +1,10 @@
 use std::fmt;
 use std::rc::Rc;
 
-use super::{BindingId, Expr, FieldLabel, Lambda, ParsedTemplate, TypeBinder, TypeBound, TypeExpr};
+use super::{
+    BindingId, Expr, FieldLabel, Lambda, ParsedTemplate, StructuralClause, TypeBinder, TypeBound,
+    TypeExpr,
+};
 use crate::source::Span;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
@@ -46,6 +49,7 @@ pub struct Item {
 pub const RUST_TRAIT_METHOD_MARKER: &str = "method";
 pub const RUST_TRAIT_HELP_MARKER: &str = "help";
 pub const RUST_TRAIT_ASSOCIATED_MARKER: &str = "associated";
+pub const RUST_TRAIT_STRUCTURAL_MARKER: &str = "structural";
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct RustTraitAssociatedType {
@@ -74,6 +78,7 @@ pub struct RustTraitDeclaration {
     pub self_variable: BindingId,
     pub methods: Vec<TraitMethod>,
     pub help: Option<Rc<str>>,
+    pub structural: Option<StructuralClause>,
     pub associated: Vec<RustTraitAssociatedType>,
     pub implementors: Vec<RustTraitImplementor>,
 }

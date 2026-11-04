@@ -5,6 +5,7 @@ mod kernel;
 mod keyword;
 mod module;
 mod printer;
+mod structural;
 mod template;
 mod template_operation;
 mod types;
@@ -24,10 +25,15 @@ pub use keyword::Keyword;
 pub use module::{
     AssociatedValue, CoreModule, EnumRust, ImplAssociatedType, ImplMethod, Item, ItemKind,
     ModuleId, ModulePath, RUST_TRAIT_ASSOCIATED_MARKER, RUST_TRAIT_HELP_MARKER,
-    RUST_TRAIT_METHOD_MARKER, RustTraitAssociatedType, RustTraitDeclaration, RustTraitImplementor,
-    TraitAssociatedType, TraitMethod, VariantDeclaration, VariantPayload,
+    RUST_TRAIT_METHOD_MARKER, RUST_TRAIT_STRUCTURAL_MARKER, RustTraitAssociatedType,
+    RustTraitDeclaration, RustTraitImplementor, TraitAssociatedType, TraitMethod,
+    VariantDeclaration, VariantPayload,
 };
 pub use printer::CorePrinter;
+pub use structural::{
+    StructuralClause, StructuralKey, StructuralPiece, StructuralTemplate, StructuralValues,
+    UnfilledPlaceholder,
+};
 pub use template::{
     Access, MalformedPlaceholder, ParsedTemplate, PassingAspect, PassingDifference, Piece,
 };

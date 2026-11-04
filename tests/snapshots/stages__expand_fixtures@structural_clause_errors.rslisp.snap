@@ -1,0 +1,128 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/structural_clause_errors.rslisp
+---
+error[L0248]: a `structural` clause needs one method that takes `(ref self)`
+ --> expand/structural_clause_errors.rslisp:5:3
+  |
+5 |   (structural :struct "" :field "" :variant "" :part "" :bare ""))
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this clause fills the body of one method
+  |
+  = help: declare one `(method name (fn ((ref self) ...) result))` in this `rust-trait`
+
+error[L0248]: a `structural` clause needs one method that takes `(ref self)`
+  --> expand/structural_clause_errors.rslisp:10:3
+   |
+10 |   (structural :struct "" :field "" :variant "" :part "" :bare ""))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this clause fills the body of one method
+   |
+   = help: declare one `(method name (fn ((ref self) ...) result))` in this `rust-trait`
+
+error[L0248]: a `structural` clause needs one method that takes `(ref self)`
+  --> expand/structural_clause_errors.rslisp:14:3
+   |
+14 |   (structural :struct "" :field "" :variant "" :part "" :bare ""))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this clause fills the body of one method
+   |
+   = help: declare one `(method name (fn ((ref self) ...) result))` in this `rust-trait`
+
+error[L0248]: `cl` binds `std::clone::Clone`, which `derive` already writes
+  --> expand/structural_clause_errors.rslisp:18:3
+   |
+18 |   (structural :struct "" :field "" :variant "" :part "" :bare ""))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ every struct would get both the derive and this impl
+   |
+   = help: keep the clause off this `rust-trait`, or bind a trait that `derive` does not write
+
+error[L0248]: `num2` binds `crate::rt::Number`, which `number` already binds
+  --> expand/structural_clause_errors.rslisp:22:3
+   |
+22 |   (structural :struct "" :field "" :variant "" :part "" :bare ""))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the two traits would infer two impls of one Rust trait
+   |
+   = help: keep the clause off this `rust-trait`, or give it a Rust path that no other `rust-trait` binds
+
+error[L0248]: `:bare` is missing from this `structural` clause
+  --> expand/structural_clause_errors.rslisp:26:3
+   |
+26 |   (structural :struct "" :field "" :variant "" :part ""))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this clause has no `:bare`
+   |
+   = help: add `:bare` and its template string
+
+error[L0248]: `:other` is not a key of a `structural` clause
+  --> expand/structural_clause_errors.rslisp:30:66
+   |
+30 |   (structural :struct "" :field "" :variant "" :part "" :bare "" :other ""))
+   |                                                                  ^^^^^^ expected a key here
+   |
+   = help: a `structural` clause takes `:struct`, `:field`, `:variant`, `:part`, `:bare`
+
+error[L0248]: `"text"` is not a key of a `structural` clause
+  --> expand/structural_clause_errors.rslisp:34:15
+   |
+34 |   (structural "text" :struct "" :field "" :variant "" :part "" :bare ""))
+   |               ^^^^^^ expected a key here
+   |
+   = help: a `structural` clause takes `:struct`, `:field`, `:variant`, `:part`, `:bare`
+
+error[L0248]: `:field` appears twice in this `structural` clause
+  --> expand/structural_clause_errors.rslisp:38:36
+   |
+38 |   (structural :struct "" :field "" :field "" :variant "" :part "" :bare ""))
+   |                          ------    ^^^^^^ repeated here
+   |                          |
+   |                          first given here
+   |
+   = help: remove one of the two `:field` templates
+
+error[L0248]: `:bare` has no template string after it
+  --> expand/structural_clause_errors.rslisp:42:57
+   |
+42 |   (structural :struct "" :field "" :variant "" :part "" :bare))
+   |                                                         ^^^^^ expected a string after this key
+   |
+   = help: write the Rust text after the key, as in `:bare "..."`
+
+error[L0248]: `:bare` has no template string after it
+  --> expand/structural_clause_errors.rslisp:46:57
+   |
+46 |   (structural :struct "" :field "" :variant "" :part "" :bare written))
+   |                                                         ^^^^^ expected a string after this key
+   |
+   = help: write the Rust text after the key, as in `:bare "..."`
+
+error[L0248]: `:part` cannot fill `{field}`
+  --> expand/structural_clause_errors.rslisp:50:54
+   |
+50 |   (structural :struct "" :field "" :variant "" :part ".part({field})" :bare ""))
+   |                                                      ^^^^^^^^^^^^^^^^ this template holds `{field}`
+   |
+   = help: `:part` takes `{value}`, and `{{` or `}}` for a literal brace
+
+error[L0248]: `:bare` cannot fill `{2}`
+  --> expand/structural_clause_errors.rslisp:54:63
+   |
+54 |   (structural :struct "" :field "" :variant "" :part "" :bare "{2}"))
+   |                                                               ^^^^^ this template holds `{2}`
+   |
+   = help: `:bare` takes `{0}`, `{1}`, `{name}`, and `{{` or `}}` for a literal brace
+
+error[L0248]: `:struct` cannot fill `{name`
+  --> expand/structural_clause_errors.rslisp:58:23
+   |
+58 |   (structural :struct "{name" :field "" :variant "" :part "" :bare ""))
+   |                       ^^^^^^^ this template holds `{name`
+   |
+   = help: `:struct` takes `{0}`, `{1}`, `{name}`, `{parts}`, and `{{` or `}}` for a literal brace
+
+error[L0248]: this `rust-trait` has a second `structural` clause
+  --> expand/structural_clause_errors.rslisp:63:3
+   |
+62 |   (structural :struct "" :field "" :variant "" :part "" :bare "")
+   |   --------------------------------------------------------------- first clause
+63 |   (structural :struct "" :field "" :variant "" :part "" :bare ""))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ second clause
+   |
+   = help: merge the two clauses into one

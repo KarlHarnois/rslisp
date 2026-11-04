@@ -9,13 +9,14 @@ use super::problems::ExpandProblems;
 use super::shape::Shape;
 use super::sourced_items::SourcedItems;
 use super::spliced_forms::{SplicedForm, SplicedForms};
+use super::structural_clause::DeclaredTrait;
 use crate::core::{
     BindingId, BindingInfo, BindingKind, ControlForm, CoreModule, DefinitionForm, Expr, ExprKind,
     ExpressionForm, FieldLabel, ImplAssociatedType, ImplMethod, Item, ItemKind, KernelForm, Leaf,
     ModuleId, Namespace, RUST_TRAIT_ASSOCIATED_MARKER, RUST_TRAIT_HELP_MARKER,
-    RUST_TRAIT_METHOD_MARKER, RustTemplate, RustTraitAssociatedType, RustTraitDeclaration,
-    RustTraitImplementor, TraitAssociatedType, TraitMethod, TypeBinder, TypeBound, TypeExpr,
-    TypeExprKind, VariantDeclaration, VariantInfo, VariantPayload,
+    RUST_TRAIT_METHOD_MARKER, RUST_TRAIT_STRUCTURAL_MARKER, RustTemplate, RustTraitAssociatedType,
+    RustTraitDeclaration, RustTraitImplementor, TraitAssociatedType, TraitMethod, TypeBinder,
+    TypeBound, TypeExpr, TypeExprKind, VariantDeclaration, VariantInfo, VariantPayload,
 };
 use crate::diagnostic::{Counted, Diagnostic};
 use crate::mangle::NameMangler;
@@ -45,6 +46,7 @@ type ImplLoweringParts = (ImplAssociated, Vec<Form>);
 struct RustTraitEntries {
     methods: Vec<TraitMethod>,
     help: Option<Rc<str>>,
+    structural: Option<Form>,
     associated: Vec<RustTraitAssociatedType>,
     implementors: Vec<RustTraitImplementor>,
 }
@@ -446,6 +448,10 @@ impl Expander<'_> {
 
     fn is_rust_trait_associated(entry: &Form) -> bool {
         Self::rust_trait_marker(entry) == Some(RUST_TRAIT_ASSOCIATED_MARKER)
+    }
+
+    fn is_rust_trait_structural(entry: &Form) -> bool {
+        Self::rust_trait_marker(entry) == Some(RUST_TRAIT_STRUCTURAL_MARKER)
     }
 
     fn register_rust_type(
@@ -1650,6 +1656,18 @@ impl Expander<'_> {
         let self_form = Form::new(FormKind::Symbol(self_symbol), items[1].span());
         let self_variable = self.define_binder_variable(&self_form)?;
         let entries = self.lower_rust_trait_entries(&shape, scope, &items[3..])?;
+        let structural = entries.structural.as_ref().and_then(|clause| {
+            self.lower_structural_clause(
+                clause,
+                &DeclaredTrait {
+                    binding,
+                    name: &items[1],
+                    path: &path,
+                    self_variable,
+                    methods: &entries.methods,
+                },
+            )
+        });
         self.tables.trait_methods.insert(
             binding,
             TraitMethods {
@@ -1672,6 +1690,7 @@ impl Expander<'_> {
                 self_variable,
                 methods: entries.methods,
                 help: entries.help,
+                structural,
                 associated: entries.associated,
                 implementors: entries.implementors,
             }),
@@ -1690,6 +1709,7 @@ impl Expander<'_> {
         let mut lowered = RustTraitEntries {
             methods: Vec::new(),
             help: None,
+            structural: None,
             associated: Vec::new(),
             implementors: Vec::new(),
         };
@@ -1706,12 +1726,13 @@ impl Expander<'_> {
         entry: &Form,
         lowered: &mut RustTraitEntries,
     ) -> Result<(), Diagnostic> {
+        if self.lower_rust_trait_clause(shape, entry, lowered)? {
+            return Ok(());
+        }
         if Self::is_rust_trait_method(entry) {
             lowered
                 .methods
                 .push(self.lower_rust_trait_method(shape, scope, entry)?);
-        } else if Self::is_rust_trait_help(entry) {
-            lowered.help = Some(self.lower_rust_trait_help(shape, entry)?);
         } else if Self::is_rust_trait_associated(entry) {
             lowered
                 .associated
@@ -1722,6 +1743,35 @@ impl Expander<'_> {
                 .push(self.lower_rust_trait_implementor(entry)?);
         }
         Ok(())
+    }
+
+    fn lower_rust_trait_clause(
+        &mut self,
+        shape: &Shape<'_>,
+        entry: &Form,
+        lowered: &mut RustTraitEntries,
+    ) -> Result<bool, Diagnostic> {
+        if Self::is_rust_trait_help(entry) {
+            lowered.help = Some(self.lower_rust_trait_help(shape, entry)?);
+        } else if Self::is_rust_trait_structural(entry) {
+            lowered.structural = Some(Self::single_structural_clause(entry, lowered)?);
+        } else {
+            return Ok(false);
+        }
+        Ok(true)
+    }
+
+    fn single_structural_clause(
+        entry: &Form,
+        lowered: &RustTraitEntries,
+    ) -> Result<Form, Diagnostic> {
+        match &lowered.structural {
+            Some(first) => Err(ExpandProblems::repeated_structural_clause(
+                entry.span(),
+                first.span(),
+            )),
+            None => Ok(entry.clone()),
+        }
     }
 
     fn lower_rust_trait_associated(
@@ -1781,24 +1831,7 @@ impl Expander<'_> {
     }
 
     fn warn_second_trait_path(&mut self, binding: BindingId, name: &Form, path: &str) {
-        let Some(symbol) = name.as_symbol() else {
-            return;
-        };
-        let mut visible =
-            self.tables
-                .table
-                .visible_bindings(symbol.scopes(), Namespace::Type, self.phase);
-        visible.sort();
-        let existing = visible.into_iter().find(|existing| {
-            *existing != binding
-                && matches!(self.kind(*existing), BindingKind::Trait(_))
-                && self
-                    .tables
-                    .trait_paths
-                    .get(existing)
-                    .is_some_and(|known| known.as_ref() == path)
-        });
-        let Some(existing) = existing else {
+        let Some(existing) = self.trait_binding_with_path(binding, name, path) else {
             return;
         };
         let span = name.span();
@@ -1807,6 +1840,29 @@ impl Expander<'_> {
         self.warnings.push(ExpandProblems::second_trait_path(
             &name, &existing, path, span,
         ));
+    }
+
+    pub(super) fn trait_binding_with_path(
+        &self,
+        binding: BindingId,
+        name: &Form,
+        path: &str,
+    ) -> Option<BindingId> {
+        let symbol = name.as_symbol()?;
+        let mut visible =
+            self.tables
+                .table
+                .visible_bindings(symbol.scopes(), Namespace::Type, self.phase);
+        visible.sort();
+        visible.into_iter().find(|existing| {
+            *existing != binding
+                && matches!(self.kind(*existing), BindingKind::Trait(_))
+                && self
+                    .tables
+                    .trait_paths
+                    .get(existing)
+                    .is_some_and(|known| known.as_ref() == path)
+        })
     }
 
     fn lower_exports(&mut self, module: ModuleId, form: &Form, core: &mut CoreModule) {
