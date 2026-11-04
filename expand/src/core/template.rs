@@ -15,7 +15,7 @@ pub enum Piece {
 pub enum Access {
     Passed,
     Borrowed,
-    MutableReceiver,
+    Owned,
 }
 
 impl Access {
@@ -23,9 +23,7 @@ impl Access {
         match self {
             Self::Passed => String::new(),
             Self::Borrowed => ParsedTemplate::BORROW.to_string(),
-            Self::MutableReceiver => {
-                format!("{}{}", ParsedTemplate::BORROW, ParsedTemplate::MUTABLE)
-            }
+            Self::Owned => ParsedTemplate::OWNED.to_string(),
         }
     }
 }
@@ -88,8 +86,8 @@ pub struct ParsedTemplate {
 
 impl ParsedTemplate {
     const BORROW: char = '&';
-    const MUTABLE: &'static str = "mut ";
     const BINDER: char = '!';
+    const OWNED: &'static str = "owned ";
     const DEREFERENCE: &'static str = "*";
 
     pub fn parse(text: &str) -> Result<Self, MalformedPlaceholder> {
@@ -122,10 +120,10 @@ impl ParsedTemplate {
         characters: &mut std::iter::Peekable<std::str::Chars>,
     ) -> Result<Piece, MalformedPlaceholder> {
         let borrowed = characters.next_if_eq(&Self::BORROW).is_some();
-        let name = Self::placeholder_name(characters)?;
-        let (access, name) = Self::access(borrowed, &name);
+        let written = Self::placeholder_name(characters)?;
+        let (access, name) = Self::access(borrowed, &written);
         if let Some(binder) = name.strip_prefix(Self::BINDER) {
-            return if borrowed || binder.is_empty() {
+            return if access != Access::Passed || binder.is_empty() {
                 Err(MalformedPlaceholder)
             } else {
                 Ok(Piece::BinderPlaceholder {
@@ -135,7 +133,7 @@ impl ParsedTemplate {
         }
         match name.parse::<usize>() {
             Ok(index) => Ok(Piece::Placeholder { index, access }),
-            Err(_) if borrowed => Err(MalformedPlaceholder),
+            Err(_) if access != Access::Passed => Err(MalformedPlaceholder),
             Err(_) => Ok(Piece::TypePlaceholder {
                 name: name.to_string(),
             }),
@@ -143,8 +141,8 @@ impl ParsedTemplate {
     }
 
     fn access(borrowed: bool, name: &str) -> (Access, &str) {
-        match name.strip_prefix(Self::MUTABLE) {
-            Some(receiver) if borrowed => (Access::MutableReceiver, receiver),
+        match name.strip_prefix(Self::OWNED) {
+            Some(index) if !borrowed => (Access::Owned, index),
             _ if borrowed => (Access::Borrowed, name),
             _ => (Access::Passed, name),
         }
@@ -253,10 +251,6 @@ impl ParsedTemplate {
         !uses.is_empty() && uses.iter().all(|access| *access == Access::Borrowed)
     }
 
-    pub fn advances_receiver(&self, argument: usize) -> bool {
-        self.accesses(argument).contains(&Access::MutableReceiver)
-    }
-
     fn accesses(&self, argument: usize) -> Vec<Access> {
         self.pieces
             .iter()
@@ -281,7 +275,7 @@ impl ParsedTemplate {
 
     pub fn borrows_any(&self) -> bool {
         self.pieces.iter().any(
-            |piece| matches!(piece, Piece::Placeholder { access, .. } if *access != Access::Passed),
+            |piece| matches!(piece, Piece::Placeholder { access, .. } if *access == Access::Borrowed),
         )
     }
 
@@ -453,23 +447,8 @@ mod tests {
     }
 
     #[test]
-    fn marks_a_placeholder_that_a_method_advances() {
-        let parsed = ParsedTemplate::parse("{&mut 0}.find({1})").expect("a valid template");
-        assert!(parsed.advances_receiver(0));
-        assert!(!parsed.advances_receiver(1));
-        assert!(!parsed.borrows(0));
-        assert!(parsed.borrows_any());
-        assert_eq!(parsed.text(), "{&mut 0}.find({1})");
-    }
-
-    #[test]
     fn receives_an_argument_before_a_method_call() {
-        for text in [
-            "{0}.len()",
-            "*{0}.len()",
-            "{&mut 0}.next()",
-            "*{&mut 0}.next()",
-        ] {
+        for text in ["{0}.len()", "*{0}.len()"] {
             let parsed = ParsedTemplate::parse(text).expect("a valid template");
             assert!(parsed.receives(0), "{text}");
             assert!(!parsed.receives(1), "{text}");
@@ -520,6 +499,32 @@ mod tests {
         let parsed = ParsedTemplate::parse("{0} + {&0}").expect("a valid template");
         assert!(!parsed.borrows(0));
         assert!(!parsed.borrows(1));
+    }
+
+    #[test]
+    fn marks_a_placeholder_that_the_call_owns() {
+        let parsed = ParsedTemplate::parse("{owned 0}.any({1})").expect("a valid template");
+        assert_eq!(
+            parsed.pieces()[0],
+            Piece::Placeholder {
+                index: 0,
+                access: Access::Owned
+            }
+        );
+        assert!(!parsed.borrows(0));
+        assert!(!parsed.borrows_any());
+        assert_eq!(parsed.text(), "{owned 0}.any({1})");
+    }
+
+    #[test]
+    fn reports_an_owned_placeholder_without_a_number() {
+        for text in ["{owned target}", "{&owned 0}", "{owned !left}"] {
+            assert_eq!(
+                ParsedTemplate::parse(text).err(),
+                Some(MalformedPlaceholder),
+                "{text}"
+            );
+        }
     }
 
     #[test]

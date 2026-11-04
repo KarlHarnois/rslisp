@@ -23,10 +23,6 @@ impl TemplateBorrows {
         self.read_template(callee, false, |parsed| parsed.borrows(position))
     }
 
-    pub fn advances(&self, callee: &TypedExpr, position: usize) -> bool {
-        self.read_template(callee, false, |parsed| parsed.advances_receiver(position))
-    }
-
     pub fn receives(&self, callee: &TypedExpr, position: usize) -> bool {
         self.read_template(callee, false, |parsed| parsed.receives(position))
     }
@@ -36,15 +32,8 @@ impl TemplateBorrows {
     }
 
     pub fn reference(&self, callee: &TypedExpr, position: usize) -> Option<ReferenceKind> {
-        self.read_template(callee, None, |parsed| {
-            if parsed.advances_receiver(position) {
-                Some(ReferenceKind::Mutable)
-            } else if parsed.borrows(position) {
-                Some(ReferenceKind::Shared)
-            } else {
-                None
-            }
-        })
+        self.borrows(callee, position)
+            .then_some(ReferenceKind::Shared)
     }
 
     pub fn read_template<T>(

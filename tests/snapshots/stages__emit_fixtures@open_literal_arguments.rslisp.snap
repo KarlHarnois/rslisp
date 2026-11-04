@@ -57,8 +57,9 @@ struct Crate {
     weight: i64,
 }
 
-fn is_any_big(mut values: impl Iterator<Item = i64>) -> bool {
+fn is_any_big(values: impl Iterator<Item = i64>) -> bool {
     values
+        .into_iter()
         .find(|value: &i64| *first_of(value, 3000000000_i64) > 1)
         .is_some()
 }

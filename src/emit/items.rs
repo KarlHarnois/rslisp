@@ -1478,7 +1478,7 @@ impl<'a> ItemEmitter<'a> {
             .into_iter()
             .filter_map(|binding| self.plan.item(binding))
             .map(|item| item.name.clone());
-        let mut mutable = MutableLocals::of(value, &self.program.template_borrows);
+        let mut mutable = MutableLocals::of(value);
         mutable.extend(self.program.mutable_function_bindings.iter().copied());
         let local_closures = LocalClosures::of(self.program, value);
         mutable.extend(local_closures.mutably_borrowed_arguments());

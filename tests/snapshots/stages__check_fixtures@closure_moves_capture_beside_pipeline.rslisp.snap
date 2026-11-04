@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/closure_moves_capture_beside_pipeline.rslisp
+---
+error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
+ --> check/closure_moves_capture_beside_pipeline.rslisp:8:16
+  |
+5 |     (twice (fn ()
+  |  __________-
+6 | |     (let steps (range 0 3))
+7 | |     (prn (count steps))
+8 | |     (let moved names)
+  | |                ^^^^^ `names` moves here
+9 | |     (prn moved))))
+  | |________________- this closure is passed here
+  |
+  = help: clone `names`, or borrow it with `(ref names)`

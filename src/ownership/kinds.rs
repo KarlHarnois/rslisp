@@ -15,9 +15,9 @@ use crate::core::{BindingArena, BindingId, FieldLabel, ReferenceKind};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Borrow, ClosureKind, CopyRules, FieldPlace, StructTable, TemplateBorrows, Type, TypedArgument,
-    TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedDefinition, TypedExpr,
-    TypedExprKind, TypedLambda, TypedLeaf, TypedModule, TypedProgram, TypedStructExpr,
+    Borrow, ClosureKind, CopyRules, FieldPlace, Pipelines, StructTable, TemplateBorrows, Type,
+    TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedDefinition,
+    TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedModule, TypedProgram, TypedStructExpr,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -120,6 +120,7 @@ pub struct KindSources<'a> {
     pub rust_parameter_kinds: FxHashMap<BindingId, Vec<ClosureKind>>,
     pub written_parameter_kinds: FxHashMap<BindingId, ClosureKind>,
     pub borrowing_lambdas: &'a FxHashMap<BindingId, FxHashSet<BindingId>>,
+    pub pipelines: Pipelines<'a>,
 }
 
 pub struct ClosureKinds<'a> {
@@ -133,6 +134,7 @@ pub struct ClosureKinds<'a> {
     value_parameters: FxHashMap<BindingId, Vec<BindingId>>,
     returned_closures: FxHashMap<BindingId, Rc<ClosureValue>>,
     borrowing_lambdas: &'a FxHashMap<BindingId, FxHashSet<BindingId>>,
+    pipelines: Pipelines<'a>,
     function_parameters: FxHashMap<BindingId, Vec<BindingId>>,
     pass_edges: FxHashMap<BindingId, FxHashSet<BindingId>>,
     cycle_peers: FxHashMap<BindingId, Vec<BindingId>>,
@@ -226,6 +228,7 @@ impl<'a> ClosureKinds<'a> {
             value_parameters: FxHashMap::default(),
             returned_closures: FxHashMap::default(),
             borrowing_lambdas: sources.borrowing_lambdas,
+            pipelines: sources.pipelines,
             function_parameters: sources.function_parameters,
             pass_edges: FxHashMap::default(),
             cycle_peers: FxHashMap::default(),
@@ -1474,16 +1477,61 @@ impl<'a> ClosureKinds<'a> {
                 argument.value.span,
                 span,
             ),
-            None => OwnershipProblems::closure_kind_mismatch(
-                actual,
-                required,
-                capture.map(|binding| self.bindings.get(binding).name()),
-                callee_name.as_deref(),
-                argument.value.span,
-                capture.and_then(|binding| self.capture_span(&argument.value, binding)),
-            ),
+            None => self.capture_mismatch(argument, capture, actual, required, callee_name),
         };
         diagnostics.push(diagnostic);
+    }
+
+    fn capture_mismatch(
+        &self,
+        argument: &TypedArgument,
+        capture: Option<BindingId>,
+        actual: ClosureKind,
+        required: ClosureKind,
+        callee_name: Option<String>,
+    ) -> Diagnostic {
+        let capture_span = capture.and_then(|binding| self.capture_span(&argument.value, binding));
+        if let Some(pipeline) =
+            capture.filter(|binding| self.captures_pipeline(&argument.value, *binding))
+        {
+            return OwnershipProblems::pipeline_capture_mismatch(
+                actual,
+                required,
+                self.bindings.get(pipeline).name(),
+                argument.value.span,
+                capture_span,
+            );
+        }
+        OwnershipProblems::closure_kind_mismatch(
+            actual,
+            required,
+            capture.map(|binding| self.bindings.get(binding).name()),
+            callee_name.as_deref(),
+            argument.value.span,
+            capture_span,
+        )
+    }
+
+    fn captures_pipeline(&self, value: &TypedExpr, binding: BindingId) -> bool {
+        let TypedExprKind::Fn(lambda) = &value.kind else {
+            return false;
+        };
+        lambda
+            .body
+            .expressions()
+            .find_map(|expr| Self::local_type(expr, binding))
+            .is_some_and(|ty| self.pipelines.is_pipeline(ty))
+    }
+
+    fn local_type(expr: &TypedExpr, binding: BindingId) -> Option<&Type> {
+        if let TypedExprKind::Leaf(TypedLeaf::Local(local)) = &expr.kind
+            && *local == binding
+        {
+            return Some(&expr.ty);
+        }
+        expr.children()
+            .into_iter()
+            .find_map(|child| Self::local_type(child, binding))
     }
 
     fn called_capture(&self, value: &TypedExpr, binding: BindingId) -> Option<(ClosureKind, Span)> {
@@ -1667,7 +1715,7 @@ mod tests {
     use std::collections::BTreeMap;
     use std::rc::Rc;
 
-    use super::{CaptureReport, ClosureKinds, KindSources};
+    use super::{CaptureReport, ClosureKinds, KindSources, Pipelines};
     use crate::core::BindingId;
     use crate::ownership::lambda_address::LambdaAddress;
     use crate::ownership::lambda_source::LambdaSource;
@@ -1706,6 +1754,7 @@ mod tests {
                 rust_parameter_kinds: ClosureKinds::rust_parameter_kinds(program),
                 written_parameter_kinds: ClosureKinds::written_parameter_kinds(program),
                 borrowing_lambdas: &program.borrowing_lambdas,
+                pipelines: Pipelines::new(&program.rust_types),
             })
         }
 

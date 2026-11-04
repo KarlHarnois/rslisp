@@ -1,0 +1,9 @@
+(defn twice (action) (action) (action))
+
+(defn main ()
+  (let names (vec (str "ada")))
+  (twice (fn ()
+    (let steps (range 0 3))
+    (prn (count steps))
+    (let moved names)
+    (prn moved))))
