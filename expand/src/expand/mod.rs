@@ -22,6 +22,7 @@ mod prelude_state;
 mod problems;
 mod recur_check;
 mod rest_of_body;
+mod result_printer;
 mod rust_clauses;
 mod rust_type;
 mod session;
@@ -52,6 +53,7 @@ use macro_call::MacroTable;
 use module_notes::ModuleNotes;
 pub use prelude_state::{PreludeState, UnreadablePrelude};
 pub use problems::ExpandProblems;
+pub use result_printer::{GeneratedFunction, ResultPrinter};
 pub use session::ExpansionSession;
 
 pub struct Program {

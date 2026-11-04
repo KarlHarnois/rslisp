@@ -1,7 +1,8 @@
 use std::rc::Rc;
 
 use super::Program;
-use crate::core::{BindingId, Block, BodyItem, Expr, ExprKind, Item, ItemKind, Lambda, Leaf};
+use super::result_printer::{GeneratedFunction, ResultPrinter};
+use crate::core::{BindingId, Block, BodyItem, Expr, ExprKind, Item, ItemKind, Lambda};
 use crate::source::Span;
 
 #[derive(Clone)]
@@ -10,6 +11,7 @@ pub struct GeneratedEntry {
     body: Block,
     forms: Vec<WrittenForm>,
     span: Span,
+    functions: Vec<GeneratedFunction>,
 }
 
 #[derive(Clone, Debug)]
@@ -30,6 +32,7 @@ impl GeneratedEntry {
             body,
             forms,
             span,
+            functions: Vec::new(),
         }
     }
 
@@ -37,7 +40,7 @@ impl GeneratedEntry {
         &self.forms
     }
 
-    pub fn printing(&self, printer: BindingId, printed: &[usize]) -> Self {
+    pub fn printing(&self, printer: &ResultPrinter, printed: &[usize]) -> Self {
         let items = self
             .body
             .items
@@ -45,7 +48,7 @@ impl GeneratedEntry {
             .enumerate()
             .map(|(position, item)| match item {
                 BodyItem::Expr(expr) if printed.contains(&position) => {
-                    BodyItem::Expr(Self::printed(printer, expr))
+                    BodyItem::Expr(printer.print(expr))
                 }
                 other => other.clone(),
             });
@@ -53,16 +56,22 @@ impl GeneratedEntry {
             body: Block {
                 items: items.collect(),
             },
+            functions: printer.functions().to_vec(),
             ..self.clone()
         }
     }
 
-    fn printed(printer: BindingId, expr: &Expr) -> Expr {
-        let callee = Expr::new(ExprKind::Leaf(Leaf::Var(printer)), expr.span());
-        Expr::new(
-            ExprKind::Call(Box::new(callee), vec![expr.clone()]),
-            expr.span(),
-        )
+    fn defines(&self, binding: BindingId) -> bool {
+        binding == self.binding
+            || self
+                .functions
+                .iter()
+                .any(|function| function.binding() == binding)
+    }
+
+    fn items(&self) -> impl Iterator<Item = Item> {
+        let functions = self.functions.iter().map(GeneratedFunction::item);
+        functions.chain(std::iter::once(self.item()))
     }
 
     fn item(&self) -> Item {
@@ -88,9 +97,9 @@ impl Program {
             .find(|module| module.id == entry_module)
             .expect("the entry module is expanded");
         module.items.retain(
-            |item| !matches!(item.kind, ItemKind::Def(binding, _) if binding == entry.binding),
+            |item| !matches!(item.kind, ItemKind::Def(binding, _) if entry.defines(binding)),
         );
-        module.items.push(entry.item());
+        module.items.extend(entry.items());
         self.entry_function = Some(entry.binding);
         self.evaluated_forms = entry.forms.clone();
     }

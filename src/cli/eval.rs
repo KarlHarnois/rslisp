@@ -1,16 +1,15 @@
 use std::ops::Range;
 use std::path::{Path, PathBuf};
 
+use super::evaluation_output::EvaluationOutput;
 use super::exit_status::ExitStatus;
-use super::finished_program::FinishedProgram;
 use super::temporary_directory::TemporaryDirectory;
 use super::terminal::{BuildTarget, EvaluationRequest, Terminal};
 use crate::build::BuildProfile;
 use crate::check::ProgramChecker;
-use crate::core::BindingId;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, Diagnostics};
 use crate::emit::EmittedCrate;
-use crate::expand::{ExpandProblems, ExpansionSession, GeneratedEntry, Program};
+use crate::expand::{ExpandProblems, ExpansionSession, GeneratedEntry, Program, ResultPrinter};
 use crate::modules::ModuleSources;
 use crate::reader::Form;
 use crate::source::{SourceId, Span, TextPosition};
@@ -21,6 +20,12 @@ pub struct EvalCommand {
     root: Option<PathBuf>,
     forms: FormsText,
     profile: BuildProfile,
+    output: Box<dyn EvaluationOutput>,
+}
+
+pub struct EvaluationSettings {
+    pub profile: BuildProfile,
+    pub output: Box<dyn EvaluationOutput>,
 }
 
 pub enum ModuleText {
@@ -38,27 +43,29 @@ impl EvalCommand {
         module: ModuleText,
         root: Option<PathBuf>,
         forms: FormsText,
-        profile: BuildProfile,
+        settings: EvaluationSettings,
     ) -> Self {
         Self {
             module,
             root,
             forms,
-            profile,
+            profile: settings.profile,
+            output: settings.output,
         }
     }
 
     pub fn run(self, terminal: &mut Terminal) -> ExitStatus {
-        match self.evaluate(terminal) {
+        self.output.attach(terminal);
+        let status = match self.evaluate(terminal) {
             Ok(status) | Err(status) => status,
-        }
+        };
+        self.output.finish(status);
+        status
     }
 
     fn evaluate(&self, terminal: &mut Terminal) -> Result<ExitStatus, ExitStatus> {
         let module = self.module.load(terminal)?;
-        let ranges = self
-            .forms
-            .ranges(self.module.path(), &terminal.text_of(module))?;
+        let ranges = self.forms.ranges(terminal, self.module.path(), module)?;
         let expanded = self.expand(terminal, module, &ranges)?;
         let module_warnings = terminal.check_expanded(&expanded.program)?.warnings;
         terminal.print_diagnostics(&expanded.definition_notes());
@@ -67,9 +74,9 @@ impl EvalCommand {
         };
         let enclosing = self.forms.enclosing(module);
         let shown = ShownWarnings::new(expanded.forms_source, enclosing, module_warnings);
-        let typed = expanded.checked_with_printing(terminal, &entry, &shown)?;
-        let emitted = terminal.emit_checked(&typed)?;
-        self.build_and_run(terminal, &emitted)
+        let checked = expanded.checked_with_printing(terminal, &entry, &shown)?;
+        let emitted = terminal.emit_checked(&checked.program)?;
+        self.build_and_run(terminal, &emitted, checked.printed_forms)
     }
 
     fn expand(
@@ -85,7 +92,7 @@ impl EvalCommand {
             evaluated: self.forms.module_spans(module, ranges),
         };
         terminal.within_evaluation(&request, |session| {
-            ExpandedEvaluation::new(session, &request, &self.forms)
+            ExpandedEvaluation::new(session, &request, &self.forms, self.output.as_ref())
         })
     }
 
@@ -93,6 +100,7 @@ impl EvalCommand {
         &self,
         terminal: &mut Terminal,
         emitted: &EmittedCrate,
+        printed_forms: Vec<usize>,
     ) -> Result<ExitStatus, ExitStatus> {
         let directory = TemporaryDirectory::create().map_err(Self::report_no_build_directory)?;
         let crate_name = Terminal::crate_name(self.module.path());
@@ -103,7 +111,7 @@ impl EvalCommand {
             output: &binary,
         };
         terminal.compile(emitted, &target, self.profile)?;
-        Ok(FinishedProgram::run(&binary).shell_status())
+        Ok(self.output.run(&binary, printed_forms).shell_status())
     }
 
     fn root(&self) -> PathBuf {
@@ -114,7 +122,7 @@ impl EvalCommand {
 
     fn report_no_build_directory(error: std::io::Error) -> ExitStatus {
         eprintln!("error: cannot create a build directory: {error}");
-        ExitStatus::UsageError
+        ExitStatus::Environment
     }
 }
 
@@ -148,9 +156,14 @@ impl FormsText {
         Self { text, position }
     }
 
-    fn ranges(&self, module: &Path, module_text: &str) -> Result<Vec<Range<usize>>, ExitStatus> {
-        let mut scratch = Terminal::new();
-        let enclosing = scratch.add_source(module, module_text.to_string());
+    fn ranges(
+        &self,
+        terminal: &Terminal,
+        module: &Path,
+        module_source: SourceId,
+    ) -> Result<Vec<Range<usize>>, ExitStatus> {
+        let mut scratch = Terminal::reporting_to(terminal.diagnostic_output());
+        let enclosing = scratch.add_source(module, terminal.text_of(module_source));
         let source = self.add_to(&mut scratch, enclosing, module)?;
         let forms = scratch.read_source(source)?;
         Ok(forms.iter().map(|form| form.span().range()).collect())
@@ -207,35 +220,38 @@ struct ExpandedEvaluation {
     forms_source: SourceId,
     entry: Option<Result<GeneratedEntry, Diagnostics>>,
     definitions: Vec<Span>,
-    printer: BindingId,
+    printer: ResultPrinter,
+    form_numbers: Vec<usize>,
+}
+
+struct CheckedEvaluation {
+    program: TypedProgram,
+    printed_forms: Vec<usize>,
 }
 
 impl ExpandedEvaluation {
-    const PRINTER: &'static str = "prn";
-
     fn new(
         mut session: ExpansionSession<'_>,
         request: &EvaluationRequest,
         text: &FormsText,
+        output: &dyn EvaluationOutput,
     ) -> Result<Self, Diagnostics> {
         let forms_source = text.add_to_session(&mut session, request.entry);
         let forms = session.read(forms_source)?;
         let definitions = Self::definitions(&session, request);
-        let running: Vec<Form> = forms
-            .iter()
-            .filter(|form| !Self::is_definition(&definitions, form))
-            .cloned()
-            .collect();
+        let (form_numbers, running): (Vec<usize>, Vec<Form>) = (1..)
+            .zip(forms)
+            .filter(|(_, form)| !Self::is_definition(&definitions, form))
+            .unzip();
         let entry = Self::generated_entry(&mut session, &running);
-        let printer = session
-            .prelude_value(Self::PRINTER)
-            .expect("the prelude defines the printer");
+        let printer = output.printer(&mut session)?;
         Ok(Self {
             program: session.finish()?,
             forms_source,
             entry,
             definitions,
             printer,
+            form_numbers,
         })
     }
 
@@ -291,14 +307,22 @@ impl ExpandedEvaluation {
         terminal: &mut Terminal,
         entry: &GeneratedEntry,
         shown: &ShownWarnings,
-    ) -> Result<TypedProgram, ExitStatus> {
+    ) -> Result<CheckedEvaluation, ExitStatus> {
         let mut program = self.program;
         program.enter(entry);
-        let results = ProgramChecker::form_results(&program, self.printer)
+        let results = ProgramChecker::form_results(&program, self.printer.bound_holder())
             .map_err(|diagnostics| terminal.report(&diagnostics))?;
         terminal.print_diagnostics(&Self::result_notes(&results));
-        program.enter(&entry.printing(self.printer, &Self::printed(&results)));
-        terminal.check_showing(&program, |warning| shown.shows(warning))
+        let printed = Self::printed(&results);
+        program.enter(&entry.printing(&self.printer, &printed));
+        let printed_forms = printed
+            .iter()
+            .map(|position| self.form_numbers[*position])
+            .collect();
+        Ok(CheckedEvaluation {
+            program: terminal.check_showing(&program, |warning| shown.shows(warning))?,
+            printed_forms,
+        })
     }
 
     fn result_notes(results: &[FormResult]) -> Diagnostics {

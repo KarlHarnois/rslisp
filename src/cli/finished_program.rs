@@ -1,3 +1,4 @@
+use std::io;
 use std::path::Path;
 use std::process::{self, Command};
 
@@ -19,7 +20,11 @@ impl FinishedProgram {
     }
 
     pub fn run_with(binary: &Path, arguments: &[String]) -> Self {
-        match Command::new(binary).args(arguments).status() {
+        Self::of(binary, Command::new(binary).args(arguments).status())
+    }
+
+    pub fn of(binary: &Path, status: io::Result<process::ExitStatus>) -> Self {
+        match status {
             Ok(status) => Self::Exited(status),
             Err(error) => {
                 eprintln!("error: cannot run `{}`: {error}", binary.display());
@@ -42,7 +47,7 @@ impl FinishedProgram {
 
     fn status_or(&self, killed: impl FnOnce(process::ExitStatus) -> u8) -> ExitStatus {
         let Self::Exited(status) = self else {
-            return ExitStatus::UsageError;
+            return ExitStatus::Environment;
         };
         if Self::stopped_by_a_closed_output(*status) {
             return ExitStatus::Success;
