@@ -4,8 +4,8 @@ pub struct Cursor<'a> {
 }
 
 impl<'a> Cursor<'a> {
-    pub fn new(text: &'a str) -> Self {
-        Self { text, position: 0 }
+    pub fn starting_at(text: &'a str, position: usize) -> Self {
+        Self { text, position }
     }
 
     pub fn peek(&self) -> Option<char> {
