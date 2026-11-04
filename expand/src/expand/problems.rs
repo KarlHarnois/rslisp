@@ -615,8 +615,12 @@ impl ExpandProblems {
         Diagnostic::error(
             DiagnosticCode::MACRO_RESULT_NOT_FORM,
             format!("this macro returned {found} instead of code"),
-            Label::new(span, "in this macro call"),
+            Self::macro_call(span),
         )
+    }
+
+    pub fn macro_call(span: Span) -> Label {
+        Label::at_macro_call(span, "in this macro call")
     }
 
     pub fn expansion_too_deep(span: Span) -> Diagnostic {

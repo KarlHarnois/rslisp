@@ -3,8 +3,8 @@ use super::context::DefinitionContext;
 use super::evaluated_forms::BoundName;
 use super::problems::ExpandProblems;
 use crate::core::{BindingId, BindingInfo, BindingKind, ModuleId, Namespace};
+use crate::diagnostic::Diagnostic;
 use crate::diagnostic::SimilarName;
-use crate::diagnostic::{Diagnostic, Label};
 use crate::reader::{Form, Symbol};
 use crate::scope::{Phase, Resolution};
 use crate::source::Span;
@@ -151,7 +151,7 @@ impl Expander<'_> {
         match (definition, self.tables.macro_origins.get(&span)) {
             (Some(_), Some(origin)) => diagnostic
                 .with_note(format!("in this expansion of `{}`", origin.name))
-                .with_label(Label::new(span, "in this macro call")),
+                .with_label(ExpandProblems::macro_call(span)),
             _ => diagnostic,
         }
     }

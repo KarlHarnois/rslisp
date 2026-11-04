@@ -8,7 +8,7 @@ use super::form_budget::FormBudget;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{BindingId, BindingKind, Expr, KernelForm, Lambda, Namespace};
-use crate::diagnostic::{Diagnostic, Label};
+use crate::diagnostic::Diagnostic;
 use crate::interpret::{Closure, Env, Interpreter, Value};
 use crate::reader::Form;
 use crate::scope::{Phase, Scope};
@@ -274,7 +274,7 @@ impl Expander<'_> {
         if call_site.contains(diagnostic.primary().span()) {
             diagnostic
         } else {
-            diagnostic.with_label(Label::new(call_site, "in this macro call"))
+            diagnostic.with_label(ExpandProblems::macro_call(call_site))
         }
     }
 
@@ -342,5 +342,43 @@ impl Expander<'_> {
         let lambda = self.lower_lambda(&shape, &items[1], &items[2..]);
         self.phase = outer_phase;
         lambda
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::diagnostic::{Diagnostic, DiagnosticCode, Label};
+    use crate::expand::Expander;
+    use crate::source::{SourceId, Span};
+
+    struct CallFixture;
+
+    impl CallFixture {
+        fn span(range: std::ops::Range<usize>) -> Span {
+            Span::new(SourceId::new(0), range)
+        }
+
+        fn error_at(range: std::ops::Range<usize>) -> Diagnostic {
+            Diagnostic::error(
+                DiagnosticCode::UNBOUND_NAME,
+                "an error",
+                Label::new(Self::span(range), "here"),
+            )
+        }
+    }
+
+    #[test]
+    fn an_error_outside_its_call_gets_a_label_marking_the_call() {
+        let pointed =
+            Expander::point_at_call(CallFixture::error_at(20..21), CallFixture::span(0..5));
+        let call = pointed.labels().last().expect("the call is labeled");
+        assert!(call.marks_a_macro_call());
+        assert_eq!(call.span(), CallFixture::span(0..5));
+    }
+
+    #[test]
+    fn an_error_inside_its_call_gets_no_label() {
+        let pointed = Expander::point_at_call(CallFixture::error_at(1..2), CallFixture::span(0..5));
+        assert_eq!(pointed.labels().count(), 1);
     }
 }
