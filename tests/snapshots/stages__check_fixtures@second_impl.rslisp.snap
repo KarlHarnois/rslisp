@@ -1,0 +1,35 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/second_impl.rslisp
+---
+error[L0459]: `p` already implements `display`
+  --> check/second_impl.rslisp:10:10
+   |
+ 9 | (display p (value) "p")
+   |          - first implemented here
+10 | (display p (value) "again")
+   |          ^ this implements `display` again
+   |
+   = help: remove one of the two
+
+error[L0459]: `(tree i64)` already implements `display`
+  --> check/second_impl.rslisp:14:10
+   |
+13 | (display (tree a) (value) "tree")
+   |          -------- first implemented here
+14 | (display (tree i64) (value) "tree of i64")
+   |          ^^^^^^^^^^ this implements `display` again
+   |
+   = help: remove one of the two
+
+error[L0459]: `listed` already implements `octal`
+  --> check/second_impl.rslisp:23:13
+   |
+21 | (derive listed clone octal)
+   |                      ----- this `derive` lists `octal`
+22 | (def write-listed (rust "write!({0}, \"listed\")" (fn ((mut octal-out)) octal-result)))
+23 | (impl octal listed (fmt (value out) (write-listed out)))
+   |             ^^^^^^ this implements `octal` again
+   |
+   = help: remove one of the two

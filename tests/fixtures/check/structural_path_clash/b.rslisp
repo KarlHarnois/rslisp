@@ -1,0 +1,8 @@
+(export p ->p)
+(rust-type octal-out "std::fmt::Formatter<'_>")
+(rust-type octal-result "std::fmt::Result")
+(rust-trait octal2 "std::fmt::Octal"
+  (method fmt (fn ((ref self) (mut octal-out)) octal-result)))
+(defstruct p :x i64)
+(def write-p (rust "write!({0}, \"p\")" (fn ((mut octal-out)) octal-result)))
+(impl octal2 p (fmt (value out) (write-p out)))

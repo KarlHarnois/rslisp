@@ -13,6 +13,7 @@ mod enums;
 mod finalize;
 mod form_results;
 mod graph;
+mod impl_overlap;
 mod infer;
 mod literal_fit;
 mod lowering;
