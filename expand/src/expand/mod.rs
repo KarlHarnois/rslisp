@@ -53,6 +53,7 @@ pub use session::ExpansionSession;
 pub struct Program {
     pub modules: Vec<CoreModule>,
     pub entry: ModuleId,
+    pub entry_function: Option<BindingId>,
     pub bindings: BindingArena,
     pub macro_origins: FxHashMap<Span, MacroOrigin>,
     pub macro_helpers: FxHashSet<BindingId>,
@@ -66,11 +67,20 @@ pub struct ExpansionWork {
 }
 
 impl Program {
+    const WRITTEN_ENTRY_FUNCTION: &str = "main";
+
     pub fn entry_module(&self) -> &CoreModule {
         self.modules
             .iter()
             .find(|module| module.id == self.entry)
             .expect("the entry module is expanded")
+    }
+
+    fn written_entry_function(&self) -> Option<BindingId> {
+        self.entry_module()
+            .definitions()
+            .map(|(binding, _)| binding)
+            .find(|binding| self.bindings.get(*binding).name() == Self::WRITTEN_ENTRY_FUNCTION)
     }
 }
 
@@ -172,15 +182,17 @@ impl<'s> Expander<'s> {
 
     fn into_program(mut self, entry: ModuleId) -> Result<Program, Diagnostics> {
         let diagnostics = self.take_diagnostics();
-        let program = Program {
+        let mut program = Program {
             modules: self.take_modules(),
             entry,
+            entry_function: None,
             bindings: self.tables.bindings,
             macro_helpers: self.tables.globals.macro_helpers(),
             macro_origins: self.tables.macro_origins,
             warnings: self.warnings,
             expansion: self.expansion,
         };
+        program.entry_function = program.written_entry_function();
         diagnostics.into_result(program)
     }
 

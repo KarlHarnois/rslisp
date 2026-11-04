@@ -127,7 +127,35 @@ impl<'a> ItemEmitter<'a> {
     }
 
     pub fn crate_fragments(&mut self) -> Vec<Fragment> {
-        let mut fragments = Self::separated(self.module_items(self.program.entry));
+        let (mut entry_items, entry_function) = self.entry_items();
+        let modules = self.module_fragments();
+        let runtime = RuntimeModule::of(&Self::text_of(&entry_items, &modules));
+        if let Some(call) = runtime.as_ref().and_then(RuntimeModule::start_up_call) {
+            Self::start_main_with(&mut entry_items[entry_function], call);
+        }
+        let mut fragments = Self::separated(entry_items);
+        fragments.extend(modules);
+        if let Some(runtime) = runtime {
+            fragments.extend([Fragment::Newline, Fragment::Newline]);
+            fragments.extend(Self::runtime(&runtime.source()));
+        }
+        fragments.push(Fragment::Newline);
+        fragments
+    }
+
+    fn entry_items(&mut self) -> (Vec<Vec<Fragment>>, usize) {
+        let items = self.declared_items(self.program.entry);
+        let (items, leading_uses) = self.with_use_lines(self.program.entry, items);
+        let entry_function = self
+            .plan
+            .items_of(self.program.entry)
+            .iter()
+            .position(|binding| *binding == self.plan.entry_function())
+            .expect("the entry function is an item of the entry module");
+        (items, leading_uses + entry_function)
+    }
+
+    fn module_fragments(&mut self) -> Vec<Fragment> {
         let mut tree = ModuleTree::default();
         for module in &self.program.modules {
             if module.id != self.program.entry {
@@ -137,35 +165,35 @@ impl<'a> ItemEmitter<'a> {
                 }
             }
         }
+        let mut fragments = Vec::new();
         for (name, child) in &tree.children {
             fragments.extend([Fragment::Newline, Fragment::Newline]);
             fragments.extend(child.fragments(name, "mod"));
         }
-        if let Some(runtime) = RuntimeModule::of(&Code::text_of(&fragments)) {
-            if let Some(call) = runtime.start_up_call() {
-                Self::start_main_with(&mut fragments, call);
-            }
-            fragments.extend([Fragment::Newline, Fragment::Newline]);
-            fragments.extend(Self::runtime(&runtime.source()));
-        }
-        fragments.push(Fragment::Newline);
         fragments
     }
 
-    fn start_main_with(fragments: &mut [Fragment], call: &str) {
-        let main_body = fragments.iter_mut().find_map(|fragment| match fragment {
-            Fragment::Spanned(_, children) => match children.as_mut_slice() {
-                [Fragment::Text(header), Fragment::Indented(body), ..]
-                    if header == Self::MAIN_HEADER =>
-                {
-                    Some(body)
-                }
+    fn text_of(entry_items: &[Vec<Fragment>], modules: &[Fragment]) -> String {
+        entry_items
+            .iter()
+            .map(|item| Code::text_of(item))
+            .chain([Code::text_of(modules)])
+            .collect()
+    }
+
+    fn start_main_with(entry_item: &mut [Fragment], call: &str) {
+        let main_body = entry_item
+            .iter_mut()
+            .rev()
+            .find_map(|fragment| match fragment {
+                Fragment::Spanned(_, children) => match children.as_mut_slice() {
+                    [Fragment::Text(_), Fragment::Indented(body), ..] => Some(body),
+                    _ => None,
+                },
                 _ => None,
-            },
-            _ => None,
-        });
+            });
         main_body
-            .expect("an emitted crate holds a main function")
+            .expect("the entry item holds the main function")
             .splice(0..0, [Fragment::Newline, Fragment::Text(call.to_string())]);
     }
 
@@ -181,6 +209,11 @@ impl<'a> ItemEmitter<'a> {
     }
 
     fn module_items(&mut self, module: ModuleId) -> Vec<Vec<Fragment>> {
+        let items = self.declared_items(module);
+        self.with_use_lines(module, items).0
+    }
+
+    fn declared_items(&mut self, module: ModuleId) -> Vec<Vec<Fragment>> {
         let mut items: Vec<Vec<Fragment>> = self
             .plan
             .items_of(module)
@@ -190,11 +223,20 @@ impl<'a> ItemEmitter<'a> {
         items.extend(self.traits(module));
         items.extend(self.trait_impls(module));
         items.extend(self.conversions(module));
-        let uses = self.use_lines(module);
-        if !uses.is_empty() {
-            items.insert(0, uses);
-        }
         items
+    }
+
+    fn with_use_lines(
+        &self,
+        module: ModuleId,
+        mut items: Vec<Vec<Fragment>>,
+    ) -> (Vec<Vec<Fragment>>, usize) {
+        let uses = self.use_lines(module);
+        if uses.is_empty() {
+            return (items, 0);
+        }
+        items.insert(0, uses);
+        (items, 1)
     }
 
     fn conversions(&self, module: ModuleId) -> Vec<Vec<Fragment>> {

@@ -26,6 +26,16 @@ impl TypedSource {
         Self { program }
     }
 
+    pub fn enter_at(&mut self, name: &str) {
+        let program = &self.program;
+        let entry = program
+            .entry_module()
+            .definitions()
+            .map(|(binding, _)| binding)
+            .find(|binding| program.bindings.get(*binding).name() == name);
+        self.program.entry_function = entry;
+    }
+
     pub fn program(&self) -> &Program {
         &self.program
     }

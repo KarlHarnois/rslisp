@@ -368,6 +368,7 @@ pub struct TypedConversion {
 pub struct TypedProgram {
     pub modules: Vec<TypedModule>,
     pub entry: ModuleId,
+    pub entry_function: Option<BindingId>,
     pub bindings: BindingArena,
     pub structs: StructTable,
     pub enums: EnumTable,
