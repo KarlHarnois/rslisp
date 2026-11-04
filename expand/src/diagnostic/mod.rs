@@ -13,6 +13,10 @@ pub use label::{Help, Label, Suggestion};
 pub use render::DiagnosticRenderer;
 pub use similar_name::SimilarName;
 
+use std::rc::Rc;
+
+use crate::core::Namespace;
+
 #[derive(Clone, Debug)]
 pub struct Diagnostic {
     report: Box<Report>,
@@ -34,6 +38,13 @@ struct Report {
     secondary: Vec<Label>,
     notes: Vec<String>,
     helps: Vec<Help>,
+    missing_name: Option<MissingName>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MissingName {
+    pub name: Rc<str>,
+    pub namespace: Namespace,
 }
 
 impl Diagnostic {
@@ -64,6 +75,7 @@ impl Diagnostic {
                 secondary: Vec::new(),
                 notes: Vec::new(),
                 helps: Vec::new(),
+                missing_name: None,
             }),
         }
     }
@@ -104,6 +116,15 @@ impl Diagnostic {
             .helps
             .push(Help::new(help.into()).with_suggestion(suggestion));
         self
+    }
+
+    pub fn with_missing_name(mut self, missing: MissingName) -> Self {
+        self.report.missing_name = Some(missing);
+        self
+    }
+
+    pub fn missing_name(&self) -> Option<&MissingName> {
+        self.report.missing_name.as_ref()
     }
 
     pub fn code(&self) -> Option<&DiagnosticCode> {
