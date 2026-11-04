@@ -38,17 +38,21 @@ impl Expander<'_> {
             Some(ModuleSource::Text { name, text }) => {
                 let source = self.sources.add(name, text);
                 Ok(DeepRecursion::guard(|| {
-                    self.load_source_module(path.clone(), source)
+                    self.load_source_module(path.clone(), &[source])
                 }))
             }
             None => Err(ExpandProblems::unknown_module(path, span)),
         }
     }
 
-    pub(super) fn load_source_module(&mut self, path: ModulePath, source: SourceId) -> ModuleId {
+    pub(super) fn load_source_module(
+        &mut self,
+        path: ModulePath,
+        sources: &[SourceId],
+    ) -> ModuleId {
         let id = self.register_source_module(path.clone());
-        let forms = self.read_module(source);
-        self.import_base(id, &path, Span::new(source, 0..0));
+        let forms = self.read_sources(sources);
+        self.import_base(id, &path, Self::module_start(sources));
         let record = self.modules.get(id);
         let (base_scope, body_scope) = (record.base_scope(), record.body_scope());
         let scoped = forms
@@ -62,6 +66,23 @@ impl Expander<'_> {
         self.expand_module_body(id, scoped);
         self.modules.finish_loading(id);
         id
+    }
+
+    fn read_sources(&mut self, sources: &[SourceId]) -> Vec<Form> {
+        let mut sources = sources.iter();
+        let mut forms = sources
+            .next()
+            .map(|first| self.read_module(*first))
+            .unwrap_or_default();
+        for source in sources {
+            forms.extend(self.read_module(*source));
+        }
+        forms
+    }
+
+    fn module_start(sources: &[SourceId]) -> Span {
+        let first = sources.first().expect("a source module has a source");
+        Span::new(*first, 0..0)
     }
 
     pub(super) fn register_source_module(&mut self, path: ModulePath) -> ModuleId {

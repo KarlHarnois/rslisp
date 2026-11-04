@@ -19,9 +19,9 @@ impl<'s> Expander<'s> {
     pub fn open(
         mut self,
         path: ModulePath,
-        entry: SourceId,
+        sources: &[SourceId],
     ) -> Result<ExpansionSession<'s>, Diagnostics> {
-        let entry = self.load_source_module(path, entry);
+        let entry = self.load_source_module(path, sources);
         self.take_diagnostics().into_result(ExpansionSession {
             expander: self,
             entry,
@@ -241,7 +241,7 @@ mod tests {
         fn session(&mut self) -> ExpansionSession<'_> {
             let entry = self.entry;
             self.expander()
-                .open(ModulePath::new(Self::ENTRY), entry)
+                .open(ModulePath::new(Self::ENTRY), &[entry])
                 .unwrap_or_else(|_| panic!("the entry expands"))
         }
 

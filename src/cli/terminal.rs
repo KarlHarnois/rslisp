@@ -268,7 +268,7 @@ impl Terminal {
         work: impl FnOnce(ExpansionSession<'_>) -> Result<T, Diagnostics>,
     ) -> Result<T, ExitStatus> {
         self.expander(path)
-            .open(Self::module_path(path), entry)
+            .open(Self::module_path(path), &[entry])
             .and_then(work)
             .map_err(|diagnostics| self.report(&diagnostics))
     }
@@ -280,7 +280,7 @@ impl Terminal {
     ) -> Result<T, ExitStatus> {
         self.expander_rooted(&request.root)
             .evaluating(request.evaluated.iter().copied())
-            .open(Self::module_path(&request.module), request.entry)
+            .open(Self::module_path(&request.module), &[request.entry])
             .and_then(work)
             .map_err(|diagnostics| self.report(&diagnostics))
     }
