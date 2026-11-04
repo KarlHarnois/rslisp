@@ -3,7 +3,7 @@
   (let found (get m "a"))
   (for-each (keys m) (fn (key) (println key)))
   (for-each (vals m) (fn (value) (println value)))
-  (for-each (entries m) (fn (entry) (println entry)))
+  (for-each (iter m) (fn (entry) (println entry)))
   (let next (update m "a" (fn (n) (+ n 1)) 0))
   (set! (at next "a") 2)
   (println found))

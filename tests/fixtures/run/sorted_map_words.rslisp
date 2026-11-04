@@ -5,7 +5,7 @@
           (update counts (str word) (fn (n) (+ n 1)) 0))))
 
 (defn main ()
-  (for-each (entries (count-words (str "the cat and the hat")))
+  (for-each (iter (count-words (str "the cat and the hat")))
             (fn (entry)
               (let-pair (word count) entry
                 (println (str word " " count))))))

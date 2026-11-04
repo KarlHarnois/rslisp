@@ -4,7 +4,7 @@
 (use prelude/pair pair)
 (use prelude/number ord hash eq)
 
-(export sorted-map hash-map get keys vals entries update into-sorted-map into-hash-map)
+(export sorted-map hash-map get keys vals update into-sorted-map into-hash-map)
 
 (rust-trait borrow "std::borrow::Borrow"
   bool char (ref str) string i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
@@ -78,9 +78,6 @@
 
 (defrule vals
   ((m) (map-at vals m)))
-
-(defrule entries
-  ((m) (map-at entries m)))
 
 (defrule update
   ((m key function default) (map-at update m key function default)))
