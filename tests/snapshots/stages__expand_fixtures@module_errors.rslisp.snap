@@ -9,7 +9,7 @@ error[L0204]: cannot find module `geometry`
 1 | (use geometry point)
   |      ^^^^^^^^ no module with this path
   |
-  = help: a module path names a file relative to the entry file, without its extension
+  = help: a module path names a file relative to the root directory, without its extension
 
 error[L0205]: module `code` does not export `lenn`
  --> expand/module_errors.rslisp:2:17

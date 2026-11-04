@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/import_errors.rslisp
 ---
 error[L0205]: module `geometry/shapes` does not export `checked`
@@ -28,4 +28,4 @@ error[L0204]: cannot find module `geometry/missing`
 2 | (use geometry/missing anything)
   |      ^^^^^^^^^^^^^^^^ no module with this path
   |
-  = help: a module path names a file relative to the entry file, without its extension
+  = help: a module path names a file relative to the root directory, without its extension
