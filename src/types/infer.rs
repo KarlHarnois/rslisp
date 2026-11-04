@@ -2123,7 +2123,7 @@ impl TypeChecker {
         position: usize,
         diagnostic: Diagnostic,
     ) -> Diagnostic {
-        if *diagnostic.code() != DiagnosticCode::MISMATCHED_TYPES {
+        if diagnostic.code() != Some(&DiagnosticCode::MISMATCHED_TYPES) {
             return diagnostic;
         }
         let Some(default) = self.literal_defaults.get(callee, position) else {
@@ -2158,7 +2158,7 @@ impl TypeChecker {
         found: &Type,
         diagnostic: &Diagnostic,
     ) -> bool {
-        *diagnostic.code() == DiagnosticCode::MISMATCHED_TYPES
+        diagnostic.code() == Some(&DiagnosticCode::MISMATCHED_TYPES)
             && !self.parameter_is_written(function, position)
             && !matches!(self.unifier.shallow(found), Type::Function(..))
     }

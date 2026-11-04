@@ -10,7 +10,7 @@ pub struct DistinctDiagnostics {
 
 #[derive(PartialEq, Eq, Hash)]
 struct DiagnosticKey {
-    code: DiagnosticCode,
+    code: Option<DiagnosticCode>,
     title: String,
     labels: Vec<Label>,
     notes: Vec<String>,
@@ -50,7 +50,7 @@ impl DistinctDiagnostics {
 impl DiagnosticKey {
     fn of(diagnostic: &Diagnostic) -> Self {
         Self {
-            code: diagnostic.code().clone(),
+            code: diagnostic.code().cloned(),
             title: diagnostic.title().to_string(),
             labels: diagnostic.labels().cloned().collect(),
             notes: diagnostic.notes().to_vec(),

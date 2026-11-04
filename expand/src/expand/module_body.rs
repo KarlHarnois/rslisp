@@ -152,10 +152,19 @@ impl Expander<'_> {
         context: &mut DefinitionContext,
         pending: &mut Vec<PendingItem>,
     ) -> Result<(), Diagnostic> {
+        let written_span = form.span();
         let mut spliced = SplicedForms::default();
         pending.extend(self.register_top_level(module, form, context, &mut spliced)?);
         self.register_spliced_forms(module, spliced, context, pending);
+        self.report_misplaced_expressions(written_span);
         Ok(())
+    }
+
+    fn report_misplaced_expressions(&mut self, written_span: Span) {
+        for span in self.evaluated_forms.misplaced_expressions(written_span) {
+            self.diagnostics
+                .push(ExpandProblems::not_a_definition(span));
+        }
     }
 
     fn register_spliced_forms(
@@ -197,16 +206,27 @@ impl Expander<'_> {
         context: &mut DefinitionContext,
         queue: &mut SplicedForms,
     ) -> Result<Option<PendingItem>, Diagnostic> {
+        let written_span = form.span();
         let form = self.expand_head(form, Some(context))?;
-        match self.definition_head(&form)? {
-            KernelForm::Definition(definition) => {
+        match self.definition_head(&form) {
+            Ok(KernelForm::Definition(definition)) => {
+                self.evaluated_forms.note_definition(written_span);
                 self.register_definition(definition, module, form, context)
             }
-            KernelForm::Expression(ExpressionForm::Control(ControlForm::Do)) => {
+            Ok(KernelForm::Expression(ExpressionForm::Control(ControlForm::Do))) => {
+                self.evaluated_forms.splice(
+                    written_span,
+                    Self::spliced_items(&form).iter().map(Form::span),
+                );
                 Self::splice(&form, queue);
                 Ok(None)
             }
-            _ => Err(ExpandProblems::not_a_definition(form.span())),
+            _ if self.evaluated_forms.holds(written_span) => {
+                self.evaluated_forms.leave_out(written_span);
+                Ok(None)
+            }
+            Ok(_) => Err(ExpandProblems::not_a_definition(form.span())),
+            Err(diagnostic) => Err(diagnostic),
         }
     }
 
@@ -494,8 +514,12 @@ impl Expander<'_> {
     }
 
     fn splice(form: &Form, queue: &mut SplicedForms) {
+        queue.splice_into_taken(Self::spliced_items(form));
+    }
+
+    fn spliced_items(form: &Form) -> &[Form] {
         let items = form.as_list().unwrap_or_default();
-        queue.splice_into_taken(items.get(1..).unwrap_or_default());
+        items.get(1..).unwrap_or_default()
     }
 
     fn register_def(

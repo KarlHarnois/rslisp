@@ -360,7 +360,7 @@ impl Expander<'_> {
         Ok(ExprKind::Leaf(Leaf::Quote(quoted)))
     }
 
-    fn lower_body(&mut self, forms: &[Form]) -> Result<Block, Diagnostic> {
+    pub(super) fn lower_body(&mut self, forms: &[Form]) -> Result<Block, Diagnostic> {
         let mut context = DefinitionContext::default();
         let items = self.lower_body_items(&mut RestOfBody::new(forms), &mut context)?;
         Ok(Block { items })

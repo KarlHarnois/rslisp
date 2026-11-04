@@ -21,7 +21,7 @@ pub(super) struct ParameterCallRequest {
 
 impl ParameterCallRequest {
     fn explains(&self, diagnostic: &Diagnostic) -> bool {
-        *diagnostic.code() == DiagnosticCode::MISMATCHED_TYPES
+        diagnostic.code() == Some(&DiagnosticCode::MISMATCHED_TYPES)
             && diagnostic.primary().span() == self.argument
     }
 }

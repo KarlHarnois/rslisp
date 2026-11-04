@@ -341,6 +341,13 @@ impl ExpandProblems {
         .with_help("put expressions inside a function, such as `(def run (fn () ...))`")
     }
 
+    pub fn evaluated_definition(span: Span) -> Diagnostic {
+        Diagnostic::note(
+            "the module defines this form, so it does not run",
+            Label::new(span, "a definition of the module"),
+        )
+    }
+
     pub fn module_level_only(kernel: KernelForm, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MODULE_LEVEL_ONLY,
