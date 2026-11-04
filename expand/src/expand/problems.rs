@@ -98,6 +98,138 @@ impl ExpandProblems {
         .with_help("bind one parameter, as in `(where ((s source)) (fn ((ref s)) string))`")
     }
 
+    pub fn structural_clause_needs_one_method(clause: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
+            "a `structural` clause needs one method that takes `(ref self)`",
+            Label::new(clause, "this clause fills the body of one method"),
+        )
+        .with_help("declare one `(method name (fn ((ref self) ...) result))` in this `rust-trait`")
+    }
+
+    pub fn structural_clause_on_derived_trait(name: &str, path: &str, clause: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
+            format!("`{name}` binds `{path}`, which `derive` already writes"),
+            Label::new(
+                clause,
+                "every struct would get both the derive and this impl",
+            ),
+        )
+        .with_help(
+            "keep the clause off this `rust-trait`, or bind a trait that `derive` does not write",
+        )
+    }
+
+    pub fn structural_clause_on_bound_path(
+        name: &str,
+        path: &str,
+        existing: &str,
+        clause: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
+            format!("`{name}` binds `{path}`, which `{existing}` already binds"),
+            Label::new(clause, "the two traits would infer two impls of one Rust trait"),
+        )
+        .with_help(
+            "keep the clause off this `rust-trait`, or give it a Rust path that no other `rust-trait` binds",
+        )
+    }
+
+    pub fn repeated_structural_clause(repeated: Span, first: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
+            "this `rust-trait` has a second `structural` clause",
+            Label::new(repeated, "second clause"),
+        )
+        .with_label(Label::new(first, "first clause"))
+        .with_help("merge the two clauses into one")
+    }
+
+    pub fn second_structural_path(
+        name: &str,
+        path: &str,
+        first: &str,
+        clause: Span,
+        first_clause: Span,
+    ) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
+            format!("`{name}` binds `{path}`, which `{first}` already infers"),
+            Label::new(
+                clause,
+                "the two clauses would infer two impls of one Rust trait",
+            ),
+        )
+        .with_label(Label::new(
+            first_clause,
+            format!("`{first}` infers `{path}` here"),
+        ))
+        .with_help("keep one of the two clauses, or give this `rust-trait` another Rust path")
+    }
+
+    pub fn missing_structural_key(key: &str, clause: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
+            format!("`{key}` is missing from this `structural` clause"),
+            Label::new(clause, format!("this clause has no `{key}`")),
+        )
+        .with_help(format!("add `{key}` and its template string"))
+    }
+
+    pub fn unknown_structural_key(written: &str, keys: &[String], span: Span) -> Diagnostic {
+        let listed: Vec<String> = keys.iter().map(|key| format!("`{key}`")).collect();
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
+            format!("`{written}` is not a key of a `structural` clause"),
+            Label::new(span, "expected a key here"),
+        )
+        .with_help(format!("a `structural` clause takes {}", listed.join(", ")))
+    }
+
+    pub fn repeated_structural_key(key: &str, repeated: Span, first: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
+            format!("`{key}` appears twice in this `structural` clause"),
+            Label::new(repeated, "repeated here"),
+        )
+        .with_label(Label::new(first, "first given here"))
+        .with_help(format!("remove one of the two `{key}` templates"))
+    }
+
+    pub fn structural_key_without_template(key: &str, span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
+            format!("`{key}` has no template string after it"),
+            Label::new(span, "expected a string after this key"),
+        )
+        .with_help(format!(
+            "write the Rust text after the key, as in `{key} \"...\"`"
+        ))
+    }
+
+    pub fn unfilled_structural_placeholder(
+        key: &str,
+        placeholder: &str,
+        accepted: &[String],
+        template: Span,
+    ) -> Diagnostic {
+        let listed: Vec<String> = accepted
+            .iter()
+            .map(|accepted| format!("`{accepted}`"))
+            .collect();
+        Diagnostic::error(
+            DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
+            format!("`{key}` cannot fill `{placeholder}`"),
+            Label::new(template, format!("this template holds `{placeholder}`")),
+        )
+        .with_help(format!(
+            "`{key}` takes {}, and `{{{{` or `}}}}` for a literal brace",
+            listed.join(", ")
+        ))
+    }
+
     pub fn clause_passes_arguments_unlike_template(
         difference: PassingDifference,
         clause: Span,

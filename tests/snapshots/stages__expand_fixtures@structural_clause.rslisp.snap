@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/structural_clause.rslisp
+---
+(rust-type octal-out "std::fmt::Formatter<'_>")
+(rust-type octal-result "std::fmt::Result")
+(rust-trait octal "std::fmt::Octal" (method fmt (fn ((ref self) (mut octal-out)) octal-result)) (structural :struct "write!({1}, \"{name}\"){parts}" :field "" :variant "write!({1}, \"{{{name}}}\")" :part "" :bare "write!({1}, \"{name}\")") i64)

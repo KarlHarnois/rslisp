@@ -87,40 +87,7 @@ impl<'a> CorePrinter<'a> {
             return self.rust_type_item(*binding, params, unsized_parameters, template, clauses);
         }
         if let ItemKind::RustTrait(declaration) = &item.kind {
-            let mut parts = vec![
-                self.name(declaration.binding),
-                format!("{:?}", declaration.path),
-            ];
-            parts.extend(declaration.methods.iter().map(|method| {
-                format!(
-                    "({} {} {})",
-                    crate::core::RUST_TRAIT_METHOD_MARKER,
-                    self.name(method.binding),
-                    self.type_expr(&method.signature)
-                )
-            }));
-            if let Some(help) = &declaration.help {
-                parts.push(format!(
-                    "({} {help:?})",
-                    crate::core::RUST_TRAIT_HELP_MARKER
-                ));
-            }
-            parts.extend(declaration.associated.iter().map(|associated| {
-                format!(
-                    "({} ({} {}) {:?})",
-                    crate::core::RUST_TRAIT_ASSOCIATED_MARKER,
-                    self.name(associated.binding),
-                    associated.parameter,
-                    associated.rust_name
-                )
-            }));
-            parts.extend(
-                declaration
-                    .implementors
-                    .iter()
-                    .map(|implementor| self.rust_trait_implementor(implementor)),
-            );
-            return Self::list("rust-trait", parts);
+            return self.rust_trait_item(declaration);
         }
         if let ItemKind::Trait(binding, _, _, supertraits, associated, methods) = &item.kind {
             let head = if supertraits.is_empty() {
@@ -633,6 +600,55 @@ impl<'a> CorePrinter<'a> {
         };
         self.assigned.insert(binding, name.clone());
         name
+    }
+
+    fn rust_trait_item(&mut self, declaration: &crate::core::RustTraitDeclaration) -> String {
+        let mut parts = vec![
+            self.name(declaration.binding),
+            format!("{:?}", declaration.path),
+        ];
+        parts.extend(declaration.methods.iter().map(|method| {
+            format!(
+                "({} {} {})",
+                crate::core::RUST_TRAIT_METHOD_MARKER,
+                self.name(method.binding),
+                self.type_expr(&method.signature)
+            )
+        }));
+        if let Some(help) = &declaration.help {
+            parts.push(format!(
+                "({} {help:?})",
+                crate::core::RUST_TRAIT_HELP_MARKER
+            ));
+        }
+        if let Some(structural) = &declaration.structural {
+            parts.push(Self::structural_clause(structural));
+        }
+        parts.extend(declaration.associated.iter().map(|associated| {
+            format!(
+                "({} ({} {}) {:?})",
+                crate::core::RUST_TRAIT_ASSOCIATED_MARKER,
+                self.name(associated.binding),
+                associated.parameter,
+                associated.rust_name
+            )
+        }));
+        parts.extend(
+            declaration
+                .implementors
+                .iter()
+                .map(|implementor| self.rust_trait_implementor(implementor)),
+        );
+        Self::list("rust-trait", parts)
+    }
+
+    fn structural_clause(structural: &crate::core::StructuralClause) -> String {
+        let parts = structural
+            .templates()
+            .iter()
+            .map(|(key, template)| format!("{} {:?}", key.keyword(), template.text()))
+            .collect();
+        Self::list(crate::core::RUST_TRAIT_STRUCTURAL_MARKER, parts)
     }
 
     fn list(head: &str, parts: Vec<String>) -> String {
