@@ -2,6 +2,7 @@ mod build;
 mod build_directory;
 mod capped_report;
 mod check;
+mod color_when;
 mod counter_report;
 mod diagnostic_output;
 mod doc;
@@ -22,12 +23,14 @@ mod term_parser;
 mod terminal;
 
 use std::convert::Infallible;
+use std::env;
+use std::ffi::OsString;
 use std::io;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 use anstream::AutoStream;
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, CommandFactory, FromArgMatches, Parser, Subcommand};
 
 use crate::build::BuildProfile;
 use crate::counters::CountingAllocator;
@@ -35,6 +38,7 @@ use crate::language::Language;
 use crate::source::TextPosition;
 use build::BuildCommand;
 use check::CheckCommand;
+use color_when::ColorWhen;
 use counter_report::CounterReport;
 use doc::{DocCommand, DocEnvironment, DocPage};
 use emit::EmitCommand;
@@ -54,6 +58,15 @@ pub struct Cli {
     command: Command,
     #[arg(long, global = true, hide = true)]
     counters: bool,
+    #[arg(
+        long,
+        global = true,
+        value_enum,
+        value_name = "WHEN",
+        default_value_t,
+        help = "When to color the output"
+    )]
+    color: ColorWhen,
 }
 
 #[derive(Subcommand)]
@@ -179,7 +192,22 @@ struct TypesFlag {
 }
 
 impl Cli {
+    pub fn parse_arguments() -> Self {
+        let arguments: Vec<OsString> = env::args_os().collect();
+        let mut command = Self::command().color(ColorWhen::written_in(&arguments).into());
+        Self::parse_with(&mut command, arguments).unwrap_or_else(|error| error.exit())
+    }
+
+    fn parse_with(
+        command: &mut clap::Command,
+        arguments: Vec<OsString>,
+    ) -> Result<Self, clap::Error> {
+        let mut matches = command.try_get_matches_from_mut(arguments)?;
+        Self::from_arg_matches_mut(&mut matches).map_err(|error| error.format(command))
+    }
+
     pub fn run(self, allocator: Option<&CountingAllocator>) -> ExitCode {
+        anstream::ColorChoice::from(self.color).write_global();
         let mut terminal = Terminal::new(AutoStream::choice(&io::stderr()));
         let status = self.command.execute(&mut terminal);
         if self.counters {

@@ -1,6 +1,5 @@
 use std::process::ExitCode;
 
-use clap::Parser;
 use rslisp::cli::Cli;
 use rslisp::counters::CountingAllocator;
 
@@ -15,5 +14,5 @@ const COUNTED_ALLOCATOR: Option<&CountingAllocator> = Some(&ALLOCATOR);
 const COUNTED_ALLOCATOR: Option<&CountingAllocator> = None;
 
 fn main() -> ExitCode {
-    Cli::parse().run(COUNTED_ALLOCATOR)
+    Cli::parse_arguments().run(COUNTED_ALLOCATOR)
 }
