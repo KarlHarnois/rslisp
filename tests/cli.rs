@@ -90,6 +90,7 @@ const MIXED_TOP_LEVEL_DO: &str =
 const UNREACHABLE_ARM: &str = "(defn pick (x) (match x (_ 1) (_ 2)))\n";
 const SHAPES: &str = "(export circle)\n(defn circle (r) (* 3 r r))\n";
 const SHAPES_USER: &str = "(use shapes circle)\n";
+const POINTS: &str = "(defstruct point :x i64 :y i64)\n";
 
 const SHADOWED_PRINTLN: &str = "(defn println (x) x)\n(defn square (n) (* n n))\n";
 const COUNT_THEN_FAIL: &str = "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n(type count-up (fn (i64) unit))\n(defn count-up (i)\n  (println i)\n  (if (< i 1000000) (recur (+ i 1)) (exit 7)))\n";
@@ -2226,4 +2227,19 @@ fn color_always_keeps_eval_json_plain() {
         rendered.is_some_and(|text| text.starts_with("error[L0401]")),
         "{rendered:?}"
     );
+}
+
+#[test]
+fn eval_notes_a_struct_that_the_module_defines() {
+    let sandbox = Sandbox::new("eval_struct_definition").with_file("points.rslisp", POINTS);
+    let eval = sandbox.compiler(&[
+        "eval",
+        "--line",
+        "1",
+        "--column",
+        "1",
+        "points.rslisp",
+        "(defstruct point :x i64 :y i64)",
+    ]);
+    assert_eq!(eval.assert_exit_code(0).stdout(), "");
 }
