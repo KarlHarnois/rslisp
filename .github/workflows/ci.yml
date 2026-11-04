@@ -82,35 +82,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest", "macos-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: ${{ matrix.os == 'macos-latest' && 30 || 15 }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-          fetch-depth: 2
-      - name: Decide whether this run builds the flake
-        id: scope
-        env:
-          EVENT: ${{ github.event_name }}
-        run: |
-          if [ "$EVENT" = pull_request ] && [ "$RUNNER_OS" = macOS ] && git diff --quiet HEAD^1 HEAD -- flake.nix flake.lock Cargo.lock '*Cargo.toml' .cargo; then
-            echo "build=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "build=true" >> "$GITHUB_OUTPUT"
-          fi
-      - if: steps.scope.outputs.build == 'true' && runner.os == 'Linux'
+      - if: runner.os == 'Linux'
         uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
-      - if: steps.scope.outputs.build == 'true' && runner.os == 'macOS'
+      - if: runner.os == 'macOS'
         uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
-      - if: steps.scope.outputs.build == 'true'
-        uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: ${{ env.CACHIX_CACHE }}
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Check flake
-        if: steps.scope.outputs.build == 'true'
         run: nix flake check
 
   bench:
