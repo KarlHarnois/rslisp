@@ -1,0 +1,14 @@
+(type same?
+  (where ((a partial-eq)) (fn (a a) bool)))
+
+(defn same? (left right) (eq left right))
+
+(type same-written?
+  (where ((a (partial-eq a)))
+    (fn (a a) bool)))
+
+(defn same-written? (left right) (same? left right))
+
+(defn main ()
+  (println (same? 1 1))
+  (println (same-written? 1 2)))

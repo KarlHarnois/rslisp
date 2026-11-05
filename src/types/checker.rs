@@ -2383,7 +2383,7 @@ impl TypeChecker {
     }
 
     fn check_generic_bound(&mut self, generic: GenericId, bound: Bound, span: Span) {
-        if self.unifier.generic_bounds(generic).contains(&bound) {
+        if self.declares_bound(generic, &bound) {
             return;
         }
         if self.impl_generics.contains(&generic) {
@@ -2410,6 +2410,13 @@ impl TypeChecker {
             span,
         );
         self.diagnostics.push(diagnostic);
+    }
+
+    fn declares_bound(&self, generic: GenericId, bound: &Bound) -> bool {
+        self.unifier
+            .generic_bounds(generic)
+            .iter()
+            .any(|declared| declared.meets(bound, generic))
     }
 
     fn record_implied_bound(&mut self, generic: GenericId, bound: Bound) {
