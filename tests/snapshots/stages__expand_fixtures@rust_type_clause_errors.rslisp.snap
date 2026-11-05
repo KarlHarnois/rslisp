@@ -25,4 +25,4 @@ error[L0210]: malformed `rust-type`
 7 | (rust-type (broken a) "{0}" (i64))
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `rust-type`
   |
-  = help: write it as `(rust-type name "template" (type "template") ...)`
+  = help: write it as `(rust-type (name parameter ...) "template" (type "template") ...)`

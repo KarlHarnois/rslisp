@@ -9,7 +9,7 @@ error[L0210]: malformed `struct`
 1 | (struct () (x i64))
   |         ^^ this does not fit the shape of `struct`
   |
-  = help: write it as `(struct name (field type) ...)`
+  = help: write it as `(struct (name parameter ...) (field type) ...)`
 
 error[L0219]: `struct` names its type parameters on its name
  --> check/type_head_edges.rslisp:3:16

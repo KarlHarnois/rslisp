@@ -41,7 +41,7 @@ error[L0210]: malformed `rust-type`
 9 | (rust-type (spare item) "Vec<{0}>" "extra")
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `rust-type`
   |
-  = help: write it as `(rust-type name "template" (type "template") ...)`
+  = help: write it as `(rust-type (name parameter ...) "template" (type "template") ...)`
 
 error[L0210]: malformed `rust-type`
   --> expand/rust_type_errors.rslisp:11:1
@@ -49,7 +49,7 @@ error[L0210]: malformed `rust-type`
 11 | (rust-type missing-template)
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `rust-type`
    |
-   = help: write it as `(rust-type name "template" (type "template") ...)`
+   = help: write it as `(rust-type (name parameter ...) "template" (type "template") ...)`
 
 error[L0224]: a type template cannot borrow a placeholder
   --> expand/rust_type_errors.rslisp:13:29

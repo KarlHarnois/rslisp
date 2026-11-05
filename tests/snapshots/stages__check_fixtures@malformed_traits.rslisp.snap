@@ -65,7 +65,7 @@ error[L0210]: malformed `impl`
 23 | (impl painted circle area)
    |                      ^^^^ this does not fit the shape of `impl`
    |
-   = help: write it as `(impl trait type (method (param ...) body ...) ...)`
+   = help: write it as `(impl trait type (method (parameter ...) body ...) ...)`
 
 error[L0210]: malformed `impl`
   --> check/malformed_traits.rslisp:25:22
@@ -73,7 +73,7 @@ error[L0210]: malformed `impl`
 25 | (impl painted circle (area))
    |                      ^^^^^^ this does not fit the shape of `impl`
    |
-   = help: write it as `(impl trait type (method (param ...) body ...) ...)`
+   = help: write it as `(impl trait type (method (parameter ...) body ...) ...)`
 
 error[L0239]: `circle` is missing `area` from `painted`
   --> check/malformed_traits.rslisp:27:15

@@ -49,7 +49,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 
 | Form | Shape | Rust | Positions |
 |---|---|---|---|
-| `fn` | `(fn (param...) body...)` | `fn` item, closure, or block | params: binders. body: expressions. |
+| `fn` | `(fn (parameter...) body...)` | `fn` item, closure, or block | params: binders. body: expressions. |
 | `def` | `(def name value)` | `fn`, `const`, `static`, or nothing | name: binder. value: expression. |
 | `let` | `(let name value)` | `let` | name: binder. value: expression. |
 | `do` | `(do form...)` | block | forms: expressions. At module level: definitions. |
@@ -74,7 +74,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `try` | `(try expression)` | `expression?` | expression: expression. |
 | `rust-trait` | `(rust-trait name "Path" (method name type)? (structural key "text"...)? (help "text")? type...)` | trait bound, or a Rust `impl` for a program type when it declares a method | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. structural: the Rust text of the impl the compiler writes for each struct and enum, under the keys `:struct`, `:field`, `:variant`, `:part` and `:bare`. help: the help line a missing implementor shows. types: types, `(with type type)`, or `(where (param...) type)`. |
 | `trait` | `(trait name (method type)...)` | `trait` | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. |
-| `impl` | `(impl trait type (method (param...) body...)...)` | `impl` | trait and type: references to a trait and a struct or enum. methods: a name, parameter binders and a body. |
+| `impl` | `(impl trait type (method (parameter...) body...)...)` | `impl` | trait and type: references to a trait and a struct or enum. methods: a name, parameter binders and a body. |
 | `rust-type` | `(rust-type name "template" (type "template")...)` or `(rust-type (name param...) "template" (type "template")...)` | the filled template | name: type binder. params: type binders. clauses: a type and a template. |
 | `use` | `(use module name...)` | path | module: module path. names: binders. |
 | `export` | `(export name...)` | `pub` | names: references in every namespace. |
