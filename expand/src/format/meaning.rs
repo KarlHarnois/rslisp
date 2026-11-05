@@ -1,3 +1,4 @@
+use super::import_order::ImportList;
 use super::shapes::ShapeCatalog;
 use crate::reader::{Form, FormKind, TokenKind, TokenScan};
 use crate::stack::DeepRecursion;
@@ -20,7 +21,38 @@ impl<'s> MeaningComparison<'s> {
             && written
                 .iter()
                 .zip(formatted)
-                .all(|(left, right)| self.same_form(left, right, false))
+                .all(|(left, right)| self.same_top_level_form(left, right))
+    }
+
+    fn same_top_level_form(&self, left: &Form, right: &Form) -> bool {
+        match (left.as_list(), right.as_list()) {
+            (Some(left), Some(right)) => {
+                DeepRecursion::guard(|| self.same_top_level_lists(left, right))
+            }
+            _ => self.same_form(left, right, false),
+        }
+    }
+
+    fn same_top_level_lists(&self, left: &[Form], right: &[Form]) -> bool {
+        let head = left
+            .first()
+            .and_then(Form::as_symbol)
+            .map(|head| head.name());
+        let import_start = head
+            .and_then(ImportList::names_start)
+            .filter(|start| *start <= left.len());
+        if left.len() != right.len() {
+            false
+        } else if head.is_some_and(ImportList::splices) {
+            left.iter()
+                .zip(right)
+                .all(|(left, right)| self.same_top_level_form(left, right))
+        } else if let Some(start) = import_start {
+            self.same_in_order(&left[..start], &right[..start], None)
+                && self.same_as_sets(&left[start..], &right[start..])
+        } else {
+            self.same_lists(left, right)
+        }
     }
 
     pub fn same_comments(&self, written: &str, formatted: &str) -> bool {
@@ -50,13 +82,23 @@ impl<'s> MeaningComparison<'s> {
     }
 
     fn same_lists(&self, left: &[Form], right: &[Form]) -> bool {
-        let docstring = self.docstring_position(left);
-        left.len() == right.len()
-            && left
-                .iter()
-                .zip(right)
-                .enumerate()
-                .all(|(index, (left, right))| self.same_form(left, right, docstring == Some(index)))
+        left.len() == right.len() && self.same_in_order(left, right, self.docstring_position(left))
+    }
+
+    fn same_in_order(&self, left: &[Form], right: &[Form], docstring: Option<usize>) -> bool {
+        left.iter()
+            .zip(right)
+            .enumerate()
+            .all(|(index, (left, right))| self.same_form(left, right, docstring == Some(index)))
+    }
+
+    fn same_as_sets(&self, left: &[Form], right: &[Form]) -> bool {
+        let sorted = |forms: &[Form]| {
+            let mut sorted: Vec<Form> = forms.to_vec();
+            sorted.sort_by_key(Form::to_string);
+            sorted
+        };
+        self.same_in_order(&sorted(left), &sorted(right), None)
     }
 
     fn docstring_position(&self, items: &[Form]) -> Option<usize> {

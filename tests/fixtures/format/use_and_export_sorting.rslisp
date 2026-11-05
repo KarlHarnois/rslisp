@@ -1,0 +1,20 @@
+(use prelude/macros header case doc-page)
+(use zeta/module omega Beta alpha ->arrow)
+(export twice once Thrice)
+(use commented/module second ; why second comes first
+     first)
+(use spaced/module second
+
+     first)
+(use)
+(export)
+(def once 1)
+(use odd/module zeta (not a name) alpha)
+(do (export beta alpha))
+(def quoted-import (quote (use m b a)))
+(defmacro third-name () (symbol-name (nth (quote (use m b a)) 2)))
+(defrule imports-pattern ((use m b a) 1))
+(use closed/module b
+  a
+  ; about a
+  )
