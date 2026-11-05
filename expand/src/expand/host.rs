@@ -1,4 +1,5 @@
 use super::Expander;
+use super::failed_definition::DeclaredName;
 use super::problems::ExpandProblems;
 use crate::core::{BindingId, BindingKind, Namespace};
 use crate::diagnostic::Diagnostic;
@@ -69,13 +70,13 @@ impl CompileTimeHost for Expander<'_> {
             .map_or_else(Vec::new, |module| self.tables.module_notes.of(module, key))
     }
 
-    fn declare_definition(&mut self, mut name: Form, namespace: Namespace) {
-        let introduction = self
+    fn declare_definition(&mut self, name: Form, namespace: Namespace) {
+        let introduction = *self
             .introductions
             .last()
             .expect("macro code runs inside a macro call");
-        name.flip_scope(*introduction);
-        self.declared_definitions.push((name, namespace));
+        self.declared_definitions
+            .push(DeclaredName::new(name, namespace, introduction));
     }
 
     fn same_binding(&self, left: &Symbol, right: &Symbol) -> bool {

@@ -3,6 +3,29 @@ use super::context::DefinitionContext;
 use crate::core::{BindingId, BindingKind, Expr, ExprKind, Leaf, ModuleId, Namespace};
 use crate::diagnostic::Diagnostic;
 use crate::reader::Form;
+use crate::scope::Scope;
+
+pub(super) struct DeclaredName {
+    name: Form,
+    namespace: Namespace,
+    introduction: Scope,
+}
+
+impl DeclaredName {
+    pub(super) fn new(name: Form, namespace: Namespace, introduction: Scope) -> Self {
+        Self {
+            name,
+            namespace,
+            introduction,
+        }
+    }
+
+    fn binder(&self) -> Form {
+        let mut binder = self.name.clone();
+        binder.flip_scope(self.introduction);
+        binder
+    }
+}
 
 impl Expander<'_> {
     pub(super) fn apply_definer(
@@ -13,8 +36,11 @@ impl Expander<'_> {
     ) -> Result<Form, Diagnostic> {
         let context = context.expect("a top-level call expands in a definition context");
         let expansion = self.apply_macro(definer, call, Some(context));
-        let declared = std::mem::take(&mut self.declared_definitions);
-        expansion.inspect_err(|_| self.bind_failed_names(&declared, context))
+        if expansion.is_err() {
+            self.bind_failed_names(context);
+        }
+        self.declared_definitions.clear();
+        expansion
     }
 
     pub(super) fn failed_use(&self, form: &Form) -> Option<Expr> {
@@ -28,13 +54,15 @@ impl Expander<'_> {
             .then(|| Expr::new(ExprKind::Leaf(Leaf::Var(binding)), form.span()))
     }
 
-    fn bind_failed_names(&mut self, declared: &[(Form, Namespace)], context: &DefinitionContext) {
+    fn bind_failed_names(&mut self, context: &DefinitionContext) {
         let module = self
             .current_module
             .expect("a top-level call expands inside a module");
-        for (name, namespace) in declared {
-            self.bind_failed_name(name, *namespace, module, context);
+        let declared = std::mem::take(&mut self.declared_definitions);
+        for name in &declared {
+            self.bind_failed_name(&name.binder(), name.namespace, module, context);
         }
+        self.declared_definitions = declared;
     }
 
     fn bind_failed_name(
