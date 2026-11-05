@@ -20,6 +20,7 @@ enum GlobalState {
     Lowering,
     Lowered(Rc<Expr>),
     Failed,
+    FailedDefinition,
 }
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
@@ -28,6 +29,7 @@ pub struct GlobalTable {
     values: FxHashMap<BindingId, Value>,
     evaluating: FxHashSet<BindingId>,
     compile_time_checks: FxHashMap<BindingId, CompileTimeCheck>,
+    failed_definition_count: usize,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -62,12 +64,25 @@ impl GlobalTable {
             .collect()
     }
 
-    pub fn mark_failed(&mut self, binding: BindingId) {
-        self.states.insert(binding, GlobalState::Failed);
+    pub fn record_failed_definition(&mut self, binding: BindingId) {
+        self.states.insert(binding, GlobalState::FailedDefinition);
+        self.failed_definition_count += 1;
     }
 
-    pub fn forget_failure(&mut self, binding: BindingId) {
+    pub fn forget_failed_definition(&mut self, binding: BindingId) {
         self.states.remove(&binding);
+        self.failed_definition_count -= 1;
+    }
+
+    pub fn has_failed_definitions(&self) -> bool {
+        self.failed_definition_count > 0
+    }
+
+    pub fn is_failed_definition(&self, binding: BindingId) -> bool {
+        matches!(
+            self.states.get(&binding),
+            Some(GlobalState::FailedDefinition)
+        )
     }
 
     pub fn has_failed(&self, binding: BindingId) -> bool {
@@ -142,11 +157,8 @@ impl Expander<'_> {
                     .insert(binding, GlobalState::Lowered(Rc::clone(&expr)));
                 Ok(expr)
             }
-            Some(GlobalState::Failed) => {
-                self.tables
-                    .globals
-                    .states
-                    .insert(binding, GlobalState::Failed);
+            Some(failed @ (GlobalState::Failed | GlobalState::FailedDefinition)) => {
+                self.tables.globals.states.insert(binding, failed);
                 Err(ExpandProblems::broken_definition(
                     self.tables.bindings.get(binding).name(),
                     span,

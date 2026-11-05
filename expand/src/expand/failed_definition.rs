@@ -44,13 +44,14 @@ impl Expander<'_> {
     }
 
     pub(super) fn failed_use(&self, form: &Form) -> Option<Expr> {
-        if self.failed_definitions.is_empty() {
+        if !self.tables.globals.has_failed_definitions() {
             return None;
         }
         let head = form.as_list()?.first()?.as_symbol()?;
         let binding = self.try_resolve(head, Namespace::Value)?;
-        self.failed_definitions
-            .contains(&binding)
+        self.tables
+            .globals
+            .is_failed_definition(binding)
             .then(|| Expr::new(ExprKind::Leaf(Leaf::Var(binding)), form.span()))
     }
 
@@ -62,7 +63,7 @@ impl Expander<'_> {
         phase: Phase,
     ) -> Result<(), BindingId> {
         match self.tables.table.bind(symbol, namespace, binding, phase) {
-            Err(existing) if self.failed_definitions.contains(&existing) => {
+            Err(existing) if self.tables.globals.is_failed_definition(existing) => {
                 self.forget_failed(symbol, namespace, existing);
                 self.tables.table.bind(symbol, namespace, binding, phase)
             }
@@ -72,8 +73,7 @@ impl Expander<'_> {
 
     fn forget_failed(&mut self, symbol: &Symbol, namespace: Namespace, failed: BindingId) {
         self.tables.table.unbind(symbol, namespace, failed);
-        self.failed_definitions.remove(&failed);
-        self.tables.globals.forget_failure(failed);
+        self.tables.globals.forget_failed_definition(failed);
     }
 
     fn bind_failed_names(&mut self, context: &DefinitionContext) {
@@ -96,8 +96,7 @@ impl Expander<'_> {
     ) {
         let kind = Self::failed_kind(namespace, module);
         if let Ok(binding) = self.define_unrecorded_global(name, namespace, kind, context) {
-            self.failed_definitions.insert(binding);
-            self.tables.globals.mark_failed(binding);
+            self.tables.globals.record_failed_definition(binding);
         }
     }
 
