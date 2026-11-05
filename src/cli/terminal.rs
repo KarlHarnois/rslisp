@@ -13,6 +13,7 @@ use super::error_location::ModuleLoader;
 use super::exit_status::ExitStatus;
 use super::interruption::Interruption;
 use super::stage_work::StageWork;
+use super::standard_error::StandardError;
 use crate::build::{BuildError, BuildProfile, EmittedFormatting, FormattingError, RustCompiler};
 use crate::core::ModulePath;
 use crate::diagnostic::{Diagnostic, Diagnostics};
@@ -225,7 +226,7 @@ impl Terminal {
                 return Err(self.report_build(BuildError::Interrupted));
             }
             Err(error) => {
-                eprintln!("note: {error}; writing unformatted Rust");
+                StandardError::write_line(format_args!("note: {error}; writing unformatted Rust"));
                 emitted
             }
         };
@@ -410,7 +411,7 @@ impl Terminal {
         match error {
             BuildError::Program(diagnostics) => self.report(&diagnostics),
             BuildError::Environment(message) => {
-                eprintln!("error: {message}");
+                StandardError::write_line(format_args!("error: {message}"));
                 ExitStatus::Environment
             }
             BuildError::Interrupted => ExitStatus::Interrupted,
@@ -452,22 +453,30 @@ impl Terminal {
     }
 
     fn report_unresolvable(directory: &Path, error: &std::io::Error) -> ExitStatus {
-        eprintln!("error: cannot resolve `{}`: {error}", directory.display());
+        StandardError::write_line(format_args!(
+            "error: cannot resolve `{}`: {error}",
+            directory.display()
+        ));
         ExitStatus::UsageError
     }
 
     fn report_malformed_variable(variable: &str) -> ExitStatus {
-        eprintln!("error: `{variable}` must be a whole number of milliseconds");
+        StandardError::write_line(format_args!(
+            "error: `{variable}` must be a whole number of milliseconds"
+        ));
         ExitStatus::UsageError
     }
 
     fn report_unwritable(error: &io::Error) -> ExitStatus {
-        eprintln!("error: cannot write standard output: {error}");
+        StandardError::write_line(format_args!("error: cannot write standard output: {error}"));
         ExitStatus::UsageError
     }
 
     fn report_unreadable(path: &Path, error: &std::io::Error) -> ExitStatus {
-        eprintln!("error: cannot read `{}`: {error}", path.display());
+        StandardError::write_line(format_args!(
+            "error: cannot read `{}`: {error}",
+            path.display()
+        ));
         ExitStatus::UsageError
     }
 }

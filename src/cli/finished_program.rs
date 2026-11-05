@@ -3,6 +3,7 @@ use std::path::Path;
 use std::process::{self, Command};
 
 use super::exit_status::ExitStatus;
+use super::standard_error::StandardError;
 use crate::build::InterruptSignal;
 
 pub enum FinishedProgram {
@@ -27,7 +28,10 @@ impl FinishedProgram {
         match status {
             Ok(status) => Self::Exited(status),
             Err(error) => {
-                eprintln!("error: cannot run `{}`: {error}", binary.display());
+                StandardError::write_line(format_args!(
+                    "error: cannot run `{}`: {error}",
+                    binary.display()
+                ));
                 Self::NotStarted
             }
         }

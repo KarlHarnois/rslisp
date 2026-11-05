@@ -1,6 +1,7 @@
 use serde_json::{Map, Value};
 
 use super::stage_work::StageWork;
+use super::standard_error::StandardError;
 use crate::counters::{AllocationCounts, CountingAllocator};
 
 pub struct CounterReport {
@@ -28,7 +29,7 @@ impl CounterReport {
     }
 
     pub fn print(self) {
-        eprintln!("{}", self.into_json());
+        StandardError::write_line(self.into_json());
     }
 
     fn add_allocation_counts(&mut self, counts: AllocationCounts) {

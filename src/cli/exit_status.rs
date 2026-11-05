@@ -1,6 +1,7 @@
 use std::io;
 use std::process::ExitCode;
 
+use super::standard_error::StandardError;
 use crate::build::InterruptSignal;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -27,7 +28,7 @@ impl ExitStatus {
     }
 
     pub fn report_unreadable_input(error: &io::Error) -> Self {
-        eprintln!("error: cannot read standard input: {error}");
+        StandardError::write_line(format_args!("error: cannot read standard input: {error}"));
         Self::UsageError
     }
 }

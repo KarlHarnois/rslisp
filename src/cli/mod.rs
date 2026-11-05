@@ -32,6 +32,7 @@ mod repl;
 mod run;
 mod signatures;
 mod stage_work;
+mod standard_error;
 mod streamed_program;
 mod temporary_directory;
 mod term_parser;

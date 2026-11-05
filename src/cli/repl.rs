@@ -13,6 +13,7 @@ use super::name_records::NameRecords;
 use super::prompt_diagnostics::{PromptAnnotations, PromptDiagnostics};
 use super::prompt_lines::{EnteredText, PromptLines};
 use super::prompt_module::PromptModule;
+use super::standard_error::StandardError;
 use super::terminal::Terminal;
 use crate::build::BuildProfile;
 use crate::diagnostic::Diagnostics;
@@ -142,7 +143,7 @@ impl PromptSession {
 
     fn acknowledge_interruption(&self) {
         self.interruption.acknowledge();
-        eprintln!("{}", Self::INTERRUPTED);
+        StandardError::write_line(Self::INTERRUPTED);
     }
 
     fn report_unfinished(&mut self, terminal: &mut Terminal, text: String) {
