@@ -64,7 +64,7 @@ const IF_PAGE: &str = "(if test then else)\n\nEvaluates `then` when the test is 
 const MACRO_STRUCT_BESIDE_A_DEF: &str = "(defrule my-struct ((n) (do (defstruct n \"A documented struct.\" :x i64))))\n(my-struct point)\n(def point 1)\n(defn main () (do))\n";
 const THREADING_HEADER: &str = "(defrule ->)";
 const THREAD_LAST_HEADER: &str = "(defrule ->>)";
-const MINUS_HEADER: &str = "(defrule -)";
+const MINUS_HEADER: &str = "(- number ...)";
 const UNKNOWN_FLAG_ERROR: &str = "error: unexpected argument '--typo' found";
 const ARITHMETIC: &str = include_str!("fixtures/emit/arithmetic.rslisp");
 const EMPTY_MAIN: &str = "(def main (fn () (do)))\n";
@@ -1472,7 +1472,7 @@ fn doc_types_prints_no_type_for_a_macro() {
     let sandbox = Sandbox::new("doc_types_macro");
     assert_eq!(
         sandbox.typed_page(&["when"]),
-        "(defrule when)\n\nRuns the body when the test is true: `(when test body ...)`.\n\nIt returns unit when the test is false.\n"
+        "(when test body ...)\n\nRuns the body when the test is true.\n\nIt returns unit when the test is false.\n"
     );
 }
 
