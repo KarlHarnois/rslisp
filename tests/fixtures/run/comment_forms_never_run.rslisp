@@ -1,0 +1,11 @@
+(comment
+  (missing-name 1)
+  (+ 1 "two")
+  (exit 3))
+
+(defn main ()
+  (println "before")
+  (comment (exit 4))
+  (the unit (comment (println "never printed")))
+  (comment)
+  (println "after"))

@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/comment_in_expression.rslisp
+---
+fn main() {
+    let marker = ();
+    {}
+    marker
+}

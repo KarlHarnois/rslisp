@@ -1,0 +1,4 @@
+(comment
+  (defn greet (name) (str "hello, " name)))
+
+(defn main () (greet "ana"))

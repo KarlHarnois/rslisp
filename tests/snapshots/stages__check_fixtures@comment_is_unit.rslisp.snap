@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/comment_is_unit.rslisp
+---
+error[L0401]: mismatched types
+ --> check/comment_is_unit.rslisp:1:20
+  |
+1 | (defn main () (+ 1 (comment 2)))
+  |                    ^^^^^^^^^^^ expected an integer, found `unit`
