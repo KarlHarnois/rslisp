@@ -133,12 +133,13 @@ impl PromptSession {
             let input = self.next_input(terminal, text[form.span().range()].to_string());
             self.interruption.clear();
             if self.enter_input(terminal, input) == ExitStatus::Interrupted {
-                return Self::report_interruption();
+                return self.acknowledge_interruption();
             }
         }
     }
 
-    fn report_interruption() {
+    fn acknowledge_interruption(&self) {
+        self.interruption.acknowledge();
         eprintln!("{}", Self::INTERRUPTED);
     }
 
