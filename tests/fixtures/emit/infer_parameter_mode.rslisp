@@ -9,5 +9,7 @@
   (first v))
 
 (defn main ()
-  (prn (total (vec 1 2)))
-  (prn (head (vec 1 2))))
+  (let numbers (vec 1))
+  (push! numbers 2)
+  (prn (total numbers))
+  (prn (head numbers)))
