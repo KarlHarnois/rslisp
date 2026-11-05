@@ -504,6 +504,29 @@ The project owner decided on 2026-11-04 that the formatter builds its syntax tre
 
 Comparing layouts, as layout rule 5 does when it moves a call's arguments below its head, needs a printer that searches for the layout with the fewest lines within the width, as `raco fmt` does with pretty-expressive. The build writes that printer or takes a library for it.
 
+The project owner decided on 2026-11-04 that the formatter recognizes `header-shape` by name, the one prelude form that the compiler's Rust names. Under Choice 2B the formatter reads files without expanding them, so it can find a shape statement only by the name of the form that states it. Making `header-shape` a kernel form, so that the compiler owns the name, is ruled out: the prelude can express `header-shape`, and "If the prelude can express a feature, NEVER add a kernel form for it" applies.
+
+The project owner decided on 2026-11-04 how layout rule 2 reads beyond `defn`. A form whose header shape carries the `:docstring` marker, a definer, stays on one line only when its body is one form, as rule 2 states for `defn`. Every other list, `match`, `when`, `if` and `fn` included, stays on one line whenever it fits. An earlier build kept any shaped form on one line only when at most one form after its header was a list, which broke short `match` and `when` forms; this decision replaces it.
+
+The project owner decided on 2026-11-04 that a docstring counts as a body form under layout rule 2. A documented definition therefore always puts its docstring on its own line, so `(defn f (x) "Doc." x)` breaks into three lines.
+
+The project owner decided on 2026-11-04 to accept two layouts around comments, because each is the one that formatting the output again leaves unchanged:
+
+- A comment on its own line before a list's `)` stays inside the list, and the `)` takes a line of its own after it. Moving the `)` above the comment would put the comment outside the list, and a second pass would then indent it as the parent's next form.
+- A comment written right after a `(` puts the list's head and every later form on its own line. The comment ends the `(`'s line, so the head cannot follow the `(` on it.
+
+The project owner decided on 2026-11-04 to replace the 40-column one-line limit with a 40-60 rule. A list stays on one line when it fits within the 80-column width and either is at most 40 columns long, or is at most 60 columns long and holds at most two nested lists. The count takes every list node inside the list at any depth, the list itself excluded, and atoms and strings count 0. The comparison of the prelude's laid-out lengths that led to it:
+
+| Rule | Prelude lines |
+| --- | ---: |
+| As written | 2,652 |
+| 40 columns | 4,868 |
+| 60 columns | 4,255 |
+| 60-dense | 4,617 |
+| 40-60 | 4,498 |
+
+The project owner decided on 2026-11-04 that a `use` or `export` that does not fit on one line keeps its module path, for a `use`, and its first name on the first line, then fills the remaining names onto each line up to the 80-column width, with each later line starting under the first name. This replaces layout rule 4's one name per line and its use for `export` through rule 5.
+
 ### Prototype
 
 After the decisions above, a prototype formatter applied every layout rule to the repository. It reads through a lossless syntax tree, collects shapes from the kernel, the prelude and the modules a file reaches through `use`, searches for the layout with the fewest lines, and runs the meaning and stability checks on each file. It lives outside the repository and is not part of this RFC.
