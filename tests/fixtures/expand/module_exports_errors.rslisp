@@ -1,0 +1,7 @@
+(use code module-exports string)
+
+(def exported-names
+  (macro (form)
+    (string (module-exports (quote missing/module)))))
+
+(def exports (exported-names))

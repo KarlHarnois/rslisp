@@ -35,6 +35,9 @@ pub trait CompileTimeHost {
     fn add_module_note(&mut self, key: &str, note: Form);
     fn module_notes(&self, context: &Symbol, key: &str) -> Vec<Form>;
     fn declare_definition(&mut self, name: Form, declaration: Declaration);
+    fn form_location(&self, form: &Form) -> String;
+    fn program_modules(&self) -> Vec<Symbol>;
+    fn module_exports(&self, path: &Symbol, span: Span) -> Result<Vec<Symbol>, Diagnostic>;
 }
 
 enum Step {

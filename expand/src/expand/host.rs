@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use super::Expander;
 use super::failed_definition::DeclaredName;
 use super::problems::ExpandProblems;
@@ -7,7 +9,7 @@ use crate::interpret::{CompileTimeHost, Value};
 use crate::modules::ModuleSources;
 use crate::reader::{Form, Symbol};
 use crate::scope::{Phase, Resolution, ScopeSet};
-use crate::source::Span;
+use crate::source::{Span, TextPosition};
 
 impl CompileTimeHost for Expander<'_> {
     fn global_value(&mut self, binding: BindingId, span: Span) -> Result<Value, Diagnostic> {
@@ -73,6 +75,38 @@ impl CompileTimeHost for Expander<'_> {
             .expect("macro code runs inside a macro call");
         self.declared_definitions
             .push(DeclaredName::new(name, declaration, introduction));
+    }
+
+    fn form_location(&self, form: &Form) -> String {
+        let span = form.span();
+        let file = self.sources.file(span.source());
+        let position = TextPosition::of_offset(file.text(), span.range().start);
+        format!(
+            "{}:{position}",
+            self.module_sources.relative_name(file.name())
+        )
+    }
+
+    fn program_modules(&self) -> Vec<Symbol> {
+        self.modules
+            .records()
+            .filter(|record| ModuleSources::is_written(record.path()))
+            .map(|record| Symbol::with_scopes(record.path().as_str(), record.body_scopes()))
+            .collect()
+    }
+
+    fn module_exports(&self, path: &Symbol, span: Span) -> Result<Vec<Symbol>, Diagnostic> {
+        let path = ModulePath::new(path.name());
+        let module = self
+            .modules
+            .find(&path)
+            .ok_or_else(|| ExpandProblems::unknown_module(&path, span))?;
+        let record = self.modules.get(module);
+        let names: BTreeSet<&str> = record.exports().map(|(name, _, _)| &**name).collect();
+        Ok(names
+            .into_iter()
+            .map(|name| Symbol::with_scopes(name, record.body_scopes()))
+            .collect())
     }
 
     fn same_binding(&self, left: &Symbol, right: &Symbol) -> bool {

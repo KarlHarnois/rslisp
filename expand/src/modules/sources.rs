@@ -96,6 +96,18 @@ impl ModuleSources {
         path.as_str() == Self::PRELUDE || path.as_str().starts_with(Self::PRELUDE_DIRECTORY)
     }
 
+    pub fn is_written(path: &ModulePath) -> bool {
+        !Self::is_prelude(path) && ![Self::KERNEL, Self::CODE].contains(&path.as_str())
+    }
+
+    pub fn relative_name<'n>(&self, name: &'n str) -> &'n str {
+        Path::new(name)
+            .strip_prefix(&self.display_root)
+            .ok()
+            .and_then(Path::to_str)
+            .unwrap_or(name)
+    }
+
     pub fn read_file(path: &Path) -> io::Result<String> {
         fs::read_to_string(path).map(Self::without_byte_order_mark)
     }

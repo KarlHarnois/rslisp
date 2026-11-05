@@ -1,0 +1,23 @@
+(use code form-location module-exports program-modules
+          string)
+
+(use queried/stock restock)
+
+(def located
+  (macro (form) (form-location form)))
+
+(def loaded-modules
+  (macro (form)
+    (string (program-modules))))
+
+(def exported-names
+  (macro (form)
+    (string (module-exports (quote queried/stock)))))
+
+(def here (located))
+
+(def modules (loaded-modules))
+
+(def exports (exported-names))
+
+(def total (restock 2))
