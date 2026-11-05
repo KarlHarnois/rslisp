@@ -1,4 +1,4 @@
-use rustc_hash::FxHashSet;
+use rustc_hash::FxHashMap;
 
 use crate::reader::{Form, FormKind};
 
@@ -54,13 +54,25 @@ impl ReturnedArguments {
     }
 
     fn count_by_set(arguments: &[Form], elements: &[Form]) -> usize {
-        let mut unreturned: FxHashSet<*const FormKind> =
-            arguments.iter().map(Form::identity).collect();
+        let mut unreturned: FxHashMap<*const FormKind, usize> = FxHashMap::default();
+        for argument in arguments {
+            *unreturned.entry(argument.identity()).or_default() += 1;
+        }
         elements
             .iter()
-            .filter(|element| unreturned.remove(&element.identity()))
+            .filter(|element| Self::take_unreturned(&mut unreturned, element))
             .map(Form::form_count)
             .sum()
+    }
+
+    fn take_unreturned(unreturned: &mut FxHashMap<*const FormKind, usize>, element: &Form) -> bool {
+        match unreturned.get_mut(&element.identity()) {
+            Some(count) if *count > 0 => {
+                *count -= 1;
+                true
+            }
+            _ => false,
+        }
     }
 }
 
@@ -130,6 +142,22 @@ mod tests {
         let last = arguments[CallFixture::MANY_ARGUMENTS - 1].clone();
         let expansion = vec![last, CallFixture::symbol("new")];
         assert_eq!(CallFixture::counted(&arguments, expansion), 2);
+    }
+
+    #[test]
+    fn counts_a_form_passed_as_two_arguments_among_many_twice() {
+        let mut arguments = CallFixture::arguments(CallFixture::MANY_ARGUMENTS);
+        arguments[1] = arguments[0].clone();
+        let expansion = vec![arguments[0].clone(), arguments[0].clone()];
+        assert_eq!(CallFixture::counted(&arguments, expansion), 4);
+    }
+
+    #[test]
+    fn counts_a_form_passed_as_two_arguments_twice() {
+        let mut arguments = CallFixture::arguments(2);
+        arguments[1] = arguments[0].clone();
+        let expansion = vec![arguments[0].clone(), arguments[0].clone()];
+        assert_eq!(CallFixture::counted(&arguments, expansion), 4);
     }
 
     #[test]
