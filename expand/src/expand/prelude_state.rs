@@ -86,6 +86,7 @@ impl Expander<'_> {
             .expect("the prelude loads");
         self.assert_no_problems();
         let lowered_globals = self.tables.take_lowered_globals();
+        self.tables.module_notes = self.tables.module_notes.saved();
         PreludeState {
             first_source,
             prelude,

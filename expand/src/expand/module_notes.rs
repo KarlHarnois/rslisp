@@ -1,13 +1,12 @@
-use rustc_hash::FxHashMap;
-
 use crate::core::ModuleId;
 use crate::reader::Form;
 
-type NotesKey = (ModuleId, String);
+use super::saved_notes::{NotesKey, NotesTable, SavedNotes};
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct ModuleNotes {
-    notes: FxHashMap<NotesKey, Vec<Form>>,
+    saved: SavedNotes,
+    notes: NotesTable,
     added: Vec<NotesKey>,
 }
 
@@ -21,9 +20,17 @@ impl ModuleNotes {
         self.added.push(notes_key);
     }
 
+    pub fn saved(&self) -> Self {
+        Self {
+            saved: SavedNotes::encode(&self.notes),
+            ..Self::default()
+        }
+    }
+
     pub fn of(&self, module: ModuleId, key: &str) -> Vec<Form> {
         self.notes
             .get(&(module, key.to_string()))
+            .or_else(|| self.saved.of(module, key))
             .cloned()
             .unwrap_or_default()
     }

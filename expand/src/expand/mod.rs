@@ -29,6 +29,7 @@ mod rest_of_body;
 mod result_printer;
 mod rust_clauses;
 mod rust_type;
+mod saved_notes;
 mod session;
 mod shape;
 mod sourced_items;
