@@ -1,4 +1,4 @@
-(use prelude/macros defrule)
+(use prelude/macros defrule document)
 (use prelude/pair pair)
 (use prelude/logic and)
 (use prelude/types box option result vec)
@@ -128,29 +128,45 @@
       (fn (a b) bool))))
 
 (defrule +
+  "Adds its arguments from left to right: `(+ a b c)`.
+
+  One argument returns it, and two call `add`."
   ((a) a)
   ((a b) (add a b))
   ((a b c more ...)
    (+ (add a b) c more ...)))
 
 (defrule -
+  "Subtracts each later argument from the first: `(- a b c)`.
+
+  One argument negates it with `neg`, and two call `sub`."
   ((a) (neg a))
   ((a b) (sub a b))
   ((a b c more ...)
    (- (sub a b) c more ...)))
 
 (defrule *
+  "Multiplies its arguments from left to right: `(* a b c)`.
+
+  One argument returns it, and two call `mul`."
   ((a) a)
   ((a b) (mul a b))
   ((a b c more ...)
    (* (mul a b) c more ...)))
 
 (defrule /
+  "Divides the first argument by each later one: `(/ a b c)`.
+
+  It takes at least two arguments, and two call `div`."
   ((a b) (div a b))
   ((a b c more ...)
    (/ (div a b) c more ...)))
 
 (defrule <
+  "Returns whether each argument is less than the next: `(< a b c)`.
+
+  Two arguments call `lt`. With more, each runs once, and a false comparison
+  ends the chain."
   ((a b) (lt a b))
   ((a b c more ...)
    (do
@@ -159,6 +175,10 @@
      (and (lt left middle) (< middle c more ...)))))
 
 (defrule <=
+  "Returns whether each argument is at most the next: `(<= a b c)`.
+
+  Two arguments call `le`. With more, each runs once, and a false comparison
+  ends the chain."
   ((a b) (le a b))
   ((a b c more ...)
    (do
@@ -167,6 +187,10 @@
      (and (le left middle) (<= middle c more ...)))))
 
 (defrule >
+  "Returns whether each argument is greater than the next: `(> a b c)`.
+
+  Two arguments call `gt`. With more, each runs once, and a false comparison
+  ends the chain."
   ((a b) (gt a b))
   ((a b c more ...)
    (do
@@ -175,6 +199,10 @@
      (and (gt left middle) (> middle c more ...)))))
 
 (defrule >=
+  "Returns whether each argument is at least the next: `(>= a b c)`.
+
+  Two arguments call `ge`. With more, each runs once, and a false comparison
+  ends the chain."
   ((a b) (ge a b))
   ((a b c more ...)
    (do
@@ -183,6 +211,10 @@
      (and (ge left middle) (>= middle c more ...)))))
 
 (defrule =
+  "Returns whether each argument equals the next: `(= a b c)`.
+
+  Two arguments call `eq`. With more, each runs once, and a false comparison
+  ends the chain."
   ((a b) (eq a b))
   ((a b c more ...)
    (do
@@ -190,7 +222,11 @@
      (let middle b)
      (and (eq left middle) (= middle c more ...)))))
 
-(defrule not= ((a b) (ne a b)))
+(defrule not=
+  "Returns whether its two arguments differ: `(not= a b)`.
+
+  It calls `ne`."
+  ((a b) (ne a b)))
 
 (rust-trait ord "Ord"
   char string
@@ -199,3 +235,119 @@
   (where ((a ord)) (ref a))
   (where ((a ord)) (box a))
   (where ((a ord) (b ord)) (pair a b)))
+
+(document number
+  "Marks a type that does arithmetic.
+
+  Every integer and float type implements it, and `add`, `sub`, `mul`, `div`
+  and `rem` take its types.")
+
+(document signed
+  "Marks a number type whose values can be negative.
+
+  The signed integer types and the float types implement it, and `neg` takes
+  its types.")
+
+(document float
+  "Marks a floating-point type.
+
+  `f32` and `f64` implement it.")
+
+(document integer
+  "Marks an integer type.
+
+  Every signed and unsigned integer type implements it.")
+
+(document partial-eq
+  "Marks a type whose values `=` and `not=` compare, as Rust's `PartialEq` does.
+
+  A bound may name a second type, as in `(a (partial-eq b))`, so a `string`
+  compares with a `str`.")
+
+(document hash
+  "Marks a type that a hasher can read, as Rust's `Hash` does.
+
+  A key of a `hash-map` implements it.")
+
+(document partial-ord
+  "Marks a type whose values `<` and `>` compare, as Rust's `PartialOrd` does.
+
+  `<=` and `>=` take the same types.")
+
+(document ord
+  "Marks a type whose values have a total order, as Rust's `Ord` does.
+
+  A key of a `sorted-map` implements it. The float types do not.")
+
+(document (add a b)
+  "Returns the sum of two numbers of one type.
+
+  It emits `a + b`. `+` takes any number of arguments.")
+
+(document (sub a b)
+  "Returns the first number minus the second.
+
+  It emits `a - b`. `-` takes any number of arguments.")
+
+(document (mul a b)
+  "Returns the product of two numbers of one type.
+
+  It emits `a * b`. `*` takes any number of arguments.")
+
+(document (div a b)
+  "Returns the first number divided by the second.
+
+  It emits `a / b`, so an integer division truncates. `/` takes two or more
+  arguments.")
+
+(document (rem a b)
+  "Returns the remainder of dividing the first number by the second.
+
+  It emits `a % b`, so the result takes the sign of the first number.")
+
+(document (neg a)
+  "Returns a signed number with its sign flipped.
+
+  It emits `-a`. `(- a)` expands to it.")
+
+(document (sqrt value)
+  "Returns the square root of an `f64`.
+
+  It emits `value.sqrt()`.")
+
+(document pi
+  "Holds the ratio of a circle's circumference to its diameter, as an `f64`.
+
+  It emits `std::f64::consts::PI`.")
+
+(document (lt a b)
+  "Returns whether the first value is less than the second.
+
+  It borrows both values. `<` expands to it.")
+
+(document (le a b)
+  "Returns whether the first value is at most the second.
+
+  It borrows both values. `<=` expands to it.")
+
+(document (gt a b)
+  "Returns whether the first value is greater than the second.
+
+  It borrows both values. `>` expands to it.")
+
+(document (ge a b)
+  "Returns whether the first value is at least the second.
+
+  It borrows both values. `>=` expands to it.")
+
+(document (eq a b)
+  "Returns whether two values are equal.
+
+  It borrows both values. `=` expands to it. `eq` is also a trait, Rust's
+  `Eq`, which marks a type whose equality is total: the float types leave it
+  out, and a key of a `hash-map` implements it.")
+
+(document (ne a b)
+  "Returns whether two values differ.
+
+  It borrows both values. `not=` expands to it.")

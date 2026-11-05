@@ -129,6 +129,8 @@ impl Expander<'_> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
+
     use rustc_hash::FxHashMap;
 
     use super::*;
@@ -136,6 +138,16 @@ mod tests {
         BindingArena, ExprKind, Item, ItemKind, KernelConstants, KernelForm, KernelType, Leaf,
         Literal, Namespace,
     };
+
+    impl PreludeState {
+        fn module(&self, path: &str) -> &ModuleRecord {
+            let path = ModulePath::new(path);
+            self.modules
+                .iter()
+                .find(|record| *record.path() == path)
+                .expect("the saved state holds the module")
+        }
+    }
 
     struct UserProgram {
         name: &'static str,
@@ -204,12 +216,13 @@ mod tests {
         }
     }
 
-    struct KernelPages {
+    struct PreludePages {
         lookups: FxHashMap<String, String>,
     }
 
-    impl KernelPages {
+    impl PreludePages {
         const ENTRY: &str = "kernel-pages";
+        const DOCUMENTED_MODULES: [&str; 1] = ["prelude/number"];
         const ALTERNATIVE: &str = " or ";
         const OPTIONAL_PART_END: &str = ")?";
         const OPTIONAL_PART_START: &str = " (";
@@ -238,17 +251,19 @@ mod tests {
 
         fn names_the_prelude_documents_by_type() -> Vec<(&'static str, &'static str)> {
             let state = UserProgram::loaded_state();
-            let prelude_path = ModulePath::new(ModuleSources::PRELUDE);
-            let prelude = state
-                .modules
-                .iter()
-                .find(|record| *record.path() == prelude_path)
-                .expect("the saved state holds the prelude");
+            let prelude = state.module(ModuleSources::PRELUDE);
             KernelType::all()
                 .map(|kernel_type| (kernel_type.name(), kernel_type.shape()))
                 .filter(|(name, _)| prelude.exported(name, Namespace::Value).is_none())
                 .chain(KernelConstants::BOOLEANS.map(|(name, _)| (name, name)))
                 .collect()
+        }
+
+        fn exported_names(module: &str) -> Vec<String> {
+            let state = UserProgram::loaded_state();
+            let exports = state.module(module).exports();
+            let names: BTreeSet<String> = exports.map(|(name, _, _)| name.to_string()).collect();
+            names.into_iter().collect()
         }
 
         fn lookups(names: &[&str]) -> String {
@@ -326,9 +341,9 @@ mod tests {
     #[test]
     fn each_kernel_form_page_shows_its_shape_as_header() {
         let names: Vec<&str> = KernelForm::all().map(KernelForm::name).collect();
-        let pages = KernelPages::of_saved_prelude(&names);
+        let pages = PreludePages::of_saved_prelude(&names);
         for (index, form) in KernelForm::all().enumerate() {
-            let header = KernelPages::header_of_shape(form.shape());
+            let header = PreludePages::header_of_shape(form.shape());
             assert_eq!(
                 pages.header(index),
                 Some(header.as_str()),
@@ -345,12 +360,24 @@ mod tests {
 
     #[test]
     fn each_kernel_type_and_constant_has_a_page_headed_by_its_shape() {
-        let entries = KernelPages::names_the_prelude_documents_by_type();
+        let entries = PreludePages::names_the_prelude_documents_by_type();
         let names: Vec<&str> = entries.iter().map(|(name, _)| *name).collect();
-        let pages = KernelPages::of_saved_prelude(&names);
+        let pages = PreludePages::of_saved_prelude(&names);
         for (index, (name, shape)) in entries.iter().enumerate() {
             assert_eq!(pages.header(index), Some(*shape), "{name}");
             assert!(pages.documents(index), "{name} has no docstring");
+        }
+    }
+
+    #[test]
+    fn each_export_of_a_documented_module_has_a_docstring() {
+        for module in PreludePages::DOCUMENTED_MODULES {
+            let names = PreludePages::exported_names(module);
+            let lookups: Vec<&str> = names.iter().map(String::as_str).collect();
+            let pages = PreludePages::of_saved_prelude(&lookups);
+            for (index, name) in names.iter().enumerate() {
+                assert!(pages.documents(index), "{module} {name} has no docstring");
+            }
         }
     }
 
