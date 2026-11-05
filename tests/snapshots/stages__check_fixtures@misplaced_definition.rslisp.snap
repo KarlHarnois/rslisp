@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/misplaced_definition.rslisp
 ---
-error[L0208]: `def` can only appear at module level
+error[L0208]: `defn` can only appear at module level
  --> check/misplaced_definition.rslisp:2:3
   |
 2 |   (defn double (x) (* x 2))
@@ -11,7 +11,7 @@ error[L0208]: `def` can only appear at module level
   |
   = help: use `let` to bind a name inside a body
 
-error[L0208]: `def` can only appear at module level
+error[L0208]: `defn` can only appear at module level
  --> check/misplaced_definition.rslisp:6:3
   |
 6 |   (defn triple (x) (* x 3))
@@ -27,7 +27,7 @@ error[L0208]: `def` can only appear at module level
    |
    = help: use `let` to bind a name inside a body
 
-error[L0208]: `def` can only appear at module level
+error[L0208]: `defn` can only appear at module level
   --> check/misplaced_definition.rslisp:14:3
    |
 14 | /   (defn countdown (n)
@@ -42,7 +42,7 @@ error[L0201]: cannot find `halve` in this scope
 19 |   (println (halve 4))
    |             ^^^^^ not found in this scope
 
-error[L0208]: `def` can only appear at module level
+error[L0208]: `defn` can only appear at module level
   --> check/misplaced_definition.rslisp:20:3
    |
 20 |   (defn halve (x) (/ x 2)))
@@ -72,7 +72,7 @@ error[L0208]: `def` can only appear at module level
    |
    = help: use `let` to bind a name inside a body
 
-error[L0208]: `def` can only appear at module level
+error[L0208]: `defn` can only appear at module level
   --> check/misplaced_definition.rslisp:53:3
    |
 53 |   (defn wrong () (missing 1))
@@ -94,16 +94,7 @@ error[L0208]: `def` can only appear at module level
    |
    = help: use `let` to bind a name inside a body
 
-error[L0208]: `def` can only appear at module level
-  --> check/misplaced_definition.rslisp:60:3
-   |
-60 | /   (defstruct point
-61 | |     :x i64)
-   | |___________^ not allowed inside an expression
-   |
-   = help: use `let` to bind a name inside a body
-
-error[L0208]: `struct` can only appear at module level
+error[L0208]: `defstruct` can only appear at module level
   --> check/misplaced_definition.rslisp:60:3
    |
 60 | /   (defstruct point

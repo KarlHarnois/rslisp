@@ -249,7 +249,7 @@ impl Expander<'_> {
             }
             KernelForm::Let => Err(ExpandProblems::let_outside_body(span)),
             KernelForm::Macro => Err(ExpandProblems::macro_outside_def(span)),
-            KernelForm::Definition(_) => Err(ExpandProblems::module_level_only(kernel, span)),
+            KernelForm::Definition(_) => Err(self.misplaced_definition(kernel, span)),
         };
         kind.map(|kind| Expr::new(kind, span))
     }

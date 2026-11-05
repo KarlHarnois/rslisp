@@ -9,6 +9,7 @@ use crate::core::{
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::Form;
+use crate::source::Span;
 
 impl Expander<'_> {
     pub(super) const DEF_FORM: KernelForm = KernelForm::Definition(DefinitionForm::Def);
@@ -22,7 +23,7 @@ impl Expander<'_> {
         rest_of_body: &mut RestOfBody,
         context: &DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
-        let misplaced = ExpandProblems::module_level_only(Self::DEF_FORM, form.span());
+        let misplaced = self.misplaced_definition(Self::DEF_FORM, form.span());
         let Some((binder, value)) = Self::misplaced_def_parts(form) else {
             return Err(misplaced);
         };
@@ -35,6 +36,15 @@ impl Expander<'_> {
             None => Self::placeholder(form.span()),
         };
         Ok(BodyItem::Let(binder, value))
+    }
+
+    pub(super) fn misplaced_definition(&self, kernel: KernelForm, span: Span) -> Diagnostic {
+        let written_definer = self
+            .tables
+            .macro_origins
+            .get(&span)
+            .map_or(kernel.name(), |origin| &origin.name);
+        ExpandProblems::module_level_only(written_definer, span)
     }
 
     fn misplaced_def_parts(form: &Form) -> Option<(&Form, Option<&Form>)> {
@@ -60,7 +70,7 @@ impl Expander<'_> {
         rest_of_body: &mut RestOfBody,
         context: &DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
-        let misplaced = ExpandProblems::module_level_only(Self::STRUCT_FORM, form.span());
+        let misplaced = self.misplaced_definition(Self::STRUCT_FORM, form.span());
         let shape = Shape::new(Self::STRUCT_FORM, form);
         let Some(name) = shape
             .at_least(2)

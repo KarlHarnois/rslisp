@@ -564,10 +564,10 @@ impl ExpandProblems {
         )
     }
 
-    pub fn module_level_only(kernel: KernelForm, span: Span) -> Diagnostic {
+    pub fn module_level_only(definer: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MODULE_LEVEL_ONLY,
-            format!("`{}` can only appear at module level", kernel.name()),
+            format!("`{definer}` can only appear at module level"),
             Label::new(span, "not allowed inside an expression"),
         )
         .with_help("use `let` to bind a name inside a body")

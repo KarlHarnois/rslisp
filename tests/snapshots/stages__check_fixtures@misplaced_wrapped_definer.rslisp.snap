@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/misplaced_wrapped_definer.rslisp
+---
+error[L0208]: `define-helper` can only appear at module level
+ --> check/misplaced_wrapped_definer.rslisp:7:3
+  |
+7 |   (define-helper bump (count) (+ count 1))
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not allowed inside an expression
+  |
+  = help: use `let` to bind a name inside a body
+
+error[L0208]: `def` can only appear at module level
+  --> check/misplaced_wrapped_definer.rslisp:11:14
+   |
+11 |   (when true (def written-limit 3))
+   |              ^^^^^^^^^^^^^^^^^^^^^ not allowed inside an expression
+   |
+   = help: use `let` to bind a name inside a body
