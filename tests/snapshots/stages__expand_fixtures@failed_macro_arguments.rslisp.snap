@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_macro_arguments.rslisp
+---
+error[L0328]: a docstring goes after the parameter list
+ --> expand/failed_macro_arguments.rslisp:1:18
+  |
+1 | (defmacro my-dsl "Reads a rule." (rule) rule)
+  |                  ^^^^^^^^^^^^^^^ a docstring in place of the parameter list
+  |
+  = help: write it as the first body form, after the parameter list

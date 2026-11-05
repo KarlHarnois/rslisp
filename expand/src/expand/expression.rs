@@ -176,7 +176,7 @@ impl Expander<'_> {
         if let Some(binding) = self.variant_head(form) {
             return self.lower_variant_call(binding, form, items);
         }
-        if let Some(failed) = self.failed_use(form) {
+        if let Some(failed) = self.failed_macro_use(form) {
             return Ok(failed);
         }
         let callee = self.lower_recovered(&items[0])?;

@@ -1,0 +1,3 @@
+(defmacro my-dsl "Reads a rule." (rule) rule)
+
+(defn main () (println (my-dsl (a -> b))))
