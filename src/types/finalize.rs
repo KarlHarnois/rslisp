@@ -19,6 +19,7 @@ pub struct Finalizer<'c> {
     reported: FxHashSet<TypeVar>,
     earlier_errors: bool,
     closures_in_definition: Vec<Type>,
+    type_text_operands: Vec<TypedExpr>,
 }
 
 impl<'c> Finalizer<'c> {
@@ -29,6 +30,7 @@ impl<'c> Finalizer<'c> {
             reported: FxHashSet::default(),
             earlier_errors,
             closures_in_definition: Vec::new(),
+            type_text_operands: Vec::new(),
         }
     }
 
@@ -39,6 +41,10 @@ impl<'c> Finalizer<'c> {
         if self.checker.holds_infer_forms {
             let writer = TypeTextWriter::new(definition.binding, &definition.scheme);
             self.write_type_texts(&mut definition.value, &writer);
+            let operands = std::mem::take(&mut self.type_text_operands);
+            self.checker
+                .type_texts
+                .keep_operands(definition.binding, operands);
         }
     }
 
@@ -46,6 +52,7 @@ impl<'c> Finalizer<'c> {
         if let TypedExprKind::Infer(operand) = &mut expr.kind {
             let text = writer.write(self.checker, operand);
             self.finalize_operand(operand, writer);
+            self.type_text_operands.push(operand.as_ref().clone());
             expr.kind = TypedExprKind::Leaf(TypedLeaf::Literal(Literal::String(text)));
             return;
         }

@@ -11,9 +11,18 @@ use crate::source::Span;
 #[derive(Clone, Debug, Default)]
 pub struct TypeTexts {
     by_definition: FxHashMap<BindingId, Vec<Rc<str>>>,
+    operands: FxHashMap<BindingId, Vec<TypedExpr>>,
 }
 
 impl TypeTexts {
+    pub fn keep_operands(&mut self, definition: BindingId, operands: Vec<TypedExpr>) {
+        self.operands.insert(definition, operands);
+    }
+
+    pub fn operands_of(&self, definition: BindingId) -> &[TypedExpr] {
+        self.operands.get(&definition).map_or(&[], Vec::as_slice)
+    }
+
     pub fn is_empty(&self) -> bool {
         self.by_definition.is_empty()
     }

@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/infer_operand_literal_use.rslisp
+---
+error[L0401]: mismatched types
+ --> check/infer_operand_literal_use.rslisp:7:11
+  |
+7 |   (listen (port)))
+  |           ^^^^^^ expected `u16`, found `i64`
