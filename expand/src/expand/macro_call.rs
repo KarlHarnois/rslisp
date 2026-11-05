@@ -240,7 +240,7 @@ impl Expander<'_> {
     fn macro_origin(&self, binding: BindingId, call_site: Span) -> MacroOrigin {
         let info = self.tables.bindings.get(binding);
         MacroOrigin {
-            name: Rc::from(info.name()),
+            name: info.shared_name(),
             defined: info.span().unwrap_or(call_site),
             call_site,
         }

@@ -74,6 +74,10 @@ impl BindingInfo {
         &self.name
     }
 
+    pub fn shared_name(&self) -> Rc<str> {
+        Rc::clone(&self.name)
+    }
+
     pub fn kind(&self) -> BindingKind {
         self.kind
     }
