@@ -1,0 +1,3 @@
+(def not-page (doc-page not))
+
+(def cond-page (doc-page cond))
