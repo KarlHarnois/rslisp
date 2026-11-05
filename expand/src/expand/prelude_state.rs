@@ -139,16 +139,6 @@ mod tests {
         Literal, Namespace,
     };
 
-    impl PreludeState {
-        fn module(&self, path: &str) -> &ModuleRecord {
-            let path = ModulePath::new(path);
-            self.modules
-                .iter()
-                .find(|record| *record.path() == path)
-                .expect("the saved state holds the module")
-        }
-    }
-
     struct UserProgram {
         name: &'static str,
         text: &'static str,
@@ -251,7 +241,7 @@ mod tests {
 
         fn names_the_prelude_documents_by_type() -> Vec<(&'static str, &'static str)> {
             let state = UserProgram::loaded_state();
-            let prelude = state.module(ModuleSources::PRELUDE);
+            let prelude = Self::module(&state, ModuleSources::PRELUDE);
             KernelType::all()
                 .map(|kernel_type| (kernel_type.name(), kernel_type.shape()))
                 .filter(|(name, _)| prelude.exported(name, Namespace::Value).is_none())
@@ -259,9 +249,18 @@ mod tests {
                 .collect()
         }
 
+        fn module<'a>(state: &'a PreludeState, path: &str) -> &'a ModuleRecord {
+            let path = ModulePath::new(path);
+            state
+                .modules
+                .iter()
+                .find(|record| *record.path() == path)
+                .expect("the saved state holds the module")
+        }
+
         fn exported_names(module: &str) -> Vec<String> {
             let state = UserProgram::loaded_state();
-            let exports = state.module(module).exports();
+            let exports = Self::module(&state, module).exports();
             let names: BTreeSet<String> = exports.map(|(name, _, _)| name.to_string()).collect();
             names.into_iter().collect()
         }
