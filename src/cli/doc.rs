@@ -1,7 +1,11 @@
+use std::io;
 use std::path::PathBuf;
+
+use anstream::AutoStream;
 
 use super::exit_status::ExitStatus;
 use super::terminal::Terminal;
+use super::token_colors::TokenColors;
 use crate::core::{BindingId, Expr, ExprKind, Leaf, Literal};
 use crate::diagnostic::Diagnostics;
 use crate::expand::{ExpansionSession, Program};
@@ -40,21 +44,33 @@ impl DocCommand {
                 .map(DocOutput::page),
             DocPage::Typed => lookup.describe_with_type(&self.environment, &self.term),
         };
+        let colors = TokenColors::deciding(AutoStream::choice(&io::stdout()));
         match output {
-            Ok(output) => output.print(terminal),
+            Ok(output) => output.print(terminal, colors),
             Err(status) => status,
         }
     }
 }
 
+struct PageText {
+    header: String,
+    body: String,
+}
+
+impl PageText {
+    fn painted(&self, colors: TokenColors) -> String {
+        format!("{}{}", colors.paint(&self.header), self.body)
+    }
+}
+
 struct DocOutput {
     type_line: Option<String>,
-    page: String,
+    page: PageText,
     status: ExitStatus,
 }
 
 impl DocOutput {
-    fn page(page: String) -> Self {
+    fn page(page: PageText) -> Self {
         Self {
             type_line: None,
             page,
@@ -62,7 +78,7 @@ impl DocOutput {
         }
     }
 
-    fn typed(page: String, type_line: Result<Option<String>, ExitStatus>) -> Self {
+    fn typed(page: PageText, type_line: Result<Option<String>, ExitStatus>) -> Self {
         match type_line {
             Ok(type_line) => Self {
                 type_line,
@@ -75,17 +91,18 @@ impl DocOutput {
         }
     }
 
-    fn print(&self, terminal: &Terminal) -> ExitStatus {
-        match terminal.write_output(self.text()) {
+    fn print(&self, terminal: &Terminal, colors: TokenColors) -> ExitStatus {
+        match terminal.write_output(self.text(colors)) {
             ExitStatus::Success => self.status,
             failure => failure,
         }
     }
 
-    fn text(&self) -> String {
+    fn text(&self, colors: TokenColors) -> String {
         self.type_line
             .iter()
-            .chain([&self.page])
+            .map(|type_line| colors.paint(type_line))
+            .chain([self.page.painted(colors)])
             .map(|line| format!("{line}\n"))
             .collect()
     }
@@ -97,26 +114,27 @@ pub struct DocLookup<'t> {
 
 impl<'t> DocLookup<'t> {
     const TERM_SOURCE: &'static str = "<term>";
-    const PAGE_MACRO: &'static str = "doc-page";
+    const HEADER_MACRO: &'static str = "header";
+    const BODY_MACRO: &'static str = "page-body";
 
     pub fn new(terminal: &'t mut Terminal) -> Self {
         Self { terminal }
     }
 
-    pub fn describe(
+    fn describe(
         &mut self,
         environment: &DocEnvironment,
         term: &str,
-    ) -> Result<String, ExitStatus> {
+    ) -> Result<PageText, ExitStatus> {
         let read = self.read_term(term)?;
         let entry = environment.load(self.terminal)?;
-        let expanded = self.terminal.expand_expression(
-            &environment.entry(),
-            entry,
-            (Self::TERM_SOURCE, term),
-            |source| Self::lookup_call(&read, source),
-        )?;
-        Self::page(&expanded)
+        let expanded =
+            self.terminal
+                .within_session(&environment.entry(), entry, |mut session| {
+                    let source = session.add_source(Self::TERM_SOURCE, term);
+                    ExpandedPage::expand(&mut session, &read, source)
+                })?;
+        expanded.text()
     }
 
     fn describe_with_type(
@@ -131,7 +149,7 @@ impl<'t> DocLookup<'t> {
             .within_session(&environment.entry(), entry, |session| {
                 TypedLookup::new(session, (Self::TERM_SOURCE, term)).look_up(&read)
             })?;
-        let page = Self::page(&lookup.page)?;
+        let page = lookup.page.text()?;
         let type_line = self
             .terminal
             .check_expanded(&lookup.program)
@@ -154,24 +172,61 @@ impl<'t> DocLookup<'t> {
         }
     }
 
-    fn lookup_call(term: &Form, source: SourceId) -> Form {
+    fn lookup_call(lookup: &str, term: &Form, source: SourceId) -> Form {
         let span = Span::new(source, term.span().range());
-        let head = Form::new(FormKind::Symbol(Symbol::new(Self::PAGE_MACRO)), span);
+        let head = Form::new(FormKind::Symbol(Symbol::new(lookup)), span);
         let name = Form::new(term.kind().clone(), span);
         Form::new(FormKind::List(vec![head, name]), span)
     }
+}
 
-    fn page(expanded: &Expr) -> Result<String, ExitStatus> {
-        match Self::page_text(expanded) {
+struct ExpandedPage {
+    header: Expr,
+    body: Expr,
+}
+
+impl ExpandedPage {
+    fn expand(
+        session: &mut ExpansionSession<'_>,
+        term: &Form,
+        source: SourceId,
+    ) -> Result<Self, Diagnostics> {
+        let header = session.expression(DocLookup::lookup_call(
+            DocLookup::HEADER_MACRO,
+            term,
+            source,
+        ))?;
+        let body =
+            session.expression(DocLookup::lookup_call(DocLookup::BODY_MACRO, term, source))?;
+        Ok(Self { header, body })
+    }
+
+    fn text(&self) -> Result<PageText, ExitStatus> {
+        Ok(PageText {
+            header: Self::string(&self.header, DocLookup::HEADER_MACRO)?,
+            body: Self::string(&self.body, DocLookup::BODY_MACRO)?,
+        })
+    }
+
+    fn same_text(&self, other: &Self) -> bool {
+        self.literals() == other.literals()
+    }
+
+    fn literals(&self) -> [Option<&str>; 2] {
+        [Self::literal(&self.header), Self::literal(&self.body)]
+    }
+
+    fn string(expanded: &Expr, lookup: &str) -> Result<String, ExitStatus> {
+        match Self::literal(expanded) {
             Some(text) => Ok(text.to_string()),
             None => {
-                eprintln!("error: `{}` did not expand to a string", Self::PAGE_MACRO);
+                eprintln!("error: `{lookup}` did not expand to a string");
                 Err(ExitStatus::ProgramErrors)
             }
         }
     }
 
-    fn page_text(expanded: &Expr) -> Option<&str> {
+    fn literal(expanded: &Expr) -> Option<&str> {
         match expanded.kind() {
             ExprKind::Leaf(Leaf::Literal(Literal::String(text))) => Some(text),
             _ => None,
@@ -203,25 +258,27 @@ impl<'s> TypedLookup<'s> {
     fn signed_binding(
         &mut self,
         term: &Form,
-        page: &Expr,
+        page: &ExpandedPage,
     ) -> Result<Option<BindingId>, Diagnostics> {
         let binding = self.session.binding(term);
         let Some(value_term) = self.session.hide_type(term) else {
             return Ok(binding);
         };
         let value_page = self.expand_page(&value_term)?;
-        let describes_the_value = DocLookup::page_text(&value_page) == DocLookup::page_text(page);
-        Ok(if describes_the_value { binding } else { None })
+        Ok(if value_page.same_text(page) {
+            binding
+        } else {
+            None
+        })
     }
 
-    fn expand_page(&mut self, term: &Form) -> Result<Expr, Diagnostics> {
-        self.session
-            .expression(DocLookup::lookup_call(term, self.source))
+    fn expand_page(&mut self, term: &Form) -> Result<ExpandedPage, Diagnostics> {
+        ExpandedPage::expand(&mut self.session, term, self.source)
     }
 }
 
 struct TypedPage {
-    page: Expr,
+    page: ExpandedPage,
     signed: Option<BindingId>,
     program: Program,
 }
@@ -256,5 +313,33 @@ impl DocEnvironment {
             Self::Prelude => PathBuf::from(Self::PRELUDE_ENTRY).with_extension(Language::EXTENSION),
             Self::Program(path) => path.clone(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DocOutput, PageText};
+    use crate::cli::exit_status::ExitStatus;
+    use crate::cli::token_colors::TokenColors;
+
+    #[test]
+    fn the_type_line_and_the_header_take_the_token_colors_and_the_body_stays_plain() {
+        let output = DocOutput {
+            type_line: Some("(type x :k)".to_string()),
+            page: PageText {
+                header: "(defn x (:k))".to_string(),
+                body: "\n\nTakes :k 2.".to_string(),
+            },
+            status: ExitStatus::Success,
+        };
+        let colors = TokenColors::Painted;
+        assert_eq!(
+            output.text(colors),
+            format!(
+                "{}\n{}\n\nTakes :k 2.\n",
+                colors.paint("(type x :k)"),
+                colors.paint("(defn x (:k))")
+            )
+        );
     }
 }

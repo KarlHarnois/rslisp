@@ -410,7 +410,7 @@ A docstring is Markdown. A lookup removes the indentation that every written con
 - Continuation lines are indented to the body.
 - Markdown conventions apply.
 
-`rslisp doc [--types] [--file <entry>] <term>` prints the page that `(doc-page <term>)` returns, for a prelude term or, with `--file`, for a term the entry module defines or imports.
+`rslisp doc [--types] [--file <entry>] <term>` prints the page that `(doc-page <term>)` returns, for a prelude term or, with `--file`, for a term the entry module defines or imports. It expands `(header <term>)` and `(page-body <term>)` and prints the first followed by the second, so it can color the header apart from the docstring, as [Colors](#colors) states.
 
 `--types` also type checks the program and prints the inferred type of the definition that the page describes above the page, as the line that `rslisp signatures` prints: `--types twice` prints `(type twice (fn (i64) i64))`, then the page. A macro that answers for a function, such as `->point` or a `defn` with keyword parameters, gets that function's type under the macro's name. A term with no type of its own, such as a struct, another macro or a kernel form, gets the page alone. A documented struct `point` beside an undocumented function `point` gets the struct's page, so it gets no type line. When the program does not type check, `--types` prints the page with no type line, the errors on stderr, and exits 1. `(doc term)` and `(doc-page term)` never show a type, because a lookup expands before the type checker runs.
 
@@ -632,6 +632,8 @@ An expression never changes the buffer. After a module file changes on disk, an 
 - When standard output decides to color, the program's standard output goes through a pipe. The CLI finds each value by the marker of `eval --json`, colors the value, and writes every other byte of the program's output unchanged, as it arrives, so a program's own escape codes and a line it prints before it reads input reach the terminal at once.
 - When standard output decides not to color, the program keeps standard output, as under `run`, and each value prints plain. So `rslisp eval f '(g)' | less` prints the value plain, and a diagnostic on a terminal stays colored.
 - The program's standard error never goes through a pipe and never takes a color.
+
+**`rslisp doc` colors the header and the `--types` line with the token colors, by standard output's decision.** The docstring is Markdown and stays plain. At the prompt, `(doc term)` is the program's output, so the whole page prints plain.
 
 ## Rust interop
 
