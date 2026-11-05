@@ -6,7 +6,7 @@
 
 (export defrule defmacro template map-list whole-pairs? note-docstring value-doc-key type-doc-key header-shape document
         docstring-before-body? documented-body? docstring-before-parameters
-        doc-page docstring header)
+        doc-page docstring header page-body)
 
 (def map-list
   (fn (function items)
@@ -434,8 +434,15 @@
 (defmacro doc-page (term)
   "Returns the page of a term as a string: its header, a blank line, then its docstring.
 
-  A term without a docstring has `No documentation.` in its place."
+  A term without a docstring has `No documentation.` in its place. The page
+  is the text of (header term) followed by the text of (page-body term)."
   (documentation-part (quote page) term))
+
+(defmacro page-body (term)
+  "Returns the page of a term after its header: a blank line, then its docstring.
+
+  A term without a docstring has `No documentation.` in its place."
+  (documentation-part (quote page-body) term))
 
 (defmacro docstring (term)
   "Returns the docstring of a term as a string."
@@ -574,7 +581,13 @@
         (string (note-header note))
         (if (value-eq part (quote docstring))
             (clean-docstring (first (note-docstrings note)))
-            (string (note-header note) "\n\n" (page-text note))))))
+            (if (value-eq part (quote page-body))
+                (page-body-text note)
+                (string (note-header note) (page-body-text note)))))))
+
+(def page-body-text
+  (fn (note)
+    (string "\n\n" (page-text note))))
 
 (def page-text
   (fn (note)
