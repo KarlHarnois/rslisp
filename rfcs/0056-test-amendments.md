@@ -87,12 +87,13 @@ The project owner decided on 2026-11-05:
 
 1. **`deftest`, `assert`, `run-tests` and the coverage helpers live in `prelude/test`,** which the always-loaded prelude does not import. A test module writes `(use prelude/test assert deftest)`.
 2. **`rslisp test` resolves `run-tests` in `prelude/test`,** which it loads itself.
-3. **`check-equal` and `check-equal-with` take the two sides and the comparison as a closure.** Their types are `(where ((a show) (b show)) (fn ((ref str) (ref str) (ref a) (ref b) (fn ((ref a) (ref b)) bool)) unit))` and the same with a last `(ref str)`.
+3. **`check-equal` and `check-equal-with` take the two sides and the comparison as a closure.** Their types are `(where ((a show) (b show)) (fn ((ref str) (ref str) (ref a) (ref b) (fn ((ref a) (ref b)) bool)) unit))` and, with a message, the same with `(m display)` and a last `(fn-once () m)`.
 4. **The checks and the runner are runtime parts,** one per marker in `prelude/runtime/`, with `rust` templates in `prelude/test`, as `expect-ok` is. The emitted Rust holds a function only when it calls that function, and no `#[allow(dead_code)]`.
 5. **A side of `=` that is a `deref`, written or from a macro's expansion, passes to the check as `(do side)`.** `=` accepts such a side only when its value is Copy, and the call borrows the block's value, so `assert` accepts and rejects what `=` does, and each side runs left then right. `(ref (deref x))` emits `&*x`, which `borrow_deref_ref` rejects. Passing `x` itself fails on a reference to a reference with rustc's `E0631` and accepts `(deref x)` of a value. A `let` of the side runs a right `deref` before the left side. A macro cannot see `x`'s type. A Copy side without `show` is `L0404` on the `assert`, once, not on the side.
 6. **`assert` works in any code,** as Rust's `assert!` does. A failed check stores its record in a static of the runtime, where the runner finds it, and panics with its location, its written form, both sides and its message, so the panic reads with no runner.
 7. **A test's function ends with a unit form, and `run-test` takes `(fn () unit)`.** A test's value is dropped, so a test that returns an `err` passes.
 8. **A mismatch between the two sides labels the whole `assert`.** A written `=` labels the right side. The closure's `left` and `right` take the `assert`'s location, and a macro cannot give them a side's span: the closure's head written as the user's own `=` symbol labels the same place.
+9. **The message runs only when the check fails,** as with Rust's `assert!`. `assert` passes it as a closure, a string literal as it is and any other message under `str`, so a variable keeps its value.
 
 ## Rejected options and why
 

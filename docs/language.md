@@ -692,7 +692,7 @@ An expression never changes the buffer. After a module file changes on disk, an 
 - A second test of one name in one module is `L0333`, at the second test, with the first marked.
 - A test's full name is its module's path, `/`, and its name, such as `text/format/pads-left`.
 
-`assert` takes one form and an optional message. A failed `assert` ends its test. When the form is a call of the prelude's `=` with two arguments, `assert` passes each side to the check, in order, with the comparison as a closure, `(fn (left right) (= left right))`. So each side runs once, a side keeps its value, the comparison type checks as a written `=` does, with a literal or `none` taking its type from the other side, and a side without `show` is reported at that side. A mismatch between the two sides labels the whole `assert`, because the closure's names take its location. A failure shows both sides in their printed form. A side that is a `deref`, written or from a macro's expansion, is a Copy value, because `=` rejects any other, and a written `deref` turns off the borrow at a call, so `assert` passes that side as `(do side)`, whose value the call borrows. Each side still runs left then right. `assert` accepts what `=` accepts and rejects what `=` rejects, and a Copy side without `show` is reported at the `assert`, once. Any other form shows as written.
+`assert` takes one form and an optional message. A failed `assert` ends its test. The message runs only when the check fails, as with Rust's `assert!`, so a message that panics does not fail a passing `assert`. A string literal is the closure's value, and any other message is `(str message)` in the closure, so a variable keeps its value. When the form is a call of the prelude's `=` with two arguments, `assert` passes each side to the check, in order, with the comparison as a closure, `(fn (left right) (= left right))`. So each side runs once, a side keeps its value, the comparison type checks as a written `=` does, with a literal or `none` taking its type from the other side, and a side without `show` is reported at that side. A mismatch between the two sides labels the whole `assert`, because the closure's names take its location. A failure shows both sides in their printed form. A side that is a `deref`, written or from a macro's expansion, is a Copy value, because `=` rejects any other, and a written `deref` turns off the borrow at a call, so `assert` passes that side as `(do side)`, whose value the call borrows. Each side still runs left then right. `assert` accepts what `=` accepts and rejects what `=` rejects, and a Copy side without `show` is reported at the `assert`, once. Any other form shows as written.
 
 `assert` works in any code, as Rust's `assert!` does, so a helper that a test and `main` share builds, and a `(use prelude/test assert)` works under `build`, `run`, `eval` and the prompt. A failed `assert` panics, and with no runner the panic prints its location, its written form, both sides of `=` and its message:
 
@@ -705,9 +705,9 @@ right: "007"
 | The `assert` | Calls | Type |
 | --- | --- | --- |
 | any form other than `=` | `check-true` | `(fn ((ref str) (ref str) bool) unit)` |
-| any form other than `=`, with a message | `check-true-with` | `(fn ((ref str) (ref str) bool (ref str)) unit)` |
+| any form other than `=`, with a message | `check-true-with` | `(where ((m display)) (fn ((ref str) (ref str) bool (fn-once () m)) unit))` |
 | `(= left right)` | `check-equal` | `(where ((a show) (b show)) (fn ((ref str) (ref str) (ref a) (ref b) (fn ((ref a) (ref b)) bool)) unit))` |
-| `(= left right)`, with a message | `check-equal-with` | `(where ((a show) (b show)) (fn ((ref str) (ref str) (ref a) (ref b) (fn ((ref a) (ref b)) bool) (ref str)) unit))` |
+| `(= left right)`, with a message | `check-equal-with` | `(where ((a show) (b show) (m display)) (fn ((ref str) (ref str) (ref a) (ref b) (fn ((ref a) (ref b)) bool) (fn-once () m)) unit))` |
 
 Each check takes the `assert`'s location, from `form-location`, and its written text first. A failed check stores its record in a static of the runtime, where the runner finds it, then panics.
 

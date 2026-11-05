@@ -4,10 +4,9 @@ pub fn check_equal<A: Show + ?Sized, B: Show + ?Sized>(
     left: &A,
     right: &B,
     equal: impl Fn(&A, &B) -> bool,
-    message: Option<&str>,
 ) {
     if !equal(left, right) {
         let sides = [Shown(left).to_string(), Shown(right).to_string()];
-        fail_check("fail-equal", location, text, &sides, message);
+        fail_check("fail-equal", location, text, &sides, None);
     }
 }
