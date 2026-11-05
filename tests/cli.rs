@@ -161,6 +161,13 @@ const PROMPT_WARNING: &str = "(defn pick (x) (match x (_ 1) (_ 2)))\n(pick 1)\n(
 const SHADOWED_PRINTLN: &str = "(defn println (x) x)\n(defn square (n) (* n n))\n";
 const COUNT_THEN_FAIL: &str = "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n(type count-up (fn (i64) unit))\n(defn count-up (i)\n  (println i)\n  (if (< i 1000000) (recur (+ i 1)) (exit 7)))\n";
 
+const UNFORMATTED: &str = "(defn twice (x)\n      (* 2 x))   ; doubles\n(def limit 10)\n";
+const FORMATTED: &str = "(defn twice (x) (* 2 x)) ; doubles\n\n(def limit 10)\n";
+const UNCLOSED: &str = "(defn main ()\n  (println 1)\n";
+const LOOP_SHAPE: &str = "(use prelude/macros header-shape)\n\n(export dotimes)\n\n(defrule dotimes ((binding body ...) (do body ...)))\n\n(header-shape (dotimes binding))\n";
+const LOOP_CALL: &str = "(use shapes/loops dotimes)\n\n(dotimes (index 10) (println \"first line of the body\") (println index))\n";
+const LOOP_CALL_SHAPED: &str = "(use shapes/loops dotimes)\n\n(dotimes (index 10)\n  (println \"first line of the body\")\n  (println index))\n";
+
 const UNBOUND_NAMES_PAST_THE_CAP: usize = 25;
 
 struct Sandbox {
@@ -196,6 +203,10 @@ impl Sandbox {
         }
         fs::write(path, source).expect("the sandbox accepts files");
         self
+    }
+
+    fn contents(&self, name: &str) -> String {
+        fs::read_to_string(self.directory.join(name)).expect("the sandbox file is readable")
     }
 
     fn with_unbound_names(self, name: &str, count: usize) -> Self {
@@ -937,6 +948,184 @@ fn unreadable_file_is_a_usage_error() {
             .stderr()
             .starts_with("error: cannot read `missing.rslisp`")
     );
+}
+
+#[test]
+fn fmt_rewrites_a_file_in_place_and_prints_nothing() {
+    let sandbox = Sandbox::new("fmt_rewrites").with_file("twice.rslisp", UNFORMATTED);
+    let formatted = sandbox.compiler(&["fmt", "twice.rslisp"]);
+    formatted.assert_silent_success();
+    assert_eq!(
+        (formatted.stdout(), sandbox.contents("twice.rslisp")),
+        (String::new(), FORMATTED.to_string())
+    );
+}
+
+#[test]
+fn fmt_check_prints_each_file_that_would_change_and_writes_nothing() {
+    let sandbox = Sandbox::new("fmt_check_changes")
+        .with_file("twice.rslisp", UNFORMATTED)
+        .with_file("done.rslisp", FORMATTED);
+    let check = sandbox.compiler(&["fmt", "--check", "twice.rslisp", "done.rslisp"]);
+    check.assert_exit_code(1);
+    assert_eq!(
+        (check.stdout(), sandbox.contents("twice.rslisp")),
+        ("twice.rslisp\n".to_string(), UNFORMATTED.to_string())
+    );
+}
+
+#[test]
+fn fmt_check_exits_0_when_every_file_is_formatted() {
+    let sandbox = Sandbox::new("fmt_check_formatted").with_file("done.rslisp", FORMATTED);
+    let check = sandbox.compiler(&["fmt", "--check", "done.rslisp"]);
+    check.assert_silent_success();
+    assert_eq!(check.stdout(), "");
+}
+
+#[test]
+fn fmt_reads_standard_input_and_writes_the_formatted_text() {
+    let sandbox = Sandbox::new("fmt_standard_input");
+    let formatted = sandbox.compiler_reading(UNFORMATTED, &["fmt", "-"]);
+    formatted.assert_silent_success();
+    assert_eq!(formatted.stdout(), FORMATTED);
+}
+
+#[test]
+fn fmt_of_standard_input_reads_shapes_from_modules_beside_its_stdin_path() {
+    let sandbox =
+        Sandbox::new("fmt_standard_input_shapes").with_file("shapes/loops.rslisp", LOOP_SHAPE);
+    let formatted = sandbox.compiler_reading(
+        LOOP_CALL,
+        &["fmt", "--stdin-path", "programs/main.rslisp", "-"],
+    );
+    formatted.assert_silent_success();
+    assert_eq!(formatted.stdout(), LOOP_CALL_SHAPED);
+}
+
+#[test]
+fn fmt_formats_every_source_file_under_a_directory() {
+    let sandbox = Sandbox::new("fmt_directory")
+        .with_file("project/twice.rslisp", UNFORMATTED)
+        .with_file("project/nested/limit.rslisp", UNFORMATTED)
+        .with_file("project/notes.txt", UNFORMATTED);
+    sandbox
+        .compiler(&["fmt", "project"])
+        .assert_silent_success();
+    assert_eq!(
+        [
+            sandbox.contents("project/twice.rslisp"),
+            sandbox.contents("project/nested/limit.rslisp"),
+            sandbox.contents("project/notes.txt"),
+        ],
+        [FORMATTED, FORMATTED, UNFORMATTED].map(String::from)
+    );
+}
+
+#[test]
+fn fmt_check_of_standard_input_that_would_change_prints_its_name_and_exits_1() {
+    let sandbox = Sandbox::new("fmt_check_standard_input_changes");
+    let check = sandbox.compiler_reading(UNFORMATTED, &["fmt", "--check", "-"]);
+    check.assert_exit_code(1);
+    assert_eq!(check.stdout(), "<stdin>\n");
+}
+
+#[test]
+fn fmt_check_of_formatted_standard_input_prints_nothing() {
+    let sandbox = Sandbox::new("fmt_check_standard_input_formatted");
+    let check = sandbox.compiler_reading(FORMATTED, &["fmt", "--check", "-"]);
+    check.assert_silent_success();
+    assert_eq!(check.stdout(), "");
+}
+
+#[test]
+fn fmt_exits_2_when_an_unreadable_file_follows_a_reader_error() {
+    let sandbox =
+        Sandbox::new("fmt_unreadable_after_reader_error").with_file("unclosed.rslisp", UNCLOSED);
+    sandbox
+        .compiler(&["fmt", "unclosed.rslisp", "missing.rslisp"])
+        .assert_exit_code(2);
+}
+
+#[test]
+fn fmt_skips_a_symlinked_directory() {
+    let sandbox = Sandbox::new("fmt_symlinked_directory")
+        .with_file("project/twice.rslisp", UNFORMATTED)
+        .with_file("elsewhere/limit.rslisp", UNFORMATTED);
+    std::os::unix::fs::symlink(
+        sandbox.directory.join("elsewhere"),
+        sandbox.directory.join("project/linked"),
+    )
+    .expect("the sandbox accepts a symlink");
+    sandbox
+        .compiler(&["fmt", "project"])
+        .assert_silent_success();
+    assert_eq!(
+        [
+            sandbox.contents("project/twice.rslisp"),
+            sandbox.contents("elsewhere/limit.rslisp"),
+        ],
+        [FORMATTED, UNFORMATTED].map(String::from)
+    );
+}
+
+#[test]
+fn fmt_reports_a_reader_error_and_leaves_the_file_as_it_was() {
+    let sandbox = Sandbox::new("fmt_reader_error")
+        .with_file("unclosed.rslisp", UNCLOSED)
+        .with_file("twice.rslisp", UNFORMATTED);
+    let formatted = sandbox.compiler(&["fmt", "unclosed.rslisp", "twice.rslisp"]);
+    formatted.assert_exit_code(1);
+    assert!(
+        formatted.stderr().contains("error[L0101]"),
+        "{}",
+        formatted.stderr()
+    );
+    assert_eq!(
+        (
+            sandbox.contents("unclosed.rslisp"),
+            sandbox.contents("twice.rslisp")
+        ),
+        (UNCLOSED.to_string(), FORMATTED.to_string())
+    );
+}
+
+#[test]
+fn fmt_of_a_missing_file_is_a_usage_error() {
+    let sandbox = Sandbox::new("fmt_missing_file");
+    let formatted = sandbox.compiler(&["fmt", "missing.rslisp"]);
+    assert!(
+        formatted
+            .assert_exit_code(2)
+            .stderr()
+            .starts_with("error: cannot read `missing.rslisp`")
+    );
+}
+
+#[test]
+fn fmt_without_a_path_is_a_usage_error() {
+    Sandbox::new("fmt_without_path")
+        .compiler(&["fmt"])
+        .assert_exit_code(2);
+}
+
+#[test]
+fn fmt_of_standard_input_with_another_path_is_a_usage_error() {
+    let sandbox = Sandbox::new("fmt_standard_input_and_path").with_file("done.rslisp", FORMATTED);
+    let formatted = sandbox.compiler_reading(FORMATTED, &["fmt", "-", "done.rslisp"]);
+    assert!(
+        formatted
+            .assert_exit_code(2)
+            .stderr()
+            .starts_with("error: `-` reads standard input")
+    );
+}
+
+#[test]
+fn fmt_with_a_stdin_path_but_no_standard_input_is_a_usage_error() {
+    let sandbox = Sandbox::new("fmt_stdin_path_alone").with_file("done.rslisp", FORMATTED);
+    sandbox
+        .compiler(&["fmt", "--stdin-path", "done.rslisp", "done.rslisp"])
+        .assert_exit_code(2);
 }
 
 #[test]
