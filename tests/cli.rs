@@ -100,7 +100,7 @@ const EVALUATED_GEOMETRY: &str = "(defn area (w h) (* w h))\n(area 2 3)\n(defn r
 const GEOMETRY_DEFINITIONS: &str = "(defn area (w h) (* w h))\n(defn report ()\n  (println (area 4 5)))\n(do (defn twice (n) (* 2 n)))\n";
 const AREA_OF_A_STRING: &str = "(defn area (w h) (* w h))\n(defn report () (area 2 \"3\"))\n";
 const TOP_LEVEL_AREA_OF_A_STRING: &str = "(defn area (w h) (* w h))\n(area 2 \"3\")\n";
-const SCRATCH: &str = "(defn f (n) (* 2 n))\n\n(comment (f 1))\n";
+const SCRATCH: &str = "(defn f (n) (* 2 n))\n\n(comment (f 1) (exit 3))\n";
 const EXITS: &str = "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n(def abort (rust \"std::process::abort()\" (fn () unit)))\n";
 const TOP_LEVEL_DO_OF_EXPRESSIONS: &str = "(defn square (n) (* n n))\n(do (prn (square 3)))\n";
 const UNREACHABLE_ARM_IN_A_BODY: &str =
@@ -2428,7 +2428,7 @@ fn eval_json_prints_nothing_for_a_comment_form() {
         "--column",
         "1",
         "scratch.rslisp",
-        "(comment (f 1))",
+        "(comment (f 1) (exit 3))",
     ]);
     assert_eq!(
         eval.assert_silent_success().json_replies(),
