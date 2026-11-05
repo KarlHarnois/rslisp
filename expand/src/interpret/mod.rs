@@ -11,7 +11,9 @@ pub use value::{Closure, Env, Value};
 
 use std::rc::Rc;
 
-use crate::core::{BindingId, Block, BodyItem, Control, Expr, ExprKind, Leaf, Literal, Namespace};
+use crate::core::{
+    BindingId, Block, BodyItem, Control, Declaration, Expr, ExprKind, Leaf, Literal,
+};
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Symbol};
 use crate::source::Span;
@@ -32,7 +34,7 @@ pub trait CompileTimeHost {
     fn expand_call(&mut self, call: Form) -> Option<Form>;
     fn add_module_note(&mut self, key: &str, note: Form);
     fn module_notes(&self, context: &Symbol, key: &str) -> Vec<Form>;
-    fn declare_definition(&mut self, name: Form, namespace: Namespace);
+    fn declare_definition(&mut self, name: Form, declaration: Declaration);
 }
 
 enum Step {

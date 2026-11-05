@@ -1,0 +1,9 @@
+(use code declare-macro-definition fail)
+
+(defmacro defdsl (name)
+  (declare-macro-definition name)
+  (fail "defdsl is not ready" name))
+
+(defdsl query)
+
+(defn main () (println (query (a -> b))))

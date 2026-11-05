@@ -7,7 +7,7 @@ use super::budget_arena::BudgetId;
 use super::problems::ExpandProblems;
 use super::recur_check::RecurCheck;
 use super::try_check::TryCheck;
-use crate::core::{BindingId, Expr};
+use crate::core::{BindingId, Declaration, Expr};
 use crate::diagnostic::Diagnostic;
 use crate::interpret::{Env, Interpreter, Value};
 use crate::reader::Form;
@@ -20,7 +20,7 @@ enum GlobalState {
     Lowering,
     Lowered(Rc<Expr>),
     Failed,
-    FailedDefinition,
+    FailedDefinition(Declaration),
 }
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
@@ -64,8 +64,9 @@ impl GlobalTable {
             .collect()
     }
 
-    pub fn record_failed_definition(&mut self, binding: BindingId) {
-        self.states.insert(binding, GlobalState::FailedDefinition);
+    pub fn record_failed_definition(&mut self, binding: BindingId, declaration: Declaration) {
+        self.states
+            .insert(binding, GlobalState::FailedDefinition(declaration));
         self.failed_definition_count += 1;
     }
 
@@ -81,7 +82,7 @@ impl GlobalTable {
     pub fn is_failed_definition(&self, binding: BindingId) -> bool {
         matches!(
             self.states.get(&binding),
-            Some(GlobalState::FailedDefinition)
+            Some(GlobalState::FailedDefinition(_))
         )
     }
 
@@ -157,7 +158,7 @@ impl Expander<'_> {
                     .insert(binding, GlobalState::Lowered(Rc::clone(&expr)));
                 Ok(expr)
             }
-            Some(failed @ (GlobalState::Failed | GlobalState::FailedDefinition)) => {
+            Some(failed @ (GlobalState::Failed | GlobalState::FailedDefinition(_))) => {
                 self.tables.globals.states.insert(binding, failed);
                 Err(ExpandProblems::broken_definition(
                     self.tables.bindings.get(binding).name(),

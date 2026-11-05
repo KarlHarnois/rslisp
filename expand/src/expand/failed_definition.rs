@@ -1,22 +1,24 @@
 use super::Expander;
 use super::context::DefinitionContext;
 use super::rest_of_body::RestOfBody;
-use crate::core::{BindingId, BindingKind, BodyItem, Expr, ExprKind, Leaf, ModuleId, Namespace};
+use crate::core::{
+    BindingId, BindingKind, BodyItem, Declaration, Expr, ExprKind, Leaf, ModuleId, Namespace,
+};
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, Symbol};
 use crate::scope::{Phase, Scope};
 
 pub(super) struct DeclaredName {
     name: Form,
-    namespace: Namespace,
+    declaration: Declaration,
     introduction: Scope,
 }
 
 impl DeclaredName {
-    pub(super) fn new(name: Form, namespace: Namespace, introduction: Scope) -> Self {
+    pub(super) fn new(name: Form, declaration: Declaration, introduction: Scope) -> Self {
         Self {
             name,
-            namespace,
+            declaration,
             introduction,
         }
     }
@@ -94,7 +96,7 @@ impl Expander<'_> {
     fn declared_value_name(&self) -> Option<Form> {
         self.declared_definitions
             .iter()
-            .find(|declared| declared.namespace == Namespace::Value)
+            .find(|declared| declared.declaration.namespace() == Namespace::Value)
             .map(DeclaredName::binder)
     }
 
@@ -104,7 +106,7 @@ impl Expander<'_> {
             .expect("a top-level call expands inside a module");
         let declared = std::mem::take(&mut self.declared_definitions);
         for name in &declared {
-            self.bind_failed_name(&name.binder(), name.namespace, module, context);
+            self.bind_failed_name(&name.binder(), name.declaration, module, context);
         }
         self.declared_definitions = declared;
     }
@@ -112,13 +114,16 @@ impl Expander<'_> {
     fn bind_failed_name(
         &mut self,
         name: &Form,
-        namespace: Namespace,
+        declaration: Declaration,
         module: ModuleId,
         context: &DefinitionContext,
     ) {
+        let namespace = declaration.namespace();
         let kind = Self::failed_kind(namespace, module);
         if let Ok(binding) = self.define_unrecorded_global(name, namespace, kind, context) {
-            self.tables.globals.record_failed_definition(binding);
+            self.tables
+                .globals
+                .record_failed_definition(binding, declaration);
         }
     }
 
