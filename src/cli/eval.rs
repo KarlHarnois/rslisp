@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use super::evaluation_output::EvaluationOutput;
 use super::exit_status::ExitStatus;
+use super::standard_error::StandardError;
 use super::temporary_directory::TemporaryDirectory;
 use super::terminal::{BuildTarget, EvaluationRequest, ModuleOfSources, Terminal};
 use crate::build::BuildProfile;
@@ -130,7 +131,9 @@ impl EvalCommand {
     }
 
     fn report_no_build_directory(error: std::io::Error) -> ExitStatus {
-        eprintln!("error: cannot create a build directory: {error}");
+        StandardError::write_line(format_args!(
+            "error: cannot create a build directory: {error}"
+        ));
         ExitStatus::Environment
     }
 }
@@ -231,10 +234,10 @@ impl FormsText {
     }
 
     fn report_misplaced(module: &Path, position: TextPosition) -> ExitStatus {
-        eprintln!(
+        StandardError::write_line(format_args!(
             "error: the forms are not the text of `{}` at {position}",
             module.display()
-        );
+        ));
         ExitStatus::UsageError
     }
 }

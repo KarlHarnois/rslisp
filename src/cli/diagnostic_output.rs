@@ -4,6 +4,7 @@ use anstream::ColorChoice;
 
 use super::capped_report::CappedReport;
 use super::json_replies::{JsonObject, JsonReplies};
+use super::standard_error::StandardError;
 use crate::diagnostic::{Diagnostic, DiagnosticRenderer, Diagnostics};
 use crate::source::{SourceMap, TextPosition};
 
@@ -27,14 +28,11 @@ struct JsonDiagnostic<'a> {
 
 impl DiagnosticOutput for RenderedDiagnostics {
     fn write(&self, sources: &SourceMap, diagnostics: &Diagnostics) {
-        eprintln!(
-            "{}",
-            CappedReport::new(self.renderer(sources)).render(diagnostics)
-        );
+        StandardError::write_line(CappedReport::new(self.renderer(sources)).render(diagnostics));
     }
 
     fn write_note(&self, sources: &SourceMap, message: &str) {
-        eprintln!("{}", self.renderer(sources).render_note(message));
+        StandardError::write_line(self.renderer(sources).render_note(message));
     }
 }
 
@@ -72,10 +70,7 @@ impl DiagnosticOutput for JsonDiagnostics {
     }
 
     fn write_note(&self, sources: &SourceMap, message: &str) {
-        eprintln!(
-            "{}",
-            DiagnosticRenderer::plain(sources).render_note(message)
-        );
+        StandardError::write_line(DiagnosticRenderer::plain(sources).render_note(message));
     }
 }
 

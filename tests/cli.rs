@@ -325,9 +325,25 @@ impl Sandbox {
     }
 
     fn compiler_writing_to_a_closed_pipe(&self, arguments: &[&str]) -> Outcome {
+        self.compiler_writing_to(Self::closed_pipe(), arguments)
+    }
+
+    fn compiler_reporting_to_a_closed_pipe(&self, arguments: &[&str]) -> Outcome {
+        let mut command = self.command(Path::new(Self::COMPILER), arguments);
+        command.stderr(Self::closed_pipe());
+        Outcome::of(&mut command)
+    }
+
+    fn assert_exit_code_with_a_closed_error_pipe(&self, arguments: &[&str], expected: i32) {
+        self.compiler(arguments).assert_exit_code(expected);
+        self.compiler_reporting_to_a_closed_pipe(arguments)
+            .assert_exit_code(expected);
+    }
+
+    fn closed_pipe() -> Stdio {
         let (reader, writer) = std::io::pipe().expect("the test opens a pipe");
         drop(reader);
-        self.compiler_writing_to(Stdio::from(writer), arguments)
+        Stdio::from(writer)
     }
 
     #[cfg(target_os = "linux")]
@@ -972,6 +988,27 @@ fn doc_reports_a_standard_output_it_cannot_write() {
         "{}",
         doc.stderr()
     );
+}
+
+#[test]
+fn doc_keeps_its_exit_code_when_its_error_reader_closes() {
+    let sandbox = Sandbox::new("doc_closed_error_pipe").with_file("unbound.rslisp", UNBOUND_NAME);
+    let arguments = ["doc", "--file", "unbound.rslisp", "main"];
+    sandbox.assert_exit_code_with_a_closed_error_pipe(&arguments, 1);
+}
+
+#[test]
+fn check_keeps_its_exit_code_when_its_error_reader_closes() {
+    let sandbox = Sandbox::new("check_closed_error_pipe").with_file("unbound.rslisp", UNBOUND_NAME);
+    let arguments = ["check", "unbound.rslisp"];
+    sandbox.assert_exit_code_with_a_closed_error_pipe(&arguments, 1);
+}
+
+#[test]
+fn run_keeps_its_exit_code_when_its_error_reader_closes() {
+    let sandbox = Sandbox::new("run_closed_error_pipe").with_file("unbound.rslisp", UNBOUND_NAME);
+    let arguments = ["run", "unbound.rslisp"];
+    sandbox.assert_exit_code_with_a_closed_error_pipe(&arguments, 1);
 }
 
 #[test]

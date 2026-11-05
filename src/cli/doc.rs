@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use anstream::AutoStream;
 
 use super::exit_status::ExitStatus;
+use super::standard_error::StandardError;
 use super::terminal::Terminal;
 use super::token_colors::TokenColors;
 use crate::core::{BindingId, Expr, ExprKind, Leaf, Literal};
@@ -166,7 +167,7 @@ impl<'t> DocLookup<'t> {
         match forms.as_slice() {
             [form] if form.as_symbol().is_some() => Ok(form.clone()),
             _ => {
-                eprintln!("error: `{term}` is not one name");
+                StandardError::write_line(format_args!("error: `{term}` is not one name"));
                 Err(ExitStatus::UsageError)
             }
         }
@@ -220,7 +221,9 @@ impl ExpandedPage {
         match Self::literal(expanded) {
             Some(text) => Ok(text.to_string()),
             None => {
-                eprintln!("error: `{lookup}` did not expand to a string");
+                StandardError::write_line(format_args!(
+                    "error: `{lookup}` did not expand to a string"
+                ));
                 Err(ExitStatus::ProgramErrors)
             }
         }
