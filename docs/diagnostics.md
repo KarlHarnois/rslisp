@@ -69,7 +69,7 @@ help: a function with a similar name exists
 
 **Name a repeated test at the second `deftest`.** A second test of one name in one module is `L0333`, ``test `pads` is defined more than once``, with its primary label on the second test's name and a secondary label on the first, and the help `rename one of the tests`.
 
-**Report each error once.** A macro can copy one form of its input into several places of its output, so the expander drops a recovered error, or an error of a form that a top-level `do` splices, that repeats an earlier error of the same top-level form with the same code, title, labels and notes. Of the copies, it keeps the one with the most helps.
+**Report each error once.** A macro can copy one form of its input into several places of its output, so the expander drops a recovered error, or an error of a form that a top-level `do` splices, that repeats an earlier error of the same top-level form with the same code, title, labels and notes. Of the copies, it keeps the one with the most helps. The type stage does the same for the diagnostics of a whole program: a macro's output can give two forms one location, so two errors can match exactly.
 
 **Report a missing annotation only when no other error explains it.** A `type annotations needed` error is a symptom of another error, so the type stage drops it when the program has any other error.
 

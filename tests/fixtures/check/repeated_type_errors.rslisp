@@ -1,0 +1,14 @@
+(use prelude/test assert deftest)
+
+(defstruct operation
+  :name string
+  :op (fn (i64) i64))
+
+(defn twice (x) (* 2 x))
+
+(deftest compares-borrowed-operations
+  (let plain (->operation :name (str "a") :op twice))
+  (let borrowed (ref plain))
+  (assert (= (deref borrowed) (deref borrowed))))
+
+(defn main () (println (twice 2)))

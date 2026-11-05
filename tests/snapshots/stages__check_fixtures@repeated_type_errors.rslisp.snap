@@ -1,0 +1,37 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/repeated_type_errors.rslisp
+---
+error[L0404]: `operation` does not implement `show`
+  --> check/repeated_type_errors.rslisp:12:3
+   |
+12 |   (assert (= (deref borrowed) (deref borrowed))))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `show`
+   |
+   = note: `operation` cannot derive `show`: field `op` is `(fn (i64) i64)`
+   = help: a closure, an iterator or a function has no printed form
+
+error[L0404]: `operation` does not implement `partial-eq`
+  --> check/repeated_type_errors.rslisp:12:3
+   |
+12 |   (assert (= (deref borrowed) (deref borrowed))))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `partial-eq`
+   |
+   = note: `operation` cannot derive `partial-eq`: field `op` is `(fn (i64) i64)`
+
+error[L0404]: `operation` does not implement `copy`
+  --> check/repeated_type_errors.rslisp:12:21
+   |
+12 |   (assert (= (deref borrowed) (deref borrowed))))
+   |                     ^^^^^^^^ this needs `copy`
+   |
+   = note: `operation` cannot derive `copy`: field `name` is `string`
+
+error[L0404]: `operation` does not implement `copy`
+  --> check/repeated_type_errors.rslisp:12:38
+   |
+12 |   (assert (= (deref borrowed) (deref borrowed))))
+   |                                      ^^^^^^^^ this needs `copy`
+   |
+   = note: `operation` cannot derive `copy`: field `name` is `string`
