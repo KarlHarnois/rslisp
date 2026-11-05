@@ -43,7 +43,7 @@ use std::rc::Rc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::core::{BindingArena, BindingId, CoreModule, ModuleId, ModulePath, Namespace};
+use crate::core::{BindingArena, BindingId, CoreModule, ModuleId, ModulePath};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::modules::{ModuleRegistry, ModuleSources};
 use crate::reader::Form;
@@ -127,7 +127,7 @@ pub struct Expander<'s> {
     evaluated_forms: EvaluatedForms,
     recorded_inputs: RecordedInputs,
     failed_definitions: FxHashSet<crate::core::BindingId>,
-    declared_definitions: Vec<(Form, Namespace)>,
+    declared_definitions: Vec<failed_definition::DeclaredName>,
     introductions: Vec<Scope>,
 }
 
