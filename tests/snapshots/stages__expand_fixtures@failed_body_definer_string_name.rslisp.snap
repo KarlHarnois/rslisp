@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_body_definer_string_name.rslisp
+---
+error[L0328]: a docstring goes after the parameter list
+ --> expand/failed_body_definer_string_name.rslisp:1:30
+  |
+1 | (defn outer () (defn "inner" "doc" (x) x) 1)
+  |                              ^^^^^ a docstring in place of the parameter list
+  |
+  = help: write it as the first body form, after the parameter list

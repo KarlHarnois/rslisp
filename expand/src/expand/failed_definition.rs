@@ -96,8 +96,9 @@ impl Expander<'_> {
     fn declared_value_name(&self) -> Option<Form> {
         self.declared_definitions
             .iter()
-            .find(|declared| declared.declaration.namespace() == Namespace::Value)
+            .filter(|declared| declared.declaration.namespace() == Namespace::Value)
             .map(DeclaredName::binder)
+            .find(|binder| binder.as_symbol().is_some())
     }
 
     fn bind_failed_names(&mut self, context: &DefinitionContext) {
