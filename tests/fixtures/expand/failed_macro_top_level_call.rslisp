@@ -1,0 +1,5 @@
+(defmacro my-def "doc" (name) name)
+
+(my-def foo)
+
+(defn main () (println (foo)))
