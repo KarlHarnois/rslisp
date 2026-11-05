@@ -1,0 +1,13 @@
+(use code declare-definition declare-type-definition)
+
+(defmacro defcounter (name)
+  (declare-type-definition name)
+  (declare-definition name)
+  (template (do (defstruct (unquote name) :count i64)
+                (defn (unquote name) () 0))))
+
+(defcounter clicks)
+
+(defn reset ((counter clicks)) (:count counter))
+
+(defn main () (println (clicks)))

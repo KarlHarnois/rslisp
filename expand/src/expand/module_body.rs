@@ -223,7 +223,7 @@ impl Expander<'_> {
         queue: &mut SplicedForms,
     ) -> Result<Option<PendingItem>, Diagnostic> {
         let written_span = form.span();
-        let form = self.expand_head(form, Some(context))?;
+        let form = self.expand_top_level_head(form, context)?;
         match self.definition_head(&form) {
             Ok(KernelForm::Definition(definition)) => {
                 self.evaluated_forms.note_definition(written_span);

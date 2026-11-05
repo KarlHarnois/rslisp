@@ -59,7 +59,29 @@ impl Expander<'_> {
     pub(super) fn expand_head(
         &mut self,
         form: Form,
+        context: Option<&mut DefinitionContext>,
+    ) -> Result<Form, Diagnostic> {
+        self.expand_head_with(form, context, Self::apply_macro)
+    }
+
+    pub(super) fn expand_top_level_head(
+        &mut self,
+        form: Form,
+        context: &mut DefinitionContext,
+    ) -> Result<Form, Diagnostic> {
+        self.expand_head_with(form, Some(context), Self::apply_definer)
+    }
+
+    fn expand_head_with(
+        &mut self,
+        form: Form,
         mut context: Option<&mut DefinitionContext>,
+        apply: impl Fn(
+            &mut Self,
+            BindingId,
+            Form,
+            Option<&mut DefinitionContext>,
+        ) -> Result<Form, Diagnostic>,
     ) -> Result<Form, Diagnostic> {
         let mut form = form;
         let mut expansions = 0;
@@ -67,7 +89,7 @@ impl Expander<'_> {
             if expansions == Self::MAX_EXPANSION_DEPTH {
                 return Err(ExpandProblems::expansion_too_deep(form.span()));
             }
-            form = self.apply_macro(binding, form, context.as_deref_mut())?;
+            form = apply(self, binding, form, context.as_deref_mut())?;
             expansions += 1;
         }
         Ok(form)
@@ -163,11 +185,13 @@ impl Expander<'_> {
         let closure = self.macro_closure(binding, call_site)?;
         let (input, introduction) = self.prepare_input(form, context);
         self.expansion_depth += 1;
+        self.introductions.push(introduction);
         let result = Interpreter::new(self, call_site).call(
             &Value::Closure(closure),
             vec![Value::Form(input)],
             call_site,
         );
+        self.introductions.pop();
         self.expansion_depth -= 1;
         let output = result.map_err(|diagnostic| Self::point_at_call(diagnostic, call_site))?;
         let mut form = self.output_form(binding, &output, call_site)?;

@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/declared_definitions.rslisp
+---
+(struct clicks (count i64))
+(def make-clicks (fn (count) (new clicks (count count))))
+(def clicks_2 (fn () 0))
+(def reset (fn ((counter clicks)) (field counter count)))
+(def main (fn () ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0 display)) (fn ((ref part-type-0)) unit))) (clicks_2))))
