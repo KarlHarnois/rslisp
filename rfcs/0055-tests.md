@@ -1,6 +1,6 @@
 # RFC 0055: Tests written in the language
 
-**Status:** Accepted
+**Status:** Accepted. Choice 1's and the Recommendation's place of `deftest`, `assert` and `run-tests` in the always-loaded prelude, choice 3's and choice 6's use of them with no `use`, `run-tests` resolved in the prelude's scope, choice 4's `check-equal` and `check-equal-with` types and emitted calls, and choice 6's runner written as prelude functions are superseded by 0056.
 **Date:** 2026-11-05
 
 ## Problem
