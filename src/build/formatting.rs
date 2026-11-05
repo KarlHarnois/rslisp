@@ -1,6 +1,6 @@
 use std::fmt;
 use std::io::{self, Read, Write};
-use std::process::{Child, Command, Stdio};
+use std::process::{Child, Command, ExitStatus, Stdio};
 use std::sync::mpsc::{self, Receiver};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
@@ -105,9 +105,10 @@ impl Rustfmt {
         output: &PipeReader,
         errors: &PipeReader,
     ) -> Result<String, FormattingError> {
-        let formatted = Self::send(child, source)
-            .and_then(|()| self.read_within_limit(output))
-            .inspect_err(|_| Self::stop(child))?;
+        Self::send(child, source).map_err(|error| Self::explain_failed_send(child, error))?;
+        let formatted = self
+            .read_within_limit(output)
+            .inspect_err(|_| _ = Self::stop(child))?;
         let status = child.wait().map_err(FormattingError::Unavailable)?;
         if InterruptSignal::stopped(status) {
             return Err(FormattingError::Interrupted);
@@ -136,6 +137,15 @@ impl Rustfmt {
             .map_err(|error| FormattingError::Failed(error.to_string()))
     }
 
+    fn explain_failed_send(child: &mut Child, error: FormattingError) -> FormattingError {
+        let interrupted = Self::stop(child).is_some_and(InterruptSignal::stopped);
+        if interrupted {
+            FormattingError::Interrupted
+        } else {
+            error
+        }
+    }
+
     fn read_within_limit(&self, output: &PipeReader) -> Result<Vec<u8>, FormattingError> {
         output
             .read_within(self.time_limit)
@@ -143,9 +153,9 @@ impl Rustfmt {
             .map_err(|error| FormattingError::Failed(error.to_string()))
     }
 
-    fn stop(child: &mut Child) {
+    fn stop(child: &mut Child) -> Option<ExitStatus> {
         child.kill().ok();
-        child.wait().ok();
+        child.wait().ok()
     }
 }
 
