@@ -28,7 +28,7 @@ impl InputHelper {
 
 impl Highlighter for InputHelper {
     fn highlight<'l>(&self, line: &'l str, _cursor: usize) -> Cow<'l, str> {
-        Cow::Owned(TokenColors::paint(line))
+        Cow::Owned(TokenColors::Painted.paint(line))
     }
 
     fn highlight_prompt<'b, 's: 'b, 'p: 'b>(
@@ -83,7 +83,7 @@ mod tests {
     fn the_typed_line_takes_the_token_colors() {
         assert_eq!(
             HelperFixture::colored("(f :x 1)"),
-            TokenColors::paint("(f :x 1)")
+            TokenColors::Painted.paint("(f :x 1)")
         );
     }
 

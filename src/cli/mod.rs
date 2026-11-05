@@ -22,6 +22,7 @@ mod interruption;
 mod json_replies;
 mod name_records;
 mod open_input;
+mod painted_program;
 mod program_stream;
 mod prompt_diagnostics;
 mod prompt_history;
@@ -362,7 +363,7 @@ impl JsonFlags {
         if self.json {
             Box::new(JsonEvaluation::new(self.id))
         } else {
-            Box::new(PrintedEvaluation)
+            Box::new(PrintedEvaluation::for_standard_output())
         }
     }
 }

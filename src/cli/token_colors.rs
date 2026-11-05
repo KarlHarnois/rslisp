@@ -1,9 +1,14 @@
+use anstream::ColorChoice;
 use anstyle::{AnsiColor, Effects, Style};
 
 use crate::core::Keyword;
 use crate::reader::{Token, TokenKind, TokenScan};
 
-pub struct TokenColors;
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TokenColors {
+    Painted,
+    Plain,
+}
 
 impl TokenColors {
     pub const STRING_STYLE: Style = AnsiColor::Green.on_default();
@@ -11,7 +16,21 @@ impl TokenColors {
     pub const KEYWORD_STYLE: Style = AnsiColor::Cyan.on_default();
     pub const COMMENT_STYLE: Style = Style::new().effects(Effects::DIMMED);
 
-    pub fn paint(text: &str) -> String {
+    pub fn deciding(choice: ColorChoice) -> Self {
+        match choice {
+            ColorChoice::Never => Self::Plain,
+            _ => Self::Painted,
+        }
+    }
+
+    pub fn paint(self, text: &str) -> String {
+        match self {
+            Self::Painted => Self::painted(text),
+            Self::Plain => text.to_string(),
+        }
+    }
+
+    fn painted(text: &str) -> String {
         let mut painted = String::with_capacity(text.len());
         let mut written = 0;
         for token in TokenScan::new(text) {
@@ -50,7 +69,7 @@ mod tests {
 
     impl PaintFixture {
         fn painted(text: &str) -> String {
-            TokenColors::paint(text)
+            TokenColors::Painted.paint(text)
         }
 
         fn styled(style: Style, text: &str) -> String {
@@ -86,5 +105,22 @@ mod tests {
     #[test]
     fn a_lone_keyword_marker_stays_plain() {
         assert_eq!(PaintFixture::painted(": [x]"), ": [x]");
+    }
+
+    #[test]
+    fn plain_colors_leave_the_text_as_it_is() {
+        assert_eq!(TokenColors::Plain.paint("(f :x 1)"), "(f :x 1)");
+    }
+
+    #[test]
+    fn only_a_decision_of_never_leaves_the_text_plain() {
+        assert_eq!(
+            TokenColors::deciding(ColorChoice::Never),
+            TokenColors::Plain
+        );
+        assert_eq!(
+            TokenColors::deciding(ColorChoice::AlwaysAnsi),
+            TokenColors::Painted
+        );
     }
 }
