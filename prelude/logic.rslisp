@@ -1,34 +1,52 @@
-(use prelude/macros defrule header-shape)
+(use prelude/macros defrule document header-shape)
 
 (export and cond not or unless when)
 
 (def not (rust "!{0}" (fn (bool) bool)))
 
 (defrule when
+  "Runs the body when the test is true: `(when test body ...)`.
+
+  It returns unit when the test is false."
   ((test body ...)
    (if test (do body ...) (do))))
 
 (header-shape (when test))
 
 (defrule unless
+  "Runs the body when the test is false: `(unless test body ...)`.
+
+  It returns unit when the test is true."
   ((test body ...)
    (if test (do) (do body ...))))
 
 (header-shape (unless test))
 
 (defrule and
+  "Returns whether every argument is true: `(and a b c)`.
+
+  It stops at the first false argument. With no arguments it is `true`, and
+  with one it is that argument."
   (() true)
   ((value) value)
   ((value next more ...)
    (if value (and next more ...) false)))
 
 (defrule or
+  "Returns whether any argument is true: `(or a b c)`.
+
+  It stops at the first true argument. With no arguments it is `false`, and
+  with one it is that argument."
   (() false)
   ((value) value)
   ((value next more ...)
    (if value true (or next more ...))))
 
 (defrule cond
+  "Runs the first clause whose test is true: `(cond (test body ...) ...)`.
+
+  A last clause `(else body ...)` runs when no test is true. Without one, the
+  call returns unit."
   ((((quote else) body ...))
    (do body ...))
   (((test body ...))
@@ -37,3 +55,8 @@
    (if test (do body ...) (cond clause more ...))))
 
 (header-shape (cond))
+
+(document (not value)
+  "Returns the opposite of a `bool`.
+
+  It emits `!value`.")

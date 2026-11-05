@@ -1472,7 +1472,7 @@ fn doc_types_prints_no_type_for_a_macro() {
     let sandbox = Sandbox::new("doc_types_macro");
     assert_eq!(
         sandbox.typed_page(&["when"]),
-        "(defrule when)\n\nNo documentation.\n"
+        "(defrule when)\n\nRuns the body when the test is true: `(when test body ...)`.\n\nIt returns unit when the test is false.\n"
     );
 }
 
