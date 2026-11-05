@@ -5,7 +5,7 @@
 
 ## Problem
 
-The language has no formatter. `rustfmt` lays out the emitted Rust (D17), but nothing lays out the source. Every author indents by hand, a reviewer checks the indentation by eye, and an editor that formats on save has no command to call. RFC 0041 already chose the docstring position so that "a formatter lays both out alike", and RFC 0047 (open in #277) plans evaluation from Neovim, where format on save is expected.
+The language has no formatter. `rustfmt` lays out the emitted Rust (D17), but nothing lays out the source. Every author indents by hand, a reviewer checks the indentation by eye, and an editor that formats on save has no command to call. RFC 0041 already chose the docstring position so that a formatter does not "lay out a documented and an undocumented `defn` differently", and RFC 0047 names evaluation from Neovim, where format on save is expected, as later work in #290.
 
 A formatter for this language has four constraints that a formatter for Rust or Go does not have:
 
@@ -18,7 +18,7 @@ One fact makes the problem smaller than in most Lisps: the reader treats only `(
 
 ## Measurements
 
-A prototype indenter scored three indentation rules against the code in this repository. It read every tracked `.rslisp` file except the `tests/fixtures/read/` fixtures, which hold reader errors, and the two generated `deep_nesting` entries. That is 1,606 files and 13,174 continuation lines, where a continuation line is a line whose first token sits inside a list. A line matches a rule when its indentation is the one the rule gives. The prototype lives outside the repository and is not part of this RFC.
+A prototype indenter scored three indentation rules against the code in this repository. It read every tracked `.rslisp` file except the `tests/fixtures/read/` fixtures, which hold reader errors, and the two generated `deep_nesting` entries. That is 1,606 files and 13,174 continuation lines, where a continuation line is a line whose first token sits inside a list. A line matches a rule when its indentation is the one the rule gives. The prototype lives outside the repository and is not part of this RFC. Every figure in this section comes from the code of 2026-11-02, as that prototype measured it.
 
 The three rules:
 
@@ -96,7 +96,7 @@ The costs:
 - A comment between two forms decides where a line must break, so the printer needs a rule for each comment position.
 - The emitted Rust follows `rustfmt`, but this language's users read the source, not the Rust, so the source keeps no layout it can borrow from `rustfmt`.
 
-It also has one gain: `rslisp expand` prints each top-level form on one line today, and a width printer could lay out forms that no author wrote, such as an expansion or a `doc` header.
+It also has one gain: `rslisp expand` prints each top-level form on one line today, and a width printer could lay out forms that no author wrote, such as an expansion or a `doc-page` header.
 
 ### Choice 2: how the formatter learns a form's layout
 
@@ -127,7 +127,7 @@ The cost is every aligned argument: an `if` lays out its test and its branches a
 
 #### 2B: the block rule, with shapes read by name
 
-The block rule above. A form's header length comes from the `header-shape` that its definer already states for `doc` (RFC 0044). `(header-shape (defn name parameters))` says that the header of a `defn` call is its name and its parameters: `doc` shows those forms, and the formatter keeps them on the head's line and indents the rest 2. One statement serves both, so a definer states its header once.
+The block rule above. A form's header length comes from the `header-shape` that its definer already states for `doc-page` (RFC 0044). `(header-shape (defn name parameters))` says that the header of a `defn` call is its name and its parameters: `doc-page` shows those forms, and the formatter keeps them on the head's line and indents the rest 2. One statement serves both, so a definer states its header once.
 
 ```lisp
 (defrule unless-zero
@@ -153,17 +153,17 @@ The formatter reads shapes without expanding the file:
 
 A list whose head has a shape takes the block rule. Every other list takes the align rule. The formatter matches a head by its name, so a local that shadows `match` still lays out as `match`. A wrong shape changes only the layout, never the meaning, so this costs no correctness.
 
-`header-shape` today states "the header of a definer's calls". 2B widens it to the header of any macro's calls, such as `(header-shape (loop bindings))`. `doc` reads shapes only for definers, so the wider meaning changes no page.
+`header-shape` today states "the header of a definer's calls". 2B widens it to the header of any macro's calls, such as `(header-shape (loop bindings))`. `doc-page` reads shapes only for definers, so the wider meaning changes no page.
 
 #### 2C: the block rule, with shapes resolved by expansion
 
-The formatter expands the file, resolves each list's head to its binding, and reads the shape from the defining module's notes, as `doc` does. Shadowing and renamed imports resolve as the compiler resolves them.
+The formatter expands the file, resolves each list's head to its binding, and reads the shape from the defining module's notes, as `doc-page` does. Shadowing and renamed imports resolve as the compiler resolves them.
 
 The costs:
 
 - A file that fails to expand gets no layout, or a layout that changes when an unrelated error elsewhere in the file is fixed.
 - Code inside `template` and `quote` is data with no bindings, and the prelude's macros are mostly templates, as in `(template (def (unquote name) (fn (unquote parameters) (splice body))))`. 2C must fall back to names inside a template, so it is 2B plus an expansion.
-- Each format pays an expansion, about 11 ms for the 38-definition session that RFC 0047 measured, where 2B pays only a read.
+- Each format pays an expansion, where 2B pays only a read. RFC 0047 measured about 20 ms for the front end to check a module of 38 definitions, expansion included.
 
 ### Choice 3: where the formatter runs
 
@@ -262,17 +262,17 @@ The gains:
 
 - Every shape is a `header-shape` form, for a kernel form, a prelude macro or a user macro. The formatter has one source and one rule for it.
 - The compiler gains nothing. "If the prelude can express a feature, NEVER add a kernel form for it" and "Every other feature belongs in the prelude" both point here.
-- `doc` does not change. A lookup reads the shapes of the module that defines the definer, and a kernel form never defines a binding through a macro call, so `definition-call` never returns one and no page reads a kernel shape.
+- `doc-page` does not change. A lookup reads the shapes of the module that defines the definer, and a kernel form never defines a binding through a macro call, so `definition-call` never returns one and no page reads a kernel shape.
 
 The costs:
 
-- The statements live outside the module that defines the forms. `docs/language.md` says to state a shape in the module that defines the definer, because that is where `doc` looks. Under 2B the formatter already reads shapes by name wherever they are written, so 4B adds no rule that 2B does not already need, but `docs/language.md` must state both readers.
+- The statements live outside the module that defines the forms. `docs/language.md` says to state a shape in the module that defines the definer, because that is where `doc-page` looks. Under 2B the formatter already reads shapes by name wherever they are written, so 4B adds no rule that 2B does not already need, but `docs/language.md` must state both readers.
 - Every program loads twelve more notes. `header-shape` adds each shape to `prelude/prelude`'s notes, which the saved prelude state holds, and every run deserializes that state. Each note is a list of two or three symbols, so the rise should be far below the 1% that the counters gate allows on `empty_program`, but the build must measure it with `nix develop -c cargo xtask bench measure`.
 - `header-shape` checks only that its argument is a list that starts with a symbol, so `(header-shape (mtach value))` lays out nothing and reports nothing. The same is true of a user's shape. A check that the name is bound, reported as `L0201`, would catch both.
 
 #### 4C: kernel notes that the compiler writes
 
-`create_builtin` adds a `header-shapes` note to the `kernel` module for each form, so the formatter and `doc` read a kernel shape exactly as they read a macro's. Rust would then write the note key `header-shapes` and the note's layout, which the prelude's `header-shape` macro chose, and "NEVER restate in Rust a name or a fact that the prelude states" forbids that.
+`create_builtin` adds a `header-shapes` note to the `kernel` module for each form, so the formatter and `doc-page` read a kernel shape exactly as they read a macro's. Rust would then write the note key `header-shapes` and the note's layout, which the prelude's `header-shape` macro chose, and "NEVER restate in Rust a name or a fact that the prelude states" forbids that.
 
 #### 4D: headers derived from the kernel's usage shapes
 
@@ -363,7 +363,7 @@ help: a name with a similar spelling exists
   |
 ```
 
-When a bound name is close in spelling, the error suggests it, with the same help that `L0201` already gives for an unknown name, such as `(doc defm)` suggesting `def`. Without the check, a misspelled shape applies to no form and the formatter lays the intended form out as a call, with nothing to say why. `header-shape` resolves its name in the prelude, the way `doc` already reports `L0201` for an unknown term, so the compiler gains no code. `rslisp fmt` reads shapes without expanding, so the error shows on `rslisp check`, `build` and `run`. A shape written above the definition of the macro it names is `L0201` too, with no help, as a call above that definition already is: the expander binds a macro's name only when it reaches the definition, so at the shape it cannot tell a misspelled name from one defined further down. The prelude writes each shape below its definer, and `docs/language.md` asks the same of users. The prelude's shapes resolve once, when the compiler builds the prelude state.
+When a bound name is close in spelling, the error suggests it, with the same help that `L0201` already gives for an unknown name, such as `(doc-page defm)` suggesting `def`. Without the check, a misspelled shape applies to no form and the formatter lays the intended form out as a call, with nothing to say why. `header-shape` resolves its name in the prelude, the way `doc-page` already reports `L0201` for an unknown term, so the compiler gains no code. `rslisp fmt` reads shapes without expanding, so the error shows on `rslisp check`, `build` and `run`. A shape written above the definition of the macro it names is `L0201` too, with no help, as a call above that definition already is: the expander binds a macro's name only when it reaches the definition, so at the shape it cannot tell a misspelled name from one defined further down. The prelude writes each shape below its definer, and `docs/language.md` asks the same of users. The prelude's shapes resolve once, when the compiler builds the prelude state.
 
 The project owner decided on 2026-11-03 that the formatter finds a user's shapes by following `use` (open question 2). It reads every module that the file reaches through `use`, tries each path against the file's directory and then each parent directory, and `rslisp fmt -` takes the file's path so an editor gets the same layout as the command line. A form whose shape it cannot find lines up like a call.
 
@@ -404,7 +404,7 @@ A lookup removes the indentation that the continuation lines share, so the page 
 (header-shape (defrule name) :docstring)
 ```
 
-For a marked definer, a string right after the header is a docstring when another form follows it, as RFC 0041 decided for every definer, so `(defn greeting () "hi")` keeps its string as written. `doc` ignores the marker, because it reads only the header. A separate statement, such as `(docstring-after-header defn)`, was rejected because it doubles the statements per definer. Guessing with no statement was rejected because a user macro may take a string as data right after its header, and shifting its lines would change what the program prints in a way the meaning check, which ignores docstring indentation, would not catch. zprint and `raco fmt` never change a string's text, so a re-indented definition can leave its docstring's continuation lines behind. The repository holds 6 multi-line strings, all docstrings.
+For a marked definer, a string right after the header is a docstring when another form follows it, as RFC 0041 decided for every definer, so `(defn greeting () "hi")` keeps its string as written. `doc-page` ignores the marker, because it reads only the header. A separate statement, such as `(docstring-after-header defn)`, was rejected because it doubles the statements per definer. Guessing with no statement was rejected because a user macro may take a string as data right after its header, and shifting its lines would change what the program prints in a way the meaning check, which ignores docstring indentation, would not catch. zprint and `raco fmt` never change a string's text, so a re-indented definition can leave its docstring's continuation lines behind. The repository holds 6 multi-line strings, all docstrings.
 
 The project owner decided on 2026-11-03 how trailing comments lay out (open question 4). A trailing comment sits one space after its form, as `raco fmt` does, so the formatter drops a gap that the author widened to line comments up. A `)` never takes a line of its own: one that would follow a trailing comment moves before it:
 
