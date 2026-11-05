@@ -78,9 +78,10 @@ impl RecurCheck {
 
     fn value_kind(&self, kind: &ExprKind) -> Result<(), Diagnostic> {
         match kind {
-            ExprKind::Try(value) | ExprKind::Borrow(_, value) | ExprKind::Deref(value) => {
-                self.expr(value, TailPosition::NotTail)
-            }
+            ExprKind::Try(value)
+            | ExprKind::Infer(value)
+            | ExprKind::Borrow(_, value)
+            | ExprKind::Deref(value) => self.expr(value, TailPosition::NotTail),
             _ => unreachable!("the caller matches a nested expression"),
         }
     }

@@ -123,6 +123,7 @@ impl TypeChecker {
         match kind {
             ExprKind::Recur(arguments) => self.infer_recur(arguments, span),
             ExprKind::Try(value) => self.infer_try(value, span),
+            ExprKind::Infer(operand) => self.infer_type_text(operand, span),
             ExprKind::Borrow(..) | ExprKind::Deref(..) => self.infer_written(expr, span),
             _ => self.infer_composite(kind, span),
         }
@@ -1540,6 +1541,15 @@ impl TypeChecker {
         Ok(TypedExpr {
             kind: TypedExprKind::Recur(typed_arguments),
             ty: target.result,
+            span,
+        })
+    }
+
+    fn infer_type_text(&mut self, operand: &Expr, span: Span) -> Result<TypedExpr, Diagnostic> {
+        let operand = self.infer(operand)?;
+        Ok(TypedExpr {
+            kind: TypedExprKind::Infer(Box::new(operand)),
+            ty: Type::str_ref(),
             span,
         })
     }

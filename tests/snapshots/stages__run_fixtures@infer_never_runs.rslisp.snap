@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/infer_never_runs.rslisp
+---
+string
+string
+unit
+unit
+(vec i64)
+string
+(some 2)

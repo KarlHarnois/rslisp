@@ -101,6 +101,7 @@ pub enum TypedExprKind {
         value: Box<TypedExpr>,
         conversion: TryErrorConversion,
     },
+    Infer(Box<TypedExpr>),
     Borrow(ReferenceKind, Box<TypedExpr>),
     Deref(Box<TypedExpr>),
     Control(TypedControl),
@@ -400,6 +401,7 @@ pub struct TypedProgram {
     pub literal_generics: FxHashMap<GenericId, LiteralKind>,
     pub unnameable_types: Diagnostics,
     pub closure_types: Vec<ClosureType>,
+    pub type_texts: super::type_text::TypeTexts,
     pub warnings: Diagnostics,
     pub checking: CheckWork,
 }

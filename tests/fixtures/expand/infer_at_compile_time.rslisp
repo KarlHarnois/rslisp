@@ -1,0 +1,3 @@
+(defmacro typed () (infer 1))
+
+(defn main () (typed))

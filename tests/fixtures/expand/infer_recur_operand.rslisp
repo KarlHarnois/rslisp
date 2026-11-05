@@ -1,0 +1,2 @@
+(defn countdown (n)
+  (infer (recur (- n 1))))

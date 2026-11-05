@@ -1,0 +1,13 @@
+(defn total (v)
+  (println (infer v))
+  (reduce (iter v)
+          0
+          (fn (sum n) (+ sum (deref n)))))
+
+(defn head (v)
+  (println (infer v))
+  (first v))
+
+(defn main ()
+  (prn (total (vec 1 2)))
+  (prn (head (vec 1 2))))

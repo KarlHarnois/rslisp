@@ -263,6 +263,7 @@ impl Expander<'_> {
             ExpressionForm::Fn => self.lower_fn(shape),
             ExpressionForm::Recur => self.lower_recur(shape),
             ExpressionForm::Try => self.lower_try(shape),
+            ExpressionForm::Infer => self.lower_infer(shape),
             other => self.lower_value_form(other, shape),
         }
     }
@@ -858,5 +859,11 @@ impl Expander<'_> {
         let items = shape.exactly(2)?;
         let value = self.lower_recovered(&items[1])?;
         Ok(ExprKind::Try(Box::new(value)))
+    }
+
+    fn lower_infer(&mut self, shape: &Shape) -> Result<ExprKind, Diagnostic> {
+        let items = shape.exactly(2)?;
+        let operand = self.lower_recovered(&items[1])?;
+        Ok(ExprKind::Infer(Box::new(operand)))
     }
 }

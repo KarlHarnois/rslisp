@@ -664,25 +664,72 @@ impl LiteralSignature<'_> {
     }
 }
 
+#[derive(Clone, Default)]
 pub struct Pinning {
-    pins: Vec<(BindingId, Type)>,
+    pins: FxHashMap<BindingId, Type>,
+    literal_pins: FxHashMap<BindingId, Type>,
 }
 
 impl Pinning {
     pub fn of(report: &InstantiationReport) -> Self {
-        let pins = report
-            .entries
-            .iter()
-            .filter_map(|(binding, entry)| {
-                let substitution = report.one_type(*binding)?;
-                Some((*binding, entry.body.substitute(&substitution)))
-            })
-            .collect();
-        Self { pins }
+        let mut pinning = Self::default();
+        for (binding, entry) in &report.entries {
+            if let Some(substitution) = report.one_type(*binding) {
+                pinning.pin(*binding, entry, &substitution);
+            }
+        }
+        pinning
     }
 
-    pub fn pins(&self) -> &[(BindingId, Type)] {
+    fn pin(
+        &mut self,
+        binding: BindingId,
+        entry: &FunctionUses,
+        substitution: &FxHashMap<GenericId, Type>,
+    ) {
+        let literal_substitution = substitution
+            .iter()
+            .filter(|(generic, _)| entry.literal.iter().any(|(literal, _)| literal == *generic))
+            .map(|(generic, ty)| (*generic, ty.clone()))
+            .collect();
+        self.pins
+            .insert(binding, entry.body.substitute(substitution));
+        self.literal_pins
+            .insert(binding, entry.body.substitute(&literal_substitution));
+    }
+
+    pub fn pins(&self) -> &FxHashMap<BindingId, Type> {
         &self.pins
+    }
+
+    pub fn literal_pins(&self) -> &FxHashMap<BindingId, Type> {
+        &self.literal_pins
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.pins.is_empty()
+    }
+
+    pub fn pins_type_parameters(&self) -> bool {
+        self.pins != self.literal_pins
+    }
+
+    pub fn unknown_to(&self, known: &Pinning) -> Pinning {
+        let unknown = |pins: &FxHashMap<BindingId, Type>| {
+            pins.iter()
+                .filter(|(binding, _)| !known.pins.contains_key(binding))
+                .map(|(binding, ty)| (*binding, ty.clone()))
+                .collect()
+        };
+        Pinning {
+            pins: unknown(&self.pins),
+            literal_pins: unknown(&self.literal_pins),
+        }
+    }
+
+    pub fn extend(&mut self, other: Pinning) {
+        self.pins.extend(other.pins);
+        self.literal_pins.extend(other.literal_pins);
     }
 }
 
@@ -776,8 +823,8 @@ mod tests {
             let report = InstantiationReport::of(program, &graph, &typed);
             Pinning::of(&report)
                 .pins()
-                .iter()
-                .map(|(binding, _)| program.bindings.get(*binding).name().to_string())
+                .keys()
+                .map(|binding| program.bindings.get(*binding).name().to_string())
                 .collect()
         }
     }

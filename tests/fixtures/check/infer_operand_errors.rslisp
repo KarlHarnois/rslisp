@@ -1,0 +1,11 @@
+(defn mismatch () (infer (+ 1 "a")))
+
+(defn too-large () (infer (the u8 300)))
+
+(defn nested-too-large ()
+  (infer (infer (the u8 301))))
+
+(defn main ()
+  (println (mismatch)
+           (too-large)
+           (nested-too-large)))

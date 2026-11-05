@@ -1,0 +1,16 @@
+(defn consume ((text string)) text)
+
+(defn wrap (x)
+  (println (infer (str x)))
+  (some x))
+
+(defn main ()
+  (let s (str "Ariya"))
+  (println (infer (consume s)))
+  (consume s)
+  (println (infer s))
+  (println (infer (println "never printed")))
+  (let v (vec))
+  (println (infer (push! v 1)))
+  (println (infer v))
+  (prn (wrap 2)))

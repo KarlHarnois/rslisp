@@ -74,6 +74,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `rust` | `(rust "template" type (type "template")...)` | the inlined template | type: type. clauses: a type and a template. |
 | `recur` | `(recur argument...)` | `loop` | arguments: expressions. |
 | `try` | `(try expression)` | `expression?` | expression: expression. |
+| `infer` | `(infer expression)` | a string literal | expression: expression, checked and never run. |
 | `rust-trait` | `(rust-trait name "Path" (method name type)? (structural key "text"...)? (help "text")? type...)` | trait bound, or a Rust `impl` for a program type when it declares a method | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. structural: the Rust text of the impl the compiler writes for each struct and enum, under the keys `:struct`, `:field`, `:variant`, `:part` and `:bare`. help: the help line a missing implementor shows. types: types, `(with type type)`, or `(where (param...) type)`. |
 | `trait` | `(trait name (method type)...)` | `trait` | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. |
 | `impl` | `(impl trait type (method (parameter...) body...)...)` | `impl` | trait and type: references to a trait and a struct or enum. methods: a name, parameter binders and a body. |
@@ -86,6 +87,8 @@ In type positions, the kernel provides `fn`, `fn-mut`, `fn-once`, `ref`, `mut`, 
 In expression positions, the kernel provides `ref`, `mut` and `deref`, and the constants `true` and `false`. The constants are kernel constants, not prelude definitions. Macro code and program code then see the same booleans, so `if`, `and` and `or` work in both.
 
 `ref`, `mut` and `deref` are kernel forms because a prelude function cannot mark its result as written. The compiler must see the written form to know that the value came from a written borrow or dereference.
+
+`infer` is a kernel form because only the checker knows an expression's inferred type ([RFC 0054](../rfcs/0054-infer.md)). A prelude macro runs before the checker and sees forms, never types. A prelude function runs in the emitted program, where Rust's `type_name` spells Rust's names, runs its argument, and cannot name a type variable.
 
 `assoc-at` is a kernel form because only the compiler knows a collection's inferred type. A prelude macro cannot choose between a vector and a map, so the `assoc-at` collection rule picks the emitted Rust by type. The rule knows `(vec a)`, `(sorted-map k v)` and `(hash-map k v)`.
 
@@ -176,6 +179,16 @@ A type parameter satisfies a trait when its `where` names the trait, or when eve
 
   `(+ x 300)` with `(n number)` is an error, because `n` can be `u8`. `(* x 0.5)` with `(n number)` is an error, because `n` can be an integer type. A literal whose parameter has no trait is an error, because the parameter can be any type. The conversion is exact for every allowed type, so Rust folds it into a constant.
 - A string literal has type `(ref str)`.
+
+### Type texts
+
+`(infer expression)` is a `(ref str)` that holds the expression's type as a `type` signature writes it, through the writer that every diagnostic's type uses ([RFC 0054](../rfcs/0054-infer.md)). The checker checks the expression in place, so it sees the enclosing scope, and its constraints count, bounds included: `(defn wrap (x) (println (infer (str x))) (some x))` generalizes to `(where ((a display)) (fn (a) (option a)))`. The program never runs the expression, and the ownership pass and the emitter never see it, so `(println (infer (vec 1 2)))` emits `println!("{}", "(vec i64)")`, `(infer s)` after `s` moved is allowed, and `(infer (println "x"))` prints nothing and is `"unit"`.
+
+- The text is written after the enclosing definition's inference, pinning and literal defaulting, so `(infer 1)` is `"i64"`, and `(let x 1) (println (infer x)) (the u8 x)` prints `u8`.
+- A type variable that appears in no binding outside the expression is generalized with its bounds: `(infer none)` is `"(where (a) (option a))"`, and `(infer identity)` is `"(where (a) (fn (a) a))"`. The generalized variables take the next names that the enclosing definition's type does not use, so `(defn wrap (x) (println (infer (pair x none))) (some x))` prints `(where (b) (pair a (option b)))`. A variable that a binding outside the expression shares is not generalized, and one the definition never fixes is `L0407` at its binding.
+- A parameter of a generic function gives its type variable, so `(infer x)` in `wrap` is `"a"` on every call, also when `wrap` emits with one concrete type.
+- A function type is written `fn`, never `fn-mut` or `fn-once`, and a parameter's passing mode does not show: `(defn total (v) (println (infer v)) (reduce (iter v) 0 (fn (sum n) (+ sum (deref n)))))` prints `(vec i64)`, though `total` takes `&[i64]`.
+- Two types of one name from two modules print alike, as in diagnostics.
 
 ### Standard types
 
@@ -562,7 +575,7 @@ Field names are not hygienic. They are looked up through the struct type.
 
 - The expander classifies each input. An input that a file accepts at its top level, `use` included, is a definition. Any other input is an expression.
 - A definition replaces every earlier input that defines or imports a name it defines or imports, and takes the place of the first one. The redefinition takes effect, even when it drops a name ([RFC 0051](../rfcs/0051-repl-redefinition.md)).
-- An expression runs as one form of `eval` against the buffer, and its result prints by the table above. A program that panics or exits nonzero gets a `note` with its exit code, and the buffer keeps its definitions.
+- An expression runs as one form of `eval` against the buffer, and its result prints by the table above, so `(infer (vec 1 2))` prints the string `"(vec i64)"`, quoted. A program that panics or exits nonzero gets a `note` with its exit code, and the buffer keeps its definitions.
 - `--root <directory>`, which defaults to the current directory, resolves `use`.
 - While the reader reports an unclosed list, `L0101`, or an unclosed string, `L0103`, the prompt reads the next line into the same text. Any other reader error rejects the text at once.
 - On a terminal, the prompt is `> `. Piped input shows no prompt.

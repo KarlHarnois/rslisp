@@ -1,0 +1,3 @@
+(defn none-given () (infer))
+
+(defn two-given () (infer 1 2))

@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/infer_shape.rslisp
+---
+error[L0210]: malformed `infer`
+ --> expand/infer_shape.rslisp:1:21
+  |
+1 | (defn none-given () (infer))
+  |                     ^^^^^^^ this does not fit the shape of `infer`
+  |
+  = help: write it as `(infer expression)`
+
+error[L0210]: malformed `infer`
+ --> expand/infer_shape.rslisp:3:20
+  |
+3 | (defn two-given () (infer 1 2))
+  |                    ^^^^^^^^^^^ this does not fit the shape of `infer`
+  |
+  = help: write it as `(infer expression)`

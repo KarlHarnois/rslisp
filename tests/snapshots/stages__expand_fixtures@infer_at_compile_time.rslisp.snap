@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/infer_at_compile_time.rslisp
+---
+error[L0316]: `infer` forms only exist at runtime
+ --> expand/infer_at_compile_time.rslisp:1:20
+  |
+1 | (defmacro typed () (infer 1))
+  |                    ^^^^^^^^^ used at compile time here

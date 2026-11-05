@@ -1,0 +1,49 @@
+(defstruct point
+  :x i64
+  :y i64)
+
+(defstruct user
+  :name string)
+
+(defstruct (holder a)
+  :item a)
+
+(enum shape empty (circle f64))
+
+(type greet
+  (where ('a)
+    (fn ((ref 'a str)) (ref 'a str))))
+
+(defn greet (name)
+  (println (infer name))
+  name)
+
+(defn main ()
+  (println (infer true)
+           " "
+           (infer (char "a"))
+           " "
+           (infer (do)))
+  (println (infer "hi")
+           " "
+           (infer (str "hi")))
+  (println (infer (vec 1 2))
+           " "
+           (infer (pair 1 "a")))
+  (println (infer (some 2.5))
+           " "
+           (infer (sorted-map "a" 1)))
+  (println (infer (->point 1 2))
+           " "
+           (infer shape/empty))
+  (println (infer (->holder 1)))
+  (let p (->point 1 2))
+  (let s (str "Ariya"))
+  (println (infer (ref p))
+           " "
+           (infer (mut s)))
+  (let u (->user :name (str "Leaf")))
+  (println (infer (:name u)))
+  (println (infer (iter (vec 1 2))))
+  (println (infer (fn (n) (+ n 1))))
+  (prn (greet "Leaf")))

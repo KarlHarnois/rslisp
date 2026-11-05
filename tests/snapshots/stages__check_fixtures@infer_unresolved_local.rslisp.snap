@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/infer_unresolved_local.rslisp
+---
+error[L0407]: type annotations needed
+ --> check/infer_unresolved_local.rslisp:2:10
+  |
+2 |   (let v (vec))
+  |          ^^^^^ cannot infer the type of this value
+  |
+  = help: annotate the binding, as in `(let (name i64) value)`, or add a `type` signature

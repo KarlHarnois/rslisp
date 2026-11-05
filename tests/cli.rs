@@ -116,6 +116,7 @@ const POINTS: &str = "(defstruct point :x i64 :y i64)\n";
 const PROMPT_DEFINITIONS: &str = "(defn square (n) (* n n))\n(defstruct point :x i64 :y i64)\n(->point (square 2) 3)\n(println \"side \" (square 3))\n";
 const PROMPT_DOC: &str =
     "(defn twice (x) \"Doubles a number.\" (* 2 x))\n(doc twice)\n(doc-page twice)\n";
+const PROMPT_INFER: &str = "(defn identity (x) x)\n(infer (vec 1 2))\n(infer identity)\n(infer none)\n(def text (infer identity))\ntext\n";
 const PROMPT_REDEFINITION: &str = "(defn square (n) (* n n))\n(defn cube (n) (* n (square n)))\n(cube 3)\n(defn square (n) (+ n n))\n(cube 3)\n";
 const PROMPT_DROPPING_REPLACEMENT: &str = "(defstruct point :x i64 :y i64)
 (defn ->point (x y) (vec x y))
@@ -2470,6 +2471,16 @@ fn eval_json_prints_a_value_that_borrows_a_temporary() {
 }
 
 #[test]
+fn eval_json_carries_an_inferred_type_as_a_string_value() {
+    let sandbox = Sandbox::new("eval_json_infer").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "--json", "session.rslisp", "(infer (vec 1 2))"]);
+    assert_eq!(
+        eval.assert_silent_success().json_replies()[0],
+        json!({"value": "\"(vec i64)\"", "form": 1})
+    );
+}
+
+#[test]
 fn eval_json_streams_a_doc_page_as_out() {
     let sandbox = Sandbox::new("eval_json_doc").with_file("page.rslisp", PAGE_PROGRAM);
     let eval = sandbox.compiler(&["eval", "--json", "page.rslisp", "(doc twice)"]);
@@ -3016,6 +3027,13 @@ fn repl_keeps_definitions_and_prints_expressions() {
 fn repl_prints_a_doc_page_as_text() {
     let sandbox = Sandbox::new("repl_doc");
     let repl = sandbox.compiler_reading(PROMPT_DOC, &["repl"]);
+    insta::assert_snapshot!(repl.transcript());
+}
+
+#[test]
+fn repl_prints_an_inferred_type_as_a_string() {
+    let sandbox = Sandbox::new("repl_infer");
+    let repl = sandbox.compiler_reading(PROMPT_INFER, &["repl"]);
     insta::assert_snapshot!(repl.transcript());
 }
 

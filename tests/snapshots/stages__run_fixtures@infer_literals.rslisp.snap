@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/infer_literals.rslisp
+---
+i64 f64
+u8
+u16
+n
+u16
+3

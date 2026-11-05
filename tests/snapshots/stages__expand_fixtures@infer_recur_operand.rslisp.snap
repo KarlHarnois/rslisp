@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/infer_recur_operand.rslisp
+---
+error[L0214]: `recur` is not in tail position
+ --> expand/infer_recur_operand.rslisp:2:10
+  |
+2 |   (infer (recur (- n 1))))
+  |          ^^^^^^^^^^^^^^^ this `recur` is not the last thing the function does
+  |
+  = help: make `recur` the last form of the function, or call the function by name

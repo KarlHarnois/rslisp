@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/infer_try_outside_fn.rslisp
+---
+error[L0220]: `try` is not inside a function
+ --> expand/infer_try_outside_fn.rslisp:1:18
+  |
+1 | (def text (infer (try (some 1))))
+  |                  ^^^^^^^^^^^^^^ there is no function here for `try` to return from
+  |
+  = help: write `try` inside a `fn` body
