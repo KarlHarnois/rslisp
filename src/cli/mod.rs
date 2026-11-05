@@ -36,6 +36,7 @@ mod temporary_directory;
 mod term_parser;
 mod terminal;
 mod token_colors;
+mod whole_characters;
 
 use std::convert::Infallible;
 use std::env;
