@@ -74,6 +74,11 @@ impl ScopeSet {
         self.position(scope).is_ok() || self.shares(scope)
     }
 
+    pub fn any(&self, matches: impl Fn(Scope) -> bool) -> bool {
+        self.own().iter().any(|scope| matches(*scope))
+            || self.shared().is_some_and(|shared| shared.any(&matches))
+    }
+
     #[inline]
     pub fn is_subset_of(&self, other: &ScopeSet) -> bool {
         if self.is_plain() && other.is_plain() {
@@ -393,6 +398,27 @@ mod tests {
             set.hash(&mut hasher);
             hasher.finish()
         }
+    }
+
+    #[test]
+    fn finds_a_scope_among_its_own_scopes() {
+        let (set, scopes) = Scopes::new().set_of(3);
+        assert!(set.any(|scope| scope == scopes[1]));
+    }
+
+    #[test]
+    fn finds_a_scope_among_its_shared_scopes() {
+        let (set, scopes) = Scopes::new().shared_set_of(Scopes::SHARED_LENGTH);
+        let last = scopes[scopes.len() - 1];
+        assert!(set.any(|scope| scope == last));
+    }
+
+    #[test]
+    fn finds_no_scope_that_a_shared_set_lacks() {
+        let mut fixture = Scopes::new();
+        let (set, _) = fixture.shared_set_of(Scopes::SHARED_LENGTH);
+        let absent = fixture.allocator.fresh();
+        assert!(!set.any(|scope| scope == absent));
     }
 
     #[test]

@@ -60,6 +60,10 @@ impl ChainPrefix {
         self.scopes()[start..].iter().all(|scope| predicate(*scope))
     }
 
+    pub(super) fn any(&self, matches: &impl Fn(Scope) -> bool) -> bool {
+        self.scopes().iter().any(|scope| matches(*scope))
+    }
+
     pub(super) fn for_each(&self, act: impl FnMut(Scope)) {
         self.scopes().iter().copied().for_each(act);
     }
@@ -108,6 +112,10 @@ impl SharedScopes {
     #[inline(never)]
     pub(super) fn contains(&self, scope: Scope) -> bool {
         self.prefixes().iter().any(|prefix| prefix.contains(scope))
+    }
+
+    pub(super) fn any(&self, matches: &impl Fn(Scope) -> bool) -> bool {
+        self.prefixes().iter().any(|prefix| prefix.any(matches))
     }
 
     pub(super) fn covered_length(&self, prefix: &ChainPrefix) -> usize {
