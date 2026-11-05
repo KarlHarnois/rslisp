@@ -116,7 +116,7 @@ impl EvaluationOutput for JsonEvaluation {
 #[cfg(test)]
 mod tests {
     use super::JsonEvaluation;
-    use crate::cli::program_stream::{ProgramStream, StreamedText};
+    use crate::cli::program_stream::{ProgramStream, Streamed};
 
     #[test]
     fn a_prompt_that_ends_like_the_language_name_streams_whole() {
@@ -124,7 +124,7 @@ mod tests {
         let mut stream = ProgramStream::new(&marker, vec![1]);
         assert_eq!(
             stream.read(b"Your answer"),
-            [StreamedText::Output("Your answer".to_string())]
+            [Streamed::Output(b"Your answer".to_vec())]
         );
     }
 }

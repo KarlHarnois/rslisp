@@ -1,10 +1,12 @@
 use std::collections::VecDeque;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum StreamedText {
-    Output(String),
+pub enum Streamed<T> {
+    Output(T),
     Value { text: String, form: usize },
 }
+
+pub type StreamedBytes = Streamed<Vec<u8>>;
 
 pub struct ProgramStream {
     marker: Vec<u8>,
@@ -29,51 +31,54 @@ impl ProgramStream {
         Self::new("", Vec::new())
     }
 
-    pub fn read(&mut self, bytes: &[u8]) -> Vec<StreamedText> {
+    pub fn read(&mut self, bytes: &[u8]) -> Vec<StreamedBytes> {
         self.pending.extend_from_slice(bytes);
-        let mut texts = Vec::new();
-        while let Some(text) = self.next_text() {
-            texts.push(text);
+        let mut parts = Vec::new();
+        while let Some(part) = self.next_part() {
+            parts.push(part);
         }
-        texts.extend(self.released_output());
-        texts.retain(|text| *text != StreamedText::Output(String::new()));
-        texts
+        parts.extend(self.released_output());
+        parts.retain(|part| *part != Streamed::Output(Vec::new()));
+        parts
     }
 
-    pub fn finish(mut self) -> Option<StreamedText> {
-        let rest = Self::text(&std::mem::take(&mut self.pending));
+    pub fn finish(mut self) -> Option<StreamedBytes> {
+        let rest = std::mem::take(&mut self.pending);
         match self.value_of_form {
-            Some(form) => Some(StreamedText::Value { text: rest, form }),
-            None => (!rest.is_empty()).then_some(StreamedText::Output(rest)),
+            Some(form) => Some(Streamed::Value {
+                text: Self::text(&rest),
+                form,
+            }),
+            None => (!rest.is_empty()).then_some(Streamed::Output(rest)),
         }
     }
 
-    fn next_text(&mut self) -> Option<StreamedText> {
+    fn next_part(&mut self) -> Option<StreamedBytes> {
         match self.value_of_form {
             Some(form) => self.next_value(form),
             None => self.output_before_marker(),
         }
     }
 
-    fn next_value(&mut self, form: usize) -> Option<StreamedText> {
+    fn next_value(&mut self, form: usize) -> Option<StreamedBytes> {
         let end = self
             .pending
             .iter()
             .position(|byte| *byte == Self::NEWLINE)?;
         let line: Vec<u8> = self.pending.drain(..=end).collect();
         self.value_of_form = None;
-        Some(StreamedText::Value {
+        Some(Streamed::Value {
             text: Self::text(&line[..end]),
             form,
         })
     }
 
-    fn output_before_marker(&mut self) -> Option<StreamedText> {
+    fn output_before_marker(&mut self) -> Option<StreamedBytes> {
         let start = self.marker_start()?;
         let output: Vec<u8> = self.pending.drain(..start).collect();
         self.pending.drain(..self.marker.len());
         self.value_of_form = self.forms.pop_front();
-        Some(StreamedText::Output(Self::text(&output)))
+        Some(Streamed::Output(output))
     }
 
     fn marker_start(&self) -> Option<usize> {
@@ -85,13 +90,12 @@ impl ProgramStream {
             .position(|window| window == self.marker)
     }
 
-    fn released_output(&mut self) -> Option<StreamedText> {
+    fn released_output(&mut self) -> Option<StreamedBytes> {
         if self.value_of_form.is_some() {
             return None;
         }
-        let released = Self::complete_characters(&self.pending[..self.held_back_start()]);
-        let output: Vec<u8> = self.pending.drain(..released).collect();
-        Some(StreamedText::Output(Self::text(&output)))
+        let released = self.held_back_start();
+        Some(Streamed::Output(self.pending.drain(..released).collect()))
     }
 
     fn held_back_start(&self) -> usize {
@@ -105,19 +109,6 @@ impl ProgramStream {
             .map_or(length, |held| length - held)
     }
 
-    fn complete_characters(bytes: &[u8]) -> usize {
-        let mut start = 0;
-        loop {
-            match std::str::from_utf8(&bytes[start..]) {
-                Ok(_) => return bytes.len(),
-                Err(error) => match error.error_len() {
-                    Some(invalid) => start += error.valid_up_to() + invalid,
-                    None => return start + error.valid_up_to(),
-                },
-            }
-        }
-    }
-
     fn text(bytes: &[u8]) -> String {
         String::from_utf8_lossy(bytes).into_owned()
     }
@@ -125,11 +116,11 @@ impl ProgramStream {
 
 #[cfg(test)]
 mod tests {
-    use super::{ProgramStream, StreamedText};
+    use super::{ProgramStream, Streamed, StreamedBytes};
 
     struct StreamFixture {
         stream: ProgramStream,
-        texts: Vec<StreamedText>,
+        parts: Vec<StreamedBytes>,
     }
 
     impl StreamFixture {
@@ -138,37 +129,37 @@ mod tests {
         fn marking(forms: Vec<usize>) -> Self {
             Self {
                 stream: ProgramStream::new(Self::MARKER, forms),
-                texts: Vec::new(),
+                parts: Vec::new(),
             }
         }
 
         fn unmarked() -> Self {
             Self {
                 stream: ProgramStream::unmarked(),
-                texts: Vec::new(),
+                parts: Vec::new(),
             }
         }
 
         fn read(mut self, bytes: &[u8]) -> Self {
-            self.texts.extend(self.stream.read(bytes));
+            self.parts.extend(self.stream.read(bytes));
             self
         }
 
-        fn read_texts(&self) -> &[StreamedText] {
-            &self.texts
+        fn read_parts(&self) -> &[StreamedBytes] {
+            &self.parts
         }
 
-        fn finished(mut self) -> Vec<StreamedText> {
-            self.texts.extend(self.stream.finish());
-            self.texts
+        fn finished(mut self) -> Vec<StreamedBytes> {
+            self.parts.extend(self.stream.finish());
+            self.parts
         }
 
-        fn output(text: &str) -> StreamedText {
-            StreamedText::Output(text.to_string())
+        fn output(bytes: &[u8]) -> StreamedBytes {
+            Streamed::Output(bytes.to_vec())
         }
 
-        fn value(text: &str, form: usize) -> StreamedText {
-            StreamedText::Value {
+        fn value(text: &str, form: usize) -> StreamedBytes {
+            Streamed::Value {
                 text: text.to_string(),
                 form,
             }
@@ -177,97 +168,95 @@ mod tests {
 
     #[test]
     fn output_before_a_marker_comes_before_the_value_of_the_form() {
-        let texts = StreamFixture::marking(vec![2]).read(b"xMARK6\n").finished();
+        let parts = StreamFixture::marking(vec![2]).read(b"xMARK6\n").finished();
         assert_eq!(
-            texts,
-            [StreamFixture::output("x"), StreamFixture::value("6", 2)]
+            parts,
+            [StreamFixture::output(b"x"), StreamFixture::value("6", 2)]
         );
     }
 
     #[test]
     fn a_marker_split_across_two_reads_is_still_found() {
         let fixture = StreamFixture::marking(vec![1]).read(b"hiMA");
-        assert_eq!(fixture.read_texts(), [StreamFixture::output("hi")]);
-        let texts = fixture.read(b"RK7\n").finished();
+        assert_eq!(fixture.read_parts(), [StreamFixture::output(b"hi")]);
+        let parts = fixture.read(b"RK7\n").finished();
         assert_eq!(
-            texts,
-            [StreamFixture::output("hi"), StreamFixture::value("7", 1)]
+            parts,
+            [StreamFixture::output(b"hi"), StreamFixture::value("7", 1)]
         );
     }
 
     #[test]
     fn output_that_cannot_start_a_marker_is_not_held_back() {
         let fixture = StreamFixture::marking(vec![1]).read(b"name? ");
-        assert_eq!(fixture.read_texts(), [StreamFixture::output("name? ")]);
+        assert_eq!(fixture.read_parts(), [StreamFixture::output(b"name? ")]);
     }
 
     #[test]
     fn a_value_split_across_two_reads_waits_for_its_newline() {
         let fixture = StreamFixture::marking(vec![1]).read(b"MARK(some");
-        assert!(fixture.read_texts().is_empty());
-        let texts = fixture.read(b" 1)\nafter\n").finished();
+        assert!(fixture.read_parts().is_empty());
+        let parts = fixture.read(b" 1)\nafter\n").finished();
         assert_eq!(
-            texts,
+            parts,
             [
                 StreamFixture::value("(some 1)", 1),
-                StreamFixture::output("after\n"),
+                StreamFixture::output(b"after\n"),
             ]
         );
     }
 
     #[test]
     fn each_marker_takes_the_next_printed_form() {
-        let texts = StreamFixture::marking(vec![1, 3])
+        let parts = StreamFixture::marking(vec![1, 3])
             .read(b"MARK1\nMARK3\n")
             .finished();
         assert_eq!(
-            texts,
+            parts,
             [StreamFixture::value("1", 1), StreamFixture::value("3", 3)]
         );
     }
 
     #[test]
     fn a_marker_after_the_last_printed_form_is_output() {
-        let texts = StreamFixture::marking(Vec::new())
+        let parts = StreamFixture::marking(Vec::new())
             .read(b"MARK1\n")
             .finished();
-        assert_eq!(texts, [StreamFixture::output("MARK1\n")]);
+        assert_eq!(parts, [StreamFixture::output(b"MARK1\n")]);
     }
 
     #[test]
     fn a_value_cut_short_by_the_end_of_the_stream_is_still_a_value() {
-        let texts = StreamFixture::marking(vec![1]).read(b"MARK5").finished();
-        assert_eq!(texts, [StreamFixture::value("5", 1)]);
+        let parts = StreamFixture::marking(vec![1]).read(b"MARK5").finished();
+        assert_eq!(parts, [StreamFixture::value("5", 1)]);
     }
 
     #[test]
     fn output_after_the_last_printed_form_is_not_held_back() {
         let fixture = StreamFixture::marking(Vec::new()).read(b"oMA");
-        assert_eq!(fixture.read_texts(), [StreamFixture::output("oMA")]);
+        assert_eq!(fixture.read_parts(), [StreamFixture::output(b"oMA")]);
     }
 
     #[test]
     fn a_held_back_prefix_of_the_marker_is_output_at_the_end() {
-        let texts = StreamFixture::marking(vec![1]).read(b"oMA").finished();
+        let parts = StreamFixture::marking(vec![1]).read(b"oMA").finished();
         assert_eq!(
-            texts,
-            [StreamFixture::output("o"), StreamFixture::output("MA")]
+            parts,
+            [StreamFixture::output(b"o"), StreamFixture::output(b"MA")]
         );
     }
 
     #[test]
-    fn a_character_split_across_two_reads_is_output_whole() {
-        let snowman = "☃".as_bytes();
-        let fixture = StreamFixture::unmarked().read(&snowman[..1]);
-        assert!(fixture.read_texts().is_empty());
-        let texts = fixture.read(&snowman[1..]).finished();
-        assert_eq!(texts, [StreamFixture::output("☃")]);
+    fn an_invalid_byte_is_output_unchanged() {
+        let parts = StreamFixture::unmarked().read(b"a\xffb").finished();
+        assert_eq!(parts, [StreamFixture::output(b"a\xffb")]);
     }
 
     #[test]
-    fn an_invalid_byte_is_output_as_a_replacement_character() {
-        let texts = StreamFixture::unmarked().read(b"a\xffb").finished();
-        assert_eq!(texts, [StreamFixture::output("a\u{fffd}b")]);
+    fn part_of_a_character_is_not_held_back() {
+        let snowman = "☃".as_bytes();
+        let fixture = StreamFixture::unmarked().read(&snowman[..1]);
+        assert_eq!(fixture.read_parts(), [StreamFixture::output(&snowman[..1])]);
     }
 
     #[test]
