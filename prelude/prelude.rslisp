@@ -129,7 +129,11 @@
   "Defines a module-level name for a value.
 
   It emits a `fn`, a `const` or a `static`, by the value, or nothing for a
-  value that exists only at compile time, such as a macro.")
+  value that exists only at compile time, such as a macro.
+
+  A string between the name and the value, as in
+  `(def max-retries \"How many times a check reruns.\" 1)`, documents the
+  name.")
 
 (document (let name value)
   "Binds a name to a value for the rest of the body.
