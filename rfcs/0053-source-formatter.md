@@ -510,6 +510,8 @@ The project owner decided on 2026-11-04 how layout rule 2 reads beyond `defn`. A
 
 The project owner decided on 2026-11-04 that a docstring counts as a body form under layout rule 2. A documented definition therefore always puts its docstring on its own line, so `(defn f (x) "Doc." x)` breaks into three lines.
 
+The project owner decided on 2026-11-04 that `(defstruct point :x f64 :y f64)` breaks into one field per line under layout rule 2, because `defstruct` is a definer and its body is more than one form. This matches `rustfmt` and `gofmt`, which put each field of a struct on its own line. The one-line `defstruct point` example in the 40-column decision above is superseded by this decision.
+
 The project owner decided on 2026-11-04 to accept two layouts around comments, because each is the one that formatting the output again leaves unchanged:
 
 - A comment on its own line before a list's `)` stays inside the list, and the `)` takes a line of its own after it. Moving the `)` above the comment would put the comment outside the list, and a second pass would then indent it as the parent's next form.
