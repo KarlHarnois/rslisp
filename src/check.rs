@@ -77,23 +77,25 @@ impl<'a> CheckRuns<'a> {
     fn typed(mut self) -> Result<TypedProgram, Diagnostics> {
         let first = self.open_run()?;
         let last = self.finish(first)?;
-        let mut typed = self.with_unpinned_type_texts(last);
+        let mut typed = self.with_unpinned_type_texts(last)?;
         typed.checking.inferred_expressions = self.inferred_expressions;
         Ok(typed)
     }
 
-    fn with_unpinned_type_texts(&mut self, last: CheckedProgram) -> TypedProgram {
+    fn with_unpinned_type_texts(
+        &mut self,
+        last: CheckedProgram,
+    ) -> Result<TypedProgram, Diagnostics> {
         let mut typed = last.program;
         if !self.needs_unpinned_type_texts(&typed) {
-            return typed;
+            return Ok(typed);
         }
-        if let Ok(unpinned) = self.check_types(self.pinning.literal_pins(), last.defaulting) {
-            self.inferred_expressions += unpinned.checking.inferred_expressions;
-            typed
-                .type_texts
-                .rewrite(&mut typed.modules, &unpinned.type_texts);
-        }
+        let unpinned = self.check_types(self.pinning.literal_pins(), last.defaulting)?;
+        self.inferred_expressions += unpinned.checking.inferred_expressions;
         typed
+            .type_texts
+            .rewrite(&mut typed.modules, &unpinned.type_texts);
+        Ok(typed)
     }
 
     fn needs_unpinned_type_texts(&self, typed: &TypedProgram) -> bool {
@@ -274,6 +276,10 @@ mod tests {
             (defn bump (x) (println (infer x)) (+ x 1))
             (defn main () (prn (bump (the u16 2))))";
 
+        const CLOSURE_IN_AN_OPERAND: &str = "
+            (defn text () (infer (map (iter (vec 1)) (fn (x) x))))
+            (defn main () (println (text)))";
+
         const STRUCT_CHANGED_IN_PLACE: &str = "
             (def add-one! (rust \"std::ops::AddAssign::add_assign({0}, 1)\" (fn ((mut i64)) unit)))
             (defstruct tally :total i64)
@@ -327,6 +333,24 @@ mod tests {
             let first = self.open_run(&mut runs);
             let last = runs.finish(first).expect("the source checks");
             runs.needs_unpinned_type_texts(&last.program)
+        }
+
+        fn inferred_expressions_of_the_unpinned_run(&self) -> usize {
+            let mut runs = self.runs();
+            let first = self.open_run(&mut runs);
+            let last = runs.finish(first).expect("the source checks");
+            let before = runs.inferred_expressions;
+            runs.with_unpinned_type_texts(last)
+                .expect("the source checks");
+            runs.inferred_expressions - before
+        }
+
+        fn closure_type_count(&self) -> usize {
+            self.runs()
+                .typed()
+                .expect("the source checks")
+                .closure_types
+                .len()
         }
 
         fn learned_in_place_change_count(&self) -> usize {
@@ -416,6 +440,13 @@ mod tests {
     fn a_type_text_in_a_pinned_generic_needs_an_unpinned_run() {
         let fixture = RunsFixture::new(RunsFixture::TYPE_TEXT_OF_A_PINNED_GENERIC);
         assert!(fixture.needs_unpinned_type_texts());
+        assert!(fixture.inferred_expressions_of_the_unpinned_run() > 0);
+    }
+
+    #[test]
+    fn a_closure_in_an_operand_gives_no_definition_a_closure_type() {
+        let fixture = RunsFixture::new(RunsFixture::CLOSURE_IN_AN_OPERAND);
+        assert_eq!(fixture.closure_type_count(), 0);
     }
 
     #[test]

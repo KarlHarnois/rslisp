@@ -796,6 +796,18 @@ mod tests {
         assert!(!fixture.bind(&scheme, &fixture.primitive()));
     }
 
+    #[test]
+    fn a_pin_unknown_to_the_known_pins_keeps_its_literal_pin() {
+        let binding = BindFixture::new().named;
+        let pinned = Type::Primitive(PrimitiveType::U8);
+        let found = Pinning {
+            pins: FxHashMap::from_iter([(binding, pinned.clone())]),
+            literal_pins: FxHashMap::from_iter([(binding, pinned.clone())]),
+        };
+        let unknown = found.unknown_to(&Pinning::default());
+        assert_eq!(unknown.literal_pins().get(&binding), Some(&pinned));
+    }
+
     struct ChainFixture {
         source: TypedSource,
     }
