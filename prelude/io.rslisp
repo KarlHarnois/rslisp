@@ -1,3 +1,4 @@
+(use prelude/macros document)
 (use prelude/types iterator option result vec)
 
 (export command-line-args exit io-error line-seq read-line
@@ -35,3 +36,42 @@
 
 (def exit
   (rust "std::process::exit({0})" (fn (i32) unit)))
+
+(document io-error
+  "Names the error of an input or output call, Rust's `std::io::Error`.
+
+  It implements `display`, `debug` and `show`.")
+
+(document stdin
+  "Holds the program's standard input.
+
+  `stdin` is also its type, Rust's `std::io::Stdin`.")
+
+(document source
+  "Marks what `slurp` reads: a path as a `str` or a `string`, or `stdin`.")
+
+(document (slurp source)
+  "Reads all of a file or of standard input into a `string`.
+
+  It returns `(result string io-error)`. It takes its source by reference, so
+  an owned path stays usable. Reading `stdin` flushes standard output first.")
+
+(document (line-seq stdin)
+  "Returns an iterator over the lines of standard input, one read at a time.
+
+  Each item is a `(result string io-error)` without its line ending. A failed
+  read yields one `err` and ends the iterator.")
+
+(document (read-line)
+  "Reads one line of standard input.
+
+  It returns `(result (option string) io-error)`, with `none` at the end of
+  input, and drops the line ending. It flushes standard output first.")
+
+(document (command-line-args)
+  "Returns the program's arguments, after its name, as a `(vec string)`.")
+
+(document (exit code)
+  "Stops the process with an `i32` exit code.
+
+  It runs no destructor of a live value.")

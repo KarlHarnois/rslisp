@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_io_pages.rslisp
+---
+(def slurp-page "(slurp source)\n\nReads all of a file or of standard input into a `string`.\n\nIt returns `(result string io-error)`. It takes its source by reference, so\nan owned path stays usable. Reading `stdin` flushes standard output first.")
+(def read-line-page "(read-line)\n\nReads one line of standard input.\n\nIt returns `(result (option string) io-error)`, with `none` at the end of\ninput, and drops the line ending. It flushes standard output first.")
+(def stdin-page "stdin\n\nHolds the program's standard input.\n\n`stdin` is also its type, Rust's `std::io::Stdin`.")
+(def io-error-page "io-error\n\nNames the error of an input or output call, Rust's `std::io::Error`.\n\nIt implements `display`, `debug` and `show`.")
