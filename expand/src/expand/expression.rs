@@ -374,6 +374,17 @@ impl Expander<'_> {
         rest_of_body: &mut RestOfBody,
         context: &mut DefinitionContext,
     ) -> Result<Vec<BodyItem>, Diagnostic> {
+        let failed = self.failed_body_definitions.len();
+        let items = self.lower_each_body_item(rest_of_body, context);
+        self.forget_failed_body_definitions(failed);
+        items
+    }
+
+    fn lower_each_body_item(
+        &mut self,
+        rest_of_body: &mut RestOfBody,
+        context: &mut DefinitionContext,
+    ) -> Result<Vec<BodyItem>, Diagnostic> {
         let mut items = Vec::new();
         while let Some(form) = rest_of_body.next() {
             items.push(self.lower_body_item(form, rest_of_body, context)?);

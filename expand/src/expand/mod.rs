@@ -127,6 +127,7 @@ pub struct Expander<'s> {
     evaluated_forms: EvaluatedForms,
     recorded_inputs: RecordedInputs,
     declared_definitions: Vec<failed_definition::DeclaredName>,
+    failed_body_definitions: Vec<BindingId>,
     introductions: Vec<Scope>,
 }
 
@@ -184,6 +185,7 @@ impl<'s> Expander<'s> {
             evaluated_forms: EvaluatedForms::default(),
             recorded_inputs: RecordedInputs::default(),
             declared_definitions: Vec::new(),
+            failed_body_definitions: Vec::new(),
             introductions: Vec::new(),
         }
     }
