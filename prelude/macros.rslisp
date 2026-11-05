@@ -4,7 +4,7 @@
           type-definition-call expand-call add-module-note module-notes symbol
           declare-macro-definition value-eq bool-not number-add number-sub
           number-lt string-lines string-trim-start string-length string-drop
-          string-strip-suffix)
+          string-strip-suffix closest-name keyword-field field-keyword)
 
 (export defrule defmacro template map-list whole-pairs? note-docstring
         value-doc-key type-doc-key header-shape document docstring-before-body?
@@ -510,7 +510,9 @@
 
   The page of a definition that a definer made shows as many leading
   forms of its call as the shape lists. A `:docstring` after the shape
-  states that the form takes a docstring right after its header."
+  states that the form takes a docstring right after its header, and a
+  `:one-per-line` states that the formatter puts each later form of a
+  call on its own line."
   (if (header-shape? shape)
       (stated-header-shape shape markers)
       (malformed-header-shape shape)))
@@ -526,51 +528,33 @@
 (def stated-header-shape
   (fn (shape markers)
     (require-bound-form (first shape))
-    (check-shape-markers markers)
+    (check-shape-markers markers (list))
     (add-module-note (quote header-shapes) shape)
     (note-docstring-form (first shape) markers)
     (quote (do))))
 
 (def note-docstring-form
   (fn (form-name markers)
+    (if (holds-marker? markers "docstring")
+        (add-module-note (quote docstring-forms) form-name)
+        (do))))
+
+(def holds-marker?
+  (fn (markers name)
     (if (empty? markers)
-        (do)
-        (add-module-note (quote docstring-forms) form-name))))
+        false
+        (if (marker-named? (first markers) name)
+            true
+            (holds-marker? (rest markers) name)))))
+
+(def marker-named?
+  (fn (form name)
+    (if (keyword? form)
+        (value-eq (keyword-name form) name)
+        false)))
 
 (def require-bound-form
   (fn (form-name) (definition-symbol form-name "shape")))
-
-(def check-shape-markers
-  (fn (markers)
-    (if (empty? markers)
-        (do)
-        (if (docstring-marker? (first markers))
-            (check-markers-after-docstring (rest markers))
-            (misplaced-header-shape-marker markers)))))
-
-(def check-markers-after-docstring
-  (fn (markers)
-    (if (empty? markers)
-        (do)
-        (extra-header-shape-marker (first markers)))))
-
-(def misplaced-header-shape-marker
-  (fn (markers)
-    (if (sole-keyword? markers)
-        (misspelled-header-shape-marker (first markers))
-        (extra-header-shape-marker (first markers)))))
-
-(def sole-keyword?
-  (fn (markers)
-    (if (keyword? (first markers))
-        (empty? (rest markers))
-        false)))
-
-(def docstring-marker?
-  (fn (form)
-    (if (keyword? form)
-        (value-eq (keyword-name form) "docstring")
-        false)))
 
 (def malformed-header-shape
   (fn (shape)
@@ -580,20 +564,73 @@
           (template (:code malformed-header-shape
                            :label "not a list that starts with a name")))))
 
+(def shape-marker-names (quote (docstring one-per-line)))
+
+(def check-shape-markers
+  (fn (markers seen)
+    (if (empty? markers)
+        (do)
+        (check-shape-marker (first markers) (rest markers) seen))))
+
+(def check-shape-marker
+  (fn (marker more seen)
+    (if (known-shape-marker? marker shape-marker-names)
+        (if (holds-marker? seen (keyword-name marker))
+            (extra-header-shape-marker marker)
+            (check-shape-markers more (prepend marker seen)))
+        (unknown-header-shape-marker marker (sole-marker? more seen)))))
+
+(def sole-marker?
+  (fn (more seen)
+    (if (empty? more) (empty? seen) false)))
+
+(def known-shape-marker?
+  (fn (marker names)
+    (if (empty? names)
+        false
+        (if (marker-named? marker (symbol-name (first names)))
+            true
+            (known-shape-marker? marker (rest names))))))
+
+(def unknown-header-shape-marker
+  (fn (marker sole)
+    (if (keyword? marker)
+        (suggested-or-extra-marker marker (closest-marker marker sole))
+        (extra-header-shape-marker marker))))
+
+(def closest-marker
+  (fn (marker sole)
+    (let closest (closest-name (keyword-field marker) shape-marker-names))
+    (if (empty? closest)
+        (if sole (list (first shape-marker-names)) closest)
+        closest)))
+
+(def suggested-or-extra-marker
+  (fn (marker closest)
+    (if (empty? closest)
+        (extra-header-shape-marker marker)
+        (misspelled-header-shape-marker marker (first closest)))))
+
 (def misspelled-header-shape-marker
-  (fn (marker)
+  (fn (marker name)
     (fail unexpected-header-shape-marker-title
           marker
-          "write `:docstring` to state that the form takes a docstring"
+          (marker-help name)
           (template (:code unexpected-header-shape-marker
-                           :label "not `:docstring`"
-                           :suggest :docstring)))))
+                           :label (unquote (string "not `:" (symbol-name name) "`"))
+                           :suggest (unquote (field-keyword name)))))))
+
+(def marker-help
+  (fn (name)
+    (if (value-eq (symbol-name name) "docstring")
+        "write `:docstring` to state that the form takes a docstring"
+        "write `:one-per-line` to state that a call of the form does not fill runs of atoms")))
 
 (def extra-header-shape-marker
   (fn (marker)
     (fail unexpected-header-shape-marker-title
           marker
-          "remove it: only one `:docstring` may follow a header shape"
+          "remove it: only `:docstring` and `:one-per-line` may follow a header shape, each once"
           (template (:code unexpected-header-shape-marker
                            :label "not expected here")))))
 

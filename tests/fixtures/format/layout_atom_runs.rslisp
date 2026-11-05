@@ -1,0 +1,9 @@
+(defn f () a b)
+(rust-trait shown "std::fmt::Display" bool char str string i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64)
+(println (str "count: " count " of " total " items, " skipped " skipped, " failed " failed"))
+(enum color red green blue cyan magenta yellow black white orange purple)
+(make-record :name first-name :address street :city town :postcode code :country nation)
+(report alpha beta (nested call here) gamma delta epsilon zeta eta theta iota kappa)
+(defn documented (x) "Doubles a number." first second)
+(report first "two
+lines" second third)

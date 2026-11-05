@@ -62,9 +62,7 @@ input_file: tests/fixtures/format/layout_one_line.rslisp
 (report (sum (first-of values))
         (sum (second-of values)))
 
-(report-every-total first-value
-                    second-value
-                    third-value
+(report-every-total first-value second-value third-value
                     fourth)
 
 (f (g) (h) (i) aaaaaaaaaaaaaaaaaaaaaaaa)

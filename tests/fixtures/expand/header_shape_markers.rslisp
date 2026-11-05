@@ -17,3 +17,9 @@
 
 (header-shape (my-defn name parameters)
               :documented :docstring)
+
+(header-shape (my-defn name parameters) :one-per-line :docstring)
+
+(header-shape (my-defn name parameters) :one-per-line :one-per-line)
+
+(header-shape (my-defn name parameters) :one-per-lin)

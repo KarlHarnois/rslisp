@@ -19,13 +19,13 @@ pub enum LaterIndent {
 pub struct Arrangement {
     pub first_line_units: usize,
     pub later_indent: LaterIndent,
-    pub fills: bool,
 }
 
 pub struct ListPlan {
     pub units: Vec<Unit>,
     pub arrangements: Vec<Arrangement>,
     pub docstring_entry: Option<usize>,
+    pub fillable_units: Vec<bool>,
     body_forms: usize,
     definer: bool,
 }
@@ -38,11 +38,10 @@ impl Arrangement {
         LaterIndent::Past(Self::BODY_INDENT)
     }
 
-    fn filled(first_line_units: usize) -> Self {
+    fn aligned_after(first_line_units: usize) -> Self {
         Self {
             first_line_units,
             later_indent: LaterIndent::UnderLastOnFirstLine,
-            fills: true,
         }
     }
 }
@@ -55,10 +54,17 @@ impl ListPlan {
             .and_then(|entry| entry.node.symbol_name());
         let shape = head.and_then(|name| shapes.of(name));
         let header_length = shape.map_or(0, |shape| shape.header_length);
+        let units = UnitGrouping::new(&list.entries, header_length).units();
+        let docstring_entry = Self::docstring_entry(list, head, shapes);
+        let fills_atom_runs = !shape.is_some_and(|shape| shape.one_per_line);
         Self {
-            units: UnitGrouping::new(&list.entries, header_length).units(),
+            fillable_units: units
+                .iter()
+                .map(|unit| fills_atom_runs && Self::is_fillable(list, *unit, docstring_entry))
+                .collect(),
+            units,
             arrangements: Self::arrangements(head, shape),
-            docstring_entry: Self::docstring_entry(list, head, shapes),
+            docstring_entry,
             body_forms: list.entries.len().saturating_sub(header_length + 1),
             definer: shape.is_some_and(|shape| shape.takes_docstring),
         }
@@ -81,29 +87,22 @@ impl ListPlan {
             (None, _) => vec![Arrangement {
                 first_line_units: 1,
                 later_indent: LaterIndent::Past(Arrangement::UNDER_HEAD_INDENT),
-                fills: false,
             }],
             (Some(name), Some(shape)) if Self::is_kernel(name, DefinitionForm::Use) => {
-                vec![Arrangement::filled(shape.header_length + 2)]
+                vec![Arrangement::aligned_after(shape.header_length + 2)]
             }
             (Some(name), None) if Self::is_kernel(name, DefinitionForm::Export) => {
-                vec![Arrangement::filled(2)]
+                vec![Arrangement::aligned_after(2)]
             }
             (Some(_), Some(shape)) => vec![Arrangement {
                 first_line_units: shape.header_length + 1,
                 later_indent: Arrangement::body(),
-                fills: false,
             }],
             (Some(_), None) => vec![
-                Arrangement {
-                    first_line_units: 2,
-                    later_indent: LaterIndent::UnderLastOnFirstLine,
-                    fills: false,
-                },
+                Arrangement::aligned_after(2),
                 Arrangement {
                     first_line_units: 1,
                     later_indent: Arrangement::body(),
-                    fills: false,
                 },
             ],
         }
@@ -111,6 +110,17 @@ impl ListPlan {
 
     fn is_kernel(name: &str, form: DefinitionForm) -> bool {
         name == KernelForm::Definition(form).name()
+    }
+
+    fn is_fillable(list: &ListNode, unit: Unit, docstring_entry: Option<usize>) -> bool {
+        let Unit::Single(entry) = unit else {
+            return false;
+        };
+        let single_line_atom = list.entries[entry]
+            .node
+            .as_atom()
+            .is_some_and(|atom| !atom.is_multi_line());
+        single_line_atom && docstring_entry != Some(entry)
     }
 
     fn docstring_entry(

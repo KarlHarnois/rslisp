@@ -78,7 +78,7 @@
 
 (header-shape (new name))
 
-(header-shape (enum name))
+(header-shape (enum name) :one-per-line)
 
 (header-shape (trait name))
 

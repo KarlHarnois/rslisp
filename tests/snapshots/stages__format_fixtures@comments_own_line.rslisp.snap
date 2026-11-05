@@ -51,13 +51,11 @@ input_file: tests/fixtures/format/comments_own_line.rslisp
 
 (vec 1
      ; the second
-     2
-     3)
+     2 3)
 
 (
   ; before the head
-  f
-  x)
+  f x)
 
 ;; a note apart
 
@@ -68,8 +66,7 @@ input_file: tests/fixtures/format/comments_own_line.rslisp
 ;; a closing note
 (
   ; before the head, after a blank line
-  g
-  y)
+  g y)
 
 (h a
 

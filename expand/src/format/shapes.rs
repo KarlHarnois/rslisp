@@ -1,11 +1,13 @@
 use rustc_hash::FxHashMap;
 
+use crate::core::Keyword;
 use crate::reader::Form;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Shape {
     pub header_length: usize,
     pub takes_docstring: bool,
+    pub one_per_line: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -21,6 +23,8 @@ pub struct ShapeCatalog {
 
 impl ShapeStatement {
     pub const STATING_FORM: &'static str = "header-shape";
+    pub const DOCSTRING_MARKER: &'static str = "docstring";
+    pub const ONE_PER_LINE_MARKER: &'static str = "one-per-line";
 
     pub fn of(form: &Form) -> Option<Self> {
         let [head, stated, markers @ ..] = form.as_list()? else {
@@ -34,8 +38,17 @@ impl ShapeStatement {
             form_name: form_name.as_symbol()?.name().to_string(),
             shape: Shape {
                 header_length: header.len(),
-                takes_docstring: !markers.is_empty(),
+                takes_docstring: Self::has_marker(markers, Self::DOCSTRING_MARKER),
+                one_per_line: Self::has_marker(markers, Self::ONE_PER_LINE_MARKER),
             },
+        })
+    }
+
+    fn has_marker(markers: &[Form], marker: &str) -> bool {
+        markers.iter().any(|form| {
+            form.as_symbol()
+                .and_then(|symbol| Keyword::field_name(symbol.name()))
+                == Some(marker)
         })
     }
 }
@@ -87,7 +100,8 @@ mod tests {
             statement.map(|statement| statement.shape),
             Some(Shape {
                 header_length: 2,
-                takes_docstring: false
+                takes_docstring: false,
+                one_per_line: false
             })
         );
     }
@@ -97,6 +111,19 @@ mod tests {
         let statement =
             StatementFixture::statement("(header-shape (defn name parameters) :docstring)");
         assert!(statement.is_some_and(|statement| statement.shape.takes_docstring));
+    }
+
+    #[test]
+    fn a_one_per_line_marker_states_no_docstring() {
+        let statement = StatementFixture::statement("(header-shape (enum name) :one-per-line)");
+        assert_eq!(
+            statement.map(|statement| statement.shape),
+            Some(Shape {
+                header_length: 1,
+                takes_docstring: false,
+                one_per_line: true
+            })
+        );
     }
 
     #[test]

@@ -21,7 +21,7 @@ error[L0331]: unexpected form after a header shape
 12 |               :docstring :docstring)
    |                          ^^^^^^^^^^ not expected here
    |
-   = help: remove it: only one `:docstring` may follow a header shape
+   = help: remove it: only `:docstring` and `:one-per-line` may follow a header shape, each once
 
 error[L0331]: unexpected form after a header shape
   --> expand/header_shape_markers.rslisp:14:41
@@ -29,7 +29,7 @@ error[L0331]: unexpected form after a header shape
 14 | (header-shape (my-defn name parameters) "text")
    |                                         ^^^^^^ not expected here
    |
-   = help: remove it: only one `:docstring` may follow a header shape
+   = help: remove it: only `:docstring` and `:one-per-line` may follow a header shape, each once
 
 error[L0331]: unexpected form after a header shape
   --> expand/header_shape_markers.rslisp:16:52
@@ -37,7 +37,7 @@ error[L0331]: unexpected form after a header shape
 16 | (header-shape (my-defn name parameters) :docstring :doc)
    |                                                    ^^^^ not expected here
    |
-   = help: remove it: only one `:docstring` may follow a header shape
+   = help: remove it: only `:docstring` and `:one-per-line` may follow a header shape, each once
 
 error[L0331]: unexpected form after a header shape
   --> expand/header_shape_markers.rslisp:19:15
@@ -45,4 +45,23 @@ error[L0331]: unexpected form after a header shape
 19 |               :documented :docstring)
    |               ^^^^^^^^^^^ not expected here
    |
-   = help: remove it: only one `:docstring` may follow a header shape
+   = help: remove it: only `:docstring` and `:one-per-line` may follow a header shape, each once
+
+error[L0331]: unexpected form after a header shape
+  --> expand/header_shape_markers.rslisp:23:55
+   |
+23 | (header-shape (my-defn name parameters) :one-per-line :one-per-line)
+   |                                                       ^^^^^^^^^^^^^ not expected here
+   |
+   = help: remove it: only `:docstring` and `:one-per-line` may follow a header shape, each once
+
+error[L0331]: unexpected form after a header shape
+  --> expand/header_shape_markers.rslisp:25:41
+   |
+25 | (header-shape (my-defn name parameters) :one-per-lin)
+   |                                         ^^^^^^^^^^^^ not `:one-per-line`
+   |
+help: write `:one-per-line` to state that a call of the form does not fill runs of atoms
+   |
+25 | (header-shape (my-defn name parameters) :one-per-line)
+   |                                                     +

@@ -9,11 +9,9 @@ input_file: tests/fixtures/format/layout_closing_parentheses.rslisp
   )
 
 ---
-(impl ttttttttttttttttttttttttttttttttt (point-type alpha
-                                                    beta
-                                                    gamma
-                                                    delta
-                                                    epsi))
+(impl ttttttttttttttttttttttttttttttttt (point-type
+                                          alpha beta gamma
+                                          delta epsi))
 
 (impl uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu (point-type alpha beta gamma delta epsi)
   ; a closing note
