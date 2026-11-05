@@ -359,20 +359,38 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     pub fn statements(&mut self, block: &TypedBlock) -> Vec<Fragment> {
-        let last = block.items.len().checked_sub(1);
+        let Some((tail, leading)) = block.items.split_last() else {
+            return Vec::new();
+        };
+        let mut fragments = self.leading_statements(leading);
+        fragments.extend(self.tail_statement(tail));
+        fragments
+    }
+
+    fn leading_statements(&mut self, items: &[TypedBodyItem]) -> Vec<Fragment> {
         let mut fragments = Vec::new();
-        for (position, item) in block.items.iter().enumerate() {
-            let is_tail = Some(position) == last;
-            if is_tail
-                && let TypedBodyItem::Expr(expr) = item
-                && let Some(contents) = self.tail_block_contents(expr)
-            {
-                fragments.extend(contents);
+        for item in items {
+            if Self::is_empty_block_statement(item) {
                 continue;
             }
             fragments.push(Fragment::Newline);
-            fragments.extend(self.statement(item, is_tail).fragments);
+            fragments.extend(self.statement(item, false).fragments);
         }
+        fragments
+    }
+
+    fn is_empty_block_statement(item: &TypedBodyItem) -> bool {
+        matches!(item, TypedBodyItem::Expr(expr) if Self::is_empty_block(expr))
+    }
+
+    fn tail_statement(&mut self, item: &TypedBodyItem) -> Vec<Fragment> {
+        if let TypedBodyItem::Expr(expr) = item
+            && let Some(contents) = self.tail_block_contents(expr)
+        {
+            return contents;
+        }
+        let mut fragments = vec![Fragment::Newline];
+        fragments.extend(self.statement(item, true).fragments);
         fragments
     }
 
@@ -1427,21 +1445,12 @@ impl<'a> ExpressionEmitter<'a> {
             TypedBodyItem::Let(binder, value) => self.let_statement(binder, value),
             TypedBodyItem::Expr(expr) if is_tail => self.expr(expr),
             TypedBodyItem::Expr(expr) => {
-                let code = self.statement_value(expr);
+                let code = self.expr(expr);
                 let ends_with_block =
                     code.precedence == Precedence::Block && Type::unit() == expr.ty;
                 let terminator = if ends_with_block { "" } else { ";" };
                 Code::joined(vec![code, Code::atom(terminator)], Precedence::Block)
             }
-        }
-    }
-
-    fn statement_value(&mut self, expr: &TypedExpr) -> Code {
-        match &expr.kind {
-            TypedExprKind::Control(TypedControl::Block(block)) if block.items.is_empty() => {
-                self.block(block).spanned(expr.span)
-            }
-            _ => self.expr(expr),
         }
     }
 
