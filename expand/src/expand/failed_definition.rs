@@ -45,7 +45,7 @@ impl Expander<'_> {
         expansion
     }
 
-    pub(super) fn failed_use(&self, form: &Form) -> Option<Expr> {
+    pub(super) fn failed_macro_use(&self, form: &Form) -> Option<Expr> {
         if !self.tables.globals.has_failed_definitions() {
             return None;
         }
@@ -53,7 +53,7 @@ impl Expander<'_> {
         let binding = self.try_resolve(head, Namespace::Value)?;
         self.tables
             .globals
-            .is_failed_definition(binding)
+            .is_failed_macro_definition(binding)
             .then(|| Expr::new(ExprKind::Leaf(Leaf::Var(binding)), form.span()))
     }
 

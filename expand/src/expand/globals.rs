@@ -79,6 +79,13 @@ impl GlobalTable {
         self.failed_definition_count > 0
     }
 
+    pub fn is_failed_macro_definition(&self, binding: BindingId) -> bool {
+        matches!(
+            self.states.get(&binding),
+            Some(GlobalState::FailedDefinition(Declaration::Macro))
+        )
+    }
+
     pub fn is_failed_definition(&self, binding: BindingId) -> bool {
         matches!(
             self.states.get(&binding),

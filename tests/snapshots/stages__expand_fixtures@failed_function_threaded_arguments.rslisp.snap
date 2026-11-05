@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_function_threaded_arguments.rslisp
+---
+error[L0328]: a docstring goes after the parameter list
+ --> expand/failed_function_threaded_arguments.rslisp:1:12
+  |
+1 | (defn area "Multiplies two sides." (width height) (* width height))
+  |            ^^^^^^^^^^^^^^^^^^^^^^^ a docstring in place of the parameter list
+  |
+  = help: write it as the first body form, after the parameter list
+
+error[L0201]: cannot find `nope` in this scope
+ --> expand/failed_function_threaded_arguments.rslisp:3:37
+  |
+3 | (defn main () (println (area (-> 1 (nope)))))
+  |                                     ^^^^ not found in this scope
+  |
+help: a name with a similar spelling exists
+  |
+3 - (defn main () (println (area (-> 1 (nope)))))
+3 + (defn main () (println (area (-> 1 (none)))))
+  |
