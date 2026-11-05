@@ -705,7 +705,9 @@
    (do (let (result type-expression) value) result)))
 
 (defrule ->
-  "Threads a value through each form as its first argument: (-> value form ...)."
+  "Threads a value through each form as its first argument.
+
+  Write (-> value form ...)."
   ((value) value)
   ((value (head arguments ...) more ...)
    (-> (head value arguments ...) more ...))

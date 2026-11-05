@@ -105,7 +105,9 @@
       (constructor-call form hidden shape))))
 
 (defmacro defstruct (head body ...)
-  "Defines a struct and its keyword constructor: (defstruct name :field type ...)."
+  "Defines a struct and its keyword constructor.
+
+  Write (defstruct name :field type ...)."
   (declare-struct-names (head-name head))
   (if (documented-body? body)
     (do
