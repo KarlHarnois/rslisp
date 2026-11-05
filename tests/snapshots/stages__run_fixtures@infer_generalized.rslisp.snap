@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/infer_generalized.rslisp
+---
+(where (a) (option a))
+(where (a) (fn (a) a))
+(where ((a display)) (fn (a) string))
+(vec char)
+a
+a
+(where (b) (pair a (option b)))
+(some 1)

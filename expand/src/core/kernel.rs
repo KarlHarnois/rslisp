@@ -13,6 +13,7 @@ pub enum ExpressionForm {
     Fn,
     Recur,
     Try,
+    Infer,
     Leaf(LeafForm),
     Borrow(ReferenceKind),
     Deref,
@@ -64,7 +65,7 @@ struct KernelFormRow {
 }
 
 impl KernelForm {
-    const ROWS: [KernelFormRow; 29] = [
+    const ROWS: [KernelFormRow; 30] = [
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Fn),
             name: "fn",
@@ -189,6 +190,11 @@ impl KernelForm {
             form: KernelForm::Expression(ExpressionForm::Try),
             name: "try",
             shape: "(try expression)",
+        },
+        KernelFormRow {
+            form: KernelForm::Expression(ExpressionForm::Infer),
+            name: "infer",
+            shape: "(infer expression)",
         },
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::Trait),

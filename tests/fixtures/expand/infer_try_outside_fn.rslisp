@@ -1,0 +1,1 @@
+(def text (infer (try (some 1))))

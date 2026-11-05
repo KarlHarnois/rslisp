@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/infer.rslisp
+---
+(def main (fn () ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0 display)) (fn ((ref part-type-0)) unit))) (infer ((rust "vec![{0}, {1}]" (where (item) (fn (item item) (vec item)))) 1 2)))))

@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/infer_type_texts.rslisp
+---
+bool char unit
+(ref str) string
+(vec i64) (pair i64 (ref str))
+(option f64) (sorted-map (ref str) i64)
+point shape
+(holder i64)
+(ref point) (mut string)
+(ref string)
+(iterator (ref i64))
+(fn (i64) i64)
+(ref 'a str)
+"Leaf"

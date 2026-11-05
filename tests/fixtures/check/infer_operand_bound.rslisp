@@ -1,0 +1,5 @@
+(defn wrap (x)
+  (println (infer (str x)))
+  (some x))
+
+(defn main () (prn (wrap (vec 1))))

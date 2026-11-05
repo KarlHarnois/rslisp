@@ -1,0 +1,11 @@
+---
+source: tests/cli.rs
+expression: repl.transcript()
+---
+exit code: Some(0)
+--- stdout
+"(vec i64)"
+"(where (a) (fn (a) a))"
+"(where (a) (option a))"
+"(where (a) (fn (a) a))"
+--- stderr

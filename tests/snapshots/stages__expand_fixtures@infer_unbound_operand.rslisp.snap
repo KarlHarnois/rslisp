@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/infer_unbound_operand.rslisp
+---
+error[L0201]: cannot find `nope` in this scope
+ --> expand/infer_unbound_operand.rslisp:2:20
+  |
+2 |   (println (infer (nope 1))))
+  |                    ^^^^ not found in this scope
+  |
+help: a name with a similar spelling exists
+  |
+2 -   (println (infer (nope 1))))
+2 +   (println (infer (none 1))))
+  |

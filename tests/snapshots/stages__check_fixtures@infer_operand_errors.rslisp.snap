@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/infer_operand_errors.rslisp
+---
+error[L0401]: mismatched types
+ --> check/infer_operand_errors.rslisp:1:31
+  |
+1 | (defn mismatch () (infer (+ 1 "a")))
+  |                               ^^^ expected an integer, found `str`
+
+error[L0406]: the literal `300` does not fit in `u8`
+ --> check/infer_operand_errors.rslisp:3:35
+  |
+3 | (defn too-large () (infer (the u8 300)))
+  |                                   ^^^ out of range for `u8`
+
+error[L0406]: the literal `301` does not fit in `u8`
+ --> check/infer_operand_errors.rslisp:6:25
+  |
+6 |   (infer (infer (the u8 301))))
+  |                         ^^^ out of range for `u8`

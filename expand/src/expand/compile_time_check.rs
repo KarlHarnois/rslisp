@@ -50,6 +50,7 @@ impl Expander<'_> {
                 InterpretProblems::runtime_only("map operations", expr.span())
             }
             ExprKind::Try(_) => InterpretProblems::runtime_only("`try` forms", expr.span()),
+            ExprKind::Infer(_) => InterpretProblems::runtime_only("`infer` forms", expr.span()),
             ExprKind::Control(Control::Match(..)) => {
                 InterpretProblems::match_only_at_runtime(expr.span())
             }

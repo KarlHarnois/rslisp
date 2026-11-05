@@ -1,0 +1,24 @@
+(defn port () 8080)
+
+(defn listen ((port u16)) port)
+
+(type increment
+  (where ((n number)) (fn (n) n)))
+
+(defn increment (x)
+  (println (infer x))
+  (+ x 1))
+
+(defn bump (x)
+  (println (infer x))
+  (+ x 1))
+
+(defn main ()
+  (println (infer 1) " " (infer 1.5))
+  (let x 1)
+  (println (infer x))
+  (the u8 x)
+  (println (infer (port)))
+  (listen (port))
+  (increment 2)
+  (prn (bump (the u16 2))))

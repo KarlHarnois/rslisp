@@ -6,6 +6,7 @@ use super::checker::{Admissible, TypeChecker};
 use super::literal_fit::LiteralFit;
 use super::problems::TypeProblems;
 use super::ty::{GenericId, Type, TypeVar};
+use super::type_text::TypeTextWriter;
 use super::typed::{ClosureType, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::LiteralKind;
 use crate::core::{BindingId, Literal, PrimitiveType};
@@ -35,6 +36,26 @@ impl<'c> Finalizer<'c> {
         self.expr(&mut definition.value);
         self.finalize_type(&mut definition.scheme.body, definition.span);
         self.record_closure_types(definition.binding);
+        let writer = TypeTextWriter::new(definition.binding, &definition.scheme);
+        self.write_type_texts(&mut definition.value, &writer);
+    }
+
+    fn write_type_texts(&mut self, expr: &mut TypedExpr, writer: &TypeTextWriter) {
+        if let TypedExprKind::Infer(operand) = &mut expr.kind {
+            let text = writer.write(self.checker, operand);
+            self.finalize_operand(operand, writer);
+            expr.kind = TypedExprKind::Leaf(TypedLeaf::Literal(Literal::String(text)));
+            return;
+        }
+        for child in expr.children_mut() {
+            self.write_type_texts(child, writer);
+        }
+    }
+
+    fn finalize_operand(&mut self, operand: &mut TypedExpr, writer: &TypeTextWriter) {
+        self.expr(operand);
+        self.write_type_texts(operand, writer);
+        self.closures_in_definition.clear();
     }
 
     fn record_closure_types(&mut self, definition: BindingId) {

@@ -171,6 +171,7 @@ pub struct TypeChecker {
     missing_annotations: Diagnostics,
     pub(super) unnameable_types: Diagnostics,
     pub(super) closure_types: Vec<super::typed::ClosureType>,
+    pub(super) type_texts: super::type_text::TypeTexts,
     pub(super) type_arities: FxHashMap<BindingId, usize>,
     pub(super) written_projections: Vec<super::associated::WrittenProjection>,
     pub(super) checked_projections: usize,
@@ -266,6 +267,7 @@ impl TypeChecker {
             missing_annotations: Diagnostics::default(),
             unnameable_types: Diagnostics::default(),
             closure_types: Vec::new(),
+            type_texts: super::type_text::TypeTexts::default(),
             type_arities: FxHashMap::default(),
             written_projections: Vec::new(),
             checked_projections: 0,
@@ -1045,6 +1047,7 @@ impl TypeChecker {
             };
         }
         if let Some(pinned) = self.pinned.get(&member.binding).cloned() {
+            let pinned = self.open_unpinned_parameters(&pinned);
             let reopened = self.reopen_borrowed_copy_parameters(pinned, member.span);
             self.component.insert(member.binding, reopened);
             return None;
@@ -1052,6 +1055,16 @@ impl TypeChecker {
         let shape = self.unwritten_shape(member.value);
         self.component.insert(member.binding, shape);
         None
+    }
+
+    fn open_unpinned_parameters(&mut self, pinned: &Type) -> Type {
+        let mut unpinned = Vec::new();
+        Self::collect_generics(pinned, &mut unpinned);
+        let fresh = unpinned
+            .into_iter()
+            .map(|generic| (generic, self.unifier.fresh()))
+            .collect();
+        pinned.substitute(&fresh)
     }
 
     fn reopen_borrowed_copy_parameters(&mut self, pinned: Type, span: Span) -> Type {
@@ -1376,7 +1389,7 @@ impl TypeChecker {
         Some(param)
     }
 
-    fn default_literal(&mut self, var: TypeVar, literal: LiteralKind, span: Span) {
+    pub(super) fn default_literal(&mut self, var: TypeVar, literal: LiteralKind, span: Span) {
         let defaulted = self.unifier.unify(
             &Type::Var(var),
             &Type::Primitive(literal.default_type()),
@@ -1388,7 +1401,7 @@ impl TypeChecker {
         );
     }
 
-    fn self_plain_bounds(&self, var: TypeVar) -> Vec<Bound> {
+    pub(super) fn self_plain_bounds(&self, var: TypeVar) -> Vec<Bound> {
         let mut bounds = Vec::new();
         for bound in self.unifier.bounds(var) {
             let bound = match &bound.argument {
@@ -3005,6 +3018,7 @@ impl TypeChecker {
             literal_generics: self.literal_generics,
             unnameable_types: self.unnameable_types,
             closure_types: self.closure_types,
+            type_texts: self.type_texts,
             warnings,
             checking: self.checking,
         })

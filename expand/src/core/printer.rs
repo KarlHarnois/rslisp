@@ -176,6 +176,7 @@ impl<'a> CorePrinter<'a> {
                     .collect(),
             ),
             ExprKind::Try(value) => Self::list("try", vec![self.expr(value)]),
+            ExprKind::Infer(operand) => Self::list("infer", vec![self.expr(operand)]),
             ExprKind::Borrow(..) | ExprKind::Deref(..) => self.written(kind),
             _ => unreachable!("the caller matches a written or recurring expression"),
         }

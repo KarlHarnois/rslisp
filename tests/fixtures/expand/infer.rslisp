@@ -1,0 +1,2 @@
+(defn main ()
+  (println (infer (vec 1 2))))

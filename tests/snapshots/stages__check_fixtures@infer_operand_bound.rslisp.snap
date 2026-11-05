@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/infer_operand_bound.rslisp
+---
+error[L0404]: `(vec i64)` does not implement `display`
+ --> check/infer_operand_bound.rslisp:5:26
+  |
+5 | (defn main () (prn (wrap (vec 1))))
+  |                          ^^^^^^^ this needs `display`
+  |
+  = note: `display` is implemented for: bool, char, str, string, (ref str), io-error, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where ((a display)) (ref a))
+  = note: `display` is implemented for `(parse-error target)` for each `target` in: bool, char, string, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64

@@ -64,13 +64,13 @@
         export f32 f64 false field filter find first float
         fn fn-mut fn-once for-each from-str ge get gt hash
         hash-map header i128 i16 i32 i64 i8 if impl
-        infallible integer into-hash-map into-sorted-map
-        io-error isize iter iterator keys last le len let
-        let-fields let-pair let-try line-seq lines loop
-        lower-case lt macro map map-at map-err map-ok
-        map-some match max max-by-key min mul mut ne neg new
-        none none? not not= number ok ok-or ok? option or
-        ord page-body pair parse parse-bool-error
+        infallible infer integer into-hash-map
+        into-sorted-map io-error isize iter iterator keys
+        last le len let let-fields let-pair let-try line-seq
+        lines loop lower-case lt macro map map-at map-err
+        map-ok map-some match max max-by-key min mul mut ne
+        neg new none none? not not= number ok ok-or ok?
+        option or ord page-body pair parse parse-bool-error
         parse-char-error parse-error parse-float-error
         parse-int-error partial-eq partial-ord pi pop!
         pr-str print println prn push! quote range read-line
@@ -268,6 +268,13 @@
   "Unwraps a successful value, or returns the failure from the function.
 
   It emits `expression?`.")
+
+(document (infer expression)
+  "Gives the type the checker infers for the expression, as a string.
+
+  The text is the type as a `type` signature writes it, such as
+  `(vec i64)`. The expression is checked and never runs, so it emits only
+  the string literal.")
 
 (document (trait name (method type) ...)
   "Defines a trait from its method signatures.

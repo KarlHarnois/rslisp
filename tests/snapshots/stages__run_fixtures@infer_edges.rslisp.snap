@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/infer_edges.rslisp
+---
+point
+f64 (where (a) (pair f64 (option a)))
+(ref str) (where (a) (pair (ref str) (option a)))
+point
+(ref str)
