@@ -419,15 +419,27 @@
   `string`.")
 
 (defmacro print (parts ...)
+  "Prints its parts to standard output, with no newline of its own.
+
+  A string literal part is literal text, a `(pr-str x)` part prints with
+  `show`, and any other part prints with `display`."
   (let pieces (flatten-parts parts))
   (if (ends-with-newline? pieces)
     (line-call "println!" (without-trailing-newline pieces))
     (print-call pieces)))
 
 (defmacro println (parts ...)
+  "Prints its parts and a newline to standard output.
+
+  A string literal part is literal text, a `(pr-str x)` part prints with
+  `show`, and any other part prints with `display`."
   (line-call "println!" (flatten-parts parts)))
 
 (defmacro eprintln (parts ...)
+  "Prints its parts and a newline to standard error.
+
+  A string literal part is literal text, a `(pr-str x)` part prints with
+  `show`, and any other part prints with `display`."
   (line-call "eprintln!" (flatten-parts parts)))
 
 (defmacro doc (term)
@@ -526,6 +538,11 @@
         (display-write parts out)))))
 
 (defmacro display (type param parts ...)
+  "Implements the `display` trait for a struct or an enum of the program.
+
+  `param` is a one-name list that binds the value, and `parts` are what
+  `print` takes. One `match` or `if` part prints each arm by its own parts.
+  `display` is also the trait, Rust's `Display`, that a `print` part needs."
   (let out (symbol (quote display) "out"))
   (list (quote impl)
         (quote display)
@@ -537,6 +554,10 @@
 (header-shape (display type parameters))
 
 (defmacro char (text)
+  "Returns the `char` that a string literal of one character names.
+
+  `(char \"a\")` emits `'a'`. Any other form is an error. `char` is also the
+  kernel type of a Unicode scalar value."
   (list (quote rust)
         (string "'" (escape-char text) "'")
         (quote char)))
@@ -652,6 +673,11 @@
                   "`(->money :cents 1200)`"))))))
 
 (defmacro show (type param body)
+  "Implements the `show` trait for a struct or an enum of the program.
+
+  `param` is a one-name list that binds the value, and `body` is a symbol or
+  a list headed by a symbol. Each argument of the list prints with `show`.
+  `show` is also the trait that `prn` and `pr-str` need."
   (let out (symbol (quote show) "out"))
   (list (quote impl)
         (quote show)
@@ -661,3 +687,117 @@
               (show-body body out))))
 
 (header-shape (show type parameters))
+
+(document debug
+  "Marks a type that Rust's `{:?}` formatting prints, as Rust's `Debug` does.
+
+  `derive` adds it to a struct or an enum of the program.")
+
+(document from-str
+  "Marks a type that `parse` builds from a string, as Rust's `FromStr` does.
+
+  The `bool`, `char`, `string`, integer and float types implement it.")
+
+(document (parse-error target)
+  "Names the error type of parsing a `target` type.
+
+  It is the associated type of `from-str`, as `Err` is in Rust, so
+  `(parse-error i64)` is `parse-int-error`.")
+
+(document parse-bool-error
+  "Names the error of parsing a `bool`, Rust's `ParseBoolError`.")
+
+(document parse-char-error
+  "Names the error of parsing a `char`, Rust's `ParseCharError`.")
+
+(document parse-int-error
+  "Names the error of parsing an integer, Rust's `ParseIntError`.")
+
+(document parse-float-error
+  "Names the error of parsing a float, Rust's `ParseFloatError`.")
+
+(document infallible
+  "Names the error of a parse that cannot fail, Rust's `Infallible`.
+
+  It is the `parse-error` of `string`.")
+
+(document (prn value)
+  "Prints the printed form of a value and a newline to standard output.
+
+  The value's type implements `show`, and a `string` prints quoted.")
+
+(document (pr-str value)
+  "Returns the printed form of a value as a `string`.
+
+  The value's type implements `show`. As a part of `print`, `println`,
+  `eprintln`, `str` or `display`, it prints in place.")
+
+(document (chars text)
+  "Returns an iterator over the `char`s of a string.")
+
+(document (lines text)
+  "Returns an iterator over the lines of a string.
+
+  Each line drops its `\\n` or `\\r\\n` ending, and a final ending starts no
+  empty line. Use `line-seq` for standard input.")
+
+(document (split text separator)
+  "Returns an iterator over the parts of a string between separators.
+
+  Two separators in a row give an empty part, and an empty string gives one
+  empty part. The separator is a `(ref str)`.")
+
+(document (split-when text test)
+  "Returns an iterator over the parts of a string between matching `char`s.
+
+  `test` is a function from a `char` to a `bool`, such as `digit?`.")
+
+(document (trim text)
+  "Returns a string without its leading and trailing whitespace.
+
+  The result borrows from `text`.")
+
+(document (as-str text)
+  "Borrows a `string` as a `(ref str)`.
+
+  It emits `text.as_str()`.")
+
+(document (parse text)
+  "Parses a string into the type that the call's result takes.
+
+  It returns `(result target (parse-error target))`, where `target` implements
+  `from-str`, so `(the (result i64 parse-int-error) (parse \"12\"))` is `ok`.")
+
+(document (lower-case text)
+  "Returns a new `string` with each character in lower case.")
+
+(document (upper-case text)
+  "Returns a new `string` with each character in upper case.
+
+  A character may become several, as `ß` becomes `SS`.")
+
+(document (alphanumeric? character)
+  "Returns whether a `char` is a Unicode letter or number.")
+
+(document (whitespace? character)
+  "Returns whether a `char` is Unicode whitespace.")
+
+(document (digit? character)
+  "Returns whether a `char` is an ASCII digit.")
+
+(document (subs text start end)
+  "Returns the part of a string from byte `start` up to byte `end`.
+
+  It emits `&text[start..end]`, so it panics when an offset is out of bounds
+  or falls inside a character.")
+
+(document (fmt value formatter)
+  "Writes a value's `display` text to a formatter.
+
+  It is the method of the `display` trait, and the `display` macro implements
+  it.")
+
+(document (write-form value formatter)
+  "Writes a value's printed form to a formatter.
+
+  It is the method of the `show` trait, and the `show` macro implements it.")

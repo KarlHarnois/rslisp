@@ -1,0 +1,13 @@
+(def print-page (doc-page print))
+
+(def display-page (doc-page display))
+
+(def char-page (doc-page char))
+
+(def parse-page (doc-page parse))
+
+(def parse-error-page (doc-page parse-error))
+
+(def lines-page (doc-page lines))
+
+(def fmt-page (doc-page fmt))
