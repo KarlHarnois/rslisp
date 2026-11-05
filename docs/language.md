@@ -55,8 +55,8 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `do` | `(do form...)` | block | forms: expressions. At module level: definitions. |
 | `if` | `(if test then else)` | `if`/`else` | all: expressions. |
 | `type` | `(type name type)` | signature | name: reference to a `def`, or to a macro whose value position expands to a function the macro introduced in this module. type: type. |
-| `struct` | `(struct name (field type)...)` or `(struct (name param...) (field type)...)` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
-| `enum` | `(enum name (rust "Path")? variant...)` or `(enum (name param...) (rust "Path")? variant...)` | `enum`, or the named Rust type | name: type binder. params: type binders. `rust`: an optional Rust path. variants: a name, `(name type...)`, or `(name (struct (field type)...))`. |
+| `struct` | `(struct name (field type)...)` or `(struct (name parameter...) (field type)...)` | `struct` | name: type binder. params: type binders. fields: field labels with types. |
+| `enum` | `(enum name (rust "Path")? variant...)` or `(enum (name parameter...) (rust "Path")? variant...)` | `enum`, or the named Rust type | name: type binder. params: type binders. `rust`: an optional Rust path. variants: a name, `(name type...)`, or `(name (struct (field type)...))`. |
 | `match` | `(match value (pattern body)...)` | `match` | value: expression. patterns: a wildcard, a literal, a bare name, `(variant pattern...)` or `(type-name pattern...)`. arms: one body expression. |
 | `derive` | `(derive type trait...)` | `#[derive(...)]` | type: reference to a `struct` or `enum` of this module. traits: references to traits. |
 | `new` | `(new name (field value)...)` or `(new _ base (field value)...)` | struct literal or struct update | name: type, or `_` with a base expression. base: expression. fields: field labels with expressions. A label is a field name or a keyword, as in `(new car (:year 2025))`. |
@@ -68,14 +68,14 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `mut` | `(mut place)` | `&mut place` | place: expression. |
 | `deref` | `(deref value)` | `*value` | value: expression. |
 | `quote` | `(quote form)` | none | form: data. |
-| `macro` | `(def name (macro (form) body...))` | none | form: binder. body: expressions. |
+| `macro` | `(macro (form) body...)`, the value of a `def` | none | form: binder. body: expressions. |
 | `rust` | `(rust "template" type (type "template")...)` | the inlined template | type: type. clauses: a type and a template. |
 | `recur` | `(recur argument...)` | `loop` | arguments: expressions. |
 | `try` | `(try expression)` | `expression?` | expression: expression. |
 | `rust-trait` | `(rust-trait name "Path" (method name type)? (structural key "text"...)? (help "text")? type...)` | trait bound, or a Rust `impl` for a program type when it declares a method | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. structural: the Rust text of the impl the compiler writes for each struct and enum, under the keys `:struct`, `:field`, `:variant`, `:part` and `:bare`. help: the help line a missing implementor shows. types: types, `(with type type)`, or `(where (param...) type)`. |
 | `trait` | `(trait name (method type)...)` | `trait` | name: type binder. methods: a name and a function type whose first parameter may be `self`, `(ref self)` or `(mut self)`. |
 | `impl` | `(impl trait type (method (parameter...) body...)...)` | `impl` | trait and type: references to a trait and a struct or enum. methods: a name, parameter binders and a body. |
-| `rust-type` | `(rust-type name "template" (type "template")...)` or `(rust-type (name param...) "template" (type "template")...)` | the filled template | name: type binder. params: type binders. clauses: a type and a template. |
+| `rust-type` | `(rust-type name "template" (type "template")...)` or `(rust-type (name parameter...) "template" (type "template")...)` | the filled template | name: type binder. params: type binders. clauses: a type and a template. |
 | `use` | `(use module name...)` | path | module: module path. names: binders. |
 | `export` | `(export name...)` | `pub` | names: references in every namespace. |
 
@@ -403,7 +403,7 @@ Every bound term has a page, as in `go doc`. A term without a docstring gets its
 (def twice-page (doc-page twice))   ; "(defn twice (x))\n\nNo documentation."
 ```
 
-With `(header-shape (my-defn name parameters))`, the same page starts with `(my-defn twice (x))`. The walk ends with the term's bare name after 32 expansions, at a call whose expansion fails, or at an expansion that is not a list headed by a bound macro's symbol, such as a call of an unbound name, the expansion of a user macro over `def`, or one that defines several names in a `do`. A term that no macro call defined, such as a plain `def` or a parameter, also takes its bare name as header: `(doc-page limit)` after `(def limit 10)` is `"limit\n\nNo documentation."`. `prelude/prelude.rslisp` documents each kernel form with `document`, beside the kernel's header shapes, and a lookup of a kernel form reads the notes of `prelude/prelude`, the module that exports the kernel, so `(doc-page if)` starts with `(if test then else)`. An unbound term is `L0201`, with the closest name. `(docstring term)` of a term without a docstring is `L0327`.
+With `(header-shape (my-defn name parameters))`, the same page starts with `(my-defn twice (x))`. The walk ends with the term's bare name after 32 expansions, at a call whose expansion fails, or at an expansion that is not a list headed by a bound macro's symbol, such as a call of an unbound name, the expansion of a user macro over `def`, or one that defines several names in a `do`. A term that no macro call defined, such as a plain `def` or a parameter, also takes its bare name as header: `(doc-page limit)` after `(def limit 10)` is `"limit\n\nNo documentation."`. `prelude/prelude.rslisp` documents each kernel form with `document`, beside the kernel's header shapes, and a lookup of a kernel form reads the notes of `prelude`, the module that exports the kernel, so `(doc-page if)` starts with `(if test then else)`. An unbound term is `L0201`, with the closest name. `(docstring term)` of a term without a docstring is `L0327`.
 
 A docstring is Markdown. A lookup removes the indentation that every written continuation line shares, as Python's `inspect.cleandoc` does, and drops blank lines at both ends. Write docstrings to these rules, which no compile error enforces:
 
