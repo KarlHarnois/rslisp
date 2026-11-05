@@ -151,6 +151,10 @@ mod tests {
 (define-caller call-it map 3)
 (defn main () (println \"{}\" (call-it)))",
         };
+        const EMPTY: Self = Self {
+            name: "user",
+            text: "",
+        };
         const NAMED_PRELUDE: Self = Self {
             name: "prelude",
             text: "(def answer 42)",
@@ -179,6 +183,14 @@ mod tests {
                 .expand(ModulePath::new(self.name), entry)
                 .unwrap_or_else(|_| panic!("the user program expands"));
             format!("{:?}", program.entry_module())
+        }
+
+        fn decodes_no_prelude_note(&self) -> bool {
+            let (mut sources, entry) = self.sources();
+            let mut expander =
+                Expander::with_prelude(&mut sources, Self::module_sources(), Self::loaded_state());
+            expander.load_source_module(ModulePath::new(self.name), &[entry]);
+            expander.tables.module_notes.decoded_no_saved_note()
         }
 
         fn loaded_state() -> PreludeState {
@@ -249,6 +261,11 @@ mod tests {
             let header = KernelPages::header_of_shape(form.shape());
             assert_eq!(pages.header(form), Some(header.as_str()), "{}", form.name());
         }
+    }
+
+    #[test]
+    fn an_empty_program_decodes_no_prelude_note() {
+        assert!(UserProgram::EMPTY.decodes_no_prelude_note());
     }
 
     #[test]

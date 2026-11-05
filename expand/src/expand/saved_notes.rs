@@ -35,6 +35,11 @@ impl SavedNotes {
         self.decoded().get(&(module, key.to_string()))
     }
 
+    #[cfg(test)]
+    pub fn decoded_nothing(&self) -> bool {
+        self.decoded.get().is_none()
+    }
+
     fn decoded(&self) -> &NotesTable {
         self.decoded
             .get_or_init(|| bincode::deserialize(&self.encoded.0).expect("the saved notes decode"))
