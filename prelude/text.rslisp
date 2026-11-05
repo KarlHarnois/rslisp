@@ -30,7 +30,7 @@
   (method fmt
           (fn ((ref self) (mut formatter))
             fmt-result))
-  (help "implement `display` with `(display type (value) ...)`, or print its printed form with `prn`")
+  (help "write `(display type (value) ...)`, or print the value with `prn`")
   bool char str string
   (ref str)
   io-error i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128
@@ -648,7 +648,8 @@
         (show-construction body out)
         (fail "a `show` body is one construction form or a symbol"
           body
-          "write the call that builds the value, as in `(->money :cents 1200)`")))))
+          (string "write the call that builds the value, as in "
+                  "`(->money :cents 1200)`"))))))
 
 (defmacro show (type param body)
   (let out (symbol (quote show) "out"))

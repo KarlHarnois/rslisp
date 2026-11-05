@@ -9,4 +9,4 @@ error[L0404]: `point` does not implement `display`
 5 | (defn main () (println (->point 0 0)))
   |                        ^^^^^^^^^^^^^ this needs `display`
   |
-  = help: implement `display` with `(display type (value) ...)`, or print its printed form with `prn`
+  = help: write `(display type (value) ...)`, or print the value with `prn`

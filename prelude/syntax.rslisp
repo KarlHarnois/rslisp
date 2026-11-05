@@ -199,7 +199,8 @@
         form "move the defaults to the end")
       (fail "a parameter must start with `:`"
         form
-        "write each parameter as `:name type` or `:name`, as in (defn add (:x i64 :y i64) (+ x y))"))))
+        (string "write each parameter as `:name type` or `:name`, as in "
+                "(defn add (:x i64 :y i64) (+ x y))")))))
 
 (def parameter-width
   (fn (more)
