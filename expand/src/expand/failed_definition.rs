@@ -179,13 +179,28 @@ mod tests {
                 expander.load_source_module(ModulePath::new(path), &[id]);
             }
             FailureRecord {
+                declared: expander
+                    .declared_definitions
+                    .iter()
+                    .map(|declared| declared.name.to_string())
+                    .collect(),
                 has_failed_definitions: expander.tables.globals.has_failed_definitions(),
             }
         }
     }
 
     struct FailureRecord {
+        declared: Vec<String>,
         has_failed_definitions: bool,
+    }
+
+    #[test]
+    fn a_failing_top_level_call_holds_only_its_own_declarations() {
+        let record = ModulesFixture::new().expand(&[
+            ("body", "(defn outer () 1 (defrule inner ((x) x)))"),
+            ("top", "(defn area \"doc\" (w) w)"),
+        ]);
+        assert_eq!(record.declared, ["area"]);
     }
 
     #[test]
