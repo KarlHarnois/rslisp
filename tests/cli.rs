@@ -1150,17 +1150,28 @@ fn check_ignores_a_byte_order_mark() {
 }
 
 #[test]
-fn signatures_prints_each_function() {
-    let sandbox = Sandbox::new("signatures").with_file("greeting.rslisp", GREETING);
-    let signatures = sandbox.compiler(&["signatures", "greeting.rslisp"]);
-    insta::assert_snapshot!(signatures.assert_exit_code(0).stdout());
+fn types_prints_each_function() {
+    let sandbox = Sandbox::new("types").with_file("greeting.rslisp", GREETING);
+    let types = sandbox.compiler(&["types", "greeting.rslisp"]);
+    insta::assert_snapshot!(types.assert_exit_code(0).stdout());
 }
 
 #[test]
-fn signatures_prints_inferred_struct_derives() {
-    let sandbox = Sandbox::new("signatures_structs").with_file("structs.rslisp", STRUCTS);
-    let signatures = sandbox.compiler(&["signatures", "structs.rslisp"]);
-    insta::assert_snapshot!(signatures.assert_exit_code(0).stdout());
+fn types_prints_inferred_struct_derives() {
+    let sandbox = Sandbox::new("types_structs").with_file("structs.rslisp", STRUCTS);
+    let types = sandbox.compiler(&["types", "structs.rslisp"]);
+    insta::assert_snapshot!(types.assert_exit_code(0).stdout());
+}
+
+#[test]
+fn signatures_is_an_unknown_command() {
+    let sandbox = Sandbox::new("signatures_unknown").with_file("greeting.rslisp", GREETING);
+    let signatures = sandbox.compiler(&["signatures", "greeting.rslisp"]);
+    let stderr = signatures.assert_exit_code(2).stderr();
+    assert_eq!(
+        stderr.lines().next(),
+        Some("error: unrecognized subcommand 'signatures'")
+    );
 }
 
 #[test]
@@ -1223,10 +1234,10 @@ fn expand_ends_quietly_when_its_reader_closes() {
 }
 
 #[test]
-fn signatures_ends_quietly_when_its_reader_closes() {
-    let sandbox = Sandbox::new("signatures_closed_pipe").with_file("greeting.rslisp", GREETING);
+fn types_ends_quietly_when_its_reader_closes() {
+    let sandbox = Sandbox::new("types_closed_pipe").with_file("greeting.rslisp", GREETING);
     sandbox
-        .compiler_writing_to_a_closed_pipe(&["signatures", "greeting.rslisp"])
+        .compiler_writing_to_a_closed_pipe(&["types", "greeting.rslisp"])
         .assert_silent_success();
 }
 

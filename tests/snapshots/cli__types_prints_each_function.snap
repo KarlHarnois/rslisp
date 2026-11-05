@@ -1,5 +1,5 @@
 ---
 source: tests/cli.rs
-expression: signatures.assert_exit_code(0).stdout()
+expression: types.assert_exit_code(0).stdout()
 ---
 (type main (fn () unit))

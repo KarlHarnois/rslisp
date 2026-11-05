@@ -1,6 +1,6 @@
 ---
 source: tests/cli.rs
-expression: signatures.assert_exit_code(0).stdout()
+expression: types.assert_exit_code(0).stdout()
 ---
 (derive person clone partial-eq eq hash show)
 (type ->person (fn (string i64) person))

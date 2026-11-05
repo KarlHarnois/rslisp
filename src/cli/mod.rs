@@ -31,7 +31,6 @@ mod prompt_lines;
 mod prompt_module;
 mod repl;
 mod run;
-mod signatures;
 mod stage_work;
 mod standard_error;
 mod streamed_program;
@@ -39,6 +38,7 @@ mod temporary_directory;
 mod term_parser;
 mod terminal;
 mod token_colors;
+mod types;
 mod value_marker;
 mod whole_characters;
 
@@ -69,9 +69,9 @@ use expand::ExpandCommand;
 use fmt::{FmtCommand, FmtMode};
 use repl::ReplCommand;
 use run::RunCommand;
-use signatures::SignaturesCommand;
 use term_parser::{SurplusParser, TermParser};
 use terminal::{BuildOptions, Terminal};
+use types::TypesCommand;
 
 #[derive(Parser)]
 #[command(
@@ -109,7 +109,7 @@ enum InspectionCommand {
     #[command(about = "Read, expand and check a program, then print its diagnostics")]
     Check { file: PathBuf },
     #[command(about = "Print the inferred signature of each function in a program")]
-    Signatures { file: PathBuf },
+    Types { file: PathBuf },
     #[command(
         name = DocCommand::NAME,
         about = "Print the page of a prelude term, or of a program's term with --file"
@@ -296,7 +296,7 @@ impl InspectionCommand {
     fn execute(self, terminal: &mut Terminal) -> ExitStatus {
         match self {
             Self::Check { file } => CheckCommand::new(file).run(terminal),
-            Self::Signatures { file } => SignaturesCommand::new(file).run(terminal),
+            Self::Types { file } => TypesCommand::new(file).run(terminal),
             Self::Doc {
                 term, file, types, ..
             } => DocCommand::new(DocEnvironment::new(file), term, types.page()).run(terminal),
