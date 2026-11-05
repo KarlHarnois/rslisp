@@ -2805,6 +2805,186 @@ fn color_never_keeps_the_repl_prompt_and_exit_note_plain() {
     );
 }
 
+struct ValueColors;
+
+impl ValueColors {
+    const TAG: &str = "(defstruct tag :name string :size i64)\n";
+    const TAG_FORM: &str = "(->tag :name (str \"an\" \"a\") :size (+ 1 1))";
+    const TAG_VALUE: &str = "(->tag :name \"ana\" :size 2)";
+    const PROGRAM_COLORS: &str = "\u{1b}[35mviolet\u{1b}[0m";
+
+    fn painted_value() -> String {
+        let keyword = anstyle::AnsiColor::Cyan.on_default();
+        format!(
+            "(->tag {} {} {} {})",
+            Self::styled(keyword, ":name"),
+            Self::styled(anstyle::AnsiColor::Green.on_default(), "\"ana\""),
+            Self::styled(keyword, ":size"),
+            Self::styled(anstyle::AnsiColor::Yellow.on_default(), "2"),
+        )
+    }
+
+    fn styled(style: anstyle::Style, text: &str) -> String {
+        format!("{style}{text}{style:#}")
+    }
+
+    fn assert_painted(output: &str) {
+        let painted = Self::painted_value();
+        assert!(output.contains(&painted), "{painted:?} in {output:?}");
+    }
+
+    fn assert_plain(output: &str) {
+        assert!(output.contains(Self::TAG_VALUE), "{output:?}");
+    }
+
+    fn typed_value() -> String {
+        format!("{}\r", Self::TAG_FORM)
+    }
+
+    fn session(name: &str, environment: &[(&str, &str)], arguments: &[&str]) -> String {
+        let environment: Vec<(&str, &str)> = [("TERM", "xterm")]
+            .into_iter()
+            .chain(environment.iter().copied())
+            .collect();
+        let typed_tag = Self::TAG.replace('\n', "\r");
+        let typed_value = Self::typed_value();
+        Sandbox::new(name)
+            .compiler_on_a_terminal_reading(
+                &[
+                    Keys::AtPrompt(&typed_tag),
+                    Keys::AtPrompt(&typed_value),
+                    Keys::AtPrompt(Keys::END_OF_INPUT),
+                ],
+                &environment,
+                arguments,
+            )
+            .assert_exit_code(0)
+            .stdout()
+    }
+
+    fn eval_on_a_terminal(name: &str, environment: &[(&str, &str)], forms: &str) -> Outcome {
+        Self::eval_on_a_terminal_then(name, environment, forms, &[])
+    }
+
+    fn eval_on_a_terminal_then(
+        name: &str,
+        environment: &[(&str, &str)],
+        forms: &str,
+        shell_words: &[&str],
+    ) -> Outcome {
+        let environment: Vec<(&str, &str)> = [("TERM", "xterm")]
+            .into_iter()
+            .chain(environment.iter().copied())
+            .collect();
+        let quoted = format!("'{forms}'");
+        let arguments: Vec<&str> = ["eval", "tags.rslisp", &quoted]
+            .into_iter()
+            .chain(shell_words.iter().copied())
+            .collect();
+        Sandbox::new(name)
+            .with_file("tags.rslisp", Self::TAG)
+            .compiler_on_a_terminal(&environment, &arguments)
+    }
+}
+
+#[test]
+fn color_repl_values_by_token_kind() {
+    let session = ValueColors::session("color_repl_values", &[], &["repl"]);
+    ValueColors::assert_painted(&session);
+}
+
+#[test]
+fn color_repl_passes_the_program_escape_codes_unchanged() {
+    let sandbox = Sandbox::new("color_repl_program_codes");
+    let session = sandbox
+        .compiler_on_a_terminal_reading(
+            &[
+                Keys::AtPrompt("(println \"\\u{1b}[35mviolet\\u{1b}[0m\")\r"),
+                Keys::AtPrompt(Keys::END_OF_INPUT),
+            ],
+            &[("TERM", "xterm")],
+            &["repl"],
+        )
+        .assert_exit_code(0)
+        .stdout();
+    assert!(session.contains(ValueColors::PROGRAM_COLORS), "{session:?}");
+}
+
+#[test]
+fn color_repl_shows_the_program_prompt_before_it_reads() {
+    let sandbox = Sandbox::new("color_repl_program_prompt");
+    let session = sandbox
+        .compiler_on_a_terminal_reading(
+            &[
+                Keys::AtPrompt("(do (println (str \"na\" \"me?\")) (read-line))\r"),
+                Keys::AfterOutput("name?", "ana\r"),
+                Keys::AtPrompt(Keys::END_OF_INPUT),
+            ],
+            &[("TERM", "xterm")],
+            &["repl"],
+        )
+        .assert_exit_code(0)
+        .stdout();
+    let painted = ValueColors::styled(anstyle::AnsiColor::Green.on_default(), "\"ana\"");
+    assert!(session.contains(&painted), "{session:?}");
+}
+
+#[test]
+fn color_stays_off_repl_values_when_no_color_is_set() {
+    let session = ValueColors::session(
+        "color_repl_values_no_color",
+        &[("NO_COLOR", "1")],
+        &["repl"],
+    );
+    ValueColors::assert_plain(&session);
+}
+
+#[test]
+fn color_never_keeps_repl_values_plain() {
+    let session = ValueColors::session(
+        "color_repl_values_never",
+        &[],
+        &["--color", "never", "repl"],
+    );
+    ValueColors::assert_plain(&session);
+}
+
+#[test]
+fn color_stays_off_repl_values_in_a_pipe() {
+    let input = format!("{}{}\n", ValueColors::TAG, ValueColors::TAG_FORM);
+    let repl = Sandbox::new("color_repl_values_pipe").compiler_reading(input, &["repl"]);
+    let output = repl.assert_exit_code(0).stdout();
+    assert!(!output.contains(Outcome::ESCAPE), "{output:?}");
+    ValueColors::assert_plain(&output);
+}
+
+#[test]
+fn color_eval_values_on_a_terminal() {
+    let eval = ValueColors::eval_on_a_terminal("color_eval_values", &[], ValueColors::TAG_FORM);
+    ValueColors::assert_painted(&eval.assert_exit_code(0).stdout());
+}
+
+#[test]
+fn color_stays_off_eval_values_when_no_color_is_set() {
+    let eval = ValueColors::eval_on_a_terminal(
+        "color_eval_values_no_color",
+        &[("NO_COLOR", "1")],
+        ValueColors::TAG_FORM,
+    );
+    ValueColors::assert_plain(&eval.assert_exit_code(0).stdout());
+}
+
+#[test]
+fn color_eval_keeps_a_piped_value_plain_and_colors_the_diagnostics() {
+    let forms = format!("(iter (vec 1 2)) {}", ValueColors::TAG_FORM);
+    let eval =
+        ValueColors::eval_on_a_terminal_then("color_eval_piped_value", &[], &forms, &["|", "cat"]);
+    let output = eval.assert_exit_code(0).stdout();
+    ValueColors::assert_plain(&output);
+    assert!(output.contains("note"), "{output:?}");
+    assert!(eval.stdout_is_colored(), "{output:?}");
+}
+
 struct RedefinitionSession;
 
 impl RedefinitionSession {
@@ -2987,6 +3167,11 @@ impl EditedSession {
         format!("{style}{text}{style:#}")
     }
 
+    fn printed_number(number: &str) -> String {
+        let painted = Self::styled(anstyle::AnsiColor::Yellow.on_default(), number);
+        format!("\r\n{painted}\r\n")
+    }
+
     fn history_notes(session: &str) -> usize {
         session.matches("history is off").count()
     }
@@ -3146,7 +3331,10 @@ fn repl_drops_the_typed_input_on_interrupt() {
         ],
         &[],
     );
-    assert!(session.contains("\r\n5\r\n"), "{session:?}");
+    assert!(
+        session.contains(&EditedSession::printed_number("5")),
+        "{session:?}"
+    );
     assert_eq!(edited.history(), "#V2\n(+ 2 3)\n");
 }
 
@@ -3180,7 +3368,10 @@ fn repl_keeps_history_under_the_state_home() {
         ],
         &[],
     );
-    assert!(recalled.contains("\r\n3\r\n"), "{recalled:?}");
+    assert!(
+        recalled.contains(&EditedSession::printed_number("3")),
+        "{recalled:?}"
+    );
     assert_eq!(edited.history(), "#V2\n(+ 1 2)\n");
 }
 
@@ -3214,7 +3405,10 @@ fn repl_works_without_history_when_no_state_directory_is_known() {
         session.contains("history is off: no state directory"),
         "{session:?}"
     );
-    assert!(session.contains("\r\n3\r\n"), "{session:?}");
+    assert!(
+        session.contains(&EditedSession::printed_number("3")),
+        "{session:?}"
+    );
 }
 
 #[test]
@@ -3254,7 +3448,10 @@ fn repl_works_without_history_when_the_history_cannot_be_read() {
         session.contains("history is off: cannot read"),
         "{session:?}"
     );
-    assert!(session.contains("\r\n3\r\n"), "{session:?}");
+    assert!(
+        session.contains(&EditedSession::printed_number("3")),
+        "{session:?}"
+    );
 }
 
 #[test]
@@ -3280,7 +3477,10 @@ fn repl_says_once_that_history_cannot_be_written() {
         "{session:?}"
     );
     assert_eq!(EditedSession::history_notes(&session), 1, "{session:?}");
-    assert!(session.contains("\r\n7\r\n"), "{session:?}");
+    assert!(
+        session.contains(&EditedSession::printed_number("7")),
+        "{session:?}"
+    );
 }
 
 #[test]

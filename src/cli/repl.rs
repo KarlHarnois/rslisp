@@ -226,7 +226,7 @@ impl PromptSession {
             forms,
             EvaluationSettings {
                 profile: self.profile,
-                output: Box::new(PrintedEvaluation),
+                output: Box::new(PrintedEvaluation::for_standard_output()),
             },
         )
         .run(terminal);

@@ -627,6 +627,12 @@ An expression never changes the buffer. After a module file changes on disk, an 
 | a comment, `;` to the end of the line | dim |
 | parentheses and every other symbol | plain |
 
+**The prompt and `eval` without `--json` color each printed value with the same token colors, by standard output's decision.** `true`, `none` and every other symbol print plain, because the colors key only on the reader's tokens.
+
+- When standard output decides to color, the program's standard output goes through a pipe. The CLI finds each value by the marker of `eval --json`, colors the value, and writes every other byte of the program's output unchanged, as it arrives, so a program's own escape codes and a line it prints before it reads input reach the terminal at once.
+- When standard output decides not to color, the program keeps standard output, as under `run`, and each value prints plain. So `rslisp eval f '(g)' | less` prints the value plain, and a diagnostic on a terminal stays colored.
+- The program's standard error never goes through a pipe and never takes a color.
+
 ## Rust interop
 
 `rust` binds a name to a piece of Rust:
