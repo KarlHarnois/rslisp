@@ -25,12 +25,13 @@ impl<'a> EmittedLints<'a> {
     const CONFIG_DIRECTORY_VARIABLE: &'static str = "CLIPPY_CONF_DIR";
     const DEFAULT_CONFIG: &'static str = "clippy.toml";
     const EDITION: &'static str = "2024";
-    const PROGRAM_CHOICES: [&'static str; 9] = [
+    const PROGRAM_CHOICES: [&'static str; 10] = [
         "unused_parens",
         "unused_variables",
         "clippy::double_parens",
         "clippy::if_same_then_else",
         "clippy::len_zero",
+        "clippy::print_literal",
         "clippy::redundant_closure_call",
         "clippy::unnecessary_fold",
         "clippy::unnecessary_literal_unwrap",
