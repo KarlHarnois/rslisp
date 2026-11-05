@@ -328,15 +328,13 @@ impl Sandbox {
         self.compiler_writing_to(Self::closed_pipe(), arguments)
     }
 
-    fn compiler_reporting_to_a_closed_pipe(&self, arguments: &[&str]) -> Outcome {
-        let mut command = self.command(Path::new(Self::COMPILER), arguments);
-        command.stderr(Self::closed_pipe());
-        Outcome::of(&mut command)
+    fn compiler_with_a_closed_standard_error(&self, arguments: &[&str]) -> Outcome {
+        self.compiler_reporting_to(Self::closed_pipe(), arguments)
     }
 
     fn assert_exit_code_with_a_closed_error_pipe(&self, arguments: &[&str], expected: i32) {
         self.compiler(arguments).assert_exit_code(expected);
-        self.compiler_reporting_to_a_closed_pipe(arguments)
+        self.compiler_with_a_closed_standard_error(arguments)
             .assert_exit_code(expected);
     }
 
@@ -358,6 +356,12 @@ impl Sandbox {
     fn compiler_writing_to(&self, standard_output: Stdio, arguments: &[&str]) -> Outcome {
         let mut command = self.command(Path::new(Self::COMPILER), arguments);
         command.stdout(standard_output);
+        Outcome::of(&mut command)
+    }
+
+    fn compiler_reporting_to(&self, standard_error: Stdio, arguments: &[&str]) -> Outcome {
+        let mut command = self.command(Path::new(Self::COMPILER), arguments);
+        command.stderr(standard_error);
         Outcome::of(&mut command)
     }
 
