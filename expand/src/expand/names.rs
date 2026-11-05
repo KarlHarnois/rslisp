@@ -63,6 +63,16 @@ impl Expander<'_> {
         Ok(binding)
     }
 
+    pub(super) fn define_unrecorded_global(
+        &mut self,
+        binder: &Form,
+        namespace: Namespace,
+        kind: BindingKind,
+        context: &DefinitionContext,
+    ) -> Result<BindingId, Diagnostic> {
+        self.define(binder, namespace, kind, Phase::Runtime, Some(context))
+    }
+
     pub(super) fn bind_import(
         &mut self,
         symbol: &Symbol,

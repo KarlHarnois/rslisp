@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_defmacro_uses.rslisp
+---
+error[L0328]: a docstring goes after the parameter list
+ --> expand/failed_defmacro_uses.rslisp:1:17
+  |
+1 | (defmacro shout "Repeats a form." (x) x)
+  |                 ^^^^^^^^^^^^^^^^^ a docstring in place of the parameter list
+  |
+  = help: write it as the first body form, after the parameter list

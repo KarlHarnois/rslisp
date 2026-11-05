@@ -1,0 +1,3 @@
+(defmacro shout "Repeats a form." (x) x)
+
+(defn main () (println (shout 1)) (println (shout 2)))

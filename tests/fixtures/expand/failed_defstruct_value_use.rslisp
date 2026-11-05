@@ -1,0 +1,5 @@
+(defstruct point (x i64) y)
+
+(defn origin () (point 0 0))
+
+(defn main () (println (point-x (origin))))

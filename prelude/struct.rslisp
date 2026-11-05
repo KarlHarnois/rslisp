@@ -3,7 +3,7 @@
                     default-bindings call-signature signature-name signature-defaults
                     read-call has-argument? pair-keys)
 (use code first rest list nth drop empty? list? symbol? symbol symbol-name prepend
-          concat string fail keyword?)
+          concat string fail keyword? declare-definition declare-type-definition)
 
 (export defstruct)
 
@@ -86,12 +86,22 @@
 
 (defmacro defstruct (head body ...)
   "Defines a struct and its keyword constructor: (defstruct name :field type ...)."
+  (declare-struct-names (head-name head))
   (if (documented-body? body)
       (do (note-docstring (type-doc-key (head-name head)) (first body))
           (struct-definition head (rest body)))
       (struct-definition head body)))
 
 (header-shape (defstruct head) :docstring)
+
+(def declare-struct-names
+  (fn (name)
+    (declare-type-definition name)
+    (declare-definition (constructor-name name))))
+
+(def constructor-name
+  (fn (name)
+    (symbol name "->" name)))
 
 (def struct-definition
   (fn (head body)
@@ -105,7 +115,7 @@
       (do (struct (unquote head) (splice fields))
           (defn (unquote hidden) (unquote field-names)
             (new (unquote name) (splice (map-list field-initializer fields))))
-          (def (unquote (symbol name "->" name))
+          (def (unquote (constructor-name name))
             (macro (form)
               (constructor-expansion form (quote (unquote hidden))
                                      (quote (unquote (call-signature name field-names defaults field-types))))))))))

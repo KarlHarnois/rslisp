@@ -1,0 +1,3 @@
+(use failed_geometry/geometry area)
+
+(defn main () (println (area 2 3)))

@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_definition_misspelled_use.rslisp
+---
+error[L0328]: a docstring goes after the parameter list
+ --> expand/failed_definition_misspelled_use.rslisp:1:12
+  |
+1 | (defn area "Multiplies two sides." (width height) (* width height))
+  |            ^^^^^^^^^^^^^^^^^^^^^^^ a docstring in place of the parameter list
+  |
+  = help: write it as the first body form, after the parameter list
+
+error[L0201]: cannot find `aera` in this scope
+ --> expand/failed_definition_misspelled_use.rslisp:3:67
+  |
+3 | (defn main () (println (area 2 3)) (println (area 4 5)) (println (aera 1 1)))
+  |                                                                   ^^^^ not found in this scope
+  |
+help: a name with a similar spelling exists
+  |
+3 - (defn main () (println (area 2 3)) (println (area 4 5)) (println (aera 1 1)))
+3 + (defn main () (println (area 2 3)) (println (area 4 5)) (println (area 1 1)))
+  |

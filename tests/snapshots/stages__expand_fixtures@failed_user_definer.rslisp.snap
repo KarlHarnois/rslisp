@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_user_definer.rslisp
+---
+error[L0301]: defgauge is not ready
+ --> expand/failed_user_definer.rslisp:7:11
+  |
+7 | (defgauge level)
+  |           ^^^^^ here
