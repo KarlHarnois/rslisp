@@ -1,0 +1,14 @@
+(use prelude/test assert deftest)
+
+(deftest)
+
+(deftest "pads a number" (assert true))
+
+(deftest asserts-nothing (assert))
+
+(deftest asserts-too-much (assert true "message" "extra"))
+
+(deftest :keyword-name (assert true))
+
+(deftest compares-an-empty-list
+  (assert (= () 1)))

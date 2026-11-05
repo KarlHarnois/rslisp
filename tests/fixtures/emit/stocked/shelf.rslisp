@@ -1,0 +1,12 @@
+(use prelude/test assert deftest)
+
+(export restock shelve stack)
+
+(defn restock (count) (+ count 1))
+
+(defn shelve (count) (- count 1))
+
+(defn stack (count) (* count 2))
+
+(deftest restocks
+  (assert (= (restock 1) 2)))

@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/test_open_last_form.rslisp
+---
+error[L0407]: type annotations needed
+ --> check/test_open_last_form.rslisp:3:35
+  |
+3 | (deftest ends-with-an-open-option none)
+  |                                   ^^^^ cannot infer the type of this value
+  |
+  = help: annotate the binding, as in `(let (name i64) value)`, or add a `type` signature
+
+error[L0407]: type annotations needed
+ --> check/test_open_last_form.rslisp:5:35
+  |
+5 | (deftest ends-with-an-open-vector (vec))
+  |                                   ^^^^^ cannot infer the type of this value
+  |
+  = help: annotate the binding, as in `(let (name i64) value)`, or add a `type` signature

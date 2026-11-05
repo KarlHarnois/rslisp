@@ -1,0 +1,64 @@
+(use prelude/test assert deftest run-tests)
+
+(defstruct box-of
+  :label string
+  :count i64)
+
+(defn noisy-count ()
+  (println "evaluated once")
+  2)
+
+(defn double-some (number)
+  (some (* number 2)))
+
+(deftest length-beside-a-literal
+  (assert (= (len "ab") 2)))
+
+(deftest length-beside-a-wrong-literal
+  (assert (= (len "ab") 3)))
+
+(deftest option-beside-none
+  (assert (= (double-some 2) none)))
+
+(deftest empty-option-beside-none
+  (assert (= (the (option i64) none) none)))
+
+(deftest then-some-beside-none
+  (assert (= (then-some (some 2) double-some) none)))
+
+(deftest each-side-evaluates-once
+  (assert (= (noisy-count) 2)))
+
+(deftest sides-stay-usable
+  (let names (vec (str "a")))
+  (let others (vec (str "a")))
+  (assert (= names others))
+  (assert (= (len names) 1))
+  (assert (= others names) "still equal"))
+
+(deftest a-field-side-stays-usable
+  (let crate (->box-of :label (str "a") :count 1))
+  (assert (= (:label crate) "a"))
+  (assert (= (:count crate) 1))
+  (println (:label crate)))
+
+(deftest float-beside-a-literal
+  (assert (= (sqrt 4.0) 2)))
+
+(deftest string-beside-a-view
+  (let name (str "a"))
+  (assert (= name (as-str name))))
+
+(deftest borrowed-item-beside-a-literal
+  (for-each (iter (vec 1 1))
+            (fn (item) (assert (= (deref item) 1)))))
+
+(deftest deref-side-reports-both-sides
+  (let number 1)
+  (let borrowed (ref number))
+  (assert (= (deref borrowed) 2)))
+
+(deftest called-closure-side
+  (assert (= ((fn (number) number) 2) 2)))
+
+(defn main () (run-tests :marker "<record>"))

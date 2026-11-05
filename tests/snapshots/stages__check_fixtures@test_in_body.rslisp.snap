@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/test_in_body.rslisp
+---
+error[L0208]: `deftest` can only appear at module level
+ --> check/test_in_body.rslisp:4:3
+  |
+4 | /   (deftest counts
+5 | |     (assert (= (tally 1) 2)))
+  | |_____________________________^ not allowed inside an expression
+  |
+  = help: use `let` to bind a name inside a body

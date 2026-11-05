@@ -1,0 +1,42 @@
+(use prelude/test assert deftest run-tests)
+
+(defn pad (text) (str " " text))
+
+(defrule pad-test
+  ((name text padded)
+   (deftest name
+     (assert (= (pad text) padded)))))
+
+(pad-test pads-letter "a" " a")
+
+(deftest pads-nothing
+  "Pads the empty string to one space.
+  The second docstring line stays out of the record."
+  (assert (= (pad "") "")))
+
+(deftest asserts-a-message
+  (assert (empty? (pad "")) "a padded string is never empty"))
+
+(deftest asserts-plainly
+  (assert (> (len (pad "")) 2)))
+
+(deftest unwraps-nothing
+  (unwrap (the (option i64) none)))
+
+(deftest prints-without-newline
+  (print "partial")
+  (assert true))
+
+(deftest panics-with-a-formatted-message
+  (expect (the (option i64) none) "must have"))
+
+(deftest summary-starts-with-spaces
+  "   The summary loses its leading spaces."
+  (assert false))
+
+(deftest three-sides-show-no-sides (assert (= 1 1 2)))
+
+(deftest list-headed-assert-shows-no-sides
+  (assert ((fn (left right) (> left right)) 1 2)))
+
+(defn main () (run-tests :marker "<record>"))

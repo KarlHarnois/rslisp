@@ -1,0 +1,15 @@
+(use prelude/test assert deftest)
+
+(defn test-pads ()
+  "a user function named like a test function")
+
+(defn pad (text) (str " " text))
+
+(deftest pads
+  "Pads one space on the left."
+  (assert (= (pad "a") " a")))
+
+(deftest keeps-user-function
+  (assert (= (test-pads) "a user function")))
+
+(defn main () (println (pad "b")))

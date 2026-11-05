@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/test_name_is_not_a_binding.rslisp
+---
+error[L0201]: cannot find `twice-named` in this scope
+ --> check/test_name_is_not_a_binding.rslisp:8:21
+  |
+8 | (def page (doc-page twice-named))
+  |                     ^^^^^^^^^^^ not found in this scope

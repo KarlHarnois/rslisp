@@ -1,0 +1,35 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/test_equal_sides.rslisp
+---
+<record>(start 13)
+<record>(test "test_equal_sides/length-beside-a-literal" "")
+<record>(ok)
+<record>(test "test_equal_sides/length-beside-a-wrong-literal" "")
+<record>(fail-equal "test_equal_sides.rslisp:18:3" "(assert (= (len \"ab\") 3))" "2" "3")
+<record>(test "test_equal_sides/option-beside-none" "")
+<record>(fail-equal "test_equal_sides.rslisp:21:3" "(assert (= (double-some 2) none))" "(some 4)" "none")
+<record>(test "test_equal_sides/empty-option-beside-none" "")
+<record>(ok)
+<record>(test "test_equal_sides/then-some-beside-none" "")
+<record>(fail-equal "test_equal_sides.rslisp:27:3" "(assert (= (then-some (some 2) double-some) none))" "(some 4)" "none")
+<record>(test "test_equal_sides/each-side-evaluates-once" "")
+evaluated once
+<record>(ok)
+<record>(test "test_equal_sides/sides-stay-usable" "")
+<record>(ok)
+<record>(test "test_equal_sides/a-field-side-stays-usable" "")
+a
+<record>(ok)
+<record>(test "test_equal_sides/float-beside-a-literal" "")
+<record>(ok)
+<record>(test "test_equal_sides/string-beside-a-view" "")
+<record>(ok)
+<record>(test "test_equal_sides/borrowed-item-beside-a-literal" "")
+<record>(ok)
+<record>(test "test_equal_sides/deref-side-reports-both-sides" "")
+<record>(fail-equal "test_equal_sides.rslisp:59:3" "(assert (= (deref borrowed) 2))" "1" "2")
+<record>(test "test_equal_sides/called-closure-side" "")
+<record>(ok)
+<record>(done)

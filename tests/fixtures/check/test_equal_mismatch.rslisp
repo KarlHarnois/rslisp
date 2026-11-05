@@ -1,0 +1,6 @@
+(use prelude/test assert deftest)
+
+(deftest compares-a-number-with-text
+  (assert (= (len "ab") "two")))
+
+(defn main () (println "main"))

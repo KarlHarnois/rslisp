@@ -1,0 +1,26 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/duplicate_test.rslisp
+---
+error[L0333]: test `pads` is defined more than once
+  --> expand/duplicate_test.rslisp:11:10
+   |
+ 5 | (deftest pads
+   |          ---- first defined here
+...
+11 | (deftest pads (println "again"))
+   |          ^^^^ defined again here
+   |
+   = help: rename one of the tests
+
+error[L0333]: test `trims` is defined more than once
+  --> expand/duplicate_test.rslisp:13:10
+   |
+ 8 | (deftest trims
+   |          ----- first defined here
+...
+13 | (deftest trims (println "again"))
+   |          ^^^^^ defined again here
+   |
+   = help: rename one of the tests

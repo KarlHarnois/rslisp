@@ -1,0 +1,7 @@
+(use prelude/test deftest)
+
+(deftest ends-with-an-open-option none)
+
+(deftest ends-with-an-open-vector (vec))
+
+(defn main () (println "main"))

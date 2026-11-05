@@ -1,0 +1,19 @@
+(use prelude/test assert deftest run-tests)
+(use stocked/shelf stack)
+
+(defn test-pads ()
+  "a user function named like a test function")
+
+(deftest pads
+  (assert (= (test-pads) "a user function")))
+
+(deftest counts
+  "Counts letters."
+  (assert (= (len "ab") 2) "two letters"))
+
+(deftest checks
+  (assert (< 1 2))
+  (assert (> 2 1) "two is above one"))
+
+(defn main ()
+  (run-tests :marker "<record>" :untested stocked/shelf))

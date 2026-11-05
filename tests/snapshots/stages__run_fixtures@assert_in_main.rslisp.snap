@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/assert_in_main.rslisp
+---
+passed
+stderr:
+
+thread 'main' panicked at main.rs:303:9:
+assertion failed at assert_in_main.rslisp:10:3: (assert (= (str "a") "b") "they differ")
+left:  "a"
+right: "b"
+they differ
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+exit code: 101
