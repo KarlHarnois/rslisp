@@ -35,6 +35,11 @@ impl ModuleNotes {
             .unwrap_or_default()
     }
 
+    #[cfg(test)]
+    pub fn decoded_no_saved_note(&self) -> bool {
+        self.saved.decoded_nothing()
+    }
+
     pub fn checkpoint(&self) -> NotesCheckpoint {
         NotesCheckpoint(self.added.len())
     }
