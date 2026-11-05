@@ -15,8 +15,10 @@ fn head(v: &[i64]) -> Option<&i64> {
 
 fn main() {
     crate::rt::restore_default_sigpipe();
-    println!("{}", crate::rt::Shown(&total(&vec![1_i64, 2_i64])));
-    println!("{}", crate::rt::Shown(&head(&vec![1_i64, 2_i64])))
+    let mut numbers: Vec<i64> = vec![1_i64];
+    numbers.push(2);
+    println!("{}", crate::rt::Shown(&total(&numbers)));
+    println!("{}", crate::rt::Shown(&head(&numbers)))
 }
 
 mod rt {
