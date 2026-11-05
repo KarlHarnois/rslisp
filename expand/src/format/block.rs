@@ -45,15 +45,7 @@ impl LaidOut for Block {
         1 + self.later.len()
     }
 
-    fn overflow(&self) -> usize {
-        let first = self.column + self.first.width();
-        self.later
-            .iter()
-            .map(Line::width)
-            .chain([first])
-            .map(Self::overflow_of)
-            .sum()
-    }
+    fn excuse_overflow(&mut self, _own_width: usize, _trailing: usize) {}
 
     fn end_column(&self) -> usize {
         match self.later.last() {
@@ -93,6 +85,17 @@ impl LaidOut for Block {
 }
 
 impl Block {
+    #[cfg(test)]
+    pub fn overflow(&self) -> usize {
+        let first = self.column + self.first.width();
+        self.later
+            .iter()
+            .map(Line::width)
+            .chain([first])
+            .map(Self::overflow_of)
+            .sum()
+    }
+
     pub const WIDTH: usize = 80;
     pub const FILL_WIDTH: usize = 60;
 

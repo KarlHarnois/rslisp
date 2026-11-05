@@ -15,7 +15,7 @@ pub trait LaidOut: Sized {
     fn list(engine: &mut LayoutEngine<'_>, list: &ListNode, column: usize, trailing: usize)
     -> Self;
     fn line_count(&self) -> usize;
-    fn overflow(&self) -> usize;
+    fn excuse_overflow(&mut self, own_width: usize, trailing: usize);
     fn end_column(&self) -> usize;
     fn ends_with_comment(&self) -> bool;
     fn append(&mut self, text: &str);
@@ -146,7 +146,12 @@ impl<'s> LayoutEngine<'s> {
                 measure: assembly.assemble(self, *arrangement),
                 layout: ChosenLayout::Arranged(*arrangement),
             })
-            .min_by_key(|choice| (choice.measure.overflow(), choice.measure.line_count()))
+            .min_by_key(|choice| {
+                (
+                    choice.measure.avoidable_overflow(trailing),
+                    choice.measure.line_count(),
+                )
+            })
             .expect("every list has an arrangement")
     }
 
@@ -391,8 +396,19 @@ impl<'l> ListAssembly<'l> {
             Some(atom) if self.plan.docstring_entry == Some(entry) => {
                 L::shifted_string(&atom.text, atom.docstring_shift(start), start)
             }
+            Some(atom) if self.fits_nowhere(&atom.text, trailing) => {
+                let mut laid_out = L::text(&atom.text, start);
+                laid_out.excuse_overflow(atom.text.chars().count(), trailing);
+                laid_out
+            }
             _ => engine.node(node, start, trailing),
         }
+    }
+
+    fn fits_nowhere(&self, text: &str, trailing: usize) -> bool {
+        let shallowest_end =
+            self.column + Arrangement::BODY_INDENT + text.chars().count() + trailing;
+        shallowest_end > Block::WIDTH
     }
 
     fn unit_trailing(&self, index: usize) -> usize {

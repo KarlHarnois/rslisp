@@ -535,6 +535,8 @@ The project owner decided on 2026-11-05 that in a list that breaks, a run of two
 
 The project owner decided on 2026-11-05 that a `use` or `export` that does not fit fills its names onto lines of at most 60 columns, not the 80-column width, and that a run of atoms fills to the same 60 columns, so the formatter states one fill width. The 80-column line width stays the limit for every line. This narrows the fill decision of 2026-11-04 above.
 
+The project owner decided on 2026-11-05 that an atom too long to fit at any column, such as a long string, no longer decides its parent's layout. Layout rule 5 sends a list to its fallback layout, every argument below the head, when the aligned layout does not fit at all, so one long string in the last branch of an `if` put the test and every branch on its own line, at every enclosing level. The formatter now compares the two layouts as if each such atom fit, so the list keeps the aligned layout. An atom counts as too long when it and the closing parentheses after it pass the 80-column width even at the shallowest column its list gives a form, 2 columns past the list's `(`. The atom's own overflow past 80 columns stays, since no layout can avoid it.
+
 ### Prototype
 
 After the decisions above, a prototype formatter applied every layout rule to the repository. It reads through a lossless syntax tree, collects shapes from the kernel, the prelude and the modules a file reaches through `use`, searches for the layout with the fewest lines, and runs the meaning and stability checks on each file. It lives outside the repository and is not part of this RFC.
