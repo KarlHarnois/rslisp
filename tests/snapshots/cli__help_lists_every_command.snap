@@ -7,17 +7,17 @@ Compile Lisp source files to Rust
 Usage: rslisp [OPTIONS] [COMMAND]
 
 Commands:
-  check       Read, expand and check a program, then print its diagnostics
-  signatures  Print the inferred signature of each function in a program
-  doc         Print the page of a prelude term, or of a program's term with --file
-  expand      Print a program as kernel forms after macro expansion
-  emit        Print the Rust code generated for a program
-  fmt         Lay out source files in place, or standard input given `-`
-  build       Compile a program to a native binary
-  eval        Check a module, then run forms once in its scope and print their values
-  repl        Read forms at a prompt, keep the definitions and run the rest
-  run         Build a program and run it
-  help        Print this message or the help of the given subcommand(s)
+  check   Read, expand and check a program, then print its diagnostics
+  types   Print the inferred signature of each function in a program
+  doc     Print the page of a prelude term, or of a program's term with --file
+  expand  Print a program as kernel forms after macro expansion
+  emit    Print the Rust code generated for a program
+  fmt     Lay out source files in place, or standard input given `-`
+  build   Compile a program to a native binary
+  eval    Check a module, then run forms once in its scope and print their values
+  repl    Read forms at a prompt, keep the definitions and run the rest
+  run     Build a program and run it
+  help    Print this message or the help of the given subcommand(s)
 
 Options:
       --color <WHEN>  When to color the output [default: auto] [possible values: auto, always, never]

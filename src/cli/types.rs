@@ -3,11 +3,11 @@ use std::path::PathBuf;
 use super::exit_status::ExitStatus;
 use super::terminal::Terminal;
 
-pub struct SignaturesCommand {
+pub struct TypesCommand {
     file: PathBuf,
 }
 
-impl SignaturesCommand {
+impl TypesCommand {
     pub fn new(file: PathBuf) -> Self {
         Self { file }
     }
