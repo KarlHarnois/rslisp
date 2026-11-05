@@ -59,9 +59,11 @@ impl Expander<'_> {
     pub(super) fn expand_head(
         &mut self,
         form: Form,
-        context: Option<&mut DefinitionContext>,
+        mut context: Option<&mut DefinitionContext>,
     ) -> Result<Form, Diagnostic> {
-        self.expand_head_with(form, context, Self::apply_macro)
+        self.expand_head_with(form, |expander, binding, form| {
+            expander.apply_macro(binding, form, context.as_deref_mut())
+        })
     }
 
     pub(super) fn expand_top_level_head(
@@ -69,19 +71,15 @@ impl Expander<'_> {
         form: Form,
         context: &mut DefinitionContext,
     ) -> Result<Form, Diagnostic> {
-        self.expand_head_with(form, Some(context), Self::apply_definer)
+        self.expand_head_with(form, |expander, binding, form| {
+            expander.apply_definer(binding, form, context)
+        })
     }
 
     fn expand_head_with(
         &mut self,
         form: Form,
-        mut context: Option<&mut DefinitionContext>,
-        apply: impl Fn(
-            &mut Self,
-            BindingId,
-            Form,
-            Option<&mut DefinitionContext>,
-        ) -> Result<Form, Diagnostic>,
+        mut apply: impl FnMut(&mut Self, BindingId, Form) -> Result<Form, Diagnostic>,
     ) -> Result<Form, Diagnostic> {
         let mut form = form;
         let mut expansions = 0;
@@ -89,7 +87,7 @@ impl Expander<'_> {
             if expansions == Self::MAX_EXPANSION_DEPTH {
                 return Err(ExpandProblems::expansion_too_deep(form.span()));
             }
-            form = apply(self, binding, form, context.as_deref_mut())?;
+            form = apply(self, binding, form)?;
             expansions += 1;
         }
         Ok(form)

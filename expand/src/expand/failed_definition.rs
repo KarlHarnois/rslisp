@@ -32,9 +32,8 @@ impl Expander<'_> {
         &mut self,
         definer: BindingId,
         call: Form,
-        context: Option<&mut DefinitionContext>,
+        context: &mut DefinitionContext,
     ) -> Result<Form, Diagnostic> {
-        let context = context.expect("a top-level call expands in a definition context");
         self.declared_definitions.clear();
         let expansion = self.apply_macro(definer, call, Some(context));
         if expansion.is_err() {
