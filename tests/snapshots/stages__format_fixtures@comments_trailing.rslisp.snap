@@ -43,8 +43,8 @@ input_file: tests/fixtures/format/comments_trailing.rslisp
 
 (defn check (x) ; a function
   (if (< x limit) ; under the limit
-      (ok x) ; keep it
-      (err x)))
+    (ok x) ; keep it
+    (err x)))
 
 (f (g (h x))) ; deep
 

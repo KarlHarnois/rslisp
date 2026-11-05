@@ -1,0 +1,2 @@
+(defn report (n) (when (> n 0) (do (println "the first line of the report") (println "the second line of it"))))
+(do (println "a top-level do that is long enough to break") (println "onto several lines"))

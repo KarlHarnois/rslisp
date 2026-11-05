@@ -90,6 +90,14 @@
 
 (header-shape (use module))
 
+(header-shape (rust template))
+
+(header-shape (where parameters))
+
+(header-shape (if test))
+
+(header-shape (do))
+
 (document (fn (parameter ...) body ...)
   "Makes a function of its parameters, whose result is its last body form.
 

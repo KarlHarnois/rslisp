@@ -19,5 +19,5 @@ input_file: tests/fixtures/format/layout_call_alignment.rslisp
 
 (defn branch (n)
   (if (< n 0)
-      "a negative number"
-      (if (= n 0) "zero" "a positive number")))
+    "a negative number"
+    (if (= n 0) "zero" "a positive number")))
