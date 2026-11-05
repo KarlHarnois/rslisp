@@ -670,14 +670,15 @@
 (header-shape (fail message))
 
 (defmacro doc-page (term)
-  "Returns the page of a term as a string: its header, a blank line, then its docstring.
+  "Returns the page of a term as a string.
 
-  A term without a docstring has `No documentation.` in its place. The page
-  is the text of (header term) followed by the text of (page-body term)."
+  The page is its header, a blank line, then its docstring. A term without a
+  docstring has `No documentation.` in its place. The page is the text of
+  (header term) followed by the text of (page-body term)."
   (documentation-part (quote page) term))
 
 (defmacro page-body (term)
-  "Returns the page of a term after its header: a blank line, then its docstring.
+  "Returns a term's page after its header: a blank line, then its docstring.
 
   A term without a docstring has `No documentation.` in its place."
   (documentation-part (quote page-body) term))
@@ -687,7 +688,9 @@
   (documentation-part (quote docstring) term))
 
 (defmacro header (term)
-  "Returns the first line of a term's definition as written, as in (defn area (width height))."
+  "Returns the first line of a term's definition as written.
+
+  For example, (defn area (width height))."
   (documentation-part (quote header) term))
 
 (def documentation-part

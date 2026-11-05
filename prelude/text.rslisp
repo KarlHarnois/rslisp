@@ -431,9 +431,11 @@
   (line-call "eprintln!" (flatten-parts parts)))
 
 (defmacro doc (term)
-  "Prints the page of a term to standard output and returns unit: its header, a blank line, then its docstring.
+  "Prints the page of a term to standard output and returns unit.
 
-  A term without a docstring has `No documentation.` in its place. Write (doc-page term) to keep the page as a string."
+  The page is its header, a blank line, then its docstring. A term without a
+  docstring has `No documentation.` in its place. Write (doc-page term) to
+  keep the page as a string."
   (template (println (doc-page (unquote term)))))
 
 (def display-type
