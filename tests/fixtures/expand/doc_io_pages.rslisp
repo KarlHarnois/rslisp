@@ -1,0 +1,7 @@
+(def slurp-page (doc-page slurp))
+
+(def read-line-page (doc-page read-line))
+
+(def stdin-page (doc-page stdin))
+
+(def io-error-page (doc-page io-error))
