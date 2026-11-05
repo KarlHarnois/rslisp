@@ -4,4 +4,4 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/doc_logic_pages.rslisp
 ---
 (def not-page "(not value)\n\nReturns the opposite of a `bool`.\n\nIt emits `!value`.")
-(def cond-page "(defrule cond)\n\nRuns the first clause whose test is true: `(cond (test body ...) ...)`.\n\nA last clause `(else body ...)` runs when no test is true. Without one, the\ncall returns unit.")
+(def cond-page "(cond (test body ...) ...)\n\nRuns the first clause whose test is true.\n\nA last clause `(else body ...)` runs when no test is true. Without one, the\ncall returns unit.")

@@ -128,45 +128,29 @@
       (fn (a b) bool))))
 
 (defrule +
-  "Adds its arguments from left to right: `(+ a b c)`.
-
-  One argument returns it, and two call `add`."
   ((a) a)
   ((a b) (add a b))
   ((a b c more ...)
    (+ (add a b) c more ...)))
 
 (defrule -
-  "Subtracts each later argument from the first: `(- a b c)`.
-
-  One argument negates it with `neg`, and two call `sub`."
   ((a) (neg a))
   ((a b) (sub a b))
   ((a b c more ...)
    (- (sub a b) c more ...)))
 
 (defrule *
-  "Multiplies its arguments from left to right: `(* a b c)`.
-
-  One argument returns it, and two call `mul`."
   ((a) a)
   ((a b) (mul a b))
   ((a b c more ...)
    (* (mul a b) c more ...)))
 
 (defrule /
-  "Divides the first argument by each later one: `(/ a b c)`.
-
-  It takes at least two arguments, and two call `div`."
   ((a b) (div a b))
   ((a b c more ...)
    (/ (div a b) c more ...)))
 
 (defrule <
-  "Returns whether each argument is less than the next: `(< a b c)`.
-
-  Two arguments call `lt`. With more, each runs once, and a false comparison
-  ends the chain."
   ((a b) (lt a b))
   ((a b c more ...)
    (do
@@ -175,10 +159,6 @@
      (and (lt left middle) (< middle c more ...)))))
 
 (defrule <=
-  "Returns whether each argument is at most the next: `(<= a b c)`.
-
-  Two arguments call `le`. With more, each runs once, and a false comparison
-  ends the chain."
   ((a b) (le a b))
   ((a b c more ...)
    (do
@@ -187,10 +167,6 @@
      (and (le left middle) (<= middle c more ...)))))
 
 (defrule >
-  "Returns whether each argument is greater than the next: `(> a b c)`.
-
-  Two arguments call `gt`. With more, each runs once, and a false comparison
-  ends the chain."
   ((a b) (gt a b))
   ((a b c more ...)
    (do
@@ -199,10 +175,6 @@
      (and (gt left middle) (> middle c more ...)))))
 
 (defrule >=
-  "Returns whether each argument is at least the next: `(>= a b c)`.
-
-  Two arguments call `ge`. With more, each runs once, and a false comparison
-  ends the chain."
   ((a b) (ge a b))
   ((a b c more ...)
    (do
@@ -211,10 +183,6 @@
      (and (ge left middle) (>= middle c more ...)))))
 
 (defrule =
-  "Returns whether each argument equals the next: `(= a b c)`.
-
-  Two arguments call `eq`. With more, each runs once, and a false comparison
-  ends the chain."
   ((a b) (eq a b))
   ((a b c more ...)
    (do
@@ -222,11 +190,7 @@
      (let middle b)
      (and (eq left middle) (= middle c more ...)))))
 
-(defrule not=
-  "Returns whether its two arguments differ: `(not= a b)`.
-
-  It calls `ne`."
-  ((a b) (ne a b)))
+(defrule not= ((a b) (ne a b)))
 
 (rust-trait ord "Ord"
   char string
@@ -351,3 +315,58 @@
   "Returns whether two values differ.
 
   It borrows both values. `not=` expands to it.")
+
+(document (+ number ...)
+  "Adds its arguments from left to right.
+
+  One argument returns it, and two call `add`.")
+
+(document (- number ...)
+  "Subtracts each later argument from the first.
+
+  One argument negates it with `neg`, and two call `sub`.")
+
+(document (* number ...)
+  "Multiplies its arguments from left to right.
+
+  One argument returns it, and two call `mul`.")
+
+(document (/ number divisor ...)
+  "Divides the first argument by each later one.
+
+  It takes at least two arguments, and two call `div`.")
+
+(document (< value next ...)
+  "Returns whether each argument is less than the next.
+
+  Two arguments call `lt`. With more, each runs once, and a false comparison
+  ends the chain.")
+
+(document (<= value next ...)
+  "Returns whether each argument is at most the next.
+
+  Two arguments call `le`. With more, each runs once, and a false comparison
+  ends the chain.")
+
+(document (> value next ...)
+  "Returns whether each argument is greater than the next.
+
+  Two arguments call `gt`. With more, each runs once, and a false comparison
+  ends the chain.")
+
+(document (>= value next ...)
+  "Returns whether each argument is at least the next.
+
+  Two arguments call `ge`. With more, each runs once, and a false comparison
+  ends the chain.")
+
+(document (= value next ...)
+  "Returns whether each argument equals the next.
+
+  Two arguments call `eq`. With more, each runs once, and a false comparison
+  ends the chain.")
+
+(document (not= a b)
+  "Returns whether its two arguments differ.
+
+  It calls `ne`.")
