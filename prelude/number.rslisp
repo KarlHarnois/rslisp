@@ -246,17 +246,17 @@
 (document (add a b)
   "Returns the sum of two numbers of one type.
 
-  It emits `a + b`. `+` takes any number of arguments.")
+  It emits `a + b`. `+` takes one or more arguments.")
 
 (document (sub a b)
   "Returns the first number minus the second.
 
-  It emits `a - b`. `-` takes any number of arguments.")
+  It emits `a - b`. `-` takes one or more arguments.")
 
 (document (mul a b)
   "Returns the product of two numbers of one type.
 
-  It emits `a * b`. `*` takes any number of arguments.")
+  It emits `a * b`. `*` takes one or more arguments.")
 
 (document (div a b)
   "Returns the first number divided by the second.
@@ -316,55 +316,55 @@
 
   It borrows both values. `not=` expands to it.")
 
-(document (+ number ...)
+(document (+ number more ...)
   "Adds its arguments from left to right.
 
   One argument returns it, and two call `add`.")
 
-(document (- number ...)
+(document (- number more ...)
   "Subtracts each later argument from the first.
 
   One argument negates it with `neg`, and two call `sub`.")
 
-(document (* number ...)
+(document (* number more ...)
   "Multiplies its arguments from left to right.
 
   One argument returns it, and two call `mul`.")
 
-(document (/ number divisor ...)
+(document (/ number divisor more ...)
   "Divides the first argument by each later one.
 
   It takes at least two arguments, and two call `div`.")
 
-(document (< value next ...)
+(document (< value next more ...)
   "Returns whether each argument is less than the next.
 
-  Two arguments call `lt`. With more, each runs once, and a false comparison
-  ends the chain.")
+  Two arguments call `lt`. With more, each runs at most once, and a false
+  comparison ends the chain before the later arguments run.")
 
-(document (<= value next ...)
+(document (<= value next more ...)
   "Returns whether each argument is at most the next.
 
-  Two arguments call `le`. With more, each runs once, and a false comparison
-  ends the chain.")
+  Two arguments call `le`. With more, each runs at most once, and a false
+  comparison ends the chain before the later arguments run.")
 
-(document (> value next ...)
+(document (> value next more ...)
   "Returns whether each argument is greater than the next.
 
-  Two arguments call `gt`. With more, each runs once, and a false comparison
-  ends the chain.")
+  Two arguments call `gt`. With more, each runs at most once, and a false
+  comparison ends the chain before the later arguments run.")
 
-(document (>= value next ...)
+(document (>= value next more ...)
   "Returns whether each argument is at least the next.
 
-  Two arguments call `ge`. With more, each runs once, and a false comparison
-  ends the chain.")
+  Two arguments call `ge`. With more, each runs at most once, and a false
+  comparison ends the chain before the later arguments run.")
 
-(document (= value next ...)
+(document (= value next more ...)
   "Returns whether each argument equals the next.
 
-  Two arguments call `eq`. With more, each runs once, and a false comparison
-  ends the chain.")
+  Two arguments call `eq`. With more, each runs at most once, and a false
+  comparison ends the chain before the later arguments run.")
 
 (document (not= a b)
   "Returns whether its two arguments differ.

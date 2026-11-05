@@ -1,4 +1,4 @@
-(def when-page (doc-page when))
+(def thread-page (doc-page ->>))
 
 (def sum-page (doc-page sum))
 

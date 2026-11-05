@@ -46,12 +46,14 @@
 (document (when test body ...)
   "Runs the body when the test is true.
 
-  It returns unit when the test is false.")
+  It returns unit when the test is false. The body must return unit, and so
+  does the call.")
 
 (document (unless test body ...)
   "Runs the body when the test is false.
 
-  It returns unit when the test is true.")
+  It returns unit when the test is true. The body must return unit, and so
+  does the call.")
 
 (document (and value ...)
   "Returns whether every argument is true.
@@ -65,8 +67,8 @@
   It stops at the first true argument. With no arguments it is `false`, and
   with one it is that argument.")
 
-(document (cond (test body ...) ...)
+(document (cond (test body ...) clause ...)
   "Runs the first clause whose test is true.
 
-  A last clause `(else body ...)` runs when no test is true. Without one, the
-  call returns unit.")
+  A last clause `(else body ...)` runs when no test is true. Without one,
+  every body must return unit, and so does the call.")
