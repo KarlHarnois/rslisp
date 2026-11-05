@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use super::Forms;
 use super::failure::FailCall;
-use crate::core::Namespace;
+use crate::core::Declaration;
 use crate::diagnostic::{Diagnostic, SimilarName};
 use crate::interpret::arguments::Arguments;
 use crate::interpret::{CompileTimeHost, Value};
@@ -171,10 +171,10 @@ impl<'a> TextOperations<'a> {
     pub fn declare_definition(
         &self,
         host: &mut dyn CompileTimeHost,
-        namespace: Namespace,
+        declaration: Declaration,
     ) -> Result<Value, Diagnostic> {
         self.arguments.expect_count(1)?;
-        host.declare_definition(self.arguments.form(0)?, namespace);
+        host.declare_definition(self.arguments.form(0)?, declaration);
         Ok(Value::Unit)
     }
 

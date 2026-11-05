@@ -3,7 +3,7 @@
                     default-bindings call-signature signature-name signature-defaults
                     read-call has-argument? pair-keys)
 (use code first rest list nth drop empty? list? symbol? symbol symbol-name prepend
-          concat string fail keyword? declare-definition declare-type-definition)
+          concat string fail keyword? declare-macro-definition declare-type-definition)
 
 (export defstruct)
 
@@ -97,7 +97,7 @@
 (def declare-struct-names
   (fn (name)
     (declare-type-definition name)
-    (declare-definition (constructor-name name))))
+    (declare-macro-definition (constructor-name name))))
 
 (def constructor-name
   (fn (name)

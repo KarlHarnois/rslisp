@@ -51,10 +51,11 @@ pub enum Builtin {
     ModuleNotes,
     DeclareDefinition,
     DeclareTypeDefinition,
+    DeclareMacroDefinition,
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 51] = [
+    const NAMES: [(Builtin, &'static str); 52] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -106,6 +107,7 @@ impl Builtin {
         (Builtin::ModuleNotes, "module-notes"),
         (Builtin::DeclareDefinition, "declare-definition"),
         (Builtin::DeclareTypeDefinition, "declare-type-definition"),
+        (Builtin::DeclareMacroDefinition, "declare-macro-definition"),
     ];
 
     pub fn all() -> impl Iterator<Item = Builtin> {

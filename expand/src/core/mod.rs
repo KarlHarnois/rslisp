@@ -10,7 +10,9 @@ mod template;
 mod template_operation;
 mod types;
 
-pub use binding::{BindingArena, BindingId, BindingInfo, BindingKind, Namespace, VariantInfo};
+pub use binding::{
+    BindingArena, BindingId, BindingInfo, BindingKind, Declaration, Namespace, VariantInfo,
+};
 pub use builtin::Builtin;
 pub use expr::{
     Arm, Binder, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, FieldSpelling, Lambda, Leaf,

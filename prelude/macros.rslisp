@@ -1,7 +1,7 @@
 (use code first rest list prepend concat len empty? nth take drop
           symbol? list? string? keyword? keyword-name symbol-name string same-binding? fail
           definition-symbol type-definition-symbol definition-call type-definition-call expand-call add-module-note module-notes symbol
-          declare-definition
+          declare-macro-definition
           value-eq bool-not number-add number-sub number-lt
           string-lines string-trim-start string-length string-drop string-strip-suffix)
 
@@ -307,7 +307,7 @@
 (def defrule
   (macro (form)
     (let name (nth form 1))
-    (declare-definition name)
+    (declare-macro-definition name)
     (let body (drop 2 form))
     (if (documented-body? body)
         (do (note-docstring (value-doc-key name) (first body))
@@ -360,7 +360,7 @@
 (def defmacro
   (macro (form)
     (let name (nth form 1))
-    (declare-definition name)
+    (declare-macro-definition name)
     (let pattern (nth form 2))
     (let body (drop 3 form))
     (if (string? pattern)

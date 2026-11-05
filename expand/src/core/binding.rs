@@ -24,6 +24,22 @@ pub enum Namespace {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum Declaration {
+    Value,
+    Macro,
+    Type,
+}
+
+impl Declaration {
+    pub fn namespace(self) -> Namespace {
+        match self {
+            Self::Value | Self::Macro => Namespace::Value,
+            Self::Type => Namespace::Type,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum BindingKind {
     KernelForm(KernelForm),
     KernelType(KernelType),
