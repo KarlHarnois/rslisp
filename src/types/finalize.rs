@@ -36,8 +36,10 @@ impl<'c> Finalizer<'c> {
         self.expr(&mut definition.value);
         self.finalize_type(&mut definition.scheme.body, definition.span);
         self.record_closure_types(definition.binding);
-        let writer = TypeTextWriter::new(definition.binding, &definition.scheme);
-        self.write_type_texts(&mut definition.value, &writer);
+        if self.checker.holds_infer_forms {
+            let writer = TypeTextWriter::new(definition.binding, &definition.scheme);
+            self.write_type_texts(&mut definition.value, &writer);
+        }
     }
 
     fn write_type_texts(&mut self, expr: &mut TypedExpr, writer: &TypeTextWriter) {
