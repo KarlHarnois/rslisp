@@ -1,5 +1,5 @@
 (use prelude/macros defmacro defrule template doc-page docstring header
-                    page-body header-shape)
+                    page-body header-shape document)
 
 (use prelude/logic not when unless and or cond)
 (use prelude/syntax defn the -> ->> try-> let-try loop)
@@ -89,3 +89,169 @@
 (header-shape (impl trait type))
 
 (header-shape (use module))
+
+(document (fn (parameter ...) body ...)
+  "Makes a function of its parameters, whose result is its last body form.
+
+  It emits a Rust `fn` item, a closure or a block, by where it appears.")
+
+(document (def name value)
+  "Defines a module-level name for a value.
+
+  It emits a `fn`, a `const` or a `static`, by the value, or nothing for a
+  value that exists only at compile time, such as a macro.")
+
+(document (let name value)
+  "Binds a name to a value for the rest of the body.
+
+  It emits a Rust `let`.")
+
+(document (do form ...)
+  "Evaluates its forms in order and returns the last one.
+
+  It emits a block, and `(do)` is the unit value. At module level, its forms
+  are definitions.")
+
+(document (if test then else)
+  "Evaluates `then` when the test is true, and `else` otherwise.
+
+  It emits a Rust `if` with an `else`.")
+
+(document (type name type)
+  "Declares the type of a definition, as a signature.
+
+  The name refers to a `def` of this module, or to a macro whose value
+  position expands to a function that the macro introduced in this module.")
+
+(document (struct (name parameter ...) (field type) ...)
+  "Defines a struct type with named fields.
+
+  The name is a bare name, or a list of the name and its type parameters.
+  It emits a Rust `struct`.")
+
+(document (enum (name parameter ...) variant ...)
+  "Defines an enum type from its variants.
+
+  The name is a bare name, or a list of the name and its type parameters. A
+  variant is a name, `(name type ...)` or `(name (struct (field type) ...))`.
+  A `(rust \"Path\")` after the name makes the enum the named Rust type.")
+
+(document (derive type trait ...)
+  "Derives traits for a struct or an enum of this module.
+
+  It emits a `#[derive(...)]` attribute on the type.")
+
+(document (match value (pattern body) ...)
+  "Evaluates the body of the first arm whose pattern matches the value.
+
+  A pattern is `_`, a literal, a bare name, `(variant pattern ...)` or
+  `(type-name pattern ...)`. It emits a Rust `match`.")
+
+(document (assoc-at value (key ...) item)
+  "Returns the collection with the item stored at a path of keys.
+
+  The collection's inferred type picks the Rust, for a vector, a sorted map
+  or a hash map. `assoc` and `assoc-in` expand to it.")
+
+(document (map-at operation value argument ...)
+  "Applies a collection operation whose Rust the collection's type picks.
+
+  The operation is `get`, `keys`, `vals`, `iter`, `update` or `push`.
+  `get`, `keys`, `vals`, `iter`, `update` and `push!` expand to it.")
+
+(document (set-at value (key ...) item)
+  "Assigns the item at a path of keys inside a place.
+
+  It emits an assignment. `set!` expands to it.")
+
+(document (new name (field value) ...)
+  "Builds a struct value from its fields.
+
+  A field label is a field name or a keyword, as in `(new car (:year 2025))`.
+  `(new _ base (field value) ...)` takes the other fields from a base value.")
+
+(document (field value name)
+  "Reads a field of a struct value.
+
+  It emits `value.name`.")
+
+(document (ref value)
+  "Borrows a value.
+
+  It emits `&value`. In a type, `(ref type)` is a shared reference.")
+
+(document (mut place)
+  "Borrows a place mutably.
+
+  It emits `&mut place`. In a type, `(mut type)` is a mutable reference.")
+
+(document (deref value)
+  "Reads the value behind a reference.
+
+  It emits `*value`.")
+
+(document (quote form)
+  "Returns a form as data, without evaluating it.
+
+  Macro code builds the forms it returns from quoted forms.")
+
+(document (macro (form) body ...)
+  "Makes a macro whose body turns its whole call form into a new form.
+
+  It is the value of a `def`, as in `(def name (macro (form) body ...))`,
+  and its body runs at compile time.")
+
+(document (rust "template" type (type "template") ...)
+  "Inlines a Rust template that has the given type.
+
+  `{0}`, `{1}` and so on stand for the arguments of a call. Each clause
+  pairs another type with its own template.")
+
+(document (rust-trait name "Path" type ...)
+  "Names a Rust trait and the types that implement it.
+
+  Optional parts after the path declare a method, the impl text that the
+  compiler writes for program types, and the help line that a missing
+  implementor shows.")
+
+(document (rust-type (name parameter ...)
+            "template"
+            (type "template")
+            ...)
+  "Names a Rust type by a template.
+
+  The name is a bare name, or a list of the name and its type parameters.
+  Each clause pairs another type with its own template.")
+
+(document (recur argument ...)
+  "Calls the enclosing function again with new arguments.
+
+  It emits a Rust `loop`, so the call takes no stack.")
+
+(document (try expression)
+  "Unwraps a successful value, or returns the failure from the function.
+
+  It emits `expression?`.")
+
+(document (trait name (method type) ...)
+  "Defines a trait from its method signatures.
+
+  A method's first parameter may be `self`, `(ref self)` or `(mut self)`.")
+
+(document (impl trait type (method (parameter ...) body ...) ...)
+  "Implements a trait for a struct or an enum.
+
+  Each method gives its name, its parameters and its body. It emits a Rust
+  `impl`.")
+
+(document (use module name ...)
+  "Imports names from a module.
+
+  The module is a path such as `prelude/vec`, and each name becomes bound in
+  this module.")
+
+(document (export name ...)
+  "Exports names from this module.
+
+  A name refers to every namespace, so a type and a value of that name both
+  leave the module. It emits `pub`.")

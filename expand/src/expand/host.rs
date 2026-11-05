@@ -1,9 +1,10 @@
 use super::Expander;
 use super::failed_definition::DeclaredName;
 use super::problems::ExpandProblems;
-use crate::core::{BindingId, BindingKind, Declaration, Namespace};
+use crate::core::{BindingId, BindingKind, Declaration, ModulePath, Namespace};
 use crate::diagnostic::Diagnostic;
 use crate::interpret::{CompileTimeHost, Value};
+use crate::modules::ModuleSources;
 use crate::reader::{Form, Symbol};
 use crate::scope::{Phase, Resolution, ScopeSet};
 use crate::source::Span;
@@ -27,10 +28,7 @@ impl CompileTimeHost for Expander<'_> {
         span: Span,
     ) -> Result<Symbol, Diagnostic> {
         let binding = self.bound_term(term, span)?;
-        Ok(Symbol::with_scopes(
-            name,
-            self.definition_scopes(term, binding),
-        ))
+        Ok(Symbol::with_scopes(name, self.definition_scopes(binding)))
     }
 
     fn definition_call(&self, term: &Symbol, span: Span) -> Result<Option<Form>, Diagnostic> {
@@ -51,9 +49,7 @@ impl CompileTimeHost for Expander<'_> {
     fn type_definition_symbol(&self, term: &Symbol, name: String) -> Symbol {
         let scopes = self
             .namespace_binding(term, Namespace::Type)
-            .map_or_else(ScopeSet::default, |binding| {
-                self.definition_scopes(term, binding)
-            });
+            .map_or_else(ScopeSet::default, |binding| self.definition_scopes(binding));
         Symbol::with_scopes(name, scopes)
     }
 
@@ -101,14 +97,22 @@ impl CompileTimeHost for Expander<'_> {
 }
 
 impl Expander<'_> {
-    fn definition_scopes(&self, term: &Symbol, binding: BindingId) -> ScopeSet {
+    fn definition_scopes(&self, binding: BindingId) -> ScopeSet {
         if let Some(module) = self.definition_module(binding) {
             return self.modules.get(module).body_scopes();
         }
         match self.kind(binding) {
-            BindingKind::KernelForm(_) => term.scopes().clone(),
+            BindingKind::KernelForm(_) => self.prelude_scopes(),
             _ => ScopeSet::default(),
         }
+    }
+
+    fn prelude_scopes(&self) -> ScopeSet {
+        let prelude = self
+            .modules
+            .find(&ModulePath::new(ModuleSources::PRELUDE))
+            .expect("macro code runs after the prelude module is registered");
+        self.modules.get(prelude).body_scopes()
     }
 
     fn bound_term(&self, term: &Symbol, span: Span) -> Result<BindingId, Diagnostic> {
