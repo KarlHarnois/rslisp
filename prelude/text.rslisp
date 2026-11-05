@@ -676,8 +676,9 @@
   "Implements the `show` trait for a struct or an enum of the program.
 
   `param` is a one-name list that binds the value, and `body` is a symbol or
-  a list headed by a symbol. Each argument of the list prints with `show`.
-  `show` is also the trait that `prn` and `pr-str` need."
+  a list headed by a symbol. A keyword argument of the list prints as
+  written, and any other argument prints with `show`. `show` is also the
+  trait that `prn` and `pr-str` need."
   (let out (symbol (quote show) "out"))
   (list (quote impl)
         (quote show)
@@ -733,29 +734,37 @@
   `eprintln`, `str` or `display`, it prints in place.")
 
 (document (chars text)
-  "Returns an iterator over the `char`s of a string.")
+  "Returns an iterator over the `char`s of a string.
+
+  It takes a `(ref str)`, so borrow a `string` with `as-str`.")
 
 (document (lines text)
   "Returns an iterator over the lines of a string.
 
   Each line drops its `\\n` or `\\r\\n` ending, and a final ending starts no
-  empty line. Use `line-seq` for standard input.")
+  empty line. Use `line-seq` for standard input.
+
+  It takes a `(ref str)`, so borrow a `string` with `as-str`.")
 
 (document (split text separator)
   "Returns an iterator over the parts of a string between separators.
 
   Two separators in a row give an empty part, and an empty string gives one
-  empty part. The separator is a `(ref str)`.")
+  empty part. Both arguments are a `(ref str)`.")
 
 (document (split-when text test)
   "Returns an iterator over the parts of a string between matching `char`s.
 
-  `test` is a function from a `char` to a `bool`, such as `digit?`.")
+  `test` is a function from a `char` to a `bool`, such as `digit?`.
+
+  It takes a `(ref str)`, so borrow a `string` with `as-str`.")
 
 (document (trim text)
   "Returns a string without its leading and trailing whitespace.
 
-  The result borrows from `text`.")
+  The result borrows from `text`.
+
+  It takes a `(ref str)`, so borrow a `string` with `as-str`.")
 
 (document (as-str text)
   "Borrows a `string` as a `(ref str)`.
@@ -766,15 +775,21 @@
   "Parses a string into the type that the call's result takes.
 
   It returns `(result target (parse-error target))`, where `target` implements
-  `from-str`, so `(the (result i64 parse-int-error) (parse \"12\"))` is `ok`.")
+  `from-str`, so `(the (result i64 parse-int-error) (parse \"12\"))` is `ok`.
+
+  It takes a `(ref str)`, so borrow a `string` with `as-str`.")
 
 (document (lower-case text)
-  "Returns a new `string` with each character in lower case.")
+  "Returns a new `string` with each character in lower case.
+
+  It takes a `(ref str)`, so borrow a `string` with `as-str`.")
 
 (document (upper-case text)
   "Returns a new `string` with each character in upper case.
 
-  A character may become several, as `ß` becomes `SS`.")
+  A character may become several, as `ß` becomes `SS`.
+
+  It takes a `(ref str)`, so borrow a `string` with `as-str`.")
 
 (document (alphanumeric? character)
   "Returns whether a `char` is a Unicode letter or number.")
@@ -789,7 +804,9 @@
   "Returns the part of a string from byte `start` up to byte `end`.
 
   It emits `&text[start..end]`, so it panics when an offset is out of bounds
-  or falls inside a character.")
+  or falls inside a character, or when `start` is past `end`.
+
+  It takes a `(ref str)`, so borrow a `string` with `as-str`.")
 
 (document (fmt value formatter)
   "Writes a value's `display` text to a formatter.
