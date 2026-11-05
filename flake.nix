@@ -121,8 +121,15 @@
       sourceFormat =
         pkgs: package:
         pkgs.runCommand "source-format" { } ''
-          ${pkgs.lib.getExe package} fmt --check ${./prelude} ${./examples} ||
-            { echo "run rslisp fmt prelude examples to lay out the files above" >&2; exit 1; }
+          fixtures=${./tests/fixtures}
+          mapfile -t fixture_files < <(
+            find "$fixtures" -name '*.rslisp' \
+              -not -path "$fixtures/read/*" \
+              -not -path "$fixtures/format/*" \
+              -not -path "$fixtures/expand/unreadable/*" | sort
+          )
+          ${pkgs.lib.getExe package} fmt --check ${./prelude} ${./examples} "''${fixture_files[@]}" ||
+            { echo "run rslisp fmt on the files above to lay them out" >&2; exit 1; }
           touch $out
         '';
 
