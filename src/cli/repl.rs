@@ -46,6 +46,8 @@ enum ClassifiedInput {
 }
 
 impl ReplCommand {
+    pub const DEFAULT_ROOT: &str = ".";
+
     pub fn new(root: PathBuf, profile: BuildProfile) -> Self {
         Self { root, profile }
     }
