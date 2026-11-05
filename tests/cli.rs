@@ -59,6 +59,7 @@ const GEOMETRY_ENTRY: &str = "(use geometry area)\n\n(defn main () (println (are
 const UNDOCUMENTED_ENTRY: &str = "(defn twice (x) (* 2 x))\n\n(defn main () (println (twice 2)))\n";
 const SHADOWING_PAGE_BODY: &str = "(defrule page-body ((term) 0))\n\n(defn main () (do))\n";
 const SHADOWING_HEADER: &str = "(defrule header ((term) 0))\n\n(defn main () (do))\n";
+const IF_PAGE: &str = "(if test then else)\n\nEvaluates `then` when the test is true, and `else` otherwise.\n\nIt emits a Rust `if` with an `else`.\n";
 const MACRO_STRUCT_BESIDE_A_DEF: &str = "(defrule my-struct ((n) (do (defstruct n \"A documented struct.\" :x i64))))\n(my-struct point)\n(def point 1)\n(defn main () (do))\n";
 const THREADING_HEADER: &str = "(defrule ->)";
 const THREAD_LAST_HEADER: &str = "(defrule ->>)";
@@ -1250,6 +1251,16 @@ fn doc_prints_the_header_that_documents_a_prelude_term() {
 }
 
 #[test]
+fn doc_prints_the_page_of_a_kernel_form() {
+    let sandbox = Sandbox::new("doc_kernel_form");
+    let doc = sandbox.compiler(&["doc", "match"]);
+    assert_eq!(
+        doc.assert_exit_code(0).stdout(),
+        "(match value (pattern body) ...)\n\nEvaluates the body of the first arm whose pattern matches the value.\n\nA pattern is `_`, a literal, a bare name, `(variant pattern ...)` or\n`(type-name pattern ...)`. It emits a Rust `match`.\n"
+    );
+}
+
+#[test]
 fn doc_takes_a_term_that_starts_with_a_hyphen() {
     let sandbox = Sandbox::new("doc_hyphen");
     let doc = sandbox.compiler(&["doc", "->"]);
@@ -1427,7 +1438,7 @@ fn doc_types_prints_no_type_for_a_macro() {
 #[test]
 fn doc_types_prints_no_type_for_a_kernel_form() {
     let sandbox = Sandbox::new("doc_types_kernel_form");
-    assert_eq!(sandbox.typed_page(&["if"]), "if\n\nNo documentation.\n");
+    assert_eq!(sandbox.typed_page(&["if"]), IF_PAGE);
 }
 
 #[test]

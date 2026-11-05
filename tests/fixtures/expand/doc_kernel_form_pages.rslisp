@@ -1,0 +1,7 @@
+(def if-page (doc-page if))
+
+(def fn-page (doc-page fn))
+
+(def match-page (doc-page match))
+
+(def new-page (doc-page new))

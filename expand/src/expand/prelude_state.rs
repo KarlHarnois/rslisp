@@ -129,7 +129,11 @@ impl Expander<'_> {
 
 #[cfg(test)]
 mod tests {
+    use rustc_hash::FxHashMap;
+
     use super::*;
+    use crate::core::KernelForm;
+    use crate::reader::Form;
 
     struct UserProgram {
         name: &'static str,
@@ -183,6 +187,67 @@ mod tests {
 
         fn module_sources() -> ModuleSources {
             ModuleSources::new(PathBuf::new(), PathBuf::new())
+        }
+    }
+
+    struct KernelPages {
+        headers: FxHashMap<String, String>,
+    }
+
+    impl KernelPages {
+        const DOCSTRINGS_KEY: &str = "docstrings";
+        const ALTERNATIVE: &str = " or ";
+        const OPTIONAL_PART_END: &str = ")?";
+        const OPTIONAL_PART_START: &str = " (";
+
+        fn of_saved_prelude() -> Self {
+            let state = UserProgram::loaded_state();
+            let notes = state
+                .tables
+                .module_notes
+                .of(state.prelude, Self::DOCSTRINGS_KEY);
+            Self {
+                headers: notes.iter().filter_map(Self::named_header).collect(),
+            }
+        }
+
+        fn named_header(note: &Form) -> Option<(String, String)> {
+            let [_, name, header, _] = note.as_list()? else {
+                return None;
+            };
+            Some((name.to_string(), header.to_string()))
+        }
+
+        fn header(&self, form: KernelForm) -> Option<&str> {
+            self.headers.get(form.name()).map(String::as_str)
+        }
+
+        fn header_of_shape(shape: &str) -> String {
+            let first_alternative = shape
+                .split(Self::ALTERNATIVE)
+                .next()
+                .expect("a shape has a first alternative");
+            Self::without_optional_parts(first_alternative)
+        }
+
+        fn without_optional_parts(shape: &str) -> String {
+            let mut header = shape.to_string();
+            while let Some(end) = header.find(Self::OPTIONAL_PART_END) {
+                let start = header[..end]
+                    .rfind(Self::OPTIONAL_PART_START)
+                    .expect("an optional part opens after a space");
+                header.replace_range(start..end + Self::OPTIONAL_PART_END.len(), "");
+            }
+            header
+        }
+    }
+
+    #[test]
+    fn each_kernel_form_page_shows_its_shape_as_header() {
+        let pages = KernelPages::of_saved_prelude();
+        for form in KernelForm::all() {
+            let header = KernelPages::header_of_shape(form.shape());
+            assert_eq!(pages.header(form), Some(header.as_str()), "{}", form.name());
         }
     }
 
