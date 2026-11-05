@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/run/test_equal_sides.rslisp
 ---
-<record>(start 13)
+<record>(start 18)
 <record>(test "test_equal_sides/length-beside-a-literal" "")
 <record>(ok)
 <record>(test "test_equal_sides/length-beside-a-wrong-literal" "")
@@ -30,6 +30,22 @@ a
 <record>(ok)
 <record>(test "test_equal_sides/deref-side-reports-both-sides" "")
 <record>(fail-equal "test_equal_sides.rslisp:59:3" "(assert (= (deref borrowed) 2))" "1" "2")
+<record>(test "test_equal_sides/deref-of-a-reference-to-a-reference" "")
+<record>(ok)
+<record>(test "test_equal_sides/runs-left-then-a-right-deref" "")
+left runs
+right runs
+<record>(ok)
+<record>(test "test_equal_sides/runs-a-plain-left-then-a-right-deref" "")
+evaluated once
+right runs
+<record>(ok)
+<record>(test "test_equal_sides/runs-a-left-deref-then-a-plain-right" "")
+left runs
+evaluated once
+<record>(ok)
+<record>(test "test_equal_sides/deref-from-a-macro" "")
+<record>(fail-equal "test_equal_sides.rslisp:94:3" "(assert (= (read-through (ref number)) 2))" "1" "2")
 <record>(test "test_equal_sides/called-closure-side" "")
 <record>(ok)
 <record>(done)
