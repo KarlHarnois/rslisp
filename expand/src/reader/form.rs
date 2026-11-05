@@ -36,6 +36,19 @@ impl Form {
         self.span
     }
 
+    pub fn is_same_form(&self, other: &Form) -> bool {
+        Rc::ptr_eq(&self.kind, &other.kind)
+    }
+
+    pub fn identity(&self) -> *const FormKind {
+        Rc::as_ptr(&self.kind)
+    }
+
+    pub fn form_count(&self) -> usize {
+        let items = self.as_list().unwrap_or_default();
+        1 + items.iter().map(Form::form_count).sum::<usize>()
+    }
+
     pub fn as_symbol(&self) -> Option<&Symbol> {
         match self.kind() {
             FormKind::Symbol(symbol) => Some(symbol),

@@ -262,7 +262,7 @@ The gains:
 
 - Every shape is a `header-shape` form, for a kernel form, a prelude macro or a user macro. The formatter has one source and one rule for it.
 - The compiler gains nothing. "If the prelude can express a feature, NEVER add a kernel form for it" and "Every other feature belongs in the prelude" both point here.
-- `doc-page` does not change. A lookup reads the shapes of the module that defines the definer, and a kernel form never defines a binding through a macro call, so `definition-call` never returns one and no page reads a kernel shape.
+- `doc-page` does not change. A lookup reads the shapes of the module that defines the definer. A kernel form never defines a binding through a macro call, but the prelude `def` over the kernel `def` does, so the page of a plain `def` reads the shape `(def name)` that `prelude/prelude.rslisp` states.
 
 The costs:
 

@@ -1,6 +1,6 @@
 (use prelude/macros defmacro defrule doc-page docstring
-                    document header header-shape page-body
-                    template)
+                    document header header-shape
+                    kernel-definition page-body template)
 
 (use prelude/logic and cond not or unless when)
 (use prelude/syntax -> ->> defn let-try loop the try->)
@@ -83,7 +83,10 @@
         upper-case use usize vals vec when where whitespace?
         windows with zip)
 
-(header-shape (def name))
+(def def
+  (macro (form) (kernel-definition form)))
+
+(header-shape (def name) :docstring)
 
 (header-shape (let name))
 

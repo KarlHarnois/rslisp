@@ -8,6 +8,6 @@ input_file: tests/fixtures/expand/definition_call.rslisp
 (def limit 10)
 (def twice-call "((defn twice (x) (* 2 x)))")
 (def helper-call "((defn helper (x) x))")
-(def limit-call "()")
+(def limit-call "((def limit 10))")
 (def if-call "()")
 (def parameter-call (fn (twice_2) "()"))

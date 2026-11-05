@@ -6,6 +6,7 @@ use super::Expander;
 use super::context::DefinitionContext;
 use super::form_budget::FormBudget;
 use super::problems::ExpandProblems;
+use super::returned_arguments::ReturnedArguments;
 use super::shape::Shape;
 use crate::core::{BindingId, BindingKind, Expr, KernelForm, Lambda, Namespace};
 use crate::diagnostic::Diagnostic;
@@ -184,6 +185,7 @@ impl Expander<'_> {
         }
         let closure = self.macro_closure(binding, call_site)?;
         let (input, introduction) = self.prepare_input(form, context);
+        let arguments = ReturnedArguments::of_call(&input);
         self.expansion_depth += 1;
         self.introductions.push(introduction);
         let result = Interpreter::new(self, call_site).call(
@@ -195,7 +197,8 @@ impl Expander<'_> {
         self.expansion_depth -= 1;
         let output = result.map_err(|diagnostic| Self::point_at_call(diagnostic, call_site))?;
         let mut form = self.output_form(binding, &output, call_site)?;
-        self.introduce_within_budget(binding, &mut form, introduction, call_site)?;
+        let counted_forms = arguments.into_form_count(&form);
+        self.introduce_within_budget(binding, &mut form, introduction, counted_forms, call_site)?;
         Ok(form)
     }
 
@@ -219,9 +222,14 @@ impl Expander<'_> {
         binding: BindingId,
         form: &mut Form,
         introduction: Scope,
+        counted_forms: usize,
         call_site: Span,
     ) -> Result<(), Diagnostic> {
-        if self.form_budgets.current().flip_scope(form, introduction) {
+        if self
+            .form_budgets
+            .current()
+            .flip_scope(form, introduction, counted_forms)
+        {
             return Ok(());
         }
         Err(self.exhaust_budget(binding, call_site))

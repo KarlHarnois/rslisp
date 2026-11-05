@@ -1,0 +1,7 @@
+(def max-retries
+  "How many times a check reruns."
+  1)
+
+(def greeting "hi")
+
+(defn main () (println greeting " " max-retries))
