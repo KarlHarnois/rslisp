@@ -213,7 +213,8 @@ mod tests {
         const ALTERNATIVE: &str = " or ";
         const OPTIONAL_PART_END: &str = ")?";
         const OPTIONAL_PART_START: &str = " (";
-        const UNDOCUMENTED_BODY: &str = "\n\nNo documentation.";
+        const UNDOCUMENTED_TERM: &str = "whole-pairs?";
+        const UNDOCUMENTED_BODY_NAME: &str = "undocumented-body";
 
         fn of_saved_prelude(names: &[&str]) -> Self {
             let mut sources = SourceMap::default();
@@ -251,7 +252,7 @@ mod tests {
         }
 
         fn lookups(names: &[&str]) -> String {
-            names
+            let term_lookups: String = names
                 .iter()
                 .enumerate()
                 .map(|(index, name)| {
@@ -261,7 +262,14 @@ mod tests {
                         Self::body_name(index),
                     )
                 })
-                .collect()
+                .collect();
+            format!("{}{term_lookups}", Self::undocumented_lookup())
+        }
+
+        fn undocumented_lookup() -> String {
+            let term = Self::UNDOCUMENTED_TERM;
+            let name = Self::UNDOCUMENTED_BODY_NAME;
+            format!("(use prelude/macros {term})\n(def {name} (page-body {term}))\n")
         }
 
         fn header_name(index: usize) -> String {
@@ -289,9 +297,10 @@ mod tests {
         }
 
         fn documents(&self, index: usize) -> bool {
+            let undocumented_body = &self.lookups[Self::UNDOCUMENTED_BODY_NAME];
             self.lookups
                 .get(&Self::body_name(index))
-                .is_some_and(|body| body != Self::UNDOCUMENTED_BODY)
+                .is_some_and(|body| body != undocumented_body)
         }
 
         fn header_of_shape(shape: &str) -> String {
