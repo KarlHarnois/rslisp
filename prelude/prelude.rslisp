@@ -314,7 +314,11 @@
   `(with string str)` means that `String` implements the trait with `str` as
   its second type.")
 
-(document _ "Stands for a type that inference fills in.")
+(document _
+  "Stands for a type that inference fills in.
+
+  In a `match` pattern, `_` matches any value, and `(new _ base ...)` updates
+  a struct whose type comes from its base.")
 
 (document bool
   "Holds `true` or `false`, as Rust's `bool` does.")
