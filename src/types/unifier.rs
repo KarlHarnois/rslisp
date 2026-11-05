@@ -52,6 +52,7 @@ pub struct Obligation {
     pub bound: Bound,
     pub implementor: Type,
     pub span: Span,
+    pub inside_operand: bool,
 }
 
 pub struct DeferredEquality {
@@ -75,6 +76,7 @@ pub struct Unifier {
     generic_bounds: FxHashMap<GenericId, Vec<Bound>>,
     projections: Rc<ProjectionTable>,
     deferred: Vec<DeferredEquality>,
+    inside_operand: bool,
 }
 
 impl Unifier {
@@ -127,6 +129,14 @@ impl Unifier {
 
     pub fn bind(&mut self, var: TypeVar, value: Type) {
         self.vars[var.index()].binding = Some(value);
+    }
+
+    pub fn inside_operand(&self) -> bool {
+        self.inside_operand
+    }
+
+    pub fn set_inside_operand(&mut self, inside_operand: bool) {
+        self.inside_operand = inside_operand;
     }
 
     pub fn defer(&mut self, obligation: Obligation) {
@@ -372,6 +382,7 @@ impl Unifier {
                 bound,
                 implementor: value.clone(),
                 span,
+                inside_operand: self.inside_operand,
             });
         }
         self.bind(var, value);
