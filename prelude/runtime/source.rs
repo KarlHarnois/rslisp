@@ -16,6 +16,7 @@ impl Source for String {
 
 impl Source for std::io::Stdin {
     fn slurp(&self) -> std::io::Result<String> {
+        std::io::Write::flush(&mut std::io::stdout())?;
         std::io::read_to_string(self.lock())
     }
 }

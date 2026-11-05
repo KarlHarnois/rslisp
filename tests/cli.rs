@@ -46,6 +46,9 @@ const MILLION_LINES: &str = "(defn main ()\n  (for-each (range 0 1000000) (fn (i
 const THOUSAND_LINES: &str = "(defn main ()\n  (for-each (range 0 1000) (fn (i) (println i))))\n";
 const ABORT: &str =
     "(def abort (rust \"std::process::abort()\" (fn () unit)))\n\n(defn main ()\n  (abort))\n";
+const PROMPT_THEN_READ_LINE: &str = "(defn main ()\n  (print \"who? \")\n  (prn (read-line)))\n";
+const PROMPT_THEN_SLURP: &str = "(defn main ()\n  (print \"who? \")\n  (prn (slurp stdin)))\n";
+const PROMPT_THEN_SLURP_ANY_SOURCE: &str = "(type load (where ((s source)) (fn ((ref s)) (result string io-error))))\n(defn load (input) (slurp input))\n\n(defn main ()\n  (print \"who? \")\n  (prn (load stdin)))\n";
 const COUNT_INPUT_LINES: &str = "(defn main ()\n  (println (count (take (line-seq stdin) 2))))\n";
 const STRUCTS: &str = "(defstruct person :name string :age i64)\n(defstruct ticket :id u32)\n(derive ticket debug)\n\n(defn main () (do))\n";
 const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::ops::Add\" i64 (with i64 person))\n\n(type matches (where ((a (same person))) (fn (a) bool)))\n(defn matches (x) true)\n\n(defn main () (println (matches 1)))\n";
@@ -178,6 +181,7 @@ impl Sandbox {
     const PIPE_OVERFLOWING_GREETING_REPEATS: usize = 1 << 18;
     const READ_ONLY: u32 = 0o444;
     const TERMINAL_RECORDER: &str = "script";
+    const INPUT_PATIENCE: Duration = Duration::from_secs(10);
     const STATE_HOME_VARIABLE: &str = "XDG_STATE_HOME";
     const STATE_DIRECTORY: &str = "state";
     const COLOR_VARIABLES: [&str; 5] = ["NO_COLOR", "CLICOLOR_FORCE", "CLICOLOR", "TERM", "CI"];
@@ -412,6 +416,27 @@ impl Sandbox {
                 ..output
             },
         }
+    }
+
+    fn built_program_output_before_its_input(&self, relative_path: &str, input: &str) -> String {
+        let mut child = self
+            .command(&self.directory.join(relative_path), &[])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("the built program starts");
+        let mut stdout = child.stdout.take().expect("stdout is piped");
+        let (sender, shown) = mpsc::channel();
+        let reader = std::thread::spawn(move || TerminalScreen::forward(&mut stdout, &sender));
+        let before_input = shown.recv_timeout(Self::INPUT_PATIENCE).unwrap_or_default();
+        std::io::Write::write_all(
+            &mut child.stdin.take().expect("stdin is piped"),
+            input.as_bytes(),
+        )
+        .expect("the program reads its input");
+        child.wait().expect("the program finishes");
+        reader.join().expect("stdout is read");
+        String::from_utf8(before_input).expect("the program prints UTF-8")
     }
 
     fn built_program_reading_its_directory(&self, relative_path: &str) -> Outcome {
@@ -1431,6 +1456,37 @@ fn built_program_stops_quietly_when_its_reader_closes_stdout() {
         .assert_exit_code(0);
     let count = sandbox.built_program_read_for_one_line("target/rslisp/count/count");
     assert_eq!(count.assert_quiet_stop().stdout(), "0\n");
+}
+
+#[test]
+fn built_program_shows_a_prompt_before_it_reads_a_line() {
+    let sandbox = Sandbox::new("prompt_before_read").with_file("who.rslisp", PROMPT_THEN_READ_LINE);
+    sandbox
+        .compiler(&["build", "who.rslisp"])
+        .assert_exit_code(0);
+    let shown = sandbox.built_program_output_before_its_input("target/rslisp/who/who", "Ada\n");
+    assert_eq!(shown, "who? ");
+}
+
+#[test]
+fn built_program_shows_a_prompt_before_it_slurps_its_input() {
+    let sandbox = Sandbox::new("prompt_before_slurp").with_file("who.rslisp", PROMPT_THEN_SLURP);
+    sandbox
+        .compiler(&["build", "who.rslisp"])
+        .assert_exit_code(0);
+    let shown = sandbox.built_program_output_before_its_input("target/rslisp/who/who", "Ada\n");
+    assert_eq!(shown, "who? ");
+}
+
+#[test]
+fn built_program_shows_a_prompt_before_it_slurps_any_source() {
+    let sandbox =
+        Sandbox::new("prompt_before_source").with_file("who.rslisp", PROMPT_THEN_SLURP_ANY_SOURCE);
+    sandbox
+        .compiler(&["build", "who.rslisp"])
+        .assert_exit_code(0);
+    let shown = sandbox.built_program_output_before_its_input("target/rslisp/who/who", "Ada\n");
+    assert_eq!(shown, "who? ");
 }
 
 #[test]

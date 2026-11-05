@@ -1,4 +1,5 @@
 pub fn read_line() -> std::io::Result<Option<String>> {
+    std::io::Write::flush(&mut std::io::stdout())?;
     let mut line = String::new();
     match std::io::stdin().read_line(&mut line) {
         Ok(0) => Ok(None),
