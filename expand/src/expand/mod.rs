@@ -3,7 +3,6 @@ mod classified_form;
 mod compile_time_check;
 mod context;
 mod defining_call;
-mod distinct_diagnostics;
 mod evaluated_forms;
 mod expression;
 mod failed_definition;

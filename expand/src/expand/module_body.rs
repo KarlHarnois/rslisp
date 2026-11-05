@@ -4,7 +4,6 @@ use super::Expander;
 use super::TraitMethods;
 use super::budget_arena::BudgetId;
 use super::context::DefinitionContext;
-use super::distinct_diagnostics::DistinctDiagnostics;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use super::sourced_items::SourcedItems;
@@ -18,7 +17,7 @@ use crate::core::{
     RustTraitDeclaration, RustTraitImplementor, TraitAssociatedType, TraitMethod, TypeBinder,
     TypeBound, TypeExpr, TypeExprKind, VariantDeclaration, VariantInfo, VariantPayload,
 };
-use crate::diagnostic::{Counted, Diagnostic};
+use crate::diagnostic::{Counted, Diagnostic, DistinctDiagnostics};
 use crate::mangle::NameMangler;
 use crate::reader::{Form, FormKind, Symbol};
 use crate::source::Span;

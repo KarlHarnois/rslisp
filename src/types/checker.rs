@@ -3005,7 +3005,7 @@ impl TypeChecker {
         program: &crate::expand::Program,
     ) -> Result<super::typed::TypedProgram, Diagnostics> {
         let warnings = self.warnings;
-        let mut diagnostics = self.diagnostics;
+        let mut diagnostics = self.diagnostics.distinct();
         if diagnostics.has_errors() {
             diagnostics.extend(self.unnameable_types);
             diagnostics.extend(warnings);

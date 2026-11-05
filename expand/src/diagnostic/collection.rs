@@ -1,4 +1,5 @@
 use super::Diagnostic;
+use super::distinct::DistinctDiagnostics;
 
 #[derive(Clone, Debug, Default)]
 pub struct Diagnostics {
@@ -37,6 +38,12 @@ impl Diagnostics {
     pub fn map(self, relabel: impl FnMut(Diagnostic) -> Diagnostic) -> Self {
         Self {
             items: self.items.into_iter().map(relabel).collect(),
+        }
+    }
+
+    pub fn distinct(self) -> Self {
+        Self {
+            items: DistinctDiagnostics::of(self.items).into_diagnostics(),
         }
     }
 

@@ -10,11 +10,3 @@ error[L0407]: type annotations needed
   |               ^^^^^^^ cannot infer the type of this value
   |
   = help: annotate the binding, as in `(let (name i64) value)`, or add a `type` signature
-
-error[L0407]: type annotations needed
- --> check/infer_in_macro_beside_unresolved.rslisp:6:15
-  |
-6 | (defn main () (probe))
-  |               ^^^^^^^ cannot infer the type of this value
-  |
-  = help: annotate the binding, as in `(let (name i64) value)`, or add a `type` signature

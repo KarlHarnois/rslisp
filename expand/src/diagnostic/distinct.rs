@@ -1,6 +1,6 @@
 use rustc_hash::FxHashMap;
 
-use crate::diagnostic::{Diagnostic, DiagnosticCode, Label};
+use super::{Diagnostic, DiagnosticCode, Label};
 
 #[derive(Default)]
 pub struct DistinctDiagnostics {

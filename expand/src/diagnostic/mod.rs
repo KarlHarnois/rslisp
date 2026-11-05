@@ -1,6 +1,7 @@
 mod code;
 mod collection;
 mod counted;
+mod distinct;
 mod label;
 mod render;
 mod similar_name;
@@ -9,6 +10,7 @@ mod source_window;
 pub use code::DiagnosticCode;
 pub use collection::Diagnostics;
 pub use counted::Counted;
+pub use distinct::DistinctDiagnostics;
 pub use label::{Help, Label, Suggestion};
 pub use render::DiagnosticRenderer;
 pub use similar_name::SimilarName;

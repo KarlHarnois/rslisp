@@ -1,7 +1,6 @@
 use super::Expander;
 use super::budget_arena::BudgetId;
-use super::distinct_diagnostics::DistinctDiagnostics;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DistinctDiagnostics};
 
 impl Expander<'_> {
     pub(super) fn within_top_level_form<T>(
