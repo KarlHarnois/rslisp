@@ -173,6 +173,7 @@ impl Sandbox {
     }
 
     const EXECUTABLE: u32 = 0o755;
+    const PIPE_OVERFLOWING_GREETING_REPEATS: usize = 1 << 18;
     const READ_ONLY: u32 = 0o444;
     const TERMINAL_RECORDER: &str = "script";
     const STATE_HOME_VARIABLE: &str = "XDG_STATE_HOME";
@@ -196,6 +197,11 @@ impl Sandbox {
             .map(|index| format!("    missing{index}\n"))
             .collect();
         self.with_file(name, &format!("(defn main ()\n  (do\n{body}    1))\n"))
+    }
+
+    fn pipe_overflowing_greeting() -> String {
+        let greeting = "hello ".repeat(Self::PIPE_OVERFLOWING_GREETING_REPEATS);
+        format!("(defn main () (println \"{greeting}\"))\n")
     }
 
     fn with_executable(self, name: &str, script: &str) -> Self {
@@ -3389,6 +3395,28 @@ fn emit_stops_quietly_when_rustfmt_is_interrupted() {
         .with_executable("tools/rustfmt", INTERRUPTED_RUSTFMT);
     let emit = sandbox.compiler_with_path("tools", &["emit", "greeting.rslisp"]);
     assert_eq!(emit.assert_exit_code(130).stderr(), "");
+}
+
+#[test]
+fn emit_stops_quietly_when_rustfmt_is_interrupted_before_it_reads_its_input() {
+    let sandbox = Sandbox::new("emit_rustfmt_interrupted_before_reading")
+        .with_file("greeting.rslisp", &Sandbox::pipe_overflowing_greeting())
+        .with_executable("tools/rustfmt", INTERRUPTED_RUSTFMT);
+    let emit = sandbox.compiler_with_path("tools", &["emit", "greeting.rslisp"]);
+    assert_eq!(emit.assert_exit_code(130).stderr(), "");
+}
+
+#[test]
+fn emit_notes_a_rustfmt_that_fails_before_it_reads_its_input() {
+    let sandbox = Sandbox::new("emit_rustfmt_failed_before_reading")
+        .with_file("greeting.rslisp", &Sandbox::pipe_overflowing_greeting())
+        .with_executable("tools/rustfmt", FAILING_RUSTFMT);
+    let emit = sandbox.compiler_with_path("tools", &["emit", "greeting.rslisp"]);
+    assert!(
+        emit.assert_exit_code(0).stderr().contains("Broken pipe"),
+        "{}",
+        emit.stderr()
+    );
 }
 
 #[test]
