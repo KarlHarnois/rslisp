@@ -9,7 +9,7 @@ error[L0210]: malformed `macro`
 1 | (def unparameterized (macro form form))
   |                             ^^^^ this does not fit the shape of `macro`
   |
-  = help: write it as `(def name (macro (form) body ...))`
+  = help: write it as `(macro (form) body ...)`
 
 error[L0309]: the macro `unparameterized` has errors, so this call cannot expand
  --> expand/broken_macro.rslisp:5:1

@@ -17,7 +17,7 @@ error[L0210]: malformed `struct`
 3 | (struct)
   | ^^^^^^^^ this does not fit the shape of `struct`
   |
-  = help: write it as `(struct name (field type) ...)`
+  = help: write it as `(struct (name parameter ...) (field type) ...)`
 
 error[L0210]: malformed `rust-trait`
  --> expand/definition_errors.rslisp:5:1
@@ -41,7 +41,7 @@ error[L0210]: malformed `struct`
 9 | (struct pair first)
   |              ^^^^^ this does not fit the shape of `struct`
   |
-  = help: write it as `(struct name (field type) ...)`
+  = help: write it as `(struct (name parameter ...) (field type) ...)`
 
 error[L0210]: malformed `struct`
   --> expand/definition_errors.rslisp:11:16
@@ -49,4 +49,4 @@ error[L0210]: malformed `struct`
 11 | (struct single (first))
    |                ^^^^^^^ this does not fit the shape of `struct`
    |
-   = help: write it as `(struct name (field type) ...)`
+   = help: write it as `(struct (name parameter ...) (field type) ...)`

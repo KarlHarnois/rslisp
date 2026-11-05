@@ -68,7 +68,7 @@ impl KernelForm {
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Fn),
             name: "fn",
-            shape: "(fn (param ...) body ...)",
+            shape: "(fn (parameter ...) body ...)",
         },
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::Def),
@@ -98,12 +98,12 @@ impl KernelForm {
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::Struct),
             name: "struct",
-            shape: "(struct name (field type) ...)",
+            shape: "(struct (name parameter ...) (field type) ...)",
         },
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::Enum),
             name: "enum",
-            shape: "(enum name variant ...)",
+            shape: "(enum (name parameter ...) variant ...)",
         },
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::Derive),
@@ -163,7 +163,7 @@ impl KernelForm {
         KernelFormRow {
             form: KernelForm::Macro,
             name: "macro",
-            shape: "(def name (macro (form) body ...))",
+            shape: "(macro (form) body ...)",
         },
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Leaf(LeafForm::Rust)),
@@ -178,7 +178,7 @@ impl KernelForm {
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::RustType),
             name: "rust-type",
-            shape: "(rust-type name \"template\" (type \"template\") ...)",
+            shape: "(rust-type (name parameter ...) \"template\" (type \"template\") ...)",
         },
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Recur),
@@ -198,7 +198,7 @@ impl KernelForm {
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::Impl),
             name: "impl",
-            shape: "(impl trait type (method (param ...) body ...) ...)",
+            shape: "(impl trait type (method (parameter ...) body ...) ...)",
         },
         KernelFormRow {
             form: KernelForm::Definition(DefinitionForm::Use),
