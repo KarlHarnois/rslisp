@@ -19,7 +19,10 @@ fn main() {
     let path = "garage.txt".to_string();
     report(&std::fs::read_to_string("cars.txt"));
     report(&std::fs::read_to_string(&path));
-    report(&std::io::read_to_string(&std::io::stdin()));
+    report(
+        &std::io::Write::flush(&mut std::io::stdout())
+            .and_then(|()| std::io::read_to_string(&std::io::stdin())),
+    );
     report(&read_source("cars.txt"));
     report(&read_source(&std::io::stdin()))
 }
@@ -43,6 +46,7 @@ mod rt {
 
     impl Source for std::io::Stdin {
         fn slurp(&self) -> std::io::Result<String> {
+            std::io::Write::flush(&mut std::io::stdout())?;
             std::io::read_to_string(self.lock())
         }
     }

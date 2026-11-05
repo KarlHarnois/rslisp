@@ -15,7 +15,7 @@
         (where ((s source)) (fn ((ref s)) (result string io-error)))
         (str "std::fs::read_to_string({0})")
         (string "std::fs::read_to_string({0})")
-        (stdin "std::io::read_to_string({0})")))
+        (stdin "std::io::Write::flush(&mut std::io::stdout()).and_then(|()| std::io::read_to_string({0}))")))
 
 (def line-seq
   (rust "crate::rt::lines({0})"

@@ -18,7 +18,9 @@ fn main() {
         Ok(text) => println!("{}", text),
         Err(error) => eprintln!("{}", error),
     }
-    match std::io::read_to_string(&std::io::stdin()) {
+    match std::io::Write::flush(&mut std::io::stdout())
+        .and_then(|()| std::io::read_to_string(&std::io::stdin()))
+    {
         Ok(text) => println!("{}", text.as_str().lines().count()),
         Err(error) => eprintln!("{}", error),
     }
@@ -32,6 +34,7 @@ fn main() {
 
 mod rt {
     pub fn read_line() -> std::io::Result<Option<String>> {
+        std::io::Write::flush(&mut std::io::stdout())?;
         let mut line = String::new();
         match std::io::stdin().read_line(&mut line) {
             Ok(0) => Ok(None),
