@@ -126,7 +126,6 @@ pub struct Expander<'s> {
     expansion: ExpansionWork,
     evaluated_forms: EvaluatedForms,
     recorded_inputs: RecordedInputs,
-    failed_definitions: FxHashSet<crate::core::BindingId>,
     declared_definitions: Vec<failed_definition::DeclaredName>,
     introductions: Vec<Scope>,
 }
@@ -184,7 +183,6 @@ impl<'s> Expander<'s> {
             expansion: ExpansionWork::default(),
             evaluated_forms: EvaluatedForms::default(),
             recorded_inputs: RecordedInputs::default(),
-            failed_definitions: FxHashSet::default(),
             declared_definitions: Vec::new(),
             introductions: Vec::new(),
         }
