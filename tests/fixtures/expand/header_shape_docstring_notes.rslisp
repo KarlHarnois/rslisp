@@ -17,6 +17,13 @@
 
 (header-shape (plain-defn name parameters))
 
+(defrule spaced-defn
+  ((n p b ...)
+   (defn n p
+     b ...)))
+
+(header-shape (spaced-defn name parameters) :one-per-line)
+
 (defmacro docstring-form-notes (part)
   (let notes
     (module-notes (definition-symbol (quote documented-defn) "notes")

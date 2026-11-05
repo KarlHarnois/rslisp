@@ -17,7 +17,10 @@ input_file: tests/fixtures/format/use_and_export_groups.rslisp
 ---
 (use alpha one)
 (use beta two)
-(use gamma first-of-many fourth-of-many second-of-many third-of-many)
+
+(use gamma first-of-many fourth-of-many second-of-many
+           third-of-many)
+
 (use delta four)
 
 (export one two)

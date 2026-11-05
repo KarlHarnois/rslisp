@@ -58,10 +58,17 @@ struct ListAssembly<'l> {
     trailing: usize,
 }
 
+enum Position {
+    FirstLine,
+    Filled,
+    OwnLine,
+}
+
 struct AssemblyState<L> {
     laid_out: L,
     later_indent: Option<usize>,
     on_first_line: bool,
+    run_open: bool,
 }
 
 impl<'s> LayoutEngine<'s> {
@@ -223,6 +230,7 @@ impl<'l> ListAssembly<'l> {
                 LaterIndent::UnderLastOnFirstLine => None,
             },
             on_first_line: true,
+            run_open: false,
         };
         for (index, unit) in self.plan.units.iter().enumerate() {
             self.place(engine, &mut state, arrangement, index, *unit);
@@ -239,19 +247,58 @@ impl<'l> ListAssembly<'l> {
         index: usize,
         unit: Unit,
     ) {
-        let entry = &self.list.entries[unit.first_entry()];
-        let continues_line = !state.laid_out.ends_with_comment() && !entry.interrupts_line(index);
+        let continues_line = self.continues_line(state, index, unit);
         state.on_first_line &= index < arrangement.first_line_units && continues_line;
-        if state.on_first_line {
-            self.join(engine, state, arrangement, index, unit);
-        } else if arrangement.fills && continues_line {
-            self.fill(engine, state, index, unit);
-        } else {
-            self.push_on_own_line(engine, state, index, unit);
+        match self.position(state, index, continues_line) {
+            Position::FirstLine => self.join(engine, state, arrangement, index, unit),
+            Position::Filled => self.fill(engine, state, index, unit),
+            Position::OwnLine => self.push_on_own_line(engine, state, index, unit),
         }
+        self.end_unit(state, arrangement, index, unit);
+    }
+
+    fn continues_line<L: LaidOut>(
+        &self,
+        state: &AssemblyState<L>,
+        index: usize,
+        unit: Unit,
+    ) -> bool {
+        let entry = &self.list.entries[unit.first_entry()];
+        !state.laid_out.ends_with_comment() && !entry.interrupts_line(index)
+    }
+
+    fn position<L: LaidOut>(
+        &self,
+        state: &AssemblyState<L>,
+        index: usize,
+        continues_line: bool,
+    ) -> Position {
+        if state.on_first_line {
+            Position::FirstLine
+        } else if continues_line && state.run_open && self.plan.fillable_units[index] {
+            Position::Filled
+        } else {
+            Position::OwnLine
+        }
+    }
+
+    fn end_unit<L: LaidOut>(
+        &self,
+        state: &mut AssemblyState<L>,
+        arrangement: Arrangement,
+        index: usize,
+        unit: Unit,
+    ) {
         if let Some(comment) = &self.list.entries[unit.last_entry()].trailing_comment {
             state.laid_out.add_trailing_comment(comment);
         }
+        state.run_open =
+            self.plan.fillable_units[index] && Self::opens_run(state.on_first_line, arrangement);
+    }
+
+    fn opens_run(on_first_line: bool, arrangement: Arrangement) -> bool {
+        let aligned = arrangement.later_indent == LaterIndent::UnderLastOnFirstLine;
+        !on_first_line || aligned
     }
 
     fn join<L: LaidOut>(
@@ -281,7 +328,7 @@ impl<'l> ListAssembly<'l> {
         let start = state.laid_out.end_column() + Self::SEPARATOR.len();
         let unit_layout: L = self.unit(engine, index, unit, start);
         let end = unit_layout.end_column() + self.unit_trailing(index);
-        if end <= Block::WIDTH {
+        if end <= Block::FILL_WIDTH {
             state.laid_out.join(Self::SEPARATOR, unit_layout);
         } else {
             self.push_on_own_line(engine, state, index, unit);
