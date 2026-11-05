@@ -1,0 +1,6 @@
+(export restock shelf-count)
+
+(defn shelf-count () 4)
+
+(defn restock (count)
+  (+ count (shelf-count)))

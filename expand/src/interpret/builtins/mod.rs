@@ -1,6 +1,7 @@
 mod failure;
 mod lists;
 mod numbers;
+mod program;
 mod strings;
 mod text;
 
@@ -16,6 +17,7 @@ use crate::reader::{Form, FormKind, Number, NumberValue};
 use crate::source::Span;
 use lists::ListOperations;
 use numbers::NumberOperations;
+use program::ProgramOperations;
 use strings::StringOperations;
 use text::TextOperations;
 
@@ -26,7 +28,7 @@ pub struct BuiltinCall {
 }
 
 impl BuiltinCall {
-    const IMPLEMENTATIONS: [(Builtin, Implementation); 52] = [
+    const IMPLEMENTATIONS: [(Builtin, Implementation); 55] = [
         (Builtin::First, |operations, _| operations.lists.first()),
         (Builtin::Rest, |operations, _| operations.lists.rest()),
         (Builtin::List, |operations, _| operations.lists.list()),
@@ -161,6 +163,15 @@ impl BuiltinCall {
         (Builtin::DeclareMacroDefinition, |operations, host| {
             operations.text.declare_definition(host, Declaration::Macro)
         }),
+        (Builtin::FormLocation, |operations, host| {
+            operations.program.form_location(host)
+        }),
+        (Builtin::ProgramModules, |operations, host| {
+            operations.program.program_modules(host)
+        }),
+        (Builtin::ModuleExports, |operations, host| {
+            operations.program.module_exports(host)
+        }),
     ];
 
     pub fn new(builtin: Builtin, values: Vec<Value>, span: Span, call_site: Span) -> Self {
@@ -188,6 +199,7 @@ type Implementation =
 struct Operations<'a> {
     lists: ListOperations<'a>,
     numbers: NumberOperations<'a>,
+    program: ProgramOperations<'a>,
     strings: StringOperations<'a>,
     text: TextOperations<'a>,
 }
@@ -197,6 +209,7 @@ impl<'a> Operations<'a> {
         Self {
             lists: ListOperations::new(arguments, call_site),
             numbers: NumberOperations::new(arguments, call_site),
+            program: ProgramOperations::new(arguments, call_site),
             strings: StringOperations::new(arguments, call_site),
             text: TextOperations::new(arguments, call_site),
         }

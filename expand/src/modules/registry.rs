@@ -110,6 +110,10 @@ impl ModuleRegistry {
             .map(ModuleId::new)
     }
 
+    pub fn records(&self) -> impl Iterator<Item = &ModuleRecord> {
+        self.records.iter()
+    }
+
     pub fn get(&self, id: ModuleId) -> &ModuleRecord {
         &self.records[id.index()]
     }

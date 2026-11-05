@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/program_queries.rslisp
+---
+(def here "program_queries.rslisp:17:11")
+(def modules "(program_queries queried/stock)")
+(def exports "(restock shelf-count)")
+(def total (restock 2))
