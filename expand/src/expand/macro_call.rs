@@ -8,7 +8,7 @@ use super::form_budget::FormBudget;
 use super::problems::ExpandProblems;
 use super::returned_arguments::ReturnedArguments;
 use super::shape::Shape;
-use crate::core::{BindingId, BindingKind, Expr, KernelForm, Lambda, Namespace};
+use crate::core::{BindingId, BindingKind, DefinitionForm, Expr, KernelForm, Lambda, Namespace};
 use crate::diagnostic::Diagnostic;
 use crate::interpret::{Closure, Env, Interpreter, Value};
 use crate::reader::Form;
@@ -197,9 +197,17 @@ impl Expander<'_> {
         self.expansion_depth -= 1;
         let output = result.map_err(|diagnostic| Self::point_at_call(diagnostic, call_site))?;
         let mut form = self.output_form(binding, &output, call_site)?;
-        let counted_forms = arguments.into_form_count(&form);
+        let counted_forms = self.counted_definition_forms(arguments, &form);
         self.introduce_within_budget(binding, &mut form, introduction, counted_forms, call_site)?;
         Ok(form)
+    }
+
+    fn counted_definition_forms(&self, arguments: ReturnedArguments, expansion: &Form) -> usize {
+        if self.is_kernel_form(expansion, KernelForm::Definition(DefinitionForm::Def)) {
+            arguments.into_form_count(expansion)
+        } else {
+            0
+        }
     }
 
     fn output_form(

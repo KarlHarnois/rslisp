@@ -1,0 +1,15 @@
+(use code concat list number-le number-sub)
+
+(def doubled
+  (fn (items times)
+    (if (number-le times 0)
+      items
+      (doubled (concat items items) (number-sub times 1)))))
+
+(defmacro pass (form)
+  (template (do (unquote form))))
+
+(defmacro nest ()
+  (template (pass (pass (pass (pass (do (splice (doubled (list 0) 15)))))))))
+
+(defn main () (nest))
