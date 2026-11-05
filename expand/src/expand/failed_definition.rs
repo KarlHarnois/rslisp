@@ -84,21 +84,31 @@ impl Expander<'_> {
         rest_of_body: &mut RestOfBody,
         context: &DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
-        let Some(name) = self.declared_value_name() else {
+        let Some((name, declaration)) = self.declared_value_name() else {
             return Ok(BodyItem::Expr(failure));
         };
         let scope = self.fresh_local_scope();
         rest_of_body.add_scope(scope);
         let binder = self.lower_binder(&Self::scoped(&name, scope), Some(context))?;
+        self.tables
+            .globals
+            .record_failed_definition(binder.binding, declaration);
+        self.failed_body_definitions.push(binder.binding);
         Ok(BodyItem::Let(binder, failure))
     }
 
-    fn declared_value_name(&self) -> Option<Form> {
+    pub(super) fn forget_failed_body_definitions(&mut self, from: usize) {
+        for binding in self.failed_body_definitions.split_off(from) {
+            self.tables.globals.forget_failed_definition(binding);
+        }
+    }
+
+    fn declared_value_name(&self) -> Option<(Form, Declaration)> {
         self.declared_definitions
             .iter()
             .filter(|declared| declared.declaration.namespace() == Namespace::Value)
-            .map(DeclaredName::binder)
-            .find(|binder| binder.as_symbol().is_some())
+            .map(|declared| (declared.binder(), declared.declaration))
+            .find(|(binder, _)| binder.as_symbol().is_some())
     }
 
     fn bind_failed_names(&mut self, context: &DefinitionContext) {
@@ -133,5 +143,55 @@ impl Expander<'_> {
             Namespace::Value => BindingKind::Global(module),
             Namespace::Type => BindingKind::Struct(module),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::*;
+    use crate::core::ModulePath;
+    use crate::modules::ModuleSources;
+    use crate::source::SourceMap;
+
+    struct ModulesFixture {
+        sources: SourceMap,
+    }
+
+    impl ModulesFixture {
+        fn new() -> Self {
+            Self {
+                sources: SourceMap::default(),
+            }
+        }
+
+        fn expand(&mut self, modules: &[(&str, &str)]) -> FailureRecord {
+            let ids: Vec<_> = modules
+                .iter()
+                .map(|(path, text)| (*path, self.sources.add(*path, *text)))
+                .collect();
+            let mut expander = Expander::new(
+                &mut self.sources,
+                ModuleSources::new(PathBuf::new(), PathBuf::new()),
+            );
+            for (path, id) in ids {
+                expander.load_source_module(ModulePath::new(path), &[id]);
+            }
+            FailureRecord {
+                has_failed_definitions: expander.tables.globals.has_failed_definitions(),
+            }
+        }
+    }
+
+    struct FailureRecord {
+        has_failed_definitions: bool,
+    }
+
+    #[test]
+    fn a_failed_body_level_definer_is_forgotten_when_its_body_ends() {
+        let record = ModulesFixture::new()
+            .expand(&[("body", "(defn outer () (defmacro dsl \"doc\" (x) x) 1)")]);
+        assert!(!record.has_failed_definitions);
     }
 }
