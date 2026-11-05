@@ -1,0 +1,114 @@
+use rustc_hash::FxHashMap;
+
+use crate::reader::Form;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Shape {
+    pub header_length: usize,
+    pub takes_docstring: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ShapeStatement {
+    pub form_name: String,
+    pub shape: Shape,
+}
+
+#[derive(Clone, Default)]
+pub struct ShapeCatalog {
+    shapes: FxHashMap<String, Shape>,
+}
+
+impl ShapeStatement {
+    pub const STATING_FORM: &'static str = "header-shape";
+
+    pub fn of(form: &Form) -> Option<Self> {
+        let [head, stated, markers @ ..] = form.as_list()? else {
+            return None;
+        };
+        (head.as_symbol()?.name() == Self::STATING_FORM).then_some(())?;
+        let [form_name, header @ ..] = stated.as_list()? else {
+            return None;
+        };
+        Some(Self {
+            form_name: form_name.as_symbol()?.name().to_string(),
+            shape: Shape {
+                header_length: header.len(),
+                takes_docstring: !markers.is_empty(),
+            },
+        })
+    }
+}
+
+impl ShapeCatalog {
+    pub fn add(&mut self, statement: &ShapeStatement) {
+        self.shapes
+            .insert(statement.form_name.clone(), statement.shape);
+    }
+
+    pub fn of(&self, form_name: &str) -> Option<Shape> {
+        self.shapes.get(form_name).copied()
+    }
+
+    pub fn docstring_position(&self, form_name: &str) -> Option<usize> {
+        self.of(form_name)
+            .filter(|shape| shape.takes_docstring)
+            .map(|shape| shape.header_length + 1)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Shape, ShapeStatement};
+    use crate::reader::{Form, Reader};
+    use crate::source::SourceMap;
+
+    struct StatementFixture;
+
+    impl StatementFixture {
+        fn statement(text: &str) -> Option<ShapeStatement> {
+            ShapeStatement::of(&Self::form(text))
+        }
+
+        fn form(text: &str) -> Form {
+            let mut sources = SourceMap::default();
+            let source = sources.add("shape", text);
+            Reader::new(sources.file(source))
+                .read()
+                .unwrap_or_else(|_| panic!("the statement reads"))
+                .remove(0)
+        }
+    }
+
+    #[test]
+    fn a_statement_counts_the_forms_after_the_form_name() {
+        let statement = StatementFixture::statement("(header-shape (impl trait type))");
+        assert_eq!(
+            statement.map(|statement| statement.shape),
+            Some(Shape {
+                header_length: 2,
+                takes_docstring: false
+            })
+        );
+    }
+
+    #[test]
+    fn a_marker_after_the_shape_states_a_docstring() {
+        let statement =
+            StatementFixture::statement("(header-shape (defn name parameters) :docstring)");
+        assert!(statement.is_some_and(|statement| statement.shape.takes_docstring));
+    }
+
+    #[test]
+    fn a_call_of_another_form_states_no_shape() {
+        assert_eq!(StatementFixture::statement("(document (defn name))"), None);
+    }
+
+    #[test]
+    fn a_shape_that_does_not_start_with_a_name_states_nothing() {
+        assert_eq!(
+            StatementFixture::statement("(header-shape (\"defn\" name))"),
+            None
+        );
+    }
+}

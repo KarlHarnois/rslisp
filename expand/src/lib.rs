@@ -1,6 +1,7 @@
 pub mod core;
 pub mod diagnostic;
 pub mod expand;
+pub mod format;
 pub mod interpret;
 pub mod language;
 pub mod mangle;

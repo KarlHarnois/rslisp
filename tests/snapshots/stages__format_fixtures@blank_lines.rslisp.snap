@@ -1,0 +1,33 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/blank_lines.rslisp
+---
+(type twice (fn (i64) i64))
+(defn twice (x) (* 2 x))
+
+
+(defn steps ()
+
+  (first-step)
+
+
+  (second-step)
+  (third-step)
+
+  )
+(def after-steps 1)
+
+---
+(type twice (fn (i64) i64))
+
+(defn twice (x) (* 2 x))
+
+(defn steps ()
+
+  (first-step)
+
+  (second-step)
+  (third-step))
+
+(def after-steps 1)

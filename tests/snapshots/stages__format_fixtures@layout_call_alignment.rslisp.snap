@@ -1,0 +1,23 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_call_alignment.rslisp
+---
+(defn report (totals)
+  (println (str "distance: " (distance (->point 0 0) (->point 3 4))))
+  (for-each (entries totals) (fn (entry) (let-pair (name worth) entry (println (str "  " name ": " (dollars (deref worth))))))))
+(defn branch (n) (if (< n 0) "a negative number" (if (= n 0) "zero" "a positive number")))
+
+---
+(defn report (totals)
+  (println (str "distance: "
+                (distance (->point 0 0) (->point 3 4))))
+  (for-each (entries totals)
+            (fn (entry)
+              (let-pair (name worth) entry
+                (println (str "  " name ": " (dollars (deref worth))))))))
+
+(defn branch (n)
+  (if (< n 0)
+      "a negative number"
+      (if (= n 0) "zero" "a positive number")))

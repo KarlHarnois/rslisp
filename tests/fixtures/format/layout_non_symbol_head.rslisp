@@ -1,0 +1,3 @@
+(defn pick (choice) (match choice ((some value) (println "chosen value" value)) (none (println "nothing was chosen"))))
+((make-adder 1 2 3 4 5 6 7 8 9) first-argument second-argument)
+(def table (vec ("first entry" 1 2 3) ("second entry" 4 5 6) ("third entry" 7 8 9)))

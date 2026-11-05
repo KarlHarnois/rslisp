@@ -3,7 +3,7 @@ mod support;
 use std::path::PathBuf;
 
 use rslisp::expand::PreludeState;
-use support::{Fixture, FixtureReports, HeaderAgreement};
+use support::{Fixture, FixtureReports, FormatFailures, HeaderAgreement};
 
 #[test]
 fn reader_fixtures() {
@@ -14,6 +14,31 @@ fn reader_fixtures() {
     insta::glob!(fixtures, |path| {
         insta::assert_snapshot!(reports.report(path));
     });
+}
+
+#[test]
+fn format_fixtures() {
+    let fixtures = "fixtures/format/*.rslisp";
+    let mut paths = Vec::new();
+    insta::glob!(fixtures, |path| paths.push(PathBuf::from(path)));
+    let reports = FixtureReports::compute(paths, |path| Fixture::load(path).format_report());
+    insta::glob!(fixtures, |path| {
+        insta::assert_snapshot!(reports.report(path));
+    });
+}
+
+#[test]
+fn every_repository_source_formats_to_the_same_forms_and_stays_formatted() {
+    let failures = FormatFailures::of_repository();
+    eprintln!(
+        "formatted {} files in {:?}",
+        failures.formatted, failures.elapsed
+    );
+    assert!(
+        failures.failed.is_empty(),
+        "the formatter fails its checks on:\n{}",
+        failures.failed.join("\n")
+    );
 }
 
 #[test]

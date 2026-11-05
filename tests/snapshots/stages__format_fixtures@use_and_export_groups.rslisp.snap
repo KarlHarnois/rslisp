@@ -1,0 +1,31 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/use_and_export_groups.rslisp
+---
+(use alpha one)
+(use beta two)
+(use gamma first-of-many second-of-many third-of-many fourth-of-many)
+(use delta four)
+(export one two)
+(export three)
+(def one 1)
+(use epsilon five)
+; the next import
+(use zeta six)
+
+---
+(use alpha one)
+(use beta two)
+(use gamma first-of-many second-of-many third-of-many fourth-of-many)
+(use delta four)
+
+(export one two)
+(export three)
+
+(def one 1)
+
+(use epsilon five)
+
+; the next import
+(use zeta six)

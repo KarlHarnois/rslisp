@@ -1,0 +1,29 @@
+(def limit 10)   ; the most items
+(def threshold 25)     ; the reorder point
+(+ a ; first operand
+   b ; second operand
+   )
+(defn check (x) ; a function
+  (if (< x limit) ; under the limit
+      (ok x) ; keep it
+      (err x)))
+(f (g (h x ; deep
+)))
+(f ; after the head
+ a)
+(f (g a ; c1
+) ; c2
+ b)
+(h (k a ; c3
+) ; c4
+)
+(m a ; c5
+) ; c6
+(def after-comments 1)
+(n (p a ; c7
+ ; c8
+) ; c9
+ b)
+(q (r (s a ; c10
+)) ; c11
+ b)

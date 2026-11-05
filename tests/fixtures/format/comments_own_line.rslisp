@@ -1,0 +1,31 @@
+;; A legal header that stays above the first form.
+
+(use prelude/macros header-shape)
+; about the next definition
+(def limit 10)
+(defn total (items)
+  ; add every item
+  (fold items 0 add)
+      ; nothing follows
+  )
+(vec 1
+     ; the second
+     2
+     3)
+(
+ ; before the head
+ f x)
+;; a note apart
+
+;; from this one
+;; and this one
+(def apart 1)
+;; a closing note
+(
+
+ ; before the head, after a blank line
+ g y)
+(h a
+
+ ; last, after a blank line
+ )

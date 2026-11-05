@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/shape_from_module.rslisp
+---
+(use shapes/loops dotimes)
+(defn main () (dotimes (index 10) (println (str "index " index)) (println "and again")))
+
+---
+(use shapes/loops dotimes)
+
+(defn main ()
+  (dotimes (index 10)
+    (println (str "index " index))
+    (println "and again")))

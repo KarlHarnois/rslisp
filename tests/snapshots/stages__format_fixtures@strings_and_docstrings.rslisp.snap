@@ -1,0 +1,68 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/strings_and_docstrings.rslisp
+---
+(defn twice (x)
+      "Doubles a number.
+
+      Works on any number."
+      (* 2 x))
+(defn greeting () "hi")
+(defn shout (text)
+"Shouts a text.
+Its lines start at column 0."
+(upper-case text))
+(def escapes "tab\tquote\" unicode \u{e9} newline\n")
+(def poem "first line
+  second line kept as written")
+(def numbers (vec 1_000 2.5e3 -7 1e9))
+(defmacro twice-macro (form)
+    "Repeats a form.
+    Twice."
+    (template (do (unquote form) (unquote form))))
+(defn uneven (x)
+        "Doc line.
+  Less indented.
+      Code block."
+        (g x))
+(defn poem-text ()
+      "first
+      second")
+
+---
+(defn twice (x)
+  "Doubles a number.
+
+  Works on any number."
+  (* 2 x))
+
+(defn greeting () "hi")
+
+(defn shout (text)
+  "Shouts a text.
+  Its lines start at column 0."
+  (upper-case text))
+
+(def escapes "tab\tquote\" unicode \u{e9} newline\n")
+
+(def poem
+  "first line
+  second line kept as written")
+
+(def numbers (vec 1_000 2.5e3 -7 1e9))
+
+(defmacro twice-macro (form)
+  "Repeats a form.
+  Twice."
+  (template (do (unquote form) (unquote form))))
+
+(defn uneven (x)
+  "Doc line.
+Less indented.
+    Code block."
+  (g x))
+
+(defn poem-text ()
+  "first
+      second")

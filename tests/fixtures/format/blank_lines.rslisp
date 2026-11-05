@@ -1,0 +1,14 @@
+(type twice (fn (i64) i64))
+(defn twice (x) (* 2 x))
+
+
+(defn steps ()
+
+  (first-step)
+
+
+  (second-step)
+  (third-step)
+
+  )
+(def after-steps 1)

@@ -1,0 +1,14 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/does_not_compile.rslisp
+---
+(defn main () (println (str "value: " (undefined-function missing-name (another-missing 1 2)))))
+(def broken (fn))
+
+---
+(defn main ()
+  (println (str "value: "
+                (undefined-function missing-name (another-missing 1 2)))))
+
+(def broken (fn))
