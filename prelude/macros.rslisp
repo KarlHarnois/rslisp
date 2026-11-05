@@ -688,6 +688,30 @@
 
 (header-shape (defmacro name pattern) :docstring)
 
+(document (defrule name
+            (pattern template)
+            ...)
+  "Defines a macro by rules that each rewrite a call of one shape.
+
+  The first rule whose pattern matches the call's arguments gives the
+  expansion, its template filled with the pattern's variables. In a pattern,
+  `name ...` matches zero or more forms. A docstring may follow the name.")
+
+(document (defmacro name pattern
+            body ...)
+  "Defines a macro whose body computes the expansion of a call.
+
+  The pattern binds the call's arguments as a `defrule` pattern does, and the
+  body's last form is the expansion. A docstring may lead the body when
+  another form follows it.")
+
+(document (template form)
+  "Builds a form from a quoted form with holes in it.
+
+  `(unquote x)` puts the value of `x` in place, and `(splice xs)` puts each
+  form of the list `xs` in place, as in
+  `(template (def (unquote name) (splice body)))`.")
+
 (header-shape (fail message))
 
 (defmacro doc-page (term)
