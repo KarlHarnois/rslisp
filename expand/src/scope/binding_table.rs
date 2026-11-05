@@ -184,6 +184,12 @@ impl NameEntries {
             .for_each(visit);
     }
 
+    fn unbind(&mut self, binding: BindingId) {
+        self.plain_sorted_by_anchor
+            .retain(|entry| entry.binding != binding);
+        self.sharing.retain(|entry| entry.binding != binding);
+    }
+
     fn all(&self) -> impl Iterator<Item = &Entry> {
         self.plain_sorted_by_anchor.iter().chain(&self.sharing)
     }
@@ -228,6 +234,12 @@ impl BindingTable {
             }
         };
         entries.bind(symbol.scopes(), binding, phase)
+    }
+
+    pub fn unbind(&mut self, symbol: &Symbol, namespace: Namespace, binding: BindingId) {
+        if let Some(entries) = self.entries.get_mut(&(symbol.shared_name(), namespace)) {
+            entries.unbind(binding);
+        }
     }
 
     pub fn resolve(&self, symbol: &Symbol, namespace: Namespace, phase: Phase) -> Resolution {

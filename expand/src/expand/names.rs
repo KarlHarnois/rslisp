@@ -132,9 +132,7 @@ impl Expander<'_> {
         Self::reject_keyword_binder(symbol.name(), span)?;
         let info = BindingInfo::new(symbol.shared_name(), kind, Some(span));
         let binding = self.tables.bindings.add(info);
-        self.tables
-            .table
-            .bind(symbol, namespace, binding, phase)
+        self.bind_over_failed(symbol, namespace, binding, phase)
             .map_err(|existing| {
                 ExpandProblems::duplicate(
                     symbol.name(),

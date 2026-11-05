@@ -2,8 +2,8 @@ use super::Expander;
 use super::context::DefinitionContext;
 use crate::core::{BindingId, BindingKind, Expr, ExprKind, Leaf, ModuleId, Namespace};
 use crate::diagnostic::Diagnostic;
-use crate::reader::Form;
-use crate::scope::Scope;
+use crate::reader::{Form, Symbol};
+use crate::scope::{Phase, Scope};
 
 pub(super) struct DeclaredName {
     name: Form,
@@ -52,6 +52,28 @@ impl Expander<'_> {
         self.failed_definitions
             .contains(&binding)
             .then(|| Expr::new(ExprKind::Leaf(Leaf::Var(binding)), form.span()))
+    }
+
+    pub(super) fn bind_over_failed(
+        &mut self,
+        symbol: &Symbol,
+        namespace: Namespace,
+        binding: BindingId,
+        phase: Phase,
+    ) -> Result<(), BindingId> {
+        match self.tables.table.bind(symbol, namespace, binding, phase) {
+            Err(existing) if self.failed_definitions.contains(&existing) => {
+                self.forget_failed(symbol, namespace, existing);
+                self.tables.table.bind(symbol, namespace, binding, phase)
+            }
+            bound => bound,
+        }
+    }
+
+    fn forget_failed(&mut self, symbol: &Symbol, namespace: Namespace, failed: BindingId) {
+        self.tables.table.unbind(symbol, namespace, failed);
+        self.failed_definitions.remove(&failed);
+        self.tables.globals.forget_failure(failed);
     }
 
     fn bind_failed_names(&mut self, context: &DefinitionContext) {

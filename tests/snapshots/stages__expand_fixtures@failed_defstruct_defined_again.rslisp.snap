@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_defstruct_defined_again.rslisp
+---
+error[L0301]: a field must start with `:`
+ --> expand/failed_defstruct_defined_again.rslisp:1:18
+  |
+1 | (defstruct point (x i64))
+  |                  ^^^^^^^ here
+  |
+  = help: write each field as `:name type`, as in (defstruct point :x f64 :y f64)

@@ -1,0 +1,5 @@
+(defstruct point (x i64))
+
+(defstruct point :x i64)
+
+(defn main () (println (:x (->point :x 1))))

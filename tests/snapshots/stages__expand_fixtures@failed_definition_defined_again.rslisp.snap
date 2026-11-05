@@ -10,12 +10,3 @@ error[L0328]: a docstring goes after the parameter list
   |            ^^^^^^^^^^^^^^^^^^^^^^^ a docstring in place of the parameter list
   |
   = help: write it as the first body form, after the parameter list
-
-error[L0203]: `area` is defined more than once
- --> expand/failed_definition_defined_again.rslisp:3:7
-  |
-1 | (defn area "Multiplies two sides." (width height) (* width height))
-  |       ---- first defined here
-2 |
-3 | (defn area (width height) (* width height))
-  |       ^^^^ defined again here
