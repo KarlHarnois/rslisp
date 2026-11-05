@@ -172,7 +172,7 @@ pub struct TypeChecker {
     pub(super) unnameable_types: Diagnostics,
     pub(super) closure_types: Vec<super::typed::ClosureType>,
     pub(super) type_texts: super::type_text::TypeTexts,
-    pub(super) infer_operands: Vec<Span>,
+    pub(super) holds_infer_forms: bool,
     pub(super) type_arities: FxHashMap<BindingId, usize>,
     pub(super) written_projections: Vec<super::associated::WrittenProjection>,
     pub(super) checked_projections: usize,
@@ -269,7 +269,7 @@ impl TypeChecker {
             unnameable_types: Diagnostics::default(),
             closure_types: Vec::new(),
             type_texts: super::type_text::TypeTexts::default(),
-            infer_operands: Vec::new(),
+            holds_infer_forms: false,
             type_arities: FxHashMap::default(),
             written_projections: Vec::new(),
             checked_projections: 0,
@@ -784,8 +784,22 @@ impl TypeChecker {
     pub(super) fn discharge_obligations(&mut self, pass: ObligationPass) {
         self.recheck_deferred_equalities();
         for obligation in self.unifier.take_obligations() {
-            self.discharge(obligation, pass);
+            self.with_operand_mark(obligation.inside_operand, |checker| {
+                checker.discharge(obligation, pass)
+            });
         }
+    }
+
+    pub(super) fn with_operand_mark<T>(
+        &mut self,
+        inside_operand: bool,
+        work: impl FnOnce(&mut Self) -> T,
+    ) -> T {
+        let outer = self.unifier.inside_operand();
+        self.unifier.set_inside_operand(inside_operand);
+        let result = work(self);
+        self.unifier.set_inside_operand(outer);
+        result
     }
 
     fn discharge(&mut self, obligation: Obligation, pass: ObligationPass) {
@@ -832,6 +846,7 @@ impl TypeChecker {
                     bound,
                     implementor: implementor.clone(),
                     span,
+                    inside_operand: self.unifier.inside_operand(),
                 },
                 pass,
             ),
@@ -859,6 +874,7 @@ impl TypeChecker {
                 bound: requirement.bound,
                 implementor: requirement.implementor,
                 span,
+                inside_operand: self.unifier.inside_operand(),
             };
             self.discharge(required, pass);
         }
@@ -871,17 +887,11 @@ impl TypeChecker {
     fn leave_unresolved(&mut self, obligation: Obligation, pass: ObligationPass) {
         match pass {
             ObligationPass::Deferring => self.unifier.defer(obligation),
-            ObligationPass::Final if self.is_inside_infer_operand(obligation.span) => {}
+            ObligationPass::Final if obligation.inside_operand => {}
             ObligationPass::Final => {
                 self.defer_missing_annotation(TypeProblems::cannot_infer(obligation.span))
             }
         }
-    }
-
-    fn is_inside_infer_operand(&self, span: Span) -> bool {
-        self.infer_operands
-            .iter()
-            .any(|operand| operand.contains(span))
     }
 
     fn check_component(&mut self, members: &[&Definition]) -> Vec<(BindingId, TypedDefinition)> {

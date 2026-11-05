@@ -1,0 +1,6 @@
+(defmacro probe ()
+  (template (do
+              (println (infer 1))
+              (str (some (vec))))))
+
+(defn main () (probe))
