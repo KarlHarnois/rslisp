@@ -5,4 +5,4 @@ input_file: tests/fixtures/expand/header_shape_prelude_docstring_forms.rslisp
 ---
 (def syntax-docstring-forms (quote (defn)))
 (def struct-docstring-forms (quote (defstruct)))
-(def macros-docstring-forms (quote (defrule defmacro)))
+(def macros-docstring-forms (quote (document defrule defmacro)))

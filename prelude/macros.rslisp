@@ -600,10 +600,22 @@
 (def unexpected-header-shape-marker-title
   "unexpected form after a header shape")
 
-(defmacro document (name text)
-  "Documents a definition that no definer documents, such as a `def` of a macro."
-  (do (note-docstring (value-doc-key name) text)
+(defmacro document (header text)
+  "Documents a term that no definer documents, such as a `def` of a macro.
+
+  The header is the term's call form, as in `(document (twice x) text)`, or
+  the bare name of a term that takes no arguments. The page shows the header
+  as written, and the header's head names the term."
+  (let key (value-doc-key (header-name header)))
+  (do (add-module-note (quote docstrings)
+                       (concat key (list header text)))
       (quote (do))))
+
+(def header-name
+  (fn (header)
+    (if (list? header) (first header) header)))
+
+(header-shape (document header) :docstring)
 
 (header-shape (defrule name) :docstring)
 
@@ -650,9 +662,15 @@
 (def value-notes
   (fn (term)
     (map-list (fn (note)
-                (with-call-header (written-header term) note))
+                (value-page term (drop 2 note)))
               (docstring-notes (definition-symbol term "doc")
                                (value-doc-key term)))))
+
+(def value-page
+  (fn (term page)
+    (if (empty? (rest page))
+        (prepend (written-header term) page)
+        page)))
 
 (def with-call-header
   (fn (header note)

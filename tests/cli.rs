@@ -1240,6 +1240,16 @@ fn doc_prints_the_page_of_a_prelude_term() {
 }
 
 #[test]
+fn doc_prints_the_header_that_documents_a_prelude_term() {
+    let sandbox = Sandbox::new("doc_document_header");
+    let doc = sandbox.compiler(&["doc", "str"]);
+    assert_eq!(
+        doc.assert_exit_code(0).stdout(),
+        "(str part ...)\n\nBuilds a `string` from its parts.\n\nA string literal part is literal text, and any other part prints with\n`display`. `(str x)` emits `x.to_string()`, and `str` as a value is that\none-part function, so `(map (iter years) str)` turns each year into a\n`string`.\n"
+    );
+}
+
+#[test]
 fn doc_takes_a_term_that_starts_with_a_hyphen() {
     let sandbox = Sandbox::new("doc_hyphen");
     let doc = sandbox.compiler(&["doc", "->"]);

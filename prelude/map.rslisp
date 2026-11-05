@@ -106,9 +106,8 @@
         (prepend (quote map-at)
                  (prepend (quote get) (rest form))))))
 
-(document
-  get
-  "Reads a slice by index or a map by key: `(get items index)` or `(get map key)`.
+(document (get collection key)
+  "Reads a slice by index or a map by key.
 
   It returns an `option` of a borrow, and `none` for a missing index or
   key. `get` as a value is the slice reader.")

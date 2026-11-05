@@ -460,8 +460,8 @@
         (quote display-string)
         (string-form (rest form)))))
 
-(document str
-          "Builds a `string` from its parts: `(str part ...)`.
+(document (str part ...)
+  "Builds a `string` from its parts.
 
   A string literal part is literal text, and any other part prints with
   `display`. `(str x)` emits `x.to_string()`, and `str` as a value is that

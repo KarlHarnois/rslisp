@@ -57,8 +57,8 @@
         (prepend (quote map-at)
                  (prepend (quote push) (rest form))))))
 
-(document push!
-          "Adds an item to a vector or a string: `(push! target item)`.
+(document (push! target item)
+  "Adds an item to a vector or a string.
 
   A vector takes an element, and a `string` takes a `char` or a
   `(ref str)`. `push!` as a value is the vector push.")
