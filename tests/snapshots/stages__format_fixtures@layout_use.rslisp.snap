@@ -11,12 +11,12 @@ input_file: tests/fixtures/format/layout_use.rslisp
      another-name)
 
 ---
-(use warehouse/model item entry valued value-cents category dollars widen)
+(use warehouse/model category dollars entry item value-cents valued widen)
 (use short a b)
-(use another/module first-name second-name third-name fourth-name fifth-name)
+(use another/module fifth-name first-name fourth-name second-name third-name)
 
-(export alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi
-        omicron pi rho sigma tau upsilon)
+(export alpha beta delta epsilon eta gamma iota kappa lambda mu nu omicron pi
+        rho sigma tau theta upsilon xi zeta)
 
 (use deeply/nested/module/path with-a-name ; why this name
                                another-name)

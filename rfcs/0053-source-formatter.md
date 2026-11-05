@@ -529,6 +529,8 @@ The project owner decided on 2026-11-04 to replace the 40-column one-line limit 
 
 The project owner decided on 2026-11-04 that a `use` or `export` that does not fit on one line keeps its module path, for a `use`, and its first name on the first line, then fills the remaining names onto each line up to the 80-column width, with each later line starting under the first name. This replaces layout rule 4's one name per line and its use for `export` through rule 5.
 
+The project owner decided on 2026-11-04 that the formatter sorts the names inside each `use` list, after its module path, and inside each `export` list, in byte order of their text, so `(use prelude/macros header case doc-page)` becomes `(use prelude/macros case doc-page header)`. A sorted list puts each name where its spelling places it, so a reader finds a name without scanning the list, and two authors who import the same names write the same list. The order of the `use` and `export` forms themselves stays as written, as Later work says. A list in which a name has a comment before or after it, or a blank line before it, stays in its written order, because a comment belongs to the name beside it and sorting would move the names away from it. The meaning check compares the names of a `use` or `export` as a set, so a sorted list keeps the meaning.
+
 ### Prototype
 
 After the decisions above, a prototype formatter applied every layout rule to the repository. It reads through a lossless syntax tree, collects shapes from the kernel, the prelude and the modules a file reaches through `use`, searches for the layout with the fewest lines, and runs the meaning and stability checks on each file. It lives outside the repository and is not part of this RFC.

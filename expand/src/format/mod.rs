@@ -1,5 +1,6 @@
 mod block;
 mod document;
+mod import_order;
 mod layout;
 mod list_plan;
 mod meaning;
@@ -15,6 +16,7 @@ use crate::diagnostic::Diagnostics;
 use crate::reader::{Form, Reader};
 use crate::source::{SourceFile, SourceMap};
 use document::DocumentPrinter;
+use import_order::ImportSorter;
 use layout::LayoutEngine;
 use meaning::MeaningComparison;
 use shape_reader::ShapeReader;
@@ -57,8 +59,10 @@ impl SourceFormatter {
 
 impl<'s> FormattedText<'s> {
     fn lay_out(shapes: &'s ShapeCatalog, text: &str) -> Self {
+        let mut tree = SyntaxTree::build(text);
+        ImportSorter::sort(&mut tree);
         let mut engine = LayoutEngine::new(shapes);
-        let text = DocumentPrinter::new(&mut engine).print(&SyntaxTree::build(text));
+        let text = DocumentPrinter::new(&mut engine).print(&tree);
         Self { shapes, text }
     }
 
@@ -193,6 +197,73 @@ mod tests {
         let fixture = CheckFixture::with_docstring_shape();
         assert!(matches!(
             fixture.verify("(f (g a ; c1\n) ; c2\n b)", "(f (g a) ; c1 ; c2\n   b)\n"),
+            Err(FormatFailure::ChangedMeaning)
+        ));
+    }
+
+    #[test]
+    fn sorted_import_names_keep_the_meaning() {
+        let fixture = CheckFixture::with_docstring_shape();
+        assert!(
+            fixture
+                .verify("(use m b a)\n(export d c)", "(use m a b)\n\n(export c d)\n")
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn an_import_list_with_another_name_changes_the_meaning() {
+        let fixture = CheckFixture::with_docstring_shape();
+        assert!(matches!(
+            fixture.verify("(use m b a)", "(use m a c)\n"),
+            Err(FormatFailure::ChangedMeaning)
+        ));
+    }
+
+    #[test]
+    fn an_import_from_another_module_changes_the_meaning() {
+        let fixture = CheckFixture::with_docstring_shape();
+        assert!(matches!(
+            fixture.verify("(use m b a)", "(use n a b)\n"),
+            Err(FormatFailure::ChangedMeaning)
+        ));
+    }
+
+    #[test]
+    fn a_reordered_call_changes_the_meaning() {
+        let fixture = CheckFixture::with_docstring_shape();
+        assert!(matches!(
+            fixture.verify("(f b a)", "(f a b)\n"),
+            Err(FormatFailure::ChangedMeaning)
+        ));
+    }
+
+    #[test]
+    fn a_list_that_loses_a_form_changes_the_meaning() {
+        let fixture = CheckFixture::with_docstring_shape();
+        assert!(matches!(
+            fixture.verify("(f a b)", "(f a)\n"),
+            Err(FormatFailure::ChangedMeaning)
+        ));
+    }
+
+    #[test]
+    fn a_reordered_quoted_import_changes_the_meaning() {
+        let fixture = CheckFixture::with_docstring_shape();
+        assert!(matches!(
+            fixture.verify(
+                "(def x (quote (use m b a)))",
+                "(def x (quote (use m a b)))\n"
+            ),
+            Err(FormatFailure::ChangedMeaning)
+        ));
+    }
+
+    #[test]
+    fn an_import_that_loses_a_name_changes_the_meaning() {
+        let fixture = CheckFixture::with_docstring_shape();
+        assert!(matches!(
+            fixture.verify("(use m a b)", "(use m a)\n"),
             Err(FormatFailure::ChangedMeaning)
         ));
     }
