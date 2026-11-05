@@ -1,0 +1,5 @@
+(use prelude/macros document)
+
+(document (if test then) "User's if.")
+
+(def page (doc-page if))
