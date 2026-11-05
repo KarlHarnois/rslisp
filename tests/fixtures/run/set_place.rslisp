@@ -25,7 +25,8 @@
   (let total 0)
   (let add!
     (fn (n)
-      (do (set! total (if (> n total) n total)))))
+      (do
+        (set! total (if (> n total) n total)))))
   (add! 1)
   (add! 2)
   (println total))

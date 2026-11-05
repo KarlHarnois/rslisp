@@ -4,149 +4,149 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/rust_clause_errors.rslisp
 ---
 error[L0246]: a `rust` with clauses takes one type parameter
- --> expand/rust_clause_errors.rslisp:3:9
+ --> expand/rust_clause_errors.rslisp:3:5
   |
-3 |         (fn (i64) i64)
-  |         ^^^^^^^^^^^^^^ this type binds 0 type parameters
+3 |     (fn (i64) i64)
+  |     ^^^^^^^^^^^^^^ this type binds 0 type parameters
   |
   = help: bind one parameter, as in `(where ((s source)) (fn ((ref s)) string))`
 
 error[L0246]: a `rust` with clauses takes one type parameter
- --> expand/rust_clause_errors.rslisp:8:9
+ --> expand/rust_clause_errors.rslisp:8:5
   |
-8 | /         (where ((a sequence) (b sequence))
-9 | |                (fn ((ref a) (ref b)) usize))
-  | |____________________________________________^ this type binds 2 type parameters
+8 | /     (where ((a sequence) (b sequence))
+9 | |       (fn ((ref a) (ref b)) usize))
+  | |___________________________________^ this type binds 2 type parameters
   |
   = help: bind one parameter, as in `(where ((s source)) (fn ((ref s)) string))`
 
 error[L0210]: malformed `rust`
-  --> expand/rust_clause_errors.rslisp:16:9
+  --> expand/rust_clause_errors.rslisp:16:5
    |
-16 |         str))
-   |         ^^^ this does not fit the shape of `rust`
+16 |     str))
+   |     ^^^ this does not fit the shape of `rust`
    |
    = help: write it as `(rust "template" type (type "template") ...)`
 
 error[L0210]: malformed `rust`
-  --> expand/rust_clause_errors.rslisp:22:14
+  --> expand/rust_clause_errors.rslisp:22:10
    |
-22 |         (str 5)))
-   |              ^ this does not fit the shape of `rust`
+22 |     (str 5)))
+   |          ^ this does not fit the shape of `rust`
    |
    = help: write it as `(rust "template" type (type "template") ...)`
 
 error[L0218]: this Rust template has a malformed placeholder
-  --> expand/rust_clause_errors.rslisp:28:14
+  --> expand/rust_clause_errors.rslisp:28:10
    |
-28 |         (str "count({0")))
-   |              ^^^^^^^^^^ a placeholder is `{`, a number and `}`
+28 |     (str "count({0")))
+   |          ^^^^^^^^^^ a placeholder is `{`, a number and `}`
    |
    = help: write a literal brace as `{{` or `}}`
 
 error[L0221]: `{t}` names no type parameter
-  --> expand/rust_clause_errors.rslisp:34:14
+  --> expand/rust_clause_errors.rslisp:34:10
    |
-34 |         (str "count::<{t}>({0})")))
-   |              ^^^^^^^^^^^^^^^^^^^ this template's `where` has no such type parameter
+34 |     (str "count::<{t}>({0})")))
+   |          ^^^^^^^^^^^^^^^^^^^ this template's `where` has no such type parameter
    |
    = help: the type parameters are `s`
 
 error[L0247]: a `rust` clause must pass its arguments as its template does
-  --> expand/rust_clause_errors.rslisp:40:14
+  --> expand/rust_clause_errors.rslisp:40:10
    |
 37 |   (rust "measure({0})"
    |         -------------- unlike the template's `{0}` here
 ...
-40 |         (str "count({&0})")))
-   |              ^^^^^^^^^^^^^ this clause borrows `{0}` differently
+40 |     (str "count({&0})")))
+   |          ^^^^^^^^^^^^^ this clause borrows `{0}` differently
    |
    = help: write each placeholder as the template writes it, with the same borrow, receiver, index or call
 
 error[L0247]: a `rust` clause must pass its arguments as its template does
-  --> expand/rust_clause_errors.rslisp:46:14
+  --> expand/rust_clause_errors.rslisp:46:10
    |
 43 |   (rust "measure({0})"
    |         -------------- unlike the template's `{0}` here
 ...
-46 |         (str "{0}.count()")))
-   |              ^^^^^^^^^^^^^ this clause differs in whether `{0}` receives a method call
+46 |     (str "{0}.count()")))
+   |          ^^^^^^^^^^^^^ this clause differs in whether `{0}` receives a method call
    |
    = help: write each placeholder as the template writes it, with the same borrow, receiver, index or call
 
 error[L0247]: a `rust` clause must pass its arguments as its template does
-  --> expand/rust_clause_errors.rslisp:52:14
+  --> expand/rust_clause_errors.rslisp:52:10
    |
 49 |   (rust "measure({0})"
    |         -------------- unlike the template's `{1}` here
 ...
-52 |         (str "count({0}, {1})")))
-   |              ^^^^^^^^^^^^^^^^^ this clause differs in whether it uses `{1}`
+52 |     (str "count({0}, {1})")))
+   |          ^^^^^^^^^^^^^^^^^ this clause differs in whether it uses `{1}`
    |
    = help: write each placeholder as the template writes it, with the same borrow, receiver, index or call
 
 error[L0247]: a `rust` clause must pass its arguments as its template does
-  --> expand/rust_clause_errors.rslisp:57:14
+  --> expand/rust_clause_errors.rslisp:57:10
    |
 55 |   (rust "{0} + 1"
    |         --------- unlike the template's `{0}` here
-56 |         (where ((n number)) (fn (n) n))
-57 |         (i64 "add({0}, 1)")))
-   |              ^^^^^^^^^^^^^ this clause differs in whether `{0}` is an operator's operand
+56 |     (where ((n number)) (fn (n) n))
+57 |     (i64 "add({0}, 1)")))
+   |          ^^^^^^^^^^^^^ this clause differs in whether `{0}` is an operator's operand
    |
    = help: write each placeholder as the template writes it, with the same borrow, receiver, index or call
 
 error[L0247]: a `rust` clause must pass its arguments as its template does
-  --> expand/rust_clause_errors.rslisp:63:14
+  --> expand/rust_clause_errors.rslisp:63:10
    |
 60 |   (rust "{0}.len"
    |         --------- the template calls no function
 ...
-63 |         (str "{0}.len()")))
-   |              ^^^^^^^^^^^ this clause calls a function
+63 |     (str "{0}.len()")))
+   |          ^^^^^^^^^^^ this clause calls a function
    |
    = help: write each placeholder as the template writes it, with the same borrow, receiver, index or call
 
 error[L0247]: a `rust` clause must pass its arguments as its template does
-  --> expand/rust_clause_errors.rslisp:69:14
+  --> expand/rust_clause_errors.rslisp:69:10
    |
 66 |   (rust "{0}.len()"
    |         ----------- the template calls a function
 ...
-69 |         (str "{0}.len")))
-   |              ^^^^^^^^^ this clause calls no function
+69 |     (str "{0}.len")))
+   |          ^^^^^^^^^ this clause calls no function
    |
    = help: write each placeholder as the template writes it, with the same borrow, receiver, index or call
 
 error[L0247]: a `rust` clause must pass its arguments as its template does
-  --> expand/rust_clause_errors.rslisp:75:14
+  --> expand/rust_clause_errors.rslisp:75:10
    |
 72 |   (rust "measure({0})"
    |         -------------- unlike the template's `{0}` here
 ...
-75 |         (str "count({0}[0])")))
-   |              ^^^^^^^^^^^^^^^ this clause differs in whether it indexes `{0}`
+75 |     (str "count({0}[0])")))
+   |          ^^^^^^^^^^^^^^^ this clause differs in whether it indexes `{0}`
    |
    = help: write each placeholder as the template writes it, with the same borrow, receiver, index or call
 
 error[L0247]: a `rust` clause must pass its arguments as its template does
-  --> expand/rust_clause_errors.rslisp:81:14
+  --> expand/rust_clause_errors.rslisp:81:10
    |
 78 |   (rust "measure({0})"
    |         -------------- unlike the template's `{0}` here
 ...
-81 |         (str "count(*{0})")))
-   |              ^^^^^^^^^^^^^ this clause differs in whether it dereferences `{0}`
+81 |     (str "count(*{0})")))
+   |          ^^^^^^^^^^^^^ this clause differs in whether it dereferences `{0}`
    |
    = help: write each placeholder as the template writes it, with the same borrow, receiver, index or call
 
 error[L0247]: a `rust` clause must pass its arguments as its template does
-  --> expand/rust_clause_errors.rslisp:87:14
+  --> expand/rust_clause_errors.rslisp:87:10
    |
 84 |   (rust "measure({0})"
    |         -------------- unlike the template's `{0}` here
 ...
-87 |         (str "count({0}(1))")))
-   |              ^^^^^^^^^^^^^^^ this clause differs in whether it calls `{0}`
+87 |     (str "count({0}(1))")))
+   |          ^^^^^^^^^^^^^^^ this clause differs in whether it calls `{0}`
    |
    = help: write each placeholder as the template writes it, with the same borrow, receiver, index or call

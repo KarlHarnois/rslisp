@@ -1,4 +1,5 @@
-(use code list string-lines string-trim-start string-length string-drop)
+(use code list string-drop string-length string-lines
+          string-trim-start)
 
 (defmacro show-lines (form)
   (list (quote quote) (string-lines "first\n  second\n")))

@@ -38,7 +38,7 @@
 
 (def write-listed
   (rust "write!({0}, \"listed\")"
-        (fn ((mut octal-out)) octal-result)))
+    (fn ((mut octal-out)) octal-result)))
 
 (impl octal listed
   (fmt (value out) (write-listed out)))
@@ -53,7 +53,7 @@
 
 (def write-q
   (rust "write!({0}, \"q\")"
-        (fn ((mut octal-out)) octal-result)))
+    (fn ((mut octal-out)) octal-result)))
 
 (impl octal q
   (fmt (value out) (write-q out)))

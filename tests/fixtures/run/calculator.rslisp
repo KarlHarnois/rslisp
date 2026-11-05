@@ -9,9 +9,9 @@
 (defn calculate (source)
   (let outcome (tokenize source))
   (if (ok? outcome)
-      (report (unwrap-ok outcome))
-      (println (str "error: "
-                    (unwrap-err (map-ok outcome (fn (tokens) (do))))))))
+    (report (unwrap-ok outcome))
+    (println (str "error: "
+                  (unwrap-err (map-ok outcome (fn (tokens) (do))))))))
 
 (defn report (tokens)
   (for-each (iter tokens)

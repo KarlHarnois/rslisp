@@ -1,14 +1,14 @@
-(use many_modules/layer_11_module_1 layer-11-module-1-score
-                                    layer-11-module-1-reading)
+(use many_modules/layer_11_module_1 layer-11-module-1-reading
+                                    layer-11-module-1-score)
 
-(use many_modules/layer_5_module_3 layer-5-module-3-score
-                                   layer-5-module-3-reading)
+(use many_modules/layer_5_module_3 layer-5-module-3-reading
+                                   layer-5-module-3-score)
 
-(use many_modules/layer_9_module_5 layer-9-module-5-score
-                                   layer-9-module-5-reading)
+(use many_modules/layer_9_module_5 layer-9-module-5-reading
+                                   layer-9-module-5-score)
 
-(export layer-12-module-1-score layer-12-module-1-reading
-        layer-12-module-1-label)
+(export layer-12-module-1-label layer-12-module-1-reading
+        layer-12-module-1-score)
 
 (defstruct layer-12-module-1-reading
   :site str

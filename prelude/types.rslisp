@@ -1,4 +1,5 @@
-(export vec option result iterator slice sequence box sorted-map hash-map)
+(export box hash-map iterator option result sequence slice
+        sorted-map vec)
 
 (rust-type (vec item) "Vec<{0}>")
 
@@ -12,7 +13,7 @@
 
 (def box
   (rust "Box::new({0})"
-        (where (a) (fn (a) (box a)))))
+    (where (a) (fn (a) (box a)))))
 
 (enum (option value)
   (rust "Option" bare)
@@ -29,8 +30,7 @@
 (rust-type (slice item) "[{0}]")
 
 (rust-trait sequence "crate::rt::Sequence"
-  str
-  string
+  str string
   (where ((item sequence)) (ref item))
   (where (item) (vec item))
   (where (item) (slice item))

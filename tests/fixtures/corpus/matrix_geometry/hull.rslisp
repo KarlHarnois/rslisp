@@ -1,4 +1,4 @@
-(use matrix_geometry/shapes point cross)
+(use matrix_geometry/shapes cross point)
 
 (export convex-hull)
 
@@ -38,10 +38,11 @@
 
 (defn push-turning (chain p)
   (if (turns-clockwise? (ref chain) p)
-      (do (let trimmed chain)
-          (pop! trimmed)
-          (push-turning trimmed p))
-      (do (let growing chain) (push! growing p) growing)))
+    (do
+      (let trimmed chain)
+      (pop! trimmed)
+      (push-turning trimmed p))
+    (do (let growing chain) (push! growing p) growing)))
 
 (type turns-clockwise?
   (fn ((ref (vec point)) point) bool))

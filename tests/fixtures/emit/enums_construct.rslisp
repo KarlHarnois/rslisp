@@ -7,13 +7,11 @@
   point)
 
 (def area
-  (rust
-    "match {0} {{ Shape::Circle(radius) => *radius, Shape::Rect(width, height) => *width * *height, Shape::Labeled {{ text, size }} => text.len() as f64 * *size, Shape::Point => 0.0 }}"
+  (rust "match {0} {{ Shape::Circle(radius) => *radius, Shape::Rect(width, height) => *width * *height, Shape::Labeled {{ text, size }} => text.len() as f64 * *size, Shape::Point => 0.0 }}"
     (fn ((ref shape)) f64)))
 
 (def pair-value
-  (rust
-    "match {0} {{ PairOf::Both(left, right) => *left + *right, PairOf::Neither => 0 }}"
+  (rust "match {0} {{ PairOf::Both(left, right) => *left + *right, PairOf::Neither => 0 }}"
     (fn ((ref (pair-of i64))) i64)))
 
 (defn make-point () shape/point)

@@ -3,8 +3,7 @@
 (defrule my-defn
   ((n p b ...)
    (defn n p
-     b
-     ...)))
+     b ...)))
 
 (defrule my-public-defn
   ((n p b ...) (my-defn n p b ...)))

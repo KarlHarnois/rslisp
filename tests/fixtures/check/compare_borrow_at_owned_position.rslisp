@@ -1,6 +1,6 @@
 (def same-owned?
   (rust "{&0} == std::convert::identity({1})"
-        (where ((a partial-eq)) (fn (a a) bool))))
+    (where ((a partial-eq)) (fn (a a) bool))))
 
 (defn main ()
   (let model (str "Leaf"))

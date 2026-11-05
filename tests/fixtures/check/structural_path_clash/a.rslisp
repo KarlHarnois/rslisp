@@ -17,4 +17,4 @@
 
 (def show-octal
   (rust "println!(\"{{:o}}\", {&0})"
-        (where ((a octal)) (fn ((ref a)) unit))))
+    (where ((a octal)) (fn ((ref a)) unit))))

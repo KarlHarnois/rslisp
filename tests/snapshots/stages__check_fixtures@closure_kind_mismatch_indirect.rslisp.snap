@@ -15,8 +15,8 @@ error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
  --> check/closure_kind_mismatch_indirect.rslisp:7:8
   |
 7 | /        (if true
-8 | |            (fn (ignored) other)
-9 | |            (fn (ignored) other))))
-  | |________________________________^ this closure is stronger than the parameter accepts
+8 | |          (fn (ignored) other)
+9 | |          (fn (ignored) other))))
+  | |______________________________^ this closure is stronger than the parameter accepts
   |
   = help: clone the closure's captures, or borrow them instead

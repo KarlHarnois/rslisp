@@ -2,12 +2,12 @@
 
 (def equal-with
   (rust "{&0} == {&1}"
-        (where ((a (comparable b)) b)
-               (fn (a b) bool))))
+    (where ((a (comparable b)) b)
+      (fn (a b) bool))))
 
 (type differ?
   (where ((a (comparable b)) b)
-         (fn (a b) bool)))
+    (fn (a b) bool)))
 
 (defn differ? (a b)
   (not (equal-with a b)))

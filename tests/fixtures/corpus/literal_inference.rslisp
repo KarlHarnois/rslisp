@@ -202,8 +202,8 @@
 
 (defn byte-link-3 (x)
   (if (> x 0)
-      (byte-link-4 x)
-      (byte-link-4 (+ x 2))))
+    (byte-link-4 x)
+    (byte-link-4 (+ x 2))))
 
 (defn byte-link-4 (x)
   (byte-link-5 (+ x 0)))
@@ -215,8 +215,8 @@
 
 (defn byte-link-6 (x)
   (if (> x 0)
-      (byte-link-7 x)
-      (byte-link-7 (+ x 2))))
+    (byte-link-7 x)
+    (byte-link-7 (+ x 2))))
 
 (defn byte-link-7 (x)
   (byte-link-8 (+ x 0)))
@@ -228,8 +228,8 @@
 
 (defn byte-link-9 (x)
   (if (> x 0)
-      (byte-link-10 x)
-      (byte-link-10 (+ x 2))))
+    (byte-link-10 x)
+    (byte-link-10 (+ x 2))))
 
 (defn byte-link-10 (x)
   (byte-link-11 (+ x 0)))
@@ -241,8 +241,8 @@
 
 (defn byte-link-12 (x)
   (if (> x 0)
-      (byte-link-13 x)
-      (byte-link-13 (+ x 2))))
+    (byte-link-13 x)
+    (byte-link-13 (+ x 2))))
 
 (defn byte-link-13 (x)
   (byte-link-14 (+ x 0)))
@@ -254,8 +254,8 @@
 
 (defn byte-link-15 (x)
   (if (> x 0)
-      (byte-link-16 x)
-      (byte-link-16 (+ x 2))))
+    (byte-link-16 x)
+    (byte-link-16 (+ x 2))))
 
 (defn byte-link-16 (x)
   (byte-link-17 (+ x 0)))
@@ -267,8 +267,8 @@
 
 (defn byte-link-18 (x)
   (if (> x 0)
-      (byte-link-19 x)
-      (byte-link-19 (+ x 2))))
+    (byte-link-19 x)
+    (byte-link-19 (+ x 2))))
 
 (defn byte-link-19 (x)
   (byte-link-20 (+ x 0)))
@@ -280,8 +280,8 @@
 
 (defn byte-link-21 (x)
   (if (> x 0)
-      (byte-link-22 x)
-      (byte-link-22 (+ x 2))))
+    (byte-link-22 x)
+    (byte-link-22 (+ x 2))))
 
 (defn byte-link-22 (x)
   (byte-link-23 (+ x 0)))
@@ -293,8 +293,8 @@
 
 (defn byte-link-24 (x)
   (if (> x 0)
-      (byte-link-25 x)
-      (byte-link-25 (+ x 2))))
+    (byte-link-25 x)
+    (byte-link-25 (+ x 2))))
 
 (defn byte-link-25 (x)
   (byte-link-26 (+ x 0)))
@@ -306,8 +306,8 @@
 
 (defn byte-link-27 (x)
   (if (> x 0)
-      (byte-link-28 x)
-      (byte-link-28 (+ x 2))))
+    (byte-link-28 x)
+    (byte-link-28 (+ x 2))))
 
 (defn byte-link-28 (x)
   (byte-link-29 (+ x 0)))
@@ -319,8 +319,8 @@
 
 (defn byte-link-30 (x)
   (if (> x 0)
-      (byte-link-31 x)
-      (byte-link-31 (+ x 2))))
+    (byte-link-31 x)
+    (byte-link-31 (+ x 2))))
 
 (defn byte-link-31 (x)
   (byte-link-32 (+ x 0)))
@@ -332,8 +332,8 @@
 
 (defn byte-link-33 (x)
   (if (> x 0)
-      (byte-link-34 x)
-      (byte-link-34 (+ x 2))))
+    (byte-link-34 x)
+    (byte-link-34 (+ x 2))))
 
 (defn byte-link-34 (x)
   (byte-link-35 (+ x 0)))
@@ -345,8 +345,8 @@
 
 (defn byte-link-36 (x)
   (if (> x 0)
-      (byte-link-37 x)
-      (byte-link-37 (+ x 2))))
+    (byte-link-37 x)
+    (byte-link-37 (+ x 2))))
 
 (defn byte-link-37 (x)
   (byte-link-38 (+ x 0)))
@@ -358,8 +358,8 @@
 
 (defn byte-link-39 (x)
   (if (> x 0)
-      (byte-link-40 x)
-      (byte-link-40 (+ x 2))))
+    (byte-link-40 x)
+    (byte-link-40 (+ x 2))))
 
 (defn byte-link-40 (x)
   (byte-link-41 (+ x 0)))
@@ -371,8 +371,8 @@
 
 (defn byte-link-42 (x)
   (if (> x 0)
-      (byte-link-43 x)
-      (byte-link-43 (+ x 2))))
+    (byte-link-43 x)
+    (byte-link-43 (+ x 2))))
 
 (defn byte-link-43 (x)
   (byte-link-44 (+ x 0)))
@@ -384,8 +384,8 @@
 
 (defn byte-link-45 (x)
   (if (> x 0)
-      (byte-link-46 x)
-      (byte-link-46 (+ x 2))))
+    (byte-link-46 x)
+    (byte-link-46 (+ x 2))))
 
 (defn byte-link-46 (x)
   (byte-link-47 (+ x 0)))
@@ -397,8 +397,8 @@
 
 (defn byte-link-48 (x)
   (if (> x 0)
-      (byte-link-49 x)
-      (byte-link-49 (+ x 2))))
+    (byte-link-49 x)
+    (byte-link-49 (+ x 2))))
 
 (defn byte-link-49 (x)
   (byte-link-50 (+ x 0)))
@@ -410,8 +410,8 @@
 
 (defn byte-link-51 (x)
   (if (> x 0)
-      (byte-link-52 x)
-      (byte-link-52 (+ x 2))))
+    (byte-link-52 x)
+    (byte-link-52 (+ x 2))))
 
 (defn byte-link-52 (x)
   (byte-link-53 (+ x 0)))
@@ -423,8 +423,8 @@
 
 (defn byte-link-54 (x)
   (if (> x 0)
-      (byte-link-55 x)
-      (byte-link-55 (+ x 2))))
+    (byte-link-55 x)
+    (byte-link-55 (+ x 2))))
 
 (defn byte-link-55 (x)
   (byte-link-56 (+ x 0)))
@@ -436,8 +436,8 @@
 
 (defn byte-link-57 (x)
   (if (> x 0)
-      (byte-link-58 x)
-      (byte-link-58 (+ x 2))))
+    (byte-link-58 x)
+    (byte-link-58 (+ x 2))))
 
 (defn byte-link-58 (x)
   (byte-link-59 (+ x 0)))
@@ -449,8 +449,8 @@
 
 (defn byte-link-60 (x)
   (if (> x 0)
-      (keep-byte x)
-      (keep-byte (+ x 2))))
+    (keep-byte x)
+    (keep-byte (+ x 2))))
 
 (defn byte-pin-1 () 2)
 
@@ -496,8 +496,8 @@
 
 (defn port-link-3 (x)
   (if (> x 0)
-      (port-link-4 x)
-      (port-link-4 (+ x 2))))
+    (port-link-4 x)
+    (port-link-4 (+ x 2))))
 
 (defn port-link-4 (x)
   (port-link-5 (+ x 0)))
@@ -509,8 +509,8 @@
 
 (defn port-link-6 (x)
   (if (> x 0)
-      (port-link-7 x)
-      (port-link-7 (+ x 2))))
+    (port-link-7 x)
+    (port-link-7 (+ x 2))))
 
 (defn port-link-7 (x)
   (port-link-8 (+ x 0)))
@@ -522,8 +522,8 @@
 
 (defn port-link-9 (x)
   (if (> x 0)
-      (port-link-10 x)
-      (port-link-10 (+ x 2))))
+    (port-link-10 x)
+    (port-link-10 (+ x 2))))
 
 (defn port-link-10 (x)
   (port-link-11 (+ x 0)))
@@ -535,8 +535,8 @@
 
 (defn port-link-12 (x)
   (if (> x 0)
-      (port-link-13 x)
-      (port-link-13 (+ x 2))))
+    (port-link-13 x)
+    (port-link-13 (+ x 2))))
 
 (defn port-link-13 (x)
   (port-link-14 (+ x 0)))
@@ -548,8 +548,8 @@
 
 (defn port-link-15 (x)
   (if (> x 0)
-      (port-link-16 x)
-      (port-link-16 (+ x 2))))
+    (port-link-16 x)
+    (port-link-16 (+ x 2))))
 
 (defn port-link-16 (x)
   (port-link-17 (+ x 0)))
@@ -561,8 +561,8 @@
 
 (defn port-link-18 (x)
   (if (> x 0)
-      (port-link-19 x)
-      (port-link-19 (+ x 2))))
+    (port-link-19 x)
+    (port-link-19 (+ x 2))))
 
 (defn port-link-19 (x)
   (port-link-20 (+ x 0)))
@@ -574,8 +574,8 @@
 
 (defn port-link-21 (x)
   (if (> x 0)
-      (port-link-22 x)
-      (port-link-22 (+ x 2))))
+    (port-link-22 x)
+    (port-link-22 (+ x 2))))
 
 (defn port-link-22 (x)
   (port-link-23 (+ x 0)))
@@ -587,8 +587,8 @@
 
 (defn port-link-24 (x)
   (if (> x 0)
-      (port-link-25 x)
-      (port-link-25 (+ x 2))))
+    (port-link-25 x)
+    (port-link-25 (+ x 2))))
 
 (defn port-link-25 (x)
   (port-link-26 (+ x 0)))
@@ -600,8 +600,8 @@
 
 (defn port-link-27 (x)
   (if (> x 0)
-      (port-link-28 x)
-      (port-link-28 (+ x 2))))
+    (port-link-28 x)
+    (port-link-28 (+ x 2))))
 
 (defn port-link-28 (x)
   (port-link-29 (+ x 0)))
@@ -613,8 +613,8 @@
 
 (defn port-link-30 (x)
   (if (> x 0)
-      (port-link-31 x)
-      (port-link-31 (+ x 2))))
+    (port-link-31 x)
+    (port-link-31 (+ x 2))))
 
 (defn port-link-31 (x)
   (port-link-32 (+ x 0)))
@@ -626,8 +626,8 @@
 
 (defn port-link-33 (x)
   (if (> x 0)
-      (port-link-34 x)
-      (port-link-34 (+ x 2))))
+    (port-link-34 x)
+    (port-link-34 (+ x 2))))
 
 (defn port-link-34 (x)
   (port-link-35 (+ x 0)))
@@ -639,8 +639,8 @@
 
 (defn port-link-36 (x)
   (if (> x 0)
-      (port-link-37 x)
-      (port-link-37 (+ x 2))))
+    (port-link-37 x)
+    (port-link-37 (+ x 2))))
 
 (defn port-link-37 (x)
   (port-link-38 (+ x 0)))
@@ -652,8 +652,8 @@
 
 (defn port-link-39 (x)
   (if (> x 0)
-      (port-link-40 x)
-      (port-link-40 (+ x 2))))
+    (port-link-40 x)
+    (port-link-40 (+ x 2))))
 
 (defn port-link-40 (x)
   (port-link-41 (+ x 0)))
@@ -665,8 +665,8 @@
 
 (defn port-link-42 (x)
   (if (> x 0)
-      (port-link-43 x)
-      (port-link-43 (+ x 2))))
+    (port-link-43 x)
+    (port-link-43 (+ x 2))))
 
 (defn port-link-43 (x)
   (port-link-44 (+ x 0)))
@@ -678,8 +678,8 @@
 
 (defn port-link-45 (x)
   (if (> x 0)
-      (port-link-46 x)
-      (port-link-46 (+ x 2))))
+    (port-link-46 x)
+    (port-link-46 (+ x 2))))
 
 (defn port-link-46 (x)
   (port-link-47 (+ x 0)))
@@ -691,8 +691,8 @@
 
 (defn port-link-48 (x)
   (if (> x 0)
-      (port-link-49 x)
-      (port-link-49 (+ x 2))))
+    (port-link-49 x)
+    (port-link-49 (+ x 2))))
 
 (defn port-link-49 (x)
   (port-link-50 (+ x 0)))
@@ -704,8 +704,8 @@
 
 (defn port-link-51 (x)
   (if (> x 0)
-      (port-link-52 x)
-      (port-link-52 (+ x 2))))
+    (port-link-52 x)
+    (port-link-52 (+ x 2))))
 
 (defn port-link-52 (x)
   (port-link-53 (+ x 0)))
@@ -717,8 +717,8 @@
 
 (defn port-link-54 (x)
   (if (> x 0)
-      (port-link-55 x)
-      (port-link-55 (+ x 2))))
+    (port-link-55 x)
+    (port-link-55 (+ x 2))))
 
 (defn port-link-55 (x)
   (port-link-56 (+ x 0)))
@@ -730,8 +730,8 @@
 
 (defn port-link-57 (x)
   (if (> x 0)
-      (port-link-58 x)
-      (port-link-58 (+ x 2))))
+    (port-link-58 x)
+    (port-link-58 (+ x 2))))
 
 (defn port-link-58 (x)
   (port-link-59 (+ x 0)))
@@ -743,8 +743,8 @@
 
 (defn port-link-60 (x)
   (if (> x 0)
-      (keep-port x)
-      (keep-port (+ x 2))))
+    (keep-port x)
+    (keep-port (+ x 2))))
 
 (defn port-pin-1 () 2)
 
@@ -790,8 +790,8 @@
 
 (defn count-link-3 (x)
   (if (> x 0)
-      (count-link-4 x)
-      (count-link-4 (+ x 2))))
+    (count-link-4 x)
+    (count-link-4 (+ x 2))))
 
 (defn count-link-4 (x)
   (count-link-5 (+ x 0)))
@@ -803,8 +803,8 @@
 
 (defn count-link-6 (x)
   (if (> x 0)
-      (count-link-7 x)
-      (count-link-7 (+ x 2))))
+    (count-link-7 x)
+    (count-link-7 (+ x 2))))
 
 (defn count-link-7 (x)
   (count-link-8 (+ x 0)))
@@ -816,8 +816,8 @@
 
 (defn count-link-9 (x)
   (if (> x 0)
-      (count-link-10 x)
-      (count-link-10 (+ x 2))))
+    (count-link-10 x)
+    (count-link-10 (+ x 2))))
 
 (defn count-link-10 (x)
   (count-link-11 (+ x 0)))
@@ -829,8 +829,8 @@
 
 (defn count-link-12 (x)
   (if (> x 0)
-      (count-link-13 x)
-      (count-link-13 (+ x 2))))
+    (count-link-13 x)
+    (count-link-13 (+ x 2))))
 
 (defn count-link-13 (x)
   (count-link-14 (+ x 0)))
@@ -842,8 +842,8 @@
 
 (defn count-link-15 (x)
   (if (> x 0)
-      (count-link-16 x)
-      (count-link-16 (+ x 2))))
+    (count-link-16 x)
+    (count-link-16 (+ x 2))))
 
 (defn count-link-16 (x)
   (count-link-17 (+ x 0)))
@@ -855,8 +855,8 @@
 
 (defn count-link-18 (x)
   (if (> x 0)
-      (count-link-19 x)
-      (count-link-19 (+ x 2))))
+    (count-link-19 x)
+    (count-link-19 (+ x 2))))
 
 (defn count-link-19 (x)
   (count-link-20 (+ x 0)))
@@ -868,8 +868,8 @@
 
 (defn count-link-21 (x)
   (if (> x 0)
-      (count-link-22 x)
-      (count-link-22 (+ x 2))))
+    (count-link-22 x)
+    (count-link-22 (+ x 2))))
 
 (defn count-link-22 (x)
   (count-link-23 (+ x 0)))
@@ -881,8 +881,8 @@
 
 (defn count-link-24 (x)
   (if (> x 0)
-      (count-link-25 x)
-      (count-link-25 (+ x 2))))
+    (count-link-25 x)
+    (count-link-25 (+ x 2))))
 
 (defn count-link-25 (x)
   (count-link-26 (+ x 0)))
@@ -894,8 +894,8 @@
 
 (defn count-link-27 (x)
   (if (> x 0)
-      (count-link-28 x)
-      (count-link-28 (+ x 2))))
+    (count-link-28 x)
+    (count-link-28 (+ x 2))))
 
 (defn count-link-28 (x)
   (count-link-29 (+ x 0)))
@@ -907,8 +907,8 @@
 
 (defn count-link-30 (x)
   (if (> x 0)
-      (count-link-31 x)
-      (count-link-31 (+ x 2))))
+    (count-link-31 x)
+    (count-link-31 (+ x 2))))
 
 (defn count-link-31 (x)
   (count-link-32 (+ x 0)))
@@ -920,8 +920,8 @@
 
 (defn count-link-33 (x)
   (if (> x 0)
-      (count-link-34 x)
-      (count-link-34 (+ x 2))))
+    (count-link-34 x)
+    (count-link-34 (+ x 2))))
 
 (defn count-link-34 (x)
   (count-link-35 (+ x 0)))
@@ -933,8 +933,8 @@
 
 (defn count-link-36 (x)
   (if (> x 0)
-      (count-link-37 x)
-      (count-link-37 (+ x 2))))
+    (count-link-37 x)
+    (count-link-37 (+ x 2))))
 
 (defn count-link-37 (x)
   (count-link-38 (+ x 0)))
@@ -946,8 +946,8 @@
 
 (defn count-link-39 (x)
   (if (> x 0)
-      (count-link-40 x)
-      (count-link-40 (+ x 2))))
+    (count-link-40 x)
+    (count-link-40 (+ x 2))))
 
 (defn count-link-40 (x)
   (count-link-41 (+ x 0)))
@@ -959,8 +959,8 @@
 
 (defn count-link-42 (x)
   (if (> x 0)
-      (count-link-43 x)
-      (count-link-43 (+ x 2))))
+    (count-link-43 x)
+    (count-link-43 (+ x 2))))
 
 (defn count-link-43 (x)
   (count-link-44 (+ x 0)))
@@ -972,8 +972,8 @@
 
 (defn count-link-45 (x)
   (if (> x 0)
-      (count-link-46 x)
-      (count-link-46 (+ x 2))))
+    (count-link-46 x)
+    (count-link-46 (+ x 2))))
 
 (defn count-link-46 (x)
   (count-link-47 (+ x 0)))
@@ -985,8 +985,8 @@
 
 (defn count-link-48 (x)
   (if (> x 0)
-      (count-link-49 x)
-      (count-link-49 (+ x 2))))
+    (count-link-49 x)
+    (count-link-49 (+ x 2))))
 
 (defn count-link-49 (x)
   (count-link-50 (+ x 0)))
@@ -998,8 +998,8 @@
 
 (defn count-link-51 (x)
   (if (> x 0)
-      (count-link-52 x)
-      (count-link-52 (+ x 2))))
+    (count-link-52 x)
+    (count-link-52 (+ x 2))))
 
 (defn count-link-52 (x)
   (count-link-53 (+ x 0)))
@@ -1011,8 +1011,8 @@
 
 (defn count-link-54 (x)
   (if (> x 0)
-      (count-link-55 x)
-      (count-link-55 (+ x 2))))
+    (count-link-55 x)
+    (count-link-55 (+ x 2))))
 
 (defn count-link-55 (x)
   (count-link-56 (+ x 0)))
@@ -1024,8 +1024,8 @@
 
 (defn count-link-57 (x)
   (if (> x 0)
-      (count-link-58 x)
-      (count-link-58 (+ x 2))))
+    (count-link-58 x)
+    (count-link-58 (+ x 2))))
 
 (defn count-link-58 (x)
   (count-link-59 (+ x 0)))
@@ -1037,8 +1037,8 @@
 
 (defn count-link-60 (x)
   (if (> x 0)
-      (keep-count x)
-      (keep-count (+ x 2))))
+    (keep-count x)
+    (keep-count (+ x 2))))
 
 (defn count-pin-1 () 2)
 
@@ -1084,8 +1084,8 @@
 
 (defn offset-link-3 (x)
   (if (> x 0)
-      (offset-link-4 x)
-      (offset-link-4 (+ x 2))))
+    (offset-link-4 x)
+    (offset-link-4 (+ x 2))))
 
 (defn offset-link-4 (x)
   (offset-link-5 (+ x 0)))
@@ -1097,8 +1097,8 @@
 
 (defn offset-link-6 (x)
   (if (> x 0)
-      (offset-link-7 x)
-      (offset-link-7 (+ x 2))))
+    (offset-link-7 x)
+    (offset-link-7 (+ x 2))))
 
 (defn offset-link-7 (x)
   (offset-link-8 (+ x 0)))
@@ -1110,8 +1110,8 @@
 
 (defn offset-link-9 (x)
   (if (> x 0)
-      (offset-link-10 x)
-      (offset-link-10 (+ x 2))))
+    (offset-link-10 x)
+    (offset-link-10 (+ x 2))))
 
 (defn offset-link-10 (x)
   (offset-link-11 (+ x 0)))
@@ -1123,8 +1123,8 @@
 
 (defn offset-link-12 (x)
   (if (> x 0)
-      (offset-link-13 x)
-      (offset-link-13 (+ x 2))))
+    (offset-link-13 x)
+    (offset-link-13 (+ x 2))))
 
 (defn offset-link-13 (x)
   (offset-link-14 (+ x 0)))
@@ -1136,8 +1136,8 @@
 
 (defn offset-link-15 (x)
   (if (> x 0)
-      (offset-link-16 x)
-      (offset-link-16 (+ x 2))))
+    (offset-link-16 x)
+    (offset-link-16 (+ x 2))))
 
 (defn offset-link-16 (x)
   (offset-link-17 (+ x 0)))
@@ -1149,8 +1149,8 @@
 
 (defn offset-link-18 (x)
   (if (> x 0)
-      (offset-link-19 x)
-      (offset-link-19 (+ x 2))))
+    (offset-link-19 x)
+    (offset-link-19 (+ x 2))))
 
 (defn offset-link-19 (x)
   (offset-link-20 (+ x 0)))
@@ -1162,8 +1162,8 @@
 
 (defn offset-link-21 (x)
   (if (> x 0)
-      (offset-link-22 x)
-      (offset-link-22 (+ x 2))))
+    (offset-link-22 x)
+    (offset-link-22 (+ x 2))))
 
 (defn offset-link-22 (x)
   (offset-link-23 (+ x 0)))
@@ -1175,8 +1175,8 @@
 
 (defn offset-link-24 (x)
   (if (> x 0)
-      (offset-link-25 x)
-      (offset-link-25 (+ x 2))))
+    (offset-link-25 x)
+    (offset-link-25 (+ x 2))))
 
 (defn offset-link-25 (x)
   (offset-link-26 (+ x 0)))
@@ -1188,8 +1188,8 @@
 
 (defn offset-link-27 (x)
   (if (> x 0)
-      (offset-link-28 x)
-      (offset-link-28 (+ x 2))))
+    (offset-link-28 x)
+    (offset-link-28 (+ x 2))))
 
 (defn offset-link-28 (x)
   (offset-link-29 (+ x 0)))
@@ -1201,8 +1201,8 @@
 
 (defn offset-link-30 (x)
   (if (> x 0)
-      (offset-link-31 x)
-      (offset-link-31 (+ x 2))))
+    (offset-link-31 x)
+    (offset-link-31 (+ x 2))))
 
 (defn offset-link-31 (x)
   (offset-link-32 (+ x 0)))
@@ -1214,8 +1214,8 @@
 
 (defn offset-link-33 (x)
   (if (> x 0)
-      (offset-link-34 x)
-      (offset-link-34 (+ x 2))))
+    (offset-link-34 x)
+    (offset-link-34 (+ x 2))))
 
 (defn offset-link-34 (x)
   (offset-link-35 (+ x 0)))
@@ -1227,8 +1227,8 @@
 
 (defn offset-link-36 (x)
   (if (> x 0)
-      (offset-link-37 x)
-      (offset-link-37 (+ x 2))))
+    (offset-link-37 x)
+    (offset-link-37 (+ x 2))))
 
 (defn offset-link-37 (x)
   (offset-link-38 (+ x 0)))
@@ -1240,8 +1240,8 @@
 
 (defn offset-link-39 (x)
   (if (> x 0)
-      (offset-link-40 x)
-      (offset-link-40 (+ x 2))))
+    (offset-link-40 x)
+    (offset-link-40 (+ x 2))))
 
 (defn offset-link-40 (x)
   (offset-link-41 (+ x 0)))
@@ -1253,8 +1253,8 @@
 
 (defn offset-link-42 (x)
   (if (> x 0)
-      (offset-link-43 x)
-      (offset-link-43 (+ x 2))))
+    (offset-link-43 x)
+    (offset-link-43 (+ x 2))))
 
 (defn offset-link-43 (x)
   (offset-link-44 (+ x 0)))
@@ -1266,8 +1266,8 @@
 
 (defn offset-link-45 (x)
   (if (> x 0)
-      (offset-link-46 x)
-      (offset-link-46 (+ x 2))))
+    (offset-link-46 x)
+    (offset-link-46 (+ x 2))))
 
 (defn offset-link-46 (x)
   (offset-link-47 (+ x 0)))
@@ -1279,8 +1279,8 @@
 
 (defn offset-link-48 (x)
   (if (> x 0)
-      (offset-link-49 x)
-      (offset-link-49 (+ x 2))))
+    (offset-link-49 x)
+    (offset-link-49 (+ x 2))))
 
 (defn offset-link-49 (x)
   (offset-link-50 (+ x 0)))
@@ -1292,8 +1292,8 @@
 
 (defn offset-link-51 (x)
   (if (> x 0)
-      (offset-link-52 x)
-      (offset-link-52 (+ x 2))))
+    (offset-link-52 x)
+    (offset-link-52 (+ x 2))))
 
 (defn offset-link-52 (x)
   (offset-link-53 (+ x 0)))
@@ -1305,8 +1305,8 @@
 
 (defn offset-link-54 (x)
   (if (> x 0)
-      (offset-link-55 x)
-      (offset-link-55 (+ x 2))))
+    (offset-link-55 x)
+    (offset-link-55 (+ x 2))))
 
 (defn offset-link-55 (x)
   (offset-link-56 (+ x 0)))
@@ -1318,8 +1318,8 @@
 
 (defn offset-link-57 (x)
   (if (> x 0)
-      (offset-link-58 x)
-      (offset-link-58 (+ x 2))))
+    (offset-link-58 x)
+    (offset-link-58 (+ x 2))))
 
 (defn offset-link-58 (x)
   (offset-link-59 (+ x 0)))
@@ -1331,8 +1331,8 @@
 
 (defn offset-link-60 (x)
   (if (> x 0)
-      (keep-offset x)
-      (keep-offset (+ x 2))))
+    (keep-offset x)
+    (keep-offset (+ x 2))))
 
 (defn offset-pin-1 () 2)
 
@@ -1378,8 +1378,8 @@
 
 (defn index-link-3 (x)
   (if (> x 0)
-      (index-link-4 x)
-      (index-link-4 (+ x 2))))
+    (index-link-4 x)
+    (index-link-4 (+ x 2))))
 
 (defn index-link-4 (x)
   (index-link-5 (+ x 0)))
@@ -1391,8 +1391,8 @@
 
 (defn index-link-6 (x)
   (if (> x 0)
-      (index-link-7 x)
-      (index-link-7 (+ x 2))))
+    (index-link-7 x)
+    (index-link-7 (+ x 2))))
 
 (defn index-link-7 (x)
   (index-link-8 (+ x 0)))
@@ -1404,8 +1404,8 @@
 
 (defn index-link-9 (x)
   (if (> x 0)
-      (index-link-10 x)
-      (index-link-10 (+ x 2))))
+    (index-link-10 x)
+    (index-link-10 (+ x 2))))
 
 (defn index-link-10 (x)
   (index-link-11 (+ x 0)))
@@ -1417,8 +1417,8 @@
 
 (defn index-link-12 (x)
   (if (> x 0)
-      (index-link-13 x)
-      (index-link-13 (+ x 2))))
+    (index-link-13 x)
+    (index-link-13 (+ x 2))))
 
 (defn index-link-13 (x)
   (index-link-14 (+ x 0)))
@@ -1430,8 +1430,8 @@
 
 (defn index-link-15 (x)
   (if (> x 0)
-      (index-link-16 x)
-      (index-link-16 (+ x 2))))
+    (index-link-16 x)
+    (index-link-16 (+ x 2))))
 
 (defn index-link-16 (x)
   (index-link-17 (+ x 0)))
@@ -1443,8 +1443,8 @@
 
 (defn index-link-18 (x)
   (if (> x 0)
-      (index-link-19 x)
-      (index-link-19 (+ x 2))))
+    (index-link-19 x)
+    (index-link-19 (+ x 2))))
 
 (defn index-link-19 (x)
   (index-link-20 (+ x 0)))
@@ -1456,8 +1456,8 @@
 
 (defn index-link-21 (x)
   (if (> x 0)
-      (index-link-22 x)
-      (index-link-22 (+ x 2))))
+    (index-link-22 x)
+    (index-link-22 (+ x 2))))
 
 (defn index-link-22 (x)
   (index-link-23 (+ x 0)))
@@ -1469,8 +1469,8 @@
 
 (defn index-link-24 (x)
   (if (> x 0)
-      (index-link-25 x)
-      (index-link-25 (+ x 2))))
+    (index-link-25 x)
+    (index-link-25 (+ x 2))))
 
 (defn index-link-25 (x)
   (index-link-26 (+ x 0)))
@@ -1482,8 +1482,8 @@
 
 (defn index-link-27 (x)
   (if (> x 0)
-      (index-link-28 x)
-      (index-link-28 (+ x 2))))
+    (index-link-28 x)
+    (index-link-28 (+ x 2))))
 
 (defn index-link-28 (x)
   (index-link-29 (+ x 0)))
@@ -1495,8 +1495,8 @@
 
 (defn index-link-30 (x)
   (if (> x 0)
-      (index-link-31 x)
-      (index-link-31 (+ x 2))))
+    (index-link-31 x)
+    (index-link-31 (+ x 2))))
 
 (defn index-link-31 (x)
   (index-link-32 (+ x 0)))
@@ -1508,8 +1508,8 @@
 
 (defn index-link-33 (x)
   (if (> x 0)
-      (index-link-34 x)
-      (index-link-34 (+ x 2))))
+    (index-link-34 x)
+    (index-link-34 (+ x 2))))
 
 (defn index-link-34 (x)
   (index-link-35 (+ x 0)))
@@ -1521,8 +1521,8 @@
 
 (defn index-link-36 (x)
   (if (> x 0)
-      (index-link-37 x)
-      (index-link-37 (+ x 2))))
+    (index-link-37 x)
+    (index-link-37 (+ x 2))))
 
 (defn index-link-37 (x)
   (index-link-38 (+ x 0)))
@@ -1534,8 +1534,8 @@
 
 (defn index-link-39 (x)
   (if (> x 0)
-      (index-link-40 x)
-      (index-link-40 (+ x 2))))
+    (index-link-40 x)
+    (index-link-40 (+ x 2))))
 
 (defn index-link-40 (x)
   (index-link-41 (+ x 0)))
@@ -1547,8 +1547,8 @@
 
 (defn index-link-42 (x)
   (if (> x 0)
-      (index-link-43 x)
-      (index-link-43 (+ x 2))))
+    (index-link-43 x)
+    (index-link-43 (+ x 2))))
 
 (defn index-link-43 (x)
   (index-link-44 (+ x 0)))
@@ -1560,8 +1560,8 @@
 
 (defn index-link-45 (x)
   (if (> x 0)
-      (index-link-46 x)
-      (index-link-46 (+ x 2))))
+    (index-link-46 x)
+    (index-link-46 (+ x 2))))
 
 (defn index-link-46 (x)
   (index-link-47 (+ x 0)))
@@ -1573,8 +1573,8 @@
 
 (defn index-link-48 (x)
   (if (> x 0)
-      (index-link-49 x)
-      (index-link-49 (+ x 2))))
+    (index-link-49 x)
+    (index-link-49 (+ x 2))))
 
 (defn index-link-49 (x)
   (index-link-50 (+ x 0)))
@@ -1586,8 +1586,8 @@
 
 (defn index-link-51 (x)
   (if (> x 0)
-      (index-link-52 x)
-      (index-link-52 (+ x 2))))
+    (index-link-52 x)
+    (index-link-52 (+ x 2))))
 
 (defn index-link-52 (x)
   (index-link-53 (+ x 0)))
@@ -1599,8 +1599,8 @@
 
 (defn index-link-54 (x)
   (if (> x 0)
-      (index-link-55 x)
-      (index-link-55 (+ x 2))))
+    (index-link-55 x)
+    (index-link-55 (+ x 2))))
 
 (defn index-link-55 (x)
   (index-link-56 (+ x 0)))
@@ -1612,8 +1612,8 @@
 
 (defn index-link-57 (x)
   (if (> x 0)
-      (index-link-58 x)
-      (index-link-58 (+ x 2))))
+    (index-link-58 x)
+    (index-link-58 (+ x 2))))
 
 (defn index-link-58 (x)
   (index-link-59 (+ x 0)))
@@ -1625,8 +1625,8 @@
 
 (defn index-link-60 (x)
   (if (> x 0)
-      (keep-index x)
-      (keep-index (+ x 2))))
+    (keep-index x)
+    (keep-index (+ x 2))))
 
 (defn index-pin-1 () 2)
 
@@ -1672,8 +1672,8 @@
 
 (defn ratio-link-3 (x)
   (if (> x 0.5)
-      (ratio-link-4 x)
-      (ratio-link-4 (+ x 2.5))))
+    (ratio-link-4 x)
+    (ratio-link-4 (+ x 2.5))))
 
 (defn ratio-link-4 (x)
   (ratio-link-5 (+ x 0.5)))
@@ -1685,8 +1685,8 @@
 
 (defn ratio-link-6 (x)
   (if (> x 0.5)
-      (ratio-link-7 x)
-      (ratio-link-7 (+ x 2.5))))
+    (ratio-link-7 x)
+    (ratio-link-7 (+ x 2.5))))
 
 (defn ratio-link-7 (x)
   (ratio-link-8 (+ x 0.5)))
@@ -1698,8 +1698,8 @@
 
 (defn ratio-link-9 (x)
   (if (> x 0.5)
-      (ratio-link-10 x)
-      (ratio-link-10 (+ x 2.5))))
+    (ratio-link-10 x)
+    (ratio-link-10 (+ x 2.5))))
 
 (defn ratio-link-10 (x)
   (ratio-link-11 (+ x 0.5)))
@@ -1711,8 +1711,8 @@
 
 (defn ratio-link-12 (x)
   (if (> x 0.5)
-      (ratio-link-13 x)
-      (ratio-link-13 (+ x 2.5))))
+    (ratio-link-13 x)
+    (ratio-link-13 (+ x 2.5))))
 
 (defn ratio-link-13 (x)
   (ratio-link-14 (+ x 0.5)))
@@ -1724,8 +1724,8 @@
 
 (defn ratio-link-15 (x)
   (if (> x 0.5)
-      (ratio-link-16 x)
-      (ratio-link-16 (+ x 2.5))))
+    (ratio-link-16 x)
+    (ratio-link-16 (+ x 2.5))))
 
 (defn ratio-link-16 (x)
   (ratio-link-17 (+ x 0.5)))
@@ -1737,8 +1737,8 @@
 
 (defn ratio-link-18 (x)
   (if (> x 0.5)
-      (ratio-link-19 x)
-      (ratio-link-19 (+ x 2.5))))
+    (ratio-link-19 x)
+    (ratio-link-19 (+ x 2.5))))
 
 (defn ratio-link-19 (x)
   (ratio-link-20 (+ x 0.5)))
@@ -1750,8 +1750,8 @@
 
 (defn ratio-link-21 (x)
   (if (> x 0.5)
-      (ratio-link-22 x)
-      (ratio-link-22 (+ x 2.5))))
+    (ratio-link-22 x)
+    (ratio-link-22 (+ x 2.5))))
 
 (defn ratio-link-22 (x)
   (ratio-link-23 (+ x 0.5)))
@@ -1763,8 +1763,8 @@
 
 (defn ratio-link-24 (x)
   (if (> x 0.5)
-      (ratio-link-25 x)
-      (ratio-link-25 (+ x 2.5))))
+    (ratio-link-25 x)
+    (ratio-link-25 (+ x 2.5))))
 
 (defn ratio-link-25 (x)
   (ratio-link-26 (+ x 0.5)))
@@ -1776,8 +1776,8 @@
 
 (defn ratio-link-27 (x)
   (if (> x 0.5)
-      (ratio-link-28 x)
-      (ratio-link-28 (+ x 2.5))))
+    (ratio-link-28 x)
+    (ratio-link-28 (+ x 2.5))))
 
 (defn ratio-link-28 (x)
   (ratio-link-29 (+ x 0.5)))
@@ -1789,8 +1789,8 @@
 
 (defn ratio-link-30 (x)
   (if (> x 0.5)
-      (ratio-link-31 x)
-      (ratio-link-31 (+ x 2.5))))
+    (ratio-link-31 x)
+    (ratio-link-31 (+ x 2.5))))
 
 (defn ratio-link-31 (x)
   (ratio-link-32 (+ x 0.5)))
@@ -1802,8 +1802,8 @@
 
 (defn ratio-link-33 (x)
   (if (> x 0.5)
-      (ratio-link-34 x)
-      (ratio-link-34 (+ x 2.5))))
+    (ratio-link-34 x)
+    (ratio-link-34 (+ x 2.5))))
 
 (defn ratio-link-34 (x)
   (ratio-link-35 (+ x 0.5)))
@@ -1815,8 +1815,8 @@
 
 (defn ratio-link-36 (x)
   (if (> x 0.5)
-      (ratio-link-37 x)
-      (ratio-link-37 (+ x 2.5))))
+    (ratio-link-37 x)
+    (ratio-link-37 (+ x 2.5))))
 
 (defn ratio-link-37 (x)
   (ratio-link-38 (+ x 0.5)))
@@ -1828,8 +1828,8 @@
 
 (defn ratio-link-39 (x)
   (if (> x 0.5)
-      (ratio-link-40 x)
-      (ratio-link-40 (+ x 2.5))))
+    (ratio-link-40 x)
+    (ratio-link-40 (+ x 2.5))))
 
 (defn ratio-link-40 (x)
   (ratio-link-41 (+ x 0.5)))
@@ -1841,8 +1841,8 @@
 
 (defn ratio-link-42 (x)
   (if (> x 0.5)
-      (ratio-link-43 x)
-      (ratio-link-43 (+ x 2.5))))
+    (ratio-link-43 x)
+    (ratio-link-43 (+ x 2.5))))
 
 (defn ratio-link-43 (x)
   (ratio-link-44 (+ x 0.5)))
@@ -1854,8 +1854,8 @@
 
 (defn ratio-link-45 (x)
   (if (> x 0.5)
-      (ratio-link-46 x)
-      (ratio-link-46 (+ x 2.5))))
+    (ratio-link-46 x)
+    (ratio-link-46 (+ x 2.5))))
 
 (defn ratio-link-46 (x)
   (ratio-link-47 (+ x 0.5)))
@@ -1867,8 +1867,8 @@
 
 (defn ratio-link-48 (x)
   (if (> x 0.5)
-      (ratio-link-49 x)
-      (ratio-link-49 (+ x 2.5))))
+    (ratio-link-49 x)
+    (ratio-link-49 (+ x 2.5))))
 
 (defn ratio-link-49 (x)
   (ratio-link-50 (+ x 0.5)))
@@ -1880,8 +1880,8 @@
 
 (defn ratio-link-51 (x)
   (if (> x 0.5)
-      (ratio-link-52 x)
-      (ratio-link-52 (+ x 2.5))))
+    (ratio-link-52 x)
+    (ratio-link-52 (+ x 2.5))))
 
 (defn ratio-link-52 (x)
   (ratio-link-53 (+ x 0.5)))
@@ -1893,8 +1893,8 @@
 
 (defn ratio-link-54 (x)
   (if (> x 0.5)
-      (ratio-link-55 x)
-      (ratio-link-55 (+ x 2.5))))
+    (ratio-link-55 x)
+    (ratio-link-55 (+ x 2.5))))
 
 (defn ratio-link-55 (x)
   (ratio-link-56 (+ x 0.5)))
@@ -1906,8 +1906,8 @@
 
 (defn ratio-link-57 (x)
   (if (> x 0.5)
-      (ratio-link-58 x)
-      (ratio-link-58 (+ x 2.5))))
+    (ratio-link-58 x)
+    (ratio-link-58 (+ x 2.5))))
 
 (defn ratio-link-58 (x)
   (ratio-link-59 (+ x 0.5)))
@@ -1919,8 +1919,8 @@
 
 (defn ratio-link-60 (x)
   (if (> x 0.5)
-      (keep-ratio x)
-      (keep-ratio (+ x 2.5))))
+    (keep-ratio x)
+    (keep-ratio (+ x 2.5))))
 
 (defn ratio-pin-1 () 2.5)
 
@@ -2029,123 +2029,12 @@
   (rust "u32::from({0})" (fn (u8) u32)))
 
 (defn packet ()
-  (vec 0
-       7
-       14
-       21
-       28
-       35
-       42
-       49
-       56
-       63
-       70
-       77
-       84
-       91
-       98
-       105
-       112
-       119
-       126
-       133
-       140
-       147
-       154
-       161
-       168
-       175
-       182
-       189
-       196
-       203
-       210
-       217
-       224
-       231
-       238
-       245
-       2
-       9
-       16
-       23
-       30
-       37
-       44
-       51
-       58
-       65
-       72
-       79
-       86
-       93
-       100
-       107
-       114
-       121
-       128
-       135
-       142
-       149
-       156
-       163
-       170
-       177
-       184
-       191
-       198
-       205
-       212
-       219
-       226
-       233
-       240
-       247
-       4
-       11
-       18
-       25
-       32
-       39
-       46
-       53
-       60
-       67
-       74
-       81
-       88
-       95
-       102
-       109
-       116
-       123
-       130
-       137
-       144
-       151
-       158
-       165
-       172
-       179
-       186
-       193
-       200
-       207
-       214
-       221
-       228
-       235
-       242
-       249
-       6
-       13
-       20
-       27
-       34
-       41
-       48
-       55
-       62
-       69
-       76
+  (vec 0 7 14 21 28 35 42 49 56 63 70 77 84 91 98 105 112
+       119 126 133 140 147 154 161 168 175 182 189 196 203
+       210 217 224 231 238 245 2 9 16 23 30 37 44 51 58 65
+       72 79 86 93 100 107 114 121 128 135 142 149 156 163
+       170 177 184 191 198 205 212 219 226 233 240 247 4 11
+       18 25 32 39 46 53 60 67 74 81 88 95 102 109 116 123
+       130 137 144 151 158 165 172 179 186 193 200 207 214
+       221 228 235 242 249 6 13 20 27 34 41 48 55 62 69 76
        83))

@@ -1,68 +1,87 @@
-(use prelude/macros defmacro defrule template doc-page docstring header
-                    page-body header-shape document)
+(use prelude/macros defmacro defrule doc-page docstring
+                    document header header-shape page-body
+                    template)
 
-(use prelude/logic not when unless and or cond)
-(use prelude/syntax defn the -> ->> try-> let-try loop)
-(use prelude/types vec option result iterator slice sequence box)
-(use prelude/pair pair let-pair let-fields)
+(use prelude/logic and cond not or unless when)
+(use prelude/syntax -> ->> defn let-try loop the try->)
+
+(use prelude/types box iterator option result sequence slice
+                   vec)
+
+(use prelude/pair let-fields let-pair pair)
 (use prelude/assoc assoc assoc-in)
 
-(use prelude/map sorted-map hash-map get keys vals update into-sorted-map
-                 into-hash-map)
+(use prelude/map get hash-map into-hash-map into-sorted-map
+                 keys sorted-map update vals)
 
 (use prelude/sequence empty? len)
 
-(use prelude/vec vec push! iter copied collect pop! remove-at! sort! sort-by!
-                 windows at dedup! first last reverse reverse!)
+(use prelude/vec at collect copied dedup! first iter last
+                 pop! push! remove-at! reverse reverse!
+                 sort! sort-by! vec windows)
 
-(use prelude/iterator range map filter reduce for-each enumerate zip sum count
-                      max min max-by-key any? every? find take take-while)
+(use prelude/iterator any? count enumerate every? filter
+                      find for-each map max max-by-key min
+                      range reduce sum take take-while zip)
 
-(use prelude/option some none some? none? unwrap-or unwrap expect map-some
-                    then-some)
+(use prelude/option expect map-some none none? some some?
+                    then-some unwrap unwrap-or)
 
-(use prelude/result ok err ok-or ok? err? unwrap-ok unwrap-err expect-ok map-ok
-                    map-err then-ok)
+(use prelude/result err err? expect-ok map-err map-ok ok
+                    ok-or ok? then-ok unwrap-err unwrap-ok)
 
-(use prelude/number number signed float integer partial-eq hash partial-ord add
-                    sub mul div rem neg sqrt pi lt le gt ge eq ne + - * / < <= >
-                    >= = not= ord)
+(use prelude/number * + - / < <= = > >= add div eq float ge
+                    gt hash integer le lt mul ne neg not=
+                    number ord partial-eq partial-ord pi rem
+                    signed sqrt sub)
 
-(use prelude/text display debug show print println eprintln doc prn pr-str str
-                  char chars lines split trim subs as-str parse parse-error
-                  from-str parse-int-error parse-bool-error parse-char-error
-                  parse-float-error infallible lower-case upper-case
-                  alphanumeric? whitespace? digit? split-when)
+(use prelude/text alphanumeric? as-str char chars debug
+                  digit? display doc eprintln from-str
+                  infallible lines lower-case parse
+                  parse-bool-error parse-char-error
+                  parse-error parse-float-error
+                  parse-int-error pr-str print println prn
+                  show split split-when str subs trim
+                  upper-case whitespace?)
 
 (use prelude/struct defstruct)
 (use prelude/ownership clone copy)
 
-(use prelude/io io-error stdin source slurp line-seq read-line command-line-args
-                exit)
+(use prelude/io command-line-args exit io-error line-seq
+                read-line slurp source stdin)
 
 (use prelude/place set!)
 
-(export fn fn-mut fn-once def let do if type struct enum derive match new field
-        quote macro rust rust-trait rust-type trait impl use export recur try
-        ref mut deref where with _ assoc-at map-at set-at bool char str string
-        unit i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
-        defmacro defrule template doc-page docstring header page-body true false
-        not when unless and or cond defn the -> ->> try-> let-try loop number
-        signed float integer partial-eq hash partial-ord ord add sub mul div rem
-        neg sqrt pi lt le gt ge eq ne + - * / < <= > >= = not= display debug
-        show print println eprintln doc prn pr-str str char chars lines split
-        trim subs as-str parse parse-error from-str parse-int-error
-        parse-bool-error parse-char-error parse-float-error infallible
-        lower-case upper-case alphanumeric? whitespace? digit? split-when
-        defstruct clone copy set! io-error stdin source slurp line-seq read-line
-        command-line-args exit sorted-map hash-map get keys vals update
-        into-sorted-map into-hash-map empty? pair let-pair let-fields assoc
-        assoc-in vec option result iterator slice sequence box push! len iter
-        copied collect pop! remove-at! sort! sort-by! windows at dedup! first
-        last reverse reverse! range map filter reduce for-each enumerate zip sum
-        count max min max-by-key any? every? find take take-while some none
-        some? none? unwrap-or unwrap expect map-some then-some ok err ok-or ok?
-        err? unwrap-ok unwrap-err expect-ok map-ok map-err then-ok)
+(export * + - -> ->> / < <= = > >= _ add alphanumeric? and
+        any? as-str assoc assoc-at assoc-in at bool box char
+        char chars clone collect command-line-args cond
+        copied copy count debug dedup! def defmacro defn
+        defrule defstruct deref derive digit? display div do
+        doc doc-page docstring empty? enum enumerate
+        eprintln eq err err? every? exit expect expect-ok
+        export f32 f64 false field filter find first float
+        fn fn-mut fn-once for-each from-str ge get gt hash
+        hash-map header i128 i16 i32 i64 i8 if impl
+        infallible integer into-hash-map into-sorted-map
+        io-error isize iter iterator keys last le len let
+        let-fields let-pair let-try line-seq lines loop
+        lower-case lt macro map map-at map-err map-ok
+        map-some match max max-by-key min mul mut ne neg new
+        none none? not not= number ok ok-or ok? option or
+        ord page-body pair parse parse-bool-error
+        parse-char-error parse-error parse-float-error
+        parse-int-error partial-eq partial-ord pi pop!
+        pr-str print println prn push! quote range read-line
+        recur reduce ref rem remove-at! result reverse
+        reverse! rust rust-trait rust-type sequence set!
+        set-at show signed slice slurp some some? sort!
+        sort-by! sorted-map source split split-when sqrt
+        stdin str str string struct sub subs sum take
+        take-while template the then-ok then-some trait trim
+        true try try-> type u128 u16 u32 u64 u8 unit unless
+        unwrap unwrap-err unwrap-ok unwrap-or update
+        upper-case use usize vals vec when where whitespace?
+        windows with zip)
 
 (header-shape (def name))
 

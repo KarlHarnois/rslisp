@@ -1,7 +1,7 @@
 (defn halve (n)
   (if (= (rem n 2) 0)
-      (ok (/ n 2))
-      (err "odd")))
+    (ok (/ n 2))
+    (err "odd")))
 
 (defn main ()
   (println (unwrap-ok (halve 10)))

@@ -1,5 +1,5 @@
-(export matrix ->matrix identity multiply transpose determinant solve apply-to
-        rounded magnitude)
+(export ->matrix apply-to determinant identity magnitude
+        matrix multiply rounded solve transpose)
 
 (defstruct matrix
   :rows (vec (vec f64)))
@@ -24,8 +24,8 @@
           (fn (text entry)
             (let-pair (index value) entry
               (if (= index 0)
-                  (str (rounded (deref value)))
-                  (str text " " (rounded (deref value))))))))
+                (str (rounded (deref value)))
+                (str text " " (rounded (deref value))))))))
 
 (type size (fn ((ref matrix)) usize))
 
@@ -98,14 +98,14 @@
 
 (defn determinant (m)
   (if (= (size m) 1)
-      (cell m 0 0)
-      (reduce (range 0 (size m))
-              0.0
-              (fn (total column)
-                (+ total
-                   (* (sign-of column)
-                      (cell m 0 column)
-                      (determinant (ref (minor m column)))))))))
+    (cell m 0 0)
+    (reduce (range 0 (size m))
+            0.0
+            (fn (total column)
+              (+ total
+                 (* (sign-of column)
+                    (cell m 0 column)
+                    (determinant (ref (minor m column)))))))))
 
 (type sign-of (fn (usize) f64))
 
@@ -119,12 +119,12 @@
 (defn solve (m targets)
   (let whole (determinant m))
   (if (< (magnitude whole) 0.000001)
-      none
-      (some (collect (map (range 0 (size m))
-                          (fn (column)
-                            (/ (determinant
-                                 (ref (replace-column m column targets)))
-                               whole)))))))
+    none
+    (some (collect (map (range 0 (size m))
+                        (fn (column)
+                          (/ (determinant (ref
+                                            (replace-column m column targets)))
+                             whole)))))))
 
 (type replace-column
   (fn ((ref matrix) usize (ref (vec f64)))
@@ -137,8 +137,8 @@
                             (collect (map (range 0 n)
                                           (fn (column)
                                             (if (= column replaced)
-                                                (deref (at targets row))
-                                                (cell m row column))))))))))
+                                              (deref (at targets row))
+                                              (cell m row column))))))))))
 
 (type apply-to
   (fn ((ref matrix) (ref (vec f64)))

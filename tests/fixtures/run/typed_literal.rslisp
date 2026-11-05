@@ -5,8 +5,8 @@
 
 (defn count-down (n)
   (if (= n 0)
-      (the u8 7)
-      (count-down (- n 1))))
+    (the u8 7)
+    (count-down (- n 1))))
 
 (defn describe (running? model)
   (str model (if running? " runs" " rests")))

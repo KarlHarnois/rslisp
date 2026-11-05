@@ -5,5 +5,5 @@
 (def string-type?
   (macro (form)
     (if (same-binding? (nth form 1) (quote string))
-        (quote true)
-        (quote false))))
+      (quote true)
+      (quote false))))

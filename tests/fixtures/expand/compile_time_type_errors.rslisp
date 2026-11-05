@@ -1,4 +1,4 @@
-(use code first list nth number-add bool-not fail)
+(use code bool-not fail first list nth number-add)
 
 (def first-of-unit
   (macro (form) (first (do))))

@@ -18,15 +18,15 @@
 
 (defn added-years (years index)
   (if (< index (len years))
-      (+ (at years index)
-         (subtracted-years years (+ index 1)))
-      0))
+    (+ (at years index)
+       (subtracted-years years (+ index 1)))
+    0))
 
 (defn subtracted-years (years index)
   (if (< index (len years))
-      (- (added-years years (+ index 1))
-         (at years index))
-      0))
+    (- (added-years years (+ index 1))
+       (at years index))
+    0))
 
 (defn pad-years! (years year remaining)
   (push! years year)
@@ -37,7 +37,7 @@
 
 (defn year-capacity (years)
   ((rust "{0}.capacity()"
-         (where (a) (fn ((ref (vec a))) usize)))
+     (where (a) (fn ((ref (vec a))) usize)))
    years))
 
 (defn year-count (years) (len years))
@@ -46,10 +46,10 @@
 
 (defn alternate-oldest (years spare turns)
   (if (> turns 0)
-      (recur spare years (- turns 1))
-      (if (> (year-capacity spare) 0)
-          (at years 0)
-          (at spare 0))))
+    (recur spare years (- turns 1))
+    (if (> (year-capacity spare) 0)
+      (at years 0)
+      (at spare 0))))
 
 (defn main ()
   (let leaf-years (vec 2011 2017))

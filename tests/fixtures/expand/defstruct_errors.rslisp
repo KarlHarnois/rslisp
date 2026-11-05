@@ -3,8 +3,7 @@
   :year)
 
 (defstruct bike
-  make
-  str)
+  make str)
 
 (defstruct van
   :seats :doors

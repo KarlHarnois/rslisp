@@ -3,9 +3,8 @@
 (def unknown-part
   (macro (form)
     (fail "bad call"
-          form
-          "fix it"
-          (quote (:cod repeated-parameter)))))
+      form "fix it"
+      (quote (:cod repeated-parameter)))))
 
 (def part-without-value
   (macro (form)
@@ -14,16 +13,14 @@
 (def misspelled-code
   (macro (form)
     (fail "bad call"
-          form
-          "fix it"
-          (quote (:code repeated-parametr)))))
+      form "fix it"
+      (quote (:code repeated-parametr)))))
 
 (def type-stage-code
   (macro (form)
     (fail "bad call"
-          form
-          "fix it"
-          (quote (:code repeated-field)))))
+      form "fix it"
+      (quote (:code repeated-field)))))
 
 (def string-code
   (macro (form)
@@ -40,16 +37,14 @@
 (def coded
   (macro (form)
     (fail "the leaf is parked"
-          form
-          "drive it"
-          (quote (:code repeated-parameter)))))
+      form "drive it"
+      (quote (:code repeated-parameter)))))
 
 (def labelled
   (macro (form)
     (fail "the leaf is parked"
-          form
-          "drive it"
-          (quote (:code repeated-parameter :label "parked here")))))
+      form "drive it"
+      (quote (:code repeated-parameter :label "parked here")))))
 
 (def symbol-label
   (macro (form)
@@ -58,34 +53,32 @@
 (def repeated-labelled
   (macro (form)
     (fail "`leaf` is given twice"
-          (first (rest (rest form)))
-          "remove the second `leaf`"
-          (template (:code repeated-parameter
-                           :earlier (unquote (first (rest form)))
-                           :label "given again here"
-                           :earlier-label "first given here")))))
+      (first (rest (rest form)))
+      "remove the second `leaf`"
+      (template (:code repeated-parameter
+                       :earlier (unquote (first (rest form)))
+                       :label "given again here"
+                       :earlier-label "first given here")))))
 
 (def earlier-unlabelled
   (macro (form)
     (fail "`leaf` is given twice"
-          (first (rest (rest form)))
-          "remove the second `leaf`"
-          (template (:code repeated-parameter
-                           :earlier (unquote (first (rest form))))))))
+      (first (rest (rest form)))
+      "remove the second `leaf`"
+      (template (:code repeated-parameter
+                       :earlier (unquote (first (rest form))))))))
 
 (def stray-earlier-label
   (macro (form)
     (fail "bad call"
-          form
-          "fix it"
-          (quote (:earlier-label "first given here")))))
+      form "fix it"
+      (quote (:earlier-label "first given here")))))
 
 (def symbol-earlier-label
   (macro (form)
     (fail "bad call"
-          form
-          "fix it"
-          (template (:earlier (unquote form) :earlier-label leaf)))))
+      form "fix it"
+      (template (:earlier (unquote form) :earlier-label leaf)))))
 
 (unknown-part)
 

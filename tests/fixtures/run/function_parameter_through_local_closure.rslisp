@@ -19,9 +19,10 @@
   (let step (fn (n) (record n)))
   (loop ((offset 0))
     (if (< offset 2)
-        (do (step (+ year offset))
-            (recur (+ offset 1)))
-        (do))))
+      (do
+        (step (+ year offset))
+        (recur (+ offset 1)))
+      (do))))
 
 (defn record-nested (record year)
   (let step (fn (n) (record n)))

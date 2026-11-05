@@ -1,4 +1,5 @@
-(use code add-module-note module-notes definition-symbol first len nth)
+(use code add-module-note definition-symbol first len
+          module-notes nth)
 
 (def remember
   (macro (form)

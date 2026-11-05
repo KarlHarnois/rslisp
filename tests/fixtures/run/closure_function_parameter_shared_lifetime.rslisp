@@ -6,8 +6,7 @@
   (let pick (fn (build) (:make (build))))
   (pick (fn ()
           (->car :make (if (> (len first) (len second))
-                           first
-                           second)
+                         first second)
                  :model "Leaf"))))
 
 (defn main ()

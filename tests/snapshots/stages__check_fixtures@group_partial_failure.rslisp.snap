@@ -4,7 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/group_partial_failure.rslisp
 ---
 error[L0401]: mismatched types
-  --> check/group_partial_failure.rslisp:10:12
+  --> check/group_partial_failure.rslisp:10:10
    |
-10 |       (+ n "one")))
-   |            ^^^^^ expected an integer, found `str`
+10 |     (+ n "one")))
+   |          ^^^^^ expected an integer, found `str`

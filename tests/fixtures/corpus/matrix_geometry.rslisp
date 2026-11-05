@@ -1,8 +1,10 @@
-(use matrix_geometry/linear matrix ->matrix identity multiply transpose
-                            determinant solve apply-to rounded)
+(use matrix_geometry/linear ->matrix apply-to determinant
+                            identity matrix multiply rounded
+                            solve transpose)
 
-(use matrix_geometry/shapes point ->point shape area perimeter title ->circle
-                            ->rect ->polygon distance)
+(use matrix_geometry/shapes ->circle ->point ->polygon
+                            ->rect area distance perimeter
+                            point shape title)
 
 (use matrix_geometry/hull convex-hull)
 
@@ -27,9 +29,7 @@
                    (vec 0.0 1.0 6.0 1.0 2.0)
                    (vec 2.0 0.0 1.0 7.0 1.0)
                    (vec 1.0 0.0 2.0 1.0 8.0))))
-  (println (str "small: "
-                small
-                " det "
+  (println (str "small: " small " det "
                 (rounded (determinant (ref small)))))
   (println (str "small squared: "
                 (multiply (ref small) (ref small))))
@@ -79,8 +79,7 @@
                        (->point 0.0 1.0)
                        (->point 2.5 -1.5)))
             (fn (p)
-              (println (str p
-                            " -> "
+              (println (str p " -> "
                             (transform (ref combined) (deref p)))))))
 
 (type rotation (fn (f64) matrix))

@@ -1,5 +1,7 @@
 (use stack_machine/machine run)
-(use stack_machine/programs countdown factorial underflowing million-steps)
+
+(use stack_machine/programs countdown factorial
+                            million-steps underflowing)
 
 (type report
   (fn ((ref str) (result i64 string))

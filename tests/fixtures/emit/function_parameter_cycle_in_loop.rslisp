@@ -1,8 +1,8 @@
 (defn ping (f n)
   (loop ((i 0))
     (if (< i 2)
-        (do (f i) (recur (+ i 1)))
-        (do)))
+      (do (f i) (recur (+ i 1)))
+      (do)))
   (if (> n 0) (pong f (- n 1)) 0))
 
 (defn pong (f n)

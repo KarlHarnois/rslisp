@@ -3,9 +3,10 @@
 
 (defn fill! (years i n)
   (if (< i n)
-      (do (set! (at years i) 2020)
-          (fill! years (+ i 1) n))
-      (do)))
+    (do
+      (set! (at years i) 2020)
+      (fill! years (+ i 1) n))
+    (do)))
 
 (defn main ()
   (let years (vec 2011 2015 2019))

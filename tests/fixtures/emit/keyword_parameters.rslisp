@@ -9,13 +9,13 @@
 
 (defn count-down (:n i64 :total i64)
   (if (= n 0)
-      total
-      (count-down :n (- n 1) :total (+ total n))))
+    total
+    (count-down :n (- n 1) :total (+ total n))))
 
 (defn sum-down (:n i64 :total i64)
   (if (= n 0)
-      total
-      (sum-down :total (+ total n) :n (- n 1))))
+    total
+    (sum-down :total (+ total n) :n (- n 1))))
 
 (defn next-y ()
   (println "y")

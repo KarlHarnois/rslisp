@@ -5,8 +5,8 @@
 
 (defn count-down (n)
   (if (= n 0)
-      (the u8 7)
-      (count-down (- n 1))))
+    (the u8 7)
+    (count-down (- n 1))))
 
 (defn describe (running? model)
   (str model (if running? " runs" " rests")))
@@ -32,5 +32,5 @@
   (println year)
   (println (loop ((i 0) (total (the usize 0)))
              (if (= i 3)
-                 total
-                 (recur (+ i 1) (+ total 2))))))
+               total
+               (recur (+ i 1) (+ total 2))))))

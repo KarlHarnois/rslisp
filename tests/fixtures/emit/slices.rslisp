@@ -8,8 +8,8 @@
 
 (defn total-from (numbers index)
   (if (< index (len numbers))
-      (recur numbers (+ index 1))
-      (total numbers)))
+    (recur numbers (+ index 1))
+    (total numbers)))
 
 (defn main ()
   (let numbers (vec 2 3 5 7 11))

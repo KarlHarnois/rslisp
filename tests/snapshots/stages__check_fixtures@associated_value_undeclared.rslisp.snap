@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/associated_value_undeclared.rslisp
 ---
 error[L0452]: `addable` does not declare `parse-error`
- --> check/associated_value_undeclared.rslisp:6:10
+ --> check/associated_value_undeclared.rslisp:6:5
   |
-6 |          (parse-error i64)))
-  |          ^^^^^^^^^^^^^^^^^ `parse-error` is not an associated type of `addable`
+6 |     (parse-error i64)))
+  |     ^^^^^^^^^^^^^^^^^ `parse-error` is not an associated type of `addable`
   |
   = help: remove the clause, or declare it with `(associated (parse-error owner) "Name")`

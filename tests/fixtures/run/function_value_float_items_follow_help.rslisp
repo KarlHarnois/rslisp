@@ -1,6 +1,6 @@
 (type small?
   (where ((a partial-ord float))
-         (fn (a) bool)))
+    (fn (a) bool)))
 
 (defn small? (x) (< x 10.5))
 

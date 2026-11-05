@@ -11,5 +11,5 @@
 (defn main ()
   (println (:label (->spare :size 1 :label "washer")))
   (if (= (size-of (->spare :size 3 :label "nut")) 3)
-      (println "three")
-      (println "other")))
+    (println "three")
+    (println "other")))

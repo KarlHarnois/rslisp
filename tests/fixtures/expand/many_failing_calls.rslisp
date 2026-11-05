@@ -1,16 +1,16 @@
-(use code list concat number-sub number-le fail)
+(use code concat fail list number-le number-sub)
 
 (def doubled
   (fn (items times)
     (if (number-le times 0)
-        items
-        (doubled (concat items items) (number-sub times 1)))))
+      items
+      (doubled (concat items items) (number-sub times 1)))))
 
 (def nest
   (fn (item times)
     (if (number-le times 0)
-        item
-        (nest (list item item) (number-sub times 1)))))
+      item
+      (nest (list item item) (number-sub times 1)))))
 
 (defmacro past-the-limit ()
   (template (do (splice (doubled (list 0) 17)))))
@@ -24,9 +24,8 @@
 (def ran
   (macro (form)
     (fail "this macro ran after its form passed the budget"
-          form
-          "stop it before it runs"
-          (quote ()))))
+      form "stop it before it runs"
+      (quote ()))))
 
 (defn main () (do (many) (ran)))
 

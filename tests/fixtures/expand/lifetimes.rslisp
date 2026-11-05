@@ -2,8 +2,8 @@
 
 (type first
   (where ('a 'b)
-         (fn ((ref 'a str) (ref 'b str))
-           (ref 'a str))))
+    (fn ((ref 'a str) (ref 'b str))
+      (ref 'a str))))
 
 (struct (label 'a) (text (ref 'a str)))
 

@@ -1,5 +1,7 @@
 (use notes/heron bird)
-(use code add-module-note module-notes definition-symbol len nth)
+
+(use code add-module-note definition-symbol len module-notes
+          nth)
 
 (def remember-crane
   (macro (form)

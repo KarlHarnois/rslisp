@@ -9,8 +9,8 @@
 
 (type first
   (where ('a 'b)
-         (fn ((ref 'a str) (ref 'b str))
-           (ref 'a str))))
+    (fn ((ref 'a str) (ref 'b str))
+      (ref 'a str))))
 
 (defn first (a b) a)
 
@@ -35,7 +35,7 @@
 
 (type choose
   (where (a)
-         (fn (a a (ref str) (ref str)) (ref str))))
+    (fn (a a (ref str) (ref str)) (ref str))))
 
 (defn choose (x y s t) t)
 

@@ -4,7 +4,7 @@
 
 (type matches
   (where ((a (same person)))
-         (fn (a) bool)))
+    (fn (a) bool)))
 
 (defn matches (x) true)
 

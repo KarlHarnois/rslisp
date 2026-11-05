@@ -1,56 +1,48 @@
 (use prelude/types iterator option)
 (use prelude/pair pair)
-(use prelude/number integer number ord add)
+(use prelude/number add integer number ord)
 (use prelude/syntax defn)
 (use prelude/macros defrule)
 (use prelude/vec iter)
 (use prelude/sequence len)
-(use code first rest list prepend empty? symbol? list? same-binding?)
 
-(export range map filter reduce for-each enumerate zip sum count max min
-        max-by-key any? every? find take take-while)
+(use code empty? first list list? prepend rest same-binding?
+          symbol?)
+
+(export any? count enumerate every? filter find for-each map
+        max max-by-key min range reduce sum take take-while
+        zip)
 
 (rust-trait step "std::ops::Range<{0}>: Iterator<Item = {0}>"
-  i8
-  i16
-  i32
-  i64
-  i128
-  isize
-  u8
-  u16
-  u32
-  u64
-  u128
-  usize)
+  i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize)
 
 (def range
   (rust "{0}..{1}"
-        (where ((n integer step))
-               (fn (n n) (iterator n)))))
+    (where ((n integer step))
+      (fn (n n) (iterator n)))))
 
 (def map
   (rust "{0}.map({1})"
-        (where (a b)
-               (fn ((iterator a) (fn-mut (a) b))
-                 (iterator b)))))
+    (where (a b)
+      (fn ((iterator a) (fn-mut (a) b))
+        (iterator b)))))
 
 (def filter
   (rust "{0}.filter({1})"
-        (where (a)
-               (fn ((iterator a) (fn-mut ((ref a)) bool))
-                 (iterator a)))))
+    (where (a)
+      (fn ((iterator a) (fn-mut ((ref a)) bool))
+        (iterator a)))))
 
 (def reduce-items
   (rust "{0}.reduce({1})"
-        (where (a)
-               (fn ((iterator a) (fn-mut (a a) a))
-                 (option a)))))
+    (where (a)
+      (fn ((iterator a) (fn-mut (a a) a))
+        (option a)))))
 
 (def fold-items
   (rust "{0}.fold({1}, {2})"
-        (where (a b)
-               (fn ((iterator a) b (fn-mut (b a) b)) b))))
+    (where (a b)
+      (fn ((iterator a) b (fn-mut (b a) b)) b))))
 
 (defrule reduce
   ((items step) (reduce-items items step))
@@ -58,104 +50,104 @@
 
 (def for-each
   (rust "{0}.for_each({1})"
-        (where (a)
-               (fn ((iterator a) (fn-mut (a) unit))
-                 unit))))
+    (where (a)
+      (fn ((iterator a) (fn-mut (a) unit))
+        unit))))
 
 (def enumerate
   (rust "{0}.enumerate()"
-        (where (a)
-               (fn ((iterator a))
-                 (iterator (pair usize a))))))
+    (where (a)
+      (fn ((iterator a))
+        (iterator (pair usize a))))))
 
 (def zip
   (rust "{0}.zip({1})"
-        (where (a b)
-               (fn ((iterator a) (iterator b))
-                 (iterator (pair a b))))))
+    (where (a b)
+      (fn ((iterator a) (iterator b))
+        (iterator (pair a b))))))
 
 (type sum
   (where ((n number))
-         (fn ((iterator n)) n)))
+    (fn ((iterator n)) n)))
 
 (defn sum (values) (reduce values 0 add))
 
 (def count-items
   (rust "{0}.count()"
-        (where (a) (fn ((iterator a)) usize))))
+    (where (a) (fn ((iterator a)) usize))))
 
 (def count-function
   (rust "Iterator::count"
-        (where (a) (fn ((iterator a)) usize))))
+    (where (a) (fn ((iterator a)) usize))))
 
 (def iter-form?
   (fn (form)
     (if (list? form)
-        (if (empty? form)
-            false
-            (if (symbol? (first form))
-                (same-binding? (first form) (quote iter))
-                false))
-        false)))
+      (if (empty? form)
+        false
+        (if (symbol? (first form))
+          (same-binding? (first form) (quote iter))
+          false))
+      false)))
 
 (def counts-one-collection?
   (fn (arguments)
     (if (empty? arguments)
-        false
-        (if (empty? (rest arguments))
-            (iter-form? (first arguments))
-            false))))
+      false
+      (if (empty? (rest arguments))
+        (iter-form? (first arguments))
+        false))))
 
 (def count
   (macro (form)
     (if (symbol? form)
-        (quote count-function)
-        (if (counts-one-collection? (rest form))
-            (prepend (quote len)
-                     (rest (first (rest form))))
-            (prepend (quote count-items) (rest form))))))
+      (quote count-function)
+      (if (counts-one-collection? (rest form))
+        (prepend (quote len)
+                 (rest (first (rest form))))
+        (prepend (quote count-items) (rest form))))))
 
 (def max
   (rust "{0}.max()"
-        (where ((a ord))
-               (fn ((iterator a)) (option a)))))
+    (where ((a ord))
+      (fn ((iterator a)) (option a)))))
 
 (def min
   (rust "{0}.min()"
-        (where ((a ord))
-               (fn ((iterator a)) (option a)))))
+    (where ((a ord))
+      (fn ((iterator a)) (option a)))))
 
 (def max-by-key
   (rust "{0}.max_by_key({1})"
-        (where (a (k ord))
-               (fn ((iterator a) (fn-mut ((ref a)) k))
-                 (option a)))))
+    (where (a (k ord))
+      (fn ((iterator a) (fn-mut ((ref a)) k))
+        (option a)))))
 
 (def any?
   (rust "{owned 0}.any({1})"
-        (where (a)
-               (fn ((iterator a) (fn-mut (a) bool))
-                 bool))))
+    (where (a)
+      (fn ((iterator a) (fn-mut (a) bool))
+        bool))))
 
 (def every?
   (rust "{owned 0}.all({1})"
-        (where (a)
-               (fn ((iterator a) (fn-mut (a) bool))
-                 bool))))
+    (where (a)
+      (fn ((iterator a) (fn-mut (a) bool))
+        bool))))
 
 (def find
   (rust "{owned 0}.find({1})"
-        (where (a)
-               (fn ((iterator a) (fn-mut ((ref a)) bool))
-                 (option a)))))
+    (where (a)
+      (fn ((iterator a) (fn-mut ((ref a)) bool))
+        (option a)))))
 
 (def take
   (rust "{0}.take({1})"
-        (where (a)
-               (fn ((iterator a) usize) (iterator a)))))
+    (where (a)
+      (fn ((iterator a) usize) (iterator a)))))
 
 (def take-while
   (rust "{0}.take_while({1})"
-        (where (a)
-               (fn ((iterator a) (fn-mut ((ref a)) bool))
-                 (iterator a)))))
+    (where (a)
+      (fn ((iterator a) (fn-mut ((ref a)) bool))
+        (iterator a)))))

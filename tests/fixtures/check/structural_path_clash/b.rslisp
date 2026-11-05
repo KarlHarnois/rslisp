@@ -1,4 +1,4 @@
-(export p ->p)
+(export ->p p)
 
 (rust-type octal-out "std::fmt::Formatter<'_>")
 
@@ -14,7 +14,7 @@
 
 (def write-p
   (rust "write!({0}, \"p\")"
-        (fn ((mut octal-out)) octal-result)))
+    (fn ((mut octal-out)) octal-result)))
 
 (impl octal2 p
   (fmt (value out) (write-p out)))

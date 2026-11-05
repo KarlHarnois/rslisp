@@ -3,9 +3,9 @@
 
 (def parse-int
   (rust "{0}.parse::<{target}>()"
-        (where ((target from-str))
-               (fn ((ref str))
-                 (result target (parse-error-for target))))))
+    (where ((target from-str))
+      (fn ((ref str))
+        (result target (parse-error-for target))))))
 
 (defn main ()
   (let (value (result i64 (parse-error-for i64)))

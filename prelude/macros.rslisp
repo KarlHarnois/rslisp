@@ -1,15 +1,20 @@
-(use code first rest list prepend concat len empty? nth take drop symbol? list?
-          string? keyword? keyword-name symbol-name string same-binding? fail
-          definition-symbol type-definition-symbol definition-call
-          type-definition-call expand-call add-module-note module-notes symbol
-          declare-macro-definition value-eq bool-not number-add number-sub
-          number-lt string-lines string-trim-start string-length string-drop
-          string-strip-suffix closest-name keyword-field field-keyword)
+(use code add-module-note bool-not closest-name concat
+          declare-macro-definition definition-call
+          definition-symbol drop empty? expand-call fail
+          field-keyword first keyword-field keyword-name
+          keyword? len list list? module-notes nth
+          number-add number-lt number-sub prepend rest
+          same-binding? string string-drop string-length
+          string-lines string-strip-suffix string-trim-start
+          string? symbol symbol-name symbol? take
+          type-definition-call type-definition-symbol
+          value-eq)
 
-(export defrule defmacro template map-list whole-pairs? note-docstring
-        value-doc-key type-doc-key header-shape document docstring-before-body?
-        documented-body? docstring-before-parameters doc-page docstring header
-        page-body)
+(export defmacro defrule doc-page docstring
+        docstring-before-body? docstring-before-parameters
+        document documented-body? header header-shape
+        map-list note-docstring page-body template
+        type-doc-key value-doc-key whole-pairs?)
 
 (def map-list
   (fn (function items)
@@ -18,11 +23,11 @@
 (def map-onto
   (fn (mapped function items)
     (if (empty? items)
-        mapped
-        (recur (concat mapped
-                       (list (function (first items))))
-               function
-               (rest items)))))
+      mapped
+      (recur (concat mapped
+                     (list (function (first items))))
+             function
+             (rest items)))))
 
 (def map-count
   (fn (count function)
@@ -31,11 +36,10 @@
 (def map-from
   (fn (mapped index count function)
     (if (number-lt index count)
-        (recur (concat mapped (list (function index)))
-               (number-add index 1)
-               count
-               function)
-        mapped)))
+      (recur (concat mapped (list (function index)))
+             (number-add index 1)
+             count function)
+      mapped)))
 
 (def concat-all
   (fn (lists) (concat-onto (list) lists)))
@@ -43,58 +47,58 @@
 (def concat-onto
   (fn (joined lists)
     (if (empty? lists)
-        joined
-        (recur (concat joined (first lists))
-               (rest lists)))))
+      joined
+      (recur (concat joined (first lists))
+             (rest lists)))))
 
 (def headed-by?
   (fn (form name)
     (if (list? form)
-        (if (empty? form)
-            false
-            (if (symbol? (first form))
-                (same-binding? (first form) name)
-                false))
-        false)))
+      (if (empty? form)
+        false
+        (if (symbol? (first form))
+          (same-binding? (first form) name)
+          false))
+      false)))
 
 (def ellipsis?
   (fn (form)
     (if (symbol? form)
-        (same-binding? form (quote ...))
-        false)))
+      (same-binding? form (quote ...))
+      false)))
 
 (def literal-pattern?
   (fn (pattern)
     (if (headed-by? pattern (quote quote))
-        (value-eq (len pattern) 2)
-        false)))
+      (value-eq (len pattern) 2)
+      false)))
 
 (def followed-by-ellipsis?
   (fn (forms)
     (if (number-lt 1 (len forms))
-        (ellipsis? (nth forms 1))
-        false)))
+      (ellipsis? (nth forms 1))
+      false)))
 
 (def entry-kind?
   (fn (entry kind)
     (if (list? entry)
-        (value-eq (symbol-name (first entry)) kind)
-        false)))
+      (value-eq (symbol-name (first entry)) kind)
+      false)))
 
 (def lookup
   (fn (variable bindings)
     (if (empty? bindings)
-        false
-        (if (value-eq (symbol-name (nth (first bindings) 1))
-                      (symbol-name variable))
-            (first bindings)
-            (recur variable (rest bindings))))))
+      false
+      (if (value-eq (symbol-name (nth (first bindings) 1))
+                    (symbol-name variable))
+        (first bindings)
+        (recur variable (rest bindings))))))
 
 (def entry-value
   (fn (entry)
     (if (entry-kind? entry "many")
-        (map-list entry-value (nth entry 2))
-        (nth entry 2))))
+      (map-list entry-value (nth entry 2))
+      (nth entry 2))))
 
 (def binding-value
   (fn (bindings variable)
@@ -103,91 +107,91 @@
 (def pattern-variables
   (fn (pattern)
     (if (literal-pattern? pattern)
-        (list)
-        (if (pattern-variable? pattern)
-            (list pattern)
-            (if (list? pattern)
-                (concat-all (map-list pattern-variables pattern))
-                (list))))))
+      (list)
+      (if (pattern-variable? pattern)
+        (list pattern)
+        (if (list? pattern)
+          (concat-all (map-list pattern-variables pattern))
+          (list))))))
 
 (def template-variables
   (fn (template)
     (if (symbol? template)
-        (if (ellipsis? template)
-            (list)
-            (list template))
-        (if (list? template)
-            (concat-all (map-list template-variables template))
-            (list)))))
+      (if (ellipsis? template)
+        (list)
+        (list template))
+      (if (list? template)
+        (concat-all (map-list template-variables template))
+        (list)))))
 
 (def join-matches
   (fn (left right)
     (if (list? left)
-        (if (list? right) (concat left right) false)
-        false)))
+      (if (list? right) (concat left right) false)
+      false)))
 
 (def append-match
   (fn (matches match)
     (if (list? match)
-        (concat matches (list match))
-        false)))
+      (concat matches (list match))
+      false)))
 
 (def match-pattern
   (fn (pattern input)
     (if (literal-pattern? pattern)
-        (if (symbol? input)
-            (if (same-binding? input (nth pattern 1))
-                (list)
-                false)
-            false)
-        (if (symbol? pattern)
-            (list (list (quote one) pattern input))
-            (if (list? pattern)
-                (if (list? input) (match-list pattern input) false)
-                (if (value-eq pattern input) (list) false))))))
+      (if (symbol? input)
+        (if (same-binding? input (nth pattern 1))
+          (list)
+          false)
+        false)
+      (if (symbol? pattern)
+        (list (list (quote one) pattern input))
+        (if (list? pattern)
+          (if (list? input) (match-list pattern input) false)
+          (if (value-eq pattern input) (list) false))))))
 
 (def match-list
   (fn (patterns inputs)
     (if (empty? patterns)
-        (if (empty? inputs) (list) false)
-        (if (followed-by-ellipsis? patterns)
-            (match-ellipsis (first patterns) (drop 2 patterns) inputs)
-            (if (empty? inputs)
-                false
-                (join-matches (match-pattern (first patterns) (first inputs))
-                              (match-list (rest patterns) (rest inputs))))))))
+      (if (empty? inputs) (list) false)
+      (if (followed-by-ellipsis? patterns)
+        (match-ellipsis (first patterns) (drop 2 patterns) inputs)
+        (if (empty? inputs)
+          false
+          (join-matches (match-pattern (first patterns) (first inputs))
+                        (match-list (rest patterns) (rest inputs))))))))
 
 (def match-ellipsis
   (fn (repeated tail inputs)
     (let repeat-count
       (number-sub (len inputs) (len tail)))
     (if (number-lt repeat-count 0)
-        false
-        (join-matches (match-repeated repeated (take repeat-count inputs))
-                      (match-list tail (drop repeat-count inputs))))))
+      false
+      (join-matches (match-repeated repeated (take repeat-count inputs))
+                    (match-list tail (drop repeat-count inputs))))))
 
 (def match-repeated
   (fn (repeated inputs)
     (if (pattern-variable? repeated)
-        (list (list (quote forms) repeated inputs))
-        (group-matches repeated (match-each repeated inputs)))))
+      (list (list (quote forms) repeated inputs))
+      (group-matches repeated (match-each repeated inputs)))))
 
 (def group-matches
   (fn (repeated matches)
     (if (list? matches)
-        (map-list (fn (variable)
-                    (list (quote many)
-                          variable
-                          (map-list (fn (bindings) (lookup variable bindings))
-                                    matches)))
-                  (pattern-variables repeated))
-        false)))
+      (map-list (fn (variable)
+                  (list (quote many)
+                        variable
+                        (map-list (fn (bindings) (lookup variable bindings))
+                                  matches)))
+                (pattern-variables repeated))
+      false)))
 
 (def pattern-variable?
   (fn (pattern)
     (if (symbol? pattern)
-        (bool-not (ellipsis? pattern))
-        false)))
+      (bool-not (ellipsis? pattern))
+      false)))
 
 (def match-each
   (fn (pattern inputs)
@@ -196,54 +200,54 @@
 (def match-each-onto
   (fn (matches pattern inputs)
     (if (empty? inputs)
-        matches
-        (if (list? matches)
-            (recur (append-match matches
-                                 (match-pattern pattern (first inputs)))
-                   pattern
-                   (rest inputs))
-            false))))
+      matches
+      (if (list? matches)
+        (recur (append-match matches
+                             (match-pattern pattern (first inputs)))
+               pattern
+               (rest inputs))
+        false))))
 
 (def fill-template
   (fn (template bindings)
     (if (symbol? template)
-        (fill-symbol template bindings)
-        (if (list? template) (fill-list template bindings) template))))
+      (fill-symbol template bindings)
+      (if (list? template) (fill-list template bindings) template))))
 
 (def fill-symbol
   (fn (template bindings)
     (let entry (lookup template bindings))
     (if (entry-kind? entry "one")
-        (nth entry 2)
-        (if (repeated-entry? entry)
-            (fail "this pattern variable needs `...` after it" template)
-            template))))
+      (nth entry 2)
+      (if (repeated-entry? entry)
+        (fail "this pattern variable needs `...` after it" template)
+        template))))
 
 (def fill-list
   (fn (templates bindings)
     (if (empty? templates)
-        (list)
-        (if (followed-by-ellipsis? templates)
-            (concat (fill-repeated (first templates) bindings)
-                    (fill-list (drop 2 templates) bindings))
-            (prepend (fill-template (first templates) bindings)
-                     (fill-list (rest templates) bindings))))))
+      (list)
+      (if (followed-by-ellipsis? templates)
+        (concat (fill-repeated (first templates) bindings)
+                (fill-list (drop 2 templates) bindings))
+        (prepend (fill-template (first templates) bindings)
+                 (fill-list (rest templates) bindings))))))
 
 (def fill-repeated
   (fn (template bindings)
     (let entries
       (repeated-entries (template-variables template) bindings))
     (if (empty? entries)
-        (fail "nothing before this `...` repeats" template)
-        (if (lone-slice? template (first entries))
-            (nth (first entries) 2)
-            (do (let fill-iteration
-                  (fn (index)
-                    (fill-template
-                      template
-                      (iteration-bindings entries bindings index))))
-                (map-count (repetition-count template entries fill-iteration)
-                           fill-iteration))))))
+      (fail "nothing before this `...` repeats" template)
+      (if (lone-slice? template (first entries))
+        (nth (first entries) 2)
+        (do
+          (let fill-iteration
+            (fn (index)
+              (fill-template template
+                             (iteration-bindings entries bindings index))))
+          (map-count (repetition-count template entries fill-iteration)
+                     fill-iteration))))))
 
 (def lone-slice?
   (fn (template leader)
@@ -254,10 +258,11 @@
     (let count (entry-length (first entries)))
     (let mismatched (mismatched-entry count (rest entries)))
     (if (list? mismatched)
-        (do (map-count (shortest-length count (rest entries))
-                       fill-iteration)
-            (unequal-repetitions repeated (first entries) mismatched))
-        count)))
+      (do
+        (map-count (shortest-length count (rest entries))
+                   fill-iteration)
+        (unequal-repetitions repeated (first entries) mismatched))
+      count)))
 
 (def entry-length
   (fn (entry) (len (nth entry 2))))
@@ -265,23 +270,23 @@
 (def mismatched-entry
   (fn (count entries)
     (if (empty? entries)
-        false
-        (if (value-eq (entry-length (first entries)) count)
-            (recur count (rest entries))
-            (first entries)))))
+      false
+      (if (value-eq (entry-length (first entries)) count)
+        (recur count (rest entries))
+        (first entries)))))
 
 (def shortest-length
   (fn (shortest entries)
     (if (empty? entries)
-        shortest
-        (recur (shorter-length shortest (first entries))
-               (rest entries)))))
+      shortest
+      (recur (shorter-length shortest (first entries))
+             (rest entries)))))
 
 (def shorter-length
   (fn (shortest entry)
     (if (number-lt (entry-length entry) shortest)
-        (entry-length entry)
-        shortest)))
+      (entry-length entry)
+      shortest)))
 
 (def unequal-repetitions
   (fn (repeated leader mismatched)
@@ -289,8 +294,8 @@
       (string "`" (nth leader 1) "` and `" (nth mismatched 1) "`"))
     (let label
       (if (number-lt (entry-length leader) (entry-length mismatched))
-          (unpaired-label repeated names mismatched leader)
-          (unpaired-label repeated names leader mismatched)))
+        (unpaired-label repeated names mismatched leader)
+        (unpaired-label repeated names leader mismatched)))
     (fail (string "`"
                   (nth leader 1)
                   "` has length "
@@ -299,30 +304,30 @@
                   (nth mismatched 1)
                   "` has length "
                   (entry-length mismatched))
-          (first label)
-          (string "give " names " the same length")
-          (list (quote :code)
-                (quote unequal-repetitions)
-                (quote :label)
-                (nth label 1)))))
+      (first label)
+      (string "give " names " the same length")
+      (list (quote :code)
+            (quote unequal-repetitions)
+            (quote :label)
+            (nth label 1)))))
 
 (def unpaired-label
   (fn (repeated names longer shorter)
     (if (entry-kind? longer "forms")
-        (list (nth (nth longer 2) (entry-length shorter))
-              (string "this `"
-                      (nth longer 1)
-                      "` has no matching `"
-                      (nth shorter 1)
-                      "`"))
-        (list repeated (string names " repeat together here")))))
+      (list (nth (nth longer 2) (entry-length shorter))
+            (string "this `"
+                    (nth longer 1)
+                    "` has no matching `"
+                    (nth shorter 1)
+                    "`"))
+      (list repeated (string names " repeat together here")))))
 
 (def repeated-entries
   (fn (candidates bindings)
     (if (empty? candidates)
-        (list)
-        (prepend-repeated (lookup (first candidates) bindings)
-                          (repeated-entries (rest candidates) bindings)))))
+      (list)
+      (prepend-repeated (lookup (first candidates) bindings)
+                        (repeated-entries (rest candidates) bindings)))))
 
 (def prepend-repeated
   (fn (entry entries)
@@ -331,8 +336,8 @@
 (def repeated-entry?
   (fn (entry)
     (if (entry-kind? entry "many")
-        true
-        (entry-kind? entry "forms"))))
+      true
+      (entry-kind? entry "forms"))))
 
 (def iteration-bindings
   (fn (entries bindings index)
@@ -344,8 +349,8 @@
   (fn (entry index)
     (let item (nth (nth entry 2) index))
     (if (entry-kind? entry "forms")
-        (list (quote one) (nth entry 1) item)
-        item)))
+      (list (quote one) (nth entry 1) item)
+      item)))
 
 (def expand-rules
   (fn (clauses form) (try-rules clauses clauses form)))
@@ -353,18 +358,18 @@
 (def try-rules
   (fn (remaining clauses form)
     (if (empty? remaining)
-        (fail (string "no rule of `" (first form) "` matches this form")
-              form
-              (string "write it as " (rule-shapes (first form) clauses)))
-        (try-clause (first remaining) (rest remaining) clauses form))))
+      (fail (string "no rule of `" (first form) "` matches this form")
+        form
+        (string "write it as " (rule-shapes (first form) clauses)))
+      (try-clause (first remaining) (rest remaining) clauses form))))
 
 (def try-clause
   (fn (clause others clauses form)
     (let bindings
       (match-list (first clause) (rest form)))
     (if (list? bindings)
-        (fill-template (nth clause 1) bindings)
-        (try-rules others clauses form))))
+      (fill-template (nth clause 1) bindings)
+      (try-rules others clauses form))))
 
 (def rule-shapes
   (fn (name clauses)
@@ -375,11 +380,11 @@
 (def join-shapes
   (fn (shapes)
     (if (empty? (rest shapes))
-        (string "`" (first shapes) "`")
-        (string "`"
-                (first shapes)
-                "`, or "
-                (join-shapes (rest shapes))))))
+      (string "`" (first shapes) "`")
+      (string "`"
+              (first shapes)
+              "`, or "
+              (join-shapes (rest shapes))))))
 
 (def defrule
   (macro (form)
@@ -387,15 +392,16 @@
     (declare-macro-definition name)
     (let body (drop 2 form))
     (if (documented-body? body)
-        (do (note-docstring (value-doc-key name) (first body))
-            (rule-definition name (rest body)))
-        (rule-definition name body))))
+      (do
+        (note-docstring (value-doc-key name) (first body))
+        (rule-definition name (rest body)))
+      (rule-definition name body))))
 
 (def documented-body?
   (fn (body)
     (if (empty? body)
-        false
-        (string? (first body)))))
+      false
+      (string? (first body)))))
 
 (def rule-definition
   (fn (name rules)
@@ -410,17 +416,17 @@
 (def build-template
   (fn (template)
     (if (headed-by? template (quote unquote))
-        (nth template 1)
-        (if (list? template)
-            (prepend (quote concat)
-                     (map-list build-template-element template))
-            (list (quote quote) template)))))
+      (nth template 1)
+      (if (list? template)
+        (prepend (quote concat)
+                 (map-list build-template-element template))
+        (list (quote quote) template)))))
 
 (def build-template-element
   (fn (element)
     (if (headed-by? element (quote splice))
-        (nth element 1)
-        (list (quote list) (build-template element)))))
+      (nth element 1)
+      (list (quote list) (build-template element)))))
 
 (def template
   (macro (form)
@@ -430,12 +436,12 @@
   (fn (pattern form)
     (let bindings (match-list pattern (rest form)))
     (if (list? bindings)
-        bindings
-        (fail (string "this use of `"
-                      (first form)
-                      "` does not match its shape")
-              form
-              (string "write it as `" (prepend (first form) pattern) "`")))))
+      bindings
+      (fail (string "this use of `"
+                    (first form)
+                    "` does not match its shape")
+        form
+        (string "write it as `" (prepend (first form) pattern) "`")))))
 
 (def pattern-lets
   (fn (pattern)
@@ -454,16 +460,16 @@
     (let pattern (nth form 2))
     (let body (drop 3 form))
     (if (string? pattern)
-        (docstring-before-parameters pattern)
-        (if (docstring-before-body? body)
-            (do (note-docstring (value-doc-key name) (first body))
-                (macro-definition name pattern (rest body)))
-            (macro-definition name pattern body)))))
+      (docstring-before-parameters pattern)
+      (if (docstring-before-body? body)
+        (do
+          (note-docstring (value-doc-key name) (first body))
+          (macro-definition name pattern (rest body)))
+        (macro-definition name pattern body)))))
 
 (def docstring-before-parameters
   (fn (docstring)
-    (fail
-      "a docstring goes after the parameter list"
+    (fail "a docstring goes after the parameter list"
       docstring
       "write it as the first body form, after the parameter list"
       (template (:code docstring-before-parameters
@@ -472,8 +478,8 @@
 (def docstring-before-body?
   (fn (body)
     (if (number-lt 1 (len body))
-        (string? (first body))
-        false)))
+      (string? (first body))
+      false)))
 
 (def macro-definition
   (fn (name pattern body)
@@ -500,10 +506,10 @@
 (def whole-pairs?
   (fn (arguments)
     (if (empty? arguments)
-        true
-        (if (empty? (rest arguments))
-            false
-            (recur (drop 2 arguments))))))
+      true
+      (if (empty? (rest arguments))
+        false
+        (recur (drop 2 arguments))))))
 
 (defmacro header-shape (shape markers ...)
   "States the header of a form's calls: (header-shape (form name ...)).
@@ -514,16 +520,16 @@
   `:one-per-line` states that the formatter puts each later form of a
   call on its own line."
   (if (header-shape? shape)
-      (stated-header-shape shape markers)
-      (malformed-header-shape shape)))
+    (stated-header-shape shape markers)
+    (malformed-header-shape shape)))
 
 (def header-shape?
   (fn (shape)
     (if (list? shape)
-        (if (empty? shape)
-            false
-            (symbol? (first shape)))
-        false)))
+      (if (empty? shape)
+        false
+        (symbol? (first shape)))
+      false)))
 
 (def stated-header-shape
   (fn (shape markers)
@@ -536,22 +542,22 @@
 (def note-docstring-form
   (fn (form-name markers)
     (if (holds-marker? markers "docstring")
-        (add-module-note (quote docstring-forms) form-name)
-        (do))))
+      (add-module-note (quote docstring-forms) form-name)
+      (do))))
 
 (def holds-marker?
   (fn (markers name)
     (if (empty? markers)
-        false
-        (if (marker-named? (first markers) name)
-            true
-            (holds-marker? (rest markers) name)))))
+      false
+      (if (marker-named? (first markers) name)
+        true
+        (holds-marker? (rest markers) name)))))
 
 (def marker-named?
   (fn (form name)
     (if (keyword? form)
-        (value-eq (keyword-name form) name)
-        false)))
+      (value-eq (keyword-name form) name)
+      false)))
 
 (def require-bound-form
   (fn (form-name) (definition-symbol form-name "shape")))
@@ -559,26 +565,26 @@
 (def malformed-header-shape
   (fn (shape)
     (fail "a header shape is a list that starts with the form's name"
-          shape
-          "write it as `(header-shape (form name ...))`"
-          (template (:code malformed-header-shape
-                           :label "not a list that starts with a name")))))
+      shape "write it as `(header-shape (form name ...))`"
+      (template (:code malformed-header-shape
+                       :label "not a list that starts with a name")))))
 
 (def shape-marker-names (quote (docstring one-per-line)))
 
 (def check-shape-markers
   (fn (markers seen)
     (if (empty? markers)
-        (do)
-        (check-shape-marker (first markers) (rest markers) seen))))
+      (do)
+      (check-shape-marker (first markers) (rest markers) seen))))
 
 (def check-shape-marker
   (fn (marker more seen)
     (if (known-shape-marker? marker shape-marker-names)
-        (if (holds-marker? seen (keyword-name marker))
-            (extra-header-shape-marker marker)
-            (check-shape-markers more (prepend marker seen)))
-        (unknown-header-shape-marker marker (sole-marker? more seen)))))
+      (if (holds-marker? seen (keyword-name marker))
+        (extra-header-shape-marker marker)
+        (check-shape-markers more (prepend marker seen)))
+      (unknown-header-shape-marker marker
+                                   (sole-marker? more seen)))))
 
 (def sole-marker?
   (fn (more seen)
@@ -587,52 +593,54 @@
 (def known-shape-marker?
   (fn (marker names)
     (if (empty? names)
-        false
-        (if (marker-named? marker (symbol-name (first names)))
-            true
-            (known-shape-marker? marker (rest names))))))
+      false
+      (if (marker-named? marker (symbol-name (first names)))
+        true
+        (known-shape-marker? marker (rest names))))))
 
 (def unknown-header-shape-marker
   (fn (marker sole)
     (if (keyword? marker)
-        (suggested-or-extra-marker marker (closest-marker marker sole))
-        (extra-header-shape-marker marker))))
+      (suggested-or-extra-marker marker
+                                 (closest-marker marker sole))
+      (extra-header-shape-marker marker))))
 
 (def closest-marker
   (fn (marker sole)
-    (let closest (closest-name (keyword-field marker) shape-marker-names))
+    (let closest
+      (closest-name (keyword-field marker) shape-marker-names))
     (if (empty? closest)
-        (if sole (list (first shape-marker-names)) closest)
-        closest)))
+      (if sole (list (first shape-marker-names)) closest)
+      closest)))
 
 (def suggested-or-extra-marker
   (fn (marker closest)
     (if (empty? closest)
-        (extra-header-shape-marker marker)
-        (misspelled-header-shape-marker marker (first closest)))))
+      (extra-header-shape-marker marker)
+      (misspelled-header-shape-marker marker (first closest)))))
 
 (def misspelled-header-shape-marker
   (fn (marker name)
     (fail unexpected-header-shape-marker-title
-          marker
-          (marker-help name)
-          (template (:code unexpected-header-shape-marker
-                           :label (unquote (string "not `:" (symbol-name name) "`"))
-                           :suggest (unquote (field-keyword name)))))))
+      marker
+      (marker-help name)
+      (template (:code unexpected-header-shape-marker
+                       :label (unquote (string "not `:" (symbol-name name) "`"))
+                       :suggest (unquote (field-keyword name)))))))
 
 (def marker-help
   (fn (name)
     (if (value-eq (symbol-name name) "docstring")
-        "write `:docstring` to state that the form takes a docstring"
-        "write `:one-per-line` to state that a call of the form does not fill runs of atoms")))
+      "write `:docstring` to state that the form takes a docstring"
+      "write `:one-per-line` to state that a call of the form does not fill runs of atoms")))
 
 (def extra-header-shape-marker
   (fn (marker)
     (fail unexpected-header-shape-marker-title
-          marker
-          "remove it: only `:docstring` and `:one-per-line` may follow a header shape, each once"
-          (template (:code unexpected-header-shape-marker
-                           :label "not expected here")))))
+      marker
+      "remove it: only `:docstring` and `:one-per-line` may follow a header shape, each once"
+      (template (:code unexpected-header-shape-marker
+                       :label "not expected here")))))
 
 (def unexpected-header-shape-marker-title
   "unexpected form after a header shape")
@@ -644,9 +652,10 @@
   the bare name of a term that takes no arguments. The page shows the header
   as written, and the header's head names the term."
   (let key (value-doc-key (header-name header)))
-  (do (add-module-note (quote docstrings)
-                       (concat key (list header text)))
-      (quote (do))))
+  (do
+    (add-module-note (quote docstrings)
+                     (concat key (list header text)))
+    (quote (do))))
 
 (def header-name
   (fn (header)
@@ -686,17 +695,17 @@
     (let documented-values (value-notes term))
     (let notes
       (if (empty? documented-values)
-          (type-notes term)
-          documented-values))
+        (type-notes term)
+        documented-values))
     (if (empty? notes)
-        (undocumented-part part term)
-        (doc-part part (first notes)))))
+      (undocumented-part part term)
+      (doc-part part (first notes)))))
 
 (def undocumented-part
   (fn (part term)
     (if (value-eq part (quote docstring))
-        (undocumented term)
-        (doc-part part (undocumented-note term)))))
+      (undocumented term)
+      (doc-part part (undocumented-note term)))))
 
 (def value-notes
   (fn (term)
@@ -708,8 +717,8 @@
 (def value-page
   (fn (term page)
     (if (empty? (rest page))
-        (prepend (written-header term) page)
-        page)))
+      (prepend (written-header term) page)
+      page)))
 
 (def with-call-header
   (fn (header note)
@@ -719,9 +728,9 @@
   (fn (term)
     (let context (type-definition-symbol term "doc"))
     (map-list (fn (note)
-                (with-call-header
-                  (calls-header term context (type-definition-call term))
-                  note))
+                (with-call-header (calls-header term context
+                                                (type-definition-call term))
+                                  note))
               (docstring-notes context (type-doc-key term)))))
 
 (def docstring-notes
@@ -732,16 +741,16 @@
 (def notes-with-key
   (fn (key notes)
     (if (empty? notes)
-        notes
-        (if (same-doc-key? key (first notes))
-            (take 1 notes)
-            (recur key (rest notes))))))
+      notes
+      (if (same-doc-key? key (first notes))
+        (take 1 notes)
+        (recur key (rest notes))))))
 
 (def same-doc-key?
   (fn (key note)
     (if (value-eq (first key) (first note))
-        (same-binding? (nth key 1) (nth note 1))
-        false)))
+      (same-binding? (nth key 1) (nth note 1))
+      false)))
 
 (def type-doc-key
   (fn (name) (list "type" name)))
@@ -759,58 +768,58 @@
   (fn (term context written-calls)
     (let calls (scoped-form context written-calls))
     (if (empty? calls)
-        term
-        (call-header term
-                     (first calls)
-                     (fn () (expand-call (first calls)))
-                     header-expansion-limit))))
+      term
+      (call-header term
+                   (first calls)
+                   (fn () (expand-call (first calls)))
+                   header-expansion-limit))))
 
 (def header-expansion-limit 32)
 
 (def scoped-form
   (fn (context form)
     (if (symbol? form)
-        (symbol context form)
-        (if (list? form)
-            (map-list (fn (item) (scoped-form context item))
-                      form)
-            form))))
+      (symbol context form)
+      (if (list? form)
+        (map-list (fn (item) (scoped-form context item))
+                  form)
+        form))))
 
 (def call-header
   (fn (term call expand expansions-left)
     (let shapes (header-shapes (first call)))
     (if (empty? shapes)
-        (expansion-header term expand expansions-left)
-        (shaped-header (first shapes) call))))
+      (expansion-header term expand expansions-left)
+      (shaped-header (first shapes) call))))
 
 (def shaped-header
   (fn (shape call)
     (if (number-lt (len call) (len shape))
-        call
-        (take (len shape) call))))
+      call
+      (take (len shape) call))))
 
 (def expansion-header
   (fn (term expand expansions-left)
     (if (number-lt 0 expansions-left)
-        (expanded-header term
-                         (expand)
-                         (number-sub expansions-left 1))
-        term)))
+      (expanded-header term
+                       (expand)
+                       (number-sub expansions-left 1))
+      term)))
 
 (def expanded-header
   (fn (term expansions expansions-left)
     (if (empty? expansions)
-        term
-        (macro-call-header term
-                           (first expansions)
-                           (expand-call (first expansions))
-                           expansions-left))))
+      term
+      (macro-call-header term
+                         (first expansions)
+                         (expand-call (first expansions))
+                         expansions-left))))
 
 (def macro-call-header
   (fn (term call expansions expansions-left)
     (if (empty? expansions)
-        term
-        (call-header term call (fn () expansions) expansions-left))))
+      term
+      (call-header term call (fn () expansions) expansions-left))))
 
 (def header-shapes
   (fn (definer)
@@ -821,10 +830,10 @@
 (def shapes-of
   (fn (definer shapes)
     (if (empty? shapes)
-        shapes
-        (if (same-binding? definer (first (first shapes)))
-            (take 1 shapes)
-            (recur definer (rest shapes))))))
+      shapes
+      (if (same-binding? definer (first (first shapes)))
+        (take 1 shapes)
+        (recur definer (rest shapes))))))
 
 (def note-header
   (fn (note) (first note)))
@@ -834,8 +843,7 @@
 
 (def undocumented
   (fn (term)
-    (fail
-      (string "`" term "` has no docstring")
+    (fail (string "`" term "` has no docstring")
       term
       "write a docstring where it is defined, as the first form after the parameter list or the header"
       (template (:code undocumented-term
@@ -844,12 +852,12 @@
 (def doc-part
   (fn (part note)
     (if (value-eq part (quote header))
-        (string (note-header note))
-        (if (value-eq part (quote docstring))
-            (clean-docstring (first (note-docstrings note)))
-            (if (value-eq part (quote page-body))
-                (page-body-text note)
-                (string (note-header note) (page-body-text note)))))))
+      (string (note-header note))
+      (if (value-eq part (quote docstring))
+        (clean-docstring (first (note-docstrings note)))
+        (if (value-eq part (quote page-body))
+          (page-body-text note)
+          (string (note-header note) (page-body-text note)))))))
 
 (def page-body-text
   (fn (note)
@@ -859,8 +867,8 @@
   (fn (note)
     (let docstrings (note-docstrings note))
     (if (empty? docstrings)
-        "No documentation."
-        (clean-docstring (first docstrings)))))
+      "No documentation."
+      (clean-docstring (first docstrings)))))
 
 (def clean-docstring
   (fn (text)
@@ -870,8 +878,7 @@
       (map-list (fn (line) (unindent margin line))
                 (rest lines)))
     (without-trailing-newlines (join-lines (without-leading-blanks
-                                             (prepend (string-trim-start
-                                                        (first lines))
+                                             (prepend (string-trim-start (first lines))
                                                       continuation))))))
 
 (def shared-indentation
@@ -890,26 +897,26 @@
 (def written-lines
   (fn (lines)
     (if (empty? lines)
-        lines
-        (if (blank? (first lines))
-            (written-lines (rest lines))
-            (prepend (first lines)
-                     (written-lines (rest lines)))))))
+      lines
+      (if (blank? (first lines))
+        (written-lines (rest lines))
+        (prepend (first lines)
+                 (written-lines (rest lines)))))))
 
 (def smallest
   (fn (numbers)
     (if (empty? numbers)
-        0
-        (smallest-from (first numbers) (rest numbers)))))
+      0
+      (smallest-from (first numbers) (rest numbers)))))
 
 (def smallest-from
   (fn (least numbers)
     (if (empty? numbers)
-        least
-        (recur (if (number-lt (first numbers) least)
-                   (first numbers)
-                   least)
-               (rest numbers)))))
+      least
+      (recur (if (number-lt (first numbers) least)
+               (first numbers)
+               least)
+             (rest numbers)))))
 
 (def unindent
   (fn (margin line)
@@ -918,23 +925,23 @@
 (def without-leading-blanks
   (fn (lines)
     (if (empty? lines)
-        lines
-        (if (blank? (first lines))
-            (recur (rest lines))
-            lines))))
+      lines
+      (if (blank? (first lines))
+        (recur (rest lines))
+        lines))))
 
 (def join-lines
   (fn (lines)
     (if (empty? lines)
-        ""
-        (join-onto (first lines) (rest lines)))))
+      ""
+      (join-onto (first lines) (rest lines)))))
 
 (def join-onto
   (fn (joined lines)
     (if (empty? lines)
-        joined
-        (recur (string joined "\n" (first lines))
-               (rest lines)))))
+      joined
+      (recur (string joined "\n" (first lines))
+             (rest lines)))))
 
 (def without-trailing-newlines
   (fn (text)

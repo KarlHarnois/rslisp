@@ -1,7 +1,7 @@
 (defn checked-half (n)
   (if (= (rem n 2) 0)
-      (ok (/ n 2))
-      (err "odd")))
+    (ok (/ n 2))
+    (err "odd")))
 
 (defn main ()
   (let numbers (vec 10 20 30))

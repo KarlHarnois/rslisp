@@ -31,26 +31,26 @@ error[L0326]: macro expansion did not finish
    = help: make each recursive macro stop, or split a large expansion across several top-level forms
 
 error[L0207]: expected a definition at module level
-  --> expand/expansion_too_large.rslisp:34:1
+  --> expand/expansion_too_large.rslisp:35:1
    |
-34 | (spread-wide)
+35 | (spread-wide)
    | ^^^^^^^^^^^^^ this is not a definition
    |
    = help: put expressions inside a function, such as `(def run (fn () ...))`
 
 error[L0326]: macro expansion did not finish
-  --> expand/expansion_too_large.rslisp:34:1
+  --> expand/expansion_too_large.rslisp:35:1
    |
-34 | (spread-wide)
+35 | (spread-wide)
    | ^^^^^^^^^^^^^ expanding this call of `spread-wide` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all
    = help: make each recursive macro stop, or split a large expansion across several top-level forms
 
 error[L0325]: this expression nests too deeply
-  --> expand/expansion_too_large.rslisp:39:1
+  --> expand/expansion_too_large.rslisp:40:1
    |
-39 | (loop-def)
+40 | (loop-def)
    | ^^^^^^^^^^ this expression sits inside 1024 others
    |
    = note: expressions nest at most 1024 deep

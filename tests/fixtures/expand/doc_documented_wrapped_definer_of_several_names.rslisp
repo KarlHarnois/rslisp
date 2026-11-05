@@ -1,9 +1,9 @@
 (defrule with-alias
   ((n a p d b)
-   (do (defn n p
-         d
-         b)
-       (defn a p b))))
+   (do
+     (defn n p
+       d b)
+     (defn a p b))))
 
 (defrule with-alias-bare
   ((n a p b)

@@ -1,7 +1,7 @@
 (type read-number
   (where ((target from-str))
-         (fn ((ref str))
-           (result target (parse-error target)))))
+    (fn ((ref str))
+      (result target (parse-error target)))))
 
 (defn read-number (text)
   (ok (try (parse text))))

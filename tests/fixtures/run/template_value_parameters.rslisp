@@ -1,7 +1,7 @@
 (def split-when
   (rust "{0}.split({1})"
-        (fn ((ref str) (fn (char) bool))
-          (iterator (ref str)))))
+    (fn ((ref str) (fn (char) bool))
+      (iterator (ref str)))))
 
 (def space?
   (rust "{0}.is_whitespace()" (fn (char) bool)))

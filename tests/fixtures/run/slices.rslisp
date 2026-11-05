@@ -8,8 +8,8 @@
 
 (defn total-from (numbers index)
   (if (< index (len numbers))
-      (recur numbers (+ index 1))
-      (total numbers)))
+    (recur numbers (+ index 1))
+    (total numbers)))
 
 (defn count-only (numbers) (len numbers))
 

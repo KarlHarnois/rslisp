@@ -4,4 +4,4 @@
   :year u16
   :electric? bool)
 
-(export car ->car)
+(export ->car car)

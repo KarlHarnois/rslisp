@@ -4,7 +4,7 @@
 
 (type swap
   (where ((a clone) (b clone))
-         (fn ((ref (pair a b))) (pair b a))))
+    (fn ((ref (pair a b))) (pair b a))))
 
 (defn swap (p)
   (new pair

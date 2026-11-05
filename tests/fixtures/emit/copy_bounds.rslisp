@@ -1,6 +1,6 @@
 (type twice
   (where ((a copy))
-         (fn (a (fn (a a) a)) a)))
+    (fn (a (fn (a a) a)) a)))
 
 (defn twice (value combine) (combine value value))
 

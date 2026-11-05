@@ -1,7 +1,8 @@
-(use warehouse/model item entry valued value-cents category dollars widen)
+(use warehouse/model category dollars entry item value-cents
+                     valued widen)
 
-(export print-summary print-low-stock print-categories print-top-value
-        print-activity)
+(export print-activity print-categories print-low-stock
+        print-summary print-top-value)
 
 (type print-summary
   (fn ((ref (sorted-map string item)))
@@ -20,9 +21,7 @@
               (+ total (value-cents current)))))
   (println (str "items: "
                 (len stock)
-                ", units: "
-                units
-                ", value: "
+                ", units: " units ", value: "
                 (dollars worth))))
 
 (type print-low-stock
@@ -75,8 +74,8 @@
   (reverse! ranked)
   (for-each (take (iter ranked) limit)
             (fn (current)
-              (println
-                (str "  " current " = " (dollars (value-cents current)))))))
+              (println (str "  " current " = "
+                            (dollars (value-cents current)))))))
 
 (type print-activity
   (fn ((ref (vec entry))) unit))
@@ -101,5 +100,5 @@
 
 (def second-of
   (rust "{0}.1"
-        (where (a b)
-               (fn ((ref (pair a b))) (ref b)))))
+    (where (a b)
+      (fn ((ref (pair a b))) (ref b)))))

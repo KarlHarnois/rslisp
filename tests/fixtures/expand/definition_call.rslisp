@@ -1,4 +1,4 @@
-(use code definition-call string nth)
+(use code definition-call nth string)
 
 (def written-call
   (macro (form)

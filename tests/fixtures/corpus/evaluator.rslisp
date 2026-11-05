@@ -10,13 +10,9 @@
     "let x = 10; let y = x * x - 2 * x + 1; y == 81; y != 81; x >= 10"
     "let rate = 7; let days = 365; rate * days / 100; if rate > 5 then 1 else 0"
     "let n = 4; let fact = n * (n - 1) * (n - 2) * (n - 3); fact; -fact + 30"
-    "let z = 0; 10 / z"
-    "let q = 5; q + missing"
-    "let r = 4 +; r"
-    "let s = 3 $ 4"
-    "if 1 then 2"
-    "let p = 2; mystery(p)"
-    "max(1 2)"))
+    "let z = 0; 10 / z" "let q = 5; q + missing"
+    "let r = 4 +; r" "let s = 3 $ 4" "if 1 then 2"
+    "let p = 2; mystery(p)" "max(1 2)"))
 
 (defn main ()
   (for-each (enumerate (iter scripts))

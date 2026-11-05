@@ -1,4 +1,5 @@
-(use code escape-string escape-format string-strip-suffix string-strip-prefix)
+(use code escape-format escape-string string-strip-prefix
+          string-strip-suffix)
 
 (defmacro show-escape-string (form)
   (escape-string "brace { quote \" slash \\ newline\n"))

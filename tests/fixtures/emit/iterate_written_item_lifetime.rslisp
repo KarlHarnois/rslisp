@@ -1,6 +1,6 @@
 (type count-long
   (where ('a)
-         (fn ((iterator (ref 'a str))) usize)))
+    (fn ((iterator (ref 'a str))) usize)))
 
 (defn count-long (names)
   (count (filter names

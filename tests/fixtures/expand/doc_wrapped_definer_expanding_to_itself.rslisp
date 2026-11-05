@@ -1,14 +1,16 @@
-(use code module-notes add-module-note definition-symbol empty?)
+(use code add-module-note definition-symbol empty?
+          module-notes)
 
 (defmacro defn-loop (name parameters body)
   (if (empty? (module-notes (definition-symbol (quote defn-loop) "notes")
                             (quote defined)))
-      (do (add-module-note (quote defined) name)
-          (template (defn (unquote name) (unquote parameters)
-                      (unquote body))))
-      (template (defn-loop (unquote name)
-                           (unquote parameters)
-                           (unquote body)))))
+    (do
+      (add-module-note (quote defined) name)
+      (template (defn (unquote name) (unquote parameters)
+                  (unquote body))))
+    (template (defn-loop (unquote name)
+                         (unquote parameters)
+                         (unquote body)))))
 
 (defn-loop twice (x) (* 2 x))
 
@@ -18,14 +20,15 @@
   (if (empty? (module-notes (definition-symbol (quote documented-defn-loop)
                                                "notes")
                             (quote documented)))
-      (do (add-module-note (quote documented) name)
-          (template (defn (unquote name) (unquote parameters)
-                      (unquote docstring)
-                      (unquote body))))
-      (template (documented-defn-loop (unquote name)
-                                      (unquote parameters)
-                                      (unquote docstring)
-                                      (unquote body)))))
+    (do
+      (add-module-note (quote documented) name)
+      (template (defn (unquote name) (unquote parameters)
+                  (unquote docstring)
+                  (unquote body))))
+    (template (documented-defn-loop (unquote name)
+                                    (unquote parameters)
+                                    (unquote docstring)
+                                    (unquote body)))))
 
 (documented-defn-loop halve (x) "Halves." (/ x 2))
 

@@ -12,12 +12,12 @@
    (do body ...))
   ((subject (match body ...))
    (if (= subject match)
-       (do body ...)
-       (do)))
+     (do body ...)
+     (do)))
   ((subject (match body ...) clause more ...)
    (if (= subject match)
-       (do body ...)
-       (case-clauses subject clause more ...))))
+     (do body ...)
+     (case-clauses subject clause more ...))))
 
 (defn describe (n)
   (case n

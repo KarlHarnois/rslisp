@@ -2,11 +2,11 @@
 
 (def box-new
   (rust "Box::new({0})"
-        (where (a) (fn (a) (boxed a)))))
+    (where (a) (fn (a) (boxed a)))))
 
 (def unbox
   (rust "*{0}"
-        (where (a) (fn ((boxed a)) a))))
+    (where (a) (fn ((boxed a)) a))))
 
 (rust-type numbers "impl Iterator<Item = i64>")
 

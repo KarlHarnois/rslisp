@@ -4,26 +4,26 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/spliced_bodies_too_large.rslisp
 ---
 error[L0207]: expected a definition at module level
-  --> expand/spliced_bodies_too_large.rslisp:18:1
+  --> expand/spliced_bodies_too_large.rslisp:19:1
    |
-18 | (defs)
+19 | (defs)
    | ^^^^^^ this is not a definition
    |
    = help: put expressions inside a function, such as `(def run (fn () ...))`
 
 error[L0326]: macro expansion did not finish
-  --> expand/spliced_bodies_too_large.rslisp:18:1
+  --> expand/spliced_bodies_too_large.rslisp:19:1
    |
-18 | (defs)
+19 | (defs)
    | ^^^^^^ expanding this call of `defs` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all
    = help: make each recursive macro stop, or split a large expansion across several top-level forms
 
 error[L0326]: macro expansion did not finish
-  --> expand/spliced_bodies_too_large.rslisp:18:1
+  --> expand/spliced_bodies_too_large.rslisp:19:1
    |
-18 | (defs)
+19 | (defs)
    | ^^^^^^ expanding this call of `pad` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all

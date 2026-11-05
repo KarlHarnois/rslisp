@@ -17,8 +17,7 @@
   (fn ((vec (box shape))) f64))
 
 (defn total (shapes)
-  (reduce shapes
-          0.0
+  (reduce shapes 0.0
           (fn (total shape)
             (+ total (area shape)))))
 

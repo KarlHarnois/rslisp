@@ -1,7 +1,7 @@
 (def compare
   (rust "{0} == {1}"
-        (where ((a (partial-eq b)) b)
-               (fn ((ref a) (ref b)) bool))))
+    (where ((a (partial-eq b)) b)
+      (fn ((ref a) (ref b)) bool))))
 
 (defn compare-with-name (x)
   (compare x (str "Ana")))

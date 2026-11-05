@@ -7,4 +7,4 @@
 (impl lot car
   (newer (c year) (->car (:model c) year)))
 
-(export car ->car)
+(export ->car car)

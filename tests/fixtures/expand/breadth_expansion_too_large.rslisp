@@ -1,14 +1,15 @@
-(use code list concat number-sub number-le)
+(use code concat list number-le number-sub)
 
 (def doubled
   (fn (items times)
     (if (number-le times 0)
-        items
-        (doubled (concat items items) (number-sub times 1)))))
+      items
+      (doubled (concat items items) (number-sub times 1)))))
 
 (defmacro spread (form)
-  (template (do (spread (unquote form))
-                (spread (unquote form))
-                (splice (doubled (list 0) 5)))))
+  (template (do
+              (spread (unquote form))
+              (spread (unquote form))
+              (splice (doubled (list 0) 5)))))
 
 (defn spreads () (println (spread 1)))

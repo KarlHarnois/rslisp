@@ -1,11 +1,11 @@
 (def passes?
   (rust "Some({0}).filter({1}).is_some()"
-        (where (a)
-               (fn (a (fn ((ref a)) bool)) bool))))
+    (where (a)
+      (fn (a (fn ((ref a)) bool)) bool))))
 
 (def borrow-twice
   (rust "&&{0}"
-        (where (a) (fn (a) (ref (ref a))))))
+    (where (a) (fn (a) (ref (ref a))))))
 
 (type big? (fn ((ref i64)) bool))
 

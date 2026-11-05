@@ -4,10 +4,10 @@
 
 (def empty?
   (rust "{0}.is_empty()"
-        (where ((collection sequence))
-               (fn ((ref collection)) bool))))
+    (where ((collection sequence))
+      (fn ((ref collection)) bool))))
 
 (def len
   (rust "{0}.len()"
-        (where ((a sequence))
-               (fn ((ref a)) usize))))
+    (where ((a sequence))
+      (fn ((ref a)) usize))))

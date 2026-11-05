@@ -3,9 +3,7 @@
 (defrule my-defn
   ((n p d b ...)
    (defn n p
-     d
-     b
-     ...)))
+     d b ...)))
 
 (header-shape (my-defn name parameters))
 

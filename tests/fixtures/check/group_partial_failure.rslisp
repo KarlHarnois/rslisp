@@ -6,5 +6,5 @@
 
 (defn odd-step (n)
   (if (> n 0)
-      (even-step (- n 1))
-      (+ n "one")))
+    (even-step (- n 1))
+    (+ n "one")))

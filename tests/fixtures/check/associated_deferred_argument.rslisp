@@ -1,6 +1,6 @@
 (type describe-error
   (where ((target display from-str))
-         (fn ((parse-error target) target) string)))
+    (fn ((parse-error target) target) string)))
 
 (defn describe-error (reason value) (str value))
 

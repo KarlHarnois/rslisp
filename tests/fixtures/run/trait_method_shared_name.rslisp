@@ -1,4 +1,4 @@
-(use trait_method_shared_name/fleet car ->car)
+(use trait_method_shared_name/fleet ->car car)
 
 (trait garage
   (newer (fn (self self) self)))

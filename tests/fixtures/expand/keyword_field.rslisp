@@ -1,4 +1,4 @@
-(use code list keyword-field)
+(use code keyword-field list)
 
 (def keyword-fields
   (macro (form)

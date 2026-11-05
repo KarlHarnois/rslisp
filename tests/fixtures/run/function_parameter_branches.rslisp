@@ -45,8 +45,7 @@
   (let chosen pick)
   (let model (str "Leaf"))
   (if (= (chosen (as-str model)) "Leaf")
-      4
-      0))
+    4 0))
 
 (defn main ()
   (let model (str "Leaf"))
