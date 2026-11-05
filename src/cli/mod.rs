@@ -35,6 +35,7 @@ mod streamed_program;
 mod temporary_directory;
 mod term_parser;
 mod terminal;
+mod token_colors;
 
 use std::convert::Infallible;
 use std::env;
