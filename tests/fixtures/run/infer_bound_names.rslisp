@@ -1,0 +1,24 @@
+(def equal-to-another?
+  (rust "false"
+    (where ((a (partial-eq b)) b)
+      (fn (a) bool))))
+
+(def equal-to-third?
+  (rust "false"
+    (where ((a (partial-eq c))
+            (b (partial-eq c))
+            c)
+      (fn (a b c) bool))))
+
+(type same?
+  (where ((a (partial-eq b)) b)
+    (fn (a b) bool)))
+
+(defn same? (left right) (eq left right))
+
+(defn main ()
+  (println (infer eq))
+  (println (infer same?))
+  (println (infer equal-to-another?))
+  (println (infer (fn (left right) (equal-to-third? left right 1))))
+  (println (same? 1 1)))
