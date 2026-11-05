@@ -14,7 +14,7 @@ use super::exit_status::ExitStatus;
 use super::interruption::Interruption;
 use super::stage_work::StageWork;
 use crate::build::{BuildError, BuildProfile, EmittedFormatting, FormattingError, RustCompiler};
-use crate::core::{Expr, ModulePath};
+use crate::core::ModulePath;
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
 use crate::expand::{BoundName, ClassifiedForm, Expander, ExpansionSession, PreludeState, Program};
@@ -286,19 +286,6 @@ impl Terminal {
     pub fn read_text(&mut self, name: &str, text: &str) -> Result<Vec<Form>, ExitStatus> {
         let source = self.sources.add(name, text);
         self.read_source(source)
-    }
-
-    pub fn expand_expression(
-        &mut self,
-        path: &Path,
-        entry: SourceId,
-        (name, text): (&str, &str),
-        expression: impl FnOnce(SourceId) -> Form,
-    ) -> Result<Expr, ExitStatus> {
-        self.within_session(path, entry, |mut session| {
-            let source = session.add_source(name, text);
-            session.expression(expression(source))
-        })
     }
 
     pub fn within_session<T>(

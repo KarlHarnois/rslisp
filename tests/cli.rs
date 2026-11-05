@@ -54,7 +54,9 @@ const TRAIT_SHARED_VECTOR: &str = "(struct odometer (offset i64))\n\n(trait mile
 const GEOMETRY: &str = "(export area)\n\n(defn area (width height) \"Multiplies a width by a height.\" (* width height))\n";
 const GEOMETRY_ENTRY: &str = "(use geometry area)\n\n(defn main () (println (area 3 4)))\n";
 const UNDOCUMENTED_ENTRY: &str = "(defn twice (x) (* 2 x))\n\n(defn main () (println (twice 2)))\n";
-const SHADOWING_DOC_PAGE: &str = "(defrule doc-page ((term) 0))\n\n(defn main () (do))\n";
+const SHADOWING_PAGE_BODY: &str = "(defrule page-body ((term) 0))\n\n(defn main () (do))\n";
+const SHADOWING_HEADER: &str = "(defrule header ((term) 0))\n\n(defn main () (do))\n";
+const MACRO_STRUCT_BESIDE_A_DEF: &str = "(defrule my-struct ((n) (do (defstruct n \"A documented struct.\" :x i64))))\n(my-struct point)\n(def point 1)\n(defn main () (do))\n";
 const THREADING_HEADER: &str = "(defrule ->)";
 const THREAD_LAST_HEADER: &str = "(defrule ->>)";
 const MINUS_HEADER: &str = "(defrule -)";
@@ -1100,12 +1102,22 @@ fn doc_rejects_a_term_that_is_not_one_name_before_reading_the_file() {
 }
 
 #[test]
-fn doc_rejects_a_shadowing_doc_page_that_returns_no_string() {
-    let sandbox = Sandbox::new("doc_shadowed").with_file("main.rslisp", SHADOWING_DOC_PAGE);
+fn doc_rejects_a_shadowing_page_body_that_returns_no_string() {
+    let sandbox = Sandbox::new("doc_shadowed").with_file("main.rslisp", SHADOWING_PAGE_BODY);
     let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "main"]);
     assert_eq!(
         doc.assert_exit_code(1).stderr(),
-        "error: `doc-page` did not expand to a string\n"
+        "error: `page-body` did not expand to a string\n"
+    );
+}
+
+#[test]
+fn doc_rejects_a_shadowing_header_that_returns_no_string() {
+    let sandbox = Sandbox::new("doc_shadowed_header").with_file("main.rslisp", SHADOWING_HEADER);
+    let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "main"]);
+    assert_eq!(
+        doc.assert_exit_code(1).stderr(),
+        "error: `header` did not expand to a string\n"
     );
 }
 
@@ -1201,6 +1213,16 @@ fn doc_types_prints_the_type_of_a_plain_definition() {
 fn doc_types_prints_no_type_for_a_value_that_no_definition_binds() {
     let sandbox = Sandbox::new("doc_types_literal");
     assert_eq!(sandbox.typed_page(&["true"]), "true\n\nNo documentation.\n");
+}
+
+#[test]
+fn doc_types_prints_no_type_above_a_struct_page_whose_header_matches_the_value() {
+    let sandbox =
+        Sandbox::new("doc_types_same_header").with_file("prog.rslisp", MACRO_STRUCT_BESIDE_A_DEF);
+    assert_eq!(
+        sandbox.typed_page(&["--file", "prog.rslisp", "point"]),
+        "point\n\nA documented struct.\n"
+    );
 }
 
 #[test]
@@ -2983,6 +3005,64 @@ fn color_eval_keeps_a_piped_value_plain_and_colors_the_diagnostics() {
     ValueColors::assert_plain(&output);
     assert!(output.contains("note"), "{output:?}");
     assert!(eval.stdout_is_colored(), "{output:?}");
+}
+
+struct DocColors;
+
+impl DocColors {
+    const SCALE_PROGRAM: &str = "(defn scale (:size i64 :factor i64 (defaults :factor 2))\n  \"Scales :size by \\\"factor\\\" 2.\"\n  (* size factor))\n";
+    const SCALE_BODY: &str = "\n\nScales :size by \"factor\" 2.\n";
+    const SCALE_HEADER: &str = "(defn scale (:size i64 :factor i64 (defaults :factor 2)))";
+
+    fn painted_header() -> String {
+        let keyword = |text| ValueColors::styled(anstyle::AnsiColor::Cyan.on_default(), text);
+        let number = ValueColors::styled(anstyle::AnsiColor::Yellow.on_default(), "2");
+        format!(
+            "(defn scale ({} i64 {} i64 (defaults {} {number})))",
+            keyword(":size"),
+            keyword(":factor"),
+            keyword(":factor"),
+        )
+    }
+
+    fn page_on_a_terminal(name: &str, environment: &[(&str, &str)], flags: &[&str]) -> String {
+        let environment: Vec<(&str, &str)> = [("TERM", "xterm")]
+            .into_iter()
+            .chain(environment.iter().copied())
+            .collect();
+        let arguments: Vec<&str> = ["doc"]
+            .into_iter()
+            .chain(flags.iter().copied())
+            .chain(["--file", "scale.rslisp", "scale"])
+            .collect();
+        Sandbox::new(name)
+            .with_file("scale.rslisp", Self::SCALE_PROGRAM)
+            .compiler_on_a_terminal(&environment, &arguments)
+            .assert_exit_code(0)
+            .stdout()
+            .replace("\r\n", "\n")
+    }
+}
+
+#[test]
+fn color_doc_header_on_a_terminal_and_leave_the_docstring_plain() {
+    let page = DocColors::page_on_a_terminal("color_doc_header", &[], &[]);
+    let expected = format!("{}{}", DocColors::painted_header(), DocColors::SCALE_BODY);
+    assert!(page.ends_with(&expected), "{page:?}");
+}
+
+#[test]
+fn color_doc_header_below_the_type_line() {
+    let page = DocColors::page_on_a_terminal("color_doc_typed_header", &[], &["--types"]);
+    let expected = format!("{}{}", DocColors::painted_header(), DocColors::SCALE_BODY);
+    assert!(page.ends_with(&expected), "{page:?}");
+}
+
+#[test]
+fn color_stays_off_the_doc_header_when_no_color_is_set() {
+    let page = DocColors::page_on_a_terminal("color_doc_no_color", &[("NO_COLOR", "1")], &[]);
+    let expected = format!("{}{}", DocColors::SCALE_HEADER, DocColors::SCALE_BODY);
+    assert!(page.ends_with(&expected), "{page:?}");
 }
 
 struct RedefinitionSession;
