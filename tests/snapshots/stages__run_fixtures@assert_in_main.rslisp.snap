@@ -6,7 +6,7 @@ input_file: tests/fixtures/run/assert_in_main.rslisp
 passed
 stderr:
 
-thread 'main' panicked at main.rs:303:9:
+thread 'main' panicked at main.rs:302:9:
 assertion failed at assert_in_main.rslisp:10:3: (assert (= (str "a") "b") "they differ")
 left:  "a"
 right: "b"

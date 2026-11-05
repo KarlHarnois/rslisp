@@ -21,7 +21,6 @@ fn test_deref_of_a_local() {
         &({ *borrowed }),
         &1,
         |left: &i64, right: &i64| *left == *right,
-        None,
     );
 }
 
@@ -32,7 +31,6 @@ fn holds_one(item: &i64) {
         &({ *item }),
         &1,
         |left: &i64, right: &i64| *left == *right,
-        None,
     )
 }
 
@@ -48,7 +46,6 @@ fn test_deref_of_a_call() {
         &({ *count_of(&crate_) }),
         &1,
         |left: &i64, right: &i64| *left == *right,
-        None,
     );
 }
 
@@ -366,11 +363,10 @@ mod rt {
         left: &A,
         right: &B,
         equal: impl Fn(&A, &B) -> bool,
-        message: Option<&str>,
     ) {
         if !equal(left, right) {
             let sides = [Shown(left).to_string(), Shown(right).to_string()];
-            fail_check("fail-equal", location, text, &sides, message);
+            fail_check("fail-equal", location, text, &sides, None);
         }
     }
 

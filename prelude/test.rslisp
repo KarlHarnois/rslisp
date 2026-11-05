@@ -4,15 +4,15 @@
 (use prelude/types vec)
 (use prelude/number =)
 (use prelude/vec vec)
-(use prelude/text show)
+(use prelude/text display show str)
 
 (use code add-module-note bool-not concat definition-symbol
           empty? expand-call fail first form-location
           keyword-name keyword? len list list?
           module-exports module-notes nth number-lt prepend
           program-modules rest same-binding? string
-          string-lines string-trim-start symbol symbol-name
-          symbol? value-eq)
+          string-lines string-trim-start string? symbol
+          symbol-name symbol? value-eq)
 
 (export assert deftest run-tests)
 
@@ -115,7 +115,8 @@
     (let checked (nth form 1))
     (let written
       (list (form-location form) (string form)))
-    (let message (rest (rest form)))
+    (let message
+      (map-list deferred-message (rest (rest form))))
     (if (equality? checked)
       (equal-assertion (equal-check message)
                        written checked message)
@@ -139,6 +140,12 @@
     (if (empty? expansion)
       false
       (deref-call? (first expansion)))))
+
+(def deferred-message
+  (fn (message)
+    (if (string? message)
+      (template (fn () (unquote message)))
+      (template (fn () (str (unquote message)))))))
 
 (def equal-assertion
   (fn (check written checked message)
@@ -310,16 +317,20 @@
              (rest names)))))
 
 (def check-true
-  (rust "crate::rt::check_true({0}, {1}, {2}, None)"
+  (rust "crate::rt::check_true({0}, {1}, {2})"
     (fn ((ref str) (ref str) bool) unit)))
 
 (def check-true-with
-  (rust "crate::rt::check_true({0}, {1}, {2}, Some({3}))"
-    (fn ((ref str) (ref str) bool (ref str))
-      unit)))
+  (rust "crate::rt::check_true_with({0}, {1}, {2}, {3})"
+    (where ((m display))
+      (fn ((ref str)
+           (ref str)
+           bool
+           (fn-once () m))
+        unit))))
 
 (def check-equal
-  (rust "crate::rt::check_equal({0}, {1}, {2}, {3}, {4}, None)"
+  (rust "crate::rt::check_equal({0}, {1}, {2}, {3}, {4})"
     (where ((a show) (b show))
       (fn ((ref str)
            (ref str)
@@ -329,14 +340,14 @@
         unit))))
 
 (def check-equal-with
-  (rust "crate::rt::check_equal({0}, {1}, {2}, {3}, {4}, Some({5}))"
-    (where ((a show) (b show))
+  (rust "crate::rt::check_equal_with({0}, {1}, {2}, {3}, {4}, {5})"
+    (where ((a show) (b show) (m display))
       (fn ((ref str)
            (ref str)
            (ref a)
            (ref b)
            (fn ((ref a) (ref b)) bool)
-           (ref str))
+           (fn-once () m))
         unit))))
 
 (def note-untested

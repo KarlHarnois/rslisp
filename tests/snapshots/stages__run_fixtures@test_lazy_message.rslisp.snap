@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/test_lazy_message.rslisp
+---
+<record>(start 5)
+<record>(test "test_lazy_message/a-passing-assert-skips-its-message" "")
+<record>(ok)
+<record>(test "test_lazy_message/a-passing-equal-skips-its-message" "")
+<record>(ok)
+<record>(test "test_lazy_message/a-failed-assert-computes-its-message" "")
+<record>(fail-equal "test_lazy_message.rslisp:15:3" "(assert (= 2 wanted) (str \"wanted \" wanted))" "2" "3" "wanted 3")
+<record>(test "test_lazy_message/a-message-stays-usable" "")
+kept
+<record>(ok)
+<record>(test "test_lazy_message/a-failed-assert-runs-a-panicking-message" "")
+<record>(panic "test_lazy_message.rslisp:22:1" "the message ran")
+<record>(done)

@@ -1,0 +1,25 @@
+(use prelude/test assert deftest run-tests)
+
+(defn panicking-message ()
+  (expect (the (option (ref str)) none)
+          "the message ran"))
+
+(deftest a-passing-assert-skips-its-message
+  (assert true (panicking-message)))
+
+(deftest a-passing-equal-skips-its-message
+  (assert (= 1 1) (panicking-message)))
+
+(deftest a-failed-assert-computes-its-message
+  (let wanted 3)
+  (assert (= 2 wanted) (str "wanted " wanted)))
+
+(deftest a-message-stays-usable
+  (let note (str "kept"))
+  (assert true note)
+  (println note))
+
+(deftest a-failed-assert-runs-a-panicking-message
+  (assert false (panicking-message)))
+
+(defn main () (run-tests :marker "<record>"))
