@@ -320,6 +320,17 @@ impl Bound {
         }
     }
 
+    pub fn meets(&self, required: &Bound, implementor: GenericId) -> bool {
+        self.binding == required.binding
+            && self.written_argument(implementor) == required.written_argument(implementor)
+    }
+
+    fn written_argument(&self, implementor: GenericId) -> Option<&Type> {
+        self.argument
+            .as_ref()
+            .filter(|argument| **argument != Type::Generic(implementor))
+    }
+
     pub fn from_origins(self, origins: Vec<BoundOrigin>) -> Self {
         Self { origins, ..self }
     }
