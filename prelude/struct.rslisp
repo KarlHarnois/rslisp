@@ -82,8 +82,8 @@
     (let omitted
       (defaults-without-key (signature-defaults shape)
                             (pair-keys arguments)))
-    (prepend (quote new)
-             (prepend (signature-name shape) (concat written omitted)))))
+    (concat (list (quote new) (signature-name shape))
+            written omitted)))
 
 (def field-definition
   (fn (name)

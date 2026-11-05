@@ -670,9 +670,8 @@
   (fn (pairs)
     (if (empty? pairs)
       (list)
-      (prepend (first pairs)
-               (prepend (bound-value pairs)
-                        (bound-pairs (drop 2 pairs)))))))
+      (concat (list (first pairs) (bound-value pairs))
+              (bound-pairs (drop 2 pairs))))))
 
 (def bound-value
   (fn (pairs)

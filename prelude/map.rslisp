@@ -1,5 +1,5 @@
-(use code empty? len list number-add number-lt prepend rest
-          string symbol?)
+(use code concat empty? len list number-add number-lt
+          prepend rest string symbol?)
 
 (use prelude/macros defmacro defrule document)
 (use prelude/types hash-map option slice sorted-map vec)
@@ -29,9 +29,8 @@
 (def map-parameters
   (fn (index count)
     (if (number-lt index count)
-      (prepend (quote key)
-               (prepend (quote value)
-                        (map-parameters (number-add index 2) count)))
+      (concat (list (quote key) (quote value))
+              (map-parameters (number-add index 2) count))
       (list))))
 
 (def map-type
@@ -90,8 +89,8 @@
   (macro (form)
     (if (symbol? form)
       (quote slice-get)
-      (prepend (quote map-at)
-               (prepend (quote get) (rest form))))))
+      (concat (list (quote map-at) (quote get))
+              (rest form)))))
 
 (document (get collection key)
   "Reads a slice by index or a map by key.

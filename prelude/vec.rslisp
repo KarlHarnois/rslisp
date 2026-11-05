@@ -55,8 +55,8 @@
   (macro (form)
     (if (symbol? form)
       (quote vec-push!)
-      (prepend (quote map-at)
-               (prepend (quote push) (rest form))))))
+      (concat (list (quote map-at) (quote push))
+              (rest form)))))
 
 (document (push! target item)
   "Adds an item to a vector or a string.
