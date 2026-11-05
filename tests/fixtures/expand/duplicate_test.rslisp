@@ -1,0 +1,13 @@
+(use prelude/test assert deftest)
+
+(defn pad (text) (str " " text))
+
+(deftest pads
+  (assert (= (pad "a") " a")))
+
+(deftest trims
+  (assert (= (pad "") " ")))
+
+(deftest pads (println "again"))
+
+(deftest trims (println "again"))

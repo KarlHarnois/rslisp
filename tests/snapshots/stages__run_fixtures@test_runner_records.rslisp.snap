@@ -1,0 +1,27 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/test_runner_records.rslisp
+---
+<record>(start 10)
+<record>(test "test_runner_records/pads-letter" "")
+<record>(ok)
+<record>(test "test_runner_records/pads-nothing" "Pads the empty string to one space.")
+<record>(fail-equal "test_runner_records.rslisp:15:3" "(assert (= (pad \"\") \"\"))" "\" \"" "\"\"")
+<record>(test "test_runner_records/asserts-a-message" "")
+<record>(fail "test_runner_records.rslisp:18:3" "(assert (empty? (pad \"\")) \"a padded string is never empty\")" "a padded string is never empty")
+<record>(test "test_runner_records/asserts-plainly" "")
+<record>(fail "test_runner_records.rslisp:21:3" "(assert (> (len (pad \"\")) 2))")
+<record>(test "test_runner_records/unwraps-nothing" "")
+<record>(panic "test_runner_records.rslisp:23:1" "called `Option::unwrap()` on a `None` value")
+<record>(test "test_runner_records/prints-without-newline" "")
+partial<record>(ok)
+<record>(test "test_runner_records/panics-with-a-formatted-message" "")
+<record>(panic "test_runner_records.rslisp:30:1" "must have")
+<record>(test "test_runner_records/summary-starts-with-spaces" "The summary loses its leading spaces.")
+<record>(fail "test_runner_records.rslisp:35:3" "(assert false)")
+<record>(test "test_runner_records/three-sides-show-no-sides" "")
+<record>(fail "test_runner_records.rslisp:37:36" "(assert (= 1 1 2))")
+<record>(test "test_runner_records/list-headed-assert-shows-no-sides" "")
+<record>(fail "test_runner_records.rslisp:40:3" "(assert ((fn (left right) (> left right)) 1 2))")
+<record>(done)

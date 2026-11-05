@@ -1,0 +1,354 @@
+(use prelude/macros docstring-before-body? document
+                    header-shape map-list template)
+
+(use prelude/types vec)
+(use prelude/number =)
+(use prelude/vec vec)
+(use prelude/text show)
+
+(use code add-module-note bool-not concat definition-symbol
+          empty? fail first form-location keyword-name
+          keyword? len list list? module-exports
+          module-notes nth number-lt prepend program-modules
+          rest same-binding? string string-lines
+          string-trim-start symbol symbol-name symbol?
+          value-eq)
+
+(export assert deftest run-tests)
+
+(def deftest
+  (macro (form)
+    (check-test-shape form)
+    (let name (nth form 1))
+    (let body (rest (rest form)))
+    (let documented (docstring-before-body? body))
+    (let forms (if documented (rest body) body))
+    (let function
+      (symbol (quote test) "test-" (symbol-name name)))
+    (template (do
+                (def (unquote function)
+                  (fn () (splice forms) (do)))
+                (note-test (unquote function)
+                           (unquote name)
+                           (unquote (summary documented body))
+                           (unquote (form-location form))
+                           (unquote forms))))))
+
+(header-shape (deftest name) :docstring)
+
+(document (deftest name)
+  "Defines a test that `rslisp test` runs.
+
+  A string before at least one more body form is the docstring, whose first
+  line a failure prints after the test's name. The test's function has an
+  introduced name, so no name of the program collides with it.")
+
+(def check-test-shape
+  (fn (form)
+    (if (number-lt 1 (len form))
+      (if (test-name? (nth form 1))
+        form
+        (misshapen-test form))
+      (misshapen-test form))))
+
+(def test-name?
+  (fn (name)
+    (if (symbol? name)
+      (bool-not (keyword? name))
+      false)))
+
+(def misshapen-test
+  (fn (form)
+    (fail "this use of `deftest` does not match its shape"
+      form "write it as `(deftest name body ...)`")))
+
+(def summary
+  (fn (documented body)
+    (if documented
+      (string-trim-start (first (string-lines (first body))))
+      "")))
+
+(def note-test
+  (macro (form)
+    (let name (nth form 2))
+    (let key
+      (symbol (quote test) "test " (symbol-name name)))
+    (let module (definition-symbol (nth form 1) "tests"))
+    (check-new-test name (module-notes module key))
+    (add-module-note key name)
+    (add-module-note (quote tests) (rest form))
+    (template (do))))
+
+(def check-new-test
+  (fn (name earlier)
+    (if (empty? earlier)
+      name
+      (duplicate-test name (first earlier)))))
+
+(def duplicate-test
+  (fn (name earlier)
+    (fail (string "test `"
+                  (symbol-name name)
+                  "` is defined more than once")
+      name "rename one of the tests"
+      (template (:code duplicate-test
+                       :label "defined again here"
+                       :earlier (unquote earlier)
+                       :earlier-label "first defined here")))))
+
+(def note-function
+  (fn (note) (nth note 0)))
+
+(def note-name (fn (note) (nth note 1)))
+
+(def note-summary
+  (fn (note) (nth note 2)))
+
+(def note-location
+  (fn (note) (nth note 3)))
+
+(def note-body (fn (note) (nth note 4)))
+
+(def assert
+  (macro (form)
+    (check-assert-shape form)
+    (let checked (nth form 1))
+    (let written
+      (list (form-location form) (string form)))
+    (let message (rest (rest form)))
+    (if (equality? checked)
+      (equal-assertion (equal-check message)
+                       written checked message)
+      (concat (prepend (true-check message) written)
+              (prepend checked message)))))
+
+(def borrowable
+  (fn (side)
+    (if (deref-call? side)
+      (list (quote ref) side)
+      side)))
+
+(def deref-call?
+  (fn (side)
+    (if (list? side)
+      (if (empty? side)
+        false
+        (if (symbol? (first side))
+          (same-binding? (first side) (quote deref))
+          false))
+      false)))
+
+(def equal-assertion
+  (fn (check written checked message)
+    (template ((unquote check)
+               (splice written)
+               (unquote (borrowable (nth checked 1)))
+               (unquote (borrowable (nth checked 2)))
+               (fn (left right) (= left right))
+               (splice message)))))
+
+(document (assert form)
+  "Ends the test with a failure unless `form` is true.
+
+  `(assert form \"message\")` adds a message to the failure. When `form` is
+  `(= left right)`, the failure shows both sides in their printed form.")
+
+(def check-assert-shape
+  (fn (form)
+    (if (number-lt 1 (len form))
+      (if (number-lt (len form) 4)
+        form
+        (misshapen-assert form))
+      (misshapen-assert form))))
+
+(def misshapen-assert
+  (fn (form)
+    (fail "this use of `assert` does not match its shape"
+      form
+      "write it as `(assert form)` or `(assert form \"message\")`")))
+
+(def equality?
+  (fn (checked)
+    (if (list? checked)
+      (if (value-eq (len checked) 3)
+        (equal-head? (first checked))
+        false)
+      false)))
+
+(def equal-head?
+  (fn (head)
+    (if (symbol? head)
+      (same-binding? head (quote =))
+      false)))
+
+(def equal-check
+  (fn (message)
+    (if (empty? message)
+      (quote check-equal)
+      (quote check-equal-with))))
+
+(def true-check
+  (fn (message)
+    (if (empty? message)
+      (quote check-true)
+      (quote check-true-with))))
+
+(def run-tests
+  (macro (form)
+    (let options (rest form))
+    (let marker (option-value options "marker"))
+    (let notes (program-tests (program-modules)))
+    (template (do
+                (splice (untested-records marker
+                                          (option-value options "untested")
+                                          notes))
+                (start-run (unquote marker)
+                           (vec (splice (map-list test-full-name notes))))
+                (splice (map-list (fn (note) (test-run marker note))
+                                  notes))
+                (finish-run (unquote marker))))))
+
+(def option-value
+  (fn (options name)
+    (if (empty? options)
+      (list)
+      (if (value-eq (keyword-name (first options)) name)
+        (nth options 1)
+        (recur (rest (rest options)) name)))))
+
+(def program-tests
+  (fn (modules)
+    (if (empty? modules)
+      (list)
+      (concat (map-list (fn (note)
+                          (prepend (first modules) note))
+                        (module-notes (first modules) (quote tests)))
+              (program-tests (rest modules))))))
+
+(def test-full-name
+  (fn (module-note)
+    (string (symbol-name (first module-note))
+            "/"
+            (symbol-name (note-name (rest module-note))))))
+
+(def test-run
+  (fn (marker module-note)
+    (let note (rest module-note))
+    (template (run-test (unquote marker)
+                        (unquote (test-full-name module-note))
+                        (unquote (note-summary note))
+                        (unquote (note-location note))
+                        (unquote (note-function note))))))
+
+(def untested-records
+  (fn (marker module notes)
+    (if (list? module)
+      (list)
+      (untested-record marker module
+                       (module-exports module)
+                       (written-symbols (map-list note-body
+                                                  (map-list rest notes)))))))
+
+(def untested-record
+  (fn (marker module exports written)
+    (let untested (unwritten exports written))
+    (list (template (note-untested (unquote marker)
+                                   (unquote (symbol-name module))
+                                   (unquote (len exports))
+                                   (unquote (joined-names untested)))))))
+
+(def written-symbols
+  (fn (form)
+    (if (list? form)
+      (written-symbols-of (list) form)
+      (if (symbol? form) (list form) (list)))))
+
+(def written-symbols-of
+  (fn (found forms)
+    (if (empty? forms)
+      found
+      (recur (concat found (written-symbols (first forms)))
+             (rest forms)))))
+
+(def unwritten
+  (fn (exports written)
+    (if (empty? exports)
+      (list)
+      (if (written? (first exports) written)
+        (unwritten (rest exports) written)
+        (prepend (first exports)
+                 (unwritten (rest exports) written))))))
+
+(def written?
+  (fn (export written)
+    (if (empty? written)
+      false
+      (if (same-binding? export (first written))
+        true
+        (recur export (rest written))))))
+
+(def joined-names
+  (fn (names)
+    (if (empty? names)
+      ""
+      (joined-onto (symbol-name (first names))
+                   (rest names)))))
+
+(def joined-onto
+  (fn (joined names)
+    (if (empty? names)
+      joined
+      (recur (string joined " " (symbol-name (first names)))
+             (rest names)))))
+
+(def check-true
+  (rust "crate::rt::check_true({0}, {1}, {2}, None)"
+    (fn ((ref str) (ref str) bool) unit)))
+
+(def check-true-with
+  (rust "crate::rt::check_true({0}, {1}, {2}, Some({3}))"
+    (fn ((ref str) (ref str) bool (ref str))
+      unit)))
+
+(def check-equal
+  (rust "crate::rt::check_equal({0}, {1}, {2}, {3}, {4}, None)"
+    (where ((a show) (b show))
+      (fn ((ref str)
+           (ref str)
+           (ref a)
+           (ref b)
+           (fn ((ref a) (ref b)) bool))
+        unit))))
+
+(def check-equal-with
+  (rust "crate::rt::check_equal({0}, {1}, {2}, {3}, {4}, Some({5}))"
+    (where ((a show) (b show))
+      (fn ((ref str)
+           (ref str)
+           (ref a)
+           (ref b)
+           (fn ((ref a) (ref b)) bool)
+           (ref str))
+        unit))))
+
+(def note-untested
+  (rust "crate::rt::note_untested({0}, {1}, {2}, {3})"
+    (fn ((ref str) (ref str) usize (ref str))
+      unit)))
+
+(def start-run
+  (rust "crate::rt::start_run({0}, {1})"
+    (fn ((ref str) (vec (ref str))) unit)))
+
+(def run-test
+  (rust "crate::rt::run_test({0}, {1}, {2}, {3}, {4})"
+    (fn ((ref str)
+         (ref str)
+         (ref str)
+         (ref str)
+         (fn () unit))
+      unit)))
+
+(def finish-run
+  (rust "crate::rt::finish_run({0})"
+    (fn ((ref str)) unit)))

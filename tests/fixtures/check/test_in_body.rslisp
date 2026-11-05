@@ -1,0 +1,8 @@
+(use prelude/test assert deftest)
+
+(defn tally (count)
+  (deftest counts
+    (assert (= (tally 1) 2)))
+  (+ count 1))
+
+(defn main () (println (tally 1)))

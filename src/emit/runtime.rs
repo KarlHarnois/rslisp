@@ -18,11 +18,18 @@ enum RuntimePart {
     UnwrapOk,
     UnwrapErr,
     ExpectOk,
+    FailedRecord,
+    CheckFailure,
+    CheckTrue,
+    CheckEqual,
+    NoteUntested,
+    TestRun,
+    RunTest,
 }
 
 impl RuntimePart {
     const STDOUT_MARKERS: &'static [&'static str] = &["print!(", "println!(", "std::io::stdout("];
-    const ALL: [(RuntimePart, &'static [&'static str]); 16] = [
+    const ALL: [(RuntimePart, &'static [&'static str]); 21] = [
         (RuntimePart::Number, &["crate::rt::Number"]),
         (RuntimePart::FromLiteral, &["::from_literal("]),
         (RuntimePart::FromFloatLiteral, &["::from_float_literal("]),
@@ -39,6 +46,43 @@ impl RuntimePart {
         (RuntimePart::UnwrapOk, &["crate::rt::unwrap_ok("]),
         (RuntimePart::UnwrapErr, &["crate::rt::unwrap_err("]),
         (RuntimePart::ExpectOk, &["crate::rt::expect_ok("]),
+        (RuntimePart::CheckTrue, &["crate::rt::check_true("]),
+        (RuntimePart::CheckEqual, &["crate::rt::check_equal("]),
+        (RuntimePart::NoteUntested, &["crate::rt::note_untested("]),
+        (RuntimePart::TestRun, &["crate::rt::start_run("]),
+        (RuntimePart::RunTest, &["crate::rt::run_test("]),
+    ];
+
+    const REQUIRED: [(RuntimePart, &'static [RuntimePart]); 16] = [
+        (RuntimePart::FromLiteral, &[RuntimePart::Number]),
+        (RuntimePart::FromFloatLiteral, &[RuntimePart::Number]),
+        (RuntimePart::Signed, &[RuntimePart::Number]),
+        (RuntimePart::Integer, &[RuntimePart::Number]),
+        (RuntimePart::Float, &[RuntimePart::Signed]),
+        (RuntimePart::MapSequence, &[RuntimePart::Sequence]),
+        (RuntimePart::Lines, &[RuntimePart::Io]),
+        (RuntimePart::UnwrapOk, &[RuntimePart::Show]),
+        (RuntimePart::UnwrapErr, &[RuntimePart::Show]),
+        (RuntimePart::ExpectOk, &[RuntimePart::Show]),
+        (
+            RuntimePart::CheckFailure,
+            &[RuntimePart::FailedRecord, RuntimePart::Show],
+        ),
+        (RuntimePart::CheckTrue, &[RuntimePart::CheckFailure]),
+        (RuntimePart::CheckEqual, &[RuntimePart::CheckFailure]),
+        (
+            RuntimePart::NoteUntested,
+            &[RuntimePart::Show, RuntimePart::Signal],
+        ),
+        (RuntimePart::TestRun, &[RuntimePart::Signal]),
+        (
+            RuntimePart::RunTest,
+            &[
+                RuntimePart::TestRun,
+                RuntimePart::FailedRecord,
+                RuntimePart::Show,
+            ],
+        ),
     ];
 
     fn present(self, code: &str) -> bool {
@@ -72,25 +116,11 @@ impl RuntimePart {
             .is_some_and(|character| character.is_alphanumeric() || character == '_')
     }
 
-    fn required(self) -> Option<RuntimePart> {
-        match self {
-            RuntimePart::FromLiteral
-            | RuntimePart::FromFloatLiteral
-            | RuntimePart::Signed
-            | RuntimePart::Integer => Some(RuntimePart::Number),
-            RuntimePart::Float => Some(RuntimePart::Signed),
-            RuntimePart::Number
-            | RuntimePart::Sequence
-            | RuntimePart::Io
-            | RuntimePart::Source
-            | RuntimePart::Signal
-            | RuntimePart::Show => None,
-            RuntimePart::MapSequence => Some(RuntimePart::Sequence),
-            RuntimePart::Lines => Some(RuntimePart::Io),
-            RuntimePart::UnwrapOk | RuntimePart::UnwrapErr | RuntimePart::ExpectOk => {
-                Some(RuntimePart::Show)
-            }
-        }
+    fn required(self) -> &'static [RuntimePart] {
+        Self::REQUIRED
+            .iter()
+            .find(|(part, _)| *part == self)
+            .map_or(&[], |(_, required)| *required)
     }
 }
 
@@ -118,8 +148,15 @@ impl RuntimeModule {
     const UNWRAP_OK: &'static str = include_str!("../../prelude/runtime/unwrap_ok.rs");
     const UNWRAP_ERR: &'static str = include_str!("../../prelude/runtime/unwrap_err.rs");
     const EXPECT_OK: &'static str = include_str!("../../prelude/runtime/expect_ok.rs");
+    const FAILED_RECORD: &'static str = include_str!("../../prelude/runtime/failed_record.rs");
+    const CHECK_FAILURE: &'static str = include_str!("../../prelude/runtime/check_failure.rs");
+    const CHECK_TRUE: &'static str = include_str!("../../prelude/runtime/check_true.rs");
+    const CHECK_EQUAL: &'static str = include_str!("../../prelude/runtime/check_equal.rs");
+    const NOTE_UNTESTED: &'static str = include_str!("../../prelude/runtime/note_untested.rs");
+    const TEST_RUN: &'static str = include_str!("../../prelude/runtime/test_run.rs");
+    const RUN_TEST: &'static str = include_str!("../../prelude/runtime/run_test.rs");
     const START_UP_CALL: &'static str = "crate::rt::restore_default_sigpipe();";
-    const FIXED_PARTS: [(RuntimePart, &'static str); 13] = [
+    const FIXED_PARTS: [(RuntimePart, &'static str); 20] = [
         (RuntimePart::Signed, Self::SIGNED),
         (RuntimePart::Float, Self::FLOAT),
         (RuntimePart::Integer, Self::INTEGER),
@@ -133,6 +170,13 @@ impl RuntimeModule {
         (RuntimePart::UnwrapOk, Self::UNWRAP_OK),
         (RuntimePart::UnwrapErr, Self::UNWRAP_ERR),
         (RuntimePart::ExpectOk, Self::EXPECT_OK),
+        (RuntimePart::FailedRecord, Self::FAILED_RECORD),
+        (RuntimePart::CheckFailure, Self::CHECK_FAILURE),
+        (RuntimePart::CheckTrue, Self::CHECK_TRUE),
+        (RuntimePart::CheckEqual, Self::CHECK_EQUAL),
+        (RuntimePart::NoteUntested, Self::NOTE_UNTESTED),
+        (RuntimePart::TestRun, Self::TEST_RUN),
+        (RuntimePart::RunTest, Self::RUN_TEST),
     ];
     const CONVERSIONS: &'static [Conversion] = &[
         Conversion {
@@ -159,10 +203,10 @@ impl RuntimeModule {
             .collect();
         let mut unchecked: Vec<RuntimePart> = parts.iter().copied().collect();
         while let Some(part) = unchecked.pop() {
-            if let Some(required) = part.required()
-                && parts.insert(required)
-            {
-                unchecked.push(required);
+            for required in part.required() {
+                if parts.insert(*required) {
+                    unchecked.push(*required);
+                }
             }
         }
         (!parts.is_empty()).then_some(RuntimeModule { parts })

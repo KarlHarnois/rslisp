@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/test_without_use.rslisp
+---
+error[L0201]: cannot find `deftest` in this scope
+ --> check/test_without_use.rslisp:3:2
+  |
+3 | (deftest doubles
+  |  ^^^^^^^ not found in this scope

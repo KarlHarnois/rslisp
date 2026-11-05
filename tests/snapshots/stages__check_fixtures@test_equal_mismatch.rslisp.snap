@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/test_equal_mismatch.rslisp
+---
+error[L0401]: mismatched types
+ --> check/test_equal_mismatch.rslisp:4:3
+  |
+4 |   (assert (= (len "ab") "two")))
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `usize`, found `str`

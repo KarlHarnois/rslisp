@@ -1,0 +1,6 @@
+(defn twice (x) (* 2 x))
+
+(deftest doubles
+         (assert (= (twice 2) 4)))
+
+(defn main () (println (twice 2)))

@@ -1,0 +1,18 @@
+(use prelude/test assert deftest)
+
+(defstruct operation
+  :name string
+  :op (fn (i64) i64))
+
+(defn twice (x) (* 2 x))
+
+(deftest compares-operations
+  (assert (= (->operation :name (str "add") :op twice)
+             (->operation :name (str "add") :op twice))))
+
+(deftest compares-called-closures
+  (assert (= ((fn ()
+                (->operation :name (str "a") :op twice)))
+             (->operation :name (str "a") :op twice))))
+
+(defn main () (println (twice 2)))

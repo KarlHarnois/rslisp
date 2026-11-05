@@ -25,9 +25,10 @@ impl ModuleSources {
     pub const KERNEL: &str = "kernel";
     pub const CODE: &str = "code";
     pub const PRELUDE: &str = "prelude";
+    pub const TEST: &str = "prelude/test";
     const PRELUDE_DIRECTORY: &str = "prelude/";
     const BYTE_ORDER_MARK: char = '\u{feff}';
-    const PRELUDE_FILES: [(&str, &str); 19] = [
+    const PRELUDE_FILES: [(&str, &str); 20] = [
         ("prelude", include_str!("../../../prelude/prelude.rslisp")),
         (
             "prelude/macros",
@@ -86,6 +87,7 @@ impl ModuleSources {
             "prelude/sequence",
             include_str!("../../../prelude/sequence.rslisp"),
         ),
+        ("prelude/test", include_str!("../../../prelude/test.rslisp")),
     ];
 
     pub fn new(root: PathBuf, display_root: PathBuf) -> Self {

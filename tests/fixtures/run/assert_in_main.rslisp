@@ -1,0 +1,10 @@
+(use prelude/test assert)
+
+(defn positive (number)
+  (assert (> number 0) "needs a positive number")
+  number)
+
+(defn main ()
+  (assert (= (positive 2) 2))
+  (println "passed")
+  (assert (= (str "a") "b") "they differ"))

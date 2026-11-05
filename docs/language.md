@@ -440,7 +440,7 @@ A docstring is Markdown. A lookup removes the indentation that every written con
 
 A `:docstring` after the shape states that the form takes a docstring as the first form after its header, when another form follows it: `(header-shape (defn name parameters) :docstring)`. A shape adds itself, such as `(defn name parameters)`, to its module's notes under `header-shapes`, and a `:docstring` adds the form's name under `docstring-forms`, so macro code reads both with `module-notes`. A `:one-per-line` after the shape states that the formatter does not fill runs of atoms in a broken call, so each later form takes its own line apart from keyword pairs, as the prelude states for `enum`. The formatter does not expand, so it reads the `header-shape` forms themselves.
 
-The prelude states the shapes of its four definers, of `def` and of `document`, each with `:docstring`, of its macros whose calls have a header and a body, such as `(header-shape (loop bindings))` and `(header-shape (let-pair names value))`, and of the kernel forms whose header stays on the first line when the call breaks, such as `(header-shape (match value))` and `(header-shape (impl trait type))`. `prelude/prelude.rslisp` states the kernel's shapes, beside its re-export of the kernel. The kernel's shapes include `(header-shape (if test))` and `(header-shape (do))`, so an `if` or a `do` that breaks indents its branches or forms 2 columns, and `prelude/macros.rslisp` states `(header-shape (fail message))` for the `code` module's `fail`.
+The prelude states the shapes of its four definers, of `def` and of `document`, each with `:docstring`, of its macros whose calls have a header and a body, such as `(header-shape (loop bindings))` and `(header-shape (let-pair names value))`, and of the kernel forms whose header stays on the first line when the call breaks, such as `(header-shape (match value))` and `(header-shape (impl trait type))`. `prelude/prelude.rslisp` states the kernel's shapes, beside its re-export of the kernel. `prelude/test` states `(header-shape (deftest name) :docstring)`. The kernel's shapes include `(header-shape (if test))` and `(header-shape (do))`, so an `if` or a `do` that breaks indents its branches or forms 2 columns, and `prelude/macros.rslisp` states `(header-shape (fail message))` for the `code` module's `fail`.
 
 A user macro states its own shape with `(use prelude/macros header-shape)`, below the macro's definition. A shape that is not a list that starts with a name is `L0329`. The name must refer to a binding where the shape is written, so a misspelled name is `L0201` with the closest name, and so is a shape above the definition of the macro it names, as a call above that definition is. Any form after the shape other than `:docstring` and `:one-per-line`, each at most once, is `L0331`.
 
@@ -668,6 +668,50 @@ An expression never changes the buffer. After a module file changes on disk, an 
 - The program's standard error never goes through a pipe and never takes a color.
 
 **`rslisp doc` colors the header and the `--types` line with the token colors, by standard output's decision.** The docstring is Markdown and stays plain. At the prompt, `(doc term)` is the program's output, so the whole page prints plain.
+
+## Tests
+
+**`deftest` defines a test, and `assert` checks a value inside it** ([RFC 0055](../rfcs/0055-tests.md), [RFC 0056](../rfcs/0056-test-amendments.md)). Both are macros of the module `prelude/test`, which the always-loaded prelude does not import, so a program with no tests pays nothing for them. A test module imports them, as a Clojure test file requires `clojure.test`.
+
+```lisp
+(use prelude/test assert deftest)
+
+(deftest pads-left
+  (assert (= (pad-left "7" 3) "  7")))
+
+(deftest trims-right
+  "Removes trailing spaces, not inner ones."
+  (assert (= (trim-right "a b  ") "a b ")))
+```
+
+- A test's name is a symbol that is not a keyword. A string before at least one more body form is the docstring, as for `defn`, and a failure prints its first line.
+- A test's function ends with a unit form, so a test's value is dropped and a test passes when it returns. A test that returns an `err` passes: `assert` is what fails a test. An open type in a test's last form is `L0407` at that form under every command.
+- A test sits at the top level of any module, beside the code it tests or in a module of its own. A `deftest` in a body is `L0208`.
+- `deftest` defines the test's function under an introduced name, `test-` and the written name, so no name of the program collides with it, `rslisp check` and `rslisp types` leave it out, and its Rust name yields to an item the program wrote. A test name is not a binding, so `(doc pads-left)` finds only a binding the program wrote.
+- Every command expands and type checks every test. A test emits Rust only under `rslisp test`, because the emitter writes only what `main` reaches.
+- A second test of one name in one module is `L0333`, at the second test, with the first marked.
+- A test's full name is its module's path, `/`, and its name, such as `text/format/pads-left`.
+
+`assert` takes one form and an optional message. A failed `assert` ends its test. When the form is a call of the prelude's `=` with two arguments, `assert` passes each side to the check, in order, with the comparison as a closure, `(fn (left right) (= left right))`. So each side runs once, a side keeps its value, the comparison type checks as a written `=` does, with a literal or `none` taking its type from the other side, and a side without `show` is reported at that side. A mismatch between the two sides labels the whole `assert`, because the closure's names take its location. A failure shows both sides in their printed form. A side headed by `deref` is wrapped in `ref`, because a written `deref` turns off the borrow at a call, so `assert` accepts what `=` accepts. Any other form shows as written.
+
+`assert` works in any code, as Rust's `assert!` does, so a helper that a test and `main` share builds, and a `(use prelude/test assert)` works under `build`, `run`, `eval` and the prompt. A failed `assert` panics, and with no runner the panic prints its location, its written form, both sides of `=` and its message:
+
+```text
+assertion failed at text/format.rslisp:12:3: (assert (= (pad-left "7" 3) "007"))
+left:  "  7"
+right: "007"
+```
+
+| The `assert` | Calls | Type |
+| --- | --- | --- |
+| any form other than `=` | `check-true` | `(fn ((ref str) (ref str) bool) unit)` |
+| any form other than `=`, with a message | `check-true-with` | `(fn ((ref str) (ref str) bool (ref str)) unit)` |
+| `(= left right)` | `check-equal` | `(where ((a show) (b show)) (fn ((ref str) (ref str) (ref a) (ref b) (fn ((ref a) (ref b)) bool)) unit))` |
+| `(= left right)`, with a message | `check-equal-with` | `(where ((a show) (b show)) (fn ((ref str) (ref str) (ref a) (ref b) (fn ((ref a) (ref b)) bool) (ref str)) unit))` |
+
+Each check takes the `assert`'s location, from `form-location`, and its written text first. A failed check stores its record in a static of the runtime, where the runner finds it, then panics.
+
+`(run-tests :marker "<marker>")` expands to the program's test runner: one call per test of every module that `(program-modules)` returns, in load order and then source order, between a start and a finish. `:untested <module>` adds the list of names that `<module>` exports and no test writes. The checks and the runner are `rust` templates over runtime parts in `prelude/runtime/`, one per marker, so the emitted Rust holds a function only when it calls that function. The runner runs each test under `std::panic::catch_unwind` and writes the records that `rslisp test` reads.
 
 ## Rust interop
 
