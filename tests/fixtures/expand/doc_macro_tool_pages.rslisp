@@ -1,0 +1,5 @@
+(def defrule-page (doc-page defrule))
+
+(def defmacro-page (doc-page defmacro))
+
+(def template-page (doc-page template))

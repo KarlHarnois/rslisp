@@ -1290,6 +1290,16 @@ fn doc_prints_the_page_of_a_kernel_constant() {
 }
 
 #[test]
+fn doc_prints_the_call_form_of_template() {
+    let sandbox = Sandbox::new("doc_template");
+    let doc = sandbox.compiler(&["doc", "template"]);
+    assert_eq!(
+        doc.assert_exit_code(0).stdout(),
+        "(template form)\n\nBuilds a form from a quoted form with holes in it.\n\n`(unquote x)` puts the value of `x` in place, and `(splice xs)` puts each\nform of the list `xs` in place, as in\n`(template (def (unquote name) (splice body)))`.\n"
+    );
+}
+
+#[test]
 fn doc_takes_a_term_that_starts_with_a_hyphen() {
     let sandbox = Sandbox::new("doc_hyphen");
     let doc = sandbox.compiler(&["doc", "->"]);

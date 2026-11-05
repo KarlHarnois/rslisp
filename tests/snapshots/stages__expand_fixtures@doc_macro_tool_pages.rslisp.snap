@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_macro_tool_pages.rslisp
+---
+(def defrule-page "(defrule name (pattern template) ...)\n\nDefines a macro by rules that each rewrite a call of one shape.\n\nThe first rule whose pattern matches the call's arguments gives the\nexpansion, its template filled with the pattern's variables. In a pattern,\n`name ...` matches zero or more forms. A docstring may follow the name.")
+(def defmacro-page "(defmacro name pattern body ...)\n\nDefines a macro whose body computes the expansion of a call.\n\nThe pattern binds the call's arguments as a `defrule` pattern does, and the\nbody's last form is the expansion. A docstring may lead the body when\nanother form follows it.")
+(def template-page "(template form)\n\nBuilds a form from a quoted form with holes in it.\n\n`(unquote x)` puts the value of `x` in place, and `(splice xs)` puts each\nform of the list `xs` in place, as in\n`(template (def (unquote name) (splice body)))`.")
