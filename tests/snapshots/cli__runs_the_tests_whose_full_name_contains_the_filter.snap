@@ -1,0 +1,13 @@
+---
+source: tests/cli.rs
+expression: test.assert_exit_code(1).stdout()
+---
+running 2 tests
+test padding/pads-a-letter ... ok
+test padding/pads-nothing ... FAIL
+FAIL padding/pads-nothing: Pads the empty string to one space. (padding.rslisp:9:3)
+    (assert (= (pad "") "") "the empty string grows")
+    left:  " "
+    right: ""
+    the empty string grows
+1 passed, 1 failed

@@ -62,14 +62,45 @@ impl ExpansionSession<'_> {
             .iter()
             .map(|form| self.in_entry_scope(form.clone()))
             .collect();
-        let lowered = self.lower_in_entry(|expander| expander.lower_body(&scoped));
+        self.entry_lowered_in(self.entry, &scoped, forms, span)
+    }
+
+    pub fn test_runner_entry(&mut self, source: SourceId) -> Result<GeneratedEntry, Diagnostics> {
+        let span = Span::new(source, 0..self.expander.sources.file(source).text().len());
+        let runner = self
+            .expander
+            .load_module(&ModulePath::new(ModuleSources::TEST), span)
+            .map_err(Diagnostics::from)?;
+        let forms = self.read(source)?;
+        let scoped: Vec<Form> = forms
+            .iter()
+            .map(|form| {
+                let mut scoped = form.clone();
+                Self::add_module_scopes(self.expander.modules.get(runner), &mut scoped);
+                scoped
+            })
+            .collect();
+        self.entry_lowered_in(runner, &scoped, &forms, span)
+    }
+
+    pub fn loads(&self, path: &ModulePath) -> bool {
+        self.expander.modules.find(path).is_some()
+    }
+
+    fn entry_lowered_in(
+        &mut self,
+        module: ModuleId,
+        scoped: &[Form],
+        written: &[Form],
+        span: Span,
+    ) -> Result<GeneratedEntry, Diagnostics> {
+        let lowered = self.lower_in(module, |expander| expander.lower_body(scoped));
         let mut body = self.collect_diagnostics(lowered)?;
         body.items.push(Self::unit(span));
-        let written = forms.iter().map(Self::written).collect();
         Ok(GeneratedEntry::new(
             self.entry_binding(span),
             body,
-            written,
+            written.iter().map(Self::written).collect(),
             span,
         ))
     }

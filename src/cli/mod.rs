@@ -37,6 +37,11 @@ mod streamed_program;
 mod temporary_directory;
 mod term_parser;
 mod terminal;
+mod test;
+mod test_entries;
+mod test_record;
+mod test_report;
+mod test_run;
 mod token_colors;
 mod types;
 mod value_marker;
@@ -71,6 +76,7 @@ use repl::ReplCommand;
 use run::RunCommand;
 use term_parser::{SurplusParser, TermParser};
 use terminal::{BuildOptions, Terminal};
+use test::{TestCommand, TestSelection};
 use types::TypesCommand;
 
 #[derive(Parser)]
@@ -176,6 +182,27 @@ enum ProgramCommand {
     Repl {
         #[arg(long, default_value = ReplCommand::DEFAULT_ROOT, help = "Resolve `use` from this directory")]
         root: PathBuf,
+        #[command(flatten)]
+        release: ReleaseFlag,
+    },
+    #[command(about = "Build the tests of a file or a directory and run them")]
+    Test {
+        path: PathBuf,
+        #[arg(help = "Run only the tests whose full name contains this text")]
+        filter: Option<String>,
+        #[arg(
+            long,
+            value_name = "NAME",
+            conflicts_with = "filter",
+            help = "Run only the test with this full name"
+        )]
+        exact: Option<String>,
+        #[arg(
+            long,
+            value_name = "MODULE",
+            help = "List the names that MODULE exports and no test writes"
+        )]
+        untested: Option<String>,
         #[command(flatten)]
         release: ReleaseFlag,
     },
@@ -345,6 +372,19 @@ impl ProgramCommand {
             )
             .run(terminal),
             Self::Repl { root, release } => ReplCommand::new(root, release.profile()).run(terminal),
+            Self::Test {
+                path,
+                filter,
+                exact,
+                untested,
+                release,
+            } => TestCommand::new(
+                path,
+                TestSelection::of(filter, exact),
+                untested,
+                release.profile(),
+            )
+            .run(terminal),
             Self::Run {
                 file,
                 release,

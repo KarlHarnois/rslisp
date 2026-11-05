@@ -192,6 +192,7 @@ impl Sandbox {
     const EXECUTABLE: u32 = 0o755;
     const PIPE_OVERFLOWING_GREETING_REPEATS: usize = 1 << 18;
     const READ_ONLY: u32 = 0o444;
+    const NO_ACCESS: u32 = 0o000;
     const TERMINAL_RECORDER: &str = "script";
     const INPUT_PATIENCE: Duration = Duration::from_secs(10);
     const STATE_HOME_VARIABLE: &str = "XDG_STATE_HOME";
@@ -4181,4 +4182,440 @@ fn repl_on_piped_input_stops_at_an_interrupt() {
     drop(input);
     let status = child.wait().expect("the compiler finishes");
     assert_eq!(status.signal(), Some(2));
+}
+
+const PADDING_TESTS: &str = r#"(use prelude/test assert deftest)
+
+(defn pad (text) (str " " text))
+
+(deftest pads-a-letter (assert (= (pad "a") " a")))
+
+(deftest pads-nothing
+  "Pads the empty string to one space."
+  (assert (= (pad "") "") "the empty string grows"))
+
+(deftest unwraps-nothing (unwrap (the (option i64) none)))
+
+(deftest counts-letters (assert (> (len (pad "")) 2)))
+"#;
+
+const CRASHING_TESTS: &str = r#"(use prelude/test assert deftest)
+
+(def abort (rust "std::process::abort()" (fn () unit)))
+
+(deftest runs-first (assert true))
+
+(deftest crashes (exit 3))
+
+(deftest exits-cleanly (exit 0))
+
+(deftest aborts (abort))
+
+(deftest runs-last (assert true))
+"#;
+
+#[test]
+fn test_reports_passing_failing_and_panicking_tests() {
+    let sandbox = Sandbox::new("test_report").with_file("padding.rslisp", PADDING_TESTS);
+    let test = sandbox.compiler(&["test", "padding.rslisp"]);
+    insta::assert_snapshot!(test.assert_exit_code(1).transcript());
+}
+
+#[test]
+fn test_exits_zero_when_every_selected_test_passes() {
+    let sandbox = Sandbox::new("test_pass").with_file("padding.rslisp", PADDING_TESTS);
+    let test = sandbox.compiler(&["test", "padding.rslisp", "pads-a"]);
+    assert_eq!(
+        test.assert_silent_success().stdout(),
+        "running 1 test\ntest padding/pads-a-letter ... ok\n1 passed, 0 failed\n"
+    );
+}
+
+#[test]
+fn test_runs_the_tests_whose_full_name_contains_the_filter() {
+    let sandbox = Sandbox::new("test_filter").with_file("padding.rslisp", PADDING_TESTS);
+    let test = sandbox.compiler(&["test", "padding.rslisp", "padding/pads"]);
+    insta::assert_snapshot!(test.assert_exit_code(1).stdout());
+}
+
+#[test]
+fn test_with_exact_runs_only_the_test_of_that_full_name() {
+    let sandbox = Sandbox::new("test_exact").with_file("padding.rslisp", PADDING_TESTS);
+    let test = sandbox.compiler(&["test", "padding.rslisp", "--exact", "padding/pads-a-letter"]);
+    assert_eq!(
+        test.assert_silent_success().stdout(),
+        "running 1 test\ntest padding/pads-a-letter ... ok\n1 passed, 0 failed\n"
+    );
+}
+
+#[test]
+fn test_with_exact_runs_no_test_whose_name_only_contains_it() {
+    let sandbox = Sandbox::new("test_exact_part").with_file("padding.rslisp", PADDING_TESTS);
+    let test = sandbox.compiler(&["test", "padding.rslisp", "--exact", "padding/pads"]);
+    test.assert_exit_code(0);
+    assert_eq!(test.stdout(), "running 0 tests\n0 passed, 0 failed\n");
+    assert_eq!(test.stderr(), "note: no test is named `padding/pads`\n");
+}
+
+#[test]
+fn test_notes_a_filter_that_matches_no_test() {
+    let sandbox = Sandbox::new("test_no_match").with_file("padding.rslisp", PADDING_TESTS);
+    let test = sandbox.compiler(&["test", "padding.rslisp", "trims"]);
+    test.assert_exit_code(0);
+    assert_eq!(test.stdout(), "running 0 tests\n0 passed, 0 failed\n");
+    assert_eq!(test.stderr(), "note: no test name contains `trims`\n");
+}
+
+#[test]
+fn test_of_a_program_without_tests_runs_none() {
+    let sandbox = Sandbox::new("test_none").with_file("plain.rslisp", "(defn twice (x) (* 2 x))\n");
+    let test = sandbox.compiler(&["test", "plain.rslisp"]);
+    assert_eq!(
+        test.assert_silent_success().stdout(),
+        "running 0 tests\n0 passed, 0 failed\n"
+    );
+}
+
+#[test]
+fn test_rejects_both_a_filter_and_exact() {
+    let sandbox = Sandbox::new("test_filter_and_exact").with_file("padding.rslisp", PADDING_TESTS);
+    sandbox
+        .compiler(&[
+            "test",
+            "padding.rslisp",
+            "pads",
+            "--exact",
+            "padding/pads-nothing",
+        ])
+        .assert_exit_code(2);
+}
+
+#[test]
+fn test_reports_a_crash_and_counts_the_tests_not_run() {
+    let sandbox = Sandbox::new("test_crash").with_file("crash.rslisp", CRASHING_TESTS);
+    let test = sandbox.compiler(&["test", "crash.rslisp"]);
+    insta::assert_snapshot!(test.assert_exit_code(1).transcript());
+}
+
+#[test]
+fn test_reports_a_test_that_exits_with_zero_as_a_crash() {
+    let sandbox = Sandbox::new("test_exit_zero").with_file("crash.rslisp", CRASHING_TESTS);
+    let test = sandbox.compiler(&["test", "crash.rslisp", "exits"]);
+    assert_eq!(
+        test.assert_exit_code(1).stdout(),
+        "running 1 test\n\
+         test crash/exits-cleanly ... CRASH\n\
+         CRASH crash/exits-cleanly: the program exited with code 0\n\
+         0 passed, 0 failed, 1 crashed, 0 not run\n"
+    );
+}
+
+#[test]
+fn test_reports_an_abort_by_its_signal() {
+    let sandbox = Sandbox::new("test_abort").with_file("crash.rslisp", CRASHING_TESTS);
+    let test = sandbox.compiler(&["test", "crash.rslisp", "aborts"]);
+    assert_eq!(
+        test.assert_exit_code(1).stdout(),
+        "running 1 test\n\
+         test crash/aborts ... CRASH\n\
+         CRASH crash/aborts: the program stopped on signal 6 (SIGABRT)\n\
+         0 passed, 0 failed, 1 crashed, 0 not run\n"
+    );
+}
+
+#[test]
+fn test_puts_the_result_after_the_output_of_the_test() {
+    let sandbox = Sandbox::new("test_output").with_file(
+        "talking.rslisp",
+        "(use prelude/test deftest)\n\n(deftest prints-a-line (println \"hello\"))\n\n\
+         (deftest prints-a-word (print \"hello\"))\n\n\
+         (deftest reads (prn (read-line)))\n",
+    );
+    let test = sandbox.compiler_reading("line one\n", &["test", "talking.rslisp"]);
+    assert_eq!(
+        test.assert_silent_success().stdout(),
+        "running 3 tests\n\
+         test talking/prints-a-line ... hello\nok\n\
+         test talking/prints-a-word ... hello\nok\n\
+         test talking/reads ... (ok (some \"line one\"))\nok\n\
+         3 passed, 0 failed\n"
+    );
+}
+
+#[test]
+fn test_checks_the_entry_main_without_running_it() {
+    let sandbox = Sandbox::new("test_main").with_file(
+        "app.rslisp",
+        "(use prelude/test deftest)\n\n(defn main () (println \"main ran\"))\n\n(deftest calls-main (main))\n",
+    );
+    let test = sandbox.compiler(&["test", "app.rslisp"]);
+    assert_eq!(
+        test.assert_silent_success().stdout(),
+        "running 1 test\ntest app/calls-main ... main ran\nok\n1 passed, 0 failed\n"
+    );
+}
+
+#[test]
+fn test_runs_the_tests_of_every_module_of_a_directory() {
+    let sandbox = Sandbox::new("test_directory")
+        .with_file("checks/text.rslisp", "(use prelude/test assert deftest)\n(use shelf/stock restock)\n\n(deftest restocks (assert (= (restock 1) 2)))\n")
+        .with_file("checks/notes.txt", "(deftest ignored (assert false))\n")
+        .with_file("checks/shelf/stock.rslisp", "(use prelude/test assert deftest)\n\n(export restock)\n\n(defn restock (count) (+ count 1))\n\n(deftest keeps-count (assert (= (restock 0) 1)))\n");
+    let test = sandbox.compiler(&["test", "checks"]);
+    assert_eq!(
+        test.assert_silent_success().stdout(),
+        "running 2 tests\n\
+         test shelf/stock/keeps-count ... ok\n\
+         test text/restocks ... ok\n\
+         2 passed, 0 failed\n"
+    );
+}
+
+#[test]
+fn test_lists_the_exports_that_no_test_writes() {
+    let sandbox = Sandbox::new("test_untested")
+        .with_file("app.rslisp", "(use prelude/test assert deftest)\n(use shelf restock)\n\n(deftest restocks (assert (= (restock 1) 2)))\n")
+        .with_file("shelf.rslisp", "(export restock shelve stack)\n\n(defn restock (count) (+ count 1))\n\n(defn shelve (count) (- count 1))\n\n(defn stack (count) (* count 2))\n");
+    let test = sandbox.compiler(&["test", "app.rslisp", "--untested", "shelf"]);
+    assert_eq!(
+        test.assert_silent_success().stdout(),
+        "untested in shelf (2 of 3): shelve stack\n\
+         running 1 test\n\
+         test app/restocks ... ok\n\
+         1 passed, 0 failed\n"
+    );
+}
+
+#[test]
+fn test_rejects_untested_for_a_module_the_program_does_not_load() {
+    let sandbox = Sandbox::new("test_untested_unloaded").with_file("padding.rslisp", PADDING_TESTS);
+    let test = sandbox.compiler(&["test", "padding.rslisp", "--untested", "shelf"]);
+    test.assert_exit_code(2);
+    assert_eq!(test.stdout(), "");
+    assert_eq!(
+        test.stderr(),
+        "error: the program does not load module `shelf`\n"
+    );
+}
+
+#[test]
+fn test_of_a_program_with_errors_reports_them_and_runs_nothing() {
+    let sandbox = Sandbox::new("test_errors").with_file(
+        "broken.rslisp",
+        "(use prelude/test assert deftest)\n\n(deftest pads (assert (= (missing 1) 2)))\n",
+    );
+    let test = sandbox.compiler(&["test", "broken.rslisp"]);
+    test.assert_exit_code(1);
+    assert_eq!(test.stdout(), "");
+    assert!(test.stderr().contains("error[L0201]"), "{}", test.stderr());
+}
+
+#[test]
+fn test_of_a_missing_path_is_a_usage_error() {
+    let sandbox = Sandbox::new("test_missing_path");
+    sandbox
+        .compiler(&["test", "missing.rslisp"])
+        .assert_exit_code(2);
+}
+
+#[test]
+fn test_runs_the_prelude_tests_and_lists_the_untested_prelude_names() {
+    let mut command = Command::new(Sandbox::COMPILER);
+    command
+        .args(["test", "prelude/tests", "--untested", "prelude"])
+        .current_dir(env!("CARGO_MANIFEST_DIR"));
+    let test = Outcome::of(&mut command);
+    insta::assert_snapshot!(test.assert_silent_success().stdout());
+}
+
+#[test]
+fn test_ends_quietly_when_its_reader_closes() {
+    let sandbox = Sandbox::new("test_closed_pipe").with_file("padding.rslisp", PADDING_TESTS);
+    sandbox
+        .compiler_writing_to_a_closed_pipe(&["test", "padding.rslisp"])
+        .assert_silent_success();
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+fn test_reports_a_standard_output_it_cannot_write() {
+    let sandbox = Sandbox::new("test_unwritable").with_file("padding.rslisp", PADDING_TESTS);
+    let test = sandbox.compiler_writing_to_a_full_device(&["test", "padding.rslisp"]);
+    assert!(
+        test.assert_exit_code(2)
+            .stderr()
+            .starts_with("error: cannot write standard output: "),
+        "{}",
+        test.stderr()
+    );
+}
+
+const ASSERTING_PROGRAM: &str = "(use prelude/test assert deftest)\n\n\
+(defn positive (number)\n  (assert (> number 0) \"needs a positive number\")\n  number)\n\n\
+(deftest keeps-a-positive-number (assert (= (positive 2) 2)))\n\n\
+(defn main ()\n  (assert (= (positive 2) 2))\n  (println \"passed\"))\n";
+
+const FAILING_ASSERT: &str = "(use prelude/test assert)\n\n(defn main ()\n  (assert (= (str \"a\") \"b\") \"they differ\"))\n";
+
+const FAILED_ASSERT_TEXT: &str = "assertion failed at failing.rslisp:4:3: \
+(assert (= (str \"a\") \"b\") \"they differ\")\nleft:  \"a\"\nright: \"b\"\nthey differ\n";
+
+#[test]
+fn assert_in_a_helper_shared_with_a_test_builds_and_runs() {
+    let sandbox = Sandbox::new("assert_shared").with_file("shared.rslisp", ASSERTING_PROGRAM);
+    sandbox
+        .compiler(&["build", "shared.rslisp"])
+        .assert_silent_success();
+    let run = sandbox.compiler(&["run", "shared.rslisp"]);
+    assert_eq!(run.assert_silent_success().stdout(), "passed\n");
+    let test = sandbox.compiler(&["test", "shared.rslisp"]);
+    assert_eq!(
+        test.assert_silent_success().stdout(),
+        "running 1 test\ntest shared/keeps-a-positive-number ... ok\n1 passed, 0 failed\n"
+    );
+}
+
+#[test]
+fn a_failed_assert_in_main_prints_its_location_and_both_sides() {
+    let sandbox = Sandbox::new("assert_failed_run").with_file("failing.rslisp", FAILING_ASSERT);
+    let run = sandbox.compiler(&["run", "failing.rslisp"]);
+    assert!(
+        run.assert_exit_code(101)
+            .stderr()
+            .contains(FAILED_ASSERT_TEXT),
+        "{}",
+        run.stderr()
+    );
+}
+
+#[test]
+fn assert_runs_under_eval() {
+    let sandbox = Sandbox::new("assert_eval").with_file("shared.rslisp", ASSERTING_PROGRAM);
+    let eval = sandbox.compiler(&["eval", "shared.rslisp", "(assert (= (positive 2) 2))"]);
+    eval.assert_silent_success();
+}
+
+#[test]
+fn a_failed_assert_under_eval_prints_both_sides() {
+    let sandbox = Sandbox::new("assert_eval_failed").with_file("shared.rslisp", ASSERTING_PROGRAM);
+    let eval = sandbox.compiler(&["eval", "shared.rslisp", "(assert (= (positive 2) 3))"]);
+    assert!(
+        eval.assert_exit_code(101).stderr().contains(
+            "assertion failed at <eval>:1:1: (assert (= (positive 2) 3))\nleft:  2\nright: 3\n"
+        ),
+        "{}",
+        eval.stderr()
+    );
+}
+
+#[test]
+fn assert_runs_at_the_prompt() {
+    let sandbox = Sandbox::new("assert_prompt");
+    let prompt = sandbox.compiler_reading(
+        "(use prelude/test assert)\n(assert (= 1 1))\n(println \"passed\")\n(assert (= 1 2))\n",
+        &["repl"],
+    );
+    assert_eq!(prompt.assert_exit_code(0).stdout(), "passed\n");
+    assert!(
+        prompt
+            .stderr()
+            .contains("assertion failed at <input 4>:1:1: (assert (= 1 2))\nleft:  1\nright: 2\n"),
+        "{}",
+        prompt.stderr()
+    );
+}
+
+#[test]
+fn test_prints_no_names_when_a_test_writes_every_export() {
+    let sandbox = Sandbox::new("test_all_written")
+        .with_file(
+            "app.rslisp",
+            "(use prelude/test assert deftest)\n(use shelf restock)\n\n(deftest restocks (assert (= (restock 1) 2)))\n",
+        )
+        .with_file(
+            "shelf.rslisp",
+            "(export restock)\n\n(defn restock (count) (+ count 1))\n",
+        );
+    let test = sandbox.compiler(&["test", "app.rslisp", "--untested", "shelf"]);
+    assert_eq!(
+        test.assert_silent_success().stdout(),
+        "untested in shelf (0 of 1)\nrunning 1 test\ntest app/restocks ... ok\n1 passed, 0 failed\n"
+    );
+}
+
+#[test]
+fn test_does_not_count_a_binding_of_the_same_name_as_an_export() {
+    let sandbox = Sandbox::new("test_same_name")
+        .with_file(
+            "app.rslisp",
+            "(use prelude/test assert deftest)\n(use shelf shelve)\n\n(defn restock () (shelve 2))\n\n(deftest restocks (assert (= (restock) 1)))\n",
+        )
+        .with_file(
+            "shelf.rslisp",
+            "(export restock shelve)\n\n(defn restock (count) (+ count 1))\n\n(defn shelve (count) (- count 1))\n",
+        );
+    let test = sandbox.compiler(&["test", "app.rslisp", "--untested", "shelf"]);
+    assert_eq!(
+        test.assert_silent_success().stdout(),
+        "untested in shelf (2 of 2): restock shelve\nrunning 1 test\ntest app/restocks ... ok\n1 passed, 0 failed\n"
+    );
+}
+
+#[test]
+fn test_reports_a_missing_build_directory() {
+    let sandbox =
+        Sandbox::new("test_no_build_directory").with_file("padding.rslisp", PADDING_TESTS);
+    let test = sandbox.compiler_with_temporary_directory("missing", &["test", "padding.rslisp"]);
+    assert!(
+        test.assert_exit_code(2)
+            .stderr()
+            .starts_with("error: cannot create a build directory"),
+        "{}",
+        test.stderr()
+    );
+}
+
+#[test]
+fn test_reports_a_program_that_cannot_start() {
+    let sandbox = Sandbox::new("test_missing_program")
+        .with_file("padding.rslisp", PADDING_TESTS)
+        .with_executable("tools/rustc", SILENT_RUSTC)
+        .with_executable("tools/rustfmt", PASSTHROUGH_RUSTFMT);
+    let test = sandbox.compiler_with_path("tools", &["test", "padding.rslisp"]);
+    assert!(
+        test.assert_exit_code(2)
+            .stderr()
+            .starts_with("error: cannot run"),
+        "{}",
+        test.stderr()
+    );
+}
+
+#[test]
+fn test_reports_a_directory_it_cannot_read() {
+    let sandbox = Sandbox::new("test_unreadable_directory")
+        .with_file("checks/hidden/stock.rslisp", "(defn restock () 1)\n");
+    let hidden = sandbox.directory.join("checks/hidden");
+    fs::set_permissions(&hidden, fs::Permissions::from_mode(Sandbox::NO_ACCESS))
+        .expect("the sandbox changes permissions");
+    let test = sandbox.compiler(&["test", "checks"]);
+    fs::set_permissions(&hidden, fs::Permissions::from_mode(Sandbox::EXECUTABLE))
+        .expect("the sandbox changes permissions");
+    assert!(
+        test.assert_exit_code(2)
+            .stderr()
+            .starts_with("error: cannot read `checks`"),
+        "{}",
+        test.stderr()
+    );
+}
+
+#[test]
+fn form_location_keeps_the_name_of_a_source_outside_the_root() {
+    let sandbox = Sandbox::new("form_location_outside_root").with_file(
+        "library/located.rslisp",
+        "(use code form-location)\n\n(def here (macro (form) (form-location form)))\n",
+    );
+    let eval = sandbox.compiler(&["eval", "library/located.rslisp", "(println (here))"]);
+    assert_eq!(eval.assert_silent_success().stdout(), "<eval>:1:10\n");
 }
