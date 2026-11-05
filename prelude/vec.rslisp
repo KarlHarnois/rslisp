@@ -2,19 +2,22 @@
 (use prelude/types vec option iterator slice)
 (use prelude/number ord partial-eq < >)
 (use prelude/ownership copy)
-(use code list prepend rest concat len empty? symbol? string number-add number-sub number-lt)
 
-(export vec push! iter copied collect pop! remove-at! sort! sort-by! windows at dedup!
-        first last reverse reverse!)
+(use code list prepend rest concat len empty? symbol? string number-add
+          number-sub number-lt)
+
+(export vec push! iter copied collect pop! remove-at! sort! sort-by! windows at
+        dedup! first last reverse reverse!)
 
 (def element-placeholders
-  (fn (count)
-    (element-placeholders-onto "" 0 count)))
+  (fn (count) (element-placeholders-onto "" 0 count)))
 
 (def element-placeholders-onto
   (fn (text index count)
     (if (number-lt index count)
-        (recur (string text (if (number-lt 0 index) ", " "") "{" index "}") (number-add index 1) count)
+        (recur (string text (if (number-lt 0 index) ", " "") "{" index "}")
+               (number-add index 1)
+               count)
         text)))
 
 (def repeated-item
@@ -24,19 +27,26 @@
 (def repeated-item-onto
   (fn (items count)
     (if (number-lt 0 count)
-        (recur (concat items (list (quote item))) (number-sub count 1))
+        (recur (concat items (list (quote item)))
+               (number-sub count 1))
         items)))
 
 (def elements-type
   (fn (count)
-    (list (quote where) (list (quote item))
-          (list (quote fn) (repeated-item count) (list (quote vec) (quote item))))))
+    (list (quote where)
+          (list (quote item))
+          (list (quote fn)
+                (repeated-item count)
+                (list (quote vec) (quote item))))))
 
 (defmacro vec (elements ...)
   (let count (len elements))
   (if (empty? elements)
-      (list (quote rust) "Vec::new()" (quote (where (item) (vec item))))
-      (prepend (list (quote rust) (string "vec![" (element-placeholders count) "]")
+      (list (quote rust)
+            "Vec::new()"
+            (quote (where (item) (vec item))))
+      (prepend (list (quote rust)
+                     (string "vec![" (element-placeholders count) "]")
                      (elements-type count))
                elements)))
 
@@ -44,36 +54,106 @@
   (macro (form)
     (if (symbol? form)
         (quote vec-push!)
-        (prepend (quote map-at) (prepend (quote push) (rest form))))))
+        (prepend (quote map-at)
+                 (prepend (quote push) (rest form))))))
 
 (document push!
-  "Adds an item to a vector or a string: `(push! target item)`.
+          "Adds an item to a vector or a string: `(push! target item)`.
 
   A vector takes an element, and a `string` takes a `char` or a
   `(ref str)`. `push!` as a value is the vector push.")
 
-(def vec-push! (rust "{0}.push({1})" (where (a) (fn ((mut (vec a)) a) unit))))
+(def vec-push!
+  (rust "{0}.push({1})"
+        (where (a) (fn ((mut (vec a)) a) unit))))
+
 (defrule iter
   ((collection) (map-at iter collection)))
-(def copied (rust "{0}.iter().copied()" (where ((a copy)) (fn ((ref (slice a))) (iterator a)))))
-(def collect (rust "{0}.collect::<Vec<_>>()" (where (a) (fn ((iterator a)) (vec a)))))
-(def pop! (rust "{0}.pop()" (where (a) (fn ((mut (vec a))) (option a)))))
-(def remove-at! (rust "{0}.remove({1})" (where (a) (fn ((mut (vec a)) usize) a))))
-(def sort-ascending! (rust "{0}.sort()" (where ((a ord)) (fn ((mut (vec a))) unit))))
-(def sort-with! (rust "{0}.sort_by(|{!left}, {!right}| {1}({!left}, {!right}).cmp(&0))"
-                     (where (a) (fn ((mut (vec a)) (fn ((ref a) (ref a)) i64)) unit))))
+
+(def copied
+  (rust "{0}.iter().copied()"
+        (where ((a copy))
+               (fn ((ref (slice a))) (iterator a)))))
+
+(def collect
+  (rust "{0}.collect::<Vec<_>>()"
+        (where (a) (fn ((iterator a)) (vec a)))))
+
+(def pop!
+  (rust "{0}.pop()"
+        (where (a)
+               (fn ((mut (vec a))) (option a)))))
+
+(def remove-at!
+  (rust "{0}.remove({1})"
+        (where (a) (fn ((mut (vec a)) usize) a))))
+
+(def sort-ascending!
+  (rust "{0}.sort()"
+        (where ((a ord))
+               (fn ((mut (vec a))) unit))))
+
+(def sort-with!
+  (rust "{0}.sort_by(|{!left}, {!right}| {1}({!left}, {!right}).cmp(&0))"
+        (where (a)
+               (fn ((mut (vec a))
+                    (fn ((ref a) (ref a)) i64))
+                 unit))))
+
 (defrule sort!
   ((items) (sort-ascending! items))
-  ((items (quote <)) (sort-ascending! items))
-  ((items (quote >)) (sort-descending! items))
+  ((items (quote <))
+   (sort-ascending! items))
+  ((items (quote >))
+   (sort-descending! items))
   ((items compare) (sort-with! items compare)))
-(def sort-by! (rust "{0}.sort_by_key({1})" (where (a (k ord)) (fn ((mut (vec a)) (fn-mut ((ref a)) k)) unit))))
-(def windows (rust "{0}.windows({1})" (where (a) (fn ((ref (slice a)) usize) (iterator (ref (slice a)))))))
-(def at (rust "&{0}[{1}]" (where (a) (fn ((ref (slice a)) usize) (ref a)))))
-(def first (rust "{0}.first()" (where (item) (fn ((ref (slice item))) (option (ref item))))))
-(def last (rust "{0}.last()" (where (item) (fn ((ref (slice item))) (option (ref item))))))
-(def reverse (rust "{0}.iter().rev()" (where (item) (fn ((ref (slice item))) (iterator (ref item))))))
-(def reverse! (rust "{0}.reverse()" (where (item) (fn ((mut (vec item))) unit))))
-(def sort-descending! (rust "{0}.sort_by(|{!left}, {!right}| {!right}.cmp({!left}))"
-                          (where ((item ord)) (fn ((mut (vec item))) unit))))
-(def dedup! (rust "{0}.dedup()" (where ((a partial-eq)) (fn ((mut (vec a))) unit))))
+
+(def sort-by!
+  (rust "{0}.sort_by_key({1})"
+        (where (a (k ord))
+               (fn ((mut (vec a)) (fn-mut ((ref a)) k))
+                 unit))))
+
+(def windows
+  (rust "{0}.windows({1})"
+        (where (a)
+               (fn ((ref (slice a)) usize)
+                 (iterator (ref (slice a)))))))
+
+(def at
+  (rust "&{0}[{1}]"
+        (where (a)
+               (fn ((ref (slice a)) usize) (ref a)))))
+
+(def first
+  (rust "{0}.first()"
+        (where (item)
+               (fn ((ref (slice item)))
+                 (option (ref item))))))
+
+(def last
+  (rust "{0}.last()"
+        (where (item)
+               (fn ((ref (slice item)))
+                 (option (ref item))))))
+
+(def reverse
+  (rust "{0}.iter().rev()"
+        (where (item)
+               (fn ((ref (slice item)))
+                 (iterator (ref item))))))
+
+(def reverse!
+  (rust "{0}.reverse()"
+        (where (item)
+               (fn ((mut (vec item))) unit))))
+
+(def sort-descending!
+  (rust "{0}.sort_by(|{!left}, {!right}| {!right}.cmp({!left}))"
+        (where ((item ord))
+               (fn ((mut (vec item))) unit))))
+
+(def dedup!
+  (rust "{0}.dedup()"
+        (where ((a partial-eq))
+               (fn ((mut (vec a))) unit))))
