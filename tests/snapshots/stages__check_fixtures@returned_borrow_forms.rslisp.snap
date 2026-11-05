@@ -4,63 +4,64 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/returned_borrow_forms.rslisp
 ---
 error[L0510]: cannot return a borrow of a local value
-  --> check/returned_borrow_forms.rslisp:15:18
+  --> check/returned_borrow_forms.rslisp:23:11
    |
- 1 | (defstruct car :make str :year u16)
-   |                      --- declared as a borrow here
+ 2 |   :make str
+   |         --- declared as a borrow here
 ...
-14 |   (let make (str "Nissan"))
+21 |   (let make (str "Nissan"))
    |        ---- this local is dropped when the function returns
-15 |   (new car (make (as-str make)) (year year)))
-   |                  ^^^^^^^^^^^^^ this borrows a local value
+22 |   (new car
+23 |     (make (as-str make))
+   |           ^^^^^^^^^^^^^ this borrows a local value
    |
    = help: the field `make` of `car` borrows its data, so give it the owned type `string`
 
 error[L0510]: cannot return a borrow of a local value
-  --> check/returned_borrow_forms.rslisp:19:14
+  --> check/returned_borrow_forms.rslisp:28:14
    |
- 5 | (defstruct pin :at (ref point))
-   |                    ----------- declared as a borrow here
+10 |   :at (ref point))
+   |       ----------- declared as a borrow here
 ...
-18 |   (let origin (->point 0 0))
+27 |   (let origin (->point 0 0))
    |        ------ this local is dropped when the function returns
-19 |   (->pin :at (ref origin)))
+28 |   (->pin :at (ref origin)))
    |              ^^^^^^^^^^^^ this borrows a local value
    |
    = help: the field `at` of `pin` borrows its data, so give it the owned type `point`
 
 error[L0510]: cannot return a borrow of a local value
-  --> check/returned_borrow_forms.rslisp:23:17
+  --> check/returned_borrow_forms.rslisp:32:17
    |
- 9 | (enum badge (titled str u16) plain)
+14 | (enum badge (titled str u16) plain)
    |                     --- declared as a borrow here
 ...
-22 |   (let title (str "Leaf"))
+31 |   (let title (str "Leaf"))
    |        ----- this local is dropped when the function returns
-23 |   (badge/titled (as-str title) year))
+32 |   (badge/titled (as-str title) year))
    |                 ^^^^^^^^^^^^^^ this borrows a local value
    |
    = help: the `titled` payload of `badge` borrows its data, so give it the owned type `string`
 
 error[L0510]: cannot return a borrow of a local value
-  --> check/returned_borrow_forms.rslisp:27:21
+  --> check/returned_borrow_forms.rslisp:36:21
    |
-26 |   (let make (str "Nissan"))
+35 |   (let make (str "Nissan"))
    |        ---- this local is dropped when the function returns
-27 |   (new holder (held (as-str make))))
+36 |   (new holder (held (as-str make))))
    |                     ^^^^^^^^^^^^^ this borrows a local value
    |
    = help: return an owned value with `(clone ...)`, or borrow from a parameter
 
 error[L0510]: cannot return a borrow of a local value
-  --> check/returned_borrow_forms.rslisp:31:20
+  --> check/returned_borrow_forms.rslisp:40:20
    |
-11 | (enum plaque (engraved (struct (text str) (count u16))) empty)
-   |                                      --- declared as a borrow here
+17 |   (engraved (struct (text str) (count u16)))
+   |                           --- declared as a borrow here
 ...
-30 |   (let make (str "Nissan"))
+39 |   (let make (str "Nissan"))
    |        ---- this local is dropped when the function returns
-31 |   (plaque/engraved (as-str make) year))
+40 |   (plaque/engraved (as-str make) year))
    |                    ^^^^^^^^^^^^^ this borrows a local value
    |
    = help: the field `text` of `plaque/engraved` borrows its data, so give it the owned type `string`

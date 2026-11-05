@@ -4,12 +4,12 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/assoc_unknown_field.rslisp
 ---
 error[L0408]: `car` has no field `:yer`
- --> check/assoc_unknown_field.rslisp:5:15
-  |
-5 |   (assoc leaf :yer 2025))
-  |               ^^^^ unknown field
-  |
+  --> check/assoc_unknown_field.rslisp:13:15
+   |
+13 |   (assoc leaf :yer 2025))
+   |               ^^^^ unknown field
+   |
 help: a field with a similar name exists
-  |
-5 |   (assoc leaf :year 2025))
-  |                  +
+   |
+13 |   (assoc leaf :year 2025))
+   |                  +

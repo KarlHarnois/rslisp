@@ -4,5 +4,4 @@
 
 (defn code ((value u16)) value)
 
-(defn main ()
-  (println (code (other))))
+(defn main () (println (code (other))))

@@ -1,5 +1,8 @@
-(trait sized (size (fn ((ref self)) i64)))
+(trait sized
+  (size (fn ((ref self)) i64)))
+
 (impl sized point (size (p) 2))
+
 (struct point (x i64) (y i64))
 
 (defn main ()

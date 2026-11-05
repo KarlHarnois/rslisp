@@ -5,14 +5,20 @@
     (let base (list 1 2))
     (let longer (concat base (list 3)))
     (let other (concat base (list 4)))
-    (let grown (concat (rest longer) (list 5)))
+    (let grown
+      (concat (rest longer) (list 5)))
     (let shorter (take 1 longer))
     (concat (list (quote println))
-            base (list " ")
-            longer (list " ")
-            other (list " ")
-            grown (list " ")
-            shorter (list " ")
+            base
+            (list " ")
+            longer
+            (list " ")
+            other
+            (list " ")
+            grown
+            (list " ")
+            shorter
+            (list " ")
             (concat shorter (list 6)))))
 
 (defn main () (print-branches))

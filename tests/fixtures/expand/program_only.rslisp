@@ -1,29 +1,38 @@
 (use code list)
 
-(def needs-rust (macro (form) (str 1) (list)))
+(def needs-rust
+  (macro (form) (str 1) (list)))
 
 (needs-rust)
 
-(def inline-rust (macro (form) (rust "1" i64) (list)))
+(def inline-rust
+  (macro (form) (rust "1" i64) (list)))
 
 (inline-rust)
 
-(def needs-addition (macro (form) (+ 1 2) (list)))
+(def needs-addition
+  (macro (form) (+ 1 2) (list)))
 
 (needs-addition)
 
-(def in-untaken-branch (macro (form) (if true (quote 1) (str 1))))
+(def in-untaken-branch
+  (macro (form)
+    (if true (quote 1) (str 1))))
 
-(def untaken-value (fn () (in-untaken-branch)))
+(def untaken-value
+  (fn () (in-untaken-branch)))
 
 (def double (fn (value) (* value 2)))
 
-(def through-a-helper (macro (form) (double 2) (list)))
+(def through-a-helper
+  (macro (form) (double 2) (list)))
 
 (through-a-helper)
 
-(def also-through-a-helper (macro (form) (double 3) (list)))
+(def also-through-a-helper
+  (macro (form) (double 3) (list)))
 
 (also-through-a-helper)
 
-(def never-called (macro (form) (print "unused")))
+(def never-called
+  (macro (form) (print "unused")))

@@ -4,7 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/map_at_push_arity.rslisp
 ---
 error[L0402]: this function takes 1 argument but 0 were given
- --> check/map_at_push_arity.rslisp:2:3
+ --> check/map_at_push_arity.rslisp:1:15
   |
-2 |   (map-at push (vec 1)))
-  |   ^^^^^^^^^^^^^^^^^^^^^ expected 1 argument
+1 | (defn main () (map-at push (vec 1)))
+  |               ^^^^^^^^^^^^^^^^^^^^^ expected 1 argument

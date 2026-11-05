@@ -1,7 +1,12 @@
-(def bump! (rust "*{0} += 1" (fn ((mut i64)) unit)))
-(defstruct tally :count i64 :label string)
+(def bump!
+  (rust "*{0} += 1" (fn ((mut i64)) unit)))
 
-(defn bump-count! (t) (bump! (field t count)))
+(defstruct tally
+  :count i64
+  :label string)
+
+(defn bump-count! (t)
+  (bump! (field t count)))
 
 (defn main ()
   (let t (->tally 5 (str "fake")))

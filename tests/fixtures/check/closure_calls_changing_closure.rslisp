@@ -1,4 +1,5 @@
 (type keep (fn ((fn () unit)) unit))
+
 (defn keep (f) (do))
 
 (defn main ()

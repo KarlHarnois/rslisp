@@ -1,7 +1,13 @@
 (defn increment ((x i64)) (+ x 1))
-(defn size ((items (vec i64))) (len items))
-(defn shout ((word string)) (str word "!"))
+
+(defn size ((items (vec i64)))
+  (len items))
+
+(defn shout ((word string))
+  (str word "!"))
+
 (defn apply-one (f a) (f a))
+
 (defn main ()
   (println (apply-one increment 41))
   (println (apply-one size (vec 1 2)))

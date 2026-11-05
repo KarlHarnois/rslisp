@@ -4,10 +4,10 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/program_only.rslisp
 ---
 error[L0306]: `display-string` belongs to the program, so macro code cannot run it
-   --> expand/program_only.rslisp:3:31
+   --> expand/program_only.rslisp:4:17
     |
-  3 |   (def needs-rust (macro (form) (str 1) (list)))
-    |                                 ^^^^^^^ macro code runs this
+  4 |     (macro (form) (str 1) (list)))
+    |                   ^^^^^^^ macro code runs this
     |
    ::: prelude/text.rslisp:172:3
     |
@@ -19,18 +19,18 @@ error[L0306]: `display-string` belongs to the program, so macro code cannot run 
     = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
 error[L0319]: this Rust code belongs to the program, so macro code cannot run it
- --> expand/program_only.rslisp:7:32
+ --> expand/program_only.rslisp:9:17
   |
-7 | (def inline-rust (macro (form) (rust "1" i64) (list)))
-  |                                ^^^^^^^^^^^^^^ macro code runs this
+9 |   (macro (form) (rust "1" i64) (list)))
+  |                 ^^^^^^^^^^^^^^ macro code runs this
   |
   = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
 error[L0306]: `add` belongs to the program, so macro code cannot run it
-   --> expand/program_only.rslisp:11:35
+   --> expand/program_only.rslisp:14:17
     |
- 11 |   (def needs-addition (macro (form) (+ 1 2) (list)))
-    |                                     ^^^^^^^ macro code runs this
+ 14 |     (macro (form) (+ 1 2) (list)))
+    |                   ^^^^^^^ macro code runs this
     |
    ::: prelude/number.rslisp:158:3
     |
@@ -42,10 +42,10 @@ error[L0306]: `add` belongs to the program, so macro code cannot run it
     = help: in macro code, use `number-add` from `code` instead
 
 error[L0306]: `display-string` belongs to the program, so macro code cannot run it
-   --> expand/program_only.rslisp:15:57
+   --> expand/program_only.rslisp:20:24
     |
- 15 |   (def in-untaken-branch (macro (form) (if true (quote 1) (str 1))))
-    |                                                           ^^^^^^^ macro code runs this
+ 20 |       (if true (quote 1) (str 1))))
+    |                          ^^^^^^^ macro code runs this
     |
    ::: prelude/text.rslisp:172:3
     |
@@ -57,13 +57,13 @@ error[L0306]: `display-string` belongs to the program, so macro code cannot run 
     = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
 error[L0306]: `mul` belongs to the program, so macro code cannot run it
-   --> expand/program_only.rslisp:19:25
+   --> expand/program_only.rslisp:25:25
     |
- 19 |   (def double (fn (value) (* value 2)))
+ 25 |   (def double (fn (value) (* value 2)))
     |                           ^^^^^^^^^^^ macro code runs this
- 20 |
- 21 |   (def through-a-helper (macro (form) (double 2) (list)))
-    |                                        ------ macro code reaches it through this
+...
+ 28 |     (macro (form) (double 2) (list)))
+    |                    ------ macro code reaches it through this
     |
    ::: prelude/number.rslisp:166:3
     |
@@ -74,16 +74,16 @@ error[L0306]: `mul` belongs to the program, so macro code cannot run it
     = help: to compute this in the program, return it as code from the macro, for example with `quote`
 
 error[L0308]: `double` has errors, so macro code cannot use it
-  --> expand/program_only.rslisp:25:43
+  --> expand/program_only.rslisp:33:18
    |
-25 | (def also-through-a-helper (macro (form) (double 3) (list)))
-   |                                           ^^^^^^ used by macro code here
+33 |   (macro (form) (double 3) (list)))
+   |                  ^^^^^^ used by macro code here
 
 error[L0306]: `print` belongs to the program, so macro code cannot run it
-   --> expand/program_only.rslisp:29:33
+   --> expand/program_only.rslisp:38:17
     |
- 29 | (def never-called (macro (form) (print "unused")))
-    |                                 ^^^^^^^^^^^^^^^^ macro code runs this
+ 38 |   (macro (form) (print "unused")))
+    |                 ^^^^^^^^^^^^^^^^ macro code runs this
     |
    ::: prelude/text.rslisp:471:11
     |

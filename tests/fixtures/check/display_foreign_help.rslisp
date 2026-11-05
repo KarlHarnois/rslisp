@@ -1,2 +1,1 @@
-(defn main ()
-  (println (do)))
+(defn main () (println (do)))

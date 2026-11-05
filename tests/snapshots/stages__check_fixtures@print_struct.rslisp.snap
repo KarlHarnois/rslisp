@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/print_struct.rslisp
 ---
 error[L0404]: `point` does not implement `display`
- --> check/print_struct.rslisp:4:12
+ --> check/print_struct.rslisp:5:24
   |
-4 |   (println (->point 0 0)))
-  |            ^^^^^^^^^^^^^ this needs `display`
+5 | (defn main () (println (->point 0 0)))
+  |                        ^^^^^^^^^^^^^ this needs `display`
   |
   = help: implement `display` with `(display type (value) ...)`, or print its printed form with `prn`

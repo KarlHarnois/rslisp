@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/closure_calls_changing_closure.rslisp
 ---
 error[L0509]: this closure is `FnMut`, but the parameter accepts `Fn`
- --> check/closure_calls_changing_closure.rslisp:7:17
+ --> check/closure_calls_changing_closure.rslisp:8:17
   |
-7 |   (keep (fn () (record))))
+8 |   (keep (fn () (record))))
   |         --------^^^^^^--
   |         |       |
   |         |       calls `record` here

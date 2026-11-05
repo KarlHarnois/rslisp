@@ -1,2 +1,1 @@
-(defn main ()
-  (println "the program ignores its input"))
+(defn main () (println "the program ignores its input"))

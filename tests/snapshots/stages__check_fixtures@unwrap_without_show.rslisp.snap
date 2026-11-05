@@ -4,10 +4,12 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/unwrap_without_show.rslisp
 ---
 error[L0404]: `failure` does not implement `show`
- --> check/unwrap_without_show.rslisp:6:23
+ --> check/unwrap_without_show.rslisp:7:23
   |
-6 |   (println (unwrap-ok (the (result i64 failure) (err (->failure retry-now))))))
-  |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `show`
+7 |     (println (unwrap-ok (the (result i64 failure)
+  |  _______________________^
+8 | |                            (err (->failure retry-now))))))
+  | |_______________________________________________________^ this needs `show`
   |
   = note: `failure` cannot derive `show`: field `retry` is `(fn () i64)`
   = help: a closure, an iterator or a function has no printed form

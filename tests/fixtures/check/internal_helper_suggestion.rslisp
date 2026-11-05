@@ -2,4 +2,5 @@
 
 (defn main () (println (make-thing 1)))
 
-(defn misspelled () (println (make-thng 1)))
+(defn misspelled ()
+  (println (make-thng 1)))

@@ -6,10 +6,12 @@
 
 (def three (+ 1 2))
 
-(defn fresh-counter () (new counter (count 1)))
+(defn fresh-counter ()
+  (new counter (count 1)))
 
 (defn chosen-count (flag)
-  (field (if flag (fresh-counter) (fresh-counter)) count))
+  (field (if flag (fresh-counter) (fresh-counter))
+         count))
 
 (defn doubler ()
   (fn (value)

@@ -1,12 +1,15 @@
 (defn flip ((flag bool)) (not flag))
 
 (defn main ()
-  (let grid (vec (vec true false) (vec false true)))
+  (let grid
+    (vec (vec true false) (vec false true)))
   (let row (at grid 1))
   (println (at row 0))
   (println (at (at grid 1) 0))
   (println (flip (at (at grid 1) 0)))
-  (let rows (vec (vec (str "alpha")) (vec (str "beta"))))
+  (let rows
+    (vec (vec (str "alpha"))
+         (vec (str "beta"))))
   (let last-row (at rows 1))
   (let word (at last-row 0))
   (println word)

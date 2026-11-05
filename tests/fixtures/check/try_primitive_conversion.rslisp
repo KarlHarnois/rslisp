@@ -1,8 +1,11 @@
-(enum message-error
-  (message string))
+(enum message-error (message string))
 
-(type source (fn () (result i64 string)))
+(type source
+  (fn () (result i64 string)))
+
 (defn source () (ok 1))
 
-(type consumer (fn () (result i64 message-error)))
+(type consumer
+  (fn () (result i64 message-error)))
+
 (defn consumer () (ok (try (source))))

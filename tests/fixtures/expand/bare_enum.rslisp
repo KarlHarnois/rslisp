@@ -1,4 +1,6 @@
-(enum (outcome value error) (rust "Result" bare) (ok value) (err error))
+(enum (outcome value error)
+  (rust "Result" bare)
+  (ok value)
+  (err error))
 
-(defn main ()
-  (do))
+(defn main () (do))

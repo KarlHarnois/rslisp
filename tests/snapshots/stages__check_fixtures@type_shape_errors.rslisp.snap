@@ -1,38 +1,38 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/type_shape_errors.rslisp
 ---
 error[L0407]: type annotations needed
- --> check/type_shape_errors.rslisp:4:35
+ --> check/type_shape_errors.rslisp:9:35
   |
-4 | (defn read-x (thing) (field thing x))
+9 | (defn read-x (thing) (field thing x))
   |                                   ^ cannot tell which struct's `x` this is
   |
   = help: name the struct in a signature, as in `(fn ((ref point)) _)`
 
 error[L0410]: `bool` has no fields
- --> check/type_shape_errors.rslisp:6:34
-  |
-6 | (defn field-of-boolean () (field true x))
-  |                                  ^^^^ only structs have fields
+  --> check/type_shape_errors.rslisp:11:34
+   |
+11 | (defn field-of-boolean () (field true x))
+   |                                  ^^^^ only structs have fields
 
 error[L0411]: this value's type would contain itself
- --> check/type_shape_errors.rslisp:8:25
-  |
-8 | (defn self-apply (f) (f f))
-  |                         ^ here
-  |
-  = help: a function cannot be called with itself as its own argument type
+  --> check/type_shape_errors.rslisp:13:25
+   |
+13 | (defn self-apply (f) (f f))
+   |                         ^ here
+   |
+   = help: a function cannot be called with itself as its own argument type
 
 error[L0413]: `where` must wrap a whole signature
-  --> check/type_shape_errors.rslisp:10:25
+  --> check/type_shape_errors.rslisp:16:8
    |
-10 | (type nested-where (fn ((where (a) a)) i64))
-   |                         ^^^^^^^^^^^^^ not allowed inside another type
+16 |   (fn ((where (a) a)) i64))
+   |        ^^^^^^^^^^^^^ not allowed inside another type
 
 error[L0415]: `point` takes 0 type arguments but 1 was given
-  --> check/type_shape_errors.rslisp:13:27
+  --> check/type_shape_errors.rslisp:21:8
    |
-13 | (type with-arguments (fn ((point i64)) i64))
-   |                           ^^^^^^^^^^^ expected 0 type arguments
+21 |   (fn ((point i64)) i64))
+   |        ^^^^^^^^^^^ expected 0 type arguments

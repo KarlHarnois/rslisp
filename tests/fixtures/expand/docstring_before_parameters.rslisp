@@ -1,1 +1,3 @@
-(defn greeting "Says hello." () "hi")
+(defn greeting "Says hello."
+  ()
+  "hi")

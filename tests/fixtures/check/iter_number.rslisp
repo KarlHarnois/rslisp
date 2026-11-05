@@ -1,2 +1,1 @@
-(defn main ()
-  (iter 5))
+(defn main () (iter 5))

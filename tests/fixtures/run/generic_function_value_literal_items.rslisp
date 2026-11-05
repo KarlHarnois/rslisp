@@ -1,5 +1,8 @@
-(type positive? (where ((n number)) (fn (n) bool)))
+(type positive?
+  (where ((n number)) (fn (n) bool)))
+
 (defn positive? (x) (> x 0))
+
 (defn main ()
   (let bytes (the (vec u8) (vec 0 7 12)))
   (println (count (filter (iter bytes) positive?))))

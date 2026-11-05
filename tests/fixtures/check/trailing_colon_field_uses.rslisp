@@ -1,12 +1,17 @@
-(defstruct user :name str :email str)
+(defstruct user
+  :name str
+  :email str)
 
 (defn read-email (:someone user) (:email: someone))
 
-(defn build-user () (->user :name "ana" :email: "ana@example.com"))
+(defn build-user ()
+  (->user :name "ana" :email: "ana@example.com"))
 
-(defn change-email (:someone user) (assoc someone :email: "bo@example.com"))
+(defn change-email (:someone user)
+  (assoc someone :email: "bo@example.com"))
 
-(defn emails (:users (vec user)) (map (iter users) :email:))
+(defn emails (:users (vec user))
+  (map (iter users) :email:))
 
 (defn main ()
   (let ana (build-user))

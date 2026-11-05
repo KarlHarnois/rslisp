@@ -6,13 +6,13 @@ input_file: tests/fixtures/expand/failed_macro_top_level_call.rslisp
 error[L0328]: a docstring goes after the parameter list
  --> expand/failed_macro_top_level_call.rslisp:1:18
   |
-1 | (defmacro my-def "doc" (name) name)
+1 | (defmacro my-def "doc"
   |                  ^^^^^ a docstring in place of the parameter list
   |
   = help: write it as the first body form, after the parameter list
 
 error[L0201]: cannot find `foo` in this scope
- --> expand/failed_macro_top_level_call.rslisp:5:25
+ --> expand/failed_macro_top_level_call.rslisp:7:25
   |
-5 | (defn main () (println (foo)))
+7 | (defn main () (println (foo)))
   |                         ^^^ not found in this scope

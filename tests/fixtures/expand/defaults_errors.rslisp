@@ -1,14 +1,52 @@
-(defstruct misspelled :name str :admin? bool (defaults :admn? false))
-(defstruct repeated :name str :admin? bool (defaults :admin? false :admin? true))
-(defstruct twice :name str :admin? bool (defaults :admin? false) (defaults :name "ana"))
-(defstruct early (defaults :admin? false) :name str :admin? bool)
-(defstruct unvalued :name str :admin? bool (defaults :admin?))
-(defstruct unmarked :name str :admin? bool (defaults admin? false))
-(defstruct user :name str :email str :admin? bool (defaults :admin? false))
-(defstruct blank (defaults :x 1))
-(defstruct close :name str (defaults :nmae "ana"))
-(defn close-parameter (:name str (defaults :nmae "ana")) name)
-(defstruct user :name str :admin? bool (defaults :admin? false :admn? true))
+(defstruct misspelled
+  :name str
+  :admin? bool
+  (defaults :admn? false))
 
-(defn main ()
-  (->user :name "ana"))
+(defstruct repeated
+  :name str
+  :admin? bool
+  (defaults :admin? false :admin? true))
+
+(defstruct twice
+  :name str
+  :admin? bool
+  (defaults :admin? false)
+  (defaults :name "ana"))
+
+(defstruct early
+  (defaults :admin? false)
+  :name str
+  :admin? bool)
+
+(defstruct unvalued
+  :name str
+  :admin? bool
+  (defaults :admin?))
+
+(defstruct unmarked
+  :name str
+  :admin? bool
+  (defaults admin? false))
+
+(defstruct user
+  :name str
+  :email str
+  :admin? bool
+  (defaults :admin? false))
+
+(defstruct blank (defaults :x 1))
+
+(defstruct close
+  :name str
+  (defaults :nmae "ana"))
+
+(defn close-parameter (:name str (defaults :nmae "ana"))
+  name)
+
+(defstruct user
+  :name str
+  :admin? bool
+  (defaults :admin? false :admn? true))
+
+(defn main () (->user :name "ana"))

@@ -1,8 +1,15 @@
-(type known? (fn ((ref (sorted-map string i64)) (ref string)) bool))
+(type known?
+  (fn ((ref (sorted-map string i64))
+       (ref string))
+    bool))
+
 (defn known? (balances name)
   (some? (get balances name)))
 
-(type credit! (fn ((mut (sorted-map string i64)) string i64) unit))
+(type credit!
+  (fn ((mut (sorted-map string i64)) string i64)
+    unit))
+
 (defn credit! (balances name amount)
   (when (known? balances name)
     (set! (at balances name) amount))

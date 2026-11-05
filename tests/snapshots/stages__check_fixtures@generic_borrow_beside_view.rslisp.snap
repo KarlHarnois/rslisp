@@ -4,19 +4,19 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/generic_borrow_beside_view.rslisp
 ---
 error[L0401]: mismatched types
- --> check/generic_borrow_beside_view.rslisp:6:22
+ --> check/generic_borrow_beside_view.rslisp:9:22
   |
-6 |   (later? (ref make) "Honda"))
+9 |   (later? (ref make) "Honda"))
   |                      ^^^^^^^ expected `(ref (ref str))`, found `(ref str)`
 
 error[L0401]: mismatched types
-  --> check/generic_borrow_beside_view.rslisp:10:19
+  --> check/generic_borrow_beside_view.rslisp:13:19
    |
-10 |   (later? "Honda" (ref make)))
+13 |   (later? "Honda" (ref make)))
    |                   ^^^^^^^^^^ expected `(ref str)`, found `(ref (ref str))`
 
 error[L0401]: mismatched types
-  --> check/generic_borrow_beside_view.rslisp:18:22
+  --> check/generic_borrow_beside_view.rslisp:21:22
    |
-18 |   (later? (char "a") (ref grade)))
+21 |   (later? (char "a") (ref grade)))
    |                      ^^^^^^^^^^^ expected `char`, found `(ref char)`

@@ -1,3 +1,7 @@
-(defn area "Multiplies two sides." (width height) (* width height))
+(defn area "Multiplies two sides."
+  (width height)
+  (* width height))
 
-(defn main () (println (area 2 3)) (println (area 4 5)))
+(defn main ()
+  (println (area 2 3))
+  (println (area 4 5)))

@@ -1,63 +1,137 @@
 (rust-type out "std::fmt::Formatter<'_>")
+
 (rust-type written "std::fmt::Result")
 
 (rust-trait methodless "std::fmt::Octal"
-  (structural :struct "" :field "" :variant "" :part "" :bare ""))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
 
 (rust-trait two-methods "std::fmt::Binary"
-  (method write-two-methods (fn ((ref self) (mut out)) written))
+  (method write-two-methods
+          (fn ((ref self) (mut out)) written))
   (method other (fn ((ref self)) written))
-  (structural :struct "" :field "" :variant "" :part "" :bare ""))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
 
 (rust-trait owned-receiver "std::fmt::LowerHex"
-  (method write-owned-receiver (fn (self (mut out)) written))
-  (structural :struct "" :field "" :variant "" :part "" :bare ""))
+  (method write-owned-receiver
+          (fn (self (mut out)) written))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
 
 (rust-trait cl "std::clone::Clone"
-  (method clone-it (fn ((ref self)) written))
-  (structural :struct "" :field "" :variant "" :part "" :bare ""))
+  (method clone-it
+          (fn ((ref self)) written))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
 
 (rust-trait num2 "crate::rt::Number"
-  (method write-num2 (fn ((ref self) (mut out)) written))
-  (structural :struct "" :field "" :variant "" :part "" :bare ""))
+  (method write-num2
+          (fn ((ref self) (mut out)) written))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
 
 (rust-trait missing-bare "std::fmt::UpperHex"
-  (method write-missing-bare (fn ((ref self) (mut out)) written))
+  (method write-missing-bare
+          (fn ((ref self) (mut out)) written))
   (structural :struct "" :field "" :variant "" :part ""))
 
 (rust-trait unknown-key "std::fmt::LowerExp"
-  (method write-unknown-key (fn ((ref self) (mut out)) written))
-  (structural :struct "" :field "" :variant "" :part "" :bare "" :other ""))
+  (method write-unknown-key
+          (fn ((ref self) (mut out)) written))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""
+              :other ""))
 
 (rust-trait not-a-key "std::fmt::UpperExp"
-  (method write-not-a-key (fn ((ref self) (mut out)) written))
-  (structural "text" :struct "" :field "" :variant "" :part "" :bare ""))
+  (method write-not-a-key
+          (fn ((ref self) (mut out)) written))
+  (structural "text"
+              :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
 
 (rust-trait repeated-key "std::fmt::Pointer"
-  (method write-repeated-key (fn ((ref self) (mut out)) written))
-  (structural :struct "" :field "" :field "" :variant "" :part "" :bare ""))
+  (method write-repeated-key
+          (fn ((ref self) (mut out)) written))
+  (structural :struct ""
+              :field ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
 
 (rust-trait key-without-string "std::fmt::Write"
-  (method write-key-without-string (fn ((ref self) (mut out)) written))
+  (method write-key-without-string
+          (fn ((ref self) (mut out)) written))
   (structural :struct "" :field "" :variant "" :part "" :bare))
 
 (rust-trait key-with-symbol "std::error::Error"
-  (method write-key-with-symbol (fn ((ref self) (mut out)) written))
-  (structural :struct "" :field "" :variant "" :part "" :bare written))
+  (method write-key-with-symbol
+          (fn ((ref self) (mut out)) written))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare written))
 
 (rust-trait field-in-part "std::hash::Hasher"
-  (method write-field-in-part (fn ((ref self) (mut out)) written))
-  (structural :struct "" :field "" :variant "" :part ".part({field})" :bare ""))
+  (method write-field-in-part
+          (fn ((ref self) (mut out)) written))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ".part({field})"
+              :bare ""))
 
 (rust-trait past-the-method "std::io::Read"
-  (method write-past-the-method (fn ((ref self) (mut out)) written))
-  (structural :struct "" :field "" :variant "" :part "" :bare "{2}"))
+  (method write-past-the-method
+          (fn ((ref self) (mut out)) written))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare "{2}"))
 
 (rust-trait unclosed-placeholder "std::io::Seek"
-  (method write-unclosed-placeholder (fn ((ref self) (mut out)) written))
-  (structural :struct "{name" :field "" :variant "" :part "" :bare ""))
+  (method write-unclosed-placeholder
+          (fn ((ref self) (mut out)) written))
+  (structural :struct "{name"
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
 
 (rust-trait two-clauses "std::io::Write"
-  (method write-two-clauses (fn ((ref self) (mut out)) written))
-  (structural :struct "" :field "" :variant "" :part "" :bare "")
-  (structural :struct "" :field "" :variant "" :part "" :bare ""))
+  (method write-two-clauses
+          (fn ((ref self) (mut out)) written))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare "")
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))

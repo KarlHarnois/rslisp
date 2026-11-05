@@ -1,6 +1,11 @@
-(defrule my-defn ((n p b ...) (defn n p b ...)))
+(defrule my-defn
+  ((n p b ...)
+   (defn n p
+     b
+     ...)))
 
-(defrule my-public-defn ((n p b ...) (my-defn n p b ...)))
+(defrule my-public-defn
+  ((n p b ...) (my-defn n p b ...)))
 
 (my-public-defn twice (x) (* 2 x))
 

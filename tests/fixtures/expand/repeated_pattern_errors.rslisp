@@ -1,5 +1,4 @@
-(defrule flat
-  ((item ...) (do item)))
+(defrule flat ((item ...) (do item)))
 
 (defrule flat-pairs
   (((left right) ...) (do left)))
@@ -8,5 +7,7 @@
   ((item ...) (do 1 ...)))
 
 (def a (fn () (flat 1 2)))
+
 (def b (fn () (flat-pairs (1 2))))
+
 (def c (fn () (empty-repeat 1 2)))

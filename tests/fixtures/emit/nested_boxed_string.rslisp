@@ -1,4 +1,6 @@
-(enum (expr) (call (expr) string) (name string))
+(enum (expr)
+  (call (expr) string)
+  (name string))
 
 (defn call-label (expr)
   (match expr
@@ -7,6 +9,8 @@
     ((expr/name label) label)))
 
 (defn main ()
-  (println (call-label (expr/call (expr/name (str "x")) (str "hit"))))
-  (println (call-label (expr/call (expr/name (str "y")) (str "miss"))))
+  (println (call-label (expr/call (expr/name (str "x"))
+                                  (str "hit"))))
+  (println (call-label (expr/call (expr/name (str "y"))
+                                  (str "miss"))))
   (println (call-label (expr/name (str "name")))))

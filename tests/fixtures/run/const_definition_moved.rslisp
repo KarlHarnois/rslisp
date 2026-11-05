@@ -1,9 +1,6 @@
 (def nothing none)
 
 (defn keep ((maybe-name (option string)))
-  (match maybe-name
-    ((some _) 1)
-    (none 0)))
+  (match maybe-name ((some _) 1) (none 0)))
 
-(defn main ()
-  (prn (keep nothing)))
+(defn main () (prn (keep nothing)))

@@ -1,16 +1,18 @@
 (defn main ()
   (let xs (cards))
-  (-> xs
-      (build-deck)
-      (prn)))
+  (-> xs (build-deck) (prn)))
 
 (defn build-deck (cards)
-    (->deck :name "The Deck" :cards (cards)))
+  (->deck :name "The Deck" :cards (cards)))
 
 (defn cards ()
-  (vec
-    (->card :name "Black Lotus" :set "Alpha")
-    (->card :name "Counterspell" :set "Alpha")))
+  (vec (->card :name "Black Lotus" :set "Alpha")
+       (->card :name "Counterspell" :set "Alpha")))
 
-(defstruct deck :name str :cards (vec card))
-(defstruct card :name str :set str)
+(defstruct deck
+  :name str
+  :cards (vec card))
+
+(defstruct card
+  :name str
+  :set str)

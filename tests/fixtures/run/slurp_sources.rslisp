@@ -1,7 +1,8 @@
-(type read-source (where ((s source)) (fn ((ref s)) (result string io-error))))
+(type read-source
+  (where ((s source))
+         (fn ((ref s)) (result string io-error))))
 
-(defn read-source (source)
-  (slurp source))
+(defn read-source (source) (slurp source))
 
 (defn report (read)
   (match read

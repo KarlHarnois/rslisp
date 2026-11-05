@@ -1,23 +1,36 @@
-(type later? (where ((a partial-ord)) (fn (a a) bool)))
+(type later?
+  (where ((a partial-ord))
+         (fn (a a) bool)))
+
 (defn later? (left right) (> left right))
 
-(type leaf-count (fn ((ref (slice (ref str)))) usize))
-(defn leaf-count (models)
-  (count (filter (iter models) (fn (m) (= m "Leaf")))))
+(type leaf-count
+  (fn ((ref (slice (ref str)))) usize))
 
-(type deref-leaf-count (fn ((ref (slice (ref str)))) usize))
+(defn leaf-count (models)
+  (count (filter (iter models)
+                 (fn (m) (= m "Leaf")))))
+
+(type deref-leaf-count
+  (fn ((ref (slice (ref str)))) usize))
+
 (defn deref-leaf-count (models)
-  (count (filter (iter models) (fn (m) (= (deref m) "Leaf")))))
+  (count (filter (iter models)
+                 (fn (m) (= (deref m) "Leaf")))))
 
 (defn count-of (names wanted)
-  (count (filter (iter names) (fn (n) (= n wanted)))))
+  (count (filter (iter names)
+                 (fn (n) (= n wanted)))))
 
 (defn report-years (years)
   (let next (fn (y) (+ (deref y) 1)))
   (println (sum (map (iter years) next)))
-  (let recent? (fn (y) (> (deref y) 2020)))
+  (let recent?
+    (fn (y) (> (deref y) 2020)))
   (println (any? (iter years) recent?))
-  (let typed-recent? (fn ((y (ref (ref i64)))) (> (deref y) 2020)))
+  (let typed-recent?
+    (fn ((y (ref (ref i64))))
+      (> (deref y) 2020)))
   (println (count (filter (iter years) typed-recent?))))
 
 (defn main ()
@@ -33,7 +46,8 @@
   (let models (vec "Leaf" "Ariya"))
   (println (leaf-count models))
   (println (deref-leaf-count models))
-  (let names (vec (str "Leaf") (str "Ariya")))
+  (let names
+    (vec (str "Leaf") (str "Ariya")))
   (let wanted (str "Leaf"))
   (println (count-of names wanted))
   (println wanted))

@@ -1,18 +1,24 @@
 (defn first-year ((years (ref (vec i64))))
-  (let first (fn ((items (ref (vec i64)))) (at items 0)))
+  (let first
+    (fn ((items (ref (vec i64))))
+      (at items 0)))
   (first years))
 
 (defn main ()
   (let name (str "Ariya"))
   (let years (vec 2019 2021 2024))
-  (let pick (fn (maybe) (unwrap-or maybe "none")))
-  (let first (fn ((items (ref (vec i64)))) (at items 0)))
+  (let pick
+    (fn (maybe) (unwrap-or maybe "none")))
+  (let first
+    (fn ((items (ref (vec i64))))
+      (at items 0)))
   (let again first)
   (println (pick (some (as-str name))))
   (println (first years))
   (println (again years))
   (println (first-year (ref years)))
-  (let (fixed (fn ((option (ref str))) (ref str))) pick)
+  (let (fixed (fn ((option (ref str))) (ref str)))
+    pick)
   (let third fixed)
   (println (third (some (as-str name))))
   (let more again)

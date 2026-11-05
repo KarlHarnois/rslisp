@@ -1,18 +1,27 @@
-(defstruct car :make str :year u16)
+(defstruct car
+  :make str
+  :year u16)
 
-(defstruct point :x i64 :y i64)
+(defstruct point
+  :x i64
+  :y i64)
 
-(defstruct pin :at (ref point))
+(defstruct pin
+  :at (ref point))
 
 (struct (holder a) (held a))
 
 (enum badge (titled str u16) plain)
 
-(enum plaque (engraved (struct (text str) (count u16))) empty)
+(enum plaque
+  (engraved (struct (text str) (count u16)))
+  empty)
 
 (defn grouped (year)
   (let make (str "Nissan"))
-  (new car (make (as-str make)) (year year)))
+  (new car
+    (make (as-str make))
+    (year year)))
 
 (defn pinned ()
   (let origin (->point 0 0))

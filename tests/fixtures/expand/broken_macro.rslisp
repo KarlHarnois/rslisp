@@ -4,6 +4,7 @@
 
 (unparameterized)
 
-(def self-expanding (macro (form) (self-expanding)))
+(def self-expanding
+  (macro (form) (self-expanding)))
 
 (self-expanding)

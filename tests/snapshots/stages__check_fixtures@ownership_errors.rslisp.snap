@@ -1,50 +1,50 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/ownership_errors.rslisp
 ---
 error[L0501]: use of moved value `name`
- --> check/ownership_errors.rslisp:7:10
+ --> check/ownership_errors.rslisp:9:10
   |
-6 |   (store name)
+8 |   (store name)
   |          ---- value moved here
-7 |   (store name))
+9 |   (store name))
   |          ^^^^ value used here after it moved
   |
 help: clone the value if both places need it
   |
-6 -   (store name)
-6 +   (store (clone name))
+8 -   (store name)
+8 +   (store (clone name))
   |
 
 error[L0503]: this value is borrowed, but the call needs to own it
- --> check/ownership_errors.rslisp:9:30
-  |
-9 | (defn steal (someone) (store (:name someone)))
-  |                              ^^^^^^^^^^^^^^^ only a borrow is available here
-  |
-  = help: pass a copy with `(clone ...)`
+  --> check/ownership_errors.rslisp:12:10
+   |
+12 |   (store (:name someone)))
+   |          ^^^^^^^^^^^^^^^ only a borrow is available here
+   |
+   = help: pass a copy with `(clone ...)`
 
 error[L0501]: use of moved value `name`
-  --> check/ownership_errors.rslisp:16:10
+  --> check/ownership_errors.rslisp:19:10
    |
-15 |   (if flag (store name) (store name))
+18 |   (if flag (store name) (store name))
    |                   ---- value moved here
-16 |   (store name))
+19 |   (store name))
    |          ^^^^ value used here after it moved
    |
 help: clone the value if both places need it
    |
-15 -   (if flag (store name) (store name))
-15 +   (if flag (store (clone name)) (store name))
+18 -   (if flag (store name) (store name))
+18 +   (if flag (store (clone name)) (store name))
    |
 
 error[L0501]: use of moved value `take`
-  --> check/ownership_errors.rslisp:23:15
+  --> check/ownership_errors.rslisp:26:15
    |
-22 |   (apply-once take)
+25 |   (apply-once take)
    |               ---- value moved here
-23 |   (apply-once take))
+26 |   (apply-once take))
    |               ^^^^ value used here after it moved
    |
    = help: this closure moves a captured value, so it cannot be copied

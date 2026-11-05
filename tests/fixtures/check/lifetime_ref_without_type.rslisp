@@ -1,2 +1,4 @@
-(type pick (where ('a) (fn ((ref 'a)) unit)))
+(type pick
+  (where ('a) (fn ((ref 'a)) unit)))
+
 (defn pick (text) (do))

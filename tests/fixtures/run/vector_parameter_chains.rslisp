@@ -1,5 +1,4 @@
-(defn record-year! (years year)
-  (push! years year))
+(defn record-year! (years year) (push! years year))
 
 (defn record-twice! (years year)
   (record-year! years year)
@@ -9,8 +8,7 @@
   (record-twice! years year)
   (set! (at years 0) year))
 
-(defn oldest-year (years)
-  (at years 0))
+(defn oldest-year (years) (at years 0))
 
 (defn newest-year (years)
   (at years (- (len years) 1)))
@@ -20,12 +18,14 @@
 
 (defn added-years (years index)
   (if (< index (len years))
-      (+ (at years index) (subtracted-years years (+ index 1)))
+      (+ (at years index)
+         (subtracted-years years (+ index 1)))
       0))
 
 (defn subtracted-years (years index)
   (if (< index (len years))
-      (- (added-years years (+ index 1)) (at years index))
+      (- (added-years years (+ index 1))
+         (at years index))
       0))
 
 (defn pad-years! (years year remaining)
@@ -33,17 +33,16 @@
   (fill-years! years (+ year 1) (- remaining 1)))
 
 (defn fill-years! (years year remaining)
-  (when (> remaining 0)
-    (pad-years! years year remaining)))
+  (when (> remaining 0) (pad-years! years year remaining)))
 
 (defn year-capacity (years)
-  ((rust "{0}.capacity()" (where (a) (fn ((ref (vec a))) usize))) years))
+  ((rust "{0}.capacity()"
+         (where (a) (fn ((ref (vec a))) usize)))
+   years))
 
-(defn year-count (years)
-  (len years))
+(defn year-count (years) (len years))
 
-(defn counted-years (years)
-  (year-count years))
+(defn counted-years (years) (year-count years))
 
 (defn alternate-oldest (years spare turns)
   (if (> turns 0)
@@ -59,7 +58,9 @@
   (println (added-years leaf-years 0))
   (fill-years! (mut leaf-years) 2024 2)
   (println (len leaf-years) " " (oldest-year leaf-years))
-  (println (<= (len leaf-years) (year-capacity leaf-years)) " " (counted-years leaf-years))
+  (println (<= (len leaf-years) (year-capacity leaf-years))
+           " "
+           (counted-years leaf-years))
   (let count-years year-count)
   (println (count-years (ref leaf-years)))
   (let spare-years (vec 2000))

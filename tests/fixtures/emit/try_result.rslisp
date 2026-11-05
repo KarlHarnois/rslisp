@@ -1,4 +1,6 @@
-(type parse-add (fn ((ref str) (ref str)) (result i64 (parse-error i64))))
+(type parse-add
+  (fn ((ref str) (ref str))
+    (result i64 (parse-error i64))))
 
 (defn parse-add (left right)
   (let left-number (try (parse left)))

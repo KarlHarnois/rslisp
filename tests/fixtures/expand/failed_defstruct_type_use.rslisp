@@ -1,5 +1,8 @@
-(defstruct point (x i64) y)
+(defstruct point
+  (x i64)
+  y)
 
 (defn norm ((p point)) 1)
 
-(defn main () (println (norm (->point :x 1 :y 2))))
+(defn main ()
+  (println (norm (->point :x 1 :y 2))))

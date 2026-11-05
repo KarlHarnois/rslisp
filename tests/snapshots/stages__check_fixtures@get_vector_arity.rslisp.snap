@@ -4,7 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/get_vector_arity.rslisp
 ---
 error[L0402]: this function takes 1 argument but 0 were given
- --> check/get_vector_arity.rslisp:1:37
+ --> check/get_vector_arity.rslisp:3:3
   |
-1 | (defn main () (let years (vec 1 2)) (get years))
-  |                                     ^^^^^^^^^^^ expected 1 argument
+3 |   (get years))
+  |   ^^^^^^^^^^^ expected 1 argument

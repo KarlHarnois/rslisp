@@ -1,2 +1,1 @@
-(defn main ()
-  (map-at push (vec 1)))
+(defn main () (map-at push (vec 1)))

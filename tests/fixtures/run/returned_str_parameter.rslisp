@@ -2,5 +2,4 @@
   (println (trim text))
   text)
 
-(defn main ()
-  (println (keep "hi")))
+(defn main () (println (keep "hi")))

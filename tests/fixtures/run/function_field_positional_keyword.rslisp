@@ -1,5 +1,10 @@
-(defstruct user :name string :age u16)
-(defstruct sorter :key (fn ((ref user)) (ref string)) :label str)
+(defstruct user
+  :name string
+  :age u16)
+
+(defstruct sorter
+  :key (fn ((ref user)) (ref string))
+  :label str)
 
 (defn main ()
   (let chosen (->sorter :name "by name"))

@@ -1,4 +1,5 @@
 (def ping pong)
+
 (def pong ping)
 
 (def uses-ping (macro (form) ping))

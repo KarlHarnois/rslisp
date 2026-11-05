@@ -2,7 +2,9 @@
 
 (def doubled
   (fn (items times)
-    (if (number-le times 0) items (doubled (concat items items) (number-sub times 1)))))
+    (if (number-le times 0)
+        items
+        (doubled (concat items items) (number-sub times 1)))))
 
 (defmacro wide (left right)
   (template (do (splice (doubled (list 0) 16)))))
@@ -10,5 +12,4 @@
 (defmacro padding ()
   (template (do (splice (doubled (list 0) 16)))))
 
-(defn main ()
-  (do wide (padding)))
+(defn main () (do wide (padding)))

@@ -2,12 +2,16 @@
 
 (export evaluate)
 
-(defstruct parsed :value i64 :next usize)
+(defstruct parsed
+  :value i64
+  :next usize)
 
 (defn evaluate (tokens)
   (:value (parse-expression tokens 0)))
 
-(type parse-expression (fn ((ref (vec token)) usize) parsed))
+(type parse-expression
+  (fn ((ref (vec token)) usize) parsed))
+
 (defn parse-expression (tokens position)
   (parse-sums tokens (parse-term tokens position)))
 
@@ -16,8 +20,12 @@
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
-       ("+" (parse-sums tokens (combine left (parse-term tokens (+ next 1)) add)))
-       ("-" (parse-sums tokens (combine left (parse-term tokens (+ next 1)) sub)))
+       ("+"
+        (parse-sums tokens
+                    (combine left (parse-term tokens (+ next 1)) add)))
+       ("-"
+        (parse-sums tokens
+                    (combine left (parse-term tokens (+ next 1)) sub)))
        (_ left)))
     (_ left)))
 
@@ -29,8 +37,12 @@
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
-       ("*" (parse-products tokens (combine left (parse-factor tokens (+ next 1)) mul)))
-       ("/" (parse-products tokens (combine left (parse-factor tokens (+ next 1)) div)))
+       ("*"
+        (parse-products tokens
+                        (combine left (parse-factor tokens (+ next 1)) mul)))
+       ("/"
+        (parse-products tokens
+                        (combine left (parse-factor tokens (+ next 1)) div)))
        (_ left)))
     (_ left)))
 
@@ -38,17 +50,22 @@
   (match (get tokens position)
     ((some (symbol text))
      (match (as-str text)
-       ("(" (skip-close-paren (parse-expression tokens (+ position 1))))
+       ("("
+        (skip-close-paren (parse-expression tokens (+ position 1))))
        (_ (->parsed 0 (+ position 1)))))
-    ((some (number text)) (->parsed (number-value text) (+ position 1)))
+    ((some (number text))
+     (->parsed (number-value text) (+ position 1)))
     (none (->parsed 0 (+ position 1)))))
 
 (defn skip-close-paren (inner)
-  (->parsed (:value inner) (+ (:next inner) 1)))
+  (->parsed (:value inner)
+            (+ (:next inner) 1)))
 
 (defn combine (left right operator)
-  (->parsed (operator (:value left) (:value right)) (:next right)))
+  (->parsed (operator (:value left) (:value right))
+            (:next right)))
 
 (defn number-value (text)
-  (let (parsed (result i64 _)) (parse (as-str text)))
+  (let (parsed (result i64 _))
+    (parse (as-str text)))
   (if (ok? parsed) (unwrap-ok parsed) 0))

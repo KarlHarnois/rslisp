@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/try_enum_value.rslisp
 ---
 error[L0429]: `try` needs a result or an option
- --> check/try_enum_value.rslisp:8:3
+ --> check/try_enum_value.rslisp:5:21
   |
-8 |   (try value))
-  |   ^^^^^^^^^^^ this is `shape`
+5 | (defn stray (value) (try value))
+  |                     ^^^^^^^^^^^ this is `shape`
   |
   = help: write `try` around a result or an option value

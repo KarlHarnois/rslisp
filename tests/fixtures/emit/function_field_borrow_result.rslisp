@@ -1,6 +1,9 @@
-(defstruct car :make str :year u16)
+(defstruct car
+  :make str
+  :year u16)
 
-(defn year-of ((leaf (ref car))) (ref (:year leaf)))
+(defn year-of ((leaf (ref car)))
+  (ref (:year leaf)))
 
 (defn main ()
   (let leaf (->car :make "Nissan" :year 2025))

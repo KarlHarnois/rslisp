@@ -1,18 +1,38 @@
-(use many_modules/layer_11_module_7 layer-11-module-7-score layer-11-module-7-reading)
-(use many_modules/layer_9_module_10 layer-9-module-10-score layer-9-module-10-reading)
-(use many_modules/layer_4_module_10 layer-4-module-10-score layer-4-module-10-reading)
+(use many_modules/layer_11_module_7 layer-11-module-7-score
+                                    layer-11-module-7-reading)
 
-(export layer-12-module-7-score layer-12-module-7-reading layer-12-module-7-label)
+(use many_modules/layer_9_module_10 layer-9-module-10-score
+                                    layer-9-module-10-reading)
 
-(defstruct layer-12-module-7-reading :site str :level i64 :weight f64)
+(use many_modules/layer_4_module_10 layer-4-module-10-score
+                                    layer-4-module-10-reading)
 
-(display layer-12-module-7-reading (reading) "layer-12-module-7 " (:site reading) "=" (:level reading))
+(export layer-12-module-7-score layer-12-module-7-reading
+        layer-12-module-7-label)
+
+(defstruct layer-12-module-7-reading
+  :site str
+  :level i64
+  :weight f64)
+
+(display layer-12-module-7-reading (reading)
+  "layer-12-module-7 "
+  (:site reading)
+  "="
+  (:level reading))
 
 (defn layer-12-module-7-label (n)
-  (str (->layer-12-module-7-reading "layer-12-module-7" (layer-12-module-7-score n) 117.5)))
+  (str (->layer-12-module-7-reading "layer-12-module-7"
+                                    (layer-12-module-7-score n)
+                                    117.5)))
 
 (defn layer-12-module-7-score (n)
-  (rem (+ (layer-11-module-7-score (+ n 3)) (:level (layer-9-module-10-reading n)) (:level (layer-4-module-10-reading n))) 997))
+  (rem (+ (layer-11-module-7-score (+ n 3))
+          (:level (layer-9-module-10-reading n))
+          (:level (layer-4-module-10-reading n)))
+       997))
 
 (defn layer-12-module-7-reading (n)
-  (->layer-12-module-7-reading "layer-12-module-7" (layer-12-module-7-score n) (* 0.5 117.0)))
+  (->layer-12-module-7-reading "layer-12-module-7"
+                               (layer-12-module-7-score n)
+                               (* 0.5 117.0)))

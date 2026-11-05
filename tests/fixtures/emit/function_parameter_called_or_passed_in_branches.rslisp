@@ -1,4 +1,6 @@
-(type build-with (fn ((fn (i64) i64)) i64))
+(type build-with
+  (fn ((fn (i64) i64)) i64))
+
 (defn build-with (constructor) (constructor 2))
 
 (defn build-either (constructor flag)

@@ -1,3 +1,5 @@
 (export build)
 
-(defn build () (defstruct inner (x i64)) 1)
+(defn build ()
+  (defstruct inner (x i64))
+  1)

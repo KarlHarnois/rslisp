@@ -6,17 +6,18 @@
 (defmacro show-trim-start (form)
   (string-trim-start "  \t indented "))
 
-(defmacro show-length (form)
-  (string-length "naïve"))
+(defmacro show-length (form) (string-length "naïve"))
 
-(defmacro show-drop (form)
-  (string-drop 2 "naïve"))
+(defmacro show-drop (form) (string-drop 2 "naïve"))
 
-(defmacro show-drop-all (form)
-  (string-drop 5 "naïve"))
+(defmacro show-drop-all (form) (string-drop 5 "naïve"))
 
 (def lines (show-lines "unused"))
+
 (def trimmed (show-trim-start "unused"))
+
 (def length (show-length "unused"))
+
 (def dropped (show-drop "unused"))
+
 (def dropped-all (show-drop-all "unused"))

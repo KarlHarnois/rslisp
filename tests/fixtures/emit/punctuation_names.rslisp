@@ -1,9 +1,15 @@
 (defn - (a b) (+ a b))
+
 (def _ 1)
+
 (defn \ () 2)
+
 (defn ` () 3)
+
 (defn , () 4)
+
 (defn add-one (n) (+ n 1))
+
 (def max-size 10)
 
 (defn main ()

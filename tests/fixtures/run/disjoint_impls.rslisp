@@ -1,5 +1,16 @@
-(trait describe (describe-it (fn ((ref self)) string)))
-(defstruct (duo a b) :l a :r b)
-(impl describe (duo a a) (describe-it (d) (str "first")))
-(impl describe (duo b (vec b)) (describe-it (d) (str "second")))
-(defn main () (println (describe-it (->duo 1 1))) (println (describe-it (->duo 1 (vec 1)))))
+(trait describe
+  (describe-it (fn ((ref self)) string)))
+
+(defstruct (duo a b)
+  :l a
+  :r b)
+
+(impl describe (duo a a)
+  (describe-it (d) (str "first")))
+
+(impl describe (duo b (vec b))
+  (describe-it (d) (str "second")))
+
+(defn main ()
+  (println (describe-it (->duo 1 1)))
+  (println (describe-it (->duo 1 (vec 1)))))

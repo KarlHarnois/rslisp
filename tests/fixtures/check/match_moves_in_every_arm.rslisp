@@ -8,5 +8,4 @@
     (true (consume items))
     (false (consume items))))
 
-(defn main ()
-  (println (choose true)))
+(defn main () (println (choose true)))

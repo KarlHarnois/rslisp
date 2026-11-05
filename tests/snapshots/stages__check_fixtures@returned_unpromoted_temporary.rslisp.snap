@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/returned_unpromoted_temporary.rslisp
 ---
 error[L0510]: cannot return a borrow of a temporary value
- --> check/returned_unpromoted_temporary.rslisp:7:3
+ --> check/returned_unpromoted_temporary.rslisp:6:3
   |
-7 |   (ref (= "Leaf" "Ariya")))
+6 |   (ref (= "Leaf" "Ariya")))
   |   ^^^^^------------------^
   |   |    |
   |   |    this temporary value is dropped when the function returns
@@ -15,21 +15,32 @@ error[L0510]: cannot return a borrow of a temporary value
   = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:10:3
+ --> check/returned_unpromoted_temporary.rslisp:8:18
+  |
+8 | (defn by-zero () (ref (/ 7 0)))
+  |                  ^^^^^-------^
+  |                  |    |
+  |                  |    this temporary value is dropped when the function returns
+  |                  this borrows a temporary value
+  |
+  = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a temporary value
+  --> check/returned_unpromoted_temporary.rslisp:10:17
    |
-10 |   (ref (/ 7 0)))
-   |   ^^^^^-------^
-   |   |    |
-   |   |    this temporary value is dropped when the function returns
-   |   this borrows a temporary value
+10 | (defn by-sum () (ref (/ 7 (+ 1 1))))
+   |                 ^^^^^-------------^
+   |                 |    |
+   |                 |    this temporary value is dropped when the function returns
+   |                 this borrows a temporary value
    |
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
   --> check/returned_unpromoted_temporary.rslisp:13:3
    |
-13 |   (ref (/ 7 (+ 1 1))))
-   |   ^^^^^-------------^
+13 |   (ref (/ (+ 3 4) -1)))
+   |   ^^^^^--------------^
    |   |    |
    |   |    this temporary value is dropped when the function returns
    |   this borrows a temporary value
@@ -39,18 +50,7 @@ error[L0510]: cannot return a borrow of a temporary value
 error[L0510]: cannot return a borrow of a temporary value
   --> check/returned_unpromoted_temporary.rslisp:16:3
    |
-16 |   (ref (/ (+ 3 4) -1)))
-   |   ^^^^^--------------^
-   |   |    |
-   |   |    this temporary value is dropped when the function returns
-   |   this borrows a temporary value
-   |
-   = help: return an owned value, or borrow from a parameter or a top-level `def`
-
-error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:19:3
-   |
-19 |   (ref (/ (+ 3 4) (- 1))))
+16 |   (ref (/ (+ 3 4) (- 1))))
    |   ^^^^^-----------------^
    |   |    |
    |   |    this temporary value is dropped when the function returns
@@ -59,20 +59,20 @@ error[L0510]: cannot return a borrow of a temporary value
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:22:3
+  --> check/returned_unpromoted_temporary.rslisp:18:21
    |
-22 |   (ref (+ year 1)))
-   |   ^^^^^----------^
-   |   |    |
-   |   |    this temporary value is dropped when the function returns
-   |   this borrows a temporary value
+18 | (defn bumped (year) (ref (+ year 1)))
+   |                     ^^^^^----------^
+   |                     |    |
+   |                     |    this temporary value is dropped when the function returns
+   |                     this borrows a temporary value
    |
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:25:3
+  --> check/returned_unpromoted_temporary.rslisp:21:3
    |
-25 |   (ref (if flag 2019 2021)))
+21 |   (ref (if flag 2019 2021)))
    |   ^^^^^-------------------^
    |   |    |
    |   |    this temporary value is dropped when the function returns
@@ -81,9 +81,9 @@ error[L0510]: cannot return a borrow of a temporary value
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:28:3
+  --> check/returned_unpromoted_temporary.rslisp:24:3
    |
-28 |   (ref (+ (if flag 2019 2021) 1)))
+24 |   (ref (+ (if flag 2019 2021) 1)))
    |   ^^^^^-------------------------^
    |   |    |
    |   |    this temporary value is dropped when the function returns
@@ -92,9 +92,9 @@ error[L0510]: cannot return a borrow of a temporary value
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:31:3
+  --> check/returned_unpromoted_temporary.rslisp:27:3
    |
-31 |   (ref (do (let year 2019) year)))
+27 |   (ref (do (let year 2019) year)))
    |   ^^^^^-------------------------^
    |   |    |
    |   |    this temporary value is dropped when the function returns
@@ -103,20 +103,20 @@ error[L0510]: cannot return a borrow of a temporary value
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:34:3
+  --> check/returned_unpromoted_temporary.rslisp:29:16
    |
-34 |   (ref (+ (base-year) 1)))
-   |   ^^^^^-----------------^
-   |   |    |
-   |   |    this temporary value is dropped when the function returns
-   |   this borrows a temporary value
+29 | (defn later () (ref (+ (base-year) 1)))
+   |                ^^^^^-----------------^
+   |                |    |
+   |                |    this temporary value is dropped when the function returns
+   |                this borrows a temporary value
    |
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:37:3
+  --> check/returned_unpromoted_temporary.rslisp:32:3
    |
-37 |   (ref (pair (the (vec i64) (vec)) 1)))
+32 |   (ref (pair (the (vec i64) (vec)) 1)))
    |   ^^^^^------------------------------^
    |   |    |
    |   |    this temporary value is dropped when the function returns
@@ -125,9 +125,9 @@ error[L0510]: cannot return a borrow of a temporary value
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:42:3
+  --> check/returned_unpromoted_temporary.rslisp:41:3
    |
-42 |   (ref (if c (:x a) (:x b))))
+41 |   (ref (if c (:x a) (:x b))))
    |   ^^^^^--------------------^
    |   |    |
    |   |    this temporary value is dropped when the function returns
@@ -136,9 +136,9 @@ error[L0510]: cannot return a borrow of a temporary value
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:45:3
+  --> check/returned_unpromoted_temporary.rslisp:44:3
    |
-45 |   (ref (if (> (len years) 0) years (vec 2019))))
+44 |   (ref (if (> (len years) 0) years (vec 2019))))
    |   ^^^^^---------------------------------------^
    |   |    |
    |   |    this temporary value is dropped when the function returns
@@ -147,31 +147,48 @@ error[L0510]: cannot return a borrow of a temporary value
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:48:3
+  --> check/returned_unpromoted_temporary.rslisp:47:3
    |
-48 |   (ref (match (len years) (0 (vec 2019)) (_ years))))
-   |   ^^^^^--------------------------------------------^
-   |   |    |
-   |   |    this temporary value is dropped when the function returns
-   |   this borrows a temporary value
-   |
-   = help: return an owned value, or borrow from a parameter or a top-level `def`
-
-error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:51:3
-   |
-51 |   (ref (if c (do (println "Leaf") (let year 2019)) (do (println "Ariya") (let year 2021)))))
-   |   ^^^^^-----------------------------------------------------------------------------------^
-   |   |    |
-   |   |    this temporary value is dropped when the function returns
-   |   this borrows a temporary value
+47 |      (ref (match (len years)
+   |  ____^    -
+   | | ________|
+48 | ||          (0 (vec 2019))
+49 | ||          (_ years))))
+   | ||___________________-^ this borrows a temporary value
+   |  |___________________|
+   |                      this temporary value is dropped when the function returns
    |
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:58:3
+  --> check/returned_unpromoted_temporary.rslisp:52:3
    |
-58 |   (ref (by-nothing 7)))
+52 |      (ref (if c
+   |  ____^    -
+   | | ________|
+53 | ||            (do (println "Leaf") (let year 2019))
+54 | ||            (do (println "Ariya") (let year 2021)))))
+   | ||__________________________________________________-^ this borrows a temporary value
+   |  |__________________________________________________|
+   |                                                     this temporary value is dropped when the function returns
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a temporary value
+  --> check/returned_unpromoted_temporary.rslisp:62:18
+   |
+62 | (defn nothing () (ref (by-nothing 7)))
+   |                  ^^^^^--------------^
+   |                  |    |
+   |                  |    this temporary value is dropped when the function returns
+   |                  this borrows a temporary value
+   |
+   = help: return an owned value, or borrow from a parameter or a top-level `def`
+
+error[L0510]: cannot return a borrow of a temporary value
+  --> check/returned_unpromoted_temporary.rslisp:65:3
+   |
+65 |   (ref (flip (+ 3 4))))
    |   ^^^^^--------------^
    |   |    |
    |   |    this temporary value is dropped when the function returns
@@ -180,20 +197,9 @@ error[L0510]: cannot return a borrow of a temporary value
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:61:3
+  --> check/returned_unpromoted_temporary.rslisp:68:3
    |
-61 |   (ref (flip (+ 3 4))))
-   |   ^^^^^--------------^
-   |   |    |
-   |   |    this temporary value is dropped when the function returns
-   |   this borrows a temporary value
-   |
-   = help: return an owned value, or borrow from a parameter or a top-level `def`
-
-error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:64:3
-   |
-64 |   (ref (+ (rust "std::process::id() as i64" i64) 1)))
+68 |   (ref (+ (rust "std::process::id() as i64" i64) 1)))
    |   ^^^^^--------------------------------------------^
    |   |    |
    |   |    this temporary value is dropped when the function returns
@@ -202,9 +208,9 @@ error[L0510]: cannot return a borrow of a temporary value
    = help: return an owned value, or borrow from a parameter or a top-level `def`
 
 error[L0510]: cannot return a borrow of a temporary value
-  --> check/returned_unpromoted_temporary.rslisp:67:3
+  --> check/returned_unpromoted_temporary.rslisp:71:3
    |
-67 |   (at (do (println "noting") years) 0))
+71 |   (at (do (println "noting") years) 0))
    |   ^^^^-----------------------------^^^
    |   |   |
    |   |   this temporary value is dropped when the function returns

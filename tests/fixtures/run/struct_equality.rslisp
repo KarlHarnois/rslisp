@@ -1,4 +1,6 @@
-(defstruct point :x i64 :y i64)
+(defstruct point
+  :x i64
+  :y i64)
 
 (defn main ()
   (println (= (->point 1 2) (->point 1 2))))

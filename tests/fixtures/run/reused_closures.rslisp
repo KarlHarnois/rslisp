@@ -1,7 +1,11 @@
-(defstruct person :name string :age i64)
+(defstruct person
+  :name string
+  :age i64)
 
 (defn apply-to-ten (f) (f 10))
+
 (defn greet-with (f) (f "hello"))
+
 (defn duplicate (value) (clone value))
 
 (defn main ()
@@ -10,7 +14,8 @@
   (println (apply-to-ten shift))
   (println (apply-to-ten shift))
   (let name (str "Ada"))
-  (let greet (fn (greeting) (str greeting ", " name)))
+  (let greet
+    (fn (greeting) (str greeting ", " name)))
   (println (greet-with greet))
   (println (greet-with greet))
   (println name)

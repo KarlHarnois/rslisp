@@ -4,49 +4,49 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/trailing_colon_field_uses.rslisp
 ---
 error[L0408]: `user` has no field `:email:`
- --> check/trailing_colon_field_uses.rslisp:3:35
+ --> check/trailing_colon_field_uses.rslisp:5:35
   |
-3 | (defn read-email (:someone user) (:email: someone))
+5 | (defn read-email (:someone user) (:email: someone))
   |                                   ^^^^^^^ unknown field
   |
 help: a field with a similar name exists
   |
-3 - (defn read-email (:someone user) (:email: someone))
-3 + (defn read-email (:someone user) (:email someone))
+5 - (defn read-email (:someone user) (:email: someone))
+5 + (defn read-email (:someone user) (:email someone))
   |
 
 error[L0408]: `user` has no field `:email:`
- --> check/trailing_colon_field_uses.rslisp:5:41
+ --> check/trailing_colon_field_uses.rslisp:8:23
   |
-5 | (defn build-user () (->user :name "ana" :email: "ana@example.com"))
-  |                                         ^^^^^^^ unknown field
+8 |   (->user :name "ana" :email: "ana@example.com"))
+  |                       ^^^^^^^ unknown field
   |
 help: a field with a similar name exists
   |
-5 - (defn build-user () (->user :name "ana" :email: "ana@example.com"))
-5 + (defn build-user () (->user :name "ana" :email "ana@example.com"))
+8 -   (->user :name "ana" :email: "ana@example.com"))
+8 +   (->user :name "ana" :email "ana@example.com"))
   |
 
 error[L0408]: `user` has no field `:email:`
- --> check/trailing_colon_field_uses.rslisp:7:51
-  |
-7 | (defn change-email (:someone user) (assoc someone :email: "bo@example.com"))
-  |                                                   ^^^^^^^ unknown field
-  |
+  --> check/trailing_colon_field_uses.rslisp:11:18
+   |
+11 |   (assoc someone :email: "bo@example.com"))
+   |                  ^^^^^^^ unknown field
+   |
 help: a field with a similar name exists
-  |
-7 - (defn change-email (:someone user) (assoc someone :email: "bo@example.com"))
-7 + (defn change-email (:someone user) (assoc someone :email "bo@example.com"))
-  |
+   |
+11 -   (assoc someone :email: "bo@example.com"))
+11 +   (assoc someone :email "bo@example.com"))
+   |
 
 error[L0408]: `user` has no field `:email:`
- --> check/trailing_colon_field_uses.rslisp:9:52
-  |
-9 | (defn emails (:users (vec user)) (map (iter users) :email:))
-  |                                                    ^^^^^^^ unknown field
-  |
+  --> check/trailing_colon_field_uses.rslisp:14:21
+   |
+14 |   (map (iter users) :email:))
+   |                     ^^^^^^^ unknown field
+   |
 help: a field with a similar name exists
-  |
-9 - (defn emails (:users (vec user)) (map (iter users) :email:))
-9 + (defn emails (:users (vec user)) (map (iter users) :email))
-  |
+   |
+14 -   (map (iter users) :email:))
+14 +   (map (iter users) :email))
+   |

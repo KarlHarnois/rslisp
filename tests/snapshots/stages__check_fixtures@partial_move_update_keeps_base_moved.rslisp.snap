@@ -4,16 +4,16 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/partial_move_update_keeps_base_moved.rslisp
 ---
 error[L0501]: use of moved value `(:badge g)`
- --> check/partial_move_update_keeps_base_moved.rslisp:9:55
-  |
-7 |   (let b (assoc (:badge g) :size 14))
-  |                 ---------- value moved here
-8 |   (let h (assoc g :badge (->badge (str "new") 1)))
-9 |   (println (:size b) " " (:name h) " " (:text (:badge g))))
-  |                                                       ^ value used here after it moved
-  |
+  --> check/partial_move_update_keeps_base_moved.rslisp:20:27
+   |
+13 |   (let b (assoc (:badge g) :size 14))
+   |                 ---------- value moved here
+...
+20 |            (:text (:badge g))))
+   |                           ^ value used here after it moved
+   |
 help: clone the value if both places need it
-  |
-7 -   (let b (assoc (:badge g) :size 14))
-7 +   (let b (assoc (clone (:badge g)) :size 14))
-  |
+   |
+13 -   (let b (assoc (:badge g) :size 14))
+13 +   (let b (assoc (clone (:badge g)) :size 14))
+   |

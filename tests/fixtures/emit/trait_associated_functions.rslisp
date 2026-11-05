@@ -1,5 +1,8 @@
-(defstruct garage :spots i64)
-(defstruct lot :spots i64)
+(defstruct garage
+  :spots i64)
+
+(defstruct lot
+  :spots i64)
 
 (trait parking
   (build (fn (i64) self))

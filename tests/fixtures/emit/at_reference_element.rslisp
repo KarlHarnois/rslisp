@@ -1,5 +1,8 @@
-(type first-word (fn ((ref str)) (ref str)))
+(type first-word
+  (fn ((ref str)) (ref str)))
+
 (defn first-word (text) (trim text))
+
 (defn main ()
   (let fields (collect (split "a b" " ")))
   (println (first-word (at fields 1))))

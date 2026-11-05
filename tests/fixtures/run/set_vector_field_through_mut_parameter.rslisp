@@ -1,6 +1,8 @@
-(defstruct order :items (vec i64))
+(defstruct order
+  :items (vec i64))
 
 (type bump! (fn ((mut order)) unit))
+
 (defn bump! (order)
   (set! (at (:items order) 0) 9))
 

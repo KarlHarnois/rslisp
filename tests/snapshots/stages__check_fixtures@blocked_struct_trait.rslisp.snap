@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/blocked_struct_trait.rslisp
 ---
 error[L0404]: `point` does not implement `eq`
- --> check/blocked_struct_trait.rslisp:6:19
-  |
-6 |   (println (same? (->point 0 0) (->point 1 1))))
-  |                   ^^^^^^^^^^^^^ this needs `eq`
-  |
-  = note: `point` cannot derive `eq`: field `x` is `f64`
+  --> check/blocked_struct_trait.rslisp:11:19
+   |
+11 |   (println (same? (->point 0 0) (->point 1 1))))
+   |                   ^^^^^^^^^^^^^ this needs `eq`
+   |
+   = note: `point` cannot derive `eq`: field `x` is `f64`

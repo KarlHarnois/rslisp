@@ -4,12 +4,12 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/consumed_iterator_used_again.rslisp
 ---
 error[L0501]: use of moved value `values`
- --> check/consumed_iterator_used_again.rslisp:1:57
+ --> check/consumed_iterator_used_again.rslisp:3:9
   |
-1 | (defn counted (values) (let total (count values)) (any? values (fn (value) (> value 50))))
-  |                                          ------         ^^^^^^ value used here after it moved
-  |                                          |
-  |                                          value moved here
+2 |   (let total (count values))
+  |                     ------ value moved here
+3 |   (any? values (fn (value) (> value 50))))
+  |         ^^^^^^ value used here after it moved
   |
   = note: `values` is a lazy pipeline, so it runs once
   = help: collect it if both places need its items, as in `(collect values)`, or write a function that rebuilds it

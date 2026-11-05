@@ -6,11 +6,18 @@ input_file: tests/fixtures/emit/inline_rust_clauses.rslisp
 error[L0603]: invalid Rust template: a template with clauses needs a `def`, whose calls give the type that chooses a clause
  --> emit/inline_rust_clauses.rslisp:2:13
   |
-2 |   (println ((rust "{0}.len()" (where ((s sequence)) (fn ((ref s)) usize)) (str "{0}.len()")) "Leaf"))
-  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ in this template
+2 |     (println ((rust "{0}.len()"
+  |  _____________^
+3 | |                   (where ((s sequence))
+4 | |                          (fn ((ref s)) usize))
+5 | |                   (str "{0}.len()"))
+  | |____________________________________^ in this template
 
 error[L0603]: invalid Rust template: a template with clauses needs a `def`, whose calls give the type that chooses a clause
- --> emit/inline_rust_clauses.rslisp:3:16
-  |
-3 |   (let measure (rust "{0}.len()" (where ((s sequence)) (fn ((ref s)) usize)) (str "{0}.len()")))
-  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ in this template
+  --> emit/inline_rust_clauses.rslisp:8:5
+   |
+ 8 | /     (rust "{0}.len()"
+ 9 | |           (where ((s sequence))
+10 | |                  (fn ((ref s)) usize))
+11 | |           (str "{0}.len()")))
+   | |____________________________^ in this template

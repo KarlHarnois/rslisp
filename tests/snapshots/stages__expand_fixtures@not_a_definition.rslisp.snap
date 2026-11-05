@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/not_a_definition.rslisp
 ---
 error[L0207]: expected a definition at module level
@@ -12,9 +12,9 @@ error[L0207]: expected a definition at module level
   = help: put expressions inside a function, such as `(def run (fn () ...))`
 
 error[L0207]: expected a definition at module level
- --> expand/not_a_definition.rslisp:2:1
+ --> expand/not_a_definition.rslisp:3:1
   |
-2 | 42
+3 | 42
   | ^^ this is not a definition
   |
   = help: put expressions inside a function, such as `(def run (fn () ...))`

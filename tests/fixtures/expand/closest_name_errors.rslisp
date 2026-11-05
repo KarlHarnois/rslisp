@@ -1,5 +1,8 @@
 (use code closest-name)
 
-(def closest-in-strings (macro (form) (closest-name (quote leef) (quote ("leaf" "ariya")))))
+(def closest-in-strings
+  (macro (form)
+    (closest-name (quote leef)
+                  (quote ("leaf" "ariya")))))
 
 (closest-in-strings)

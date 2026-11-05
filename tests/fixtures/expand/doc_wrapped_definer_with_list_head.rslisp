@@ -1,9 +1,11 @@
 (use code module-notes add-module-note definition-symbol empty?)
 
 (defmacro defn-once (name parameters body)
-  (if (empty? (module-notes (definition-symbol (quote defn-once) "notes") (quote defined)))
+  (if (empty? (module-notes (definition-symbol (quote defn-once) "notes")
+                            (quote defined)))
       (do (add-module-note (quote defined) name)
-          (template (defn (unquote name) (unquote parameters) (unquote body))))
+          (template (defn (unquote name) (unquote parameters)
+                      (unquote body))))
       (template ((fn () 0)))))
 
 (defn-once twice (x) (* 2 x))

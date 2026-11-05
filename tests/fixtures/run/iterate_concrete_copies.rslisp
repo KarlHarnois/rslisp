@@ -1,4 +1,5 @@
 (type total (fn ((iterator i64)) i64))
+
 (defn total (values) (sum values))
 
 (defn main ()

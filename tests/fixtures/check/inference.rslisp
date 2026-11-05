@@ -1,13 +1,24 @@
 (def add-numbers (fn (x y) (+ x y)))
+
 (def some-function (fn (x) (* x x)))
+
 (defn square (x) (* x x))
+
 (def admin? true)
+
 (defn greeting () (str "hello" " " "world"))
-(defstruct point :x f64 :y f64)
+
+(defstruct point
+  :x f64
+  :y f64)
+
 (def origin (->point 1 2))
+
 (defn distance-squared (a b)
   (let dx (- (:x a) (:x b)))
   (let dy (- (:y a) (:y b)))
   (+ (* dx dx) (* dy dy)))
+
 (defn identity (value) value)
+
 (defn main () (println (greeting)))

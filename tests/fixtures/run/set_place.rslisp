@@ -1,4 +1,6 @@
-(defstruct cell :alive bool :label string)
+(defstruct cell
+  :alive bool
+  :label string)
 
 (defn revive! (cell)
   (set! (field cell alive) true))
@@ -11,16 +13,19 @@
   (push! grid (vec false false))
   (push! grid (vec false false))
   (set! (at (at grid 1) 0) true)
-  (let alive (match (get grid 1)
-               ((some row) (at row 0))
-               (none false)))
+  (let alive
+    (match (get grid 1)
+      ((some row) (at row 0))
+      (none false)))
   (println alive)
   (let cell (->cell false (str "seed")))
   (revive! cell)
   (rename! cell (str "grown"))
   (println (:alive cell) " " (:label cell))
   (let total 0)
-  (let add! (fn (n) (do (set! total (if (> n total) n total)))))
+  (let add!
+    (fn (n)
+      (do (set! total (if (> n total) n total)))))
   (add! 1)
   (add! 2)
   (println total))

@@ -4,14 +4,14 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/structural_path_clash.rslisp
 ---
 error[L0459]: `p` already implements `std::fmt::Octal` through `octal2`
- --> check/structural_path_clash.rslisp:3:27
-  |
-3 | (defn main () (show-octal (->p 1)) (show-octal (->p 2)))
-  |                           ^^^^^^^ this needs the inferred `octal`, a second impl of `std::fmt::Octal`
-  |
- ::: check/structural_path_clash/b.rslisp:8:14
-  |
-8 | (impl octal2 p (fmt (value out) (write-p out)))
-  |              - `octal2` implements `std::fmt::Octal` here
-  |
-  = help: use `octal2` here, or remove one of the two
+  --> check/structural_path_clash.rslisp:5:15
+   |
+ 5 |   (show-octal (->p 1))
+   |               ^^^^^^^ this needs the inferred `octal`, a second impl of `std::fmt::Octal`
+   |
+  ::: check/structural_path_clash/b.rslisp:19:14
+   |
+19 | (impl octal2 p
+   |              - `octal2` implements `std::fmt::Octal` here
+   |
+   = help: use `octal2` here, or remove one of the two

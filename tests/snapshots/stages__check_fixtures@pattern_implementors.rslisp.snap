@@ -6,7 +6,7 @@ input_file: tests/fixtures/check/pattern_implementors.rslisp
 warning[L0217]: `shown` binds a Rust path that `display` already binds
  --> check/pattern_implementors.rslisp:1:13
   |
-1 | (rust-trait shown "std::fmt::Display" i64 string (where ((a shown)) (ref a)))
+1 | (rust-trait shown "std::fmt::Display"
   |             ^^^^^ this also binds `std::fmt::Display`
   |
   = note: two traits that bind one Rust path can disagree about its implementors

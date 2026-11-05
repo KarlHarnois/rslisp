@@ -4,11 +4,11 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/match_unreachable_struct_arm.rslisp
 ---
 warning[L0434]: unreachable `match` arm
- --> check/match_unreachable_struct_arm.rslisp:6:6
+ --> check/match_unreachable_struct_arm.rslisp:8:6
   |
-5 |     ((range start end) (- end start))
+7 |     ((range start end) (- end start))
   |      ----------------- this arm covers it
-6 |     ((range _ end) end)))
+8 |     ((range _ end) end)))
   |      ^^^^^^^^^^^^^ this arm can never match
 
 (derive range clone copy partial-eq eq hash show)

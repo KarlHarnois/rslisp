@@ -1,4 +1,5 @@
-(defn copy-first! (years) (set! (at years 1) (at years 0)))
+(defn copy-first! (years)
+  (set! (at years 1) (at years 0)))
 
 (defn main ()
   (let years (vec 2019 2021 2024))

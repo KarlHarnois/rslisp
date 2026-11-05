@@ -1,13 +1,21 @@
-(defstruct badge :label string :size u16)
+(defstruct badge
+  :label string
+  :size u16)
 
-(defstruct garage :owner string :tag badge :badge badge)
+(defstruct garage
+  :owner string
+  :tag badge
+  :badge badge)
 
 (defn main ()
-  (let g (->garage (str "karl") (->badge (str "Nissan") 1) (->badge (str "Leaf") 12)))
+  (let g
+    (->garage (str "karl")
+              (->badge (str "Nissan") 1)
+              (->badge (str "Leaf") 12)))
   (let renamed (assoc (:tag g) :size 2))
-  (println
-    (loop ((i 0))
-      (println (:owner g))
-      (if (< i 2)
-        (do (let bigger (assoc (:badge g) :size 14)) (recur (+ i 1)))
-        i))))
+  (println (loop ((i 0))
+             (println (:owner g))
+             (if (< i 2)
+                 (do (let bigger (assoc (:badge g) :size 14))
+                     (recur (+ i 1)))
+                 i))))

@@ -1,4 +1,6 @@
-(defstruct handler :callback (fn (i64) i64) :tag i64)
+(defstruct handler
+  :callback (fn (i64) i64)
+  :tag i64)
 
 (defn main ()
   (= (->handler (fn (value) value) 1)

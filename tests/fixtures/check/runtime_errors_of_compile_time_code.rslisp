@@ -2,6 +2,7 @@
 
 (defn head-of-number () (first 1))
 
-(defn print-a-function () (println (fn (value) value)))
+(defn print-a-function ()
+  (println (fn (value) value)))
 
 (defn main () (head-of-number))

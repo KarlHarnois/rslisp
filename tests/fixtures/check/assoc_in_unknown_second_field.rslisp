@@ -1,7 +1,12 @@
-(defstruct point :x i64 :y i64)
+(defstruct point
+  :x i64
+  :y i64)
 
-(defstruct line :start point :end point)
+(defstruct line
+  :start point
+  :end point)
 
 (defn main ()
-  (let line (->line (->point 1 2) (->point 5 6)))
+  (let line
+    (->line (->point 1 2) (->point 5 6)))
   (assoc-in line (:start :z) 3))

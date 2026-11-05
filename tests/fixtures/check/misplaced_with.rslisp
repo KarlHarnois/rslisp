@@ -1,2 +1,4 @@
 (defn bad (x) x)
-(type bad (where (a) (fn ((with a i64)) unit)))
+
+(type bad
+  (where (a) (fn ((with a i64)) unit)))

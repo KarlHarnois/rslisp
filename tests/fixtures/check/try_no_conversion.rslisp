@@ -1,7 +1,7 @@
-(enum app-error
-  (io io-error))
+(enum app-error (io io-error))
 
-(type read-number (fn ((ref str)) (result i64 app-error)))
+(type read-number
+  (fn ((ref str)) (result i64 app-error)))
 
 (defn read-number (path)
   (let text (try (slurp path)))

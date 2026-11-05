@@ -1,5 +1,8 @@
-(defstruct not-a-key :name string)
+(defstruct not-a-key
+  :name string)
 
 (defn main ()
-  (let items (sorted-map (new not-a-key (name (str "x"))) 1))
+  (let items
+    (sorted-map (new not-a-key (name (str "x")))
+                1))
   (println (len items)))

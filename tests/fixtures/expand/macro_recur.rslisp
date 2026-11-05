@@ -2,7 +2,9 @@
 
 (def count-from
   (fn (index forms)
-    (if (empty? forms) index (recur (number-add index 1) (rest forms)))))
+    (if (empty? forms)
+        index
+        (recur (number-add index 1) (rest forms)))))
 
 (def count-args
   (macro (form)

@@ -24,13 +24,13 @@ help: an export with a similar name exists
   |
 
 error[L0201]: cannot find `missing-name` in this scope
- --> expand/module_errors.rslisp:3:9
+ --> expand/module_errors.rslisp:4:9
   |
-3 | (export missing-name)
+4 | (export missing-name)
   |         ^^^^^^^^^^^^ not found in this scope
 
 error[L0201]: cannot find `launch` in this scope
- --> expand/module_errors.rslisp:4:2
+ --> expand/module_errors.rslisp:6:2
   |
-4 | (launch 3)
+6 | (launch 3)
   |  ^^^^^^ not found in this scope

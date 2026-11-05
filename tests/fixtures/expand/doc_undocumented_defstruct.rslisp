@@ -1,3 +1,5 @@
-(defstruct point :x i64 :y i64)
+(defstruct point
+  :x i64
+  :y i64)
 
 (def point-page (doc-page point))

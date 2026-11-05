@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/iterator_items_need_borrow_signature.rslisp
 ---
 error[L0401]: mismatched types
- --> check/iterator_items_need_borrow_signature.rslisp:8:25
-  |
-8 |   (for-each (adult-ages users) (fn (age) (println age))))
-  |                         ^^^^^ expected `(iterator user)`, found `(iterator (ref user))`
-  |
-  = help: `adult-ages` takes owned items, but the argument yields borrowed items: write `(type adult-ages (fn ((iterator (ref user))) (iterator u16)))` to take borrowed items
+  --> check/iterator_items_need_borrow_signature.rslisp:13:25
+   |
+13 |   (for-each (adult-ages users)
+   |                         ^^^^^ expected `(iterator user)`, found `(iterator (ref user))`
+   |
+   = help: `adult-ages` takes owned items, but the argument yields borrowed items: write `(type adult-ages (fn ((iterator (ref user))) (iterator u16)))` to take borrowed items

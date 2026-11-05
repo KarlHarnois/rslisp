@@ -2,5 +2,4 @@
   (associated (output left) "Output")
   (where () (with i64 i64) (output)))
 
-(defn main ()
-  (println 1))
+(defn main () (println 1))

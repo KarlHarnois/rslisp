@@ -1,4 +1,6 @@
-(defn helper "Gives one." (x) x)
+(defn helper "Gives one."
+  (x)
+  x)
 
 (defmacro one () (helper 1))
 

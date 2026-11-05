@@ -1,10 +1,12 @@
-(defstruct card :name str :set str)
+(defstruct card
+  :name str
+  :set str)
 
 (def cards
-  (vec
-    (->card :name "Black Lotus" :set "Alpha")
-    (->card :name "Counterspell" :set "Alpha")))
+  (vec (->card :name "Black Lotus" :set "Alpha")
+       (->card :name "Counterspell" :set "Alpha")))
 
 (defn main ()
   (prn (len cards))
-  (for-each (iter cards) (fn (card) (println (:name card)))))
+  (for-each (iter cards)
+            (fn (card) (println (:name card)))))

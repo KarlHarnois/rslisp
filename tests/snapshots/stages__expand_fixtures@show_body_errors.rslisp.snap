@@ -4,25 +4,25 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/show_body_errors.rslisp
 ---
 error[L0301]: a `show` body is one construction form or a symbol
- --> expand/show_body_errors.rslisp:2:17
+ --> expand/show_body_errors.rslisp:4:17
   |
-2 | (show price (p) 42)
+4 | (show price (p) 42)
   |                 ^^ here
   |
   = help: write the call that builds the value, as in `(->money :cents 1200)`
 
 error[L0301]: a `show` body is one construction form or a symbol
- --> expand/show_body_errors.rslisp:5:15
+ --> expand/show_body_errors.rslisp:9:15
   |
-5 | (show tag (t) ((fn () tag)))
+9 | (show tag (t) ((fn () tag)))
   |               ^^^^^^^^^^^^^ here
   |
   = help: write the call that builds the value, as in `(->money :cents 1200)`
 
 error[L0301]: a `show` body is one construction form or a symbol
-  --> expand/show_body_errors.rslisp:10:17
+  --> expand/show_body_errors.rslisp:16:17
    |
-10 | (show blank (b) ())
+16 | (show blank (b) ())
    |                 ^^ here
    |
    = help: write the call that builds the value, as in `(->money :cents 1200)`

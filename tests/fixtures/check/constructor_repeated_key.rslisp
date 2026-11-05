@@ -1,5 +1,10 @@
-(defstruct user :name str :email str :admin? bool (defaults :admin? false))
+(defstruct user
+  :name str
+  :email str
+  :admin? bool
+  (defaults :admin? false))
 
 (defn main ()
-  (let ana (->user :name "ana" :name "bea" :email "ana@example.com"))
+  (let ana
+    (->user :name "ana" :name "bea" :email "ana@example.com"))
   (println (:name ana)))

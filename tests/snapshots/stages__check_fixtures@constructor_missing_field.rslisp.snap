@@ -4,7 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/constructor_missing_field.rslisp
 ---
 error[L0409]: missing field `email` in `user`
- --> check/constructor_missing_field.rslisp:4:12
+ --> check/constructor_missing_field.rslisp:8:12
   |
-4 |   (let ana (->user :name "ana"))
+8 |   (let ana (->user :name "ana"))
   |            ^^^^^^^^^^^^^^^^^^^^ each missing field needs a value

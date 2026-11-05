@@ -1,11 +1,21 @@
-(defstruct money :cents i64)
-(defn dollars (amount) (->money :cents (* amount 100)))
-(show money (m) (dollars (/ (:cents m) 100)))
+(defstruct money
+  :cents i64)
 
-(defstruct price :cents i64)
-(show price (p) (->price :cents (:cents p)))
+(defn dollars (amount)
+  (->money :cents (* amount 100)))
 
-(defstruct origin :x i64)
+(show money (m)
+  (dollars (/ (:cents m) 100)))
+
+(defstruct price
+  :cents i64)
+
+(show price (p)
+  (->price :cents (:cents p)))
+
+(defstruct origin
+  :x i64)
+
 (show origin (o) origin)
 
 (defn main ()

@@ -1,7 +1,14 @@
-(defstruct user :name str :age u16)
-(defstruct sorter :key (fn ((ref user)) (ref str)) :label str)
+(defstruct user
+  :name str
+  :age u16)
+
+(defstruct sorter
+  :key (fn ((ref user)) (ref str))
+  :label str)
 
 (defn main ()
   (let chosen (->sorter :name "by name"))
   (let ana (->user :name "ana" :age 34))
-  (println (:label chosen) ": " ((:key chosen) ana)))
+  (println (:label chosen)
+           ": "
+           ((:key chosen) ana)))

@@ -1,7 +1,10 @@
-(defstruct car :make str :model str :year u16 :electric? bool)
+(defstruct car
+  :make str
+  :model str
+  :year u16
+  :electric? bool)
 
-(defn make-car (make)
-  (->car make "Custom" 2024 false))
+(defn make-car (make) (->car make "Custom" 2024 false))
 
 (defn main ()
   (println (:model (make-car "Rivian"))))

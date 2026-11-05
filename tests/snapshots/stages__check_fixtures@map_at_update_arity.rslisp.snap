@@ -1,10 +1,13 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/map_at_update_arity.rslisp
 ---
 error[L0402]: this function takes 3 arguments but 2 were given
  --> check/map_at_update_arity.rslisp:2:3
   |
-2 |   (map-at update (sorted-map "a" 1) "a" (fn (n) (+ n 1))))
-  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 3 arguments
+2 | /   (map-at update
+3 | |           (sorted-map "a" 1)
+4 | |           "a"
+5 | |           (fn (n) (+ n 1))))
+  | |___________________________^ expected 3 arguments

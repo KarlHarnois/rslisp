@@ -1,6 +1,9 @@
-(defstruct car :make str :model str)
+(defstruct car
+  :make str
+  :model str)
 
 (type leaf-maker (fn () (fn () car)))
+
 (defn leaf-maker ()
   (fn () (->car :make "Nissan" :model "Leaf")))
 

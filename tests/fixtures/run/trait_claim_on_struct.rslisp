@@ -1,6 +1,14 @@
 (rust-trait record-eq "PartialEq" employee)
-(def same-record? (rust "{0} == {1}" (where ((a record-eq)) (fn ((ref a) (ref a)) bool))))
-(defstruct employee :name string :score u32)
+
+(def same-record?
+  (rust "{0} == {1}"
+        (where ((a record-eq))
+               (fn ((ref a) (ref a)) bool))))
+
+(defstruct employee
+  :name string
+  :score u32)
+
 (defn main ()
   (let first-hire (->employee (str "Ada") 91))
   (let second-hire (->employee (str "Bram") 78))

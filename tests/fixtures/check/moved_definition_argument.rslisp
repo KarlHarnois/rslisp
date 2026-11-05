@@ -1,12 +1,18 @@
-(defstruct car :make str :model str :year u16)
-(defstruct garage :name str :cars (vec car))
+(defstruct car
+  :make str
+  :model str
+  :year u16)
 
-(defn open-garage (cars) (->garage :name "Downtown" :cars cars))
+(defstruct garage
+  :name str
+  :cars (vec car))
+
+(defn open-garage (cars)
+  (->garage :name "Downtown" :cars cars))
 
 (def cars
-  (vec
-    (->car :make "Nissan" :model "Leaf" :year 2024)
-    (->car :make "Honda" :model "Civic" :year 2019)))
+  (vec (->car :make "Nissan" :model "Leaf" :year 2024)
+       (->car :make "Honda" :model "Civic" :year 2019)))
 
 (defn main ()
   (prn (len (:cars (open-garage cars)))))

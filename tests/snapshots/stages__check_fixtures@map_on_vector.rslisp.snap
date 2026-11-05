@@ -4,7 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/map_on_vector.rslisp
 ---
 error[L0401]: mismatched types
- --> check/map_on_vector.rslisp:2:9
+ --> check/map_on_vector.rslisp:1:21
   |
-2 |   (vals (vec 1 2)))
-  |         ^^^^^^^^^ expected a map, found (vec _)
+1 | (defn main () (vals (vec 1 2)))
+  |                     ^^^^^^^^^ expected a map, found (vec _)

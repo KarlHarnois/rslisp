@@ -1,7 +1,13 @@
-(defstruct user :name str :age u16)
-(defstruct sorter :key (fn ((ref user)) u16) :label str)
+(defstruct user
+  :name str
+  :age u16)
 
-(defn age-of ((someone (ref user))) (:age someone))
+(defstruct sorter
+  :key (fn ((ref user)) u16)
+  :label str)
+
+(defn age-of ((someone (ref user)))
+  (:age someone))
 
 (defn by-key (key label)
   (let a key)

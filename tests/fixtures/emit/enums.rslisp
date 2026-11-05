@@ -1,4 +1,5 @@
 (enum (pair-of a) (both a a) neither)
+
 (enum shape
   (circle f64)
   (rect f64 f64)

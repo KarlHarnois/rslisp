@@ -1,3 +1,5 @@
 (defn main ()
-  (let bytes (the (vec u8) (vec 3 7 12 4)))
-  (println (count (take-while (iter bytes) (fn (b) (< (deref (deref b)) 10))))))
+  (let bytes
+    (the (vec u8) (vec 3 7 12 4)))
+  (println (count (take-while (iter bytes)
+                              (fn (b) (< (deref (deref b)) 10))))))

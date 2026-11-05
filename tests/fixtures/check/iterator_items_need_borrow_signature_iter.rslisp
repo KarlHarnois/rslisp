@@ -1,8 +1,14 @@
-(defstruct user :name string :age u16)
+(defstruct user
+  :name string
+  :age u16)
 
 (defn adult-ages (users)
-  (map (filter users (fn (u) (> (:age u) 17))) :age))
+  (map (filter users (fn (u) (> (:age u) 17)))
+       :age))
 
 (defn main ()
-  (let users (vec (->user (str "Ana") 34) (->user (str "Ben") 12)))
-  (for-each (adult-ages (iter users)) (fn (age) (println age))))
+  (let users
+    (vec (->user (str "Ana") 34)
+         (->user (str "Ben") 12)))
+  (for-each (adult-ages (iter users))
+            (fn (age) (println age))))

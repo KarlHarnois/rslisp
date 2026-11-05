@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/failed_body_macro_arguments.rslisp
 ---
 error[L0328]: a docstring goes after the parameter list
- --> expand/failed_body_macro_arguments.rslisp:1:33
+ --> expand/failed_body_macro_arguments.rslisp:2:20
   |
-1 | (defn outer () (defmacro my-dsl "doc" (x) x) (my-dsl (a -> b)))
-  |                                 ^^^^^ a docstring in place of the parameter list
+2 |   (defmacro my-dsl "doc"
+  |                    ^^^^^ a docstring in place of the parameter list
   |
   = help: write it as the first body form, after the parameter list

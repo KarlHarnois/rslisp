@@ -1,7 +1,11 @@
 (use code expand-call list fail)
 
 (defmacro probe (x)
-  (expand-call (list (quote defn) (quote area) "doc" (list (quote w)) (quote w)))
+  (expand-call (list (quote defn)
+                     (quote area)
+                     "doc"
+                     (list (quote w))
+                     (quote w)))
   (fail "probe fails" x))
 
 (probe 1)

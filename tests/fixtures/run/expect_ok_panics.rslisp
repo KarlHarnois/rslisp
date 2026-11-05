@@ -1,3 +1,7 @@
-(defstruct failure :line i64)
+(defstruct failure
+  :line i64)
+
 (defn main ()
-  (println (expect-ok (the (result i64 failure) (err (->failure 7))) "needs a count")))
+  (println (expect-ok (the (result i64 failure)
+                           (err (->failure 7)))
+                      "needs a count")))

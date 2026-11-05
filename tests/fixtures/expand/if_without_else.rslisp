@@ -1,2 +1,1 @@
-(defn f (n)
-  (if (= n 0) (println n)))
+(defn f (n) (if (= n 0) (println n)))

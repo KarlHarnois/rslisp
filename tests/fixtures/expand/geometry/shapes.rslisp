@@ -2,6 +2,11 @@
 
 (struct square (side f64))
 
-(def make-square (fn (side) (new square (side (checked side)))))
-(def square-side (fn (shape) (field shape side)))
+(def make-square
+  (fn (side)
+    (new square (side (checked side)))))
+
+(def square-side
+  (fn (shape) (field shape side)))
+
 (def checked (fn (value) value))

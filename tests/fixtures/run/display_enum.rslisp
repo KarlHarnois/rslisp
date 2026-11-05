@@ -1,7 +1,4 @@
-(enum token
-  (number i64)
-  (word string)
-  end)
+(enum token (number i64) (word string) end)
 
 (display token (t)
   (match t

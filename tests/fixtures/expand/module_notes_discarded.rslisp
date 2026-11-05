@@ -8,7 +8,8 @@
 
 (def count-sightings
   (macro (form)
-    (len (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))))
+    (len (module-notes (definition-symbol (nth form 1) "notes")
+                       (quote sightings)))))
 
 (remember-crane)
 

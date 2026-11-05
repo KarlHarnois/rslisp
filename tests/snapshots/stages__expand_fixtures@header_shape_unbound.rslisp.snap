@@ -4,18 +4,18 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/header_shape_unbound.rslisp
 ---
 error[L0201]: cannot find `unles-zero` in this scope
- --> expand/header_shape_unbound.rslisp:5:16
+ --> expand/header_shape_unbound.rslisp:7:16
   |
-5 | (header-shape (unles-zero value))
+7 | (header-shape (unles-zero value))
   |                ^^^^^^^^^^ not found in this scope
   |
 help: a name with a similar spelling exists
   |
-5 | (header-shape (unless-zero value))
+7 | (header-shape (unless-zero value))
   |                     +
 
 error[L0201]: cannot find `no-such-form` in this scope
- --> expand/header_shape_unbound.rslisp:7:16
+ --> expand/header_shape_unbound.rslisp:9:16
   |
-7 | (header-shape (no-such-form name))
+9 | (header-shape (no-such-form name))
   |                ^^^^^^^^^^^^ not found in this scope

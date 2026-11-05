@@ -1,6 +1,7 @@
 (use short_variant_import/palette color)
 
 (type brightness (fn (color) i64))
+
 (defn brightness (shade)
   (match shade
     (red 255)

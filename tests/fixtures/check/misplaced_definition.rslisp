@@ -11,7 +11,8 @@
   (+ limit 1))
 
 (defn recursive ()
-  (defn countdown (n) (if (= n 0) 0 (countdown (- n 1))))
+  (defn countdown (n)
+    (if (= n 0) 0 (countdown (- n 1))))
   (countdown 3))
 
 (defn used-before ()
@@ -23,7 +24,10 @@
   (let shift 1))
 
 (defn main ()
-  (println (used-once) (used-twice) (constant) (recursive))
+  (println (used-once)
+           (used-twice)
+           (constant)
+           (recursive))
   (used-before)
   (let-used-before)
   (malformed)
@@ -50,17 +54,15 @@
   (wrong))
 
 (def compile-time-misplaced
-  (macro (form)
-    (def inner 1)
-    inner))
+  (macro (form) (def inner 1) inner))
 
 (defn misplaced-struct ()
-  (defstruct point :x i64)
+  (defstruct point
+    :x i64)
   (let origin (->point :x 0))
   (println (:x (the point origin))))
 
-(defn malformed-struct ()
-  (struct))
+(defn malformed-struct () (struct))
 
 (defn do-without-definition ()
   (do (let hidden 1) hidden)
@@ -75,8 +77,7 @@
   (def (typed i64) 1)
   (+ typed 1))
 
-(defn unnamed ()
-  (def 7 1))
+(defn unnamed () (def 7 1))
 
 (defn overfull ()
   (def extra 1 2)

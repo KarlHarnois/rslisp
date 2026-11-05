@@ -1,7 +1,7 @@
-(defstruct badge :code i64)
+(defstruct badge
+  :code i64)
 
-(trait vetting
-  (check (fn (str) bool)))
+(trait vetting (check (fn (str) bool)))
 
 (impl vetting badge
   (check (word) (not= word "")))

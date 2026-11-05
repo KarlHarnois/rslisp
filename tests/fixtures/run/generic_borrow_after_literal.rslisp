@@ -1,4 +1,7 @@
-(type later? (where ((a partial-ord)) (fn (a a) bool)))
+(type later?
+  (where ((a partial-ord))
+         (fn (a a) bool)))
+
 (defn later? (a b) (> a b))
 
 (defn main ()

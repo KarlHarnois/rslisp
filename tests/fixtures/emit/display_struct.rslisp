@@ -1,6 +1,11 @@
 (struct point (x i64) (y i64))
 
-(display point (p) "(" (field p x) ", " (field p y) ")")
+(display point (p)
+  "("
+  (field p x)
+  ", "
+  (field p y)
+  ")")
 
 (defn main ()
   (println (new point (x 1) (y 2)))

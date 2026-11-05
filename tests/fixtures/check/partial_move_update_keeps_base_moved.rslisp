@@ -1,9 +1,20 @@
-(defstruct badge :text string :size u16)
+(defstruct badge
+  :text string
+  :size u16)
 
-(defstruct garage :name string :badge badge)
+(defstruct garage
+  :name string
+  :badge badge)
 
 (defn main ()
-  (let g (->garage (str "Leaf Garage") (->badge (str "open") 12)))
+  (let g
+    (->garage (str "Leaf Garage")
+              (->badge (str "open") 12)))
   (let b (assoc (:badge g) :size 14))
-  (let h (assoc g :badge (->badge (str "new") 1)))
-  (println (:size b) " " (:name h) " " (:text (:badge g))))
+  (let h
+    (assoc g :badge (->badge (str "new") 1)))
+  (println (:size b)
+           " "
+           (:name h)
+           " "
+           (:text (:badge g))))

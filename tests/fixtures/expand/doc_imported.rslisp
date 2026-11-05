@@ -6,4 +6,5 @@
 
 (def area-header (header area))
 
-(defn main () (println (area 3 4) area-page))
+(defn main ()
+  (println (area 3 4) area-page))

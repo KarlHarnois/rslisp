@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/closure_kind_mismatch_fnmut.rslisp
 ---
 error[L0509]: this closure is `FnMut`, but the parameter accepts `Fn`
- --> check/closure_kind_mismatch_fnmut.rslisp:6:23
+ --> check/closure_kind_mismatch_fnmut.rslisp:7:23
   |
-6 |   (keep (fn () (push! more 2))))
+7 |   (keep (fn () (push! more 2))))
   |         --------------^^^^----
   |         |             |
   |         |             `more` changes here

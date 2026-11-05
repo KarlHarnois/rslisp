@@ -1,1 +1,3 @@
-(enum (pair a b) (rust "({0}, {1})") (of (struct (first a) (second b))))
+(enum (pair a b)
+  (rust "({0}, {1})")
+  (of (struct (first a) (second b))))

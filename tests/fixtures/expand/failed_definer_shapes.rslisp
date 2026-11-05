@@ -1,11 +1,13 @@
 (use code fail)
 (use prelude/macros header-shape)
 
-(defmacro defpair (left right) (fail "defpair is not ready" left))
+(defmacro defpair (left right)
+  (fail "defpair is not ready" left))
 
 (header-shape (defpair left right))
 
-(defmacro defone (name extra) (fail "defone is not ready" name))
+(defmacro defone (name extra)
+  (fail "defone is not ready" name))
 
 (header-shape (defone name))
 
@@ -15,4 +17,7 @@
 
 (defbare third-thing)
 
-(defn main () (first-thing) (second-thing) (third-thing))
+(defn main ()
+  (first-thing)
+  (second-thing)
+  (third-thing))

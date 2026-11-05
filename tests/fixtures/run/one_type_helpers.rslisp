@@ -1,17 +1,13 @@
 (defn is-alive (grid x y)
   (deref (unwrap (get (unwrap (get grid y)) x))))
 
-(defn print-generation (generation)
-  (println generation))
+(defn print-generation (generation) (println generation))
 
-(defn size (items)
-  (len items))
+(defn size (items) (len items))
 
-(defn size-many (items)
-  (len items))
+(defn size-many (items) (len items))
 
-(defn shout (value)
-  (str value))
+(defn shout (value) (str value))
 
 (defn countdown (value done?)
   (if done? value (countdown value true)))
@@ -26,24 +22,23 @@
 
 (defn identity (x) x)
 
-(defn add (x y)
-  (+ x y))
+(defn add (x y) (+ x y))
 
-(defn show-cell (cell)
-  (str cell))
+(defn show-cell (cell) (str cell))
 
-(defn label (value)
-  (show-cell value))
+(defn label (value) (show-cell value))
 
 (defn main ()
-  (let grid (vec (vec true false) (vec false true)))
+  (let grid
+    (vec (vec true false) (vec false true)))
   (println (is-alive grid 1 0))
   (print-generation 42)
   (let word (str "one"))
   (println (size word))
   (println (size-many word))
   (println (size-many (vec 1 2)))
-  (for-each (map (range 0 4) shout) (fn (text) (println text)))
+  (for-each (map (range 0 4) shout)
+            (fn (text) (println text)))
   (println (countdown 3 false))
   (println (even-step 4 false))
   (println (identity 3))

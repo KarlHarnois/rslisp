@@ -1,55 +1,55 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/compile_time_errors.rslisp
 ---
 error[L0303]: `first` expects a list as argument 1, found an integer
-  --> expand/compile_time_errors.rslisp:3:36
+  --> expand/compile_time_errors.rslisp:4:17
    |
- 3 | (def first-of-number (macro (form) (first 1)))
-   |                                    ^^^^^^^^^ an integer given here
+ 4 |   (macro (form) (first 1)))
+   |                 ^^^^^^^^^ an integer given here
 ...
-10 | (first-of-number)
+21 | (first-of-number)
    | ----------------- in this macro call
 
 error[L0314]: `nth` was given an index outside the list
-  --> expand/compile_time_errors.rslisp:4:33
+  --> expand/compile_time_errors.rslisp:7:17
    |
- 4 | (def past-the-end (macro (form) (nth form 5)))
-   |                                 ^^^^^^^^^^^^ index out of range
+ 7 |   (macro (form) (nth form 5)))
+   |                 ^^^^^^^^^^^^ index out of range
 ...
-11 | (past-the-end)
+23 | (past-the-end)
    | -------------- in this macro call
 
 error[L0313]: the test of `if` must be a boolean, found an integer
-  --> expand/compile_time_errors.rslisp:5:36
+  --> expand/compile_time_errors.rslisp:10:21
    |
- 5 | (def number-test (macro (form) (if 1 form form)))
-   |                                    ^ this test
+10 |   (macro (form) (if 1 form form)))
+   |                     ^ this test
 ...
-12 | (number-test)
+25 | (number-test)
    | ------------- in this macro call
 
 error[L0312]: a string cannot be called
-  --> expand/compile_time_errors.rslisp:6:34
+  --> expand/compile_time_errors.rslisp:13:17
    |
- 6 | (def call-a-string (macro (form) ("text" form)))
-   |                                  ^^^^^^^^^^^^^ called here
+13 |   (macro (form) ("text" form)))
+   |                 ^^^^^^^^^^^^^ called here
 ...
-13 | (call-a-string)
+27 | (call-a-string)
    | --------------- in this macro call
 
 error[L0316]: structs only exist at runtime
- --> expand/compile_time_errors.rslisp:7:33
-  |
-7 | (def read-a-field (macro (form) (field form name)))
-  |                                 ^^^^^^^^^^^^^^^^^ used at compile time here
+  --> expand/compile_time_errors.rslisp:16:17
+   |
+16 |   (macro (form) (field form name)))
+   |                 ^^^^^^^^^^^^^^^^^ used at compile time here
 
 error[L0311]: `first` takes 1 argument but 2 were given
-  --> expand/compile_time_errors.rslisp:8:39
+  --> expand/compile_time_errors.rslisp:19:17
    |
- 8 | (def too-many-arguments (macro (form) (first form form)))
-   |                                       ^^^^^^^^^^^^^^^^^ 2 arguments given
+19 |   (macro (form) (first form form)))
+   |                 ^^^^^^^^^^^^^^^^^ 2 arguments given
 ...
-15 | (too-many-arguments)
+31 | (too-many-arguments)
    | -------------------- in this macro call

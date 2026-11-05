@@ -1,4 +1,6 @@
 (def maybe-name (some (str "Leaf")))
 
 (defn main ()
-  (println (match maybe-name ((some _) "named") (none "none"))))
+  (println (match maybe-name
+             ((some _) "named")
+             (none "none"))))

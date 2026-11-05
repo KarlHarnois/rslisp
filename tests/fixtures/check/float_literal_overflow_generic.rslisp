@@ -1,2 +1,4 @@
-(type scale (where ((n float)) (fn (n) n)))
+(type scale
+  (where ((n float)) (fn (n) n)))
+
 (defn scale (x) (* x 1e400))

@@ -1,13 +1,13 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/display_foreign_help.rslisp
 ---
 error[L0404]: `unit` does not implement `display`
- --> check/display_foreign_help.rslisp:2:12
+ --> check/display_foreign_help.rslisp:1:24
   |
-2 |   (println (do)))
-  |            ^^^^ this needs `display`
+1 | (defn main () (println (do)))
+  |                        ^^^^ this needs `display`
   |
   = note: `display` is implemented for: bool, char, str, string, (ref str), io-error, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where ((a display)) (ref a))
   = note: `display` is implemented for `(parse-error target)` for each `target` in: bool, char, string, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64

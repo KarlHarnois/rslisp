@@ -1,7 +1,9 @@
 (use warehouse/model ledger-error)
 (use warehouse/parsing parse-stock parse-events)
 (use warehouse/book book apply-all)
-(use warehouse/reports print-summary print-low-stock print-categories print-top-value print-activity)
+
+(use warehouse/reports print-summary print-low-stock print-categories
+                       print-top-value print-activity)
 
 (def stock-text
   (str "BOLT-01,short bolt,32,3043,25\n"
@@ -132,37 +134,55 @@
        "adjust VALVE-04 4"))
 
 (def broken-events
-  (str "receive BOLT-01 12\n"
-       "receive BOLT-01 lots"))
+  (str "receive BOLT-01 12\n" "receive BOLT-01 lots"))
 
 (def broken-stock
-  (str "BOLT-01,bolt,12,40,10\n"
-       "NUT-01,nut,8"))
+  (str "BOLT-01,bolt,12,40,10\n" "NUT-01,nut,8"))
 
-(type load (fn ((ref str) (ref str)) (result book ledger-error)))
+(type load
+  (fn ((ref str) (ref str))
+    (result book ledger-error)))
+
 (defn load (stock-source event-source)
   (let stock (try (parse-stock stock-source)))
   (let events (try (parse-events event-source)))
   (ok (apply-all stock (ref events))))
 
 (defn main ()
-  (report "morning" (load (as-str stock-text) (as-str morning-events)))
-  (report "full day" (load (as-str stock-text) (as-str (str morning-events "\n" afternoon-events))))
-  (report "broken events" (load (as-str stock-text) (as-str broken-events)))
-  (report "broken stock" (load (as-str broken-stock) (as-str morning-events))))
+  (report "morning"
+          (load (as-str stock-text) (as-str morning-events)))
+  (report "full day"
+          (load (as-str stock-text)
+                (as-str (str morning-events "\n" afternoon-events))))
+  (report "broken events"
+          (load (as-str stock-text) (as-str broken-events)))
+  (report "broken stock"
+          (load (as-str broken-stock) (as-str morning-events))))
 
-(type report (fn ((ref str) (result book ledger-error)) unit))
+(type report
+  (fn ((ref str) (result book ledger-error))
+    unit))
+
 (defn report (title outcome)
   (println (str "== " title))
   (match outcome
-    ((ok finished) (print-book (ref finished)))
-    ((err problem) (println (str "failed: " problem)))))
+    ((ok finished)
+     (print-book (ref finished)))
+    ((err problem)
+     (println (str "failed: " problem)))))
 
 (type print-book (fn ((ref book)) unit))
+
 (defn print-book (finished)
-  (println (str "entries: " (len (:entries finished)) ", rejected: " (len (:rejected finished))))
-  (for-each (iter (:rejected finished)) (fn (problem) (println (str "  rejected: " problem))))
-  (for-each (take (iter (:entries finished)) 5) (fn (moved) (println (str "  " moved))))
+  (println (str "entries: "
+                (len (:entries finished))
+                ", rejected: "
+                (len (:rejected finished))))
+  (for-each (iter (:rejected finished))
+            (fn (problem)
+              (println (str "  rejected: " problem))))
+  (for-each (take (iter (:entries finished)) 5)
+            (fn (moved) (println (str "  " moved))))
   (print-summary (:stock finished))
   (print-low-stock (:stock finished))
   (println "by category:")

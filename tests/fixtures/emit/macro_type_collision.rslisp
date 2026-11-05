@@ -1,9 +1,15 @@
 (defrule old-point
-  ((reader) (do (struct point (x i64))
-                (defn reader () (field (new point (x 3)) x)))))
+  ((reader)
+   (do (struct point (x i64))
+       (defn reader ()
+         (field (new point (x 3)) x)))))
 
 (old-point old-x)
-(defstruct point :y i64)
+
+(defstruct point
+  :y i64)
 
 (defn main ()
-  (println (old-x) " " (field (->point 7) y)))
+  (println (old-x)
+           " "
+           (field (->point 7) y)))

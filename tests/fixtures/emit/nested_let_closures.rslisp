@@ -2,12 +2,10 @@
   (let calls (vec 0))
   (let outer
     (fn ()
-      (do
-        (let middle
-          (fn ()
-            (do
-              (let inner (fn () (push! calls 1)))
-              (inner))))
-        (middle))))
+      (do (let middle
+            (fn ()
+              (do (let inner (fn () (push! calls 1)))
+                  (inner))))
+          (middle))))
   (outer)
   (println (len calls)))

@@ -4,13 +4,13 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/program_only_helper.rslisp
 ---
 error[L0306]: `print` belongs to the program, so macro code cannot run it
-   --> expand/program_only_helper.rslisp:2:3
+   --> expand/program_only_helper.rslisp:1:21
     |
-  2 |   (print "unused"))
-    |   ^^^^^^^^^^^^^^^^ macro code runs this
-  3 |
-  4 | (def never-called (macro (form) (say-unused)))
-    |                                  ---------- macro code reaches it through this
+  1 | (defn say-unused () (print "unused"))
+    |                     ^^^^^^^^^^^^^^^^ macro code runs this
+...
+  4 |   (macro (form) (say-unused)))
+    |                  ---------- macro code reaches it through this
     |
    ::: prelude/text.rslisp:471:11
     |

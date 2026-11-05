@@ -7,7 +7,8 @@
   (escape-format "brace { quote \" slash \\ newline\n"))
 
 (defmacro show-strip-suffix (form)
-  (string-strip-suffix "brace { quote \" slash \\ newline\nEND" "END"))
+  (string-strip-suffix "brace { quote \" slash \\ newline\nEND"
+                       "END"))
 
 (defmacro show-strip-prefix (form)
   (string-strip-prefix ":year" ":"))
@@ -16,7 +17,11 @@
   (string-strip-prefix "year" ":"))
 
 (def escaped-string (show-escape-string "unused"))
+
 (def escaped-format (show-escape-format "unused"))
+
 (def stripped-suffix (show-strip-suffix "unused"))
+
 (def stripped-prefix (show-strip-prefix "unused"))
+
 (def kept-prefix (show-keep-prefix "unused"))

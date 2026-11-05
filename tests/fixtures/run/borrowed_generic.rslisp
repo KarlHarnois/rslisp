@@ -1,4 +1,9 @@
-(defn first-item (items) (unwrap (get items 0)))
+(defn first-item (items)
+  (unwrap (get items 0)))
+
 (defn twice (x) (+ x x))
-(defn run (items) (twice (first-item items)))
+
+(defn run (items)
+  (twice (first-item items)))
+
 (defn main () (println (run (vec 4))))

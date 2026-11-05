@@ -1,4 +1,5 @@
-(defstruct car :models (vec str))
+(defstruct car
+  :models (vec str))
 
 (defn build (line)
   (let model (str line))

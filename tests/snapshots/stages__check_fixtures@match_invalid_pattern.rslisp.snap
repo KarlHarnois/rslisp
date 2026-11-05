@@ -1,28 +1,28 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/match_invalid_pattern.rslisp
 ---
 error[L0231]: this is not a pattern
- --> check/match_invalid_pattern.rslisp:4:6
+ --> check/match_invalid_pattern.rslisp:4:13
   |
-4 |     ((0 value) value)
-  |      ^^^^^^^^^ a pattern names a binding, a literal or a variant
-  |
-  = help: write a binding name, `_`, a literal, or `(variant pattern ...)`
-
-error[L0231]: this is not a pattern
- --> check/match_invalid_pattern.rslisp:8:6
-  |
-8 |     ((+ value) value)
-  |      ^^^^^^^^^ a pattern names a binding, a literal or a variant
+4 |   (match s ((0 value) value) (_ 0.0)))
+  |             ^^^^^^^^^ a pattern names a binding, a literal or a variant
   |
   = help: write a binding name, `_`, a literal, or `(variant pattern ...)`
 
 error[L0231]: this is not a pattern
-  --> check/match_invalid_pattern.rslisp:12:6
+ --> check/match_invalid_pattern.rslisp:7:13
+  |
+7 |   (match s ((+ value) value) (_ 0.0)))
+  |             ^^^^^^^^^ a pattern names a binding, a literal or a variant
+  |
+  = help: write a binding name, `_`, a literal, or `(variant pattern ...)`
+
+error[L0231]: this is not a pattern
+  --> check/match_invalid_pattern.rslisp:10:13
    |
-12 |     (shape/circle 0.0)))
-   |      ^^^^^^^^^^^^ a pattern names a binding, a literal or a variant
+10 |   (match s (shape/circle 0.0)))
+   |             ^^^^^^^^^^^^ a pattern names a binding, a literal or a variant
    |
    = help: write a binding name, `_`, a literal, or `(variant pattern ...)`

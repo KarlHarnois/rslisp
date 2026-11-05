@@ -2,5 +2,4 @@
 
 (defn half ((value f32)) value)
 
-(defn main ()
-  (println (half (ratio))))
+(defn main () (println (half (ratio))))

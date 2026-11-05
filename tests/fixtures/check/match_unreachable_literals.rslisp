@@ -1,17 +1,8 @@
 (defn number (n)
-  (match n
-    (0 0)
-    (1 1)
-    (1 2)))
+  (match n (0 0) (1 1) (1 2)))
 
 (defn text (s)
-  (match s
-    ("a" 1)
-    ("b" 2)
-    ("a" 3)))
+  (match s ("a" 1) ("b" 2) ("a" 3)))
 
 (defn flag (b)
-  (match b
-    (true 1)
-    (false 2)
-    (true 3)))
+  (match b (true 1) (false 2) (true 3)))

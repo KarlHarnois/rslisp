@@ -1,27 +1,61 @@
 (use code first list nth number-add bool-not fail)
 
-(def first-of-unit (macro (form) (first (do))))
-(def first-of-function (macro (form) (first first)))
-(def first-of-symbol (macro (form) (first (quote name))))
-(def add-a-list (macro (form) (number-add (list) 1)))
-(def add-a-float (macro (form) (number-add 1.5 2)))
-(def overflow (macro (form) (number-add 170141183460469231731687303715884105727 1)))
-(def nth-at-a-fraction (macro (form) (nth form 1.5)))
-(def negate-a-number (macro (form) (bool-not 1)))
+(def first-of-unit
+  (macro (form) (first (do))))
+
+(def first-of-function
+  (macro (form) (first first)))
+
+(def first-of-symbol
+  (macro (form) (first (quote name))))
+
+(def add-a-list
+  (macro (form) (number-add (list) 1)))
+
+(def add-a-float
+  (macro (form) (number-add 1.5 2)))
+
+(def overflow
+  (macro (form)
+    (number-add 170141183460469231731687303715884105727 1)))
+
+(def nth-at-a-fraction
+  (macro (form) (nth form 1.5)))
+
+(def negate-a-number
+  (macro (form) (bool-not 1)))
+
 (def call-true (macro (form) (true)))
-(def fail-with-a-number (macro (form) (fail 5 form)))
-(def fail-with-a-numbered-help (macro (form) (fail "bad call" form 5)))
-(def call-with-too-few (macro (form) ((fn (x) x))))
+
+(def fail-with-a-number
+  (macro (form) (fail 5 form)))
+
+(def fail-with-a-numbered-help
+  (macro (form) (fail "bad call" form 5)))
+
+(def call-with-too-few
+  (macro (form) ((fn (x) x))))
 
 (first-of-unit)
+
 (first-of-function)
+
 (first-of-symbol)
+
 (add-a-list)
+
 (add-a-float)
+
 (overflow)
+
 (nth-at-a-fraction)
+
 (negate-a-number)
+
 (call-true)
+
 (fail-with-a-number)
+
 (fail-with-a-numbered-help)
+
 (call-with-too-few)

@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/generic_struct_errors.rslisp
 ---
 error[L0415]: `pair` takes 2 type arguments but 1 was given
@@ -10,23 +10,23 @@ error[L0415]: `pair` takes 2 type arguments but 1 was given
   |                    ^^^^^^^^^^ expected 2 type arguments
 
 error[L0415]: `pair` takes 2 type arguments but 3 were given
- --> check/generic_struct_errors.rslisp:6:21
+ --> check/generic_struct_errors.rslisp:8:8
   |
-6 | (type too-many (fn ((pair i64 i64 i64)) i64))
-  |                     ^^^^^^^^^^^^^^^^^^ expected 2 type arguments
+8 |   (fn ((pair i64 i64 i64)) i64))
+  |        ^^^^^^^^^^^^^^^^^^ expected 2 type arguments
 
 error[L0416]: no field uses the type parameter `b`
- --> check/generic_struct_errors.rslisp:9:19
-  |
-9 | (struct (unused a b) (only a))
-  |                   ^ declared here
-  |
-  = help: use `b` in a field's type, or remove it
+  --> check/generic_struct_errors.rslisp:12:19
+   |
+12 | (struct (unused a b) (only a))
+   |                   ^ declared here
+   |
+   = help: use `b` in a field's type, or remove it
 
 error[L0417]: the type parameter `a` cannot require traits here
-  --> check/generic_struct_errors.rslisp:11:18
+  --> check/generic_struct_errors.rslisp:14:18
    |
-11 | (struct (bounded (a display)) (shown a))
+14 | (struct (bounded (a display)) (shown a))
    |                  ^^^^^^^^^^^ traits given here
    |
    = help: write `a` alone, and require the traits in the `where` of each function that needs them

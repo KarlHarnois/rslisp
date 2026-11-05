@@ -1,6 +1,8 @@
-(defstruct person :name string)
+(defstruct person
+  :name string)
 
-(defn same-name? (a b) (= (:name a) (:name b)))
+(defn same-name? (a b)
+  (= (:name a) (:name b)))
 
 (defn main ()
   (let ana (->person (str "Ana")))

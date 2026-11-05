@@ -1,4 +1,4 @@
-(defn say-unused ()
-  (print "unused"))
+(defn say-unused () (print "unused"))
 
-(def never-called (macro (form) (say-unused)))
+(def never-called
+  (macro (form) (say-unused)))

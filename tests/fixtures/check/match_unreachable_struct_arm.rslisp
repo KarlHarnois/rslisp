@@ -1,4 +1,6 @@
-(defstruct range :start i64 :end i64)
+(defstruct range
+  :start i64
+  :end i64)
 
 (defn total (r)
   (match r

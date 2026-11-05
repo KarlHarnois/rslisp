@@ -1,7 +1,9 @@
 (defn same? (a b) (= a b))
 
 (defn recent (years floor)
-  (let n (count (filter (iter years) (fn (y) (> (deref y) floor)))))
+  (let n
+    (count (filter (iter years)
+                   (fn (y) (> (deref y) floor)))))
   (if (same? floor floor) n 0))
 
 (defn main ()

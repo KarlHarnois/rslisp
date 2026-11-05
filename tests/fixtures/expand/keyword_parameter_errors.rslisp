@@ -1,7 +1,11 @@
 (defn add (:x i64 :y i64) (+ x y))
+
 (defn twice (:x i64 :x i64) (+ x x))
+
 (defn untyped-start (:x i64 i64) x)
+
 (defn early (:x (defaults :x 1) :y) x)
+
 (defn misspelled (:x (defaults :z 1)) x)
 
 (defn main ()
@@ -13,8 +17,7 @@
 
 (defn apply-key (:key :label) (key label))
 
-(defn apply-name ()
-  (apply-key :name "x"))
+(defn apply-name () (apply-key :name "x"))
 
 (defn pair-reversed (:ac i64 :ab i64) (+ ab ac))
 

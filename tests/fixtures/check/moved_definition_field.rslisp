@@ -1,12 +1,17 @@
 (defn main ()
   (let deck (->deck :name "The Deck" :cards cards))
-  (let names (collect (map (:cards deck) :name)))
+  (let names
+    (collect (map (:cards deck) :name)))
   (prn names))
 
 (def cards
-  (vec
-    (->card :name "Black Lotus" :set "Alpha")
-    (->card :name "Counterspell" :set "Alpha")))
+  (vec (->card :name "Black Lotus" :set "Alpha")
+       (->card :name "Counterspell" :set "Alpha")))
 
-(defstruct deck :name str :cards (vec card))
-(defstruct card :name str :set str)
+(defstruct deck
+  :name str
+  :cards (vec card))
+
+(defstruct card
+  :name str
+  :set str)

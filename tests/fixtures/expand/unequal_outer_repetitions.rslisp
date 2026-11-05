@@ -1,4 +1,6 @@
 (defrule zip-grids
-  ((((a ...) ...) ((b ...) ...)) (vec (vec (pair a b) ...) ...)))
+  ((((a ...) ...) ((b ...) ...))
+   (vec (vec (pair a b) ...) ...)))
 
-(defn grids () (zip-grids ((1) (2)) ((3))))
+(defn grids ()
+  (zip-grids ((1) (2)) ((3))))

@@ -4,28 +4,28 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/definition_call_errors.rslisp
 ---
 error[L0311]: `definition-call` takes 1 argument but 0 were given
- --> expand/definition_call_errors.rslisp:5:5
+ --> expand/definition_call_errors.rslisp:4:17
   |
-5 |     (definition-call)))
-  |     ^^^^^^^^^^^^^^^^^ 0 arguments given
-6 |
-7 | (def missing (call-of-nothing))
+4 |   (macro (form) (definition-call)))
+  |                 ^^^^^^^^^^^^^^^^^ 0 arguments given
+5 |
+6 | (def missing (call-of-nothing))
   |              ----------------- in this macro call
 
 error[L0303]: `definition-call` expects a symbol as argument 1, found a string
-  --> expand/definition_call_errors.rslisp:11:5
+  --> expand/definition_call_errors.rslisp:9:17
    |
-11 |     (definition-call "twice")))
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^ a string given here
-12 |
-13 | (def text (call-of-text))
+ 9 |   (macro (form) (definition-call "twice")))
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^ a string given here
+10 |
+11 | (def text (call-of-text))
    |           -------------- in this macro call
 
 error[L0201]: cannot find `no-such-term` in this scope
-  --> expand/definition_call_errors.rslisp:17:29
+  --> expand/definition_call_errors.rslisp:15:29
    |
-17 |     (definition-call (quote no-such-term))))
+15 |     (definition-call (quote no-such-term))))
    |                             ^^^^^^^^^^^^ not found in this scope
-18 |
-19 | (def unbound (call-of-unbound))
+16 |
+17 | (def unbound (call-of-unbound))
    |              ----------------- in this macro call

@@ -1,9 +1,11 @@
 (use code module-notes add-module-note definition-symbol empty? fail)
 
 (defmacro defn-once (name parameters body)
-  (if (empty? (module-notes (definition-symbol (quote defn-once) "notes") (quote defined)))
+  (if (empty? (module-notes (definition-symbol (quote defn-once) "notes")
+                            (quote defined)))
       (do (add-module-note (quote defined) name)
-          (template (defn (unquote name) (unquote parameters) (unquote body))))
+          (template (defn (unquote name) (unquote parameters)
+                      (unquote body))))
       (fail "expanded twice" name)))
 
 (defn-once twice (x) (* 2 x))
@@ -11,9 +13,13 @@
 (def twice-page (doc-page twice))
 
 (defmacro documented-defn-once (name parameters docstring body)
-  (if (empty? (module-notes (definition-symbol (quote documented-defn-once) "notes") (quote documented)))
+  (if (empty? (module-notes (definition-symbol (quote documented-defn-once)
+                                               "notes")
+                            (quote documented)))
       (do (add-module-note (quote documented) name)
-          (template (defn (unquote name) (unquote parameters) (unquote docstring) (unquote body))))
+          (template (defn (unquote name) (unquote parameters)
+                      (unquote docstring)
+                      (unquote body))))
       (fail "expanded twice" name)))
 
 (documented-defn-once halve (x) "Halves." (/ x 2))

@@ -1,20 +1,20 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/malformed_with.rslisp
 ---
 error[L0228]: malformed `with` type
- --> check/malformed_with.rslisp:2:29
+ --> check/malformed_with.rslisp:4:19
   |
-2 | (type worse (where (a) (fn (with) unit)))
-  |                             ^^^^ this does not fit the shape of the type
+4 |   (where (a) (fn (with) unit)))
+  |                   ^^^^ this does not fit the shape of the type
   |
   = help: write it as `(with type type)`
 
 error[L0228]: malformed `with` type
- --> check/malformed_with.rslisp:5:30
+ --> check/malformed_with.rslisp:9:19
   |
-5 | (type broken (where (a) (fn ((with a)) unit)))
-  |                              ^^^^^^^^ this does not fit the shape of the type
+9 |   (where (a) (fn ((with a)) unit)))
+  |                   ^^^^^^^^ this does not fit the shape of the type
   |
   = help: write it as `(with type type)`

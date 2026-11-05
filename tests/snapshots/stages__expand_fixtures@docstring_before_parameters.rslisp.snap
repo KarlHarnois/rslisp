@@ -6,7 +6,7 @@ input_file: tests/fixtures/expand/docstring_before_parameters.rslisp
 error[L0328]: a docstring goes after the parameter list
  --> expand/docstring_before_parameters.rslisp:1:16
   |
-1 | (defn greeting "Says hello." () "hi")
+1 | (defn greeting "Says hello."
   |                ^^^^^^^^^^^^^ a docstring in place of the parameter list
   |
   = help: write it as the first body form, after the parameter list

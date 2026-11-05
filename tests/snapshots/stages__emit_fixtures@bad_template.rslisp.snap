@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).emit_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/emit/bad_template.rslisp
 ---
 error[L0218]: this Rust template has a malformed placeholder
- --> emit/bad_template.rslisp:2:21
+ --> emit/bad_template.rslisp:5:9
   |
-2 | (def unclosed (rust "{0" (fn (i64) i64)))
-  |                     ^^^^ a placeholder is `{`, a number and `}`
+5 |   (rust "{0" (fn (i64) i64)))
+  |         ^^^^ a placeholder is `{`, a number and `}`
   |
   = help: write a literal brace as `{{` or `}}`

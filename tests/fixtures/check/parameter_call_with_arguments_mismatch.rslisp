@@ -1,5 +1,3 @@
-(defn main ()
-  (prn (combine-ranges 5)))
+(defn main () (prn (combine-ranges 5)))
 
-(defn combine-ranges (combine)
-  (combine 150 240))
+(defn combine-ranges (combine) (combine 150 240))

@@ -1,1 +1,3 @@
-(enum (wrapped a) (holds (option (wrapped a))) empty)
+(enum (wrapped a)
+  (holds (option (wrapped a)))
+  empty)

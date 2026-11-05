@@ -9,7 +9,8 @@
             (fn (entry)
               (let-pair (text number) entry
                 (println (str text number)))))
-  (let pairs (vec (pair 2 "b") (pair 1 "a")))
+  (let pairs
+    (vec (pair 2 "b") (pair 1 "a")))
   (sort! pairs)
   (for-each (copied pairs)
             (fn (entry)

@@ -1,10 +1,19 @@
 (defn size (items) (len items))
-(defn sizes (grid) (collect (map (iter grid) (fn (row) (size row)))))
-(type owned-size (where ((collection sequence)) (fn (collection) usize)))
+
+(defn sizes (grid)
+  (collect (map (iter grid) (fn (row) (size row)))))
+
+(type owned-size
+  (where ((collection sequence))
+         (fn (collection) usize)))
+
 (defn owned-size (collection) (len collection))
+
 (defn main ()
   (let grid (vec (vec 1 2 3) (vec 4 5)))
-  (let models (vec (str "Leaf") (str "Ariya")))
+  (let models
+    (vec (str "Leaf") (str "Ariya")))
   (prn (sizes grid))
   (prn (sizes models))
-  (prn (collect (map (iter grid) (fn (row) (owned-size row))))))
+  (prn (collect (map (iter grid)
+                     (fn (row) (owned-size row))))))

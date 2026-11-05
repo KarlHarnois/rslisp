@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/malformed_closure_kinds.rslisp
 ---
 error[L0228]: malformed `fn-mut` type
@@ -12,9 +12,9 @@ error[L0228]: malformed `fn-mut` type
   = help: write it as `(fn-mut (argument ...) result)`
 
 error[L0228]: malformed `fn-once` type
- --> check/malformed_closure_kinds.rslisp:3:21
+ --> check/malformed_closure_kinds.rslisp:6:8
   |
-3 | (type bad-once (fn ((fn-once (i64))) i64))
-  |                     ^^^^^^^^^^^^^^^ this does not fit the shape of the type
+6 |   (fn ((fn-once (i64))) i64))
+  |        ^^^^^^^^^^^^^^^ this does not fit the shape of the type
   |
   = help: write it as `(fn-once (argument ...) result)`

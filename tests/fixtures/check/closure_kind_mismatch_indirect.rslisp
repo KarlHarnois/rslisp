@@ -3,4 +3,7 @@
   (let consume (fn (ignored) text))
   (map (iter (vec 1 2)) consume)
   (let other (str "other"))
-  (map (iter (vec 1 2)) (if true (fn (ignored) other) (fn (ignored) other))))
+  (map (iter (vec 1 2))
+       (if true
+           (fn (ignored) other)
+           (fn (ignored) other))))

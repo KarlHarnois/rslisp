@@ -4,32 +4,32 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/iterator_function_field_beside_move_and_warning.rslisp
 ---
 error[L0458]: Rust cannot name the type `(iterator (ref i64))` here
- --> check/iterator_function_field_beside_move_and_warning.rslisp:1:27
+ --> check/iterator_function_field_beside_move_and_warning.rslisp:2:12
   |
-1 | (defstruct tally :counter (fn ((iterator (ref i64))) usize))
-  |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this holds `(iterator (ref i64))` inside a function type
+2 |   :counter (fn ((iterator (ref i64))) usize))
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this holds `(iterator (ref i64))` inside a function type
   |
   = note: Rust names this type only as the type of a function's own parameter or result
   = help: pass a value whose type Rust can name instead, such as the collection the items come from
 
 warning[L0434]: unreachable `match` arm
- --> check/iterator_function_field_beside_move_and_warning.rslisp:6:6
+ --> check/iterator_function_field_beside_move_and_warning.rslisp:7:21
   |
-5 |     (_ 0.0)
-  |      - this arm covers it
-6 |     (point 1.0)))
-  |      ^^^^^ this arm can never match
+7 |   (match s (_ 0.0) (point 1.0)))
+  |             -       ^^^^^ this arm can never match
+  |             |
+  |             this arm covers it
 
 error[L0501]: use of moved value `years`
-  --> check/iterator_function_field_beside_move_and_warning.rslisp:11:17
+  --> check/iterator_function_field_beside_move_and_warning.rslisp:16:17
    |
-10 |   (let moved (consume years))
+15 |   (let moved (consume years))
    |                       ----- value moved here
-11 |   (println (len years)))
+16 |   (println (len years)))
    |                 ^^^^^ value used here after it moved
    |
 help: clone the value if both places need it
    |
-10 -   (let moved (consume years))
-10 +   (let moved (consume (clone years)))
+15 -   (let moved (consume years))
+15 +   (let moved (consume (clone years)))
    |

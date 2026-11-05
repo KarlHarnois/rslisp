@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/function_field_blocks_comparison.rslisp
 ---
 error[L0404]: `handler` does not implement `partial-eq`
- --> check/function_field_blocks_comparison.rslisp:4:6
+ --> check/function_field_blocks_comparison.rslisp:6:6
   |
-4 |   (= (->handler (fn (value) value) 1)
+6 |   (= (->handler (fn (value) value) 1)
   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `partial-eq`
   |
   = note: `handler` cannot derive `partial-eq`: field `callback` is `(fn (i64) i64)`

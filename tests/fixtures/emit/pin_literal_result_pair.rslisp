@@ -3,5 +3,4 @@
 (defn code ((value (pair u16 (ref str))))
   (let-pair (number text) value (str number " " text)))
 
-(defn main ()
-  (println (code (status))))
+(defn main () (println (code (status))))

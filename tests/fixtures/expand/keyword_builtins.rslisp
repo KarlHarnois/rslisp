@@ -1,6 +1,8 @@
 (use code list keyword? keyword-name)
 
-(def yes-or-no (fn (test) (if test (quote yes) (quote no))))
+(def yes-or-no
+  (fn (test)
+    (if test (quote yes) (quote no))))
 
 (def keyword-facts
   (macro (form)

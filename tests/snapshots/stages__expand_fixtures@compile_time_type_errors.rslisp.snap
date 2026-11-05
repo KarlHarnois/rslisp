@@ -1,112 +1,112 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/compile_time_type_errors.rslisp
 ---
 error[L0303]: `first` expects code as argument 1, found unit
-  --> expand/compile_time_type_errors.rslisp:3:34
+  --> expand/compile_time_type_errors.rslisp:4:17
    |
- 3 | (def first-of-unit (macro (form) (first (do))))
-   |                                  ^^^^^^^^^^^^ unit given here
+ 4 |   (macro (form) (first (do))))
+   |                 ^^^^^^^^^^^^ unit given here
 ...
-16 | (first-of-unit)
+39 | (first-of-unit)
    | --------------- in this macro call
 
 error[L0303]: `first` expects code as argument 1, found a function
-  --> expand/compile_time_type_errors.rslisp:4:38
+  --> expand/compile_time_type_errors.rslisp:7:17
    |
- 4 | (def first-of-function (macro (form) (first first)))
-   |                                      ^^^^^^^^^^^^^ a function given here
+ 7 |   (macro (form) (first first)))
+   |                 ^^^^^^^^^^^^^ a function given here
 ...
-17 | (first-of-function)
+41 | (first-of-function)
    | ------------------- in this macro call
 
 error[L0303]: `first` expects a list as argument 1, found a symbol
-  --> expand/compile_time_type_errors.rslisp:5:36
+  --> expand/compile_time_type_errors.rslisp:10:17
    |
- 5 | (def first-of-symbol (macro (form) (first (quote name))))
-   |                                    ^^^^^^^^^^^^^^^^^^^^ a symbol given here
+10 |   (macro (form) (first (quote name))))
+   |                 ^^^^^^^^^^^^^^^^^^^^ a symbol given here
 ...
-18 | (first-of-symbol)
+43 | (first-of-symbol)
    | ----------------- in this macro call
 
 error[L0303]: `number-add` expects an integer as argument 1, found a list
-  --> expand/compile_time_type_errors.rslisp:6:31
+  --> expand/compile_time_type_errors.rslisp:13:17
    |
- 6 | (def add-a-list (macro (form) (number-add (list) 1)))
-   |                               ^^^^^^^^^^^^^^^^^^^^^ a list given here
+13 |   (macro (form) (number-add (list) 1)))
+   |                 ^^^^^^^^^^^^^^^^^^^^^ a list given here
 ...
-19 | (add-a-list)
+45 | (add-a-list)
    | ------------ in this macro call
 
 error[L0303]: `number-add` expects an integer as argument 1, found a float
-  --> expand/compile_time_type_errors.rslisp:7:32
+  --> expand/compile_time_type_errors.rslisp:16:17
    |
- 7 | (def add-a-float (macro (form) (number-add 1.5 2)))
-   |                                ^^^^^^^^^^^^^^^^^^ a float given here
+16 |   (macro (form) (number-add 1.5 2)))
+   |                 ^^^^^^^^^^^^^^^^^^ a float given here
 ...
-20 | (add-a-float)
+47 | (add-a-float)
    | ------------- in this macro call
 
 error[L0315]: `number-add` overflowed
-  --> expand/compile_time_type_errors.rslisp:8:29
+  --> expand/compile_time_type_errors.rslisp:20:5
    |
- 8 | (def overflow (macro (form) (number-add 170141183460469231731687303715884105727 1)))
-   |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ in this call
+20 |     (number-add 170141183460469231731687303715884105727 1)))
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ in this call
 ...
-21 | (overflow)
+49 | (overflow)
    | ---------- in this macro call
 
 error[L0303]: `nth` expects an integer as argument 2, found a float
-  --> expand/compile_time_type_errors.rslisp:9:38
+  --> expand/compile_time_type_errors.rslisp:23:17
    |
- 9 | (def nth-at-a-fraction (macro (form) (nth form 1.5)))
-   |                                      ^^^^^^^^^^^^^^ a float given here
+23 |   (macro (form) (nth form 1.5)))
+   |                 ^^^^^^^^^^^^^^ a float given here
 ...
-22 | (nth-at-a-fraction)
+51 | (nth-at-a-fraction)
    | ------------------- in this macro call
 
 error[L0303]: `bool-not` expects a boolean as argument 1, found an integer
-  --> expand/compile_time_type_errors.rslisp:10:36
+  --> expand/compile_time_type_errors.rslisp:26:17
    |
-10 | (def negate-a-number (macro (form) (bool-not 1)))
-   |                                    ^^^^^^^^^^^^ an integer given here
+26 |   (macro (form) (bool-not 1)))
+   |                 ^^^^^^^^^^^^ an integer given here
 ...
-23 | (negate-a-number)
+53 | (negate-a-number)
    | ----------------- in this macro call
 
 error[L0312]: a boolean cannot be called
-  --> expand/compile_time_type_errors.rslisp:11:30
+  --> expand/compile_time_type_errors.rslisp:28:30
    |
-11 | (def call-true (macro (form) (true)))
+28 | (def call-true (macro (form) (true)))
    |                              ^^^^^^ called here
 ...
-24 | (call-true)
+55 | (call-true)
    | ----------- in this macro call
 
 error[L0303]: `fail` expects a string as argument 1, found an integer
-  --> expand/compile_time_type_errors.rslisp:12:39
+  --> expand/compile_time_type_errors.rslisp:31:17
    |
-12 | (def fail-with-a-number (macro (form) (fail 5 form)))
-   |                                       ^^^^^^^^^^^^^ an integer given here
+31 |   (macro (form) (fail 5 form)))
+   |                 ^^^^^^^^^^^^^ an integer given here
 ...
-25 | (fail-with-a-number)
+57 | (fail-with-a-number)
    | -------------------- in this macro call
 
 error[L0303]: `fail` expects a string as argument 3, found an integer
-  --> expand/compile_time_type_errors.rslisp:13:46
+  --> expand/compile_time_type_errors.rslisp:34:17
    |
-13 | (def fail-with-a-numbered-help (macro (form) (fail "bad call" form 5)))
-   |                                              ^^^^^^^^^^^^^^^^^^^^^^^^ an integer given here
+34 |   (macro (form) (fail "bad call" form 5)))
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^ an integer given here
 ...
-26 | (fail-with-a-numbered-help)
+59 | (fail-with-a-numbered-help)
    | --------------------------- in this macro call
 
 error[L0311]: this function takes 1 argument but 0 were given
-  --> expand/compile_time_type_errors.rslisp:14:38
+  --> expand/compile_time_type_errors.rslisp:37:17
    |
-14 | (def call-with-too-few (macro (form) ((fn (x) x))))
-   |                                      ^^^^^^^^^^^^ 0 arguments given
+37 |   (macro (form) ((fn (x) x))))
+   |                 ^^^^^^^^^^^^ 0 arguments given
 ...
-27 | (call-with-too-few)
+61 | (call-with-too-few)
    | ------------------- in this macro call

@@ -1,6 +1,9 @@
-(defrule noted "Multiplies a width by a height." ((width height) (* width height)))
+(defrule noted
+  "Multiplies a width by a height."
+  ((width height) (* width height)))
 
-(defrule plain ((width height) (* width height)))
+(defrule plain
+  ((width height) (* width height)))
 
 (def noted-header (header noted))
 

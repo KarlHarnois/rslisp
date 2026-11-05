@@ -4,15 +4,15 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/string_where_str.rslisp
 ---
 error[L0401]: mismatched types
- --> check/string_where_str.rslisp:8:10
+ --> check/string_where_str.rslisp:7:10
   |
-8 |   (shout name))
+7 |   (shout name))
   |          ^^^^ expected `str`, found `string`
   |
   = help: borrow it as a `str` with `(as-str name)`
 
 error[L0401]: mismatched types
-  --> check/string_where_str.rslisp:11:10
-   |
-11 |   (shout (str "y")))
-   |          ^^^^^^^^^ expected `str`, found `string`
+ --> check/string_where_str.rslisp:9:27
+  |
+9 | (defn from-call () (shout (str "y")))
+  |                           ^^^^^^^^^ expected `str`, found `string`

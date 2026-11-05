@@ -3,4 +3,5 @@
 
 (def loops (fn () (forever 1)))
 
-(def loops-in-argument (fn () (+ 1 (forever 1))))
+(def loops-in-argument
+  (fn () (+ 1 (forever 1))))

@@ -1,4 +1,5 @@
 (defn maybe (f) (some f))
+
 (defn main ()
   (let offset 3)
   (match (maybe (fn (x) (+ x offset)))

@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/closure_kind_mismatch_indirect.rslisp
 ---
 error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
@@ -12,9 +12,11 @@ error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
   = help: clone `text`, or borrow it with `(ref text)`
 
 error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
- --> check/closure_kind_mismatch_indirect.rslisp:6:25
+ --> check/closure_kind_mismatch_indirect.rslisp:7:8
   |
-6 |   (map (iter (vec 1 2)) (if true (fn (ignored) other) (fn (ignored) other))))
-  |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this closure is stronger than the parameter accepts
+7 | /        (if true
+8 | |            (fn (ignored) other)
+9 | |            (fn (ignored) other))))
+  | |________________________________^ this closure is stronger than the parameter accepts
   |
   = help: clone the closure's captures, or borrow them instead

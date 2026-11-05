@@ -12,4 +12,8 @@
   (set-next! (mut years) 0 2016)
   (println (at years 1))
   (fill! (mut years) 1 3)
-  (println (at years 0) " " (at years 1) " " (at years 2)))
+  (println (at years 0)
+           " "
+           (at years 1)
+           " "
+           (at years 2)))

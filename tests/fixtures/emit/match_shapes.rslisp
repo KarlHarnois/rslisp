@@ -35,12 +35,9 @@
 (type echo (fn (i64) i64))
 
 (defn rename (s)
-  (match s
-    (circle circle)))
+  (match s (circle circle)))
 
-(defn echo (n)
-  (match n
-    (value value)))
+(defn echo (n) (match n (value value)))
 
 (defn main ()
   (println (area (shape/circle 1.0)))

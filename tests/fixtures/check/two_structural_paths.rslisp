@@ -1,4 +1,9 @@
 (use two_structural_paths/a show-octal)
 (use two_structural_paths/d show-octal3)
-(defstruct p :x i64)
-(defn main () (show-octal (->p 1)) (show-octal3 (->p 2)))
+
+(defstruct p
+  :x i64)
+
+(defn main ()
+  (show-octal (->p 1))
+  (show-octal3 (->p 2)))

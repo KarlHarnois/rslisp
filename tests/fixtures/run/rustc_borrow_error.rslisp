@@ -1,8 +1,9 @@
-(defstruct person :name string :age i64)
+(defstruct person
+  :name string
+  :age i64)
 
 (defn dangling-name ()
   (let someone (->person (str "Grace") 85))
   (:name someone))
 
-(defn main ()
-  (println (dangling-name)))
+(defn main () (println (dangling-name)))

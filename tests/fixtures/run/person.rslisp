@@ -1,4 +1,6 @@
-(defstruct person :name string :age i64)
+(defstruct person
+  :name string
+  :age i64)
 
 (defn introduce (someone)
   (str (:name someone) " is " (:age someone)))

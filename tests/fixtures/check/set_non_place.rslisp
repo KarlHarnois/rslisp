@@ -1,4 +1,5 @@
-(defstruct cell :alive bool)
+(defstruct cell
+  :alive bool)
 
 (defn main ()
   (set! (->cell false) true))

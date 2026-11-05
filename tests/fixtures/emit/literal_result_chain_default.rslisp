@@ -2,5 +2,4 @@
 
 (defn other () (answer))
 
-(defn main ()
-  (println (other)))
+(defn main () (println (other)))

@@ -1,7 +1,10 @@
-(type show-twice (fn ((fn () (fn-once () string))) unit))
+(type show-twice
+  (fn ((fn () (fn-once () string))) unit))
+
 (defn show-twice (make)
   (let getter (make))
   (println (getter))
   (println (getter)))
+
 (defn main ()
   (show-twice (fn () (fn () (str "Leaf")))))

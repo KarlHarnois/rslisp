@@ -7,7 +7,9 @@
 
 (def report-sightings
   (macro (form)
-    (let notes (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))
+    (let notes
+      (module-notes (definition-symbol (nth form 1) "notes")
+                    (quote sightings)))
     (fail (string "sightings noted: " (len notes)) form)))
 
 (def unconfirmed (note-then-fail))

@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/generic_implementor.rslisp
 ---
 error[L0242]: an `impl` cannot name only a type variable
  --> check/generic_implementor.rslisp:4:16
   |
-4 | (impl labelled a
+4 | (impl labelled a (label (items) "items"))
   |                ^ `a` is a type variable
   |
   = help: apply the variable to a type, such as `(vec a)`

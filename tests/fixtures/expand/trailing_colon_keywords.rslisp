@@ -1,4 +1,6 @@
-(defstruct user :name str :email: str)
+(defstruct user
+  :name str
+  :email: str)
 
 (defn greet (:name str :greeting: str) (str greeting name))
 
@@ -6,8 +8,10 @@
 
 (defn welcome (:name str :greeting str) (str greeting name))
 
-(defn welcome-ana () (welcome :name "ana" :greeting: "hello"))
+(defn welcome-ana ()
+  (welcome :name "ana" :greeting: "hello"))
 
-(defstruct marker :: str)
+(defstruct marker
+  :: str)
 
 (defn mark (:size i64 ::: str) size)

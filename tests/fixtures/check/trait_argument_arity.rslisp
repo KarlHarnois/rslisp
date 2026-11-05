@@ -1,2 +1,5 @@
 (defn bad (a b) (do))
-(type bad (where ((a (display b)) b) (fn (a b) unit)))
+
+(type bad
+  (where ((a (display b)) b)
+         (fn (a b) unit)))

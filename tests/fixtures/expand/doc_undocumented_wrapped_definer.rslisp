@@ -1,4 +1,8 @@
-(defrule my-defn ((n p b ...) (defn n p b ...)))
+(defrule my-defn
+  ((n p b ...)
+   (defn n p
+     b
+     ...)))
 
 (my-defn twice (x) (* 2 x))
 

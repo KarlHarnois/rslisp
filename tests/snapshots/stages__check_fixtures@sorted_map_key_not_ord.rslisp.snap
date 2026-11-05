@@ -4,10 +4,10 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/sorted_map_key_not_ord.rslisp
 ---
 error[L0404]: `not-a-key` does not implement `ord`
- --> check/sorted_map_key_not_ord.rslisp:4:26
+ --> check/sorted_map_key_not_ord.rslisp:6:17
   |
-4 |   (let items (sorted-map (new not-a-key (name (str "x"))) 1))
-  |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `ord`
+6 |     (sorted-map (new not-a-key (name (str "x")))
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `ord`
   |
   = note: `ord` is never inferred for a struct, so the struct needs a written `derive`
   = help: add `(derive not-a-key clone partial-eq eq hash show ord)` to compare fields in this order: `name`

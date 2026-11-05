@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/match_wrong_pattern_count.rslisp
 ---
 error[L0432]: `circle` takes 1 part in a pattern but 2 were given
@@ -10,7 +10,7 @@ error[L0432]: `circle` takes 1 part in a pattern but 2 were given
   |      ^^^^^^^^^^^^ this pattern has the wrong number of parts
 
 error[L0432]: `circle` takes 1 part in a pattern but 2 were given
-  --> check/match_wrong_pattern_count.rslisp:10:6
-   |
-10 |     ((shape/circle _ _) 0.0)))
-   |      ^^^^^^^^^^^^^^^^^^ this pattern has the wrong number of parts
+ --> check/match_wrong_pattern_count.rslisp:9:13
+  |
+9 |   (match s ((shape/circle _ _) 0.0)))
+  |             ^^^^^^^^^^^^^^^^^^ this pattern has the wrong number of parts

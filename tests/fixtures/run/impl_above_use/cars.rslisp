@@ -1,3 +1,5 @@
-(defstruct car :make str :model str)
+(defstruct car
+  :make str
+  :model str)
 
 (export car ->car)

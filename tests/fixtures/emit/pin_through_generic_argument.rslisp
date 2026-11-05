@@ -2,5 +2,4 @@
 
 (defn outer (y) (wrap (some y)))
 
-(defn main ()
-  (prn (outer "a")))
+(defn main () (prn (outer "a")))

@@ -2,40 +2,59 @@
 
 (export evaluate)
 
-(defstruct parsed :value i64 :next usize)
+(defstruct parsed
+  :value i64
+  :next usize)
 
 (defn evaluate (tokens)
-  (then-ok (parse-expression tokens 0) (fn (result) (expect-end tokens result))))
+  (then-ok (parse-expression tokens 0)
+           (fn (result) (expect-end tokens result))))
 
 (defn expect-end (tokens result)
   (if (= (:next result) (len tokens))
       (ok (:value result))
       (err (str "unexpected token at " (:next result)))))
 
-(type parse-expression (fn ((ref (vec token)) usize) (result parsed string)))
+(type parse-expression
+  (fn ((ref (vec token)) usize)
+    (result parsed string)))
+
 (defn parse-expression (tokens position)
-  (then-ok (parse-term tokens position) (fn (left) (parse-sums tokens left))))
+  (then-ok (parse-term tokens position)
+           (fn (left) (parse-sums tokens left))))
 
 (defn parse-sums (tokens left)
   (let next (:next left))
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
-       ("+" (then-ok (parse-term tokens (+ next 1)) (fn (right) (parse-sums tokens (combine left right add)))))
-       ("-" (then-ok (parse-term tokens (+ next 1)) (fn (right) (parse-sums tokens (combine left right sub)))))
+       ("+"
+        (then-ok (parse-term tokens (+ next 1))
+                 (fn (right)
+                   (parse-sums tokens (combine left right add)))))
+       ("-"
+        (then-ok (parse-term tokens (+ next 1))
+                 (fn (right)
+                   (parse-sums tokens (combine left right sub)))))
        (_ (ok left))))
     (_ (ok left))))
 
 (defn parse-term (tokens position)
-  (then-ok (parse-factor tokens position) (fn (left) (parse-products tokens left))))
+  (then-ok (parse-factor tokens position)
+           (fn (left) (parse-products tokens left))))
 
 (defn parse-products (tokens left)
   (let next (:next left))
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
-       ("*" (then-ok (parse-factor tokens (+ next 1)) (fn (right) (parse-products tokens (combine left right mul)))))
-       ("/" (then-ok (parse-factor tokens (+ next 1)) (fn (right) (divide tokens left right))))
+       ("*"
+        (then-ok (parse-factor tokens (+ next 1))
+                 (fn (right)
+                   (parse-products tokens (combine left right mul)))))
+       ("/"
+        (then-ok (parse-factor tokens (+ next 1))
+                 (fn (right) (divide tokens left right))))
        (_ (ok left))))
     (_ (ok left))))
 
@@ -48,9 +67,12 @@
   (match (get tokens position)
     ((some (symbol text))
      (match (as-str text)
-       ("(" (then-ok (parse-expression tokens (+ position 1)) (fn (inner) (expect-close tokens inner))))
+       ("("
+        (then-ok (parse-expression tokens (+ position 1))
+                 (fn (inner) (expect-close tokens inner))))
        (_ (err (str "expected a number at token " position)))))
-    ((some (number text)) (ok (->parsed (number-value text) (+ position 1))))
+    ((some (number text))
+     (ok (->parsed (number-value text) (+ position 1))))
     (none (err (str "expected a number at token " position)))))
 
 (defn expect-close (tokens inner)
@@ -58,13 +80,16 @@
   (match (get tokens next)
     ((some (symbol text))
      (match (as-str text)
-       (")" (ok (->parsed (:value inner) (+ next 1))))
+       (")"
+        (ok (->parsed (:value inner) (+ next 1))))
        (_ (err (str "expected `)` at token " next)))))
     (_ (err (str "expected `)` at token " next)))))
 
 (defn combine (left right operator)
-  (->parsed (operator (:value left) (:value right)) (:next right)))
+  (->parsed (operator (:value left) (:value right))
+            (:next right)))
 
 (defn number-value (text)
-  (let (parsed (result i64 _)) (parse (as-str text)))
+  (let (parsed (result i64 _))
+    (parse (as-str text)))
   (if (ok? parsed) (unwrap-ok parsed) 0))

@@ -1,4 +1,6 @@
-(type twice (where (a) (fn (a) (vec a))))
+(type twice
+  (where (a) (fn (a) (vec a))))
+
 (defn twice (x) (vec x x))
 
 (defn main () (println (len (twice 3))))

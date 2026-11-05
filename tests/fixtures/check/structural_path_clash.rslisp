@@ -1,3 +1,6 @@
 (use structural_path_clash/a show-octal)
 (use structural_path_clash/b p ->p)
-(defn main () (show-octal (->p 1)) (show-octal (->p 2)))
+
+(defn main ()
+  (show-octal (->p 1))
+  (show-octal (->p 2)))

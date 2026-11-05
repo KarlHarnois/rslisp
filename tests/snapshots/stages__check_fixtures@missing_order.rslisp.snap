@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/missing_order.rslisp
 ---
 error[L0404]: `score` does not implement `ord`
- --> check/missing_order.rslisp:4:10
+ --> check/missing_order.rslisp:9:10
   |
-4 |   (sort! scores)
+9 |   (sort! scores)
   |          ^^^^^^ this needs `ord`
   |
   = note: `ord` is never inferred for a struct, so the struct needs a written `derive`

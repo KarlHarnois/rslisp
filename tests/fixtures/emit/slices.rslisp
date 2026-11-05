@@ -1,8 +1,7 @@
 (defn total (numbers)
   (sum (copied numbers)))
 
-(defn first-number (numbers)
-  (at numbers 0))
+(defn first-number (numbers) (at numbers 0))
 
 (defn count-pairs (numbers)
   (count (windows numbers 2)))

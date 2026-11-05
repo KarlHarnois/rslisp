@@ -1,10 +1,17 @@
-(defstruct point :x i64 :y i64)
+(defstruct point
+  :x i64
+  :y i64)
 
-(defstruct badge :text string :at point)
+(defstruct badge
+  :text string
+  :at point)
 
-(defstruct garage :badge badge)
+(defstruct garage
+  :badge badge)
 
 (defn main ()
-  (let gs (vec (->garage (->badge (str "open") (->point 0 0)))))
-  (let moved (assoc-in (:badge (at gs 0)) (:at :x) 4))
+  (let gs
+    (vec (->garage (->badge (str "open") (->point 0 0)))))
+  (let moved
+    (assoc-in (:badge (at gs 0)) (:at :x) 4))
   (println (:text moved)))

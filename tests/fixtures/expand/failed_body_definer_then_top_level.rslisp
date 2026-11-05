@@ -1,5 +1,10 @@
 (use failed_builder/inner build)
 
-(defn area "Multiplies two sides." (width height) (* width height))
+(defn area "Multiplies two sides."
+  (width height)
+  (* width height))
 
-(defn main () (->inner :x 1) (area 2 3) (build))
+(defn main ()
+  (->inner :x 1)
+  (area 2 3)
+  (build))

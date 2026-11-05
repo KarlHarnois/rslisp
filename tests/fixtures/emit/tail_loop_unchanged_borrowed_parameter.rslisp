@@ -1,4 +1,6 @@
-(defstruct counter :label string :count i64)
+(defstruct counter
+  :label string
+  :count i64)
 
 (defn count-to (limit state steps)
   (if (= steps limit)

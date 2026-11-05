@@ -1,3 +1,5 @@
 (export area)
 
-(defn area (width height) "Multiplies a width by a height." (* width height))
+(defn area (width height)
+  "Multiplies a width by a height."
+  (* width height))

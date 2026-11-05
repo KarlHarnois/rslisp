@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/match_arm_body.rslisp
 ---
 error[L0232]: an arm has one body form
- --> check/match_arm_body.rslisp:5:5
+ --> check/match_arm_body.rslisp:4:12
   |
-5 |     ((circle r) 0.0 1.0)))
-  |     ^^^^^^^^^^^^^^^^^^^^ this arm does not fit the shape of `match`
+4 |   (match s ((circle r) 0.0 1.0)))
+  |            ^^^^^^^^^^^^^^^^^^^^ this arm does not fit the shape of `match`
   |
   = help: write each arm as `(pattern body)`

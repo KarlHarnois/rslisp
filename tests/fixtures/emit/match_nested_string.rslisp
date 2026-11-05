@@ -9,15 +9,19 @@
 
 (defn scan (tokens position)
   (match (get tokens position)
-    ((some (symbol "(")) (scan tokens (add position 1)))
+    ((some (symbol "("))
+     (scan tokens (add position 1)))
     ((some (symbol _)) 2)
     ((some (number _)) 3)
     (none 0)))
 
 (defn main ()
-  (let open (vec (token/symbol (str "("))))
-  (let name (vec (token/symbol (str "foo"))))
-  (let number (vec (token/number (str "42"))))
+  (let open
+    (vec (token/symbol (str "("))))
+  (let name
+    (vec (token/symbol (str "foo"))))
+  (let number
+    (vec (token/number (str "42"))))
   (println (classify open 0))
   (println (classify name 0))
   (println (classify number 0))

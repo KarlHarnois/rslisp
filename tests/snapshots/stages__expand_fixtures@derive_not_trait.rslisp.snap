@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/derive_not_trait.rslisp
 ---
 error[L0238]: `string` is not a trait
- --> expand/derive_not_trait.rslisp:2:16
+ --> expand/derive_not_trait.rslisp:4:16
   |
-2 | (derive ticket string)
+4 | (derive ticket string)
   |                ^^^^^^ a `derive` lists traits
   |
   = help: list a trait's name, not `string`

@@ -1,4 +1,7 @@
-(defmacro defthing (name value) (template (defn (unquote name) "Gives a thing." () (unquote value))))
+(defmacro defthing (name value)
+  (template (defn (unquote name) "Gives a thing."
+              ()
+              (unquote value))))
 
 (defthing widget 3)
 

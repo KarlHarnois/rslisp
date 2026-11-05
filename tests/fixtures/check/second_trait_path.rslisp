@@ -1,2 +1,3 @@
 (rust-trait shows "std::fmt::Display" i64)
+
 (defn main () (println 1))

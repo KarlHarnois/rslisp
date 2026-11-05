@@ -9,7 +9,11 @@
   (calculate "7 % 2"))
 
 (defn calculate (source)
-  (let outcome (then-ok (tokenize source) (fn (tokens) (evaluate (ref tokens)))))
+  (let outcome
+    (then-ok (tokenize source)
+             (fn (tokens) (evaluate (ref tokens)))))
   (match outcome
-    ((ok value) (println (str source " = " value)))
-    ((err message) (println (str source " -> error: " message)))))
+    ((ok value)
+     (println (str source " = " value)))
+    ((err message)
+     (println (str source " -> error: " message)))))

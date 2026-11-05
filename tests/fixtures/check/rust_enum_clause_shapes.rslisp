@@ -1,6 +1,7 @@
 (enum a (rust) one)
+
 (enum b (rust "Thing" extra) one)
+
 (enum c (rust "{0}" bare) (of a))
 
-(defn main ()
-  (do))
+(defn main () (do))

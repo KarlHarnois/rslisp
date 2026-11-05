@@ -1,2 +1,5 @@
-(type keep (where (('a clone)) (fn ((ref 'a str)) (ref 'a str))))
+(type keep
+  (where (('a clone))
+         (fn ((ref 'a str)) (ref 'a str))))
+
 (defn keep (text) text)

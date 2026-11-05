@@ -1,4 +1,5 @@
-(defstruct car :model string)
+(defstruct car
+  :model string)
 
 (defn main ()
   (let model (str "Leaf"))
