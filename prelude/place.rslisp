@@ -4,7 +4,9 @@
 
 (export set!)
 
-(def set-place! (rust "*{0} = {1}" (where (a) (fn ((mut a) a) unit))))
+(def set-place!
+  (rust "*{0} = {1}"
+        (where (a) (fn ((mut a) a) unit))))
 
 (def at-form?
   (fn (form)
@@ -31,5 +33,8 @@
 
 (defmacro set! (target value)
   (if (at-form? target)
-      (list (quote set-at) (at-base target) (at-indices target) value)
+      (list (quote set-at)
+            (at-base target)
+            (at-indices target)
+            value)
       (list (quote set-place!) target value)))

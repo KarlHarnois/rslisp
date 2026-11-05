@@ -1,7 +1,8 @@
 (use prelude/macros defmacro whole-pairs?)
-(use code first rest list prepend concat len empty? list? nth drop number-sub symbol?
-          string fail keyword? keyword-name field-keyword value-eq symbol
-          bool-not)
+
+(use code first rest list prepend concat len empty? list? nth drop number-sub
+          symbol? string fail keyword? keyword-name field-keyword value-eq
+          symbol bool-not)
 
 (export assoc assoc-in)
 
@@ -15,7 +16,8 @@
 
 (def struct-update
   (fn (value pairs)
-    (concat (list (quote new) (quote _) value) (field-initializers pairs))))
+    (concat (list (quote new) (quote _) value)
+            (field-initializers pairs))))
 
 (def field-initializers
   (fn (pairs)
@@ -28,61 +30,79 @@
   (fn (key more)
     (if (keyword? key)
         (if (empty? more)
-            (fail "this field has no value" key
+            (fail "this field has no value"
+                  key
                   "write `:field value` pairs, as in (assoc leaf :year 2025)")
             (list key (first more)))
-        (fail "a struct update takes only `:field value` pairs" key
+        (fail "a struct update takes only `:field value` pairs"
+              key
               "update the collection in a separate `assoc`"))))
 
 (def collection-updates
   (fn (value pairs)
     (if (empty? pairs)
         value
-        (collection-updates (list (quote assoc-at) value (list (first pairs)) (nth pairs 1))
+        (collection-updates (list (quote assoc-at)
+                                  value
+                                  (list (first pairs))
+                                  (nth pairs 1))
                             (drop 2 pairs)))))
 
 (def unpaired-key-error
   (fn (value arguments)
-    (let message "a collection update takes keys and values in pairs")
-    (let unpaired-key (nth arguments (number-sub (len arguments) 1)))
+    (let message
+      "a collection update takes keys and values in pairs")
+    (let unpaired-key
+      (nth arguments (number-sub (len arguments) 1)))
     (if (every-field-group? arguments)
-        (fail message unpaired-key
+        (fail message
+              unpaired-key
               (string "to update a field, write "
-                      (concat (list (quote assoc) value) (keyword-arguments arguments))))
+                      (concat (list (quote assoc) value)
+                              (keyword-arguments arguments))))
         (fail message unpaired-key))))
 
 (def every-field-group?
   (fn (arguments)
     (if (empty? arguments)
         true
-        (if (field-group? (first arguments)) (every-field-group? (rest arguments)) false))))
+        (if (field-group? (first arguments))
+            (every-field-group? (rest arguments))
+            false))))
 
 (def field-group?
   (fn (form)
     (if (list? form)
-        (if (value-eq (len form) 2) (field-name? (first form)) false)
+        (if (value-eq (len form) 2)
+            (field-name? (first form))
+            false)
         false)))
 
 (def field-name?
   (fn (form)
-    (if (symbol? form) (bool-not (keyword? form)) false)))
+    (if (symbol? form)
+        (bool-not (keyword? form))
+        false)))
 
 (def keyword-arguments
   (fn (arguments)
     (if (empty? arguments)
         (list)
-        (concat (keyword-pair (first arguments)) (keyword-arguments (rest arguments))))))
+        (concat (keyword-pair (first arguments))
+                (keyword-arguments (rest arguments))))))
 
 (def keyword-pair
   (fn (argument)
     (if (field-group? argument)
-        (list (field-keyword (first argument)) (nth argument 1))
+        (list (field-keyword (first argument))
+              (nth argument 1))
         (list argument))))
 
 (defmacro assoc-in (value (step ...) item)
   (let root (read-root value))
   (if (bound-root? root value step)
-      (list (quote do) (list (quote let) (quote base) root)
+      (list (quote do)
+            (list (quote let) (quote base) root)
             (path-update (rebased-read value root) step item))
       (path-update value step item)))
 
@@ -90,25 +110,34 @@
   (fn (root value path)
     (if (symbol? root)
         false
-        (if (value-eq root value) (bool-not (empty? (keyword-steps path))) true))))
+        (if (value-eq root value)
+            (bool-not (empty? (keyword-steps path)))
+            true))))
 
 (def read-root
   (fn (form)
     (if (list? form)
         (if (value-eq (len form) 2)
-            (if (keyword? (first form)) (read-root (nth form 1)) form)
+            (if (keyword? (first form))
+                (read-root (nth form 1))
+                form)
             form)
         form)))
 
 (def rebased-read
   (fn (form root)
-    (if (value-eq form root) (quote base) (list (first form) (rebased-read (nth form 1) root)))))
+    (if (value-eq form root)
+        (quote base)
+        (list (first form)
+              (rebased-read (nth form 1) root)))))
 
 (def keyword-steps
   (fn (path)
     (if (empty? path)
         path
-        (if (keyword? (first path)) path (keyword-steps (rest path))))))
+        (if (keyword? (first path))
+            path
+            (keyword-steps (rest path))))))
 
 (def path-update
   (fn (base path item)
@@ -117,13 +146,17 @@
         (list (quote assoc-at) base path item)
         (if (keyword? (first path))
             (field-step base (first path) (rest path) item)
-            (fail "a field step cannot follow an index step" (first fields))))))
+            (fail "a field step cannot follow an index step"
+                  (first fields))))))
 
 (def field-step
   (fn (base key path item)
-    (let field (symbol (quote base) (keyword-name key)))
+    (let field
+      (symbol (quote base) (keyword-name key)))
     (if (empty? path)
         (list (quote assoc) base key item)
         (list (quote do)
-              (list (quote let) field (path-update (list key base) path item))
+              (list (quote let)
+                    field
+                    (path-update (list key base) path item))
               (list (quote assoc) base key field)))))

@@ -7,14 +7,35 @@
 (export sorted-map hash-map get keys vals update into-sorted-map into-hash-map)
 
 (rust-trait borrow "std::borrow::Borrow"
-  bool char (ref str) string i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64
+  bool
+  char
+  (ref str)
+  string
+  i8
+  i16
+  i32
+  i64
+  i128
+  isize
+  u8
+  u16
+  u32
+  u64
+  u128
+  usize
+  f32
+  f64
   (with string str)
   (with (ref str) str))
 
 (def map-inserts
   (fn (index count)
     (if (number-lt index count)
-        (string "map.insert({" index "}, {" (number-add index 1) "}); "
+        (string "map.insert({"
+                index
+                "}, {"
+                (number-add index 1)
+                "}); "
                 (map-inserts (number-add index 2) count))
         "")))
 
@@ -29,7 +50,8 @@
 (def map-type
   (fn (name bounds count)
     (list (quote where)
-          (list (prepend (quote key) bounds) (quote value))
+          (list (prepend (quote key) bounds)
+                (quote value))
           (list (quote fn)
                 (map-parameters 0 count)
                 (list name (quote key) (quote value))))))
@@ -37,53 +59,70 @@
 (def map-form
   (fn (rust-type name bounds pairs)
     (if (empty? pairs)
-        (list (quote rust) (string rust-type "::new()")
-              (list (quote where) (list (prepend (quote key) bounds) (quote value))
+        (list (quote rust)
+              (string rust-type "::new()")
+              (list (quote where)
+                    (list (prepend (quote key) bounds)
+                          (quote value))
                     (list name (quote key) (quote value))))
-        (do
-          (let count (len pairs))
-          (prepend
-            (list (quote rust)
-                  (string "{{ let mut map = " rust-type "::new(); "
-                          (map-inserts 0 count) "map }}")
-                  (map-type name bounds count))
-            pairs)))))
+        (do (let count (len pairs))
+            (prepend (list (quote rust)
+                           (string "{{ let mut map = "
+                                   rust-type
+                                   "::new(); "
+                                   (map-inserts 0 count)
+                                   "map }}")
+                           (map-type name bounds count))
+                     pairs)))))
 
 (defmacro sorted-map (pairs ...)
-  (map-form "std::collections::BTreeMap" (quote sorted-map) (quote (ord)) pairs))
+  (map-form "std::collections::BTreeMap"
+            (quote sorted-map)
+            (quote (ord))
+            pairs))
 
 (defmacro hash-map (pairs ...)
-  (map-form "std::collections::HashMap" (quote hash-map) (quote (hash eq)) pairs))
+  (map-form "std::collections::HashMap"
+            (quote hash-map)
+            (quote (hash eq))
+            pairs))
 
 (def into-sorted-map
   (rust "{0}.into_iter().collect::<std::collections::BTreeMap<_, _>>()"
         (where ((key ord) (value))
-          (fn ((vec (pair key value))) (sorted-map key value)))))
+               (fn ((vec (pair key value)))
+                 (sorted-map key value)))))
 
 (def into-hash-map
   (rust "{0}.into_iter().collect::<std::collections::HashMap<_, _>>()"
         (where ((key hash eq) (value))
-          (fn ((vec (pair key value))) (hash-map key value)))))
+               (fn ((vec (pair key value)))
+                 (hash-map key value)))))
 
 (def get
   (macro (form)
     (if (symbol? form)
         (quote slice-get)
-        (prepend (quote map-at) (prepend (quote get) (rest form))))))
+        (prepend (quote map-at)
+                 (prepend (quote get) (rest form))))))
 
-(document get
+(document
+  get
   "Reads a slice by index or a map by key: `(get items index)` or `(get map key)`.
 
   It returns an `option` of a borrow, and `none` for a missing index or
   key. `get` as a value is the slice reader.")
 
-(def slice-get (rust "{0}.get({1})" (where (a) (fn ((ref (slice a)) usize) (option (ref a))))))
+(def slice-get
+  (rust "{0}.get({1})"
+        (where (a)
+               (fn ((ref (slice a)) usize)
+                 (option (ref a))))))
 
-(defrule keys
-  ((m) (map-at keys m)))
+(defrule keys ((m) (map-at keys m)))
 
-(defrule vals
-  ((m) (map-at vals m)))
+(defrule vals ((m) (map-at vals m)))
 
 (defrule update
-  ((m key function default) (map-at update m key function default)))
+  ((m key function default)
+   (map-at update m key function default)))

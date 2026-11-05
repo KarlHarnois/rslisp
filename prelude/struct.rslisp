@@ -1,9 +1,14 @@
-(use prelude/macros defmacro template map-list documented-body? note-docstring type-doc-key header-shape)
-(use prelude/syntax defn definition declared-forms declared-name default-pairs type-missing? defaults-clause?
-                    default-bindings call-signature signature-name signature-defaults
-                    read-call has-argument? pair-keys)
-(use code first rest list nth drop empty? list? symbol? symbol symbol-name prepend
-          concat string fail keyword? declare-macro-definition declare-type-definition)
+(use prelude/macros defmacro template map-list documented-body? note-docstring
+                    type-doc-key header-shape)
+
+(use prelude/syntax defn definition declared-forms declared-name default-pairs
+                    type-missing? defaults-clause? default-bindings
+                    call-signature signature-name signature-defaults read-call
+                    has-argument? pair-keys)
+
+(use code first rest list nth drop empty? list? symbol? symbol symbol-name
+          prepend concat string fail keyword? declare-macro-definition
+          declare-type-definition)
 
 (export defstruct)
 
@@ -12,8 +17,7 @@
     (if (list? head) (first head) head)))
 
 (def field-type-form
-  (fn (field)
-    (nth field 1)))
+  (fn (field) (nth field 1)))
 
 (def field-initializer
   (fn (field)
@@ -29,23 +33,31 @@
 (def field-group
   (fn (keyword more)
     (if (keyword? keyword)
-        (list (declared-name keyword "field") (field-type keyword more))
+        (list (declared-name keyword "field")
+              (field-type keyword more))
         (field-start-error keyword))))
 
 (def field-type
   (fn (keyword more)
     (if (type-missing? more)
-        (fail "this field has no type" keyword
-              (string "write a type after it, as in " (symbol-name keyword) " i64"))
+        (fail "this field has no type"
+              keyword
+              (string "write a type after it, as in "
+                      (symbol-name keyword)
+                      " i64"))
         (first more))))
 
 (def field-start-error
   (fn (form)
-    (if (defaults-clause? form)
-        (fail "a struct takes one `defaults` clause, after its fields" form
-              "move the defaults to the end")
-        (fail "a field must start with `:`" form
-              "write each field as `:name type`, as in (defstruct point :x f64 :y f64)"))))
+    (if
+      (defaults-clause? form)
+      (fail "a struct takes one `defaults` clause, after its fields"
+            form
+            "move the defaults to the end")
+      (fail
+        "a field must start with `:`"
+        form
+        "write each field as `:name type`, as in (defstruct point :x f64 :y f64)"))))
 
 (def defaults-without-key
   (fn (defaults keys)
@@ -53,7 +65,8 @@
         (list)
         (if (has-argument? (first (first defaults)) keys)
             (defaults-without-key (rest defaults) keys)
-            (prepend (first defaults) (defaults-without-key (rest defaults) keys))))))
+            (prepend (first defaults)
+                     (defaults-without-key (rest defaults) keys))))))
 
 (def named-initializers
   (fn (arguments)
@@ -65,18 +78,27 @@
 (def named-construction
   (fn (arguments shape)
     (let written (named-initializers arguments))
-    (let omitted (defaults-without-key (signature-defaults shape) (pair-keys arguments)))
-    (prepend (quote new) (prepend (signature-name shape) (concat written omitted)))))
+    (let omitted
+      (defaults-without-key (signature-defaults shape)
+                            (pair-keys arguments)))
+    (prepend (quote new)
+             (prepend (signature-name shape) (concat written omitted)))))
 
 (def field-definition
   (fn (name)
-    (definition name "field" (fn (name) name) (quote unknown-field-default))))
+    (definition name
+                "field"
+                (fn (name) name)
+                (quote unknown-field-default))))
 
 (def constructor-call
   (fn (form hidden shape)
-    (read-call form hidden shape
+    (read-call form
+               hidden
+               shape
                (field-definition (signature-name shape))
-               (fn (form) (named-construction (rest form) shape)))))
+               (fn (form)
+                 (named-construction (rest form) shape)))))
 
 (def constructor-expansion
   (fn (form hidden shape)
@@ -88,7 +110,8 @@
   "Defines a struct and its keyword constructor: (defstruct name :field type ...)."
   (declare-struct-names (head-name head))
   (if (documented-body? body)
-      (do (note-docstring (type-doc-key (head-name head)) (first body))
+      (do (note-docstring (type-doc-key (head-name head))
+                          (first body))
           (struct-definition head (rest body)))
       (struct-definition head body)))
 
@@ -100,8 +123,7 @@
     (declare-macro-definition (constructor-name name))))
 
 (def constructor-name
-  (fn (name)
-    (symbol name "->" name)))
+  (fn (name) (symbol name "->" name)))
 
 (def struct-definition
   (fn (head body)
@@ -109,13 +131,22 @@
     (let fields (field-groups (declared-forms body)))
     (let field-names (map-list first fields))
     (let field-types (map-list field-type-form fields))
-    (let defaults (default-bindings (default-pairs body) (field-definition name) field-names))
+    (let defaults
+      (default-bindings (default-pairs body)
+                        (field-definition name)
+                        field-names))
     (let hidden (symbol (quote make) "make-" name))
-    (template
-      (do (struct (unquote head) (splice fields))
-          (defn (unquote hidden) (unquote field-names)
-            (new (unquote name) (splice (map-list field-initializer fields))))
-          (def (unquote (constructor-name name))
-            (macro (form)
-              (constructor-expansion form (quote (unquote hidden))
-                                     (quote (unquote (call-signature name field-names defaults field-types))))))))))
+    (template (do
+                (struct (unquote head) (splice fields))
+                (defn (unquote hidden) (unquote field-names)
+                  (new (unquote name)
+                    (splice (map-list field-initializer fields))))
+                (def (unquote (constructor-name name))
+                  (macro (form)
+                    (constructor-expansion form
+                                           (quote (unquote hidden))
+                                           (quote (unquote (call-signature
+                                                             name
+                                                             field-names
+                                                             defaults
+                                                             field-types))))))))))

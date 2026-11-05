@@ -1,35 +1,117 @@
 (use prelude/macros defmacro template map-list document doc-page header-shape)
 (use prelude/pair pair)
-(use code first rest list prepend concat len empty? nth take drop
-          symbol symbol? list? string? string same-binding? value-eq
-          number-add number-sub number-lt bool-not
-          escape-string escape-char escape-format string-strip-suffix
-          symbol-name fail keyword?)
+
+(use code first rest list prepend concat len empty? nth take drop symbol symbol?
+          list? string? string same-binding? value-eq number-add number-sub
+          number-lt bool-not escape-string escape-char escape-format
+          string-strip-suffix symbol-name fail keyword?)
+
 (use prelude/types vec option result iterator box slice sorted-map hash-map)
 (use prelude/io io-error)
 
-(export display debug show print println eprintln doc prn pr-str str char chars lines split trim subs as-str parse parse-error from-str parse-int-error parse-bool-error parse-char-error parse-float-error infallible lower-case upper-case alphanumeric? whitespace? digit? split-when)
+(export display debug show print println eprintln doc prn pr-str str char chars
+        lines split trim subs as-str parse parse-error from-str parse-int-error
+        parse-bool-error parse-char-error parse-float-error infallible
+        lower-case upper-case alphanumeric? whitespace? digit? split-when)
 
 (rust-type formatter "std::fmt::Formatter<'_>")
+
 (rust-type fmt-result "std::fmt::Result")
 
 (rust-trait display "std::fmt::Display"
-  (method fmt (fn ((ref self) (mut formatter)) fmt-result))
-  (help "implement `display` with `(display type (value) ...)`, or print its printed form with `prn`")
-  bool char str string (ref str) io-error i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64 (parse-error bool) (parse-error char) (parse-error string) (parse-error i8) (parse-error i16) (parse-error i32) (parse-error i64) (parse-error i128) (parse-error isize) (parse-error u8) (parse-error u16) (parse-error u32) (parse-error u64) (parse-error u128) (parse-error usize) (parse-error f32) (parse-error f64)
+  (method fmt
+          (fn ((ref self) (mut formatter))
+            fmt-result))
+  (help
+    "implement `display` with `(display type (value) ...)`, or print its printed form with `prn`")
+  bool
+  char
+  str
+  string
+  (ref str)
+  io-error
+  i8
+  i16
+  i32
+  i64
+  i128
+  isize
+  u8
+  u16
+  u32
+  u64
+  u128
+  usize
+  f32
+  f64
+  (parse-error bool)
+  (parse-error char)
+  (parse-error string)
+  (parse-error i8)
+  (parse-error i16)
+  (parse-error i32)
+  (parse-error i64)
+  (parse-error i128)
+  (parse-error isize)
+  (parse-error u8)
+  (parse-error u16)
+  (parse-error u32)
+  (parse-error u64)
+  (parse-error u128)
+  (parse-error usize)
+  (parse-error f32)
+  (parse-error f64)
   (where ((a display)) (ref a)))
 
 (rust-trait debug "std::fmt::Debug"
-  bool char str string io-error i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64 (parse-error bool) (parse-error char) (parse-error string) (parse-error i8) (parse-error i16) (parse-error i32) (parse-error i64) (parse-error i128) (parse-error isize) (parse-error u8) (parse-error u16) (parse-error u32) (parse-error u64) (parse-error u128) (parse-error usize) (parse-error f32) (parse-error f64)
+  bool
+  char
+  str
+  string
+  io-error
+  i8
+  i16
+  i32
+  i64
+  i128
+  isize
+  u8
+  u16
+  u32
+  u64
+  u128
+  usize
+  f32
+  f64
+  (parse-error bool)
+  (parse-error char)
+  (parse-error string)
+  (parse-error i8)
+  (parse-error i16)
+  (parse-error i32)
+  (parse-error i64)
+  (parse-error i128)
+  (parse-error isize)
+  (parse-error u8)
+  (parse-error u16)
+  (parse-error u32)
+  (parse-error u64)
+  (parse-error u128)
+  (parse-error usize)
+  (parse-error f32)
+  (parse-error f64)
   (where ((a debug)) (ref a))
   (where ((a debug)) (vec a))
   (where ((a debug)) (option a))
-  (where ((a debug) (b debug)) (result a b))
+  (where ((a debug) (b debug))
+         (result a b))
   (where ((a debug)) (box a))
   (where ((a debug) (b debug)) (pair a b)))
 
 (rust-trait show "crate::rt::Show"
-  (method write-form (fn ((ref self) (mut formatter)) fmt-result))
+  (method write-form
+          (fn ((ref self) (mut formatter))
+            fmt-result))
   (structural
     :struct "crate::rt::Record::open({1}, \"->{name}\"){parts}.close()"
     :field ".text(\":{field}\").part({value})"
@@ -37,7 +119,43 @@
     :part ".part({value})"
     :bare "{1}.write_str(\"{name}\")")
   (help "a closure, an iterator or a function has no printed form")
-  bool char str string unit io-error i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64 (parse-error bool) (parse-error char) (parse-error string) (parse-error i8) (parse-error i16) (parse-error i32) (parse-error i64) (parse-error i128) (parse-error isize) (parse-error u8) (parse-error u16) (parse-error u32) (parse-error u64) (parse-error u128) (parse-error usize) (parse-error f32) (parse-error f64)
+  bool
+  char
+  str
+  string
+  unit
+  io-error
+  i8
+  i16
+  i32
+  i64
+  i128
+  isize
+  u8
+  u16
+  u32
+  u64
+  u128
+  usize
+  f32
+  f64
+  (parse-error bool)
+  (parse-error char)
+  (parse-error string)
+  (parse-error i8)
+  (parse-error i16)
+  (parse-error i32)
+  (parse-error i64)
+  (parse-error i128)
+  (parse-error isize)
+  (parse-error u8)
+  (parse-error u16)
+  (parse-error u32)
+  (parse-error u64)
+  (parse-error u128)
+  (parse-error usize)
+  (parse-error f32)
+  (parse-error f64)
   (where ((a show)) (ref a))
   (where ((a show)) (vec a))
   (where ((a show)) (slice a))
@@ -45,17 +163,32 @@
   (where ((a show) (b show)) (result a b))
   (where ((a show)) (box a))
   (where ((a show) (b show)) (pair a b))
-  (where ((k show) (v show)) (sorted-map k v))
-  (where ((k show) (v show)) (hash-map k v)))
+  (where ((k show) (v show))
+         (sorted-map k v))
+  (where ((k show) (v show))
+         (hash-map k v)))
 
-(def display-string (rust "{0}.to_string()" (where ((a display)) (fn ((ref a)) string))))
-(def prn (rust "println!(\"{{}}\", crate::rt::Shown({0}))" (where ((a show)) (fn ((ref a)) unit))))
-(def pr-str (rust "crate::rt::Shown({0}).to_string()" (where ((a show)) (fn ((ref a)) string))))
+(def display-string
+  (rust "{0}.to_string()"
+        (where ((a display))
+               (fn ((ref a)) string))))
+
+(def prn
+  (rust "println!(\"{{}}\", crate::rt::Shown({0}))"
+        (where ((a show)) (fn ((ref a)) unit))))
+
+(def pr-str
+  (rust "crate::rt::Shown({0}).to_string()"
+        (where ((a show)) (fn ((ref a)) string))))
 
 (rust-type parse-bool-error "std::str::ParseBoolError")
+
 (rust-type parse-char-error "std::char::ParseCharError")
+
 (rust-type infallible "std::convert::Infallible")
+
 (rust-type parse-int-error "std::num::ParseIntError")
+
 (rust-type parse-float-error "std::num::ParseFloatError")
 
 (rust-trait from-str "std::str::FromStr"
@@ -78,13 +211,32 @@
   (where () f32 (parse-error parse-float-error))
   (where () f64 (parse-error parse-float-error)))
 
-(def chars (rust "{0}.chars()" (fn ((ref str)) (iterator char))))
-(def lines (rust "{0}.lines()" (fn ((ref str)) (iterator (ref str)))))
-(def split (rust "{0}.split({1})" (fn ((ref str) (ref str)) (iterator (ref str)))))
-(def trim (rust "{0}.trim()" (fn ((ref str)) (ref str))))
-(def as-str (rust "{0}.as_str()" (fn ((ref string)) (ref str))))
-(def parse (rust "{0}.parse::<{target}>()" (where ((target from-str))
-                                              (fn ((ref str)) (result target (parse-error target))))))
+(def chars
+  (rust "{0}.chars()"
+        (fn ((ref str)) (iterator char))))
+
+(def lines
+  (rust "{0}.lines()"
+        (fn ((ref str)) (iterator (ref str)))))
+
+(def split
+  (rust "{0}.split({1})"
+        (fn ((ref str) (ref str))
+          (iterator (ref str)))))
+
+(def trim
+  (rust "{0}.trim()"
+        (fn ((ref str)) (ref str))))
+
+(def as-str
+  (rust "{0}.as_str()"
+        (fn ((ref string)) (ref str))))
+
+(def parse
+  (rust "{0}.parse::<{target}>()"
+        (where ((target from-str))
+               (fn ((ref str))
+                 (result target (parse-error target))))))
 
 (def arguments-text
   (fn (wrappers index)
@@ -94,11 +246,16 @@
   (fn (text wrappers index)
     (if (empty? wrappers)
         text
-        (recur (string text ", " (first (first wrappers)) index (nth (first wrappers) 1))
+        (recur (string text
+                       ", "
+                       (first (first wrappers))
+                       index
+                       (nth (first wrappers) 1))
                (rest wrappers)
                (number-add index 1)))))
 
 (def plain-argument (list "{&" "}"))
+
 (def shown-argument (list "crate::rt::Shown({" "})"))
 
 (def part-type
@@ -110,12 +267,19 @@
     (list (quote where)
           variables
           (list (quote fn)
-                (map-list (fn (variable) (list (quote ref) (first variable))) variables)
+                (map-list (fn (variable)
+                            (list (quote ref) (first variable)))
+                          variables)
                 result))))
 
 (def format-template
   (fn (function text wrappers)
-    (string function "(\"" text "\"" (arguments-text wrappers 0) ")")))
+    (string function
+            "(\""
+            text
+            "\""
+            (arguments-text wrappers 0)
+            ")")))
 
 (def splices?
   (fn (part name)
@@ -145,7 +309,8 @@
   (fn (pieces parts)
     (if (empty? parts)
         pieces
-        (recur (concat pieces (flatten-part (first parts))) (rest parts)))))
+        (recur (concat pieces (flatten-part (first parts)))
+               (rest parts)))))
 
 (def literal-piece?
   (fn (piece)
@@ -156,19 +321,24 @@
     (value-eq (first piece) (quote shown))))
 
 (def placeholder-count
-  (fn (pieces)
-    (placeholder-count-onto 0 pieces)))
+  (fn (pieces) (placeholder-count-onto 0 pieces)))
 
 (def placeholder-count-onto
   (fn (count pieces)
     (if (empty? pieces)
         count
-        (recur (number-add count (if (literal-piece? (first pieces)) 0 1)) (rest pieces)))))
+        (recur (number-add count
+                           (if (literal-piece? (first pieces)) 0 1))
+               (rest pieces)))))
 
 (def format-piece
   (fn (piece index escaper)
     (if (literal-piece? piece)
-        (list (escaper (nth piece 1)) (list) (list) index (list))
+        (list (escaper (nth piece 1))
+              (list)
+              (list)
+              index
+              (list))
         (if (shown-piece? piece)
             (list "{{}}"
                   (list (nth piece 1))
@@ -183,13 +353,17 @@
 
 (def format-pieces
   (fn (pieces index escaper)
-    (format-pieces-onto (list "" (list) (list) index (list)) pieces escaper)))
+    (format-pieces-onto (list "" (list) (list) index (list))
+                        pieces
+                        escaper)))
 
 (def format-pieces-onto
   (fn (formatted pieces escaper)
     (if (empty? pieces)
         formatted
-        (recur (join-formatted formatted (format-piece (first pieces) (nth formatted 3) escaper))
+        (recur (join-formatted
+                 formatted
+                 (format-piece (first pieces) (nth formatted 3) escaper))
                (rest pieces)
                escaper))))
 
@@ -210,7 +384,9 @@
     (if (empty? pieces)
         false
         (if (literal-piece? (last-piece pieces))
-            (bool-not (value-eq (string-strip-suffix (nth (last-piece pieces) 1) "\n") (nth (last-piece pieces) 1)))
+            (bool-not (value-eq (string-strip-suffix (nth (last-piece pieces) 1)
+                                                     "\n")
+                                (nth (last-piece pieces) 1)))
             false))))
 
 (def without-trailing-newline
@@ -222,29 +398,32 @@
 (def print-call
   (fn (pieces)
     (let formatted (format-pieces pieces 0 escape-format))
-    (prepend
-      (list (quote rust)
-            (format-template "print!" (nth formatted 0) (nth formatted 4))
-            (format-type (quote unit) (nth formatted 2)))
-      (nth formatted 1))))
+    (prepend (list (quote rust)
+                   (format-template "print!"
+                                    (nth formatted 0)
+                                    (nth formatted 4))
+                   (format-type (quote unit) (nth formatted 2)))
+             (nth formatted 1))))
 
 (def line-call
   (fn (function pieces)
     (let formatted (format-pieces pieces 0 escape-format))
     (let variables (nth formatted 2))
-    (prepend
-      (list (quote rust)
-            (if (value-eq (nth formatted 0) "")
-                (string function "()")
-                (format-template function (nth formatted 0) (nth formatted 4)))
-            (format-type (quote unit) variables))
-      (nth formatted 1))))
+    (prepend (list (quote rust)
+                   (if (value-eq (nth formatted 0) "")
+                       (string function "()")
+                       (format-template function
+                                        (nth formatted 0)
+                                        (nth formatted 4)))
+                   (format-type (quote unit) variables))
+             (nth formatted 1))))
 
 (def string-form
   (fn (parts)
     (let pieces (flatten-parts parts))
     (if (one-value? pieces)
-        (list (quote display-string) (nth (first pieces) 1))
+        (list (quote display-string)
+              (nth (first pieces) 1))
         (format-string-form pieces))))
 
 (def one-value?
@@ -252,21 +431,25 @@
     (if (empty? pieces)
         false
         (if (empty? (rest pieces))
-            (value-eq (first (first pieces)) (quote value))
+            (value-eq (first (first pieces))
+                      (quote value))
             false))))
 
 (def format-string-form
   (fn (pieces)
     (let count (placeholder-count pieces))
-    (let formatted (format-pieces pieces 0
-                      (if (number-lt 0 count) escape-format escape-string)))
+    (let formatted
+      (format-pieces pieces
+                     0
+                     (if (number-lt 0 count) escape-format escape-string)))
     (let variables (nth formatted 2))
     (if (number-lt 0 count)
-        (prepend
-          (list (quote rust)
-                (format-template "format!" (nth formatted 0) (nth formatted 4))
-                (format-type (quote string) variables))
-          (nth formatted 1))
+        (prepend (list (quote rust)
+                       (format-template "format!"
+                                        (nth formatted 0)
+                                        (nth formatted 4))
+                       (format-type (quote string) variables))
+                 (nth formatted 1))
         (list (list (quote rust)
                     (string "\"" (nth formatted 0) "\".to_string()")
                     (format-type (quote string) variables))))))
@@ -278,7 +461,7 @@
         (string-form (rest form)))))
 
 (document str
-  "Builds a `string` from its parts: `(str part ...)`.
+          "Builds a `string` from its parts: `(str part ...)`.
 
   A string literal part is literal text, and any other part prints with
   `display`. `(str x)` emits `x.to_string()`, and `str` as a value is that
@@ -309,23 +492,29 @@
           variables
           (list (quote fn)
                 (concat (list (list (quote mut) (quote formatter)))
-                        (map-list (fn (variable) (list (quote ref) (first variable))) variables))
+                        (map-list (fn (variable)
+                                    (list (quote ref) (first variable)))
+                                  variables))
                 (quote fmt-result)))))
 
 (def display-template
   (fn (pieces)
     (let formatted (format-pieces pieces 0 escape-format))
-    (list (string "write!({0}, \"" (nth formatted 0) "\""
-                  (arguments-text (nth formatted 4) 1) ")")
+    (list (string "write!({0}, \""
+                  (nth formatted 0)
+                  "\""
+                  (arguments-text (nth formatted 4) 1)
+                  ")")
           (display-type (nth formatted 2))
           (nth formatted 1))))
 
 (def display-write
   (fn (parts out)
     (let rendered (display-template (flatten-parts parts)))
-    (prepend
-      (list (quote rust) (nth rendered 0) (nth rendered 1))
-      (concat (list out) (nth rendered 2)))))
+    (prepend (list (quote rust)
+                   (nth rendered 0)
+                   (nth rendered 1))
+             (concat (list out) (nth rendered 2)))))
 
 (def kernel-form?
   (fn (form name)
@@ -336,9 +525,12 @@
         false)))
 
 (def display-match?
-  (fn (form) (kernel-form? form (quote match))))
+  (fn (form)
+    (kernel-form? form (quote match))))
+
 (def display-if?
-  (fn (form) (kernel-form? form (quote if))))
+  (fn (form)
+    (kernel-form? form (quote if))))
 
 (def display-arm
   (fn (body out)
@@ -354,14 +546,16 @@
 
 (def display-match
   (fn (form out)
-    (concat
-      (take 2 form)
-      (map-list (fn (arm) (list (first arm) (display-arm (nth arm 1) out)))
-                (drop 2 form)))))
+    (concat (take 2 form)
+            (map-list (fn (arm)
+                        (list (first arm)
+                              (display-arm (nth arm 1) out)))
+                      (drop 2 form)))))
 
 (def display-if
   (fn (form out)
-    (list (first form) (nth form 1)
+    (list (first form)
+          (nth form 1)
           (display-arm (nth form 2) out)
           (display-arm (nth form 3) out))))
 
@@ -370,18 +564,19 @@
     (if (empty? parts)
         (display-write (list) out)
         (if (empty? (rest parts))
-            (do
-              (let part (first parts))
-              (if (display-match? part)
-                  (display-match part out)
-                  (if (display-if? part)
-                      (display-if part out)
-                      (display-write parts out))))
+            (do (let part (first parts))
+                (if (display-match? part)
+                    (display-match part out)
+                    (if (display-if? part)
+                        (display-if part out)
+                        (display-write parts out))))
             (display-write parts out)))))
 
 (defmacro display (type param parts ...)
   (let out (symbol (quote display) "out"))
-  (list (quote impl) (quote display) type
+  (list (quote impl)
+        (quote display)
+        type
         (list (quote fmt)
               (concat param (list out))
               (display-body parts out))))
@@ -389,15 +584,35 @@
 (header-shape (display type parameters))
 
 (defmacro char (text)
-  (list (quote rust) (string "'" (escape-char text) "'") (quote char)))
+  (list (quote rust)
+        (string "'" (escape-char text) "'")
+        (quote char)))
 
-(def split-when (rust "{0}.split({1})" (fn ((ref str) (fn (char) bool)) (iterator (ref str)))))
-(def lower-case (rust "{0}.to_lowercase()" (fn ((ref str)) string)))
-(def upper-case (rust "{0}.to_uppercase()" (fn ((ref str)) string)))
-(def alphanumeric? (rust "{0}.is_alphanumeric()" (fn (char) bool)))
-(def whitespace? (rust "{0}.is_whitespace()" (fn (char) bool)))
-(def digit? (rust "{0}.is_ascii_digit()" (fn (char) bool)))
-(def subs (rust "&{0}[{1}..{2}]" (fn ((ref str) usize usize) (ref str))))
+(def split-when
+  (rust "{0}.split({1})"
+        (fn ((ref str) (fn (char) bool))
+          (iterator (ref str)))))
+
+(def lower-case
+  (rust "{0}.to_lowercase()"
+        (fn ((ref str)) string)))
+
+(def upper-case
+  (rust "{0}.to_uppercase()"
+        (fn ((ref str)) string)))
+
+(def alphanumeric?
+  (rust "{0}.is_alphanumeric()" (fn (char) bool)))
+
+(def whitespace?
+  (rust "{0}.is_whitespace()" (fn (char) bool)))
+
+(def digit?
+  (rust "{0}.is_ascii_digit()" (fn (char) bool)))
+
+(def subs
+  (rust "&{0}[{1}..{2}]"
+        (fn ((ref str) usize usize) (ref str))))
 
 (def construction?
   (fn (body)
@@ -408,18 +623,22 @@
         false)))
 
 (def show-calls
-  (fn (arguments)
-    (show-calls-onto "" arguments 1)))
+  (fn (arguments) (show-calls-onto "" arguments 1)))
 
 (def show-calls-onto
   (fn (text arguments index)
     (if (empty? arguments)
         text
         (if (keyword? (first arguments))
-            (recur (string text ".text(\"" (escape-string (symbol-name (first arguments))) "\")")
+            (recur (string text
+                           ".text(\""
+                           (escape-string (symbol-name (first arguments)))
+                           "\")")
                    (rest arguments)
                    index)
-            (recur (string text ".part({" index "})") (rest arguments) (number-add index 1))))))
+            (recur (string text ".part({" index "})")
+                   (rest arguments)
+                   (number-add index 1))))))
 
 (def shown-values
   (fn (arguments)
@@ -442,7 +661,8 @@
   (fn (variables arguments index)
     (if (empty? arguments)
         variables
-        (recur (concat variables (list (list (part-type index) (quote show))))
+        (recur (concat variables
+                       (list (list (part-type index) (quote show))))
                (rest arguments)
                (number-add index 1)))))
 
@@ -450,32 +670,42 @@
   (fn (body out)
     (let arguments (rest body))
     (let values (shown-values arguments))
-    (prepend
-      (list (quote rust)
-            (string "crate::rt::Record::open({0}, \"" (escape-string (symbol-name (first body))) "\")"
-                    (show-calls arguments) ".close()")
-            (display-type (show-variables values)))
-      (concat (list out) values))))
+    (prepend (list (quote rust)
+                   (string "crate::rt::Record::open({0}, \""
+                           (escape-string (symbol-name (first body)))
+                           "\")"
+                           (show-calls arguments)
+                           ".close()")
+                   (display-type (show-variables values)))
+             (concat (list out) values))))
 
 (def show-symbol
   (fn (body out)
     (list (list (quote rust)
-                (string "{0}.write_str(\"" (escape-string (symbol-name body)) "\")")
+                (string "{0}.write_str(\""
+                        (escape-string (symbol-name body))
+                        "\")")
                 (display-type (list)))
           out)))
 
 (def show-body
   (fn (body out)
-    (if (symbol? body)
-        (show-symbol body out)
-        (if (construction? body)
-            (show-construction body out)
-            (fail "a `show` body is one construction form or a symbol" body
-                  "write the call that builds the value, as in `(->money :cents 1200)`")))))
+    (if
+      (symbol? body)
+      (show-symbol body out)
+      (if
+        (construction? body)
+        (show-construction body out)
+        (fail
+          "a `show` body is one construction form or a symbol"
+          body
+          "write the call that builds the value, as in `(->money :cents 1200)`")))))
 
 (defmacro show (type param body)
   (let out (symbol (quote show) "out"))
-  (list (quote impl) (quote show) type
+  (list (quote impl)
+        (quote show)
+        type
         (list (quote write-form)
               (concat param (list out))
               (show-body body out))))

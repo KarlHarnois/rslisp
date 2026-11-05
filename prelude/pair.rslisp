@@ -2,18 +2,24 @@
 
 (export pair let-pair let-fields)
 
-(enum (pair a b) (rust "({0}, {1})") (pair a b))
+(enum (pair a b)
+  (rust "({0}, {1})")
+  (pair a b))
 
-(def pair (rust "({0}, {1})" (where (a b) (fn (a b) (pair a b)))))
+(def pair
+  (rust "({0}, {1})"
+        (where (a b) (fn (a b) (pair a b)))))
 
 (defrule let-pair
   (((first second) value body ...)
-   (match value ((pair first second) (do body ...)))))
+   (match value
+     ((pair first second) (do body ...)))))
 
 (header-shape (let-pair names value))
 
 (defrule let-fields
   (((type-name (name ...)) value body ...)
-   (match value ((type-name name ...) (do body ...)))))
+   (match value
+     ((type-name name ...) (do body ...)))))
 
 (header-shape (let-fields pattern value))
