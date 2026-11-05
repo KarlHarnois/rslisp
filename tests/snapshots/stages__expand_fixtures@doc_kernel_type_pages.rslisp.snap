@@ -6,4 +6,4 @@ input_file: tests/fixtures/expand/doc_kernel_type_pages.rslisp
 (def i64-page "i64\n\nHolds a signed 64-bit integer, as Rust's `i64` does.\n\nAn integer literal whose type stays open defaults to `i64`.")
 (def true-page "true\n\nIs the `bool` value true.\n\nIt is a kernel constant, so macro code and program code see the same\nbooleans.")
 (def where-page "(where (variable (variable trait ...) ...) type)\n\nBinds the type variables of a type and the traits each must implement.\n\nA bare variable takes any type, and `(variable trait ...)` requires each\ntrait, so `(where ((n number)) (fn (n) n))` emits `fn<N: Number>(N) -> N`.")
-(def hole-page "_\n\nStands for a type that inference fills in.")
+(def hole-page "_\n\nStands for a type that inference fills in.\n\nIn a `match` pattern, `_` matches any value, and `(new _ base ...)` updates\na struct whose type comes from its base.")
