@@ -1,6 +1,7 @@
 use super::Expander;
 use super::context::DefinitionContext;
-use crate::core::{BindingId, BindingKind, Expr, ExprKind, Leaf, ModuleId, Namespace};
+use super::rest_of_body::RestOfBody;
+use crate::core::{BindingId, BindingKind, BodyItem, Expr, ExprKind, Leaf, ModuleId, Namespace};
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, Symbol};
 use crate::scope::{Phase, Scope};
@@ -73,6 +74,28 @@ impl Expander<'_> {
     fn forget_failed(&mut self, symbol: &Symbol, namespace: Namespace, failed: BindingId) {
         self.tables.table.unbind(symbol, namespace, failed);
         self.tables.globals.forget_failed_definition(failed);
+    }
+
+    pub(super) fn bind_failed_body_name(
+        &mut self,
+        failure: Expr,
+        rest_of_body: &mut RestOfBody,
+        context: &DefinitionContext,
+    ) -> Result<BodyItem, Diagnostic> {
+        let Some(name) = self.declared_value_name() else {
+            return Ok(BodyItem::Expr(failure));
+        };
+        let scope = self.fresh_local_scope();
+        rest_of_body.add_scope(scope);
+        let binder = self.lower_binder(&Self::scoped(&name, scope), Some(context))?;
+        Ok(BodyItem::Let(binder, failure))
+    }
+
+    fn declared_value_name(&self) -> Option<Form> {
+        self.declared_definitions
+            .iter()
+            .find(|declared| declared.namespace == Namespace::Value)
+            .map(DeclaredName::binder)
     }
 
     fn bind_failed_names(&mut self, context: &DefinitionContext) {

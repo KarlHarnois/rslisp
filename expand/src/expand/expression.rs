@@ -388,9 +388,13 @@ impl Expander<'_> {
         context: &mut DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
         let span = form.span();
+        self.declared_definitions.clear();
         match self.expand_body_head(form, context) {
             Ok(form) => self.lower_body_form(&form, rest_of_body, context),
-            Err(diagnostic) => Ok(BodyItem::Expr(self.recover(diagnostic, span)?)),
+            Err(diagnostic) => {
+                let failure = self.recover(diagnostic, span)?;
+                self.bind_failed_body_name(failure, rest_of_body, context)
+            }
         }
     }
 
