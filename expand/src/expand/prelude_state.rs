@@ -132,8 +132,7 @@ mod tests {
     use rustc_hash::FxHashMap;
 
     use super::*;
-    use crate::core::KernelForm;
-    use crate::reader::Form;
+    use crate::core::{BindingArena, ExprKind, Item, ItemKind, KernelForm, Leaf, Literal};
 
     struct UserProgram {
         name: &'static str,
@@ -207,31 +206,62 @@ mod tests {
     }
 
     impl KernelPages {
-        const DOCSTRINGS_KEY: &str = "docstrings";
+        const ENTRY: &str = "kernel-pages";
         const ALTERNATIVE: &str = " or ";
         const OPTIONAL_PART_END: &str = ")?";
         const OPTIONAL_PART_START: &str = " (";
 
         fn of_saved_prelude() -> Self {
-            let state = UserProgram::loaded_state();
-            let notes = state
-                .tables
-                .module_notes
-                .of(state.prelude, Self::DOCSTRINGS_KEY);
-            Self {
-                headers: notes.iter().filter_map(Self::named_header).collect(),
-            }
+            let mut sources = SourceMap::default();
+            let entry = sources.add(Self::ENTRY, Self::lookups());
+            let expander = Expander::with_prelude(
+                &mut sources,
+                UserProgram::module_sources(),
+                UserProgram::loaded_state(),
+            );
+            let program = expander
+                .expand(ModulePath::new(Self::ENTRY), entry)
+                .unwrap_or_else(|_| panic!("the kernel lookups expand"));
+            let headers = program
+                .entry_module()
+                .items
+                .iter()
+                .filter_map(|item| Self::string_definition(&program.bindings, item))
+                .collect();
+            Self { headers }
         }
 
-        fn named_header(note: &Form) -> Option<(String, String)> {
-            let [_, name, header, _] = note.as_list()? else {
+        fn lookups() -> String {
+            KernelForm::all()
+                .enumerate()
+                .map(|(index, form)| {
+                    format!(
+                        "(def {} (header {}))\n",
+                        Self::lookup_name(index),
+                        form.name()
+                    )
+                })
+                .collect()
+        }
+
+        fn lookup_name(index: usize) -> String {
+            format!("h-{index}")
+        }
+
+        fn string_definition(bindings: &BindingArena, item: &Item) -> Option<(String, String)> {
+            let ItemKind::Def(binding, value) = &item.kind else {
                 return None;
             };
-            Some((name.to_string(), header.to_string()))
+            let ExprKind::Leaf(Leaf::Literal(Literal::String(text))) = value.kind() else {
+                return None;
+            };
+            Some((bindings.get(*binding).name().to_string(), text.to_string()))
         }
 
-        fn header(&self, form: KernelForm) -> Option<&str> {
-            self.headers.get(form.name()).map(String::as_str)
+        fn header(&self, index: usize) -> Option<&str> {
+            self.headers
+                .get(&Self::lookup_name(index))
+                .map(String::as_str)
         }
 
         fn header_of_shape(shape: &str) -> String {
@@ -257,9 +287,14 @@ mod tests {
     #[test]
     fn each_kernel_form_page_shows_its_shape_as_header() {
         let pages = KernelPages::of_saved_prelude();
-        for form in KernelForm::all() {
+        for (index, form) in KernelForm::all().enumerate() {
             let header = KernelPages::header_of_shape(form.shape());
-            assert_eq!(pages.header(form), Some(header.as_str()), "{}", form.name());
+            assert_eq!(
+                pages.header(index),
+                Some(header.as_str()),
+                "{}",
+                form.name()
+            );
         }
     }
 
