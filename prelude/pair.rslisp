@@ -1,4 +1,4 @@
-(use prelude/macros defrule)
+(use prelude/macros defrule header-shape)
 
 (export pair let-pair let-fields)
 
@@ -10,6 +10,10 @@
   (((first second) value body ...)
    (match value ((pair first second) (do body ...)))))
 
+(header-shape (let-pair names value))
+
 (defrule let-fields
   (((type-name (name ...)) value body ...)
    (match value ((type-name name ...) (do body ...)))))
+
+(header-shape (let-fields pattern value))

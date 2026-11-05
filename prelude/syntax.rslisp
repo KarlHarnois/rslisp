@@ -578,6 +578,8 @@
   ((((name value) ...) body ...)
    ((fn (name ...) body ...) value ...)))
 
+(header-shape (loop bindings))
+
 (defrule the
   ((type-expression value) (do (let (result type-expression) value) result)))
 
@@ -594,6 +596,8 @@
 (defrule let-try
   ((((name value) ...) body ...)
    (do (let name (try value)) ... body ...)))
+
+(header-shape (let-try bindings))
 
 (defrule try->
   ((value) value)
