@@ -134,7 +134,7 @@ mod tests {
     use super::*;
     use crate::core::{
         BindingArena, ExprKind, Item, ItemKind, KernelConstants, KernelForm, KernelType, Leaf,
-        Literal,
+        Literal, Namespace,
     };
 
     struct UserProgram {
@@ -214,7 +214,6 @@ mod tests {
         const OPTIONAL_PART_END: &str = ")?";
         const OPTIONAL_PART_START: &str = " (";
         const UNDOCUMENTED_BODY: &str = "\n\nNo documentation.";
-        const NAMES_WITH_PRELUDE_VALUES: [&str; 2] = ["char", "str"];
 
         fn of_saved_prelude(names: &[&str]) -> Self {
             let mut sources = SourceMap::default();
@@ -236,11 +235,17 @@ mod tests {
             Self { lookups }
         }
 
-        fn names_without_form_rows() -> Vec<(&'static str, &'static str)> {
+        fn names_the_prelude_documents_by_type() -> Vec<(&'static str, &'static str)> {
+            let state = UserProgram::loaded_state();
+            let prelude_path = ModulePath::new(ModuleSources::PRELUDE);
+            let prelude = state
+                .modules
+                .iter()
+                .find(|record| *record.path() == prelude_path)
+                .expect("the saved state holds the prelude");
             KernelType::all()
                 .map(|kernel_type| (kernel_type.name(), kernel_type.shape()))
-                .filter(|(name, _)| KernelForm::all().all(|form| form.name() != *name))
-                .filter(|(name, _)| !Self::NAMES_WITH_PRELUDE_VALUES.contains(name))
+                .filter(|(name, _)| prelude.exported(name, Namespace::Value).is_none())
                 .chain(KernelConstants::BOOLEANS.map(|(name, _)| (name, name)))
                 .collect()
         }
@@ -331,7 +336,7 @@ mod tests {
 
     #[test]
     fn each_kernel_type_and_constant_has_a_page_headed_by_its_shape() {
-        let entries = KernelPages::names_without_form_rows();
+        let entries = KernelPages::names_the_prelude_documents_by_type();
         let names: Vec<&str> = entries.iter().map(|(name, _)| *name).collect();
         let pages = KernelPages::of_saved_prelude(&names);
         for (index, (name, shape)) in entries.iter().enumerate() {
