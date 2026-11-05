@@ -1,0 +1,9 @@
+(def plus-page (doc-page +))
+
+(def add-page (doc-page add))
+
+(def pi-page (doc-page pi))
+
+(def number-page (doc-page number))
+
+(def eq-page (doc-page eq))
