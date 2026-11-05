@@ -41,6 +41,7 @@ impl<'c> Finalizer<'c> {
         self.finalize_type(&mut definition.scheme.body, definition.span);
         self.record_closure_types(definition.binding);
         if !self.checker.infer_operands.is_empty() {
+            self.checker.checking.type_text_walks += 1;
             let writer = TypeTextWriter::new(definition.binding, &definition.scheme);
             self.write_type_texts(&mut definition.value, &writer);
             let operands = std::mem::take(&mut self.type_text_operands);

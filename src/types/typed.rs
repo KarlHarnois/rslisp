@@ -409,6 +409,7 @@ pub struct TypedProgram {
 #[derive(Clone, Copy, Default)]
 pub struct CheckWork {
     pub inferred_expressions: usize,
+    pub type_text_walks: usize,
 }
 
 impl TypedProgram {

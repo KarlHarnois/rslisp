@@ -345,6 +345,14 @@ mod tests {
             runs.inferred_expressions - before
         }
 
+        fn type_text_walks(&self) -> usize {
+            self.runs()
+                .typed()
+                .expect("the source checks")
+                .checking
+                .type_text_walks
+        }
+
         fn closure_type_count(&self) -> usize {
             self.runs()
                 .typed()
@@ -441,6 +449,18 @@ mod tests {
         let fixture = RunsFixture::new(RunsFixture::TYPE_TEXT_OF_A_PINNED_GENERIC);
         assert!(fixture.needs_unpinned_type_texts());
         assert!(fixture.inferred_expressions_of_the_unpinned_run() > 0);
+    }
+
+    #[test]
+    fn a_program_with_no_infer_form_walks_for_no_type_text() {
+        let fixture = RunsFixture::new(RunsFixture::WRITTEN_TYPES);
+        assert_eq!(fixture.type_text_walks(), 0);
+    }
+
+    #[test]
+    fn a_program_with_an_infer_form_walks_for_its_type_texts() {
+        let fixture = RunsFixture::new(RunsFixture::CLOSURE_IN_AN_OPERAND);
+        assert!(fixture.type_text_walks() > 0);
     }
 
     #[test]
