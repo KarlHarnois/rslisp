@@ -118,6 +118,14 @@
           touch $out
         '';
 
+      sourceFormat =
+        pkgs: package:
+        pkgs.runCommand "source-format" { } ''
+          ${pkgs.lib.getExe package} fmt --check ${./prelude} ${./examples} ||
+            { echo "run rslisp fmt prelude examples to lay out the files above" >&2; exit 1; }
+          touch $out
+        '';
+
       installedProfile =
         pkgs: package:
         let
@@ -221,6 +229,7 @@
         installed-profile =
           installedProfile nixpkgs.legacyPackages.${system}
             self.packages.${system}.default;
+        source-format = sourceFormat nixpkgs.legacyPackages.${system} self.packages.${system}.default;
       });
     };
 }

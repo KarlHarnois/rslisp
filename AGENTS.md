@@ -180,7 +180,9 @@ nix develop -c cargo test <narrowest test>
 - `nix flake check`
 - `nix build`, except the command below
 
-**If a change touches what a small flake check checks, build that check alone with `nix build --no-link .#checks.<system>.<name>`.** Every flake check except `default` is small.
+**If a change touches what a small flake check checks, build that check alone with `nix build --no-link .#checks.<system>.<name>`.** Every flake check except `default` and `source-format`, which builds `default`, is small.
+
+**The `source-format` flake check fails on any `.rslisp` file under `prelude/` or `examples/` that `rslisp fmt --check` would change.**
 
 **A change is done when CI passes on Linux and macOS.**
 

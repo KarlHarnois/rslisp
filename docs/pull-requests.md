@@ -41,6 +41,8 @@
 
 **NEVER reproduce a CI failure with a command that `AGENTS.md` bans locally.**
 
+**If the `source-format` flake check fails, run `nix develop -c cargo run --quiet -- fmt prelude examples` and commit the laid-out files.**
+
 **If the same failure survives three fixes, stop and show the failing output to the project owner.**
 
 ## The check on `main`
