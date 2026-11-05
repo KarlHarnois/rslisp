@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/test_user_equals.rslisp
+---
+<record>(start 1)
+<record>(test "test_user_equals/a-user-equals-shows-no-sides" "")
+<record>(fail "test_user_equals.rslisp:5:39" "(assert (= 1 2))")
+<record>(done)

@@ -4619,3 +4619,21 @@ fn form_location_keeps_the_name_of_a_source_outside_the_root() {
     let eval = sandbox.compiler(&["eval", "library/located.rslisp", "(println (here))"]);
     assert_eq!(eval.assert_silent_success().stdout(), "<eval>:1:10\n");
 }
+
+#[test]
+fn test_lists_the_untested_names_of_a_program_with_no_tests() {
+    let sandbox = Sandbox::new("test_untested_no_tests")
+        .with_file(
+            "app.rslisp",
+            "(use shelf restock)\n\n(defn main () (println (restock 1)))\n",
+        )
+        .with_file(
+            "shelf.rslisp",
+            "(export restock)\n\n(defn restock (count) (+ count 1))\n",
+        );
+    let test = sandbox.compiler(&["test", "app.rslisp", "--untested", "shelf"]);
+    assert_eq!(
+        test.assert_silent_success().stdout(),
+        "untested in shelf (1 of 1): restock\nrunning 0 tests\n0 passed, 0 failed\n"
+    );
+}

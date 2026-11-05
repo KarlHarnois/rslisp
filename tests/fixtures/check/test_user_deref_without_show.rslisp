@@ -1,0 +1,13 @@
+(use prelude/test assert deftest)
+
+(defstruct operation
+  :op (fn (i64) i64))
+
+(defn twice (x) (* 2 x))
+
+(defn deref (value) (->operation :op twice))
+
+(deftest a-user-deref-is-reported-at-its-side
+  (assert (= (deref 1) (deref 2))))
+
+(defn main () (println (twice 2)))

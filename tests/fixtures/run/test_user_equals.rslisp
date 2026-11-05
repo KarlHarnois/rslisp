@@ -1,0 +1,7 @@
+(use prelude/test assert deftest run-tests)
+
+(defn = (left right) (> left right))
+
+(deftest a-user-equals-shows-no-sides (assert (= 1 2)))
+
+(defn main () (run-tests :marker "<record>"))
