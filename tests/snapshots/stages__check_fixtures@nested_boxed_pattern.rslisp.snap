@@ -1,14 +1,15 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/nested_boxed_pattern.rslisp
 ---
 error[L0433]: non-exhaustive `match`
- --> check/nested_boxed_pattern.rslisp:4:3
+ --> check/nested_boxed_pattern.rslisp:6:3
   |
-4 | /   (match tree
-5 | |     ((tree/node (tree/node left value right) _ _) (+ (total left) value))
-6 | |     (tree/leaf 0)))
+6 | /   (match tree
+7 | |     ((tree/node (tree/node left value right) _ _)
+8 | |      (+ (total left) value))
+9 | |     (tree/leaf 0)))
   | |__________________^ this `match` does not cover every value
   |
   = note: missing 1 case: `(node _ _ _)`

@@ -4,49 +4,49 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/field_keyword_errors.rslisp
 ---
 error[L0244]: a name cannot start with `:`
- --> expand/field_keyword_errors.rslisp:3:6
+ --> expand/field_keyword_errors.rslisp:7:6
   |
-3 | (def :model "Leaf")
+7 | (def :model "Leaf")
   |      ^^^^^^ this is a field keyword
   |
   = help: names starting with `:` read struct fields; choose another name
 
 error[L0244]: a name cannot start with `:`
- --> expand/field_keyword_errors.rslisp:5:18
+ --> expand/field_keyword_errors.rslisp:9:18
   |
-5 | (def rename (fn (:make) :make))
+9 | (def rename (fn (:make) :make))
   |                  ^^^^^ this is a field keyword
   |
   = help: names starting with `:` read struct fields; choose another name
 
 error[L0244]: a name cannot start with `:`
- --> expand/field_keyword_errors.rslisp:9:6
-  |
-9 |     (:year 0)))
-  |      ^^^^^ this is a field keyword
-  |
-  = help: names starting with `:` read struct fields; choose another name
+  --> expand/field_keyword_errors.rslisp:12:19
+   |
+12 |   (match vehicle (:year 0)))
+   |                   ^^^^^ this is a field keyword
+   |
+   = help: names starting with `:` read struct fields; choose another name
 
 error[L0243]: a field keyword takes one value
-  --> expand/field_keyword_errors.rslisp:14:24
+  --> expand/field_keyword_errors.rslisp:17:24
    |
-14 |   (println (:year leaf civic))
+17 |   (println (:year leaf civic))
    |                        ^^^^^ this value is extra
    |
    = help: write (:year value)
 
 error[L0243]: a field keyword takes one value
-  --> expand/field_keyword_errors.rslisp:15:12
+  --> expand/field_keyword_errors.rslisp:18:12
    |
-15 |   (println (:year))
+18 |   (println (:year))
    |            ^^^^^^^ this call has no value
    |
    = help: write (:year value)
 
 error[L0244]: a name cannot start with `:`
-  --> expand/field_keyword_errors.rslisp:16:8
+  --> expand/field_keyword_errors.rslisp:19:8
    |
-16 |   (let :year 3)
+19 |   (let :year 3)
    |        ^^^^^ this is a field keyword
    |
    = help: names starting with `:` read struct fields; choose another name

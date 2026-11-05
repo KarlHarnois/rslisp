@@ -1,4 +1,6 @@
-(type tokenize (fn ((ref str)) (result (vec token) string)))
+(type tokenize
+  (fn ((ref str))
+    (result (vec token) string)))
 
 (struct token (text (ref str)))
 

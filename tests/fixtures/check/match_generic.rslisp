@@ -1,4 +1,5 @@
 (enum (box a) (wrap a))
+
 (enum shape (circle f64) point)
 
 (defn circle-area (b)

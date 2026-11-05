@@ -1,4 +1,6 @@
-(defstruct user :name str :admin? bool)
+(defstruct user
+  :name str
+  :admin? bool)
 
 (defn initial (name)
   (let letter (subs name 0 1))

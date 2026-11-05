@@ -6,15 +6,15 @@
 
 (def noted
   (macro (form)
-    (string (module-notes (definition-symbol (quote noted) "notes") (quote noted)))))
+    (string (module-notes (definition-symbol (quote noted) "notes")
+                          (quote noted)))))
 
 (defrule swap-call ((f a b) (f b a)))
 
 (defrule one-argument ((x) x))
 
 (defmacro noting (x)
-  (do (add-module-note (quote noted) x)
-      x))
+  (do (add-module-note (quote noted) x) x))
 
 (defn add-two (x y) (+ x y))
 

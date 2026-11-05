@@ -1,4 +1,5 @@
-(defstruct user :nickname (option str))
+(defstruct user
+  :nickname (option str))
 
 (defn main ()
   (let user (->user :nickname (option/some "Leafy")))

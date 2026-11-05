@@ -1,4 +1,5 @@
-(defrule swap "Swaps the two arguments of a call: (swap f a b)."
+(defrule swap
+  "Swaps the two arguments of a call: (swap f a b)."
   ((function left right) (function right left)))
 
 (defn main () (println (swap - 1 10)))

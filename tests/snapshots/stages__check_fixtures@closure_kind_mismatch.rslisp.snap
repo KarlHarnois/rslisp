@@ -1,15 +1,15 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/closure_kind_mismatch.rslisp
 ---
 error[L0509]: this closure is `FnOnce`, but the parameter accepts `FnMut`
- --> check/closure_kind_mismatch.rslisp:3:39
+ --> check/closure_kind_mismatch.rslisp:4:22
   |
-3 |   (map (iter (vec 1 2)) (fn (ignored) text)))
-  |                         --------------^^^^-
-  |                         |             |
-  |                         |             `text` moves here
-  |                         this closure is passed here
+4 |        (fn (ignored) text)))
+  |        --------------^^^^-
+  |        |             |
+  |        |             `text` moves here
+  |        this closure is passed here
   |
   = help: clone `text`, or borrow it with `(ref text)`

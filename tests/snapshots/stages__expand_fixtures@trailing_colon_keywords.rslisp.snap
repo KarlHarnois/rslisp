@@ -4,65 +4,65 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/trailing_colon_keywords.rslisp
 ---
 error[L0332]: a field name cannot end with `:`
- --> expand/trailing_colon_keywords.rslisp:1:27
+ --> expand/trailing_colon_keywords.rslisp:3:3
   |
-1 | (defstruct user :name str :email: str)
-  |                           ^^^^^^^ ends with `:`
+3 |   :email: str)
+  |   ^^^^^^^ ends with `:`
   |
 help: write `:email`
   |
-1 - (defstruct user :name str :email: str)
-1 + (defstruct user :name str :email str)
+3 -   :email: str)
+3 +   :email str)
   |
 
 error[L0332]: a parameter name cannot end with `:`
- --> expand/trailing_colon_keywords.rslisp:3:24
+ --> expand/trailing_colon_keywords.rslisp:5:24
   |
-3 | (defn greet (:name str :greeting: str) (str greeting name))
+5 | (defn greet (:name str :greeting: str) (str greeting name))
   |                        ^^^^^^^^^^ ends with `:`
   |
 help: write `:greeting`
   |
-3 - (defn greet (:name str :greeting: str) (str greeting name))
-3 + (defn greet (:name str :greeting str) (str greeting name))
+5 - (defn greet (:name str :greeting: str) (str greeting name))
+5 + (defn greet (:name str :greeting str) (str greeting name))
   |
 
 error[L0332]: a parameter name cannot end with `:`
- --> expand/trailing_colon_keywords.rslisp:5:14
+ --> expand/trailing_colon_keywords.rslisp:7:14
   |
-5 | (defn shout (:volume:: u8) volume)
+7 | (defn shout (:volume:: u8) volume)
   |              ^^^^^^^^^ ends with `:`
   |
 help: write `:volume`
   |
-5 - (defn shout (:volume:: u8) volume)
-5 + (defn shout (:volume u8) volume)
+7 - (defn shout (:volume:: u8) volume)
+7 + (defn shout (:volume u8) volume)
   |
 
 error[L0323]: `welcome` has no parameter `:greeting:`
- --> expand/trailing_colon_keywords.rslisp:9:43
-  |
-9 | (defn welcome-ana () (welcome :name "ana" :greeting: "hello"))
-  |                                           ^^^^^^^^^^ here
-  |
+  --> expand/trailing_colon_keywords.rslisp:12:24
+   |
+12 |   (welcome :name "ana" :greeting: "hello"))
+   |                        ^^^^^^^^^^ here
+   |
 help: a parameter with a similar name exists
-  |
-9 - (defn welcome-ana () (welcome :name "ana" :greeting: "hello"))
-9 + (defn welcome-ana () (welcome :name "ana" :greeting "hello"))
-  |
+   |
+12 -   (welcome :name "ana" :greeting: "hello"))
+12 +   (welcome :name "ana" :greeting "hello"))
+   |
 
 error[L0332]: a field name cannot be only `:`
-  --> expand/trailing_colon_keywords.rslisp:11:19
+  --> expand/trailing_colon_keywords.rslisp:15:3
    |
-11 | (defstruct marker :: str)
-   |                   ^^ has no name
+15 |   :: str)
+   |   ^^ has no name
    |
    = help: write a name after the first `:`, as in `:email`
 
 error[L0332]: a parameter name cannot be only `:`
-  --> expand/trailing_colon_keywords.rslisp:13:23
+  --> expand/trailing_colon_keywords.rslisp:17:23
    |
-13 | (defn mark (:size i64 ::: str) size)
+17 | (defn mark (:size i64 ::: str) size)
    |                       ^^^ has no name
    |
    = help: write a name after the first `:`, as in `:email`

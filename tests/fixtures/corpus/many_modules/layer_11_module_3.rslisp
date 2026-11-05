@@ -1,18 +1,38 @@
-(use many_modules/layer_10_module_3 layer-10-module-3-score layer-10-module-3-reading)
-(use many_modules/layer_4_module_5 layer-4-module-5-score layer-4-module-5-reading)
-(use many_modules/layer_6_module_3 layer-6-module-3-score layer-6-module-3-reading)
+(use many_modules/layer_10_module_3 layer-10-module-3-score
+                                    layer-10-module-3-reading)
 
-(export layer-11-module-3-score layer-11-module-3-reading layer-11-module-3-label)
+(use many_modules/layer_4_module_5 layer-4-module-5-score
+                                   layer-4-module-5-reading)
 
-(defstruct layer-11-module-3-reading :site str :level i64 :weight f64)
+(use many_modules/layer_6_module_3 layer-6-module-3-score
+                                   layer-6-module-3-reading)
 
-(display layer-11-module-3-reading (reading) "layer-11-module-3 " (:site reading) "=" (:level reading))
+(export layer-11-module-3-score layer-11-module-3-reading
+        layer-11-module-3-label)
+
+(defstruct layer-11-module-3-reading
+  :site str
+  :level i64
+  :weight f64)
+
+(display layer-11-module-3-reading (reading)
+  "layer-11-module-3 "
+  (:site reading)
+  "="
+  (:level reading))
 
 (defn layer-11-module-3-label (n)
-  (str (->layer-11-module-3-reading "layer-11-module-3" (layer-11-module-3-score n) 103.5)))
+  (str (->layer-11-module-3-reading "layer-11-module-3"
+                                    (layer-11-module-3-score n)
+                                    103.5)))
 
 (defn layer-11-module-3-score (n)
-  (rem (+ (layer-10-module-3-score (+ n 4)) (:level (layer-4-module-5-reading n)) (:level (layer-6-module-3-reading n))) 997))
+  (rem (+ (layer-10-module-3-score (+ n 4))
+          (:level (layer-4-module-5-reading n))
+          (:level (layer-6-module-3-reading n)))
+       997))
 
 (defn layer-11-module-3-reading (n)
-  (->layer-11-module-3-reading "layer-11-module-3" (layer-11-module-3-score n) (* 0.5 103.0)))
+  (->layer-11-module-3-reading "layer-11-module-3"
+                               (layer-11-module-3-score n)
+                               (* 0.5 103.0)))

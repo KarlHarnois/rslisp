@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/unequal_repetitions_template_order.rslisp
 ---
 error[L0330]: `b` has length 3 but `a` has length 2
- --> expand/unequal_repetitions_template_order.rslisp:4:39
+ --> expand/unequal_repetitions_template_order.rslisp:5:24
   |
-4 | (defn flipped () (zip-flip (1 2) (4 5 6)))
-  |                                       ^ this `b` has no matching `a`
+5 |   (zip-flip (1 2) (4 5 6)))
+  |                        ^ this `b` has no matching `a`
   |
   = help: give `b` and `a` the same length

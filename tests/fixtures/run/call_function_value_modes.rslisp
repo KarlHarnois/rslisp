@@ -1,4 +1,11 @@
-(type call-it (fn ((fn ((vec i64)) usize)) usize))
+(type call-it
+  (fn ((fn ((vec i64)) usize)) usize))
+
 (defn call-it (f) (f (vec)))
-(defn change! (items) (push! items 1) (len items))
-(defn main () (println (call-it change!)))
+
+(defn change! (items)
+  (push! items 1)
+  (len items))
+
+(defn main ()
+  (println (call-it change!)))

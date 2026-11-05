@@ -4,7 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/hidden_constructor.rslisp
 ---
 error[L0201]: cannot find `make-car` in this scope
- --> expand/hidden_constructor.rslisp:4:20
+ --> expand/hidden_constructor.rslisp:8:20
   |
-4 |   (println (:year (make-car "Honda" "Civic" 2019 false))))
+8 |   (println (:year (make-car "Honda" "Civic" 2019 false))))
   |                    ^^^^^^^^ not found in this scope

@@ -1,4 +1,6 @@
-(defn twice (x) "Doubles a number." (* 2 x))
+(defn twice (x)
+  "Doubles a number."
+  (* 2 x))
 
 (defn main ()
   (doc twice)

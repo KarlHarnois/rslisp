@@ -1,6 +1,8 @@
-(defstruct user :name str)
+(defstruct user
+  :name str)
 
-(defn sort-users (:key (fn ((ref user)) (ref str)) :label str)
+(defn sort-users (:key (fn ((ref user)) (ref str))
+                       :label str)
   (let ana (->user "ana"))
   (println label ": " (key (ref ana))))
 

@@ -8,11 +8,13 @@
 
 (def recall
   (macro (form)
-    (first (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))))
+    (first (module-notes (definition-symbol (nth form 1) "notes")
+                         (quote sightings)))))
 
 (def count-sightings
   (macro (form)
-    (len (module-notes (definition-symbol (nth form 1) "notes") (quote sightings)))))
+    (len (module-notes (definition-symbol (nth form 1) "notes")
+                       (quote sightings)))))
 
 (remember "a heron")
 

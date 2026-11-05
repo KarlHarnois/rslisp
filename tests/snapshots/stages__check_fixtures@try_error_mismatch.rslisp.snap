@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/try_error_mismatch.rslisp
 ---
 error[L0437]: `try` cannot convert this error
- --> check/try_error_mismatch.rslisp:5:23
+ --> check/try_error_mismatch.rslisp:9:23
   |
-5 | (defn consumer () (ok (try (source))))
+9 | (defn consumer () (ok (try (source))))
   |                       ^^^^^^^^^^^^^^ this error is `string`
   |
   = note: this function returns a result whose error is `bool`

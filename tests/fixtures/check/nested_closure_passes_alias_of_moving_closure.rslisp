@@ -2,13 +2,13 @@
   (action)
   (action))
 
-(defn keep (model)
-  model)
+(defn keep (model) model)
 
 (defn main ()
   (let model (str "Leaf"))
   (let announce (fn () (keep model)))
-  (let later (fn ()
-    (let again announce)
-    (twice again)))
+  (let later
+    (fn ()
+      (let again announce)
+      (twice again)))
   (later))

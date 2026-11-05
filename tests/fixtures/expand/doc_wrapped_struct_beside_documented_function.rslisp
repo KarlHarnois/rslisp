@@ -1,12 +1,18 @@
 (use prelude/macros header-shape)
 
-(defrule my-struct ((h f ...) (defstruct h f ...)))
+(defrule my-struct
+  ((h f ...)
+   (defstruct h
+     f
+     ...)))
 
 (header-shape (my-struct head))
 
 (my-struct point "A point on a grid." :x i64 :y i64)
 
-(defn point (x) "Makes a point." (->point :x x :y x))
+(defn point (x)
+  "Makes a point."
+  (->point :x x :y x))
 
 (def point-page (doc-page point))
 

@@ -2,4 +2,5 @@
   (copy (fn ((ref self)) self)))
 
 (type take (fn ((box shape)) unit))
+
 (defn take (value) (do))

@@ -1,2 +1,5 @@
-(defn accept-many ((f (fn-mut (i64) i64))) (f 1))
-(defn accept-once ((f (fn-once () i64))) (f))
+(defn accept-many ((f (fn-mut (i64) i64)))
+  (f 1))
+
+(defn accept-once ((f (fn-once () i64)))
+  (f))

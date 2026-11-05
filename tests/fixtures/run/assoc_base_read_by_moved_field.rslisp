@@ -1,6 +1,10 @@
-(defstruct named :name string :size usize)
+(defstruct named
+  :name string
+  :size usize)
 
 (defn main ()
   (let label (str "abc"))
-  (let updated (assoc (->named (str "x") (len label)) :name label))
+  (let updated
+    (assoc (->named (str "x") (len label))
+           :name label))
   (println (:name updated) " " (:size updated)))

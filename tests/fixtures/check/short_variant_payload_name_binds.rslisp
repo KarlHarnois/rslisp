@@ -1,8 +1,6 @@
 (enum shape (circle f64) point)
 
 (defn rename (value)
-  (match value
-    (circle circle)))
+  (match value (circle circle)))
 
-(defn main ()
-  (println (rename 5)))
+(defn main () (println (rename 5)))

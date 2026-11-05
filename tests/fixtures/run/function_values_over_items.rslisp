@@ -1,16 +1,28 @@
-(defstruct car :model string :year i64)
+(defstruct car
+  :model string
+  :year i64)
 
 (defn double (y) (* y 2))
+
 (defn big? (y) (> y 2))
-(defn shout (word) (len (upper-case (as-str word))))
-(defn long? (word) (> (len (as-str word)) 3))
+
+(defn shout (word)
+  (len (upper-case (as-str word))))
+
+(defn long? (word)
+  (> (len (as-str word)) 3))
+
 (defn model-length (c) (len (:model c)))
+
 (defn new? (c) (> (:year c) 2020))
 
 (defn main ()
   (let numbers (vec 1 2 3 4))
-  (let words (vec (str "kiwi") (str "fig")))
-  (let cars (vec (->car (str "Leaf") 2023) (->car (str "Civic") 2015)))
+  (let words
+    (vec (str "kiwi") (str "fig")))
+  (let cars
+    (vec (->car (str "Leaf") 2023)
+         (->car (str "Civic") 2015)))
   (println (sum (map (iter numbers) double)))
   (println (any? (iter numbers) big?))
   (println (sum (map (iter words) shout)))

@@ -2,4 +2,5 @@
   (reader xs))
 
 (defn main ()
-  (println (apply-reader (fn (numbers) (at numbers 0)) (vec 4 8 15))))
+  (println (apply-reader (fn (numbers) (at numbers 0))
+                         (vec 4 8 15))))

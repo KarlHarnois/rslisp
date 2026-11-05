@@ -1,5 +1,7 @@
-(def shout (fn (word) (if "loud" word word)))
+(def shout
+  (fn (word) (if "loud" word word)))
 
-(defmacro loud (form) (if false (shout form) form))
+(defmacro loud (form)
+  (if false (shout form) form))
 
 (defn main ())

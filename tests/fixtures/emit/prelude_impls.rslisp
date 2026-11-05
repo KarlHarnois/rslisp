@@ -10,8 +10,7 @@
 (impl label (vec i64)
   (label (numbers) (pr-str numbers)))
 
-(defn make-numbers ()
-  (vec 1 2 3))
+(defn make-numbers () (vec 1 2 3))
 
 (defn main ()
   (println (label 3))

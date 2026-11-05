@@ -1,4 +1,8 @@
-(type take-owned (fn ((fn ((vec i64)) unit)) unit))
+(type take-owned
+  (fn ((fn ((vec i64)) unit)) unit))
+
 (defn take-owned (f) (do))
+
 (defn change! (items) (push! items 1))
+
 (defn main () (take-owned change!))

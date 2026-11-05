@@ -42,8 +42,7 @@
     (0 (fn () 1))
     (_ (fn () 2))))
 
-(defn choose-block ()
-  (do (fn () 3)))
+(defn choose-block () (do (fn () 3)))
 
 (defn main ()
   (let text (str "captured"))

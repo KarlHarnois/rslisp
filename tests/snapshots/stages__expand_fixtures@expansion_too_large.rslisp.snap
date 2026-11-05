@@ -4,53 +4,53 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/expansion_too_large.rslisp
 ---
 error[L0326]: macro expansion did not finish
-  --> expand/expansion_too_large.rslisp:14:12
+  --> expand/expansion_too_large.rslisp:15:24
    |
-14 |   (println (grow 1)))
-   |            ^^^^^^^^ expanding this call of `grow` passes 131072 forms
-   |
-   = note: the macro calls in one top-level form expand to at most 131072 forms in all
-   = help: make each recursive macro stop, or split a large expansion across several top-level forms
-
-error[L0326]: macro expansion did not finish
-  --> expand/expansion_too_large.rslisp:17:3
-   |
-17 |   (past-the-limit))
-   |   ^^^^^^^^^^^^^^^^ expanding this call of `past-the-limit` passes 131072 forms
+15 | (defn main () (println (grow 1)))
+   |                        ^^^^^^^^ expanding this call of `grow` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all
    = help: make each recursive macro stop, or split a large expansion across several top-level forms
 
 error[L0326]: macro expansion did not finish
-  --> expand/expansion_too_large.rslisp:27:3
+  --> expand/expansion_too_large.rslisp:17:17
    |
-27 |   (huge))
-   |   ^^^^^^ expanding this call of `huge` passes 131072 forms
+17 | (defn padded () (past-the-limit))
+   |                 ^^^^^^^^^^^^^^^^ expanding this call of `past-the-limit` passes 131072 forms
+   |
+   = note: the macro calls in one top-level form expand to at most 131072 forms in all
+   = help: make each recursive macro stop, or split a large expansion across several top-level forms
+
+error[L0326]: macro expansion did not finish
+  --> expand/expansion_too_large.rslisp:27:17
+   |
+27 | (defn nested () (huge))
+   |                 ^^^^^^ expanding this call of `huge` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all
    = help: make each recursive macro stop, or split a large expansion across several top-level forms
 
 error[L0207]: expected a definition at module level
-  --> expand/expansion_too_large.rslisp:32:1
+  --> expand/expansion_too_large.rslisp:34:1
    |
-32 | (spread-wide)
+34 | (spread-wide)
    | ^^^^^^^^^^^^^ this is not a definition
    |
    = help: put expressions inside a function, such as `(def run (fn () ...))`
 
 error[L0326]: macro expansion did not finish
-  --> expand/expansion_too_large.rslisp:32:1
+  --> expand/expansion_too_large.rslisp:34:1
    |
-32 | (spread-wide)
+34 | (spread-wide)
    | ^^^^^^^^^^^^^ expanding this call of `spread-wide` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all
    = help: make each recursive macro stop, or split a large expansion across several top-level forms
 
 error[L0325]: this expression nests too deeply
-  --> expand/expansion_too_large.rslisp:37:1
+  --> expand/expansion_too_large.rslisp:39:1
    |
-37 | (loop-def)
+39 | (loop-def)
    | ^^^^^^^^^^ this expression sits inside 1024 others
    |
    = note: expressions nest at most 1024 deep

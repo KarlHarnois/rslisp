@@ -1,7 +1,10 @@
-(defn apply-pair ((test (fn ((ref u8) (ref u8)) bool)) (limit u8) (value u8))
+(defn apply-pair ((test (fn ((ref u8) (ref u8)) bool))
+                  (limit u8)
+                  (value u8))
   (test (ref limit) (ref value)))
 
-(defn below? ((limit (ref u8)) value) (< value (deref limit)))
+(defn below? ((limit (ref u8)) value)
+  (< value (deref limit)))
 
 (defn main ()
   (println (apply-pair below? 10 3))

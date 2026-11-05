@@ -1,8 +1,7 @@
 (defn reset! (items item)
   (set! (at items 0) item))
 
-(defn reset-outer! (items item)
-  (reset! items item))
+(defn reset-outer! (items item) (reset! items item))
 
 (defn main ()
   (let years (vec 2011 2019))

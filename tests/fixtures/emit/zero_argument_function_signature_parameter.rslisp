@@ -1,10 +1,14 @@
-(defstruct car :make str :model str)
+(defstruct car
+  :make str
+  :model str)
 
 (type describe (fn ((fn () car)) unit))
+
 (defn describe (make)
   (let built (make))
   (println (:make built) " " (:model built)))
 
 (defn main ()
   (let model (str "Leaf"))
-  (describe (fn () (->car :make "Nissan" :model (as-str model)))))
+  (describe (fn ()
+              (->car :make "Nissan" :model (as-str model)))))

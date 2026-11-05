@@ -1,12 +1,15 @@
-(defstruct car :make str :model str)
+(defstruct car
+  :make str
+  :model str)
+
 (enum maker (factory (fn () car)) idle)
 
-(defn build-leaf ()
-  (->car :make "Nissan" :model "Leaf"))
+(defn build-leaf () (->car :make "Nissan" :model "Leaf"))
 
 (defn describe (plant)
   (match plant
-    ((factory make) (println (:model (make))))
+    ((factory make)
+     (println (:model (make))))
     (idle (println "idle"))))
 
 (defn main ()

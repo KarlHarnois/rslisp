@@ -1,5 +1,6 @@
 (use prelude/syntax definition)
 
-(defn parameter-record () (definition "limit" "parameter" 1 2))
+(defn parameter-record ()
+  (definition "limit" "parameter" 1 2))
 
 (defn main ())

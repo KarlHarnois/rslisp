@@ -1,7 +1,13 @@
 (rust-type (shifted item) "Box<{1}>")
+
 (rust-type (ignored key value) "Vec<{0}>")
+
 (rust-type broken "Vec<{0")
+
 (rust-type plain "Vec<{0}>")
+
 (rust-type (spare item) "Vec<{0}>" "extra")
+
 (rust-type missing-template)
+
 (rust-type (borrowing item) "Vec<{&0}>")

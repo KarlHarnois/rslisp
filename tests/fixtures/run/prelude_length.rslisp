@@ -2,4 +2,5 @@
   (println (len (str "abc")))
   (println (len "abcd"))
   (println (len (vec 1 2 3)))
-  (for-each (windows (vec 1 2 3) 2) (fn (pair) (println (len pair)))))
+  (for-each (windows (vec 1 2 3) 2)
+            (fn (pair) (println (len pair)))))

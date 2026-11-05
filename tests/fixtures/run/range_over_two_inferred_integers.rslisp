@@ -1,4 +1,5 @@
-(defn count-between (start end) (count (range start end)))
+(defn count-between (start end)
+  (count (range start end)))
 
 (defn main ()
   (println (count-between 2 5))

@@ -1,9 +1,12 @@
-(defstruct counter :label string :count i64)
+(defstruct counter
+  :label string
+  :count i64)
 
 (defn count-up (limit state)
   (if (= (:count state) limit)
       (:count state)
-      (count-up limit (assoc state :count (+ (:count state) 1)))))
+      (count-up limit
+                (assoc state :count (+ (:count state) 1)))))
 
 (defn main ()
   (println (count-up 3 (->counter :label (str "c") :count 0))))

@@ -4,45 +4,45 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/header_shape_markers.rslisp
 ---
 error[L0331]: unexpected form after a header shape
- --> expand/header_shape_markers.rslisp:5:41
+ --> expand/header_shape_markers.rslisp:9:41
   |
-5 | (header-shape (my-defn name parameters) :documented)
+9 | (header-shape (my-defn name parameters) :documented)
   |                                         ^^^^^^^^^^^ not `:docstring`
   |
 help: write `:docstring` to state that the form takes a docstring
   |
-5 - (header-shape (my-defn name parameters) :documented)
-5 + (header-shape (my-defn name parameters) :docstring)
+9 - (header-shape (my-defn name parameters) :documented)
+9 + (header-shape (my-defn name parameters) :docstring)
   |
 
 error[L0331]: unexpected form after a header shape
- --> expand/header_shape_markers.rslisp:7:52
-  |
-7 | (header-shape (my-defn name parameters) :docstring :docstring)
-  |                                                    ^^^^^^^^^^ not expected here
-  |
-  = help: remove it: only one `:docstring` may follow a header shape
-
-error[L0331]: unexpected form after a header shape
- --> expand/header_shape_markers.rslisp:9:41
-  |
-9 | (header-shape (my-defn name parameters) "text")
-  |                                         ^^^^^^ not expected here
-  |
-  = help: remove it: only one `:docstring` may follow a header shape
-
-error[L0331]: unexpected form after a header shape
-  --> expand/header_shape_markers.rslisp:11:52
+  --> expand/header_shape_markers.rslisp:12:26
    |
-11 | (header-shape (my-defn name parameters) :docstring :doc)
+12 |               :docstring :docstring)
+   |                          ^^^^^^^^^^ not expected here
+   |
+   = help: remove it: only one `:docstring` may follow a header shape
+
+error[L0331]: unexpected form after a header shape
+  --> expand/header_shape_markers.rslisp:14:41
+   |
+14 | (header-shape (my-defn name parameters) "text")
+   |                                         ^^^^^^ not expected here
+   |
+   = help: remove it: only one `:docstring` may follow a header shape
+
+error[L0331]: unexpected form after a header shape
+  --> expand/header_shape_markers.rslisp:16:52
+   |
+16 | (header-shape (my-defn name parameters) :docstring :doc)
    |                                                    ^^^^ not expected here
    |
    = help: remove it: only one `:docstring` may follow a header shape
 
 error[L0331]: unexpected form after a header shape
-  --> expand/header_shape_markers.rslisp:13:41
+  --> expand/header_shape_markers.rslisp:19:15
    |
-13 | (header-shape (my-defn name parameters) :documented :docstring)
-   |                                         ^^^^^^^^^^^ not expected here
+19 |               :documented :docstring)
+   |               ^^^^^^^^^^^ not expected here
    |
    = help: remove it: only one `:docstring` may follow a header shape

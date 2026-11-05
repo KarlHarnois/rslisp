@@ -1,5 +1,6 @@
 (def countdown (fn (n) (countdown n)))
 
-(def never-ends (macro (form) (countdown 1)))
+(def never-ends
+  (macro (form) (countdown 1)))
 
 (never-ends)

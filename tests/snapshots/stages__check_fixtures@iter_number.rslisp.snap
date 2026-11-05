@@ -1,10 +1,10 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/iter_number.rslisp
 ---
 error[L0401]: mismatched types
- --> check/iter_number.rslisp:2:9
+ --> check/iter_number.rslisp:1:21
   |
-2 |   (iter 5))
-  |         ^ expected a vector, a slice or a map, found an integer
+1 | (defn main () (iter 5))
+  |                     ^ expected a vector, a slice or a map, found an integer

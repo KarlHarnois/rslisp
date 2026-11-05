@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/compile_time_recursion.rslisp
 ---
 error[L0318]: compile-time code recursed too deeply
@@ -9,5 +9,5 @@ error[L0318]: compile-time code recursed too deeply
 1 | (def countdown (fn (n) (countdown n)))
   |                        ^^^^^^^^^^^^^ while evaluating this call
 ...
-5 | (never-ends)
+6 | (never-ends)
   | ------------ in this macro call

@@ -1,8 +1,17 @@
-(defstruct shelf :label string :items (vec i64))
+(defstruct shelf
+  :label string
+  :items (vec i64))
 
 (defn stock ()
   (->shelf (str "top") (vec 1 2 3)))
 
 (defn main ()
-  (let items (assoc-in (:items (stock)) (1) 9))
-  (println (:label (stock)) " " (at items 0) " " (at items 1) " " (at items 2)))
+  (let items
+    (assoc-in (:items (stock)) (1) 9))
+  (println (:label (stock))
+           " "
+           (at items 0)
+           " "
+           (at items 1)
+           " "
+           (at items 2)))

@@ -3,7 +3,8 @@
                          (let (a i64) (try (parse left)))
                          (let (b i64) (try (parse right)))
                          (ok (+ a b)))
-                       "2" "3")))
+                       "2"
+                       "3")))
   (println (err? ((fn ((text (ref str)))
                     (let (value i64) (try (parse text)))
                     (ok value))

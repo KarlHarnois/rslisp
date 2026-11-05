@@ -4,14 +4,14 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/string_vector_field_borrows_local.rslisp
 ---
 error[L0510]: cannot return a borrow of a local value
- --> check/string_vector_field_borrows_local.rslisp:5:18
+ --> check/string_vector_field_borrows_local.rslisp:6:18
   |
-1 | (defstruct car :models (vec str))
-  |                        --------- declared as a borrow here
+2 |   :models (vec str))
+  |           --------- declared as a borrow here
 ...
-4 |   (let model (str line))
+5 |   (let model (str line))
   |        ----- this local is dropped when the function returns
-5 |   (->car :models (vec (as-str model))))
+6 |   (->car :models (vec (as-str model))))
   |                  ^^^^^^^^^^^^^^^^^^^^ this borrows a local value
   |
   = help: the field `models` of `car` borrows its data, so give it the owned type `(vec string)`

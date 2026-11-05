@@ -1,5 +1,9 @@
-(defstruct point "A point on a grid." :x i64 :y i64)
+(defstruct point
+  "A point on a grid."
+  :x i64
+  :y i64)
 
-(defn main () (println (:x (->point :x 1 :y 2))))
+(defn main ()
+  (println (:x (->point :x 1 :y 2))))
 
 (def point-page (doc-page point))

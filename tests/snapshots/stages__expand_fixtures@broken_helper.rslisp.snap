@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/broken_helper.rslisp
 ---
 error[L0201]: cannot find `missing-name` in this scope
@@ -10,19 +10,19 @@ error[L0201]: cannot find `missing-name` in this scope
   |                            ^^^^^^^^^^^^ not found in this scope
 
 error[L0309]: the macro `calls-unbound-helper` has errors, so this call cannot expand
- --> expand/broken_helper.rslisp:9:1
-  |
-9 | (calls-unbound-helper)
-  | ^^^^^^^^^^^^^^^^^^^^^^ this call needs the macro
+  --> expand/broken_helper.rslisp:10:1
+   |
+10 | (calls-unbound-helper)
+   | ^^^^^^^^^^^^^^^^^^^^^^ this call needs the macro
 
 error[L0308]: `unbound-helper` has errors, so macro code cannot use it
-  --> expand/broken_helper.rslisp:11:47
+  --> expand/broken_helper.rslisp:13:18
    |
-11 | (def also-calls-unbound-helper (macro (form) (unbound-helper) (list)))
-   |                                               ^^^^^^^^^^^^^^ used by macro code here
+13 |   (macro (form) (unbound-helper) (list)))
+   |                  ^^^^^^^^^^^^^^ used by macro code here
 
 error[L0307]: `needs-cyclic-helper` depends on itself at compile time
-  --> expand/broken_helper.rslisp:15:27
+  --> expand/broken_helper.rslisp:18:10
    |
-15 | (def cyclic-helper (fn () (needs-cyclic-helper)))
-   |                           ^^^^^^^^^^^^^^^^^^^^^ needed here while it is still being computed
+18 |   (fn () (needs-cyclic-helper)))
+   |          ^^^^^^^^^^^^^^^^^^^^^ needed here while it is still being computed

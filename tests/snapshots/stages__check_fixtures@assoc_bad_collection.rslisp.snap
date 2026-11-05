@@ -1,10 +1,10 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/assoc_bad_collection.rslisp
 ---
 error[L0401]: mismatched types
- --> check/assoc_bad_collection.rslisp:2:10
+ --> check/assoc_bad_collection.rslisp:1:22
   |
-2 |   (assoc 1 0 2))
-  |          ^ expected `(vec _)`, found an integer
+1 | (defn main () (assoc 1 0 2))
+  |                      ^ expected `(vec _)`, found an integer

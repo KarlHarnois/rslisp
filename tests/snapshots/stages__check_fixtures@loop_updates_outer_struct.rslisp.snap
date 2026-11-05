@@ -4,13 +4,13 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/loop_updates_outer_struct.rslisp
 ---
 error[L0501]: use of moved value `g`
-  --> check/loop_updates_outer_struct.rslisp:10:33
+  --> check/loop_updates_outer_struct.rslisp:15:42
    |
-10 |         (do (let renamed (assoc g :owner (str "Nissan"))) (recur (+ i 1)))
-   |                                 ^ value used here after an earlier pass of the loop moved it
+15 |                  (do (let renamed (assoc g :owner (str "Nissan")))
+   |                                          ^ value used here after an earlier pass of the loop moved it
    |
 help: clone the value if both places need it
    |
-10 -         (do (let renamed (assoc g :owner (str "Nissan"))) (recur (+ i 1)))
-10 +         (do (let renamed (assoc (clone g) :owner (str "Nissan"))) (recur (+ i 1)))
+15 -                  (do (let renamed (assoc g :owner (str "Nissan")))
+15 +                  (do (let renamed (assoc (clone g) :owner (str "Nissan")))
    |

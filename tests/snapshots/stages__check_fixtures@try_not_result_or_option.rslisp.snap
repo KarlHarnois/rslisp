@@ -1,20 +1,20 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/try_not_result_or_option.rslisp
 ---
 error[L0429]: `try` needs a result or an option
- --> check/try_not_result_or_option.rslisp:2:16
+ --> check/try_not_result_or_option.rslisp:3:16
   |
-2 | (defn stray () (try (do)))
+3 | (defn stray () (try (do)))
   |                ^^^^^^^^^^ this is `unit`
   |
   = help: write `try` around a result or an option value
 
 error[L0429]: `try` needs a result or an option
- --> check/try_not_result_or_option.rslisp:5:23
+ --> check/try_not_result_or_option.rslisp:7:23
   |
-5 | (defn stray-vector () (try (vec 1)))
+7 | (defn stray-vector () (try (vec 1)))
   |                       ^^^^^^^^^^^^^ this is `(vec _)`
   |
   = help: write `try` around a result or an option value

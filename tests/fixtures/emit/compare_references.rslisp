@@ -1,4 +1,6 @@
-(type both-equal? (fn ((ref i64) (ref i64)) bool))
+(type both-equal?
+  (fn ((ref i64) (ref i64)) bool))
+
 (defn both-equal? (x y) (= x y))
 
 (defn main ()

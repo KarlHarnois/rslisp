@@ -4,12 +4,12 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/unequal_mixed_repetitions.rslisp
 ---
 error[L0330]: `a` has length 2 but `b` has length 3
- --> expand/unequal_mixed_repetitions.rslisp:2:33
+ --> expand/unequal_mixed_repetitions.rslisp:3:9
   |
-2 |   (((a ...) ((b ...) ...)) (vec (vec a b ...) ...)))
-  |                                 ^^^^^^^^^^^^^ `a` and `b` repeat together here
-3 |
-4 | (defn spread-rows () (spread (1 2) ((3) (4) (5))))
-  |                      ---------------------------- in this macro call
+3 |    (vec (vec a b ...) ...)))
+  |         ^^^^^^^^^^^^^ `a` and `b` repeat together here
+...
+6 |   (spread (1 2) ((3) (4) (5))))
+  |   ---------------------------- in this macro call
   |
   = help: give `a` and `b` the same length

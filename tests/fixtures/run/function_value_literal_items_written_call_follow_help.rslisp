@@ -1,7 +1,11 @@
-(type small? (where ((a partial-ord number)) (fn (a) bool)))
+(type small?
+  (where ((a partial-ord number))
+         (fn (a) bool)))
+
 (defn small? (b) (< b 10))
 
 (defn main ()
-  (let bytes (the (vec u8) (vec 3 7 12 4)))
+  (let bytes
+    (the (vec u8) (vec 3 7 12 4)))
   (println (small? (the u16 5)))
   (println (count (take-while (iter bytes) small?))))

@@ -1,11 +1,26 @@
-(defstruct point :x i64 :y i64)
-(defstruct cube :x i64 :y i64 :z i64)
-(defstruct (pair a) :left a :right a)
+(defstruct point
+  :x i64
+  :y i64)
+
+(defstruct cube
+  :x i64
+  :y i64
+  :z i64)
+
+(defstruct (pair a)
+  :left a
+  :right a)
 
 (type shift (fn (point) point))
-(defn shift (p) (->point (+ (:x p) 1) (:y p)))
+
+(defn shift (p)
+  (->point (+ (:x p) 1) (:y p)))
+
 (type volume (fn ((ref cube)) i64))
-(defn volume (c) (* (:x c) (* (:y c) (:z c))))
+
+(defn volume (c)
+  (* (:x c) (* (:y c) (:z c))))
+
 (defn same-shape? (a b) (= a b))
 
 (defn main ()

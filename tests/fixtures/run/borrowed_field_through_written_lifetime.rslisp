@@ -1,6 +1,12 @@
-(defstruct car :make str :year u16)
+(defstruct car
+  :make str
+  :year u16)
 
-(type first (where ('a 'b) (fn ((ref 'a str) (ref 'b str)) (ref 'a str))))
+(type first
+  (where ('a 'b)
+         (fn ((ref 'a str) (ref 'b str))
+           (ref 'a str))))
+
 (defn first (a b) a)
 
 (defn build ((make (ref str)) year)

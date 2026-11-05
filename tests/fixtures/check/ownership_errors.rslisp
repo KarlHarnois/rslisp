@@ -1,4 +1,6 @@
-(defstruct person :name string :age i64)
+(defstruct person
+  :name string
+  :age i64)
 
 (defn store (name) (->person name 3))
 
@@ -6,7 +8,8 @@
   (store name)
   (store name))
 
-(defn steal (someone) (store (:name someone)))
+(defn steal (someone)
+  (store (:name someone)))
 
 (defn pick-name (first second)
   (if true (:name first) (:name second)))

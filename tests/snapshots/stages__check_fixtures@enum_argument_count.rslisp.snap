@@ -4,13 +4,13 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/enum_argument_count.rslisp
 ---
 error[L0402]: this function takes 1 argument but 2 were given
- --> check/enum_argument_count.rslisp:2:15
+ --> check/enum_argument_count.rslisp:5:15
   |
-2 | (def too-many (shape/circle 1.0 2.0))
+5 | (def too-many (shape/circle 1.0 2.0))
   |               ^^^^^^^^^^^^^^^^^^^^^^ expected 1 argument
 
 error[L0402]: this function takes 2 arguments but 1 was given
- --> check/enum_argument_count.rslisp:3:14
+ --> check/enum_argument_count.rslisp:7:14
   |
-3 | (def too-few (shape/labeled (str "box")))
+7 | (def too-few (shape/labeled (str "box")))
   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 2 arguments

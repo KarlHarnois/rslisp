@@ -1,9 +1,8 @@
 (enum value (number i64))
 
 (type get (fn ((ref value)) i64))
-(defn get (v)
-  (match v
-    ((number n) n)))
+
+(defn get (v) (match v ((number n) n)))
 
 (defn main ()
   (println (get (value/number 3))))

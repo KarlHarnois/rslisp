@@ -4,7 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/impl_variable_shadowed_by_def.rslisp
 ---
 error[L0201]: cannot find type `t` in this scope
- --> expand/impl_variable_shadowed_by_def.rslisp:2:18
+ --> expand/impl_variable_shadowed_by_def.rslisp:4:18
   |
-2 | (impl sized (vec t) (size (v) (len v)))
+4 | (impl sized (vec t) (size (v) (len v)))
   |                  ^ not found in this scope

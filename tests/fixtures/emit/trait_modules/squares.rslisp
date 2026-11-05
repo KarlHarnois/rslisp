@@ -5,5 +5,8 @@
 (export square)
 
 (impl shape square
-  (area (s) (* (field s side) (field s side)))
-  (scale! (s factor) (do (let _side (field s side)) (let _factor factor))))
+  (area (s)
+        (* (field s side) (field s side)))
+  (scale! (s factor)
+          (do (let _side (field s side))
+              (let _factor factor))))

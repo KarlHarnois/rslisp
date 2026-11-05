@@ -1,5 +1,5 @@
 (enum shape (circle f64) point)
+
 (derive shape clone debug partial-eq show)
 
-(defn main ()
-  (prn (shape/circle 1.0)))
+(defn main () (prn (shape/circle 1.0)))

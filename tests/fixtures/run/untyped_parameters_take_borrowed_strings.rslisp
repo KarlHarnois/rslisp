@@ -1,4 +1,5 @@
-(defn longer (a b) (if (> (len a) (len b)) a b))
+(defn longer (a b)
+  (if (> (len a) (len b)) a b))
 
 (defn announce ((make (ref str)))
   (let model (str "Leaf"))

@@ -1,4 +1,6 @@
-(defstruct car :make str :year u16)
+(defstruct car
+  :make str
+  :year u16)
 
 (defn build (year)
   (let assemble

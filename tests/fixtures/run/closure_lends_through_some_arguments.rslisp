@@ -1,11 +1,13 @@
-(def left (rust "{0}" (where (a b) (fn (a b) a))))
+(def left
+  (rust "{0}" (where (a b) (fn (a b) a))))
 
 (defn label ((other (ref str)))
   (let name (str "Ariya"))
   (left other (as-str name)))
 
 (defn main ()
-  (let pick (fn (maybe) (unwrap-or maybe "none")))
+  (let pick
+    (fn (maybe) (unwrap-or maybe "none")))
   (let model (fn ((name (ref str))) name))
   (let again model)
   (println (pick (some "Leaf")))

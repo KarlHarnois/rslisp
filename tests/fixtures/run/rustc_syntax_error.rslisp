@@ -1,4 +1,5 @@
-(def doubled-sign (rust "{0} + + 1" (fn (i64) i64)))
+(def doubled-sign
+  (rust "{0} + + 1" (fn (i64) i64)))
 
 (defn main ()
   (println (doubled-sign 1)))

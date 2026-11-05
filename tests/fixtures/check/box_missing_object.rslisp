@@ -2,11 +2,14 @@
   (area (fn ((ref self)) f64)))
 
 (struct circle (radius f64))
+
 (impl shape circle
   (area (c) (field c radius)))
 
 (defn total (shapes)
-  (reduce shapes 0.0 (fn (sum shape) (+ sum (area shape)))))
+  (reduce shapes
+          0.0
+          (fn (sum shape) (+ sum (area shape)))))
 
 (defn main ()
   (println (total (vec (box (new circle (radius 1.0)))))))

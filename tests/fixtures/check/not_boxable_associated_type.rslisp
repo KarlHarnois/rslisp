@@ -3,4 +3,5 @@
   (area (fn ((ref self)) item)))
 
 (type take (fn ((box shape)) unit))
+
 (defn take (value) (do))

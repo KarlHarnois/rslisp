@@ -2,12 +2,13 @@
   (associated (output left) "Output")
   (where () (with i64 i64) (output i64)))
 
-(def add-values (rust "{0} + {1}" (where ((a (addable b)) b) (fn (a b) (output a)))))
+(def add-values
+  (rust "{0} + {1}"
+        (where ((a (addable b)) b)
+               (fn (a b) (output a)))))
 
 (type total (fn (i64 i64) (output i64)))
 
-(defn total (left right)
-  (add-values left right))
+(defn total (left right) (add-values left right))
 
-(defn main ()
-  (println (total 2 3)))
+(defn main () (println (total 2 3)))

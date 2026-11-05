@@ -2,7 +2,9 @@
 
 (export solve-rations)
 
-(def packing-list "1200\n800\n\n3100\n\n450\n900\n1500\n\n2000\n2200\n\n700")
+(def packing-list
+  "1200\n800\n\n3100\n\n450\n900\n1500\n\n2000\n2200\n\n700")
+
 (def podium-size 3)
 
 (defn solve-rations ()
@@ -11,7 +13,8 @@
   (println (str "top three groups: " (podium-total totals))))
 
 (defn group-totals (packing)
-  (collect (map (split packing "\n\n") (fn (group) (group-total group)))))
+  (collect (map (split packing "\n\n")
+                (fn (group) (group-total group)))))
 
 (defn group-total (group)
   (sum (map (lines group) parse-integer)))

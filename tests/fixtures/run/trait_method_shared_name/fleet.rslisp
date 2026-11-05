@@ -1,7 +1,8 @@
-(defstruct car :model str :year i64)
+(defstruct car
+  :model str
+  :year i64)
 
-(trait lot
-  (newer (fn (self i64) self)))
+(trait lot (newer (fn (self i64) self)))
 
 (impl lot car
   (newer (c year) (->car (:model c) year)))

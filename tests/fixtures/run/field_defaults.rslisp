@@ -1,10 +1,23 @@
-(defstruct user :name str :email str :admin? bool (defaults :admin? false))
-(defstruct client :host str :retries u8 (defaults :retries 3))
-(defstruct basket :owner str :items (vec i64) (defaults :items (vec)))
+(defstruct user
+  :name str
+  :email str
+  :admin? bool
+  (defaults :admin? false))
+
+(defstruct client
+  :host str
+  :retries u8
+  (defaults :retries 3))
+
+(defstruct basket
+  :owner str
+  :items (vec i64)
+  (defaults :items (vec)))
 
 (defn main ()
   (let ana (->user :name "ana" :email "ana@example.org"))
-  (let root (->user :name "root" :email "root@example.org" :admin? true))
+  (let root
+    (->user :name "root" :email "root@example.org" :admin? true))
   (let sam (->user "sam" "sam@example.org" false))
   (let local (->client :host "localhost"))
   (let first-basket (->basket :owner "ana"))

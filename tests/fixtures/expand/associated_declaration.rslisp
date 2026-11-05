@@ -3,5 +3,4 @@
   (where () (with i64 i64) (output i64))
   (with f64 f64))
 
-(defn main ()
-  (println 1))
+(defn main () (println 1))

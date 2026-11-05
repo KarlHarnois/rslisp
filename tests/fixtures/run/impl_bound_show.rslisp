@@ -1,7 +1,15 @@
-(trait describe (describe-it (fn ((ref self)) string)))
-(impl describe (vec a) (describe-it (v) (pr-str v)))
-(defstruct point :x i64)
-(defstruct mark :y i64)
+(trait describe
+  (describe-it (fn ((ref self)) string)))
+
+(impl describe (vec a)
+  (describe-it (v) (pr-str v)))
+
+(defstruct point
+  :x i64)
+
+(defstruct mark
+  :y i64)
+
 (defn main ()
   (println (describe-it (vec (->point 1))))
   (println (describe-it (vec (some (->mark 2))))))

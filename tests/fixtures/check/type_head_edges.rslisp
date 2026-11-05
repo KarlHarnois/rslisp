@@ -1,4 +1,5 @@
 (struct () (x i64))
+
 (struct empty (where () (x i64)))
 
 (defn main () (println 1))

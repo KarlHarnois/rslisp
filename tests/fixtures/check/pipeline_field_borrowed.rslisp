@@ -1,4 +1,6 @@
-(defstruct feed :items (iterator i64) :label str)
+(defstruct feed
+  :items (iterator i64)
+  :label str)
 
 (defn drain (f)
   (let first (count (:items f)))

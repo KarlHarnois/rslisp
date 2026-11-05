@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/second_trait_binding.rslisp
 ---
 warning[L0217]: `partial-eq` binds `PartialEq` again
- --> check/second_trait_binding.rslisp:2:13
+ --> check/second_trait_binding.rslisp:5:13
   |
-2 | (rust-trait partial-eq "PartialEq" point)
+5 | (rust-trait partial-eq "PartialEq" point)
   |             ^^^^^^^^^^ this also binds `PartialEq`
   |
   = note: two traits that bind one Rust path can disagree about its implementors

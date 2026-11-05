@@ -1,8 +1,20 @@
 (export octal3 show-octal3)
+
 (rust-type octal-out "std::fmt::Formatter<'_>")
+
 (rust-type octal-result "std::fmt::Result")
+
 (rust-trait octal3 "std::fmt::Octal"
-  (method fmt (fn ((ref self) (mut octal-out)) octal-result))
-  (structural :struct "write!({1}, \"{name}\")" :field "" :variant "write!({1}, \"{name}\")" :part "" :bare "write!({1}, \"{name}\")")
+  (method fmt
+          (fn ((ref self) (mut octal-out))
+            octal-result))
+  (structural :struct "write!({1}, \"{name}\")"
+              :field ""
+              :variant "write!({1}, \"{name}\")"
+              :part ""
+              :bare "write!({1}, \"{name}\")")
   i64)
-(def show-octal3 (rust "println!(\"{{:o}}\", {&0})" (where ((a octal3)) (fn ((ref a)) unit))))
+
+(def show-octal3
+  (rust "println!(\"{{:o}}\", {&0})"
+        (where ((a octal3)) (fn ((ref a)) unit))))

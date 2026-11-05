@@ -20,7 +20,10 @@
 
 (defn main ()
   (let years (vec 2024))
-  (record-through-alias (fn (year) (push! years year)) 2025)
-  (record-through-alias-once (fn (year) (push! years year)) 2027)
-  (record-alias-through-twice (fn (year) (push! years year)) 2028)
+  (record-through-alias (fn (year) (push! years year))
+                        2025)
+  (record-through-alias-once (fn (year) (push! years year))
+                             2027)
+  (record-alias-through-twice (fn (year) (push! years year))
+                              2028)
   (println (len years)))

@@ -1,4 +1,6 @@
-(defstruct node :label u16 :next (fn () node))
+(defstruct node
+  :label u16
+  :next (fn () node))
 
 (defn leaf () (->node :label 2 :next leaf))
 

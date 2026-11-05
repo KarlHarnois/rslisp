@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/written_copy_bound.rslisp
 ---
 error[L0505]: use of moved value `x`
- --> check/written_copy_bound.rslisp:2:24
+ --> check/written_copy_bound.rslisp:4:24
   |
-2 | (defn twice (x) (vec x x))
+4 | (defn twice (x) (vec x x))
   |                      - ^ value used here after it moved
   |                      |
   |                      value moved here

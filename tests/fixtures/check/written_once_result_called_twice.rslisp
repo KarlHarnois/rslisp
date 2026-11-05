@@ -1,5 +1,7 @@
 (type make (fn () (fn-once () string)))
+
 (defn make () (fn () (str "Leaf")))
+
 (defn main ()
   (let getter (make))
   (println (getter))

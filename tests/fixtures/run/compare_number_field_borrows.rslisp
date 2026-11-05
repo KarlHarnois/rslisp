@@ -1,4 +1,6 @@
-(defstruct car :model string :year i64)
+(defstruct car
+  :model string
+  :year i64)
 
 (defn main ()
   (let year 2024)
@@ -7,13 +9,16 @@
   (let civic (->car :model (str "Civic") :year 2019))
   (println (= (ref (:year leaf)) (ref year)))
   (println (= (ref year) (ref (:year leaf))))
-  (println (= (ref (:year leaf)) (ref (:year civic))))
+  (println (= (ref (:year leaf))
+              (ref (:year civic))))
   (println (= (ref year) (ref floor)))
   (println (not= (ref (:year leaf)) (ref year)))
   (println (not= (ref year) (ref (:year leaf))))
-  (println (not= (ref (:year leaf)) (ref (:year civic))))
+  (println (not= (ref (:year leaf))
+                 (ref (:year civic))))
   (println (not= (ref year) (ref floor)))
   (println (> (ref (:year leaf)) (ref year)))
   (println (> (ref year) (ref (:year leaf))))
-  (println (> (ref (:year leaf)) (ref (:year civic))))
+  (println (> (ref (:year leaf))
+              (ref (:year civic))))
   (println (> (ref year) (ref floor))))

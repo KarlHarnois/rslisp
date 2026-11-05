@@ -1,6 +1,10 @@
-(defstruct dealer :prices (hash-map str u32) :ranking (sorted-map u8 str))
+(defstruct dealer
+  :prices (hash-map str u32)
+  :ranking (sorted-map u8 str))
 
 (defn main ()
-  (let dealer (->dealer :prices (hash-map "Leaf" 30000) :ranking (sorted-map 1 "Leaf")))
+  (let dealer
+    (->dealer :prices (hash-map "Leaf" 30000)
+              :ranking (sorted-map 1 "Leaf")))
   (println (unwrap (get (:prices dealer) "Leaf")))
   (println (unwrap (get (:ranking dealer) 1))))

@@ -6,8 +6,8 @@ input_file: tests/fixtures/check/selfless_method_signature.rslisp
 error[L0456]: cannot choose which implementor of `vetting` runs `check`
   --> check/selfless_method_signature.rslisp:10:13
    |
- 4 |   (check (fn (str) bool)))
-   |          --------------- this signature never mentions `self`
+ 4 | (trait vetting (check (fn (str) bool)))
+   |                       --------------- this signature never mentions `self`
 ...
 10 |   (println (check "visitor")))
    |             ^^^^^ no type here picks an implementor of `vetting`

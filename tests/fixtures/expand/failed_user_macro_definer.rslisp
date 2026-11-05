@@ -6,4 +6,5 @@
 
 (defdsl query)
 
-(defn main () (println (query (a -> b))))
+(defn main ()
+  (println (query (a -> b))))

@@ -5,7 +5,9 @@
   (template (def (unquote name) (unquote value))))
 
 (def no-rule (fn () (only-two 1 2 3)))
+
 (needs-name)
+
 (def as-value (fn () when))
 
 (def no-operands (fn () (+)))

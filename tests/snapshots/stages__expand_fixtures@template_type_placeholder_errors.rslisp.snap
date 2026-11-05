@@ -1,20 +1,20 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/template_type_placeholder_errors.rslisp
 ---
 error[L0221]: `{missing}` names no type parameter
  --> expand/template_type_placeholder_errors.rslisp:2:9
   |
-2 |   (rust "{missing}" (fn ((ref str)) (ref str))))
+2 |   (rust "{missing}"
   |         ^^^^^^^^^^^ this template's `where` has no such type parameter
   |
   = help: add `(missing)` to the template's `where`
 
 error[L0221]: `{target}` names no type parameter
- --> expand/template_type_placeholder_errors.rslisp:5:9
+ --> expand/template_type_placeholder_errors.rslisp:6:9
   |
-5 |   (rust "{target}" (where ((item from-str)) (fn ((ref str)) (result item (parse-error item))))))
+6 |   (rust "{target}"
   |         ^^^^^^^^^^ this template's `where` has no such type parameter
   |
   = help: the type parameters are `item`

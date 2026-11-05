@@ -1,3 +1,6 @@
 (defn main ()
-  (let names (vec (str "Ana") (str "Bartholomew") (str "Cy")))
+  (let names
+    (vec (str "Ana")
+         (str "Bartholomew")
+         (str "Cy")))
   (prn (max-by-key (iter names) len)))

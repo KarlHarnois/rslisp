@@ -1,5 +1,7 @@
 (defn bad (row) (sum (iter row)))
+
 (defn total (row) (bad row))
+
 (defn main ()
   (let grid (vec (vec 1 2) (vec 3 4)))
   (println (sum (map (iter grid) total))))

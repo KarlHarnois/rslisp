@@ -1,3 +1,5 @@
 (use cycle/first first-value)
+
 (export second-value)
+
 (def second-value 2)

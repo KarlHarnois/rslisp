@@ -1,11 +1,14 @@
-(defstruct counter :step i64)
+(defstruct counter
+  :step i64)
 
 (trait tally
   (reset! (fn ((ref self) (mut (vec i64))) unit)))
 
 (impl tally counter
-  (reset! (c counts) (push! counts (:step c))))
+  (reset! (c counts)
+          (push! counts (:step c))))
 
-(defn reset-counter! (counts) (reset! (->counter 1) counts))
+(defn reset-counter! (counts)
+  (reset! (->counter 1) counts))
 
 (export reset-counter!)

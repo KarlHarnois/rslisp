@@ -1,7 +1,9 @@
 (type add-one (fn (i64) i64))
+
 (defn add-one (x) (+ x 1))
 
 (type peek (fn ((ref i64)) i64))
+
 (defn peek (x) (deref x))
 
 (defn bad-ref ()

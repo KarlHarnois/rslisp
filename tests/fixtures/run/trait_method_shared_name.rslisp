@@ -4,7 +4,8 @@
   (newer (fn (self self) self)))
 
 (impl garage car
-  (newer (c other) (if (> (:year c) (:year other)) c other)))
+  (newer (c other)
+         (if (> (:year c) (:year other)) c other)))
 
 (defn main ()
   (let leaf (->car "Leaf" 2024))

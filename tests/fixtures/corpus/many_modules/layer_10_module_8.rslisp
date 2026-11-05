@@ -1,18 +1,38 @@
-(use many_modules/layer_9_module_8 layer-9-module-8-score layer-9-module-8-reading)
-(use many_modules/layer_9_module_4 layer-9-module-4-score layer-9-module-4-reading)
-(use many_modules/layer_8_module_9 layer-8-module-9-score layer-8-module-9-reading)
+(use many_modules/layer_9_module_8 layer-9-module-8-score
+                                   layer-9-module-8-reading)
 
-(export layer-10-module-8-score layer-10-module-8-reading layer-10-module-8-label)
+(use many_modules/layer_9_module_4 layer-9-module-4-score
+                                   layer-9-module-4-reading)
 
-(defstruct layer-10-module-8-reading :site str :level i64 :weight f64)
+(use many_modules/layer_8_module_9 layer-8-module-9-score
+                                   layer-8-module-9-reading)
 
-(display layer-10-module-8-reading (reading) "layer-10-module-8 " (:site reading) "=" (:level reading))
+(export layer-10-module-8-score layer-10-module-8-reading
+        layer-10-module-8-label)
+
+(defstruct layer-10-module-8-reading
+  :site str
+  :level i64
+  :weight f64)
+
+(display layer-10-module-8-reading (reading)
+  "layer-10-module-8 "
+  (:site reading)
+  "="
+  (:level reading))
 
 (defn layer-10-module-8-label (n)
-  (str (->layer-10-module-8-reading "layer-10-module-8" (layer-10-module-8-score n) 98.5)))
+  (str (->layer-10-module-8-reading "layer-10-module-8"
+                                    (layer-10-module-8-score n)
+                                    98.5)))
 
 (defn layer-10-module-8-score (n)
-  (rem (+ (layer-9-module-8-score (+ n 4)) (:level (layer-9-module-4-reading n)) (:level (layer-8-module-9-reading n))) 997))
+  (rem (+ (layer-9-module-8-score (+ n 4))
+          (:level (layer-9-module-4-reading n))
+          (:level (layer-8-module-9-reading n)))
+       997))
 
 (defn layer-10-module-8-reading (n)
-  (->layer-10-module-8-reading "layer-10-module-8" (layer-10-module-8-score n) (* 0.5 98.0)))
+  (->layer-10-module-8-reading "layer-10-module-8"
+                               (layer-10-module-8-score n)
+                               (* 0.5 98.0)))

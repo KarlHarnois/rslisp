@@ -7,7 +7,9 @@
   (if (> n 0) (pong f (- n 1)) 0))
 
 (defn pong (f n)
-  (if (> n 0) (ping f (- n 1)) (helper f n)))
+  (if (> n 0)
+      (ping f (- n 1))
+      (helper f n)))
 
 (defn main ()
   (let total (vec 0))

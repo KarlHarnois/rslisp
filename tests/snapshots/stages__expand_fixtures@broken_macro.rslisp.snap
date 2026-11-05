@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/broken_macro.rslisp
 ---
 error[L0210]: malformed `macro`
@@ -18,7 +18,7 @@ error[L0309]: the macro `unparameterized` has errors, so this call cannot expand
   | ^^^^^^^^^^^^^^^^^ this call needs the macro
 
 error[L0307]: `self-expanding` depends on itself at compile time
- --> expand/broken_macro.rslisp:7:35
+ --> expand/broken_macro.rslisp:8:17
   |
-7 | (def self-expanding (macro (form) (self-expanding)))
-  |                                   ^^^^^^^^^^^^^^^^ needed here while it is still being computed
+8 |   (macro (form) (self-expanding)))
+  |                 ^^^^^^^^^^^^^^^^ needed here while it is still being computed

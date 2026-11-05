@@ -2,7 +2,8 @@
 
 (defmacro countdown (n)
   (if (number-le n 0)
-    (template (defn main ()))
-    (template (do (def counted 1) (countdown (unquote (number-sub n 1)))))))
+      (template (defn main ()))
+      (template (do (def counted 1)
+                    (countdown (unquote (number-sub n 1)))))))
 
 (countdown 1024)

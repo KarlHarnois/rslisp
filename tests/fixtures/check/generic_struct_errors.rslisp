@@ -1,9 +1,12 @@
 (struct (pair a b) (first a) (second b))
 
 (type too-few (fn ((pair i64)) i64))
+
 (defn too-few (p) 1)
 
-(type too-many (fn ((pair i64 i64 i64)) i64))
+(type too-many
+  (fn ((pair i64 i64 i64)) i64))
+
 (defn too-many (p) 1)
 
 (struct (unused a b) (only a))

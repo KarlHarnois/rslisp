@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/variant_as_value.rslisp
 ---
 error[L0233]: `shape/circle` is a variant constructor, not a value
- --> check/variant_as_value.rslisp:2:13
+ --> check/variant_as_value.rslisp:3:13
   |
-2 | (def circle shape/circle)
+3 | (def circle shape/circle)
   |             ^^^^^^^^^^^^ this constructor takes 1 argument when it is called
   |
   = help: write `(shape/circle value ...)`

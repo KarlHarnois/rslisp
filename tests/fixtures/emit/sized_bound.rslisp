@@ -1,4 +1,7 @@
-(def assign! (rust "{0}.clone_from({1})" (where ((a clone)) (fn ((mut a) (ref a)) unit))))
+(def assign!
+  (rust "{0}.clone_from({1})"
+        (where ((a clone))
+               (fn ((mut a) (ref a)) unit))))
 
 (defn copy-into! (target source) (assign! target source))
 

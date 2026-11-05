@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/rust_template_placeholder.rslisp
 ---
 error[L0225]: `{1}` names no type parameter
- --> check/rust_template_placeholder.rslisp:1:22
+ --> check/rust_template_placeholder.rslisp:2:9
   |
-1 | (enum (pair a) (rust "({0}, {1})") (of a a))
-  |                      ^^^^^^^^^^^^ this type has 1 type parameter
+2 |   (rust "({0}, {1})")
+  |         ^^^^^^^^^^^^ this type has 1 type parameter
   |
   = help: declare the type parameters on the name, as in `(rust-type (pair a b) "({0}, {1})")`

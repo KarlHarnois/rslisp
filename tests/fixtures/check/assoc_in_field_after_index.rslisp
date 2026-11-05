@@ -1,7 +1,14 @@
-(defstruct car :make str :model string :year u16)
+(defstruct car
+  :make str
+  :model string
+  :year u16)
 
-(defstruct garage :name string :bays (vec car))
+(defstruct garage
+  :name string
+  :bays (vec car))
 
 (defn main ()
-  (let garage (->garage (str "North") (vec (->car "Honda" (str "Civic") 2019))))
+  (let garage
+    (->garage (str "North")
+              (vec (->car "Honda" (str "Civic") 2019))))
   (assoc-in garage (:bays 0 :make) "Nissan"))

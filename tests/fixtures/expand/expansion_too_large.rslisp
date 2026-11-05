@@ -5,29 +5,31 @@
 
 (def doubled
   (fn (items times)
-    (if (number-le times 0) items (doubled (concat items items) (number-sub times 1)))))
+    (if (number-le times 0)
+        items
+        (doubled (concat items items) (number-sub times 1)))))
 
 (defmacro past-the-limit ()
   (template (do (splice (doubled (list 0) 17)))))
 
-(defn main ()
-  (println (grow 1)))
+(defn main () (println (grow 1)))
 
-(defn padded ()
-  (past-the-limit))
+(defn padded () (past-the-limit))
 
 (def nest
   (fn (item times)
-    (if (number-le times 0) item (nest (list item item) (number-sub times 1)))))
+    (if (number-le times 0)
+        item
+        (nest (list item item) (number-sub times 1)))))
 
-(defmacro huge ()
-  (nest (list 0) 40))
+(defmacro huge () (nest (list 0) 40))
 
-(defn nested ()
-  (huge))
+(defn nested () (huge))
 
 (defmacro spread-wide ()
-  (template (do ((splice (doubled (list 0) 16))) (spread-wide) (spread-wide))))
+  (template (do ((splice (doubled (list 0) 16)))
+                (spread-wide)
+                (spread-wide))))
 
 (spread-wide)
 

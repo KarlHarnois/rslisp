@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/type_parameters_in_where.rslisp
 ---
 error[L0219]: `struct` names its type parameters on its name
- --> check/type_parameters_in_where.rslisp:1:15
+ --> check/type_parameters_in_where.rslisp:2:10
   |
-1 | (struct pair (where (a b) (first a) (second b)))
-  |               ^^^^^ this `where` names them in the body
+2 |         (where (a b) (first a) (second b)))
+  |          ^^^^^ this `where` names them in the body
   |
   = help: write `(struct (pair a b) (first a) (second b))`

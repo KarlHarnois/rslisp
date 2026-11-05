@@ -1,8 +1,16 @@
-(defstruct badge :text string :size u16)
+(defstruct badge
+  :text string
+  :size u16)
 
-(defstruct garage :name string :badge badge)
+(defstruct garage
+  :name string
+  :badge badge)
 
 (defn main ()
-  (let garage (->garage (str "Leaf Garage") (->badge (str "open") 12)))
+  (let garage
+    (->garage (str "Leaf Garage")
+              (->badge (str "open") 12)))
   (let bigger (assoc-in garage (:badge :size) 14))
-  (println (:size (:badge bigger)) " " (:name garage)))
+  (println (:size (:badge bigger))
+           " "
+           (:name garage)))

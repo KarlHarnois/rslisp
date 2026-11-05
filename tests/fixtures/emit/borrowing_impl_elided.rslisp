@@ -1,4 +1,6 @@
-(defstruct car :make str :year u16)
+(defstruct car
+  :make str
+  :year u16)
 
 (trait badged
   (badge (fn (i64 (ref self)) (ref str)))
@@ -6,8 +8,12 @@
   (make (fn ((ref self)) (ref str))))
 
 (impl badged car
-  (badge (year c) (if (> year 2020) (:make c) "classic"))
-  (pick (fallback c) (if (> (:year c) 2020) (:make c) fallback))
+  (badge (year c)
+         (if (> year 2020) (:make c) "classic"))
+  (pick (fallback c)
+        (if (> (:year c) 2020)
+            (:make c)
+            fallback))
   (make (self) (:make self)))
 
 (defn main ()

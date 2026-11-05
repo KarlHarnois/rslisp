@@ -1,4 +1,2 @@
 (defn main ()
-  (do
-    (println "starting")
-    1))
+  (do (println "starting") 1))

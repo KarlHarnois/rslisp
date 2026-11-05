@@ -3,12 +3,10 @@
 (def bury
   (fn (form count)
     (if (number-gt count 0)
-      (recur (list (quote do) form) (number-sub count 1))
-      form)))
+        (recur (list (quote do) form)
+               (number-sub count 1))
+        form)))
 
-(def deep
-  (macro (form)
-    (bury 1 1100)))
+(def deep (macro (form) (bury 1 1100)))
 
-(defn main ()
-  (println (deep)))
+(defn main () (println (deep)))

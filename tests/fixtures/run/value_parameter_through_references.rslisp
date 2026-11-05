@@ -1,10 +1,18 @@
-(defstruct employee :name string :score u32)
+(defstruct employee
+  :name string
+  :score u32)
 
-(defn high? (person) (> (:score person) 80))
+(defn high? (person)
+  (> (:score person) 80))
+
 (defn big? (n) (> n 2))
 
 (defn main ()
-  (let people (vec (->employee (str "Ada") 91) (->employee (str "Bo") 70)))
+  (let people
+    (vec (->employee (str "Ada") 91)
+         (->employee (str "Bo") 70)))
   (let numbers (vec 1 2 3))
-  (println (count (filter (iter people) (fn (person) (high? person)))))
-  (println (count (filter (iter numbers) (fn (n) (big? n))))))
+  (println (count (filter (iter people)
+                          (fn (person) (high? person)))))
+  (println (count (filter (iter numbers)
+                          (fn (n) (big? n))))))

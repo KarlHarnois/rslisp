@@ -1,4 +1,8 @@
-(enum (option value) (rust "Option") (some value) none)
+(enum (option value)
+  (rust "Option")
+  (some value)
+  none)
+
 (derive option clone)
 
 (defn main () (do))

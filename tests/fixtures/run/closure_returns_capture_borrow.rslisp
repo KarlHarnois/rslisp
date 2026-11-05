@@ -3,5 +3,4 @@
   (let first (fn () (at years 0)))
   (println (first)))
 
-(defn main ()
-  (first-of-capture))
+(defn main () (first-of-capture))

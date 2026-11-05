@@ -1,20 +1,26 @@
-(defstruct odometer :offset i64)
-(defstruct meter :scale i64)
+(defstruct odometer
+  :offset i64)
+
+(defstruct meter
+  :scale i64)
 
 (trait mileage
   (base (fn ((ref self)) i64))
   (total (fn ((ref self) (ref (vec i64))) i64)
-    (+ (base self) (at argument-1 0)))
+         (+ (base self) (at argument-1 0)))
   (record! (fn ((ref self) (mut (vec i64))) unit)))
 
 (impl mileage odometer
   (base (o) (:offset o))
-  (record! (o readings) (set! (at readings 0) (:offset o))))
+  (record! (o readings)
+           (set! (at readings 0) (:offset o))))
 
 (impl mileage meter
   (base (m) (:scale m))
-  (total (m readings) (* (:scale m) (at readings 1)))
-  (record! (m readings) (push! readings (:scale m))))
+  (total (m readings)
+         (* (:scale m) (at readings 1)))
+  (record! (m readings)
+           (push! readings (:scale m))))
 
 (defn report (o readings) (total o readings))
 

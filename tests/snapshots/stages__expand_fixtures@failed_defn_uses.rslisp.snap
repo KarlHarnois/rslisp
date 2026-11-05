@@ -6,7 +6,7 @@ input_file: tests/fixtures/expand/failed_defn_uses.rslisp
 error[L0328]: a docstring goes after the parameter list
  --> expand/failed_defn_uses.rslisp:1:12
   |
-1 | (defn area "Multiplies two sides." (width height) (* width height))
+1 | (defn area "Multiplies two sides."
   |            ^^^^^^^^^^^^^^^^^^^^^^^ a docstring in place of the parameter list
   |
   = help: write it as the first body form, after the parameter list

@@ -1,5 +1,9 @@
-(defstruct failure :line i64)
+(defstruct failure
+  :line i64)
+
 (defn main ()
   (println (unwrap-ok (the (result i64 failure) (ok 1))))
-  (println (unwrap-err (the (result i64 string) (err (str "e")))))
-  (println (expect-ok (the (result i64 string) (ok 2)) "needs two")))
+  (println (unwrap-err (the (result i64 string)
+                            (err (str "e")))))
+  (println (expect-ok (the (result i64 string) (ok 2))
+                      "needs two")))

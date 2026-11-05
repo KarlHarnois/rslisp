@@ -1,7 +1,8 @@
 (struct (holder a) (value a))
 
 (defn main ()
-  (let several? (> (len (command-line-args)) 5))
+  (let several?
+    (> (len (command-line-args)) 5))
   (let odometer (the i64 2024))
   (let reading (fn () 3000000000))
   (prn (reading))

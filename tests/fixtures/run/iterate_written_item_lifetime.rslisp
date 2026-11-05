@@ -1,5 +1,10 @@
-(type count-long (where ('a) (fn ((iterator (ref 'a str))) usize)))
-(defn count-long (names) (count (filter names (fn (name) (> (len name) 4)))))
+(type count-long
+  (where ('a)
+         (fn ((iterator (ref 'a str))) usize)))
+
+(defn count-long (names)
+  (count (filter names
+                 (fn (name) (> (len name) 4)))))
 
 (defn main ()
   (let models (vec "Leaf" "Ariya" "Sakura"))

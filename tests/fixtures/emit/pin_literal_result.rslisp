@@ -2,5 +2,4 @@
 
 (defn code ((value u16)) value)
 
-(defn main ()
-  (println (code (port))))
+(defn main () (println (code (port))))

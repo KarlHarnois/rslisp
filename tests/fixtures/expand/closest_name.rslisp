@@ -3,8 +3,9 @@
 (def models
   (macro (form)
     (list (quote quote)
-          (list (closest-name (quote leef) (quote (leaf ariya sakura)))
-                (closest-name (quote truck) (quote (leaf ariya sakura)))))))
+          (list (closest-name (quote leef)
+                              (quote (leaf ariya sakura)))
+                (closest-name (quote truck)
+                              (quote (leaf ariya sakura)))))))
 
 (def model-guesses (fn () (models)))
-

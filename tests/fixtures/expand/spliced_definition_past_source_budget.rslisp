@@ -2,14 +2,16 @@
 
 (def doubled
   (fn (items times)
-    (if (number-le times 0) items (doubled (concat items items) (number-sub times 1)))))
+    (if (number-le times 0)
+        items
+        (doubled (concat items items) (number-sub times 1)))))
 
 (defmacro padded-definition ()
-  (template (def padded (do (splice (doubled (list 0) 16))))))
+  (template (def padded
+              (do (splice (doubled (list 0) 16))))))
 
 (defmacro pad ()
   (template (do (splice (doubled (list 0) 16)))))
 
-(do
-  (padded-definition)
-  (def padding (fn () (pad))))
+(do (padded-definition)
+    (def padding (fn () (pad))))

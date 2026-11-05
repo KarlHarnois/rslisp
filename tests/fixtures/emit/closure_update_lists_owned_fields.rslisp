@@ -1,6 +1,12 @@
-(defstruct garage :name string :city string :size u16)
+(defstruct garage
+  :name string
+  :city string
+  :size u16)
 
 (defn main ()
-  (let g (->garage (str "Leaf Garage") (str "Leeds") 12))
-  (let f (fn () (assoc g :name (str "x") :city (str "York"))))
+  (let g
+    (->garage (str "Leaf Garage") (str "Leeds") 12))
+  (let f
+    (fn ()
+      (assoc g :name (str "x") :city (str "York"))))
   (println (:name (f)) (:name (f))))

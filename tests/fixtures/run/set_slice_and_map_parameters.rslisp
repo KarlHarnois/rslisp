@@ -1,6 +1,10 @@
-(defstruct car :make str :year u16)
+(defstruct car
+  :make str
+  :year u16)
 
-(type replace-first! (fn ((mut (slice car)) car) unit))
+(type replace-first!
+  (fn ((mut (slice car)) car) unit))
+
 (defn replace-first! (cars car)
   (set! (at cars 0) car))
 
@@ -14,9 +18,12 @@
   (set! (at prices key) price))
 
 (defn main ()
-  (let cars (vec (->car "Nissan Leaf" 2011) (->car "Honda Civic" 1999)))
+  (let cars
+    (vec (->car "Nissan Leaf" 2011) (->car "Honda Civic" 1999)))
   (replace-first! (mut cars) (->car "Nissan Ariya" 2023))
-  (println (:make (at cars 0)) " " (:year (at cars 0)))
+  (println (:make (at cars 0))
+           " "
+           (:year (at cars 0)))
   (let models (hash-map "leaf" "Nissan Leaf"))
   (rename-through! (mut models) "leaf" "Nissan Leaf Plus")
   (println (unwrap (get models "leaf")))

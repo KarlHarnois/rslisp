@@ -6,10 +6,14 @@
 
 (defn keep (f) (do))
 
-(type hold (fn ((fn () i64)) (fn () i64)))
+(type hold
+  (fn ((fn () i64)) (fn () i64)))
+
 (defn hold (f) f)
 
-(type hold-mut (fn ((fn-mut () i64)) i64))
+(type hold-mut
+  (fn ((fn-mut () i64)) i64))
+
 (defn hold-mut (f) (f))
 
 (defn alias (f x)
@@ -26,12 +30,16 @@
   (let start (fn () (consume)))
   (start))
 
-(type returns-mut (fn () (fn-mut () unit)))
+(type returns-mut
+  (fn () (fn-mut () unit)))
+
 (defn returns-mut ()
   (let items (vec 1))
   (fn () (push! items 2)))
 
-(type returns-once (fn () (fn-once () string)))
+(type returns-once
+  (fn () (fn-once () string)))
+
 (defn returns-once ()
   (let text (str "written"))
   (fn () text))
@@ -60,8 +68,7 @@
     (0 (fn () 1))
     (_ (fn () 2))))
 
-(defn choose-block ()
-  (do (fn () 3)))
+(defn choose-block () (do (fn () 3)))
 
 (defn main ()
   (let text (str "fake"))

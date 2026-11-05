@@ -1,3 +1,5 @@
-(defn twice (x) "Doubles a number." (* 2 x))
+(defn twice (x)
+  "Doubles a number."
+  (* 2 x))
 
 (defn f (twice) (doc-page twice))

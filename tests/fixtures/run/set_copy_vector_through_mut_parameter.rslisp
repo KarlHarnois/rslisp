@@ -1,4 +1,6 @@
-(type reset-first! (fn ((mut (vec i64))) unit))
+(type reset-first!
+  (fn ((mut (vec i64))) unit))
+
 (defn reset-first! (cars)
   (set! (at cars 0) 7))
 

@@ -2,11 +2,15 @@
   (area (fn ((ref self)) f64)))
 
 (struct circle (radius f64))
+
 (impl shape circle
   (area (c) (field c radius)))
 
 (defn main ()
-  (let boxed (the (box shape) (box (new circle (radius 1.0)))))
-  (let (other (box shape)) (box (new circle (radius 2.0))))
+  (let boxed
+    (the (box shape)
+         (box (new circle (radius 1.0)))))
+  (let (other (box shape))
+    (box (new circle (radius 2.0))))
   (println (area boxed))
   (println (area other)))

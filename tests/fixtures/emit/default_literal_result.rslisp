@@ -1,4 +1,3 @@
 (defn answer () 42)
 
-(defn main ()
-  (println (answer)))
+(defn main () (println (answer)))

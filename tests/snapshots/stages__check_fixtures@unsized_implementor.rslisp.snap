@@ -1,20 +1,20 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/unsized_implementor.rslisp
 ---
 error[L0444]: `str` has no size, so `take` cannot take `self` by value
- --> check/unsized_implementor.rslisp:4:16
+ --> check/unsized_implementor.rslisp:3:16
   |
-4 | (impl consumed str
+3 | (impl consumed str (take (text) 0))
   |                ^^^ `str` has no size
   |
   = help: take the receiver by reference, as in `(fn ((ref self)) ...)`
 
 error[L0444]: `(slice i64)` has no size, so `take` cannot take `self` by value
- --> check/unsized_implementor.rslisp:7:16
+ --> check/unsized_implementor.rslisp:5:16
   |
-7 | (impl consumed (slice i64)
+5 | (impl consumed (slice i64)
   |                ^^^^^^^^^^^ `(slice i64)` has no size
   |
   = help: take the receiver by reference, as in `(fn ((ref self)) ...)`

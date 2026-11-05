@@ -1,5 +1,7 @@
-(defstruct car :models (box (vec str)))
+(defstruct car
+  :models (box (vec str)))
 
 (defn main ()
-  (let car (->car :models (box (vec "Leaf" "Ariya"))))
+  (let car
+    (->car :models (box (vec "Leaf" "Ariya"))))
   (prn (:models car)))

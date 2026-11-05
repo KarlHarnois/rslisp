@@ -1,19 +1,29 @@
 (defn add (:x i64 :y i64) (+ x y))
 
 (type scale (fn (f32 f32) f32))
+
 (defn scale (:factor :value) (* factor value))
 
 (defn greet (:name str :greeting (defaults :greeting "hello"))
   (str greeting ", " name))
 
 (defn count-down (:n i64 :total i64)
-  (if (= n 0) total (count-down :n (- n 1) :total (+ total n))))
+  (if (= n 0)
+      total
+      (count-down :n (- n 1) :total (+ total n))))
 
 (defn sum-down (:n i64 :total i64)
-  (if (= n 0) total (sum-down :total (+ total n) :n (- n 1))))
+  (if (= n 0)
+      total
+      (sum-down :total (+ total n) :n (- n 1))))
 
-(defn next-y () (println "y") 7)
-(defn next-x () (println "x") 6)
+(defn next-y ()
+  (println "y")
+  7)
+
+(defn next-x ()
+  (println "x")
+  6)
 
 (defn main ()
   (println (add :x 6 :y 7))

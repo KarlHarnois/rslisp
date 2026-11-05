@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/derive_rust_enum.rslisp
 ---
 error[L0435]: `option` is a Rust type, so it has no `derive`
- --> check/derive_rust_enum.rslisp:2:9
+ --> check/derive_rust_enum.rslisp:6:9
   |
-2 | (derive option clone)
+6 | (derive option clone)
   |         ^^^^^^ `option` names a Rust type
   |
   = help: the traits of a Rust type come from its `rust-trait` entries

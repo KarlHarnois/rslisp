@@ -1,10 +1,18 @@
-(defstruct user :name str :age u16)
-(defstruct sorter :key (fn ((ref user)) u16) :label str)
+(defstruct user
+  :name str
+  :age u16)
+
+(defstruct sorter
+  :key (fn ((ref user)) u16)
+  :label str)
 
 (defn main ()
   (let bonus 2)
-  (let key (fn ((someone (ref user))) (+ (:age someone) bonus)))
-  (let by-bonus (new sorter (:key key) (:label "by bonus")))
+  (let key
+    (fn ((someone (ref user)))
+      (+ (:age someone) bonus)))
+  (let by-bonus
+    (new sorter (:key key) (:label "by bonus")))
   (println (:label by-bonus)))
 
 (defn by-key (key label)
@@ -12,6 +20,8 @@
 
 (defn rebound ()
   (let bonus 3)
-  (let key (fn ((someone (ref user))) (+ (:age someone) bonus)))
+  (let key
+    (fn ((someone (ref user)))
+      (+ (:age someone) bonus)))
   (let chosen key)
   (println (:label (by-key chosen "rebound"))))

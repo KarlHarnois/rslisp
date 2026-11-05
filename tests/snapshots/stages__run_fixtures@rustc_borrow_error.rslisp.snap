@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).run_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/run/rustc_borrow_error.rslisp
 ---
 error[E0515]: cannot return reference to local data `someone.name`
- --> run/rustc_borrow_error.rslisp:5:3
+ --> run/rustc_borrow_error.rslisp:7:3
   |
-5 |   (:name someone))
+7 |   (:name someone))
   |   ^^^^^^^^^^^^^^^ returns a reference to data owned by the current function
   |
   = note: reported by rustc while compiling the generated Rust

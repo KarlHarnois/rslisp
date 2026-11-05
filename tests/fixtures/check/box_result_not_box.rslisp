@@ -4,7 +4,7 @@
 (defn number () 1)
 
 (type take (fn ((box shape)) unit))
+
 (defn take (value) (do))
 
-(defn main ()
-  (take (number)))
+(defn main () (take (number)))

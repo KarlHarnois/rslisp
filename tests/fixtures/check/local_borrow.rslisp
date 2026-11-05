@@ -20,5 +20,4 @@
     (yes (ref text))
     (no (ref text))))
 
-(defn main ()
-  (println (make)))
+(defn main () (println (make)))

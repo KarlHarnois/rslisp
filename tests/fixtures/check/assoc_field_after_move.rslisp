@@ -1,4 +1,6 @@
-(defstruct car :model string :year u16)
+(defstruct car
+  :model string
+  :year u16)
 
 (defn main ()
   (let leaf (->car :model (str "Leaf") :year 2024))

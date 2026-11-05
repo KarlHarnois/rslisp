@@ -1,9 +1,16 @@
-(type apply (fn ((fn ((ref str)) (ref str))) (ref str)))
+(type apply
+  (fn ((fn ((ref str)) (ref str)))
+    (ref str)))
+
 (defn apply (pick)
   (let local (str "Leaf"))
-  (if (= (pick (as-str local)) "Leaf") (pick "Nissan") "none"))
+  (if (= (pick (as-str local)) "Leaf")
+      (pick "Nissan")
+      "none"))
 
-(type first-word (fn ((ref str)) (ref str)))
+(type first-word
+  (fn ((ref str)) (ref str)))
+
 (defn first-word (text) text)
 
 (defn main ()

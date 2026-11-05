@@ -1,11 +1,13 @@
-(defstruct car :year i64)
+(defstruct car
+  :year i64)
 
 (trait fleet
   (newest (fn ((ref self) (vec self)) i64))
   (pair (fn (self) (vec self))))
 
 (impl fleet car
-  (newest (c others) (+ (:year c) (:year (at others 0))))
+  (newest (c others)
+          (+ (:year c) (:year (at others 0))))
   (pair (c) (vec c c)))
 
 (defn main ()

@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/run/function_value_float_items.rslisp
 ---
 error[L0401]: mismatched types
- --> run/function_value_float_items.rslisp:6:41
+ --> run/function_value_float_items.rslisp:7:41
   |
-6 |   (println (count (filter (iter ratios) small?))))
+7 |   (println (count (filter (iter ratios) small?))))
   |                                         ^^^^^^ expected `f32`, found `f64`
   |
   = note: `x` defaulted to `f64`, because `small?` is called with `f64` and passed as a value with `f32`

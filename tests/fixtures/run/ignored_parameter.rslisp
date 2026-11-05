@@ -1,4 +1,3 @@
 (defn first-of (value _) value)
 
-(defn main ()
-  (println (first-of 1 2)))
+(defn main () (println (first-of 1 2)))

@@ -1,8 +1,15 @@
-(defstruct car :model str :year i64)
-(defstruct van :model str :seats i64)
+(defstruct car
+  :model str
+  :year i64)
+
+(defstruct van
+  :model str
+  :seats i64)
+
 (enum ride (cab (ref str)) bike)
 
 (type model-of (fn (car) (ref str)))
+
 (defn model-of (c) (:model c))
 
 (trait garage
@@ -19,14 +26,18 @@
   (tag (name c) (:model c))
   (maybe (c name) (some (:model c)))
   (brand (c name) (model-of c))
-  (stamp (year c) ((fn (x) (model-of x)) c))
+  (stamp (year c)
+         ((fn (x) (model-of x)) c))
   (swap (c other) ((fn (x) x) other))
-  (trade (c other) (match (some other) ((some o) o) ((none) c))))
+  (trade (c other)
+         (match (some other)
+           ((some o) o)
+           ((none) c))))
 
 (impl garage van
   (echo (v label)
-    (let name (:model v))
-    name)
+        (let name (:model v))
+        name)
   (tag (label v) label)
   (maybe (v label) (some label))
   (brand (v label) label)
@@ -38,7 +49,8 @@
   (park (fn (self (ref str)) (ref str))))
 
 (impl valet ride
-  (park (r name) (match r ((cab m) m) (bike name))))
+  (park (r name)
+        (match r ((cab m) m) (bike name))))
 
 (defn main ()
   (println (echo (->car "Leaf" 2024) "Nissan"))

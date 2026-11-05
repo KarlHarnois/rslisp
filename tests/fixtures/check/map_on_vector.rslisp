@@ -1,2 +1,1 @@
-(defn main ()
-  (vals (vec 1 2)))
+(defn main () (vals (vec 1 2)))

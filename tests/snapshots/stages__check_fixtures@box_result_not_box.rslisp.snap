@@ -4,7 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/box_result_not_box.rslisp
 ---
 error[L0401]: mismatched types
-  --> check/box_result_not_box.rslisp:10:9
+  --> check/box_result_not_box.rslisp:10:21
    |
-10 |   (take (number)))
-   |         ^^^^^^^^ expected `(box shape)`, found an integer
+10 | (defn main () (take (number)))
+   |                     ^^^^^^^^ expected `(box shape)`, found an integer

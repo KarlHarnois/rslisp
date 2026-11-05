@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/failed_defstruct_type_use.rslisp
 ---
 error[L0301]: a field must start with `:`
- --> expand/failed_defstruct_type_use.rslisp:1:18
+ --> expand/failed_defstruct_type_use.rslisp:2:3
   |
-1 | (defstruct point (x i64) y)
-  |                  ^^^^^^^ here
+2 |   (x i64)
+  |   ^^^^^^^ here
   |
   = help: write each field as `:name type`, as in (defstruct point :x f64 :y f64)

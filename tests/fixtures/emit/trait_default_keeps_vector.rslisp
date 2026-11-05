@@ -1,16 +1,23 @@
-(defstruct odometer :offset i64)
-(defstruct meter :scale i64)
-(defstruct gauge :level i64)
+(defstruct odometer
+  :offset i64)
+
+(defstruct meter
+  :scale i64)
+
+(defstruct gauge
+  :level i64)
 
 (trait mileage
   (record! (fn ((ref self) (mut (vec i64))) unit)
-    (push! argument-1 9)))
+           (push! argument-1 9)))
 
 (impl mileage odometer
-  (record! (o readings) (set! (at readings 0) (:offset o))))
+  (record! (o readings)
+           (set! (at readings 0) (:offset o))))
 
 (impl mileage meter
-  (record! (m readings) (set! (at readings 1) (:scale m))))
+  (record! (m readings)
+           (set! (at readings 1) (:scale m))))
 
 (impl mileage gauge)
 
@@ -20,4 +27,10 @@
   (record! (->odometer 5) (mut readings))
   (record! (->meter 2) (mut readings))
   (record! reading-gauge (mut readings))
-  (println (at readings 0) " " (at readings 1) " " (len readings) " " (:level reading-gauge)))
+  (println (at readings 0)
+           " "
+           (at readings 1)
+           " "
+           (len readings)
+           " "
+           (:level reading-gauge)))

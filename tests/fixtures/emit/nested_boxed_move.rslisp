@@ -1,4 +1,6 @@
-(enum (tree a) (node (tree a) a (tree a)) leaf)
+(enum (tree a)
+  (node (tree a) a (tree a))
+  leaf)
 
 (defn inner-left (tree)
   (match tree

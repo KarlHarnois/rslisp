@@ -4,13 +4,13 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/macro_as_function.rslisp
 ---
 error[L0304]: `+` is a macro, not a value
- --> check/macro_as_function.rslisp:1:46
+ --> check/macro_as_function.rslisp:2:34
   |
-1 | (defn main () (println (reduce (range 1 4) 0 +)))
-  |                                              ^ used as a value here
+2 |   (println (reduce (range 1 4) 0 +)))
+  |                                  ^ used as a value here
   |
 help: a macro can only be called; pass `add` instead
   |
-1 - (defn main () (println (reduce (range 1 4) 0 +)))
-1 + (defn main () (println (reduce (range 1 4) 0 add)))
+2 -   (println (reduce (range 1 4) 0 +)))
+2 +   (println (reduce (range 1 4) 0 add)))
   |

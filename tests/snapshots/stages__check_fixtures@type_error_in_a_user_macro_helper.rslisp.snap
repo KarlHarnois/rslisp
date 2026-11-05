@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/type_error_in_a_user_macro_helper.rslisp
 ---
 error[L0401]: mismatched types
- --> check/type_error_in_a_user_macro_helper.rslisp:1:27
+ --> check/type_error_in_a_user_macro_helper.rslisp:2:18
   |
-1 | (def shout (fn (word) (if "loud" word word)))
-  |                           ^^^^^^ expected `bool`, found `(ref str)`
+2 |   (fn (word) (if "loud" word word)))
+  |                  ^^^^^^ expected `bool`, found `(ref str)`
   |
   = note: the test of `if` must be a `bool`

@@ -1,18 +1,38 @@
-(use many_modules/layer_8_module_10 layer-8-module-10-score layer-8-module-10-reading)
-(use many_modules/layer_7_module_6 layer-7-module-6-score layer-7-module-6-reading)
-(use many_modules/layer_4_module_3 layer-4-module-3-score layer-4-module-3-reading)
+(use many_modules/layer_8_module_10 layer-8-module-10-score
+                                    layer-8-module-10-reading)
 
-(export layer-9-module-10-score layer-9-module-10-reading layer-9-module-10-label)
+(use many_modules/layer_7_module_6 layer-7-module-6-score
+                                   layer-7-module-6-reading)
 
-(defstruct layer-9-module-10-reading :site str :level i64 :weight f64)
+(use many_modules/layer_4_module_3 layer-4-module-3-score
+                                   layer-4-module-3-reading)
 
-(display layer-9-module-10-reading (reading) "layer-9-module-10 " (:site reading) "=" (:level reading))
+(export layer-9-module-10-score layer-9-module-10-reading
+        layer-9-module-10-label)
+
+(defstruct layer-9-module-10-reading
+  :site str
+  :level i64
+  :weight f64)
+
+(display layer-9-module-10-reading (reading)
+  "layer-9-module-10 "
+  (:site reading)
+  "="
+  (:level reading))
 
 (defn layer-9-module-10-label (n)
-  (str (->layer-9-module-10-reading "layer-9-module-10" (layer-9-module-10-score n) 90.5)))
+  (str (->layer-9-module-10-reading "layer-9-module-10"
+                                    (layer-9-module-10-score n)
+                                    90.5)))
 
 (defn layer-9-module-10-score (n)
-  (rem (+ (layer-8-module-10-score (+ n 1)) (:level (layer-7-module-6-reading n)) (:level (layer-4-module-3-reading n))) 997))
+  (rem (+ (layer-8-module-10-score (+ n 1))
+          (:level (layer-7-module-6-reading n))
+          (:level (layer-4-module-3-reading n)))
+       997))
 
 (defn layer-9-module-10-reading (n)
-  (->layer-9-module-10-reading "layer-9-module-10" (layer-9-module-10-score n) (* 0.5 90.0)))
+  (->layer-9-module-10-reading "layer-9-module-10"
+                               (layer-9-module-10-score n)
+                               (* 0.5 90.0)))

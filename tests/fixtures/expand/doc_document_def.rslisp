@@ -6,4 +6,5 @@
 
 (def twice-page (doc-page twice))
 
-(defn main () (println (twice 2) twice-page))
+(defn main ()
+  (println (twice 2) twice-page))

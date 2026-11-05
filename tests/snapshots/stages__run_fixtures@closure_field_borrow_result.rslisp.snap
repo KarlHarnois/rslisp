@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/run/closure_field_borrow_result.rslisp
 ---
 error[E0597]: `leaf` does not live long enough
- --> run/closure_field_borrow_result.rslisp:6:21
-  |
-6 |   (println (year-of (ref leaf))))
-  |                     ^^^^^^^^^^ borrowed value does not live long enough
-  |
-  = note: reported by rustc while compiling the generated Rust
+  --> run/closure_field_borrow_result.rslisp:10:21
+   |
+10 |   (println (year-of (ref leaf))))
+   |                     ^^^^^^^^^^ borrowed value does not live long enough
+   |
+   = note: reported by rustc while compiling the generated Rust

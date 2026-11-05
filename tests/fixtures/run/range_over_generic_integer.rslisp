@@ -1,4 +1,6 @@
-(type count-to (where ((n integer)) (fn (n) usize)))
+(type count-to
+  (where ((n integer)) (fn (n) usize)))
+
 (defn count-to (n) (count (range 0 n)))
 
 (defn main ()

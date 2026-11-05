@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/malformed_types.rslisp
 ---
 error[L0234]: expected a type
@@ -12,59 +12,59 @@ error[L0234]: expected a type
   = help: a type is a name such as `i64`, or a form such as `(fn (i64) i64)` or `(ref str)`
 
 error[L0228]: malformed `ref` type
- --> expand/malformed_types.rslisp:4:16
+ --> expand/malformed_types.rslisp:5:16
   |
-4 | (type bare-ref ref)
+5 | (type bare-ref ref)
   |                ^^^ this does not fit the shape of the type
   |
   = help: write it as `(ref type)`
 
 error[L0212]: expected a type constructor, found `number`
- --> expand/malformed_types.rslisp:7:31
-  |
-7 | (type trait-constructor (fn ((number i64)) i64))
-  |                               ^^^^^^ not a type constructor
+  --> expand/malformed_types.rslisp:10:9
+   |
+10 |   (fn ((number i64)) i64))
+   |         ^^^^^^ not a type constructor
 
 error[L0228]: malformed `fn` type
-  --> expand/malformed_types.rslisp:10:16
+  --> expand/malformed_types.rslisp:14:16
    |
-10 | (type short-fn (fn i64))
+14 | (type short-fn (fn i64))
    |                ^^^^^^^^ this does not fit the shape of the type
    |
    = help: write it as `(fn (argument ...) result)`
 
 error[L0228]: malformed `ref` type
-  --> expand/malformed_types.rslisp:13:22
+  --> expand/malformed_types.rslisp:18:22
    |
-13 | (type empty-ref (fn ((ref)) i64))
+18 | (type empty-ref (fn ((ref)) i64))
    |                      ^^^^^ this does not fit the shape of the type
    |
    = help: write it as `(ref type)`
 
 error[L0228]: malformed `where` type
-  --> expand/malformed_types.rslisp:16:19
+  --> expand/malformed_types.rslisp:22:19
    |
-16 | (type short-where (where (t)))
+22 | (type short-where (where (t)))
    |                   ^^^^^^^^^^^ this does not fit the shape of the type
    |
    = help: write it as `(where (variable (variable trait ...) ...) type)`
 
 error[L0212]: expected a trait, found `"trait"`
-  --> expand/malformed_types.rslisp:19:31
+  --> expand/malformed_types.rslisp:27:14
    |
-19 | (type string-bound (where ((t "trait")) (fn (t) t)))
-   |                               ^^^^^^^ not a trait
+27 |   (where ((t "trait")) (fn (t) t)))
+   |              ^^^^^^^ not a trait
 
 error[L0212]: expected a trait, found `i64`
-  --> expand/malformed_types.rslisp:22:34
+  --> expand/malformed_types.rslisp:32:14
    |
-22 | (type primitive-bound (where ((t i64)) (fn (t) t)))
-   |                                  ^^^ not a trait
+32 |   (where ((t i64)) (fn (t) t)))
+   |              ^^^ not a trait
 
 error[L0228]: malformed `mut` type
-  --> expand/malformed_types.rslisp:25:22
+  --> expand/malformed_types.rslisp:36:22
    |
-25 | (type empty-mut (fn ((mut)) i64))
+36 | (type empty-mut (fn ((mut)) i64))
    |                      ^^^^^ this does not fit the shape of the type
    |
    = help: write it as `(mut type)`

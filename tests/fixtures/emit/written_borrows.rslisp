@@ -1,20 +1,32 @@
-(def add-one! (rust "*{0} += 1" (fn ((mut i64)) unit)))
+(def add-one!
+  (rust "*{0} += 1" (fn ((mut i64)) unit)))
 
 (type peek (fn ((ref i64)) i64))
+
 (defn peek (x) (deref x))
 
 (defn plus-one (r) (+ (deref r) 1))
-(def vec-capacity (rust "{0}.capacity()" (fn ((ref (vec string))) usize)))
+
+(def vec-capacity
+  (rust "{0}.capacity()"
+        (fn ((ref (vec string))) usize)))
+
 (defn vec-size (names) (vec-capacity names))
+
 (type show (fn ((ref string)) unit))
+
 (defn show (s) (println s))
+
 (defn relay (s) (show (ref s)))
+
 (defn relay-mut! (x) (add-one! (mut x)))
 
 (defmacro three () (deref (ref 3)))
+
 (def value (three))
 
 (type pair-up (where (a) (fn (a a) a)))
+
 (defn pair-up (a b) a)
 
 (defn main ()

@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/generic_mismatch.rslisp
 ---
 error[L0401]: mismatched types
- --> check/generic_mismatch.rslisp:2:20
+ --> check/generic_mismatch.rslisp:3:20
   |
-2 | (defn same (value) "text")
+3 | (defn same (value) "text")
   |                    ^^^^^^ expected `t`, found `(ref str)`
   |
   = note: `t` is a type parameter, so this code must work for every type `t` stands for

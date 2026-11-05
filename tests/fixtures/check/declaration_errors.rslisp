@@ -1,7 +1,11 @@
-(def where-in-rust (rust "x" (fn ((where (t) t)) i64)))
+(def where-in-rust
+  (rust "x" (fn ((where (t) t)) i64)))
 
 (struct holder (value (where (t) t)))
 
 (rust-trait shape "Shape" holder)
-(type unit-of (where ((t shape)) (fn () t)))
+
+(type unit-of
+  (where ((t shape)) (fn () t)))
+
 (defn unit-of () 1)

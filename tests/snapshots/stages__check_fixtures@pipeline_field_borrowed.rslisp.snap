@@ -4,27 +4,27 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/pipeline_field_borrowed.rslisp
 ---
 error[L0458]: Rust cannot name the type `(iterator i64)` here
- --> check/pipeline_field_borrowed.rslisp:1:24
+ --> check/pipeline_field_borrowed.rslisp:2:10
   |
-1 | (defstruct feed :items (iterator i64) :label str)
-  |                        ^^^^^^^^^^^^^^ this stores `(iterator i64)`
+2 |   :items (iterator i64)
+  |          ^^^^^^^^^^^^^^ this stores `(iterator i64)`
   |
   = note: Rust names this type only as the type of a function's own parameter or result
   = help: store the collection the items come from instead, and call `iter` on it where the items are used
 
 error[L0503]: this value is borrowed, but the call needs to own it
- --> check/pipeline_field_borrowed.rslisp:4:21
+ --> check/pipeline_field_borrowed.rslisp:6:21
   |
-4 |   (let first (count (:items f)))
+6 |   (let first (count (:items f)))
   |                     ^^^^^^^^^^ only a borrow is available here
   |
   = note: this value is a lazy pipeline, so it runs once
   = help: collect it if both places need its items, as in `(collect ...)`, or write a function that rebuilds it
 
 error[L0503]: this value is borrowed, but the call needs to own it
- --> check/pipeline_field_borrowed.rslisp:5:19
+ --> check/pipeline_field_borrowed.rslisp:7:19
   |
-5 |   (+ first (count (:items f))))
+7 |   (+ first (count (:items f))))
   |                   ^^^^^^^^^^ only a borrow is available here
   |
   = note: this value is a lazy pipeline, so it runs once

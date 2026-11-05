@@ -1,3 +1,7 @@
-(defn outer () (defmacro my-dsl "doc" (x) x) (my-dsl (a -> b)))
+(defn outer ()
+  (defmacro my-dsl "doc"
+    (x)
+    x)
+  (my-dsl (a -> b)))
 
 (defn main () (println (outer)))

@@ -4,21 +4,25 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/found_iterator_used_again.rslisp
 ---
 error[L0501]: use of moved value `values`
- --> check/found_iterator_used_again.rslisp:1:105
+ --> check/found_iterator_used_again.rslisp:6:14
   |
-1 | ... first (find values (fn (value) (> (deref value) 5)))) (and (some? first) (any? values (fn (value) (> value 50)))))
-  |                 ------ value moved here                                            ^^^^^^ value used here after it moved
+3 |     (find values
+  |           ------ value moved here
+...
+6 |        (any? values (fn (value) (> value 50)))))
+  |              ^^^^^^ value used here after it moved
   |
   = note: `values` is a lazy pipeline, so it runs once
   = help: collect it if both places need its items, as in `(collect values)`, or write a function that rebuilds it
 
 error[L0501]: use of moved value `steps`
- --> check/found_iterator_used_again.rslisp:8:14
-  |
-7 |   (prn (find steps (fn (step) (> (deref step) 2))))
-  |              ----- value moved here
-8 |   (prn (find steps (fn (step) (> (deref step) 2)))))
-  |              ^^^^^ value used here after it moved
-  |
-  = note: `steps` is a lazy pipeline, so it runs once
-  = help: collect it if both places need its items, as in `(collect steps)`, or write a function that rebuilds it
+  --> check/found_iterator_used_again.rslisp:14:14
+   |
+12 |   (prn (find steps
+   |              ----- value moved here
+13 |              (fn (step) (> (deref step) 2))))
+14 |   (prn (find steps
+   |              ^^^^^ value used here after it moved
+   |
+   = note: `steps` is a lazy pipeline, so it runs once
+   = help: collect it if both places need its items, as in `(collect steps)`, or write a function that rebuilds it

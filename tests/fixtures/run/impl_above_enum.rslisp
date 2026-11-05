@@ -3,9 +3,7 @@
 
 (impl labeled drive
   (label (d)
-    (match d
-      (electric "electric")
-      (petrol "petrol"))))
+         (match d (electric "electric") (petrol "petrol"))))
 
 (enum drive electric petrol)
 

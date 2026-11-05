@@ -1,17 +1,19 @@
-(enum app-error
-  (bad-input string)
-  (missing))
+(enum app-error (bad-input string) (missing))
 
 (display app-error (error)
   (match error
     ((bad-input message) (str "bad input: " message))
     (missing "missing")))
 
-(type fail (fn (bool) (result unit app-error)))
+(type fail
+  (fn (bool) (result unit app-error)))
+
 (defn fail (missing?)
   (if missing?
       (err app-error/missing)
       (err (app-error/bad-input (str "oops")))))
 
-(type main (fn () (result unit app-error)))
+(type main
+  (fn () (result unit app-error)))
+
 (defn main () (fail true))

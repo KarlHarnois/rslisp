@@ -1,3 +1,4 @@
-(defn add (:x i64 :y i64 (defaults :y 1)) (+ x y))
+(defn add (:x i64 :y i64 (defaults :y 1))
+  (+ x y))
 
 (export add)

@@ -1,8 +1,14 @@
-(type square-float (where ((n float)) (fn (n) n)))
+(type square-float
+  (where ((n float)) (fn (n) n)))
+
 (defn square-float (x) (* x x))
 
-(type show-float (where ((n float)) (fn (n) string)))
+(type show-float
+  (where ((n float)) (fn (n) string)))
+
 (defn show-float (x) (str x))
 
-(type square-shown (where ((n display)) (fn (n) n)))
+(type square-shown
+  (where ((n display)) (fn (n) n)))
+
 (defn square-shown (x) (* x x))

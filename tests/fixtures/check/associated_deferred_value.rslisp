@@ -1,4 +1,5 @@
 (defn main ()
-  (let (answer (result _ parse-bool-error)) (parse "4"))
+  (let (answer (result _ parse-bool-error))
+    (parse "4"))
   (let (count i64) (unwrap-ok answer))
   (println count))

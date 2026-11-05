@@ -1,18 +1,35 @@
-(type first-big (fn ((iterator i64)) (option i64)))
-(defn first-big (values) (find values (fn (value) (> (deref value) 50))))
+(type first-big
+  (fn ((iterator i64)) (option i64)))
 
-(type has-big? (fn ((iterator i64)) bool))
-(defn has-big? (values) (any? values (fn (value) (> value 50))))
+(defn first-big (values)
+  (find values
+        (fn (value) (> (deref value) 50))))
 
-(type all-small? (fn ((iterator i64)) bool))
-(defn all-small? (values) (every? values (fn (value) (< value 50))))
+(type has-big?
+  (fn ((iterator i64)) bool))
 
-(type how-many (fn ((iterator i64)) usize))
+(defn has-big? (values)
+  (any? values (fn (value) (> value 50))))
+
+(type all-small?
+  (fn ((iterator i64)) bool))
+
+(defn all-small? (values)
+  (every? values
+          (fn (value) (< value 50))))
+
+(type how-many
+  (fn ((iterator i64)) usize))
+
 (defn how-many (values) (count values))
 
-(defn first-even (values) (find values (fn (value) (= (rem (deref value) 2) 0))))
+(defn first-even (values)
+  (find values
+        (fn (value) (= (rem (deref value) 2) 0))))
 
-(defn even-year (years) (find (copied years) (fn (year) (= (rem year 2) 0))))
+(defn even-year (years)
+  (find (copied years)
+        (fn (year) (= (rem year 2) 0))))
 
 (defn main ()
   (prn (first-big (range 1 100)))
@@ -22,6 +39,10 @@
   (prn (first-even (range 2041 2045)))
   (let years (vec 2017 2018 2019))
   (prn (even-year years))
-  (let recent (filter (iter years) (fn (year) (> (deref year) 2017))))
-  (prn (every? recent (fn (year) (> (deref year) 2018))))
-  (prn (any? (iter years) (fn (year) (> (deref year) 2018)))))
+  (let recent
+    (filter (iter years)
+            (fn (year) (> (deref year) 2017))))
+  (prn (every? recent
+               (fn (year) (> (deref year) 2018))))
+  (prn (any? (iter years)
+             (fn (year) (> (deref year) 2018)))))

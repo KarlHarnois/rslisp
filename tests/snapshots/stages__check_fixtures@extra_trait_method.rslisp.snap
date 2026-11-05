@@ -1,12 +1,12 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/extra_trait_method.rslisp
 ---
 error[L0240]: `area` is implemented more than once
- --> check/extra_trait_method.rslisp:8:4
+ --> check/extra_trait_method.rslisp:9:4
   |
-8 |   (area (c) (* (field c radius) (field c radius))))
+9 |   (area (c)
   |    ^^^^ defined again here
   |
   = help: remove one of the definitions

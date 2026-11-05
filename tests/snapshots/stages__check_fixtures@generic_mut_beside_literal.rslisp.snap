@@ -4,15 +4,15 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/generic_mut_beside_literal.rslisp
 ---
 error[L0401]: mismatched types
- --> check/generic_mut_beside_literal.rslisp:6:16
+ --> check/generic_mut_beside_literal.rslisp:9:16
   |
-6 |   (later? 2020 (mut year)))
+9 |   (later? 2020 (mut year)))
   |                ^^^^^^^^^^ expected an integer, found `(mut _)`
 
 error[L0419]: this argument is a copy, so changing it changes nothing
-  --> check/generic_mut_beside_literal.rslisp:10:22
+  --> check/generic_mut_beside_literal.rslisp:13:22
    |
-10 |   (later? (mut year) 2020))
+13 |   (later? (mut year) 2020))
    |                      ^^^^ this is a copy, not a place
    |
    = help: pass a local or a field, because a call returns a copy

@@ -1,5 +1,6 @@
 (defn read-count (text)
-  (let (count (result i64 _)) (parse text))
+  (let (count (result i64 _))
+    (parse text))
   count)
 
 (defn main ()

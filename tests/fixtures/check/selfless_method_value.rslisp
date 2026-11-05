@@ -1,7 +1,7 @@
-(defstruct garage :spots i64)
+(defstruct garage
+  :spots i64)
 
-(trait parking
-  (park (fn (i64) i64)))
+(trait parking (park (fn (i64) i64)))
 
 (impl parking garage
   (park (spot) (+ spot 100)))

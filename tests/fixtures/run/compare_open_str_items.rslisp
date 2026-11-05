@@ -1,11 +1,14 @@
 (defn leaves (models)
-  (count (filter (iter models) (fn (m) (= (deref m) "Leaf")))))
+  (count (filter (iter models)
+                 (fn (m) (= (deref m) "Leaf")))))
 
 (defn leaf-models (models)
-  (count (filter (iter models) (fn (m) (= m "Leaf")))))
+  (count (filter (iter models)
+                 (fn (m) (= m "Leaf")))))
 
 (defn first-leaf (models)
-  (find (iter models) (fn (m) (= m "Leaf"))))
+  (find (iter models)
+        (fn (m) (= m "Leaf"))))
 
 (defn main ()
   (let models (vec "Leaf" "Ariya"))

@@ -1,4 +1,2 @@
 (defn classify (n)
-  (match n
-    (0 "zero")
-    (1 "one")))
+  (match n (0 "zero") (1 "one")))

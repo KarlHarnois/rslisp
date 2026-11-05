@@ -4,46 +4,46 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/show_help_lines.rslisp
 ---
 error[L0404]: `ticket` does not implement `show`
-  --> check/show_help_lines.rslisp:15:8
+  --> check/show_help_lines.rslisp:22:8
    |
- 2 | (derive ticket clone)
+ 4 | (derive ticket clone)
    | --------------------- this `derive` leaves out `show`
 ...
-15 |   (prn (->ticket 1))
+22 |   (prn (->ticket 1))
    |        ^^^^^^^^^^^^ this needs `show`
    |
    = help: add `show` to the struct's `derive`
 
 error[L0404]: `(tree bool)` does not implement `show`
-  --> check/show_help_lines.rslisp:16:8
+  --> check/show_help_lines.rslisp:23:8
    |
- 5 | (show (tree i64) (t) leaf)
+ 8 | (show (tree i64) (t) leaf)
    |       ---------- this `show` replaces the inferred one for every `tree`
 ...
-16 |   (prn (the (tree bool) tree/leaf))
+23 |   (prn (the (tree bool) tree/leaf))
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `show`
 
 error[L0404]: `(tree bool)` does not implement `display`
-  --> check/show_help_lines.rslisp:17:12
+  --> check/show_help_lines.rslisp:24:12
    |
-17 |   (println (the (tree bool) tree/leaf))
+24 |   (println (the (tree bool) tree/leaf))
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `display`
    |
    = help: implement `display` with `(display type (value) ...)`, or print its printed form with `prn`
 
 error[L0404]: `task` does not implement `show`
-  --> check/show_help_lines.rslisp:18:8
+  --> check/show_help_lines.rslisp:25:8
    |
-18 |   (prn (task/run one))
+25 |   (prn (task/run one))
    |        ^^^^^^^^^^^^^^ this needs `show`
    |
    = note: `task` cannot derive `show`: variant `run` holds `(fn () i64)`
    = help: a closure, an iterator or a function has no printed form
 
 error[L0404]: `(fn (i64) i64)` does not implement `show`
-  --> check/show_help_lines.rslisp:19:8
+  --> check/show_help_lines.rslisp:26:8
    |
-19 |   (prn (vec twice))
+26 |   (prn (vec twice))
    |        ^^^^^^^^^^^ this needs `show`
    |
    = note: `show` is implemented for: bool, char, str, string, unit, io-error, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64, (where ((a show)) (ref a)), (where ((a show)) (vec a)), (where ((a show)) (slice a)), (where ((a show)) (option a)), (where ((a show) (b show)) (result a b)), (where ((a show)) (box a)), (where ((a show) (b show)) (pair a b)), (where ((k show) (v show)) (sorted-map k v)), (where ((k show) (v show)) (hash-map k v)), (tree i64)
@@ -51,9 +51,9 @@ error[L0404]: `(fn (i64) i64)` does not implement `show`
    = help: a closure, an iterator or a function has no printed form
 
 error[L0404]: `spare` does not implement `show`
-  --> check/show_help_lines.rslisp:20:8
+  --> check/show_help_lines.rslisp:27:8
    |
-20 |   (prn (->spare (some one))))
+27 |   (prn (->spare (some one))))
    |        ^^^^^^^^^^^^^^^^^^^^ this needs `show`
    |
    = note: `spare` cannot derive `show`: field `maker` is `(option (fn () i64))`

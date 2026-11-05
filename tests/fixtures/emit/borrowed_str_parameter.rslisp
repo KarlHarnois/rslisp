@@ -1,4 +1,5 @@
 (type show (fn (str) unit))
+
 (defn show (text) (println text))
 
 (defn main ()

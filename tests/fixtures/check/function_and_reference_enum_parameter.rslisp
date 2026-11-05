@@ -1,1 +1,4 @@
-(enum (thing a) (callback (fn (a) bool)) (borrow (ref a)) (plain i64))
+(enum (thing a)
+  (callback (fn (a) bool))
+  (borrow (ref a))
+  (plain i64))

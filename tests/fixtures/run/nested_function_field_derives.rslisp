@@ -1,9 +1,13 @@
-(defstruct car :make str :model str)
-(defstruct spare :maker (option (fn () car)))
+(defstruct car
+  :make str
+  :model str)
+
+(defstruct spare
+  :maker (option (fn () car)))
+
 (enum line (stations (vec (fn () i64))))
 
-(defn build-leaf ()
-  (->car :make "Nissan" :model "Leaf"))
+(defn build-leaf () (->car :make "Nissan" :model "Leaf"))
 
 (defn count-doors () 4)
 
@@ -13,7 +17,10 @@
     ((stations steps) (println (len steps))))
   (let backup (->spare :maker (some build-leaf)))
   (match backup
-    ((spare (some maker)) (println (:make (maker)) " " (:model (maker))))
+    ((spare (some maker))
+     (println (:make (maker))
+              " "
+              (:model (maker))))
     ((spare none) (println "no spare")))
   (match (line/stations (vec count-doors))
     ((stations steps) (println (len steps)))))

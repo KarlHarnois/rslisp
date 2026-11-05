@@ -1,7 +1,11 @@
-(def bump! (rust "*{0} += 1" (fn ((mut i64)) unit)))
-(defstruct counter :count i64)
+(def bump!
+  (rust "*{0} += 1" (fn ((mut i64)) unit)))
+
+(defstruct counter
+  :count i64)
 
 (type peek (fn ((ref i64)) i64))
+
 (defn peek (x) (deref x))
 
 (defn main ()

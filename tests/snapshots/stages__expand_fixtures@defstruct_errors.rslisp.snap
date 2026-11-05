@@ -4,25 +4,25 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/defstruct_errors.rslisp
 ---
 error[L0301]: this field has no type
- --> expand/defstruct_errors.rslisp:1:26
+ --> expand/defstruct_errors.rslisp:3:3
   |
-1 | (defstruct car :make str :year)
-  |                          ^^^^^ here
+3 |   :year)
+  |   ^^^^^ here
   |
   = help: write a type after it, as in :year i64
 
 error[L0301]: a field must start with `:`
- --> expand/defstruct_errors.rslisp:2:17
+ --> expand/defstruct_errors.rslisp:6:3
   |
-2 | (defstruct bike make str)
-  |                 ^^^^ here
+6 |   make
+  |   ^^^^ here
   |
   = help: write each field as `:name type`, as in (defstruct point :x f64 :y f64)
 
 error[L0301]: this field has no type
- --> expand/defstruct_errors.rslisp:3:16
-  |
-3 | (defstruct van :seats :doors i64)
-  |                ^^^^^^ here
-  |
-  = help: write a type after it, as in :seats i64
+  --> expand/defstruct_errors.rslisp:10:3
+   |
+10 |   :seats :doors
+   |   ^^^^^^ here
+   |
+   = help: write a type after it, as in :seats i64

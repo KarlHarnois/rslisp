@@ -1,3 +1,6 @@
 (defn increment ((x i64)) (+ x 1))
+
 (defn apply-one (f a) (f a))
-(defn main () (println (apply-one increment 41)))
+
+(defn main ()
+  (println (apply-one increment 41)))

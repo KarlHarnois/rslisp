@@ -1,4 +1,6 @@
-(defstruct person :name string :age u32)
+(defstruct person
+  :name string
+  :age u32)
 
 (defn ana? (p) (= (:name p) "Ana"))
 

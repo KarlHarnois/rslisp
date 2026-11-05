@@ -4,14 +4,22 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/two_structural_paths.rslisp
 ---
 error[L0248]: `octal3` binds `std::fmt::Octal`, which `octal` already infers
- --> check/two_structural_paths/d.rslisp:6:3
-  |
-6 |   (structural :struct "write!({1}, \"{name}\")" :field "" :variant "write!({1}, \"{name}\")" :part "" :bare "write!({1}, \"{name}\")")
-  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the two clauses would infer two impls of one Rust trait
-  |
- ::: check/two_structural_paths/a.rslisp:6:3
-  |
-6 |   (structural :struct "write!({1}, \"{name}\")" :field "" :variant "write!({1}, \"{name}\")" :part "" :bare "write!({1}, \"{name}\")")
-  |   ------------------------------------------------------------------------------------------------------------------------------------ `octal` infers `std::fmt::Octal` here
-  |
-  = help: keep one of the two clauses, or give this `rust-trait` another Rust path
+  --> check/two_structural_paths/d.rslisp:11:3
+   |
+11 | /   (structural :struct "write!({1}, \"{name}\")"
+12 | |               :field ""
+13 | |               :variant "write!({1}, \"{name}\")"
+14 | |               :part ""
+15 | |               :bare "write!({1}, \"{name}\")")
+   | |______________________________________________^ the two clauses would infer two impls of one Rust trait
+   |
+  ::: check/two_structural_paths/a.rslisp:11:3
+   |
+11 | /   (structural :struct "write!({1}, \"{name}\")"
+12 | |               :field ""
+13 | |               :variant "write!({1}, \"{name}\")"
+14 | |               :part ""
+15 | |               :bare "write!({1}, \"{name}\")")
+   | |______________________________________________- `octal` infers `std::fmt::Octal` here
+   |
+   = help: keep one of the two clauses, or give this `rust-trait` another Rust path

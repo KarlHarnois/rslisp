@@ -1,8 +1,13 @@
-(defstruct person :name string :age u32)
+(defstruct person
+  :name string
+  :age u32)
 
 (defn adults (people)
-  (collect (filter (iter people) (fn (p) (>= (:age p) 18)))))
+  (collect (filter (iter people)
+                   (fn (p) (>= (:age p) 18)))))
 
 (defn main ()
-  (let people (vec (->person (str "Ana") 30) (->person (str "Ben") 12)))
+  (let people
+    (vec (->person (str "Ana") 30)
+         (->person (str "Ben") 12)))
   (println (len (adults people))))

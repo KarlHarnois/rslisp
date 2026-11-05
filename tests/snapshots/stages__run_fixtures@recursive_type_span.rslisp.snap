@@ -1,21 +1,21 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).run_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/run/recursive_type_span.rslisp
 ---
 error[E0072]: recursive type `tree` has infinite size
- --> run/recursive_type_span.rslisp:4:7
+ --> run/recursive_type_span.rslisp:7:7
   |
-4 | (enum tree (leaf i64) (node (cell tree)))
+7 | (enum tree
   |       ^^^^ here
   |
   = note: reported by rustc while compiling the generated Rust
   = help: insert some indirection (e.g., a `Box`, `Rc`, or `&`) to break the cycle
 
 error[E0391]: cycle detected when computing layout of `tree`
- --> run/recursive_type_span.rslisp:4:7
+ --> run/recursive_type_span.rslisp:7:7
   |
-4 | (enum tree (leaf i64) (node (cell tree)))
+7 | (enum tree
   |       ^^^^ here
   |
   = note: ...which requires computing layout of `core::cell::Cell<tree>`...

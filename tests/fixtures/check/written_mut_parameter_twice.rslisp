@@ -1,4 +1,5 @@
 (type fill! (fn ((mut (vec i64))) unit))
+
 (defn fill! (stack)
   (push! stack 1)
   (push! stack 2))

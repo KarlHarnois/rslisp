@@ -1,2 +1,4 @@
 (defn duplicate (value) (clone value))
-(defn duplicate-text (value) (clone (the string value)))
+
+(defn duplicate-text (value)
+  (clone (the string value)))

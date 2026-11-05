@@ -1,4 +1,6 @@
-(type flip (where ((a number signed)) (fn (a) a)))
+(type flip
+  (where ((a number signed)) (fn (a) a)))
+
 (defn flip (b) (+ (neg b) 1))
 
 (defn main ()

@@ -1,6 +1,10 @@
 (use prelude/macros header-shape)
 
-(defrule my-defn ((n p b ...) (defn n p b ...)))
+(defrule my-defn
+  ((n p b ...)
+   (defn n p
+     b
+     ...)))
 
 (header-shape (my-defn name parameters))
 

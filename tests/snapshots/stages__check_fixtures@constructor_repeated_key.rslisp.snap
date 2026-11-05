@@ -4,11 +4,11 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/constructor_repeated_key.rslisp
 ---
 error[L0454]: `:name` is given twice in `user`
- --> check/constructor_repeated_key.rslisp:4:32
+ --> check/constructor_repeated_key.rslisp:9:25
   |
-4 |   (let ana (->user :name "ana" :name "bea" :email "ana@example.com"))
-  |                    -----       ^^^^^ given again here
-  |                    |
-  |                    first given here
+9 |     (->user :name "ana" :name "bea" :email "ana@example.com"))
+  |             -----       ^^^^^ given again here
+  |             |
+  |             first given here
   |
   = help: remove the second `:name` and its value

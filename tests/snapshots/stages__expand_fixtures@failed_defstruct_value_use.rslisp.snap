@@ -4,27 +4,27 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/failed_defstruct_value_use.rslisp
 ---
 error[L0301]: a field must start with `:`
- --> expand/failed_defstruct_value_use.rslisp:1:18
+ --> expand/failed_defstruct_value_use.rslisp:2:3
   |
-1 | (defstruct point (x i64) y)
-  |                  ^^^^^^^ here
+2 |   (x i64)
+  |   ^^^^^^^ here
   |
   = help: write each field as `:name type`, as in (defstruct point :x f64 :y f64)
 
 error[L0201]: cannot find `point` in this scope
- --> expand/failed_defstruct_value_use.rslisp:3:18
+ --> expand/failed_defstruct_value_use.rslisp:5:18
   |
-3 | (defn origin () (point 0 0))
+5 | (defn origin () (point 0 0))
   |                  ^^^^^ not found in this scope
   |
 help: a name with a similar spelling exists
   |
-3 - (defn origin () (point 0 0))
-3 + (defn origin () (print 0 0))
+5 - (defn origin () (point 0 0))
+5 + (defn origin () (print 0 0))
   |
 
 error[L0201]: cannot find `point-x` in this scope
- --> expand/failed_defstruct_value_use.rslisp:5:25
+ --> expand/failed_defstruct_value_use.rslisp:8:13
   |
-5 | (defn main () (println (point-x (origin))))
-  |                         ^^^^^^^ not found in this scope
+8 |   (println (point-x (origin))))
+  |             ^^^^^^^ not found in this scope

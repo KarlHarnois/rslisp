@@ -4,7 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/rust_clause_target_error.rslisp
 ---
 error[L0415]: `vec` takes 1 type argument but 0 were given
- --> check/rust_clause_target_error.rslisp:2:69
+ --> check/rust_clause_target_error.rslisp:5:10
   |
-2 |   (rust "measure({0})" (where ((s sequence)) (fn ((ref s)) usize)) ((vec) "count({0})")))
-  |                                                                     ^^^^^ expected 1 type argument
+5 |         ((vec) "count({0})")))
+  |          ^^^^^ expected 1 type argument

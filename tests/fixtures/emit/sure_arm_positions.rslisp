@@ -4,10 +4,12 @@
 
 (defn choose (flag)
   (match flag
-    (true (match (box/value 1) ((value n) (plus-one n))))
+    (true (match (box/value 1)
+            ((value n) (plus-one n))))
     (false 0)))
 
 (defn main ()
-  (println (match (box/value 2) ((value n) (plus-one n))))
+  (println (match (box/value 2)
+             ((value n) (plus-one n))))
   (println (choose true))
   (println (choose false)))

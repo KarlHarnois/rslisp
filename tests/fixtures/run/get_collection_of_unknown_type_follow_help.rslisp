@@ -1,4 +1,6 @@
-(type score-of (fn ((ref (sorted-map string _)) _) _))
+(type score-of
+  (fn ((ref (sorted-map string _)) _) _))
+
 (defn score-of (scores name) (get scores name))
 
 (defn main ()

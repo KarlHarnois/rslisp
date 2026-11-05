@@ -1,10 +1,14 @@
 (use code list module-notes definition-symbol)
 
 (defmacro docstring-forms-beside (definer)
-  (list (quote quote) (module-notes (definition-symbol definer "notes") (quote docstring-forms))))
+  (list (quote quote)
+        (module-notes (definition-symbol definer "notes")
+                      (quote docstring-forms))))
 
 (def syntax-docstring-forms (docstring-forms-beside defn))
 
-(def struct-docstring-forms (docstring-forms-beside defstruct))
+(def struct-docstring-forms
+  (docstring-forms-beside defstruct))
 
-(def macros-docstring-forms (docstring-forms-beside defmacro))
+(def macros-docstring-forms
+  (docstring-forms-beside defmacro))

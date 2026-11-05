@@ -1,7 +1,10 @@
-(type first-even-double (fn ((vec i64)) (option i64)))
+(type first-even-double
+  (fn ((vec i64)) (option i64)))
 
 (defn first-even-double (numbers)
-  (let found (try (find (copied numbers) (fn (n) (= (rem n 2) 0)))))
+  (let found
+    (try (find (copied numbers)
+               (fn (n) (= (rem n 2) 0)))))
   (some (* found 2)))
 
 (defn main ()

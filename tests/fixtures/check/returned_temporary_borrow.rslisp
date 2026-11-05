@@ -5,8 +5,7 @@
     ((some items) (at items 0))
     (none (at (vec 0) 0))))
 
-(defn first-fallback ()
-  (at fallback-years 0))
+(defn first-fallback () (at fallback-years 0))
 
 (defn built-years ()
   (ref (vec 2019 2021)))

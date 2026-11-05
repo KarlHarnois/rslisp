@@ -2,5 +2,7 @@
   (let year 2024)
   (let model "Nissan Leaf")
   (let record (fn (n) (println model n)))
-  (let apply (the (fn ((fn (i64) unit)) unit) (fn (action) (action year))))
+  (let apply
+    (the (fn ((fn (i64) unit)) unit)
+         (fn (action) (action year))))
   (apply (fn (n) (record n))))

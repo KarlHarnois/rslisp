@@ -28,9 +28,7 @@
        instruction/halt))
 
 (defn underflowing ()
-  (vec (instruction/push 1)
-       instruction/add
-       instruction/halt))
+  (vec (instruction/push 1) instruction/add instruction/halt))
 
 (defn million-steps ()
   (vec (instruction/push 7)

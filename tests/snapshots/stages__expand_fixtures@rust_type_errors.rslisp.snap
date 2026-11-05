@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/rust_type_errors.rslisp
 ---
 error[L0225]: `{1}` names no type parameter
@@ -12,49 +12,49 @@ error[L0225]: `{1}` names no type parameter
   = help: declare the type parameters on the name, as in `(rust-type (shifted a b) "Box<{1}>")`
 
 error[L0226]: the template never uses this type parameter
- --> expand/rust_type_errors.rslisp:2:25
+ --> expand/rust_type_errors.rslisp:3:25
   |
-2 | (rust-type (ignored key value) "Vec<{0}>")
+3 | (rust-type (ignored key value) "Vec<{0}>")
   |                         ^^^^^ its placeholder is `{1}`
   |
   = help: use `{1}` in the template, or remove the parameter
 
 error[L0213]: this type template has a malformed placeholder
- --> expand/rust_type_errors.rslisp:3:19
+ --> expand/rust_type_errors.rslisp:5:19
   |
-3 | (rust-type broken "Vec<{0")
+5 | (rust-type broken "Vec<{0")
   |                   ^^^^^^^^ a placeholder is `{`, a number and `}`
   |
   = help: write a literal brace as `{{` or `}}`
 
 error[L0225]: `{0}` names no type parameter
- --> expand/rust_type_errors.rslisp:4:18
+ --> expand/rust_type_errors.rslisp:7:18
   |
-4 | (rust-type plain "Vec<{0}>")
+7 | (rust-type plain "Vec<{0}>")
   |                  ^^^^^^^^^^ this type has 0 type parameters
   |
   = help: declare the type parameters on the name, as in `(rust-type (plain a) "Vec<{0}>")`
 
 error[L0210]: malformed `rust-type`
- --> expand/rust_type_errors.rslisp:5:1
+ --> expand/rust_type_errors.rslisp:9:1
   |
-5 | (rust-type (spare item) "Vec<{0}>" "extra")
+9 | (rust-type (spare item) "Vec<{0}>" "extra")
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `rust-type`
   |
   = help: write it as `(rust-type name "template" (type "template") ...)`
 
 error[L0210]: malformed `rust-type`
- --> expand/rust_type_errors.rslisp:6:1
-  |
-6 | (rust-type missing-template)
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `rust-type`
-  |
-  = help: write it as `(rust-type name "template" (type "template") ...)`
+  --> expand/rust_type_errors.rslisp:11:1
+   |
+11 | (rust-type missing-template)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this does not fit the shape of `rust-type`
+   |
+   = help: write it as `(rust-type name "template" (type "template") ...)`
 
 error[L0224]: a type template cannot borrow a placeholder
- --> expand/rust_type_errors.rslisp:7:29
-  |
-7 | (rust-type (borrowing item) "Vec<{&0}>")
-  |                             ^^^^^^^^^^^ `{&...}` only makes sense for a value
-  |
-  = help: write the placeholder as `{0}`
+  --> expand/rust_type_errors.rslisp:13:29
+   |
+13 | (rust-type (borrowing item) "Vec<{&0}>")
+   |                             ^^^^^^^^^^^ `{&...}` only makes sense for a value
+   |
+   = help: write the placeholder as `{0}`

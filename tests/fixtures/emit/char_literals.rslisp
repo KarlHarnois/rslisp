@@ -1,5 +1,7 @@
 (defn whitespace? (c) (= c (char " ")))
-(defn digit? (c) (<= (char "0") c (char "9")))
+
+(defn digit? (c)
+  (<= (char "0") c (char "9")))
 
 (defn main ()
   (println (whitespace? (char " ")))

@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/run/function_value_literal_items_written_call.rslisp
 ---
 error[L0401]: mismatched types
- --> run/function_value_literal_items_written_call.rslisp:5:20
+ --> run/function_value_literal_items_written_call.rslisp:6:20
   |
-5 |   (println (small? (the u16 5)))
+6 |   (println (small? (the u16 5)))
   |                    ^^^^^^^^^^^ expected `i64`, found `u16`
   |
   = note: `b` defaulted to `i64`, because `small?` is called with `u16` and passed as a value with `u8`

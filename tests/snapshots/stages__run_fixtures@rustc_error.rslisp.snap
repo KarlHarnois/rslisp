@@ -1,18 +1,18 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).run_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/run/rustc_error.rslisp
 ---
 error[L0501]: use of moved value `first-pair`
- --> run/rustc_error.rslisp:6:19
+ --> run/rustc_error.rslisp:8:19
   |
-5 |   (let moved first-pair)
+7 |   (let moved first-pair)
   |              ---------- value moved here
-6 |   (println (:left first-pair)))
+8 |   (println (:left first-pair)))
   |                   ^^^^^^^^^^ value used here after it moved
   |
 help: clone the value if both places need it
   |
-5 -   (let moved first-pair)
-5 +   (let moved (clone first-pair))
+7 -   (let moved first-pair)
+7 +   (let moved (clone first-pair))
   |

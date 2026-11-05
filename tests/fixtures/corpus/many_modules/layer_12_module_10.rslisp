@@ -1,18 +1,38 @@
-(use many_modules/layer_11_module_10 layer-11-module-10-score layer-11-module-10-reading)
-(use many_modules/layer_1_module_10 layer-1-module-10-score layer-1-module-10-reading)
-(use many_modules/layer_7_module_2 layer-7-module-2-score layer-7-module-2-reading)
+(use many_modules/layer_11_module_10 layer-11-module-10-score
+                                     layer-11-module-10-reading)
 
-(export layer-12-module-10-score layer-12-module-10-reading layer-12-module-10-label)
+(use many_modules/layer_1_module_10 layer-1-module-10-score
+                                    layer-1-module-10-reading)
 
-(defstruct layer-12-module-10-reading :site str :level i64 :weight f64)
+(use many_modules/layer_7_module_2 layer-7-module-2-score
+                                   layer-7-module-2-reading)
 
-(display layer-12-module-10-reading (reading) "layer-12-module-10 " (:site reading) "=" (:level reading))
+(export layer-12-module-10-score layer-12-module-10-reading
+        layer-12-module-10-label)
+
+(defstruct layer-12-module-10-reading
+  :site str
+  :level i64
+  :weight f64)
+
+(display layer-12-module-10-reading (reading)
+  "layer-12-module-10 "
+  (:site reading)
+  "="
+  (:level reading))
 
 (defn layer-12-module-10-label (n)
-  (str (->layer-12-module-10-reading "layer-12-module-10" (layer-12-module-10-score n) 120.5)))
+  (str (->layer-12-module-10-reading "layer-12-module-10"
+                                     (layer-12-module-10-score n)
+                                     120.5)))
 
 (defn layer-12-module-10-score (n)
-  (rem (+ (layer-11-module-10-score (+ n 1)) (:level (layer-1-module-10-reading n)) (:level (layer-7-module-2-reading n))) 997))
+  (rem (+ (layer-11-module-10-score (+ n 1))
+          (:level (layer-1-module-10-reading n))
+          (:level (layer-7-module-2-reading n)))
+       997))
 
 (defn layer-12-module-10-reading (n)
-  (->layer-12-module-10-reading "layer-12-module-10" (layer-12-module-10-score n) (* 0.5 120.0)))
+  (->layer-12-module-10-reading "layer-12-module-10"
+                                (layer-12-module-10-score n)
+                                (* 0.5 120.0)))

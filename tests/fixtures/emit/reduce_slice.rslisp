@@ -1,4 +1,6 @@
-(type total (fn ((ref (slice i64))) i64))
+(type total
+  (fn ((ref (slice i64))) i64))
+
 (defn total (items) (reduce items 0 add))
 
 (defn main ()

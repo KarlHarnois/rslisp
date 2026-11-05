@@ -1,6 +1,6 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).expand_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/expand/expansion_too_deep.rslisp
 ---
 error[L0305]: macro expansion did not finish
@@ -12,9 +12,9 @@ error[L0305]: macro expansion did not finish
   = help: check that every recursive macro has a case that stops
 
 error[L0305]: macro expansion did not finish
- --> expand/expansion_too_deep.rslisp:6:36
+ --> expand/expansion_too_deep.rslisp:7:15
   |
-6 | (def loops-in-argument (fn () (+ 1 (forever 1))))
-  |                                    ^^^^^^^^^^^ expanding this form keeps producing more macro calls
+7 |   (fn () (+ 1 (forever 1))))
+  |               ^^^^^^^^^^^ expanding this form keeps producing more macro calls
   |
   = help: check that every recursive macro has a case that stops

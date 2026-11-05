@@ -1,5 +1,8 @@
 (defn counted-first (years)
-  (at (do (let count (len years)) (println count) years) 0))
+  (at (do (let count (len years))
+          (println count)
+          years)
+      0))
 
 (defn first-by-length (years)
   (first (match (len years) (0 years) (_ years))))
@@ -8,7 +11,8 @@
   (at (do (println "noting") years) 0))
 
 (defn checked-first (years)
-  (at (if (> (len years) 1) years years) 0))
+  (at (if (> (len years) 1) years years)
+      0))
 
 (defn main ()
   (let years (vec 2019 2021))

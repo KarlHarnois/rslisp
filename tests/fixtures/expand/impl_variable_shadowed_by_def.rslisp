@@ -1,3 +1,6 @@
-(trait sized (size (fn ((ref self)) usize)))
+(trait sized
+  (size (fn ((ref self)) usize)))
+
 (impl sized (vec t) (size (v) (len v)))
+
 (defn t () 7)

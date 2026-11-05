@@ -1,11 +1,14 @@
 (def admin? true)
+
 (def some-function (fn (x) (* x x)))
+
 (defn square (x) (* x x))
 
 (defn describe (n)
-  (cond ((< n 0) "negative")
-        ((= n 0) "zero")
-        (else "positive")))
+  (cond
+    ((< n 0) "negative")
+    ((= n 0) "zero")
+    (else "positive")))
 
 (defn main ()
   (println admin?)

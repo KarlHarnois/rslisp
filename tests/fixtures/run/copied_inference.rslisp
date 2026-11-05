@@ -4,10 +4,10 @@
 
 (defn count-lines (lines)
   (reduce (enumerate (copied lines))
-        0
-        (fn (state entry)
-          (let-pair (index line) entry
-            (+ state (parse-record (+ index 1) line))))))
+          0
+          (fn (state entry)
+            (let-pair (index line) entry
+              (+ state (parse-record (+ index 1) line))))))
 
 (defn main ()
   (let lines (collect (lines "a,b\nc,d")))

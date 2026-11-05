@@ -1,4 +1,6 @@
-(defstruct garage :owner string :spots u16)
+(defstruct garage
+  :owner string
+  :spots u16)
 
 (defn main ()
   (let g (->garage (str "karl") 2))

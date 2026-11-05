@@ -1,4 +1,5 @@
-(defrule via ((m n p b ...) (m n p b ...)))
+(defrule via
+  ((m n p b ...) (m n p b ...)))
 
 (via defn twice (x) (* 2 x))
 

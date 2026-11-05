@@ -1,6 +1,7 @@
 (enum result (ok i64) (err string))
 
 (type settle (fn (result) i64))
+
 (defn settle (outcome)
   (match outcome
     ((ok value) value)

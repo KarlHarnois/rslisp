@@ -1,1 +1,3 @@
-(defmacro shout "Shouts." (x) x)
+(defmacro shout "Shouts."
+  (x)
+  x)

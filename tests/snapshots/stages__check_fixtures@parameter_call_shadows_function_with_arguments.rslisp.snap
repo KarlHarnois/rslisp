@@ -4,12 +4,12 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/parameter_call_shadows_function_with_arguments.rslisp
 ---
 error[L0401]: mismatched types
- --> check/parameter_call_shadows_function_with_arguments.rslisp:2:22
+ --> check/parameter_call_shadows_function_with_arguments.rslisp:1:34
   |
-2 |   (prn (double-range 5)))
-  |                      ^ expected `(fn (_ _) _)`, found an integer
-...
-5 |   (span 150 240))
-  |   -------------- `double-range` calls its parameter `span` here, so it expects a function
+1 | (defn main () (prn (double-range 5)))
+  |                                  ^ expected `(fn (_ _) _)`, found an integer
+2 |
+3 | (defn double-range (span) (span 150 240))
+  |                           -------------- `double-range` calls its parameter `span` here, so it expects a function
   |
   = help: the parameter `span` shadows the function `span`, so to call the function, rename the parameter

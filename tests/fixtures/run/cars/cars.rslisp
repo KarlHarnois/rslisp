@@ -1,3 +1,7 @@
-(defstruct car :make str :model str :year u16 :electric? bool)
+(defstruct car
+  :make str
+  :model str
+  :year u16
+  :electric? bool)
 
 (export car ->car)

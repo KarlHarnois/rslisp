@@ -4,10 +4,10 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/parameter_call_with_arguments_mismatch.rslisp
 ---
 error[L0401]: mismatched types
- --> check/parameter_call_with_arguments_mismatch.rslisp:2:24
+ --> check/parameter_call_with_arguments_mismatch.rslisp:1:36
   |
-2 |   (prn (combine-ranges 5)))
-  |                        ^ expected `(fn (_ _) _)`, found an integer
-...
-5 |   (combine 150 240))
-  |   ----------------- `combine-ranges` calls its parameter `combine` here, so it expects a function
+1 | (defn main () (prn (combine-ranges 5)))
+  |                                    ^ expected `(fn (_ _) _)`, found an integer
+2 |
+3 | (defn combine-ranges (combine) (combine 150 240))
+  |                                ----------------- `combine-ranges` calls its parameter `combine` here, so it expects a function

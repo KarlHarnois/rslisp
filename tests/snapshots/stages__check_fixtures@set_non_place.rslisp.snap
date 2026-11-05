@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/set_non_place.rslisp
 ---
 error[L0419]: this argument is a copy, so changing it changes nothing
- --> check/set_non_place.rslisp:4:9
+ --> check/set_non_place.rslisp:5:9
   |
-4 |   (set! (->cell false) true))
+5 |   (set! (->cell false) true))
   |         ^^^^^^^^^^^^^^ this is a copy, not a place
   |
   = help: pass a local or a field, because a call returns a copy

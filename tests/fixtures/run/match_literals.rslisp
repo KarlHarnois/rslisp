@@ -5,9 +5,7 @@
     (other "many")))
 
 (defn flip (flag)
-  (match flag
-    (true false)
-    (false true)))
+  (match flag (true false) (false true)))
 
 (type label (fn (string) f64))
 
@@ -25,7 +23,8 @@
   (println (label (str "left")))
   (println (label (str "right")))
   (println (label (str "other")))
-  (let (word (ref string)) (ref (str "left")))
+  (let (word (ref string))
+    (ref (str "left")))
   (match word
     ("left" (println "ref-left"))
     (other (println "ref-other")))

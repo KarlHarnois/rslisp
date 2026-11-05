@@ -1,3 +1,4 @@
 (defn main ()
-  (for-each (filter (split "a b" " ") (fn (word) (not (empty? word))))
+  (for-each (filter (split "a b" " ")
+                    (fn (word) (not (empty? word))))
             (fn (word) (println word))))

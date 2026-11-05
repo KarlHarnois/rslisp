@@ -1,4 +1,6 @@
-(defstruct point (x i64) y)
+(defstruct point
+  (x i64)
+  y)
 
 (defn origin () (->point :x 0 :y 0))
 

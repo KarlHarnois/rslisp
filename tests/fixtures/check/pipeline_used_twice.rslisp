@@ -1,7 +1,11 @@
-(defstruct user :name str :age u16)
+(defstruct user
+  :name str
+  :age u16)
 
 (defn main ()
-  (let users (vec (->user "Ana" 34) (->user "Bo" 12)))
+  (let users
+    (vec (->user "Ana" 34) (->user "Bo" 12)))
   (let names (map users :name))
   (println (count names))
-  (for-each names (fn (name) (println name))))
+  (for-each names
+            (fn (name) (println name))))

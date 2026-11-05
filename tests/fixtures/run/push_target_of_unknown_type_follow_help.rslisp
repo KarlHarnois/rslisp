@@ -1,4 +1,5 @@
 (type add-text! (fn ((mut string) _) _))
+
 (defn add-text! (message text) (push! message text))
 
 (defn main ()

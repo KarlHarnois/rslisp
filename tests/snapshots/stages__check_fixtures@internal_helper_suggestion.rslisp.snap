@@ -1,18 +1,18 @@
 ---
 source: tests/stages.rs
-expression: "Fixture::load(path).check_report()"
+expression: reports.report(path)
 input_file: tests/fixtures/check/internal_helper_suggestion.rslisp
 ---
 error[L0201]: cannot find `make-thng` in this scope
- --> check/internal_helper_suggestion.rslisp:5:31
+ --> check/internal_helper_suggestion.rslisp:6:13
   |
-5 | (defn misspelled () (println (make-thng 1)))
-  |                               ^^^^^^^^^ not found in this scope
+6 |   (println (make-thng 1)))
+  |             ^^^^^^^^^ not found in this scope
   |
 help: a name with a similar spelling exists
   |
-5 | (defn misspelled () (println (make-thing 1)))
-  |                                      +
+6 |   (println (make-thing 1)))
+  |                    +
 
 error[L0201]: cannot find `internal-helpr` in this scope
  --> check/internal_helper_suggestion/helpers.rslisp:6:14

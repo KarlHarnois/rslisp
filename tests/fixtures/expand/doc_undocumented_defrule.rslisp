@@ -1,3 +1,4 @@
-(defrule swap ((function left right) (function right left)))
+(defrule swap
+  ((function left right) (function right left)))
 
 (def swap-page (doc-page swap))

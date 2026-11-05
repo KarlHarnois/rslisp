@@ -11,5 +11,4 @@
     (point 0.0)))
 
 (def renamed
-  (match (shape/circle 1.0)
-    (circle circle)))
+  (match (shape/circle 1.0) (circle circle)))

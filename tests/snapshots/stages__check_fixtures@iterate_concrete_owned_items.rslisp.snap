@@ -4,7 +4,7 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/iterate_concrete_owned_items.rslisp
 ---
 error[L0401]: mismatched types
- --> check/iterate_concrete_owned_items.rslisp:6:23
+ --> check/iterate_concrete_owned_items.rslisp:9:23
   |
-6 |   (println (shout-all models)))
+9 |   (println (shout-all models)))
   |                       ^^^^^^ expected `(iterator string)`, found `(iterator (ref string))`
