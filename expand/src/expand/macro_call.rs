@@ -258,7 +258,7 @@ impl Expander<'_> {
             let use_site = self.tables.scopes.fresh();
             self.tables.use_site_scopes.insert(use_site);
             form.add_scope(use_site);
-            context.record_use_site(use_site);
+            context.record_fresh_use_site(use_site);
         }
         (form, introduction)
     }
