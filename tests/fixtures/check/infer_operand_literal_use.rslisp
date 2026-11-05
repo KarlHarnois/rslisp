@@ -1,0 +1,7 @@
+(defn port () 8080)
+
+(defn listen ((port u16)) port)
+
+(defn main ()
+  (println (infer (port)))
+  (listen (port)))

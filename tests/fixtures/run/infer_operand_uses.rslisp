@@ -1,0 +1,8 @@
+(defn wrap (x) (some x))
+
+(defn bump (x) (+ x 1))
+
+(defn main ()
+  (println (infer (wrap "s")))
+  (prn (wrap 1))
+  (println (infer (bump (the u8 1)))))

@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/infer_operand_uses.rslisp
+---
+(option (ref str))
+(some 1)
+u8

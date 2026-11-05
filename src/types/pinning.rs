@@ -170,13 +170,10 @@ impl InstantiationReport {
     ) {
         for module in &typed.modules {
             for definition in &module.definitions {
-                Self::collect_expr(
-                    &definition.value,
-                    definition.binding,
-                    targets,
-                    groups,
-                    entries,
-                );
+                let operands = typed.type_texts.operands_of(definition.binding);
+                for checked in std::iter::once(&definition.value).chain(operands) {
+                    Self::collect_expr(checked, definition.binding, targets, groups, entries);
+                }
             }
         }
     }
