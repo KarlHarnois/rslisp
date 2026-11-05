@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/infer_unresolved_operand.rslisp
+---
+usize
+i64
+bool
+i64
+i64
+i64
+bool
+i64
+(ref str)
+i64

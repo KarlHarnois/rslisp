@@ -20,6 +20,7 @@ pub struct Finalizer<'c> {
     earlier_errors: bool,
     closures_in_definition: Vec<Type>,
     type_text_operands: Vec<TypedExpr>,
+    inside_operand: bool,
 }
 
 impl<'c> Finalizer<'c> {
@@ -31,6 +32,7 @@ impl<'c> Finalizer<'c> {
             earlier_errors,
             closures_in_definition: Vec::new(),
             type_text_operands: Vec::new(),
+            inside_operand: false,
         }
     }
 
@@ -38,7 +40,7 @@ impl<'c> Finalizer<'c> {
         self.expr(&mut definition.value);
         self.finalize_type(&mut definition.scheme.body, definition.span);
         self.record_closure_types(definition.binding);
-        if self.checker.holds_infer_forms {
+        if !self.checker.infer_operands.is_empty() {
             let writer = TypeTextWriter::new(definition.binding, &definition.scheme);
             self.write_type_texts(&mut definition.value, &writer);
             let operands = std::mem::take(&mut self.type_text_operands);
@@ -62,7 +64,9 @@ impl<'c> Finalizer<'c> {
     }
 
     fn finalize_operand(&mut self, operand: &mut TypedExpr, writer: &TypeTextWriter) {
+        self.inside_operand = true;
         self.expr(operand);
+        self.inside_operand = false;
         self.write_type_texts(operand, writer);
         self.closures_in_definition.clear();
     }
@@ -116,7 +120,7 @@ impl<'c> Finalizer<'c> {
             Some(LiteralKind::Integer) => PrimitiveType::I64,
             Some(LiteralKind::Float) => PrimitiveType::F64,
             None => {
-                if self.reported.insert(var) && !self.earlier_errors {
+                if !self.inside_operand && self.reported.insert(var) && !self.earlier_errors {
                     let problem = self.missing_annotation(span, ty);
                     self.checker.defer_missing_annotation(problem);
                 }

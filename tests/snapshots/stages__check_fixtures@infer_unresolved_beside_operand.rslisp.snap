@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/infer_unresolved_beside_operand.rslisp
+---
+error[L0407]: type annotations needed
+ --> check/infer_unresolved_beside_operand.rslisp:3:3
+  |
+3 |   (str (some (vec))))
+  |   ^^^^^^^^^^^^^^^^^^ cannot infer the type of this value
+  |
+  = help: annotate the binding, as in `(let (name i64) value)`, or add a `type` signature
+
+error[L0407]: type annotations needed
+ --> check/infer_unresolved_beside_operand.rslisp:3:8
+  |
+3 |   (str (some (vec))))
+  |        ^^^^^^^^^^^^ cannot infer the type of this value
+  |
+  = help: annotate the binding, as in `(let (name i64) value)`, or add a `type` signature
