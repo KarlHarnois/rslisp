@@ -241,6 +241,7 @@ impl Expander<'_> {
                 self.evaluated_forms.leave_out(written_span);
                 Ok(None)
             }
+            _ if self.failed_macro_use(&form).is_some() => Ok(None),
             Ok(_) => Err(ExpandProblems::not_a_definition(form.span())),
             Err(diagnostic) => Err(diagnostic),
         }
