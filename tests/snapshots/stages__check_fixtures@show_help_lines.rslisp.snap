@@ -29,7 +29,7 @@ error[L0404]: `(tree bool)` does not implement `display`
 24 |   (println (the (tree bool) tree/leaf))
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `display`
    |
-   = help: implement `display` with `(display type (value) ...)`, or print its printed form with `prn`
+   = help: write `(display type (value) ...)`, or print the value with `prn`
 
 error[L0404]: `task` does not implement `show`
   --> check/show_help_lines.rslisp:25:8

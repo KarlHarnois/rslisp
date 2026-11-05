@@ -9,4 +9,4 @@ error[L0446]: `circle` does not implement `display`, a supertrait of `shape`
 6 | (impl shape circle
   |             ^^^^^^ `circle` does not implement `display`
   |
-  = help: implement `display` with `(display type (value) ...)`, or print its printed form with `prn`
+  = help: write `(display type (value) ...)`, or print the value with `prn`

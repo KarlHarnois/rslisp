@@ -58,7 +58,8 @@
         form "move the defaults to the end")
       (fail "a field must start with `:`"
         form
-        "write each field as `:name type`, as in (defstruct point :x f64 :y f64)"))))
+        (string "write each field as `:name type`, as in "
+                "(defstruct point :x f64 :y f64)")))))
 
 (def defaults-without-key
   (fn (defaults keys)

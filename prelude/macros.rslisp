@@ -632,13 +632,15 @@
   (fn (name)
     (if (value-eq (symbol-name name) "docstring")
       "write `:docstring` to state that the form takes a docstring"
-      "write `:one-per-line` to state that a call of the form does not fill runs of atoms")))
+      (string "write `:one-per-line` to state that a call of the form "
+              "does not fill runs of atoms"))))
 
 (def extra-header-shape-marker
   (fn (marker)
     (fail unexpected-header-shape-marker-title
       marker
-      "remove it: only `:docstring` and `:one-per-line` may follow a header shape, each once"
+      (string "remove it: only `:docstring` and `:one-per-line` may follow "
+              "a header shape, each once")
       (template (:code unexpected-header-shape-marker
                        :label "not expected here")))))
 
@@ -848,7 +850,8 @@
   (fn (term)
     (fail (string "`" term "` has no docstring")
       term
-      "write a docstring where it is defined, as the first form after the parameter list or the header"
+      (string "write a docstring where it is defined, as the first form "
+              "after the parameter list or the header")
       (template (:code undocumented-term
                        :label "no docstring for this name")))))
 
