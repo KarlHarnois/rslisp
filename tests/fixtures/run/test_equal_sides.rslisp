@@ -58,6 +58,41 @@
   (let borrowed (ref number))
   (assert (= (deref borrowed) 2)))
 
+(deftest deref-of-a-reference-to-a-reference
+  (let number 1)
+  (let inner (ref number))
+  (let outer (ref inner))
+  (assert (= (deref outer) inner)))
+
+(defn noisy-reference (name number)
+  (println name " runs")
+  number)
+
+(type noisy-reference
+  (fn ((ref str) (ref i64)) (ref i64)))
+
+(defmacro read-through (reference)
+  (template (deref (unquote reference))))
+
+(deftest runs-left-then-a-right-deref
+  (let number 1)
+  (assert (= (deref (noisy-reference "left" (ref number)))
+             (deref (noisy-reference "right" (ref number))))))
+
+(deftest runs-a-plain-left-then-a-right-deref
+  (let number 2)
+  (assert (= (noisy-count)
+             (deref (noisy-reference "right" (ref number))))))
+
+(deftest runs-a-left-deref-then-a-plain-right
+  (let number 2)
+  (assert (= (deref (noisy-reference "left" (ref number)))
+             (noisy-count))))
+
+(deftest deref-from-a-macro
+  (let number 1)
+  (assert (= (read-through (ref number)) 2)))
+
 (deftest called-closure-side
   (assert (= ((fn (number) number) 2) 2)))
 

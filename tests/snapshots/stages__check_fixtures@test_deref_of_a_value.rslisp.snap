@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/test_deref_of_a_value.rslisp
+---
+error[L0401]: mismatched types
+ --> check/test_deref_of_a_value.rslisp:5:21
+  |
+5 |   (assert (= (deref number) 1)))
+  |                     ^^^^^^ expected `(ref _)`, found an integer

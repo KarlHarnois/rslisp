@@ -7,12 +7,12 @@
 (use prelude/text show)
 
 (use code add-module-note bool-not concat definition-symbol
-          empty? fail first form-location keyword-name
-          keyword? len list list? module-exports
-          module-notes nth number-lt prepend program-modules
-          rest same-binding? string string-lines
-          string-trim-start symbol symbol-name symbol?
-          value-eq)
+          empty? expand-call fail first form-location
+          keyword-name keyword? len list list?
+          module-exports module-notes nth number-lt prepend
+          program-modules rest same-binding? string
+          string-lines string-trim-start symbol symbol-name
+          symbol? value-eq)
 
 (export assert deftest run-tests)
 
@@ -122,30 +122,38 @@
       (concat (prepend (true-check message) written)
               (prepend checked message)))))
 
-(def borrowable
-  (fn (side)
-    (if (deref-call? side)
-      (list (quote ref) side)
-      side)))
-
 (def deref-call?
   (fn (side)
     (if (list? side)
       (if (empty? side)
         false
         (if (symbol? (first side))
-          (same-binding? (first side) (quote deref))
+          (if (same-binding? (first side) (quote deref))
+            true
+            (expands-to-deref? (expand-call side)))
           false))
       false)))
+
+(def expands-to-deref?
+  (fn (expansion)
+    (if (empty? expansion)
+      false
+      (deref-call? (first expansion)))))
 
 (def equal-assertion
   (fn (check written checked message)
     (template ((unquote check)
                (splice written)
-               (unquote (borrowable (nth checked 1)))
-               (unquote (borrowable (nth checked 2)))
+               (unquote (passed-side (nth checked 1)))
+               (unquote (passed-side (nth checked 2)))
                (fn (left right) (= left right))
                (splice message)))))
+
+(def passed-side
+  (fn (side)
+    (if (deref-call? side)
+      (list (quote do) side)
+      side)))
 
 (document (assert form)
   "Ends the test with a failure unless `form` is true.

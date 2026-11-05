@@ -89,7 +89,7 @@ The project owner decided on 2026-11-05:
 2. **`rslisp test` resolves `run-tests` in `prelude/test`,** which it loads itself.
 3. **`check-equal` and `check-equal-with` take the two sides and the comparison as a closure.** Their types are `(where ((a show) (b show)) (fn ((ref str) (ref str) (ref a) (ref b) (fn ((ref a) (ref b)) bool)) unit))` and the same with a last `(ref str)`.
 4. **The checks and the runner are runtime parts,** one per marker in `prelude/runtime/`, with `rust` templates in `prelude/test`, as `expect-ok` is. The emitted Rust holds a function only when it calls that function, and no `#[allow(dead_code)]`.
-5. **A side of `=` headed by `deref` is wrapped in `ref`,** so `assert` accepts what `=` accepts. That side's `L0404` lands on the `assert`.
+5. **A side of `=` that is a `deref`, written or from a macro's expansion, passes to the check as `(do side)`.** `=` accepts such a side only when its value is Copy, and the call borrows the block's value, so `assert` accepts and rejects what `=` does, and each side runs left then right. `(ref (deref x))` emits `&*x`, which `borrow_deref_ref` rejects. Passing `x` itself fails on a reference to a reference with rustc's `E0631` and accepts `(deref x)` of a value. A `let` of the side runs a right `deref` before the left side. A macro cannot see `x`'s type. A Copy side without `show` is `L0404` on the `assert`, once, not on the side.
 6. **`assert` works in any code,** as Rust's `assert!` does. A failed check stores its record in a static of the runtime, where the runner finds it, and panics with its location, its written form, both sides and its message, so the panic reads with no runner.
 7. **A test's function ends with a unit form, and `run-test` takes `(fn () unit)`.** A test's value is dropped, so a test that returns an `err` passes.
 8. **A mismatch between the two sides labels the whole `assert`.** A written `=` labels the right side. The closure's `left` and `right` take the `assert`'s location, and a macro cannot give them a side's span: the closure's head written as the user's own `=` symbol labels the same place.
@@ -101,6 +101,9 @@ The project owner decided on 2026-11-05:
 - **A `let` for each side:** a doubled diagnostic.
 - **A built-in that sets a symbol's span:** it adds to the compiler what the prelude can express.
 - **Documenting a `deref` side as an error:** `assert` would reject a form that `=` accepts.
+- **`(ref (deref x))` for a `deref` side:** it emits `&*x`.
+- **`x` itself for a `deref` side:** it is rustc's `E0631` on a reference to a reference, and it accepts a `deref` of a value.
+- **A `let` for a `deref` side:** it runs a right `deref` before the left side.
 
 ## Rule
 
