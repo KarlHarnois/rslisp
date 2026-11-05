@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_atom_that_fits_nowhere_joined.rslisp
+---
+(outer-call "a message that is far too long to fit on this list however it is placed by the formatter" second)
+
+---
+(outer-call "a message that is far too long to fit on this list however it is placed by the formatter"
+            second)

@@ -8,6 +8,7 @@ pub struct Measure {
     closed_overflow: usize,
     end_column: usize,
     ends_with_comment: bool,
+    excused_overflow: usize,
 }
 
 impl LaidOut for Measure {
@@ -25,6 +26,7 @@ impl LaidOut for Measure {
                 .sum(),
             end_column: absolute_end(earlier.len(), *last),
             ends_with_comment: false,
+            excused_overflow: 0,
         }
     }
 
@@ -47,8 +49,9 @@ impl LaidOut for Measure {
         self.line_count
     }
 
-    fn overflow(&self) -> usize {
-        self.closed_overflow + Block::overflow_of(self.end_column)
+    fn excuse_overflow(&mut self, own_width: usize, trailing: usize) {
+        let closed_end = self.end_column + trailing;
+        self.excused_overflow = Block::overflow_of(closed_end).min(own_width + trailing);
     }
 
     fn end_column(&self) -> usize {
@@ -66,6 +69,7 @@ impl LaidOut for Measure {
     fn join(&mut self, _separator: &str, other: Self) {
         self.line_count += other.line_count - 1;
         self.closed_overflow += other.closed_overflow;
+        self.excused_overflow += other.excused_overflow;
         self.end_column = other.end_column;
         self.ends_with_comment = other.ends_with_comment;
     }
@@ -74,6 +78,7 @@ impl LaidOut for Measure {
         self.close_line();
         self.line_count += other.line_count - 1;
         self.closed_overflow += other.closed_overflow;
+        self.excused_overflow += other.excused_overflow;
         self.end_column = other.end_column;
         self.ends_with_comment = other.ends_with_comment;
     }
@@ -90,6 +95,11 @@ impl LaidOut for Measure {
 }
 
 impl Measure {
+    pub fn avoidable_overflow(&self, trailing: usize) -> usize {
+        let total_overflow = self.closed_overflow + Block::overflow_of(self.end_column + trailing);
+        total_overflow.saturating_sub(self.excused_overflow)
+    }
+
     fn close_line(&mut self) {
         self.closed_overflow += Block::overflow_of(self.end_column);
         self.line_count += 1;
@@ -136,7 +146,7 @@ mod tests {
                 ),
                 (
                     self.measure.line_count(),
-                    self.measure.overflow(),
+                    self.measure.avoidable_overflow(0),
                     self.measure.end_column()
                 )
             );

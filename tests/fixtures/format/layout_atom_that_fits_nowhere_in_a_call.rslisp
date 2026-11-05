@@ -1,0 +1,9 @@
+(def show-body
+  (fn (body out)
+    (choose (symbol? body)
+            (show-symbol body out)
+            (choose (construction? body)
+                    (show-construction body out)
+                    (report "a `show` body is one construction form or a symbol"
+                            body
+                            "write the call that builds the value, as in `(->money :cents 1200)`")))))

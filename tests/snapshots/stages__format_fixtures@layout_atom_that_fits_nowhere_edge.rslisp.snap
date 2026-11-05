@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_atom_that_fits_nowhere_edge.rslisp
+---
+(outer-call first-argument "a message that is far too long to fit on this list however it is placed by t")
+
+---
+(outer-call first-argument
+            "a message that is far too long to fit on this list however it is placed by t")
