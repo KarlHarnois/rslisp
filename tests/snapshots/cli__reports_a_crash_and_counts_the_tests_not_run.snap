@@ -1,0 +1,13 @@
+---
+source: tests/cli.rs
+expression: test.assert_exit_code(1).transcript()
+---
+exit code: Some(1)
+--- stdout
+running 5 tests
+test crash/runs-first ... ok
+test crash/crashes ... CRASH
+CRASH crash/crashes: the program exited with code 3
+3 tests not run
+1 passed, 0 failed, 1 crashed, 3 not run
+--- stderr

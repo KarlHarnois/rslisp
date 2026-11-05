@@ -713,6 +713,70 @@ Each check takes the `assert`'s location, from `form-location`, and its written 
 
 `(run-tests :marker "<marker>")` expands to the program's test runner: one call per test of every module that `(program-modules)` returns, in load order and then source order, between a start and a finish. `:untested <module>` adds the list of names that `<module>` exports and no test writes. The checks and the runner are `rust` templates over runtime parts in `prelude/runtime/`, one per marker, so the emitted Rust holds a function only when it calls that function. The runner runs each test under `std::panic::catch_unwind` and writes the records that `rslisp test` reads.
 
+**`rslisp test <path> [filter]` builds one program that runs the tests, and runs it.**
+
+- A file is an entry: its module and every module it reaches through `use` run their tests. A directory makes every `.rslisp` file under it an entry, with the directory as the root of `use`.
+- The program's `main` is `(run-tests :marker "<marker>")`, resolved in the scope of `prelude/test`, which `rslisp test` loads, and expanded after every module. An entry's own `main` is checked and does not run, and a test that calls it calls `main_2` in Rust.
+- `filter` runs the tests whose full name contains it, and `--exact <name>` runs the test of that full name. `rslisp test` passes either to the program as its arguments, and the runner applies it. When no test is selected, a filter adds ``note: no test name contains `<filter>` `` and `--exact` adds ``note: no test is named `<name>` `` on standard error.
+- `--untested <module>` adds `:untested <module>` to the call. A module that the program does not load is a usage error before the build, ``error: the program does not load module `<module>` ``.
+- Tests run one at a time, in the order `run-tests` calls them, and read the standard input of `rslisp test`. The program's standard error passes through.
+
+**The runner writes a record for each event: the marker, a printed form in the printed form of [RFC 0048](../rfcs/0048-printing-values.md), and a newline.** `rslisp test` finds a record anywhere in the program's standard output, as `eval` finds its marker, strips it, and passes the rest of the output through where the program wrote it.
+
+| Record | Written |
+| --- | --- |
+| `(untested "<module>" <count of exports> "<name> <name> ...")` | first, only with `:untested` |
+| `(start <count of selected tests>)` | before the first test |
+| `(test "<full name>" "<docstring's first line>")` | before each selected test, followed by a flush |
+| `(ok)` | after a test that returns |
+| `(fail "<location>" "<written assert>")`, with an optional `"<message>"` | after a failed `assert` on a form other than `=` |
+| `(fail-equal "<location>" "<written assert>" "<left>" "<right>")`, with an optional `"<message>"` | after a failed `assert` on `=`, with each side's printed form |
+| `(panic "<location of the deftest>" "<message>")` | after any other panic |
+| `(done)` | after the last test |
+
+**`rslisp test` prints every line of the report from the records:**
+
+```text
+untested in text/format (1 of 3): trim-right
+running 2 tests
+test text/format/pads-left ... ok
+test text/format/trims-right ... FAIL
+FAIL text/format/trims-right: Removes trailing spaces, not inner ones. (text/format.rslisp:20:3)
+    (assert (= (trim-right "a b  ") "a b "))
+    left:  "a b"
+    right: "a b "
+1 passed, 1 failed
+```
+
+- A test's own output follows `test <name> ... ` on the same line, and the result starts the next line. `rslisp test` adds a newline before the result when that output does not end with one.
+- A failure prints the test's full name, the first line of its docstring after a colon, and the location of the failed `assert`, or of the `deftest` for any other panic. The written `assert`, both sides of `=`, the message and a panic's message follow, each indented 4 columns.
+- The untested line prints no names when every export is written: `untested in text/format (0 of 3)`.
+
+**A test that ends the process, through `exit`, an abort or a stack overflow, crashes the run.** Its record of `(test ...)` has no result after it and the program writes no `(done)`. `rslisp test` then prints `CRASH` as the test's result, the reason, the number of tests not run when it is not 0, and a count line that names `crashed` and `not run`:
+
+```text
+running 3 tests
+test crash/first-one ... ok
+test crash/crashes ... CRASH
+CRASH crash/crashes: the program exited with code 3
+1 test not run
+1 passed, 0 failed, 1 crashed, 1 not run
+```
+
+| The test | The reason |
+| --- | --- |
+| calls `(exit N)` | `the program exited with code N`, even for `(exit 0)` |
+| aborts, or overflows its stack | `the program stopped on signal 6 (SIGABRT)`, after Rust's own lines on standard error for a stack overflow |
+| is stopped by signal N | `the program stopped on signal N (<name>)`, with the name when it is the same on Linux and macOS |
+
+| Exit code | When |
+| --- | --- |
+| 0 | every selected test passes, or no test is selected |
+| 1 | a test fails or crashes, whatever the program's own exit code or signal, or the program has errors |
+| 2 | a usage error |
+
+A non-empty untested list does not change the exit code. `prelude/tests/` holds the prelude's own tests, one module per prelude module, outside the embedded prelude, and a test in `tests/cli.rs` runs `rslisp test prelude/tests --untested prelude` and records the report.
+
 ## Rust interop
 
 `rust` binds a name to a piece of Rust:

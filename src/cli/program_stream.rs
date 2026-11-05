@@ -10,18 +10,50 @@ pub type StreamedBytes = Streamed<Vec<u8>>;
 
 pub struct ProgramStream {
     marker: Vec<u8>,
-    forms: VecDeque<usize>,
+    values: ExpectedValues,
     pending: Vec<u8>,
     value_of_form: Option<usize>,
+}
+
+enum ExpectedValues {
+    Forms(VecDeque<usize>),
+    Records(usize),
+}
+
+impl ExpectedValues {
+    fn is_exhausted(&self) -> bool {
+        match self {
+            Self::Forms(forms) => forms.is_empty(),
+            Self::Records(_) => false,
+        }
+    }
+
+    fn next(&mut self) -> Option<usize> {
+        match self {
+            Self::Forms(forms) => forms.pop_front(),
+            Self::Records(read) => {
+                *read += 1;
+                Some(*read)
+            }
+        }
+    }
 }
 
 impl ProgramStream {
     const NEWLINE: u8 = b'\n';
 
     pub fn new(marker: &str, forms: Vec<usize>) -> Self {
+        Self::expecting(marker, ExpectedValues::Forms(forms.into()))
+    }
+
+    pub fn recording(marker: &str) -> Self {
+        Self::expecting(marker, ExpectedValues::Records(0))
+    }
+
+    fn expecting(marker: &str, values: ExpectedValues) -> Self {
         Self {
             marker: marker.as_bytes().to_vec(),
-            forms: forms.into(),
+            values,
             pending: Vec::new(),
             value_of_form: None,
         }
@@ -77,12 +109,12 @@ impl ProgramStream {
         let start = self.marker_start()?;
         let output: Vec<u8> = self.pending.drain(..start).collect();
         self.pending.drain(..self.marker.len());
-        self.value_of_form = self.forms.pop_front();
+        self.value_of_form = self.values.next();
         Some(Streamed::Output(output))
     }
 
     fn marker_start(&self) -> Option<usize> {
-        if self.forms.is_empty() {
+        if self.values.is_exhausted() {
             return None;
         }
         self.pending
@@ -100,7 +132,7 @@ impl ProgramStream {
 
     fn held_back_start(&self) -> usize {
         let length = self.pending.len();
-        if self.forms.is_empty() {
+        if self.values.is_exhausted() {
             return length;
         }
         (1..self.marker.len().min(length + 1))
@@ -136,6 +168,13 @@ mod tests {
         fn unmarked() -> Self {
             Self {
                 stream: ProgramStream::unmarked(),
+                parts: Vec::new(),
+            }
+        }
+
+        fn recording() -> Self {
+            Self {
+                stream: ProgramStream::recording(Self::MARKER),
                 parts: Vec::new(),
             }
         }
@@ -257,6 +296,28 @@ mod tests {
         let snowman = "☃".as_bytes();
         let fixture = StreamFixture::unmarked().read(&snowman[..1]);
         assert_eq!(fixture.read_parts(), [StreamFixture::output(&snowman[..1])]);
+    }
+
+    #[test]
+    fn a_recording_stream_reads_every_marked_record_in_order() {
+        let parts = StreamFixture::recording()
+            .read(b"MARK(start 2)\nhiMARK(ok)\nMARK(done)\n")
+            .finished();
+        assert_eq!(
+            parts,
+            [
+                StreamFixture::value("(start 2)", 1),
+                StreamFixture::output(b"hi"),
+                StreamFixture::value("(ok)", 2),
+                StreamFixture::value("(done)", 3),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_recording_stream_holds_back_a_possible_marker() {
+        let fixture = StreamFixture::recording().read(b"oMA");
+        assert_eq!(fixture.read_parts(), [StreamFixture::output(b"o")]);
     }
 
     #[test]

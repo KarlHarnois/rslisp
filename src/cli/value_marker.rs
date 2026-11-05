@@ -40,6 +40,14 @@ impl ValueMarker {
         Ok(ResultPrinter::through(printer, bound_holder))
     }
 
+    pub fn text(&self) -> &str {
+        &self.marker
+    }
+
+    pub fn records(&self) -> ProgramStream {
+        ProgramStream::recording(&self.marker)
+    }
+
     pub fn stream(&self, printed_forms: Vec<usize>) -> ProgramStream {
         ProgramStream::new(&self.marker, printed_forms)
     }

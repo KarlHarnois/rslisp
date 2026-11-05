@@ -1,0 +1,35 @@
+(use prelude/test assert deftest)
+
+(deftest some-holds-a-value
+  (assert (some? (some 1)))
+  (assert (not (none? (some 1)))))
+
+(deftest none-holds-nothing
+  (assert (none? (the (option i64) none)))
+  (assert (not (some? (the (option i64) none)))))
+
+(deftest unwrap-takes-the-value
+  (assert (= (unwrap (some 4)) 4)))
+
+(deftest unwrap-or-falls-back-on-none
+  (assert (= (unwrap-or (the (option i64) none) 7)
+             7))
+  (assert (= (unwrap-or (some 3) 7) 3)))
+
+(deftest expect-takes-the-value
+  (assert (= (expect (some "card") "a card is drawn") "card")))
+
+(deftest map-some-changes-the-value
+  (assert (= (map-some (some 2) (fn (n) (* n 10)))
+             (some 20)))
+  (assert (= (map-some (the (option i64) none)
+                       (fn (n) (* n 10)))
+             none)))
+
+(deftest then-some-chains-an-optional-step
+  (assert (= (then-some (some 4)
+                        (fn (n) (if (> n 3) (some n) none)))
+             (some 4)))
+  (assert (= (then-some (some 2)
+                        (fn (n) (if (> n 3) (some n) none)))
+             none)))
