@@ -189,6 +189,7 @@ A type parameter satisfies a trait when its `where` names the trait, or when eve
 - A parameter of a generic function gives its type variable, so `(infer x)` in `wrap` is `"a"` on every call, also when `wrap` emits with one concrete type.
 - A function type is written `fn`, never `fn-mut` or `fn-once`, and a parameter's passing mode does not show: `(defn total (v) (println (infer v)) (reduce (iter v) 0 (fn (sum n) (+ sum (deref n)))))` prints `(vec i64)`, though `total` takes `&[i64]`.
 - Two types of one name from two modules print alike, as in diagnostics.
+- `infer` needs the checker, so macro code, which runs before it, cannot use the form: `infer` at compile time reports L0316, as `try` does.
 
 ### Standard types
 
