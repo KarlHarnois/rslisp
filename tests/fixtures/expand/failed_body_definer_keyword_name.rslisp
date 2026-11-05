@@ -1,0 +1,2 @@
+(defn outer () (defn :inner "doc" (x) x) 1)
+(defn main () (println (outer)))

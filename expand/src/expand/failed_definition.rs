@@ -89,7 +89,9 @@ impl Expander<'_> {
         };
         let scope = self.fresh_local_scope();
         rest_of_body.add_scope(scope);
-        let binder = self.lower_binder(&Self::scoped(&name, scope), Some(context))?;
+        let Ok(binder) = self.lower_binder(&Self::scoped(&name, scope), Some(context)) else {
+            return Ok(BodyItem::Expr(failure));
+        };
         self.tables
             .globals
             .record_failed_definition(binder.binding, declaration);
