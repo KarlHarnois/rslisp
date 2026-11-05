@@ -1,0 +1,8 @@
+(use prelude/test assert deftest run-tests)
+
+(defn deref (value) (+ value 1))
+
+(deftest a-user-deref-passes-as-written
+  (assert (= (deref 1) 3)))
+
+(defn main () (run-tests :marker "<record>"))

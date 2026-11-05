@@ -27,6 +27,11 @@
   (print "partial")
   (assert true))
 
+(def raise-a-number
+  (rust "std::panic::panic_any(1)" (fn () unit)))
+
+(deftest panics-with-no-text (raise-a-number))
+
 (deftest panics-with-a-formatted-message
   (expect (the (option i64) none) "must have"))
 

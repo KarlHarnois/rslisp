@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/test_user_deref.rslisp
+---
+<record>(start 1)
+<record>(test "test_user_deref/a-user-deref-passes-as-written" "")
+<record>(fail-equal "test_user_deref.rslisp:6:3" "(assert (= (deref 1) 3))" "2" "3")
+<record>(done)

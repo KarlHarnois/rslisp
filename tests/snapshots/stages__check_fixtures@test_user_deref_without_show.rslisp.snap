@@ -1,0 +1,30 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/test_user_deref_without_show.rslisp
+---
+error[L0404]: `operation` does not implement `partial-eq`
+  --> check/test_user_deref_without_show.rslisp:11:3
+   |
+11 |   (assert (= (deref 1) (deref 2))))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `partial-eq`
+   |
+   = note: `operation` cannot derive `partial-eq`: field `op` is `(fn (i64) i64)`
+
+error[L0404]: `operation` does not implement `show`
+  --> check/test_user_deref_without_show.rslisp:11:14
+   |
+11 |   (assert (= (deref 1) (deref 2))))
+   |              ^^^^^^^^^ this needs `show`
+   |
+   = note: `operation` cannot derive `show`: field `op` is `(fn (i64) i64)`
+   = help: a closure, an iterator or a function has no printed form
+
+error[L0404]: `operation` does not implement `show`
+  --> check/test_user_deref_without_show.rslisp:11:24
+   |
+11 |   (assert (= (deref 1) (deref 2))))
+   |                        ^^^^^^^^^ this needs `show`
+   |
+   = note: `operation` cannot derive `show`: field `op` is `(fn (i64) i64)`
+   = help: a closure, an iterator or a function has no printed form
