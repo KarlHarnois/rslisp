@@ -2,9 +2,9 @@
   i64
   (with i64 i64)
   (where ((a (comparable b)) b)
-         (with (ref a) (ref b))))
+    (with (ref a) (ref b))))
 
 (def compare-with
   (rust "{&0} == {&1}"
-        (where ((a (comparable b)) b)
-               (fn (a b) bool))))
+    (where ((a (comparable b)) b)
+      (fn (a b) bool))))

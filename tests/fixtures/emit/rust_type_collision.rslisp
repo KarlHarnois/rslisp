@@ -2,7 +2,7 @@
 
 (def wrap-new
   (rust "Wrapper::new({0})"
-        (where (a) (fn (a) (wrapped a)))))
+    (where (a) (fn (a) (wrapped a)))))
 
 (struct wrapper (value i64))
 

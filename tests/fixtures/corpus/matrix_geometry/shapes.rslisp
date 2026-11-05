@@ -1,7 +1,7 @@
-(use matrix_geometry/linear rounded magnitude)
+(use matrix_geometry/linear magnitude rounded)
 
-(export point ->point shape area perimeter title circle ->circle rect ->rect
-        polygon ->polygon cross distance)
+(export ->circle ->point ->polygon ->rect area circle cross
+        distance perimeter point polygon rect shape title)
 
 (defstruct point
   :x f64

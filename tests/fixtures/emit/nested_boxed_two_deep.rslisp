@@ -11,9 +11,8 @@
     (tree/leaf tree/leaf)))
 
 (defn main ()
-  (prn (deepest-left (tree/node
-                       (tree/node (tree/node tree/leaf 3 tree/leaf) 2 tree/leaf)
-                       1
-                       tree/leaf)))
+  (prn (deepest-left (tree/node (tree/node (tree/node tree/leaf 3 tree/leaf)
+                                           2 tree/leaf)
+                                1 tree/leaf)))
   (prn (deepest-left (tree/node (tree/node tree/leaf 2 tree/leaf) 1 tree/leaf)))
   (prn (deepest-left (tree/node tree/leaf 1 tree/leaf))))

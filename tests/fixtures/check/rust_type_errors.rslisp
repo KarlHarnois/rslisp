@@ -5,7 +5,7 @@
 
 (def box-new
   (rust "Box::new({0})"
-        (where (a) (fn (a) (boxed a)))))
+    (where (a) (fn (a) (boxed a)))))
 
 (type unwrap-twice
   (fn ((boxed i64 i64)) i64))

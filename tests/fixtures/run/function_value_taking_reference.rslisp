@@ -1,10 +1,10 @@
 (def lines
   (rust "{0}.lines()"
-        (fn ((ref str)) (iterator (ref str)))))
+    (fn ((ref str)) (iterator (ref str)))))
 
 (def size
   (rust "{0}.len()"
-        (fn ((ref str)) usize)))
+    (fn ((ref str)) usize)))
 
 (defn line-size (line) (size line))
 

@@ -1,4 +1,4 @@
-(use code list field-keyword)
+(use code field-keyword list)
 
 (def field-keywords
   (macro (form)

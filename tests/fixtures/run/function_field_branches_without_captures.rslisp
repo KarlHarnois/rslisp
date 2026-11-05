@@ -10,8 +10,8 @@
   (let base 4)
   (let chosen
     (->spare :maker (if (> base 2)
-                        (fn () (+ 4 1))
-                        count-doors)))
+                      (fn () (+ 4 1))
+                      count-doors)))
   (let matched
     (->backup :maker (some (match base
                              (4 count-doors)

@@ -4,24 +4,24 @@
   (associated (item collection) "Item")
   (associated (into-iter collection) "IntoIter")
   (where (a)
-         (vec a)
-         (item a)
-         (into-iter (vec-iter a))))
+    (vec a)
+    (item a)
+    (into-iter (vec-iter a))))
 
 (def first-item
   (rust "{0}.into_iter().next()"
-        (where ((c into-iterator))
-               (fn (c) (option (item c))))))
+    (where ((c into-iterator))
+      (fn (c) (option (item c))))))
 
 (def iterate
   (rust "{0}.into_iter()"
-        (where ((c into-iterator))
-               (fn (c) (into-iter c)))))
+    (where ((c into-iterator))
+      (fn (c) (into-iter c)))))
 
 (def remaining
   (rust "{0}.len()"
-        (where (a)
-               (fn ((ref (vec-iter a))) usize))))
+    (where (a)
+      (fn ((ref (vec-iter a))) usize))))
 
 (defn main ()
   (println (unwrap (first-item (vec 7 8))))

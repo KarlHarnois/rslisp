@@ -23,8 +23,8 @@
 
 (defn build-down (constructor count)
   (if (= count 0)
-      (constructor "Leaf" 2024)
-      (build-down constructor (- count 1))))
+    (constructor "Leaf" 2024)
+    (build-down constructor (- count 1))))
 
 (type first-word
   (fn ((ref str)) (ref str)))
@@ -37,8 +37,7 @@
 (defn measure (pick)
   (let model (str "Leaf"))
   (if (= (pick (as-str model)) "Leaf")
-      4
-      0))
+    4 0))
 
 (type measure-through
   (fn ((fn ((ref str)) (ref str))) u16))

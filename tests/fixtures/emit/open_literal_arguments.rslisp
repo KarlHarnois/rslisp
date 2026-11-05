@@ -24,8 +24,8 @@
 
 (defn count-down (n)
   (if (= n 0)
-      n
-      (recur (first-of (- n 1) 3000000000))))
+    n
+    (recur (first-of (- n 1) 3000000000))))
 
 (trait weighed
   (weight-of (fn ((ref self)) i64)))
@@ -44,8 +44,7 @@
   (fn ((vec (box weighed))) i64))
 
 (defn total-weight (crates)
-  (reduce crates
-          0
+  (reduce crates 0
           (fn (total item)
             (+ total (weight-of item)))))
 
@@ -68,10 +67,9 @@
   (println (= 0 odometer))
   (println (= odometer 0))
   (println ((rust "{&0} == {&1}"
-                  (where ((a (partial-eq b)) b)
-                         (fn (a b) bool)))
-            0
-            odometer))
+              (where ((a (partial-eq b)) b)
+                (fn (a b) bool)))
+            0 odometer))
   (println (square 100000))
   (println (count-down 3))
   (let add-one (fn (n) (+ n 1)))

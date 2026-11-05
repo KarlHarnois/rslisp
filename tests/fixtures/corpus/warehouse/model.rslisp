@@ -1,5 +1,5 @@
-(export item ->item event ledger-error entry ->entry valued value-cents category
-        dollars widen)
+(export ->entry ->item category dollars entry event item
+        ledger-error value-cents valued widen)
 
 (defstruct item
   :sku string
@@ -66,21 +66,11 @@
   (match problem
     ((unknown-sku sku) (str "unknown sku " sku))
     ((short-stock sku wanted available)
-     (str "cannot ship "
-          wanted
-          " of "
-          sku
-          ", only "
-          available
-          " left"))
+     (str "cannot ship " wanted " of " sku ", only "
+          available " left"))
     ((negative-count sku removed available)
-     (str "cannot remove "
-          removed
-          " of "
-          sku
-          ", only "
-          available
-          " counted"))
+     (str "cannot remove " removed " of " sku ", only "
+          available " counted"))
     ((bad-line line reason) (str "line " line ": " reason))
     ((bad-number reason) (str "bad number: " reason))))
 
@@ -94,13 +84,13 @@
 
 (defn pad-cents (cents)
   (if (< cents 10)
-      (str "0" cents)
-      (str cents)))
+    (str "0" cents)
+    (str cents)))
 
 (defn signed (delta)
   (if (> delta 0)
-      (str "+" delta)
-      (str delta)))
+    (str "+" delta)
+    (str delta)))
 
 (type category (fn ((ref str)) string))
 

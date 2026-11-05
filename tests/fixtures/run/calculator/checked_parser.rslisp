@@ -12,8 +12,8 @@
 
 (defn expect-end (tokens result)
   (if (= (:next result) (len tokens))
-      (ok (:value result))
-      (err (str "unexpected token at " (:next result)))))
+    (ok (:value result))
+    (err (str "unexpected token at " (:next result)))))
 
 (type parse-expression
   (fn ((ref (vec token)) usize)
@@ -60,8 +60,8 @@
 
 (defn divide (tokens left right)
   (if (= (:value right) 0)
-      (err (str "division by zero"))
-      (parse-products tokens (combine left right div))))
+    (err (str "division by zero"))
+    (parse-products tokens (combine left right div))))
 
 (defn parse-factor (tokens position)
   (match (get tokens position)

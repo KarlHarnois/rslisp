@@ -2,8 +2,8 @@
 
 (defn broken ()
   (if true
-      (pair (vec) 1)
-      (pair (vec) "x")))
+    (pair (vec) 1)
+    (pair (vec) "x")))
 
 (defn count-word (word words)
   (reduce (iter words)

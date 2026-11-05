@@ -1,6 +1,6 @@
 (type later?
   (where ((a partial-ord))
-         (fn (a a) bool)))
+    (fn (a a) bool)))
 
 (defn later? (a b) (> a b))
 

@@ -1,4 +1,4 @@
-(use code expand-call list fail)
+(use code expand-call fail list)
 
 (defmacro probe (x)
   (expand-call (list (quote defn)

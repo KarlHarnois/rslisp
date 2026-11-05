@@ -4,25 +4,25 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/header_shape_errors.rslisp
 ---
 error[L0329]: a header shape is a list that starts with the form's name
- --> expand/header_shape_errors.rslisp:9:15
+ --> expand/header_shape_errors.rslisp:8:15
   |
-9 | (header-shape my-defn)
+8 | (header-shape my-defn)
   |               ^^^^^^^ not a list that starts with a name
   |
   = help: write it as `(header-shape (form name ...))`
 
 error[L0329]: a header shape is a list that starts with the form's name
-  --> expand/header_shape_errors.rslisp:11:15
+  --> expand/header_shape_errors.rslisp:10:15
    |
-11 | (header-shape ())
+10 | (header-shape ())
    |               ^^ not a list that starts with a name
    |
    = help: write it as `(header-shape (form name ...))`
 
 error[L0329]: a header shape is a list that starts with the form's name
-  --> expand/header_shape_errors.rslisp:13:15
+  --> expand/header_shape_errors.rslisp:12:15
    |
-13 | (header-shape ("my-defn" name parameters))
+12 | (header-shape ("my-defn" name parameters))
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^ not a list that starts with a name
    |
    = help: write it as `(header-shape (form name ...))`

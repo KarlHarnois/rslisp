@@ -1,51 +1,38 @@
-(use code list prepend rest string len empty? symbol? number-add number-lt)
-(use prelude/macros defmacro defrule document)
-(use prelude/types vec option slice sorted-map hash-map)
-(use prelude/pair pair)
-(use prelude/number ord hash eq)
+(use code empty? len list number-add number-lt prepend rest
+          string symbol?)
 
-(export sorted-map hash-map get keys vals update into-sorted-map into-hash-map)
+(use prelude/macros defmacro defrule document)
+(use prelude/types hash-map option slice sorted-map vec)
+(use prelude/pair pair)
+(use prelude/number eq hash ord)
+
+(export get hash-map into-hash-map into-sorted-map keys
+        sorted-map update vals)
 
 (rust-trait borrow "std::borrow::Borrow"
-  bool
-  char
+  bool char
   (ref str)
-  string
-  i8
-  i16
-  i32
-  i64
-  i128
-  isize
-  u8
-  u16
-  u32
-  u64
-  u128
-  usize
-  f32
-  f64
+  string i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize
+  f32 f64
   (with string str)
   (with (ref str) str))
 
 (def map-inserts
   (fn (index count)
     (if (number-lt index count)
-        (string "map.insert({"
-                index
-                "}, {"
-                (number-add index 1)
-                "}); "
-                (map-inserts (number-add index 2) count))
-        "")))
+      (string "map.insert({" index "}, {"
+              (number-add index 1)
+              "}); "
+              (map-inserts (number-add index 2) count))
+      "")))
 
 (def map-parameters
   (fn (index count)
     (if (number-lt index count)
-        (prepend (quote key)
-                 (prepend (quote value)
-                          (map-parameters (number-add index 2) count)))
-        (list))))
+      (prepend (quote key)
+               (prepend (quote value)
+                        (map-parameters (number-add index 2) count)))
+      (list))))
 
 (def map-type
   (fn (name bounds count)
@@ -59,21 +46,21 @@
 (def map-form
   (fn (rust-type name bounds pairs)
     (if (empty? pairs)
-        (list (quote rust)
-              (string rust-type "::new()")
-              (list (quote where)
-                    (list (prepend (quote key) bounds)
-                          (quote value))
-                    (list name (quote key) (quote value))))
-        (do (let count (len pairs))
-            (prepend (list (quote rust)
-                           (string "{{ let mut map = "
-                                   rust-type
-                                   "::new(); "
-                                   (map-inserts 0 count)
-                                   "map }}")
-                           (map-type name bounds count))
-                     pairs)))))
+      (list (quote rust)
+            (string rust-type "::new()")
+            (list (quote where)
+                  (list (prepend (quote key) bounds)
+                        (quote value))
+                  (list name (quote key) (quote value))))
+      (do
+        (let count (len pairs))
+        (prepend (list (quote rust)
+                       (string "{{ let mut map = " rust-type
+                               "::new(); "
+                               (map-inserts 0 count)
+                               "map }}")
+                       (map-type name bounds count))
+                 pairs)))))
 
 (defmacro sorted-map (pairs ...)
   (map-form "std::collections::BTreeMap"
@@ -89,22 +76,22 @@
 
 (def into-sorted-map
   (rust "{0}.into_iter().collect::<std::collections::BTreeMap<_, _>>()"
-        (where ((key ord) (value))
-               (fn ((vec (pair key value)))
-                 (sorted-map key value)))))
+    (where ((key ord) (value))
+      (fn ((vec (pair key value)))
+        (sorted-map key value)))))
 
 (def into-hash-map
   (rust "{0}.into_iter().collect::<std::collections::HashMap<_, _>>()"
-        (where ((key hash eq) (value))
-               (fn ((vec (pair key value)))
-                 (hash-map key value)))))
+    (where ((key hash eq) (value))
+      (fn ((vec (pair key value)))
+        (hash-map key value)))))
 
 (def get
   (macro (form)
     (if (symbol? form)
-        (quote slice-get)
-        (prepend (quote map-at)
-                 (prepend (quote get) (rest form))))))
+      (quote slice-get)
+      (prepend (quote map-at)
+               (prepend (quote get) (rest form))))))
 
 (document (get collection key)
   "Reads a slice by index or a map by key.
@@ -114,9 +101,9 @@
 
 (def slice-get
   (rust "{0}.get({1})"
-        (where (a)
-               (fn ((ref (slice a)) usize)
-                 (option (ref a))))))
+    (where (a)
+      (fn ((ref (slice a)) usize)
+        (option (ref a))))))
 
 (defrule keys ((m) (map-at keys m)))
 

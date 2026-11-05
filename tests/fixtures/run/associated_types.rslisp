@@ -8,7 +8,7 @@
 
 (type first-item
   (where ((c (container item)) item)
-         (fn ((ref c)) (option (ref item)))))
+    (fn ((ref c)) (option (ref item)))))
 
 (defn first-item (c) (first c))
 

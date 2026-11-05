@@ -25,11 +25,11 @@ error[L0501]: use of moved value `stack`
    = help: use the value before it moves, because a `mut` borrow cannot be cloned
 
 error[L0501]: use of moved value `stack`
-  --> check/clone_meaning.rslisp:24:16
+  --> check/clone_meaning.rslisp:24:14
    |
-23 |       (+ (len (store-in-vec stack))
-   |                             ----- value moved here
-24 |          (walk stack (- n 1)))))
-   |                ^^^^^ value used here after it moved
+23 |     (+ (len (store-in-vec stack))
+   |                           ----- value moved here
+24 |        (walk stack (- n 1)))))
+   |              ^^^^^ value used here after it moved
    |
    = help: write the parameter as a borrow in a `type` signature: `(ref ...)`

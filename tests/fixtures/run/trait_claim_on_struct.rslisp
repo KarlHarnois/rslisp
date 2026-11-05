@@ -2,8 +2,8 @@
 
 (def same-record?
   (rust "{0} == {1}"
-        (where ((a record-eq))
-               (fn ((ref a) (ref a)) bool))))
+    (where ((a record-eq))
+      (fn ((ref a) (ref a)) bool))))
 
 (defstruct employee
   :name string

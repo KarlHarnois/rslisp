@@ -15,19 +15,20 @@
   (where ((source (container item))
           (target (container item))
           item)
-         (fn ((mut source)
-              (mut target)
-              (fn ((ref item)) unit))
-           unit)))
+    (fn ((mut source)
+         (mut target)
+         (fn ((ref item)) unit))
+      unit)))
 
 (defn move! (source target observe)
   (loop ()
     (let next (take source))
     (match next
       ((some item)
-       (do (observe item)
-           (put target item)
-           (recur)))
+       (do
+         (observe item)
+         (put target item)
+         (recur)))
       (none (do)))))
 
 (defn main ()

@@ -19,17 +19,19 @@
   (let first
     (fn (picked)
       (if flag
-          (match picked
-            ((some year)
-             (do (let years (vec year 2024))
-                 (at years 0)))
-            (none (at fallback 0)))
-          (at fallback 0))))
+        (match picked
+          ((some year)
+           (do
+             (let years (vec year 2024))
+             (at years 0)))
+          (none (at fallback 0)))
+        (at fallback 0))))
   (println (first (some 2019))))
 
 (def first-year
-  (do (let first (fn (items) (at items 0)))
-      (deref (first (vec 2019 2021)))))
+  (do
+    (let first (fn (items) (at items 0)))
+    (deref (first (vec 2019 2021)))))
 
 (defn main ()
   (println first-year)

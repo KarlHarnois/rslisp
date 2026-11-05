@@ -1,13 +1,12 @@
 (use stack_machine/instruction instruction)
 
-(export countdown factorial underflowing million-steps)
+(export countdown factorial million-steps underflowing)
 
 (defn countdown ()
   (vec (instruction/push 5)
        instruction/dup
        (instruction/jump-if-zero 8)
-       instruction/dup
-       instruction/print
+       instruction/dup instruction/print
        (instruction/push 1)
        instruction/sub
        (instruction/jump 1)
@@ -18,12 +17,9 @@
        (instruction/push 1)
        instruction/over
        (instruction/jump-if-zero 11)
-       instruction/over
-       instruction/mul
-       instruction/swap
+       instruction/over instruction/mul instruction/swap
        (instruction/push 1)
-       instruction/sub
-       instruction/swap
+       instruction/sub instruction/swap
        (instruction/jump 2)
        instruction/halt))
 

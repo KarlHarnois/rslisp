@@ -1,6 +1,6 @@
 (def vec-capacity
   (rust "{0}.capacity()"
-        (fn ((ref (vec string))) usize)))
+    (fn ((ref (vec string))) usize)))
 
 (defn vec-size (names) (vec-capacity names))
 

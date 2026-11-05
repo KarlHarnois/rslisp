@@ -4,16 +4,16 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/loop_moves_outer_field.rslisp
 ---
 error[L0501]: use of moved value `(:badge g)`
-  --> check/loop_moves_outer_field.rslisp:15:49
+  --> check/loop_moves_outer_field.rslisp:16:45
    |
-15 |                  (do (let bigger (assoc (:badge g) :size 14))
-   |                                         --------^-
-   |                                         |       |
-   |                                         |       value used here after an earlier pass of the loop moved it
-   |                                         value moved here, in an earlier pass of the loop
+16 |                  (let bigger (assoc (:badge g) :size 14))
+   |                                     --------^-
+   |                                     |       |
+   |                                     |       value used here after an earlier pass of the loop moved it
+   |                                     value moved here, in an earlier pass of the loop
    |
 help: clone the value if both places need it
    |
-15 -                  (do (let bigger (assoc (:badge g) :size 14))
-15 +                  (do (let bigger (assoc (clone (:badge g)) :size 14))
+16 -                  (let bigger (assoc (:badge g) :size 14))
+16 +                  (let bigger (assoc (clone (:badge g)) :size 14))
    |

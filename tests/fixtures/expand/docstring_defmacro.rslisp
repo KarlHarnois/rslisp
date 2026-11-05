@@ -1,8 +1,8 @@
 (defmacro unless (test body ...)
   "Runs body when test is false."
   (template (if (unquote test)
-                (do)
-                (do (splice body)))))
+              (do)
+              (do (splice body)))))
 
 (defn main ()
   (unless false (println "ran")))

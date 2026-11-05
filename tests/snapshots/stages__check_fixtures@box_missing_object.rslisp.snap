@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/box_missing_object.rslisp
 ---
 error[L0404]: `(box circle)` does not implement `shape`
-  --> check/box_missing_object.rslisp:15:19
+  --> check/box_missing_object.rslisp:14:19
    |
-15 |   (println (total (vec (box (new circle (radius 1.0)))))))
+14 |   (println (total (vec (box (new circle (radius 1.0)))))))
    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this needs `shape`
    |
    = help: write the type `(box shape)` where the box is made, such as `(let (shapes (vec (box shape))) ...)`

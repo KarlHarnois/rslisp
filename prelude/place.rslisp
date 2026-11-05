@@ -1,4 +1,6 @@
-(use code first rest list concat empty? symbol? list? same-binding?)
+(use code concat empty? first list list? rest same-binding?
+          symbol?)
+
 (use prelude/macros defmacro)
 (use prelude/vec at)
 
@@ -6,35 +8,35 @@
 
 (def set-place!
   (rust "*{0} = {1}"
-        (where (a) (fn ((mut a) a) unit))))
+    (where (a) (fn ((mut a) a) unit))))
 
 (def at-form?
   (fn (form)
     (if (list? form)
-        (if (empty? form)
-            false
-            (if (symbol? (first form))
-                (same-binding? (first form) (quote at))
-                false))
-        false)))
+      (if (empty? form)
+        false
+        (if (symbol? (first form))
+          (same-binding? (first form) (quote at))
+          false))
+      false)))
 
 (def at-base
   (fn (form)
     (if (at-form? form)
-        (at-base (first (rest form)))
-        form)))
+      (at-base (first (rest form)))
+      form)))
 
 (def at-indices
   (fn (form)
     (if (at-form? form)
-        (concat (at-indices (first (rest form)))
-                (list (first (rest (rest form)))))
-        (list))))
+      (concat (at-indices (first (rest form)))
+              (list (first (rest (rest form)))))
+      (list))))
 
 (defmacro set! (target value)
   (if (at-form? target)
-      (list (quote set-at)
-            (at-base target)
-            (at-indices target)
-            value)
-      (list (quote set-place!) target value)))
+    (list (quote set-at)
+          (at-base target)
+          (at-indices target)
+          value)
+    (list (quote set-place!) target value)))

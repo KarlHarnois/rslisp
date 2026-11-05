@@ -1,4 +1,4 @@
-(export color brightest)
+(export brightest color)
 
 (enum color red (custom i64))
 

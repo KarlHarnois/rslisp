@@ -3,9 +3,10 @@
 (defmacro defcounter (name)
   (declare-type-definition name)
   (declare-definition name)
-  (template (do (defstruct (unquote name)
-                  :count i64)
-                (defn (unquote name) () 0))))
+  (template (do
+              (defstruct (unquote name)
+                :count i64)
+              (defn (unquote name) () 0))))
 
 (defcounter clicks)
 

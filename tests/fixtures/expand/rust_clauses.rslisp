@@ -1,16 +1,16 @@
 (def measure
   (rust "crate::rt::Sequence::len({0})"
-        (where ((s sequence))
-               (fn ((ref s)) usize))
-        (str "str::len({0})")))
+    (where ((s sequence))
+      (fn ((ref s)) usize))
+    (str "str::len({0})")))
 
 (defn main ()
   (println (measure "Leaf")))
 
 (def measure-borrowed
   (rust "crate::rt::Sequence::len({0})"
-        (where ('a (s sequence))
-               (fn ((ref 'a s)) usize))
-        (str "str::len({0})")))
+    (where ('a (s sequence))
+      (fn ((ref 'a s)) usize))
+    (str "str::len({0})")))
 
 (defn count-letters () (measure-borrowed "Leaf"))

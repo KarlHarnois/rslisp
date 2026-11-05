@@ -50,8 +50,8 @@
 
 (defn settled-pick (c)
   (ref (if c
-           (do (println "Leaf") (let year 2019))
-           (do (println "Ariya") (let year 2021)))))
+         (do (println "Leaf") (let year 2019))
+         (do (println "Ariya") (let year 2021)))))
 
 (def by-nothing
   (rust "{0} / 0" (fn (i64) i64)))

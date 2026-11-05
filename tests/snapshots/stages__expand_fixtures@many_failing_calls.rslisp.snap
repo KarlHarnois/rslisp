@@ -4,36 +4,36 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/many_failing_calls.rslisp
 ---
 error[L0326]: macro expansion did not finish
-  --> expand/many_failing_calls.rslisp:31:19
+  --> expand/many_failing_calls.rslisp:30:19
    |
-31 | (defn main () (do (many) (ran)))
+30 | (defn main () (do (many) (ran)))
    |                   ^^^^^^ expanding this call of `past-the-limit` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all
    = help: make each recursive macro stop, or split a large expansion across several top-level forms
 
 error[L0326]: macro expansion did not finish
-  --> expand/many_failing_calls.rslisp:31:26
+  --> expand/many_failing_calls.rslisp:30:26
    |
-31 | (defn main () (do (many) (ran)))
+30 | (defn main () (do (many) (ran)))
    |                          ^^^^^ expanding this call of `ran` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all
    = help: make each recursive macro stop, or split a large expansion across several top-level forms
 
 error[L0326]: macro expansion did not finish
-  --> expand/many_failing_calls.rslisp:34:12
+  --> expand/many_failing_calls.rslisp:33:12
    |
-34 |   (println (huge) (ran)))
+33 |   (println (huge) (ran)))
    |            ^^^^^^ expanding this call of `huge` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all
    = help: make each recursive macro stop, or split a large expansion across several top-level forms
 
 error[L0326]: macro expansion did not finish
-  --> expand/many_failing_calls.rslisp:34:19
+  --> expand/many_failing_calls.rslisp:33:19
    |
-34 |   (println (huge) (ran)))
+33 |   (println (huge) (ran)))
    |                   ^^^^^ expanding this call of `ran` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all

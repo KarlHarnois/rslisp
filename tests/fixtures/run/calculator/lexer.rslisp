@@ -17,11 +17,9 @@
 
 (defn scan (characters position tokens)
   (if (>= position (len characters))
-      (ok tokens)
-      (scan-character characters
-                      position
-                      tokens
-                      (char-at characters position))))
+    (ok tokens)
+    (scan-character characters position tokens
+                    (char-at characters position))))
 
 (defn scan-character (characters position tokens c)
   (cond
@@ -36,16 +34,15 @@
 
 (defn scan-number (characters start tokens)
   (let end (digits-end characters start))
-  (scan characters
-        end
+  (scan characters end
         (append tokens
                 (token/number (slice-text characters start end)))))
 
 (defn digits-end (characters position)
   (if (and (< position (len characters))
            (digit? (char-at characters position)))
-      (digits-end characters (+ position 1))
-      position))
+    (digits-end characters (+ position 1))
+    position))
 
 (defn append (items item)
   (let growing items)

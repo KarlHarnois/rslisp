@@ -2,4 +2,4 @@
   :make str
   :model str)
 
-(export car ->car)
+(export ->car car)

@@ -1,23 +1,24 @@
 (defn fill! (spare years label count)
   (if (= count 0)
-      (println label)
-      (do (push! spare count)
-          (recur years spare label (- count 1)))))
+    (println label)
+    (do
+      (push! spare count)
+      (recur years spare label (- count 1)))))
 
 (defn alternate (make model turns)
   (if (= turns 0)
-      make
-      (alternate model make (- turns 1))))
+    make
+    (alternate model make (- turns 1))))
 
 (defn settle (make model turns)
   (if (= turns 0)
-      (len make)
-      (settle model model (- turns 1))))
+    (len make)
+    (settle model model (- turns 1))))
 
 (defn swap-years (low high turns)
   (if (= turns 0)
-      low
-      (recur high low (- turns 1))))
+    low
+    (recur high low (- turns 1))))
 
 (defn main ()
   (let spare (vec 2019))

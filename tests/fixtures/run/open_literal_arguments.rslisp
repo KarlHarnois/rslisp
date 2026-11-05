@@ -37,8 +37,7 @@
   (fn ((vec (box weighed))) i64))
 
 (defn total-weight (crates)
-  (reduce crates
-          0
+  (reduce crates 0
           (fn (total item)
             (+ total (weight-of item)))))
 

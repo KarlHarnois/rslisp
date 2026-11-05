@@ -1,12 +1,12 @@
 (defn main ()
   (println ((rust "{0}.len()"
-                  (where ((s sequence))
-                         (fn ((ref s)) usize))
-                  (str "{0}.len()"))
+              (where ((s sequence))
+                (fn ((ref s)) usize))
+              (str "{0}.len()"))
             "Leaf"))
   (let measure
     (rust "{0}.len()"
-          (where ((s sequence))
-                 (fn ((ref s)) usize))
-          (str "{0}.len()")))
+      (where ((s sequence))
+        (fn ((ref s)) usize))
+      (str "{0}.len()")))
   (println (measure "Ariya")))

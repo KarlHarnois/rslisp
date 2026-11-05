@@ -2,7 +2,7 @@
 
 (def shared-str
   (rust "std::rc::Rc::from({0})"
-        (fn ((ref str)) (shared str))))
+    (fn ((ref str)) (shared str))))
 
 (defstruct tag
   :name (shared str))

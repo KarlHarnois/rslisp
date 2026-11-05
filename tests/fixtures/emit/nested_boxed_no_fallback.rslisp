@@ -9,7 +9,7 @@
     (tree/leaf 0)))
 
 (defn main ()
-  (println (value-or-zero
-             (tree/node (tree/node tree/leaf 7 tree/leaf) 1 tree/leaf)))
+  (println (value-or-zero (tree/node (tree/node tree/leaf 7 tree/leaf)
+                                     1 tree/leaf)))
   (println (value-or-zero (tree/node tree/leaf 2 tree/leaf)))
   (println (value-or-zero tree/leaf)))

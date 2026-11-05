@@ -16,8 +16,8 @@
 (defn sum-to (limit)
   (loop ((i 0) (total 0))
     (if (> i limit)
-        total
-        (recur (+ i 1) (+ total i)))))
+      total
+      (recur (+ i 1) (+ total i)))))
 
 (defn total (a b c) (+ a b c))
 

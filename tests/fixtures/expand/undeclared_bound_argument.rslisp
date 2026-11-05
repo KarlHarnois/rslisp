@@ -2,4 +2,4 @@
 
 (type bad
   (where ((a (partial-eq c)) b)
-         (fn (a b) bool)))
+    (fn (a b) bool)))

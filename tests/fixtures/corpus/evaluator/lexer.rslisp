@@ -1,4 +1,4 @@
-(export token tokenize append)
+(export append token tokenize)
 
 (enum token
   (number i64)
@@ -18,11 +18,9 @@
 
 (defn scan (characters position tokens)
   (if (>= position (len characters))
-      (ok tokens)
-      (scan-character characters
-                      position
-                      tokens
-                      (char-at characters position))))
+    (ok tokens)
+    (scan-character characters position tokens
+                    (char-at characters position))))
 
 (defn scan-character (characters position tokens c)
   (cond
@@ -53,8 +51,7 @@
 
 (defn scan-name (characters start tokens)
   (let end (span-end characters start name-part?))
-  (scan characters
-        end
+  (scan characters end
         (append tokens
                 (token/name (slice-text characters start end)))))
 
@@ -67,8 +64,8 @@
 (defn span-end (characters position accepts)
   (if (and (< position (len characters))
            (accepts (char-at characters position)))
-      (span-end characters (+ position 1) accepts)
-      position))
+    (span-end characters (+ position 1) accepts)
+    position))
 
 (defn two-character-symbol? (characters position)
   (let next (+ position 1))
@@ -112,5 +109,5 @@
 
 (def slice-text
   (rust "{0}[{1}..{2}].iter().collect::<String>()"
-        (fn ((ref (vec char)) usize usize)
-          string)))
+    (fn ((ref (vec char)) usize usize)
+      string)))

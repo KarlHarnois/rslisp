@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/breadth_expansion_too_large.rslisp
 ---
 error[L0325]: this expression nests too deeply
-  --> expand/breadth_expansion_too_large.rslisp:14:27
+  --> expand/breadth_expansion_too_large.rslisp:15:27
    |
-14 | (defn spreads () (println (spread 1)))
+15 | (defn spreads () (println (spread 1)))
    |                           ^^^^^^^^^^ this expression sits inside 1024 others
    |
    = note: expressions nest at most 1024 deep
@@ -14,9 +14,9 @@ error[L0325]: this expression nests too deeply
    = help: move the inner expressions into a function of their own
 
 error[L0326]: macro expansion did not finish
-  --> expand/breadth_expansion_too_large.rslisp:14:27
+  --> expand/breadth_expansion_too_large.rslisp:15:27
    |
-14 | (defn spreads () (println (spread 1)))
+15 | (defn spreads () (println (spread 1)))
    |                           ^^^^^^^^^^ expanding this call of `spread` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all

@@ -4,10 +4,10 @@
 
 (defn count-up (limit state)
   (if (= (:count state) limit)
-      (:count state)
-      (count-up limit
-                (->counter :label (str "c")
-                           :count (+ (:count state) 1)))))
+    (:count state)
+    (count-up limit
+              (->counter :label (str "c")
+                         :count (+ (:count state) 1)))))
 
 (defn main ()
   (let start (->counter :label (str "c") :count 0))

@@ -4,13 +4,13 @@
 
 (def read-number
   (rust "{0}.parse::<i64>()"
-        (fn ((ref str))
-          (result i64 (error-of i64)))))
+    (fn ((ref str))
+      (result i64 (error-of i64)))))
 
 (def read-float
   (rust "{0}.parse::<f32>()"
-        (fn ((ref str))
-          (result f32 (error-of f32)))))
+    (fn ((ref str))
+      (result f32 (error-of f32)))))
 
 (defn main ()
   (let (number (result i64 (error-of i64)))

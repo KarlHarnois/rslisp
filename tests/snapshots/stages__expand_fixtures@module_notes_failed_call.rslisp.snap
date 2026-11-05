@@ -4,13 +4,13 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/module_notes_failed_call.rslisp
 ---
 error[L0301]: this sighting is unconfirmed
-  --> expand/module_notes_failed_call.rslisp:15:18
+  --> expand/module_notes_failed_call.rslisp:16:18
    |
-15 | (def unconfirmed (note-then-fail))
+16 | (def unconfirmed (note-then-fail))
    |                  ^^^^^^^^^^^^^^^^ here
 
 error[L0301]: sightings noted: 0
-  --> expand/module_notes_failed_call.rslisp:19:13
+  --> expand/module_notes_failed_call.rslisp:20:13
    |
-19 | (def report (report-sightings bird))
+20 | (def report (report-sightings bird))
    |             ^^^^^^^^^^^^^^^^^^^^^^^ here

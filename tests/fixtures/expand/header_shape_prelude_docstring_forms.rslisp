@@ -1,4 +1,4 @@
-(use code list module-notes definition-symbol)
+(use code definition-symbol list module-notes)
 
 (defmacro docstring-forms-beside (definer)
   (list (quote quote)

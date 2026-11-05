@@ -10,7 +10,7 @@
 
 (type count
   (where ((c (container item)) item)
-         (fn ((ref c)) usize)))
+    (fn ((ref c)) usize)))
 
 (defn count (c) (size c))
 

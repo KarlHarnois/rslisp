@@ -1,6 +1,6 @@
 (def swap-cells
   (rust "std::mem::swap({&0}, {&1})"
-        (where (a) (fn ((mut a) (mut a)) unit))))
+    (where (a) (fn ((mut a) (mut a)) unit))))
 
 (defn exchange! (a b) (swap-cells a b))
 
@@ -8,8 +8,8 @@
 
 (def first-slice
   (rust "{0}.as_slice()"
-        (where (a)
-               (fn ((ref (vec a))) (ref (slice a))))))
+    (where (a)
+      (fn ((ref (vec a))) (ref (slice a))))))
 
 (defn measure (value) (len value))
 

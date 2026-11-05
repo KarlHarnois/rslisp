@@ -28,7 +28,7 @@
 
 (def write-written
   (rust "write!({0}, \"written\")"
-        (fn ((mut octal-out)) octal-result)))
+    (fn ((mut octal-out)) octal-result)))
 
 (impl octal written
   (fmt (value out) (write-written out)))
@@ -53,7 +53,7 @@
 
 (def show-octal
   (rust "println!(\"{{:o}}\", {&0})"
-        (where ((a octal)) (fn ((ref a)) unit))))
+    (where ((a octal)) (fn ((ref a)) unit))))
 
 (defn main ()
   (show-octal (->mode 8 9))

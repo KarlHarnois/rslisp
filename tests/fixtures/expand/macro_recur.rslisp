@@ -1,10 +1,10 @@
-(use code empty? rest number-add)
+(use code empty? number-add rest)
 
 (def count-from
   (fn (index forms)
     (if (empty? forms)
-        index
-        (recur (number-add index 1) (rest forms)))))
+      index
+      (recur (number-add index 1) (rest forms)))))
 
 (def count-args
   (macro (form)

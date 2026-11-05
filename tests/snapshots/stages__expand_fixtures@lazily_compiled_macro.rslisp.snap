@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/lazily_compiled_macro.rslisp
 ---
 error[L0326]: macro expansion did not finish
-  --> expand/lazily_compiled_macro.rslisp:26:29
+  --> expand/lazily_compiled_macro.rslisp:27:29
    |
-26 | (defn main () (do (padding) (small)))
+27 | (defn main () (do (padding) (small)))
    |                             ^^^^^^^ expanding this call of `small` passes 131072 forms
    |
    = note: the macro calls in one top-level form expand to at most 131072 forms in all

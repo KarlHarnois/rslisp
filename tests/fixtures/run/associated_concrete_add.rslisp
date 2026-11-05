@@ -4,8 +4,8 @@
 
 (def add-values
   (rust "{0} + {1}"
-        (where ((a (addable b)) b)
-               (fn (a b) (output a)))))
+    (where ((a (addable b)) b)
+      (fn (a b) (output a)))))
 
 (type total (fn (i64 i64) (output i64)))
 

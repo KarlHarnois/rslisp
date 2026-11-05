@@ -1,5 +1,6 @@
-(use code list string? number? bool-not number-add number-sub number-lt
-          number-le number-gt number-ge value-eq)
+(use code bool-not list number-add number-ge number-gt
+          number-le number-lt number-sub number? string?
+          value-eq)
 
 (def yes-or-no
   (fn (test)

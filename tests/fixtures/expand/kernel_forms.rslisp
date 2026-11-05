@@ -20,4 +20,4 @@
 
 (def to-text
   (rust "{0}.to_string()"
-        (fn ((ref str)) string)))
+    (fn ((ref str)) string)))

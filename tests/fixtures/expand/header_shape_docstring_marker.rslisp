@@ -3,8 +3,7 @@
 (defrule my-defn
   ((n p b ...)
    (defn n p
-     b
-     ...)))
+     b ...)))
 
 (header-shape (my-defn name parameters) :docstring)
 

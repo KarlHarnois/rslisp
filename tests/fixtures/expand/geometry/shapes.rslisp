@@ -1,4 +1,4 @@
-(export square make-square square-side)
+(export make-square square square-side)
 
 (struct square (side f64))
 

@@ -1,5 +1,5 @@
-(export layer-1-module-10-score layer-1-module-10-reading
-        layer-1-module-10-label)
+(export layer-1-module-10-label layer-1-module-10-reading
+        layer-1-module-10-score)
 
 (defstruct layer-1-module-10-reading
   :site str

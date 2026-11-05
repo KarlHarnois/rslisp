@@ -12,8 +12,8 @@
          (if (> year 2020) (:make c) "classic"))
   (pick (fallback c)
         (if (> (:year c) 2020)
-            (:make c)
-            fallback))
+          (:make c)
+          fallback))
   (make (self) (:make self)))
 
 (defn main ()

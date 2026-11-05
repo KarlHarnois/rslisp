@@ -9,8 +9,9 @@
 (defn run-from! (program counter stack)
   (match (try (instruction-at program counter))
     ((push value)
-     (do (push! stack value)
-         (run-from! program (+ counter 1) stack)))
+     (do
+       (push! stack value)
+       (run-from! program (+ counter 1) stack)))
     (add (let-try ((right (pop-value! stack))
                    (left (pop-value! stack)))
            (push! stack (+ left right))

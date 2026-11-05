@@ -1,11 +1,11 @@
 (def add-one!
   (rust "std::ops::AddAssign::add_assign({0}, 1)"
-        (fn ((mut i64)) unit)))
+    (fn ((mut i64)) unit)))
 
 (def assign!
   (rust "{0}.clone_from({1})"
-        (where ((a clone))
-               (fn ((mut a) (ref a)) unit))))
+    (where ((a clone))
+      (fn ((mut a) (ref a)) unit))))
 
 (defstruct counter
   :count i64)

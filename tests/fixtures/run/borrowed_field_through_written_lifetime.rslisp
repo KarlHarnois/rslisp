@@ -4,8 +4,8 @@
 
 (type first
   (where ('a 'b)
-         (fn ((ref 'a str) (ref 'b str))
-           (ref 'a str))))
+    (fn ((ref 'a str) (ref 'b str))
+      (ref 'a str))))
 
 (defn first (a b) a)
 

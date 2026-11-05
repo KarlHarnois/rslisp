@@ -3,8 +3,7 @@
 (defrule my-struct
   ((h f ...)
    (defstruct h
-     f
-     ...)))
+     f ...)))
 
 (header-shape (my-struct head))
 

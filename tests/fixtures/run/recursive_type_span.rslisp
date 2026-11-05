@@ -2,7 +2,7 @@
 
 (def cell-new
   (rust "std::cell::Cell::new({0})"
-        (where (a) (fn (a) (cell a)))))
+    (where (a) (fn (a) (cell a)))))
 
 (enum tree
   (leaf i64)

@@ -5,9 +5,10 @@
 (defn main ()
   (println (loop ((i 0) (total 0))
              (if (< i 3)
-                 (do (let leaf
-                       (->car (str "Leaf") (+ 2020 i)))
-                     (let kept leaf)
-                     (println (:model kept) " " (:year kept))
-                     (recur (+ i 1) (+ total (:year kept))))
-                 total))))
+               (do
+                 (let leaf
+                   (->car (str "Leaf") (+ 2020 i)))
+                 (let kept leaf)
+                 (println (:model kept) " " (:year kept))
+                 (recur (+ i 1) (+ total (:year kept))))
+               total))))

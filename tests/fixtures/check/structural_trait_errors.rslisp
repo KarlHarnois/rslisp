@@ -15,7 +15,7 @@
 
 (def show-octal
   (rust "println!(\"{{:o}}\", {&0})"
-        (where ((a octal)) (fn ((ref a)) unit))))
+    (where ((a octal)) (fn ((ref a)) unit))))
 
 (defstruct closed
   :mask u32)
@@ -45,7 +45,7 @@
 
 (def write-wrap
   (rust "write!({0}, \"wrap\")"
-        (fn ((mut octal-out)) octal-result)))
+    (fn ((mut octal-out)) octal-result)))
 
 (impl octal (wrap u32)
   (fmt (value out) (write-wrap out)))

@@ -55,8 +55,7 @@
     (max-by-key (filter (iter people)
                         (fn (person) (in-dept? person dept)))
                 (fn (person) (:score person))))
-  (println (str dept
-                " top scorer: "
+  (println (str dept " top scorer: "
                 (:name (expect best "every department has a member")))))
 
 (defn in-dept? (person dept)

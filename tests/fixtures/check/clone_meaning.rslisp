@@ -19,6 +19,6 @@
 
 (defn walk (stack n)
   (if (= n 0)
-      (len stack)
-      (+ (len (store-in-vec stack))
-         (walk stack (- n 1)))))
+    (len stack)
+    (+ (len (store-in-vec stack))
+       (walk stack (- n 1)))))

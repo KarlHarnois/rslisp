@@ -1,4 +1,5 @@
-(use code add-module-note module-notes definition-symbol fail len nth string)
+(use code add-module-note definition-symbol fail len
+          module-notes nth string)
 
 (def note-then-fail
   (macro (form)

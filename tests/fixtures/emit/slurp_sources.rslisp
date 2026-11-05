@@ -1,6 +1,6 @@
 (type read-source
   (where ((s source))
-         (fn ((ref s)) (result string io-error))))
+    (fn ((ref s)) (result string io-error))))
 
 (defn read-source (source) (slurp source))
 

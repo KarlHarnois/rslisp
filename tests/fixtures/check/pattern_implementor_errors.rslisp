@@ -4,8 +4,8 @@
 
 (def describe
   (rust "{0}.to_string()"
-        (where ((a shown))
-               (fn ((ref a)) string))))
+    (where ((a shown))
+      (fn ((ref a)) string))))
 
 (type borrowed-text
   (fn ((ref (ref str))) string))
@@ -35,7 +35,7 @@
 
 (def to-label
   (rust "{0}.to_string()"
-        (where ((a labeled)) (fn (a) string))))
+    (where ((a labeled)) (fn (a) string))))
 
 (defn label-of (text)
   (to-label (ref text)))

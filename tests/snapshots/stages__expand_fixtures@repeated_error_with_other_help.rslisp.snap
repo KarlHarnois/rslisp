@@ -4,13 +4,13 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/repeated_error_with_other_help.rslisp
 ---
 error[L0201]: cannot find `missing-name` in this scope
- --> expand/repeated_error_with_other_help.rslisp:6:33
+ --> expand/repeated_error_with_other_help.rslisp:7:33
   |
-6 | (defn main () (both missing-nam missing-name))
+7 | (defn main () (both missing-nam missing-name))
   |                                 ^^^^^^^^^^^^ not found in this scope
   |
 help: a name with a similar spelling exists
   |
-6 - (defn main () (both missing-nam missing-name))
-6 + (defn main () (both missing-nam missing-nam))
+7 - (defn main () (both missing-nam missing-name))
+7 + (defn main () (both missing-nam missing-nam))
   |

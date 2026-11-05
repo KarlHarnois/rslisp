@@ -2,8 +2,9 @@
 
 (def with-total
   (macro (form)
-    (template (do (let total 100)
-                  (+ total (unquote (nth form 1)))))))
+    (template (do
+                (let total 100)
+                (+ total (unquote (nth form 1)))))))
 
 (defn main ()
   (let total 1)
@@ -12,9 +13,10 @@
   (let add-total
     (fn (amount) (+ amount total)))
   (let inner
-    (do (let doubled 10)
-        (let total (+ total doubled))
-        total))
+    (do
+      (let doubled 10)
+      (let total (+ total doubled))
+      total))
   (println (with-total total))
   (println (add-total inner))
   (println doubled))

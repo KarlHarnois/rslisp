@@ -18,17 +18,17 @@
 (defn execute-from (statements index names)
   (match (get statements index)
     ((some (binding name value))
-     (do (let result
-           (try (evaluate value (ref names))))
-         (execute-from statements
-                       (+ index 1)
-                       (assoc names (clone name) result))))
+     (do
+       (let result
+         (try (evaluate value (ref names))))
+       (execute-from statements
+                     (+ index 1)
+                     (assoc names (clone name) result))))
     ((some (show value))
-     (do (println (str "  "
-                       value
-                       " => "
-                       (try (evaluate value (ref names)))))
-         (execute-from statements (+ index 1) names)))
+     (do
+       (println (str "  " value " => "
+                     (try (evaluate value (ref names)))))
+       (execute-from statements (+ index 1) names)))
     (none (ok names))))
 
 (type evaluate
@@ -48,12 +48,13 @@
      (ok (- 0 (try (evaluate inner names)))))
     ((choice test then otherwise)
      (if (= (try (evaluate test names)) 0)
-         (evaluate otherwise names)
-         (evaluate then names)))
+       (evaluate otherwise names)
+       (evaluate then names)))
     ((call function arguments)
-     (do (let values
-           (try (evaluate-all arguments names 0 (vec))))
-         (apply-function function values)))))
+     (do
+       (let values
+         (try (evaluate-all arguments names 0 (vec))))
+       (apply-function function values)))))
 
 (type look-up
   (fn ((ref (sorted-map string i64))
@@ -75,10 +76,11 @@
 (defn evaluate-all (arguments names index values)
   (match (get arguments index)
     ((some argument)
-     (do (let value (try (evaluate argument names)))
-         (let growing values)
-         (push! growing value)
-         (evaluate-all arguments names (+ index 1) growing)))
+     (do
+       (let value (try (evaluate argument names)))
+       (let growing values)
+       (push! growing value)
+       (evaluate-all arguments names (+ index 1) growing)))
     (none (ok values))))
 
 (type apply-operator
@@ -92,12 +94,12 @@
     ("*" (ok (* left right)))
     ("/"
      (if (= right 0)
-         (err (str "division by zero"))
-         (ok (/ left right))))
+       (err (str "division by zero"))
+       (ok (/ left right))))
     ("%"
      (if (= right 0)
-         (err (str "remainder by zero"))
-         (ok (rem left right))))
+       (err (str "remainder by zero"))
+       (ok (rem left right))))
     ("<" (ok (truth (< left right))))
     (">" (ok (truth (> left right))))
     ("<=" (ok (truth (<= left right))))
@@ -127,8 +129,8 @@
      (match (first numbers)
        ((some value)
         (ok (if (< (deref value) 0)
-                (- 0 (deref value))
-                (deref value))))
+              (- 0 (deref value))
+              (deref value))))
        (none (err (str "abs needs an argument")))))
     (_ (err (str "unknown function `" function "`")))))
 

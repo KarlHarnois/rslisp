@@ -1,4 +1,4 @@
-(use code list keyword? keyword-name)
+(use code keyword-name keyword? list)
 
 (def yes-or-no
   (fn (test)
