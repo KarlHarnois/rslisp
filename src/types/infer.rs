@@ -1546,7 +1546,7 @@ impl TypeChecker {
     }
 
     fn infer_type_text(&mut self, operand: &Expr, span: Span) -> Result<TypedExpr, Diagnostic> {
-        self.holds_infer_forms = true;
+        self.infer_operands.push(operand.span());
         let operand = self.infer(operand)?;
         Ok(TypedExpr {
             kind: TypedExprKind::Infer(Box::new(operand)),

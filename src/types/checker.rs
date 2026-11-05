@@ -172,7 +172,7 @@ pub struct TypeChecker {
     pub(super) unnameable_types: Diagnostics,
     pub(super) closure_types: Vec<super::typed::ClosureType>,
     pub(super) type_texts: super::type_text::TypeTexts,
-    pub(super) holds_infer_forms: bool,
+    pub(super) infer_operands: Vec<Span>,
     pub(super) type_arities: FxHashMap<BindingId, usize>,
     pub(super) written_projections: Vec<super::associated::WrittenProjection>,
     pub(super) checked_projections: usize,
@@ -269,7 +269,7 @@ impl TypeChecker {
             unnameable_types: Diagnostics::default(),
             closure_types: Vec::new(),
             type_texts: super::type_text::TypeTexts::default(),
-            holds_infer_forms: false,
+            infer_operands: Vec::new(),
             type_arities: FxHashMap::default(),
             written_projections: Vec::new(),
             checked_projections: 0,
@@ -871,10 +871,17 @@ impl TypeChecker {
     fn leave_unresolved(&mut self, obligation: Obligation, pass: ObligationPass) {
         match pass {
             ObligationPass::Deferring => self.unifier.defer(obligation),
+            ObligationPass::Final if self.is_inside_infer_operand(obligation.span) => {}
             ObligationPass::Final => {
                 self.defer_missing_annotation(TypeProblems::cannot_infer(obligation.span))
             }
         }
+    }
+
+    fn is_inside_infer_operand(&self, span: Span) -> bool {
+        self.infer_operands
+            .iter()
+            .any(|operand| operand.contains(span))
     }
 
     fn check_component(&mut self, members: &[&Definition]) -> Vec<(BindingId, TypedDefinition)> {
