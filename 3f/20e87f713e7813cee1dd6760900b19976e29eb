@@ -1,9 +1,9 @@
-# method 06258bb4c5f45da70587b945f457665c13cd3d55-8c4a250049fda726abb7f131e480de50b9e22f10-7abdbbf17387b4fde503673fb3205c0133b069dd-0af90e95e1dfdc6606b8369442c2baa8f5072027
+# method 06258bb4c5f45da70587b945f457665c13cd3d55-19a6e855cb6f3f0c261769e489de3df1ddc15dc6-7abdbbf17387b4fde503673fb3205c0133b069dd-0af90e95e1dfdc6606b8369442c2baa8f5072027
 # rustc rustc 1.95.0 (59807616e 2026-04-14) (built from a source tarball)
 # valgrind valgrind-3.26.0
 call_chain	build=24920497	check=530844644	emit=157023153	expand=476532276	modules=17230	source=23	total=1199757206	allocator.allocated_bytes=146161058	allocator.allocations=1765674	allocator.peak_live_bytes=9228624	build.scanned_tokens=26592	check.inferred_expressions=20391	emit.emitted_expressions=5595	expand.lowered_forms=8392
 deep_nesting	build=26614818	check=272256809	emit=55635759	expand=577076478	modules=9721	source=23	total=938747557	allocator.allocated_bytes=157984081	allocator.allocations=1325402	allocator.peak_live_bytes=31878023	build.scanned_tokens=15060	check.inferred_expressions=7288	emit.emitted_expressions=2895	expand.lowered_forms=4462
-empty_program	build=25702	check=5776562	emit=96084	expand=10608672	modules=1148	source=23	total=19748609	allocator.allocated_bytes=3461718	allocator.allocations=32561	allocator.peak_live_bytes=1669787	build.scanned_tokens=12	check.inferred_expressions=4	emit.emitted_expressions=0	expand.lowered_forms=1
+empty_program	build=25816	check=5776562	emit=96084	expand=10608672	modules=1148	source=23	total=19748723	allocator.allocated_bytes=3461718	allocator.allocations=32561	allocator.peak_live_bytes=1669787	build.scanned_tokens=12	check.inferred_expressions=4	emit.emitted_expressions=0	expand.lowered_forms=1
 evaluator	allocator.allocated_bytes=16883142	allocator.allocations=190680	allocator.peak_live_bytes=2266735
 generic_types	allocator.allocated_bytes=43593992	allocator.allocations=494083	allocator.peak_live_bytes=4255281
 literal_inference	allocator.allocated_bytes=46599902	allocator.allocations=509038	allocator.peak_live_bytes=3500579
