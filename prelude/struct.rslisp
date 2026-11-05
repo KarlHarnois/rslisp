@@ -138,6 +138,8 @@
                         (field-definition name)
                         field-names))
     (let hidden (symbol (quote make) "make-" name))
+    (let signature
+      (call-signature name field-names defaults field-types))
     (template (do
                 (struct (unquote head) (splice fields))
                 (defn (unquote hidden) (unquote field-names)
@@ -147,8 +149,4 @@
                   (macro (form)
                     (constructor-expansion form
                                            (quote (unquote hidden))
-                                           (quote (unquote (call-signature
-                                                             name
-                                                             field-names
-                                                             defaults
-                                                             field-types))))))))))
+                                           (quote (unquote signature)))))))))

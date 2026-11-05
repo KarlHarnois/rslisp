@@ -883,9 +883,9 @@
     (let continuation
       (map-list (fn (line) (unindent margin line))
                 (rest lines)))
-    (without-trailing-newlines (join-lines (without-leading-blanks
-                                             (prepend (string-trim-start (first lines))
-                                                      continuation))))))
+    (let first-line (string-trim-start (first lines)))
+    (without-trailing-newlines
+      (join-lines (without-leading-blanks (prepend first-line continuation))))))
 
 (def shared-indentation
   (fn (lines)
