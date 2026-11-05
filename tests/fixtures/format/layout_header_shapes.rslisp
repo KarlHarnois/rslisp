@@ -1,0 +1,8 @@
+(def limit (+ (base-limit) (extra-allowance) (seasonal-bonus)))
+(def describe (fn (n) (if (< n 0) "negative" (str "count " n))))
+(defn area (shape) (match shape ((circle radius) (* pi radius radius)) ((square side) (* side side))))
+(enum token (symbol (ref str)) (number (ref str)))
+(impl display point (defn fmt (self formatter) (write formatter "point")))
+(rust-trait same "std::ops::Add" i64 (with i64 point))
+(defn twice (x)
+      (* 2 x))

@@ -1,3 +1,4 @@
+mod formatting;
 mod headers;
 mod reports;
 
@@ -15,12 +16,14 @@ use rslisp::core::{
 use rslisp::diagnostic::{DiagnosticRenderer, Diagnostics};
 use rslisp::emit::{EmittedCrate, RustEmitter};
 use rslisp::expand::{Expander, PreludeState};
+use rslisp::format::{FormatFailure, SourceFormatter};
 use rslisp::modules::ModuleSources;
 use rslisp::reader::Reader;
 use rslisp::source::{SourceId, SourceMap, Span};
 use rslisp::types::TypedProgram;
 use rustc_hash::FxHashMap;
 
+pub use formatting::{FormatFailures, ShapeLookup};
 pub use headers::HeaderAgreement;
 pub use reports::FixtureReports;
 
@@ -70,6 +73,19 @@ impl Fixture {
         match Reader::new(self.sources.file(self.entry)).read() {
             Ok(forms) => forms.iter().map(|form| format!("{form}\n")).collect(),
             Err(diagnostics) => self.render(&diagnostics),
+        }
+    }
+
+    pub fn format_report(&self) -> String {
+        let input = self.sources.file(self.entry);
+        let lookup = ShapeLookup::beside(&self.path);
+        match SourceFormatter::default().format(input, &lookup) {
+            Ok(formatted) => format!("{}\n---\n{formatted}", input.text()),
+            Err(FormatFailure::Unreadable(diagnostics)) => self.render(&diagnostics),
+            Err(failure) => panic!(
+                "formatting {} fails its check: {failure:?}",
+                self.path.display()
+            ),
         }
     }
 

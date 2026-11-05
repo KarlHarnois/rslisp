@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_use.rslisp
+---
+(use warehouse/model item entry valued value-cents category dollars widen)
+(use short a b)
+(use another/module first-name second-name third-name fourth-name fifth-name)
+(export alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon)
+(use deeply/nested/module/path with-a-name ; why this name
+     another-name)
+
+---
+(use warehouse/model item entry valued value-cents category dollars widen)
+(use short a b)
+(use another/module first-name second-name third-name fourth-name fifth-name)
+
+(export alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi
+        omicron pi rho sigma tau upsilon)
+
+(use deeply/nested/module/path with-a-name ; why this name
+                               another-name)

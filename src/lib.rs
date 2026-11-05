@@ -7,5 +7,5 @@ pub mod ownership;
 pub mod types;
 
 pub use rslisp_expand::{
-    core, diagnostic, expand, interpret, language, modules, reader, scope, source, stack,
+    core, diagnostic, expand, format, interpret, language, modules, reader, scope, source, stack,
 };

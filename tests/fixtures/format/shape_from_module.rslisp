@@ -1,0 +1,2 @@
+(use shapes/loops dotimes)
+(defn main () (dotimes (index 10) (println (str "index " index)) (println "and again")))

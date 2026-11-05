@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/reader_error.rslisp
+---
+error[L0101]: this list is never closed
+ --> format/reader_error.rslisp:1:1
+  |
+1 | (defn main ()
+  | ^ this `(` has no matching `)`
+  |
+  = help: add a `)` where the list ends
+
+error[L0101]: this list is never closed
+ --> format/reader_error.rslisp:2:3
+  |
+2 |   (println "unclosed"
+  |   ^ this `(` has no matching `)`
+  |
+  = help: add a `)` where the list ends

@@ -1,0 +1,27 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_keyword_pairs.rslisp
+---
+(->reading :site label :level base :limit 40)
+(defstruct reading :site str :level i64 :limit i64)
+(make-record :name "Example Name" :address (address-of "1 Sample Street" "Testville"))
+(flags :quiet :verbose :dry-run :colors-off)
+(f :key ; why
+   value)
+
+---
+(->reading :site label :level base :limit 40)
+
+(defstruct reading
+  :site str
+  :level i64
+  :limit i64)
+
+(make-record :name "Example Name"
+             :address (address-of "1 Sample Street" "Testville"))
+
+(flags :quiet :verbose :dry-run :colors-off)
+
+(f :key ; why
+   value)

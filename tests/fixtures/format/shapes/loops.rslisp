@@ -1,0 +1,8 @@
+(use prelude/macros header-shape)
+
+(export dotimes)
+
+(defrule dotimes
+  ((binding body ...) (for-each (range 0 10) (fn (index) body ...))))
+
+(header-shape (dotimes binding))
