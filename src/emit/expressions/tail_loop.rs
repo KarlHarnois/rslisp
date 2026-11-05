@@ -204,15 +204,6 @@ impl ExpressionEmitter<'_> {
         fragments
     }
 
-    fn leading_statements(&mut self, items: &[TypedBodyItem]) -> Vec<Fragment> {
-        let mut fragments = Vec::new();
-        for item in items {
-            fragments.push(Fragment::Newline);
-            fragments.extend(self.statement(item, false).fragments);
-        }
-        fragments
-    }
-
     fn loop_tail(&mut self, tail: &TypedExpr) -> Vec<Fragment> {
         if let Some(arguments) = self
             .tail_loop

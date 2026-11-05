@@ -1,0 +1,9 @@
+(defn countdown (n)
+  (do)
+  (if (> n 0) (countdown (- n 1)) n))
+
+(defn main ()
+  (do)
+  (println (countdown 3))
+  (comment (exit 1))
+  (println "done"))
