@@ -1,0 +1,3 @@
+(comment (defn scratch-square (x) (* x x)) (scratch-square 12) (println "a scratch line that is long enough to break"))
+
+(comment)

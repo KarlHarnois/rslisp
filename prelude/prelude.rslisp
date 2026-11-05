@@ -3,7 +3,9 @@
                     kernel-definition page-body template)
 
 (use prelude/logic and cond not or unless when)
-(use prelude/syntax -> ->> defn let-try loop the try->)
+
+(use prelude/syntax -> ->> comment defn let-try loop the
+                    try->)
 
 (use prelude/types box iterator option result sequence slice
                    vec)
@@ -54,10 +56,10 @@
 
 (export * + - -> ->> / < <= = > >= _ add alphanumeric? and
         any? as-str assoc assoc-at assoc-in at bool box char
-        char chars clone collect command-line-args cond
-        copied copy count debug dedup! def defmacro defn
-        defrule defstruct deref derive digit? display div do
-        doc doc-page docstring empty? enum enumerate
+        char chars clone collect command-line-args comment
+        cond copied copy count debug dedup! def defmacro
+        defn defrule defstruct deref derive digit? display
+        div do doc doc-page docstring empty? enum enumerate
         eprintln eq err err? every? exit expect expect-ok
         export f32 f64 false field filter find first float
         fn fn-mut fn-once for-each from-str ge get gt hash

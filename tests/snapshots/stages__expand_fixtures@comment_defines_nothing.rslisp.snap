@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/comment_defines_nothing.rslisp
+---
+error[L0201]: cannot find `greet` in this scope
+ --> expand/comment_defines_nothing.rslisp:4:16
+  |
+4 | (defn main () (greet "ana"))
+  |                ^^^^^ not found in this scope

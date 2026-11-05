@@ -9,11 +9,11 @@
           list? nth number-sub prepend rest string string?
           symbol symbol-name symbol? take value-eq)
 
-(export -> ->> call-signature declared-forms declared-name
-        default-bindings default-pairs defaults-clause?
-        definition defn has-argument? let-try loop pair-keys
-        read-call signature-defaults signature-name the
-        try-> type-missing?)
+(export -> ->> call-signature comment declared-forms
+        declared-name default-bindings default-pairs
+        defaults-clause? definition defn has-argument?
+        let-try loop pair-keys read-call signature-defaults
+        signature-name the try-> type-missing?)
 
 (defmacro defn (name parameters body ...)
   "Defines a function: (defn name (parameter ...) body ...).
@@ -704,6 +704,15 @@
 (defrule the
   ((type-expression value)
    (do (let (result type-expression) value) result)))
+
+(defrule comment
+  "Keeps forms in the source that never expand, check or run.
+
+  Write (comment form ...). The call is unit, so a file can hold
+  scratch expressions to evaluate one at a time from an editor."
+  ((form ...) (do)))
+
+(header-shape (comment))
 
 (defrule ->
   "Threads a value through each form as its first argument.

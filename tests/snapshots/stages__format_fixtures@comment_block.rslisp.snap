@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/comment_block.rslisp
+---
+(comment (defn scratch-square (x) (* x x)) (scratch-square 12) (println "a scratch line that is long enough to break"))
+
+(comment)
+
+---
+(comment
+  (defn scratch-square (x) (* x x))
+  (scratch-square 12)
+  (println "a scratch line that is long enough to break"))
+
+(comment)

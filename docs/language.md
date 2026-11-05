@@ -19,6 +19,8 @@ The reader knows four rules:
 3. An atom is a string, a number or a symbol.
 4. `;` starts a comment that runs to the end of the line.
 
+`(comment form ...)` is the prelude's comment block, as in Clojure. Its forms must read, so their parentheses balance and their strings close, and `rslisp fmt` lays them out as code, but they never expand, check or run, so a `defn` inside one defines nothing. A file keeps scratch expressions in a `comment` to send one at a time to `rslisp eval` or the prompt. The call is `unit` at top level and in expression position, as Clojure's is `nil`, so `(+ 1 (comment 2))` is a type error. There is no `#_` form discard, because it would make `#` a character that the reader treats specially.
+
 ### Atoms
 
 | Atom | Examples | Rule |
