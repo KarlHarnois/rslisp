@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/def_docstring.rslisp
+---
+(def max-retries 1)
+(def greeting "hi")
+(def max-retries-page "(def max-retries)\n\nHow many times a check reruns.")
+(def max-retries-docstring "How many times a check reruns.")
+(def greeting-page "(def greeting)\n\nNo documentation.")

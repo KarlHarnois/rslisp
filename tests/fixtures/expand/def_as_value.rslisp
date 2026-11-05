@@ -1,0 +1,3 @@
+(defn f ()
+  (let d def)
+  d)

@@ -80,7 +80,8 @@
 (defn unnamed () (def 7 1))
 
 (defn overfull ()
-  (def extra 1 2)
+  (def extra
+    1 2)
   extra)
 
 (defn empty-def ()

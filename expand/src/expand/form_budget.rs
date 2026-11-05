@@ -29,8 +29,15 @@ impl FormBudget {
         value.to_form_within(&mut allowance)
     }
 
-    pub fn flip_scope(&mut self, form: &mut Form, scope: Scope) -> bool {
-        form.flip_scope_within(scope, &mut self.remaining)
+    pub fn flip_scope(&mut self, form: &mut Form, scope: Scope, counted_forms: usize) -> bool {
+        let mut allowance = self.remaining.saturating_add(counted_forms);
+        let flipped = form.flip_scope_within(scope, &mut allowance);
+        self.remaining = if flipped {
+            allowance.min(self.remaining)
+        } else {
+            0
+        };
+        flipped
     }
 }
 
@@ -48,6 +55,8 @@ mod tests {
     }
 
     impl BudgetFixture {
+        const NOTHING_COUNTED: usize = 0;
+
         fn new() -> Self {
             Self {
                 budget: FormBudget::full(),
@@ -58,7 +67,14 @@ mod tests {
         fn admits_list_of(&mut self, forms: usize) -> bool {
             let mut list = Self::list_of(forms);
             let scope = self.scopes.fresh();
-            self.budget.flip_scope(&mut list, scope)
+            self.budget
+                .flip_scope(&mut list, scope, Self::NOTHING_COUNTED)
+        }
+
+        fn admits_list_counting(&mut self, forms: usize, counted_forms: usize) -> bool {
+            let mut list = Self::list_of(forms);
+            let scope = self.scopes.fresh();
+            self.budget.flip_scope(&mut list, scope, counted_forms)
         }
 
         fn admits_value(&self, value: &Value) -> bool {
@@ -93,6 +109,28 @@ mod tests {
     fn rejects_an_expansion_one_form_past_the_limit() {
         let mut fixture = BudgetFixture::new();
         assert!(!fixture.admits_list_of(FormBudget::EXPANSION_LIMIT + 1));
+    }
+
+    #[test]
+    fn admits_counted_forms_beyond_the_limit() {
+        let mut fixture = BudgetFixture::new();
+        assert!(fixture.admits_list_counting(FormBudget::EXPANSION_LIMIT + 1, 1));
+        assert!(!fixture.admits_list_of(1));
+    }
+
+    #[test]
+    fn gains_no_budget_from_counted_forms_it_did_not_return() {
+        let mut fixture = BudgetFixture::new();
+        assert!(fixture.admits_list_counting(1, FormBudget::EXPANSION_LIMIT));
+        assert!(fixture.admits_list_of(FormBudget::EXPANSION_LIMIT));
+        assert!(!fixture.admits_list_of(1));
+    }
+
+    #[test]
+    fn spends_the_rest_of_the_budget_on_a_failed_expansion() {
+        let mut fixture = BudgetFixture::new();
+        assert!(!fixture.admits_list_counting(FormBudget::EXPANSION_LIMIT + 2, 1));
+        assert!(!fixture.admits_list_of(1));
     }
 
     #[test]

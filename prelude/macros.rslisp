@@ -13,8 +13,8 @@
 (export defmacro defrule doc-page docstring
         docstring-before-body? docstring-before-parameters
         document documented-body? header header-shape
-        map-list note-docstring page-body template
-        type-doc-key value-doc-key whole-pairs?)
+        kernel-definition map-list note-docstring page-body
+        template type-doc-key value-doc-key whole-pairs?)
 
 (def map-list
   (fn (function items)
@@ -502,6 +502,25 @@
 
 (def value-doc-key
   (fn (name) (list "value" name)))
+
+(def kernel-definition
+  (fn (form)
+    (if (symbol? form)
+      (quote def)
+      (if (value-eq (len form) 4)
+        (four-form-definition form)
+        (prepend (quote def) (rest form))))))
+
+(def four-form-definition
+  (fn (form)
+    (if (string? (nth form 2))
+      (do
+        (note-docstring (value-doc-key (nth form 1))
+                        (nth form 2))
+        (list (quote def)
+              (nth form 1)
+              (nth form 3)))
+      (prepend (quote def) (rest form)))))
 
 (def whole-pairs?
   (fn (arguments)

@@ -1482,7 +1482,7 @@ fn doc_types_prints_the_type_of_a_plain_definition() {
     let sandbox = Sandbox::new("doc_types_plain").with_file("prog.rslisp", TYPED_PROGRAM);
     assert_eq!(
         sandbox.typed_page(&["--file", "prog.rslisp", "limit"]),
-        "(type limit i64)\nlimit\n\nNo documentation.\n"
+        "(type limit i64)\n(def limit)\n\nNo documentation.\n"
     );
 }
 
@@ -1538,7 +1538,7 @@ fn doc_types_prints_the_type_of_an_undocumented_def_beside_a_struct() {
         .with_file("prog.rslisp", UNDOCUMENTED_DEF_BESIDE_A_STRUCT);
     assert_eq!(
         sandbox.typed_page(&["--file", "prog.rslisp", "point"]),
-        "(type point i64)\npoint\n\nNo documentation.\n"
+        "(type point i64)\n(def point)\n\nNo documentation.\n"
     );
 }
 
@@ -1592,7 +1592,7 @@ fn doc_types_leaves_a_page_in_the_program_untyped() {
     );
     assert_eq!(
         sandbox.typed_page(&["--file", "prog.rslisp", "page"]),
-        "(type page (ref str))\npage\n\nNo documentation.\n"
+        "(type page (ref str))\n(def page)\n\nNo documentation.\n"
     );
 }
 

@@ -1,0 +1,11 @@
+(def max-retries
+  "How many times a check reruns."
+  1)
+
+(def greeting "hi")
+
+(def max-retries-page (doc-page max-retries))
+
+(def max-retries-docstring (docstring max-retries))
+
+(def greeting-page (doc-page greeting))

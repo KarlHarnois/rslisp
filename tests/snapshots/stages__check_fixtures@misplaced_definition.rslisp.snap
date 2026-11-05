@@ -153,23 +153,24 @@ error[L0208]: `def` can only appear at module level
 error[L0208]: `def` can only appear at module level
   --> check/misplaced_definition.rslisp:83:3
    |
-83 |   (def extra 1 2)
-   |   ^^^^^^^^^^^^^^^ not allowed inside an expression
-   |
-   = help: use `let` to bind a name inside a body
-
-error[L0208]: `def` can only appear at module level
-  --> check/misplaced_definition.rslisp:87:3
-   |
-87 |   (def)
-   |   ^^^^^ not allowed inside an expression
+83 | /   (def extra
+84 | |     1 2)
+   | |________^ not allowed inside an expression
    |
    = help: use `let` to bind a name inside a body
 
 error[L0208]: `def` can only appear at module level
   --> check/misplaced_definition.rslisp:88:3
    |
-88 |   (def after 1)
+88 |   (def)
+   |   ^^^^^ not allowed inside an expression
+   |
+   = help: use `let` to bind a name inside a body
+
+error[L0208]: `def` can only appear at module level
+  --> check/misplaced_definition.rslisp:89:3
+   |
+89 |   (def after 1)
    |   ^^^^^^^^^^^^^ not allowed inside an expression
    |
    = help: use `let` to bind a name inside a body

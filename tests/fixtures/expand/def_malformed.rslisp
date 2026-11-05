@@ -1,0 +1,16 @@
+(def x)
+
+(def 1 2)
+
+(def)
+
+(def y
+  1 2)
+
+(def z
+  "Five forms are not a documented def."
+  1 2)
+
+(def 3
+  "A documented def needs a name."
+  4)

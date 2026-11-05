@@ -1,0 +1,51 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/def_malformed.rslisp
+---
+error[L0210]: malformed `def`
+ --> expand/def_malformed.rslisp:1:1
+  |
+1 | (def x)
+  | ^^^^^^^ this does not fit the shape of `def`
+  |
+  = help: write it as `(def name value)`
+
+error[L0212]: expected a name, found `1`
+ --> expand/def_malformed.rslisp:3:6
+  |
+3 | (def 1 2)
+  |      ^ not a name
+
+error[L0210]: malformed `def`
+ --> expand/def_malformed.rslisp:5:1
+  |
+5 | (def)
+  | ^^^^^ this does not fit the shape of `def`
+  |
+  = help: write it as `(def name value)`
+
+error[L0210]: malformed `def`
+ --> expand/def_malformed.rslisp:7:1
+  |
+7 | / (def y
+8 | |   1 2)
+  | |______^ this does not fit the shape of `def`
+  |
+  = help: write it as `(def name value)`
+
+error[L0210]: malformed `def`
+  --> expand/def_malformed.rslisp:10:1
+   |
+10 | / (def z
+11 | |   "Five forms are not a documented def."
+12 | |   1 2)
+   | |______^ this does not fit the shape of `def`
+   |
+   = help: write it as `(def name value)`
+
+error[L0212]: expected a name, found `3`
+  --> expand/def_malformed.rslisp:14:6
+   |
+14 | (def 3
+   |      ^ not a name
