@@ -6,6 +6,7 @@ mod defining_call;
 mod distinct_diagnostics;
 mod evaluated_forms;
 mod expression;
+mod failed_definition;
 mod field_keyword;
 mod form_budget;
 mod generated_entry;
@@ -42,7 +43,7 @@ use std::rc::Rc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::core::{BindingArena, BindingId, CoreModule, ModuleId, ModulePath};
+use crate::core::{BindingArena, BindingId, CoreModule, ModuleId, ModulePath, Namespace};
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::modules::{ModuleRegistry, ModuleSources};
 use crate::reader::Form;
@@ -125,6 +126,8 @@ pub struct Expander<'s> {
     expansion: ExpansionWork,
     evaluated_forms: EvaluatedForms,
     recorded_inputs: RecordedInputs,
+    declared_definitions: Vec<(Form, Namespace)>,
+    introductions: Vec<Scope>,
 }
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
@@ -180,6 +183,8 @@ impl<'s> Expander<'s> {
             expansion: ExpansionWork::default(),
             evaluated_forms: EvaluatedForms::default(),
             recorded_inputs: RecordedInputs::default(),
+            declared_definitions: Vec::new(),
+            introductions: Vec::new(),
         }
     }
 

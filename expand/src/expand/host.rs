@@ -69,6 +69,15 @@ impl CompileTimeHost for Expander<'_> {
             .map_or_else(Vec::new, |module| self.tables.module_notes.of(module, key))
     }
 
+    fn declare_definition(&mut self, mut name: Form, namespace: Namespace) {
+        let introduction = self
+            .introductions
+            .last()
+            .expect("macro code runs inside a macro call");
+        name.flip_scope(*introduction);
+        self.declared_definitions.push((name, namespace));
+    }
+
     fn same_binding(&self, left: &Symbol, right: &Symbol) -> bool {
         let pairs: Vec<(Resolution, Resolution)> = [Namespace::Value, Namespace::Type]
             .into_iter()

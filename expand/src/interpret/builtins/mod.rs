@@ -10,7 +10,7 @@ use std::cmp::Ordering;
 
 use super::arguments::Arguments;
 use super::{CompileTimeHost, Value};
-use crate::core::Builtin;
+use crate::core::{Builtin, Namespace};
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind, Number, NumberValue};
 use crate::source::Span;
@@ -26,7 +26,7 @@ pub struct BuiltinCall {
 }
 
 impl BuiltinCall {
-    const IMPLEMENTATIONS: [(Builtin, Implementation); 49] = [
+    const IMPLEMENTATIONS: [(Builtin, Implementation); 51] = [
         (Builtin::First, |operations, _| operations.lists.first()),
         (Builtin::Rest, |operations, _| operations.lists.rest()),
         (Builtin::List, |operations, _| operations.lists.list()),
@@ -151,6 +151,12 @@ impl BuiltinCall {
         }),
         (Builtin::ModuleNotes, |operations, host| {
             operations.text.module_notes(host)
+        }),
+        (Builtin::DeclareDefinition, |operations, host| {
+            operations.text.declare_definition(host, Namespace::Value)
+        }),
+        (Builtin::DeclareTypeDefinition, |operations, host| {
+            operations.text.declare_definition(host, Namespace::Type)
         }),
     ];
 

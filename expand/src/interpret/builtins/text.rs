@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use super::Forms;
 use super::failure::FailCall;
+use crate::core::Namespace;
 use crate::diagnostic::{Diagnostic, SimilarName};
 use crate::interpret::arguments::Arguments;
 use crate::interpret::{CompileTimeHost, Value};
@@ -165,6 +166,16 @@ impl<'a> TextOperations<'a> {
         let context = self.arguments.symbol(0)?;
         let notes = host.module_notes(context, self.arguments.symbol(1)?.name());
         Ok(Forms::list(notes, self.call_site))
+    }
+
+    pub fn declare_definition(
+        &self,
+        host: &mut dyn CompileTimeHost,
+        namespace: Namespace,
+    ) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(1)?;
+        host.declare_definition(self.arguments.form(0)?, namespace);
+        Ok(Value::Unit)
     }
 
     pub fn closest_name(&self) -> Result<Value, Diagnostic> {

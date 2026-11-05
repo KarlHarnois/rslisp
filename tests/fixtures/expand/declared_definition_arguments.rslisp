@@ -1,0 +1,9 @@
+(use code declare-definition)
+
+(defmacro defbroken (name)
+  (declare-definition name name)
+  (template (def (unquote name) 1)))
+
+(defbroken limit)
+
+(defn main () (println 1))

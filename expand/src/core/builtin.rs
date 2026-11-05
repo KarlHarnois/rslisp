@@ -49,10 +49,12 @@ pub enum Builtin {
     StringDrop,
     AddModuleNote,
     ModuleNotes,
+    DeclareDefinition,
+    DeclareTypeDefinition,
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 49] = [
+    const NAMES: [(Builtin, &'static str); 51] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -102,6 +104,8 @@ impl Builtin {
         (Builtin::StringDrop, "string-drop"),
         (Builtin::AddModuleNote, "add-module-note"),
         (Builtin::ModuleNotes, "module-notes"),
+        (Builtin::DeclareDefinition, "declare-definition"),
+        (Builtin::DeclareTypeDefinition, "declare-type-definition"),
     ];
 
     pub fn all() -> impl Iterator<Item = Builtin> {

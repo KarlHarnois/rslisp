@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/declared_definition_arguments.rslisp
+---
+error[L0311]: `declare-definition` takes 1 argument but 2 were given
+ --> expand/declared_definition_arguments.rslisp:4:3
+  |
+4 |   (declare-definition name name)
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 2 arguments given
+...
+7 | (defbroken limit)
+  | ----------------- in this macro call
