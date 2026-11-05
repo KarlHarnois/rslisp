@@ -1,0 +1,7 @@
+(def i64-page (doc-page i64))
+
+(def true-page (doc-page true))
+
+(def where-page (doc-page where))
+
+(def hole-page (doc-page _))

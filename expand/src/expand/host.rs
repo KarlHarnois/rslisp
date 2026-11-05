@@ -102,7 +102,9 @@ impl Expander<'_> {
             return self.modules.get(module).body_scopes();
         }
         match self.kind(binding) {
-            BindingKind::KernelForm(_) => self.prelude_scopes(),
+            BindingKind::KernelForm(_) | BindingKind::KernelType(_) | BindingKind::Boolean(_) => {
+                self.prelude_scopes()
+            }
             _ => ScopeSet::default(),
         }
     }

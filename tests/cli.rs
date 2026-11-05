@@ -59,6 +59,7 @@ const GEOMETRY_ENTRY: &str = "(use geometry area)\n\n(defn main () (println (are
 const UNDOCUMENTED_ENTRY: &str = "(defn twice (x) (* 2 x))\n\n(defn main () (println (twice 2)))\n";
 const SHADOWING_PAGE_BODY: &str = "(defrule page-body ((term) 0))\n\n(defn main () (do))\n";
 const SHADOWING_HEADER: &str = "(defrule header ((term) 0))\n\n(defn main () (do))\n";
+const TRUE_PAGE: &str = "true\n\nIs the `bool` value true.\n\nIt is a kernel constant, so macro code and program code see the same\nbooleans.\n";
 const IF_PAGE: &str = "(if test then else)\n\nEvaluates `then` when the test is true, and `else` otherwise.\n\nIt emits a Rust `if` with an `else`.\n";
 const MACRO_STRUCT_BESIDE_A_DEF: &str = "(defrule my-struct ((n) (do (defstruct n \"A documented struct.\" :x i64))))\n(my-struct point)\n(def point 1)\n(defn main () (do))\n";
 const THREADING_HEADER: &str = "(defrule ->)";
@@ -1272,6 +1273,23 @@ fn doc_prints_the_page_of_a_kernel_form() {
 }
 
 #[test]
+fn doc_prints_the_page_of_a_kernel_type() {
+    let sandbox = Sandbox::new("doc_kernel_type");
+    let doc = sandbox.compiler(&["doc", "i64"]);
+    assert_eq!(
+        doc.assert_exit_code(0).stdout(),
+        "i64\n\nHolds a signed 64-bit integer, as Rust's `i64` does.\n\nAn integer literal whose type stays open defaults to `i64`.\n"
+    );
+}
+
+#[test]
+fn doc_prints_the_page_of_a_kernel_constant() {
+    let sandbox = Sandbox::new("doc_kernel_constant");
+    let doc = sandbox.compiler(&["doc", "true"]);
+    assert_eq!(doc.assert_exit_code(0).stdout(), TRUE_PAGE);
+}
+
+#[test]
 fn doc_takes_a_term_that_starts_with_a_hyphen() {
     let sandbox = Sandbox::new("doc_hyphen");
     let doc = sandbox.compiler(&["doc", "->"]);
@@ -1500,7 +1518,7 @@ fn doc_types_prints_the_type_of_a_plain_definition() {
 #[test]
 fn doc_types_prints_no_type_for_a_value_that_no_definition_binds() {
     let sandbox = Sandbox::new("doc_types_literal");
-    assert_eq!(sandbox.typed_page(&["true"]), "true\n\nNo documentation.\n");
+    assert_eq!(sandbox.typed_page(&["true"]), TRUE_PAGE);
 }
 
 #[test]

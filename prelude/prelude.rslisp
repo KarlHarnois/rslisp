@@ -289,3 +289,102 @@
 
   A name refers to every namespace, so a type and a value of that name both
   leave the module. It emits `pub`.")
+
+(document (fn-mut (argument ...) result)
+  "Types a function that may change what it captures, as Rust's `FnMut` does.
+
+  It emits `impl FnMut(argument, ...) -> result`. A written `fn-mut` is
+  exact, while a plain `fn` leaves the kind to inference.")
+
+(document (fn-once (argument ...) result)
+  "Types a function that may be called only once, as Rust's `FnOnce` does.
+
+  It emits `impl FnOnce(argument, ...) -> result`. A written `fn-once` is
+  exact, while a plain `fn` leaves the kind to inference.")
+
+(document (where (variable (variable trait ...) ...) type)
+  "Binds the type variables of a type and the traits each must implement.
+
+  A bare variable takes any type, and `(variable trait ...)` requires each
+  trait, so `(where ((n number)) (fn (n) n))` emits `fn<N: Number>(N) -> N`.")
+
+(document (with type type)
+  "Gives a `rust-trait` implementor the trait's second type.
+
+  `(with string str)` means that `String` implements the trait with `str` as
+  its second type.")
+
+(document _ "Stands for a type that inference fills in.")
+
+(document bool
+  "Holds `true` or `false`, as Rust's `bool` does.")
+
+(document string
+  "Holds owned text that can grow, as Rust's `String` does.
+
+  A string literal is a `(ref str)`, and `str` builds a `string` from parts.")
+
+(document unit
+  "Holds no information, as Rust's `()` does.
+
+  `(do)` is the unit value.")
+
+(document i8
+  "Holds a signed 8-bit integer, as Rust's `i8` does.")
+
+(document i16
+  "Holds a signed 16-bit integer, as Rust's `i16` does.")
+
+(document i32
+  "Holds a signed 32-bit integer, as Rust's `i32` does.")
+
+(document i64
+  "Holds a signed 64-bit integer, as Rust's `i64` does.
+
+  An integer literal whose type stays open defaults to `i64`.")
+
+(document i128
+  "Holds a signed 128-bit integer, as Rust's `i128` does.")
+
+(document isize
+  "Holds a signed integer as wide as a pointer, as Rust's `isize` does.")
+
+(document u8
+  "Holds an unsigned 8-bit integer, as Rust's `u8` does.")
+
+(document u16
+  "Holds an unsigned 16-bit integer, as Rust's `u16` does.")
+
+(document u32
+  "Holds an unsigned 32-bit integer, as Rust's `u32` does.")
+
+(document u64
+  "Holds an unsigned 64-bit integer, as Rust's `u64` does.")
+
+(document u128
+  "Holds an unsigned 128-bit integer, as Rust's `u128` does.")
+
+(document usize
+  "Holds an unsigned integer as wide as a pointer, as Rust's `usize` does.
+
+  A vector or a slice is indexed by a `usize`.")
+
+(document f32
+  "Holds a 32-bit floating-point number, as Rust's `f32` does.")
+
+(document f64
+  "Holds a 64-bit floating-point number, as Rust's `f64` does.
+
+  A float literal whose type stays open defaults to `f64`.")
+
+(document true
+  "Is the `bool` value true.
+
+  It is a kernel constant, so macro code and program code see the same
+  booleans.")
+
+(document false
+  "Is the `bool` value false.
+
+  It is a kernel constant, so macro code and program code see the same
+  booleans.")

@@ -132,7 +132,10 @@ mod tests {
     use rustc_hash::FxHashMap;
 
     use super::*;
-    use crate::core::{BindingArena, ExprKind, Item, ItemKind, KernelForm, Leaf, Literal};
+    use crate::core::{
+        BindingArena, ExprKind, Item, ItemKind, KernelConstants, KernelForm, KernelType, Leaf,
+        Literal,
+    };
 
     struct UserProgram {
         name: &'static str,
@@ -202,7 +205,7 @@ mod tests {
     }
 
     struct KernelPages {
-        headers: FxHashMap<String, String>,
+        lookups: FxHashMap<String, String>,
     }
 
     impl KernelPages {
@@ -210,10 +213,12 @@ mod tests {
         const ALTERNATIVE: &str = " or ";
         const OPTIONAL_PART_END: &str = ")?";
         const OPTIONAL_PART_START: &str = " (";
+        const UNDOCUMENTED_BODY: &str = "\n\nNo documentation.";
+        const NAMES_WITH_PRELUDE_VALUES: [&str; 2] = ["char", "str"];
 
-        fn of_saved_prelude() -> Self {
+        fn of_saved_prelude(names: &[&str]) -> Self {
             let mut sources = SourceMap::default();
-            let entry = sources.add(Self::ENTRY, Self::lookups());
+            let entry = sources.add(Self::ENTRY, Self::lookups(names));
             let expander = Expander::with_prelude(
                 &mut sources,
                 UserProgram::module_sources(),
@@ -222,30 +227,44 @@ mod tests {
             let program = expander
                 .expand(ModulePath::new(Self::ENTRY), entry)
                 .unwrap_or_else(|_| panic!("the kernel lookups expand"));
-            let headers = program
+            let lookups = program
                 .entry_module()
                 .items
                 .iter()
                 .filter_map(|item| Self::string_definition(&program.bindings, item))
                 .collect();
-            Self { headers }
+            Self { lookups }
         }
 
-        fn lookups() -> String {
-            KernelForm::all()
+        fn names_without_form_rows() -> Vec<(&'static str, &'static str)> {
+            KernelType::all()
+                .map(|kernel_type| (kernel_type.name(), kernel_type.shape()))
+                .filter(|(name, _)| KernelForm::all().all(|form| form.name() != *name))
+                .filter(|(name, _)| !Self::NAMES_WITH_PRELUDE_VALUES.contains(name))
+                .chain(KernelConstants::BOOLEANS.map(|(name, _)| (name, name)))
+                .collect()
+        }
+
+        fn lookups(names: &[&str]) -> String {
+            names
+                .iter()
                 .enumerate()
-                .map(|(index, form)| {
+                .map(|(index, name)| {
                     format!(
-                        "(def {} (header {}))\n",
-                        Self::lookup_name(index),
-                        form.name()
+                        "(def {} (header {name}))\n(def {} (page-body {name}))\n",
+                        Self::header_name(index),
+                        Self::body_name(index),
                     )
                 })
                 .collect()
         }
 
-        fn lookup_name(index: usize) -> String {
-            format!("h-{index}")
+        fn header_name(index: usize) -> String {
+            format!("header-{index}")
+        }
+
+        fn body_name(index: usize) -> String {
+            format!("body-{index}")
         }
 
         fn string_definition(bindings: &BindingArena, item: &Item) -> Option<(String, String)> {
@@ -259,9 +278,15 @@ mod tests {
         }
 
         fn header(&self, index: usize) -> Option<&str> {
-            self.headers
-                .get(&Self::lookup_name(index))
+            self.lookups
+                .get(&Self::header_name(index))
                 .map(String::as_str)
+        }
+
+        fn documents(&self, index: usize) -> bool {
+            self.lookups
+                .get(&Self::body_name(index))
+                .is_some_and(|body| body != Self::UNDOCUMENTED_BODY)
         }
 
         fn header_of_shape(shape: &str) -> String {
@@ -286,7 +311,8 @@ mod tests {
 
     #[test]
     fn each_kernel_form_page_shows_its_shape_as_header() {
-        let pages = KernelPages::of_saved_prelude();
+        let names: Vec<&str> = KernelForm::all().map(KernelForm::name).collect();
+        let pages = KernelPages::of_saved_prelude(&names);
         for (index, form) in KernelForm::all().enumerate() {
             let header = KernelPages::header_of_shape(form.shape());
             assert_eq!(
@@ -301,6 +327,17 @@ mod tests {
     #[test]
     fn an_empty_program_decodes_no_prelude_note() {
         assert!(UserProgram::EMPTY.decodes_no_prelude_note());
+    }
+
+    #[test]
+    fn each_kernel_type_and_constant_has_a_page_headed_by_its_shape() {
+        let entries = KernelPages::names_without_form_rows();
+        let names: Vec<&str> = entries.iter().map(|(name, _)| *name).collect();
+        let pages = KernelPages::of_saved_prelude(&names);
+        for (index, (name, shape)) in entries.iter().enumerate() {
+            assert_eq!(pages.header(index), Some(*shape), "{name}");
+            assert!(pages.documents(index), "{name} has no docstring");
+        }
     }
 
     #[test]
