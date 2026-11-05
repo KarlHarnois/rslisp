@@ -542,7 +542,7 @@ Field names are not hygienic. They are looked up through the struct type.
 
 ### The prompt
 
-`rslisp repl` reads inputs from standard input. Its only state is a buffer of the definitions entered so far, as text. Each form is one input, so a line of three forms is three inputs, and each input is its own source, named `<input N>`.
+`rslisp repl` reads inputs from standard input. `rslisp` with no command starts the same prompt, and takes the global arguments such as `--color`. Its only state is a buffer of the definitions entered so far, as text. Each form is one input, so a line of three forms is three inputs, and each input is its own source, named `<input N>`.
 
 - The expander classifies each input. An input that a file accepts at its top level, `use` included, is a definition. Any other input is an expression.
 - A definition replaces every earlier input that defines or imports a name it defines or imports, and takes the place of the first one. The redefinition takes effect, even when it drops a name ([RFC 0051](../rfcs/0051-repl-redefinition.md)).

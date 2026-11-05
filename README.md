@@ -57,7 +57,7 @@ Run `nix fmt` to format the Nix files, and `nix flake check` to build the packag
 
 ## Use
 
-Run `rslisp --help` to list the commands. Each command except `doc` takes a source file:
+Run `rslisp` alone to start the prompt, as `rslisp repl` does. Run `rslisp --help` to list the commands. Each command except `doc` and `repl` takes a source file:
 
 ```sh
 rslisp run examples/hello.rslisp

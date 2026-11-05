@@ -765,6 +765,22 @@ fn help_lists_every_command() {
 }
 
 #[test]
+fn no_command_runs_piped_inputs_as_repl_does() {
+    let sandbox = Sandbox::new("no_command");
+    let bare = sandbox.compiler_reading(PROMPT_DEFINITIONS, &[]);
+    let repl = sandbox.compiler_reading(PROMPT_DEFINITIONS, &["repl"]);
+    assert_eq!(bare.transcript(), repl.transcript());
+}
+
+#[test]
+fn no_command_takes_the_global_color_argument() {
+    let sandbox = Sandbox::new("no_command_color");
+    let bare = sandbox.compiler_reading(PROMPT_DEFINITIONS, &["--color", "never"]);
+    let repl = sandbox.compiler_reading(PROMPT_DEFINITIONS, &["repl"]);
+    assert_eq!(bare.transcript(), repl.transcript());
+}
+
+#[test]
 fn counters_flag_prints_one_json_object_after_the_command() {
     let sandbox = Sandbox::new("counters").with_file("arithmetic.rslisp", ARITHMETIC);
     let plain = sandbox.compiler(&["emit", "arithmetic.rslisp"]);

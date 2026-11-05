@@ -67,10 +67,15 @@ use term_parser::{SurplusParser, TermParser};
 use terminal::{BuildOptions, Terminal};
 
 #[derive(Parser)]
-#[command(name = Language::NAME, version, about = "Compile Lisp source files to Rust")]
+#[command(
+    name = Language::NAME,
+    version,
+    about = "Compile Lisp source files to Rust",
+    after_help = "With no command, start the prompt as repl does."
+)]
 pub struct Cli {
     #[command(subcommand)]
-    command: Command,
+    command: Option<Command>,
     #[arg(long, global = true, hide = true)]
     counters: bool,
     #[arg(
@@ -149,7 +154,7 @@ enum ProgramCommand {
     },
     #[command(about = "Read forms at a prompt, keep the definitions and run the rest")]
     Repl {
-        #[arg(long, default_value = ".", help = "Resolve `use` from this directory")]
+        #[arg(long, default_value = ReplCommand::DEFAULT_ROOT, help = "Resolve `use` from this directory")]
         root: PathBuf,
         #[command(flatten)]
         release: ReleaseFlag,
@@ -231,7 +236,8 @@ impl Cli {
     pub fn run(self, allocator: Option<&CountingAllocator>) -> ExitCode {
         anstream::ColorChoice::from(self.color).write_global();
         let mut terminal = Terminal::new(AutoStream::choice(&io::stderr()));
-        let status = self.command.execute(&mut terminal);
+        let command = self.command.unwrap_or_else(Command::prompt);
+        let status = command.execute(&mut terminal);
         if self.counters {
             let mut report = CounterReport::new(allocator);
             report.add_stage_work(terminal.work());
@@ -242,6 +248,13 @@ impl Cli {
 }
 
 impl Command {
+    fn prompt() -> Self {
+        Self::Program(ProgramCommand::Repl {
+            root: PathBuf::from(ReplCommand::DEFAULT_ROOT),
+            release: ReleaseFlag { release: false },
+        })
+    }
+
     fn execute(self, terminal: &mut Terminal) -> ExitStatus {
         match self {
             Command::Inspection(command) => command.execute(terminal),

@@ -4,7 +4,7 @@ expression: help.assert_exit_code(0).stdout()
 ---
 Compile Lisp source files to Rust
 
-Usage: rslisp [OPTIONS] <COMMAND>
+Usage: rslisp [OPTIONS] [COMMAND]
 
 Commands:
   check       Read, expand and check a program, then print its diagnostics
@@ -22,3 +22,5 @@ Options:
       --color <WHEN>  When to color the output [default: auto] [possible values: auto, always, never]
   -h, --help          Print help
   -V, --version       Print version
+
+With no command, start the prompt as repl does.
