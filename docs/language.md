@@ -380,13 +380,14 @@ A docstring is a string literal that documents a definition. `defn` and `defmacr
 
 `defstruct` and `defrule` take the docstring as the first form after their header: `(defstruct point "A point on a grid." :x i64 :y i64)` and `(defrule swap "Swaps the two arguments of a call." rules...)`. A string in place of the parameter list of `defn` or `defmacro` is `L0328`. A user documents a definition through these four definers. `(document name text)` documents a definition that no definer documents, such as a `def` of a macro, and a program imports it with `(use prelude/macros document)`. The prelude documents `str`, `get` and `push!` this way, so their pages take the bare name as header and state their call shapes in the docstring.
 
-The prelude's string lookups, `docstring`, `header` and `doc-page`, expand to string literals at expansion time, so `(def twice-doc (docstring twice))` emits `const TWICE_DOC: &str = "Doubles a number.";`, and a program's emitted Rust is the same with and without its docstrings:
+The prelude's string lookups, `docstring`, `header`, `page-body` and `doc-page`, expand to string literals at expansion time, so `(def twice-doc (docstring twice))` emits `const TWICE_DOC: &str = "Doubles a number.";`, and a program's emitted Rust is the same with and without its docstrings:
 
 | Lookup | Returns |
 | --- | --- |
 | `(docstring term)` | The docstring. |
 | `(header term)` | The first line of the definition as written, such as `"(defn twice (x))"`, or the bare name of a term without a written header. |
-| `(doc-page term)` | The page: the header, a blank line, then the docstring, or `No documentation.` for a term without a docstring. |
+| `(page-body term)` | The page after its header: a blank line, then the docstring, or `No documentation.` for a term without a docstring. |
+| `(doc-page term)` | The page: the text of `(header term)` followed by the text of `(page-body term)`. |
 
 `(doc term)` prints the page to standard output, as `rslisp doc` prints it, and returns `unit`: it expands to `(println (doc-page term))`, so `(doc twice)` at the prompt prints the page as text, and `(def p (doc twice))` binds `unit` and prints the page when a form first reads `p`. Write `(doc-page term)` to keep the page as a string.
 

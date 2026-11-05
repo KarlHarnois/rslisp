@@ -1,0 +1,11 @@
+(defn twice (x) "Doubles a number." (* 2 x))
+
+(defn halve (x) (/ x 2))
+
+(def twice-body (page-body twice))
+
+(def halve-body (page-body halve))
+
+(def twice-page-agrees (eq (doc-page twice) (str (header twice) (page-body twice))))
+
+(defn main () (println twice-body halve-body twice-page-agrees))
