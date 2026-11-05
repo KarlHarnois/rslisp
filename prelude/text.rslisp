@@ -1,4 +1,4 @@
-(use prelude/macros defmacro template map-list document doc-page)
+(use prelude/macros defmacro template map-list document doc-page header-shape)
 (use prelude/pair pair)
 (use code first rest list prepend concat len empty? nth take drop
           symbol symbol? list? string? string same-binding? value-eq
@@ -386,6 +386,8 @@
               (concat param (list out))
               (display-body parts out))))
 
+(header-shape (display type parameters))
+
 (defmacro char (text)
   (list (quote rust) (string "'" (escape-char text) "'") (quote char)))
 
@@ -477,3 +479,5 @@
         (list (quote write-form)
               (concat param (list out))
               (show-body body out))))
+
+(header-shape (show type parameters))
