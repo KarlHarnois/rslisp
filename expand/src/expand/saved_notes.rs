@@ -1,7 +1,7 @@
 use std::cell::OnceCell;
 use std::fmt;
 
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use serde::de::{self, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -10,37 +10,61 @@ use crate::reader::Form;
 
 pub type NotesKey = (ModuleId, String);
 pub type NotesTable = FxHashMap<NotesKey, Vec<Form>>;
+type ModuleTable = FxHashMap<String, Vec<Form>>;
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct SavedNotes {
-    modules: FxHashSet<ModuleId>,
-    encoded: EncodedTable,
-    #[serde(skip)]
-    decoded: OnceCell<NotesTable>,
+    modules: FxHashMap<ModuleId, SavedModuleNotes>,
 }
 
 impl SavedNotes {
     pub fn encode(table: &NotesTable) -> Self {
+        let mut tables: FxHashMap<ModuleId, ModuleTable> = FxHashMap::default();
+        for ((module, key), notes) in table {
+            tables
+                .entry(*module)
+                .or_default()
+                .insert(key.clone(), notes.clone());
+        }
         Self {
-            modules: table.keys().map(|(module, _)| *module).collect(),
+            modules: tables
+                .iter()
+                .map(|(module, table)| (*module, SavedModuleNotes::encode(table)))
+                .collect(),
+        }
+    }
+
+    pub fn of(&self, module: ModuleId, key: &str) -> Option<&Vec<Form>> {
+        self.modules.get(&module)?.decoded().get(key)
+    }
+
+    #[cfg(test)]
+    pub fn decoded_nothing(&self) -> bool {
+        self.modules.values().all(SavedModuleNotes::decoded_nothing)
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct SavedModuleNotes {
+    encoded: EncodedTable,
+    #[serde(skip)]
+    decoded: OnceCell<ModuleTable>,
+}
+
+impl SavedModuleNotes {
+    fn encode(table: &ModuleTable) -> Self {
+        Self {
             encoded: EncodedTable(bincode::serialize(table).expect("every note serializes")),
             decoded: OnceCell::new(),
         }
     }
 
-    pub fn of(&self, module: ModuleId, key: &str) -> Option<&Vec<Form>> {
-        if !self.modules.contains(&module) {
-            return None;
-        }
-        self.decoded().get(&(module, key.to_string()))
-    }
-
     #[cfg(test)]
-    pub fn decoded_nothing(&self) -> bool {
+    fn decoded_nothing(&self) -> bool {
         self.decoded.get().is_none()
     }
 
-    fn decoded(&self) -> &NotesTable {
+    fn decoded(&self) -> &ModuleTable {
         self.decoded
             .get_or_init(|| bincode::deserialize(&self.encoded.0).expect("the saved notes decode"))
     }
@@ -89,6 +113,7 @@ mod tests {
 
     struct SavedTable {
         noted_module: ModuleId,
+        other_noted_module: ModuleId,
         other_module: ModuleId,
     }
 
@@ -99,16 +124,16 @@ mod tests {
         fn new() -> Self {
             Self {
                 noted_module: ModuleId::new(1),
-                other_module: ModuleId::new(2),
+                other_noted_module: ModuleId::new(2),
+                other_module: ModuleId::new(3),
             }
         }
 
         fn saved(&self) -> SavedNotes {
             let mut table = NotesTable::default();
-            table.insert(
-                (self.noted_module, Self::KEY.to_string()),
-                vec![Self::note()],
-            );
+            for module in [self.noted_module, self.other_noted_module] {
+                table.insert((module, Self::KEY.to_string()), vec![Self::note()]);
+            }
             let bytes =
                 bincode::serialize(&SavedNotes::encode(&table)).expect("saved notes serialize");
             bincode::deserialize(&bytes).expect("saved notes deserialize")
@@ -125,7 +150,7 @@ mod tests {
     #[test]
     fn a_loaded_table_decodes_no_note_before_a_read() {
         let saved = SavedTable::new().saved();
-        assert!(saved.decoded.get().is_none());
+        assert!(saved.decoded_nothing());
     }
 
     #[test]
@@ -141,6 +166,15 @@ mod tests {
         let table = SavedTable::new();
         let saved = table.saved();
         assert!(saved.of(table.other_module, SavedTable::KEY).is_none());
-        assert!(saved.decoded.get().is_none());
+        assert!(saved.decoded_nothing());
+    }
+
+    #[test]
+    fn a_read_of_a_noted_module_leaves_other_modules_encoded() {
+        let table = SavedTable::new();
+        let saved = table.saved();
+        saved.of(table.noted_module, SavedTable::KEY);
+        let other = &saved.modules[&table.other_noted_module];
+        assert!(other.decoded_nothing());
     }
 }
