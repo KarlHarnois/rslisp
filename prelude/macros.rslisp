@@ -658,6 +658,8 @@
 
 (header-shape (defmacro name pattern) :docstring)
 
+(header-shape (fail message))
+
 (defmacro doc-page (term)
   "Returns the page of a term as a string: its header, a blank line, then its docstring.
 

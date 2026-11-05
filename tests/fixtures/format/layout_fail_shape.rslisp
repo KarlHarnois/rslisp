@@ -1,0 +1,11 @@
+(def field-start-error
+  (fn (form)
+    (if
+      (defaults-clause? form)
+      (fail "a struct takes one `defaults` clause, after its fields"
+            form
+            "move the defaults to the end")
+      (fail
+        "a field must start with `:`"
+        form
+        "write each field as `:name type`, as in (defstruct point :x f64 :y f64)"))))

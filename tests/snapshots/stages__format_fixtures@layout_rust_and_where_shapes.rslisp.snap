@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_rust_and_where_shapes.rslisp
+---
+(def reduce-items (rust "{0}.reduce({1})" (where (a) (fn ((iterator a) (fn-mut (a a) a)) (option a)))))
+
+---
+(def reduce-items
+  (rust "{0}.reduce({1})"
+    (where (a)
+      (fn ((iterator a) (fn-mut (a a) a))
+        (option a)))))
