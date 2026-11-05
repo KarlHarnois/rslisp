@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/infer_bound_names.rslisp
+---
+(where ((a (partial-eq b)) b) (fn (a b) bool))
+(where ((a (partial-eq b)) b) (fn (a b) bool))
+(where ((a (partial-eq b)) b) (fn (a) bool))
+(fn (i64 i64) bool)
+true

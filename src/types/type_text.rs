@@ -3,7 +3,7 @@ use std::rc::Rc;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::checker::TypeChecker;
-use super::ty::{GenericParam, Scheme, Type, TypeVar};
+use super::ty::{Bound, GenericParam, Scheme, Type, TypeVar};
 use super::typed::{TypedExpr, TypedExprKind, TypedLeaf, TypedModule};
 use crate::core::{BindingId, Literal};
 use crate::source::Span;
@@ -78,27 +78,57 @@ impl TypeTextWriter {
     }
 
     fn generalize(&self, checker: &mut TypeChecker, operand: &Type, span: Span) -> Scheme {
-        let mut names = self.free_names();
-        let params = Self::open_vars(checker, operand, span)
+        let bounded: Vec<(TypeVar, Vec<Bound>)> = Self::open_vars(checker, operand, span)
             .into_iter()
-            .map(|var| Self::generalize_var(checker, var, &mut names))
+            .map(|var| (var, checker.self_plain_bounds(var)))
+            .collect();
+        let mut names = self.free_names();
+        let params: Vec<GenericParam> = bounded
+            .into_iter()
+            .map(|(var, bounds)| Self::generalize_var(checker, var, bounds, &mut names))
             .collect();
         Scheme {
             lifetimes: Vec::new(),
-            params,
+            params: params
+                .into_iter()
+                .map(|param| Self::with_named_bounds(checker, param))
+                .collect(),
             body: checker.unifier.resolve(operand),
         }
     }
 
     fn open_vars(checker: &mut TypeChecker, operand: &Type, span: Span) -> Vec<TypeVar> {
         let mut open_vars = Vec::new();
-        for var in checker.free_vars(operand) {
+        for var in Self::vars_with_their_bounds(checker, operand) {
             match checker.unifier.literal_kind(var) {
                 Some(literal) => checker.default_literal(var, literal, span),
                 None => open_vars.push(var),
             }
         }
         open_vars
+    }
+
+    fn vars_with_their_bounds(checker: &TypeChecker, operand: &Type) -> Vec<TypeVar> {
+        let mut vars = checker.free_vars(operand);
+        let mut position = 0;
+        while let Some(var) = vars.get(position).copied() {
+            for named in Self::vars_in_bounds(checker, var) {
+                if !vars.contains(&named) {
+                    vars.push(named);
+                }
+            }
+            position += 1;
+        }
+        vars
+    }
+
+    fn vars_in_bounds(checker: &TypeChecker, var: TypeVar) -> Vec<TypeVar> {
+        checker
+            .self_plain_bounds(var)
+            .iter()
+            .filter_map(|bound| bound.argument.as_ref())
+            .flat_map(|argument| checker.free_vars(argument))
+            .collect()
     }
 
     fn free_names(&self) -> impl Iterator<Item = String> + use<'_> {
@@ -110,12 +140,22 @@ impl TypeTextWriter {
     fn generalize_var(
         checker: &mut TypeChecker,
         var: TypeVar,
+        bounds: Vec<Bound>,
         names: &mut impl Iterator<Item = String>,
     ) -> GenericParam {
         let name = names.next().expect("parameter names never run out");
-        let bounds = checker.self_plain_bounds(var);
         let param = checker.new_generic(&name, bounds);
         checker.unifier.bind(var, Type::Generic(param.id));
+        param
+    }
+
+    fn with_named_bounds(checker: &TypeChecker, mut param: GenericParam) -> GenericParam {
+        for bound in &mut param.bounds {
+            bound.argument = bound
+                .argument
+                .as_ref()
+                .map(|argument| checker.unifier.resolve(argument));
+        }
         param
     }
 }
