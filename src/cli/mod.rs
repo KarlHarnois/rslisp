@@ -17,6 +17,7 @@ mod evaluation_output;
 mod exit_status;
 mod expand;
 mod finished_program;
+mod fmt;
 mod input_helper;
 mod interruption;
 mod json_replies;
@@ -65,6 +66,7 @@ use eval::{EvalCommand, EvaluationSettings, FormsText, ModuleText};
 use evaluation_output::{EvaluationOutput, JsonEvaluation, PrintedEvaluation};
 use exit_status::ExitStatus;
 use expand::ExpandCommand;
+use fmt::{FmtCommand, FmtMode};
 use repl::ReplCommand;
 use run::RunCommand;
 use signatures::SignaturesCommand;
@@ -126,6 +128,19 @@ enum InspectionCommand {
     Expand { file: PathBuf },
     #[command(about = "Print the Rust code generated for a program")]
     Emit { file: PathBuf },
+    #[command(about = "Lay out source files in place, or standard input given `-`")]
+    Fmt {
+        #[arg(required = true)]
+        paths: Vec<PathBuf>,
+        #[command(flatten)]
+        check: CheckFlag,
+        #[arg(
+            long,
+            value_name = "FILE",
+            help = "Find the modules that standard input uses as if it were this file"
+        )]
+        stdin_path: Option<PathBuf>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -218,6 +233,15 @@ struct JsonFlags {
 }
 
 #[derive(Args)]
+struct CheckFlag {
+    #[arg(
+        long,
+        help = "Write nothing, print each file that would change, and exit 1 if any would"
+    )]
+    check: bool,
+}
+
+#[derive(Args)]
 struct TypesFlag {
     #[arg(long, help = "Print the inferred type above the page")]
     types: bool,
@@ -278,6 +302,11 @@ impl InspectionCommand {
             } => DocCommand::new(DocEnvironment::new(file), term, types.page()).run(terminal),
             Self::Expand { file } => ExpandCommand::new(file).run(terminal),
             Self::Emit { file } => EmitCommand::new(file).run(terminal),
+            Self::Fmt {
+                paths,
+                check,
+                stdin_path,
+            } => FmtCommand::new(paths, check.mode(), stdin_path).run(terminal),
         }
     }
 }
@@ -365,6 +394,16 @@ impl JsonFlags {
             Box::new(JsonEvaluation::new(self.id))
         } else {
             Box::new(PrintedEvaluation::for_standard_output())
+        }
+    }
+}
+
+impl CheckFlag {
+    fn mode(&self) -> FmtMode {
+        if self.check {
+            FmtMode::Check
+        } else {
+            FmtMode::Write
         }
     }
 }

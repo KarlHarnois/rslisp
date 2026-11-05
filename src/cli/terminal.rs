@@ -22,7 +22,7 @@ use crate::expand::{BoundName, ClassifiedForm, Expander, ExpansionSession, Prelu
 use crate::modules::ModuleSources;
 use crate::reader::{Form, Reader};
 use crate::source::Span;
-use crate::source::{SourceId, SourceMap, TextPosition};
+use crate::source::{SourceFile, SourceId, SourceMap, TextPosition};
 use crate::types::TypedProgram;
 
 pub struct BuildOptions {
@@ -117,6 +117,10 @@ impl Terminal {
 
     pub fn add_source(&mut self, path: &Path, text: String) -> SourceId {
         self.sources.add(path.display().to_string(), text)
+    }
+
+    pub fn source_file(&self, source: SourceId) -> &SourceFile {
+        self.sources.file(source)
     }
 
     pub fn text_of(&self, source: SourceId) -> String {
@@ -472,7 +476,7 @@ impl Terminal {
         ExitStatus::UsageError
     }
 
-    fn report_unreadable(path: &Path, error: &std::io::Error) -> ExitStatus {
+    pub fn report_unreadable(path: &Path, error: &std::io::Error) -> ExitStatus {
         StandardError::write_line(format_args!(
             "error: cannot read `{}`: {error}",
             path.display()
