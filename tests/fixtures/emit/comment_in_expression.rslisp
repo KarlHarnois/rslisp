@@ -3,4 +3,4 @@
 (defn main ()
   (let marker (comment (println "scratch")))
   (comment)
-  marker)
+  (println "after"))
