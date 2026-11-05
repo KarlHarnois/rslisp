@@ -51,9 +51,9 @@ impl Expander<'_> {
 impl ExpansionTables {
     pub(super) fn carries_introduction_scope(&self, binder: &Form) -> bool {
         binder.as_symbol().is_some_and(|symbol| {
-            self.introduction_scopes
-                .iter()
-                .any(|scope| symbol.scopes().contains(*scope))
+            symbol
+                .scopes()
+                .any(|scope| self.introduction_scopes.contains(&scope))
         })
     }
 }
