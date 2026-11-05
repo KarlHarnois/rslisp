@@ -1,0 +1,5 @@
+(defn area "Multiplies two sides." (width height) (* width height))
+
+(defn main ()
+  (let measure area)
+  (println (area (missing-width) 2)))

@@ -1,0 +1,34 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_definer_shapes.rslisp
+---
+error[L0301]: defone is not ready
+  --> expand/failed_definer_shapes.rslisp:14:9
+   |
+14 | (defone first-thing second-thing)
+   |         ^^^^^^^^^^^ here
+
+error[L0301]: defbare is not ready
+  --> expand/failed_definer_shapes.rslisp:16:10
+   |
+16 | (defbare third-thing)
+   |          ^^^^^^^^^^^ here
+
+error[L0201]: cannot find `first-thing` in this scope
+  --> expand/failed_definer_shapes.rslisp:18:16
+   |
+18 | (defn main () (first-thing) (second-thing) (third-thing))
+   |                ^^^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `second-thing` in this scope
+  --> expand/failed_definer_shapes.rslisp:18:30
+   |
+18 | (defn main () (first-thing) (second-thing) (third-thing))
+   |                              ^^^^^^^^^^^^ not found in this scope
+
+error[L0201]: cannot find `third-thing` in this scope
+  --> expand/failed_definer_shapes.rslisp:18:45
+   |
+18 | (defn main () (first-thing) (second-thing) (third-thing))
+   |                                             ^^^^^^^^^^^ not found in this scope

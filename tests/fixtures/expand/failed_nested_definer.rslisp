@@ -1,0 +1,5 @@
+(defmacro defthing (name value) (template (defn (unquote name) "Gives a thing." () (unquote value))))
+
+(defthing widget 3)
+
+(defn main () (println (widget)))

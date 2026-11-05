@@ -1,0 +1,15 @@
+---
+source: tests/cli.rs
+expression: "RedefinitionSession::transcript(\"repl_failed_redefined_struct\",\nPROMPT_FAILED_REDEFINED_STRUCT)"
+---
+exit code: Some(0)
+--- stdout
+"karl"
+--- stderr
+error[L0301]: a field must start with `:`
+ --> <input 3>:1:17
+  |
+1 | (defstruct user (name str))
+  |                 ^^^^^^^^^^ here
+  |
+  = help: write each field as `:name type`, as in (defstruct point :x f64 :y f64)

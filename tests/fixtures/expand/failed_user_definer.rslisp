@@ -1,0 +1,9 @@
+(use code declare-definition fail)
+
+(defmacro defgauge (name)
+  (declare-definition name)
+  (fail "defgauge is not ready" name))
+
+(defgauge level)
+
+(defn main () (println (level)))

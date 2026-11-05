@@ -39,30 +39,50 @@ mod tests {
     use crate::modules::ModuleSources;
     use crate::source::SourceMap;
 
+    struct SurveyFixture;
+
+    impl SurveyFixture {
+        fn survey(texts: &[&str]) -> ModuleSurvey {
+            let mut sources = SourceMap::default();
+            let ids: Vec<SourceId> = texts
+                .iter()
+                .map(|text| sources.add("prompt", *text))
+                .collect();
+            let inputs: Vec<Span> = ids
+                .iter()
+                .zip(texts)
+                .map(|(id, text)| Span::new(*id, 0..text.len()))
+                .collect();
+            Expander::new(
+                &mut sources,
+                ModuleSources::new(PathBuf::new(), PathBuf::new()),
+            )
+            .survey(ModulePath::new("prompt"), &ids, &inputs)
+        }
+
+        fn names(survey: &ModuleSurvey) -> Vec<Vec<String>> {
+            survey
+                .names
+                .iter()
+                .map(|bound| bound.iter().map(|name| name.name.to_string()).collect())
+                .collect()
+        }
+    }
+
     #[test]
     fn a_survey_names_each_input_even_when_the_module_has_an_error() {
-        let texts = ["(defn twice (x) (* 2 x))", "(defn twice (x) x)"];
-        let mut sources = SourceMap::default();
-        let ids: Vec<SourceId> = texts
-            .iter()
-            .map(|text| sources.add("prompt", *text))
-            .collect();
-        let inputs: Vec<Span> = ids
-            .iter()
-            .zip(texts)
-            .map(|(id, text)| Span::new(*id, 0..text.len()))
-            .collect();
-        let survey = Expander::new(
-            &mut sources,
-            ModuleSources::new(PathBuf::new(), PathBuf::new()),
-        )
-        .survey(ModulePath::new("prompt"), &ids, &inputs);
+        let survey = SurveyFixture::survey(&["(defn twice (x) (* 2 x))", "(defn twice (x) x)"]);
         assert!(survey.program.is_err());
-        let names: Vec<Vec<String>> = survey
-            .names
-            .iter()
-            .map(|bound| bound.iter().map(|name| name.name.to_string()).collect())
-            .collect();
-        assert_eq!(names, [["twice"], ["twice"]]);
+        assert_eq!(SurveyFixture::names(&survey), [["twice"], ["twice"]]);
+    }
+
+    #[test]
+    fn a_failed_definer_binds_no_name_of_its_input() {
+        let survey = SurveyFixture::survey(&["(defn area \"doc\" (w) w)", "(area 1)"]);
+        assert!(survey.program.is_err());
+        assert_eq!(
+            SurveyFixture::names(&survey),
+            [Vec::<String>::new(), Vec::new()]
+        );
     }
 }

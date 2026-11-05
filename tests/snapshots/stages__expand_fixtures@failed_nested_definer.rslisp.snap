@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_nested_definer.rslisp
+---
+error[L0328]: a docstring goes after the parameter list
+ --> expand/failed_nested_definer.rslisp:3:1
+  |
+3 | (defthing widget 3)
+  | ^^^^^^^^^^^^^^^^^^^ a docstring in place of the parameter list
+  |
+  = help: write it as the first body form, after the parameter list

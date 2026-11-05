@@ -62,6 +62,10 @@ impl GlobalTable {
             .collect()
     }
 
+    pub fn mark_failed(&mut self, binding: BindingId) {
+        self.states.insert(binding, GlobalState::Failed);
+    }
+
     pub fn has_failed(&self, binding: BindingId) -> bool {
         matches!(self.states.get(&binding), Some(GlobalState::Failed))
     }

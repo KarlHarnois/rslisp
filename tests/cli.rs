@@ -132,6 +132,7 @@ const PROMPT_EXIT: &str =
 const PROMPT_UNCLOSED_END: &str = "(+ 1 2)\n(defn twice (x)\n  (* 2 x)\n";
 const PROMPT_NOT_UTF8: &[u8] = b"(+ 1 1)\n\xff\n";
 const PROMPT_REDEFINED_STRUCT: &str = "(defstruct user :name str)\n(def karl (->user :name \"karl\"))\n(defstruct user :name str :email str)\n(karl)\n";
+const PROMPT_FAILED_REDEFINED_STRUCT: &str = "(defstruct user :name str)\n(def karl (->user :name \"karl\"))\n(defstruct user (name str))\n(:name karl)\n";
 const PROMPT_CASCADE: &str = "(defstruct user :name str)\n(def karl (->user :name \"karl\"))\n(defn greet () (str \"hi \" (:name karl)))\n(defstruct user :name str :email str)\n(greet)\n";
 const PROMPT_BROKEN_MACRO_CALLED: &str =
     "(defmacro bad () (template (missing-helper 1)))\n(+ 1 2)\n(defn f () (bad))\n(f)\n";
@@ -3371,6 +3372,14 @@ fn repl_sets_aside_an_input_that_a_redefinition_breaks() {
     insta::assert_snapshot!(RedefinitionSession::transcript(
         "repl_redefined_struct",
         PROMPT_REDEFINED_STRUCT
+    ));
+}
+
+#[test]
+fn repl_rejects_a_failed_redefinition_and_keeps_the_old_definition() {
+    insta::assert_snapshot!(RedefinitionSession::transcript(
+        "repl_failed_redefined_struct",
+        PROMPT_FAILED_REDEFINED_STRUCT
     ));
 }
 

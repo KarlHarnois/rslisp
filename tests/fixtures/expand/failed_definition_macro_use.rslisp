@@ -1,0 +1,5 @@
+(defn helper "Gives one." (x) x)
+
+(defmacro one () (helper 1))
+
+(defn main () (println (one)))
