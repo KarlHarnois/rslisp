@@ -40,7 +40,7 @@
   (where (key value) (hash-map key value)))
 
 (document (box value)
-  "Moves a value to the heap.
+  "Puts a value on the heap.
 
   `box` is also the type `(box a)`, Rust's `Box<A>`.")
 
