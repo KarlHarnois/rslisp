@@ -9,6 +9,5 @@
 
 (defn main ()
   (match (parse "4")
-    ((err reason)
-     (println (show-error reason)))
+    ((err reason) (println (show-error reason)))
     ((ok count) (show-count count))))

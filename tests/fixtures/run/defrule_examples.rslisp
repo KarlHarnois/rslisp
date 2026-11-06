@@ -8,8 +8,7 @@
    (do (let subject value) (case-clauses subject clause ...))))
 
 (defrule case-clauses
-  ((subject ((quote else) body ...))
-   (do body ...))
+  ((subject ((quote else) body ...)) (do body ...))
   ((subject (match body ...))
    (if (= subject match)
      (do body ...)

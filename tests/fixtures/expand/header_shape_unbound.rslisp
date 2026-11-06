@@ -1,8 +1,7 @@
 (use prelude/macros header-shape)
 
 (defrule unless-zero
-  ((value body ...)
-   (unless (= value 0) body ...)))
+  ((value body ...) (unless (= value 0) body ...)))
 
 (header-shape (unles-zero value))
 

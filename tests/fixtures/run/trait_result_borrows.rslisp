@@ -55,10 +55,7 @@
   (park (c name)
         (let held (some c))
         (match (some (:model c))
-          ((some m)
-           (match held
-             ((some d) name)
-             ((none) name)))
+          ((some m) (match held ((some d) name) ((none) name)))
           ((none) name))))
 
 (defn main ()

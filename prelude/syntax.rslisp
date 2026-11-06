@@ -721,15 +721,13 @@
   ((value) value)
   ((value (head arguments ...) more ...)
    (-> (head value arguments ...) more ...))
-  ((value head more ...)
-   (-> (head value) more ...)))
+  ((value head more ...) (-> (head value) more ...)))
 
 (defrule ->>
   ((value) value)
   ((value (head arguments ...) more ...)
    (->> (head arguments ... value) more ...))
-  ((value head more ...)
-   (->> (head value) more ...)))
+  ((value head more ...) (->> (head value) more ...)))
 
 (defrule let-try
   ((((name value) ...) body ...)
@@ -740,5 +738,4 @@
 (defrule try->
   ((value) value)
   ((value head) (head value))
-  ((value head more ...)
-   (try-> (try (head value)) more ...)))
+  ((value head more ...) (try-> (try (head value)) more ...)))

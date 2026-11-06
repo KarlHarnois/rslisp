@@ -7,8 +7,7 @@
 (defn drain! (items)
   (loop ()
     (match (->slot :item (pop! items))
-      ((slot (some item))
-       (do (println item) (recur)))
+      ((slot (some item)) (do (println item) (recur)))
       ((slot none) (do)))))
 
 (defn main ()

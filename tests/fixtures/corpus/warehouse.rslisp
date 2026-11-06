@@ -122,10 +122,8 @@
 (defn report (title outcome)
   (println (str "== " title))
   (match outcome
-    ((ok finished)
-     (print-book (ref finished)))
-    ((err problem)
-     (println (str "failed: " problem)))))
+    ((ok finished) (print-book (ref finished)))
+    ((err problem) (println (str "failed: " problem)))))
 
 (type print-book (fn ((ref book)) unit))
 

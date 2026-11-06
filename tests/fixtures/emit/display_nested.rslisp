@@ -4,10 +4,8 @@
 
 (display choice (c)
   (match c
-    ((number n)
-     (if (> n 0) "positive" "nonpositive"))
-    ((status s)
-     (match s ((good) "good") ((bad) "bad")))))
+    ((number n) (if (> n 0) "positive" "nonpositive"))
+    ((status s) (match s ((good) "good") ((bad) "bad")))))
 
 (defn main ()
   (println (choice/number 2))

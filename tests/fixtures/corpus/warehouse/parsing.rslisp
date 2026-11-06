@@ -95,8 +95,7 @@
   (match verb
     ("receive"
      (ok (event/receive sku (try (parse-count amount)))))
-    ("ship"
-     (ok (event/ship sku (try (parse-count amount)))))
+    ("ship" (ok (event/ship sku (try (parse-count amount)))))
     ("adjust"
      (ok (event/adjust sku (try (parse-delta amount)))))
     ("reprice"

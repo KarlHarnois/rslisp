@@ -43,10 +43,8 @@
 
 (defn skip-separator (tokens position)
   (cond
-    ((>= position (len tokens))
-     (ok position))
-    ((symbol-at? tokens position ";")
-     (ok (+ position 1)))
+    ((>= position (len tokens)) (ok position))
+    ((symbol-at? tokens position ";") (ok (+ position 1)))
     (else (err (str "expected `;` at token " position)))))
 
 (type parse-statement
@@ -220,8 +218,7 @@
 
 (defn skip-argument-separator (tokens position)
   (cond
-    ((symbol-at? tokens position ",")
-     (ok (+ position 1)))
+    ((symbol-at? tokens position ",") (ok (+ position 1)))
     ((symbol-at? tokens position ")") (ok position))
     (else (err (str "expected `,` or `)` at token " position)))))
 
@@ -285,12 +282,10 @@
 
 (defn symbol-at? (tokens position expected)
   (match (get tokens position)
-    ((some (symbol text))
-     (= (as-str text) expected))
+    ((some (symbol text)) (= (as-str text) expected))
     (_ false)))
 
 (defn name-at? (tokens position expected)
   (match (get tokens position)
-    ((some (name text))
-     (= (as-str text) expected))
+    ((some (name text)) (= (as-str text) expected))
     (_ false)))

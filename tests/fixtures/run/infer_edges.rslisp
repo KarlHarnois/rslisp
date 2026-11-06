@@ -3,10 +3,7 @@
   :y i64)
 
 (defrule types-of
-  ((value)
-   (str (infer value)
-        " "
-        (infer (pair value none)))))
+  ((value) (str (infer value) " " (infer (pair value none)))))
 
 (def text (infer (->point 1 2)))
 

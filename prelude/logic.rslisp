@@ -5,34 +5,28 @@
 (def not (rust "!{0}" (fn (bool) bool)))
 
 (defrule when
-  ((test body ...)
-   (if test (do body ...) (do))))
+  ((test body ...) (if test (do body ...) (do))))
 
 (header-shape (when test))
 
 (defrule unless
-  ((test body ...)
-   (if test (do) (do body ...))))
+  ((test body ...) (if test (do) (do body ...))))
 
 (header-shape (unless test))
 
 (defrule and
   (() true)
   ((value) value)
-  ((value next more ...)
-   (if value (and next more ...) false)))
+  ((value next more ...) (if value (and next more ...) false)))
 
 (defrule or
   (() false)
   ((value) value)
-  ((value next more ...)
-   (if value true (or next more ...))))
+  ((value next more ...) (if value true (or next more ...))))
 
 (defrule cond
-  ((((quote else) body ...))
-   (do body ...))
-  (((test body ...))
-   (if test (do body ...) (do)))
+  ((((quote else) body ...)) (do body ...))
+  (((test body ...)) (if test (do body ...) (do)))
   (((test body ...) clause more ...)
    (if test (do body ...) (cond clause more ...))))
 

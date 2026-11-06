@@ -8,8 +8,7 @@
 
 (defn area (s)
   (match s
-    ((shape/circle r)
-     (* 3.0 (deref r) (deref r)))
+    ((shape/circle r) (* 3.0 (deref r) (deref r)))
     ((rect w h) (* (deref w) (deref h)))
     ((labeled _ size) (deref size))
     (point 0.0)))

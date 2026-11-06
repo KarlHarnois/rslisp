@@ -590,7 +590,8 @@
       (template (:code malformed-header-shape
                        :label "not a list that starts with a name")))))
 
-(def shape-marker-names (quote (docstring one-per-line arms)))
+(def shape-marker-names
+  (quote (docstring one-per-line arms)))
 
 (def check-shape-markers
   (fn (markers seen)
