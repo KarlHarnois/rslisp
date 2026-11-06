@@ -1,6 +1,6 @@
 # RFC 0053: A source formatter
 
-**Status:** Accepted
+**Status:** Accepted. Its rule 2, its rule 5 and its run filling no longer apply to a binding list, as 0058 states.
 **Date:** 2026-11-02
 
 ## Problem
