@@ -8,6 +8,7 @@ pub struct Shape {
     pub header_length: usize,
     pub takes_docstring: bool,
     pub one_per_line: bool,
+    pub arms: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -25,6 +26,7 @@ impl ShapeStatement {
     pub const STATING_FORM: &'static str = "header-shape";
     pub const DOCSTRING_MARKER: &'static str = "docstring";
     pub const ONE_PER_LINE_MARKER: &'static str = "one-per-line";
+    pub const ARMS_MARKER: &'static str = "arms";
 
     pub fn of(form: &Form) -> Option<Self> {
         let [head, stated, markers @ ..] = form.as_list()? else {
@@ -40,6 +42,7 @@ impl ShapeStatement {
                 header_length: header.len(),
                 takes_docstring: Self::has_marker(markers, Self::DOCSTRING_MARKER),
                 one_per_line: Self::has_marker(markers, Self::ONE_PER_LINE_MARKER),
+                arms: Self::has_marker(markers, Self::ARMS_MARKER),
             },
         })
     }
@@ -101,7 +104,8 @@ mod tests {
             Some(Shape {
                 header_length: 2,
                 takes_docstring: false,
-                one_per_line: false
+                one_per_line: false,
+                arms: false
             })
         );
     }
@@ -121,7 +125,22 @@ mod tests {
             Some(Shape {
                 header_length: 1,
                 takes_docstring: false,
-                one_per_line: true
+                one_per_line: true,
+                arms: false
+            })
+        );
+    }
+
+    #[test]
+    fn an_arms_marker_states_arms_alone() {
+        let statement = StatementFixture::statement("(header-shape (match value) :arms)");
+        assert_eq!(
+            statement.map(|statement| statement.shape),
+            Some(Shape {
+                header_length: 1,
+                takes_docstring: false,
+                one_per_line: false,
+                arms: true
             })
         );
     }
