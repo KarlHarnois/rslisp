@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/set_at_map_as_argument.rslisp
+---
+(do)
+(sorted-map "a" 9)
