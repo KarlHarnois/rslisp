@@ -168,7 +168,7 @@ pub struct TypeChecker {
     bindings_after_errors: FxHashSet<BindingId>,
     pub(super) diagnostics: Diagnostics,
     pub(super) warnings: Diagnostics,
-    missing_annotations: Diagnostics,
+    missing_annotations: super::missing_annotations::MissingAnnotations,
     pub(super) unnameable_types: Diagnostics,
     pub(super) closure_types: Vec<super::typed::ClosureType>,
     pub(super) type_texts: super::type_text::TypeTexts,
@@ -265,7 +265,7 @@ impl TypeChecker {
             bindings_after_errors: FxHashSet::default(),
             diagnostics: Diagnostics::default(),
             warnings: Diagnostics::default(),
-            missing_annotations: Diagnostics::default(),
+            missing_annotations: super::missing_annotations::MissingAnnotations::default(),
             unnameable_types: Diagnostics::default(),
             closure_types: Vec::new(),
             type_texts: super::type_text::TypeTexts::default(),
@@ -754,15 +754,25 @@ impl TypeChecker {
         self.evaluated_forms.get(&span).map(Rc::as_ref)
     }
 
-    pub(super) fn defer_missing_annotation(&mut self, diagnostic: Diagnostic) {
-        self.missing_annotations.push(diagnostic);
+    pub(super) fn defer_missing_annotation(
+        &mut self,
+        open_vars: Vec<TypeVar>,
+        diagnostic: Diagnostic,
+    ) {
+        self.missing_annotations.defer(open_vars, diagnostic);
     }
 
     fn resolve_missing_annotations(&mut self) {
         if !self.diagnostics.has_errors() {
-            self.diagnostics
-                .extend(std::mem::take(&mut self.missing_annotations));
+            let missing = std::mem::take(&mut self.missing_annotations);
+            let reports = missing.one_per_variable(|var| self.open_roots(var));
+            self.diagnostics.extend(reports);
         }
+    }
+
+    fn open_roots(&self, var: TypeVar) -> Vec<TypeVar> {
+        let roots = self.free_vars(&Type::Var(var));
+        if roots.is_empty() { vec![var] } else { roots }
     }
 
     pub(super) fn macro_name(&self, span: Span) -> Option<Rc<str>> {
@@ -888,10 +898,16 @@ impl TypeChecker {
         match pass {
             ObligationPass::Deferring => self.unifier.defer(obligation),
             ObligationPass::Final if obligation.inside_operand => {}
-            ObligationPass::Final => {
-                self.defer_missing_annotation(TypeProblems::cannot_infer(obligation.span))
-            }
+            ObligationPass::Final => self.report_open_obligation(&obligation),
         }
+    }
+
+    fn report_open_obligation(&mut self, obligation: &Obligation) {
+        let mut open_vars = self.free_vars(&obligation.implementor);
+        if let Some(argument) = &obligation.bound.argument {
+            open_vars.extend(self.free_vars(argument));
+        }
+        self.defer_missing_annotation(open_vars, TypeProblems::cannot_infer(obligation.span));
     }
 
     fn check_component(&mut self, members: &[&Definition]) -> Vec<(BindingId, TypedDefinition)> {

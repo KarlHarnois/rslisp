@@ -123,7 +123,7 @@ impl<'c> Finalizer<'c> {
             None => {
                 if !self.inside_operand && self.reported.insert(var) && !self.earlier_errors {
                     let problem = self.missing_annotation(span, ty);
-                    self.checker.defer_missing_annotation(problem);
+                    self.checker.defer_missing_annotation(vec![var], problem);
                 }
                 return;
             }

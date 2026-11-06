@@ -73,6 +73,8 @@ help: a function with a similar name exists
 
 **Report a missing annotation only when no other error explains it.** A `type annotations needed` error is a symptom of another error, so the type stage drops it when the program has any other error.
 
+**Report an unresolved type variable once.** A value that holds the variable reports it first, and a trait obligation reports only a variable that no value holds. Variables that inference merges later count as one.
+
 ## Tests
 
 **Add a fixture and a snapshot for every new diagnostic.** Place the fixture under `tests/fixtures/`, in the directory of the stage that reports it. Use fake data only.

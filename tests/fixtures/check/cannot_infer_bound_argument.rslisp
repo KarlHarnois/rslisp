@@ -1,0 +1,6 @@
+(def compares-with-anything?
+  (rust "true"
+    (where ((a (partial-eq b)) b)
+      (fn (a) bool))))
+
+(defn main () (compares-with-anything? 1))

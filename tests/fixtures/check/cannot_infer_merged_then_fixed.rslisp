@@ -1,0 +1,33 @@
+(trait container
+  (type item)
+  (size (fn ((ref self)) usize)))
+
+(struct (wrapper a b)
+        (label a)
+        (items (vec b)))
+
+(impl container (wrapper i64 b)
+  (type item b)
+  (size (w) (len (field w items))))
+
+(impl container (wrapper f64 b)
+  (type item b)
+  (size (w) (len (field w items))))
+
+(type ->wrapper
+  (where (a b)
+    (fn (a (vec b)) (wrapper a b))))
+
+(defn ->wrapper (label items)
+  (new wrapper (label label) (items items)))
+
+(type link
+  (where ((c (container item)) item)
+    (fn (c (vec item)) bool)))
+
+(defn link (c items)
+  (= (size (ref c)) (len (ref items))))
+
+(defn main ()
+  (println (link (->wrapper 1 (the (vec i64) (vec)))
+                 (vec))))
