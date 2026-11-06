@@ -9,7 +9,7 @@ error[L0407]: type annotations needed
 3 | (deftest ends-with-an-open-option none)
   |                                   ^^^^ cannot infer the type of this value
   |
-  = help: annotate the binding, as in `(let (name i64) value)`, or add a `type` signature
+  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
 
 error[L0407]: type annotations needed
  --> check/test_open_last_form.rslisp:5:35
@@ -17,4 +17,4 @@ error[L0407]: type annotations needed
 5 | (deftest ends-with-an-open-vector (vec))
   |                                   ^^^^^ cannot infer the type of this value
   |
-  = help: annotate the binding, as in `(let (name i64) value)`, or add a `type` signature
+  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
