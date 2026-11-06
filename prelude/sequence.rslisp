@@ -23,4 +23,5 @@
   "Returns the number of items of a collection as a `usize`.
 
   A string counts bytes, not characters, so `(len \"héllo\")` is 6. Use
-  `(count (chars text))` for characters.")
+  `(count (chars text))` for characters, and borrow a `string` first with
+  `as-str`.")
