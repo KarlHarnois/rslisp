@@ -1,0 +1,9 @@
+(def open-one
+  (rust "1" (where (a) (fn () (vec a)))))
+
+(defrule m
+  ((name) (def name (open-one))))
+
+(m held)
+
+(defn main () (println "done"))

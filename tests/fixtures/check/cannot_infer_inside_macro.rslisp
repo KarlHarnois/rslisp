@@ -1,0 +1,4 @@
+(defmacro open-value ()
+  (template (do (some (vec)) 1)))
+
+(defn main () (println (open-value)))

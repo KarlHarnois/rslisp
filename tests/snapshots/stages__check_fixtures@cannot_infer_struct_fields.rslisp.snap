@@ -7,14 +7,20 @@ error[L0407]: type annotations needed
  --> check/cannot_infer_struct_fields.rslisp:7:23
   |
 7 |     (new holder (left (vec)) (right (vec))))
-  |                       ^^^^^ cannot infer the type of this value
+  |                       ^^^^^ cannot infer the type `(vec _)` of this value
   |
-  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
+help: write the type with `the`, and replace each `_` with a type
+  |
+7 |     (new holder (left (the (vec _) (vec))) (right (vec))))
+  |                       ++++++++++++      +
 
 error[L0407]: type annotations needed
  --> check/cannot_infer_struct_fields.rslisp:7:37
   |
 7 |     (new holder (left (vec)) (right (vec))))
-  |                                     ^^^^^ cannot infer the type of this value
+  |                                     ^^^^^ cannot infer the type `(vec _)` of this value
   |
-  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
+help: write the type with `the`, and replace each `_` with a type
+  |
+7 |     (new holder (left (vec)) (right (the (vec _) (vec)))))
+  |                                     ++++++++++++      +

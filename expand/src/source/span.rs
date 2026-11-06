@@ -37,6 +37,14 @@ impl Span {
         self.start as usize..self.end as usize
     }
 
+    pub fn start(self) -> Span {
+        Span::new(self.source(), self.range().start..self.range().start)
+    }
+
+    pub fn end(self) -> Span {
+        Span::new(self.source(), self.range().end..self.range().end)
+    }
+
     pub fn contains(self, inner: Span) -> bool {
         self.source == inner.source && self.start <= inner.start && inner.end <= self.end
     }

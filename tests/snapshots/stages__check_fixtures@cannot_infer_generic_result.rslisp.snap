@@ -7,6 +7,9 @@ error[L0407]: type annotations needed
  --> check/cannot_infer_generic_result.rslisp:2:10
   |
 2 |   (let n (parse "1"))
-  |          ^^^^^^^^^^^ cannot infer the type of this value
+  |          ^^^^^^^^^^^ cannot infer the type `(result _ (parse-error _))` of this value
   |
-  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
+help: write the type with `the`, and replace each `_` with a type
+  |
+2 |   (let n (the (result _ (parse-error _)) (parse "1")))
+  |          +++++++++++++++++++++++++++++++            +

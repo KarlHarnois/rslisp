@@ -1,4 +1,4 @@
-use super::generated_entry::{GeneratedEntry, WrittenForm};
+use super::generated_entry::GeneratedEntry;
 use super::result_printer::GeneratedFunction;
 use super::{Expander, Program};
 use crate::core::{
@@ -62,7 +62,7 @@ impl ExpansionSession<'_> {
             .iter()
             .map(|form| self.in_entry_scope(form.clone()))
             .collect();
-        self.entry_lowered_in(self.entry, &scoped, forms, span)
+        self.entry_lowered_in(self.entry, &scoped, span)
     }
 
     pub fn test_runner_entry(&mut self, source: SourceId) -> Result<GeneratedEntry, Diagnostics> {
@@ -80,7 +80,7 @@ impl ExpansionSession<'_> {
                 scoped
             })
             .collect();
-        self.entry_lowered_in(runner, &scoped, &forms, span)
+        self.entry_lowered_in(runner, &scoped, span)
     }
 
     pub fn loads(&self, path: &ModulePath) -> bool {
@@ -91,18 +91,12 @@ impl ExpansionSession<'_> {
         &mut self,
         module: ModuleId,
         scoped: &[Form],
-        written: &[Form],
         span: Span,
     ) -> Result<GeneratedEntry, Diagnostics> {
         let lowered = self.lower_in(module, |expander| expander.lower_body(scoped));
         let mut body = self.collect_diagnostics(lowered)?;
         body.items.push(Self::unit(span));
-        Ok(GeneratedEntry::new(
-            self.entry_binding(span),
-            body,
-            written.iter().map(Self::written).collect(),
-            span,
-        ))
+        Ok(GeneratedEntry::new(self.entry_binding(span), body, span))
     }
 
     pub fn prelude_function(
@@ -213,13 +207,6 @@ impl ExpansionSession<'_> {
     fn unit(span: Span) -> BodyItem {
         let empty = Control::Block(Block::default());
         BodyItem::Expr(Expr::new(ExprKind::Control(empty), span))
-    }
-
-    fn written(form: &Form) -> WrittenForm {
-        WrittenForm {
-            span: form.span(),
-            text: form.to_string().into(),
-        }
     }
 
     fn collect_diagnostics<T>(&mut self, lowered: Result<T, Diagnostic>) -> Result<T, Diagnostics> {

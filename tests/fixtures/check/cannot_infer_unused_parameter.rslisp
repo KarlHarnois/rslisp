@@ -1,0 +1,3 @@
+(defn main ()
+  (let ignored (fn (unused) 1))
+  (println "done"))

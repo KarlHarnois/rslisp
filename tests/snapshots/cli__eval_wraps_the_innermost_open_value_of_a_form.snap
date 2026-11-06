@@ -1,0 +1,14 @@
+---
+source: tests/cli.rs
+expression: eval.assert_exit_code(1).stderr()
+---
+error[L0407]: type annotations needed
+ --> <eval>:1:7
+  |
+1 | (some none)
+  |       ^^^^ cannot infer the type `(option _)` of this value
+  |
+help: write the type with `the`, and replace each `_` with a type
+  |
+1 | (some (the (option _) none))
+  |       +++++++++++++++     +

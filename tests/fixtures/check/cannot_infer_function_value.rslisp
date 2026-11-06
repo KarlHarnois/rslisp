@@ -1,0 +1,12 @@
+(type look
+  (where (a) (fn (i64) (option a))))
+
+(defn look (x) none)
+
+(type apply-on
+  (where (r)
+    (fn ((fn ((ref i64)) r)) bool)))
+
+(defn apply-on (f) true)
+
+(defn main () (println (apply-on look)))

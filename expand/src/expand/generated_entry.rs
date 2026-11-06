@@ -9,35 +9,18 @@ use crate::source::Span;
 pub struct GeneratedEntry {
     binding: BindingId,
     body: Block,
-    forms: Vec<WrittenForm>,
     span: Span,
     functions: Vec<GeneratedFunction>,
 }
 
-#[derive(Clone, Debug)]
-pub struct WrittenForm {
-    pub span: Span,
-    pub text: Rc<str>,
-}
-
 impl GeneratedEntry {
-    pub(super) fn new(
-        binding: BindingId,
-        body: Block,
-        forms: Vec<WrittenForm>,
-        span: Span,
-    ) -> Self {
+    pub(super) fn new(binding: BindingId, body: Block, span: Span) -> Self {
         Self {
             binding,
             body,
-            forms,
             span,
             functions: Vec::new(),
         }
-    }
-
-    pub fn forms(&self) -> &[WrittenForm] {
-        &self.forms
     }
 
     pub fn printing(&self, printer: &ResultPrinter, printed: &[usize]) -> Self {
@@ -79,7 +62,8 @@ impl GeneratedEntry {
             params: Vec::new(),
             body: self.body.clone(),
         };
-        let value = Expr::new(ExprKind::Fn(Rc::new(lambda)), self.span);
+        let holds_no_written_text = self.span.start();
+        let value = Expr::new(ExprKind::Fn(Rc::new(lambda)), holds_no_written_text);
         Item {
             kind: ItemKind::Def(self.binding, Rc::new(value)),
             span: self.span,
@@ -101,6 +85,5 @@ impl Program {
         );
         module.items.extend(entry.items());
         self.entry_function = Some(entry.binding);
-        self.evaluated_forms = entry.forms.clone();
     }
 }

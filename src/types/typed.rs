@@ -258,6 +258,12 @@ pub enum TypedBodyItem {
     Expr(TypedExpr),
 }
 
+#[derive(Clone, Copy)]
+pub struct LetValue {
+    pub binder_span: Span,
+    pub annotated: bool,
+}
+
 #[derive(Clone, Debug)]
 pub struct PendingModeCheck {
     pub callee: BindingId,

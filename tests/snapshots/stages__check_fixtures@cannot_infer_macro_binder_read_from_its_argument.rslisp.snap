@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/cannot_infer_macro_binder_read_from_its_argument.rslisp
+---
+error[L0407]: type annotations needed
+  --> check/cannot_infer_macro_binder_read_from_its_argument.rslisp:12:8
+   |
+12 |   (tap (open it))
+   |        ^^^^^^^^^ cannot infer the type of this value
+   |
+   = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature

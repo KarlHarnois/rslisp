@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/cannot_infer_rule_branches.rslisp
+---
+error[L0407]: type annotations needed
+ --> check/cannot_infer_rule_branches.rslisp:4:10
+  |
+4 |   (let x (pick true))
+  |          ^^^^^^^^^^^ cannot infer the type of this value
+  |
+  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature

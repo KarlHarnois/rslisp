@@ -7,12 +7,54 @@ use super::literal_fit::LiteralFit;
 use super::problems::TypeProblems;
 use super::ty::{GenericId, Type, TypeVar};
 use super::type_text::TypeTextWriter;
-use super::typed::{ClosureType, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
+use super::typed::{ClosureType, LetValue, TypedDefinition, TypedExpr, TypedExprKind, TypedLeaf};
 use super::unifier::LiteralKind;
 use crate::core::{BindingId, Literal, PrimitiveType};
 use crate::diagnostic::Diagnostic;
 use crate::reader::Number;
 use crate::source::Span;
+
+#[derive(Clone, Copy)]
+enum OpenSite {
+    WrittenValue(Span),
+    Elsewhere(Span),
+}
+
+impl OpenSite {
+    fn span(self) -> Span {
+        match self {
+            Self::WrittenValue(span) | Self::Elsewhere(span) => span,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+enum Enclosure {
+    Form(Span),
+    Binder(Span),
+    AnnotatedBinder(Span),
+}
+
+impl Enclosure {
+    fn of_child(parent_span: Span, let_value: Option<LetValue>) -> Self {
+        match let_value {
+            Some(value) if value.annotated => Self::AnnotatedBinder(value.binder_span),
+            Some(value) => Self::Binder(value.binder_span),
+            None => Self::Form(parent_span),
+        }
+    }
+
+    fn site_of(enclosure: Option<Self>, span: Span) -> OpenSite {
+        match enclosure {
+            Some(Self::AnnotatedBinder(binder_span)) => OpenSite::Elsewhere(binder_span),
+            Some(Self::Form(form_span)) if form_span == span => OpenSite::Elsewhere(span),
+            Some(Self::Binder(binder_span)) if span.contains(binder_span) => {
+                OpenSite::Elsewhere(span)
+            }
+            _ => OpenSite::WrittenValue(span),
+        }
+    }
+}
 
 pub struct Finalizer<'c> {
     checker: &'c mut TypeChecker,
@@ -21,6 +63,7 @@ pub struct Finalizer<'c> {
     closures_in_definition: Vec<Type>,
     type_text_operands: Vec<TypedExpr>,
     inside_operand: bool,
+    enclosure: Option<Enclosure>,
 }
 
 impl<'c> Finalizer<'c> {
@@ -33,12 +76,18 @@ impl<'c> Finalizer<'c> {
             closures_in_definition: Vec::new(),
             type_text_operands: Vec::new(),
             inside_operand: false,
+            enclosure: None,
         }
     }
 
     pub fn definition(&mut self, definition: &mut TypedDefinition) {
+        self.enclosure = Some(Enclosure::Form(definition.span));
         self.expr(&mut definition.value);
-        self.finalize_type(&mut definition.scheme.body, definition.span);
+        self.enclosure = None;
+        self.finalize_type(
+            &mut definition.scheme.body,
+            OpenSite::Elsewhere(definition.span),
+        );
         self.record_closure_types(definition.binding);
         if self.checker.holds_infer_forms {
             self.checker.checking.type_text_walks += 1;
@@ -81,19 +130,23 @@ impl<'c> Finalizer<'c> {
     }
 
     fn expr(&mut self, expr: &mut TypedExpr) {
+        let enclosure = self.enclosure;
+        let site = Enclosure::site_of(enclosure, expr.span);
         if let TypedExprKind::Call(callee, arguments) = &mut expr.kind {
             if self.checker.unifier.holds_open_literal(&callee.ty) {
                 self.default_literals(&callee.ty, callee.span);
             }
+            self.enclosure = Some(Enclosure::Form(expr.span));
             for argument in arguments {
                 self.child(&mut argument.value);
             }
-            self.finalize_type(&mut expr.ty, expr.span);
+            self.finalize_type(&mut expr.ty, site);
             self.child(callee);
         } else {
             self.children(expr);
-            self.finalize_type(&mut expr.ty, expr.span);
+            self.finalize_type(&mut expr.ty, site);
         }
+        self.enclosure = enclosure;
         if let TypedExprKind::Leaf(TypedLeaf::Literal(Literal::Number(number))) = &expr.kind {
             self.check_range(number, &expr.ty.clone(), expr.span);
         }
@@ -101,11 +154,13 @@ impl<'c> Finalizer<'c> {
     }
 
     fn children(&mut self, expr: &mut TypedExpr) {
-        for child in expr.children_mut() {
+        let parent_span = expr.span;
+        expr.visit_children_mut(&mut |let_value, child| {
+            self.enclosure = Some(Enclosure::of_child(parent_span, let_value));
             self.child(child);
-        }
+        });
         for binder in expr.binders_mut() {
-            self.finalize_type(&mut binder.ty, binder.span);
+            self.finalize_type(&mut binder.ty, OpenSite::Elsewhere(binder.span));
         }
     }
 
@@ -126,7 +181,7 @@ impl<'c> Finalizer<'c> {
         if let TypedExprKind::Fn(lambda) = &mut expr.kind
             && let Some(wrapped) = &mut Rc::make_mut(lambda).wraps
         {
-            self.finalize_type(&mut wrapped.ty, expr.span);
+            self.finalize_type(&mut wrapped.ty, OpenSite::Elsewhere(expr.span));
         }
     }
 
@@ -136,17 +191,17 @@ impl<'c> Finalizer<'c> {
         }
     }
 
-    fn finalize_type(&mut self, ty: &mut Type, span: Span) {
+    fn finalize_type(&mut self, ty: &mut Type, site: OpenSite) {
         for var in self.checker.free_vars(ty) {
-            self.default_var(var, span, ty);
+            self.default_var(var, site, ty);
         }
         *ty = self.checker.unifier.resolve(ty);
     }
 
-    fn default_var(&mut self, var: TypeVar, span: Span, ty: &Type) {
+    fn default_var(&mut self, var: TypeVar, site: OpenSite, ty: &Type) {
         match self.checker.unifier.literal_kind(var) {
-            Some(kind) => self.default_literal(var, kind, span),
-            None => self.report_unresolved(var, span, ty),
+            Some(kind) => self.default_literal(var, kind, site.span()),
+            None => self.report_unresolved(var, site, ty),
         }
     }
 
@@ -165,23 +220,23 @@ impl<'c> Finalizer<'c> {
         );
     }
 
-    fn report_unresolved(&mut self, var: TypeVar, span: Span, ty: &Type) {
+    fn report_unresolved(&mut self, var: TypeVar, site: OpenSite, ty: &Type) {
         if !self.inside_operand && self.reported.insert(var) && !self.earlier_errors {
-            let problem = self.missing_annotation(span, ty);
+            let problem = self.missing_annotation(site, ty);
             self.checker.defer_missing_annotation(vec![var], problem);
         }
     }
 
-    fn missing_annotation(&self, span: Span, ty: &Type) -> Diagnostic {
-        match self.checker.evaluated_form(span) {
-            Some(form) => {
+    fn missing_annotation(&self, site: OpenSite, ty: &Type) -> Diagnostic {
+        match site {
+            OpenSite::WrittenValue(span) => {
                 let open_type = self
                     .checker
                     .display()
                     .show(&self.checker.unifier.resolve(ty));
-                TypeProblems::cannot_infer_evaluated(&open_type, form, span)
+                TypeProblems::cannot_infer_value(&open_type, span)
             }
-            None => TypeProblems::cannot_infer(span),
+            OpenSite::Elsewhere(span) => TypeProblems::cannot_infer(span),
         }
     }
 

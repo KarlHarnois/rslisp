@@ -1,0 +1,6 @@
+(defrule hold ((name) (let name (vec))))
+
+(defn main ()
+  (match (some 1)
+    ((some value) (hold it))
+    (none (println "none"))))

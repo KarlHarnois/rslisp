@@ -539,7 +539,7 @@ Field names are not hygienic. They are looked up through the struct type.
 | `unit` | nothing |
 | a type that the parameter of the prelude's `prn` accepts | the value, as `prn` prints it |
 | any other type, such as a closure or an `iterator` | a `note` on standard error that names the type and the trait it lacks |
-| a type still open after inference, such as `none` | `L0407` on the form, with a fix that wraps the form in `the` |
+| a type still open after inference, such as `none` | `L0407` on the innermost open value, with a fix that wraps that value in `the` |
 
 **The forms are their own source, named `<eval>`, so a diagnostic points at the form.** `--line <n> --column <n>` give the position where the forms start in the module's text. Lines and columns count from 1, and columns count UTF-8 bytes. The forms then MUST be the module's text at that position, or `eval` exits 2. Their diagnostics carry the module's name and the forms' own lines.
 
@@ -688,7 +688,7 @@ An expression never changes the buffer. After a module file changes on disk, an 
 ```
 
 - A test's name is a symbol that is not a keyword. A string before at least one more body form is the docstring, as for `defn`, and a failure prints its first line.
-- A test's function ends with a unit form, so a test's value is dropped and a test passes when it returns. A test that returns an `err` passes: `assert` is what fails a test. An open type in a test's last form is `L0407` at that form under every command.
+- A test's function ends with a unit form, so a test's value is dropped and a test passes when it returns. A test that returns an `err` passes: `assert` is what fails a test. An open type in a test's last form is `L0407` at the innermost open value of that form under every command.
 - A test sits at the top level of any module, beside the code it tests or in a module of its own. A `deftest` in a body is `L0208`.
 - `deftest` defines the test's function under an introduced name, `test-` and the written name, so no name of the program collides with it, `rslisp check` and `rslisp types` leave it out, and its Rust name yields to an item the program wrote. A test name is not a binding, so `(doc pads-left)` finds only a binding the program wrote.
 - Every command expands and type checks every test. A test emits Rust only under `rslisp test`, because the emitter writes only what `main` reaches.

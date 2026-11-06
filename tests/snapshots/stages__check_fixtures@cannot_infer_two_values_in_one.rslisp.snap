@@ -7,14 +7,20 @@ error[L0407]: type annotations needed
  --> check/cannot_infer_two_values_in_one.rslisp:1:26
   |
 1 | (defn main () (str (pair (vec) (vec))))
-  |                          ^^^^^ cannot infer the type of this value
+  |                          ^^^^^ cannot infer the type `(vec _)` of this value
   |
-  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
+help: write the type with `the`, and replace each `_` with a type
+  |
+1 | (defn main () (str (pair (the (vec _) (vec)) (vec))))
+  |                          ++++++++++++      +
 
 error[L0407]: type annotations needed
  --> check/cannot_infer_two_values_in_one.rslisp:1:32
   |
 1 | (defn main () (str (pair (vec) (vec))))
-  |                                ^^^^^ cannot infer the type of this value
+  |                                ^^^^^ cannot infer the type `(vec _)` of this value
   |
-  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
+help: write the type with `the`, and replace each `_` with a type
+  |
+1 | (defn main () (str (pair (vec) (the (vec _) (vec)))))
+  |                                ++++++++++++      +

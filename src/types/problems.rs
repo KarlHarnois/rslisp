@@ -698,7 +698,7 @@ impl TypeProblems {
         )
     }
 
-    pub fn cannot_infer_evaluated(open_type: &str, form: &str, span: Span) -> Diagnostic {
+    pub fn cannot_infer_value(open_type: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::CANNOT_INFER,
             "type annotations needed",
@@ -709,7 +709,7 @@ impl TypeProblems {
         )
         .with_suggestion(
             "write the type with `the`, and replace each `_` with a type",
-            Suggestion::new(span, format!("(the {open_type} {form})")),
+            Suggestion::wrapping(span, format!("(the {open_type} "), ")"),
         )
     }
 
