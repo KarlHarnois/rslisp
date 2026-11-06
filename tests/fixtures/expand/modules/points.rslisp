@@ -1,0 +1,9 @@
+(export ->pixel ->point pixel point)
+
+(defstruct point
+  "A point on a grid."
+  :x i64
+  :y i64)
+
+(defstruct pixel
+  :x i64)

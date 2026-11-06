@@ -1,0 +1,3 @@
+(module "Wins.")
+
+(module "Loses.")

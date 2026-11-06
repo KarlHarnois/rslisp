@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module_key_is_no_name.rslisp
+---
+(def prose-docstring "Only prose.")
+(def entry-header "(module doc_module_key_is_no_name)")
+(def entry-body "\n\nNo documentation.")

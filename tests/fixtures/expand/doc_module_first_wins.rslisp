@@ -1,0 +1,3 @@
+(use modules/twice)
+
+(def twice-docstring (docstring (module modules/twice)))

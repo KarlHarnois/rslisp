@@ -1,0 +1,3 @@
+(use modules/points point)
+
+(def points-page (doc-page (module modules/points)))

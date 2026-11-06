@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module.rslisp
+---
+(def grid-page "(module modules/grid)\n\nShapes on a grid.\n\n(defn area (width height))\n    Multiplies two sides.\n(defn perimeter (width height))")
+(def grid-body "\n\nShapes on a grid.\n\n(defn area (width height))\n    Multiplies two sides.\n(defn perimeter (width height))")
+(def grid-docstring "Shapes on a grid.")
+(def grid-header "(module modules/grid)")
+(def main (fn () ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0 display)) (fn ((ref part-type-0)) unit))) "(module modules/grid)\n\nShapes on a grid.\n\n(defn area (width height))\n    Multiplies two sides.\n(defn perimeter (width height))") ((rust "println!(\"{{}}\", {&0})" (where ((part-type-0_2 display)) (fn ((ref part-type-0_2)) unit))) (area 2 3))))

@@ -1,0 +1,3 @@
+(use modules/plane area)
+
+(def plane-page (doc-page (module modules/plane)))

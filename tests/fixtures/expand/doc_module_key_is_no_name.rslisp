@@ -1,0 +1,14 @@
+(use prelude/macros document)
+(use modules/prose)
+
+(document module-docstring "Not the module docstring.")
+
+(document module "Not the module docstring either.")
+
+(def prose-docstring (docstring (module modules/prose)))
+
+(def entry-header
+  (header (module doc_module_key_is_no_name)))
+
+(def entry-body
+  (page-body (module doc_module_key_is_no_name)))

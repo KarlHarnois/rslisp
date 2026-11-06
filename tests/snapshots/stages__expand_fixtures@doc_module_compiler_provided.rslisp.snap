@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module_compiler_provided.rslisp
+---
+error[L0204]: cannot find module `kernel`
+ --> expand/doc_module_compiler_provided.rslisp:1:36
+  |
+1 | (def kernel-page (doc-page (module kernel)))
+  |                                    ^^^^^^ no module with this path
+  |
+  = help: a module path names a file relative to the root directory, without its extension
+
+error[L0204]: cannot find module `code`
+ --> expand/doc_module_compiler_provided.rslisp:3:34
+  |
+3 | (def code-page (doc-page (module code)))
+  |                                  ^^^^ no module with this path
+  |
+  = help: a module path names a file relative to the root directory, without its extension

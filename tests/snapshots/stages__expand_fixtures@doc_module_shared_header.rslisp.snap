@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module_shared_header.rslisp
+---
+(def pairs-page "(module modules/pairs)\n\nNo documentation.\n\n(defpair alpha beta)\n    Comes first.\n(defpair alpha beta)\n    Comes second.\n(defpair eta theta)\n    Only the first name has this.\n(defpair gamma delta)\n    Comes as a pair.\n(defpair eta theta)\n(defpair epsilon zeta)")

@@ -1,0 +1,8 @@
+(use modules/grid area)
+
+(def module 1)
+
+(def grid-header (header (module modules/grid)))
+
+(defn parameter-head (module)
+  (header (module modules/grid)))

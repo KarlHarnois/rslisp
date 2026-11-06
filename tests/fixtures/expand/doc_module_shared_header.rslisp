@@ -1,0 +1,3 @@
+(use modules/pairs alpha)
+
+(def pairs-page (doc-page (module modules/pairs)))

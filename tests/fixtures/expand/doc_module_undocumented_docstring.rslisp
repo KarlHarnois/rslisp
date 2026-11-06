@@ -1,0 +1,4 @@
+(use undocumented/shapes area)
+
+(def shapes-docstring
+  (docstring (module undocumented/shapes)))

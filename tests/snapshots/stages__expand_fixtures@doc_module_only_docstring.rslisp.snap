@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module_only_docstring.rslisp
+---
+(def prose-page "(module modules/prose)\n\nOnly prose.")

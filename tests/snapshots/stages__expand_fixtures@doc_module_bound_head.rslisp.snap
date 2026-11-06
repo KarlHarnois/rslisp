@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module_bound_head.rslisp
+---
+(def module 1)
+(def grid-header "(module modules/grid)")
+(def parameter-head (fn (module_2) "(module modules/grid)"))
