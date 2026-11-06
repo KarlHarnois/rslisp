@@ -74,7 +74,8 @@
 (document (ok-or option error)
   "Turns an `option` into a `result`, with `error` in place of `none`.
 
-  `error` runs before the call, whether or not the call uses it.")
+  `error` runs before the call, whether or not the call uses it. The call
+  moves an option that is not `copy`.")
 
 (document (ok? result)
   "Returns whether a `result` is `ok`.
@@ -110,16 +111,18 @@
 
   It returns the function's result in an `ok`. For `err` the function does not
   run, and the error passes through. A keyword such as `:age` reads that
-  field.")
+  field. The call moves a result that is not `copy`.")
 
 (document (map-err result function)
   "Applies a function to a `result`'s `err` value.
 
   It returns the function's result in an `err`. For `ok` the function does not
-  run, and the value passes through.")
+  run, and the value passes through. The call moves a result that is not
+  `copy`.")
 
 (document (then-ok result function)
   "Calls a function that returns a `result` on a `result`'s `ok` value.
 
   It returns the function's `result` as it is, which has the same error type.
-  For `err` the function does not run, and the error passes through.")
+  For `err` the function does not run, and the error passes through. The call
+  moves a result that is not `copy`.")

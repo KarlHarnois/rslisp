@@ -39,4 +39,5 @@
 
   `bool`, `char`, `unit`, the number types and `(ref a)` implement it, and an
   `option`, a `result` or a `pair` of such types does. `string` and `vec` do
-  not.")
+  not. A struct or an enum of `copy` fields that the program never changes in
+  place is `copy` too.")

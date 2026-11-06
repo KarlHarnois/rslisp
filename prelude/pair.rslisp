@@ -38,10 +38,14 @@
 (document (let-pair (first second) value body ...)
   "Binds the two parts of a pair for a body.
 
-  It expands to a `match`, so it moves a pair that is not `copy`.")
+  It expands to a `match`. On an owned pair, each name moves its part unless
+  the part is `copy`, and `_` leaves its part in place. After a move, the
+  whole pair counts as moved.")
 
 (document (let-fields (type-name (name ...)) value body ...)
   "Binds the fields of a struct for a body, in field order.
 
-  Each field takes one name, and `_` skips a field. It expands to a `match`,
-  so it moves a value that is not `copy`.")
+  Each field takes one name, and `_` skips a field. It expands to a `match`.
+  On an owned struct, each name moves its field unless the field is `copy`,
+  and `_` leaves its field in place. After a move, the whole struct counts as
+  moved.")
