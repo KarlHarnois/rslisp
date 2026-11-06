@@ -64,6 +64,14 @@ const BOUND_ENTRY: &str = "(use other/person person)\n\n(rust-trait same \"std::
 const TRAIT_SHARED_VECTOR: &str = "(struct odometer (offset i64))\n\n(trait mileage\n  (first-reading (fn ((ref self) (ref (vec i64))) i64)))\n\n(impl mileage odometer\n  (first-reading (o readings) (+ (field o offset) (at readings 0))))\n\n(defn main ()\n  (println (first-reading (new odometer (offset 10)) (vec 1200))))\n";
 const GEOMETRY: &str = "(export area)\n\n(defn area (width height) \"Multiplies a width by a height.\" (* width height))\n";
 const GEOMETRY_ENTRY: &str = "(use geometry area)\n\n(defn main () (println (area 3 4)))\n";
+const DOCUMENTED_GEOMETRY: &str = "(module \"Shapes on a grid.\")\n\n(export area perimeter)\n\n(defn area (width height)\n  \"Multiplies two sides.\"\n  (* width height))\n\n(defn perimeter (width height)\n  (* 2 (+ width height)))\n\n(defn helper (x)\n  \"Not exported.\"\n  x)\n";
+const GEOMETRY_PAGE: &str = "(module geometry)\n\nShapes on a grid.\n\n(defn area (width height))\n    Multiplies two sides.\n(defn perimeter (width height))\n";
+const DOCUMENTED_ENTRY: &str =
+    "(module \"Prints an area.\")\n\n(export main)\n\n(defn main ()\n  (println 6))\n";
+const MODULE_BINDING_ENTRY: &str =
+    "(use geometry area)\n\n(def module 1)\n\n(defn main ()\n  (println (area module 3)))\n";
+const SHADOWING_GEOMETRY_ENTRY: &str =
+    "(use geometry area)\n\n(def geometry 1)\n\n(defn main ()\n  (println (area geometry 3)))\n";
 const UNDOCUMENTED_ENTRY: &str = "(defn twice (x) (* 2 x))\n\n(defn main () (println (twice 2)))\n";
 const SHADOWING_PAGE_BODY: &str = "(defrule page-body ((term) 0))\n\n(defn main () (do))\n";
 const SHADOWING_HEADER: &str = "(defrule header ((term) 0))\n\n(defn main () (do))\n";
@@ -1382,6 +1390,86 @@ fn doc_prints_the_page_of_an_imported_term() {
 }
 
 #[test]
+fn doc_prints_the_page_of_an_imported_module() {
+    let sandbox = Sandbox::new("doc_module")
+        .with_file("geometry.rslisp", DOCUMENTED_GEOMETRY)
+        .with_file("main.rslisp", GEOMETRY_ENTRY);
+    let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "(module geometry)"]);
+    assert_eq!(doc.assert_exit_code(0).stdout(), GEOMETRY_PAGE);
+}
+
+#[test]
+fn doc_prints_a_module_page_without_a_type_line() {
+    let sandbox = Sandbox::new("doc_module_types")
+        .with_file("geometry.rslisp", DOCUMENTED_GEOMETRY)
+        .with_file("main.rslisp", GEOMETRY_ENTRY);
+    let doc = sandbox.compiler(&[
+        "doc",
+        "--types",
+        "--file",
+        "main.rslisp",
+        "(module geometry)",
+    ]);
+    assert_eq!(doc.assert_exit_code(0).stdout(), GEOMETRY_PAGE);
+}
+
+#[test]
+fn doc_lists_the_exports_of_the_entry_module() {
+    let sandbox = Sandbox::new("doc_entry_module").with_file("main.rslisp", DOCUMENTED_ENTRY);
+    let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "(module main)"]);
+    assert_eq!(
+        doc.assert_exit_code(0).stdout(),
+        "(module main)\n\nPrints an area.\n\n(defn main ())\n"
+    );
+}
+
+#[test]
+fn doc_keeps_the_page_of_a_binding_named_like_a_module() {
+    let sandbox = Sandbox::new("doc_module_binding")
+        .with_file("geometry.rslisp", DOCUMENTED_GEOMETRY)
+        .with_file("main.rslisp", SHADOWING_GEOMETRY_ENTRY);
+    let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "geometry"]);
+    assert_eq!(
+        doc.assert_exit_code(0).stdout(),
+        "(def geometry)\n\nNo documentation.\n"
+    );
+}
+
+#[test]
+fn doc_reports_an_unknown_module_at_its_path_in_the_term() {
+    let sandbox = Sandbox::new("doc_unknown_module");
+    let doc = sandbox.compiler(&["doc", "(module nowhere)"]);
+    assert!(
+        doc.assert_exit_code(1)
+            .stderr()
+            .starts_with("error[L0204]: cannot find module `nowhere`\n --> <term>:1:9\n")
+    );
+}
+
+#[test]
+fn doc_finds_a_module_when_the_program_binds_the_name_module() {
+    let sandbox = Sandbox::new("doc_module_bound_head")
+        .with_file("geometry.rslisp", DOCUMENTED_GEOMETRY)
+        .with_file("main.rslisp", MODULE_BINDING_ENTRY);
+    let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "(module geometry)"]);
+    assert_eq!(doc.assert_exit_code(0).stdout(), GEOMETRY_PAGE);
+}
+
+#[test]
+fn doc_reports_a_term_that_is_no_name_or_module_as_a_program_error() {
+    for term in ["(f x)", "5"] {
+        let sandbox = Sandbox::new("doc_malformed_term");
+        let doc = sandbox.compiler(&["doc", term]);
+        assert!(
+            doc.assert_exit_code(1)
+                .stderr()
+                .starts_with("error[L0301]: a documentation lookup takes a name or a module\n"),
+            "{term}"
+        );
+    }
+}
+
+#[test]
 fn doc_prints_the_page_of_an_undocumented_term() {
     let sandbox = Sandbox::new("doc_undocumented").with_file("main.rslisp", UNDOCUMENTED_ENTRY);
     let doc = sandbox.compiler(&["doc", "--file", "main.rslisp", "twice"]);
@@ -1399,12 +1487,12 @@ fn doc_suggests_a_close_name_for_an_unknown_term() {
 }
 
 #[test]
-fn doc_rejects_a_term_that_is_not_one_name() {
+fn doc_rejects_a_term_that_is_not_one_term() {
     let sandbox = Sandbox::new("doc_not_one_name");
     let doc = sandbox.compiler(&["doc", "x y"]);
     assert_eq!(
         doc.assert_exit_code(2).stderr(),
-        "error: `x y` is not one name\n"
+        "error: `x y` is not one term\n"
     );
 }
 
@@ -1427,12 +1515,12 @@ fn doc_reports_an_unreadable_file_as_a_usage_error() {
 }
 
 #[test]
-fn doc_rejects_a_term_that_is_not_one_name_before_reading_the_file() {
+fn doc_rejects_a_term_that_is_not_one_term_before_reading_the_file() {
     let sandbox = Sandbox::new("doc_term_before_file");
     let doc = sandbox.compiler(&["doc", "--file", "missing.rslisp", "x y"]);
     assert_eq!(
         doc.assert_exit_code(2).stderr(),
-        "error: `x y` is not one name\n"
+        "error: `x y` is not one term\n"
     );
 }
 

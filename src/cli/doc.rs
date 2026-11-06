@@ -165,9 +165,9 @@ impl<'t> DocLookup<'t> {
             .read_text(Self::TERM_SOURCE, term)
             .map_err(|_| ExitStatus::UsageError)?;
         match forms.as_slice() {
-            [form] if form.as_symbol().is_some() => Ok(form.clone()),
+            [form] => Ok(form.clone()),
             _ => {
-                StandardError::write_line(format_args!("error: `{term}` is not one name"));
+                StandardError::write_line(format_args!("error: `{term}` is not one term"));
                 Err(ExitStatus::UsageError)
             }
         }
@@ -176,8 +176,23 @@ impl<'t> DocLookup<'t> {
     fn lookup_call(lookup: &str, term: &Form, source: SourceId) -> Form {
         let span = Span::new(source, term.span().range());
         let head = Form::new(FormKind::Symbol(Symbol::new(lookup)), span);
-        let name = Form::new(term.kind().clone(), span);
-        Form::new(FormKind::List(vec![head, name]), span)
+        Form::new(
+            FormKind::List(vec![head, Self::relocated(term, source)]),
+            span,
+        )
+    }
+
+    fn relocated(form: &Form, source: SourceId) -> Form {
+        let kind = match form.kind() {
+            FormKind::List(items) => FormKind::List(
+                items
+                    .iter()
+                    .map(|item| Self::relocated(item, source))
+                    .collect(),
+            ),
+            atom => atom.clone(),
+        };
+        Form::new(kind, Span::new(source, form.span().range()))
     }
 }
 
