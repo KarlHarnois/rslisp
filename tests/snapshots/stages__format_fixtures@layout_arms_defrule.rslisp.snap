@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_arms_defrule.rslisp
+---
+(defrule swap-pair
+  "Swaps the two parts of a pair."
+  (((pair a b)) (pair b a))
+  (((pair (nested a) (nested b))) (pair (nested b) (nested a)))
+  (((triple a b c) rest ...) (do (swap-pair (pair a b)) (swap-pair (pair b c)) rest ...)))
+
+---
+(defrule swap-pair
+  "Swaps the two parts of a pair."
+  (((pair a b)) (pair b a))
+  (((pair (nested a) (nested b)))
+   (pair (nested b) (nested a)))
+  (((triple a b c) rest ...)
+   (do
+     (swap-pair (pair a b))
+     (swap-pair (pair b c))
+     rest ...)))

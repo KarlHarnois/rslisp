@@ -1,0 +1,21 @@
+(use prelude/macros header-shape)
+
+(defrule when-kind
+  ((value arm ...) (match value arm ...)))
+
+(header-shape (when-kind value) :arms)
+
+(defrule without-arms
+  ((value arm ...) (match value arm ...)))
+
+(header-shape (without-arms value))
+
+(defn shows-both (value)
+  (when-kind value
+    ((kind/first part) (keep (show (rendered part)) (other)))
+    :label (keep (show (rendered part)) (other (and (a (lot (more))))))
+    (_ 0))
+  (without-arms value
+    ((kind/first part) (keep (show (rendered part)) (other)))
+    :label (keep (show (rendered part)) (other (and (a (lot (more))))))
+    (_ 0)))

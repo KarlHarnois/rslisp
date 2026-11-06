@@ -36,7 +36,7 @@
   (((test body ...) clause more ...)
    (if test (do body ...) (cond clause more ...))))
 
-(header-shape (cond))
+(header-shape (cond) :arms)
 
 (document (not value)
   "Returns the opposite of a `bool`.

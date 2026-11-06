@@ -1,0 +1,21 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_arms_comment.rslisp
+---
+(defn commented (value)
+  (match value
+    ((some part) (keep (show (rendered part)) (other))) ; a trailing note
+    ; an own-line note
+    ((none) (keep (show (rendered 0)) (other)))
+    (_ ; inside the arm
+     (keep (show (rendered 1)) (other)))))
+
+---
+(defn commented (value)
+  (match value
+    ((some part) (keep (show (rendered part)) (other))) ; a trailing note
+    ; an own-line note
+    ((none) (keep (show (rendered 0)) (other)))
+    (_ ; inside the arm
+      (keep (show (rendered 1)) (other)))))

@@ -1,0 +1,7 @@
+(defn commented (value)
+  (match value
+    ((some part) (keep (show (rendered part)) (other))) ; a trailing note
+    ; an own-line note
+    ((none) (keep (show (rendered 0)) (other)))
+    (_ ; inside the arm
+     (keep (show (rendered 1)) (other)))))

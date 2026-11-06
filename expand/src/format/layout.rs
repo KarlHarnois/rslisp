@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::block::Block;
 use super::list_plan::{Arrangement, LaterIndent, ListPlan, Unit};
@@ -30,6 +30,7 @@ pub struct LayoutEngine<'s> {
     plans: FxHashMap<usize, Rc<ListPlan>>,
     one_line_texts: FxHashMap<usize, Option<Rc<str>>>,
     choices: FxHashMap<Placement, Choice>,
+    arms: FxHashSet<usize>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -82,6 +83,7 @@ impl<'s> LayoutEngine<'s> {
             plans: FxHashMap::default(),
             one_line_texts: FxHashMap::default(),
             choices: FxHashMap::default(),
+            arms: FxHashSet::default(),
         }
     }
 
@@ -89,6 +91,12 @@ impl<'s> LayoutEngine<'s> {
         match node {
             SyntaxNode::Atom(atom) => L::text(&atom.text, column),
             SyntaxNode::List(list) => L::list(self, list, column, trailing),
+        }
+    }
+
+    pub fn mark_arm(&mut self, node: &SyntaxNode) {
+        if let SyntaxNode::List(list) = node {
+            self.arms.insert(list.id);
         }
     }
 
@@ -163,11 +171,15 @@ impl<'s> LayoutEngine<'s> {
     ) -> Option<Rc<str>> {
         let text = self.one_line_text(list)?;
         let length = text.chars().count();
-        let short = length <= Self::SHORT_LIST_LIMIT
-            || (length <= Self::SPARSE_LIST_LIMIT
-                && list.nested_lists <= Self::SPARSE_LIST_NESTED_LISTS);
-        let fits = short && column + length + trailing <= Block::WIDTH;
+        let fits = self.is_short(list, length) && column + length + trailing <= Block::WIDTH;
         fits.then_some(text)
+    }
+
+    fn is_short(&self, list: &ListNode, length: usize) -> bool {
+        let sparse = length <= Self::SPARSE_LIST_LIMIT
+            && list.nested_lists <= Self::SPARSE_LIST_NESTED_LISTS;
+        let short_arm = length <= Block::FILL_WIDTH && self.arms.contains(&list.id);
+        length <= Self::SHORT_LIST_LIMIT || sparse || short_arm
     }
 
     fn one_line_text(&mut self, list: &ListNode) -> Option<Rc<str>> {
@@ -377,7 +389,7 @@ impl<'l> ListAssembly<'l> {
             Unit::Pair(keyword, value) => {
                 let mut laid_out: L = self.entry_layout(engine, keyword, start, 0);
                 let value_start = laid_out.end_column() + Self::SEPARATOR.len();
-                let value_layout = self.entry_layout(engine, value, value_start, trailing);
+                let value_layout = self.pair_value_layout(engine, value, value_start, trailing);
                 laid_out.join(Self::SEPARATOR, value_layout);
                 laid_out
             }
@@ -397,12 +409,36 @@ impl<'l> ListAssembly<'l> {
                 L::shifted_string(&atom.text, atom.docstring_shift(start), start)
             }
             Some(atom) if self.fits_nowhere(&atom.text, trailing) => {
-                let mut laid_out = L::text(&atom.text, start);
-                laid_out.excuse_overflow(atom.text.chars().count(), trailing);
-                laid_out
+                Self::excused_atom(&atom.text, start, trailing)
+            }
+            _ if self.plan.is_arm(entry) => {
+                engine.mark_arm(node);
+                engine.node(node, start, trailing)
             }
             _ => engine.node(node, start, trailing),
         }
+    }
+
+    fn pair_value_layout<L: LaidOut>(
+        &self,
+        engine: &mut LayoutEngine<'_>,
+        value: usize,
+        start: usize,
+        trailing: usize,
+    ) -> L {
+        let node = &self.list.entries[value].node;
+        match node.as_atom() {
+            Some(atom) if self.fits_nowhere(&atom.text, trailing) => {
+                Self::excused_atom(&atom.text, start, trailing)
+            }
+            _ => engine.node(node, start, trailing),
+        }
+    }
+
+    fn excused_atom<L: LaidOut>(text: &str, start: usize, trailing: usize) -> L {
+        let mut laid_out = L::text(text, start);
+        laid_out.excuse_overflow(text.chars().count(), trailing);
+        laid_out
     }
 
     fn fits_nowhere(&self, text: &str, trailing: usize) -> bool {

@@ -1,0 +1,4 @@
+(defn describe (hits)
+  (cond ((< (abs hits) (limit)) (println (str "few: " (show hits))))
+        ((> (abs hits) (limit)) (println (str "many hits, sorted: " (show (sorted hits)))))
+        (true (println "exactly the limit"))))

@@ -100,7 +100,7 @@
 
 (header-shape (macro parameters))
 
-(header-shape (match value))
+(header-shape (match value) :arms)
 
 (header-shape (new name))
 
