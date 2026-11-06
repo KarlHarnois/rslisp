@@ -1,0 +1,43 @@
+(type empty-like
+  (where (a) (fn ((ref a)) (vec a))))
+
+(defn empty-like (sample) (vec))
+
+(type nothing-like
+  (where (a) (fn ((ref a)) (option a))))
+
+(defn nothing-like (sample) none)
+
+(type wrap (where (a) (fn (a) (vec a))))
+
+(defn wrap (item) (vec item))
+
+(type second-of
+  (where (a b) (fn ((ref a) b) b)))
+
+(defn second-of (ignored value) value)
+
+(defn main ()
+  (let word "a")
+  (let view (ref word))
+  (let deep-view (ref view))
+  (println (len (empty-like view)))
+  (println (len (empty-like deep-view)))
+  (println (len (empty-like (ref view))))
+  (println (len (wrap view)))
+  (println (match (nothing-like view)
+             ((some _) "some")
+             (none "none")))
+  (println (match (nothing-like deep-view)
+             ((some _) "some")
+             (none "none")))
+  (println (infer (empty-like view)))
+  (println (infer (empty-like deep-view)))
+  (println (second-of view 2))
+  (let words (vec word))
+  (push! words word)
+  (println (len (empty-like (at words 0))))
+  (let number 1)
+  (let inner (ref number))
+  (let outer (ref inner))
+  (println (len (empty-like outer))))

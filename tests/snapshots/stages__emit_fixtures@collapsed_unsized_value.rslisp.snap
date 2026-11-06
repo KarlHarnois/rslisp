@@ -1,0 +1,72 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/collapsed_unsized_value.rslisp
+---
+fn empty_like<A>(sample: &A) -> Vec<A> {
+    Vec::new()
+}
+
+fn nothing_like<A>(sample: &A) -> Option<A> {
+    None
+}
+
+fn wrap<A>(item: A) -> Vec<A> {
+    vec![item]
+}
+
+fn second_of<A: ?Sized, B>(ignored: &A, value: B) -> B {
+    value
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let word = "a";
+    let view = &word;
+    let deep_view = &view;
+    println!("{}", empty_like(view).len());
+    println!("{}", empty_like(*deep_view).len());
+    println!("{}", empty_like(&view).len());
+    println!("{}", wrap(view).len());
+    println!(
+        "{}",
+        match nothing_like(view) {
+            Some(_) => "some",
+            None => "none",
+        }
+    );
+    println!(
+        "{}",
+        match nothing_like(*deep_view) {
+            Some(_) => "some",
+            None => "none",
+        }
+    );
+    println!("{}", "(vec (ref str))");
+    println!("{}", "(vec (ref str))");
+    println!("{}", second_of(*view, 2_i64));
+    let mut words = vec![word];
+    words.push(word);
+    println!("{}", empty_like(&words[0]).len());
+    let number: i64 = 1;
+    let inner = &number;
+    let outer = &inner;
+    println!("{}", empty_like(*outer).len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

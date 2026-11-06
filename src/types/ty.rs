@@ -94,6 +94,21 @@ impl Type {
         }
     }
 
+    pub fn holds_outside_references(&self, var: TypeVar) -> bool {
+        match self {
+            Type::Var(found) => *found == var,
+            Type::Ref(_, referent) | Type::Mut(_, referent)
+                if matches!(**referent, Type::Var(_)) =>
+            {
+                false
+            }
+            other => other
+                .parts()
+                .into_iter()
+                .any(|part| part.holds_outside_references(var)),
+        }
+    }
+
     pub fn contains_var(&self, var: TypeVar) -> bool {
         self.any_part(&|part| *part == Type::Var(var))
     }

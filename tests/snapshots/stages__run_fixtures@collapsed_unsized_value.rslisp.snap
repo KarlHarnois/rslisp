@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/collapsed_unsized_value.rslisp
+---
+0
+0
+0
+1
+none
+none
+(vec (ref str))
+(vec (ref str))
+2
+0
+0
