@@ -38,6 +38,7 @@ pub trait CompileTimeHost {
     fn form_location(&self, form: &Form) -> String;
     fn program_modules(&self) -> Vec<Symbol>;
     fn module_exports(&self, path: &Symbol, span: Span) -> Result<Vec<Symbol>, Diagnostic>;
+    fn module_symbol(&self, path: &Symbol, span: Span) -> Result<Symbol, Diagnostic>;
 }
 
 enum Step {

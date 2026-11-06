@@ -105,7 +105,11 @@ impl ModuleSources {
     }
 
     pub fn is_written(path: &ModulePath) -> bool {
-        !Self::is_prelude(path) && ![Self::KERNEL, Self::CODE].contains(&path.as_str())
+        !Self::is_prelude(path) && !Self::is_compiler_provided(path)
+    }
+
+    pub fn is_compiler_provided(path: &ModulePath) -> bool {
+        [Self::KERNEL, Self::CODE].contains(&path.as_str())
     }
 
     pub fn relative_name<'n>(&self, name: &'n str) -> &'n str {

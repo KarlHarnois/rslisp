@@ -39,6 +39,16 @@ impl<'a> ProgramOperations<'a> {
         Ok(self.symbols(exports))
     }
 
+    pub fn module_symbol(&self, host: &mut dyn CompileTimeHost) -> Result<Value, Diagnostic> {
+        self.arguments.expect_count(1)?;
+        let path = self.arguments.form(0)?;
+        let module = host.module_symbol(self.arguments.symbol(0)?, path.span())?;
+        Ok(Value::Form(Form::new(
+            FormKind::Symbol(module),
+            self.call_site,
+        )))
+    }
+
     fn symbols(&self, symbols: Vec<Symbol>) -> Value {
         let forms = symbols
             .into_iter()

@@ -1,0 +1,8 @@
+(use code add-module-note nth)
+
+(def remember
+  (macro (form)
+    (add-module-note (quote sightings) (nth form 1))
+    (quote (do))))
+
+(remember "a heron")
