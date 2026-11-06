@@ -1,4 +1,4 @@
-(use prelude/test assert deftest)
+(use prelude/test assert deftest run-tests)
 
 (deftest)
 
@@ -12,3 +12,27 @@
 
 (deftest compares-an-empty-list
   (assert (= () 1)))
+
+(defn runs-nothing () (run-tests))
+
+(defn runs-a-number () (run-tests 1))
+
+(defn runs-without-a-marker-text () (run-tests :marker))
+
+(defn runs-with-a-number-marker () (run-tests :marker 1))
+
+(defn runs-with-another-key () (run-tests :label "text"))
+
+(defn runs-with-half-an-option ()
+  (run-tests :marker "text" :untested))
+
+(defn runs-with-another-option ()
+  (run-tests :marker "text" :other module))
+
+(defn runs-with-a-text-module ()
+  (run-tests :marker "text" :untested "module"))
+
+(defn runs-with-a-text-key () (run-tests "marker" "text"))
+
+(defn runs-with-a-number-marker-and-a-module ()
+  (run-tests :marker 1 :untested module))
