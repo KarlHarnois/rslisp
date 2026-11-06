@@ -3,6 +3,7 @@ use std::rc::Rc;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::functions::{FunctionTable, ParamMode};
+use super::uncoerced_parameters::UncoercedMethodParameters;
 use crate::core::{BindingId, ReferenceKind};
 use crate::types::{
     Borrow, CopyRules, Lifetime, Type, TypedArgument, TypedBodyItem, TypedControl, TypedDefinition,
@@ -15,6 +16,7 @@ pub struct ModeRewrite<'a> {
     added_references: FxHashSet<BindingId>,
     copy_binders: FxHashSet<BindingId>,
     function_params: FxHashMap<BindingId, Vec<Type>>,
+    uncoerced_method_parameters: UncoercedMethodParameters,
     modes: &'a FxHashMap<BindingId, ParamMode>,
 }
 
@@ -24,6 +26,7 @@ impl<'a> ModeRewrite<'a> {
         modes: &'a FxHashMap<BindingId, ParamMode>,
         slices: &'a FxHashMap<BindingId, Type>,
         copy: &CopyRules,
+        uncoerced_method_parameters: UncoercedMethodParameters,
     ) -> Self {
         let mut param_types = FxHashMap::default();
         let mut function_params = FxHashMap::default();
@@ -53,6 +56,7 @@ impl<'a> ModeRewrite<'a> {
             added_references: FxHashSet::default(),
             copy_binders: Self::copy_binders(functions, copy),
             function_params,
+            uncoerced_method_parameters,
             modes,
         }
     }
@@ -330,16 +334,23 @@ impl<'a> ModeRewrite<'a> {
             .cloned()
             .unwrap_or_else(|| instantiated.to_vec());
         for (position, (argument, param)) in arguments.iter_mut().zip(&params).enumerate() {
-            Self::dereference_uncoerced_borrows(argument, param);
+            if self.stops_coercion(function, position, param) {
+                Self::dereference_collapsed_borrow(argument);
+            }
             let param = Self::instantiated_at_shared_reference(param, instantiated.get(position));
             self.borrow_for(argument, param);
         }
     }
 
-    fn dereference_uncoerced_borrows(argument: &mut TypedArgument, param: &Type) {
-        if let Borrow::Collapse(levels) = argument.borrow
-            && param.is_generic_behind_shared_references()
-        {
+    fn stops_coercion(&self, function: BindingId, position: usize, param: &Type) -> bool {
+        param.is_generic_behind_shared_references()
+            || self
+                .uncoerced_method_parameters
+                .contains(function, position)
+    }
+
+    fn dereference_collapsed_borrow(argument: &mut TypedArgument) {
+        if let Borrow::Collapse(levels) = argument.borrow {
             argument.borrow = Borrow::Deref(levels);
         }
     }

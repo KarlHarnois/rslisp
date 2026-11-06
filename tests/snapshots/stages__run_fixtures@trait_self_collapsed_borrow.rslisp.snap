@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/trait_self_collapsed_borrow.rslisp
+---
+true
+false
+true
+true
+1

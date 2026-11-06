@@ -1,0 +1,31 @@
+(defstruct sized-thing
+  :size i64)
+
+(trait matcher
+  (type item)
+  (matches (fn (i64 (ref self)) bool))
+  (matches-next (fn (i64 (ref self)) bool)
+                (matches (+ argument-0 1) argument-1))
+  (held-by (fn ((ref item) (ref self)) bool))
+  (deep-size (fn ((ref (ref self))) i64)))
+
+(impl matcher sized-thing
+  (type item i64)
+  (matches (n thing) (= n (:size thing)))
+  (held-by (value thing)
+           (= value (:size thing)))
+  (deep-size (thing) (:size thing)))
+
+(defn main ()
+  (let thing (->sized-thing 1))
+  (let inner (ref thing))
+  (let outer (ref inner))
+  (let outermost (ref outer))
+  (let number 1)
+  (let number-view (ref number))
+  (let number-outer (ref number-view))
+  (println (matches 1 outer))
+  (println (matches 2 outermost))
+  (println (matches-next 0 outer))
+  (println (held-by number-outer inner))
+  (println (deep-size outermost)))

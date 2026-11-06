@@ -33,6 +33,7 @@ mod stored_definitions;
 mod subtree;
 mod tail_calls;
 mod trait_slices;
+mod uncoerced_parameters;
 mod update_bases;
 mod update_order;
 mod usage;
@@ -60,6 +61,7 @@ use rewrite::ModeRewrite;
 use slices::ShrinkSelection;
 use stored::StoredClosures;
 use stored_definitions::StoredDefinitions;
+use uncoerced_parameters::UncoercedMethodParameters;
 use values::FunctionValueModes;
 
 pub use changes::InPlaceChanges;
@@ -104,7 +106,13 @@ impl OwnershipChecker {
             &program.structs,
             &program.enums,
         );
-        let mut rewrite = ModeRewrite::new(&functions, &modes, slices.parameters(), &copy);
+        let mut rewrite = ModeRewrite::new(
+            &functions,
+            &modes,
+            slices.parameters(),
+            &copy,
+            UncoercedMethodParameters::of(program),
+        );
         rewrite.apply(program);
         slices.rewrite_declarations(program);
         FunctionValueModes::apply(program, rewrite.function_params())
