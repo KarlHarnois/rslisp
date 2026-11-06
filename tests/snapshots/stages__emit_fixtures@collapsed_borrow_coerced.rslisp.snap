@@ -1,0 +1,56 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/collapsed_borrow_coerced.rslisp
+---
+fn total(value: &i64) -> i64 {
+    *value + 1
+}
+
+fn count_items<A>(items: &[A]) -> usize {
+    items.len()
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let number: i64 = 1;
+    let inner = &number;
+    let outer = &inner;
+    let equal = |left: i64, right: i64| left == right;
+    println!("{}", equal(**outer, **outer));
+    println!("{}", {
+        let template_argument_0 = outer;
+        let template_argument_1 = outer;
+        let template_argument_2 = |left: &i64, right: &i64| *left == *right;
+        template_argument_2(template_argument_0, template_argument_1)
+    });
+    println!("{}", total(outer));
+    let items: Vec<i64> = vec![1_i64, 2_i64];
+    let view = &items;
+    let deep_view = &view;
+    println!("{}", count_items(deep_view));
+    let mut names = vec!["a", "b"];
+    names.push("c");
+    let matches = names
+        .iter()
+        .map(|name: &&str| **name == *"a")
+        .collect::<Vec<_>>();
+    println!("{}", matches.len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

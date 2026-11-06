@@ -1,0 +1,76 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/collapsed_generic_borrow.rslisp
+---
+fn check_both<A, B>(left: &A, right: &B, equal: impl FnOnce(&A, &B) -> bool) -> bool {
+    equal(left, right)
+}
+
+fn apply_to<A: ?Sized>(value: &A, test: impl FnOnce(&A) -> bool) -> bool {
+    test(value)
+}
+
+fn is_same<A: PartialEq>(left: A, right: A) -> bool {
+    left == right
+}
+
+fn check_reference<A>(value: &&A, test: impl FnOnce(&&A) -> bool) -> bool {
+    test(value)
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let number: i64 = 1;
+    let inner = &number;
+    let outer = &inner;
+    let outermost = &outer;
+    println!(
+        "{}",
+        check_both(*outer, *outer, |left: &i64, right: &i64| *left == *right)
+    );
+    println!(
+        "{}",
+        check_both(**outermost, **outermost, |left: &i64, right: &i64| *left
+            == *right)
+    );
+    println!(
+        "{}",
+        check_both(*outer, **outermost, |left: &i64, right: &i64| *left
+            == *right)
+    );
+    let word = "a";
+    let view = &word;
+    let deep_view = &view;
+    println!("{}", apply_to(*view, |text: &str| text == "a"));
+    println!("{}", apply_to(**deep_view, |text: &str| text == "b"));
+    let mut views = vec![view];
+    let mut deep_views = vec![deep_view];
+    views.push(view);
+    deep_views.push(deep_view);
+    println!("{}", apply_to(*views[0], |text: &str| text == "a"));
+    println!("{}", apply_to(**deep_views[0], |text: &str| text == "a"));
+    println!("{}", check_reference(*outermost, |item: &&i64| **item > 0));
+    let name = "ada".to_string();
+    let borrowed = &name;
+    let reborrowed = &borrowed;
+    println!("{}", is_same(borrowed, *reborrowed));
+    println!("{}", is_same(*reborrowed, borrowed))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

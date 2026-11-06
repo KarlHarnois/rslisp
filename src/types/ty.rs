@@ -87,6 +87,13 @@ impl Type {
         matches!(self, Type::Ref(..) | Type::Mut(..))
     }
 
+    pub fn is_generic_behind_shared_references(&self) -> bool {
+        match self {
+            Type::Ref(_, referent) => referent.is_generic_behind_shared_references(),
+            other => matches!(other, Type::Generic(_)),
+        }
+    }
+
     pub fn contains_var(&self, var: TypeVar) -> bool {
         self.any_part(&|part| *part == Type::Var(var))
     }
