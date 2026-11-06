@@ -2063,6 +2063,19 @@ impl TypeChecker {
         parameter: &Type,
         value: &TypedExpr,
     ) -> Result<Borrow, Diagnostic> {
+        match self.layers_above_held_view(callee, parameter, value) {
+            Some(layers) => self.pass_held_view(parameter, value, layers),
+            None => self.pass_to_callee(callee, position, parameter, value),
+        }
+    }
+
+    fn pass_to_callee(
+        &mut self,
+        callee: Option<&TypedExpr>,
+        position: usize,
+        parameter: &Type,
+        value: &TypedExpr,
+    ) -> Result<Borrow, Diagnostic> {
         let call = match callee.map(|callee| &callee.kind) {
             Some(TypedExprKind::Leaf(TypedLeaf::Global(binding))) => *binding,
             _ => return self.pass_argument(parameter, value),
@@ -2094,6 +2107,59 @@ impl TypeChecker {
             .map_err(|diagnostic| {
                 self.explain_assumed_collection(call, position, &value.ty, diagnostic)
             })
+    }
+
+    fn layers_above_held_view(
+        &self,
+        callee: Option<&TypedExpr>,
+        parameter: &Type,
+        value: &TypedExpr,
+    ) -> Option<usize> {
+        let callee = callee?;
+        if !self.may_collapse(parameter, &value.ty) || self.passes_as_written(value) {
+            return None;
+        }
+        let parameter = self.unifier.resolve(parameter);
+        let argument = self.unifier.resolve(&value.ty);
+        let Type::Var(variable) = Self::innermost_referent(&parameter) else {
+            return None;
+        };
+        let layers =
+            Self::reference_depth(&argument).checked_sub(Self::reference_depth(&parameter) + 1)?;
+        let holds_view =
+            Self::is_unsized_type(&self.rust_types, Self::innermost_referent(&argument))
+                && self
+                    .unifier
+                    .resolve(&callee.ty)
+                    .holds_outside_references(*variable);
+        holds_view.then_some(layers)
+    }
+
+    fn may_collapse(&self, parameter: &Type, argument: &Type) -> bool {
+        matches!(self.unifier.shallow(parameter), Type::Ref(..))
+            && self.is_nested_reference(argument)
+    }
+
+    fn is_nested_reference(&self, value: &Type) -> bool {
+        match self.unifier.shallow(value) {
+            Type::Ref(_, referent) => matches!(self.unifier.shallow(&referent), Type::Ref(..)),
+            _ => false,
+        }
+    }
+
+    fn pass_held_view(
+        &mut self,
+        parameter: &Type,
+        value: &TypedExpr,
+        layers: usize,
+    ) -> Result<Borrow, Diagnostic> {
+        let argument = self.unifier.resolve(&value.ty);
+        let view = Self::without_references(&argument, layers);
+        let borrow = match layers {
+            0 => Borrow::None,
+            _ => Borrow::Collapse(layers),
+        };
+        self.pass(parameter, &view, value.span, borrow)
     }
 
     fn explain_assumed_collection(
