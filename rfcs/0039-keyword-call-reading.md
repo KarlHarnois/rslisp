@@ -1,6 +1,6 @@
 # RFC 0039: Reading keyword pairs in a call
 
-**Status:** Accepted
+**Status:** Accepted. Its rule 2 and its rejection of option B are superseded by 0059.
 **Date:** 2026-10-27
 
 ## Problem

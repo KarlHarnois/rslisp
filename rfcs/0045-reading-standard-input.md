@@ -1,6 +1,6 @@
 # RFC 0045: Reading standard input
 
-**Status:** Accepted
+**Status:** Accepted. Its rule that a clause of a `rust` form is a type and a template is superseded by 0059, which lets a clause name a trait.
 **Date:** 2026-11-02
 
 ## Problem

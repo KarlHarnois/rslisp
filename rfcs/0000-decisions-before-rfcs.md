@@ -35,7 +35,7 @@ This file records the decisions the project owner made before RFCs existed. Each
 - **Decision:** Variants take positional payloads by default: `(circle f64)`, `(rect f64 f64)`, and a bare `point` for no payload. A variant that wants names holds an inline `struct` payload, as `(rect (struct (width f64) (height f64)))`, and construction and patterns stay positional for every variant.
 - **Rejected:** Named fields in every variant; a union of separate structs; a prelude `defenum`; a flat form with separators.
 - **Why:** Few rules keep the syntax simple, since after a variant's name comes types or one `struct` body, and Rust uses tuple and struct variants the same way.
-- **Rule:** [9. Enums and `match`](../docs/language.md#9-enums-and-match)
+- **Rule:** Superseded by [RFC 0059](0059-consistent-syntax.md) for the `struct` payload spelling, the rejection of a prelude `defenum` and of a flat form, and the rule that construction and patterns stay positional; [9. Enums and `match`](../docs/language.md#9-enums-and-match)
 
 ## D6. Where a type definition names its parameters
 
@@ -105,7 +105,7 @@ This file records the decisions the project owner made before RFCs existed. Each
 - **Decision:** `(enum (pair a b) (rust "({0}, {1})") (pair a b))` makes a `rust` clause hold a type template, so a one-variant enum with one emits as a Rust tuple. Build with the prelude function `(pair 1 "a")`, match with `(pair index line)`, the same word, as `(some x)` does for `option`, and destructure with `let-pair`; pairs get `partial-ord` and `ord`, and `enumerate` emits `{0}.enumerate()`.
 - **Rejected:** A prelude enum `Pair::Of` with no compiler change, which converts every tuple from `enumerate` and `zip` and names a prelude module path in a template.
 - **Why:** The emitted Rust uses Rust's own tuples, and the change extends an existing clause instead of adding a kernel form.
-- **Rule:** [9. Enums and `match`](../docs/language.md#9-enums-and-match)
+- **Rule:** Superseded by [RFC 0059](0059-consistent-syntax.md) for `let-pair`; [9. Enums and `match`](../docs/language.md#9-enums-and-match)
 
 ## D16. How `parse` names its target and its error type
 
@@ -175,7 +175,7 @@ This file records the decisions the project owner made before RFCs existed. Each
 - **Decision:** Struct patterns work in `match`, positionally in field order with `_` to skip, as variant patterns do: `((parsed node _) (tree/branch node))`. An owned struct moves its fields out, a borrowed one binds borrows, and the prelude adds `let-fields` over `match`, as `let-pair` is.
 - **Rejected:** A `take` form over a field, a new kernel form for one field at a time; a field read that moves when an owned value is expected, which makes every read depend on context.
 - **Why:** The existing `match` and its positional patterns grow to structs, with no new kernel form.
-- **Rule:** [9. Enums and `match`](../docs/language.md#9-enums-and-match)
+- **Rule:** Superseded by [RFC 0059](0059-consistent-syntax.md) for `let-fields`, and for struct patterns as positional only; [9. Enums and `match`](../docs/language.md#9-enums-and-match)
 
 ## D26. Closures that consume, change or read their captures
 
@@ -224,7 +224,7 @@ This file records the decisions the project owner made before RFCs existed. Each
 - **Decision:** A template marks each name its Rust text binds as `{!name}`, renamed only on a clash. `ok`, `err` and `some` are prelude macros over the variant constructors, so `(ok (try e))` emits `e` when the `try` converts nothing, and they can no longer be passed as function values; an enum clause `(rust "Result" bare)` emits bare `Ok`, `Err`, `Some` and `None`.
 - **Rejected:** Discovering closure binders in template text; reserving template names in the program; keeping `ok` and `err` as functions with `Ok(e?)`.
 - **Why:** Correct programs, hand-written Rust, and no compiler knowledge of prelude template text.
-- **Rule:** [Hygiene](../docs/language.md#hygiene) and [9. Enums and `match`](../docs/language.md#9-enums-and-match)
+- **Rule:** Superseded by [RFC 0059](0059-consistent-syntax.md) for passing `ok`, `err` and `some` as function values; [Hygiene](../docs/language.md#hygiene) and [9. Enums and `match`](../docs/language.md#9-enums-and-match)
 
 ## D33. Milestone 11, written lifetimes
 

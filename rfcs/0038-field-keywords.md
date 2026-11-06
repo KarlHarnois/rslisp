@@ -1,6 +1,6 @@
 # RFC 0038: Field keywords
 
-**Status:** Accepted. Its construction call rule is superseded by 0039. Its field view rule is superseded by 0040.
+**Status:** Accepted. Its construction call rule is superseded by 0039. Its field view rule is superseded by 0040. Its rule that a call with one argument per field is positional, for a keyword argument, is superseded by 0059.
 **Date:** 2026-10-26
 
 ## Problem

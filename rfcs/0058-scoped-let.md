@@ -1,6 +1,6 @@
 # RFC 0058: A scoped let and a flat local
 
-**Status:** Accepted
+**Status:** Accepted. Its statement that `let-pair` and `let-fields` keep their names, and their place in the migration, are superseded by 0059, which replaces them with `let-match`.
 **Date:** 2026-11-02
 
 ## Problem
