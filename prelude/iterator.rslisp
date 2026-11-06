@@ -2,7 +2,7 @@
 (use prelude/pair pair)
 (use prelude/number add integer number ord)
 (use prelude/syntax defn)
-(use prelude/macros defrule)
+(use prelude/macros defrule document)
 (use prelude/vec iter)
 (use prelude/sequence len)
 
@@ -70,7 +70,12 @@
   (where ((n number))
     (fn ((iterator n)) n)))
 
-(defn sum (values) (reduce values 0 add))
+(defn sum (values)
+  "Adds the items of an iterator from left to right.
+
+  An empty iterator gives 0. An overflow panics in a debug build, as `add`
+  does. A vector or a map passes as its `iter`."
+  (reduce values 0 add))
 
 (def count-items
   (rust "{0}.count()"
@@ -151,3 +156,102 @@
     (where (a)
       (fn ((iterator a) (fn-mut ((ref a)) bool))
         (iterator a)))))
+
+(document (range start end)
+  "Returns an iterator over the integers from `start` up to but not `end`.
+
+  It is empty when `start` is not below `end`.")
+
+(document (map items function)
+  "Returns an iterator over a function's result for each item.
+
+  It is lazy: the function runs when a later call reads the item. A vector or
+  a map passes as its `iter`.")
+
+(document (filter items test)
+  "Returns an iterator over the items that pass a test.
+
+  `test` takes a `(ref a)`. It is lazy: the test runs when a later call reads
+  the item. A vector or a map passes as its `iter`.")
+
+(document (reduce items step)
+  "Combines the items into one value with a function of two arguments.
+
+  `step` takes the value so far and the next item. The first item starts the
+  value, and the call returns an `option`, `none` for no items.
+
+  `(reduce items initial step)` starts from `initial` and returns the value
+  itself. A vector or a map passes as its `iter`.")
+
+(document (for-each items function)
+  "Calls a function on each item, in order.
+
+  The function must return unit, and so does the call. A vector or a map
+  passes as its `iter`.")
+
+(document (enumerate items)
+  "Returns an iterator that pairs each item's index with the item.
+
+  Each result is a `(pair usize a)`, and the index starts at 0. A vector or a
+  map passes as its `iter`.")
+
+(document (zip left right)
+  "Returns an iterator over pairs of items from two iterators.
+
+  It ends when the shorter iterator ends. A vector or a map passes as its
+  `iter`.")
+
+(document (count items)
+  "Returns the number of items of an iterator as a `usize`.
+
+  `(count (iter collection))` emits the collection's `len`, and any other call
+  runs through the items. A vector or a map passes as its `iter`.")
+
+(document (max items)
+  "Returns the largest item as an `option`.
+
+  It returns `none` for no items, and the last of equal items. The items
+  implement `ord`, so a float is an error. A vector or a map passes as its
+  `iter`.")
+
+(document (min items)
+  "Returns the smallest item as an `option`.
+
+  It returns `none` for no items, and the first of equal items. The items
+  implement `ord`, so a float is an error. A vector or a map passes as its
+  `iter`.")
+
+(document (max-by-key items key)
+  "Returns the item with the largest key as an `option`.
+
+  `key` takes a `(ref a)` and returns a value that implements `ord`. The call
+  returns `none` for no items, and the last of equal keys. A vector or a map
+  passes as its `iter`.")
+
+(document (any? items test)
+  "Returns whether any item passes a test.
+
+  It stops at the first item that passes, and no items give `false`. `test`
+  takes the item itself. A vector or a map passes as its `iter`.")
+
+(document (every? items test)
+  "Returns whether every item passes a test.
+
+  It stops at the first item that fails, and no items give `true`. `test`
+  takes the item itself. A vector or a map passes as its `iter`.")
+
+(document (find items test)
+  "Returns the first item that passes a test as an `option`.
+
+  It returns `none` when no item passes. `test` takes a `(ref a)`. A vector or
+  a map passes as its `iter`.")
+
+(document (take items limit)
+  "Returns an iterator over at most the first `limit` items.
+
+  A vector or a map passes as its `iter`.")
+
+(document (take-while items test)
+  "Returns an iterator over the items before the first that fails a test.
+
+  `test` takes a `(ref a)`. A vector or a map passes as its `iter`.")
