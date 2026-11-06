@@ -1,0 +1,6 @@
+(defmacro bind-open ()
+  (template (let held (vec))))
+
+(defn main ()
+  (bind-open)
+  (println "done"))

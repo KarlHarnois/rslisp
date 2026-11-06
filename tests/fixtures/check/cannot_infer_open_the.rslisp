@@ -1,0 +1,3 @@
+(defn main ()
+  (let v (the (vec _) (vec)))
+  (println "done"))

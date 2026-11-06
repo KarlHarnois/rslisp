@@ -37,25 +37,53 @@ impl Label {
 }
 
 #[derive(Clone, Debug)]
-pub struct Suggestion {
+pub struct Edit {
     span: Span,
     replacement: String,
 }
 
-impl Suggestion {
-    pub fn new(span: Span, replacement: impl Into<String>) -> Self {
-        Self {
-            span,
-            replacement: replacement.into(),
-        }
-    }
-
+impl Edit {
     pub fn span(&self) -> Span {
         self.span
     }
 
     pub fn replacement(&self) -> &str {
         &self.replacement
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Suggestion {
+    edits: Vec<Edit>,
+}
+
+impl Suggestion {
+    pub fn new(span: Span, replacement: impl Into<String>) -> Self {
+        Self {
+            edits: vec![Edit {
+                span,
+                replacement: replacement.into(),
+            }],
+        }
+    }
+
+    pub fn wrapping(span: Span, opening: impl Into<String>, closing: impl Into<String>) -> Self {
+        Self {
+            edits: vec![
+                Edit {
+                    span: span.start(),
+                    replacement: opening.into(),
+                },
+                Edit {
+                    span: span.end(),
+                    replacement: closing.into(),
+                },
+            ],
+        }
+    }
+
+    pub fn edits(&self) -> &[Edit] {
+        &self.edits
     }
 }
 

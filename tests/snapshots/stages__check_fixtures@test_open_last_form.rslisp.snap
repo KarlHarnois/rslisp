@@ -7,14 +7,20 @@ error[L0407]: type annotations needed
  --> check/test_open_last_form.rslisp:3:35
   |
 3 | (deftest ends-with-an-open-option none)
-  |                                   ^^^^ cannot infer the type of this value
+  |                                   ^^^^ cannot infer the type `(option _)` of this value
   |
-  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
+help: write the type with `the`, and replace each `_` with a type
+  |
+3 | (deftest ends-with-an-open-option (the (option _) none))
+  |                                   +++++++++++++++     +
 
 error[L0407]: type annotations needed
  --> check/test_open_last_form.rslisp:5:35
   |
 5 | (deftest ends-with-an-open-vector (vec))
-  |                                   ^^^^^ cannot infer the type of this value
+  |                                   ^^^^^ cannot infer the type `(vec _)` of this value
   |
-  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
+help: write the type with `the`, and replace each `_` with a type
+  |
+5 | (deftest ends-with-an-open-vector (the (vec _) (vec)))
+  |                                   ++++++++++++      +

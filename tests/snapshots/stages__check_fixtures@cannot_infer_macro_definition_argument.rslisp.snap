@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/cannot_infer_macro_definition_argument.rslisp
+---
+error[L0407]: type annotations needed
+ --> check/cannot_infer_macro_definition_argument.rslisp:7:9
+  |
+7 | (m held (open-one))
+  |         ^^^^^^^^^^ cannot infer the type `(vec _)` of this value
+  |
+help: write the type with `the`, and replace each `_` with a type
+  |
+7 | (m held (the (vec _) (open-one)))
+  |         ++++++++++++           +

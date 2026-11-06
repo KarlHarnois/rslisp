@@ -2053,6 +2053,22 @@ fn eval_reports_an_open_type_on_the_form() {
 }
 
 #[test]
+fn eval_wraps_a_lone_open_form() {
+    let sandbox = Sandbox::new("eval_lone_open_form").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "session.rslisp", "(vec)"]);
+    insta::assert_snapshot!(eval.assert_exit_code(1).stderr());
+    assert_eq!(eval.stdout(), "");
+}
+
+#[test]
+fn eval_wraps_the_innermost_open_value_of_a_form() {
+    let sandbox = Sandbox::new("eval_inner_open_type").with_file("session.rslisp", SESSION);
+    let eval = sandbox.compiler(&["eval", "session.rslisp", "(some none)"]);
+    insta::assert_snapshot!(eval.assert_exit_code(1).stderr());
+    assert_eq!(eval.stdout(), "");
+}
+
+#[test]
 fn eval_reports_a_diagnostic_of_the_module_and_runs_nothing() {
     let sandbox = Sandbox::new("eval_module_error").with_file("geometry.rslisp", AREA_OF_A_STRING);
     let eval = sandbox.compiler(&["eval", "geometry.rslisp", "(println \"never\")"]);

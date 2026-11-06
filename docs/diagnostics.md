@@ -75,6 +75,8 @@ help: a function with a similar name exists
 
 **Report an unresolved type variable once, at the innermost value whose type holds it.** The type stage visits a value's parts before the value. On a call it visits the arguments, then the call, then the callee, so a callee reports only a variable that neither an argument nor the result holds. Variables that inference merges later count as one.
 
+**Wrap the labeled value in `the`.** The help of `L0407` is a fix that writes the value's open type around the value, with `_` for each unresolved part. If the label's text is not a value the user wrote, such as a binder or a form inside a macro's expansion, the help names `the` and a `type` signature in words. A value that an annotated `let` or a `the` already holds labels that form, with the same help.
+
 **Say so when no annotation can help.** A variable that only a bound holds reports `L0407` at the function that brought the bound, and its help says that the function's signature must change.
 
 ## Tests

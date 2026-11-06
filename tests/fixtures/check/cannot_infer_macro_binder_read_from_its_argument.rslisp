@@ -1,0 +1,13 @@
+(use code nth)
+
+(defn open (x) (vec))
+
+(def it 1)
+
+(defmacro tap (form)
+  (template (let (unquote (nth form 1))
+              (unquote form))))
+
+(defn main ()
+  (tap (open it))
+  (println "done"))

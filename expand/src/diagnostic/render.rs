@@ -149,12 +149,17 @@ impl<'a> DiagnosticRenderer<'a> {
     }
 
     fn patched_snippet<'d>(&'d self, suggestion: &'d Suggestion) -> Snippet<'d, Patch<'d>> {
-        let span = suggestion.span();
-        let window = self.window(span.source(), std::iter::once(span.range()));
-        self.snippet(span.source(), &window).patch(Patch::new(
-            window.relative(span.range()),
-            suggestion.replacement(),
-        ))
+        let edits = suggestion.edits();
+        let source = edits[0].span().source();
+        let window = self.window(source, edits.iter().map(|edit| edit.span().range()));
+        edits
+            .iter()
+            .fold(self.snippet(source, &window), |snippet, edit| {
+                snippet.patch(Patch::new(
+                    window.relative(edit.span().range()),
+                    edit.replacement(),
+                ))
+            })
     }
 
     fn snippet<'d, T: Clone>(&'d self, source: SourceId, window: &SourceWindow) -> Snippet<'d, T> {

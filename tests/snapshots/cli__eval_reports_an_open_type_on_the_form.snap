@@ -10,6 +10,5 @@ error[L0407]: type annotations needed
   |
 help: write the type with `the`, and replace each `_` with a type
   |
-1 - (println "never") none
-1 + (println "never") (the (option _) none)
-  |
+1 | (println "never") (the (option _) none)
+  |                   +++++++++++++++     +

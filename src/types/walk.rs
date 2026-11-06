@@ -3,8 +3,8 @@ use std::rc::Rc;
 use crate::core::BindingId;
 
 use super::typed::{
-    TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda,
-    TypedLeaf, TypedStructExpr,
+    LetValue, TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind,
+    TypedLambda, TypedLeaf, TypedStructExpr,
 };
 
 impl TypedExpr {
@@ -70,6 +70,24 @@ impl TypedExpr {
                 .collect(),
             TypedExprKind::Control(control) => control.children_mut(),
             other => other.nested_children_mut(),
+        }
+    }
+
+    pub fn visit_children_mut(&mut self, visit: &mut impl FnMut(Option<LetValue>, &mut TypedExpr)) {
+        match &mut self.kind {
+            TypedExprKind::Fn(lambda) => Rc::make_mut(lambda).body.visit_items_mut(visit),
+            TypedExprKind::Control(TypedControl::Block(block)) => block.visit_items_mut(visit),
+            TypedExprKind::Control(TypedControl::Match(matched)) => {
+                visit(None, &mut matched.value);
+                for arm in &mut matched.arms {
+                    arm.body.visit_items_mut(visit);
+                }
+            }
+            _ => {
+                for child in self.children_mut() {
+                    visit(None, child);
+                }
+            }
         }
     }
 
@@ -295,6 +313,21 @@ impl TypedBlock {
 
     pub fn expressions_mut(&mut self) -> impl Iterator<Item = &mut TypedExpr> {
         self.items.iter_mut().map(TypedBodyItem::expr_mut)
+    }
+
+    fn visit_items_mut(&mut self, visit: &mut impl FnMut(Option<LetValue>, &mut TypedExpr)) {
+        for item in &mut self.items {
+            match item {
+                TypedBodyItem::Let(binder, value) => {
+                    let let_value = LetValue {
+                        binder_span: binder.span,
+                        annotated: binder.annotated,
+                    };
+                    visit(Some(let_value), value);
+                }
+                TypedBodyItem::Expr(value) => visit(None, value),
+            }
+        }
     }
 
     fn binders(&self) -> impl Iterator<Item = &TypedBinder> {

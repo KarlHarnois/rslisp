@@ -1,0 +1,6 @@
+(defrule with-open
+  ((first) (pair first (vec))))
+
+(defn main ()
+  (let held (with-open (+ 1 2)))
+  (println "done"))

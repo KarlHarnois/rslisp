@@ -1,0 +1,5 @@
+(defrule hold ((name) (let name (vec))))
+
+(defn main ()
+  (hold it)
+  (println "done"))

@@ -53,7 +53,7 @@ use crate::source::{SourceId, SourceMap, Span};
 use budget_arena::BudgetArena;
 pub use classified_form::ClassifiedForm;
 use evaluated_forms::EvaluatedForms;
-pub use generated_entry::{GeneratedEntry, WrittenForm};
+pub use generated_entry::GeneratedEntry;
 use globals::{GlobalTable, LoweredGlobals};
 pub use macro_call::MacroOrigin;
 use macro_call::MacroTable;
@@ -70,7 +70,6 @@ pub struct Program {
     pub modules: Vec<CoreModule>,
     pub entry: ModuleId,
     pub entry_function: Option<BindingId>,
-    pub evaluated_forms: Vec<WrittenForm>,
     pub bindings: BindingArena,
     pub macro_origins: FxHashMap<Span, MacroOrigin>,
     pub macro_helpers: FxHashSet<BindingId>,
@@ -221,7 +220,6 @@ impl<'s> Expander<'s> {
             modules: self.take_modules(),
             entry,
             entry_function: None,
-            evaluated_forms: Vec::new(),
             bindings: self.tables.bindings,
             macro_helpers: self.tables.globals.macro_helpers(),
             macro_origins: self.tables.macro_origins,
