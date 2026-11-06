@@ -1,6 +1,6 @@
 # RFC 0050: Colors at the prompt
 
-**Status:** Accepted. Rule 3's page from the prelude's `doc`, and its statement of `doc` as the header followed by `page-body`, are superseded by 0052: both apply to `doc-page`.
+**Status:** Accepted. Rule 3's page from the prelude's `doc`, and its statement of `doc` as the header followed by `page-body`, are superseded by 0052: both apply to `doc-page`. The names `header` and `page-body` are superseded by 0059, which names those lookups `doc-header` and `doc-body`.
 **Date:** 2026-11-04
 
 ## Problem

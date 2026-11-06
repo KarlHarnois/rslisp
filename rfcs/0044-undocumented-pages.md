@@ -1,6 +1,6 @@
 # RFC 0044: Pages for undocumented definitions
 
-**Status:** Accepted
+**Status:** Accepted. The name `header` is superseded by 0059, which names that lookup `doc-header`.
 **Date:** 2026-10-31
 
 ## Problem

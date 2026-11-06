@@ -1,6 +1,6 @@
 # RFC 0046: Names
 
-**Status:** Accepted
+**Status:** Accepted. Its decision that `add` and the other arithmetic names stay exported, and its statement that `>` has no value, are superseded by 0059. `rem` and `neg` stay exported.
 **Date:** 2026-11-02
 
 ## Problem

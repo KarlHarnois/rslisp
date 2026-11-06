@@ -1,6 +1,6 @@
 # RFC 0052: `doc` at the prompt
 
-**Status:** Accepted
+**Status:** Accepted. The names `header` and `page-body` are superseded by 0059, which names those lookups `doc-header` and `doc-body`.
 **Date:** 2026-11-04
 
 ## Problem
