@@ -1,0 +1,9 @@
+(def some-page (doc-page some))
+
+(def none-page (doc-page none))
+
+(def expect-page (doc-page expect))
+
+(def unwrap-ok-page (doc-page unwrap-ok))
+
+(def map-ok-page (doc-page map-ok))

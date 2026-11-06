@@ -1,4 +1,4 @@
-(use prelude/macros defrule)
+(use prelude/macros defrule document)
 (use prelude/types option)
 
 (export expect map-some none none? some some? then-some
@@ -42,3 +42,53 @@
     (where (a b)
       (fn ((option a) (fn-once (a) (option b)))
         (option b)))))
+
+(document (some value)
+  "Wraps a value in an `option`.
+
+  It is a macro, so `(fn (x) (some x))` passes it as a function. In a `match`,
+  `(some x)` is the pattern that binds the value.")
+
+(document none
+  "Holds an `option` with no value.
+
+  In a `match`, `none` is the pattern for it.")
+
+(document (some? option)
+  "Returns whether an `option` holds a value.
+
+  It borrows the option, which stays usable.")
+
+(document (none? option)
+  "Returns whether an `option` holds no value.
+
+  It borrows the option, which stays usable.")
+
+(document (unwrap-or option default)
+  "Returns an `option`'s value, or `default` when it holds none.
+
+  `default` runs before the call, whether or not the call uses it. The call
+  moves an option that is not `copy`.")
+
+(document (unwrap option)
+  "Returns an `option`'s value.
+
+  It panics on `none`. It moves an option that is not `copy`.")
+
+(document (expect option message)
+  "Returns an `option`'s value, or panics with a message on `none`.
+
+  `message` is a `(ref str)`, so borrow a `string` with `as-str`. The call
+  moves an option that is not `copy`.")
+
+(document (map-some option function)
+  "Applies a function to an `option`'s value.
+
+  It returns the result in an `option`. For `none` the function does not run,
+  and the call returns `none`. A keyword such as `:age` reads that field.")
+
+(document (then-some option function)
+  "Calls a function that returns an `option` on an `option`'s value.
+
+  It returns the function's `option` as it is. For `none` the function does
+  not run, and the call returns `none`.")
