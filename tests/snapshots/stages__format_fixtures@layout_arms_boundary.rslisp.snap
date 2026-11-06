@@ -1,0 +1,62 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_arms_boundary.rslisp
+---
+(defn arm-of-sixty-columns-and-arm-of-sixty-one (value)
+  (match value
+    ((long-pattern xx) (first (second (third (fourth (item))))))
+    ((long-pattern yyy) (first (second (third (fourth (item))))))
+    ((long-pattern xx) (first (second (third (fourth (item))))))))
+
+(defn short-arm-past-the-line-width (a b c d e f g)
+  (match a
+    ((b-arm)
+     (match b
+       ((c-arm)
+        (match c
+          ((d-arm)
+           (match d
+             ((e-arm)
+              (match e
+                ((f-arm)
+                 (match f
+                   ((g-arm)
+                    (match g
+                      ((deep-patternxx) (first (second (third (fourth (fifth))))))
+                      bare-atom-arm))))))))))))))
+
+(defn matched-value-is-no-arm (value)
+  (match (pick-one (first-part (inner)) (second-part (other-inner)))
+    (_ 0)))
+
+---
+(defn arm-of-sixty-columns-and-arm-of-sixty-one (value)
+  (match value
+    ((long-pattern xx) (first (second (third (fourth (item))))))
+    ((long-pattern yyy)
+     (first (second (third (fourth (item))))))
+    ((long-pattern xx) (first (second (third (fourth (item))))))))
+
+(defn short-arm-past-the-line-width (a b c d e f g)
+  (match a
+    ((b-arm)
+     (match b
+       ((c-arm)
+        (match c
+          ((d-arm)
+           (match d
+             ((e-arm)
+              (match e
+                ((f-arm)
+                 (match f
+                   ((g-arm)
+                    (match g
+                      ((deep-patternxx)
+                       (first (second (third (fourth (fifth))))))
+                      bare-atom-arm))))))))))))))
+
+(defn matched-value-is-no-arm (value)
+  (match (pick-one (first-part (inner))
+                   (second-part (other-inner)))
+    (_ 0)))

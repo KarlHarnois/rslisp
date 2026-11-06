@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_arms_match.rslisp
+---
+(defn update (msg model)
+  (match msg
+    ((msg/increment fruit) (no-effect (change model fruit 1)))
+    ((msg/decrement fruit) (no-effect (change model fruit -1)))
+    (msg/reset (no-effect (init)))
+    (msg/load (pair model (load-apples)))
+    ((msg/loaded result) (no-effect (apply-loaded model result)))))
+
+---
+(defn update (msg model)
+  (match msg
+    ((msg/increment fruit) (no-effect (change model fruit 1)))
+    ((msg/decrement fruit) (no-effect (change model fruit -1)))
+    (msg/reset (no-effect (init)))
+    (msg/load (pair model (load-apples)))
+    ((msg/loaded result)
+     (no-effect (apply-loaded model result)))))

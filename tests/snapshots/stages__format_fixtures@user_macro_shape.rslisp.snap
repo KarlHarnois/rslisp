@@ -15,8 +15,7 @@ input_file: tests/fixtures/format/user_macro_shape.rslisp
 (use prelude/macros header-shape)
 
 (defrule unless-zero
-  ((value body ...)
-   (unless (= value 0) body ...)))
+  ((value body ...) (unless (= value 0) body ...)))
 
 (header-shape (unless-zero value))
 

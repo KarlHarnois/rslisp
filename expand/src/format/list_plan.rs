@@ -28,6 +28,7 @@ pub struct ListPlan {
     pub fillable_units: Vec<bool>,
     body_forms: usize,
     definer: bool,
+    first_arm_entry: Option<usize>,
 }
 
 impl Arrangement {
@@ -67,7 +68,12 @@ impl ListPlan {
             docstring_entry,
             body_forms: list.entries.len().saturating_sub(header_length + 1),
             definer: shape.is_some_and(|shape| shape.takes_docstring),
+            first_arm_entry: shape.filter(|shape| shape.arms).map(|_| header_length + 1),
         }
+    }
+
+    pub fn is_arm(&self, entry: usize) -> bool {
+        self.first_arm_entry.is_some_and(|first| entry >= first)
     }
 
     pub fn allows_one_line(&self) -> bool {

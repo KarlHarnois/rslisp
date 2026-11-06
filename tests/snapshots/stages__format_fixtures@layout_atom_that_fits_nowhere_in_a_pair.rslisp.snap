@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_atom_that_fits_nowhere_in_a_pair.rslisp
+---
+(make-label :text "a keyword value string that is too long to fit on a line at any indentation at all" :other 1)
+
+---
+(make-label :text "a keyword value string that is too long to fit on a line at any indentation at all"
+            :other 1)

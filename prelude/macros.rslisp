@@ -538,7 +538,8 @@
   states that the form takes a docstring right after its header, a
   `:one-per-line` states that the formatter puts each later form of a
   call on its own line, and an `:arms` states that each list after the
-  header is an arm, which stays on one line up to the fill width."
+  header, other than a keyword's value, is an arm, which stays on one
+  line up to the fill width."
   (if (header-shape? shape)
     (stated-header-shape shape markers)
     (malformed-header-shape shape)))
@@ -687,7 +688,7 @@
 
 (header-shape (document header) :docstring)
 
-(header-shape (defrule name) :docstring)
+(header-shape (defrule name) :docstring :arms)
 
 (header-shape (defmacro name pattern) :docstring)
 
