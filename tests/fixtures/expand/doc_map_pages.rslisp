@@ -1,0 +1,5 @@
+(def keys-page (doc-page keys))
+
+(def update-page (doc-page update))
+
+(def into-page (doc-page into-sorted-map))

@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_map_pages.rslisp
+---
+(def keys-page "(keys map)\n\nReturns an iterator over borrows of a map's keys.\n\nA `sorted-map` yields them in key order, and the order of a `hash-map` is\nnot fixed. The map stays usable.")
+(def update-page "(update map key function default)\n\nApplies a function to the value at a key and returns the map.\n\n`function` takes the value at `key`, or `default` when the key is missing,\nand the result is stored at `key`. `default` runs before the call, whether\nor not the call uses it. The call moves the map.\n\n`key` has the type of the map's keys: a string literal is a `(ref str)`, so\na `string` key takes `(str \"name\")`, and a `(ref str)` key takes\n`(as-str name)`.")
+(def into-page "(into-sorted-map pairs)\n\nBuilds a `sorted-map` from a vector of pairs.\n\n`pairs` is a `(vec (pair key value))`, and the call moves it. Keys implement\n`ord`, and the last pair of a repeated key wins.")

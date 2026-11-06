@@ -121,3 +121,39 @@
 (defrule update
   ((m key function default)
    (map-at update m key function default)))
+
+(document (keys map)
+  "Returns an iterator over borrows of a map's keys.
+
+  A `sorted-map` yields them in key order, and the order of a `hash-map` is
+  not fixed. The map stays usable.")
+
+(document (vals map)
+  "Returns an iterator over borrows of a map's values.
+
+  A `sorted-map` yields them in key order, and the order of a `hash-map` is
+  not fixed. The map stays usable. Each item is a borrow, so
+  `(sum (vals map))` is an error, and `(reduce (vals map) 0 add)` adds them.")
+
+(document (update map key function default)
+  "Applies a function to the value at a key and returns the map.
+
+  `function` takes the value at `key`, or `default` when the key is missing,
+  and the result is stored at `key`. `default` runs before the call, whether
+  or not the call uses it. The call moves the map.
+
+  `key` has the type of the map's keys: a string literal is a `(ref str)`, so
+  a `string` key takes `(str \"name\")`, and a `(ref str)` key takes
+  `(as-str name)`.")
+
+(document (into-sorted-map pairs)
+  "Builds a `sorted-map` from a vector of pairs.
+
+  `pairs` is a `(vec (pair key value))`, and the call moves it. Keys implement
+  `ord`, and the last pair of a repeated key wins.")
+
+(document (into-hash-map pairs)
+  "Builds a `hash-map` from a vector of pairs.
+
+  `pairs` is a `(vec (pair key value))`, and the call moves it. Keys implement
+  `hash` and `eq`, and the last pair of a repeated key wins.")
