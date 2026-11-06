@@ -2193,8 +2193,13 @@ impl<'a> ExpressionEmitter<'a> {
 
     fn is_mut_place(parsed: &Template, position: usize, argument: &TypedArgument) -> bool {
         parsed.dereferences(position)
-            && (Self::written_mut_place(&argument.value)
-                || (argument.borrow == Borrow::Mutable && argument.value.place_root().is_some()))
+            && (Self::written_mut_place(&argument.value) || Self::borrows_owned_place(argument))
+    }
+
+    fn borrows_owned_place(argument: &TypedArgument) -> bool {
+        argument.borrow == Borrow::Mutable
+            && argument.value.place_root().is_some()
+            && !matches!(argument.value.ty, Type::Mut(..))
     }
 
     fn written_mut_place(value: &TypedExpr) -> bool {

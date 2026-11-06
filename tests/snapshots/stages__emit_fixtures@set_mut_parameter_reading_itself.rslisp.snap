@@ -1,0 +1,32 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/set_mut_parameter_reading_itself.rslisp
+---
+fn shout(s: &mut String) {
+    *s = format!("{}!", s)
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut name = "old".to_string();
+    shout(&mut name);
+    println!("{}", name)
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

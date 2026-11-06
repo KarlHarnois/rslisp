@@ -1,0 +1,23 @@
+(defstruct counter
+  :value i64)
+
+(defn raise! (target)
+  (set! (:value target) 2))
+
+(defn overwrite-first! (items)
+  (set! (at items 0) 9))
+
+(defn add! (items) (push! items 7))
+
+(defn main ()
+  (let total 0)
+  (println total)
+  (set! total 1)
+  (let target (new counter (:value total)))
+  (raise! target)
+  (let items (vec 1 2))
+  (overwrite-first! items)
+  (add! items)
+  (println (:value target)
+           (at items 0)
+           (len items)))
