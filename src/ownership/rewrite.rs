@@ -330,8 +330,17 @@ impl<'a> ModeRewrite<'a> {
             .cloned()
             .unwrap_or_else(|| instantiated.to_vec());
         for (position, (argument, param)) in arguments.iter_mut().zip(&params).enumerate() {
+            Self::dereference_uncoerced_borrows(argument, param);
             let param = Self::instantiated_at_shared_reference(param, instantiated.get(position));
             self.borrow_for(argument, param);
+        }
+    }
+
+    fn dereference_uncoerced_borrows(argument: &mut TypedArgument, param: &Type) {
+        if let Borrow::Collapse(levels) = argument.borrow
+            && param.is_generic_behind_shared_references()
+        {
+            argument.borrow = Borrow::Deref(levels);
         }
     }
 

@@ -2281,15 +2281,17 @@ impl<'a> ExpressionEmitter<'a> {
         argument: &TypedArgument,
         context: TypeContext,
     ) -> Option<Code> {
-        if !matches!(argument.borrow, Borrow::Deref(1) | Borrow::Collapse(1))
-            || !self.is_borrowed_index_call(&argument.value)
-        {
+        let levels = match argument.borrow {
+            Borrow::Deref(levels) => levels,
+            Borrow::Collapse(1) => 1,
+            _ => return None,
+        };
+        if !self.is_borrowed_index_call(&argument.value) {
             return None;
         }
-        Some(
-            self.place(&argument.value, context)
-                .spanned(argument.value.span),
-        )
+        let span = argument.value.span;
+        let element = self.place(&argument.value, context).spanned(span);
+        Some(Self::prefixed(&"*".repeat(levels - 1), element).spanned(span))
     }
 
     fn argument_value(

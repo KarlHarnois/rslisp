@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/collapsed_generic_borrow.rslisp
+---
+true
+true
+true
+true
+false
+true
+true
+true
+true
+true

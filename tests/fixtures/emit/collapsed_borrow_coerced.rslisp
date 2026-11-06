@@ -1,0 +1,37 @@
+(def check-both
+  (rust "{2}({0}, {1})"
+    (where (a b)
+      (fn ((ref a)
+           (ref b)
+           (fn ((ref a) (ref b)) bool))
+        bool))))
+
+(type total (fn ((ref i64)) i64))
+
+(defn total (value) (+ value 1))
+
+(type count-items
+  (where (a) (fn ((ref (vec a))) usize)))
+
+(defn count-items (items) (len items))
+
+(defn main ()
+  (let number 1)
+  (let inner (ref number))
+  (let outer (ref inner))
+  (let equal
+    (fn (left right) (= left right)))
+  (println (equal outer outer))
+  (println (check-both outer outer
+                       (fn (left right) (= left right))))
+  (println (total outer))
+  (let items (vec 1 2))
+  (let view (ref items))
+  (let deep-view (ref view))
+  (println (count-items deep-view))
+  (let names (vec "a" "b"))
+  (push! names "c")
+  (let matches
+    (collect (map (iter names)
+                  (fn (name) (= name "a")))))
+  (println (len matches)))
