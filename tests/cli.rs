@@ -1399,6 +1399,25 @@ fn doc_prints_the_page_of_an_imported_module() {
 }
 
 #[test]
+fn doc_prints_the_page_of_a_prelude_module() {
+    let sandbox = Sandbox::new("doc_prelude_module");
+    let doc = sandbox.compiler(&["doc", "(module prelude/vec)"]);
+    let page = doc.assert_exit_code(0).stdout();
+    let lines: Vec<&str> = page.lines().take(6).collect();
+    assert_eq!(
+        lines,
+        [
+            "(module prelude/vec)",
+            "",
+            "Builds, reads and reorders vectors.",
+            "",
+            "(at items index)",
+            "    Returns a borrow of the item at an index."
+        ]
+    );
+}
+
+#[test]
 fn doc_prints_a_module_page_without_a_type_line() {
     let sandbox = Sandbox::new("doc_module_types")
         .with_file("geometry.rslisp", DOCUMENTED_GEOMETRY)

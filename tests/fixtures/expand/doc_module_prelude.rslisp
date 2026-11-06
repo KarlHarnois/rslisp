@@ -1,0 +1,1 @@
+(def vec-page (doc-page (module prelude/vec)))
