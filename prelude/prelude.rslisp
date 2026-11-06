@@ -67,23 +67,23 @@
         infallible infer integer into-hash-map
         into-sorted-map io-error isize iter iterator keys
         last le len let let-fields let-pair let-try line-seq
-        lines loop lower-case lt macro map map-at map-err
-        map-ok map-some match max max-by-key min mul mut ne
-        neg new none none? not not= number ok ok-or ok?
-        option or ord page-body pair parse parse-bool-error
-        parse-char-error parse-error parse-float-error
-        parse-int-error partial-eq partial-ord pi pop!
-        pr-str print println prn push! quote range read-line
-        recur reduce ref rem remove-at! result reverse
-        reverse! rust rust-trait rust-type sequence set!
-        set-at show signed slice slurp some some? sort!
-        sort-by! sorted-map source split split-when sqrt
-        stdin str str string struct sub subs sum take
-        take-while template the then-ok then-some trait trim
-        true try try-> type u128 u16 u32 u64 u8 unit unless
-        unwrap unwrap-err unwrap-ok unwrap-or update
-        upper-case use usize vals vec when where whitespace?
-        windows with zip)
+        lines local loop lower-case lt macro map map-at
+        map-err map-ok map-some match max max-by-key min mul
+        mut ne neg new none none? not not= number ok ok-or
+        ok? option or ord page-body pair parse
+        parse-bool-error parse-char-error parse-error
+        parse-float-error parse-int-error partial-eq
+        partial-ord pi pop! pr-str print println prn push!
+        quote range read-line recur reduce ref rem
+        remove-at! result reverse reverse! rust rust-trait
+        rust-type sequence set! set-at show signed slice
+        slurp some some? sort! sort-by! sorted-map source
+        split split-when sqrt stdin str str string struct
+        sub subs sum take take-while template the then-ok
+        then-some trait trim true try try-> type u128 u16
+        u32 u64 u8 unit unless unwrap unwrap-err unwrap-ok
+        unwrap-or update upper-case use usize vals vec when
+        where whitespace? windows with zip)
 
 (def def
   (macro (form) (kernel-definition form)))
@@ -91,6 +91,8 @@
 (header-shape (def name) :docstring)
 
 (header-shape (let name))
+
+(header-shape (local name))
 
 (header-shape (type name))
 
@@ -138,6 +140,11 @@
   name.")
 
 (document (let name value)
+  "Binds a name to a value for the rest of the body.
+
+  It emits a Rust `let`.")
+
+(document (local name value)
   "Binds a name to a value for the rest of the body.
 
   It emits a Rust `let`.")

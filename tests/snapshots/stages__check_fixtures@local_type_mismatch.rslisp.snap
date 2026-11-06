@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/local_type_mismatch.rslisp
+---
+error[L0401]: mismatched types
+ --> check/local_type_mismatch.rslisp:3:28
+  |
+3 |   (local total (+ greeting 1))
+  |                            ^ expected `str`, found an integer

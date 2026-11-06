@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/local_shadowing.rslisp
+---
+20
+flat local
+2

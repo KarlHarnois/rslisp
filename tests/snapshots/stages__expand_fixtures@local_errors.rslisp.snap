@@ -1,0 +1,44 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/local_errors.rslisp
+---
+error[L0207]: expected a definition at module level
+ --> expand/local_errors.rslisp:1:1
+  |
+1 | (local outside 1)
+  | ^^^^^^^^^^^^^^^^^ this is not a definition
+  |
+  = help: put expressions inside a function, such as `(def run (fn () ...))`
+
+error[L0210]: malformed `local`
+ --> expand/local_errors.rslisp:3:24
+  |
+3 | (defn missing-value () (local name))
+  |                        ^^^^^^^^^^^^ this does not fit the shape of `local`
+  |
+  = help: write it as `(local name value)`
+
+error[L0227]: `local` can only appear directly in a body
+ --> expand/local_errors.rslisp:6:12
+  |
+6 |   (println (local name 1)))
+  |            ^^^^^^^^^^^^^^ not allowed here
+  |
+  = help: wrap the `local` and the code that uses it in `(do ...)`
+
+error[L0244]: a name cannot start with `:`
+ --> expand/local_errors.rslisp:8:35
+  |
+8 | (defn keyword-as-binder () (local :name 1))
+  |                                   ^^^^^ this is a field keyword
+  |
+  = help: names starting with `:` read struct fields; choose another name
+
+error[L0211]: `local` is a form, not a value
+  --> expand/local_errors.rslisp:10:30
+   |
+10 | (defn as-a-value () (println local))
+   |                              ^^^^^ used as a value here
+   |
+   = help: write it as `(local name value)`

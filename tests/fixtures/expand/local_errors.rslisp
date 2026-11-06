@@ -1,0 +1,10 @@
+(local outside 1)
+
+(defn missing-value () (local name))
+
+(defn as-an-argument ()
+  (println (local name 1)))
+
+(defn keyword-as-binder () (local :name 1))
+
+(defn as-a-value () (println local))

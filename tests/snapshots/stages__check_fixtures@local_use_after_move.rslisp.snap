@@ -1,0 +1,19 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/local_use_after_move.rslisp
+---
+error[L0501]: use of moved value `greeting`
+ --> check/local_use_after_move.rslisp:5:12
+  |
+3 |   (local moved greeting)
+  |                -------- value moved here
+4 |   (println moved)
+5 |   (println greeting))
+  |            ^^^^^^^^ value used here after it moved
+  |
+help: clone the value if both places need it
+  |
+3 -   (local moved greeting)
+3 +   (local moved (clone greeting))
+  |

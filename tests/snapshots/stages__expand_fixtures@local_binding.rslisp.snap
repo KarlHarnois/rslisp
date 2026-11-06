@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/local_binding.rslisp
+---
+(def rate 3)
+(def scale (fn (n) (let doubled (mul n 2)) (let (factor i64) rate) (mul doubled factor)))

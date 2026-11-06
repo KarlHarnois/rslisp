@@ -1,0 +1,5 @@
+(defn main ()
+  (local greeting (str "hello"))
+  (local moved greeting)
+  (println moved)
+  (println greeting))
