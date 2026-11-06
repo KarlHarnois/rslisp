@@ -1,0 +1,4 @@
+(defn main ()
+  (local greeting "hello")
+  (local total (+ greeting 1))
+  (println total))

@@ -54,6 +54,7 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `fn` | `(fn (parameter...) body...)` | `fn` item, closure, or block | params: binders. body: expressions. |
 | `def` | `(def name value)` | `fn`, `const`, `static`, or nothing | name: binder. value: expression. |
 | `let` | `(let name value)` | `let` | name: binder. value: expression. |
+| `local` | `(local name value)` | `let` | name: binder. value: expression. |
 | `do` | `(do form...)` | block | forms: expressions. At module level: definitions. |
 | `if` | `(if test then else)` | `if`/`else` | all: expressions. |
 | `type` | `(type name type)` | signature | name: reference to a `def`, or to a macro whose value position expands to a function the macro introduced in this module. type: type. |
@@ -86,6 +87,8 @@ In type positions, the kernel provides `fn`, `fn-mut`, `fn-once`, `ref`, `mut`, 
 
 In expression positions, the kernel provides `ref`, `mut` and `deref`, and the constants `true` and `false`. The constants are kernel constants, not prelude definitions. Macro code and program code then see the same booleans, so `if`, `and` and `or` work in both.
 
+`local` means the same as `let`. It is a kernel form because a macro sees only its own form and cannot bind a name for the forms that follow it in the enclosing body ([RFC 0058](../rfcs/0058-scoped-let.md)).
+
 `ref`, `mut` and `deref` are kernel forms because a prelude function cannot mark its result as written. The compiler must see the written form to know that the value came from a written borrow or dereference.
 
 `infer` is a kernel form because only the checker knows an expression's inferred type ([RFC 0054](../rfcs/0054-infer.md)). A prelude macro runs before the checker and sees forms, never types. A prelude function runs in the emitted program, where Rust's `type_name` spells Rust's names, runs its argument, and cannot name a type variable.
@@ -105,7 +108,7 @@ Values and types are therefore order-independent, like Rust items. An `impl` res
 
 ### Bodies
 
-A body is the sequence of forms in `fn`, `macro` and `do`. A `let` binds its name for the rest of the enclosing body. The value of a body is the value of its last form, or unit if the body is empty or ends with a `let`. A `(do)` before the last form has no effect and emits nothing.
+A body is the sequence of forms in `fn`, `macro` and `do`. A `let` or a `local` binds its name for the rest of the enclosing body. The value of a body is the value of its last form, or unit if the body is empty or ends with a `let` or a `local`. A `(do)` before the last form has no effect and emits nothing.
 
 A function that calls itself in tail position compiles to a Rust loop. The call reassigns the parameters that change, then starts the next iteration. A parameter to which the call passes a new value, such as a struct it builds or a local the loop body binds, takes the own mode unless it is a small Copy type, because a borrow of that value would not outlive the iteration: `(count-up limit (->counter :label (str "c") :count (+ (:count state) 1)))` emits `state = Counter { ... };` with `mut state: Counter`. A parameter to which the call passes itself, another parameter, or a field of one keeps the mode its uses need. A call to itself anywhere else stays recursive. A `fn` that the program calls where it is written emits as a block that binds each parameter with `let`.
 

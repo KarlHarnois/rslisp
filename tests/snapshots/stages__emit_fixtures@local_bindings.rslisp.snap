@@ -1,0 +1,32 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/local_bindings.rslisp
+---
+fn total(limit: i64) -> i64 {
+    let doubled: i64 = limit * 2;
+    let offset: i64 = 1;
+    doubled + offset
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!("{}", total(20))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

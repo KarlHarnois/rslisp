@@ -5,6 +5,7 @@ pub enum KernelForm {
     Expression(ExpressionForm),
     Definition(DefinitionForm),
     Let,
+    Local,
     Macro,
 }
 
@@ -65,7 +66,7 @@ struct KernelFormRow {
 }
 
 impl KernelForm {
-    const ROWS: [KernelFormRow; 30] = [
+    const ROWS: [KernelFormRow; 31] = [
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Fn),
             name: "fn",
@@ -80,6 +81,11 @@ impl KernelForm {
             form: KernelForm::Let,
             name: "let",
             shape: "(let name value)",
+        },
+        KernelFormRow {
+            form: KernelForm::Local,
+            name: "local",
+            shape: "(local name value)",
         },
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Control(ControlForm::Do)),

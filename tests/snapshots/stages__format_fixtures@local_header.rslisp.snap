@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/local_header.rslisp
+---
+(defn report (sightings)
+  (local summary (str "the first sighting of the season came from the northern ridge" sightings))
+  (println summary))
+
+---
+(defn report (sightings)
+  (local summary
+    (str "the first sighting of the season came from the northern ridge"
+         sightings))
+  (println summary))

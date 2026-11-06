@@ -573,13 +573,16 @@ impl ExpandProblems {
         .with_help("use `let` to bind a name inside a body")
     }
 
-    pub fn let_outside_body(span: Span) -> Diagnostic {
+    pub fn binding_outside_body(binding_form: KernelForm, span: Span) -> Diagnostic {
+        let name = binding_form.name();
         Diagnostic::error(
             DiagnosticCode::LET_OUTSIDE_BODY,
-            "`let` can only appear directly in a body",
+            format!("`{name}` can only appear directly in a body"),
             Label::new(span, "not allowed here"),
         )
-        .with_help("wrap the `let` and the code that uses it in `(do ...)`")
+        .with_help(format!(
+            "wrap the `{name}` and the code that uses it in `(do ...)`"
+        ))
     }
 
     pub fn macro_outside_def(span: Span) -> Diagnostic {

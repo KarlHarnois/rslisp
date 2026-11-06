@@ -247,7 +247,9 @@ impl Expander<'_> {
             KernelForm::Expression(expression) => {
                 self.lower_expression_form(expression, &Shape::new(kernel, form))
             }
-            KernelForm::Let => Err(ExpandProblems::let_outside_body(span)),
+            KernelForm::Let | KernelForm::Local => {
+                Err(ExpandProblems::binding_outside_body(kernel, span))
+            }
             KernelForm::Macro => Err(ExpandProblems::macro_outside_def(span)),
             KernelForm::Definition(_) => Err(self.misplaced_definition(kernel, span)),
         };
@@ -417,7 +419,9 @@ impl Expander<'_> {
         context: &mut DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
         let item = match self.kernel_head(form) {
-            Some(KernelForm::Let) => self.lower_let(form, rest_of_body, context),
+            Some(kernel @ (KernelForm::Let | KernelForm::Local)) => {
+                self.lower_let(&Shape::new(kernel, form), rest_of_body, context)
+            }
             Some(Self::DEF_FORM) => self.lower_misplaced_def(form, rest_of_body, context),
             Some(Self::STRUCT_FORM) => self.lower_misplaced_struct(form, rest_of_body, context),
             Some(Self::DO_FORM) if self.holds_definition(form) => {
@@ -453,11 +457,11 @@ impl Expander<'_> {
 
     fn lower_let(
         &mut self,
-        form: &Form,
+        shape: &Shape,
         rest_of_body: &mut RestOfBody,
         context: &DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
-        let items = Shape::new(KernelForm::Let, form).exactly(3)?;
+        let items = shape.exactly(3)?;
         let value = self.lower_recovered(&items[2])?;
         let scope = self.fresh_local_scope();
         rest_of_body.add_scope(scope);

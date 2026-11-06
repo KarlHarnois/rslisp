@@ -1,0 +1,6 @@
+(defn total (limit)
+  (local doubled (* limit 2))
+  (local (offset i64) 1)
+  (+ doubled offset))
+
+(defn main () (println (total 20)))

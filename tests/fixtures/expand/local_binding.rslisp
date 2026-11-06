@@ -1,0 +1,6 @@
+(def rate 3)
+
+(defn scale (n)
+  (local doubled (* n 2))
+  (local (factor i64) rate)
+  (* doubled factor))
