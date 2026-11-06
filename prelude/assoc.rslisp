@@ -8,6 +8,16 @@
 (export assoc assoc-in)
 
 (defmacro assoc (value key more ...)
+  "Returns a struct or a collection with new values at its keys.
+
+  A keyword key sets a field, as in `(assoc point :x 1 :y 2)`. An unknown
+  field is an error, and a keyword without a value is an error. The call moves
+  each field it does not list, unless the field is `copy`.
+
+  Any other key updates a vector or a map, as in `(assoc items 0 9)`. Keys and
+  values come in pairs, and each pair updates the result of the one before. A
+  map adds a missing key. A vector panics when an index is out of bounds. The
+  call moves the collection."
   (let arguments (prepend key more))
   (if (keyword? key)
     (struct-update value arguments)
@@ -100,6 +110,14 @@
       (list argument))))
 
 (defmacro assoc-in (value (step ...) item)
+  "Returns a struct or a collection with a new item at a path of steps.
+
+  A keyword step names a field, as in `(assoc-in line (:start :x) 3)`, and the
+  call moves each field the path does not change, unless it is `copy`.
+
+  Other steps name indexes, as in `(assoc-in grid (1 0) 7)`, and the call
+  moves the collection. It panics when an index is out of bounds. A keyword
+  step after an index step is an error."
   (let root (read-root value))
   (if (bound-root? root value step)
     (list (quote do)
