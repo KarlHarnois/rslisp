@@ -1,0 +1,7 @@
+(def map-page (doc-page map))
+
+(def reduce-page (doc-page reduce))
+
+(def count-page (doc-page count))
+
+(def max-page (doc-page max))
