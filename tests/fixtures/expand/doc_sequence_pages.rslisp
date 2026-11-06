@@ -1,0 +1,3 @@
+(def len-page (doc-page len))
+
+(def empty-page (doc-page empty?))

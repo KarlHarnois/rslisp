@@ -1,3 +1,4 @@
+(use prelude/macros document)
 (use prelude/types sequence)
 
 (export empty? len)
@@ -11,3 +12,15 @@
   (rust "{0}.len()"
     (where ((a sequence))
       (fn ((ref a)) usize))))
+
+(document (empty? collection)
+  "Returns whether a collection has no items.
+
+  It takes a `string`, a `str`, a vector, a slice or a map, or a reference to
+  one.")
+
+(document (len collection)
+  "Returns the number of items of a collection as a `usize`.
+
+  A string counts bytes, not characters, so `(len \"héllo\")` is 6. Use
+  `(count (chars text))` for characters.")
