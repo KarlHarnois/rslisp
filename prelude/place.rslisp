@@ -34,6 +34,11 @@
       (list))))
 
 (defmacro set! (target value)
+  "Changes a local, a field or an element in place.
+
+  The target is a name, a field read such as `(:x point)`, or an `at` form, as
+  in `(set! (at items 0) 9)`. A vector panics when the index is out of bounds,
+  and a map panics on a missing key. Any other target is an error."
   (if (at-form? target)
     (list (quote set-at)
           (at-base target)

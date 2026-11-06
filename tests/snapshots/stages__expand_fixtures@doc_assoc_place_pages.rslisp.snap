@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_assoc_place_pages.rslisp
+---
+(def assoc-page "(defmacro assoc (value key more ...))\n\nReturns a struct or a collection with new values at its keys.\n\nA keyword key sets a field, as in `(assoc point :x 1 :y 2)`. An unknown\nfield is an error, and a keyword without a value is an error. The call moves\neach field it does not list, unless the field is `copy`.\n\nAny other key updates a vector or a map, as in `(assoc items 0 9)`. Keys and\nvalues come in pairs, and each pair updates the result of the one before. A\nmap adds a missing key. A vector panics when an index is out of bounds. The\ncall moves the collection.")
+(def assoc-in-page "(defmacro assoc-in (value (step ...) item))\n\nReturns a struct or a collection with a new item at a path of steps.\n\nA keyword step names a field, as in `(assoc-in line (:start :x) 3)`, and the\ncall moves each field the path does not change, unless it is `copy`.\n\nOther steps name indexes, as in `(assoc-in grid (1 0) 7)`, and the call\nmoves the collection. It panics when an index is out of bounds. A keyword\nstep after an index step is an error.")
+(def set-page "(defmacro set! (target value))\n\nChanges a local, a field or an element in place.\n\nThe target is a name, a field read such as `(:x point)`, or an `at` form, as\nin `(set! (at items 0) 9)`. A vector panics when the index is out of bounds,\nand a map panics on a missing key. Any other target is an error.")

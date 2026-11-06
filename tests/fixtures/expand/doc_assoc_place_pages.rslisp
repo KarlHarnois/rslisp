@@ -1,0 +1,5 @@
+(def assoc-page (doc-page assoc))
+
+(def assoc-in-page (doc-page assoc-in))
+
+(def set-page (doc-page set!))
