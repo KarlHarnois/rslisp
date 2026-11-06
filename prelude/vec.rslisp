@@ -1,10 +1,12 @@
-(use prelude/macros defmacro defrule document)
+(use prelude/macros defmacro defrule document module)
 (use prelude/types iterator option slice vec)
 (use prelude/number < > ord partial-eq)
 (use prelude/ownership copy)
 
 (use code concat empty? len list number-add number-lt
           number-sub prepend rest string symbol?)
+
+(module "Builds, reads and reorders vectors.")
 
 (export at collect copied dedup! first iter last pop! push!
         remove-at! reverse reverse! sort! sort-by! vec
