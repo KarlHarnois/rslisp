@@ -1,3 +1,4 @@
+(use prelude/macros document)
 (use prelude/types box option result vec)
 (use prelude/pair pair)
 
@@ -25,3 +26,17 @@
 (def clone
   (rust "{0}.clone()"
     (where ((a clone)) (fn ((ref a)) a))))
+
+(document (clone value)
+  "Returns a copy of a value that owns its own data.
+
+  It takes a borrow, so `value` stays usable. A `str` has no `clone`:
+  `(str text)` builds a `string` from it. `clone` is also the trait, Rust's
+  `Clone`.")
+
+(document copy
+  "Marks a type whose values copy where another type would move.
+
+  `bool`, `char`, `unit`, the number types and `(ref a)` implement it, and an
+  `option`, a `result` or a `pair` of such types does. `string` and `vec` do
+  not.")

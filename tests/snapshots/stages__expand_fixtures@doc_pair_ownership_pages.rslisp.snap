@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_pair_ownership_pages.rslisp
+---
+(def pair-page "(pair a b)\n\nBuilds a pair of two values.\n\n`pair` is also the type `(pair a b)`, Rust's `(A, B)`. In a `match`,\n`(pair x y)` is the pattern that binds the parts.")
+(def let-pair-page "(let-pair (first second) value body ...)\n\nBinds the two parts of a pair for a body.\n\nIt expands to a `match`, so it moves a pair that is not `copy`.")
+(def let-fields-page "(let-fields (type-name (name ...)) value body ...)\n\nBinds the fields of a struct for a body, in field order.\n\nEach field takes one name, and `_` skips a field. It expands to a `match`,\nso it moves a value that is not `copy`.")
+(def clone-page "(clone value)\n\nReturns a copy of a value that owns its own data.\n\nIt takes a borrow, so `value` stays usable. A `str` has no `clone`:\n`(str text)` builds a `string` from it. `clone` is also the trait, Rust's\n`Clone`.")
+(def copy-page "copy\n\nMarks a type whose values copy where another type would move.\n\n`bool`, `char`, `unit`, the number types and `(ref a)` implement it, and an\n`option`, a `result` or a `pair` of such types does. `string` and `vec` do\nnot.")
