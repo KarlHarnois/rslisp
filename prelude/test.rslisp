@@ -210,26 +210,56 @@
 
 (def run-tests
   (macro (form)
-    (let options (rest form))
-    (let marker (option-value options "marker"))
+    (check-run-tests-shape form)
+    (let marker (nth form 2))
     (let notes (program-tests (program-modules)))
     (template (do
-                (splice (untested-records marker
-                                          (option-value options "untested")
-                                          notes))
+                (splice (untested-records marker (untested-option form) notes))
                 (start-run (unquote marker)
                            (vec (splice (map-list test-full-name notes))))
                 (splice (map-list (fn (note) (test-run marker note))
                                   notes))
                 (finish-run (unquote marker))))))
 
-(def option-value
-  (fn (options name)
-    (if (empty? options)
-      (list)
-      (if (value-eq (keyword-name (first options)) name)
-        (nth options 1)
-        (recur (rest (rest options)) name)))))
+(def untested-option
+  (fn (form)
+    (if (value-eq (len form) 5)
+      (list (nth form 4))
+      (list))))
+
+(def check-run-tests-shape
+  (fn (form)
+    (if (runner-call? form)
+      form
+      (fail "this use of `run-tests` does not match its shape"
+        form
+        "write it as `(run-tests :marker \"text\")` or `(run-tests :marker \"text\" :untested module)`"))))
+
+(def runner-call?
+  (fn (form)
+    (if (value-eq (len form) 3)
+      (marker-option? form)
+      (if (value-eq (len form) 5)
+        (if (marker-option? form) (untested-option? form) false)
+        false))))
+
+(def marker-option?
+  (fn (form)
+    (if (named-key? (nth form 1) "marker")
+      (string? (nth form 2))
+      false)))
+
+(def untested-option?
+  (fn (form)
+    (if (named-key? (nth form 3) "untested")
+      (symbol? (nth form 4))
+      false)))
+
+(def named-key?
+  (fn (key name)
+    (if (keyword? key)
+      (value-eq (keyword-name key) name)
+      false)))
 
 (def program-tests
   (fn (modules)
@@ -256,11 +286,12 @@
                         (unquote (note-function note))))))
 
 (def untested-records
-  (fn (marker module notes)
-    (if (list? module)
+  (fn (marker option notes)
+    (if (empty? option)
       (list)
-      (untested-record marker module
-                       (module-exports module)
+      (untested-record marker
+                       (first option)
+                       (module-exports (first option))
                        (written-symbols (map-list note-body
                                                   (map-list rest notes)))))))
 

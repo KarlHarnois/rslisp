@@ -53,3 +53,83 @@ help: the unit value is written `(do)`
    |
 14 |   (assert (= (do) 1)))
    |               ++
+
+error[L0301]: this use of `run-tests` does not match its shape
+  --> expand/test_shape_errors.rslisp:16:23
+   |
+16 | (defn runs-nothing () (run-tests))
+   |                       ^^^^^^^^^^^ here
+   |
+   = help: write it as `(run-tests :marker "text")` or `(run-tests :marker "text" :untested module)`
+
+error[L0301]: this use of `run-tests` does not match its shape
+  --> expand/test_shape_errors.rslisp:18:24
+   |
+18 | (defn runs-a-number () (run-tests 1))
+   |                        ^^^^^^^^^^^^^ here
+   |
+   = help: write it as `(run-tests :marker "text")` or `(run-tests :marker "text" :untested module)`
+
+error[L0301]: this use of `run-tests` does not match its shape
+  --> expand/test_shape_errors.rslisp:20:37
+   |
+20 | (defn runs-without-a-marker-text () (run-tests :marker))
+   |                                     ^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: write it as `(run-tests :marker "text")` or `(run-tests :marker "text" :untested module)`
+
+error[L0301]: this use of `run-tests` does not match its shape
+  --> expand/test_shape_errors.rslisp:22:36
+   |
+22 | (defn runs-with-a-number-marker () (run-tests :marker 1))
+   |                                    ^^^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: write it as `(run-tests :marker "text")` or `(run-tests :marker "text" :untested module)`
+
+error[L0301]: this use of `run-tests` does not match its shape
+  --> expand/test_shape_errors.rslisp:24:32
+   |
+24 | (defn runs-with-another-key () (run-tests :label "text"))
+   |                                ^^^^^^^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: write it as `(run-tests :marker "text")` or `(run-tests :marker "text" :untested module)`
+
+error[L0301]: this use of `run-tests` does not match its shape
+  --> expand/test_shape_errors.rslisp:27:3
+   |
+27 |   (run-tests :marker "text" :untested))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: write it as `(run-tests :marker "text")` or `(run-tests :marker "text" :untested module)`
+
+error[L0301]: this use of `run-tests` does not match its shape
+  --> expand/test_shape_errors.rslisp:30:3
+   |
+30 |   (run-tests :marker "text" :other module))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: write it as `(run-tests :marker "text")` or `(run-tests :marker "text" :untested module)`
+
+error[L0301]: this use of `run-tests` does not match its shape
+  --> expand/test_shape_errors.rslisp:33:3
+   |
+33 |   (run-tests :marker "text" :untested "module"))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: write it as `(run-tests :marker "text")` or `(run-tests :marker "text" :untested module)`
+
+error[L0301]: this use of `run-tests` does not match its shape
+  --> expand/test_shape_errors.rslisp:35:31
+   |
+35 | (defn runs-with-a-text-key () (run-tests "marker" "text"))
+   |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: write it as `(run-tests :marker "text")` or `(run-tests :marker "text" :untested module)`
+
+error[L0301]: this use of `run-tests` does not match its shape
+  --> expand/test_shape_errors.rslisp:38:3
+   |
+38 |   (run-tests :marker 1 :untested module))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: write it as `(run-tests :marker "text")` or `(run-tests :marker "text" :untested module)`
