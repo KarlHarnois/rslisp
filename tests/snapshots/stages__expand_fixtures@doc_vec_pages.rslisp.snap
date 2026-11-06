@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_vec_pages.rslisp
+---
+(def vec-page "(defmacro vec (elements ...))\n\nBuilds a vector from its elements, which all have one type.\n\n`(vec)` is empty. `vec` is also the type `(vec a)`, Rust's `Vec<A>`.")
+(def iter-page "(iter collection)\n\nReturns an iterator over borrows of a collection's items.\n\nA vector or a slice yields `(ref a)`, and a map yields\n`(pair (ref key) (ref value))`. Where a call expects an `iterator`, a vector\nor a map passes without `iter`.")
+(def sort-page "(sort! items)\n\nSorts a vector in place, in ascending order.\n\n`(sort! items <)` does the same, and `(sort! items >)` sorts in descending\norder. Both need items that implement `ord`.\n\n`(sort! items compare)` orders by a function of two `(ref a)` that returns\nan `i64`. A negative result puts the first item first, a positive result\nputs it last, and zero keeps the two in order. Rust's `sort_by` may panic\nwhen `compare` is not a consistent order.")
+(def windows-page "(windows items size)\n\nReturns an iterator over each run of `size` neighboring items of a slice.\n\nEach run is a `(ref (slice a))`. A slice shorter than `size` gives no run. It\npanics when `size` is zero. A vector passes as its slice.")
