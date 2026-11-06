@@ -55,10 +55,11 @@ pub enum Builtin {
     FormLocation,
     ProgramModules,
     ModuleExports,
+    ModuleSymbol,
 }
 
 impl Builtin {
-    const NAMES: [(Builtin, &'static str); 55] = [
+    const NAMES: [(Builtin, &'static str); 56] = [
         (Builtin::First, "first"),
         (Builtin::Rest, "rest"),
         (Builtin::List, "list"),
@@ -114,6 +115,7 @@ impl Builtin {
         (Builtin::FormLocation, "form-location"),
         (Builtin::ProgramModules, "program-modules"),
         (Builtin::ModuleExports, "module-exports"),
+        (Builtin::ModuleSymbol, "module-symbol"),
     ];
 
     pub fn all() -> impl Iterator<Item = Builtin> {

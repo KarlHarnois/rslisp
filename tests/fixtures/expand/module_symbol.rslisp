@@ -1,0 +1,15 @@
+(use noted/birds)
+(use code first module-notes module-symbol symbol-name)
+
+(def recall
+  (macro (form)
+    (first (module-notes (module-symbol (quote noted/birds))
+                         (quote sightings)))))
+
+(def module-path
+  (macro (form)
+    (symbol-name (module-symbol (quote noted/birds)))))
+
+(def sighting (recall))
+
+(def path (module-path))

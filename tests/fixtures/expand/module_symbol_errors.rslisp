@@ -1,0 +1,7 @@
+(use code module-symbol symbol-name)
+
+(def missing-path
+  (macro (form)
+    (symbol-name (module-symbol (quote missing/module)))))
+
+(def path (missing-path))

@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/module_symbol.rslisp
+---
+(def sighting "a heron")
+(def path "noted/birds")

@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/module_symbol_errors.rslisp
+---
+error[L0204]: cannot find module `missing/module`
+ --> expand/module_symbol_errors.rslisp:5:40
+  |
+5 |     (symbol-name (module-symbol (quote missing/module)))))
+  |                                        ^^^^^^^^^^^^^^ no module with this path
+6 |
+7 | (def path (missing-path))
+  |           -------------- in this macro call
+  |
+  = help: a module path names a file relative to the root directory, without its extension

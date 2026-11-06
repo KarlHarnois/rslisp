@@ -6,7 +6,7 @@ use super::problems::ExpandProblems;
 use crate::core::{BindingId, BindingKind, Declaration, ModulePath, Namespace};
 use crate::diagnostic::Diagnostic;
 use crate::interpret::{CompileTimeHost, Value};
-use crate::modules::ModuleSources;
+use crate::modules::{ModuleRecord, ModuleSources};
 use crate::reader::{Form, Symbol};
 use crate::scope::{Phase, Resolution, ScopeSet};
 use crate::source::{Span, TextPosition};
@@ -96,17 +96,20 @@ impl CompileTimeHost for Expander<'_> {
     }
 
     fn module_exports(&self, path: &Symbol, span: Span) -> Result<Vec<Symbol>, Diagnostic> {
-        let path = ModulePath::new(path.name());
-        let module = self
-            .modules
-            .find(&path)
-            .ok_or_else(|| ExpandProblems::unknown_module(&path, span))?;
-        let record = self.modules.get(module);
+        let record = self.loaded_module(path, span)?;
         let names: BTreeSet<&str> = record.exports().map(|(name, _, _)| &**name).collect();
         Ok(names
             .into_iter()
             .map(|name| Symbol::with_scopes(name, record.body_scopes()))
             .collect())
+    }
+
+    fn module_symbol(&self, path: &Symbol, span: Span) -> Result<Symbol, Diagnostic> {
+        let record = self.loaded_module(path, span)?;
+        if ModuleSources::is_compiler_provided(record.path()) {
+            return Err(ExpandProblems::unknown_module(record.path(), span));
+        }
+        Ok(Symbol::with_scopes(path.name(), record.body_scopes()))
     }
 
     fn same_binding(&self, left: &Symbol, right: &Symbol) -> bool {
@@ -131,6 +134,15 @@ impl CompileTimeHost for Expander<'_> {
 }
 
 impl Expander<'_> {
+    fn loaded_module(&self, path: &Symbol, span: Span) -> Result<&ModuleRecord, Diagnostic> {
+        let path = ModulePath::new(path.name());
+        let module = self
+            .modules
+            .find(&path)
+            .ok_or_else(|| ExpandProblems::unknown_module(&path, span))?;
+        Ok(self.modules.get(module))
+    }
+
     fn definition_scopes(&self, binding: BindingId) -> ScopeSet {
         if let Some(module) = self.definition_module(binding) {
             return self.modules.get(module).body_scopes();
