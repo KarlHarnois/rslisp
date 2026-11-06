@@ -1,0 +1,51 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/set_places_through_parameters.rslisp
+---
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct Counter {
+    value: i64,
+}
+
+fn raise(target: &mut Counter) {
+    target.value = 2
+}
+
+fn overwrite_first(items: &mut [i64]) {
+    items[0] = 9
+}
+
+fn add(items: &mut Vec<i64>) {
+    items.push(7)
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut total: i64 = 0;
+    println!("{}", total);
+    total = 1;
+    let mut target = Counter { value: total };
+    raise(&mut target);
+    let mut items: Vec<i64> = vec![1_i64, 2_i64];
+    overwrite_first(&mut items);
+    add(&mut items);
+    println!("{}{}{}", target.value, items[0], items.len())
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}
