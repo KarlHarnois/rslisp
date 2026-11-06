@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/trait_self_coerced_borrow.rslisp
+---
+4
+true
+true
+true
+false
+2
