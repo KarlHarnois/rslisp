@@ -43,7 +43,9 @@
   An `at` index is a `usize`, so an `i64` is an error, and a vector panics
   when the index is out of bounds. A map panics on a missing key. A map key
   must fit the map's key type: a `(ref str)` key takes a literal or
-  `(as-str name)`, and a `string` is an error."
+  `(as-str name)`, and a `string` is an error.
+
+  It returns `unit`, which prints as `(do)`."
   (if (at-form? target)
     (list (quote set-at)
           (at-base target)
