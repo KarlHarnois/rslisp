@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/literal_missing_trait_label.rslisp
+---
+error[L0404]: `i64` does not implement `named`
+  --> check/literal_missing_trait_label.rslisp:10:25
+   |
+10 | (defn main () (println (show-name 1)))
+   |                         ^^^^^^^^^ this needs `named`
+   |
+   = note: `named` is implemented for:

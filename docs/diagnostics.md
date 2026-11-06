@@ -73,7 +73,9 @@ help: a function with a similar name exists
 
 **Report a missing annotation only when no other error explains it.** A `type annotations needed` error is a symptom of another error, so the type stage drops it when the program has any other error.
 
-**Report an unresolved type variable once.** A value that holds the variable reports it first, and a trait obligation reports only a variable that no value holds. Variables that inference merges later count as one.
+**Report an unresolved type variable once, at the innermost value whose type holds it.** The type stage visits a value's parts before the value. On a call it visits the arguments, then the call, then the callee, so a callee reports only a variable that neither an argument nor the result holds. Variables that inference merges later count as one.
+
+**Say so when no annotation can help.** A variable that only a bound holds reports `L0407` at the function that brought the bound, and its help says that the function's signature must change.
 
 ## Tests
 

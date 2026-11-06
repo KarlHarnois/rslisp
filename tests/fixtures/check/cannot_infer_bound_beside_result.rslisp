@@ -1,0 +1,12 @@
+(def compares?
+  (rust "true"
+    (where ((a (partial-eq b)) b)
+      (fn ((ref a)) bool))))
+
+(defn main ()
+  (let run
+    (fn (g v)
+      (if true
+        (g (compares? (ref v)))
+        (+ v 1))))
+  (println "done"))

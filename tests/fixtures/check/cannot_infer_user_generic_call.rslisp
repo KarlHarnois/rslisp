@@ -1,0 +1,7 @@
+(type make (where (a) (fn () (vec a))))
+
+(defn make () (vec))
+
+(defn main ()
+  (let v (make))
+  (println "done"))

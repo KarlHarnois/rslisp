@@ -1,0 +1,28 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/literal_missing_trait_nested.rslisp
+---
+error[L0404]: `i64` does not implement `named`
+  --> check/literal_missing_trait_nested.rslisp:14:13
+   |
+14 |   (println (option-named? (some 1)))
+   |             ^^^^^^^^^^^^^ this needs `named`
+   |
+   = note: `named` is implemented for: 
+
+error[L0404]: `i64` does not implement `named`
+  --> check/literal_missing_trait_nested.rslisp:17:17
+   |
+17 |       (println (mutable-named? (mut value)))
+   |                 ^^^^^^^^^^^^^^ this needs `named`
+   |
+   = note: `named` is implemented for: 
+
+error[L0404]: `i64` does not implement `named`
+  --> check/literal_missing_trait_nested.rslisp:20:21
+   |
+20 |     (fn (function) (function (some 1))))
+   |                     ^^^^^^^^ this needs `named`
+   |
+   = note: `named` is implemented for:

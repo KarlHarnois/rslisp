@@ -1,0 +1,7 @@
+(def both
+  (rust "true"
+    (where ((a display) (b (partial-eq c)) c)
+      (fn (a b) bool))))
+
+(defn main ()
+  (println (both (str "text") 1)))

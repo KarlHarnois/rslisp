@@ -1,0 +1,7 @@
+(def both
+  (rust "true"
+    (where ((a (partial-eq b)) b)
+      (fn (a) bool))))
+
+(defn main ()
+  (println (both (the i64 1))))

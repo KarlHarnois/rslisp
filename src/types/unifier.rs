@@ -1,4 +1,5 @@
 use std::cell::Cell;
+use std::num::NonZeroU32;
 use std::rc::Rc;
 
 use rustc_hash::FxHashMap;
@@ -48,10 +49,16 @@ pub enum UnifyError {
     NotNumeric,
 }
 
+#[derive(Clone, Copy)]
+pub struct ObligationSite {
+    pub span: Span,
+    pub bound_site: Option<Span>,
+}
+
 pub struct Obligation {
     pub bound: Bound,
     pub implementor: Type,
-    pub span: Span,
+    pub site: ObligationSite,
     pub inside_operand: bool,
 }
 
@@ -67,11 +74,16 @@ struct VarState {
     shortcut: Cell<Option<TypeVar>>,
     literal: Option<LiteralKind>,
     bounds: Vec<Bound>,
+    bound_site: Option<BoundSiteId>,
 }
+
+#[derive(Clone, Copy)]
+struct BoundSiteId(NonZeroU32);
 
 #[derive(Default)]
 pub struct Unifier {
     vars: Vec<VarState>,
+    bound_sites: Vec<Span>,
     obligations: Vec<Obligation>,
     generic_bounds: FxHashMap<GenericId, Vec<Bound>>,
     projections: Rc<ProjectionTable>,
@@ -111,12 +123,56 @@ impl Unifier {
         self.vars[var.index()].literal
     }
 
+    pub fn holds_open_literal(&self, value: &Type) -> bool {
+        match value {
+            Type::Var(start) => self.var_holds_open_literal(*start),
+            Type::Named(_, arguments) => self.any_holds_open_literal(arguments),
+            Type::Function(_, parameters, _) => self.any_holds_open_literal(parameters),
+            Type::Ref(_, inner) | Type::Mut(_, inner) => self.holds_open_literal(inner),
+            _ => false,
+        }
+    }
+
+    fn var_holds_open_literal(&self, start: TypeVar) -> bool {
+        let last = &self.vars[self.last_var(start).index()];
+        match &last.binding {
+            Some(bound) => self.holds_open_literal(bound),
+            None => last.literal.is_some(),
+        }
+    }
+
+    fn any_holds_open_literal(&self, values: &[Type]) -> bool {
+        values.iter().any(|value| self.holds_open_literal(value))
+    }
+
     pub fn bounds(&self, var: TypeVar) -> &[Bound] {
         &self.vars[var.index()].bounds
     }
 
-    pub fn set_bounds(&mut self, var: TypeVar, bounds: Vec<Bound>) {
-        self.vars[var.index()].bounds = bounds;
+    pub fn set_bounds(&mut self, var: TypeVar, bounds: Vec<Bound>, site: Span) {
+        let bound_site = (!bounds.is_empty()).then(|| self.intern_bound_site(site));
+        let state = &mut self.vars[var.index()];
+        state.bound_site = bound_site;
+        state.bounds = bounds;
+    }
+
+    fn intern_bound_site(&mut self, site: Span) -> BoundSiteId {
+        if self.bound_sites.last() != Some(&site) {
+            self.bound_sites.push(site);
+        }
+        let count = u32::try_from(self.bound_sites.len()).expect("fewer sites than variables");
+        BoundSiteId(NonZeroU32::new(count).expect("the last site exists"))
+    }
+
+    fn bound_site(&self, var: TypeVar) -> Option<Span> {
+        let BoundSiteId(id) = self.vars[var.index()].bound_site?;
+        self.bound_sites.get(id.get() as usize - 1).copied()
+    }
+
+    fn add_bound_from(&mut self, var: TypeVar, bound: Bound, site: Option<BoundSiteId>) {
+        self.add_bound(var, bound);
+        let bound_site = &mut self.vars[var.index()].bound_site;
+        *bound_site = bound_site.or(site);
     }
 
     pub fn add_bound(&mut self, var: TypeVar, bound: Bound) {
@@ -353,6 +409,7 @@ impl Unifier {
             shortcut: Cell::new(None),
             literal,
             bounds,
+            bound_site: None,
         });
         Type::Var(var)
     }
@@ -364,9 +421,10 @@ impl Unifier {
             self.vars[into.index()].literal,
         );
         self.vars[into.index()].literal = literal;
+        let bound_site = self.vars[from.index()].bound_site;
         moved_bounds
             .into_iter()
-            .for_each(|bound| self.add_bound(into, bound));
+            .for_each(|bound| self.add_bound_from(into, bound, bound_site));
         self.bind(from, Type::Var(into));
     }
 
@@ -381,7 +439,10 @@ impl Unifier {
             self.obligations.push(Obligation {
                 bound,
                 implementor: value.clone(),
-                span,
+                site: ObligationSite {
+                    span,
+                    bound_site: self.bound_site(var),
+                },
                 inside_operand: self.inside_operand,
             });
         }

@@ -26,7 +26,7 @@ use super::typed::{
     PendingModeCheck, ReceiverKind, TraitMethodInfo, TypedConversion, TypedDefinition, TypedExpr,
     TypedExprKind, TypedLeaf, TypedTrait, TypedTraitImpl, TypedTraitMethod,
 };
-use super::unifier::{LiteralKind, Obligation, Unifier};
+use super::unifier::{LiteralKind, Obligation, ObligationSite, Unifier};
 use crate::core::{
     BindingArena, BindingId, BindingKind, BodyItem, CopyTrait, CoreModule, Expr, ExprKind, Item,
     ItemKind, Leaf, ModuleId, ParsedTemplate, PrimitiveType, ReferenceKind, RustTemplate,
@@ -817,8 +817,10 @@ impl TypeChecker {
         let implementor = self.unifier.resolve(&obligation.implementor);
         match implementor {
             Type::Var(var) => self.unifier.add_bound(var, bound),
-            Type::Generic(generic) => self.check_generic_bound(generic, bound, obligation.span),
-            _ => self.select_implementor(bound, &implementor, obligation.span, pass),
+            Type::Generic(generic) => {
+                self.check_generic_bound(generic, bound, obligation.site.span)
+            }
+            _ => self.select_implementor(bound, &implementor, obligation.site, pass),
         }
     }
 
@@ -837,7 +839,7 @@ impl TypeChecker {
         &mut self,
         bound: Bound,
         implementor: &Type,
-        span: Span,
+        site: ObligationSite,
         pass: ObligationPass,
     ) {
         if self.is_boxed_trait(implementor, bound.binding) {
@@ -847,15 +849,15 @@ impl TypeChecker {
             Selection::Implemented {
                 requirements,
                 argument,
-            } => self.adopt_selection(bound, implementor, requirements, argument, span, pass),
+            } => self.adopt_selection(bound, implementor, requirements, argument, site, pass),
             Selection::Missing if !implementor.has_vars() => {
-                self.report_missing_trait(&bound, implementor, span)
+                self.report_missing_trait(&bound, implementor, site.span)
             }
             Selection::Undecided | Selection::Missing => self.leave_unresolved(
                 Obligation {
                     bound,
                     implementor: implementor.clone(),
-                    span,
+                    site,
                     inside_operand: self.unifier.inside_operand(),
                 },
                 pass,
@@ -869,21 +871,21 @@ impl TypeChecker {
         implementor: &Type,
         requirements: Vec<super::selection::Requirement>,
         argument: Option<Type>,
-        span: Span,
+        site: ObligationSite,
         pass: ObligationPass,
     ) {
         if let (Some(argument), Some(expected)) = (argument, &bound.argument)
-            && self.unifier.unify(expected, &argument, span).is_err()
+            && self.unifier.unify(expected, &argument, site.span).is_err()
         {
-            self.report_missing_trait(&bound, implementor, span);
+            self.report_missing_trait(&bound, implementor, site.span);
             return;
         }
-        self.record_structural_use(&bound, implementor, span);
+        self.record_structural_use(&bound, implementor, site.span);
         for requirement in requirements {
             let required = Obligation {
                 bound: requirement.bound,
                 implementor: requirement.implementor,
-                span,
+                site,
                 inside_operand: self.unifier.inside_operand(),
             };
             self.discharge(required, pass);
@@ -907,7 +909,9 @@ impl TypeChecker {
         if let Some(argument) = &obligation.bound.argument {
             open_vars.extend(self.free_vars(argument));
         }
-        self.defer_missing_annotation(open_vars, TypeProblems::cannot_infer(obligation.span));
+        let site = obligation.site;
+        let label_span = site.bound_site.unwrap_or(site.span);
+        self.defer_missing_annotation(open_vars, TypeProblems::cannot_infer_bound(label_span));
     }
 
     fn check_component(&mut self, members: &[&Definition]) -> Vec<(BindingId, TypedDefinition)> {

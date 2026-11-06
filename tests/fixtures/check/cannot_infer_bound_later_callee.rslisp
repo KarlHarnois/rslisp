@@ -1,0 +1,15 @@
+(def compares?
+  (rust "true"
+    (where ((a (partial-eq b)) b)
+      (fn ((ref a)) bool))))
+
+(def open-one
+  (rust "1" (where (a) (fn () a))))
+
+(def takes-int
+  (rust "{0}" (fn (i64) i64)))
+
+(defn main ()
+  (let x (open-one))
+  (println (compares? (ref x)))
+  (println (takes-int x)))

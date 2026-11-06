@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/cannot_infer_once_per_variable.rslisp
 ---
 error[L0407]: type annotations needed
- --> check/cannot_infer_once_per_variable.rslisp:1:15
+ --> check/cannot_infer_once_per_variable.rslisp:1:26
   |
 1 | (defn main () (str (some (vec))))
-  |               ^^^^^^^^^^^^^^^^^^ cannot infer the type of this value
+  |                          ^^^^^ cannot infer the type of this value
   |
   = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature

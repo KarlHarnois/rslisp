@@ -1,0 +1,10 @@
+(trait named
+  (name (fn ((ref self)) string)))
+
+(type show-name
+  (where ((a named)) (fn (a) string)))
+
+(defn show-name (value)
+  (name (ref value)))
+
+(defn main () (println (show-name 1)))

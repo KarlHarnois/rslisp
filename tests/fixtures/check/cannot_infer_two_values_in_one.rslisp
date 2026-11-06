@@ -1,0 +1,1 @@
+(defn main () (str (pair (vec) (vec))))

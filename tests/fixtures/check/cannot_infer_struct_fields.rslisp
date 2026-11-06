@@ -1,0 +1,8 @@
+(struct (holder a b)
+        (left (vec a))
+        (right (vec b)))
+
+(defn main ()
+  (let held
+    (new holder (left (vec)) (right (vec))))
+  (println "done"))

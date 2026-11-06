@@ -150,7 +150,7 @@ impl TypeChecker {
             )),
             Leaf::Var(binding) => self.infer_variable(*binding, span),
             Leaf::Quote(_) => Err(TypeProblems::quote_at_runtime(span)),
-            Leaf::Rust(template) => self.infer_inline_rust(template),
+            Leaf::Rust(template) => self.infer_inline_rust(template, span),
         };
         Self::typed(inferred, span)
     }
@@ -1128,7 +1128,7 @@ impl TypeChecker {
         }
         Ok((
             TypedExprKind::Leaf(TypedLeaf::Global(binding)),
-            self.global_type(binding),
+            self.global_type(binding, span),
         ))
     }
 
@@ -1155,12 +1155,12 @@ impl TypeChecker {
         )
     }
 
-    fn global_type(&mut self, binding: BindingId) -> Type {
+    fn global_type(&mut self, binding: BindingId, span: Span) -> Type {
         if let Some(current) = self.component.get(&binding) {
             return current.clone();
         }
         match self.schemes.get(&binding).cloned() {
-            Some(scheme) => self.instantiate(&scheme),
+            Some(scheme) => self.instantiate(&scheme, span),
             None => self.unifier.fresh(),
         }
     }
@@ -3653,9 +3653,10 @@ impl TypeChecker {
     fn infer_inline_rust(
         &mut self,
         template: &Rc<RustTemplate>,
+        span: Span,
     ) -> Result<(TypedExprKind, Type), Diagnostic> {
         let scheme = self.lower_scheme(&template.type_expr)?;
-        let ty = self.instantiate(&scheme);
+        let ty = self.instantiate(&scheme, span);
         Ok((TypedExprKind::Leaf(TypedLeaf::Rust(template.clone())), ty))
     }
 }
@@ -3720,7 +3721,8 @@ mod tests {
                 BindingKind::Global(ModuleId::new(0)),
                 None,
             ));
-            self.checker.global_type(binding)
+            let span = Span::new(SourceId::new(0), 0..0);
+            self.checker.global_type(binding, span)
         }
 
         fn rejects_a_compile_time_only_global(&mut self) -> bool {

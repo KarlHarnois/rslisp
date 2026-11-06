@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/cannot_infer_annotated_argument.rslisp
+---
+error[L0407]: type annotations needed
+ --> check/cannot_infer_annotated_argument.rslisp:7:13
+  |
+7 |   (println (both (the i64 1))))
+  |             ^^^^ cannot infer a type that a bound of this function names
+  |
+  = help: a bound of this function names a type that no argument or result holds, so its signature must change

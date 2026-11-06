@@ -1,0 +1,11 @@
+(def mut-compares?
+  (rust "true"
+    (where ((a (partial-eq b)) b)
+      (fn ((mut a)) bool))))
+
+(defn main ()
+  (let run
+    (fn (v)
+      (println (mut-compares? (mut v)))
+      (+ v 1)))
+  (println "done"))

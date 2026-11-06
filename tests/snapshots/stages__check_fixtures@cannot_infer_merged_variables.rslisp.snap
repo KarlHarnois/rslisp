@@ -4,9 +4,9 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/cannot_infer_merged_variables.rslisp
 ---
 error[L0407]: type annotations needed
-  --> check/cannot_infer_merged_variables.rslisp:32:13
+  --> check/cannot_infer_merged_variables.rslisp:32:31
    |
 32 |   (println (link (->wrapper 1 (vec)) (vec))))
-   |             ^^^^ cannot infer the type of this value
+   |                               ^^^^^ cannot infer the type of this value
    |
    = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
