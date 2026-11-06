@@ -37,14 +37,14 @@ impl TraitSlot {
 pub struct TraitSlotCollector<'a> {
     program: &'a TypedProgram,
     functions: &'a FunctionTable,
-    declared: &'a FxHashMap<BindingId, Vec<Type>>,
+    declared: &'a FxHashMap<BindingId, &'a Type>,
 }
 
 impl<'a> TraitSlotCollector<'a> {
     pub fn new(
         program: &'a TypedProgram,
         functions: &'a FunctionTable,
-        declared: &'a FxHashMap<BindingId, Vec<Type>>,
+        declared: &'a FxHashMap<BindingId, &'a Type>,
     ) -> Self {
         Self {
             program,
@@ -76,6 +76,7 @@ impl<'a> TraitSlotCollector<'a> {
             .collect();
         self.declared
             .get(&method)
+            .and_then(|signature| signature.parameters())
             .into_iter()
             .flatten()
             .enumerate()

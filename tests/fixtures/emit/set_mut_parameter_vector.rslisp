@@ -1,0 +1,7 @@
+(defn replace! (items)
+  (set! items (vec 4 5)))
+
+(defn main ()
+  (let numbers (vec 1 2 3))
+  (replace! numbers)
+  (println (len numbers)))

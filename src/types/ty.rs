@@ -94,18 +94,14 @@ impl Type {
         }
     }
 
-    pub fn holds_outside_references(&self, var: TypeVar) -> bool {
+    pub fn holds_outside_references(&self, held: &Type) -> bool {
         match self {
-            Type::Var(found) => *found == var,
-            Type::Ref(_, referent) | Type::Mut(_, referent)
-                if matches!(**referent, Type::Var(_)) =>
-            {
-                false
-            }
+            found if found == held => true,
+            Type::Ref(_, referent) | Type::Mut(_, referent) if **referent == *held => false,
             other => other
                 .parts()
                 .into_iter()
-                .any(|part| part.holds_outside_references(var)),
+                .any(|part| part.holds_outside_references(held)),
         }
     }
 
