@@ -1,0 +1,4 @@
+(defn main ()
+  (let x 1)
+  (prn (set! x 2))
+  (prn x))

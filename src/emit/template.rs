@@ -288,10 +288,10 @@ impl Template {
 
     fn precedence(&self) -> Precedence {
         let text = self.parsed.text().trim();
-        if text.starts_with(Self::UNARY_OPERATORS) {
-            Precedence::Prefix
-        } else if Self::has_top_level_operator(text) {
+        if Self::has_top_level_operator(text) {
             Precedence::Operator
+        } else if text.starts_with(Self::UNARY_OPERATORS) {
+            Precedence::Prefix
         } else {
             Precedence::Atom
         }
@@ -346,6 +346,18 @@ mod tests {
 
     fn operator(text: &str) -> Code {
         Code::with(text, Precedence::Operator)
+    }
+
+    #[test]
+    fn an_assignment_through_a_dereference_is_an_operator() {
+        let template = Template::new("*{0} = {1}");
+        assert_eq!(template.precedence(), Precedence::Operator);
+    }
+
+    #[test]
+    fn a_lone_dereference_stays_a_prefix() {
+        let template = Template::new("*{0}");
+        assert_eq!(template.precedence(), Precedence::Prefix);
     }
 
     #[test]

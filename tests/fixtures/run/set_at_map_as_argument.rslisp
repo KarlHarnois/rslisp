@@ -1,0 +1,4 @@
+(defn main ()
+  (let m (sorted-map "a" 1))
+  (prn (set! (at m "a") 9))
+  (prn m))

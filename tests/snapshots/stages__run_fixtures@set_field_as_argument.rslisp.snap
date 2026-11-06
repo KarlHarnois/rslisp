@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/set_field_as_argument.rslisp
+---
+(do)
+(->counter :total 2)

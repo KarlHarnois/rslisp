@@ -1,0 +1,7 @@
+(defstruct counter
+  :total i64)
+
+(defn main ()
+  (let tally (->counter :total 1))
+  (prn (set! (:total tally) 2))
+  (prn tally))
