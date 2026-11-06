@@ -1,0 +1,7 @@
+(module "")
+
+(export quiet)
+
+(defn quiet ()
+  ""
+  1)

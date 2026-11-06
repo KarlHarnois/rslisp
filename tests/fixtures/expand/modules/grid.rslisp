@@ -1,0 +1,14 @@
+(module "Shapes on a grid.")
+
+(export area perimeter)
+
+(defn area (width height)
+  "Multiplies two sides."
+  (* width height))
+
+(defn perimeter (width height)
+  (* 2 (+ width height)))
+
+(defn helper (x)
+  "Not exported."
+  x)

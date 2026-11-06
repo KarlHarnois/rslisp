@@ -1,0 +1,13 @@
+(use modules/grid area)
+
+(def grid-page (doc-page (module modules/grid)))
+
+(def grid-body (page-body (module modules/grid)))
+
+(def grid-docstring (docstring (module modules/grid)))
+
+(def grid-header (header (module modules/grid)))
+
+(defn main ()
+  (doc (module modules/grid))
+  (println (area 2 3)))

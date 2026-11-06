@@ -1,0 +1,7 @@
+(module "Looks itself up.")
+
+(export main)
+
+(def page (doc-page (module doc_module_entry)))
+
+(defn main () (println page))

@@ -1,0 +1,44 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_lookup_malformed.rslisp
+---
+error[L0301]: a documentation lookup takes a name or a module
+ --> expand/doc_lookup_malformed.rslisp:1:26
+  |
+1 | (def call-page (doc-page (module)))
+  |                          ^^^^^^^^ not a name or a module
+  |
+  = help: write a name, or a module as in `(module geometry)`
+
+error[L0301]: a documentation lookup takes a name or a module
+ --> expand/doc_lookup_malformed.rslisp:3:27
+  |
+3 | (def extra-page (doc-page (module modules/grid extra)))
+  |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^ not a name or a module
+  |
+  = help: write a name, or a module as in `(module geometry)`
+
+error[L0301]: a documentation lookup takes a name or a module
+ --> expand/doc_lookup_malformed.rslisp:5:28
+  |
+5 | (def number-page (doc-page (module 5)))
+  |                            ^^^^^^^^^^ not a name or a module
+  |
+  = help: write a name, or a module as in `(module geometry)`
+
+error[L0301]: a documentation lookup takes a name or a module
+ --> expand/doc_lookup_malformed.rslisp:7:28
+  |
+7 | (def string-page (doc-page "x"))
+  |                            ^^^ not a name or a module
+  |
+  = help: write a name, or a module as in `(module geometry)`
+
+error[L0301]: a documentation lookup takes a name or a module
+ --> expand/doc_lookup_malformed.rslisp:9:20
+  |
+9 | (defn main () (doc (f x)))
+  |                    ^^^^^ not a name or a module
+  |
+  = help: write a name, or a module as in `(module geometry)`

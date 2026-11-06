@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module_undocumented_docstring.rslisp
+---
+error[L0327]: `undocumented/shapes` has no docstring
+ --> expand/doc_module_undocumented_docstring.rslisp:4:22
+  |
+4 |   (docstring (module undocumented/shapes)))
+  |                      ^^^^^^^^^^^^^^^^^^^ no docstring for this module
+  |
+  = help: write `(module "...")` in the module's file

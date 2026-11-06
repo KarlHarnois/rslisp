@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module_beside_binding.rslisp
+---
+(def modules/grid 1)
+(def binding-page "(def modules/grid)\n\nNo documentation.")
+(def module-docstring "Shapes on a grid.")

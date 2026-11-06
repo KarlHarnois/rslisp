@@ -1,0 +1,7 @@
+(use modules/grid area)
+
+(def modules/grid 1)
+
+(def binding-page (doc-page modules/grid))
+
+(def module-docstring (docstring (module modules/grid)))

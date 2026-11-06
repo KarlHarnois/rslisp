@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module_unknown.rslisp
+---
+error[L0204]: cannot find module `nowhere`
+ --> expand/doc_module_unknown.rslisp:1:29
+  |
+1 | (def page (doc-page (module nowhere)))
+  |                             ^^^^^^^ no module with this path
+  |
+  = help: a module path names a file relative to the root directory, without its extension

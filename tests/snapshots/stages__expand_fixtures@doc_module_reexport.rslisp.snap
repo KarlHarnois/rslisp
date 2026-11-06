@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module_reexport.rslisp
+---
+(def plane-page "(module modules/plane)\n\nNo documentation.\n\n(defn area (width height))\n    Multiplies two sides.")

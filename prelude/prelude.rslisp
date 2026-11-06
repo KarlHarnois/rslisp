@@ -1,6 +1,7 @@
 (use prelude/macros defmacro defrule doc-page docstring
                     document header header-shape
-                    kernel-definition page-body template)
+                    kernel-definition module page-body
+                    template)
 
 (use prelude/logic and cond not or unless when)
 
@@ -68,9 +69,9 @@
         into-sorted-map io-error isize iter iterator keys
         last le len let let-fields let-pair let-try line-seq
         lines local loop lower-case lt macro map map-at
-        map-err map-ok map-some match max max-by-key min mul
-        mut ne neg new none none? not not= number ok ok-or
-        ok? option or ord page-body pair parse
+        map-err map-ok map-some match max max-by-key min
+        module mul mut ne neg new none none? not not= number
+        ok ok-or ok? option or ord page-body pair parse
         parse-bool-error parse-char-error parse-error
         parse-float-error parse-int-error partial-eq
         partial-ord pi pop! pr-str print println prn push!

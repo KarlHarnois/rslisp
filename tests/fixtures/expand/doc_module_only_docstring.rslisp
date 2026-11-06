@@ -1,0 +1,3 @@
+(use modules/prose)
+
+(def prose-page (doc-page (module modules/prose)))

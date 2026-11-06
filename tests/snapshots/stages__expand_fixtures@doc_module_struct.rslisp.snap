@@ -1,0 +1,6 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module_struct.rslisp
+---
+(def points-page "(module modules/points)\n\nNo documentation.\n\n(defstruct pixel)\n(defstruct point)\n    A point on a grid.")

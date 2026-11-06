@@ -1,0 +1,6 @@
+(use undocumented/shapes area)
+
+(def shapes-page (doc-page (module undocumented/shapes)))
+
+(defn main ()
+  (println (area 2 3) shapes-page))

@@ -1,0 +1,9 @@
+(def call-page (doc-page (module)))
+
+(def extra-page (doc-page (module modules/grid extra)))
+
+(def number-page (doc-page (module 5)))
+
+(def string-page (doc-page "x"))
+
+(defn main () (doc (f x)))

@@ -1,0 +1,3 @@
+(use modules/blank quiet)
+
+(def blank-docstring (docstring (module modules/blank)))

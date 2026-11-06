@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module_blank_docstring.rslisp
+---
+error[L0327]: `modules/blank` has no docstring
+ --> expand/doc_module_blank_docstring.rslisp:3:41
+  |
+3 | (def blank-docstring (docstring (module modules/blank)))
+  |                                         ^^^^^^^^^^^^^ no docstring for this module
+  |
+  = help: write `(module "...")` in the module's file

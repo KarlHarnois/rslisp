@@ -1,0 +1,3 @@
+(def kernel-page (doc-page (module kernel)))
+
+(def code-page (doc-page (module code)))

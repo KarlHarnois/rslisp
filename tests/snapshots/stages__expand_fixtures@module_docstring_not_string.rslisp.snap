@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/module_docstring_not_string.rslisp
+---
+error[L0301]: a docstring is a string
+ --> expand/module_docstring_not_string.rslisp:1:9
+  |
+1 | (module 5)
+  |         ^ not a string
+  |
+  = help: write it as a string literal

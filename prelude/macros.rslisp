@@ -2,19 +2,21 @@
           declare-macro-definition definition-call
           definition-symbol drop empty? expand-call fail
           field-keyword first keyword-field keyword-name
-          keyword? len list list? module-notes nth
-          number-add number-lt number-sub prepend rest
-          same-binding? string string-drop string-length
-          string-lines string-strip-suffix string-trim-start
-          string? symbol symbol-name symbol? take
-          type-definition-call type-definition-symbol
-          value-eq)
+          keyword? len list list? module-exports
+          module-notes module-symbol nth number-add
+          number-lt number-sub prepend rest same-binding?
+          string string-drop string-length string-lines
+          string-strip-prefix string-strip-suffix
+          string-trim-start string? symbol symbol-name
+          symbol? take type-definition-call
+          type-definition-symbol value-eq)
 
 (export defmacro defrule doc-page docstring
         docstring-before-body? docstring-before-parameters
         document documented-body? header header-shape
-        kernel-definition map-list note-docstring page-body
-        template type-doc-key value-doc-key whole-pairs?)
+        kernel-definition map-list module note-docstring
+        page-body template type-doc-key value-doc-key
+        whole-pairs?)
 
 (def map-list
   (fn (function items)
@@ -472,8 +474,8 @@
     (fail "a docstring goes after the parameter list"
       docstring
       "write it as the first body form, after the parameter list"
-      (template (:code docstring-before-parameters
-                       :label "a docstring in place of the parameter list")))))
+      (quote (:code docstring-before-parameters
+                    :label "a docstring in place of the parameter list")))))
 
 (def docstring-before-body?
   (fn (body)
@@ -587,8 +589,8 @@
   (fn (shape)
     (fail "a header shape is a list that starts with the form's name"
       shape "write it as `(header-shape (form name ...))`"
-      (template (:code malformed-header-shape
-                       :label "not a list that starts with a name")))))
+      (quote (:code malformed-header-shape
+                    :label "not a list that starts with a name")))))
 
 (def shape-marker-names
   (quote (docstring one-per-line arms)))
@@ -665,8 +667,8 @@
       marker
       (string "remove it: only `:docstring`, `:one-per-line` and `:arms` "
               "may follow a header shape, each once")
-      (template (:code unexpected-header-shape-marker
-                       :label "not expected here")))))
+      (quote (:code unexpected-header-shape-marker
+                    :label "not expected here")))))
 
 (def unexpected-header-shape-marker-title
   "unexpected form after a header shape")
@@ -677,11 +679,20 @@
   The header is the term's call form, as in `(document (twice x) text)`, or
   the bare name of a term that takes no arguments. The page shows the header
   as written, and the header's head names the term."
-  (local key (value-doc-key (header-name header)))
-  (do
-    (add-module-note (quote docstrings)
-                     (concat key (list header text)))
-    (quote (do))))
+  (noted-docstring (quote docstrings)
+                   (concat (value-doc-key (header-name header))
+                           (list header text))
+                   text))
+
+(def noted-docstring
+  (fn (key note text)
+    (if (string? text)
+      (do
+        (add-module-note key note)
+        (quote (do)))
+      (fail "a docstring is a string"
+        text "write it as a string literal"
+        (quote (:label "not a string"))))))
 
 (def header-name
   (fn (header)
@@ -719,12 +730,24 @@
 
 (header-shape (fail message))
 
+(defmacro module (text)
+  (noted-docstring (quote module-docstrings) text text))
+
+(document (module text)
+  "Documents the module it is written in.
+
+  `(doc (module path))` prints the page: the module header, the docstring,
+  then the exported names in name order. Each entry is a name's header and
+  summary, and names with one header and one docstring share an entry. The
+  first `module` of a file wins.")
+
 (defmacro doc-page (term)
   "Returns the page of a term as a string.
 
   The page is its header, a blank line, then its docstring. A term without a
   docstring has `No documentation.` in its place. The page is the text of
-  (header term) followed by the text of (page-body term)."
+  (header term) followed by the text of (page-body term). A term may be
+  (module path), whose page also lists the module's exports."
   (documentation-part (quote page) term))
 
 (defmacro page-body (term)
@@ -745,20 +768,120 @@
 
 (def documentation-part
   (fn (part term)
+    (if (symbol? term)
+      (term-part part term)
+      (if (module-lookup? term)
+        (module-part part (nth term 1))
+        (malformed-term term)))))
+
+(def module-lookup?
+  (fn (term)
+    (if (list? term)
+      (if (value-eq (len term) 2)
+        (if (value-eq (first term) (quote module))
+          (symbol? (nth term 1))
+          false)
+        false)
+      false)))
+
+(def module-part
+  (fn (part path)
+    (local note (module-note path))
+    (if (missing-docstring? part note)
+      (undocumented path "no docstring for this module"
+                    "write `(module \"...\")` in the module's file")
+      (string (doc-part part note)
+              (if (value-eq part (quote header))
+                ""
+                (if (value-eq part (quote docstring))
+                  ""
+                  (export-listing path)))))))
+
+(def module-note
+  (fn (path)
+    (prepend (list (quote module) path)
+             (written-texts (module-notes (module-symbol path)
+                                          (quote module-docstrings))))))
+
+(def written-texts
+  (fn (texts)
+    (if (empty? texts)
+      texts
+      (if (value-eq (clean-docstring (first texts)) "")
+        (list)
+        (take 1 texts)))))
+
+(def export-listing
+  (fn (path)
+    (local entries
+      (distinct-entries (map-list listing-entry (module-exports path))))
+    (if (empty? entries)
+      ""
+      (string "\n\n" (join-lines entries)))))
+
+(def listing-entry
+  (fn (term)
+    (local note (term-note term))
+    (local docstrings (written-texts (note-docstrings note)))
+    (if (empty? docstrings)
+      (string (note-header note))
+      (string (note-header note)
+              "\n    "
+              (first (string-lines (clean-docstring (first docstrings))))))))
+
+(def distinct-entries
+  (fn (entries)
+    (if (empty? entries)
+      entries
+      (if (shared-entry? (first entries) (rest entries))
+        (distinct-entries (rest entries))
+        (prepend (first entries)
+                 (distinct-entries (rest entries)))))))
+
+(def shared-entry?
+  (fn (entry later)
+    (if (empty? later)
+      false
+      (if (value-eq entry (first later))
+        true
+        (if (value-eq (first later)
+                      (string-strip-prefix (first later) (string entry "\n")))
+          (recur entry (rest later))
+          true)))))
+
+(def malformed-term
+  (fn (term)
+    (fail "a documentation lookup takes a name or a module"
+      term
+      "write a name, or a module as in `(module geometry)`"
+      (quote (:label "not a name or a module")))))
+
+(def term-part
+  (fn (part term)
+    (local note (term-note term))
+    (if (missing-docstring? part note)
+      (undocumented term "no docstring for this name"
+                    (string "write a docstring where it is defined, as the "
+                            "first form after the parameter list or the "
+                            "header"))
+      (doc-part part note))))
+
+(def missing-docstring?
+  (fn (part note)
+    (if (value-eq part (quote docstring))
+      (empty? (note-docstrings note))
+      false)))
+
+(def term-note
+  (fn (term)
     (local documented-values (value-notes term))
     (local notes
       (if (empty? documented-values)
         (type-notes term)
         documented-values))
     (if (empty? notes)
-      (undocumented-part part term)
-      (doc-part part (first notes)))))
-
-(def undocumented-part
-  (fn (part term)
-    (if (value-eq part (quote docstring))
-      (undocumented term)
-      (doc-part part (undocumented-note term)))))
+      (list (written-header term))
+      (first notes))))
 
 (def value-notes
   (fn (term)
@@ -773,17 +896,12 @@
       (prepend (written-header term) page)
       page)))
 
-(def with-call-header
-  (fn (header note)
-    (prepend header (drop 2 note))))
-
 (def type-notes
   (fn (term)
     (local context (type-definition-symbol term "doc"))
     (map-list (fn (note)
-                (with-call-header (calls-header term context
-                                                (type-definition-call term))
-                                  note))
+                (prepend (calls-header term context (type-definition-call term))
+                         (drop 2 note)))
               (docstring-notes context (type-doc-key term)))))
 
 (def docstring-notes
@@ -807,9 +925,6 @@
 
 (def type-doc-key
   (fn (name) (list "type" name)))
-
-(def undocumented-note
-  (fn (term) (list (written-header term))))
 
 (def written-header
   (fn (term)
@@ -895,13 +1010,13 @@
   (fn (note) (rest note)))
 
 (def undocumented
-  (fn (term)
+  (fn (term label help)
     (fail (string "`" term "` has no docstring")
-      term
-      (string "write a docstring where it is defined, as the first form "
-              "after the parameter list or the header")
-      (template (:code undocumented-term
-                       :label "no docstring for this name")))))
+      term help
+      (list (quote :code)
+            (quote undocumented-term)
+            (quote :label)
+            label))))
 
 (def doc-part
   (fn (part note)
@@ -915,14 +1030,11 @@
 
 (def page-body-text
   (fn (note)
-    (string "\n\n" (page-text note))))
-
-(def page-text
-  (fn (note)
     (local docstrings (note-docstrings note))
-    (if (empty? docstrings)
-      "No documentation."
-      (clean-docstring (first docstrings)))))
+    (string "\n\n"
+            (if (empty? docstrings)
+              "No documentation."
+              (clean-docstring (first docstrings))))))
 
 (def clean-docstring
   (fn (text)

@@ -1,0 +1,3 @@
+(use modules/blank quiet)
+
+(def blank-page (doc-page (module modules/blank)))

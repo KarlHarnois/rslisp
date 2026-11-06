@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_module_unloaded.rslisp
+---
+error[L0204]: cannot find module `modules/grid`
+ --> expand/doc_module_unloaded.rslisp:1:29
+  |
+1 | (def page (doc-page (module modules/grid)))
+  |                             ^^^^^^^^^^^^ no module with this path
+  |
+  = help: a module path names a file relative to the root directory, without its extension

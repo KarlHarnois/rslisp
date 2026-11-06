@@ -1,0 +1,27 @@
+(use prelude/macros header-shape note-docstring
+                    value-doc-key)
+
+(use code empty? first len nth number-lt)
+
+(export alpha beta delta epsilon eta gamma theta zeta)
+
+(defmacro defpair (first-name second-name texts ...)
+  (if (empty? texts)
+    (do)
+    (note-docstring (value-doc-key first-name) (first texts)))
+  (if (number-lt (len texts) 2)
+    (do)
+    (note-docstring (value-doc-key second-name) (nth texts 1)))
+  (template (do
+              (def (unquote first-name) 1)
+              (def (unquote second-name) 2))))
+
+(header-shape (defpair first-name second-name))
+
+(defpair alpha beta "Comes first." "Comes second.")
+
+(defpair gamma delta "Comes as a pair." "Comes as a pair.")
+
+(defpair epsilon zeta)
+
+(defpair eta theta "Only the first name has this.")
