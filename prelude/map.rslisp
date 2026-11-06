@@ -62,12 +62,22 @@
                  pairs)))))
 
 (defmacro sorted-map (pairs ...)
+  "Builds a sorted map from keys and values given in turn.
+
+  `(sorted-map)` is empty, and an odd number of arguments is an error. Keys
+  implement `ord`. `sorted-map` is also the type `(sorted-map key value)`,
+  Rust's `std::collections::BTreeMap<K, V>`."
   (map-form "std::collections::BTreeMap"
             (quote sorted-map)
             (quote (ord))
             pairs))
 
 (defmacro hash-map (pairs ...)
+  "Builds a hash map from keys and values given in turn.
+
+  `(hash-map)` is empty, and an odd number of arguments is an error. Keys
+  implement `hash` and `eq`. `hash-map` is also the type
+  `(hash-map key value)`, Rust's `std::collections::HashMap<K, V>`."
   (map-form "std::collections::HashMap"
             (quote hash-map)
             (quote (hash eq))

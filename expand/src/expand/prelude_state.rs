@@ -212,7 +212,7 @@ mod tests {
 
     impl PreludePages {
         const ENTRY: &str = "kernel-pages";
-        const DOCUMENTED_MODULES: [&str; 9] = [
+        const DOCUMENTED_MODULES: [&str; 10] = [
             "prelude/number",
             "prelude/logic",
             "prelude/text",
@@ -222,6 +222,7 @@ mod tests {
             "prelude/sequence",
             "prelude/option",
             "prelude/result",
+            "prelude/types",
         ];
         const ALTERNATIVE: &str = " or ";
         const OPTIONAL_PART_END: &str = ")?";
