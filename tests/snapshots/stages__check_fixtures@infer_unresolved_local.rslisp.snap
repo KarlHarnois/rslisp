@@ -9,4 +9,4 @@ error[L0407]: type annotations needed
 2 |   (let v (vec))
   |          ^^^^^ cannot infer the type of this value
   |
-  = help: annotate the binding, as in `(let (name i64) value)`, or add a `type` signature
+  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature

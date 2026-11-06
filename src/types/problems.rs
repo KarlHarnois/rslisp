@@ -674,7 +674,7 @@ impl TypeProblems {
             Label::new(span, "cannot infer the type of this value"),
         )
         .with_help(
-            "annotate the binding, as in `(let (name i64) value)`, or add a `type` signature",
+            "write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature",
         )
     }
 
