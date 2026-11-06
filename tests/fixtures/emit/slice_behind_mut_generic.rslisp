@@ -1,0 +1,12 @@
+(def size-of!
+  (rust "std::mem::size_of_val({0})"
+    (where (a) (fn ((mut a)) usize))))
+
+(defn g! (v)
+  (println (size-of! v))
+  (set! (at v 0) 2))
+
+(defn main ()
+  (let xs (vec 1))
+  (g! xs)
+  (println (at xs 0)))

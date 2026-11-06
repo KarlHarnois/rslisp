@@ -42,7 +42,7 @@ pub struct ShrinkSelection<'a> {
     program: &'a TypedProgram,
     functions: &'a FunctionTable,
     modes: &'a FxHashMap<BindingId, ParamMode>,
-    declared: FxHashMap<BindingId, Vec<Type>>,
+    declared: FxHashMap<BindingId, &'a Type>,
     values: FxHashSet<BindingId>,
     trait_methods: FxHashSet<BindingId>,
     trait_slots: Vec<ShrinkableSlot>,
@@ -59,14 +59,11 @@ impl<'a> ShrinkSelection<'a> {
             .rust_types
             .binding_with_template(RustType::SLICE_TEMPLATE)?;
         let mut values = FxHashSet::default();
-        let declared: FxHashMap<BindingId, Vec<Type>> = program
+        let declared: FxHashMap<BindingId, &'a Type> = program
             .modules
             .iter()
             .flat_map(|module| &module.definitions)
-            .filter_map(|definition| match &definition.scheme.body {
-                Type::Function(_, parameters, _) => Some((definition.binding, parameters.clone())),
-                _ => None,
-            })
+            .map(|definition| (definition.binding, &definition.scheme.body))
             .collect();
         for definition in program
             .modules
@@ -282,11 +279,23 @@ impl<'a> ShrinkSelection<'a> {
         position: usize,
         shrink: &Shrink,
     ) -> bool {
-        self.declared.get(&function).is_some_and(|parameters| {
-            parameters
-                .get(position)
-                .is_some_and(|parameter| self.accepts(parameter, shrink))
+        self.declared.get(&function).is_some_and(|signature| {
+            signature
+                .parameters()
+                .and_then(|parameters| parameters.get(position))
+                .is_some_and(|parameter| {
+                    self.accepts(parameter, shrink)
+                        && !Self::holds_referent_by_value(signature, parameter)
+                })
         })
+    }
+
+    fn holds_referent_by_value(signature: &Type, parameter: &Type) -> bool {
+        matches!(
+            parameter,
+            Type::Ref(_, referent) | Type::Mut(_, referent)
+                if signature.holds_outside_references(referent)
+        )
     }
 
     fn rust_argument_use(

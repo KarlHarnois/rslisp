@@ -1,0 +1,11 @@
+(type tagged
+  (where ((a display))
+    (fn ((ref a) a) string)))
+
+(defn tagged (expected actual) (str expected actual))
+
+(defn label (name)
+  (tagged name (str "x")))
+
+(defn main ()
+  (println (label (str "y"))))

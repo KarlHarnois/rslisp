@@ -1,0 +1,33 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/slice_behind_mut_generic.rslisp
+---
+fn g(v: &mut [i64]) {
+    println!("{}", std::mem::size_of_val(v));
+    v[0] = 2
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let mut xs: Vec<i64> = vec![1_i64];
+    g(&mut xs);
+    println!("{}", xs[0])
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

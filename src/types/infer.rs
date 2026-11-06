@@ -2131,7 +2131,7 @@ impl TypeChecker {
                 && self
                     .unifier
                     .resolve(&callee.ty)
-                    .holds_outside_references(*variable);
+                    .holds_outside_references(&Type::Var(*variable));
         holds_view.then_some(layers)
     }
 
