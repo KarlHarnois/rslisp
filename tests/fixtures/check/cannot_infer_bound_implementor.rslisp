@@ -1,0 +1,10 @@
+(rust-trait carried "Carried"
+  (where ((t display))
+    (with i64 (option t))))
+
+(def probe
+  (rust "true"
+    (where ((a (carried (option (vec b)))) b)
+      (fn (a) bool))))
+
+(defn main () (println (probe 1)))

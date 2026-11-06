@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/cannot_infer_bound_argument.rslisp
+---
+error[L0407]: type annotations needed
+ --> check/cannot_infer_bound_argument.rslisp:6:16
+  |
+6 | (defn main () (compares-with-anything? 1))
+  |                ^^^^^^^^^^^^^^^^^^^^^^^ cannot infer the type of this value
+  |
+  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature

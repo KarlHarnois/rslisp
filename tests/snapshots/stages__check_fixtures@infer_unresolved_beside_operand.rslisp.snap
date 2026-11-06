@@ -10,11 +10,3 @@ error[L0407]: type annotations needed
   |   ^^^^^^^^^^^^^^^^^^ cannot infer the type of this value
   |
   = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
-
-error[L0407]: type annotations needed
- --> check/infer_unresolved_beside_operand.rslisp:3:8
-  |
-3 |   (str (some (vec))))
-  |        ^^^^^^^^^^^^ cannot infer the type of this value
-  |
-  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature

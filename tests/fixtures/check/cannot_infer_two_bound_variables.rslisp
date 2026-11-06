@@ -1,0 +1,10 @@
+(rust-trait matched "Matched" (with i64 (pair i64 i64)))
+
+(def probe
+  (rust "true"
+    (where ((a (matched (pair b c)))
+            (d (partial-eq c))
+            b c)
+      (fn (a d) bool))))
+
+(defn main () (println (probe 1 2)))

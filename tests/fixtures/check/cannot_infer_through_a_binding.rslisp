@@ -1,0 +1,3 @@
+(defn main ()
+  (let open (some (vec)))
+  (str open))
