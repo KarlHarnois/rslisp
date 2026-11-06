@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_types_pages.rslisp
+---
+(def option-page "(option a)\n\nTypes a value that may be absent, Rust's `Option<A>`.\n\n`some` and `none` build one, and `match` reads it with the patterns\n`(some x)` and `none`.")
+(def slice-page "(slice a)\n\nTypes a run of items in one place, Rust's `[A]`.\n\nWrite it behind a borrow, as `(ref (slice a))`. A `(ref (vec a))` passes as\none.")
+(def box-page "(box value)\n\nMoves a value to the heap.\n\n`box` is also the type `(box a)`, Rust's `Box<A>`.")
+(def sorted-map-page "(defmacro sorted-map (pairs ...))\n\nBuilds a sorted map from keys and values given in turn.\n\n`(sorted-map)` is empty, and an odd number of arguments is an error. Keys\nimplement `ord`. `sorted-map` is also the type `(sorted-map key value)`,\nRust's `std::collections::BTreeMap<K, V>`.")
+(def variant-page "(option/some value)\n\nBuilds the `some` variant of an `option`.\n\n`some` is the macro for this call.")

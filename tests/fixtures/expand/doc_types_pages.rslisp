@@ -1,0 +1,9 @@
+(def option-page (doc-page option))
+
+(def slice-page (doc-page slice))
+
+(def box-page (doc-page box))
+
+(def sorted-map-page (doc-page sorted-map))
+
+(def variant-page (doc-page option/some))

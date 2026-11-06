@@ -1,3 +1,5 @@
+(use prelude/macros document)
+
 (export box hash-map iterator option result sequence slice
         sorted-map vec)
 
@@ -36,3 +38,58 @@
   (where (item) (slice item))
   (where (key value) (sorted-map key value))
   (where (key value) (hash-map key value)))
+
+(document (box value)
+  "Moves a value to the heap.
+
+  `box` is also the type `(box a)`, Rust's `Box<A>`.")
+
+(document (option a)
+  "Types a value that may be absent, Rust's `Option<A>`.
+
+  `some` and `none` build one, and `match` reads it with the patterns
+  `(some x)` and `none`.")
+
+(document (option/some value)
+  "Builds the `some` variant of an `option`.
+
+  `some` is the macro for this call.")
+
+(document option/none
+  "Holds the `none` variant of an `option`.
+
+  `none` is the same value.")
+
+(document (result a b)
+  "Types a success `a` or a failure `b`, Rust's `Result<A, B>`.
+
+  `ok` and `err` build one, and `match` reads it with the patterns `(ok x)`
+  and `(err x)`.")
+
+(document (result/ok value)
+  "Builds the `ok` variant of a `result`.
+
+  `ok` is the macro for this call.")
+
+(document (result/err error)
+  "Builds the `err` variant of a `result`.
+
+  `err` is the macro for this call.")
+
+(document (iterator a)
+  "Types a lazy run of items, Rust's `impl Iterator<Item = A>`.
+
+  It is an error in a struct field or an enum payload, because Rust names this
+  type only as a function's own parameter or result.")
+
+(document (slice a)
+  "Types a run of items in one place, Rust's `[A]`.
+
+  Write it behind a borrow, as `(ref (slice a))`. A `(ref (vec a))` passes as
+  one.")
+
+(document sequence
+  "Marks a type that `len` and `empty?` read.
+
+  `str`, `string`, a vector, a slice, a map and a reference to any of them
+  implement it.")
