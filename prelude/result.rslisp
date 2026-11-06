@@ -1,4 +1,4 @@
-(use prelude/macros defrule)
+(use prelude/macros defrule document)
 (use prelude/types option result)
 (use prelude/text show)
 
@@ -58,3 +58,68 @@
       (fn ((result a e)
            (fn-once (a) (result b e)))
         (result b e)))))
+
+(document (ok value)
+  "Wraps a success value in a `result`.
+
+  It is a macro, so `(fn (x) (ok x))` passes it as a function. In a `match`,
+  `(ok x)` is the pattern that binds the value.")
+
+(document (err error)
+  "Wraps a failure value in a `result`.
+
+  It is a macro, so `(fn (x) (err x))` passes it as a function. In a `match`,
+  `(err x)` is the pattern that binds the value.")
+
+(document (ok-or option error)
+  "Turns an `option` into a `result`, with `error` in place of `none`.
+
+  `error` runs before the call, whether or not the call uses it.")
+
+(document (ok? result)
+  "Returns whether a `result` is `ok`.
+
+  It borrows the result, which stays usable.")
+
+(document (err? result)
+  "Returns whether a `result` is `err`.
+
+  It borrows the result, which stays usable.")
+
+(document (unwrap-ok result)
+  "Returns a `result`'s `ok` value.
+
+  It panics on `err` with the printed form of the error, so the error type
+  implements `show`. It moves a result that is not `copy`.")
+
+(document (unwrap-err result)
+  "Returns a `result`'s `err` value.
+
+  It panics on `ok` with the printed form of the value, so the value type
+  implements `show`. It moves a result that is not `copy`.")
+
+(document (expect-ok result message)
+  "Returns a `result`'s `ok` value, or panics with a message on `err`.
+
+  The panic prints `message`, then the printed form of the error, so the error
+  type implements `show`. `message` is a `(ref str)`, so borrow a `string`
+  with `as-str`. The call moves a result that is not `copy`.")
+
+(document (map-ok result function)
+  "Applies a function to a `result`'s `ok` value.
+
+  It returns the function's result in an `ok`. For `err` the function does not
+  run, and the error passes through. A keyword such as `:age` reads that
+  field.")
+
+(document (map-err result function)
+  "Applies a function to a `result`'s `err` value.
+
+  It returns the function's result in an `err`. For `ok` the function does not
+  run, and the value passes through.")
+
+(document (then-ok result function)
+  "Calls a function that returns a `result` on a `result`'s `ok` value.
+
+  It returns the function's `result` as it is, which has the same error type.
+  For `err` the function does not run, and the error passes through.")
