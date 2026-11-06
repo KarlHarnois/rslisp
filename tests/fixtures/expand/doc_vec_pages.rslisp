@@ -1,0 +1,7 @@
+(def vec-page (doc-page vec))
+
+(def iter-page (doc-page iter))
+
+(def sort-page (doc-page sort!))
+
+(def windows-page (doc-page windows))

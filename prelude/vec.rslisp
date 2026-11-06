@@ -41,6 +41,9 @@
                 (list (quote vec) (quote item))))))
 
 (defmacro vec (elements ...)
+  "Builds a vector from its elements, which all have one type.
+
+  `(vec)` is empty. `vec` is also the type `(vec a)`, Rust's `Vec<A>`."
   (let count (len elements))
   (if (empty? elements)
     (list (quote rust)
@@ -158,3 +161,82 @@
   (rust "{0}.dedup()"
     (where ((a partial-eq))
       (fn ((mut (vec a))) unit))))
+
+(document (iter collection)
+  "Returns an iterator over borrows of a collection's items.
+
+  A vector or a slice yields `(ref a)`, and a map yields
+  `(pair (ref key) (ref value))`. Where a call expects an `iterator`, a vector
+  or a map passes without `iter`.")
+
+(document (copied items)
+  "Returns an iterator over copies of a slice's items.
+
+  The items implement `copy`. A vector passes as its slice.")
+
+(document (collect items)
+  "Collects the items of an iterator into a vector.")
+
+(document (pop! items)
+  "Removes a vector's last item and returns it as an `option`.
+
+  It returns `none` for an empty vector.")
+
+(document (remove-at! items index)
+  "Removes the item at an index and returns it.
+
+  Each later item moves down by one. It panics when `index` is not below the
+  vector's length.")
+
+(document (sort! items)
+  "Sorts a vector in place, in ascending order.
+
+  `(sort! items <)` does the same, and `(sort! items >)` sorts in descending
+  order. Both need items that implement `ord`.
+
+  `(sort! items compare)` orders by a function of two `(ref a)` that returns
+  an `i64`. A negative result puts the first item first, a positive result
+  puts it last, and zero keeps the two in order. Rust's `sort_by` may panic
+  when `compare` is not a consistent order.")
+
+(document (sort-by! items key)
+  "Sorts a vector in place by the key of each item.
+
+  `key` takes a `(ref a)` and returns a value that implements `ord`. Items
+  with equal keys keep their order.")
+
+(document (windows items size)
+  "Returns an iterator over each run of `size` neighboring items of a slice.
+
+  Each run is a `(ref (slice a))`. A slice shorter than `size` gives no run. It
+  panics when `size` is zero. A vector passes as its slice.")
+
+(document (at items index)
+  "Returns a borrow of the item at an index.
+
+  It panics when `index` is not below the length. `get` returns an `option`
+  in place of the panic. A vector passes as its slice.")
+
+(document (first items)
+  "Returns a borrow of a slice's first item as an `option`.
+
+  It returns `none` for an empty slice. A vector passes as its slice.")
+
+(document (last items)
+  "Returns a borrow of a slice's last item as an `option`.
+
+  It returns `none` for an empty slice. A vector passes as its slice.")
+
+(document (reverse items)
+  "Returns an iterator over borrows of a slice's items, last item first.
+
+  It takes a vector or a slice, not an iterator, and leaves the items in
+  place. Use `reverse!` to reverse a vector itself.")
+
+(document (reverse! items) "Reverses a vector in place.")
+
+(document (dedup! items)
+  "Removes from a vector each item equal to the one before it.
+
+  Only neighbors count, so sort the vector first to remove every repeat. The
+  items implement `partial-eq`.")
