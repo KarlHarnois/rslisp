@@ -3,5 +3,5 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/expand/doc_sequence_pages.rslisp
 ---
-(def len-page "(len collection)\n\nReturns the number of items of a collection as a `usize`.\n\nA string counts bytes, not characters, so `(len \"héllo\")` is 6. Use\n`(count (chars text))` for characters.")
+(def len-page "(len collection)\n\nReturns the number of items of a collection as a `usize`.\n\nA string counts bytes, not characters, so `(len \"héllo\")` is 6. Use\n`(count (chars text))` for characters, and borrow a `string` first with\n`as-str`.")
 (def empty-page "(empty? collection)\n\nReturns whether a collection has no items.\n\nIt takes a `string`, a `str`, a vector, a slice or a map, or a reference to\none.")

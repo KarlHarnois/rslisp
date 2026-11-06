@@ -166,13 +166,13 @@
   "Returns an iterator over borrows of a collection's items.
 
   A vector or a slice yields `(ref a)`, and a map yields
-  `(pair (ref key) (ref value))`. Where a call expects an `iterator`, a vector
-  or a map passes without `iter`.")
+  `(pair (ref key) (ref value))`. Where a call expects an `iterator`, a vector,
+  a slice or a map passes without `iter`.")
 
 (document (copied items)
   "Returns an iterator over copies of a slice's items.
 
-  The items implement `copy`. A vector passes as its slice.")
+  The items implement `copy`. It takes a vector or a slice, not an iterator.")
 
 (document (collect items)
   "Collects the items of an iterator into a vector.")
@@ -185,8 +185,8 @@
 (document (remove-at! items index)
   "Removes the item at an index and returns it.
 
-  Each later item moves down by one. It panics when `index` is not below the
-  vector's length.")
+  `index` is a `usize`, so an `i64` is an error. Each later item moves down by
+  one. It panics when `index` is not below the vector's length.")
 
 (document (sort! items)
   "Sorts a vector in place, in ascending order.
@@ -203,19 +203,22 @@
   "Sorts a vector in place by the key of each item.
 
   `key` takes a `(ref a)` and returns a value that implements `ord`. Items
-  with equal keys keep their order.")
+  with equal keys keep their order. A keyword such as `:age` reads that field.
+  Rust's `sort_by_key` may panic when `key` is not consistent between calls.")
 
 (document (windows items size)
   "Returns an iterator over each run of `size` neighboring items of a slice.
 
-  Each run is a `(ref (slice a))`. A slice shorter than `size` gives no run. It
-  panics when `size` is zero. A vector passes as its slice.")
+  Each run is a `(ref (slice a))`. `size` is a `usize`, so an `i64` is an
+  error. A slice shorter than `size` gives no run. It panics when `size` is
+  zero. A vector passes as its slice.")
 
 (document (at items index)
   "Returns a borrow of the item at an index.
 
-  It panics when `index` is not below the length. `get` returns an `option`
-  in place of the panic. A vector passes as its slice.")
+  `index` is a `usize`, so an `i64` is an error. It panics when `index` is not
+  below the length. `get` returns an `option` in place of the panic. A vector
+  passes as its slice.")
 
 (document (first items)
   "Returns a borrow of a slice's first item as an `option`.

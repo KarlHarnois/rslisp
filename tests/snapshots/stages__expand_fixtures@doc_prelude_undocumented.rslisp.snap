@@ -4,5 +4,5 @@ expression: reports.report(path)
 input_file: tests/fixtures/expand/doc_prelude_undocumented.rslisp
 ---
 (def thread-page "(defrule ->>)\n\nNo documentation.")
-(def sum-page "(defn sum (values))\n\nAdds the items of an iterator from left to right.\n\nAn empty iterator gives 0. An overflow panics in a debug build, as `add`\ndoes. A vector or a map passes as its `iter`.")
+(def sum-page "(defn sum (values))\n\nAdds the items of an iterator from left to right.\n\nAn empty iterator gives 0. An overflow panics in a debug build, as `add`\ndoes. A vector passes and yields copies of its numbers. `(iter items)` is an\nerror, as its items are borrows, and so is a map.")
 (def assoc-page "(defmacro assoc (value key more ...))\n\nNo documentation.")

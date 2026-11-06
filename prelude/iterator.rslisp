@@ -74,7 +74,8 @@
   "Adds the items of an iterator from left to right.
 
   An empty iterator gives 0. An overflow panics in a debug build, as `add`
-  does. A vector or a map passes as its `iter`."
+  does. A vector passes and yields copies of its numbers. `(iter items)` is an
+  error, as its items are borrows, and so is a map."
   (reduce values 0 add))
 
 (def count-items
@@ -166,7 +167,7 @@
   "Returns an iterator over a function's result for each item.
 
   It is lazy: the function runs when a later call reads the item. A vector or
-  a map passes as its `iter`.")
+  a map passes as its `iter`. A keyword such as `:age` reads that field.")
 
 (document (filter items test)
   "Returns an iterator over the items that pass a test.
@@ -181,7 +182,8 @@
   value, and the call returns an `option`, `none` for no items.
 
   `(reduce items initial step)` starts from `initial` and returns the value
-  itself. A vector or a map passes as its `iter`.")
+  itself. A vector or a map passes as its `iter`. Its items are borrows, so
+  the first form takes `(copied items)` for a step such as `add`.")
 
 (document (for-each items function)
   "Calls a function on each item, in order.
@@ -226,7 +228,7 @@
 
   `key` takes a `(ref a)` and returns a value that implements `ord`. The call
   returns `none` for no items, and the last of equal keys. A vector or a map
-  passes as its `iter`.")
+  passes as its `iter`. A keyword such as `:age` reads that field.")
 
 (document (any? items test)
   "Returns whether any item passes a test.
@@ -249,7 +251,8 @@
 (document (take items limit)
   "Returns an iterator over at most the first `limit` items.
 
-  A vector or a map passes as its `iter`.")
+  `limit` is a `usize`, so an `i64` is an error. A vector or a map passes as
+  its `iter`.")
 
 (document (take-while items test)
   "Returns an iterator over the items before the first that fails a test.
