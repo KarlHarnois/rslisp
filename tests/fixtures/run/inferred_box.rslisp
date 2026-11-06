@@ -27,14 +27,12 @@
 
 (defn named-total (tree)
   (match tree
-    ((named-tree/node left value)
-     (+ (named-total left) value))
+    ((named-tree/node left value) (+ (named-total left) value))
     (named-tree/leaf 0)))
 
 (defn depth (tree count)
   (match tree
-    ((tree/node left _ _)
-     (recur left (+ count 1)))
+    ((tree/node left _ _) (recur left (+ count 1)))
     (tree/leaf count)))
 
 (defn main ()

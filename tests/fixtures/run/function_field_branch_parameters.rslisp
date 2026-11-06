@@ -19,6 +19,5 @@
   (let pick (:maker chosen))
   (println (pick))
   (match (wrap-backup false count-doors count-wheels)
-    ((backup (some maker))
-     (println (maker)))
+    ((backup (some maker)) (println (maker)))
     ((backup none) (println "no backup"))))

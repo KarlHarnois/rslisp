@@ -19,5 +19,4 @@
     ((negate inner) (str "-" inner))
     ((choice test then otherwise)
      (str "if " test " then " then " else " otherwise))
-    ((call name arguments)
-     (str name "/" (len arguments)))))
+    ((call name arguments) (str name "/" (len arguments)))))

@@ -20,10 +20,7 @@
     (fn (picked)
       (if flag
         (match picked
-          ((some year)
-           (do
-             (let years (vec year 2024))
-             (at years 0)))
+          ((some year) (do (let years (vec year 2024)) (at years 0)))
           (none (at fallback 0)))
         (at fallback 0))))
   (println (first (some 2019))))

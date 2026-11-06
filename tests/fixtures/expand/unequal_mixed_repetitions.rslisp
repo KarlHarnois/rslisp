@@ -1,6 +1,5 @@
 (defrule spread
-  (((a ...) ((b ...) ...))
-   (vec (vec a b ...) ...)))
+  (((a ...) ((b ...) ...)) (vec (vec a b ...) ...)))
 
 (defn spread-rows ()
   (spread (1 2) ((3) (4) (5))))

@@ -11,8 +11,7 @@
    (do (let subject value) (case-clauses subject clause ...))))
 
 (defrule case-clauses
-  ((subject ((quote else) body ...))
-   (do body ...))
+  ((subject ((quote else) body ...)) (do body ...))
   ((subject (match body ...) clause more ...)
    (if (= subject match)
      (do body ...)
@@ -26,13 +25,11 @@
      (else value))))
 
 (defrule unless-zero
-  ((value body ...)
-   (unless (= value 0) body ...)))
+  ((value body ...) (unless (= value 0) body ...)))
 
 (defrule sum-of
   ((value) value)
-  ((value more ...)
-   (+ value (sum-of more ...))))
+  ((value more ...) (+ value (sum-of more ...))))
 
 (defrule tally
   ((counter (item ...) test)

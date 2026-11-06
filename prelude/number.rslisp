@@ -130,25 +130,21 @@
 (defrule +
   ((a) a)
   ((a b) (add a b))
-  ((a b c more ...)
-   (+ (add a b) c more ...)))
+  ((a b c more ...) (+ (add a b) c more ...)))
 
 (defrule -
   ((a) (neg a))
   ((a b) (sub a b))
-  ((a b c more ...)
-   (- (sub a b) c more ...)))
+  ((a b c more ...) (- (sub a b) c more ...)))
 
 (defrule *
   ((a) a)
   ((a b) (mul a b))
-  ((a b c more ...)
-   (* (mul a b) c more ...)))
+  ((a b c more ...) (* (mul a b) c more ...)))
 
 (defrule /
   ((a b) (div a b))
-  ((a b c more ...)
-   (/ (div a b) c more ...)))
+  ((a b c more ...) (/ (div a b) c more ...)))
 
 (defrule <
   ((a b) (lt a b))

@@ -4,8 +4,7 @@
               (match line
                 ((ok name)
                  (match (read-line)
-                   ((ok (some value))
-                    (println name " = " value))
+                   ((ok (some value)) (println name " = " value))
                    ((ok none) (println name))
                    ((err error) (eprintln error))))
                 ((err error) (eprintln error))))))

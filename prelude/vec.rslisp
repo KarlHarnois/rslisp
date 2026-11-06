@@ -106,10 +106,8 @@
 
 (defrule sort!
   ((items) (sort-ascending! items))
-  ((items (quote <))
-   (sort-ascending! items))
-  ((items (quote >))
-   (sort-descending! items))
+  ((items (quote <)) (sort-ascending! items))
+  ((items (quote >)) (sort-descending! items))
   ((items compare) (sort-with! items compare)))
 
 (def sort-by!

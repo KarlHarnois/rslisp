@@ -24,11 +24,7 @@
   (loop ()
     (let next (take source))
     (match next
-      ((some item)
-       (do
-         (observe item)
-         (put target item)
-         (recur)))
+      ((some item) (do (observe item) (put target item) (recur)))
       (none (do)))))
 
 (defn main ()

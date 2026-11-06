@@ -1,6 +1,5 @@
 (defn main ()
   (match (read-line)
-    ((ok (some line))
-     (println "first: " line))
+    ((ok (some line)) (println "first: " line))
     ((ok none) (println "empty input"))
     ((err error) (eprintln error))))

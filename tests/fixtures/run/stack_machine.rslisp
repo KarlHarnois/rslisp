@@ -9,10 +9,8 @@
 
 (defn report (name outcome)
   (match outcome
-    ((ok value)
-     (println (str name ": " value)))
-    ((err message)
-     (println (str name " failed: " message)))))
+    ((ok value) (println (str name ": " value)))
+    ((err message) (println (str name " failed: " message)))))
 
 (defn main ()
   (report "countdown" (run (countdown)))

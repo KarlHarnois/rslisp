@@ -48,13 +48,11 @@
     (print (let-try ((top (pop-value! stack)))
              (println top)
              (run-from! program (+ counter 1) stack)))
-    (halt (let-try ((top (pop-value! stack)))
-            (ok top)))))
+    (halt (let-try ((top (pop-value! stack))) (ok top)))))
 
 (defn instruction-at (program counter)
   (match (get program counter)
-    ((some instruction)
-     (ok (deref instruction)))
+    ((some instruction) (ok (deref instruction)))
     (none (err (str "jump out of range: " counter)))))
 
 (defn pop-value! (stack)

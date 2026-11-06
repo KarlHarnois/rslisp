@@ -4,8 +4,7 @@
 (defn drain! (items)
   (loop ()
     (match (pop! items)
-      ((some item)
-       (do (println item) (recur)))
+      ((some item) (do (println item) (recur)))
       (none (do)))))
 
 (defn main ()

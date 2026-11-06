@@ -23,8 +23,7 @@
 
 (defn scan-character (characters position tokens c)
   (cond
-    ((whitespace? c)
-     (scan characters (+ position 1) tokens))
+    ((whitespace? c) (scan characters (+ position 1) tokens))
     ((symbol-character? c)
      (scan characters
            (+ position 1)

@@ -13,6 +13,5 @@
     (rule/keep (fn ((vehicle (ref car)))
                  (> (:year vehicle) cutoff))))
   (match recent
-    ((keep test)
-     (println (test (->car "Nissan" "Leaf" 2024))))
+    ((keep test) (println (test (->car "Nissan" "Leaf" 2024))))
     (skip (println "skipped"))))

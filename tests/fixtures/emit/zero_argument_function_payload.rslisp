@@ -8,8 +8,7 @@
 
 (defn describe (plant)
   (match plant
-    ((factory make)
-     (println (:model (make))))
+    ((factory make) (println (:model (make))))
     (idle (println "idle"))))
 
 (defn main ()

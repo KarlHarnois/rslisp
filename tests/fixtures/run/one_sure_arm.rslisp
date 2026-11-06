@@ -7,10 +7,7 @@
 
 (defn countdown (b)
   (match b
-    ((value n)
-     (if (= n 0)
-       n
-       (countdown (box/value (- n 1)))))))
+    ((value n) (if (= n 0) n (countdown (box/value (- n 1)))))))
 
 (defn main ()
   (println (unbox (box/value 41)))

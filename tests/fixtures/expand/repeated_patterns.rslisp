@@ -1,16 +1,13 @@
 (use code len)
 
 (defrule table
-  (((row cell ...) ...)
-   (vec (vec cell ...) ...)))
+  (((row cell ...) ...) (vec (vec cell ...) ...)))
 
 (defrule pairs
-  (((left right) ...)
-   (vec (pair left right) ...)))
+  (((left right) ...) (vec (pair left right) ...)))
 
 (defrule tagged
-  ((tag item ...)
-   (vec (pair tag item) ...)))
+  ((tag item ...) (vec (pair tag item) ...)))
 
 (defmacro labeled (name (field ...) body ...)
   (template (def (unquote name)

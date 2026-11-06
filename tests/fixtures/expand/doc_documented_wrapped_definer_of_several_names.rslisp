@@ -6,8 +6,7 @@
      (defn a p b))))
 
 (defrule with-alias-bare
-  ((n a p b)
-   (do (defn n p b) (defn a p b))))
+  ((n a p b) (do (defn n p b) (defn a p b))))
 
 (with-alias twice double (x) "Doubles." (* 2 x))
 

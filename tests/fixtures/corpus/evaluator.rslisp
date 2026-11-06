@@ -25,8 +25,7 @@
   (println (str "script " index ": " script))
   (match (evaluate-script script)
     ((ok names) (report-names names))
-    ((err problem)
-     (println (str "  error: " problem)))))
+    ((err problem) (println (str "  error: " problem)))))
 
 (type evaluate-script
   (fn ((ref str))

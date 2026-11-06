@@ -29,4 +29,6 @@
 
 (header-shape (my-defn name parameters) :arms :arms)
 
-(header-shape (my-defn name parameters) :arms :docstring :one-per-line)
+(header-shape (my-defn name parameters)
+              :arms :docstring
+              :one-per-line)

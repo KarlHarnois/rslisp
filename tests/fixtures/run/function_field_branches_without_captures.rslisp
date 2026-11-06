@@ -23,6 +23,5 @@
   (println (pick))
   (println (build))
   (match matched
-    ((backup (some maker))
-     (println (maker)))
+    ((backup (some maker)) (println (maker)))
     ((backup none) (println "no backup"))))

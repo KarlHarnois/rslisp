@@ -8,6 +8,5 @@
              (point "point")))
   (println (match (shape/labeled "a" 3)
              ((labeled text 3) text)
-             ((labeled _ size)
-              (if (> size 3) "large" "small"))
+             ((labeled _ size) (if (> size 3) "large" "small"))
              (point "point"))))

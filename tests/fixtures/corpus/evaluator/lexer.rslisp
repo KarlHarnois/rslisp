@@ -24,8 +24,7 @@
 
 (defn scan-character (characters position tokens c)
   (cond
-    ((whitespace? c)
-     (scan characters (+ position 1) tokens))
+    ((whitespace? c) (scan characters (+ position 1) tokens))
     ((digit? c) (scan-number characters position tokens))
     ((name-start? c) (scan-name characters position tokens))
     ((two-character-symbol? characters position)
@@ -46,8 +45,7 @@
   (match (parse (as-str text))
     ((ok value)
      (scan characters end (append tokens (token/number value))))
-    ((err problem)
-     (err (str "bad number " text ": " problem)))))
+    ((err problem) (err (str "bad number " text ": " problem)))))
 
 (defn scan-name (characters start tokens)
   (let end (span-end characters start name-part?))
