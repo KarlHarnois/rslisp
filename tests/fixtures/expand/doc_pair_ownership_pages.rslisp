@@ -1,0 +1,9 @@
+(def pair-page (doc-page pair))
+
+(def let-pair-page (doc-page let-pair))
+
+(def let-fields-page (doc-page let-fields))
+
+(def clone-page (doc-page clone))
+
+(def copy-page (doc-page copy))

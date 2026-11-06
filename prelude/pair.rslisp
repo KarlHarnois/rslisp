@@ -1,4 +1,4 @@
-(use prelude/macros defrule header-shape)
+(use prelude/macros defrule document header-shape)
 
 (export let-fields let-pair pair)
 
@@ -23,3 +23,25 @@
      ((type-name name ...) (do body ...)))))
 
 (header-shape (let-fields pattern value))
+
+(document (pair a b)
+  "Builds a pair of two values.
+
+  `pair` is also the type `(pair a b)`, Rust's `(A, B)`. In a `match`,
+  `(pair x y)` is the pattern that binds the parts.")
+
+(document (pair/pair a b)
+  "Builds the `pair` variant of a pair.
+
+  `pair` is the function for this call.")
+
+(document (let-pair (first second) value body ...)
+  "Binds the two parts of a pair for a body.
+
+  It expands to a `match`, so it moves a pair that is not `copy`.")
+
+(document (let-fields (type-name (name ...)) value body ...)
+  "Binds the fields of a struct for a body, in field order.
+
+  Each field takes one name, and `_` skips a field. It expands to a `match`,
+  so it moves a value that is not `copy`.")
