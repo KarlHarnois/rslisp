@@ -535,9 +535,10 @@
 
   The page of a definition that a definer made shows as many leading
   forms of its call as the shape lists. A `:docstring` after the shape
-  states that the form takes a docstring right after its header, and a
+  states that the form takes a docstring right after its header, a
   `:one-per-line` states that the formatter puts each later form of a
-  call on its own line."
+  call on its own line, and an `:arms` states that each list after the
+  header is an arm, which stays on one line up to the fill width."
   (if (header-shape? shape)
     (stated-header-shape shape markers)
     (malformed-header-shape shape)))
@@ -588,7 +589,7 @@
       (template (:code malformed-header-shape
                        :label "not a list that starts with a name")))))
 
-(def shape-marker-names (quote (docstring one-per-line)))
+(def shape-marker-names (quote (docstring one-per-line arms)))
 
 (def check-shape-markers
   (fn (markers seen)
@@ -651,15 +652,17 @@
   (fn (name)
     (if (value-eq (symbol-name name) "docstring")
       "write `:docstring` to state that the form takes a docstring"
-      (string "write `:one-per-line` to state that a call of the form "
-              "does not fill runs of atoms"))))
+      (if (value-eq (symbol-name name) "arms")
+        "write `:arms` to state that each list after the header is an arm"
+        (string "write `:one-per-line` to state that a call of the form "
+                "does not fill runs of atoms")))))
 
 (def extra-header-shape-marker
   (fn (marker)
     (fail unexpected-header-shape-marker-title
       marker
-      (string "remove it: only `:docstring` and `:one-per-line` may follow "
-              "a header shape, each once")
+      (string "remove it: only `:docstring`, `:one-per-line` and `:arms` "
+              "may follow a header shape, each once")
       (template (:code unexpected-header-shape-marker
                        :label "not expected here")))))
 
