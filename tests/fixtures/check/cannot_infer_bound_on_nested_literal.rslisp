@@ -1,0 +1,22 @@
+(def option-compares?
+  (rust "true"
+    (where ((a (partial-eq b)) b)
+      (fn ((option a)) bool))))
+
+(def reference-compares?
+  (rust "true"
+    (where ((a (partial-eq b)) b)
+      (fn ((ref a)) bool))))
+
+(def bound-compares?
+  (rust "true"
+    (where ((a (partial-eq b)) b)
+      (fn (a) bool))))
+
+(defn main ()
+  (println (option-compares? (some 1)))
+  (println (reference-compares? (ref 1)))
+  (println (bound-compares? (some 1)))
+  (let call-with-one
+    (fn (function) (function (some 1))))
+  (println (call-with-one option-compares?)))

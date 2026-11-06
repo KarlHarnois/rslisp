@@ -1,0 +1,21 @@
+(trait named
+  (name (fn ((ref self)) string)))
+
+(def option-named?
+  (rust "true"
+    (where ((a named))
+      (fn ((option a)) bool))))
+
+(def mutable-named?
+  (rust "true"
+    (where ((a named)) (fn ((mut a)) bool))))
+
+(defn main ()
+  (println (option-named? (some 1)))
+  (let run
+    (fn (value)
+      (println (mutable-named? (mut value)))
+      (+ value 1)))
+  (let call-with-one
+    (fn (function) (function (some 1))))
+  (println (call-with-one option-named?)))

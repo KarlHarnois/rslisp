@@ -276,7 +276,7 @@ impl TypeChecker {
         })
     }
 
-    pub(super) fn instantiate(&mut self, scheme: &Scheme) -> Type {
+    pub(super) fn instantiate(&mut self, scheme: &Scheme, span: Span) -> Type {
         let fresh: Vec<Type> = scheme
             .params
             .iter()
@@ -297,7 +297,7 @@ impl TypeChecker {
                     .chain(implied)
                     .map(|bound| bound.substituted(&replacements))
                     .collect();
-                self.unifier.set_bounds(*var, bounds);
+                self.unifier.set_bounds(*var, bounds, span);
             }
         }
         scheme.body.substitute(&replacements)

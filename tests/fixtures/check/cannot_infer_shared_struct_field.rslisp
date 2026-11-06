@@ -1,0 +1,8 @@
+(struct (twin a)
+        (left (vec a))
+        (right (vec a)))
+
+(defn main ()
+  (let held
+    (new twin (left (vec)) (right (vec))))
+  (println "done"))

@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/cannot_infer_struct_fields.rslisp
+---
+error[L0407]: type annotations needed
+ --> check/cannot_infer_struct_fields.rslisp:7:23
+  |
+7 |     (new holder (left (vec)) (right (vec))))
+  |                       ^^^^^ cannot infer the type of this value
+  |
+  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
+
+error[L0407]: type annotations needed
+ --> check/cannot_infer_struct_fields.rslisp:7:37
+  |
+7 |     (new holder (left (vec)) (right (vec))))
+  |                                     ^^^^^ cannot infer the type of this value
+  |
+  = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature

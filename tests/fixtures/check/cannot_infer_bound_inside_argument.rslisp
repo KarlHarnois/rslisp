@@ -1,0 +1,14 @@
+(def made
+  (rust "1"
+    (where ((a (partial-eq b)) b) (fn () a))))
+
+(def both
+  (rust "true"
+    (where ((a (partial-eq b)) b)
+      (fn (a) bool))))
+
+(def takes-int
+  (rust "{0}" (fn (i64) i64)))
+
+(defn main ()
+  (println (takes-int (made))))

@@ -4,17 +4,17 @@ expression: reports.report(path)
 input_file: tests/fixtures/check/cannot_infer_each_variable.rslisp
 ---
 error[L0407]: type annotations needed
- --> check/cannot_infer_each_variable.rslisp:2:3
+ --> check/cannot_infer_each_variable.rslisp:2:14
   |
 2 |   (str (some (vec)))
-  |   ^^^^^^^^^^^^^^^^^^ cannot infer the type of this value
+  |              ^^^^^ cannot infer the type of this value
   |
   = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature
 
 error[L0407]: type annotations needed
- --> check/cannot_infer_each_variable.rslisp:3:3
+ --> check/cannot_infer_each_variable.rslisp:3:14
   |
 3 |   (str (some (vec))))
-  |   ^^^^^^^^^^^^^^^^^^ cannot infer the type of this value
+  |              ^^^^^ cannot infer the type of this value
   |
   = help: write the type with `the`, as in `(the (vec i64) (vec))`, or add a `type` signature

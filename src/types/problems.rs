@@ -687,6 +687,17 @@ impl TypeProblems {
         )
     }
 
+    pub fn cannot_infer_bound(span: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::CANNOT_INFER,
+            "type annotations needed",
+            Label::new(span, "cannot infer a type that a bound of this function names"),
+        )
+        .with_help(
+            "a bound of this function names a type that no argument or result holds, so its signature must change",
+        )
+    }
+
     pub fn cannot_infer_evaluated(open_type: &str, form: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::CANNOT_INFER,

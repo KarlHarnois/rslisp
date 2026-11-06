@@ -1,0 +1,2 @@
+(defn main ()
+  (str (some (some (some (vec))))))

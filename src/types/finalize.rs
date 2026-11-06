@@ -81,18 +81,45 @@ impl<'c> Finalizer<'c> {
     }
 
     fn expr(&mut self, expr: &mut TypedExpr) {
-        self.finalize_type(&mut expr.ty, expr.span);
+        if let TypedExprKind::Call(callee, arguments) = &mut expr.kind {
+            if self.checker.unifier.holds_open_literal(&callee.ty) {
+                self.default_literals(&callee.ty, callee.span);
+            }
+            for argument in arguments {
+                self.child(&mut argument.value);
+            }
+            self.finalize_type(&mut expr.ty, expr.span);
+            self.child(callee);
+        } else {
+            self.children(expr);
+            self.finalize_type(&mut expr.ty, expr.span);
+        }
         if let TypedExprKind::Leaf(TypedLeaf::Literal(Literal::Number(number))) = &expr.kind {
             self.check_range(number, &expr.ty.clone(), expr.span);
         }
+        self.finalize_wrapped_function(expr);
+    }
+
+    fn children(&mut self, expr: &mut TypedExpr) {
         for child in expr.children_mut() {
-            self.expr(child);
-            self.note_closure(child);
+            self.child(child);
         }
         for binder in expr.binders_mut() {
             self.finalize_type(&mut binder.ty, binder.span);
         }
-        self.finalize_wrapped_function(expr);
+    }
+
+    fn child(&mut self, expr: &mut TypedExpr) {
+        self.expr(expr);
+        self.note_closure(expr);
+    }
+
+    fn default_literals(&mut self, ty: &Type, span: Span) {
+        for var in self.checker.free_vars(ty) {
+            if let Some(kind) = self.checker.unifier.literal_kind(var) {
+                self.default_literal(var, kind, span);
+            }
+        }
     }
 
     fn finalize_wrapped_function(&mut self, expr: &mut TypedExpr) {
@@ -117,16 +144,16 @@ impl<'c> Finalizer<'c> {
     }
 
     fn default_var(&mut self, var: TypeVar, span: Span, ty: &Type) {
-        let default = match self.checker.unifier.literal_kind(var) {
-            Some(LiteralKind::Integer) => PrimitiveType::I64,
-            Some(LiteralKind::Float) => PrimitiveType::F64,
-            None => {
-                if !self.inside_operand && self.reported.insert(var) && !self.earlier_errors {
-                    let problem = self.missing_annotation(span, ty);
-                    self.checker.defer_missing_annotation(vec![var], problem);
-                }
-                return;
-            }
+        match self.checker.unifier.literal_kind(var) {
+            Some(kind) => self.default_literal(var, kind, span),
+            None => self.report_unresolved(var, span, ty),
+        }
+    }
+
+    fn default_literal(&mut self, var: TypeVar, kind: LiteralKind, span: Span) {
+        let default = match kind {
+            LiteralKind::Integer => PrimitiveType::I64,
+            LiteralKind::Float => PrimitiveType::F64,
         };
         let defaulted =
             self.checker
@@ -136,6 +163,13 @@ impl<'c> Finalizer<'c> {
             defaulted.is_ok(),
             "a literal variable accepts its default type"
         );
+    }
+
+    fn report_unresolved(&mut self, var: TypeVar, span: Span, ty: &Type) {
+        if !self.inside_operand && self.reported.insert(var) && !self.earlier_errors {
+            let problem = self.missing_annotation(span, ty);
+            self.checker.defer_missing_annotation(vec![var], problem);
+        }
     }
 
     fn missing_annotation(&self, span: Span, ty: &Type) -> Diagnostic {
