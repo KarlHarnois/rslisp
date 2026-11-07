@@ -496,32 +496,20 @@
   (fn (form)
     (kernel-form? form (quote if))))
 
-(def display-arm
-  (fn (body out)
-    (if (list? body)
-      (if (splices? body (quote str))
-        (display-write (drop 1 body) out)
-        (if (display-match? body)
-          (display-match body out)
-          (if (display-if? body)
-            (display-if body out)
-            (display-write (list body) out))))
-      (display-write (list body) out))))
-
 (def display-match
   (fn (form out)
     (concat (take 2 form)
             (map-list (fn (arm)
                         (list (first arm)
-                              (display-arm (nth arm 1) out)))
+                              (display-body (rest arm) out)))
                       (drop 2 form)))))
 
 (def display-if
   (fn (form out)
     (list (first form)
           (nth form 1)
-          (display-arm (nth form 2) out)
-          (display-arm (nth form 3) out))))
+          (display-body (list (nth form 2)) out)
+          (display-body (list (nth form 3)) out))))
 
 (def display-body
   (fn (parts out)

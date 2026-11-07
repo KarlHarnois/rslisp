@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/display_arm_parts.rslisp
+---
+circle 1.5
+square 2.5!
+tiny 0.125
+thin 0.5
+ring 3.5
+writing a dot
+dot
+[]

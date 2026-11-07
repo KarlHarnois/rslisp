@@ -1150,7 +1150,7 @@ The prelude's `display` trait declares `fmt`, and the prelude's `display` macro 
 (display point (p) "(" (field p x) ", " (field p y) ")")
 ```
 
-The parts follow `println`: a string is literal text, any other form prints with `display`, and `(str ...)` splices. A `(pr-str ...)` part prints its value's printed form. When the parts are exactly one `match` form, each arm body becomes a write of that body's parts, and a `(str ...)` arm writes those parts. Any other arm body is one part, and the rule applies again to a nested `match` or `if`. A single `if` form writes in both branches the same way. The type then works with `print`, `println`, `str`, and as the error type of a `main` that returns a `result`. An implementor that is not a struct or enum of the program is an error, `L0445`.
+The parts follow `println`: a string is literal text, any other form prints with `display`, and `(str ...)` splices. A `(pr-str ...)` part prints its value's printed form. When the parts are exactly one `match` form, each form of an arm's body is a part, so `((circle r) "circle " r)` writes both forms and an arm does not follow the `do` rule. A `(do ...)` is one part, for an arm that needs statements. The rule applies again to an arm whose only part is a nested `match` or `if`. A single `if` form writes each branch as its parts the same way. The type then works with `print`, `println`, `str`, and as the error type of a `main` that returns a `result`. An implementor that is not a struct or enum of the program is an error, `L0445`.
 
 ```lisp
 (trait shape
