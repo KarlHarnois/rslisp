@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/arm_beside_a_code_builtin_of_its_name.rslisp
+---
+error[L0401]: mismatched types
+ --> check/arm_beside_a_code_builtin_of_its_name.rslisp:6:22
+  |
+6 |   (match c (list (if 1 2 3)) (green 0)))
+  |                      ^ expected `bool`, found an integer
+  |
+  = note: the test of `if` must be a `bool`

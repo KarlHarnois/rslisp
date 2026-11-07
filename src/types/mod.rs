@@ -7,6 +7,7 @@ mod checker;
 mod collection;
 mod copy;
 mod coverage;
+mod deferred_definitions;
 mod derives;
 mod display;
 mod enums;

@@ -1,6 +1,12 @@
+use std::rc::Rc;
+
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::core::{BindingArena, BindingId, BindingKind, Expr, ExprKind, ItemKind, Leaf, ModuleId};
+use super::deferred_definitions::DeferredDefinitions;
+use crate::core::{
+    BindingArena, BindingId, BindingKind, Control, Expr, ExprKind, ItemKind, Leaf, ModuleId,
+    Pattern,
+};
 use crate::expand::Program;
 use crate::modules::ModuleSources;
 use crate::source::Span;
@@ -15,16 +21,26 @@ pub struct DefinitionGraph<'p> {
     definitions: Vec<Definition<'p>>,
     dependencies: DependencyGraph,
     components: Vec<Vec<BindingId>>,
+    unreached: Rc<FxHashSet<BindingId>>,
 }
 
 impl<'p> DefinitionGraph<'p> {
     pub fn of(program: &'p Program) -> Self {
-        Self::deferring(program, Self::prelude_macro_helpers(program))
+        Self::deferring(
+            program,
+            DeferredDefinitions::of(program),
+            Self::prelude_macro_helpers(program),
+        )
     }
 
-    fn deferring(program: &'p Program, macro_helpers: FxHashSet<BindingId>) -> Self {
-        let walked = ReferenceWalk::new(&program.bindings, &macro_helpers)
-            .run(Self::definitions_in(program));
+    fn deferring(
+        program: &'p Program,
+        mut deferred: FxHashSet<BindingId>,
+        macro_helpers: FxHashSet<BindingId>,
+    ) -> Self {
+        let walked =
+            ReferenceWalk::new(&program.bindings, &deferred).run(Self::definitions_in(program));
+        deferred.retain(|binding| !walked.contains_key(binding));
         let mut definitions = Vec::with_capacity(Self::item_count(program));
         definitions.extend(
             Self::definitions_in(program)
@@ -40,6 +56,7 @@ impl<'p> DefinitionGraph<'p> {
             definitions,
             dependencies,
             components,
+            unreached: Rc::new(deferred),
         }
     }
 
@@ -86,6 +103,10 @@ impl<'p> DefinitionGraph<'p> {
 
     pub fn definitions(&self) -> &[Definition<'p>] {
         &self.definitions
+    }
+
+    pub fn unreached(&self) -> Rc<FxHashSet<BindingId>> {
+        Rc::clone(&self.unreached)
     }
 
     pub fn dependencies(&self) -> &DependencyGraph {
@@ -273,17 +294,37 @@ impl DependencyGraph {
 struct References {
     globals: Vec<BindingId>,
     uses_compile_time_code: bool,
+    arm_outers: FxHashMap<BindingId, BindingId>,
 }
 
 impl References {
     fn collect(&mut self, expr: &Expr, bindings: &BindingArena) {
         match expr.kind() {
-            ExprKind::Leaf(Leaf::Var(binding)) => self.note_reference(*binding, bindings),
+            ExprKind::Leaf(Leaf::Var(binding)) => self.note_read(*binding, bindings),
             ExprKind::Leaf(Leaf::Quote(_)) => self.uses_compile_time_code = true,
+            ExprKind::Control(Control::Match(_, arms)) => {
+                for arm in arms {
+                    self.collect_arm_outers(&arm.pattern);
+                }
+            }
             _ => {}
         }
         for child in expr.children() {
             self.collect(child, bindings);
+        }
+    }
+
+    fn collect_arm_outers(&mut self, pattern: &Pattern) {
+        self.arm_outers.extend(pattern.arm_outer());
+        for nested in pattern.nested() {
+            self.collect_arm_outers(nested);
+        }
+    }
+
+    fn note_read(&mut self, binding: BindingId, bindings: &BindingArena) {
+        self.note_reference(binding, bindings);
+        if let Some(outer) = self.arm_outers.get(&binding).copied() {
+            self.note_reference(outer, bindings);
         }
     }
 
@@ -367,10 +408,14 @@ impl<'a> StronglyConnected<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
+
     use rustc_hash::{FxHashMap, FxHashSet};
 
     use super::{DefinitionGraph, DependencyGraph};
     use crate::core::{BindingArena, BindingId, BindingInfo, BindingKind, ModuleId};
+    use crate::expand::Program;
+    use crate::modules::ModuleSources;
     use crate::types::{TypedProgram, TypedSource};
 
     struct CallGraph {
@@ -499,21 +544,151 @@ mod tests {
     }
 
     #[test]
-    fn every_prelude_macro_helper_outside_compile_time_code_type_checks_once() {
+    fn every_prelude_definition_outside_compile_time_code_type_checks_once() {
         let source = TypedSource::expand(PreludeFixture::EMPTY_PROGRAM);
-        let graph = DefinitionGraph::deferring(source.program(), FxHashSet::default());
+        let graph = DefinitionGraph::deferring(
+            source.program(),
+            FxHashSet::default(),
+            FxHashSet::default(),
+        );
         let typed = PreludeFixture::typed_bindings(&source.check(&graph));
-        let unchecked = DefinitionGraph::prelude_macro_helpers(source.program())
+        let unchecked = PreludeFixture::prelude_definitions(source.program())
             .into_iter()
-            .filter(|helper| !graph.dependencies().is_compile_time_only(*helper))
-            .find(|helper| !typed.contains(helper));
+            .filter(|binding| !graph.dependencies().is_compile_time_only(*binding))
+            .find(|binding| !typed.contains(binding));
         assert_eq!(unchecked, None);
+    }
+
+    #[test]
+    fn an_empty_program_types_no_prelude_function_it_does_not_reach() {
+        assert!(!PreludeFixture::types(PreludeFixture::EMPTY_PROGRAM, "sum"));
+    }
+
+    #[test]
+    fn a_reached_prelude_function_is_typed_with_what_it_reaches() {
+        assert!(PreludeFixture::types(PreludeFixture::SUMMING, "sum"));
+        assert!(PreludeFixture::types(PreludeFixture::SUMMING, "add"));
+    }
+
+    #[test]
+    fn an_arm_that_reads_an_outer_name_reaches_that_prelude_function() {
+        const ARM_NAMES_SUM: &str = "(enum total sum)
+            (defn main ()
+              (match total/sum
+                (sum (sum (vec 1 2)))))";
+        assert!(PreludeFixture::types(ARM_NAMES_SUM, "sum"));
+    }
+
+    #[test]
+    fn an_arm_that_leaves_an_outer_name_unread_reaches_nothing() {
+        const ARM_LEAVES_SUM_UNREAD: &str = "(enum total sum)
+            (defn main ()
+              (match total/sum
+                (sum (println 1))))";
+        assert!(!PreludeFixture::types(ARM_LEAVES_SUM_UNREAD, "sum"));
+    }
+
+    #[test]
+    fn a_labeled_arm_that_reads_an_outer_name_reaches_that_prelude_function() {
+        const LABELED_ARM_NAMES_SUM: &str = "(enum total sum)
+            (defstruct holder :inner total)
+            (defn main ()
+              (match (->holder :inner total/sum)
+                ((holder :inner sum) (sum (vec 1 2)))))";
+        assert!(PreludeFixture::types(LABELED_ARM_NAMES_SUM, "sum"));
+    }
+
+    #[test]
+    fn a_nested_arm_that_reads_an_outer_name_reaches_that_prelude_function() {
+        const NESTED_ARM_NAMES_SUM: &str = "(enum total sum)
+            (enum wrapped (holds total))
+            (defn main ()
+              (match (wrapped/holds total/sum)
+                ((holds sum) (sum (vec 1 2)))))";
+        assert!(PreludeFixture::types(NESTED_ARM_NAMES_SUM, "sum"));
+    }
+
+    #[test]
+    fn a_checked_root_is_typed_though_nothing_reaches_it() {
+        let mut source = TypedSource::expand(PreludeFixture::EMPTY_PROGRAM);
+        let sum = PreludeFixture::prelude_definition(source.program(), "sum");
+        source.check_also(sum);
+        assert!(PreludeFixture::typed_bindings(&source.typed()).contains(&sum));
+    }
+
+    #[test]
+    fn the_string_view_is_typed_though_nothing_reaches_it() {
+        let source = TypedSource::expand(PreludeFixture::EMPTY_PROGRAM);
+        let view = source
+            .program()
+            .string_view
+            .expect("the prelude views strings");
+        assert!(PreludeFixture::typed_bindings(&source.typed()).contains(&view));
+    }
+
+    #[test]
+    #[should_panic(expected = "the definition graph missed a reference")]
+    fn a_reference_the_walk_missed_stops_the_checker() {
+        let source = TypedSource::expand(PreludeFixture::SUMMING);
+        let sum = PreludeFixture::prelude_definition(source.program(), "sum");
+        let mut graph = DefinitionGraph::of(source.program());
+        graph
+            .components
+            .retain(|component| !component.contains(&sum));
+        graph.unreached = Rc::new(FxHashSet::from_iter([sum]));
+        source.check(&graph);
+    }
+
+    #[test]
+    fn the_graph_names_what_it_left_unreached() {
+        let source = TypedSource::expand(PreludeFixture::EMPTY_PROGRAM);
+        let sum = PreludeFixture::prelude_definition(source.program(), "sum");
+        assert!(
+            DefinitionGraph::of(source.program())
+                .unreached()
+                .contains(&sum)
+        );
+    }
+
+    #[test]
+    fn the_graph_leaves_out_of_unreached_what_a_program_reaches() {
+        let source = TypedSource::expand(PreludeFixture::SUMMING);
+        let sum = PreludeFixture::prelude_definition(source.program(), "sum");
+        assert!(
+            !DefinitionGraph::of(source.program())
+                .unreached()
+                .contains(&sum)
+        );
     }
 
     struct PreludeFixture;
 
     impl PreludeFixture {
         const EMPTY_PROGRAM: &str = "(defn main ())";
+        const SUMMING: &str = "(defn main () (println (sum (vec 1 2))))";
+
+        fn types(program: &str, name: &str) -> bool {
+            let source = TypedSource::expand(program);
+            let binding = Self::prelude_definition(source.program(), name);
+            Self::typed_bindings(&source.typed()).contains(&binding)
+        }
+
+        fn prelude_definition(program: &Program, name: &str) -> BindingId {
+            Self::prelude_definitions(program)
+                .into_iter()
+                .find(|binding| program.bindings.get(*binding).name() == name)
+                .expect("the prelude defines the name")
+        }
+
+        fn prelude_definitions(program: &Program) -> Vec<BindingId> {
+            program
+                .modules
+                .iter()
+                .filter(|module| ModuleSources::is_prelude(&module.path))
+                .flat_map(|module| module.definitions())
+                .map(|(binding, _)| binding)
+                .collect()
+        }
 
         fn typed_bindings(program: &TypedProgram) -> FxHashSet<BindingId> {
             program

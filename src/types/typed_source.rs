@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{DefinitionGraph, InferredCopies, LiteralDefaults, TypeChecker, TypedProgram};
-use crate::core::ModulePath;
+use crate::core::{BindingId, ModulePath};
 use crate::expand::{Expander, Program};
 use crate::language::Language;
 use crate::modules::ModuleSources;
@@ -34,6 +34,24 @@ impl TypedSource {
             .map(|(binding, _)| binding)
             .find(|binding| program.bindings.get(*binding).name() == name);
         self.program.entry_function = entry;
+    }
+
+    pub fn move_entry_to(&mut self, path: ModulePath) {
+        let entry = self.program.entry;
+        let module = self
+            .program
+            .modules
+            .iter_mut()
+            .find(|module| module.id == entry);
+        module.expect("the entry module is expanded").path = path;
+    }
+
+    pub fn detach_entry(&mut self) {
+        self.program.entry = self.program.modules[0].id;
+    }
+
+    pub fn check_also(&mut self, binding: BindingId) {
+        self.program.checked_roots.push(binding);
     }
 
     pub fn program(&self) -> &Program {

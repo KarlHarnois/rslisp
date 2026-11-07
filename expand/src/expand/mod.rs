@@ -76,6 +76,7 @@ pub struct Program {
     pub macro_origins: FxHashMap<Span, MacroOrigin>,
     pub macro_helpers: FxHashSet<BindingId>,
     pub string_view: Option<BindingId>,
+    pub checked_roots: Vec<BindingId>,
     pub warnings: Diagnostics,
     pub expansion: ExpansionWork,
 }
@@ -240,6 +241,7 @@ impl<'s> Expander<'s> {
             bindings: self.tables.bindings,
             macro_helpers: self.tables.globals.macro_helpers(),
             string_view,
+            checked_roots: Vec::new(),
             macro_origins: self.tables.macro_origins,
             warnings: self.warnings,
             expansion: self.expansion,

@@ -164,6 +164,7 @@ pub struct TypeChecker {
     pub(super) locals: FxHashMap<BindingId, Type>,
     pub(super) variant_arm: FxHashMap<BindingId, VariantArmReference>,
     pub(super) unchecked: FxHashSet<BindingId>,
+    pub(super) unreached_prelude: Rc<FxHashSet<BindingId>>,
     failed_bindings: FxHashSet<BindingId>,
     bindings_after_errors: FxHashSet<BindingId>,
     pub(super) diagnostics: Diagnostics,
@@ -260,6 +261,7 @@ impl TypeChecker {
             locals: FxHashMap::default(),
             variant_arm: FxHashMap::default(),
             unchecked: FxHashSet::default(),
+            unreached_prelude: Rc::default(),
             failed_bindings: FxHashSet::default(),
             bindings_after_errors: FxHashSet::default(),
             diagnostics: Diagnostics::default(),
@@ -582,6 +584,7 @@ impl TypeChecker {
     ) -> FxHashMap<BindingId, TypedDefinition> {
         let dependencies = graph.dependencies();
         self.unchecked = dependencies.unchecked(entry_function.as_slice());
+        self.unreached_prelude = graph.unreached();
         let by_binding: FxHashMap<BindingId, &Definition> = graph
             .definitions()
             .iter()
