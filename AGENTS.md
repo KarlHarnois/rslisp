@@ -156,9 +156,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test <narrowest test>
 ```
 
-**If `IN_NIX_SHELL` is set, run every command without the `nix develop -c` prefix.** In a dirty worktree, the prefix evaluates the flake again and copies the tracked files into `/nix/store`.
+**If `IN_NIX_SHELL` is set, run every command as written.**
 
-**If `IN_NIX_SHELL` is not set, prefix every command that runs a dev shell tool, such as `cargo`, with `nix develop -c`.**
+**If `IN_NIX_SHELL` is not set, prefix every command that runs a dev shell tool, such as `cargo`, with `direnv exec .`.** If direnv refuses, stop and ask the project owner.
+
+**NEVER prefix a command with `nix develop -c`:** in a dirty worktree, the prefix evaluates the flake again and copies the tracked files into `/nix/store`.
 
 **Replace `<narrowest test>` with the narrowest row of this table that covers the change:**
 
