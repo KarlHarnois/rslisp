@@ -31,6 +31,7 @@ pub struct LayoutEngine<'s> {
     one_line_texts: FxHashMap<usize, Option<Rc<str>>>,
     choices: FxHashMap<Placement, Choice>,
     arms: FxHashSet<usize>,
+    binding_lists: FxHashSet<usize>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -84,6 +85,7 @@ impl<'s> LayoutEngine<'s> {
             one_line_texts: FxHashMap::default(),
             choices: FxHashMap::default(),
             arms: FxHashSet::default(),
+            binding_lists: FxHashSet::default(),
         }
     }
 
@@ -216,12 +218,31 @@ impl<'s> LayoutEngine<'s> {
     }
 
     fn plan(&mut self, list: &ListNode) -> Rc<ListPlan> {
-        let shapes = self.shapes;
-        Rc::clone(
-            self.plans
-                .entry(list.id)
-                .or_insert_with(|| Rc::new(ListPlan::new(list, shapes))),
-        )
+        if let Some(plan) = self.plans.get(&list.id) {
+            return Rc::clone(plan);
+        }
+        let plan = Rc::new(self.fresh_plan(list));
+        self.mark_binding_list(list, &plan);
+        self.plans.insert(list.id, Rc::clone(&plan));
+        plan
+    }
+
+    fn fresh_plan(&self, list: &ListNode) -> ListPlan {
+        if self.binding_lists.contains(&list.id) {
+            ListPlan::binding_list(list)
+        } else {
+            ListPlan::new(list, self.shapes)
+        }
+    }
+
+    fn mark_binding_list(&mut self, list: &ListNode, plan: &ListPlan) {
+        let binding_list = plan
+            .binding_list_entry
+            .and_then(|entry| list.entries.get(entry))
+            .and_then(|entry| entry.node.as_list());
+        if let Some(binding_list) = binding_list {
+            self.binding_lists.insert(binding_list.id);
+        }
     }
 }
 
@@ -280,8 +301,10 @@ impl<'l> ListAssembly<'l> {
         index: usize,
         unit: Unit,
     ) -> bool {
-        let entry = &self.list.entries[unit.first_entry()];
-        !state.laid_out.ends_with_comment() && !entry.interrupts_line(index)
+        let interrupted = unit
+            .entries()
+            .any(|entry| self.list.entries[entry].interrupts_line(index));
+        !state.laid_out.ends_with_comment() && !interrupted
     }
 
     fn position<L: LaidOut>(
@@ -306,8 +329,10 @@ impl<'l> ListAssembly<'l> {
         index: usize,
         unit: Unit,
     ) {
-        if let Some(comment) = &self.list.entries[unit.last_entry()].trailing_comment {
-            state.laid_out.add_trailing_comment(comment);
+        for entry in unit.entries() {
+            if let Some(comment) = &self.list.entries[entry].trailing_comment {
+                state.laid_out.add_trailing_comment(comment);
+            }
         }
         state.run_open =
             self.plan.fillable_units[index] && Self::opens_run(state.on_first_line, arrangement);
@@ -360,8 +385,10 @@ impl<'l> ListAssembly<'l> {
         unit: Unit,
     ) {
         let indent = state.indent(self.column);
-        let entry = &self.list.entries[unit.first_entry()];
-        for (position, comment) in entry.leading_comments.iter().enumerate() {
+        let comments = unit
+            .entries()
+            .flat_map(|entry| &self.list.entries[entry].leading_comments);
+        for (position, comment) in comments.enumerate() {
             if comment.blank_before && (index > 0 || position > 0) {
                 state.laid_out.push_blank();
             }
@@ -369,6 +396,7 @@ impl<'l> ListAssembly<'l> {
                 .laid_out
                 .push_indented(indent, L::text(&comment.text, indent));
         }
+        let entry = &self.list.entries[unit.first_entry()];
         if entry.keeps_blank_line(index) {
             state.laid_out.push_blank();
         }

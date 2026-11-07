@@ -58,6 +58,13 @@ impl SyntaxNode {
         }
     }
 
+    pub fn as_list(&self) -> Option<&ListNode> {
+        match self {
+            SyntaxNode::List(list) => Some(list),
+            SyntaxNode::Atom(_) => None,
+        }
+    }
+
     pub fn ends_with_comment(&self) -> bool {
         match self {
             SyntaxNode::List(list) => list.ends_with_comment,

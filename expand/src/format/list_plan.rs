@@ -26,8 +26,8 @@ pub struct ListPlan {
     pub arrangements: Vec<Arrangement>,
     pub docstring_entry: Option<usize>,
     pub fillable_units: Vec<bool>,
-    body_forms: usize,
-    definer: bool,
+    pub binding_list_entry: Option<usize>,
+    one_line_allowed: bool,
     first_arm_entry: Option<usize>,
 }
 
@@ -58,6 +58,8 @@ impl ListPlan {
         let units = UnitGrouping::new(&list.entries, header_length).units();
         let docstring_entry = Self::docstring_entry(list, head, shapes);
         let fills_atom_runs = !shape.is_some_and(|shape| shape.one_per_line);
+        let body_forms = list.entries.len().saturating_sub(header_length + 1);
+        let definer = shape.is_some_and(|shape| shape.takes_docstring);
         Self {
             fillable_units: units
                 .iter()
@@ -66,10 +68,32 @@ impl ListPlan {
             units,
             arrangements: Self::arrangements(head, shape),
             docstring_entry,
-            body_forms: list.entries.len().saturating_sub(header_length + 1),
-            definer: shape.is_some_and(|shape| shape.takes_docstring),
+            binding_list_entry: Self::binding_list_entry(shape),
+            one_line_allowed: !definer || body_forms <= 1,
             first_arm_entry: shape.filter(|shape| shape.arms).map(|_| header_length + 1),
         }
+    }
+
+    pub fn binding_list(list: &ListNode) -> Self {
+        let units = BindingPairs::new(list.entries.len()).units();
+        Self {
+            fillable_units: vec![false; units.len()],
+            units,
+            arrangements: vec![Arrangement {
+                first_line_units: 1,
+                later_indent: LaterIndent::Past(Arrangement::UNDER_HEAD_INDENT),
+            }],
+            docstring_entry: None,
+            binding_list_entry: None,
+            one_line_allowed: list.entries.len() <= BindingPairs::PAIR_LENGTH,
+            first_arm_entry: None,
+        }
+    }
+
+    fn binding_list_entry(shape: Option<Shape>) -> Option<usize> {
+        shape
+            .filter(|shape| shape.bindings)
+            .map(|shape| shape.header_length)
     }
 
     pub fn is_arm(&self, entry: usize) -> bool {
@@ -77,7 +101,7 @@ impl ListPlan {
     }
 
     pub fn allows_one_line(&self) -> bool {
-        !self.definer || self.body_forms <= 1
+        self.one_line_allowed
     }
 
     pub fn arrangements_at(&self, column: usize) -> &[Arrangement] {
@@ -187,6 +211,34 @@ impl<'e> UnitGrouping<'e> {
     }
 }
 
+struct BindingPairs {
+    entry_count: usize,
+}
+
+impl BindingPairs {
+    const PAIR_LENGTH: usize = 2;
+
+    fn new(entry_count: usize) -> Self {
+        Self { entry_count }
+    }
+
+    fn units(&self) -> Vec<Unit> {
+        (0..self.entry_count)
+            .step_by(Self::PAIR_LENGTH)
+            .map(|name| self.unit_at(name))
+            .collect()
+    }
+
+    fn unit_at(&self, name: usize) -> Unit {
+        let value = name + 1;
+        if value < self.entry_count {
+            Unit::Pair(name, value)
+        } else {
+            Unit::Single(name)
+        }
+    }
+}
+
 impl Unit {
     pub fn first_entry(self) -> usize {
         match self {
@@ -198,6 +250,10 @@ impl Unit {
         match self {
             Unit::Single(entry) | Unit::Pair(_, entry) => entry,
         }
+    }
+
+    pub fn entries(self) -> impl Iterator<Item = usize> {
+        self.first_entry()..=self.last_entry()
     }
 
     fn entry_count(self) -> usize {

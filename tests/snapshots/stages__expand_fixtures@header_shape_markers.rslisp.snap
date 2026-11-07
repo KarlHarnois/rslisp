@@ -21,7 +21,7 @@ error[L0331]: unexpected form after a header shape
 11 |               :docstring :docstring)
    |                          ^^^^^^^^^^ not expected here
    |
-   = help: remove it: only `:docstring`, `:one-per-line` and `:arms` may follow a header shape, each once
+   = help: remove it: only `:docstring`, `:one-per-line`, `:arms` and `:bindings` may follow a header shape, each once
 
 error[L0331]: unexpected form after a header shape
   --> expand/header_shape_markers.rslisp:13:41
@@ -29,7 +29,7 @@ error[L0331]: unexpected form after a header shape
 13 | (header-shape (my-defn name parameters) "text")
    |                                         ^^^^^^ not expected here
    |
-   = help: remove it: only `:docstring`, `:one-per-line` and `:arms` may follow a header shape, each once
+   = help: remove it: only `:docstring`, `:one-per-line`, `:arms` and `:bindings` may follow a header shape, each once
 
 error[L0331]: unexpected form after a header shape
   --> expand/header_shape_markers.rslisp:15:52
@@ -37,7 +37,7 @@ error[L0331]: unexpected form after a header shape
 15 | (header-shape (my-defn name parameters) :docstring :doc)
    |                                                    ^^^^ not expected here
    |
-   = help: remove it: only `:docstring`, `:one-per-line` and `:arms` may follow a header shape, each once
+   = help: remove it: only `:docstring`, `:one-per-line`, `:arms` and `:bindings` may follow a header shape, each once
 
 error[L0331]: unexpected form after a header shape
   --> expand/header_shape_markers.rslisp:18:15
@@ -45,7 +45,7 @@ error[L0331]: unexpected form after a header shape
 18 |               :documented :docstring)
    |               ^^^^^^^^^^^ not expected here
    |
-   = help: remove it: only `:docstring`, `:one-per-line` and `:arms` may follow a header shape, each once
+   = help: remove it: only `:docstring`, `:one-per-line`, `:arms` and `:bindings` may follow a header shape, each once
 
 error[L0331]: unexpected form after a header shape
   --> expand/header_shape_markers.rslisp:24:29
@@ -53,7 +53,7 @@ error[L0331]: unexpected form after a header shape
 24 |               :one-per-line :one-per-line)
    |                             ^^^^^^^^^^^^^ not expected here
    |
-   = help: remove it: only `:docstring`, `:one-per-line` and `:arms` may follow a header shape, each once
+   = help: remove it: only `:docstring`, `:one-per-line`, `:arms` and `:bindings` may follow a header shape, each once
 
 error[L0331]: unexpected form after a header shape
   --> expand/header_shape_markers.rslisp:26:41
@@ -83,4 +83,23 @@ error[L0331]: unexpected form after a header shape
 30 | (header-shape (my-defn name parameters) :arms :arms)
    |                                               ^^^^^ not expected here
    |
-   = help: remove it: only `:docstring`, `:one-per-line` and `:arms` may follow a header shape, each once
+   = help: remove it: only `:docstring`, `:one-per-line`, `:arms` and `:bindings` may follow a header shape, each once
+
+error[L0331]: unexpected form after a header shape
+  --> expand/header_shape_markers.rslisp:36:41
+   |
+36 | (header-shape (my-defn name parameters) :binding)
+   |                                         ^^^^^^^^ not `:bindings`
+   |
+help: write `:bindings` to state that the header's last form is a binding list
+   |
+36 | (header-shape (my-defn name parameters) :bindings)
+   |                                                 +
+
+error[L0331]: unexpected form after a header shape
+  --> expand/header_shape_markers.rslisp:38:51
+   |
+38 | (header-shape (my-defn name parameters) :bindings :bindings)
+   |                                                   ^^^^^^^^^ not expected here
+   |
+   = help: remove it: only `:docstring`, `:one-per-line`, `:arms` and `:bindings` may follow a header shape, each once

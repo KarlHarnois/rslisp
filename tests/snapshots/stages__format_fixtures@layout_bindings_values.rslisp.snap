@@ -1,0 +1,48 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_bindings_values.rslisp
+---
+(use prelude/macros header-shape)
+
+(defrule bind ((bindings body ...) (do body ...)))
+
+(header-shape (bind bindings) :bindings)
+
+(defn odd () (bind (x 5 y) y))
+
+(defn flat () (bind x 5))
+
+(defn nested-value ()
+  (bind (total (+ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25) count 3)
+    total))
+
+(defn long-single-pair ()
+  (bind (summary (str "the first sighting of the season came from the northern ridge" "and more"))
+    summary))
+
+---
+(use prelude/macros header-shape)
+
+(defrule bind
+  ((bindings body ...) (do body ...)))
+
+(header-shape (bind bindings) :bindings)
+
+(defn odd ()
+  (bind (x 5
+         y)
+    y))
+
+(defn flat () (bind x 5))
+
+(defn nested-value ()
+  (bind (total (+ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
+                  18 19 20 21 22 23 24 25)
+         count 3)
+    total))
+
+(defn long-single-pair ()
+  (bind (summary (str "the first sighting of the season came from the northern ridge"
+                      "and more"))
+    summary))

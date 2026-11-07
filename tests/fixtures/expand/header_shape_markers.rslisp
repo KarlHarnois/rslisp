@@ -32,3 +32,9 @@
 (header-shape (my-defn name parameters)
               :arms :docstring
               :one-per-line)
+
+(header-shape (my-defn name parameters) :binding)
+
+(header-shape (my-defn name parameters) :bindings :bindings)
+
+(header-shape (my-defn name parameters) :bindings :arms :docstring)

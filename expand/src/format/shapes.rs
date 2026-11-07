@@ -9,6 +9,7 @@ pub struct Shape {
     pub takes_docstring: bool,
     pub one_per_line: bool,
     pub arms: bool,
+    pub bindings: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -27,6 +28,7 @@ impl ShapeStatement {
     pub const DOCSTRING_MARKER: &'static str = "docstring";
     pub const ONE_PER_LINE_MARKER: &'static str = "one-per-line";
     pub const ARMS_MARKER: &'static str = "arms";
+    pub const BINDINGS_MARKER: &'static str = "bindings";
 
     pub fn of(form: &Form) -> Option<Self> {
         let [head, stated, markers @ ..] = form.as_list()? else {
@@ -43,6 +45,7 @@ impl ShapeStatement {
                 takes_docstring: Self::has_marker(markers, Self::DOCSTRING_MARKER),
                 one_per_line: Self::has_marker(markers, Self::ONE_PER_LINE_MARKER),
                 arms: Self::has_marker(markers, Self::ARMS_MARKER),
+                bindings: Self::has_marker(markers, Self::BINDINGS_MARKER),
             },
         })
     }
@@ -105,7 +108,8 @@ mod tests {
                 header_length: 2,
                 takes_docstring: false,
                 one_per_line: false,
-                arms: false
+                arms: false,
+                bindings: false
             })
         );
     }
@@ -126,7 +130,8 @@ mod tests {
                 header_length: 1,
                 takes_docstring: false,
                 one_per_line: true,
-                arms: false
+                arms: false,
+                bindings: false
             })
         );
     }
@@ -140,7 +145,23 @@ mod tests {
                 header_length: 1,
                 takes_docstring: false,
                 one_per_line: false,
-                arms: true
+                arms: true,
+                bindings: false
+            })
+        );
+    }
+
+    #[test]
+    fn a_bindings_marker_states_a_binding_list() {
+        let statement = StatementFixture::statement("(header-shape (let bindings) :bindings)");
+        assert_eq!(
+            statement.map(|statement| statement.shape),
+            Some(Shape {
+                header_length: 1,
+                takes_docstring: false,
+                one_per_line: false,
+                arms: false,
+                bindings: true
             })
         );
     }

@@ -1,0 +1,22 @@
+(use prelude/macros header-shape)
+
+(defrule bind ((bindings body ...) (do body ...)))
+
+(header-shape (bind bindings) :bindings)
+
+(defn leading () (bind (; leading
+                       x 5 y 7) y))
+
+(defn own-line () (bind (x 5
+                          ; before y
+                          y 7) y))
+
+(defn after-name () (bind (x ; after x
+                           5 y 7) y))
+
+(defn after-value () (bind (x 5 ; after five
+                           y 7) y))
+
+(defn before-value () (bind (x
+                             ; before five
+                             5 y 7) y))
