@@ -18,14 +18,17 @@ env:
   INSTA_UPDATE: "no"
 
 jobs:
-  survey:
-    name: survey (#${{ matrix.pull }})
+  mutants:
+    name: mutants (#${{ matrix.pull }}, ${{ matrix.tests }}, ${{ matrix.shard }}/${{ matrix.shards }})
     strategy:
       fail-fast: false
       matrix:
-        pull: [321, 340, 342, 344, 346, 350, 351]
+        pull: [340, 344, 346, 351]
+        tests: [full]
+        shards: [4]
+        shard: [0, 1, 2, 3]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -48,12 +51,15 @@ jobs:
         run: |
           base=$(gh pr view "$PULL" --json baseRefOid --jq .baseRefOid)
           git -C pull diff "$base...HEAD" > "pull/$DIFF"
-          wc -l "pull/$DIFF"
-      - name: List the mutants
-        run: |
-          nix develop .#mutation -c bash -c '
-            cd pull
-            cargo mutants --version
-            cargo mutants --list --in-diff "$DIFF" --json > mutants.json
-            cargo mutants --list --in-diff "$DIFF"
-            jq length mutants.json'
+      - name: Test the mutants
+        env:
+          SHARD: ${{ matrix.shard }}/${{ matrix.shards }}
+          TESTS: ${{ matrix.tests }}
+        run: nix develop .#mutation -c bash .github/mutation/run.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: mutants-${{ matrix.pull }}-${{ matrix.tests }}-${{ matrix.shard }}-of-${{ matrix.shards }}
+          path: |
+            pull/mutants.out/outcomes.json
+            pull/mutants.out/*.txt
