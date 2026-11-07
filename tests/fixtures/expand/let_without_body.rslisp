@@ -1,0 +1,7 @@
+(defn no-body ()
+  (let (x 5
+        y 7)))
+
+(defn empty-list () (let ()))
+
+(defn missing-value-first () (let (x)))

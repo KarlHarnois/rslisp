@@ -1,0 +1,76 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/let_binding_list_errors.rslisp
+---
+error[L0336]: `let` takes a list of bindings
+ --> expand/let_binding_list_errors.rslisp:1:18
+  |
+1 | (defn no-list () (let))
+  |                  ^^^^^ this has no list of bindings
+  |
+  = help: write it as `(let (name value) body ...)`
+
+error[L0336]: `let` takes a list of bindings
+ --> expand/let_binding_list_errors.rslisp:3:25
+  |
+3 | (defn name-only () (let x))
+  |                         ^ not a list of bindings
+  |
+  = help: write it as `(let (name value) body ...)`
+
+error[L0336]: `let` takes a list of bindings
+ --> expand/let_binding_list_errors.rslisp:5:20
+  |
+5 | (defn flat () (let x 5))
+  |                    ^ not a list of bindings
+  |
+  = help: to bind `x` for the rest of the body, write `(local x 5)`; to define it for the module, write `(def x 5)`
+
+error[L0336]: `let` takes a list of bindings
+ --> expand/let_binding_list_errors.rslisp:8:8
+  |
+8 |   (let x 5 (* x 2)))
+  |        ^ not a list of bindings
+  |
+  = help: write the bindings in a list, as `(let (x 5) (* x 2))`
+
+error[L0336]: `let` takes a list of bindings
+  --> expand/let_binding_list_errors.rslisp:10:26
+   |
+10 | (defn not-a-name () (let "a" 5))
+   |                          ^^^ not a list of bindings
+   |
+   = help: write it as `(let (name value) body ...)`
+
+error[L0336]: `let` takes a list of bindings
+  --> expand/let_binding_list_errors.rslisp:12:29
+   |
+12 | (defn keyword-first () (let :x 5))
+   |                             ^^ not a list of bindings
+   |
+   = help: write it as `(let (name value) body ...)`
+
+error[L0336]: each name and its value go straight into the binding list of `let`, without their own parentheses
+  --> expand/let_binding_list_errors.rslisp:15:9
+   |
+15 |   (let ((step 0) (total 1)) total))
+   |         ^^^^^^^^ a name and its value in their own parentheses
+   |
+   = help: write it as `(let (step 0 total 1) ...)`
+
+error[L0336]: each name and its value go straight into the binding list of `let`, without their own parentheses
+  --> expand/let_binding_list_errors.rslisp:18:9
+   |
+18 |   (let ((step 0) (label "a")) label))
+   |         ^^^^^^^^ a name and its value in their own parentheses
+   |
+   = help: write it as `(let (step 0 label "a") ...)`
+
+error[L0336]: each name and its value go straight into the binding list of `let`, without their own parentheses
+  --> expand/let_binding_list_errors.rslisp:20:27
+   |
+20 | (defn text-first () (let ((label "a") (count 1)) count))
+   |                           ^^^^^^^^^^^ a name and its value in their own parentheses
+   |
+   = help: write it as `(let (label "a" count 1) ...)`

@@ -316,9 +316,7 @@ impl Expander<'_> {
             KernelForm::Expression(expression) => {
                 self.lower_expression_form(expression, &Shape::new(kernel, form))
             }
-            KernelForm::Let | KernelForm::Local => {
-                Err(ExpandProblems::binding_outside_body(kernel, span))
-            }
+            KernelForm::Local => Err(ExpandProblems::binding_outside_body(kernel, span)),
             KernelForm::Macro => Err(ExpandProblems::macro_outside_def(span)),
             KernelForm::Definition(_) => Err(self.misplaced_definition(kernel, span)),
         };
@@ -488,7 +486,7 @@ impl Expander<'_> {
         context: &mut DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
         let item = match self.kernel_head(form) {
-            Some(kernel @ (KernelForm::Let | KernelForm::Local)) => {
+            Some(kernel @ KernelForm::Local) => {
                 self.lower_let(&Shape::new(kernel, form), rest_of_body, context)
             }
             Some(Self::DEF_FORM) => self.lower_misplaced_def(form, rest_of_body, context),

@@ -1,0 +1,11 @@
+(defn total ()
+  (let (x 5
+        y (+ x 2))
+    (+ y x)))
+
+(defn nothing-bound () (let () 1))
+
+(defn shadowed ()
+  (let (x 1
+        x (+ x 1))
+    x))

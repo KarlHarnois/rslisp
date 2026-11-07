@@ -54,7 +54,6 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `fn` | `(fn (parameter...) body...)` | `fn` item, closure, or block | params: binders. body: expressions. |
 | `def` | `(def name value)` | `fn`, `const`, `static`, or nothing | name: binder. value: expression. |
 | `local` | `(local name value)` | `let` | name: binder. value: expression. |
-| `let` | `(let name value)` | `let` | name: binder. value: expression. |
 | `do` | `(do form...)` | block | forms: expressions. At module level: definitions. |
 | `if` | `(if test then else)` | `if`/`else` | all: expressions. |
 | `type` | `(type name type)` | signature | name: reference to a `def`, or to a macro whose value position expands to a function the macro introduced in this module. type: type. |
@@ -87,7 +86,7 @@ In type positions, the kernel provides `fn`, `fn-mut`, `fn-once`, `ref`, `mut`, 
 
 In expression positions, the kernel provides `ref`, `mut` and `deref`, and the constants `true` and `false`. The constants are kernel constants, not prelude definitions. Macro code and program code then see the same booleans, so `if`, `and` and `or` work in both.
 
-`local` is a kernel form because a macro sees only its own form and cannot bind a name for the forms that follow it in the enclosing body ([RFC 0058](../rfcs/0058-scoped-let.md)). `let` means the same as `local`.
+`local` is a kernel form because a macro sees only its own form and cannot bind a name for the forms that follow it in the enclosing body ([RFC 0058](../rfcs/0058-scoped-let.md)).
 
 `ref`, `mut` and `deref` are kernel forms because a prelude function cannot mark its result as written. The compiler must see the written form to know that the value came from a written borrow or dereference.
 
@@ -109,6 +108,16 @@ Values and types are therefore order-independent, like Rust items. An `impl` res
 ### Bodies
 
 A body is the sequence of forms in `fn`, `macro` and `do`. A `local` binds its name for the rest of the enclosing body. The value of a body is the value of its last form, or unit if the body is empty or ends with a `local`. A `(do)` before the last form has no effect and emits nothing.
+
+`(let (name value ...) body ...)` binds names for its own body, and the bindings end at its closing parenthesis ([RFC 0058](../rfcs/0058-scoped-let.md)). The list alternates names and values. Each value sees the names bound before it, so `(let (x 5 y (+ x 1)) y)` is `6`, and a later name may shadow an earlier one. A binder is what `local` takes: a name, or a name and its type, as in `(let ((year i64) (deref y) total 0) ...)`. The body follows the rules of `do`, so its last form is its value and in tail position. An empty list is allowed, so `(let () body ...)` is `(do body ...)`. `let` is a prelude macro that expands every pair to a `local` inside a `do`, so at the end of a function body it emits flat Rust `let` statements, and in argument position it emits a Rust block.
+
+A `let` that cannot bind is an error. A name without a value is `L0334`, and its help prints the list with the placeholder `value` after that name. A list in which every item is a two-item list, as in `((count usize))`, also reads as the old shape, so its help shows both fixes. A `let` with no body is `L0335`, because its bindings reach no form. A binding list that is not a list, as in `(let x 5)`, is `L0336`, with the help `(local x 5)` or `(def x 5)` when only a name and a value follow. A list with an even number of items in which a binder is a two-item list whose second item is a literal, as `(step 0)` in `((step 0) (total 1))`, is `L0336` too, and its help prints the list with each name and its value straight in it. A list reports `L0334` before `L0335`.
+
+The prelude, the docs and the examples follow one style rule: bind the steps of a function body with `local`, and use `let` where only one expression fits or where a binding should end before the body does.
+
+1. **The steps of a function body use `local`.** They add no nesting and read as the Rust they emit.
+2. **A position that takes one expression uses `let`:** an `if` branch, a `match` arm or an argument.
+3. **A binding that only the next few forms use, or whose name would mislead later in the body, uses `let`.**
 
 A function that calls itself in tail position compiles to a Rust loop. The call reassigns the parameters that change, then starts the next iteration. A parameter to which the call passes a new value, such as a struct it builds or a local the loop body binds, takes the own mode unless it is a small Copy type, because a borrow of that value would not outlive the iteration: `(count-up limit (->counter :label (str "c") :count (+ (:count state) 1)))` emits `state = Counter { ... };` with `mut state: Counter`. A parameter to which the call passes itself, another parameter, or a field of one keeps the mode its uses need. A call to itself anywhere else stays recursive. A `fn` that the program calls where it is written emits as a block that binds each parameter with `let`.
 
@@ -338,7 +347,7 @@ A macro also answers for its name in value position. When a program uses a macro
 
 **A definer that fails reports one error.** `defn`, `defmacro`, `defrule` and `defstruct` declare the names they define, with `declare-definition`, `declare-macro-definition` and `declare-type-definition` from the `code` module, before their own checks. When the definer's top-level call fails, the expander binds each declared name, so `(area 1)` after a failed `(defn area "doc" (w) w)` adds no `L0201`, and a use of the type or the constructor after a failed `defstruct point` adds none either. A definer that fails inside a body binds its declared value name as a local for the rest of the body, so `(defn outer () (defn inner "doc" (x) x) (inner 1))` reports the `L0328` alone, and a call of a failed macro there skips its arguments too. A later definition of a failed name replaces it with no `L0203`, so a fixed copy below a broken one reports only the broken one. Macro code that calls a failed name reports `L0308`, as it does for any definition with errors. A user definer declares its names the same way, so its failures report once. A call of a failed function still checks its arguments, so `(area (missing-width) 2)` reports the `L0201` for `missing-width`, while a call of a failed macro skips its arguments, which need not be code the program could run. A misspelled name, such as `aera`, still reports `L0201`, with the failed name as its suggestion. A name that no declaration reaches stays unbound: `(defn area)` does not match the shape of `defn`, so the call fails before `defn` declares `area`, and `(area 1)` reports `L0201`.
 
-The prelude also provides `defn` for a function definition, `the` for a typed value, `->` and `->>` for threading a value through calls, `let-try` and `try->` for propagating errors, and `assoc` and `assoc-in` for changing a value. `defn` with a plain parameter list expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
+The prelude also provides `defn` for a function definition, `the` for a typed value, `->` and `->>` for threading a value through calls, `let-try` and `try->` for propagating errors, and `assoc` and `assoc-in` for changing a value. A macro template that binds names for its own forms uses `let`, because a template is one expression, as `let-try`, `the` and the comparison chains in `prelude/number.rslisp` do. Only the prelude `let` expands to `local`, and `defmacro` builds `local` for the steps of a macro's body, which are the steps of a function body. `prelude/macros` and `prelude/bindings`, which `let` is built from, keep `(do (local ...) ...)`, because `let` does not exist where they are expanded. `defn` with a plain parameter list expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
 
 ### Keyword parameters
 
@@ -384,7 +393,7 @@ Write a macro with `defrule` when its expansion follows from the shape of its ca
   (((index count) body ...) (for-each (range 0 count) (fn (index) body ...))))
 
 (defrule case
-  ((value clause ...) (do (local subject value) (case-clauses subject clause ...))))
+  ((value clause ...) (let (subject value) (case-clauses subject clause ...))))
 ```
 
 One implementation per name keeps the compiler small. Compile-time twins of the prelude's Rust templates would disagree with Rust on integer width, overflow, division by zero and floats. Most macros need no computation when written with `defrule`.
@@ -649,7 +658,7 @@ An expression never changes the buffer. After a module file changes on disk, an 
 
 **The prompt differs from a file in three ways:**
 
-1. An input that is not a definition runs once, as the body of a generated `main`.
+1. An input that is not a definition runs once, as the body of a generated `main`. A `(local x 5)` there binds for that input only and prints nothing, and a value that outlives one input is a `def`.
 2. A definition replaces the earlier definition of the same name, where a file reports `L0203`, and sets aside each earlier input that no longer checks.
 3. Each definition is checked when it is entered, so it comes after the definitions it uses. Mutually recursive functions go in one input, as `(do (defn even? ...) (defn odd? ...))`.
 

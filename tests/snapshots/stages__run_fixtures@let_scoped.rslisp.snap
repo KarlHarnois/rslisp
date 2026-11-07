@@ -1,6 +1,11 @@
 ---
 source: tests/stages.rs
 expression: reports.report(path)
-input_file: tests/fixtures/run/let_alias.rslisp
+input_file: tests/fixtures/run/let_scoped.rslisp
 ---
+16
+4
 2
+2
+1
+0

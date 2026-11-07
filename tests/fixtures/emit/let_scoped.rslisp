@@ -1,0 +1,21 @@
+(defn total ()
+  (let (x 5
+        y 7)
+    (+ y x)))
+
+(defn report (n)
+  (println (let (doubled (* n 2)) doubled))
+  (let (half (/ n 2)
+        quarter (/ half 2))
+    (println half)
+    (println quarter)))
+
+(defn shadow ()
+  (local x 1)
+  (let (x 2) (println x))
+  (println x))
+
+(defn main ()
+  (println (total))
+  (report 8)
+  (shadow))

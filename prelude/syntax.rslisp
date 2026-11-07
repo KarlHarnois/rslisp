@@ -1,3 +1,5 @@
+(use prelude/bindings let)
+
 (use prelude/macros defmacro defrule docstring-before-body?
                     docstring-before-parameters document
                     header-shape map-list note-docstring
@@ -671,7 +673,7 @@
 
 (defrule the
   ((type-expression value)
-   (do (local (result type-expression) value) result)))
+   (let ((result type-expression) value) result)))
 
 (defrule comment ((form ...) (do)))
 

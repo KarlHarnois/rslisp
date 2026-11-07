@@ -1,0 +1,4 @@
+(let (rate 3)
+  (defn scale (n) (* n rate)))
+
+(defn main () (println (scale 2)))

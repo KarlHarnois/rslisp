@@ -1,0 +1,19 @@
+(defn lone-name () (let (x) x))
+
+(defn last-name ()
+  (let (total (+ 1 2)
+        count)
+    total))
+
+(defn typed-binder ()
+  (let ((count usize)) count))
+
+(defn old-list ()
+  (let ((index 0) (total 0)
+        (rest 5))
+    total))
+
+(defn new-list-typed-binder ()
+  (let (count 0
+        (total i64))
+    count))

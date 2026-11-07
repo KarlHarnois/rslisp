@@ -4,6 +4,7 @@
                     template)
 
 (use prelude/logic and cond not or unless when)
+(use prelude/bindings let)
 
 (use prelude/syntax -> ->> comment defn let-try loop the
                     try->)
@@ -91,8 +92,6 @@
 
 (header-shape (def name) :docstring)
 
-(header-shape (let name))
-
 (header-shape (local name))
 
 (header-shape (type name))
@@ -139,11 +138,6 @@
   A string between the name and the value, as in
   `(def max-retries \"How many times a check reruns.\" 1)`, documents the
   name.")
-
-(document (let name value)
-  "Binds a name to a value for the rest of the body.
-
-  It emits a Rust `let`.")
 
 (document (local name value)
   "Binds a name to a value for the rest of the body.

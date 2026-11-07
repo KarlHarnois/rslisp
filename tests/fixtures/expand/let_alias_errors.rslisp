@@ -1,4 +1,0 @@
-(defn missing-value () (let name))
-
-(defn as-an-argument ()
-  (println (let name 1)))

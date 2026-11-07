@@ -1,6 +1,7 @@
 (use prelude/macros defrule document)
 (use prelude/pair pair)
 (use prelude/logic and)
+(use prelude/bindings let)
 (use prelude/types box option result vec)
 
 (export * + - / < <= = > >= add div eq float ge gt hash
@@ -149,41 +150,36 @@
 (defrule <
   ((a b) (lt a b))
   ((a b c more ...)
-   (do
-     (local left a)
-     (local middle b)
+   (let (left a
+         middle b)
      (and (lt left middle) (< middle c more ...)))))
 
 (defrule <=
   ((a b) (le a b))
   ((a b c more ...)
-   (do
-     (local left a)
-     (local middle b)
+   (let (left a
+         middle b)
      (and (le left middle) (<= middle c more ...)))))
 
 (defrule >
   ((a b) (gt a b))
   ((a b c more ...)
-   (do
-     (local left a)
-     (local middle b)
+   (let (left a
+         middle b)
      (and (gt left middle) (> middle c more ...)))))
 
 (defrule >=
   ((a b) (ge a b))
   ((a b c more ...)
-   (do
-     (local left a)
-     (local middle b)
+   (let (left a
+         middle b)
      (and (ge left middle) (>= middle c more ...)))))
 
 (defrule =
   ((a b) (eq a b))
   ((a b c more ...)
-   (do
-     (local left a)
-     (local middle b)
+   (let (left a
+         middle b)
      (and (eq left middle) (= middle c more ...)))))
 
 (defrule not= ((a b) (ne a b)))

@@ -1,0 +1,44 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/let_missing_value.rslisp
+---
+error[L0334]: a name in the binding list of `let` has no value
+ --> expand/let_missing_value.rslisp:1:26
+  |
+1 | (defn lone-name () (let (x) x))
+  |                          ^ this name has no value
+  |
+  = help: write its value after it, as `(let (x value) ...)`
+
+error[L0334]: a name in the binding list of `let` has no value
+ --> expand/let_missing_value.rslisp:5:9
+  |
+5 |         count)
+  |         ^^^^^ this name has no value
+  |
+  = help: write its value after it, as `(let (total (+ 1 2) count value) ...)`
+
+error[L0334]: a name in the binding list of `let` has no value
+ --> expand/let_missing_value.rslisp:9:9
+  |
+9 |   (let ((count usize)) count))
+  |         ^^^^^^^^^^^^^ this name has no value
+  |
+  = help: write its value after it, as `(let ((count usize) value) ...)`, or write each name and its value without their own parentheses, as `(let (count usize) ...)`
+
+error[L0334]: a name in the binding list of `let` has no value
+  --> expand/let_missing_value.rslisp:13:9
+   |
+13 |         (rest 5))
+   |         ^^^^^^^^ this name has no value
+   |
+   = help: write its value after it, as `(let ((index 0) (total 0) (rest 5) value) ...)`, or write each name and its value without their own parentheses, as `(let (index 0 total 0 rest 5) ...)`
+
+error[L0334]: a name in the binding list of `let` has no value
+  --> expand/let_missing_value.rslisp:18:9
+   |
+18 |         (total i64))
+   |         ^^^^^^^^^^^ this name has no value
+   |
+   = help: write its value after it, as `(let (count 0 (total i64) value) ...)`

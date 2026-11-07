@@ -1,0 +1,258 @@
+(use prelude/macros document header-shape whole-pairs?)
+
+(use code bool-not concat drop empty? fail first keyword?
+          len list list? nth number-sub number? prepend rest
+          same-binding? string string? symbol-name symbol?
+          value-eq)
+
+(export binding-list let)
+
+(def let
+  (macro (form)
+    (prepend (quote do)
+             (concat (local-steps (binding-list form))
+                     (drop 2 form)))))
+
+(header-shape (let bindings) :bindings)
+
+(document (let (name value
+                ...)
+            body ...)
+  "Binds names to values for its body.
+
+  Each value sees the names bound before it, and the value of the body
+  is the value of its last form. To bind a name for the rest of the
+  enclosing body, write `local`.")
+
+(def local-steps
+  (fn (bindings)
+    (local-steps-onto (list) bindings)))
+
+(def local-steps-onto
+  (fn (steps bindings)
+    (if (empty? bindings)
+      steps
+      (recur (concat steps (list (local-step bindings)))
+             (drop 2 bindings)))))
+
+(def local-step
+  (fn (bindings)
+    (list (quote local)
+          (first bindings)
+          (nth bindings 1))))
+
+(def binding-list
+  (fn (form)
+    (if (bindings-written? form)
+      (checked-bindings form (nth form 1))
+      (unlisted-bindings form))))
+
+(def bindings-written?
+  (fn (form)
+    (if (empty? (rest form))
+      false
+      (list? (nth form 1)))))
+
+(def checked-bindings
+  (fn (form bindings)
+    (if (parenthesized-pairs? bindings)
+      (parenthesized-pairs form bindings)
+      (if (whole-pairs? bindings)
+        (bindings-with-body form bindings)
+        (name-without-value form bindings)))))
+
+(def bindings-with-body
+  (fn (form bindings)
+    (if (empty? (drop 2 form))
+      (bindings-without-body form bindings)
+      bindings)))
+
+(def form-name
+  (fn (form) (symbol-name (first form))))
+
+(def elided-call
+  (fn (form bindings)
+    (list (first form) bindings (quote ...))))
+
+(def let-call?
+  (fn (form)
+    (same-binding? (first form) (quote let))))
+
+(def parenthesized-pairs?
+  (fn (bindings)
+    (if (whole-pairs? bindings)
+      (bool-not (empty? (parenthesized-binders bindings)))
+      false)))
+
+(def parenthesized-binders
+  (fn (bindings)
+    (if (empty? bindings)
+      bindings
+      (if (parenthesized-pair? (first bindings))
+        bindings
+        (recur (drop 2 bindings))))))
+
+(def parenthesized-pair?
+  (fn (binder)
+    (if (pair-list? binder)
+      (literal? (nth binder 1))
+      false)))
+
+(def pair-list?
+  (fn (item)
+    (if (list? item)
+      (value-eq (len item) 2)
+      false)))
+
+(def literal?
+  (fn (item)
+    (if (number? item) true (string? item))))
+
+(def parenthesized-pairs
+  (fn (form bindings)
+    (fail (string "each name and its value go straight into the binding "
+                  "list of `"
+                  (form-name form)
+                  "`, without their own parentheses")
+      (first (parenthesized-binders bindings))
+      (string "write it as `"
+              (elided-call form (unwrapped-pairs bindings))
+              "`")
+      (quote (:code malformed-binding-list
+                    :label "a name and its value in their own parentheses")))))
+
+(def unwrapped-pairs
+  (fn (bindings)
+    (unwrapped-onto (list) bindings)))
+
+(def unwrapped-onto
+  (fn (unwrapped bindings)
+    (if (empty? bindings)
+      unwrapped
+      (recur (concat unwrapped (unwrapped-item (first bindings)))
+             (rest bindings)))))
+
+(def unwrapped-item
+  (fn (item)
+    (if (pair-list? item) item (list item))))
+
+(def name-without-value
+  (fn (form bindings)
+    (fail (string "a name in the binding list of `"
+                  (form-name form)
+                  "` has no value")
+      (nth bindings (number-sub (len bindings) 1))
+      (value-help form bindings)
+      (quote (:code binding-without-value
+                    :label "this name has no value")))))
+
+(def value-help
+  (fn (form bindings)
+    (local with-value
+      (string "write its value after it, as `"
+              (elided-call form
+                           (concat bindings (list (quote value))))
+              "`"))
+    (if (every-pair-list? bindings)
+      (string with-value
+              ", or write each name and its value without their own "
+              "parentheses, as `"
+              (elided-call form (unwrapped-pairs bindings))
+              "`")
+      with-value)))
+
+(def every-pair-list?
+  (fn (items)
+    (if (empty? items)
+      true
+      (if (pair-list? (first items))
+        (recur (rest items))
+        false))))
+
+(def bindings-without-body
+  (fn (form bindings)
+    (fail (string "`" (form-name form) "` has no body")
+      form
+      (body-help form bindings)
+      (quote (:code bindings-without-body
+                    :label "its bindings reach no form")))))
+
+(def body-help
+  (fn (form bindings)
+    (if (let-call? form)
+      (string "write the forms that use the bindings after the list; "
+              "to bind a name for the rest of the body, write `"
+              (first-local-step bindings)
+              "`")
+      "write the forms that use the bindings after the list")))
+
+(def first-local-step
+  (fn (bindings)
+    (if (empty? bindings)
+      (quote (local name value))
+      (local-step bindings))))
+
+(def unlisted-bindings
+  (fn (form)
+    (if (empty? (rest form))
+      (fail (string "`" (form-name form) "` takes a list of bindings")
+        form
+        (generic-binding-help form)
+        (quote (:code malformed-binding-list
+                      :label "this has no list of bindings")))
+      (fail (string "`" (form-name form) "` takes a list of bindings")
+        (nth form 1)
+        (unlisted-help form)
+        (quote (:code malformed-binding-list
+                      :label "not a list of bindings"))))))
+
+(def unlisted-help
+  (fn (form)
+    (if (flat-binding? form)
+      (flat-binding-help form)
+      (generic-binding-help form))))
+
+(def flat-binding?
+  (fn (form)
+    (if (name? (nth form 1))
+      (bool-not (empty? (drop 2 form)))
+      false)))
+
+(def name?
+  (fn (form)
+    (if (symbol? form)
+      (bool-not (keyword? form))
+      false)))
+
+(def generic-binding-help
+  (fn (form)
+    (string "write it as `("
+            (form-name form)
+            " (name value) body ...)`")))
+
+(def flat-binding-help
+  (fn (form)
+    (if (let-call? form)
+      (flat-let-help form)
+      (string "write the bindings in a list, as `"
+              (elided-call form (flat-pair form))
+              "`"))))
+
+(def flat-pair
+  (fn (form)
+    (list (nth form 1) (nth form 2))))
+
+(def flat-let-help
+  (fn (form)
+    (if (empty? (drop 3 form))
+      (string "to bind `"
+              (symbol-name (nth form 1))
+              "` for the rest of the body, write `"
+              (prepend (quote local) (flat-pair form))
+              "`; to define it for the module, write `"
+              (prepend (quote def) (flat-pair form))
+              "`")
+      (string "write the bindings in a list, as `"
+              (prepend (first form)
+                       (prepend (flat-pair form) (drop 3 form)))
+              "`"))))

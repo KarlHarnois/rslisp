@@ -1,4 +1,0 @@
-(defn main ()
-  (let count 1)
-  (let count (+ count 1))
-  (println count))

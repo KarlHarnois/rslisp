@@ -1,0 +1,20 @@
+(defn no-list () (let))
+
+(defn name-only () (let x))
+
+(defn flat () (let x 5))
+
+(defn flat-with-body ()
+  (let x 5 (* x 2)))
+
+(defn not-a-name () (let "a" 5))
+
+(defn keyword-first () (let :x 5))
+
+(defn parenthesized ()
+  (let ((step 0) (total 1)) total))
+
+(defn parenthesized-text ()
+  (let ((step 0) (label "a")) label))
+
+(defn text-first () (let ((label "a") (count 1)) count))
