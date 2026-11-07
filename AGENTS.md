@@ -133,7 +133,7 @@ The exceptions are:
 - NEVER lower `MINIMUM_LINE_COVERAGE` or raise `MAXIMUM_CRAP` in `xtask/src/gate.rs` without the project owner's approval.
 - NEVER hide code from `cargo xtask coverage`, such as by moving branches into a macro: the gate cannot see inside a macro.
 
-### `nix develop`
+### Dev shell
 
 **Build, test and run every tool inside the dev shell.** The host `PATH` can carry other versions of `cargo` and `rustc`.
 
