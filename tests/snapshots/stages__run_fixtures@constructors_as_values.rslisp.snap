@@ -1,0 +1,9 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/constructors_as_values.rslisp
+---
+(some 2)
+(some 2)
+(ok (ok 1))
+(ok (err 1))

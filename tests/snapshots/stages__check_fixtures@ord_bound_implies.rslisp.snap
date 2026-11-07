@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/ord_bound_implies.rslisp
+---
+(type ordered (where ((a ord)) (fn (a a) bool)))
+(type through-supertrait (where ((a ranked)) (fn (a a) bool)))
+(type main (fn () unit))

@@ -1,13 +1,14 @@
-(use prelude/macros defrule document)
+(use prelude/macros defrule-with-value document)
 (use prelude/types option result)
 (use prelude/text show)
 
 (export err err? expect-ok map-err map-ok ok ok-or ok?
         then-ok unwrap-err unwrap-ok)
 
-(defrule ok ((value) (result/ok value)))
+(defrule-with-value ok (fn (value) (result/ok value))
+  ((value) (result/ok value)))
 
-(defrule err
+(defrule-with-value err (fn (value) (result/err value))
   ((value) (result/err value)))
 
 (def ok-or
@@ -62,14 +63,14 @@
 (document (ok value)
   "Wraps a success value in a `result`.
 
-  It is a macro, so `(fn (x) (ok x))` passes it as a function. In a `match`,
-  `(ok x)` is the pattern that binds the value.")
+  As a value, it is a function of one argument, as in `(map (iter v) ok)`. In
+  a `match`, `(ok x)` is the pattern that binds the value.")
 
 (document (err error)
   "Wraps a failure value in a `result`.
 
-  It is a macro, so `(fn (x) (err x))` passes it as a function. In a `match`,
-  `(err x)` is the pattern that binds the value.")
+  As a value, it is a function of one argument, as in `(map (iter v) err)`. In
+  a `match`, `(err x)` is the pattern that binds the value.")
 
 (document (ok-or option error)
   "Turns an `option` into a `result`, with `error` in place of `none`.

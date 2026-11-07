@@ -1,0 +1,28 @@
+(type parsed
+  (fn (i64) (result i64 (ref str))))
+
+(defn parsed (value) (ok value))
+
+(type nested
+  (fn ((result i64 (ref str)))
+    (result (result i64 (ref str))
+            (ref str))))
+
+(defn nested (value) (map-ok value ok))
+
+(type failed
+  (fn ((result i64 (ref str)))
+    (result (result i64 i64) (ref str))))
+
+(defn failed (value) (map-ok value err))
+
+(type wrapped
+  (fn ((vec i64)) (vec (option i64))))
+
+(defn wrapped (items)
+  (collect (map (copied items) some)))
+
+(defn main ()
+  (prn (wrapped (vec 1 2)))
+  (prn (nested (parsed 1)))
+  (prn (failed (parsed 1))))

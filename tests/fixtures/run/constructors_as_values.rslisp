@@ -1,0 +1,28 @@
+(type parsed
+  (fn (i64) (result i64 (ref str))))
+
+(defn parsed (value) (ok value))
+
+(type nested
+  (fn ((result i64 (ref str)))
+    (result (result i64 (ref str))
+            (ref str))))
+
+(defn nested (value) (map-ok value ok))
+
+(type failed
+  (fn ((result i64 (ref str)))
+    (result (result i64 i64) (ref str))))
+
+(defn failed (value) (map-ok value err))
+
+(defn main ()
+  (local v (vec 1 2))
+  (prn (reduce (map (iter v) some)
+               (some (ref 0))
+               (fn (best item) item)))
+  (prn (reduce (map (range 0 3) some)
+               (some 0)
+               (fn (best item) item)))
+  (prn (nested (parsed 1)))
+  (prn (failed (parsed 1))))

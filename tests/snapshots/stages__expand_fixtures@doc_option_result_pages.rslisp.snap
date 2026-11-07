@@ -3,7 +3,7 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/expand/doc_option_result_pages.rslisp
 ---
-(def some-page "(some value)\n\nWraps a value in an `option`.\n\nIt is a macro, so `(fn (x) (some x))` passes it as a function. In a `match`,\n`(some x)` is the pattern that binds the value.")
+(def some-page "(some value)\n\nWraps a value in an `option`.\n\nAs a value, it is a function of one argument, as in `(map (iter v) some)`. In\na `match`, `(some x)` is the pattern that binds the value.")
 (def none-page "none\n\nHolds an `option` with no value.\n\nIn a `match`, `none` is the pattern for it.")
 (def expect-page "(expect option message)\n\nReturns an `option`'s value, or panics with a message on `none`.\n\n`message` is a `(ref str)`, so borrow a `string` with `as-str`. The call\nmoves an option that is not `copy`.")
 (def unwrap-ok-page "(unwrap-ok result)\n\nReturns a `result`'s `ok` value.\n\nIt panics on `err` with the printed form of the error, so the error type\nimplements `show`. It moves a result that is not `copy`.")

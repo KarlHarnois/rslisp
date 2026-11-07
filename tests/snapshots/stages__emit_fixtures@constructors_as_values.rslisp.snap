@@ -1,0 +1,286 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/constructors_as_values.rslisp
+---
+fn parsed(value: i64) -> Result<i64, &'static str> {
+    Ok(value)
+}
+
+fn nested(value: Result<i64, &str>) -> Result<Result<i64, &str>, &str> {
+    value.map(|value_2: i64| Ok(value_2))
+}
+
+fn failed(value: Result<i64, &str>) -> Result<Result<i64, i64>, &str> {
+    value.map(|value_2: i64| Err(value_2))
+}
+
+fn wrapped(items: Vec<i64>) -> Vec<Option<i64>> {
+    items
+        .iter()
+        .copied()
+        .map(|value: i64| Some(value))
+        .collect::<Vec<_>>()
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!("{}", crate::rt::Shown(&wrapped(vec![1_i64, 2_i64])));
+    println!("{}", crate::rt::Shown(&nested(parsed(1))));
+    println!("{}", crate::rt::Shown(&failed(parsed(1))))
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+
+    use std::fmt::{Display, Formatter, Result, Write};
+
+    pub trait Show {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result;
+    }
+
+    pub struct Shown<'v, T: Show + ?Sized>(pub &'v T);
+
+    impl<T: Show + ?Sized> Display for Shown<'_, T> {
+        fn fmt(&self, out: &mut Formatter<'_>) -> Result {
+            self.0.write_form(out)
+        }
+    }
+
+    pub struct Record<'r, 'f> {
+        out: &'r mut Formatter<'f>,
+        written: Result,
+    }
+
+    impl<'r, 'f> Record<'r, 'f> {
+        pub fn open(out: &'r mut Formatter<'f>, head: &str) -> Self {
+            let written = write!(out, "({head}");
+            Record { out, written }
+        }
+
+        pub fn part<T: Show + ?Sized>(self, value: &T) -> Self {
+            self.write(|out| {
+                out.write_char(' ')?;
+                value.write_form(out)
+            })
+        }
+
+        pub fn text(self, written: &str) -> Self {
+            self.write(|out| write!(out, " {written}"))
+        }
+
+        pub fn close(self) -> Result {
+            self.written?;
+            self.out.write_char(')')
+        }
+
+        fn write(mut self, part: impl FnOnce(&mut Formatter<'f>) -> Result) -> Self {
+            self.written = self.written.and_then(|()| part(self.out));
+            self
+        }
+    }
+
+    struct Quoted<'t>(&'t str);
+
+    impl Display for Quoted<'_> {
+        fn fmt(&self, out: &mut Formatter<'_>) -> Result {
+            out.write_char('"')?;
+            for character in self.0.chars() {
+                match character {
+                    '"' => out.write_str("\\\"")?,
+                    '\\' => out.write_str("\\\\")?,
+                    '\n' => out.write_str("\\n")?,
+                    '\r' => out.write_str("\\r")?,
+                    '\t' => out.write_str("\\t")?,
+                    '\0' => out.write_str("\\0")?,
+                    control if control.is_control() => write!(out, "\\u{{{:x}}}", control as u32)?,
+                    printable => out.write_char(printable)?,
+                }
+            }
+            out.write_char('"')
+        }
+    }
+
+    macro_rules! shown_as_display {
+        ($($shown:ty),*) => {
+            $(
+                impl Show for $shown {
+                    fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+                        write!(out, "{self}")
+                    }
+                }
+            )*
+        };
+    }
+
+    shown_as_display!(
+        bool, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize
+    );
+
+    macro_rules! shown_as_float {
+        ($($shown:ty),*) => {
+            $(
+                impl Show for $shown {
+                    fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+                        if self.is_nan() {
+                            out.write_str("(/ 0.0 0.0)")
+                        } else if self.is_infinite() && self.is_sign_positive() {
+                            out.write_str("(/ 1.0 0.0)")
+                        } else if self.is_infinite() {
+                            out.write_str("(/ -1.0 0.0)")
+                        } else {
+                            write!(out, "{self:?}")
+                        }
+                    }
+                }
+            )*
+        };
+    }
+
+    shown_as_float!(f32, f64);
+
+    macro_rules! shown_as_message {
+        ($($shown:ty => $head:literal),*) => {
+            $(
+                impl Show for $shown {
+                    fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+                        Record::open(out, $head).part(self.to_string().as_str()).close()
+                    }
+                }
+            )*
+        };
+    }
+
+    shown_as_message!(
+        std::io::Error => "io-error",
+        std::str::ParseBoolError => "parse-bool-error",
+        std::char::ParseCharError => "parse-char-error",
+        std::num::ParseIntError => "parse-int-error",
+        std::num::ParseFloatError => "parse-float-error"
+    );
+
+    impl Show for std::convert::Infallible {
+        fn write_form(&self, _: &mut Formatter<'_>) -> Result {
+            match *self {}
+        }
+    }
+
+    impl Show for char {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            let mut text = [0; 4];
+            Record::open(out, "char")
+                .part(&*self.encode_utf8(&mut text))
+                .close()
+        }
+    }
+
+    impl Show for str {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            write!(out, "{}", Quoted(self))
+        }
+    }
+
+    impl Show for String {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            self.as_str().write_form(out)
+        }
+    }
+
+    impl Show for () {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            out.write_str("(do)")
+        }
+    }
+
+    impl<T: Show + ?Sized> Show for &T {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            T::write_form(self, out)
+        }
+    }
+
+    impl<T: Show + ?Sized> Show for Box<T> {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            Record::open(out, "box").part(&**self).close()
+        }
+    }
+
+    impl<T: Show> Show for [T] {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            self.iter()
+                .fold(Record::open(out, "vec"), Record::part)
+                .close()
+        }
+    }
+
+    impl<T: Show> Show for Vec<T> {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            self.as_slice().write_form(out)
+        }
+    }
+
+    impl<T: Show> Show for Option<T> {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            match self {
+                Some(value) => Record::open(out, "some").part(value).close(),
+                None => out.write_str("none"),
+            }
+        }
+    }
+
+    impl<T: Show, E: Show> Show for std::result::Result<T, E> {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            match self {
+                Ok(value) => Record::open(out, "ok").part(value).close(),
+                Err(error) => Record::open(out, "err").part(error).close(),
+            }
+        }
+    }
+
+    impl<A: Show, B: Show> Show for (A, B) {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            Record::open(out, "pair")
+                .part(&self.0)
+                .part(&self.1)
+                .close()
+        }
+    }
+
+    impl<K: Show, V: Show> Show for std::collections::BTreeMap<K, V> {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            self.iter()
+                .fold(Record::open(out, "sorted-map"), |record, (key, value)| {
+                    record.part(key).part(value)
+                })
+                .close()
+        }
+    }
+
+    impl<K: Show, V: Show, S> Show for std::collections::HashMap<K, V, S> {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            let mut entries: Vec<(String, &V)> = self
+                .iter()
+                .map(|(key, value)| (Shown(key).to_string(), value))
+                .collect();
+            entries.sort_by(|(left, _), (right, _)| left.cmp(right));
+            entries
+                .iter()
+                .fold(Record::open(out, "hash-map"), |record, (key, value)| {
+                    record.text(key).part(*value)
+                })
+                .close()
+        }
+    }
+}

@@ -85,3 +85,16 @@ error[L0306]: `print` belongs to the program, so macro code cannot run it
     |           ----- `print` expands to Rust code that runs in the program
     |
     = help: to compute this in the program, return it as code from the macro, for example with `quote`
+
+error[L0306]: `sqrt` belongs to the program, so macro code cannot run it
+  --> expand/program_only.rslisp:41:18
+   |
+41 |   (macro (form) (sqrt 2.0) (list)))
+   |                  ^^^^ macro code runs this
+   |
+  ::: prelude/number.rslisp:98:3
+   |
+98 |   (rust "{0}.sqrt()" (fn (f64) f64)))
+   |   ---------------------------------- `sqrt` is Rust code that runs in the program
+   |
+   = help: to compute this in the program, return it as code from the macro, for example with `quote`
