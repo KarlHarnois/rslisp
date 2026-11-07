@@ -121,10 +121,16 @@ enum InspectionCommand {
         about = "Print the page of a prelude term, or of a program's term with --file"
     )]
     Doc {
-        #[arg(allow_hyphen_values = true, value_parser = TermParser)]
-        term: String,
+        #[arg(
+            allow_hyphen_values = true,
+            value_parser = TermParser,
+            required_unless_present = "separated_term"
+        )]
+        term: Option<String>,
         #[arg(hide = true, value_parser = SurplusParser)]
         surplus: Vec<Infallible>,
+        #[arg(last = true, hide = true, value_name = "TERM", conflicts_with = "term")]
+        separated_term: Option<String>,
         #[arg(long)]
         file: Option<PathBuf>,
         #[command(flatten)]
@@ -277,7 +283,11 @@ struct TypesFlag {
 impl Cli {
     pub fn parse_arguments() -> Self {
         let arguments: Vec<OsString> = env::args_os().collect();
-        let mut command = Self::command().color(ColorWhen::written_in(&arguments).into());
+        let mut command = Self::command()
+            .color(ColorWhen::written_in(&arguments).into())
+            .mut_subcommand(DocCommand::NAME, |doc| {
+                doc.override_usage(DocCommand::usage())
+            });
         Self::parse_with(&mut command, arguments).unwrap_or_else(|error| error.exit())
     }
 
@@ -325,8 +335,15 @@ impl InspectionCommand {
             Self::Check { file } => CheckCommand::new(file).run(terminal),
             Self::Types { file } => TypesCommand::new(file).run(terminal),
             Self::Doc {
-                term, file, types, ..
-            } => DocCommand::new(DocEnvironment::new(file), term, types.page()).run(terminal),
+                term,
+                separated_term,
+                file,
+                types,
+                ..
+            } => {
+                let term = term.or(separated_term).expect("clap requires one term");
+                DocCommand::new(DocEnvironment::new(file), term, types.page()).run(terminal)
+            }
             Self::Expand { file } => ExpandCommand::new(file).run(terminal),
             Self::Emit { file } => EmitCommand::new(file).run(terminal),
             Self::Fmt {

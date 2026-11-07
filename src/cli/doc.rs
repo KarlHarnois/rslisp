@@ -28,6 +28,15 @@ pub enum DocPage {
 
 impl DocCommand {
     pub const NAME: &'static str = "doc";
+    const SEPARATOR: &'static str = "--";
+
+    pub fn usage() -> String {
+        let command = format!("{} {}", Language::NAME, Self::NAME);
+        format!(
+            "{command} [OPTIONS] <TERM>\n       {command} [OPTIONS] {} <TERM>",
+            Self::SEPARATOR
+        )
+    }
 
     pub fn new(environment: DocEnvironment, term: String, page: DocPage) -> Self {
         Self {
