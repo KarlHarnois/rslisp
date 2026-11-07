@@ -1,0 +1,6 @@
+(defrule spread (((a ...)) (vec a)))
+
+(defn main ()
+  (spread (1))
+  (spread (2))
+  (spread (3)))

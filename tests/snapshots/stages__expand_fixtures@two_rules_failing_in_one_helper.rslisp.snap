@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/two_rules_failing_in_one_helper.rslisp
+---
+error[L0303]: `first` expects a list as argument 1, found an integer
+  --> expand/two_rules_failing_in_one_helper.rslisp:4:15
+   |
+ 4 |   (fn (value) (first value)))
+   |               ^^^^^^^^^^^^^ an integer given here
+...
+11 | (left)
+   | ------ in this macro call
+
+error[L0303]: `first` expects a list as argument 1, found an integer
+  --> expand/two_rules_failing_in_one_helper.rslisp:4:15
+   |
+ 4 |   (fn (value) (first value)))
+   |               ^^^^^^^^^^^^^ an integer given here
+...
+13 | (right)
+   | ------- in this macro call

@@ -1,0 +1,10 @@
+(use code fail symbol?)
+
+(defmacro named (name)
+  (if (symbol? name)
+    name
+    (fail "this needs a symbol" (quote name))))
+
+(defn main ()
+  (named 1)
+  (named "two"))

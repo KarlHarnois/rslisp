@@ -1,0 +1,10 @@
+(defmacro yes () true)
+
+(defmacro no () false)
+
+(defmacro maybe () true)
+
+(defn main ()
+  (yes)
+  (no)
+  (maybe))
