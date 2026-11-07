@@ -1,0 +1,95 @@
+name: CI speed trial
+
+on:
+  push:
+    branches: [research-ci-speed]
+
+permissions:
+  contents: read
+
+env:
+  CACHIX_CACHE: rslisp
+
+jobs:
+  coverage:
+    name: coverage (${{ matrix.variant }})
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [baseline, workspace-opt1, deps-opt2, both]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-coverage-${{ hashFiles('flake.lock') }}-
+      - name: Load the dev shell
+        run: nix develop .#ci -c true
+      - name: Optimize the workspace
+        if: matrix.variant == 'workspace-opt1' || matrix.variant == 'both'
+        run: echo "CARGO_PROFILE_DEV_OPT_LEVEL=1" >> "$GITHUB_ENV"
+      - name: Optimize the dependencies
+        if: matrix.variant == 'deps-opt2' || matrix.variant == 'both'
+        run: sed -i '/^\[profile.dev.package."\*"\]/a opt-level = 2' Cargo.toml
+      - name: First coverage run
+        run: nix develop .#ci -c cargo xtask coverage
+      - name: Touch the workspace sources
+        run: touch src/lib.rs expand/src/lib.rs
+      - name: Second coverage run
+        run: nix develop .#ci -c cargo xtask coverage
+
+  per-test:
+    name: per test (${{ matrix.mode }})
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [instrumented, plain]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-coverage-${{ hashFiles('flake.lock') }}-
+      - name: Time each test target
+        run: nix develop .#ci -c bash .github/trial/per-test.sh ${{ matrix.mode }}
+
+  fixture-rustc:
+    name: fixture rustc flags
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+      - name: Find mold
+        run: echo "MOLD_DIRECTORY=$(nix build --no-link --print-out-paths --inputs-from . nixpkgs#mold)/bin" >> "$GITHUB_ENV"
+      - name: Time run fixtures under each flag
+        run: nix develop .#ci -c bash .github/trial/fixture-rustc.sh
