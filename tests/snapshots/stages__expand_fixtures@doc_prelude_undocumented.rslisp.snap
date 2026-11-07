@@ -3,6 +3,6 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/expand/doc_prelude_undocumented.rslisp
 ---
-(def thread-page "(defrule ->>)\n\nNo documentation.")
+(def thread-page "(->> value form ...)\n\nThreads a value through each form as its last argument.\n\n`(->> 3 (- 10) (* 2))` is `(* 2 (- 10 3))`. A bare name in place of a form\nis called with the value alone.")
 (def sum-page "(defn sum (values))\n\nAdds the items of an iterator from left to right.\n\nAn empty iterator gives 0. An overflow panics in a debug build, as `add`\ndoes. A vector passes and yields copies of its numbers. `(iter items)` is an\nerror, as its items are borrows, and so is a map.")
 (def assoc-page "(defmacro assoc (value key more ...))\n\nReturns a struct or a collection with new values at its keys.\n\nA keyword key sets a field, as in `(assoc point :x 1 :y 2)`. An unknown\nfield is an error, and a keyword without a value is an error. The call moves\neach field it does not list, unless the field is `copy`.\n\nAny other key updates a vector or a map, as in `(assoc items 0 9)`. Keys and\nvalues come in pairs, and each pair updates the result of the one before.\nThe call moves the collection.\n\nA vector index is a `usize`, so an `i64` is an error, and the call panics\nwhen the index is out of bounds. A map key has the type of the map's keys: a\nstring literal is a `(ref str)`, so a `string` key takes `(str \"name\")`,\nand a `(ref str)` key takes a literal or `(as-str name)`. A map adds a\nmissing key.")

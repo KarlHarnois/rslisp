@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_syntax_pages.rslisp
+---
+(def thread-page "(->> value form ...)\n\nThreads a value through each form as its last argument.\n\n`(->> 3 (- 10) (* 2))` is `(* 2 (- 10 3))`. A bare name in place of a form\nis called with the value alone.")
+(def the-page "(the type value)\n\nGives a value a written type.\n\nIt binds the value with an annotated `local` and returns it, so a literal is\nchecked against the type and a value that is not `copy` moves. A value of\nanother type is an error.")
+(def loop-page "(loop ((name value) ...) body ...)\n\nBinds names to values and runs a body that `recur` repeats.\n\n`(recur new-value ...)` in tail position runs the body again with each name\nbound to its new value. The call returns the body's last value.")
+(def let-try-page "(let-try ((name value) ...) body ...)\n\nBinds each name to the value inside a `result` or an `option`, in order.\n\nEach value goes through `try`, so the first `err` or `none` returns from the\nenclosing function, which must return a `result` or an `option` of the same\nkind.")
+(def try-thread-page "(try-> value function ...)\n\nCalls each function on the result of the one before, through `try`.\n\n`(try-> x f g)` is `(g (try (f x)))`, so the first `err` or `none` returns\nfrom the enclosing function, and the last result is returned as it is. Each\nstep is a function, not a call form: `(try-> x (f))` is an error. With no\nfunction, the call returns the value.")

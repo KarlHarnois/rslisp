@@ -213,7 +213,7 @@ mod tests {
 
     impl PreludePages {
         const ENTRY: &str = "kernel-pages";
-        const DOCUMENTED_MODULES: [&str; 16] = [
+        const DOCUMENTED_MODULES: [&str; 17] = [
             "prelude/number",
             "prelude/logic",
             "prelude/text",
@@ -230,6 +230,7 @@ mod tests {
             "prelude/assoc",
             "prelude/place",
             "prelude/struct",
+            "prelude/syntax",
         ];
         const ALTERNATIVE: &str = " or ";
         const OPTIONAL_PART_END: &str = ")?";
@@ -238,8 +239,17 @@ mod tests {
         const UNDOCUMENTED_BODY_NAME: &str = "undocumented-body";
 
         fn of_saved_prelude(names: &[&str]) -> Self {
+            Self::of_entry(Self::lookups(names))
+        }
+
+        fn of_module_exports(module: &str, names: &[&str]) -> Self {
+            let import = format!("(use {module} {})\n", names.join(" "));
+            Self::of_entry(import + &Self::lookups(names))
+        }
+
+        fn of_entry(text: String) -> Self {
             let mut sources = SourceMap::default();
-            let entry = sources.add(Self::ENTRY, Self::lookups(names));
+            let entry = sources.add(Self::ENTRY, text);
             let expander = Expander::with_prelude(
                 &mut sources,
                 UserProgram::module_sources(),
@@ -391,7 +401,7 @@ mod tests {
         for module in PreludePages::DOCUMENTED_MODULES {
             let names = PreludePages::exported_names(module);
             let lookups: Vec<&str> = names.iter().map(String::as_str).collect();
-            let pages = PreludePages::of_saved_prelude(&lookups);
+            let pages = PreludePages::of_module_exports(module, &lookups);
             for (index, name) in names.iter().enumerate() {
                 assert!(pages.documents(index), "{module} {name} has no docstring");
             }
