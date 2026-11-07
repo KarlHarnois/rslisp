@@ -37,7 +37,7 @@
 (header-shape (deftest name) :docstring)
 
 (document (deftest name)
-  "Defines a test that `rslisp test` runs.
+  "Defines a test that `knave test` runs.
 
   A string before at least one more body form is the docstring, whose first
   line a failure prints after the test's name. The test's function has an

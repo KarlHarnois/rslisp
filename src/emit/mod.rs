@@ -10,7 +10,7 @@ mod let_annotation;
 mod literal_generics;
 mod local_closures;
 mod locals;
-pub(crate) use rslisp_expand::mangle;
+pub(crate) use knave_expand::mangle;
 mod method_elisions;
 mod mutable_locals;
 mod opaque_borrows;

@@ -1,8 +1,8 @@
 [package]
-name = "rslisp-expand"
+name = "knave-expand"
 version = "0.1.0"
 edition = "2024"
-description = "The reading, scoping and expansion stages of rslisp (placeholder name)"
+description = "The reading, scoping and expansion stages of knave"
 license = "MIT"
 publish = false
 

@@ -60,6 +60,7 @@ mod tests {
     use std::path::PathBuf;
 
     use super::TemporaryDirectory;
+    use crate::language::Language;
 
     struct ParentFixture {
         parent: PathBuf,
@@ -71,7 +72,8 @@ mod tests {
 
         fn new(test_name: &str) -> Self {
             let parent = std::env::temp_dir().join(format!(
-                "rslisp-temporary-{}-{test_name}",
+                "{}-temporary-{}-{test_name}",
+                Language::NAME,
                 std::process::id()
             ));
             fs::create_dir_all(parent.join(Self::TAKEN)).expect("the parent is writable");

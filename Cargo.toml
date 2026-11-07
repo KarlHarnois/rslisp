@@ -1,8 +1,8 @@
 [package]
-name = "rslisp"
+name = "knave"
 version = "0.8.22"
 edition = "2024"
-description = "A small Lisp for humans and agents that infers types and ownership and compiles to readable Rust (placeholder name)"
+description = "A small Lisp for humans and agents that infers types and ownership and compiles to readable Rust"
 license = "MIT"
 publish = false
 
@@ -17,14 +17,14 @@ anstream = "1.0.0"
 anstyle = "1.0.14"
 clap = { version = "4.6", features = ["derive"] }
 ctrlc = "3.5.2"
-rslisp-expand = { path = "expand" }
+knave-expand = { path = "expand" }
 rustc-hash = { workspace = true }
 rustyline = { version = "19.0.0", default-features = false, features = ["buffer-redux", "custom-bindings", "with-file-history"] }
 serde_json = "1"
 similar = "2.7"
 
 [build-dependencies]
-rslisp-expand = { path = "expand" }
+knave-expand = { path = "expand" }
 
 [dev-dependencies]
 insta = { version = "1", features = ["glob"] }

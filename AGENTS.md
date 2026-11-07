@@ -1,4 +1,4 @@
-# rslisp agent guide
+# knave agent guide
 
 This file and the reference files it names are the living reference for working in this repository. If a change makes a statement in any of them false, update the statement in the same commit.
 
@@ -94,7 +94,7 @@ The exceptions are:
 - NEVER put an abbreviation or a noise word in a name.
 - Unless a number gives each name's position in a sequence, NEVER tell two names apart by a number.
 - If a value's meaning is not obvious, make the value a named constant.
-- In Rust code, take the language's name and file extension from `Language` in `expand/src/language.rs`: `rslisp` is a placeholder name.
+- In Rust code, take the language's name and file extension from `Language` in `expand/src/language.rs`.
 
 ### Stages
 
@@ -141,7 +141,7 @@ The exceptions are:
 
 - If `direnv allow` has run in this repository, `.envrc` loads the dev shell through nix-direnv.
 - Stage each new file by path with `git add` before any `nix` command: flake commands ignore files outside the git index.
-- The dev shell runs at most two compiling `cargo` commands at once across every worktree. Set `RSLISP_BUILD_SLOTS` to change the limit.
+- The dev shell runs at most two compiling `cargo` commands at once across every worktree. Set `KNAVE_BUILD_SLOTS` to change the limit.
 
 ### Commits
 
@@ -169,7 +169,7 @@ cargo test <narrowest test>
 | The change touches | `<narrowest test>` |
 | --- | --- |
 | a unit test in `src/` | `--lib <module::path>` |
-| a unit test in `expand/src/` | `-p rslisp-expand --lib <module::path>` |
+| a unit test in `expand/src/` | `-p knave-expand --lib <module::path>` |
 | one stage's fixtures | `--test stages <stage>_fixtures` |
 | a corpus entry | `--test stages corpus_fixtures` |
 | a CLI command | `--test cli <test name>` |
@@ -193,7 +193,7 @@ cargo test <narrowest test>
 
 **If a change touches what a small flake check checks, build that check alone with `nix build --no-link .#checks.<system>.<name>`.** Every flake check except `default` and `source-format`, which builds `default`, is small.
 
-**The `source-format` flake check fails on any `.rslisp` file under `prelude/`, `examples/` or `tests/fixtures/` that `rslisp fmt --check` would change.** The check skips `tests/fixtures/read/`, `tests/fixtures/format/` and `tests/fixtures/expand/unreadable/`.
+**The `source-format` flake check fails on any `.rslisp` file under `prelude/`, `examples/` or `tests/fixtures/` that `knave fmt --check` would change.** The check skips `tests/fixtures/read/`, `tests/fixtures/format/` and `tests/fixtures/expand/unreadable/`.
 
 **A change is done when CI passes on Linux and macOS.**
 

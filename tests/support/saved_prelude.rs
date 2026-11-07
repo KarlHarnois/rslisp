@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use rslisp::expand::PreludeState;
+use knave::expand::PreludeState;
 
 use super::{Fixture, FixtureReports};
 

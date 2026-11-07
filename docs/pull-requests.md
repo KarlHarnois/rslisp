@@ -69,7 +69,7 @@ base_path=$(nix eval --raw "git+file://$PWD?rev=$base#default")
 nix-store --realise "$merge_path" "$base_path"
 ```
 
-**Run each binary as `"$merge_path/bin/rslisp"` or `"$base_path/bin/rslisp"`.** Nix checks the signature of each download.
+**Run each binary as `"$merge_path/bin/knave"` or `"$base_path/bin/knave"`.** Nix checks the signature of each download.
 
 **If `nix-store --realise` reports `no substituter that can build it`, run `gh pr checks <number> --watch`, then rerun the block.** If the second run reports the same error, stop and report the commit to the project owner. NEVER build a release binary to replace the download.
 
@@ -98,7 +98,7 @@ done
 
 **If `curl` reports a 404, run `gh pr checks <number> --watch`, then rerun the block.** If the second run reports a 404, stop and report the commit to the project owner. NEVER build a release binary to replace the download.
 
-**Run each binary as `target/scratch/probe-<commit>/bin/.rslisp-wrapped` inside the dev shell:** `bin/rslisp` points at a store path that this block does not download.
+**Run each binary as `target/scratch/probe-<commit>/bin/.knave-wrapped` inside the dev shell:** `bin/knave` points at a store path that this block does not download.
 
 ## Callgrind profiles
 

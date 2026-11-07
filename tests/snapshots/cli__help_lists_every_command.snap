@@ -4,7 +4,7 @@ expression: help.assert_exit_code(0).stdout()
 ---
 Compile Lisp source files to Rust
 
-Usage: rslisp [OPTIONS] [COMMAND]
+Usage: knave [OPTIONS] [COMMAND]
 
 Commands:
   check   Read, expand and check a program, then print its diagnostics
