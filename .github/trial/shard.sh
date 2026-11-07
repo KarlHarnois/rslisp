@@ -16,4 +16,4 @@ source <(cargo llvm-cov show-env --sh)
 timed clean cargo llvm-cov clean --workspace
 timed build cargo test --no-run $build_targets
 timed test cargo test $targets
-timed report cargo llvm-cov report --exclude-from-report xtask --lcov --output-path target/shard.info
+timed report cargo llvm-cov report --ignore-filename-regex '/xtask/' --lcov --output-path target/shard.info
