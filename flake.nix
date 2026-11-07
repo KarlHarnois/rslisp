@@ -96,19 +96,19 @@
           text = ''
             real_cargo=${pkgs.lib.getExe' realCargo "cargo"}
             flock=${pkgs.lib.getExe pkgs.flock}
-            slot_directory=$HOME/.cache/rslisp/build-slots
-            slot_limit=''${RSLISP_BUILD_SLOTS:-2}
+            slot_directory=$HOME/.cache/knave/build-slots
+            slot_limit=''${KNAVE_BUILD_SLOTS:-2}
             seconds_between_attempts=1
 
             main() {
-              if [[ -n ''${CI:-} || -n ''${RSLISP_BUILD_SLOT_HELD:-} ]] || ! command_compiles "$@"; then
+              if [[ -n ''${CI:-} || -n ''${KNAVE_BUILD_SLOT_HELD:-} ]] || ! command_compiles "$@"; then
                 exec "$real_cargo" "$@"
               fi
               require_valid_slot_limit
               mkdir -p "$slot_directory"
               wait_for_slot
               # Keep the lock from cargo: a daemon that a build starts, such as sccache, would inherit it and hold the slot.
-              RSLISP_BUILD_SLOT_HELD=1 "$real_cargo" "$@" {slot_lock}>&-
+              KNAVE_BUILD_SLOT_HELD=1 "$real_cargo" "$@" {slot_lock}>&-
             }
 
             command_compiles() {
@@ -134,7 +134,7 @@
 
             require_valid_slot_limit() {
               if [[ ! $slot_limit =~ ^[1-9][0-9]*$ ]]; then
-                echo "RSLISP_BUILD_SLOTS must be a positive whole number, not '$slot_limit'" >&2
+                echo "KNAVE_BUILD_SLOTS must be a positive whole number, not '$slot_limit'" >&2
                 exit 2
               fi
             }
@@ -238,7 +238,7 @@
             touch "$calls/finish-$1"
           }
           export HOME=$PWD/home calls=$PWD/calls slot_limited_cargo=${cargo}
-          unset CI RSLISP_BUILD_SLOTS RSLISP_BUILD_SLOT_HELD
+          unset CI KNAVE_BUILD_SLOTS KNAVE_BUILD_SLOT_HELD
           mkdir -p "$HOME" "$calls"
 
           ${cargo} build first &
@@ -259,12 +259,12 @@
           timeout 5 ${cargo} --version || fail "--version waited for a slot"
           timeout 5 ${cargo} --color always metadata || fail "metadata waited for a slot"
           timeout 5 ${cargo} --color || fail "a flag with no value waited for a slot"
-          timeout 5 env RSLISP_BUILD_SLOT_HELD=1 ${cargo} check nested || fail "a nested cargo waited for a slot"
+          timeout 5 env KNAVE_BUILD_SLOT_HELD=1 ${cargo} check nested || fail "a nested cargo waited for a slot"
           timeout 5 env CI=true ${cargo} check ci || fail "cargo waited for a slot under CI"
-          timeout 5 env RSLISP_BUILD_SLOTS=3 ${cargo} check third-slot || fail "RSLISP_BUILD_SLOTS did not raise the limit"
+          timeout 5 env KNAVE_BUILD_SLOTS=3 ${cargo} check third-slot || fail "KNAVE_BUILD_SLOTS did not raise the limit"
 
           limit_status=0
-          RSLISP_BUILD_SLOTS=0 timeout 5 ${cargo} check 2>/dev/null || limit_status=$?
+          KNAVE_BUILD_SLOTS=0 timeout 5 ${cargo} check 2>/dev/null || limit_status=$?
           [[ $limit_status == 2 ]] || fail "a slot limit of 0 was not refused"
           finish first
           wait_for_call build-third
@@ -287,10 +287,10 @@
           ${cargo} failing || status=$?
           [[ $status == 3 ]] || fail "cargo exit status $status was not passed on"
 
-          RSLISP_BUILD_SLOTS=1 ${cargo} xtask || fail "a cargo inside a slot waited for a second slot"
+          KNAVE_BUILD_SLOTS=1 ${cargo} xtask || fail "a cargo inside a slot waited for a second slot"
 
-          RSLISP_BUILD_SLOTS=1 ${cargo} daemon
-          timeout 5 env RSLISP_BUILD_SLOTS=1 ${cargo} check after-daemon || fail "a process that outlived cargo kept the slot"
+          KNAVE_BUILD_SLOTS=1 ${cargo} daemon
+          timeout 5 env KNAVE_BUILD_SLOTS=1 ${cargo} check after-daemon || fail "a process that outlived cargo kept the slot"
           kill "$(<"$calls/daemon-process")"
           touch $out
         '';
