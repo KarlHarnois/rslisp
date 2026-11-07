@@ -29,7 +29,7 @@ jobs:
             local started=$SECONDS
             nix develop "$GITHUB_WORKSPACE#ci" -c cargo test --no-run --test cli -v 2>&1 | tee build.log | tail -1
             echo "$1: $((SECONDS - started))s, fresh $(grep -c '^ *Fresh' build.log), dirty $(grep -c '^ *Dirty' build.log), compiled $(grep -c '^ *Compiling' build.log)"
-            grep '^ *Dirty' build.log | cut -c1-160 | head -5
+            grep '^ *Dirty' build.log | cut -c1-160 | head -5 || true
           }
           timed_build cold
           git worktree add --quiet ../seeded HEAD
@@ -39,22 +39,3 @@ jobs:
           git worktree add --quiet ../unseeded HEAD
           cd ../unseeded
           timed_build cold-second-path
-
-  branch-binary:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
-      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
-        with:
-          name: ${{ env.CACHIX_CACHE }}
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - name: Build the branch's installed package
-        shell: bash
-        run: |
-          started=$SECONDS
-          nix build --no-link --print-out-paths .#default
-          echo "built in $((SECONDS - started))s"
