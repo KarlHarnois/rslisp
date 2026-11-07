@@ -184,6 +184,7 @@ cargo test <narrowest test>
 **NEVER run these commands locally:** CI does the same work.
 
 - `cargo test` without a test target
+- `cargo build --release` to probe a pull request's unedited code: download the binaries, as `docs/pull-requests.md` says
 - `git rebase -x` with a build command, or another loop that builds each commit
 - `cargo xtask coverage`
 - `nix flake check`
@@ -203,5 +204,5 @@ cargo test <narrowest test>
 | --- | --- |
 | `docs/language.md` | change the language or the Rust it emits |
 | `docs/diagnostics.md` | add or change an error or a warning |
-| `docs/pull-requests.md` | open a pull request, push to one, or fix a CI failure |
+| `docs/pull-requests.md` | open a pull request, push to one, review one, or fix a CI failure |
 | `rfcs/README.md` | write a design, or change a rule that an RFC or decision records |

@@ -54,6 +54,38 @@
 3. Run `gh run view <id> --json jobs --jq '.jobs[] | {name, conclusion}'` on that run.
 4. If the job that failed on the pull request shows `failure` there, `main` fails the same check.
 
+## Probe binaries
+
+**The `flake` job pushes the compiler of each ready pull request and each `main` commit to the project's Cachix.** A pull request's binary holds the pull request merged into its base.
+
+**If you probe a pull request's unedited code, download the binaries of the pull request and its base with this block:**
+
+```sh
+git fetch origin refs/pull/<number>/merge
+merge=$(git rev-parse FETCH_HEAD)
+base=$(git rev-parse "$merge^1")
+cache=https://rslisp.cachix.org
+for commit in "$merge" "$base"; do
+  store_path=$(nix eval --raw "git+file://$PWD?rev=$commit#default")
+  name=$(basename "$store_path")
+  narinfo=$(curl --fail --silent --show-error "$cache/${name%%-*}.narinfo") || break
+  nar=$(sed -n 's/^URL: //p' <<< "$narinfo")
+  probe=$PWD/target/scratch/probe-$commit
+  rm -rf "$probe"
+  curl --fail --silent --show-error "$cache/$nar" | zstd --decompress | nix-store --restore "$probe"
+  [ "sha256:$(nix-hash --type sha256 --base32 "$probe")" = "$(sed -n 's/^NarHash: //p' <<< "$narinfo")" ] ||
+    echo "NarHash mismatch: $commit"
+done
+```
+
+**The block checks the NarHash and no signature.** If the block prints `NarHash mismatch`, stop and report the commit to the project owner.
+
+**If `curl` reports a 404, run `gh pr checks <number> --watch`, then run the block once more.** If the second run reports a 404, stop and report the commit to the project owner. NEVER build a release binary to replace the download.
+
+**Run each binary as `target/scratch/probe-<commit>/bin/.rslisp-wrapped` inside the dev shell:** `bin/rslisp` points at a store path that the block does not download.
+
+**A downloaded binary has no `counters` feature.** Read counters from the `front-end instruction counts` job.
+
 ## Callgrind profiles
 
 **The `front-end instruction counts` job uploads the merged pull request's profiles as the `callgrind-profiles` artifact.** GitHub keeps the artifact for seven days. The artifact holds no profiles of the base.
