@@ -1,0 +1,31 @@
+name: Dev shell
+description: Install Nix, trust the project's Cachix, and restore the Rust build cache, saving it when the key missed.
+
+inputs:
+  cachix-auth-token:
+    description: Pushes built store paths to Cachix when set.
+    default: ""
+  build-cache:
+    description: The name of the Rust build cache, shared by every job that builds the same way.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - if: runner.os == 'Linux'
+      uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+    - if: runner.os == 'macOS'
+      uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+    - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+      with:
+        name: ${{ env.CACHIX_CACHE }}
+        authToken: ${{ inputs.cachix-auth-token }}
+        skipPush: ${{ runner.os == 'macOS' }}
+    - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ inputs.build-cache }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-${{ inputs.build-cache }}-${{ hashFiles('flake.lock') }}-
