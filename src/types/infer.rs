@@ -1151,7 +1151,7 @@ impl TypeChecker {
         )
     }
 
-    fn global_type(&mut self, binding: BindingId, span: Span) -> Type {
+    pub(super) fn global_type(&mut self, binding: BindingId, span: Span) -> Type {
         if let Some(current) = self.component.get(&binding) {
             return current.clone();
         }

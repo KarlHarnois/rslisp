@@ -1,24 +1,11 @@
-use rustc_hash::FxHashMap;
-
 use super::checker::TypeChecker;
 use super::rust_types::RustTypeTable;
 use super::ty::Type;
 use super::typed::{TypedArgument, TypedBlock, TypedBodyItem, TypedExpr, TypedExprKind, TypedLeaf};
-use crate::core::{
-    BindingId, ClosureKind, CoreModule, ExprKind, ItemKind, Leaf, PrimitiveType, ReferenceKind,
-    RustTemplate, TypeExpr, TypeExprKind,
-};
+use crate::core::{BindingId, PrimitiveType, ReferenceKind};
 use crate::diagnostic::Diagnostic;
-use crate::modules::ModuleSources;
 
 impl TypeChecker {
-    pub(super) fn record_string_view(&mut self, modules: &[CoreModule]) {
-        let view = Self::string_view_type();
-        self.string_view = Self::prelude_templates(modules)
-            .find(|(_, template)| self.lowers_to(&template.type_expr, &view))
-            .map(|(binding, _)| binding);
-    }
-
     pub(super) fn view_closure_result(
         &mut self,
         mut body: TypedBlock,
@@ -105,41 +92,6 @@ impl TypeChecker {
         }
     }
 
-    fn prelude_templates(
-        modules: &[CoreModule],
-    ) -> impl Iterator<Item = (BindingId, &RustTemplate)> {
-        modules
-            .iter()
-            .filter(|module| ModuleSources::is_prelude(&module.path))
-            .flat_map(|module| &module.items)
-            .filter_map(|item| match &item.kind {
-                ItemKind::Def(binding, value) => match value.kind() {
-                    ExprKind::Leaf(Leaf::Rust(template)) => Some((*binding, template.as_ref())),
-                    _ => None,
-                },
-                _ => None,
-            })
-    }
-
-    fn lowers_to(&mut self, written: &TypeExpr, expected: &Type) -> bool {
-        !matches!(written.kind(), TypeExprKind::Where(..))
-            && self
-                .lower_type(written, &FxHashMap::default())
-                .is_ok_and(|lowered| &lowered == expected)
-    }
-
-    fn string_view_type() -> Type {
-        Type::Function(
-            ClosureKind::Fn,
-            vec![Self::viewed_string()],
-            Box::new(Type::str_ref()),
-        )
-    }
-
-    fn viewed_string() -> Type {
-        Type::shared(Self::owned_string())
-    }
-
     fn owned_string() -> Type {
         Type::Primitive(PrimitiveType::String)
     }
@@ -161,15 +113,20 @@ impl TypeChecker {
         value: TypedExpr,
     ) -> Result<TypedExpr, Diagnostic> {
         let span = value.span;
+        let ty = self.global_type(view, span);
+        let Type::Function(_, parameters, result) = &ty else {
+            unreachable!("the string view is a function")
+        };
+        let (parameter, result) = (parameters[0].clone(), result.as_ref().clone());
         let callee = TypedExpr {
             kind: TypedExprKind::Leaf(TypedLeaf::Global(view)),
-            ty: Self::string_view_type(),
+            ty,
             span,
         };
-        let borrow = self.pass_call_argument(Some(&callee), 0, &Self::viewed_string(), &value)?;
+        let borrow = self.pass_call_argument(Some(&callee), 0, &parameter, &value)?;
         Ok(TypedExpr {
             kind: TypedExprKind::Call(Box::new(callee), vec![TypedArgument { value, borrow }]),
-            ty: Type::str_ref(),
+            ty: result,
             span,
         })
     }

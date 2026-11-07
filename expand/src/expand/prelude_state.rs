@@ -85,6 +85,7 @@ impl Expander<'_> {
             )
             .expect("the prelude loads");
         self.assert_no_problems();
+        self.tables.string_view = self.tables.find_string_view();
         let lowered_globals = self.tables.take_lowered_globals();
         self.tables.module_notes = self.tables.module_notes.saved();
         PreludeState {
@@ -407,6 +408,12 @@ mod tests {
     fn an_entry_named_prelude_expands_alike_on_a_loaded_state() {
         let program = UserProgram::NAMED_PRELUDE;
         assert_eq!(program.loaded_entry(), program.built_entry());
+    }
+
+    #[test]
+    fn a_saved_state_holds_the_string_view() {
+        let state = UserProgram::loaded_state();
+        assert!(state.tables.string_view.is_some());
     }
 
     #[test]

@@ -355,7 +355,6 @@ impl TypeChecker {
         self.check_trait_claims(modules);
         self.copy_trait = self.traits.with_paths(&[CopyTrait::PATH]).first().copied();
         self.record_definition_facts(definitions);
-        self.record_string_view(modules);
     }
 
     fn record_prelude_value_names(&mut self, modules: &[CoreModule]) {
@@ -2922,6 +2921,7 @@ impl TypeChecker {
     ) -> Result<super::typed::TypedProgram, Diagnostics> {
         let configured = |vector_bases: &FxHashSet<Span>, checking| {
             let mut checker = Self::new(program.bindings.clone());
+            checker.string_view = program.string_view;
             checker.checking = checking;
             checker.changed_structs = changed_structs.clone();
             checker.inferred_copies = inferred_copies.clone();

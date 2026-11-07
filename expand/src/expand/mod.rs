@@ -34,6 +34,7 @@ mod session;
 mod shape;
 mod sourced_items;
 mod spliced_forms;
+mod string_view;
 mod structural_clause;
 mod top_level_form;
 mod try_check;
@@ -65,6 +66,7 @@ use recorded_inputs::RecordedInputs;
 pub use recorded_inputs::{BoundName, LoadedModule};
 pub use result_printer::{GeneratedFunction, ResultPrinter};
 pub use session::ExpansionSession;
+use string_view::StringViewSearch;
 
 pub struct Program {
     pub modules: Vec<CoreModule>,
@@ -73,6 +75,7 @@ pub struct Program {
     pub bindings: BindingArena,
     pub macro_origins: FxHashMap<Span, MacroOrigin>,
     pub macro_helpers: FxHashSet<BindingId>,
+    pub string_view: Option<BindingId>,
     pub warnings: Diagnostics,
     pub expansion: ExpansionWork,
 }
@@ -151,9 +154,19 @@ struct ExpansionTables {
     module_notes: ModuleNotes,
     expanded: FxHashMap<ModuleId, CoreModule>,
     order: Vec<ModuleId>,
+    string_view: Option<BindingId>,
 }
 
 impl ExpansionTables {
+    fn find_string_view(&self) -> Option<BindingId> {
+        let modules = self
+            .order
+            .iter()
+            .filter_map(|id| self.expanded.get(id))
+            .filter(|module| ModuleSources::is_embedded_prelude(&module.path));
+        StringViewSearch::in_modules(modules)
+    }
+
     fn take_lowered_globals(&mut self) -> LoweredGlobals {
         let definitions = self.expanded.values().flat_map(CoreModule::definitions);
         self.globals.take_lowered(definitions)
@@ -216,12 +229,17 @@ impl<'s> Expander<'s> {
 
     fn into_program(mut self, entry: ModuleId) -> Result<Program, Diagnostics> {
         let diagnostics = self.take_diagnostics();
+        let string_view = self
+            .tables
+            .string_view
+            .or_else(|| self.tables.find_string_view());
         let mut program = Program {
             modules: self.take_modules(),
             entry,
             entry_function: None,
             bindings: self.tables.bindings,
             macro_helpers: self.tables.globals.macro_helpers(),
+            string_view,
             macro_origins: self.tables.macro_origins,
             warnings: self.warnings,
             expansion: self.expansion,
