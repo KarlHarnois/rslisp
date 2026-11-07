@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/variant_label_compile_time.rslisp
+---
+error[L0316]: enum values only exist at runtime
+ --> check/variant_label_compile_time.rslisp:6:20
+  |
+6 | (defmacro build () (shape/labeled :text "hi" :size 2.0))
+  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ used at compile time here
+7 |
+8 | (defn main () (build))
+  |               ------- in this macro call

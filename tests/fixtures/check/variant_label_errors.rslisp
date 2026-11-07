@@ -1,0 +1,38 @@
+(enum shape
+  (circle f64)
+  (corners f64 f64)
+  (labeled (struct (text str) (size f64)))
+  dot)
+
+(defn unknown-field () (shape/labeled :txt "hi" :size 2.0))
+
+(defn repeated-field ()
+  (shape/labeled :text "hi" :text "again" :size 2.0))
+
+(defn missing-field () (shape/labeled :text "hi"))
+
+(defn wrong-type () (shape/labeled :text 1 :size 2.0))
+
+(defn keyword-on-positional () (shape/circle :radius 1.0))
+
+(defn keywords-on-positional ()
+  (shape/corners :width 1.0 :height 2.0))
+
+(defn keyword-on-no-payload () (shape/dot :radius 1.0))
+
+(defn keyword-outside-a-pair-on-positional ()
+  (shape/circle 1.0 :radius))
+
+(defn wrong-count-on-positional () (shape/circle))
+
+(defn odd-keywords-on-positional ()
+  (shape/corners :width 1.0 :height))
+
+(enum (tagged item)
+  (entry (struct (key str) (value item))))
+
+(type wrong-payload
+  (fn () (tagged i64)))
+
+(defn wrong-payload ()
+  (tagged/entry :key "k" :value "text"))

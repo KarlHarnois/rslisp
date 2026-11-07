@@ -1,0 +1,18 @@
+(enum shape
+  (labeled (struct (text string) (size f64))))
+
+(enum (tagged item)
+  (entry (struct (key str) (value item))))
+
+(defn next-size () 2.0)
+
+(defn main ()
+  (local in-order (shape/labeled :text (str "hi") :size 2.0))
+  (local reordered
+    (shape/labeled :size (next-size) :text (str "hi")))
+  (local positional (shape/labeled (str "hi") 2.0))
+  (prn in-order)
+  (prn reordered)
+  (prn positional)
+  (match (tagged/entry :value 1 :key "count")
+    ((tagged/entry key value) (println key " " value))))

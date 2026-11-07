@@ -1,0 +1,14 @@
+(enum shape
+  (labeled (struct (text str) (size f64))))
+
+(enum action
+  (named (struct (reader (fn ((ref shape)) str)))))
+
+(defn value-after-label () (shape/labeled :text "hi" 2.0))
+
+(defn label-after-value () (shape/labeled "hi" :size 2.0))
+
+(defn label-without-value ()
+  (shape/labeled :text "hi" :size))
+
+(defn reader-without-label () (action/named :text))

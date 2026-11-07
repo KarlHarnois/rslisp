@@ -1,0 +1,36 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/variant_partly_labeled.rslisp
+---
+error[L0338]: `shape/labeled` takes a label on every argument or on none
+ --> expand/variant_partly_labeled.rslisp:7:54
+  |
+7 | (defn value-after-label () (shape/labeled :text "hi" 2.0))
+  |                                                      ^^^ this argument has no label
+  |
+  = help: a keyword argument is always a label: write `:text value :size value`
+
+error[L0338]: `shape/labeled` takes a label on every argument or on none
+ --> expand/variant_partly_labeled.rslisp:9:43
+  |
+9 | (defn label-after-value () (shape/labeled "hi" :size 2.0))
+  |                                           ^^^^ this argument has no label
+  |
+  = help: a keyword argument is always a label: write `:text value :size value`
+
+error[L0338]: `shape/labeled` takes a label on every argument or on none
+  --> expand/variant_partly_labeled.rslisp:12:29
+   |
+12 |   (shape/labeled :text "hi" :size))
+   |                             ^^^^^ this label has no value
+   |
+   = help: a keyword argument is always a label: write `:text value :size value`
+
+error[L0338]: `action/named` takes a label on every argument or on none
+  --> expand/variant_partly_labeled.rslisp:14:45
+   |
+14 | (defn reader-without-label () (action/named :text))
+   |                                             ^^^^^ this label has no value
+   |
+   = help: a keyword argument is always a label: write `:reader value`

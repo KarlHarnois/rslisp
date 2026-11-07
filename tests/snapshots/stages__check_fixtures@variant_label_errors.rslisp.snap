@@ -1,0 +1,85 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/variant_label_errors.rslisp
+---
+error[L0408]: `shape/labeled` has no field `:txt`
+ --> check/variant_label_errors.rslisp:7:39
+  |
+7 | (defn unknown-field () (shape/labeled :txt "hi" :size 2.0))
+  |                                       ^^^^ unknown field
+  |
+help: a field with a similar name exists
+  |
+7 | (defn unknown-field () (shape/labeled :text "hi" :size 2.0))
+  |                                         +
+
+error[L0454]: `:text` is given twice in `shape/labeled`
+  --> check/variant_label_errors.rslisp:10:29
+   |
+10 |   (shape/labeled :text "hi" :text "again" :size 2.0))
+   |                  -----      ^^^^^ given again here
+   |                  |
+   |                  first given here
+   |
+   = help: remove the second `:text` and its value
+
+error[L0409]: missing field `size` in `shape/labeled`
+  --> check/variant_label_errors.rslisp:12:24
+   |
+12 | (defn missing-field () (shape/labeled :text "hi"))
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^ each missing field needs a value
+
+error[L0401]: mismatched types
+  --> check/variant_label_errors.rslisp:14:42
+   |
+14 | (defn wrong-type () (shape/labeled :text 1 :size 2.0))
+   |                                          ^ expected `(ref str)`, found an integer
+
+error[L0460]: `shape/circle` has no field `:radius`
+  --> check/variant_label_errors.rslisp:16:46
+   |
+16 | (defn keyword-on-positional () (shape/circle :radius 1.0))
+   |                                              ^^^^^^^ unknown field
+   |
+   = help: `shape/circle` takes 1 part by position, without a label
+
+error[L0460]: `shape/corners` has no field `:width`
+  --> check/variant_label_errors.rslisp:19:18
+   |
+19 |   (shape/corners :width 1.0 :height 2.0))
+   |                  ^^^^^^ unknown field
+   |
+   = help: `shape/corners` takes 2 parts by position, without a label
+
+error[L0460]: `shape/dot` has no field `:radius`
+  --> check/variant_label_errors.rslisp:21:43
+   |
+21 | (defn keyword-on-no-payload () (shape/dot :radius 1.0))
+   |                                           ^^^^^^^ unknown field
+   |
+   = help: `shape/dot` has no payload: write `shape/dot`
+
+error[L0402]: this function takes 1 argument but 2 were given
+  --> check/variant_label_errors.rslisp:24:3
+   |
+24 |   (shape/circle 1.0 :radius))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 1 argument
+
+error[L0402]: this function takes 1 argument but 0 were given
+  --> check/variant_label_errors.rslisp:26:36
+   |
+26 | (defn wrong-count-on-positional () (shape/circle))
+   |                                    ^^^^^^^^^^^^^^ expected 1 argument
+
+error[L0402]: this function takes 2 arguments but 3 were given
+  --> check/variant_label_errors.rslisp:29:3
+   |
+29 |   (shape/corners :width 1.0 :height))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 2 arguments
+
+error[L0401]: mismatched types
+  --> check/variant_label_errors.rslisp:38:33
+   |
+38 |   (tagged/entry :key "k" :value "text"))
+   |                                 ^^^^^^ expected `i64`, found `(ref str)`

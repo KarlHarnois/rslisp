@@ -23,6 +23,7 @@ pub enum ExprKind {
     Control(Control),
     Struct(StructExpr),
     Variant(BindingId, Vec<Expr>),
+    LabeledVariant(BindingId, Vec<(FieldLabel, Expr)>),
     Assoc(Box<Expr>, Vec<Expr>, Box<Expr>),
     MapAt(MapOperation, Box<Expr>, Vec<Expr>),
     SetAt(Box<Expr>, Vec<Expr>, Box<Expr>),
@@ -289,6 +290,7 @@ impl ExprKind {
             }
             ExprKind::Struct(structure) => structure.children(),
             ExprKind::Variant(_, arguments) => arguments.iter().collect(),
+            ExprKind::LabeledVariant(_, fields) => fields.iter().map(|(_, value)| value).collect(),
             other => other.collection_children(),
         }
     }

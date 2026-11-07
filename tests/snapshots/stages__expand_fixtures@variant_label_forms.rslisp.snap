@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/variant_label_forms.rslisp
+---
+(enum shape (labeled (struct (text str) (size f64))))
+(def in-order (fn () (shape/labeled :text "hi" :size 2.0)))
+(def reordered (fn () (shape/labeled :size 2.0 :text "hi")))

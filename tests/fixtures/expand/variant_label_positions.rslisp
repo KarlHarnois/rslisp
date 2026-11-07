@@ -1,0 +1,8 @@
+(enum shape
+  (labeled (struct (text str) (size f64))))
+
+(defn recur-in-a-field (n)
+  (shape/labeled :text (recur n) :size 2.0))
+
+(def try-outside-a-function
+  (shape/labeled :text (try (some "hi")) :size 2.0))

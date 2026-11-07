@@ -5,6 +5,7 @@ use crate::core::{
 };
 use crate::diagnostic::{Counted, Diagnostic, DiagnosticCode, Label, MissingName, Suggestion};
 use crate::interpret::InterpretProblems;
+use crate::reader::Form;
 use crate::source::Span;
 
 pub struct ExpandProblems;
@@ -822,6 +823,31 @@ impl ExpandProblems {
             label,
         )
         .with_help(format!("write ({keyword} value)"))
+    }
+
+    pub fn label_without_value(head: &Form, fields: &[Rc<str>], span: Span) -> Diagnostic {
+        Self::partly_labeled_call(head, fields, Label::new(span, "this label has no value"))
+    }
+
+    pub fn value_without_label(head: &Form, fields: &[Rc<str>], span: Span) -> Diagnostic {
+        Self::partly_labeled_call(head, fields, Label::new(span, "this argument has no label"))
+    }
+
+    fn partly_labeled_call(head: &Form, fields: &[Rc<str>], label: Label) -> Diagnostic {
+        let marker = Keyword::MARKER;
+        let labeled_values: Vec<String> = fields
+            .iter()
+            .map(|field| format!("{marker}{field} value"))
+            .collect();
+        Diagnostic::error(
+            DiagnosticCode::PARTLY_LABELED_CALL,
+            format!("`{head}` takes a label on every argument or on none"),
+            label,
+        )
+        .with_help(format!(
+            "a keyword argument is always a label: write `{}`",
+            labeled_values.join(" ")
+        ))
     }
 
     pub fn keyword_binder(span: Span) -> Diagnostic {

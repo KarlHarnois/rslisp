@@ -22,6 +22,8 @@ use crate::source::Span;
 use crate::stack::DeepRecursion;
 
 impl Expander<'_> {
+    const LABEL_AND_VALUE: usize = 2;
+
     pub(super) fn lower_expr(&mut self, form: &Form) -> Result<Expr, Diagnostic> {
         if form.as_list().is_some() && self.nesting_depth == Form::NESTING_LIMIT {
             return Err(self.nests_too_deep(form.span()));
@@ -193,11 +195,76 @@ impl Expander<'_> {
         form: &Form,
         items: &[Form],
     ) -> Result<Expr, Diagnostic> {
+        if self.reads_labels(binding, &items[1..]) {
+            return self.lower_labeled_variant(binding, form, items);
+        }
         let arguments = self.lower_arguments(&items[1..])?;
         Ok(Expr::new(
             ExprKind::Variant(binding, arguments),
             form.span(),
         ))
+    }
+
+    fn reads_labels(&self, binding: BindingId, arguments: &[Form]) -> bool {
+        arguments.iter().any(|form| Self::field_of(form).is_some())
+            && (self.tables.variant_fields.contains_key(&binding)
+                || self.mislabels_payload(binding, arguments))
+    }
+
+    fn mislabels_payload(&self, binding: BindingId, arguments: &[Form]) -> bool {
+        let wrong_count = matches!(
+            self.kind(binding),
+            BindingKind::Variant(_, info) if info.arity != arguments.len()
+        );
+        wrong_count
+            && arguments.chunks(Self::LABEL_AND_VALUE).all(|pair| {
+                pair.len() == Self::LABEL_AND_VALUE && Self::field_of(&pair[0]).is_some()
+            })
+    }
+
+    fn lower_labeled_variant(
+        &mut self,
+        binding: BindingId,
+        form: &Form,
+        items: &[Form],
+    ) -> Result<Expr, Diagnostic> {
+        let fields = items[1..]
+            .chunks(Self::LABEL_AND_VALUE)
+            .map(|pair| self.lower_labeled_value(binding, &items[0], pair))
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
+        Ok(Expr::new(
+            ExprKind::LabeledVariant(binding, fields),
+            form.span(),
+        ))
+    }
+
+    fn lower_labeled_value(
+        &mut self,
+        binding: BindingId,
+        head: &Form,
+        pair: &[Form],
+    ) -> Result<(FieldLabel, Expr), Diagnostic> {
+        let field = Self::field_of(&pair[0]);
+        match (field, pair.get(1)) {
+            (Some(field), Some(value)) => Ok((
+                Self::keyword_label(field, pair[0].span()),
+                self.lower_recovered(value)?,
+            )),
+            (Some(_), None) => Err(ExpandProblems::label_without_value(
+                head,
+                &self.tables.variant_fields[&binding],
+                pair[0].span(),
+            )),
+            (None, _) => Err(ExpandProblems::value_without_label(
+                head,
+                &self.tables.variant_fields[&binding],
+                pair[0].span(),
+            )),
+        }
+    }
+
+    fn field_of(form: &Form) -> Option<&str> {
+        Keyword::field_name(form.as_symbol()?.name())
     }
 
     fn lower_arguments(&mut self, arguments: &[Form]) -> Result<Vec<Expr>, Diagnostic> {
@@ -208,11 +275,13 @@ impl Expander<'_> {
     }
 
     fn variant_head(&self, form: &Form) -> Option<BindingId> {
-        let head = form.as_list()?.first()?.as_symbol()?;
+        let items = form.as_list()?;
+        let head = items.first()?.as_symbol()?;
         let binding = self.try_resolve(head, Namespace::Value)?;
         matches!(
             self.kind(binding),
-            BindingKind::Variant(_, VariantInfo { arity, .. }) if arity > 0
+            BindingKind::Variant(_, VariantInfo { arity, .. })
+                if arity > 0 || self.reads_labels(binding, &items[1..])
         )
         .then_some(binding)
     }

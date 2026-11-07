@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/variant_label_positions.rslisp
+---
+error[L0214]: `recur` is not in tail position
+ --> expand/variant_label_positions.rslisp:5:24
+  |
+5 |   (shape/labeled :text (recur n) :size 2.0))
+  |                        ^^^^^^^^^ this `recur` is not the last thing the function does
+  |
+  = help: make `recur` the last form of the function, or call the function by name
+
+error[L0220]: `try` is not inside a function
+ --> expand/variant_label_positions.rslisp:8:24
+  |
+8 |   (shape/labeled :text (try (some "hi")) :size 2.0))
+  |                        ^^^^^^^^^^^^^^^^^ there is no function here for `try` to return from
+  |
+  = help: write `try` inside a `fn` body
