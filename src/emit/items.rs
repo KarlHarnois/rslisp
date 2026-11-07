@@ -132,7 +132,7 @@ impl<'a> ItemEmitter<'a> {
     pub fn crate_fragments(&mut self) -> Vec<Fragment> {
         let (mut entry_items, entry_function) = self.entry_items();
         let modules = self.module_fragments();
-        let runtime = self.runtime_module(&Self::text_of(&entry_items, &modules));
+        let runtime = RuntimeModule::of(&Self::text_of(&entry_items, &modules));
         if let Some(call) = runtime.as_ref().and_then(RuntimeModule::start_up_call) {
             Self::start_main_with(&mut entry_items[entry_function], call);
         }
@@ -144,14 +144,6 @@ impl<'a> ItemEmitter<'a> {
         }
         fragments.push(Fragment::Newline);
         fragments
-    }
-
-    fn runtime_module(&self, code: &str) -> Option<RuntimeModule> {
-        if self.plan.main_body_name().is_some() {
-            RuntimeModule::of_result_main(code)
-        } else {
-            RuntimeModule::of(code)
-        }
     }
 
     fn entry_items(&mut self) -> (Vec<Vec<Fragment>>, usize) {

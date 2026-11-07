@@ -30,7 +30,14 @@ enum RuntimePart {
 }
 
 impl RuntimePart {
-    const STDOUT_MARKERS: &'static [&'static str] = &["print!(", "println!(", "std::io::stdout("];
+    const STANDARD_STREAM_MARKERS: &'static [&'static str] = &[
+        "print!(",
+        "println!(",
+        "std::io::stdout(",
+        "eprint!(",
+        "eprintln!(",
+        "std::io::stderr(",
+    ];
     const ALL: [(RuntimePart, &'static [&'static str]); 23] = [
         (RuntimePart::Number, &["crate::rt::Number"]),
         (RuntimePart::FromLiteral, &["::from_literal("]),
@@ -43,7 +50,7 @@ impl RuntimePart {
         (RuntimePart::Io, &["crate::rt::read_line"]),
         (RuntimePart::Source, &["crate::rt::Source"]),
         (RuntimePart::Lines, &["crate::rt::lines("]),
-        (RuntimePart::Signal, Self::STDOUT_MARKERS),
+        (RuntimePart::Signal, Self::STANDARD_STREAM_MARKERS),
         (RuntimePart::Show, &["crate::rt::Show"]),
         (RuntimePart::UnwrapOk, &["crate::rt::unwrap_ok("]),
         (RuntimePart::UnwrapErr, &["crate::rt::unwrap_err("]),
@@ -210,24 +217,11 @@ impl RuntimeModule {
     const IMPLEMENTATION_INDENT: &'static str = "            ";
 
     pub fn of(code: &str) -> Option<RuntimeModule> {
-        Self::with_required_parts(Self::present_parts(code))
-    }
-
-    pub fn of_result_main(code: &str) -> Option<RuntimeModule> {
-        let mut parts = Self::present_parts(code);
-        parts.insert(RuntimePart::Signal);
-        Self::with_required_parts(parts)
-    }
-
-    fn present_parts(code: &str) -> BTreeSet<RuntimePart> {
-        RuntimePart::ALL
+        let mut parts: BTreeSet<RuntimePart> = RuntimePart::ALL
             .into_iter()
             .map(|(part, _)| part)
             .filter(|part| part.present(code))
-            .collect()
-    }
-
-    fn with_required_parts(mut parts: BTreeSet<RuntimePart>) -> Option<RuntimeModule> {
+            .collect();
         let mut unchecked: Vec<RuntimePart> = parts.iter().copied().collect();
         while let Some(part) = unchecked.pop() {
             for required in part.required() {
@@ -312,5 +306,25 @@ impl RuntimeModule {
             return "{}".to_string();
         }
         format!("{{\n{}\n{indent}}}", members.join("\n\n"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn each_standard_stream_write_restores_the_default_sigpipe() {
+        for code in [
+            "print!(\"a\")",
+            "println!(\"a\")",
+            "std::io::stdout()",
+            "eprint!(\"a\")",
+            "eprintln!(\"a\")",
+            "std::io::stderr()",
+        ] {
+            let module = RuntimeModule::of(code).expect("the code needs the runtime");
+            assert!(module.start_up_call().is_some(), "{code}");
+        }
     }
 }
