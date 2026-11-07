@@ -2,8 +2,7 @@ mod support;
 
 use std::path::PathBuf;
 
-use rslisp::expand::PreludeState;
-use support::{Fixture, FixtureReports, FormatFailures, HeaderAgreement};
+use support::{Fixture, FixtureReports, FormatFailures, HeaderAgreement, SavedPreludeAgreement};
 
 #[test]
 fn reader_fixtures() {
@@ -117,25 +116,41 @@ fn defrule_headers_agree() {
 }
 
 #[test]
-fn saved_prelude_fixtures() {
+fn saved_prelude_expand_fixtures() {
     let mut paths = Vec::new();
-    insta::glob!("fixtures/{expand,check,emit,run,corpus}/*.rslisp", |path| {
-        paths.push(PathBuf::from(path))
-    });
-    let saved = PreludeState::build().save();
-    let built = FixtureReports::compute(paths.clone(), |path| Fixture::load(path).stage_report());
-    let loaded = FixtureReports::compute(paths.clone(), |path| {
-        let prelude = PreludeState::load(&saved).expect("the saved prelude loads");
-        Fixture::load(path)
-            .with_saved_prelude(prelude)
-            .stage_report()
-    });
-    for path in &paths {
-        assert_eq!(
-            loaded.report(path),
-            built.report(path),
-            "a loaded prelude changes {}",
-            path.display()
-        );
-    }
+    insta::glob!("fixtures/expand/*.rslisp", |path| paths
+        .push(PathBuf::from(path)));
+    SavedPreludeAgreement::of(paths).assert_loaded_prelude_agrees();
+}
+
+#[test]
+fn saved_prelude_check_fixtures() {
+    let mut paths = Vec::new();
+    insta::glob!("fixtures/check/*.rslisp", |path| paths
+        .push(PathBuf::from(path)));
+    SavedPreludeAgreement::of(paths).assert_loaded_prelude_agrees();
+}
+
+#[test]
+fn saved_prelude_emit_fixtures() {
+    let mut paths = Vec::new();
+    insta::glob!("fixtures/emit/*.rslisp", |path| paths
+        .push(PathBuf::from(path)));
+    SavedPreludeAgreement::of(paths).assert_loaded_prelude_agrees();
+}
+
+#[test]
+fn saved_prelude_run_fixtures() {
+    let mut paths = Vec::new();
+    insta::glob!("fixtures/run/*.rslisp", |path| paths
+        .push(PathBuf::from(path)));
+    SavedPreludeAgreement::of(paths).assert_loaded_prelude_agrees();
+}
+
+#[test]
+fn saved_prelude_corpus_fixtures() {
+    let mut paths = Vec::new();
+    insta::glob!("fixtures/corpus/*.rslisp", |path| paths
+        .push(PathBuf::from(path)));
+    SavedPreludeAgreement::of(paths).assert_loaded_prelude_agrees();
 }
