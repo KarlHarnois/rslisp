@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/unknown_section.rslisp
+---
+error[L0707]: unknown section `dependecies`
+ --> project/unknown_section.rslisp:1:19
+  |
+1 | (project browser (dependecies (serde "1.0")))
+  |                   ^^^^^^^^^^^ not a section of a project
+  |
+help: a section with a similar name exists
+  |
+1 | (project browser (dependencies (serde "1.0")))
+  |                          +

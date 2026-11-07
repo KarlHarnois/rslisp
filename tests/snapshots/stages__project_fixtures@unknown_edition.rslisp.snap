@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/unknown_edition.rslisp
+---
+error[L0717]: edition 2025 does not exist
+ --> project/unknown_edition.rslisp:1:27
+  |
+1 | (project browser :edition 2025)
+  |                           ^^^^ not an edition of this compiler
+  |
+help: the only edition is 2026
+  |
+1 - (project browser :edition 2025)
+1 + (project browser :edition 2026)
+  |

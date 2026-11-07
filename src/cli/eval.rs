@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 
 use super::evaluation_output::EvaluationOutput;
 use super::exit_status::ExitStatus;
+use super::located_program::LocatedProgram;
+use super::program_file::ProgramFile;
 use super::standard_error::StandardError;
 use super::temporary_directory::TemporaryDirectory;
 use super::terminal::{BuildTarget, EvaluationRequest, ModuleOfSources, Terminal};
@@ -100,10 +102,17 @@ impl EvalCommand {
 
     fn load_module(&self, terminal: &mut Terminal) -> Result<ModuleOfSources, ExitStatus> {
         Ok(ModuleOfSources {
-            path: self.module.path().to_path_buf(),
-            root: self.root(),
+            file: self.module_file(terminal)?,
             sources: self.module.load(terminal)?,
         })
+    }
+
+    fn module_file(&self, terminal: &mut Terminal) -> Result<ProgramFile, ExitStatus> {
+        let path = self.module.path().to_path_buf();
+        match &self.root {
+            Some(root) => Ok(ProgramFile::within(path, root.clone())),
+            None => LocatedProgram::locate(Some(path), terminal).map(LocatedProgram::into_file),
+        }
     }
 
     fn build_and_run(
@@ -122,12 +131,6 @@ impl EvalCommand {
         };
         terminal.compile(emitted, &target, self.profile)?;
         Ok(self.output.run(&binary, printed_forms).shell_status())
-    }
-
-    fn root(&self) -> PathBuf {
-        self.root
-            .clone()
-            .unwrap_or_else(|| Terminal::directory_of(self.module.path()))
     }
 
     fn report_no_build_directory(error: std::io::Error) -> ExitStatus {

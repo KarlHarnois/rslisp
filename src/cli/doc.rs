@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use anstream::AutoStream;
 
 use super::exit_status::ExitStatus;
+use super::program_file::ProgramFile;
 use super::standard_error::StandardError;
 use super::terminal::Terminal;
 use super::token_colors::TokenColors;
@@ -140,7 +141,7 @@ impl<'t> DocLookup<'t> {
         let entry = environment.load(self.terminal)?;
         let expanded =
             self.terminal
-                .within_session(&environment.entry(), entry, |mut session| {
+                .within_session(&environment.file(), entry, |mut session| {
                     let source = session.add_source(Self::TERM_SOURCE, term);
                     ExpandedPage::expand(&mut session, &read, source)
                 })?;
@@ -156,7 +157,7 @@ impl<'t> DocLookup<'t> {
         let entry = environment.load(self.terminal)?;
         let lookup = self
             .terminal
-            .within_session(&environment.entry(), entry, |session| {
+            .within_session(&environment.file(), entry, |session| {
                 TypedLookup::new(session, (Self::TERM_SOURCE, term)).look_up(&read)
             })?;
         let page = lookup.page.text()?;
@@ -335,6 +336,10 @@ impl DocEnvironment {
             Self::Prelude => Ok(terminal.add_empty_source(&self.entry())),
             Self::Program(path) => terminal.load(path),
         }
+    }
+
+    fn file(&self) -> ProgramFile {
+        ProgramFile::beside_itself(self.entry())
     }
 
     fn entry(&self) -> PathBuf {

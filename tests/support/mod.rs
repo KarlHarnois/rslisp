@@ -19,6 +19,7 @@ use rslisp::emit::{EmittedCrate, RustEmitter};
 use rslisp::expand::{Expander, PreludeState};
 use rslisp::format::{FormatFailure, SourceFormatter};
 use rslisp::modules::ModuleSources;
+use rslisp::project::ProjectReader;
 use rslisp::reader::Reader;
 use rslisp::source::{SourceId, SourceMap, Span};
 use rslisp::types::TypedProgram;
@@ -74,6 +75,16 @@ impl Fixture {
     pub fn read_report(&self) -> String {
         match Reader::new(self.sources.file(self.entry)).read() {
             Ok(forms) => forms.iter().map(|form| format!("{form}\n")).collect(),
+            Err(diagnostics) => self.render(&diagnostics),
+        }
+    }
+
+    pub fn project_report(&self) -> String {
+        let file = self.sources.file(self.entry);
+        let whole_file = Span::new(self.entry, 0..file.text().len());
+        let read = Reader::new(file).read();
+        match read.and_then(|forms| ProjectReader::read(&forms, whole_file)) {
+            Ok(project) => format!("{project:#?}\n"),
             Err(diagnostics) => self.render(&diagnostics),
         }
     }

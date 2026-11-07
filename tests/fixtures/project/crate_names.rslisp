@@ -1,0 +1,4 @@
+(project browser
+         (dependencies (tokio_util "0.7")
+                       (Inflector "0.11")
+                       (hints-core :path "../hints-core")))

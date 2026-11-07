@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use super::program_file::ProgramFile;
 use super::terminal::ModuleOfSources;
 use crate::source::SourceId;
 
@@ -23,8 +24,7 @@ impl PromptModule {
         let mut sources = vec![self.anchor];
         sources.extend(inputs);
         ModuleOfSources {
-            path: PathBuf::from(Self::PATH),
-            root: self.root.clone(),
+            file: ProgramFile::within(PathBuf::from(Self::PATH), self.root.clone()),
             sources,
         }
     }

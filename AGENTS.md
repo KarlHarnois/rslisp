@@ -171,6 +171,7 @@ cargo test <narrowest test>
 | a unit test in `src/` | `--lib <module::path>` |
 | a unit test in `expand/src/` | `-p rslisp-expand --lib <module::path>` |
 | one stage's fixtures | `--test stages <stage>_fixtures` |
+| the project file's reader | `--test stages project_fixtures` |
 | a corpus entry | `--test stages corpus_fixtures` |
 | a CLI command | `--test cli <test name>` |
 | a diagnostic code | `--test diagnostic_codes --test diagnostic_snapshots` |

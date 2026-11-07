@@ -1,0 +1,40 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/crate_names.rslisp
+---
+Project {
+    name: "browser",
+    version: "0.1.0",
+    entry: "src/main.rslisp",
+    library_root: "src/lib.rslisp",
+    edition: 2026,
+    libraries: [],
+    dependencies: [
+        CrateDependency {
+            name: "tokio_util",
+            version: Some(
+                "0.7",
+            ),
+            features: [],
+            path: None,
+        },
+        CrateDependency {
+            name: "Inflector",
+            version: Some(
+                "0.11",
+            ),
+            features: [],
+            path: None,
+        },
+        CrateDependency {
+            name: "hints-core",
+            version: None,
+            features: [],
+            path: Some(
+                "../hints-core",
+            ),
+        },
+    ],
+    dev_dependencies: [],
+}

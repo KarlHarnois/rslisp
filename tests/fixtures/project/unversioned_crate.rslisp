@@ -1,0 +1,2 @@
+(project browser
+         (dependencies (serde :features ("derive"))))

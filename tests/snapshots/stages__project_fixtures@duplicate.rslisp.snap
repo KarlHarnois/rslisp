@@ -1,0 +1,34 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/duplicate.rslisp
+---
+error[L0709]: `:entry` is given more than once
+ --> project/duplicate.rslisp:3:10
+  |
+2 |          :entry "src/main.rslisp"
+  |          ------ first given here
+3 |          :entry "src/app.rslisp"
+  |          ^^^^^^ given again here
+  |
+  = help: remove one of them
+
+error[L0709]: `serde` is given more than once
+ --> project/duplicate.rslisp:4:39
+  |
+4 |          (dependencies (serde "1.0") (serde "1.1"))
+  |                         -----         ^^^^^ given again here
+  |                         |
+  |                         first given here
+  |
+  = help: remove one of them
+
+error[L0709]: `dependencies` is given more than once
+ --> project/duplicate.rslisp:5:11
+  |
+4 |          (dependencies (serde "1.0") (serde "1.1"))
+  |           ------------ first given here
+5 |          (dependencies (itoa "1.0")))
+  |           ^^^^^^^^^^^^ given again here
+  |
+  = help: remove one of them

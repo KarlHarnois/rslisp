@@ -1,0 +1,22 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/short_revision.rslisp
+---
+error[L0715]: `:rev` must name a full commit
+ --> project/short_revision.rslisp:2:68
+  |
+2 |          (libraries (keymap :git "https://example.com/keymap" :rev "a1b2c3d")
+  |                                                                    ^^^^^^^^^ expected 40 hexadecimal digits
+  |
+  = note: git fetches a commit only by its full hash
+  = help: write the commit's full hash, as `git rev-parse <commit>` prints it
+
+error[L0715]: `:rev` must name a full commit
+ --> project/short_revision.rslisp:4:33
+  |
+4 | ...                   :rev "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")))
+  |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 40 hexadecimal digits
+  |
+  = note: git fetches a commit only by its full hash
+  = help: write the commit's full hash, as `git rev-parse <commit>` prints it

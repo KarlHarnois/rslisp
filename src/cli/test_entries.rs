@@ -3,6 +3,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use super::exit_status::ExitStatus;
+use super::program_file::ProgramFile;
 use super::terminal::{ModuleOfSources, Terminal};
 use crate::language::Language;
 
@@ -12,7 +13,6 @@ pub struct TestEntries {
 
 impl TestEntries {
     const DIRECTORY_ENTRY: &'static str = "<tests>";
-    const MODULE_SEPARATOR: &'static str = "/";
 
     pub fn new(path: PathBuf) -> Self {
         Self { path }
@@ -23,8 +23,7 @@ impl TestEntries {
             self.load_directory(terminal)
         } else {
             Ok(ModuleOfSources {
-                path: self.path.clone(),
-                root: Terminal::directory_of(&self.path),
+                file: ProgramFile::beside_itself(self.path.clone()),
                 sources: vec![terminal.load(&self.path)?],
             })
         }
@@ -41,8 +40,7 @@ impl TestEntries {
             .collect();
         let source = terminal.add_named_source(Self::DIRECTORY_ENTRY, &uses.join("\n"));
         Ok(ModuleOfSources {
-            path: self.path.join(Self::DIRECTORY_ENTRY),
-            root: self.path.clone(),
+            file: ProgramFile::within(self.path.join(Self::DIRECTORY_ENTRY), self.path.clone()),
             sources: vec![source],
         })
     }
@@ -60,14 +58,14 @@ impl TestEntries {
     }
 
     fn module_path(&self, file: &Path) -> Option<String> {
-        if file.extension()? != Language::EXTENSION {
+        if file.extension()? != Language::EXTENSION || Self::is_project_file(file) {
             return None;
         }
-        let relative = file.strip_prefix(&self.path).ok()?.with_extension("");
-        let parts: Vec<&str> = relative
-            .components()
-            .map(|component| component.as_os_str().to_str())
-            .collect::<Option<_>>()?;
-        Some(parts.join(Self::MODULE_SEPARATOR))
+        ProgramFile::module_name(file.strip_prefix(&self.path).ok()?)
+    }
+
+    fn is_project_file(file: &Path) -> bool {
+        file.file_name()
+            .is_some_and(|name| *name == *Language::project_file_name())
     }
 }

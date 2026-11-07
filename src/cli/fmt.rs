@@ -3,6 +3,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use super::exit_status::ExitStatus;
+use super::program_file::ProgramFile;
 use super::standard_error::StandardError;
 use super::terminal::Terminal;
 use crate::format::{FormatFailure, ModuleLookup, SourceFormatter};
@@ -228,7 +229,7 @@ impl SourceFiles {
     }
 
     fn lookup_beside(path: &Path) -> ModuleLookup {
-        let directory = Terminal::directory_of(path);
+        let directory = ProgramFile::directory_of(path);
         let absolute = fs::canonicalize(Path::new(Self::CURRENT_DIRECTORY).join(&directory))
             .unwrap_or(directory);
         ModuleLookup::beside(&absolute)

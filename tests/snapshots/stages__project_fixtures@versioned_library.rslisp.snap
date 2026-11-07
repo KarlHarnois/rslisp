@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/versioned_library.rslisp
+---
+error[L0711]: library `hints` cannot take a version
+ --> project/versioned_library.rslisp:1:36
+  |
+1 | (project browser (libraries (hints "1.0" :path "../hints")))
+  |                                    ^^^^^ a library is found by its source, not its version
+  |
+  = help: remove the version

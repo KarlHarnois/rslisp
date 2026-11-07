@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use super::definition_buffer::{BufferedInput, DefinitionBuffer, Replacement};
@@ -9,6 +9,7 @@ use super::eval::{EvalCommand, EvaluationSettings, FormsText, ModuleText};
 use super::evaluation_output::PrintedEvaluation;
 use super::exit_status::ExitStatus;
 use super::interruption::Interruption;
+use super::located_project::LocatedProject;
 use super::name_records::NameRecords;
 use super::prompt_diagnostics::{PromptAnnotations, PromptDiagnostics};
 use super::prompt_lines::{EnteredText, PromptLines};
@@ -21,7 +22,7 @@ use crate::expand::ClassifiedForm;
 use crate::source::{SourceId, Span};
 
 pub struct ReplCommand {
-    root: PathBuf,
+    root: Option<PathBuf>,
     profile: BuildProfile,
 }
 
@@ -47,13 +48,15 @@ enum ClassifiedInput {
 }
 
 impl ReplCommand {
-    pub const DEFAULT_ROOT: &str = ".";
-
-    pub fn new(root: PathBuf, profile: BuildProfile) -> Self {
+    pub fn new(root: Option<PathBuf>, profile: BuildProfile) -> Self {
         Self { root, profile }
     }
 
     pub fn run(self, terminal: &mut Terminal) -> ExitStatus {
+        let root = match self.source_root(terminal) {
+            Ok(root) => root,
+            Err(status) => return status,
+        };
         let mut lines = match PromptLines::standard_input(terminal.diagnostic_output()) {
             Ok(lines) => lines,
             Err(error) => return ExitStatus::report_unreadable_input(&error),
@@ -62,7 +65,7 @@ impl ReplCommand {
             .catch_interrupts()
             .unwrap_or_else(|error| Self::note_uncaught_interrupts(terminal, &error));
         terminal.stop_before_rustc_on(interruption.clone());
-        let session = PromptSession::new(terminal, self.root, self.profile, interruption);
+        let session = PromptSession::new(terminal, root, self.profile, interruption);
         Self::answer(&mut lines, session, terminal)
     }
 
@@ -82,6 +85,18 @@ impl ReplCommand {
                 Err(error) => return ExitStatus::report_unreadable_input(&error),
             }
         }
+    }
+
+    fn source_root(&self, terminal: &Terminal) -> Result<PathBuf, ExitStatus> {
+        if let Some(root) = &self.root {
+            return Ok(root.clone());
+        }
+        let working_directory = Path::new(Terminal::WORKING_DIRECTORY);
+        let project = LocatedProject::search_from(working_directory, terminal)?;
+        Ok(project.map_or_else(
+            || working_directory.to_path_buf(),
+            |project| project.source_root(),
+        ))
     }
 
     fn note_uncaught_interrupts(terminal: &Terminal, error: &ctrlc::Error) -> Interruption {
@@ -222,7 +237,7 @@ impl PromptSession {
         self.locate_expression_errors(&input.name);
         let forms = FormsText::named(input.name, input.text, None);
         let status = EvalCommand::new(
-            ModuleText::Loaded(module.path, module.sources),
+            ModuleText::Loaded(module.file.path().to_path_buf(), module.sources),
             Some(self.module.root().to_path_buf()),
             forms,
             EvaluationSettings {
