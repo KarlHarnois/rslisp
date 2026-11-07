@@ -26,11 +26,6 @@
 
 [docs/language.md](docs/language.md) describes the language.
 
-```clojure
-(defn main ()
-  (println (str "hello" " " "world")))
-```
-
 ## Set up
 
 The project uses a [Nix](https://nixos.org/download/) flake.
@@ -70,6 +65,13 @@ The project uses a [Nix](https://nixos.org/download/) flake.
 Run `nix fmt` to format the Nix files, and `nix flake check` to build the package and run the checks that `cargo xtask coverage` leaves out.
 
 ## Use
+
+A program starts at `main`, as `examples/hello.rslisp` shows:
+
+```clojure
+(defn main ()
+  (println (str "hello" " " "world")))
+```
 
 Run `rslisp` alone to start the prompt, as `rslisp repl` does. Run `rslisp --help` to list the commands. Each command except `doc` and `repl` takes a source file, and `test` also takes a directory:
 
