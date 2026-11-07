@@ -13,7 +13,7 @@ This file and the reference files it names are the living reference for working 
 | Front end | Every stage before rustc |
 | Fixture | A source file under `tests/fixtures/` whose output an insta snapshot records |
 | Corpus entry | A top-level fixture under `tests/fixtures/corpus/`, sized to measure the compiler's performance |
-| Working commands | The three commands at the top of the Commands section |
+| Working commands | The two commands at the top of the Commands section |
 
 ## Principles
 
@@ -155,7 +155,6 @@ The exceptions are:
 
 ```sh
 cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
 cargo test <narrowest test>
 ```
 
@@ -184,6 +183,8 @@ cargo test <narrowest test>
 **NEVER run these commands locally:** CI does the same work.
 
 - `cargo test` without a test target
+- `cargo test --test cli` without a test name
+- `cargo clippy --workspace`
 - `cargo build --release` to probe a pull request's unedited code: download the binaries, as `docs/pull-requests.md` says
 - `git rebase -x` with a build command, or another loop that builds each commit
 - `cargo xtask coverage`
