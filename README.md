@@ -10,7 +10,21 @@
 > [!WARNING]
 > **`rslisp` is a placeholder name.** The language has no name yet. The name `rslisp` and the `.rslisp` extension will change. The language is experimental: expect breaking changes to the syntax, the prelude and the command line in any commit.
 
-rslisp is a small Lisp that compiles to Rust. The syntax has few rules, and the compiler infers types and ownership. Most features live in a prelude written in the language itself. The generated Rust has no hidden clones or allocations. [docs/language.md](docs/language.md) describes the language.
+```clojure
+(def rslisp
+  "A small Lisp for humans and agents
+  that infers types and ownership
+  and compiles to readable Rust.")
+
+(def values
+  (vec "Few rules, no exceptions."
+       "Small compiler, big prelude."
+       "No clones or allocations you did not write."
+       "Errors worth reading."
+       "Interpret while you iterate, compile when you ship."))
+```
+
+[docs/language.md](docs/language.md) describes the language.
 
 ```clojure
 (defn main ()
