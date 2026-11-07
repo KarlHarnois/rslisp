@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/not_a_project.rslisp
+---
+error[L0701]: `project.rslisp` must hold a `project` form
+ --> project/not_a_project.rslisp:1:1
+  |
+1 | (package browser)
+  | ^^^^^^^^^^^^^^^^^ expected `(project <name> ...)` here
+  |
+  = help: start the file with `(project my-program)`

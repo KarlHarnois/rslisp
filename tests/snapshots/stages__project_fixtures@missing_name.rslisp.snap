@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/missing_name.rslisp
+---
+error[L0703]: the project has no name
+ --> project/missing_name.rslisp:1:2
+  |
+1 | (project :version "0.1.0")
+  |  ^^^^^^^ expected a name after `project`
+  |
+  = help: name the project, as `(project my-program)`

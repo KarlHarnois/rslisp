@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/minimal.rslisp
+---
+Project {
+    name: "browser",
+    version: "0.1.0",
+    entry: "src/main.rslisp",
+    library_root: "src/lib.rslisp",
+    edition: 2026,
+    libraries: [],
+    dependencies: [],
+    dev_dependencies: [],
+}

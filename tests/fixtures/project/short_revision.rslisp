@@ -1,0 +1,4 @@
+(project browser
+         (libraries (keymap :git "https://example.com/keymap" :rev "a1b2c3d")
+                    (hints :git "https://example.com/hints"
+                           :rev "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")))

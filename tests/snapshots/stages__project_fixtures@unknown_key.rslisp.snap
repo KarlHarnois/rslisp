@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/unknown_key.rslisp
+---
+error[L0704]: unknown key `:entyr`
+ --> project/unknown_key.rslisp:1:18
+  |
+1 | (project browser :entyr "src/main.rslisp")
+  |                  ^^^^^^ not a key of this form
+  |
+help: a key with a similar name exists
+  |
+1 - (project browser :entyr "src/main.rslisp")
+1 + (project browser :entry "src/main.rslisp")
+  |

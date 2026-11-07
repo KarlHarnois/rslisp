@@ -1,0 +1,28 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/mismatched_value.rslisp
+---
+error[L0706]: `:entry` takes a string
+ --> project/mismatched_value.rslisp:2:17
+  |
+2 |          :entry main
+  |                 ^^^^ expected a string
+
+error[L0706]: a feature is a string
+ --> project/mismatched_value.rslisp:3:48
+  |
+3 |          (dependencies (serde "1.0" :features (derive))
+  |                                                ^^^^^^ expected a string
+  |
+help: quote the feature's name
+  |
+3 -          (dependencies (serde "1.0" :features (derive))
+3 +          (dependencies (serde "1.0" :features ("derive"))
+  |
+
+error[L0706]: `:features` takes a list of strings
+ --> project/mismatched_value.rslisp:4:46
+  |
+4 |                        (itoa "1.0" :features "std")))
+  |                                              ^^^^^ expected a list of strings

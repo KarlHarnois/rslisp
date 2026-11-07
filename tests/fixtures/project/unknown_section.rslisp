@@ -1,0 +1,1 @@
+(project browser (dependecies (serde "1.0")))

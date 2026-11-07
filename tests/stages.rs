@@ -16,6 +16,17 @@ fn reader_fixtures() {
 }
 
 #[test]
+fn project_fixtures() {
+    let fixtures = "fixtures/project/*.rslisp";
+    let mut paths = Vec::new();
+    insta::glob!(fixtures, |path| paths.push(PathBuf::from(path)));
+    let reports = FixtureReports::compute(paths, |path| Fixture::load(path).project_report());
+    insta::glob!(fixtures, |path| {
+        insta::assert_snapshot!(reports.report(path));
+    });
+}
+
+#[test]
 fn format_fixtures() {
     let fixtures = "fixtures/format/*.rslisp";
     let mut paths = Vec::new();

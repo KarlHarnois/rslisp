@@ -1,0 +1,4 @@
+(project browser
+         :entry main
+         (dependencies (serde "1.0" :features (derive))
+                       (itoa "1.0" :features "std")))

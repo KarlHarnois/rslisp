@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/empty.rslisp
+---
+error[L0701]: `project.rslisp` must hold a `project` form
+ --> project/empty.rslisp:1:1
+  |
+1 | ; this project file has only a comment
+  | ^ expected `(project <name> ...)` here
+  |
+  = help: start the file with `(project my-program)`

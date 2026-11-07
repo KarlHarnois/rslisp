@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/library_without_source.rslisp
+---
+error[L0712]: library `hints` has no source
+ --> project/library_without_source.rslisp:1:30
+  |
+1 | (project browser (libraries (hints)))
+  |                              ^^^^^ this library needs `:path` or `:git`
+  |
+  = help: write `(hints :path "../hints")`, or `:git` with a `:rev`

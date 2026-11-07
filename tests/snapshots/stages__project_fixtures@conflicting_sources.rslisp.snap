@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/conflicting_sources.rslisp
+---
+error[L0713]: library `hints` has two sources
+ --> project/conflicting_sources.rslisp:2:45
+  |
+2 |          (libraries (hints :path "../hints" :git "https://example.com/hints")
+  |                            -----            ^^^^ this source
+  |                            |
+  |                            conflicts with this one
+  |
+  = help: keep `:path` alone, or `:git` with `:rev`
+
+error[L0713]: library `keymap` has two sources
+ --> project/conflicting_sources.rslisp:4:29
+  |
+3 |                     (keymap :path "../keymap"
+  |                             ----- conflicts with this one
+4 |                             :rev "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678")))
+  |                             ^^^^ this source
+  |
+  = help: keep `:path` alone, or `:git` with `:rev`

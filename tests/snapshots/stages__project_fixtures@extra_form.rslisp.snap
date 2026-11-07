@@ -1,0 +1,15 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/extra_form.rslisp
+---
+error[L0702]: `project.rslisp` holds a form after its `project` form
+ --> project/extra_form.rslisp:3:1
+  |
+1 | (project browser)
+  | ----------------- the `project` form ends here
+2 |
+3 | (project other)
+  | ^^^^^^^^^^^^^^^ this form is outside the `project` form
+  |
+  = help: move this form inside the `project` form, or remove it

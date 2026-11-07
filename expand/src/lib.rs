@@ -6,6 +6,7 @@ pub mod interpret;
 pub mod language;
 pub mod mangle;
 pub mod modules;
+pub mod project;
 pub mod reader;
 pub mod scope;
 pub mod source;

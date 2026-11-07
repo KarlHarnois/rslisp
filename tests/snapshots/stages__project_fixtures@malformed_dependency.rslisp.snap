@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/malformed_dependency.rslisp
+---
+error[L0710]: expected a dependency
+ --> project/malformed_dependency.rslisp:1:32
+  |
+1 | (project browser (dependencies serde ("1.0")))
+  |                                ^^^^^ a dependency is a list that starts with a name
+  |
+  = help: write a dependency as `(serde "1.0")` or `(hints :path "../hints")`
+
+error[L0710]: expected a dependency
+ --> project/malformed_dependency.rslisp:1:38
+  |
+1 | (project browser (dependencies serde ("1.0")))
+  |                                      ^^^^^^^ a dependency is a list that starts with a name
+  |
+  = help: write a dependency as `(serde "1.0")` or `(hints :path "../hints")`

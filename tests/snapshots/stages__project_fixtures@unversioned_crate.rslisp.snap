@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/unversioned_crate.rslisp
+---
+error[L0716]: crate `serde` has no version
+ --> project/unversioned_crate.rslisp:2:25
+  |
+2 |          (dependencies (serde :features ("derive"))))
+  |                         ^^^^^ this crate needs a version or a `:path`
+  |
+  = help: write the version after the name, as `(serde "1.0")`

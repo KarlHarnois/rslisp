@@ -1,0 +1,2 @@
+(project browser
+         (libraries (keymap :git "https://example.com/keymap")))

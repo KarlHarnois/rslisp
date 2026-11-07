@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/project/git_without_revision.rslisp
+---
+error[L0714]: git library `keymap` has no `:rev`
+ --> project/git_without_revision.rslisp:2:29
+  |
+2 |          (libraries (keymap :git "https://example.com/keymap")))
+  |                             ^^^^ this repository needs a commit
+  |
+  = help: add `:rev` with the commit's full 40-character hash
