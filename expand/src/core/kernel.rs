@@ -120,7 +120,7 @@ impl KernelForm {
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Match),
             name: "match",
-            shape: "(match value (pattern body) ...)",
+            shape: "(match value (pattern body ...) ...)",
         },
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Assoc),

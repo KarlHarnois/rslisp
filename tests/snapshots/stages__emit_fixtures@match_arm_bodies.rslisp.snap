@@ -1,0 +1,142 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/match_arm_bodies.rslisp
+---
+#[derive(Clone, Copy, PartialEq)]
+enum Shape {
+    Circle(f64),
+    Dot,
+}
+
+fn area(s: Shape) -> f64 {
+    match s {
+        Shape::Circle(r) => {
+            println!("circle");
+            let twice = 2.0 * r;
+            twice + r
+        }
+        Shape::Dot => 0.0,
+    }
+}
+
+fn nothing(n: i64) {
+    match n {
+        1 => {}
+        2 => println!("two"),
+        _ => {}
+    }
+}
+
+fn sum_to(mut n: i64, mut total: i64) -> i64 {
+    loop {
+        match n {
+            0 => {
+                return total;
+            }
+            _ => {
+                println!("{}", n);
+                (n, total) = (n - 1, total + n);
+                continue;
+            }
+        }
+    }
+}
+
+fn down_to_zero(mut n: i64) -> i64 {
+    loop {
+        match n {
+            0 => {
+                println!("end");
+                return 0;
+            }
+            _ => {
+                println!("{}", n);
+                n -= 1;
+                continue;
+            }
+        }
+    }
+}
+
+fn drain(items: &mut Vec<i64>) {
+    while let Some(item) = items.pop() {
+        println!("{}", item);
+    }
+}
+
+fn drain_with_do(items: &mut Vec<i64>) {
+    while let Some(item) = items.pop() {
+        println!("{}", item);
+    }
+}
+
+fn drain_then_report(items: &mut Vec<i64>) {
+    loop {
+        match items.pop() {
+            Some(item) => {
+                println!("{}", item);
+                continue;
+            }
+            None => {
+                println!("drained");
+                break;
+            }
+        }
+    }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!(
+        "{}",
+        match 1_i64 {
+            1 => {
+                println!("a");
+                2_i64
+            }
+            _ => 3,
+        }
+    );
+    println!("{}", area(Shape::Circle(2.0)));
+    println!("{}", area(Shape::Dot));
+    nothing(1);
+    nothing(2);
+    println!("{}", sum_to(2, 0));
+    println!("{}", down_to_zero(1));
+    let mut items: Vec<i64> = vec![1_i64, 2_i64];
+    drain(&mut items);
+    let mut more: Vec<i64> = vec![3_i64, 4_i64];
+    drain_with_do(&mut more);
+    let mut reported: Vec<i64> = vec![10_i64];
+    drain_then_report(&mut reported);
+    {
+        let (left, right) = (5_i64, 6_i64);
+        println!("{}", left);
+        println!("{}", right)
+    }
+    println!("{}", {
+        let (left, _) = (7_i64, 8_i64);
+        {
+            println!("body")
+        }
+        left
+    })
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

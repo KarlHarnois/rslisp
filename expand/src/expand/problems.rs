@@ -880,15 +880,6 @@ impl ExpandProblems {
         .with_help("write a binding name, `_`, a literal, or `(variant pattern ...)`")
     }
 
-    pub fn arm_body(span: Span) -> Diagnostic {
-        Diagnostic::error(
-            DiagnosticCode::ARM_BODY,
-            "an arm has one body form",
-            Label::new(span, "this arm does not fit the shape of `match`"),
-        )
-        .with_help("write each arm as `(pattern body)`")
-    }
-
     pub fn variant_as_value(name: &str, arity: usize, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::VARIANT_AS_VALUE,
