@@ -248,7 +248,9 @@ impl<'a> CheckRuns<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::{CheckRuns, CheckedProgram};
+    use super::{CheckRuns, CheckedProgram, ProgramChecker};
+    use crate::core::BindingId;
+    use crate::modules::ModuleSources;
     use crate::types::{LiteralDefaults, TypedSource};
 
     struct RunsFixture {
@@ -297,6 +299,17 @@ mod tests {
               (let-pair (left right) (twice 7) (println left right))
               (let-pair (left right) (twice 2.5) (println left right))
               (println (listen (port))))";
+
+        fn prelude_definitions(source: &TypedSource) -> Vec<BindingId> {
+            source
+                .program()
+                .modules
+                .iter()
+                .filter(|module| ModuleSources::is_embedded_prelude(&module.path))
+                .flat_map(|module| module.definitions())
+                .map(|(binding, _)| binding)
+                .collect()
+        }
 
         fn new(text: &str) -> Self {
             Self {
@@ -489,6 +502,15 @@ mod tests {
     fn the_open_run_finds_the_in_place_changes_that_the_next_run_reads() {
         let fixture = RunsFixture::new(RunsFixture::STRUCT_CHANGED_IN_PLACE);
         assert_eq!(fixture.learned_in_place_change_count(), 1);
+    }
+
+    #[test]
+    fn every_prelude_definition_passes_the_type_and_ownership_checks() {
+        let mut source = TypedSource::expand(RunsFixture::WRITTEN_TYPES);
+        for binding in RunsFixture::prelude_definitions(&source) {
+            source.check_also(binding);
+        }
+        assert!(ProgramChecker::check(source.program()).is_ok());
     }
 
     #[test]

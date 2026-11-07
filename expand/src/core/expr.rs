@@ -124,6 +124,13 @@ pub enum PatternPart {
 }
 
 impl PatternArguments {
+    pub fn patterns(&self) -> impl Iterator<Item = &Pattern> {
+        self.parts.iter().filter_map(|part| match part {
+            PatternPart::Positional(pattern) => Some(pattern),
+            PatternPart::Labeled(_, pattern) => pattern.as_ref(),
+        })
+    }
+
     pub fn positional(&self) -> impl Iterator<Item = &Pattern> {
         self.parts.iter().filter_map(|part| match part {
             PatternPart::Positional(pattern) => Some(pattern),
@@ -142,6 +149,32 @@ impl PatternArguments {
 impl Pattern {
     pub fn new(kind: PatternKind, span: Span) -> Self {
         Self { kind, span }
+    }
+
+    pub fn arm_outer(&self) -> Option<(BindingId, BindingId)> {
+        match &self.kind {
+            PatternKind::BareName {
+                binding,
+                outer: Some(outer),
+                ..
+            } => Some((*binding, *outer)),
+            _ => None,
+        }
+    }
+
+    pub fn nested(&self) -> impl Iterator<Item = &Pattern> {
+        self.arguments()
+            .into_iter()
+            .flat_map(PatternArguments::patterns)
+    }
+
+    fn arguments(&self) -> Option<&PatternArguments> {
+        match &self.kind {
+            PatternKind::Variant(_, arguments)
+            | PatternKind::Struct(_, arguments)
+            | PatternKind::ShortVariant { arguments, .. } => Some(arguments),
+            _ => None,
+        }
     }
 }
 
@@ -316,7 +349,131 @@ impl BodyItem {
 
 #[cfg(test)]
 mod tests {
-    use super::MapOperation;
+    use super::{
+        FieldLabel, FieldSpelling, MapOperation, Pattern, PatternArguments, PatternKind,
+        PatternPart,
+    };
+    use crate::core::{BindingArena, BindingId, BindingInfo, BindingKind};
+    use crate::source::{SourceId, Span};
+
+    struct PatternFixture {
+        bindings: BindingArena,
+    }
+
+    impl PatternFixture {
+        fn new() -> Self {
+            Self {
+                bindings: BindingArena::default(),
+            }
+        }
+
+        fn binding(&mut self) -> BindingId {
+            self.bindings
+                .add(BindingInfo::new("name".into(), BindingKind::Local, None))
+        }
+
+        fn pattern(kind: PatternKind) -> Pattern {
+            Pattern::new(kind, Span::new(SourceId::new(0), 0..0))
+        }
+
+        fn bare_name(&mut self, outer: Option<BindingId>) -> Pattern {
+            let binding = self.binding();
+            Self::pattern(PatternKind::BareName {
+                name: "name".into(),
+                binding,
+                candidates: Vec::new(),
+                outer,
+            })
+        }
+
+        fn held(&mut self) -> PatternArguments {
+            PatternArguments {
+                parts: vec![PatternPart::Positional(self.bare_name(None))],
+            }
+        }
+
+        fn label() -> FieldLabel {
+            FieldLabel {
+                name: "name".into(),
+                spelling: FieldSpelling::Keyword,
+                span: Span::new(SourceId::new(0), 0..0),
+            }
+        }
+    }
+
+    #[test]
+    fn a_bare_name_pairs_its_binding_with_its_outer_binding() {
+        let mut fixture = PatternFixture::new();
+        let outer = fixture.binding();
+        let pattern = fixture.bare_name(Some(outer));
+        let (_, found) = pattern.arm_outer().expect("the name has an outer binding");
+        assert_eq!(found, outer);
+    }
+
+    #[test]
+    fn a_bare_name_without_an_outer_binding_has_no_arm_outer() {
+        assert_eq!(PatternFixture::new().bare_name(None).arm_outer(), None);
+    }
+
+    #[test]
+    fn a_wildcard_has_no_arm_outer() {
+        let pattern = PatternFixture::pattern(PatternKind::Wildcard);
+        assert_eq!(pattern.arm_outer(), None);
+    }
+
+    #[test]
+    fn a_variant_pattern_holds_its_nested_patterns() {
+        let mut fixture = PatternFixture::new();
+        let variant = fixture.binding();
+        let held = fixture.held();
+        let pattern = PatternFixture::pattern(PatternKind::Variant(variant, held));
+        assert_eq!(pattern.nested().count(), 1);
+    }
+
+    #[test]
+    fn a_struct_pattern_holds_its_nested_patterns() {
+        let mut fixture = PatternFixture::new();
+        let shape = fixture.binding();
+        let held = fixture.held();
+        let pattern = PatternFixture::pattern(PatternKind::Struct(shape, held));
+        assert_eq!(pattern.nested().count(), 1);
+    }
+
+    #[test]
+    fn a_short_variant_pattern_holds_its_nested_patterns() {
+        let mut fixture = PatternFixture::new();
+        let arguments = fixture.held();
+        let pattern = PatternFixture::pattern(PatternKind::ShortVariant {
+            name: "name".into(),
+            candidates: Vec::new(),
+            arguments,
+        });
+        assert_eq!(pattern.nested().count(), 1);
+    }
+
+    #[test]
+    fn a_labeled_part_holds_its_pattern() {
+        let mut fixture = PatternFixture::new();
+        let shape = fixture.binding();
+        let inner = fixture.bare_name(None);
+        let label = PatternFixture::label();
+        let parts = vec![PatternPart::Labeled(label, Some(inner))];
+        let pattern =
+            PatternFixture::pattern(PatternKind::Struct(shape, PatternArguments { parts }));
+        assert_eq!(pattern.nested().count(), 1);
+    }
+
+    #[test]
+    fn a_label_without_a_pattern_holds_nothing() {
+        let parts = vec![PatternPart::Labeled(PatternFixture::label(), None)];
+        assert_eq!(PatternArguments { parts }.patterns().count(), 0);
+    }
+
+    #[test]
+    fn a_wildcard_holds_no_nested_patterns() {
+        let wildcard = PatternFixture::pattern(PatternKind::Wildcard);
+        assert_eq!(wildcard.nested().count(), 0);
+    }
 
     #[test]
     fn every_operation_name_round_trips() {

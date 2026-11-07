@@ -251,10 +251,12 @@ impl<'s> TypedLookup<'s> {
     fn look_up(mut self, term: &Form) -> Result<TypedPage, Diagnostics> {
         let page = self.expand_page(term)?;
         let signed = self.signed_binding(term, &page)?;
+        let mut program = self.session.finish()?;
+        program.checked_roots.extend(signed);
         Ok(TypedPage {
             page,
             signed,
-            program: self.session.finish()?,
+            program,
         })
     }
 

@@ -1157,7 +1157,14 @@ impl TypeChecker {
         }
         match self.schemes.get(&binding).cloned() {
             Some(scheme) => self.instantiate(&scheme, span),
-            None => self.unifier.fresh(),
+            None => {
+                assert!(
+                    !self.unreached_prelude.contains(&binding),
+                    "the definition graph missed a reference to the prelude's `{}`",
+                    self.bindings.get(binding).name()
+                );
+                self.unifier.fresh()
+            }
         }
     }
 
@@ -3659,6 +3666,10 @@ impl TypeChecker {
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
+
+    use rustc_hash::FxHashSet;
+
     use super::TypeChecker;
     use crate::core::{
         BindingArena, BindingInfo, BindingKind, Expr, ExprKind, FieldLabel, FieldSpelling, Leaf,
@@ -3721,6 +3732,17 @@ mod tests {
             self.checker.global_type(binding, span)
         }
 
+        fn type_of_an_unreached_prelude_definition(&mut self) -> Type {
+            let binding = self.checker.bindings.add(BindingInfo::new(
+                "missed".into(),
+                BindingKind::Global(ModuleId::new(0)),
+                None,
+            ));
+            self.checker.unreached_prelude = Rc::new(FxHashSet::from_iter([binding]));
+            let span = Span::new(SourceId::new(0), 0..0);
+            self.checker.global_type(binding, span)
+        }
+
         fn rejects_a_compile_time_only_global(&mut self) -> bool {
             let binding = self.checker.bindings.add(BindingInfo::new(
                 "hidden".into(),
@@ -3749,6 +3771,12 @@ mod tests {
     fn a_global_without_a_scheme_gets_a_fresh_type() {
         let mut fixture = PlaceTypeFixture::new();
         assert!(matches!(fixture.global_without_a_scheme(), Type::Var(_)));
+    }
+
+    #[test]
+    #[should_panic(expected = "the definition graph missed a reference")]
+    fn a_reference_to_an_unreached_prelude_definition_panics() {
+        PlaceTypeFixture::new().type_of_an_unreached_prelude_definition();
     }
 
     #[test]

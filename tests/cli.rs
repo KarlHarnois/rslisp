@@ -44,6 +44,11 @@ const UNINTERRUPTED_RUSTFMT: &str =
 const PASSTHROUGH_RUSTFMT: &str =
     "#!/bin/sh\nwhile IFS= read -r line; do printf '%s\\n' \"$line\"; done\n";
 const FAILING_RUSTFMT: &str = "#!/bin/sh\nprintf 'rustfmt failed in the sandbox\\n' >&2\nexit 1\n";
+const USES_PRELUDE_DIRECTORY: &str =
+    "(use prelude/extra good)\n\n(defn main ()\n  (println (good)))\n";
+const BROKEN_PRELUDE_DIRECTORY_MODULE: &str =
+    "(export good)\n\n(def good (rust \"1\" (fn () i64)))\n\n(def broken (fn () (if 1 2 3)))\n";
+const MAIN_IN_PRELUDE: &str = "(def print-it (rust \"println!(\\\"hi\\\")\" (fn () unit)))\n\n(def main (fn () (print-it)))\n";
 const BOUND_MODULE: &str = "(export person)\n\n(defstruct person :name string)\n";
 const MILLION_LINES: &str = "(defn main ()\n  (for-each (range 0 1000000) (fn (i) (println i))))\n";
 const THOUSAND_LINES: &str = "(defn main ()\n  (for-each (range 0 1000) (fn (i) (println i))))\n";
@@ -1501,6 +1506,24 @@ fn doc_types_prints_the_type_of_a_prelude_function() {
         sandbox.typed_page(&["sum"]),
         "(type sum (where ((n number)) (fn ((iterator n)) n)))\n(defn sum (values))\n\nAdds the items of an iterator from left to right.\n\nAn empty iterator gives 0. An overflow panics in a debug build, as `add`\ndoes. A vector passes and yields copies of its numbers. `(iter items)` is an\nerror, as its items are borrows, and so is a map.\n"
     );
+}
+
+#[test]
+fn check_reports_an_unused_broken_definition_in_a_user_prelude_directory() {
+    let sandbox = Sandbox::new("user_prelude_directory")
+        .with_file("prog.rslisp", USES_PRELUDE_DIRECTORY)
+        .with_file("prelude/extra.rslisp", BROKEN_PRELUDE_DIRECTORY_MODULE);
+    let check = sandbox.compiler(&["check", "prog.rslisp"]);
+    check.assert_exit_code(1);
+    assert!(check.stderr().contains("L0401"), "{}", check.stderr());
+}
+
+#[test]
+fn run_finds_main_in_an_entry_named_prelude() {
+    let sandbox = Sandbox::new("entry_named_prelude").with_file("prelude.rslisp", MAIN_IN_PRELUDE);
+    let run = sandbox.compiler(&["run", "prelude.rslisp"]);
+    run.assert_exit_code(0);
+    assert_eq!(run.stdout(), "hi\n");
 }
 
 #[test]

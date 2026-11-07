@@ -1,0 +1,6 @@
+(use code list)
+
+(enum color list green)
+
+(defn pick (c)
+  (match c (list (if 1 2 3)) (green 0)))

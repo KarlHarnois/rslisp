@@ -1,0 +1,10 @@
+(enum color red green)
+
+(defn pick (c x)
+  (match c (red x) (green x)))
+
+(defn red ()
+  (println (pick color/red 1))
+  (println (pick color/green "text")))
+
+(defn main () (red))
