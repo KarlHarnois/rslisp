@@ -51,3 +51,18 @@
 2. Take the newest run whose conclusion is not `cancelled`. If all five are cancelled, treat `main` as passing.
 3. Run `gh run view <id> --json jobs --jq '.jobs[] | {name, conclusion}'` on that run.
 4. If the job that failed on the pull request shows `failure` there, `main` fails the same check.
+
+## Callgrind profiles
+
+**The `front-end instruction counts` job uploads the merged pull request's profiles as the `callgrind-profiles` artifact.** GitHub keeps the artifact for seven days. The artifact holds no profiles of the base.
+
+**If you need a ready pull request's profiles, NEVER run callgrind locally.** Download the profiles:
+
+```sh
+run=$(gh run list --branch <branch> --workflow CI --event pull_request --limit 1 --json databaseId --jq '.[0].databaseId')
+gh run download "$run" --name callgrind-profiles --dir target/scratch/profiles
+```
+
+**Read a downloaded profile with `callgrind_annotate <profile>`.**
+
+**If `gh run download` finds no artifact, run `gh pr checks <number> --watch`, then rerun the block.** If the second run finds no artifact, stop and report the pull request to the project owner.
