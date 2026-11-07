@@ -19,6 +19,7 @@ use super::opaque_borrows::OpaqueBorrows;
 use super::open_literals::OpenLiterals;
 use super::plan::{EmitPlan, ItemInfo, ItemKind};
 use super::result_borrows::{FunctionFlows, LambdaFlows, ResultBorrows, StoredFlows};
+use super::reused_locals::ReusedLocals;
 use super::runtime::RuntimeModule;
 use super::signature_borrows::SignatureBorrows;
 use super::structural_impls::StructuralImpls;
@@ -1535,6 +1536,9 @@ impl<'a> ItemEmitter<'a> {
         mutable.extend(self.program.mutable_function_bindings.iter().copied());
         let local_closures = LocalClosures::of(self.program, value);
         mutable.extend(local_closures.mutably_borrowed_arguments());
+        let reused_locals = ReusedLocals::of(self.program, value);
+        let changed = reused_locals.changed_locals(|parameter| mutable.contains(parameter));
+        mutable.extend(changed);
         ExpressionEmitter::new(
             self.program,
             self.plan,
@@ -1544,6 +1548,7 @@ impl<'a> ItemEmitter<'a> {
         )
         .with_mutable_locals(mutable.into_set())
         .with_local_closures(local_closures)
+        .with_reused_locals(reused_locals)
         .with_open_literals(OpenLiterals::of(self.program, &self.generic_callees, value))
     }
 

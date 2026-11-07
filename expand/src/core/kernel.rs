@@ -4,7 +4,6 @@ use super::ClosureKind;
 pub enum KernelForm {
     Expression(ExpressionForm),
     Definition(DefinitionForm),
-    Let,
     Local,
     Macro,
 }
@@ -66,7 +65,7 @@ struct KernelFormRow {
 }
 
 impl KernelForm {
-    const ROWS: [KernelFormRow; 31] = [
+    const ROWS: [KernelFormRow; 30] = [
         KernelFormRow {
             form: KernelForm::Expression(ExpressionForm::Fn),
             name: "fn",
@@ -76,11 +75,6 @@ impl KernelForm {
             form: KernelForm::Definition(DefinitionForm::Def),
             name: "def",
             shape: "(def name value)",
-        },
-        KernelFormRow {
-            form: KernelForm::Let,
-            name: "let",
-            shape: "(let name value)",
         },
         KernelFormRow {
             form: KernelForm::Local,

@@ -10,7 +10,7 @@ struct Circle {
 
 fn main() {
     crate::rt::restore_default_sigpipe();
-    let boxed = Box::new(Circle { radius: 1.0 }) as Box<dyn Shape>;
+    let boxed: Box<dyn Shape> = Box::new(Circle { radius: 1.0 });
     let other: Box<dyn Shape> = Box::new(Circle { radius: 2.0 });
     println!("{}", boxed.area());
     println!("{}", other.area())

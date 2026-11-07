@@ -1,0 +1,20 @@
+(defn report (n)
+  (println (let (doubled (* n 2)) doubled))
+  (let (half (/ n 2)
+        quarter (/ half 2))
+    (println half)
+    (println quarter)))
+
+(defn shadow ()
+  (local x 1)
+  (let (x 2) (println x))
+  (println x))
+
+(defn countdown (n)
+  (let (step (- n 1))
+    (if (> step 0) (countdown step) step)))
+
+(defn main ()
+  (report 8)
+  (shadow)
+  (println (countdown 3)))

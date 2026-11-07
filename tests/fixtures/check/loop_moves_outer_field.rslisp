@@ -10,7 +10,7 @@
   (local g
     (->garage (str "karl")
               (->badge (str "Leaf") 12)))
-  (println (loop ((i 0))
+  (println (loop (i 0)
              (if (< i 2)
                (do
                  (local bigger (assoc (:badge g) :size 14))

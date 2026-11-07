@@ -1,0 +1,29 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/let_without_body.rslisp
+---
+error[L0335]: `let` has no body
+ --> expand/let_without_body.rslisp:2:3
+  |
+2 | /   (let (x 5
+3 | |         y 7)))
+  | |_____________^ its bindings reach no form
+  |
+  = help: write the forms that use the bindings after the list; to bind a name for the rest of the body, write `(local x 5)`
+
+error[L0335]: `let` has no body
+ --> expand/let_without_body.rslisp:5:21
+  |
+5 | (defn empty-list () (let ()))
+  |                     ^^^^^^^^ its bindings reach no form
+  |
+  = help: write the forms that use the bindings after the list; to bind a name for the rest of the body, write `(local name value)`
+
+error[L0334]: a name in the binding list of `let` has no value
+ --> expand/let_without_body.rslisp:7:36
+  |
+7 | (defn missing-value-first () (let (x)))
+  |                                    ^ this name has no value
+  |
+  = help: write its value after it, as `(let (x value) ...)`

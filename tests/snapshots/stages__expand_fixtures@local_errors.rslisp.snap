@@ -25,7 +25,7 @@ error[L0227]: `local` can only appear directly in a body
 6 |   (println (local name 1)))
   |            ^^^^^^^^^^^^^^ not allowed here
   |
-  = help: wrap the `local` and the code that uses it in `(do ...)`
+  = help: wrap the code that uses it in `(let (name 1) ...)`
 
 error[L0244]: a name cannot start with `:`
  --> expand/local_errors.rslisp:8:35

@@ -1,0 +1,4 @@
+(defn main ()
+  (local readings
+    (the (vec string) (vec)))
+  (println (len readings)))

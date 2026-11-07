@@ -1,0 +1,19 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/let_at_top_level.rslisp
+---
+error[L0207]: expected a definition at module level
+ --> check/let_at_top_level.rslisp:1:1
+  |
+1 | / (let (rate 3)
+2 | |   (defn scale (n) (* n rate)))
+  | |______________________________^ this is not a definition
+  |
+  = help: put expressions inside a function, such as `(def run (fn () ...))`
+
+error[L0201]: cannot find `rate` in this scope
+ --> check/let_at_top_level.rslisp:2:24
+  |
+2 |   (defn scale (n) (* n rate)))
+  |                        ^^^^ not found in this scope

@@ -15,7 +15,7 @@
   (if (:passed (->check :passed false))
     (do)
     (println "failed"))
-  (loop ((size 2))
+  (loop (size 2)
     (if (= (->spare :size size :label "bolt") s)
       (println size)
       (recur 3))))

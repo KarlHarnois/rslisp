@@ -34,6 +34,10 @@ impl MutableLocals {
         self.bindings.extend(bindings);
     }
 
+    pub fn contains(&self, binding: BindingId) -> bool {
+        self.bindings.contains(&binding)
+    }
+
     pub fn into_set(self) -> FxHashSet<BindingId> {
         self.bindings
     }

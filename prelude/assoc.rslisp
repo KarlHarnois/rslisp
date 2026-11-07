@@ -1,4 +1,5 @@
 (use prelude/macros defmacro whole-pairs?)
+(use prelude/bindings let)
 
 (use code bool-not concat drop empty? fail field-keyword
           first keyword-name keyword? len list list? nth
@@ -133,8 +134,8 @@
   A path of only index or map key steps moves the collection."
   (local root (read-root value))
   (if (bound-root? root value step)
-    (list (quote do)
-          (list (quote local) (quote base) root)
+    (list (quote let)
+          (list (quote base) root)
           (path-update (rebased-read value root) step item))
     (path-update value step item)))
 
@@ -187,8 +188,6 @@
       (symbol (quote base) (keyword-name key)))
     (if (empty? path)
       (list (quote assoc) base key item)
-      (list (quote do)
-            (list (quote local)
-                  field
-                  (path-update (list key base) path item))
+      (list (quote let)
+            (list field (path-update (list key base) path item))
             (list (quote assoc) base key field)))))

@@ -574,15 +574,22 @@ impl ExpandProblems {
         .with_help("use `local` to bind a name inside a body")
     }
 
-    pub fn binding_outside_body(binding_form: KernelForm, span: Span) -> Diagnostic {
-        let name = binding_form.name();
+    pub fn type_in_value_note(name: &str) -> String {
+        format!(
+            "`{name}` is a type; a type goes beside a name in a binding, as in \
+             `(local (year i64) 2025)`, or in a `type` signature"
+        )
+    }
+
+    pub fn local_outside_body(written_binding: &str, span: Span) -> Diagnostic {
+        let local = KernelForm::Local.name();
         Diagnostic::error(
             DiagnosticCode::LET_OUTSIDE_BODY,
-            format!("`{name}` can only appear directly in a body"),
+            format!("`{local}` can only appear directly in a body"),
             Label::new(span, "not allowed here"),
         )
         .with_help(format!(
-            "wrap the `{name}` and the code that uses it in `(do ...)`"
+            "wrap the code that uses it in `(let ({written_binding}) ...)`"
         ))
     }
 

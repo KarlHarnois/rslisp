@@ -107,11 +107,36 @@ impl Expander<'_> {
         if let Some(field_name) = Keyword::field_name(symbol.name()) {
             return Ok(Expr::new(self.lower_field_reader(field_name, span), span));
         }
-        let binding = self.resolve(symbol, Namespace::Value, span)?;
+        let binding = self
+            .resolve(symbol, Namespace::Value, span)
+            .map_err(|unbound| self.noted_if_type(unbound, symbol))?;
         if matches!(self.kind(binding), BindingKind::Macro(_)) {
             return self.lower_macro_value(binding, symbol, form);
         }
         Ok(Expr::new(self.lower_reference(binding, span)?, span))
+    }
+
+    fn noted_if_type(&mut self, unbound: Diagnostic, symbol: &Symbol) -> Diagnostic {
+        let names_type = self.try_resolve(symbol, Namespace::Type).is_some();
+        if !names_type || self.type_note_shown {
+            return unbound;
+        }
+        self.type_note_shown = true;
+        unbound.with_note(ExpandProblems::type_in_value_note(symbol.name()))
+    }
+
+    pub(super) fn with_fresh_type_note<T>(&mut self, lower: impl FnOnce(&mut Self) -> T) -> T {
+        let outer = std::mem::take(&mut self.type_note_shown);
+        let lowered = lower(self);
+        self.type_note_shown = outer;
+        lowered
+    }
+
+    fn written_binding(form: &Form) -> String {
+        match form.as_list() {
+            Some([_, binder, value]) => format!("{binder} {value}"),
+            _ => "name value".to_string(),
+        }
     }
 
     fn lower_macro_value(
@@ -316,9 +341,10 @@ impl Expander<'_> {
             KernelForm::Expression(expression) => {
                 self.lower_expression_form(expression, &Shape::new(kernel, form))
             }
-            KernelForm::Let | KernelForm::Local => {
-                Err(ExpandProblems::binding_outside_body(kernel, span))
-            }
+            KernelForm::Local => Err(ExpandProblems::local_outside_body(
+                &Self::written_binding(form),
+                span,
+            )),
             KernelForm::Macro => Err(ExpandProblems::macro_outside_def(span)),
             KernelForm::Definition(_) => Err(self.misplaced_definition(kernel, span)),
         };
@@ -459,7 +485,10 @@ impl Expander<'_> {
     ) -> Result<Vec<BodyItem>, Diagnostic> {
         let mut items = Vec::new();
         while let Some(form) = rest_of_body.next() {
-            items.push(self.lower_body_item(form, rest_of_body, context)?);
+            let item = self.with_fresh_type_note(|expander| {
+                expander.lower_body_item(form, rest_of_body, context)
+            });
+            items.push(item?);
         }
         Ok(items)
     }
@@ -488,7 +517,7 @@ impl Expander<'_> {
         context: &mut DefinitionContext,
     ) -> Result<BodyItem, Diagnostic> {
         let item = match self.kernel_head(form) {
-            Some(kernel @ (KernelForm::Let | KernelForm::Local)) => {
+            Some(kernel @ KernelForm::Local) => {
                 self.lower_let(&Shape::new(kernel, form), rest_of_body, context)
             }
             Some(Self::DEF_FORM) => self.lower_misplaced_def(form, rest_of_body, context),

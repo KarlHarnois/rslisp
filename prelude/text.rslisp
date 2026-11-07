@@ -2,6 +2,7 @@
                     map-list template)
 
 (use prelude/pair pair)
+(use prelude/bindings let)
 
 (use code bool-not concat drop empty? escape-char
           escape-format escape-string fail first keyword?
@@ -528,8 +529,7 @@
     (if (empty? parts)
       (display-write (list) out)
       (if (empty? (rest parts))
-        (do
-          (local part (first parts))
+        (let (part (first parts))
           (if (display-match? part)
             (display-match part out)
             (if (display-if? part)

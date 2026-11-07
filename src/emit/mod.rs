@@ -19,6 +19,7 @@ mod operator;
 mod plan;
 mod problems;
 mod result_borrows;
+mod reused_locals;
 mod runtime;
 mod rust_fallback;
 mod signature_borrows;

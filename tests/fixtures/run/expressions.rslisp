@@ -14,7 +14,8 @@
   (do (local y (+ x 1)) (* y 2)))
 
 (defn sum-to (limit)
-  (loop ((i 0) (total 0))
+  (loop (i 0
+         total 0)
     (if (> i limit)
       total
       (recur (+ i 1) (+ total i)))))

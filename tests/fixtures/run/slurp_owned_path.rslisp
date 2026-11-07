@@ -1,6 +1,6 @@
 (defn main ()
   (local path (str "input_output/data.txt"))
-  (let-try ((text (slurp path)))
+  (let-try (text (slurp path))
     (do
       (println path ": "
                (count (lines (as-str text)))

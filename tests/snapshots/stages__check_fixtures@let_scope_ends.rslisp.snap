@@ -1,0 +1,10 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/let_scope_ends.rslisp
+---
+error[L0201]: cannot find `total` in this scope
+ --> check/let_scope_ends.rslisp:3:12
+  |
+3 |   (println total))
+  |            ^^^^^ not found in this scope

@@ -54,7 +54,6 @@ These forms are the compiler's complete vocabulary. Every other form is a macro 
 | `fn` | `(fn (parameter...) body...)` | `fn` item, closure, or block | params: binders. body: expressions. |
 | `def` | `(def name value)` | `fn`, `const`, `static`, or nothing | name: binder. value: expression. |
 | `local` | `(local name value)` | `let` | name: binder. value: expression. |
-| `let` | `(let name value)` | `let` | name: binder. value: expression. |
 | `do` | `(do form...)` | block | forms: expressions. At module level: definitions. |
 | `if` | `(if test then else)` | `if`/`else` | all: expressions. |
 | `type` | `(type name type)` | signature | name: reference to a `def`, or to a macro whose value position expands to a function the macro introduced in this module. type: type. |
@@ -87,7 +86,7 @@ In type positions, the kernel provides `fn`, `fn-mut`, `fn-once`, `ref`, `mut`, 
 
 In expression positions, the kernel provides `ref`, `mut` and `deref`, and the constants `true` and `false`. The constants are kernel constants, not prelude definitions. Macro code and program code then see the same booleans, so `if`, `and` and `or` work in both.
 
-`local` is a kernel form because a macro sees only its own form and cannot bind a name for the forms that follow it in the enclosing body ([RFC 0058](../rfcs/0058-scoped-let.md)). `let` means the same as `local`.
+`local` is a kernel form because a macro sees only its own form and cannot bind a name for the forms that follow it in the enclosing body ([RFC 0058](../rfcs/0058-scoped-let.md)).
 
 `ref`, `mut` and `deref` are kernel forms because a prelude function cannot mark its result as written. The compiler must see the written form to know that the value came from a written borrow or dereference.
 
@@ -110,7 +109,19 @@ Values and types are therefore order-independent, like Rust items. An `impl` res
 
 A body is the sequence of forms in `fn`, `macro` and `do`. A `local` binds its name for the rest of the enclosing body. The value of a body is the value of its last form, or unit if the body is empty or ends with a `local`. A `(do)` before the last form has no effect and emits nothing.
 
-A function that calls itself in tail position compiles to a Rust loop. The call reassigns the parameters that change, then starts the next iteration. A parameter to which the call passes a new value, such as a struct it builds or a local the loop body binds, takes the own mode unless it is a small Copy type, because a borrow of that value would not outlive the iteration: `(count-up limit (->counter :label (str "c") :count (+ (:count state) 1)))` emits `state = Counter { ... };` with `mut state: Counter`. A parameter to which the call passes itself, another parameter, or a field of one keeps the mode its uses need. A call to itself anywhere else stays recursive. A `fn` that the program calls where it is written emits as a block that binds each parameter with `let`.
+`(let (name value ...) body ...)` binds names for its own body, and the bindings end at its closing parenthesis ([RFC 0058](../rfcs/0058-scoped-let.md)). The list alternates names and values. Each value sees the names bound before it, so `(let (x 5 y (+ x 1)) y)` is `6`, and a later name may shadow an earlier one. A binder is what `local` takes: a name, or a name and its type, as in `(let ((year i64) (deref y) total 0) ...)`. The body follows the rules of `do`, so its last form is its value and in tail position. An empty list is allowed, so `(let () body ...)` is `(do body ...)`. `let` is a prelude macro that expands every pair to a `local` inside a `do`, so at the end of a function body it emits flat Rust `let` statements, and in argument position it emits a Rust block.
+
+A `let` that cannot bind is an error. A name without a value is `L0334`, and its help prints the list with the placeholder `value` after that name. A list in which every item is a two-item list, as in `((count usize))`, also reads as the old shape, so its help shows both fixes. A `let` with no body is `L0335`, because its bindings reach no form. A binding list that is not a list, as in `(let x 5)`, is `L0336`, with the help `(local x 5)` or `(def x 5)` when only a name and a value follow. A list with an even number of items in which a binder is a two-item list whose second item is a literal, as `(step 0)` in `((step 0) (total 1))`, is `L0336` too, and its help prints the list with each name and its value straight in it. A list reports `L0334` before `L0335`.
+
+A `local` outside a body is `L0227`, and its help wraps the code in a `let` that shows the binding as written, as `(let (x 5) ...)`. A name in a value that is unbound and names a type, as `i64` in `(let (year i64) 2025)`, keeps `L0201` and its similar-name suggestion, and adds the note that a type goes beside a name in a binding, as in `(local (year i64) 2025)`, or in a `type` signature. The note appears on the first such name of each form of a body and of each module-level value, because only the compiler knows which names are types. A name that names a macro keeps `L0304`, and a value that resolves stays valid, so `(let (make pair) ...)` binds `make` to the function `pair`.
+
+The prelude, the docs and the examples follow one style rule: bind the steps of a function body with `local`, and use `let` where only one expression fits or where a binding should end before the body does.
+
+1. **The steps of a function body use `local`.** They add no nesting and read as the Rust they emit.
+2. **A position that takes one expression uses `let`:** an `if` branch, a `match` arm or an argument.
+3. **A binding that only the next few forms use, or whose name would mislead later in the body, uses `let`.**
+
+A function that calls itself in tail position compiles to a Rust loop. The call reassigns the parameters that change, then starts the next iteration. A parameter to which the call passes a new value, such as a struct it builds or a local the loop body binds, takes the own mode unless it is a small Copy type, because a borrow of that value would not outlive the iteration: `(count-up limit (->counter :label (str "c") :count (+ (:count state) 1)))` emits `state = Counter { ... };` with `mut state: Counter`. A parameter to which the call passes itself, another parameter, or a field of one keeps the mode its uses need. A call to itself anywhere else stays recursive. A `fn` that the program calls where it is written emits as a block that binds each parameter with `let`. A parameter whose argument is a local of the same name, bound earlier in the same body, reuses that local's binding when nothing reads the local from the call on, the `fn` body and the call's other arguments included ([RFC 0058](../rfcs/0058-scoped-let.md)). A borrow or a closure of the local that an earlier binding holds counts as a read while that binding is read from the call on. So `(local n 0)` followed by `((fn (n) (if (< n 3) (recur (+ n 1)) n)) n)` emits `let mut n: i64 = 0;` and the loop, with no second binding.
 
 ## Types
 
@@ -338,7 +349,7 @@ A macro also answers for its name in value position. When a program uses a macro
 
 **A definer that fails reports one error.** `defn`, `defmacro`, `defrule` and `defstruct` declare the names they define, with `declare-definition`, `declare-macro-definition` and `declare-type-definition` from the `code` module, before their own checks. When the definer's top-level call fails, the expander binds each declared name, so `(area 1)` after a failed `(defn area "doc" (w) w)` adds no `L0201`, and a use of the type or the constructor after a failed `defstruct point` adds none either. A definer that fails inside a body binds its declared value name as a local for the rest of the body, so `(defn outer () (defn inner "doc" (x) x) (inner 1))` reports the `L0328` alone, and a call of a failed macro there skips its arguments too. A later definition of a failed name replaces it with no `L0203`, so a fixed copy below a broken one reports only the broken one. Macro code that calls a failed name reports `L0308`, as it does for any definition with errors. A user definer declares its names the same way, so its failures report once. A call of a failed function still checks its arguments, so `(area (missing-width) 2)` reports the `L0201` for `missing-width`, while a call of a failed macro skips its arguments, which need not be code the program could run. A misspelled name, such as `aera`, still reports `L0201`, with the failed name as its suggestion. A name that no declaration reaches stays unbound: `(defn area)` does not match the shape of `defn`, so the call fails before `defn` declares `area`, and `(area 1)` reports `L0201`.
 
-The prelude also provides `defn` for a function definition, `the` for a typed value, `->` and `->>` for threading a value through calls, `let-try` and `try->` for propagating errors, and `assoc` and `assoc-in` for changing a value. `defn` with a plain parameter list expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
+The prelude also provides `defn` for a function definition, `the` for a typed value, which binds the value under its written type, so `(local readings (the (vec string) (vec)))` emits `let readings: Vec<String> = Vec::new();`, `->` and `->>` for threading a value through calls, `let-try` and `try->` for propagating errors, and `assoc` and `assoc-in` for changing a value. A macro template that binds names for its own forms uses `let`, because a template is one expression, as `let-try`, `the` and the comparison chains in `prelude/number.rslisp` do. Only the prelude `let` expands to `local`, and `defmacro` builds `local` for the steps of a macro's body, which are the steps of a function body. `prelude/macros` and `prelude/bindings`, which `let` is built from, keep `(do (local ...) ...)`, because `let` does not exist where they are expanded. `defn` with a plain parameter list expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
 
 ### Keyword parameters
 
@@ -384,7 +395,7 @@ Write a macro with `defrule` when its expansion follows from the shape of its ca
   (((index count) body ...) (for-each (range 0 count) (fn (index) body ...))))
 
 (defrule case
-  ((value clause ...) (do (local subject value) (case-clauses subject clause ...))))
+  ((value clause ...) (let (subject value) (case-clauses subject clause ...))))
 ```
 
 One implementation per name keeps the compiler small. Compile-time twins of the prelude's Rust templates would disagree with Rust on integer width, overflow, division by zero and floats. Most macros need no computation when written with `defrule`.
@@ -461,11 +472,11 @@ A module's `export` lists expand after its `def` values, because exporting a tra
 
 `(header-shape (form name ...))` states the header of a form's calls: the leading forms that belong with the form's name, before its body. `(header-shape (defn name parameters))` says that the header of a `defn` call is its name and its parameter list. `doc` shows the header of an undocumented definition (see Docstrings), and `rslisp fmt` reads the same shapes to keep a header on a call's first line (see Source formatting).
 
-A `:docstring` after the shape states that the form takes a docstring as the first form after its header, when another form follows it: `(header-shape (defn name parameters) :docstring)`. A shape adds itself, such as `(defn name parameters)`, to its module's notes under `header-shapes`, and a `:docstring` adds the form's name under `docstring-forms`, so macro code reads both with `module-notes`. A `:one-per-line` after the shape states that the formatter does not fill runs of atoms in a broken call, so each later form takes its own line apart from keyword pairs, as the prelude states for `enum`. An `:arms` after the shape states that each list after the header, other than a keyword's value, is an arm, which stays on one line when it is at most as long as the fill width, whatever the number of lists inside it (see Source formatting): `(header-shape (match value) :arms)`, `(header-shape (cond) :arms)` and `(header-shape (defrule name) :docstring :arms)`. A user macro with arms opts in the same way. The formatter does not expand, so it reads the `header-shape` forms themselves.
+A `:docstring` after the shape states that the form takes a docstring as the first form after its header, when another form follows it: `(header-shape (defn name parameters) :docstring)`. A shape adds itself, such as `(defn name parameters)`, to its module's notes under `header-shapes`, and a `:docstring` adds the form's name under `docstring-forms`, so macro code reads both with `module-notes`. A `:one-per-line` after the shape states that the formatter does not fill runs of atoms in a broken call, so each later form takes its own line apart from keyword pairs, as the prelude states for `enum`. An `:arms` after the shape states that each list after the header, other than a keyword's value, is an arm, which stays on one line when it is at most as long as the fill width, whatever the number of lists inside it (see Source formatting): `(header-shape (match value) :arms)`, `(header-shape (cond) :arms)` and `(header-shape (defrule name) :docstring :arms)`. A user macro with arms opts in the same way. A `:bindings` after the shape states that the header's last form is a binding list, which alternates names and values and lays out one name and its value per line (see Source formatting), as `let`, `let-try` and `loop` do: `(header-shape (let bindings) :bindings)`. The formatter does not expand, so it reads the `header-shape` forms themselves.
 
-The prelude states the shapes of its four definers, of `def` and of `document`, each with `:docstring`, of its macros whose calls have a header and a body, such as `(header-shape (loop bindings))` and `(header-shape (let-pair names value))`, and of the kernel forms whose header stays on the first line when the call breaks, such as `(header-shape (match value) :arms)` and `(header-shape (impl trait type))`. `prelude/prelude.rslisp` states the kernel's shapes, beside its re-export of the kernel. `prelude/test` states `(header-shape (deftest name) :docstring)`. The kernel's shapes include `(header-shape (if test))` and `(header-shape (do))`, so an `if` or a `do` that breaks indents its branches or forms 2 columns, and `prelude/macros.rslisp` states `(header-shape (fail message))` for the `code` module's `fail`.
+The prelude states the shapes of its four definers, of `def` and of `document`, each with `:docstring`, of its macros whose calls have a header and a body, such as `(header-shape (loop bindings) :bindings)` and `(header-shape (let-pair names value))`, and of the kernel forms whose header stays on the first line when the call breaks, such as `(header-shape (match value) :arms)` and `(header-shape (impl trait type))`. `prelude/prelude.rslisp` states the kernel's shapes, beside its re-export of the kernel. `prelude/test` states `(header-shape (deftest name) :docstring)`. The kernel's shapes include `(header-shape (if test))` and `(header-shape (do))`, so an `if` or a `do` that breaks indents its branches or forms 2 columns, and `prelude/macros.rslisp` states `(header-shape (fail message))` for the `code` module's `fail`.
 
-A user macro states its own shape with `(use prelude/macros header-shape)`, below the macro's definition. A shape that is not a list that starts with a name is `L0329`. The name must refer to a binding where the shape is written, so a misspelled name is `L0201` with the closest name, and so is a shape above the definition of the macro it names, as a call above that definition is. Any form after the shape other than `:docstring`, `:one-per-line` and `:arms`, each at most once, is `L0331`.
+A user macro states its own shape with `(use prelude/macros header-shape)`, below the macro's definition. A shape that is not a list that starts with a name is `L0329`. The name must refer to a binding where the shape is written, so a misspelled name is `L0201` with the closest name, and so is a shape above the definition of the macro it names, as a call above that definition is. Any form after the shape other than `:docstring`, `:one-per-line`, `:arms` and `:bindings`, each at most once, is `L0331`.
 
 ### The `code` module
 
@@ -649,7 +660,7 @@ An expression never changes the buffer. After a module file changes on disk, an 
 
 **The prompt differs from a file in three ways:**
 
-1. An input that is not a definition runs once, as the body of a generated `main`.
+1. An input that is not a definition runs once, as the body of a generated `main`. A `(local x 5)` there binds for that input only and prints nothing, and a value that outlives one input is a `def`.
 2. A definition replaces the earlier definition of the same name, where a file reports `L0203`, and sets aside each earlier input that no longer checks.
 3. Each definition is checked when it is entered, so it comes after the definitions it uses. Mutually recursive functions go in one input, as `(do (defn even? ...) (defn odd? ...))`.
 
@@ -892,7 +903,9 @@ The emitted Rust is formatted by `rustfmt` when `rslisp emit`, `rslisp build` or
 
 The formatter owns every line break. A list stays on one line when it fits in the width and either is at most 40 columns long, or is at most 60 columns long and holds at most two lists at any depth inside it, or is an arm of at most 60 columns, the fill width, whatever the number of lists inside it, except that a form whose header shape carries `:docstring`, a definer such as `defn`, stays on one line only when its body is one form. A docstring counts as a body form, so a documented definition always puts its docstring on its own line. An arm is a list after the header, other than a keyword's value, of a form whose shape carries `:arms`, and each arm decides alone, so one long arm does not break a short one. A list that breaks lays out by the head's header shape (see Header shapes). A shaped list keeps its header on its first line and indents each later form 2 columns. A `use` keeps its module path and first name on its first line, and an `export` keeps its first name there; both then fill each line with names up to the 60-column fill width, and each later line starts under the first name. Any other call aligns its arguments under the first argument, or puts every argument on its own line 2 columns in when that takes fewer lines or the aligned layout does not fit, except that an atom too long to fit, with the parentheses that close after it, even 2 columns past its list's `(` counts as fitting when the formatter compares the layouts, and a list whose head is not a symbol lines up its forms under its head. A keyword and the form after it share a line. In a list that breaks, a run of two or more atoms in a row fills lines up to the fill width in the same way, unless the head's shape carries `:one-per-line`. A list, a keyword pair, a docstring and a multi-line string each end a run. The formatter sorts the names of each `use`, after its module path, and of each `export` in byte order of their text, and keeps the forms themselves in their written order. A `use` or `export` whose names carry a comment, or a blank line between them, keeps its written order. [RFC 0053](../rfcs/0053-source-formatter.md#recommendation) states the rules with examples, and [RFC 0057](../rfcs/0057-one-line-arms.md) amends them for arms.
 
-The formatter reads shapes without expanding, so a file that reads but does not compile still lays out. It reads the `header-shape` forms at the top level of the prelude, of the file, and of every module that the file reaches through `use`, following `use` transitively through each module it reads, and finds each module's file against the file's directory and then each parent directory. `header-shape` is the one prelude form that the compiler names: the formatter reads files without expanding them, so it recognizes a shape statement by the name of the form that states it ([RFC 0053](../rfcs/0053-source-formatter.md#decision), decided on 2026-11-04). Its markers `:docstring`, `:one-per-line` and `:arms` are the only keywords the formatter names, for the same reason. A shape names its form by name, so a local that shadows a shaped name lays out as that form. A form whose shape it cannot find lays out like a call.
+A binding list, the last header form of a form whose shape carries `:bindings`, lays out by pairs of a name and its value. A binding list with two or more pairs always breaks, with one name and its value per line, each name under the first. A single pair stays on the form's first line. A pair never splits across lines: a value that breaks starts on its name's line, and its later lines lay out by its own shape from the value's first column. A list with an odd number of items lays out by pairs, with its last name alone. A comment on its own line takes the indentation of the next name and never counts as a pair, a trailing comment after a name moves to the end of that pair's last line, and a comment right after `(` keeps pairs together. A binding list that is not a list, as in `(let x 5)`, lays out as a call ([RFC 0058](../rfcs/0058-scoped-let.md#decision)).
+
+The formatter reads shapes without expanding, so a file that reads but does not compile still lays out. It reads the `header-shape` forms at the top level of the prelude, of the file, and of every module that the file reaches through `use`, following `use` transitively through each module it reads, and finds each module's file against the file's directory and then each parent directory. `header-shape` is the one prelude form that the compiler names: the formatter reads files without expanding them, so it recognizes a shape statement by the name of the form that states it ([RFC 0053](../rfcs/0053-source-formatter.md#decision), decided on 2026-11-04). Its markers `:docstring`, `:one-per-line`, `:arms` and `:bindings` are the only keywords the formatter names, for the same reason. A shape names its form by name, so a local that shadows a shaped name lays out as that form. A form whose shape it cannot find lays out like a call.
 
 A comment on its own line takes the indentation of the form after it, and a trailing comment stays one space after its form, with any `)` that would follow it moved before it. A `)` takes a line of its own only after a comment on its own line that ends a list, and a comment right after `(` puts every form of its list on its own line. One blank line separates top-level forms, except that consecutive one-line `use` forms stay together, and so do consecutive one-line `export` forms. Inside a list, a blank line between two forms stays, at most one in a row. A string and a number keep their text, except that a docstring's later lines move by as many columns as its first line moves.
 
@@ -1014,16 +1027,46 @@ A call to the enclosing function in tail position already compiles to a Rust `lo
 - A written `(recur argument...)` compiles to the same loop.
 - `recur` is an error outside tail position.
 - The number of arguments to `recur` must equal the number of parameters of the target.
-- `recur` targets the nearest `fn`, so the prelude defines Clojure's `loop` as a `defrule`.
+- `recur` targets the nearest `fn`, so the prelude defines Clojure's `loop` as a macro.
 - Mutual recursion stays recursion.
 - `recur` is a kernel form, because the prelude cannot make a function jump back to its start.
 
 Rust has no guaranteed tail calls. Without this milestone, recursion is the only way to loop, and a deep loop overflows the stack.
 
-`loop` binds names to values, then repeats its body with `recur`. It emits as a Rust block and an inline `loop`:
+`loop` binds names to values, then repeats its body with `recur`. It takes the binding list of `let`, so each value sees the names bound before it, and `recur` replaces every value at once. A name given twice in one `loop` list is `L0203`, because `recur` passes one value per name. This is the one rule in which a `loop` list differs from a `let` list. `loop` reports `L0334`, `L0335` and `L0336` for its own form. When no value names an earlier binder of its list, `loop` calls a `fn` of its names where it is written, with its values as the arguments. Otherwise it binds its list with `let` and calls that `fn` with the names, so each parameter reuses the binding of its name (see Bodies), and the loop emits each value into the loop's own binding.:
 
 ```lisp
-(loop ((index 0))
+(defn countdown-sum (limit)
+  (loop (top (* limit 2)
+         step top
+         total 0)
+    (if (> step 0)
+      (recur top (- step 1) (+ total step))
+      total)))
+```
+
+```rust
+fn countdown_sum(limit: i64) -> i64 {
+    let top: i64 = limit * 2;
+    let mut step: i64 = top;
+    let mut total: i64 = 0;
+    loop {
+        if step > 0 {
+            (step, total) = (step - 1, total + step);
+            continue;
+        } else {
+            break total;
+        }
+    }
+}
+```
+
+The test reads names only, so a value that names an earlier binder by a name bound elsewhere also takes the `let`. A sequential `loop` whose body holds `try` stays a closure called where it is written, because a `?` in it leaves the closure, and a closure parameter cannot reuse a local, so it keeps a copy of each value ([RFC 0058](../rfcs/0058-scoped-let.md), amended on 2026-11-07).
+
+A `loop` in argument position emits as a Rust block and an inline `loop`:
+
+```lisp
+(loop (index 0)
   (if (< index 10) (recur (+ index 1)) index))
 ```
 
@@ -1129,11 +1172,11 @@ Conversion belongs to the compiler: only type inference knows the enclosing func
 Programs read functionally through two prelude forms over `try`, as `loop` is over `recur`:
 
 ```lisp
-(let-try ((tokens (tokenize source))) (evaluate tokens))
+(let-try (tokens (tokenize source)) (evaluate tokens))
 (try-> source tokenize evaluate)
 ```
 
-`let-try` expands each binding to `(local name (try expression))` and then the body. `try->` threads a value through calls and applies `try` to every step except the last: `(try-> x f g)` is `(g (try (f x)))`, and `(try-> x f)` is `(f x)`. `ok-or` turns an `option` and an error value into a `result`, and `map-err` converts an error.
+`let-try` takes the binding list of `let` and wraps each value in `try`, so `(let-try (a (parse left) b (parse right)) (ok (+ a b)))` expands to `(let (a (try (parse left)) b (try (parse right))) (ok (+ a b)))` and emits a `let` statement with `?` for each binding. It reports `L0334`, `L0335` and `L0336` for its own form, and their helps name `let-try`. `try->` threads a value through calls and applies `try` to every step except the last: `(try-> x f g)` is `(g (try (f x)))`, and `(try-> x f)` is `(f x)`. `ok-or` turns an `option` and an error value into a `result`, and `map-err` converts an error.
 
 `try` is a kernel form, because a prelude function cannot leave its caller early.
 

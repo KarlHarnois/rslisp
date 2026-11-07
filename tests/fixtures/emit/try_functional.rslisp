@@ -11,7 +11,7 @@
     (result i64 (parse-error i64))))
 
 (defn add-text-let (text)
-  (let-try ((value (parse text)))
+  (let-try (value (parse text))
     (ok (+ value 1))))
 
 (defn add-text-threaded (text)
@@ -19,7 +19,8 @@
          (fn (value) (ok (+ value 1)))))
 
 (defn add-two-texts (left right)
-  (let-try ((a (parse left)) (b (parse right)))
+  (let-try (a (parse left)
+            b (parse right))
     (ok (+ a b))))
 
 (defn main ()

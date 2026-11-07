@@ -1,3 +1,5 @@
+(use prelude/bindings binding-list let)
+
 (use prelude/macros defmacro defrule docstring-before-body?
                     docstring-before-parameters document
                     header-shape map-list note-docstring
@@ -632,8 +634,7 @@
     (local call
       (prepend positional
                (positional-arguments (bound-pairs pairs) signature)))
-    (prepend (quote do)
-             (concat (temporary-bindings pairs) (list call)))))
+    (list (quote let) (temporary-bindings pairs) call)))
 
 (def bound-pairs
   (fn (pairs)
@@ -657,21 +658,90 @@
     (if (empty? pairs)
       (list)
       (if (list? (nth pairs 1))
-        (prepend (list (quote local)
-                       (temporary (first pairs))
-                       (nth pairs 1))
-                 (temporary-bindings (drop 2 pairs)))
+        (prepend (temporary (first pairs))
+                 (prepend (nth pairs 1)
+                          (temporary-bindings (drop 2 pairs))))
         (temporary-bindings (drop 2 pairs))))))
 
-(defrule loop
-  ((((name value) ...) body ...)
-   ((fn (name ...) body ...) value ...)))
+(def loop
+  (macro (form)
+    (local bindings (binding-list form))
+    (if (sequential-values? bindings)
+      (template (let (unquote bindings)
+                  (unquote (loop-call form bindings
+                                      (map-list binder-name
+                                                (binders bindings))))))
+      (loop-call form bindings (binding-values bindings)))))
 
-(header-shape (loop bindings))
+(def loop-call
+  (fn (form bindings arguments)
+    (template ((fn (unquote (binders bindings))
+                 (splice (drop 2 form)))
+               (splice arguments)))))
+
+(header-shape (loop bindings) :bindings)
+
+(def sequential-values?
+  (fn (bindings)
+    (names-earlier-binder? (list) bindings)))
+
+(def names-earlier-binder?
+  (fn (earlier bindings)
+    (if (empty? bindings)
+      false
+      (if (mentions-any? (nth bindings 1) earlier)
+        true
+        (recur (prepend (binder-name (first bindings)) earlier)
+               (drop 2 bindings))))))
+
+(def mentions-any?
+  (fn (form names)
+    (if (list? form)
+      (any-mentions? form names)
+      (if (symbol? form) (named-in? form names) false))))
+
+(def any-mentions?
+  (fn (forms names)
+    (if (empty? forms)
+      false
+      (if (mentions-any? (first forms) names)
+        true
+        (recur (rest forms) names)))))
+
+(def named-in?
+  (fn (symbol names)
+    (if (empty? names)
+      false
+      (if (value-eq (symbol-name symbol)
+                    (symbol-name (first names)))
+        true
+        (recur symbol (rest names))))))
+
+(def binding-values
+  (fn (bindings)
+    (binding-values-onto (list) bindings)))
+
+(def binding-values-onto
+  (fn (found bindings)
+    (if (empty? bindings)
+      found
+      (recur (concat found (list (nth bindings 1)))
+             (drop 2 bindings)))))
+
+(def binders
+  (fn (bindings)
+    (binders-onto (list) bindings)))
+
+(def binders-onto
+  (fn (found bindings)
+    (if (empty? bindings)
+      found
+      (recur (concat found (list (first bindings)))
+             (drop 2 bindings)))))
 
 (defrule the
   ((type-expression value)
-   (do (local (result type-expression) value) result)))
+   (let ((result type-expression) value) result)))
 
 (defrule comment ((form ...) (do)))
 
@@ -689,11 +759,25 @@
    (->> (head arguments ... value) more ...))
   ((value head more ...) (->> (head value) more ...)))
 
-(defrule let-try
-  ((((name value) ...) body ...)
-   (do (local name (try value)) ... body ...)))
+(def let-try
+  (macro (form)
+    (template (let (unquote (tried-bindings (binding-list form)))
+                (splice (drop 2 form))))))
 
-(header-shape (let-try bindings))
+(header-shape (let-try bindings) :bindings)
+
+(def tried-bindings
+  (fn (bindings)
+    (tried-onto (list) bindings)))
+
+(def tried-onto
+  (fn (tried bindings)
+    (if (empty? bindings)
+      tried
+      (recur (concat tried
+                     (list (first bindings)
+                           (list (quote try) (nth bindings 1))))
+             (drop 2 bindings)))))
 
 (defrule try->
   ((value) value)
@@ -709,13 +793,19 @@
 (document (the type value)
   "Gives a value a written type.
 
-  It binds the value with an annotated `local` and returns it, so a literal is
+  It binds the value with an annotated `let` and returns it, so a literal is
   checked against the type and a value that is not `copy` moves. A value of
   another type is an error, except that a borrowed `string`, `(ref name)`,
   passes as a `(ref str)`.")
 
-(document (loop ((name value) ...) body ...)
+(document (loop (name value
+                 ...)
+            body ...)
   "Binds names to values and runs a body that `recur` repeats.
+
+  The list is the binding list of `let`, so each value sees the names bound
+  before it. A name given twice is an error, because `recur` passes one value
+  per name.
 
   `(recur new-value ...)` in tail position runs the body again with each name
   bound to its new value. The call returns the body's last value.
@@ -723,8 +813,12 @@
   The body is a function, so `try`, `let-try` and `try->` in it leave the loop
   with the failure, not the enclosing function.")
 
-(document (let-try ((name value) ...) body ...)
+(document (let-try (name value
+                    ...)
+            body ...)
   "Binds each name to the value inside a `result` or an `option`, in order.
+
+  The list is the binding list of `let`.
 
   Each value goes through `try`, so the first `err` or `none` returns from the
   enclosing function, or leaves the enclosing `loop`. That function must

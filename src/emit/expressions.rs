@@ -13,6 +13,7 @@ use super::operator::{RustOperator, Side};
 use super::plan::{EmitPlan, ItemKind};
 use super::problems::EmitProblems;
 use super::result_borrows::ResultBorrows;
+use super::reused_locals::ReusedLocals;
 use super::stored_functions::StoredFunctions;
 use super::template::{Template, TemplateError};
 use super::types::{LifetimeScope, RustTypes, TypePosition};
@@ -33,7 +34,7 @@ use crate::types::{
 };
 
 mod tail_loop;
-use tail_loop::TailLoop;
+pub(super) use tail_loop::TailLoop;
 
 struct UpdateArgument {
     name: Option<String>,
@@ -174,6 +175,7 @@ pub struct ExpressionEmitter<'a> {
     mutable_locals: FxHashSet<BindingId>,
     stored_functions: StoredFunctions<'a>,
     local_closures: LocalClosures<'a>,
+    reused_locals: ReusedLocals,
     open_literals: OpenLiterals,
     enclosing_lifetime: Option<String>,
     result_parameters: FxHashSet<BindingId>,
@@ -207,6 +209,7 @@ impl<'a> ExpressionEmitter<'a> {
             mutable_locals: FxHashSet::default(),
             stored_functions: StoredFunctions::new(program),
             local_closures: LocalClosures::new(program),
+            reused_locals: ReusedLocals::empty(),
             open_literals: OpenLiterals::default(),
             enclosing_lifetime: None,
             result_parameters: FxHashSet::default(),
@@ -231,6 +234,11 @@ impl<'a> ExpressionEmitter<'a> {
 
     pub fn with_local_closures(mut self, local_closures: LocalClosures<'a>) -> Self {
         self.local_closures = local_closures;
+        self
+    }
+
+    pub fn with_reused_locals(mut self, reused_locals: ReusedLocals) -> Self {
+        self.reused_locals = reused_locals;
         self
     }
 
@@ -1460,6 +1468,7 @@ impl<'a> ExpressionEmitter<'a> {
     }
 
     fn let_statement(&mut self, binder: &TypedBinder, value: &TypedExpr) -> Code {
+        let binder = &Self::with_written_type(binder, value);
         let value = self.let_value(binder, value);
         let name = self.locals.bind(
             binder.binding,
@@ -1481,6 +1490,14 @@ impl<'a> ExpressionEmitter<'a> {
             ],
             Precedence::Block,
         )
+    }
+
+    fn with_written_type(binder: &TypedBinder, value: &TypedExpr) -> TypedBinder {
+        let written = value.holds_written_type() && !binder.ty.holds_function();
+        TypedBinder {
+            annotated: binder.annotated || written,
+            ..binder.clone()
+        }
     }
 
     fn let_value(&mut self, binder: &TypedBinder, value: &TypedExpr) -> Code {
@@ -1863,7 +1880,7 @@ impl<'a> ExpressionEmitter<'a> {
         ])
     }
 
-    fn contains_try(block: &TypedBlock) -> bool {
+    pub(super) fn contains_try(block: &TypedBlock) -> bool {
         block.expressions().any(Self::expression_contains_try)
     }
 
@@ -2486,6 +2503,10 @@ impl<'a> ExpressionEmitter<'a> {
         self.locals.enter();
         let mut fragments = Vec::new();
         for (param, argument) in lambda.params.iter().zip(arguments) {
+            if let Some(local) = self.reused_locals.local_of(param.binding) {
+                self.locals.reuse(param.binding, local);
+                continue;
+            }
             let binding = self.bind_parameter(param, TypePosition::Value);
             let value = self.annotated_binding_value(argument);
             fragments.push(Fragment::Newline);

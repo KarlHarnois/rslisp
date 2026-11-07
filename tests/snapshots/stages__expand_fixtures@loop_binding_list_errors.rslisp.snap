@@ -1,0 +1,44 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/loop_binding_list_errors.rslisp
+---
+error[L0336]: `loop` takes a list of bindings
+ --> expand/loop_binding_list_errors.rslisp:2:9
+  |
+2 |   (loop index 0 (recur (+ index 1))))
+  |         ^^^^^ not a list of bindings
+  |
+  = help: write the bindings in a list, as `(loop (index 0) ...)`
+
+error[L0335]: `loop` has no body
+ --> expand/loop_binding_list_errors.rslisp:4:18
+  |
+4 | (defn no-body () (loop (index 0)))
+  |                  ^^^^^^^^^^^^^^^^ its bindings reach no form
+  |
+  = help: write the forms that use the bindings after the list
+
+error[L0336]: each name and its value go straight into the binding list of `loop`, without their own parentheses
+ --> expand/loop_binding_list_errors.rslisp:7:10
+  |
+7 |   (loop ((step 0) (total 1))
+  |          ^^^^^^^^ a name and its value in their own parentheses
+  |
+  = help: write it as `(loop (step 0 total 1) ...)`
+
+error[L0334]: a name in the binding list of `loop` has no value
+  --> expand/loop_binding_list_errors.rslisp:13:10
+   |
+13 |   (loop ((count usize)) count))
+   |          ^^^^^^^^^^^^^ this name has no value
+   |
+   = help: write its value after it, as `(loop ((count usize) value) ...)`, or write each name and its value without their own parentheses, as `(loop (count usize) ...)`
+
+error[L0203]: `index` is defined more than once
+  --> expand/loop_binding_list_errors.rslisp:17:10
+   |
+16 |   (loop (index 0
+   |          ----- first defined here
+17 |          index 1)
+   |          ^^^^^ defined again here

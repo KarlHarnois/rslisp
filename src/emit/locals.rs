@@ -54,6 +54,12 @@ impl LocalNames {
         self.assigned.insert(binding, name.to_string());
     }
 
+    pub fn reuse(&mut self, binding: BindingId, existing: BindingId) {
+        if let Some(name) = self.assigned.get(&existing).cloned() {
+            self.assigned.insert(binding, name);
+        }
+    }
+
     pub fn bind_receiver(&mut self, binding: BindingId) -> String {
         let name = "self".to_string();
         self.used.insert(name.clone());

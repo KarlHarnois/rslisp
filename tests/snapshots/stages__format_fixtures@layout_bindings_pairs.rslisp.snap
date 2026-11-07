@@ -1,0 +1,45 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_bindings_pairs.rslisp
+---
+(use prelude/macros header-shape)
+
+(defrule bind ((bindings body ...) (do body ...)))
+
+(header-shape (bind bindings) :bindings)
+
+(defn one () (bind (x 5) (+ x 1)))
+
+(defn two () (bind (x 5 y 7) (+ y x)))
+
+(defn three-on-one-line () (bind (x 5 y 7 z 9) z))
+
+(defn empty () (bind () 1))
+
+(defn header-list-without-the-marker (a b c d) (+ a b c d))
+
+---
+(use prelude/macros header-shape)
+
+(defrule bind
+  ((bindings body ...) (do body ...)))
+
+(header-shape (bind bindings) :bindings)
+
+(defn one () (bind (x 5) (+ x 1)))
+
+(defn two ()
+  (bind (x 5
+         y 7)
+    (+ y x)))
+
+(defn three-on-one-line ()
+  (bind (x 5
+         y 7
+         z 9)
+    z))
+
+(defn empty () (bind () 1))
+
+(defn header-list-without-the-marker (a b c d) (+ a b c d))

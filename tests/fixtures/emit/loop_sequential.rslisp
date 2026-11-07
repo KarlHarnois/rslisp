@@ -1,0 +1,43 @@
+(defn countdown-sum (limit)
+  (loop (top (* limit 2)
+         step top
+         total 0)
+    (if (> step 0)
+      (recur top (- step 1) (+ total step))
+      total)))
+
+(defn power-of-two (exponent)
+  (loop (step 0
+         total 1)
+    (if (< step exponent)
+      (recur (+ step 1) (* total 2))
+      total)))
+
+(defn nested-mention (base)
+  (loop (first-step base
+         second-step 1
+         limit (* first-step 3))
+    (if (< second-step limit)
+      (recur first-step (* second-step 2) limit)
+      second-step)))
+
+(type tried-sum
+  (fn ((ref str))
+    (result i64 (parse-error i64))))
+
+(defn tried-sum (text)
+  (loop (step 0
+         total step)
+    (if (< step 3)
+      (recur (+ step 1) (+ total step))
+      (ok (+ total (try (parse text)))))))
+
+(defn main ()
+  (println (countdown-sum 3))
+  (println (power-of-two 10))
+  (println (nested-mention 5))
+  (println (unwrap-ok (tried-sum "4")))
+  (println (loop (index 0)
+             (if (< index 10)
+               (recur (+ index 1))
+               index))))

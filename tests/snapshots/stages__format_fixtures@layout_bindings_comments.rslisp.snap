@@ -1,0 +1,65 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_bindings_comments.rslisp
+---
+(use prelude/macros header-shape)
+
+(defrule bind ((bindings body ...) (do body ...)))
+
+(header-shape (bind bindings) :bindings)
+
+(defn leading () (bind (; leading
+                       x 5 y 7) y))
+
+(defn own-line () (bind (x 5
+                          ; before y
+                          y 7) y))
+
+(defn after-name () (bind (x ; after x
+                           5 y 7) y))
+
+(defn after-value () (bind (x 5 ; after five
+                           y 7) y))
+
+(defn before-value () (bind (x
+                             ; before five
+                             5 y 7) y))
+
+---
+(use prelude/macros header-shape)
+
+(defrule bind
+  ((bindings body ...) (do body ...)))
+
+(header-shape (bind bindings) :bindings)
+
+(defn leading ()
+  (bind (
+         ; leading
+         x 5
+         y 7)
+    y))
+
+(defn own-line ()
+  (bind (x 5
+         ; before y
+         y 7)
+    y))
+
+(defn after-name ()
+  (bind (x 5 ; after x
+         y 7)
+    y))
+
+(defn after-value ()
+  (bind (x 5 ; after five
+         y 7)
+    y))
+
+(defn before-value ()
+  (bind (
+         ; before five
+         x 5
+         y 7)
+    y))

@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/inline_call_reuses_local.rslisp
+---
+3
+3
+5
+3
+0
+4
+4
+3
+0
+0
+2
+2
+4

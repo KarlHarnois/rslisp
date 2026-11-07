@@ -1,0 +1,14 @@
+(defn total ()
+  (let (x 5
+        y (+ x 2))
+    (+ y x)))
+
+(defn nothing-bound () (let () 1))
+
+(defn shadowed ()
+  (let (x 1
+        x (+ x 1))
+    x))
+
+(defn typed ()
+  (let ((year i64) 2025) year))

@@ -1,5 +1,5 @@
 (defn main ()
-  (let-try ((text (slurp stdin)))
+  (let-try (text (slurp stdin))
     (do
       (println (count (lines (as-str text)))
                " lines")

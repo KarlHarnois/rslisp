@@ -2,6 +2,7 @@
           prepend rest string symbol?)
 
 (use prelude/macros defmacro defrule document)
+(use prelude/bindings let)
 (use prelude/types hash-map option slice sorted-map vec)
 (use prelude/pair pair)
 (use prelude/number eq hash ord)
@@ -51,8 +52,7 @@
                   (list (prepend (quote key) bounds)
                         (quote value))
                   (list name (quote key) (quote value))))
-      (do
-        (local count (len pairs))
+      (let (count (len pairs))
         (prepend (list (quote rust)
                        (string "{{ let mut map = " rust-type
                                "::new(); "

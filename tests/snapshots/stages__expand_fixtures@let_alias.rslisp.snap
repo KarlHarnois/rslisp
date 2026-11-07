@@ -1,6 +1,0 @@
----
-source: tests/stages.rs
-expression: reports.report(path)
-input_file: tests/fixtures/expand/let_alias.rslisp
----
-(def doubled (fn (n) (local twice (mul n 2)) twice))

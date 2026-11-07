@@ -13,7 +13,7 @@
               (->badge (str "Nissan") 1)
               (->badge (str "Leaf") 12)))
   (local renamed (assoc (:tag g) :size 2))
-  (println (loop ((i 0))
+  (println (loop (i 0)
              (println (:owner g))
              (if (< i 2)
                (do

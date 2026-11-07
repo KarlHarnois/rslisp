@@ -1,0 +1,103 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/type_in_value.rslisp
+---
+error[L0201]: cannot find `i64` in this scope
+ --> expand/type_in_value.rslisp:2:14
+  |
+2 |   (let (year i64) 2025))
+  |              ^^^ not found in this scope
+  |
+  = note: `i64` is a type; a type goes beside a name in a binding, as in `(local (year i64) 2025)`, or in a `type` signature
+
+error[L0201]: cannot find `option` in this scope
+ --> expand/type_in_value.rslisp:5:17
+  |
+5 |   (let (parsed (option i64)) parsed))
+  |                 ^^^^^^ not found in this scope
+  |
+  = note: `option` is a type; a type goes beside a name in a binding, as in `(local (year i64) 2025)`, or in a `type` signature
+
+error[L0201]: cannot find `i64` in this scope
+ --> expand/type_in_value.rslisp:5:24
+  |
+5 |   (let (parsed (option i64)) parsed))
+  |                        ^^^ not found in this scope
+
+error[L0201]: cannot find `i64` in this scope
+ --> expand/type_in_value.rslisp:7:43
+  |
+7 | (defn type-in-argument (text) (parse text i64))
+  |                                           ^^^ not found in this scope
+  |
+  = note: `i64` is a type; a type goes beside a name in a binding, as in `(local (year i64) 2025)`, or in a `type` signature
+
+error[L0201]: cannot find `i64` in this scope
+  --> expand/type_in_value.rslisp:10:15
+   |
+10 |   (local year i64)
+   |               ^^^ not found in this scope
+   |
+   = note: `i64` is a type; a type goes beside a name in a binding, as in `(local (year i64) 2025)`, or in a `type` signature
+
+error[L0201]: cannot find `string` in this scope
+  --> expand/type_in_value.rslisp:11:16
+   |
+11 |   (local count string)
+   |                ^^^^^^ not found in this scope
+   |
+   = note: `string` is a type; a type goes beside a name in a binding, as in `(local (year i64) 2025)`, or in a `type` signature
+help: a name with a similar spelling exists
+   |
+11 -   (local count string)
+11 +   (local count stdin)
+   |
+
+error[L0304]: `char` is a macro, not a value
+  --> expand/type_in_value.rslisp:14:33
+   |
+14 | (defn macro-name (numbers) (map char numbers))
+   |                                 ^^^^ used as a value here
+   |
+   = help: a macro can only be called; pass a function instead
+
+error[L0201]: cannot find `totl` in this scope
+  --> expand/type_in_value.rslisp:21:6
+   |
+21 |   (+ totl i64))
+   |      ^^^^ not found in this scope
+   |
+help: a name with a similar spelling exists
+   |
+21 |   (+ total i64))
+   |         +
+
+error[L0201]: cannot find `i64` in this scope
+  --> expand/type_in_value.rslisp:21:11
+   |
+21 |   (+ totl i64))
+   |           ^^^ not found in this scope
+   |
+   = note: `i64` is a type; a type goes beside a name in a binding, as in `(local (year i64) 2025)`, or in a `type` signature
+
+error[L0201]: cannot find `i64` in this scope
+  --> expand/type_in_value.rslisp:23:25
+   |
+23 | (def first-module-value i64)
+   |                         ^^^ not found in this scope
+   |
+   = note: `i64` is a type; a type goes beside a name in a binding, as in `(local (year i64) 2025)`, or in a `type` signature
+
+error[L0201]: cannot find `string` in this scope
+  --> expand/type_in_value.rslisp:25:26
+   |
+25 | (def second-module-value string)
+   |                          ^^^^^^ not found in this scope
+   |
+   = note: `string` is a type; a type goes beside a name in a binding, as in `(local (year i64) 2025)`, or in a `type` signature
+help: a name with a similar spelling exists
+   |
+25 - (def second-module-value string)
+25 + (def second-module-value stdin)
+   |

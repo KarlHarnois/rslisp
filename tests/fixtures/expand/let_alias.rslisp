@@ -1,3 +1,0 @@
-(defn doubled (n)
-  (let twice (* n 2))
-  twice)

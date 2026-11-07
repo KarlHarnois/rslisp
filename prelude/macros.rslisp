@@ -539,9 +539,11 @@
   forms of its call as the shape lists. A `:docstring` after the shape
   states that the form takes a docstring right after its header, a
   `:one-per-line` states that the formatter puts each later form of a
-  call on its own line, and an `:arms` states that each list after the
+  call on its own line, an `:arms` states that each list after the
   header, other than a keyword's value, is an arm, which stays on one
-  line up to the fill width."
+  line up to the fill width, and a `:bindings` states that the header's
+  last form is a binding list, which the formatter lays out one name and
+  its value per line."
   (if (header-shape? shape)
     (stated-header-shape shape markers)
     (malformed-header-shape shape)))
@@ -593,7 +595,7 @@
                     :label "not a list that starts with a name")))))
 
 (def shape-marker-names
-  (quote (docstring one-per-line arms)))
+  (quote (docstring one-per-line arms bindings)))
 
 (def check-shape-markers
   (fn (markers seen)
@@ -658,15 +660,18 @@
       "write `:docstring` to state that the form takes a docstring"
       (if (value-eq (symbol-name name) "arms")
         "write `:arms` to state that each list after the header is an arm"
-        (string "write `:one-per-line` to state that a call of the form "
-                "does not fill runs of atoms")))))
+        (if (value-eq (symbol-name name) "bindings")
+          (string "write `:bindings` to state that the header's last form "
+                  "is a binding list")
+          (string "write `:one-per-line` to state that a call of the form "
+                  "does not fill runs of atoms"))))))
 
 (def extra-header-shape-marker
   (fn (marker)
     (fail unexpected-header-shape-marker-title
       marker
-      (string "remove it: only `:docstring`, `:one-per-line` and `:arms` "
-              "may follow a header shape, each once")
+      (string "remove it: only `:docstring`, `:one-per-line`, `:arms` "
+              "and `:bindings` may follow a header shape, each once")
       (quote (:code unexpected-header-shape-marker
                     :label "not expected here")))))
 

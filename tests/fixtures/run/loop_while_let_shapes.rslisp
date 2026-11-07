@@ -49,7 +49,7 @@
     (if (some? (pop! items)) (recur) (do))))
 
 (defn bound ()
-  (loop ((n 0))
+  (loop (n 0)
     (match n (0 (recur 1)) (_ (do)))))
 
 (defn main ()
