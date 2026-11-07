@@ -1,0 +1,391 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/max_min_values.rslisp
+---
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct Ticket {
+    number: i64,
+}
+
+fn make_ticket_2(number: i64) -> Ticket {
+    Ticket { number }
+}
+
+#[derive(Clone, PartialEq, PartialOrd)]
+struct Score {
+    points: f64,
+}
+
+fn make_score(points: f64) -> Score {
+    Score { points }
+}
+
+fn make_ticket(number: i64) -> Ticket {
+    make_ticket_2(number)
+}
+
+fn bounded_ord<A: Ord>(left: A, right: A) -> A {
+    std::cmp::max(left, right)
+}
+
+fn bounded_both<A: Ord>(left: A, right: A) -> A {
+    std::cmp::min(left, right)
+}
+
+fn bounded_partial<A: PartialOrd>(left: A, right: A) -> A {
+    crate::rt::max(left, right)
+}
+
+fn bounded_partial_min<A: PartialOrd>(left: A, right: A) -> A {
+    crate::rt::min(left, right)
+}
+
+fn bounded_float<A: crate::rt::Float>(left: A, right: A) -> A {
+    crate::rt::max(left, right)
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    let number: i64 = 3;
+    println!("{}", std::cmp::max(1_i64, 2_i64));
+    println!("{}", std::cmp::min(1_i64, 2_i64));
+    println!("{}", std::cmp::max(std::cmp::max(1_i64, 2_i64), number));
+    println!(
+        "{}",
+        std::cmp::min(std::cmp::min(std::cmp::min(4, number), 2), 5)
+    );
+    println!("{}", std::cmp::max(&number, &number));
+    println!("{}", std::cmp::max("a", "b"));
+    println!("{}", std::cmp::min("a".to_string(), "b".to_string()));
+    println!(
+        "{}",
+        crate::rt::Shown(&std::cmp::max((1_i64, 2_i64), (1_i64, 3_i64)))
+    );
+    println!("{}", std::cmp::max(make_ticket(1), make_ticket(2)).number);
+    println!("{}", f64::max(1.0_f64, 2.0_f64));
+    println!("{}", f32::min(1.5_f32, 2.5));
+    println!("{}", f32::max(1.5_f32, 2.5));
+    println!("{}", f64::min(1.0_f64, 2.0_f64));
+    println!(
+        "{}",
+        crate::rt::Shown(&crate::rt::max((1.0_f64, 2.0_f64), (1.0_f64, 3.0_f64)))
+    );
+    println!(
+        "{}",
+        bounded_partial(make_score(1.0), make_score(2.0)).points
+    );
+    println!("{}", bounded_ord(1_i64, 2));
+    println!("{}", bounded_both(1_i64, 2));
+    println!("{}", bounded_partial(1.0, 2.0));
+    println!("{}", bounded_partial_min(1.0, 2.0));
+    println!("{}", bounded_float(1.0, 2.0));
+    println!("{}", bounded_partial(0.0, -0.0));
+    println!("{}", bounded_partial_min(0.0, -0.0))
+}
+
+mod rt {
+    use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
+
+    pub trait Number:
+        Copy
+        + PartialOrd
+        + Add<Output = Self>
+        + Sub<Output = Self>
+        + Mul<Output = Self>
+        + Div<Output = Self>
+        + Rem<Output = Self>
+    {
+    }
+
+    macro_rules! numbers {
+        ($($number:ty),*) => {
+            $(
+                impl Number for $number {}
+            )*
+        };
+    }
+
+    numbers!(
+        i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+    );
+
+    pub trait Signed: Number + Neg<Output = Self> {}
+
+    impl<T> Signed for T where T: Number + Neg<Output = T> {}
+
+    pub trait Float: Signed {}
+
+    impl Float for f32 {}
+
+    impl Float for f64 {}
+
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+
+    use std::fmt::{Display, Formatter, Result, Write};
+
+    pub trait Show {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result;
+    }
+
+    pub struct Shown<'v, T: Show + ?Sized>(pub &'v T);
+
+    impl<T: Show + ?Sized> Display for Shown<'_, T> {
+        fn fmt(&self, out: &mut Formatter<'_>) -> Result {
+            self.0.write_form(out)
+        }
+    }
+
+    pub struct Record<'r, 'f> {
+        out: &'r mut Formatter<'f>,
+        written: Result,
+    }
+
+    impl<'r, 'f> Record<'r, 'f> {
+        pub fn open(out: &'r mut Formatter<'f>, head: &str) -> Self {
+            let written = write!(out, "({head}");
+            Record { out, written }
+        }
+
+        pub fn part<T: Show + ?Sized>(self, value: &T) -> Self {
+            self.write(|out| {
+                out.write_char(' ')?;
+                value.write_form(out)
+            })
+        }
+
+        pub fn text(self, written: &str) -> Self {
+            self.write(|out| write!(out, " {written}"))
+        }
+
+        pub fn close(self) -> Result {
+            self.written?;
+            self.out.write_char(')')
+        }
+
+        fn write(mut self, part: impl FnOnce(&mut Formatter<'f>) -> Result) -> Self {
+            self.written = self.written.and_then(|()| part(self.out));
+            self
+        }
+    }
+
+    struct Quoted<'t>(&'t str);
+
+    impl Display for Quoted<'_> {
+        fn fmt(&self, out: &mut Formatter<'_>) -> Result {
+            out.write_char('"')?;
+            for character in self.0.chars() {
+                match character {
+                    '"' => out.write_str("\\\"")?,
+                    '\\' => out.write_str("\\\\")?,
+                    '\n' => out.write_str("\\n")?,
+                    '\r' => out.write_str("\\r")?,
+                    '\t' => out.write_str("\\t")?,
+                    '\0' => out.write_str("\\0")?,
+                    control if control.is_control() => write!(out, "\\u{{{:x}}}", control as u32)?,
+                    printable => out.write_char(printable)?,
+                }
+            }
+            out.write_char('"')
+        }
+    }
+
+    macro_rules! shown_as_display {
+        ($($shown:ty),*) => {
+            $(
+                impl Show for $shown {
+                    fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+                        write!(out, "{self}")
+                    }
+                }
+            )*
+        };
+    }
+
+    shown_as_display!(
+        bool, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize
+    );
+
+    macro_rules! shown_as_float {
+        ($($shown:ty),*) => {
+            $(
+                impl Show for $shown {
+                    fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+                        if self.is_nan() {
+                            out.write_str("(/ 0.0 0.0)")
+                        } else if self.is_infinite() && self.is_sign_positive() {
+                            out.write_str("(/ 1.0 0.0)")
+                        } else if self.is_infinite() {
+                            out.write_str("(/ -1.0 0.0)")
+                        } else {
+                            write!(out, "{self:?}")
+                        }
+                    }
+                }
+            )*
+        };
+    }
+
+    shown_as_float!(f32, f64);
+
+    macro_rules! shown_as_message {
+        ($($shown:ty => $head:literal),*) => {
+            $(
+                impl Show for $shown {
+                    fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+                        Record::open(out, $head).part(self.to_string().as_str()).close()
+                    }
+                }
+            )*
+        };
+    }
+
+    shown_as_message!(
+        std::io::Error => "io-error",
+        std::str::ParseBoolError => "parse-bool-error",
+        std::char::ParseCharError => "parse-char-error",
+        std::num::ParseIntError => "parse-int-error",
+        std::num::ParseFloatError => "parse-float-error"
+    );
+
+    impl Show for std::convert::Infallible {
+        fn write_form(&self, _: &mut Formatter<'_>) -> Result {
+            match *self {}
+        }
+    }
+
+    impl Show for char {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            let mut text = [0; 4];
+            Record::open(out, "char")
+                .part(&*self.encode_utf8(&mut text))
+                .close()
+        }
+    }
+
+    impl Show for str {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            write!(out, "{}", Quoted(self))
+        }
+    }
+
+    impl Show for String {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            self.as_str().write_form(out)
+        }
+    }
+
+    impl Show for () {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            out.write_str("(do)")
+        }
+    }
+
+    impl<T: Show + ?Sized> Show for &T {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            T::write_form(self, out)
+        }
+    }
+
+    impl<T: Show + ?Sized> Show for Box<T> {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            Record::open(out, "box").part(&**self).close()
+        }
+    }
+
+    impl<T: Show> Show for [T] {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            self.iter()
+                .fold(Record::open(out, "vec"), Record::part)
+                .close()
+        }
+    }
+
+    impl<T: Show> Show for Vec<T> {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            self.as_slice().write_form(out)
+        }
+    }
+
+    impl<T: Show> Show for Option<T> {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            match self {
+                Some(value) => Record::open(out, "some").part(value).close(),
+                None => out.write_str("none"),
+            }
+        }
+    }
+
+    impl<T: Show, E: Show> Show for std::result::Result<T, E> {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            match self {
+                Ok(value) => Record::open(out, "ok").part(value).close(),
+                Err(error) => Record::open(out, "err").part(error).close(),
+            }
+        }
+    }
+
+    impl<A: Show, B: Show> Show for (A, B) {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            Record::open(out, "pair")
+                .part(&self.0)
+                .part(&self.1)
+                .close()
+        }
+    }
+
+    impl<K: Show, V: Show> Show for std::collections::BTreeMap<K, V> {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            self.iter()
+                .fold(Record::open(out, "sorted-map"), |record, (key, value)| {
+                    record.part(key).part(value)
+                })
+                .close()
+        }
+    }
+
+    impl<K: Show, V: Show, S> Show for std::collections::HashMap<K, V, S> {
+        fn write_form(&self, out: &mut Formatter<'_>) -> Result {
+            let mut entries: Vec<(String, &V)> = self
+                .iter()
+                .map(|(key, value)| (Shown(key).to_string(), value))
+                .collect();
+            entries.sort_by(|(left, _), (right, _)| left.cmp(right));
+            entries
+                .iter()
+                .fold(Record::open(out, "hash-map"), |record, (key, value)| {
+                    record.text(key).part(*value)
+                })
+                .close()
+        }
+    }
+
+    pub fn max<T: PartialOrd>(left: T, right: T) -> T {
+        if left > right || right.partial_cmp(&right).is_none() {
+            left
+        } else {
+            right
+        }
+    }
+
+    pub fn min<T: PartialOrd>(left: T, right: T) -> T {
+        if right < left || left.partial_cmp(&left).is_none() {
+            right
+        } else {
+            left
+        }
+    }
+}

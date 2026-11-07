@@ -13,9 +13,10 @@ use crate::core::{
     BindingId, BindingInfo, BindingKind, ControlForm, CoreModule, DefinitionForm, Expr, ExprKind,
     ExpressionForm, FieldLabel, ImplAssociatedType, ImplMethod, Item, ItemKind, KernelForm, Leaf,
     ModuleId, Namespace, RUST_TRAIT_ASSOCIATED_MARKER, RUST_TRAIT_HELP_MARKER,
-    RUST_TRAIT_METHOD_MARKER, RUST_TRAIT_STRUCTURAL_MARKER, RustTemplate, RustTraitAssociatedType,
-    RustTraitDeclaration, RustTraitImplementor, TraitAssociatedType, TraitMethod, TypeBinder,
-    TypeBound, TypeExpr, TypeExprKind, VariantDeclaration, VariantInfo, VariantPayload,
+    RUST_TRAIT_METHOD_MARKER, RUST_TRAIT_REQUIRES_MARKER, RUST_TRAIT_STRUCTURAL_MARKER,
+    RustTemplate, RustTraitAssociatedType, RustTraitDeclaration, RustTraitImplementor,
+    TraitAssociatedType, TraitMethod, TypeBinder, TypeBound, TypeExpr, TypeExprKind,
+    VariantDeclaration, VariantInfo, VariantPayload,
 };
 use crate::diagnostic::{Counted, Diagnostic, DistinctDiagnostics};
 use crate::mangle::NameMangler;
@@ -45,6 +46,7 @@ type ImplLoweringParts = (ImplAssociated, Vec<Form>);
 struct RustTraitEntries {
     methods: Vec<TraitMethod>,
     help: Option<Rc<str>>,
+    requires: Vec<TypeBound>,
     structural: Option<Form>,
     associated: Vec<RustTraitAssociatedType>,
     implementors: Vec<RustTraitImplementor>,
@@ -458,6 +460,10 @@ impl Expander<'_> {
 
     fn is_rust_trait_help(entry: &Form) -> bool {
         Self::rust_trait_marker(entry) == Some(RUST_TRAIT_HELP_MARKER)
+    }
+
+    fn is_rust_trait_requires(entry: &Form) -> bool {
+        Self::rust_trait_marker(entry) == Some(RUST_TRAIT_REQUIRES_MARKER)
     }
 
     fn is_rust_trait_associated(entry: &Form) -> bool {
@@ -1704,6 +1710,7 @@ impl Expander<'_> {
                 self_variable,
                 methods: entries.methods,
                 help: entries.help,
+                requires: entries.requires,
                 structural,
                 associated: entries.associated,
                 implementors: entries.implementors,
@@ -1723,6 +1730,7 @@ impl Expander<'_> {
         let mut lowered = RustTraitEntries {
             methods: Vec::new(),
             help: None,
+            requires: Vec::new(),
             structural: None,
             associated: Vec::new(),
             implementors: Vec::new(),
@@ -1767,6 +1775,10 @@ impl Expander<'_> {
     ) -> Result<bool, Diagnostic> {
         if Self::is_rust_trait_help(entry) {
             lowered.help = Some(self.lower_rust_trait_help(shape, entry)?);
+        } else if Self::is_rust_trait_requires(entry) {
+            lowered
+                .requires
+                .extend(self.lower_rust_trait_requires(shape, entry)?);
         } else if Self::is_rust_trait_structural(entry) {
             lowered.structural = Some(Self::single_structural_clause(entry, lowered)?);
         } else {
@@ -1830,6 +1842,17 @@ impl Expander<'_> {
             signature: lowered,
             default: None,
         })
+    }
+
+    fn lower_rust_trait_requires(
+        &mut self,
+        shape: &Shape<'_>,
+        entry: &Form,
+    ) -> Result<Vec<TypeBound>, Diagnostic> {
+        shape.list(entry)?[1..]
+            .iter()
+            .map(|required| self.lower_bound(required))
+            .collect()
     }
 
     fn lower_rust_trait_help(

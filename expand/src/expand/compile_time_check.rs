@@ -26,18 +26,22 @@ impl Expander<'_> {
         match expr.kind() {
             ExprKind::Leaf(Leaf::Var(binding)) => self.check_global(*binding, expr.span(), through),
             ExprKind::Leaf(Leaf::Rust(_)) => {
-                let problem = match self.tables.macro_origins.get(&expr.span()) {
-                    Some(origin) => ExpandProblems::macro_program_only(
-                        &origin.name,
-                        expr.span(),
-                        origin.defined,
-                    ),
-                    None => InterpretProblems::program_only(expr.span()),
-                };
+                let problem = self
+                    .macro_program_only(expr.span())
+                    .unwrap_or_else(|| InterpretProblems::program_only(expr.span()));
                 Err(Self::routed(problem, through))
             }
             _ => self.check_value_form(expr, through),
         }
+    }
+
+    fn macro_program_only(&self, span: Span) -> Option<Diagnostic> {
+        let origin = self.tables.macro_origins.get(&span)?;
+        Some(ExpandProblems::macro_program_only(
+            &origin.name,
+            span,
+            origin.defined,
+        ))
     }
 
     fn check_value_form(&self, expr: &Expr, through: Option<Span>) -> Result<(), Diagnostic> {
@@ -71,7 +75,9 @@ impl Expander<'_> {
         let value = self.lowered_global(binding, span)?;
         let name = self.tables.bindings.get(binding).name().to_string();
         if let ExprKind::Leaf(Leaf::Rust(_)) = value.kind() {
-            let problem = ExpandProblems::program_only(&name, span, value.span());
+            let problem = self
+                .macro_program_only(span)
+                .unwrap_or_else(|| ExpandProblems::program_only(&name, span, value.span()));
             return Err(Self::routed(problem, through));
         }
         match self.tables.globals.compile_time_check(binding) {

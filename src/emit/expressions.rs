@@ -26,7 +26,7 @@ use crate::ownership::StructUpdateOrder;
 use crate::reader::{Number, NumberValue};
 use crate::source::Span;
 use crate::types::{
-    Borrow, ClosureKind, Collection, GenericId, Type, TypedArgument, TypedArm, TypedBinder,
+    Borrow, Bound, ClosureKind, Collection, GenericId, Type, TypedArgument, TypedArm, TypedBinder,
     TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf,
     TypedMatch, TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr, VariantPayload,
 };
@@ -1926,13 +1926,35 @@ impl<'a> ExpressionEmitter<'a> {
         let chosen = self
             .definition_type_bindings(binding, instantiated)
             .first()
-            .and_then(|(_, parameter)| self.program.template_clauses.chosen(binding, parameter));
+            .and_then(|(_, parameter)| self.chosen_clause(binding, parameter));
         Some(match chosen {
             Some(clause) => Rc::new(RustTemplate {
                 template: Rc::clone(clause),
                 ..RustTemplate::clone(template)
             }),
             None => Rc::clone(template),
+        })
+    }
+
+    fn chosen_clause(&self, binding: BindingId, parameter: &Type) -> Option<&Rc<str>> {
+        let implements = |bound: &Bound| {
+            self.program
+                .traits
+                .satisfies(bound, parameter, &|generic, required| {
+                    self.generic_declares(generic, required)
+                })
+        };
+        self.program
+            .template_clauses
+            .chosen(binding, parameter, &implements)
+    }
+
+    fn generic_declares(&self, generic: GenericId, required: &Bound) -> bool {
+        self.program.generics.get(&generic).is_some_and(|param| {
+            param
+                .bounds
+                .iter()
+                .any(|declared| self.program.traits.implies(declared, required, generic))
         })
     }
 

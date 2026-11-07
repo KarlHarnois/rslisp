@@ -133,7 +133,7 @@
 
   A `sorted-map` yields them in key order, and the order of a `hash-map` is
   not fixed. The map stays usable. Each item is a borrow, so
-  `(sum (vals map))` is an error, and `(reduce (vals map) 0 add)` adds them.")
+  `(sum (vals map))` is an error, and `(reduce (vals map) 0 +)` adds them.")
 
 (document (update map key function default)
   "Applies a function to the value at a key and returns the map.

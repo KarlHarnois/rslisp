@@ -3,14 +3,4 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/macro_as_function.rslisp
 ---
-error[L0304]: `+` is a macro, not a value
- --> check/macro_as_function.rslisp:2:34
-  |
-2 |   (println (reduce (range 1 4) 0 +)))
-  |                                  ^ used as a value here
-  |
-help: a macro can only be called; pass `add` instead
-  |
-2 -   (println (reduce (range 1 4) 0 +)))
-2 +   (println (reduce (range 1 4) 0 add)))
-  |
+(type main (fn () unit))

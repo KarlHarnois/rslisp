@@ -31,11 +31,11 @@
        ("+"
         (then-ok (parse-term tokens (+ next 1))
                  (fn (right)
-                   (parse-sums tokens (combine left right add)))))
+                   (parse-sums tokens (combine left right +)))))
        ("-"
         (then-ok (parse-term tokens (+ next 1))
                  (fn (right)
-                   (parse-sums tokens (combine left right sub)))))
+                   (parse-sums tokens (combine left right -)))))
        (_ (ok left))))
     (_ (ok left))))
 
@@ -51,7 +51,7 @@
        ("*"
         (then-ok (parse-factor tokens (+ next 1))
                  (fn (right)
-                   (parse-products tokens (combine left right mul)))))
+                   (parse-products tokens (combine left right *)))))
        ("/"
         (then-ok (parse-factor tokens (+ next 1))
                  (fn (right) (divide tokens left right))))
@@ -61,7 +61,7 @@
 (defn divide (tokens left right)
   (if (= (:value right) 0)
     (err (str "division by zero"))
-    (parse-products tokens (combine left right div))))
+    (parse-products tokens (combine left right /))))
 
 (defn parse-factor (tokens position)
   (match (get tokens position)

@@ -9,7 +9,7 @@
 
 (defn scan (tokens position)
   (match (get tokens position)
-    ((some (symbol "(")) (scan tokens (add position 1)))
+    ((some (symbol "(")) (scan tokens (+ position 1)))
     ((some (symbol _)) 2)
     ((some (number _)) 3)
     (none 0)))

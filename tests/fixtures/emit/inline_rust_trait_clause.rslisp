@@ -1,0 +1,5 @@
+(defn main ()
+  (println ((rust "measure({0})"
+              (where (a) (fn (a) a))
+              (ord "count({0})"))
+            1)))

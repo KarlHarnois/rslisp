@@ -1,0 +1,13 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/inline_rust_trait_clause.rslisp
+---
+error[L0603]: invalid Rust template: a template with clauses needs a `def`, whose calls give the type that chooses a clause
+ --> emit/inline_rust_trait_clause.rslisp:2:13
+  |
+2 |     (println ((rust "measure({0})"
+  |  _____________^
+3 | |               (where (a) (fn (a) a))
+4 | |               (ord "count({0})"))
+  | |_________________________________^ in this template

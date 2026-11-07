@@ -1,10 +1,10 @@
-(use prelude/macros defrule document)
+(use prelude/macros defrule-with-value document)
 (use prelude/types option)
 
 (export expect map-some none none? some some? then-some
         unwrap unwrap-or)
 
-(defrule some
+(defrule-with-value some (fn (value) (option/some value))
   ((value) (option/some value)))
 
 (def none
@@ -46,8 +46,8 @@
 (document (some value)
   "Wraps a value in an `option`.
 
-  It is a macro, so `(fn (x) (some x))` passes it as a function. In a `match`,
-  `(some x)` is the pattern that binds the value.")
+  As a value, it is a function of one argument, as in `(map (iter v) some)`. In
+  a `match`, `(some x)` is the pattern that binds the value.")
 
 (document none
   "Holds an `option` with no value.

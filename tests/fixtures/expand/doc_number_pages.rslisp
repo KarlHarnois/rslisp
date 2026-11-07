@@ -1,6 +1,6 @@
 (def plus-page (doc-page +))
 
-(def add-page (doc-page add))
+(def minus-page (doc-page -))
 
 (def pi-page (doc-page pi))
 

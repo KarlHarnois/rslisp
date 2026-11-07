@@ -5,4 +5,4 @@
   (println (unwrap-or (reduce (range 1 5)
                               (fn (product n) (* product n)))
                       0))
-  (println (none? (reduce (range 1 1) add))))
+  (println (none? (reduce (range 1 1) +))))

@@ -12,13 +12,13 @@ pub struct ExpandProblems;
 impl ExpandProblems {
     const QUOTE_SHORTHAND: char = '\'';
     const CODE_REPLACEMENTS: [(&'static str, &'static str, &'static str); 9] = [
-        ("add", "number-add", "code"),
-        ("sub", "number-sub", "code"),
-        ("lt", "number-lt", "code"),
-        ("le", "number-le", "code"),
-        ("gt", "number-gt", "code"),
-        ("ge", "number-ge", "code"),
-        ("eq", "value-eq", "code"),
+        ("+", "number-add", "code"),
+        ("-", "number-sub", "code"),
+        ("<", "number-lt", "code"),
+        ("<=", "number-le", "code"),
+        (">", "number-gt", "code"),
+        (">=", "number-ge", "code"),
+        ("=", "value-eq", "code"),
         ("not", "bool-not", "code"),
         ("map", "map-list", "prelude/macros"),
     ];
@@ -1000,6 +1000,10 @@ impl ExpandProblems {
             format!("`{name}` is Rust code that runs in the program"),
         ))
         .with_help(InterpretProblems::RETURN_AS_CODE_HELP);
+        Self::with_code_replacement(diagnostic, name)
+    }
+
+    fn with_code_replacement(diagnostic: Diagnostic, name: &str) -> Diagnostic {
         match Self::code_replacement(name) {
             Some((replacement, module)) => diagnostic.with_help(format!(
                 "in macro code, use `{replacement}` from `{module}` instead"
@@ -1009,7 +1013,7 @@ impl ExpandProblems {
     }
 
     pub fn macro_program_only(name: &str, used: Span, defined: Span) -> Diagnostic {
-        Diagnostic::error(
+        let diagnostic = Diagnostic::error(
             DiagnosticCode::PROGRAM_ONLY,
             format!("`{name}` belongs to the program, so macro code cannot run it"),
             Label::new(used, "macro code runs this"),
@@ -1018,7 +1022,8 @@ impl ExpandProblems {
             defined,
             format!("`{name}` expands to Rust code that runs in the program"),
         ))
-        .with_help(InterpretProblems::RETURN_AS_CODE_HELP)
+        .with_help(InterpretProblems::RETURN_AS_CODE_HELP);
+        Self::with_code_replacement(diagnostic, name)
     }
 
     fn code_replacement(name: &str) -> Option<(&'static str, &'static str)> {

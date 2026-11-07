@@ -25,7 +25,7 @@ error[L0210]: malformed `rust`
 8 | (def extra-twin (rust "1" i64 add 2))
   |                               ^^^ this does not fit the shape of `rust`
   |
-  = help: write it as `(rust "template" type (type "template") ...)`
+  = help: write it as `(rust "template" type (target "template") ...)`
 
 error[L0210]: malformed `fn`
   --> expand/expression_errors.rslisp:10:15
@@ -41,4 +41,4 @@ error[L0210]: malformed `rust`
 12 | (def numbered-template (rust 5 i64))
    |                              ^ this does not fit the shape of `rust`
    |
-   = help: write it as `(rust "template" type (type "template") ...)`
+   = help: write it as `(rust "template" type (target "template") ...)`

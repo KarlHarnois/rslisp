@@ -621,6 +621,16 @@ impl TypeProblems {
         ))
     }
 
+    pub fn covered_clause(clause: Span, earlier: Span) -> Diagnostic {
+        Diagnostic::error(
+            DiagnosticCode::COVERED_CLAUSE,
+            "this clause can never be chosen",
+            Label::new(clause, "an earlier clause covers this target"),
+        )
+        .with_label(Label::new(earlier, "this clause comes first"))
+        .with_help("move the narrower clause first, or remove a repeated one")
+    }
+
     pub fn out_of_range(literal: &str, type_name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::LITERAL_OUT_OF_RANGE,

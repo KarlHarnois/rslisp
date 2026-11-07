@@ -2,8 +2,8 @@
 
 (defn apply (operation left right)
   (match operation
-    (add (add left right))
-    (sub (sub left right))))
+    (add (+ left right))
+    (sub (- left right))))
 
 (defn main ()
   (println (apply operation/add 2 3))

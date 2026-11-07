@@ -18,7 +18,7 @@ use super::rust_types::{RustType, RustTypeTable};
 use super::selection::Selection;
 use super::selfless_methods::SelflessMethods;
 use super::structs::{StructDefinition, StructTable};
-use super::template_clauses::TemplateClauses;
+use super::template_clauses::{ClauseTarget, TemplateClauses};
 use super::templates::TemplateBorrows;
 use super::traits::{Implementor, RustTrait, TraitTable};
 use super::ty::{Bound, BoundOrigin, GenericId, GenericParam, Scheme, Type, TypeVar};
@@ -1030,13 +1030,43 @@ impl TypeChecker {
             .clauses
             .iter()
             .map(|clause| {
-                let target = self.lower_type(&clause.target, &FxHashMap::default())?;
+                let target = self.clause_target(&clause.target)?;
                 Ok((target, Rc::clone(&clause.template)))
             })
             .collect::<Result<Vec<_>, Diagnostic>>();
         match lowered {
-            Ok(clauses) => self.template_clauses.add(binding, clauses),
+            Ok(clauses) => {
+                self.report_covered_clauses(template, &clauses);
+                self.template_clauses.add(binding, clauses);
+            }
             Err(diagnostic) => self.diagnostics.push(diagnostic),
+        }
+    }
+
+    fn clause_target(&mut self, target: &TypeExpr) -> Result<ClauseTarget, Diagnostic> {
+        match target.kind() {
+            TypeExprKind::Trait(binding) => Ok(ClauseTarget::Trait(Bound::plain(*binding))),
+            _ => self
+                .lower_type(target, &FxHashMap::default())
+                .map(ClauseTarget::Type),
+        }
+    }
+
+    fn report_covered_clauses(
+        &mut self,
+        template: &RustTemplate,
+        clauses: &[(ClauseTarget, Rc<str>)],
+    ) {
+        for (index, (target, _)) in clauses.iter().enumerate() {
+            let covering = clauses[..index]
+                .iter()
+                .position(|(earlier, _)| earlier.covers(target, &self.traits));
+            if let Some(covering) = covering {
+                self.diagnostics.push(TypeProblems::covered_clause(
+                    template.clauses[index].target.span(),
+                    template.clauses[covering].target.span(),
+                ));
+            }
         }
     }
 
@@ -2321,13 +2351,18 @@ impl TypeChecker {
         declaration: &crate::core::RustTraitDeclaration,
     ) -> Result<(), Diagnostic> {
         let implementors = self.lower_rust_trait_implementors(declaration)?;
+        let supertraits = declaration
+            .requires
+            .iter()
+            .map(|bound| self.lower_type_bound(bound, &FxHashMap::default()))
+            .collect::<Result<Vec<_>, Diagnostic>>()?;
         self.traits.add(
             declaration.binding,
             RustTrait {
                 path: declaration.path.clone(),
                 implementors,
                 help: declaration.help.clone(),
-                supertraits: Vec::new(),
+                supertraits,
                 associated: None,
             },
         );
@@ -2490,20 +2525,7 @@ impl TypeChecker {
         self.unifier
             .generic_bounds(generic)
             .iter()
-            .any(|declared| self.bound_implies(declared, bound))
-    }
-
-    fn bound_implies(&self, declared: &Bound, required: &Bound) -> bool {
-        if declared == required {
-            return true;
-        }
-        let Some(rust_trait) = self.traits.get(declared.binding) else {
-            return false;
-        };
-        rust_trait
-            .supertraits
-            .iter()
-            .any(|supertrait| self.bound_implies(supertrait, required))
+            .any(|declared| self.traits.implies(declared, bound, generic))
     }
 
     pub(super) fn report_missing_trait(&mut self, bound: &Bound, implementor: &Type, span: Span) {

@@ -1,0 +1,43 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/rust_trait_clause_errors.rslisp
+---
+error[L0247]: a `rust` clause must pass its arguments as its template does
+ --> expand/rust_trait_clause_errors.rslisp:4:10
+  |
+2 |   (rust "measure({0}, {1})"
+  |         ------------------- unlike the template's `{0}` here
+3 |     (where ((a partial-ord)) (fn (a a) a))
+4 |     (ord "{0}.max({1})")))
+  |          ^^^^^^^^^^^^^^ this clause differs in whether `{0}` receives a method call
+  |
+  = help: write each placeholder as the template writes it, with the same borrow, receiver, index or call
+
+error[L0246]: a `rust` with clauses takes one type parameter
+ --> expand/rust_trait_clause_errors.rslisp:8:5
+  |
+8 |     (fn (i64) i64)
+  |     ^^^^^^^^^^^^^^ this type binds 0 type parameters
+  |
+  = help: bind one parameter, as in `(where ((s source)) (fn ((ref s)) string))`
+
+error[L0246]: a `rust` with clauses takes one type parameter
+  --> expand/rust_trait_clause_errors.rslisp:13:5
+   |
+13 |     (where (a b) (fn (a b) a))
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^ this type binds 2 type parameters
+   |
+   = help: bind one parameter, as in `(where ((s source)) (fn ((ref s)) string))`
+
+error[L0201]: cannot find type `nosuch` in this scope
+  --> expand/rust_trait_clause_errors.rslisp:19:6
+   |
+19 |     (nosuch "count({0})")))
+   |      ^^^^^^ not found in this scope
+
+error[L0212]: expected a type constructor, found `partial-eq`
+  --> expand/rust_trait_clause_errors.rslisp:24:7
+   |
+24 |     ((partial-eq i64) "count({0})")))
+   |       ^^^^^^^^^^ not a type constructor

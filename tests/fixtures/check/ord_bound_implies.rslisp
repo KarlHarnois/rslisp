@@ -1,0 +1,14 @@
+(type ordered
+  (where ((a ord)) (fn (a a) bool)))
+
+(defn ordered (left right) (<= left right))
+
+(trait (ranked (ord))
+  (label (fn ((ref self)) (ref str))))
+
+(type through-supertrait
+  (where ((a ranked)) (fn (a a) bool)))
+
+(defn through-supertrait (left right) (< left right))
+
+(defn main () (println (ordered 1 2)))

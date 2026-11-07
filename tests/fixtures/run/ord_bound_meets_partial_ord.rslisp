@@ -1,0 +1,70 @@
+(type smaller-of
+  (where ((a ord)) (fn (a a) a)))
+
+(defn smaller-of (left right)
+  (if (< left right) left right))
+
+(type clause-kind
+  (where ((a ord)) (fn (a) (ref str))))
+
+(defn clause-kind (value) (kind value))
+
+(def kind
+  (rust "{{ let _ = {0}; \"default\" }}"
+    (where (a) (fn (a) (ref str)))
+    (partial-ord "{{ let _ = {0}; \"partial-ord\" }}")))
+
+(type compared
+  (where ((a ord (partial-eq string)))
+    (fn (a string) bool)))
+
+(defn compared (left right) (= left right))
+
+(type same-order
+  (where ((a ord)) (fn (a a) bool)))
+
+(defn same-order (left right) (= left right))
+
+(type same-total
+  (where ((a eq)) (fn (a a) bool)))
+
+(defn same-total (left right) (not= left right))
+
+(type borrowed-order
+  (where ((a ord))
+    (fn ((ref a) (ref a)) bool)))
+
+(defn borrowed-order (left right) (< left right))
+
+(type same-partial
+  (where ((a partial-ord))
+    (fn (a a) bool)))
+
+(defn same-partial (left right) (= left right))
+
+(type duplicated
+  (where ((a copy)) (fn (a) a)))
+
+(defn duplicated (value) (clone value))
+
+(type total-only
+  (where ((b eq)) (fn (b) b)))
+
+(defn total-only (value) value)
+
+(type through-ord
+  (where ((a ord)) (fn (a) a)))
+
+(defn through-ord (value) (total-only value))
+
+(defn main ()
+  (println (smaller-of 2 1))
+  (println (smaller-of "b" "a"))
+  (println (clause-kind 1))
+  (println (compared "text" (str "text")))
+  (println (same-order 1 1))
+  (println (same-total "a" "b"))
+  (println (borrowed-order (ref 1) (ref 2)))
+  (println (same-partial 1.5 1.5))
+  (println (through-ord 2))
+  (println (duplicated 1)))

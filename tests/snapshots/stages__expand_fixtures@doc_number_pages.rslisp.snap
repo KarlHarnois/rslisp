@@ -3,8 +3,8 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/expand/doc_number_pages.rslisp
 ---
-(def plus-page "(+ number more ...)\n\nAdds its arguments from left to right.\n\nOne argument returns it, and two call `add`.")
-(def add-page "(add a b)\n\nReturns the sum of two numbers of one type.\n\nIt emits `a + b`. `+` takes one or more arguments.")
+(def plus-page "(+ number more ...)\n\nAdds its arguments from left to right.\n\nOne argument returns it, and two emit `a + b`. `+` as a value is the function\nof two numbers, so `(reduce (iter v) 0 +)` sums the items.")
+(def minus-page "(- number more ...)\n\nSubtracts each later argument from the first.\n\nOne argument negates it with `neg`, and two emit `a - b`. `-` as a value is\nthe function of two numbers, and `neg` is unary minus as a value.")
 (def pi-page "pi\n\nHolds the ratio of a circle's circumference to its diameter, as an `f64`.\n\nIt emits `std::f64::consts::PI`.")
-(def number-page "number\n\nMarks a type that does arithmetic.\n\nEvery integer and float type implements it, and `add`, `sub`, `mul`, `div`\nand `rem` take its types.")
-(def eq-page "(eq a b)\n\nReturns whether two values are equal.\n\nIt borrows both values. `=` expands to it. `eq` is also a trait, Rust's\n`Eq`, which marks a type whose equality is total: the float types leave it\nout, and a key of a `hash-map` implements it.")
+(def number-page "number\n\nMarks a type that does arithmetic.\n\nEvery integer and float type implements it, and `+`, `-`, `*`, `/` and `rem`\ntake its types.")
+(def eq-page "eq\n\nMarks a type whose equality is total, as Rust's `Eq` does.\n\nThe float types leave it out, and a key of a `hash-map` implements it.")

@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/rust_trait_requires.rslisp
+---
+(rust-trait marked "crate::marks::Marked" (requires ord (partial-eq string)) i64)
+(def main (fn () ((rust "println!(\"marked\")" (where () (fn () unit))))))

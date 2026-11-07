@@ -11,9 +11,10 @@
           symbol? take type-definition-call
           type-definition-symbol value-eq)
 
-(export defmacro defrule doc-page docstring
-        docstring-before-body? docstring-before-parameters
-        document documented-body? header header-shape
+(export defmacro defrule defrule-with-value doc-page
+        docstring docstring-before-body?
+        docstring-before-parameters document
+        documented-body? header header-shape
         kernel-definition map-list module note-docstring
         page-body template type-doc-key value-doc-key
         whole-pairs?)
@@ -399,6 +400,19 @@
         (rule-definition name (rest body)))
       (rule-definition name body))))
 
+(def defrule-with-value
+  (macro (form)
+    (local name (nth form 1))
+    (declare-macro-definition name)
+    (list (quote def)
+          name
+          (list (quote macro)
+                (list (quote rule-form))
+                (list (quote if)
+                      (list (quote symbol?) (quote rule-form))
+                      (list (quote quote) (nth form 2))
+                      (rule-expansion (drop 3 form)))))))
+
 (def documented-body?
   (fn (body)
     (if (empty? body)
@@ -411,9 +425,13 @@
           name
           (list (quote macro)
                 (list (quote rule-form))
-                (list (quote expand-rules)
-                      (list (quote quote) rules)
-                      (quote rule-form))))))
+                (rule-expansion rules)))))
+
+(def rule-expansion
+  (fn (rules)
+    (list (quote expand-rules)
+          (list (quote quote) rules)
+          (quote rule-form))))
 
 (def build-template
   (fn (template)
@@ -702,6 +720,8 @@
 
 (header-shape (defrule name) :docstring :arms)
 
+(header-shape (defrule-with-value name value) :arms)
+
 (header-shape (defmacro name pattern) :docstring)
 
 (document (defrule name
@@ -712,6 +732,12 @@
   The first rule whose pattern matches the call's arguments gives the
   expansion, its template filled with the pattern's variables. In a pattern,
   `name ...` matches zero or more forms. A docstring may follow the name.")
+
+(document (defrule-with-value name value (pattern template) ...)
+  "Defines a macro by rules, which is also a value where it is not called.
+
+  A call takes the rules, as in `defrule`. A bare `name` expands to `value`,
+  so `+` is a macro whose value is a function of two numbers.")
 
 (document (defmacro name pattern
             body ...)

@@ -1,0 +1,62 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/rust_trait_clause_errors.rslisp
+---
+error[L0464]: this clause can never be chosen
+ --> check/rust_trait_clause_errors.rslisp:5:6
+  |
+4 |     (ord "first({0})")
+  |      --- this clause comes first
+5 |     (i64 "second({0})")))
+  |      ^^^ an earlier clause covers this target
+  |
+  = help: move the narrower clause first, or remove a repeated one
+
+error[L0464]: this clause can never be chosen
+  --> check/rust_trait_clause_errors.rslisp:11:6
+   |
+10 |     (i64 "first({0})")
+   |      --- this clause comes first
+11 |     (i64 "second({0})")))
+   |      ^^^ an earlier clause covers this target
+   |
+   = help: move the narrower clause first, or remove a repeated one
+
+error[L0464]: this clause can never be chosen
+  --> check/rust_trait_clause_errors.rslisp:17:6
+   |
+16 |     (ord "first({0})")
+   |      --- this clause comes first
+17 |     (ord "second({0})")))
+   |      ^^^ an earlier clause covers this target
+   |
+   = help: move the narrower clause first, or remove a repeated one
+
+error[L0464]: this clause can never be chosen
+  --> check/rust_trait_clause_errors.rslisp:23:6
+   |
+22 |     (partial-ord "first({0})")
+   |      ----------- this clause comes first
+23 |     (ord "second({0})")))
+   |      ^^^ an earlier clause covers this target
+   |
+   = help: move the narrower clause first, or remove a repeated one
+
+error[L0464]: this clause can never be chosen
+  --> check/rust_trait_clause_errors.rslisp:40:6
+   |
+39 |     (ord "first({0})")
+   |      --- this clause comes first
+40 |     (ticket "second({0})")))
+   |      ^^^^^^ an earlier clause covers this target
+   |
+   = help: move the narrower clause first, or remove a repeated one
+
+error[L0449]: a trait is a type only inside `(box ...)`
+  --> check/rust_trait_clause_errors.rslisp:42:39
+   |
+42 | (rust-type (wrapped item) "Vec<{0}>" (ord "Vec<{0}>"))
+   |                                       ^^^ `ord` is a trait
+   |
+   = help: write `(box ord)` to box it as a trait object

@@ -1,0 +1,70 @@
+(defstruct ticket
+  :number i64)
+
+(derive ticket clone partial-eq eq partial-ord ord)
+
+(defstruct score
+  :points f64)
+
+(derive score clone partial-eq partial-ord)
+
+(defn make-ticket (number) (->ticket number))
+
+(type bounded-ord
+  (where ((a ord)) (fn (a a) a)))
+
+(defn bounded-ord (left right) (max left right))
+
+(type bounded-both
+  (where ((a ord partial-ord))
+    (fn (a a) a)))
+
+(defn bounded-both (left right) (min left right))
+
+(type bounded-partial
+  (where ((a partial-ord)) (fn (a a) a)))
+
+(defn bounded-partial (left right) (max left right))
+
+(type bounded-partial-min
+  (where ((a partial-ord)) (fn (a a) a)))
+
+(defn bounded-partial-min (left right) (min left right))
+
+(type bounded-float
+  (where ((a float)) (fn (a a) a)))
+
+(defn bounded-float (left right) (max left right))
+
+(defn main ()
+  (local number 3)
+  (println (max 1 2))
+  (println (min 1 2))
+  (println (max 1 2 number))
+  (println (min 4 number 2 5))
+  (println (max (ref number) (ref number)))
+  (println (max "a" "b"))
+  (println (min (str "a") (str "b")))
+  (println (pr-str (max (pair 1 2) (pair 1 3))))
+  (println (:number (max (make-ticket 1) (make-ticket 2))))
+  (println (max 1.0 2.0))
+  (println (min (the f32 1.5) 2.5))
+  (println (max (the f32 1.5) 2.5))
+  (println (min 1.0 2.0))
+  (println (pr-str (max (pair 1.0 2.0) (pair 1.0 3.0))))
+  (println (:points (bounded-partial (->score 1.0) (->score 2.0))))
+  (println (bounded-ord 1 2))
+  (println (bounded-both 1 2))
+  (println (bounded-partial 1.0 2.0))
+  (println (bounded-partial-min 1.0 2.0))
+  (println (bounded-float 1.0 2.0))
+  (println (bounded-partial 0.0 -0.0))
+  (println (bounded-partial-min 0.0 -0.0))
+  (local not-a-number (/ 0.0 0.0))
+  (println (bounded-partial not-a-number 1.0))
+  (println (bounded-partial 1.0 not-a-number))
+  (println (bounded-partial-min not-a-number 1.0))
+  (println (bounded-partial-min 1.0 not-a-number))
+  (println (max not-a-number 1.0))
+  (println (unwrap (max (vec 1 2))))
+  (println (unwrap (min (iter (vec 1 2))))))

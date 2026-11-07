@@ -1611,7 +1611,7 @@ fn doc_types_prints_the_type_of_a_prelude_function() {
     let sandbox = Sandbox::new("doc_types_prelude");
     assert_eq!(
         sandbox.typed_page(&["sum"]),
-        "(type sum (where ((n number)) (fn ((iterator n)) n)))\n(defn sum (values))\n\nAdds the items of an iterator from left to right.\n\nAn empty iterator gives 0. An overflow panics in a debug build, as `add`\ndoes. A vector passes and yields copies of its numbers. `(iter items)` is an\nerror, as its items are borrows, and so is a map.\n"
+        "(type sum (where ((n number)) (fn ((iterator n)) n)))\n(defn sum (values))\n\nAdds the items of an iterator from left to right.\n\nAn empty iterator gives 0. An overflow panics in a debug build, as `+`\ndoes. A vector passes and yields copies of its numbers. `(iter items)` is an\nerror, as its items are borrows, and so is a map.\n"
     );
 }
 

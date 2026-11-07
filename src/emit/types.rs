@@ -376,10 +376,10 @@ impl<'a> RustTypes<'a> {
             .bounds
             .iter()
             .filter(|bound| {
-                !param
-                    .bounds
-                    .iter()
-                    .any(|other| other.binding != bound.binding && self.bound_implies(other, bound))
+                !param.bounds.iter().any(|other| {
+                    other.binding != bound.binding
+                        && self.program.traits.implies(other, bound, param.id)
+                })
             })
             .filter_map(|bound| self.trait_path(bound))
             .collect()
@@ -396,7 +396,7 @@ impl<'a> RustTypes<'a> {
             if param
                 .bounds
                 .iter()
-                .any(|bound| self.bound_implies(bound, implied))
+                .any(|bound| self.program.traits.implies(bound, implied, param.id))
             {
                 continue;
             }
@@ -422,21 +422,6 @@ impl<'a> RustTypes<'a> {
             }
             (None, _) => path,
         })
-    }
-
-    fn bound_implies(&self, declared: &Bound, required: &Bound) -> bool {
-        if declared == required {
-            return true;
-        }
-        self.program
-            .traits
-            .get(declared.binding)
-            .is_some_and(|rust_trait| {
-                rust_trait
-                    .supertraits
-                    .iter()
-                    .any(|supertrait| self.bound_implies(supertrait, required))
-            })
     }
 
     fn is_covered(path: &str, bounds: &[String]) -> bool {

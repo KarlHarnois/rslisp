@@ -36,3 +36,8 @@
 
 (def never-called
   (macro (form) (print "unused")))
+
+(def direct-rust-call
+  (macro (form) (sqrt 2.0) (list)))
+
+(direct-rust-call)

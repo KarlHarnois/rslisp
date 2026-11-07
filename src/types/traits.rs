@@ -123,6 +123,20 @@ impl TraitTable {
         }
     }
 
+    pub fn implies(&self, declared: &Bound, required: &Bound, implementor: GenericId) -> bool {
+        self.brings(declared, &|brought| brought.meets(required, implementor))
+    }
+
+    pub fn brings(&self, declared: &Bound, wanted: &dyn Fn(&Bound) -> bool) -> bool {
+        wanted(declared)
+            || self.get(declared.binding).is_some_and(|rust_trait| {
+                rust_trait
+                    .supertraits
+                    .iter()
+                    .any(|supertrait| self.brings(supertrait, wanted))
+            })
+    }
+
     pub fn implemented_exactly_by(&self, types: &[Type]) -> Option<BindingId> {
         let mut matching = self
             .traits
@@ -195,7 +209,7 @@ impl TraitTable {
 #[cfg(test)]
 mod tests {
     use crate::core::{BindingArena, BindingId, BindingInfo, BindingKind, ModuleId, PrimitiveType};
-    use crate::types::{Implementor, RustTrait, Scheme, TraitTable, Type};
+    use crate::types::{Bound, GenericId, Implementor, RustTrait, Scheme, TraitTable, Type};
 
     struct TraitsFixture {
         bindings: BindingArena,
@@ -258,5 +272,20 @@ mod tests {
         fixture.add("countable", &numbers);
         let types = numbers.map(Type::Primitive);
         assert_eq!(fixture.traits.implemented_exactly_by(&types), None);
+    }
+
+    #[test]
+    fn a_bound_with_a_second_type_implies_itself_and_not_another_second_type() {
+        let mut fixture = TraitsFixture::new();
+        let compared = fixture.add("PartialEq", &[]);
+        let implementor = GenericId::new(0);
+        let with_string = Bound::with_argument(compared, Type::Primitive(PrimitiveType::String));
+        let with_str = Bound::with_argument(compared, Type::Primitive(PrimitiveType::Str));
+        assert!(
+            fixture
+                .traits
+                .implies(&with_string, &with_string, implementor)
+        );
+        assert!(!fixture.traits.implies(&with_string, &with_str, implementor));
     }
 }

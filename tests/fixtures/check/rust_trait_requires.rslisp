@@ -1,0 +1,14 @@
+(rust-trait base-mark "crate::marks::Base" i64)
+
+(rust-trait marked "crate::marks::Marked"
+  (requires base-mark)
+  (method mark (fn ((ref self)) i64))
+  i64)
+
+(defstruct unmarked
+  :number i64)
+
+(impl marked unmarked (mark (value) 1))
+
+(defn main ()
+  (println (mark (->unmarked 1))))

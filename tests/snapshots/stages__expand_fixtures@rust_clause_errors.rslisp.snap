@@ -26,7 +26,7 @@ error[L0210]: malformed `rust`
 16 |     str))
    |     ^^^ this does not fit the shape of `rust`
    |
-   = help: write it as `(rust "template" type (type "template") ...)`
+   = help: write it as `(rust "template" type (target "template") ...)`
 
 error[L0210]: malformed `rust`
   --> expand/rust_clause_errors.rslisp:22:10
@@ -34,7 +34,7 @@ error[L0210]: malformed `rust`
 22 |     (str 5)))
    |          ^ this does not fit the shape of `rust`
    |
-   = help: write it as `(rust "template" type (type "template") ...)`
+   = help: write it as `(rust "template" type (target "template") ...)`
 
 error[L0218]: this Rust template has a malformed placeholder
   --> expand/rust_clause_errors.rslisp:28:10

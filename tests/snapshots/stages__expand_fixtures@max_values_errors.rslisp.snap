@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/max_values_errors.rslisp
+---
+error[L0301]: no rule of `max` matches this form
+ --> expand/max_values_errors.rslisp:2:12
+  |
+2 |   (println (max))
+  |            ^^^^^ here
+  |
+  = help: write it as `(max items)`, or `(max a b)`, or `(max a b c more ...)`
+
+error[L0301]: no rule of `min` matches this form
+ --> expand/max_values_errors.rslisp:3:12
+  |
+3 |   (println (min)))
+  |            ^^^^^ here
+  |
+  = help: write it as `(min items)`, or `(min a b)`, or `(min a b c more ...)`

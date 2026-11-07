@@ -1,0 +1,7 @@
+(rust-trait unknown-requirement "Unknown"
+  (requires nosuch)
+  i64)
+
+(rust-trait type-requirement "Typed" (requires i64) i64)
+
+(defn main () (println "unreachable"))
