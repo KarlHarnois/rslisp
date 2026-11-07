@@ -13,9 +13,21 @@
       (recur (+ step 1) (* total 2))
       total)))
 
+(type tried-sum
+  (fn ((ref str))
+    (result i64 (parse-error i64))))
+
+(defn tried-sum (text)
+  (loop (step 0
+         total step)
+    (if (< step 3)
+      (recur (+ step 1) (+ total step))
+      (ok (+ total (try (parse text)))))))
+
 (defn main ()
   (println (countdown-sum 3))
   (println (power-of-two 10))
+  (println (unwrap-ok (tried-sum "4")))
   (println (loop (index 0)
              (if (< index 10)
                (recur (+ index 1))

@@ -668,12 +668,67 @@
 (def loop
   (macro (form)
     (local bindings (binding-list form))
-    (template (let (unquote bindings)
-                ((fn (unquote (binders bindings))
-                   (splice (drop 2 form)))
-                 (splice (map-list binder-name (binders bindings))))))))
+    (if (sequential-values? bindings)
+      (template (let (unquote bindings)
+                  (unquote (loop-call form bindings
+                                      (map-list binder-name
+                                                (binders bindings))))))
+      (loop-call form bindings (binding-values bindings)))))
+
+(def loop-call
+  (fn (form bindings arguments)
+    (template ((fn (unquote (binders bindings))
+                 (splice (drop 2 form)))
+               (splice arguments)))))
 
 (header-shape (loop bindings) :bindings)
+
+(def sequential-values?
+  (fn (bindings)
+    (names-earlier-binder? (list) bindings)))
+
+(def names-earlier-binder?
+  (fn (earlier bindings)
+    (if (empty? bindings)
+      false
+      (if (mentions-any? (nth bindings 1) earlier)
+        true
+        (recur (prepend (binder-name (first bindings)) earlier)
+               (drop 2 bindings))))))
+
+(def mentions-any?
+  (fn (form names)
+    (if (list? form)
+      (any-mentions? form names)
+      (if (symbol? form) (named-in? form names) false))))
+
+(def any-mentions?
+  (fn (forms names)
+    (if (empty? forms)
+      false
+      (if (mentions-any? (first forms) names)
+        true
+        (recur (rest forms) names)))))
+
+(def named-in?
+  (fn (symbol names)
+    (if (empty? names)
+      false
+      (if (value-eq (symbol-name symbol)
+                    (symbol-name (first names)))
+        true
+        (recur symbol (rest names))))))
+
+(def binding-values
+  (fn (bindings)
+    (binding-values-onto (list) bindings)))
+
+(def binding-values-onto
+  (fn (found bindings)
+    (if (empty? bindings)
+      found
+      (recur (concat found (list (nth bindings 1)))
+             (drop 2 bindings)))))
 
 (def binders
   (fn (bindings)

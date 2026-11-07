@@ -1,6 +1,6 @@
 # RFC 0058: A scoped let and a flat local
 
-**Status:** Accepted. Its statement that `let-pair` and `let-fields` keep their names, and their place in the migration, are superseded by 0059, which replaces them with `let-match`.
+**Status:** Accepted. Its statement that `let-pair` and `let-fields` keep their names, and their place in the migration, are superseded by 0059, which replaces them with `let-match`. Its statement that the build emits each value into the loop's own binding is amended on 2026-11-07: `loop` calls a `fn` of its names with its values as the arguments when no value names an earlier binder of its list, and binds the list with `let` before that call otherwise, so a `loop` whose values see no earlier name emits as before, and a sequential `loop` whose body holds `try`, which stays a closure, keeps a copy of each value.
 **Date:** 2026-11-02
 
 ## Problem

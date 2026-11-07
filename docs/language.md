@@ -1033,7 +1033,7 @@ A call to the enclosing function in tail position already compiles to a Rust `lo
 
 Rust has no guaranteed tail calls. Without this milestone, recursion is the only way to loop, and a deep loop overflows the stack.
 
-`loop` binds names to values, then repeats its body with `recur`. It takes the binding list of `let`, so each value sees the names bound before it, and `recur` replaces every value at once. A name given twice in one `loop` list is `L0203`, because `recur` passes one value per name. This is the one rule in which a `loop` list differs from a `let` list. `loop` reports `L0334`, `L0335` and `L0336` for its own form. It binds its list with `let` and calls a `fn` of the names where it is written, so each parameter reuses the binding of its name (see Bodies), and the loop emits each value into the loop's own binding:
+`loop` binds names to values, then repeats its body with `recur`. It takes the binding list of `let`, so each value sees the names bound before it, and `recur` replaces every value at once. A name given twice in one `loop` list is `L0203`, because `recur` passes one value per name. This is the one rule in which a `loop` list differs from a `let` list. `loop` reports `L0334`, `L0335` and `L0336` for its own form. When no value names an earlier binder of its list, `loop` calls a `fn` of its names where it is written, with its values as the arguments. Otherwise it binds its list with `let` and calls that `fn` with the names, so each parameter reuses the binding of its name (see Bodies), and the loop emits each value into the loop's own binding.:
 
 ```lisp
 (defn countdown-sum (limit)
@@ -1060,6 +1060,8 @@ fn countdown_sum(limit: i64) -> i64 {
     }
 }
 ```
+
+The test reads names only, so a value that names an earlier binder by a name bound elsewhere also takes the `let`. A sequential `loop` whose body holds `try` stays a closure called where it is written, because a `?` in it leaves the closure, and a closure parameter cannot reuse a local, so it keeps a copy of each value ([RFC 0058](../rfcs/0058-scoped-let.md), amended on 2026-11-07).
 
 A `loop` in argument position emits as a Rust block and an inline `loop`:
 
