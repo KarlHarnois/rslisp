@@ -19,6 +19,7 @@ const PRINTS_B: &str = "(defn main () (println \"B\"))\n";
 const MARKED_PROGRAM: &str = "\u{feff}(defn main () (println 1))\n";
 const FAILED_MAIN: &str = "(defn fails () (the (result i64 string) (err (str \"boom\"))))\n(defn main () (let value (try (fails))) (ok value))\n";
 const REPORTING_MAIN: &str = "(defn works () (the (result i64 string) (ok 1)))\n(defn main ()\n  (eprintln \"working\")\n  (let value (try (works)))\n  (ok value))\n";
+const ERROR_ONLY_MAIN: &str = "(defn main () (eprintln \"only\"))\n";
 const UNWRAPPED_FAILURE: &str = "(defstruct failure :line i64)
 (defn main ()
   (println (unwrap-ok (the (result i64 failure) (err (->failure 3))))))
@@ -1677,6 +1678,14 @@ fn a_failed_main_stops_without_a_panic_when_standard_error_is_a_dead_pipe() {
 #[test]
 fn eprintln_in_a_result_main_stops_without_a_panic_when_standard_error_is_a_dead_pipe() {
     let sandbox = Sandbox::new("dead_pipe_eprintln").with_file("report.rslisp", REPORTING_MAIN);
+    sandbox
+        .compiler_with_a_closed_standard_error(&["run", "report.rslisp"])
+        .assert_no_panic();
+}
+
+#[test]
+fn eprintln_alone_stops_without_a_panic_when_standard_error_is_a_dead_pipe() {
+    let sandbox = Sandbox::new("dead_pipe_error_only").with_file("report.rslisp", ERROR_ONLY_MAIN);
     sandbox
         .compiler_with_a_closed_standard_error(&["run", "report.rslisp"])
         .assert_no_panic();
