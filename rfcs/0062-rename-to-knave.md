@@ -1,6 +1,6 @@
 # RFC 0062: Rename the language to knave
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-11-07
 
 ## Problem
@@ -18,6 +18,16 @@ The project owner decided these points on 2026-11-07.
 3. **The command-line binary is `knave`.**
 4. **The old name and extension stop working at once.** Before 1.0 the owner is the only user, so the build gives no transition period and no migration aid. The build renames the repository's own files.
 5. **The Cachix cache stays `rslisp.cachix.org`.** Renaming the cache is later work, outside this RFC's build. [Question 2](#question-2-the-cachix-cache) records the options.
+
+### Decided questions
+
+The project owner decided the five questions under [Options](#options) on 2026-11-07, each as [Recommendation](#recommendation) proposed.
+
+1. **Every place the name appears changes,** as [Option 1A](#option-1a-rename-every-place) says, crate names and dev shell variables included.
+2. **The cache stays,** as [Option 2B](#option-2b-keep-rslispcachixorg) says.
+3. **Accepted RFCs stay as history,** as [Option 3A](#option-3a-leave-accepted-rfcs-as-history-rewrite-live-text) says. Live text changes, and `docs/language.md` names the old name once.
+4. **The name changes first, then the extension by script in a quiet window,** as [Option 4B](#option-4b-the-name-first-then-the-extension-by-script-in-a-quiet-window) says.
+5. **The owner makes the changes outside the repository after stage 2 merges,** as [Question 5](#question-5-changes-outside-the-repository) lists them. The main checkout moves only after stage 2, when no session runs.
 
 ## Options
 
@@ -124,7 +134,7 @@ The script runs before the name changes. The window opens earlier, while the cod
 
 None of these is in the repository, so the owner makes each one.
 
-1. **Ringleader:** `~/.config/ringleader/config.toml` names the repository `rslisp` at `/home/karl/Documents/hobby/rslisp`, and worktrees live under `~/.local/share/ringleader/worktrees/rslisp/`. The owner renames the repository entry to `knave`, moves the main checkout to `/home/karl/Documents/hobby/knave` once no session runs, and lets new worktrees take the new path.
+1. **Ringleader:** `~/.config/ringleader/config.toml` names the repository `rslisp` at `/home/karl/Documents/hobby/rslisp`, and worktrees live under `~/.local/share/ringleader/worktrees/rslisp/`. The owner renames the repository entry to `knave`, moves the main checkout to `/home/karl/Documents/hobby/knave` after stage 2 merges, when no session runs, and lets new worktrees take the new path.
 2. **Local state:** the old prompt history at `~/.local/state/rslisp/history` and the slot directory at `~/.cache/rslisp/build-slots` stop being read. The owner moves the history to `~/.local/state/knave/history` to keep it, and deletes the slot directory.
 3. **Shell environment:** a `RSLISP_BUILD_SLOTS` set in the owner's shell becomes `KNAVE_BUILD_SLOTS`.
 4. **nixos-config:** it has no flake input for the repository. Its only mention is the `rslisp.cachix.org` substituter and key in `modules/core.nix`, which stays under [Option 2B](#option-2b-keep-rslispcachixorg).
@@ -137,15 +147,15 @@ None of these is in the repository, so the owner makes each one.
 - **Question 2: Option 2B.** The owner decided it, as [Decision](#decision) point 5 records.
 - **Question 3: Option 3A.** It follows the rule in `rfcs/README.md`, keeps every current rule in knave, and the one sentence in `docs/language.md` lets a reader map the old name.
 - **Question 4: Option 4B.** Stage 1 is small enough to review by hand and to merge while other work is open. Stage 2 is mechanical, so a script does it and checks it, and only it needs the quiet window. Option 4C holds the window open for the larger stage while the smaller one waits.
-- **Question 5:** the six owner actions above, after stage 2 merges, except the Ringleader rename, which waits until no session runs.
-
-## Decision
-
-The project owner decided points 1 to 5 under [Decision](#decision) on 2026-11-07. Questions 1, 3, 4 and 5 wait for the owner's decision.
+- **Question 5:** the six owner actions above, after stage 2 merges. The Ringleader rename and the checkout move also wait until no session runs.
 
 ## Rejected options and why
 
+- **Option 1B, rename only what a user sees:** it leaves a second name in the crates, the Rust paths and the dev shell, which every contributor has to map to the first.
 - **Option 2A, a new cache:** the owner kept `rslisp.cachix.org` and left the cache rename to later work.
+- **Option 3B, rewrite every RFC:** `rfcs/README.md` forbids editing an accepted RFC's reasoning, and the old counts and decisions are true of the old name.
+- **Option 4A, one pull request:** it conflicts with every open pull request that touches a fixture, and it mixes 25 files changed by hand with thousands of mechanical renames.
+- **Option 4C, the extension first:** it needs the quiet window for the larger stage while the smaller stage, which can merge beside other work, waits.
 
 ## Rule
 
