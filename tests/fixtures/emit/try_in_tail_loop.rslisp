@@ -1,5 +1,5 @@
 (defn main ()
-  (println (unwrap-ok (loop ((attempt 0))
+  (println (unwrap-ok (loop (attempt 0)
                         (if (< attempt 1)
                           (recur (+ attempt 1))
                           (do

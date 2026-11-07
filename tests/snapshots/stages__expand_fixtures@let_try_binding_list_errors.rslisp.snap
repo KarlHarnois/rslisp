@@ -1,0 +1,52 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/let_try_binding_list_errors.rslisp
+---
+error[L0336]: `let-try` takes a list of bindings
+ --> expand/let_try_binding_list_errors.rslisp:1:18
+  |
+1 | (defn no-list () (let-try))
+  |                  ^^^^^^^^^ this has no list of bindings
+  |
+  = help: write it as `(let-try (name value) body ...)`
+
+error[L0336]: `let-try` takes a list of bindings
+ --> expand/let_try_binding_list_errors.rslisp:4:12
+  |
+4 |   (let-try text (parse text) (ok text)))
+  |            ^^^^ not a list of bindings
+  |
+  = help: write the bindings in a list, as `(let-try (text (parse text)) ...)`
+
+error[L0336]: `let-try` takes a list of bindings
+ --> expand/let_try_binding_list_errors.rslisp:7:12
+  |
+7 |   (let-try text (parse text)))
+  |            ^^^^ not a list of bindings
+  |
+  = help: write the bindings in a list, as `(let-try (text (parse text)) ...)`
+
+error[L0335]: `let-try` has no body
+  --> expand/let_try_binding_list_errors.rslisp:10:3
+   |
+10 |   (let-try (value (parse text))))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ its bindings reach no form
+   |
+   = help: write the forms that use the bindings after the list
+
+error[L0334]: a name in the binding list of `let-try` has no value
+  --> expand/let_try_binding_list_errors.rslisp:13:13
+   |
+13 |   (let-try (value) (ok value)))
+   |             ^^^^^ this name has no value
+   |
+   = help: write its value after it, as `(let-try (value value) ...)`
+
+error[L0334]: a name in the binding list of `let-try` has no value
+  --> expand/let_try_binding_list_errors.rslisp:16:13
+   |
+16 |   (let-try ((value (parse text)))
+   |             ^^^^^^^^^^^^^^^^^^^^ this name has no value
+   |
+   = help: write its value after it, as `(let-try ((value (parse text)) value) ...)`, or write each name and its value without their own parentheses, as `(let-try (value (parse text)) ...)`

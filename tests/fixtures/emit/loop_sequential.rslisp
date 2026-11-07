@@ -1,0 +1,22 @@
+(defn countdown-sum (limit)
+  (loop (top (* limit 2)
+         step top
+         total 0)
+    (if (> step 0)
+      (recur top (- step 1) (+ total step))
+      total)))
+
+(defn power-of-two (exponent)
+  (loop (step 0
+         total 1)
+    (if (< step exponent)
+      (recur (+ step 1) (* total 2))
+      total)))
+
+(defn main ()
+  (println (countdown-sum 3))
+  (println (power-of-two 10))
+  (println (loop (index 0)
+             (if (< index 10)
+               (recur (+ index 1))
+               index))))

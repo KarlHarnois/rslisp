@@ -101,8 +101,8 @@
     (result i64 string)))
 
 (defn sum-levels (left right)
-  (let-try ((first-level (parse-level left))
-            (second-level (parse-level right)))
+  (let-try (first-level (parse-level left)
+            second-level (parse-level right))
     (ok (+ first-level second-level))))
 
 (defn checked-sum (left right)
@@ -133,7 +133,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-1: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 1)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -165,7 +166,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-2: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 2)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -197,7 +199,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-3: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 3)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -229,7 +232,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-4: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 4)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -261,7 +265,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-5: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 5)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -293,7 +298,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-6: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 1)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -325,7 +331,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-7: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 2)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -357,7 +364,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-8: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 3)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -389,7 +397,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-9: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 4)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -421,7 +430,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-10: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 5)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -453,7 +463,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-11: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 1)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -485,7 +496,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-12: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 2)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -517,7 +529,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-13: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 3)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -549,7 +562,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-14: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 4)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -581,7 +595,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-15: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 5)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -613,7 +628,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-16: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 1)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -645,7 +661,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-17: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 2)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -677,7 +694,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-18: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 3)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -709,7 +727,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-19: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 4)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -741,7 +760,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-20: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 5)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -773,7 +793,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-21: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 1)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -805,7 +826,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-22: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 2)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -837,7 +859,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-23: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 3)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -869,7 +892,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-24: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 4)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -901,7 +925,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-25: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 5)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -933,7 +958,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-26: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 1)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -965,7 +991,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-27: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 2)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -997,7 +1024,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-28: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 3)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -1029,7 +1057,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-29: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 4)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -1061,7 +1090,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-30: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 5)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -1093,7 +1123,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-31: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 1)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))
@@ -1125,7 +1156,8 @@
                (dotimes (pass (clamp hits 0 2))
                         (when (= pass 0)
                           (println (str "rule-32: " r)))))
-  (loop ((k 0) (acc base))
+  (loop (k 0
+         acc base)
     (if (< k 2)
       (recur (+ k 1)
              (->> acc (+ k) (rem 1000)))

@@ -17,4 +17,5 @@
 (defn parenthesized-text ()
   (let ((step 0) (label "a")) label))
 
-(defn text-first () (let ((label "a") (count 1)) count))
+(defn text-first ()
+  (let ((label "a") (count 1)) count))

@@ -7,19 +7,20 @@ fn main() {
     crate::rt::restore_default_sigpipe();
     println!(
         "{}",
-        crate::rt::unwrap_ok(
-            (|mut attempt: i64| -> Result<i64, std::num::ParseIntError> {
+        crate::rt::unwrap_ok({
+            let attempt: i64 = 0;
+            (|mut attempt_2: i64| -> Result<i64, std::num::ParseIntError> {
                 loop {
-                    if attempt < 1 {
-                        attempt += 1;
+                    if attempt_2 < 1 {
+                        attempt_2 += 1;
                         continue;
                     } else {
                         let value: i64 = "7".parse::<i64>()?;
                         return Ok(value);
                     }
                 }
-            })(0)
-        )
+            })(attempt)
+        })
     )
 }
 

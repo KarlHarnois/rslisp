@@ -28,7 +28,7 @@ const UNBOUND_NAME: &str = "(defn main ()\n  (println greeting))\n";
 const ECHO: &str = "(def first-argument (rust \"std::env::args().nth(1).unwrap_or_default()\" string))\n\n(defn main ()\n  (println first-argument))\n";
 const EXIT_THREE: &str =
     "(def exit (rust \"std::process::exit({0})\" (fn (i32) unit)))\n\n(defn main ()\n  (exit 3))\n";
-const MAIN_ERROR: &str = "(defn main ()\n  (let-try ((text (slurp \"missing.txt\")))\n    (do (println text) (ok 0))))\n";
+const MAIN_ERROR: &str = "(defn main ()\n  (let-try (text (slurp \"missing.txt\"))\n    (do (println text) (ok 0))))\n";
 const RUSTC_SYNTAX_ERROR: &str = "(def doubled-sign (rust \"{0} + + 1\" (fn (i64) i64)))\n\n(defn main ()\n  (println (doubled-sign 1)))\n";
 const CRASHING_RUSTC: &str =
     "#!/bin/sh\necho 'rustc crashed before reporting anything' >&2\nexit 101\n";

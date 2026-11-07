@@ -1,0 +1,65 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/emit/loop_sequential.rslisp
+---
+fn countdown_sum(limit: i64) -> i64 {
+    let top: i64 = limit * 2;
+    let mut step: i64 = top;
+    let mut total: i64 = 0;
+    loop {
+        if step > 0 {
+            (step, total) = (step - 1, total + step);
+            continue;
+        } else {
+            break total;
+        }
+    }
+}
+
+fn power_of_two(exponent: i64) -> i64 {
+    let mut step: i64 = 0;
+    let mut total: i64 = 1;
+    loop {
+        if step < exponent {
+            (step, total) = (step + 1, total * 2);
+            continue;
+        } else {
+            break total;
+        }
+    }
+}
+
+fn main() {
+    crate::rt::restore_default_sigpipe();
+    println!("{}", countdown_sum(3));
+    println!("{}", power_of_two(10));
+    println!("{}", {
+        let mut index: i64 = 0;
+        loop {
+            if index < 10 {
+                index += 1;
+                continue;
+            } else {
+                break index;
+            }
+        }
+    })
+}
+
+mod rt {
+    #[cfg(unix)]
+    pub fn restore_default_sigpipe() {
+        const SIGPIPE: i32 = 13;
+        const DEFAULT_HANDLER: usize = 0;
+        unsafe extern "C" {
+            fn signal(signal: i32, handler: usize) -> usize;
+        }
+        unsafe {
+            signal(SIGPIPE, DEFAULT_HANDLER);
+        }
+    }
+
+    #[cfg(not(unix))]
+    pub fn restore_default_sigpipe() {}
+}

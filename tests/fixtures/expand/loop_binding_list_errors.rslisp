@@ -1,0 +1,18 @@
+(defn flat ()
+  (loop index 0 (recur (+ index 1))))
+
+(defn no-body () (loop (index 0)))
+
+(defn old-list ()
+  (loop ((step 0) (total 1))
+    (if (< step 3)
+      (recur (+ step 1) total)
+      total)))
+
+(defn typed-binder-without-value ()
+  (loop ((count usize)) count))
+
+(defn repeated-name ()
+  (loop (index 0
+         index 1)
+    (recur index index)))

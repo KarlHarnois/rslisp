@@ -1,0 +1,17 @@
+(defn no-list () (let-try))
+
+(defn flat (text)
+  (let-try text (parse text) (ok text)))
+
+(defn flat-without-body (text)
+  (let-try text (parse text)))
+
+(defn no-body (text)
+  (let-try (value (parse text))))
+
+(defn name-without-value (text)
+  (let-try (value) (ok value)))
+
+(defn old-list (text)
+  (let-try ((value (parse text)))
+    (ok value)))

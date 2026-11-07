@@ -1,4 +1,4 @@
-(use prelude/bindings let)
+(use prelude/bindings binding-list let)
 
 (use prelude/macros defmacro defrule docstring-before-body?
                     docstring-before-parameters document
@@ -665,11 +665,26 @@
                  (temporary-bindings (drop 2 pairs)))
         (temporary-bindings (drop 2 pairs))))))
 
-(defrule loop
-  ((((name value) ...) body ...)
-   ((fn (name ...) body ...) value ...)))
+(def loop
+  (macro (form)
+    (local bindings (binding-list form))
+    (template (let (unquote bindings)
+                ((fn (unquote (binders bindings))
+                   (splice (drop 2 form)))
+                 (splice (map-list binder-name (binders bindings))))))))
 
-(header-shape (loop bindings))
+(header-shape (loop bindings) :bindings)
+
+(def binders
+  (fn (bindings)
+    (binders-onto (list) bindings)))
+
+(def binders-onto
+  (fn (found bindings)
+    (if (empty? bindings)
+      found
+      (recur (concat found (list (first bindings)))
+             (drop 2 bindings)))))
 
 (defrule the
   ((type-expression value)
@@ -691,11 +706,25 @@
    (->> (head arguments ... value) more ...))
   ((value head more ...) (->> (head value) more ...)))
 
-(defrule let-try
-  ((((name value) ...) body ...)
-   (do (local name (try value)) ... body ...)))
+(def let-try
+  (macro (form)
+    (template (let (unquote (tried-bindings (binding-list form)))
+                (splice (drop 2 form))))))
 
-(header-shape (let-try bindings))
+(header-shape (let-try bindings) :bindings)
+
+(def tried-bindings
+  (fn (bindings)
+    (tried-onto (list) bindings)))
+
+(def tried-onto
+  (fn (tried bindings)
+    (if (empty? bindings)
+      tried
+      (recur (concat tried
+                     (list (first bindings)
+                           (list (quote try) (nth bindings 1))))
+             (drop 2 bindings)))))
 
 (defrule try->
   ((value) value)

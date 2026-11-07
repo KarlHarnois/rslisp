@@ -1,5 +1,5 @@
 (defn ping (f n)
-  (loop ((i 0))
+  (loop (i 0)
     (if (< i 2)
       (do (f i) (recur (+ i 1)))
       (do)))

@@ -68,9 +68,9 @@ error[L0336]: each name and its value go straight into the binding list of `let`
    = help: write it as `(let (step 0 label "a") ...)`
 
 error[L0336]: each name and its value go straight into the binding list of `let`, without their own parentheses
-  --> expand/let_binding_list_errors.rslisp:20:27
+  --> expand/let_binding_list_errors.rslisp:21:9
    |
-20 | (defn text-first () (let ((label "a") (count 1)) count))
-   |                           ^^^^^^^^^^^ a name and its value in their own parentheses
+21 |   (let ((label "a") (count 1)) count))
+   |         ^^^^^^^^^^^ a name and its value in their own parentheses
    |
    = help: write it as `(let (label "a" count 1) ...)`
