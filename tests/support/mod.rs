@@ -1,6 +1,7 @@
 mod formatting;
 mod headers;
 mod reports;
+mod saved_prelude;
 
 use std::fs;
 use std::io::{Read, Write};
@@ -26,6 +27,7 @@ use rustc_hash::FxHashMap;
 pub use formatting::{FormatFailures, ShapeLookup};
 pub use headers::HeaderAgreement;
 pub use reports::FixtureReports;
+pub use saved_prelude::SavedPreludeAgreement;
 
 pub struct Fixture {
     sources: SourceMap,
