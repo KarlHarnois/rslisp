@@ -3,8 +3,8 @@ use super::promoted_constants::PromotedConstants;
 use crate::core::{BindingId, FieldLabel};
 use crate::source::Span;
 use crate::types::{
-    Borrow, Lifetime, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem, TypedControl,
-    TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
+    Borrow, FieldOrder, Lifetime, Type, TypedArgument, TypedBinder, TypedBlock, TypedBodyItem,
+    TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf, TypedStructExpr,
 };
 
 pub(super) struct LocalBorrow<'e> {
@@ -108,7 +108,9 @@ impl<'e> LocalBorrows<'e> {
             TypedExprKind::Struct(TypedStructExpr::New(owner, fields)) => {
                 self.borrowing_field(*owner, fields)
             }
-            TypedExprKind::Variant(variant, payloads) => self.borrowing_payload(*variant, payloads),
+            TypedExprKind::Variant(variant, payloads, order) => {
+                self.borrowing_payload(*variant, payloads, order)
+            }
             TypedExprKind::Control(control) => self.returned_from(control),
             _ => None,
         }
@@ -177,10 +179,11 @@ impl<'e> LocalBorrows<'e> {
         &self,
         variant: BindingId,
         payloads: &'e [TypedExpr],
+        order: &FieldOrder,
     ) -> Option<LocalBorrow<'e>> {
-        payloads.iter().enumerate().find_map(|(position, value)| {
-            self.returned(value)
-                .map(|found| found.held_by(BorrowHolder::Payload(variant, position)))
+        payloads.iter().enumerate().find_map(|(written, value)| {
+            let holder = BorrowHolder::Payload(variant, order.field_of(written));
+            self.returned(value).map(|found| found.held_by(holder))
         })
     }
 

@@ -60,7 +60,9 @@ impl OpenLiteralSearch<'_> {
             TypedExprKind::Call(callee, arguments) => self.call(callee, arguments, context),
             TypedExprKind::Control(control) => self.control(control, context),
             TypedExprKind::Struct(structure) => self.structure(structure, context),
-            TypedExprKind::Variant(binding, payloads) => self.variant(*binding, payloads, context),
+            TypedExprKind::Variant(binding, payloads, order) => {
+                self.variant(*binding, &order.in_field_order(payloads), context)
+            }
             _ => self.other_kind(expr, context),
         }
     }
@@ -236,7 +238,7 @@ impl OpenLiteralSearch<'_> {
         self.positions(&values, contexts);
     }
 
-    fn variant(&mut self, binding: BindingId, payloads: &[TypedExpr], context: TypeContext) {
+    fn variant(&mut self, binding: BindingId, values: &[&TypedExpr], context: TypeContext) {
         let BindingKind::Variant(_, VariantInfo { owner, index, .. }) =
             self.program.bindings.get(binding).kind()
         else {
@@ -248,9 +250,8 @@ impl OpenLiteralSearch<'_> {
             .get(owner)
             .expect("a reached enum has a definition");
         let declared = definition.variants[index].payload_types().into_iter();
-        let values: Vec<&TypedExpr> = payloads.iter().collect();
         let contexts = GenericPositions::of_fields(&definition.params, declared)
-            .contexts(&self.anchor.certainties(&values), context);
-        self.positions(&values, contexts);
+            .contexts(&self.anchor.certainties(values), context);
+        self.positions(values, contexts);
     }
 }

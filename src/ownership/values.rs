@@ -100,7 +100,7 @@ impl<'a> FunctionValueModes<'a> {
         match kind {
             TypedExprKind::Recur(arguments) => self.arguments(arguments, current, current),
             TypedExprKind::Struct(structure) => self.structure(structure, ty, current),
-            TypedExprKind::Variant(_, arguments) => self.expressions(arguments, current),
+            TypedExprKind::Variant(_, arguments, _) => self.expressions(arguments, current),
             TypedExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item, current),
             TypedExprKind::TraitObject(value, _) => self.expr(value, current),
             _ => self.value_kind(kind, current),

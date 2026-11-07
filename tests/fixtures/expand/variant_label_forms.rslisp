@@ -1,0 +1,6 @@
+(enum shape
+  (labeled (struct (text str) (size f64))))
+
+(defn in-order () (shape/labeled :text "hi" :size 2.0))
+
+(defn reordered () (shape/labeled :size 2.0 :text "hi"))

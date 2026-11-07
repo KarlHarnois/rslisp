@@ -150,6 +150,7 @@ struct ExpansionTables {
     trait_paths: FxHashMap<crate::core::BindingId, Rc<str>>,
     structural_paths: FxHashMap<Rc<str>, (crate::core::BindingId, Span)>,
     enum_variants: FxHashMap<crate::core::BindingId, Vec<crate::core::BindingId>>,
+    variant_fields: FxHashMap<crate::core::BindingId, Vec<Rc<str>>>,
     trait_methods: FxHashMap<crate::core::BindingId, TraitMethods>,
     globals: GlobalTable,
     module_notes: ModuleNotes,

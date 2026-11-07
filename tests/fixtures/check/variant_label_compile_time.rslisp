@@ -1,0 +1,8 @@
+(use prelude/macros defmacro)
+
+(enum shape
+  (labeled (struct (text str) (size f64))))
+
+(defmacro build () (shape/labeled :text "hi" :size 2.0))
+
+(defn main () (build))

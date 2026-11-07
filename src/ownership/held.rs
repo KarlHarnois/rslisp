@@ -36,7 +36,7 @@ impl<'h, 'e> HeldClosures<'h, 'e> {
 
     fn held_values(&self, value: &'e TypedExpr) -> Vec<&'e TypedExpr> {
         match &value.kind {
-            TypedExprKind::Variant(_, payloads) => payloads.iter().collect(),
+            TypedExprKind::Variant(_, payloads, _) => payloads.iter().collect(),
             TypedExprKind::Call(callee, arguments) if self.templates.is_template(callee) => {
                 arguments
                     .iter()

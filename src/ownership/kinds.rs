@@ -513,7 +513,7 @@ impl<'a> ClosureKinds<'a> {
     ) -> CaptureReport {
         match kind {
             TypedExprKind::Struct(structure) => self.scan_structure(expr, structure, own),
-            TypedExprKind::Variant(_, arguments) => {
+            TypedExprKind::Variant(_, arguments, _) => {
                 let values: Vec<&TypedExpr> = arguments.iter().collect();
                 self.scan_values(&values, own)
             }
@@ -1340,7 +1340,7 @@ impl<'a> ClosureKinds<'a> {
             TypedExprKind::Struct(structure) => {
                 self.require_structure(structure, params, nested, uses)
             }
-            TypedExprKind::Variant(_, arguments) => {
+            TypedExprKind::Variant(_, arguments, _) => {
                 for argument in arguments {
                     self.require_expression(argument, params, nested, uses);
                 }

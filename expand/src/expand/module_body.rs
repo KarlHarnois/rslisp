@@ -11,8 +11,8 @@ use super::spliced_forms::{SplicedForm, SplicedForms};
 use super::structural_clause::DeclaredTrait;
 use crate::core::{
     BindingId, BindingInfo, BindingKind, ControlForm, CoreModule, DefinitionForm, Expr, ExprKind,
-    ExpressionForm, FieldLabel, ImplAssociatedType, ImplMethod, Item, ItemKind, KernelForm, Leaf,
-    ModuleId, Namespace, RUST_TRAIT_ASSOCIATED_MARKER, RUST_TRAIT_HELP_MARKER,
+    ExpressionForm, FieldLabel, ImplAssociatedType, ImplMethod, Item, ItemKind, KernelForm,
+    Keyword, Leaf, ModuleId, Namespace, RUST_TRAIT_ASSOCIATED_MARKER, RUST_TRAIT_HELP_MARKER,
     RUST_TRAIT_METHOD_MARKER, RUST_TRAIT_STRUCTURAL_MARKER, RustTemplate, RustTraitAssociatedType,
     RustTraitDeclaration, RustTraitImplementor, TraitAssociatedType, TraitMethod, TypeBinder,
     TypeBound, TypeExpr, TypeExprKind, VariantDeclaration, VariantInfo, VariantPayload,
@@ -325,14 +325,17 @@ impl Expander<'_> {
         let mut constructors = Vec::new();
         for (index, variant) in items[first_variant..].iter().enumerate() {
             let (variant_name, arity) = self.variant_shape(&shape, variant)?;
-            constructors.push(self.define_variant(
-                binding,
-                name,
-                variant_name,
+            let info = VariantInfo {
+                owner: binding,
                 index,
                 arity,
-                context,
-            )?);
+            };
+            let constructor = self.define_variant(info, name, variant_name, context)?;
+            if let Some(fields) = self.named_fields(variant) {
+                let names = fields.iter().filter_map(Self::declared_field).collect();
+                self.tables.variant_fields.insert(constructor, names);
+            }
+            constructors.push(constructor);
         }
         self.tables.enum_variants.insert(binding, constructors);
         Ok(Some(PendingItem::Enum(binding, form)))
@@ -348,14 +351,12 @@ impl Expander<'_> {
 
     fn define_variant(
         &mut self,
-        owner: BindingId,
+        info: VariantInfo,
         enum_name: &Form,
         variant_name: &Form,
-        index: usize,
-        arity: usize,
         context: &DefinitionContext,
     ) -> Result<BindingId, Diagnostic> {
-        let BindingKind::Enum(module) = self.kind(owner) else {
+        let BindingKind::Enum(module) = self.kind(info.owner) else {
             unreachable!("an enum's owner is an enum binding");
         };
         let enum_symbol = enum_name
@@ -372,14 +373,7 @@ impl Expander<'_> {
         self.define_global(
             &binder,
             Namespace::Value,
-            BindingKind::Variant(
-                module,
-                VariantInfo {
-                    owner,
-                    index,
-                    arity,
-                },
-            ),
+            BindingKind::Variant(module, info),
             context,
         )
     }
@@ -395,17 +389,26 @@ impl Expander<'_> {
                 let Some(name) = items.first() else {
                     return Err(shape.malformed(variant));
                 };
-                let payload = &items[1..];
-                if let [single] = payload
-                    && self.is_struct_payload(single)
-                {
-                    let fields = single.as_list().map_or(&[][..], |items| &items[1..]);
-                    return Ok((name, fields.len()));
-                }
-                Ok((name, payload.len()))
+                let arity = self
+                    .named_fields(variant)
+                    .map_or(items.len() - 1, <[Form]>::len);
+                Ok((name, arity))
             }
             FormKind::Number(_) | FormKind::String(_) => Err(shape.malformed(variant)),
         }
+    }
+
+    fn named_fields<'f>(&self, variant: &'f Form) -> Option<&'f [Form]> {
+        let [_, single] = variant.as_list()? else {
+            return None;
+        };
+        self.is_struct_payload(single)
+            .then(|| single.as_list().map_or(&[][..], |items| &items[1..]))
+    }
+
+    fn declared_field(field: &Form) -> Option<Rc<str>> {
+        let name = field.as_list()?.first()?.as_symbol()?.name();
+        Some(Keyword::field_name(name).unwrap_or(name).into())
     }
 
     fn is_struct_payload(&self, form: &Form) -> bool {

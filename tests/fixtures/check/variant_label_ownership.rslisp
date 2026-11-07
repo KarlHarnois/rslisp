@@ -1,0 +1,21 @@
+(enum held
+  (both (struct (first string) (second string))))
+
+(enum view
+  (counted (struct (count i64) (text (ref str)))))
+
+(enum action
+  (timed (struct (count i64)
+                 (run (fn (i64) i64)))))
+
+(defn moved-in-written-order ()
+  (local name (str "x"))
+  (held/both :second name :first name))
+
+(defn borrow-of-a-local ()
+  (local text (str "x"))
+  (view/counted :text (ref text) :count 1))
+
+(defn capture-in-a-reordered-field (step)
+  (action/timed :run (fn (x) (+ x step))
+                :count 1))

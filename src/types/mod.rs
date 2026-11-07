@@ -69,7 +69,7 @@ pub use templates::TemplateBorrows;
 pub use traits::{Implementor, RustTrait, TraitTable};
 pub use ty::{Bound, GenericId, GenericParam, Lifetime, Scheme, Type, TypeVar};
 pub use typed::{
-    Borrow, ClosureType, FieldPlace, PendingModeCheck, ReceiverKind, TraitMethodInfo,
+    Borrow, ClosureType, FieldOrder, FieldPlace, PendingModeCheck, ReceiverKind, TraitMethodInfo,
     TypedArgument, TypedArm, TypedAssociatedType, TypedBinder, TypedBlock, TypedBodyItem,
     TypedControl, TypedConversion, TypedDefinition, TypedExpr, TypedExprKind, TypedImplMethod,
     TypedLambda, TypedLeaf, TypedMatch, TypedModule, TypedPattern, TypedPatternKind, TypedProgram,

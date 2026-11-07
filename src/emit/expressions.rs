@@ -26,9 +26,10 @@ use crate::ownership::StructUpdateOrder;
 use crate::reader::{Number, NumberValue};
 use crate::source::Span;
 use crate::types::{
-    Borrow, ClosureKind, Collection, GenericId, Type, TypedArgument, TypedArm, TypedBinder,
-    TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf,
-    TypedMatch, TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr, VariantPayload,
+    Borrow, ClosureKind, Collection, FieldOrder, GenericId, Type, TypedArgument, TypedArm,
+    TypedBinder, TypedBlock, TypedBodyItem, TypedControl, TypedExpr, TypedExprKind, TypedLambda,
+    TypedLeaf, TypedMatch, TypedPattern, TypedPatternKind, TypedProgram, TypedStructExpr,
+    VariantPayload,
 };
 
 mod tail_loop;
@@ -484,7 +485,9 @@ impl<'a> ExpressionEmitter<'a> {
         match &expr.kind {
             TypedExprKind::Control(control) => self.control(control),
             TypedExprKind::Struct(structure) => self.structure(structure, &expr.ty),
-            TypedExprKind::Variant(binding, arguments) => self.variant(*binding, arguments),
+            TypedExprKind::Variant(binding, arguments, order) => {
+                self.variant(*binding, arguments, order)
+            }
             TypedExprKind::Assoc(value, keys, item) => self.assoc_block(value, keys, item),
             TypedExprKind::TraitObject(value, trait_binding) => {
                 self.trait_object(value, *trait_binding)
@@ -1232,7 +1235,7 @@ impl<'a> ExpressionEmitter<'a> {
         }
     }
 
-    fn variant(&mut self, binding: BindingId, arguments: &[TypedExpr]) -> Code {
+    fn variant(&mut self, binding: BindingId, arguments: &[TypedExpr], order: &FieldOrder) -> Code {
         let BindingKind::Variant(_, VariantInfo { owner, index, .. }) =
             self.program.bindings.get(binding).kind()
         else {
@@ -1267,7 +1270,7 @@ impl<'a> ExpressionEmitter<'a> {
         match &payload {
             VariantPayload::None => Code::atom(path),
             VariantPayload::Positional(types) => self.positional_variant(path, types, arguments),
-            VariantPayload::Named(fields) => self.named_variant(path, fields, arguments),
+            VariantPayload::Named(fields) => self.named_variant(path, fields, arguments, order),
         }
     }
 
@@ -1299,15 +1302,17 @@ impl<'a> ExpressionEmitter<'a> {
         path: String,
         fields: &[(std::rc::Rc<str>, Type)],
         arguments: &[TypedExpr],
+        order: &FieldOrder,
     ) -> Code {
         if fields.is_empty() {
             return Code::atom(path);
         }
         let mut parts = vec![Code::atom(format!("{path} {{ "))];
-        for (position, ((label, payload), argument)) in fields.iter().zip(arguments).enumerate() {
-            if position > 0 {
+        for (written, argument) in arguments.iter().enumerate() {
+            if written > 0 {
                 parts.push(Code::atom(", "));
             }
+            let (label, payload) = &fields[order.field_of(written)];
             let field = NameMangler::value(label);
             parts.push(Code::atom(format!("{field}: ")));
             parts.push(self.payload_argument(argument, payload));

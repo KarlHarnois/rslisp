@@ -1,0 +1,42 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/variant_label_ownership.rslisp
+---
+error[L0501]: use of moved value `name`
+  --> check/variant_label_ownership.rslisp:13:34
+   |
+13 |   (held/both :second name :first name))
+   |                      ----        ^^^^ value used here after it moved
+   |                      |
+   |                      value moved here
+   |
+help: clone the value if both places need it
+   |
+13 -   (held/both :second name :first name))
+13 +   (held/both :second (clone name) :first name))
+   |
+
+error[L0510]: cannot return a borrow of a local value
+  --> check/variant_label_ownership.rslisp:17:23
+   |
+ 5 |   (counted (struct (count i64) (text (ref str)))))
+   |                                      --------- declared as a borrow here
+...
+16 |   (local text (str "x"))
+   |          ---- this local is dropped when the function returns
+17 |   (view/counted :text (ref text) :count 1))
+   |                       ^^^^^^^^^^ this borrows a local value
+   |
+   = help: the field `text` of `view/counted` borrows its data, so give it the owned type `string`
+
+error[L0511]: cannot store a capturing closure in the `timed` payload
+  --> check/variant_label_ownership.rslisp:20:22
+   |
+ 9 |                  (run (fn (i64) i64)))))
+   |                       -------------- declared with a function type here
+...
+20 |   (action/timed :run (fn (x) (+ x step))
+   |                      ^^^^^^^^^^^^^^^^^^^ this closure captures `step`
+   |
+   = help: a payload declared with a function type holds only a named function or a closure that captures nothing

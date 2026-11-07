@@ -197,7 +197,7 @@ impl TypedExprKind {
             | TypedExprKind::Deref(value)
             | TypedExprKind::TraitObject(value, _) => vec![value],
             TypedExprKind::Struct(structure) => structure.children(),
-            TypedExprKind::Variant(_, arguments) => arguments.iter().collect(),
+            TypedExprKind::Variant(_, arguments, _) => arguments.iter().collect(),
             TypedExprKind::Assoc(value, keys, item) => std::iter::once(value.as_ref())
                 .chain(keys)
                 .chain(std::iter::once(item.as_ref()))
@@ -217,7 +217,7 @@ impl TypedExprKind {
             | TypedExprKind::Deref(value)
             | TypedExprKind::TraitObject(value, _) => vec![value],
             TypedExprKind::Struct(structure) => structure.children_mut(),
-            TypedExprKind::Variant(_, arguments) => arguments.iter_mut().collect(),
+            TypedExprKind::Variant(_, arguments, _) => arguments.iter_mut().collect(),
             TypedExprKind::Assoc(value, keys, item) => std::iter::once(value.as_mut())
                 .chain(keys.iter_mut())
                 .chain(std::iter::once(item.as_mut()))

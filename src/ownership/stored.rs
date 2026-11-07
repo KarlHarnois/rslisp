@@ -11,8 +11,8 @@ use crate::core::{BindingId, FieldLabel};
 use crate::diagnostic::Diagnostic;
 use crate::source::Span;
 use crate::types::{
-    Type, TypedArgument, TypedDefinition, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf,
-    TypedProgram, TypedStructExpr,
+    FieldOrder, Type, TypedArgument, TypedDefinition, TypedExpr, TypedExprKind, TypedLambda,
+    TypedLeaf, TypedProgram, TypedStructExpr,
 };
 
 pub struct StoredClosures<'p> {
@@ -196,7 +196,9 @@ impl<'e> Store<'e> {
             TypedExprKind::Struct(
                 TypedStructExpr::New(owner, fields) | TypedStructExpr::Update(owner, _, fields),
             ) => Self::fields(*owner, fields, slots),
-            TypedExprKind::Variant(variant, payloads) => Self::payloads(*variant, payloads, slots),
+            TypedExprKind::Variant(variant, payloads, order) => {
+                Self::payloads(*variant, payloads, order, slots)
+            }
             TypedExprKind::Call(callee, arguments) => Self::arguments(callee, arguments, storing),
             _ => Vec::new(),
         }
@@ -213,12 +215,18 @@ impl<'e> Store<'e> {
             .collect()
     }
 
-    fn payloads(variant: BindingId, payloads: &'e [TypedExpr], slots: &FunctionSlots) -> Vec<Self> {
+    fn payloads(
+        variant: BindingId,
+        payloads: &'e [TypedExpr],
+        order: &FieldOrder,
+        slots: &FunctionSlots,
+    ) -> Vec<Self> {
         payloads
             .iter()
             .enumerate()
-            .filter_map(|(position, value)| {
-                Some(Self::new(value, slots.payload(variant, position)?))
+            .filter_map(|(written, value)| {
+                let slot = slots.payload(variant, order.field_of(written))?;
+                Some(Self::new(value, slot))
             })
             .collect()
     }

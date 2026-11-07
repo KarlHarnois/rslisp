@@ -1,0 +1,16 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/variant_labels.rslisp
+---
+in order 2
+reordered 3
+positional 4
+size runs first
+text runs second
+written order 5
+count 1
+9
+6
+6
+7

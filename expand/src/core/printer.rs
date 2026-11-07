@@ -158,6 +158,7 @@ impl<'a> CorePrinter<'a> {
         match kind {
             ExprKind::Struct(structure) => self.structure(structure),
             ExprKind::Variant(binding, arguments) => self.variant(*binding, arguments),
+            ExprKind::LabeledVariant(binding, fields) => self.labeled_variant(*binding, fields),
             ExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item),
             ExprKind::MapAt(operation, value, arguments) => {
                 self.map_at(*operation, value, arguments)
@@ -495,6 +496,15 @@ impl<'a> CorePrinter<'a> {
     fn variant(&mut self, binding: BindingId, arguments: &[Expr]) -> String {
         let mut parts = vec![self.name(binding)];
         parts.extend(arguments.iter().map(|argument| self.expr(argument)));
+        format!("({})", parts.join(" "))
+    }
+
+    fn labeled_variant(&mut self, binding: BindingId, fields: &[(FieldLabel, Expr)]) -> String {
+        let mut parts = vec![self.name(binding)];
+        for (label, value) in fields {
+            parts.push(label.spelled(&label.name));
+            parts.push(self.expr(value));
+        }
         format!("({})", parts.join(" "))
     }
 

@@ -113,7 +113,9 @@ impl<'h> Interpreter<'h> {
             ExprKind::Control(control) => self.step_control(control, env, span),
             ExprKind::Struct(_) => Err(InterpretProblems::runtime_only("structs", span)),
             ExprKind::Try(_) => Err(InterpretProblems::runtime_only("`try` forms", span)),
-            ExprKind::Variant(..) => Err(InterpretProblems::runtime_only("enum values", span)),
+            ExprKind::Variant(..) | ExprKind::LabeledVariant(..) => {
+                Err(InterpretProblems::runtime_only("enum values", span))
+            }
             _ => unreachable!("the caller matches a value form"),
         }
     }

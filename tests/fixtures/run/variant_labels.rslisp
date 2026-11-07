@@ -1,0 +1,66 @@
+(enum shape
+  (circle f64)
+  (labeled (struct (text string) (size f64)))
+  dot)
+
+(enum (tagged item)
+  (entry (struct (key str) (value item))))
+
+(enum tree
+  (leaf (struct (value i64)))
+  (branch (struct (left tree) (right tree))))
+
+(defstruct ruler
+  :length f64)
+
+(enum action
+  (named (struct (reader (fn ((ref ruler)) f64))))
+  (by (fn ((ref ruler)) f64)))
+
+(defn announce (word)
+  (println word)
+  word)
+
+(defn describe (s)
+  (match s
+    ((shape/labeled text size) (println text " " size))
+    ((shape/circle radius) (println radius))
+    (shape/dot (println "dot"))))
+
+(defn total (t)
+  (match t
+    ((tree/leaf value) value)
+    ((tree/branch left right) (+ (total left) (total right)))))
+
+(defn main ()
+  (describe (shape/labeled :text (str "in order") :size 2.0))
+  (describe (shape/labeled :size 3.0 :text (str "reordered")))
+  (describe (shape/labeled (str "positional") 4.0))
+  (describe (shape/labeled
+              :size (do (announce "size runs first") 5.0)
+              :text (do (announce "text runs second") (str "written order"))))
+  (match (tagged/entry :value 1 :key "count")
+    ((tagged/entry key value) (println key " " value)))
+  (println (total (tree/branch :right (tree/leaf :value 2)
+                               :left (tree/branch :left (tree/leaf :value 3)
+                                                  :right (tree/leaf 4)))))
+  (local stick (->ruler 6.0))
+  (match (action/named :reader :length)
+    ((action/named reader) (println (reader (ref stick))))
+    (_ (println "other")))
+  (match (action/by :length)
+    ((action/by reader) (println (reader (ref stick))))
+    (_ (println "other")))
+  (match (next-job)
+    ((job/step run (some seed)) (println (run seed)))
+    (_ (println "other"))))
+
+(enum (job item)
+  (step (struct (run (fn (item) f64))
+                (seed (option item)))))
+
+(type next-job (fn () (job ruler)))
+
+(defn next-job ()
+  (job/step :run (fn (item) (:length item))
+            :seed (some (->ruler 7.0))))

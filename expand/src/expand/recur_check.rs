@@ -63,14 +63,23 @@ impl RecurCheck {
     ) -> Result<(), Diagnostic> {
         match kind {
             ExprKind::Recur(arguments) => self.recur(expr, arguments, position),
-            ExprKind::Struct(structure) => self.structure(structure),
-            ExprKind::Variant(_, arguments) => self.arguments(arguments.iter()),
             ExprKind::Assoc(value, keys, item) | ExprKind::SetAt(value, keys, item) => {
                 self.assoc(value, keys, item)
             }
             ExprKind::MapAt(_, value, arguments) => {
                 self.expr(value, TailPosition::NotTail)?;
                 self.arguments(arguments.iter())
+            }
+            _ => self.constructed_value(kind),
+        }
+    }
+
+    fn constructed_value(&self, kind: &ExprKind) -> Result<(), Diagnostic> {
+        match kind {
+            ExprKind::Struct(structure) => self.structure(structure),
+            ExprKind::Variant(_, arguments) => self.arguments(arguments.iter()),
+            ExprKind::LabeledVariant(_, fields) => {
+                self.arguments(fields.iter().map(|(_, value)| value))
             }
             _ => self.value_kind(kind),
         }

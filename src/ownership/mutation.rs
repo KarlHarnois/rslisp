@@ -64,7 +64,7 @@ impl ChangedValues {
         match kind {
             TypedExprKind::Recur(arguments) => self.arguments(arguments, enclosing, true),
             TypedExprKind::Struct(structure) => self.structure(structure, enclosing),
-            TypedExprKind::Variant(_, arguments) => self.expressions(arguments, enclosing),
+            TypedExprKind::Variant(_, arguments, _) => self.expressions(arguments, enclosing),
             TypedExprKind::Assoc(value, keys, item) => self.assoc(value, keys, item, enclosing),
             TypedExprKind::TraitObject(value, _) => self.expr(value, enclosing),
             TypedExprKind::Fn(lambda) => self.block(&lambda.body, enclosing),

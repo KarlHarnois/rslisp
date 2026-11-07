@@ -1,3 +1,4 @@
+mod labeled_variant;
 mod open_collections;
 pub(super) use open_collections::{OpenCollections, OpenSetAt};
 mod shared_variables;
@@ -22,9 +23,9 @@ use super::ty::Bound;
 use super::ty::Type;
 use super::ty::TypeVar;
 use super::typed::{
-    Borrow, PendingModeCheck, TryErrorConversion, TypedArgument, TypedArm, TypedBinder, TypedBlock,
-    TypedBodyItem, TypedControl, TypedConversion, TypedExpr, TypedExprKind, TypedLambda, TypedLeaf,
-    TypedMatch, TypedPattern, TypedPatternKind, TypedStructExpr,
+    Borrow, FieldOrder, PendingModeCheck, TryErrorConversion, TypedArgument, TypedArm, TypedBinder,
+    TypedBlock, TypedBodyItem, TypedControl, TypedConversion, TypedExpr, TypedExprKind,
+    TypedLambda, TypedLeaf, TypedMatch, TypedPattern, TypedPatternKind, TypedStructExpr,
 };
 use super::unifier::{LiteralKind, UnifyError};
 use super::wrapper::FunctionValueWrapper;
@@ -38,6 +39,12 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::reader::NumberValue;
 use crate::source::Span;
 use shared_variables::SharedVariables;
+
+struct VariantSite {
+    info: VariantInfo,
+    type_arguments: Vec<Type>,
+    payload: Vec<Type>,
+}
 
 enum MapIterator {
     Keys,
@@ -134,6 +141,19 @@ impl TypeChecker {
         match kind {
             ExprKind::Struct(structure) => self.infer_struct(structure, span),
             ExprKind::Variant(binding, arguments) => self.infer_variant(*binding, arguments, span),
+            ExprKind::LabeledVariant(binding, fields) => {
+                self.infer_labeled_variant(*binding, fields, None, span)
+            }
+            _ => self.infer_collection_form(kind, span),
+        }
+    }
+
+    fn infer_collection_form(
+        &mut self,
+        kind: &ExprKind,
+        span: Span,
+    ) -> Result<TypedExpr, Diagnostic> {
+        match kind {
             ExprKind::Assoc(value, keys, item) => self.infer_assoc(value, keys, item, span),
             ExprKind::MapAt(operation, value, arguments) => {
                 self.infer_map_at(*operation, value, arguments, span)
@@ -272,42 +292,45 @@ impl TypeChecker {
         expected: Option<&Type>,
         span: Span,
     ) -> Result<TypedExpr, Diagnostic> {
-        let BindingKind::Variant(
-            _,
-            VariantInfo {
-                owner,
-                index,
-                arity,
-            },
-        ) = self.bindings.get(binding).kind()
-        else {
-            unreachable!("the expander resolves a variant call to a variant binding");
-        };
-        let type_arguments = match expected.map(|expected| self.unifier.shallow(expected)) {
-            Some(Type::Named(expected_owner, arguments)) if expected_owner == owner => arguments,
-            _ => self.fresh_arguments(owner),
-        };
-        let payload = self.visible_payloads(owner, index, &type_arguments);
-        if arguments.len() != arity {
+        let site = self.variant_site(binding, expected);
+        if arguments.len() != site.info.arity {
             return Err(TypeProblems::wrong_argument_count(
-                arity,
+                site.info.arity,
                 arguments.len(),
                 span,
             ));
         }
         let mut typed = Vec::new();
-        for (argument, expected) in arguments.iter().zip(&payload) {
+        for (argument, expected) in arguments.iter().zip(&site.payload) {
             let value = self.infer_against(argument, expected, MismatchContext::Plain)?;
             typed.push(value);
         }
-        if let Some(value) = self.result_ok_try(owner, index, &typed) {
+        if let Some(value) = self.result_ok_try(site.info.owner, site.info.index, &typed) {
             return Ok(value);
         }
         Ok(TypedExpr {
-            kind: TypedExprKind::Variant(binding, typed),
-            ty: Type::Named(owner, type_arguments),
+            kind: TypedExprKind::Variant(binding, typed, FieldOrder::Declared),
+            ty: Type::Named(site.info.owner, site.type_arguments),
             span,
         })
+    }
+
+    fn variant_site(&mut self, binding: BindingId, expected: Option<&Type>) -> VariantSite {
+        let BindingKind::Variant(_, info) = self.bindings.get(binding).kind() else {
+            unreachable!("the expander resolves a variant call to a variant binding");
+        };
+        let type_arguments = match expected.map(|expected| self.unifier.shallow(expected)) {
+            Some(Type::Named(expected_owner, arguments)) if expected_owner == info.owner => {
+                arguments
+            }
+            _ => self.fresh_arguments(info.owner),
+        };
+        let payload = self.visible_payloads(info.owner, info.index, &type_arguments);
+        VariantSite {
+            info,
+            type_arguments,
+            payload,
+        }
     }
 
     fn result_ok_try(
@@ -1211,6 +1234,9 @@ impl TypeChecker {
             }
             (ExprKind::Variant(binding, arguments), _) => {
                 self.infer_variant_expecting(*binding, arguments, Some(expected), expr.span())
+            }
+            (ExprKind::LabeledVariant(binding, fields), _) => {
+                self.infer_labeled_variant(*binding, fields, Some(expected), expr.span())
             }
             _ => self.infer(expr),
         }
@@ -2723,14 +2749,7 @@ impl TypeChecker {
         let arguments = self.fresh_arguments(binding);
         let typed_fields = self.check_fields(binding, &arguments, fields)?;
         let declared = self.instantiated_fields(binding, &arguments);
-        let missing: Vec<Rc<str>> = declared
-            .iter()
-            .map(|(name, _)| name.clone())
-            .filter(|name| !fields.iter().any(|(label, _)| label.name == *name))
-            .collect();
-        if !missing.is_empty() {
-            return Err(TypeProblems::missing_fields(&struct_name, &missing, span));
-        }
+        Self::require_every_field(&struct_name, &declared, fields, span)?;
         Ok((
             TypedExprKind::Struct(TypedStructExpr::New(binding, typed_fields)),
             Type::Named(binding, arguments),
@@ -3521,31 +3540,53 @@ impl TypeChecker {
         let struct_name = self.bindings.get(binding).name().to_string();
         let declared = self.instantiated_fields(binding, arguments);
         let mut typed_fields: Vec<(FieldLabel, TypedExpr)> = Vec::new();
-        for (label, value) in fields {
-            if let Some((first, _)) = typed_fields
-                .iter()
-                .find(|(earlier, _)| earlier.name == label.name)
-            {
-                return Err(TypeProblems::repeated_field(
-                    &struct_name,
-                    label,
-                    first.span,
-                ));
-            }
-            let Some((_, field_type)) = declared.iter().find(|(name, _)| *name == label.name)
-            else {
-                let names: Vec<Rc<str>> = declared.iter().map(|(name, _)| name.clone()).collect();
-                return Err(TypeProblems::unknown_field(
-                    &struct_name,
-                    label,
-                    SimilarName::closest(&label.name, &names),
-                ));
-            };
+        for (given, (label, value)) in fields.iter().enumerate() {
+            let position = Self::field_position(&struct_name, &declared, fields, given)?;
+            let field_type = &declared[position].1;
             let typed = self.infer_expecting(value, field_type, &MismatchContext::Plain)?;
             self.expect(field_type, &typed.ty, typed.span, MismatchContext::Plain)?;
             typed_fields.push((label.clone(), typed));
         }
         Ok(typed_fields)
+    }
+
+    fn field_position(
+        owner: &str,
+        declared: &[(Rc<str>, Type)],
+        fields: &[(FieldLabel, Expr)],
+        given: usize,
+    ) -> Result<usize, Diagnostic> {
+        let label = &fields[given].0;
+        if let Some((first, _)) = fields[..given]
+            .iter()
+            .find(|(earlier, _)| earlier.name == label.name)
+        {
+            return Err(TypeProblems::repeated_field(owner, label, first.span));
+        }
+        declared
+            .iter()
+            .position(|(name, _)| *name == label.name)
+            .ok_or_else(|| {
+                let names: Vec<Rc<str>> = declared.iter().map(|(name, _)| name.clone()).collect();
+                TypeProblems::unknown_field(owner, label, SimilarName::closest(&label.name, &names))
+            })
+    }
+
+    fn require_every_field(
+        owner: &str,
+        declared: &[(Rc<str>, Type)],
+        fields: &[(FieldLabel, Expr)],
+        span: Span,
+    ) -> Result<(), Diagnostic> {
+        let missing: Vec<Rc<str>> = declared
+            .iter()
+            .map(|(name, _)| name.clone())
+            .filter(|name| !fields.iter().any(|(label, _)| label.name == *name))
+            .collect();
+        if missing.is_empty() {
+            return Ok(());
+        }
+        Err(TypeProblems::missing_fields(owner, &missing, span))
     }
 
     fn instantiated_fields(&self, binding: BindingId, arguments: &[Type]) -> Vec<(Rc<str>, Type)> {
