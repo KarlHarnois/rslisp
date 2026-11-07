@@ -707,19 +707,14 @@ impl Expander<'_> {
 
     fn lower_arm(&mut self, shape: &Shape, arm: &Form) -> Result<Arm, Diagnostic> {
         let items = shape.list(arm)?;
-        let (pattern, body) = items
-            .split_first()
-            .ok_or_else(|| ExpandProblems::arm_body(arm.span()))?;
-        let [body] = body else {
-            return Err(ExpandProblems::arm_body(arm.span()));
-        };
+        let (pattern, body) = items.split_first().ok_or_else(|| shape.malformed(arm))?;
         let scope = self.fresh_local_scope();
         let mut pattern = pattern.clone();
-        let mut body = body.clone();
+        let mut body = body.to_vec();
         pattern.add_scope(scope);
-        body.add_scope(scope);
+        body.iter_mut().for_each(|form| form.add_scope(scope));
         let pattern = self.lower_pattern(&pattern)?;
-        let body = self.lower_body(std::slice::from_ref(&body))?;
+        let body = self.lower_body(&body)?;
         Ok(Arm {
             pattern,
             body,

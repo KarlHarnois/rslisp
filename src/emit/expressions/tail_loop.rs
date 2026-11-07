@@ -108,7 +108,10 @@ impl ExpressionEmitter<'_> {
         }
         let repeating = self.repeating_arm(matched)?;
         let ending = 1 - repeating;
-        if !Self::is_empty_do(&matched.arms[ending].body) {
+        if !Self::without_lone_do(&matched.arms[ending].body)
+            .items
+            .is_empty()
+        {
             return None;
         }
         let arm = &matched.arms[repeating];
@@ -140,20 +143,27 @@ impl ExpressionEmitter<'_> {
     }
 
     fn repeats(&self, arm: &TypedArm) -> bool {
-        self.recurring_block(arm).is_some()
+        self.statements_before_recurrence(arm).is_some()
     }
 
-    fn recurring_block<'e>(&self, arm: &'e TypedArm) -> Option<Option<&'e TypedBlock>> {
-        let [TypedBodyItem::Expr(only)] = arm.body.items.as_slice() else {
+    fn statements_before_recurrence<'e>(&self, arm: &'e TypedArm) -> Option<&'e [TypedBodyItem]> {
+        let (tail, leading) = Self::without_lone_do(&arm.body).items.split_last()?;
+        let TypedBodyItem::Expr(tail) = tail else {
             return None;
         };
-        let TypedExprKind::Control(TypedControl::Block(block)) = &only.kind else {
-            return self.recurres(only).then_some(None);
-        };
-        let Some(TypedBodyItem::Expr(tail)) = block.items.last() else {
-            return None;
-        };
-        self.recurres(tail).then_some(Some(block))
+        self.recurres(tail).then_some(leading)
+    }
+
+    fn without_lone_do(body: &TypedBlock) -> &TypedBlock {
+        match body.items.as_slice() {
+            [
+                TypedBodyItem::Expr(TypedExpr {
+                    kind: TypedExprKind::Control(TypedControl::Block(block)),
+                    ..
+                }),
+            ] => block,
+            _ => body,
+        }
     }
 
     fn recurres(&self, tail: &TypedExpr) -> bool {
@@ -162,22 +172,9 @@ impl ExpressionEmitter<'_> {
             .is_some_and(|tail_loop| tail_loop.recurrence(tail).is_some())
     }
 
-    fn is_empty_do(body: &TypedBlock) -> bool {
-        matches!(
-            body.items.as_slice(),
-            [TypedBodyItem::Expr(TypedExpr {
-                kind: TypedExprKind::Control(TypedControl::Block(block)),
-                ..
-            })] if block.items.is_empty()
-        )
-    }
-
     fn repeating_body(&mut self, arm: &TypedArm) -> Vec<Fragment> {
-        let Some(Some(block)) = self.recurring_block(arm) else {
-            return Vec::new();
-        };
-        let leading = block.items.len().saturating_sub(1);
-        self.leading_statements(&block.items[..leading])
+        let leading = self.statements_before_recurrence(arm).unwrap_or_default();
+        self.leading_statements(leading)
     }
 
     fn while_let_fragments(pattern: Code, value: Code, body: Vec<Fragment>) -> Vec<Fragment> {

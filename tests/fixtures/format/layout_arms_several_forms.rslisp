@@ -1,0 +1,7 @@
+(defn short-arms (value) (match value (1 (println "a") 2) (_ 3)))
+
+(defn long-arms (value)
+  (match value
+    ((long-pattern first-part) (println "this body is long enough to break") (println "a second statement of the arm") (+ first-part 1))
+    ((another-long-pattern) (println "this is an arm of more than sixty columns") 2)
+    (_ 3)))

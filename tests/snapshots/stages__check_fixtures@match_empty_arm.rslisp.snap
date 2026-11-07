@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/match_empty_arm.rslisp
+---
+error[L0210]: malformed `match`
+ --> check/match_empty_arm.rslisp:1:25
+  |
+1 | (defn pick (n) (match n ()))
+  |                         ^^ this does not fit the shape of `match`
+  |
+  = help: write it as `(match value (pattern body ...) ...)`

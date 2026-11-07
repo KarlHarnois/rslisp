@@ -55,7 +55,6 @@ diagnostic_codes! {
     MACRO_OUTSIDE_DEF = "L0229",
     MIXED_VARIANT_PAYLOAD = "L0230",
     NOT_A_PATTERN = "L0231",
-    ARM_BODY = "L0232",
     VARIANT_AS_VALUE = "L0233",
     NOT_A_TYPE = "L0234",
     NOT_A_NAME = "L0235",

@@ -1,0 +1,66 @@
+(enum shape (circle f64) dot)
+
+(defn area (s)
+  (match s
+    ((circle r)
+     (println "circle")
+     (local twice (* 2.0 r))
+     (+ twice r))
+    (dot 0.0)))
+
+(defn nothing (n)
+  (match n
+    (1)
+    (2 (println "two"))
+    (_ (do))))
+
+(defn sum-to (n total)
+  (match n
+    (0 total)
+    (_ (println n) (sum-to (- n 1) (+ total n)))))
+
+(defn down-to-zero (n)
+  (match n
+    (0 (println "end") 0)
+    (_ (println n) (recur (- n 1)))))
+
+(defn drain! ((items (mut (vec i64))))
+  (loop ()
+    (match (pop! items)
+      ((some item) (println item) (recur))
+      (none))))
+
+(defn drain-with-do! ((items (mut (vec i64))))
+  (loop ()
+    (match (pop! items)
+      ((some item) (do (println item) (recur)))
+      (none (do)))))
+
+(defn drain-then-report! ((items (mut (vec i64))))
+  (loop ()
+    (match (pop! items)
+      ((some item) (println item) (recur))
+      (none (println "drained")))))
+
+(defrule first-of-pair
+  ((value body ...)
+   (match value
+     ((pair left _) (do body ...) left))))
+
+(defn main ()
+  (println (match 1 (1 (println "a") 2) (_ 3)))
+  (println (area (shape/circle 2.0)))
+  (println (area shape/dot))
+  (nothing 1)
+  (nothing 2)
+  (println (sum-to 2 0))
+  (println (down-to-zero 1))
+  (local items (vec 1 2))
+  (drain! items)
+  (local more (vec 3 4))
+  (drain-with-do! more)
+  (local reported (vec 10))
+  (drain-then-report! reported)
+  (match (pair 5 6)
+    ((pair left right) (println left) (println right)))
+  (println (first-of-pair (pair 7 8) (println "body"))))
