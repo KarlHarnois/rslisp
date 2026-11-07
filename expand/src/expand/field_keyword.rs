@@ -54,6 +54,10 @@ impl Expander<'_> {
         }
     }
 
+    pub(super) fn written_field_keyword(form: &Form) -> Option<&str> {
+        Keyword::field_name(form.as_symbol()?.name())
+    }
+
     fn field_keyword_arity(form: &Form, items: &[Form]) -> Diagnostic {
         let keyword = items[0].to_string();
         match items.get(2) {

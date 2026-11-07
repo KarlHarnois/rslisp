@@ -16,7 +16,8 @@ pub use binding::{
 pub use builtin::Builtin;
 pub use expr::{
     Arm, Binder, Block, BodyItem, Control, Expr, ExprKind, FieldLabel, FieldSpelling, Lambda, Leaf,
-    Literal, MapOperation, Pattern, PatternKind, RustClause, RustTemplate, StructExpr,
+    Literal, MapOperation, Pattern, PatternArguments, PatternKind, PatternPart, RustClause,
+    RustTemplate, StructExpr,
 };
 pub use kernel::{
     ControlForm, CopyTrait, DefinitionForm, ExpressionForm, FunctionFieldTraits, KernelConstants,

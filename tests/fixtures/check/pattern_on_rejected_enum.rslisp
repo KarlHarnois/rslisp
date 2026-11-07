@@ -1,0 +1,4 @@
+(enum (holder a) (held i64))
+
+(defn read (h)
+  (match h ((holder/held n) n)))

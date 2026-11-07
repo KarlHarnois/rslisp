@@ -1,0 +1,18 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/pattern_on_rejected_enum.rslisp
+---
+error[L0443]: no payload uses the type parameter `a`
+ --> check/pattern_on_rejected_enum.rslisp:1:15
+  |
+1 | (enum (holder a) (held i64))
+  |               ^ declared here
+  |
+  = help: use `a` in a variant payload, or remove it
+
+error[L0432]: `held` takes 0 parts in a pattern but 1 was given
+ --> check/pattern_on_rejected_enum.rslisp:4:13
+  |
+4 |   (match h ((holder/held n) n)))
+  |             ^^^^^^^^^^^^^^^ this pattern has the wrong number of parts

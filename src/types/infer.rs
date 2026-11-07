@@ -10,8 +10,9 @@ use super::assumed_collections::CollectionAssumption;
 use super::borrowed_items::ArgumentSite;
 use super::checker::{TypeChecker, VariantArmReference};
 use super::collection::{Collection, CollectionKind};
-use super::enums::VariantPayload;
+use super::enums::{VariantDefinition, VariantPayload};
 use super::parameter_calls::ParameterCallRequest;
+use super::pattern_placement::{PatternFields, PatternPlacement};
 use super::pending::{DecidedBorrows, PendingBorrow};
 use super::pipelines::Pipelines;
 use super::problems::{MismatchContext, TypeProblems};
@@ -29,8 +30,8 @@ use super::unifier::{LiteralKind, UnifyError};
 use super::wrapper::FunctionValueWrapper;
 use crate::core::{
     Arm, Binder, BindingId, BindingKind, Block, BodyItem, Control, Expr, ExprKind, FieldLabel,
-    Keyword, Lambda, Leaf, Literal, MapOperation, Pattern, PatternKind, PrimitiveType,
-    ReferenceKind, RustTemplate, StructExpr, TypeExpr, TypeExprKind, VariantInfo,
+    Keyword, Lambda, Leaf, Literal, MapOperation, Pattern, PatternArguments, PatternKind,
+    PrimitiveType, ReferenceKind, RustTemplate, StructExpr, TypeExpr, TypeExprKind, VariantInfo,
 };
 use crate::diagnostic::SimilarName;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
@@ -750,7 +751,7 @@ impl TypeChecker {
     fn named_variant_pattern(
         &mut self,
         binding: BindingId,
-        patterns: &[Pattern],
+        written: &PatternArguments,
         matched: Type,
         mode: Option<ReferenceKind>,
         span: Span,
@@ -766,20 +767,17 @@ impl TypeChecker {
             .get(owner)
             .and_then(|definition| definition.instantiated_payload(index, &arguments))
             .unwrap_or_default();
-        self.check_pattern_count(
-            self.variant_name(binding),
-            storage.len(),
-            patterns.len(),
-            span,
-        )?;
-        let typed = self.lower_payload_patterns(owner, index, patterns, &storage, mode)?;
+        let placement = PatternPlacement::new(written, span);
+        let fields = self.payload_pattern_fields(owner, index);
+        let placed = placement.place(self.variant_name(binding), &fields)?;
+        let typed = self.lower_payload_patterns(owner, index, &placed, &storage, mode)?;
         Ok(TypedPatternKind::Variant(binding, typed))
     }
 
     fn struct_pattern(
         &mut self,
         binding: BindingId,
-        patterns: &[Pattern],
+        written: &PatternArguments,
         matched: Type,
         mode: Option<ReferenceKind>,
         span: Span,
@@ -790,14 +788,14 @@ impl TypeChecker {
             .get(binding)
             .map(|definition| definition.instantiated_fields(&arguments))
             .unwrap_or_default();
-        self.check_pattern_count(
+        let names = fields.iter().map(|(name, _)| name.as_ref()).collect();
+        let placement = PatternPlacement::new(written, span);
+        let placed = placement.place(
             self.bindings.get(binding).name(),
-            fields.len(),
-            patterns.len(),
-            span,
+            &PatternFields::Named(names),
         )?;
-        let typed = patterns
-            .iter()
+        let typed = placed
+            .into_iter()
             .zip(&fields)
             .map(|(pattern, (_, field_type))| self.lower_pattern(pattern, field_type, mode))
             .collect::<Result<Vec<_>, Diagnostic>>()?;
@@ -808,7 +806,7 @@ impl TypeChecker {
         &mut self,
         name: &str,
         candidates: &[BindingId],
-        arguments: &[Pattern],
+        written: &PatternArguments,
         matched: Type,
         mode: Option<ReferenceKind>,
         span: Span,
@@ -839,16 +837,27 @@ impl TypeChecker {
             .and_then(|definition| definition.instantiated_payload(index, &type_arguments))
             .unwrap_or_default();
         let binding = self.candidate_binding(candidates, owner, index);
-        self.check_pattern_count(name, storage.len(), arguments.len(), span)?;
-        let typed = self.lower_payload_patterns(owner, index, arguments, &storage, mode)?;
+        let placement = PatternPlacement::new(written, span);
+        let placed = placement.place(name, &self.payload_pattern_fields(owner, index))?;
+        let typed = self.lower_payload_patterns(owner, index, &placed, &storage, mode)?;
         Ok(TypedPatternKind::Variant(binding, typed))
+    }
+
+    fn payload_pattern_fields(&self, owner: BindingId, variant: usize) -> PatternFields<'_> {
+        self.enums
+            .get(owner)
+            .and_then(|definition| definition.variants.get(variant))
+            .map_or(
+                PatternFields::Positional(0),
+                VariantDefinition::pattern_fields,
+            )
     }
 
     fn lower_payload_patterns(
         &mut self,
         owner: BindingId,
         variant: usize,
-        patterns: &[Pattern],
+        patterns: &[&Pattern],
         storage: &[Type],
         mode: Option<ReferenceKind>,
     ) -> Result<Vec<TypedPattern>, Diagnostic> {
@@ -933,19 +942,6 @@ impl TypeChecker {
                 )
             })
             .unwrap_or(&candidates[0])
-    }
-
-    fn check_pattern_count(
-        &self,
-        name: &str,
-        expected: usize,
-        found: usize,
-        span: Span,
-    ) -> Result<(), Diagnostic> {
-        if expected == found {
-            return Ok(());
-        }
-        Err(TypeProblems::pattern_count(name, expected, found, span))
     }
 
     fn match_arguments(

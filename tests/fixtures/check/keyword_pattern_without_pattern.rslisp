@@ -1,0 +1,17 @@
+(defstruct point
+  :x i64
+  :y i64)
+
+(enum shape (circle f64) dot)
+
+(defn trailing (p)
+  (match p ((point :x) 0)))
+
+(defn followed-by-keyword (p)
+  (match p ((point :x :y b) b)))
+
+(defn unknown-field-first (p)
+  (match p ((point :z) 0)))
+
+(defn positional-variant-first (s)
+  (match s ((circle :radius) 0) (dot 1)))

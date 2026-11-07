@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/keyword_pattern_repeated_field.rslisp
+---
+error[L0461]: `:x` is given twice in this pattern of `point`
+  --> check/keyword_pattern_repeated_field.rslisp:10:25
+   |
+10 |   (match p ((point :x a :x b) a)))
+   |                    --   ^^ given again here
+   |                    |
+   |                    first given here
+   |
+   = help: remove the second `:x` and its pattern
+
+error[L0461]: `:text` is given twice in this pattern of `labeled`
+  --> check/keyword_pattern_repeated_field.rslisp:14:31
+   |
+14 |     ((labeled :text a :size b :text c) b)
+   |               -----           ^^^^^ given again here
+   |               |
+   |               first given here
+   |
+   = help: remove the second `:text` and its pattern

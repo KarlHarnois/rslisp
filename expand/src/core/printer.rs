@@ -3,8 +3,9 @@ use rustc_hash::FxHashMap;
 use super::{
     Arm, Binder, BindingArena, BindingId, Block, BodyItem, ClosureKind, Control, CoreModule, Expr,
     ExprKind, FieldLabel, Item, ItemKind, KernelConstants, KernelForm, Lambda, Leaf, Literal,
-    MapOperation, ParsedTemplate, Pattern, PatternKind, RustTemplate, RustTraitImplementor,
-    StructExpr, TypeBinder, TypeBound, TypeExpr, TypeExprKind, VariantDeclaration, VariantPayload,
+    MapOperation, ParsedTemplate, Pattern, PatternArguments, PatternKind, PatternPart,
+    RustTemplate, RustTraitImplementor, StructExpr, TypeBinder, TypeBound, TypeExpr, TypeExprKind,
+    VariantDeclaration, VariantPayload,
 };
 use crate::stack::DeepRecursion;
 
@@ -291,9 +292,17 @@ impl<'a> CorePrinter<'a> {
         }
     }
 
-    fn prefixed_pattern(&mut self, name: String, arguments: &[Pattern]) -> String {
+    fn prefixed_pattern(&mut self, name: String, arguments: &PatternArguments) -> String {
         let mut parts = vec![name];
-        parts.extend(arguments.iter().map(|argument| self.pattern(argument)));
+        for part in &arguments.parts {
+            match part {
+                PatternPart::Positional(pattern) => parts.push(self.pattern(pattern)),
+                PatternPart::Labeled(label, pattern) => {
+                    parts.push(label.spelled(&label.name));
+                    parts.extend(pattern.iter().map(|pattern| self.pattern(pattern)));
+                }
+            }
+        }
         format!("({})", parts.join(" "))
     }
 

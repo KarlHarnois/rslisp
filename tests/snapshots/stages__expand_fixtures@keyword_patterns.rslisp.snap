@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/keyword_patterns.rslisp
+---
+(struct point (x i64) (y i64))
+(def make-point (fn (x y) (new point (x x) (y y))))
+(enum shape (labeled (struct (text string) (size f64))) dot)
+(def y-of (fn (p) (match p ((point :y found) found))))
+(def size-of (fn (s) (match s ((labeled :size size :text _) size) ((shape/labeled :text _) 0.0) (dot 0.0))))
+(def mixed (fn (p_2) (match p_2 ((point :y b a) a))))
+(def unfinished (fn (p_3) (match p_3 ((point :x) 0))))

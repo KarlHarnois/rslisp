@@ -102,14 +102,41 @@ pub enum PatternKind {
         candidates: Vec<BindingId>,
         outer: Option<BindingId>,
     },
-    Variant(BindingId, Vec<Pattern>),
-    Struct(BindingId, Vec<Pattern>),
+    Variant(BindingId, PatternArguments),
+    Struct(BindingId, PatternArguments),
     ShortVariant {
         name: Rc<str>,
         candidates: Vec<BindingId>,
-        arguments: Vec<Pattern>,
+        arguments: PatternArguments,
     },
     Literal(Literal),
+}
+
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+pub struct PatternArguments {
+    pub parts: Vec<PatternPart>,
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub enum PatternPart {
+    Positional(Pattern),
+    Labeled(FieldLabel, Option<Pattern>),
+}
+
+impl PatternArguments {
+    pub fn positional(&self) -> impl Iterator<Item = &Pattern> {
+        self.parts.iter().filter_map(|part| match part {
+            PatternPart::Positional(pattern) => Some(pattern),
+            PatternPart::Labeled(..) => None,
+        })
+    }
+
+    pub fn labeled(&self) -> impl Iterator<Item = (&FieldLabel, Option<&Pattern>)> {
+        self.parts.iter().filter_map(|part| match part {
+            PatternPart::Positional(_) => None,
+            PatternPart::Labeled(label, pattern) => Some((label, pattern.as_ref())),
+        })
+    }
 }
 
 impl Pattern {
