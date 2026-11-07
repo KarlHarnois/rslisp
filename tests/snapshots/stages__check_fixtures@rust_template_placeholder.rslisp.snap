@@ -9,4 +9,4 @@ error[L0225]: `{1}` names no type parameter
 2 |   (rust "({0}, {1})")
   |         ^^^^^^^^^^^^ this type has 1 type parameter
   |
-  = help: declare the type parameters on the name, as in `(rust-type (pair a b) "({0}, {1})")`
+  = help: declare the type parameters on the name, as in `(enum (pair a b) ...)`

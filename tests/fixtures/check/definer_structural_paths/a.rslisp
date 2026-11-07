@@ -1,0 +1,21 @@
+(export octal show-octal)
+
+(deftype octal-out (rust "std::fmt::Formatter<'_>"))
+
+(deftype octal-result (rust "std::fmt::Result"))
+
+(deftrait octal
+  (rust "std::fmt::Octal")
+  (method fmt
+          (fn ((ref self) (mut octal-out))
+            octal-result))
+  (structural :struct "write!({1}, \"{name}\")"
+              :field ""
+              :variant "write!({1}, \"{name}\")"
+              :part ""
+              :bare "write!({1}, \"{name}\")")
+  i64)
+
+(def show-octal
+  (rust "println!(\"{{:o}}\", {&0})"
+    (where ((a octal)) (fn ((ref a)) unit))))

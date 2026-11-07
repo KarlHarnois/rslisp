@@ -1,0 +1,56 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/format/layout_definers.rslisp
+---
+(defenum color red green)
+(defenum shape "A shape." (circle f64) (labeled :text string :size f64) dot)
+(defenum (maybe value) "Rust's option." (rust "Option" bare) (just value) nothing)
+(deftrait area-of "Areas." (area (fn ((ref self)) f64)))
+(deftrait short (area (fn ((ref self)) f64)))
+(deftrait number (rust "crate::rt::Number") i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 isize usize i128 u128 u8 u16 u32 u64)
+(deftrait from-string "Reads a value." (rust "std::str::FromStr") (associated (parse-failure target) "Err") (where () i64 (parse-failure i64)))
+(deftype (boxed item) (rust "Box<{0}>"))
+(deftype (non-zero n) "Not zero." (rust "std::num::NonZero<{0}>") (u8 "std::num::NonZeroU8"))
+
+---
+(defenum color
+  red
+  green)
+
+(defenum shape
+  "A shape."
+  (circle f64)
+  (labeled :text string :size f64)
+  dot)
+
+(defenum (maybe value)
+  "Rust's option."
+  (rust "Option" bare)
+  (just value)
+  nothing)
+
+(deftrait area-of
+  "Areas."
+  (area (fn ((ref self)) f64)))
+
+(deftrait short
+  (area (fn ((ref self)) f64)))
+
+(deftrait number
+  (rust "crate::rt::Number")
+  i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 isize usize i128
+  u128 u8 u16 u32 u64)
+
+(deftrait from-string
+  "Reads a value."
+  (rust "std::str::FromStr")
+  (associated (parse-failure target) "Err")
+  (where () i64 (parse-failure i64)))
+
+(deftype (boxed item) (rust "Box<{0}>"))
+
+(deftype (non-zero n)
+  "Not zero."
+  (rust "std::num::NonZero<{0}>")
+  (u8 "std::num::NonZeroU8"))

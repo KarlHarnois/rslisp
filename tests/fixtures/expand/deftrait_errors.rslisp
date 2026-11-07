@@ -1,0 +1,37 @@
+(deftrait implementors-without-clause
+  i8 i16)
+
+(deftrait method-with-clause
+  (rust "Copy")
+  (area (fn ((ref self)) f64)))
+
+(deftrait generic-method-with-clause
+  (rust "Copy")
+  (area (where (a) (fn ((ref self) a) f64))))
+
+(deftrait clause-after-implementor
+  i8
+  (rust "Copy"))
+
+(deftrait clause-after-method
+  (area (fn ((ref self)) f64))
+  (rust "Copy"))
+
+(deftrait second-clause
+  (rust "Copy")
+  i8
+  (rust "Clone"))
+
+(deftrait clause-with-two-strings
+  (rust "Copy" "Clone")
+  i8)
+
+(deftrait (clause-with-supertraits (clone))
+  (rust "Copy")
+  i8)
+
+(deftrait method-without-type (area))
+
+(deftrait clause-without-path (rust))
+
+(deftrait ())

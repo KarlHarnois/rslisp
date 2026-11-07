@@ -9,4 +9,4 @@ error[L0435]: `option` is a Rust type, so it has no `derive`
 6 | (derive option clone)
   |         ^^^^^^ `option` names a Rust type
   |
-  = help: the traits of a Rust type come from its `rust-trait` entries
+  = help: the traits of a Rust type come from the Rust traits that list it

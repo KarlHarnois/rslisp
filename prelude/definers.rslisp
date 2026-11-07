@@ -1,0 +1,374 @@
+(use prelude/macros defmacro documented-body? header-shape
+                    map-list module note-docstring template
+                    type-doc-key)
+
+(use prelude/syntax declared-name type-missing?)
+
+(use code bool-not concat declare-definition
+          declare-type-definition drop empty? fail first
+          keyword? len list list? nth prepend rest string
+          string? symbol symbol-name symbol? value-eq)
+
+(export defenum deftrait deftype)
+
+(module "Defines enums and traits, and names Rust types and traits.")
+
+(defmacro defenum (head body ...)
+  "Defines an enum, or names a Rust enum with a `rust` clause.
+
+  Write (defenum name variant ...). A variant is a name, `(name type ...)` or
+  `(name :field type ...)`. A `(rust \"Path\")` right after the name or the
+  docstring makes the enum the named Rust type."
+  (check-head "defenum" head)
+  (declare-type-definition (head-name head))
+  (enum-definition head (after-docstring head body)))
+
+(header-shape (defenum name) :docstring :one-per-line)
+
+(defmacro deftrait (head body ...)
+  "Defines a trait, or names a Rust trait with a `rust` clause.
+
+  Write (deftrait name (method type) ...), where a method's first parameter
+  may be `self`, `(ref self)` or `(mut self)`. Write
+  (deftrait name (rust \"Path\") type ...) to name a Rust trait and the types
+  that implement it."
+  (check-head "deftrait" head)
+  (declare-type-definition (head-name head))
+  (trait-definition head (after-docstring head body)))
+
+(header-shape (deftrait name) :docstring)
+
+(defmacro deftype (head body ...)
+  "Names a Rust type by a template.
+
+  Write (deftype name (rust \"template\")) or
+  (deftype (name parameter ...) (rust \"template\") (type \"template\") ...).
+  `{0}` in the template is the first parameter, and each clause pairs a type
+  with its own template."
+  (check-head "deftype" head)
+  (declare-type-definition (head-name head))
+  (type-definition head (after-docstring head body)))
+
+(header-shape (deftype name) :docstring)
+
+(def check-head
+  (fn (definer head)
+    (if (plain-symbol? (head-name head))
+      (quote named)
+      (fail (string "`" definer "` needs a name")
+        head
+        (string "write a name, as in (" definer " shape ...)")
+        (template (:code malformed-definer-head))))))
+
+(def head-name
+  (fn (head)
+    (if (list? head)
+      (if (empty? head) head (first head))
+      head)))
+
+(def plain-symbol?
+  (fn (form)
+    (if (symbol? form)
+      (bool-not (keyword? form))
+      false)))
+
+(def after-docstring
+  (fn (head body)
+    (if (documented-body? body)
+      (do
+        (note-docstring (type-doc-key (head-name head))
+                        (first body))
+        (rest body))
+      body)))
+
+(def enum-definition
+  (fn (head forms)
+    (local variants (after-rust-clause forms))
+    (declare-variants (head-name head) variants)
+    (check-no-late-rust variants)
+    (concat (list (quote enum) head)
+            (rust-clause-of forms)
+            (map-list variant-form variants))))
+
+(def after-rust-clause
+  (fn (forms)
+    (if (starts-with-rust-clause? forms) (rest forms) forms)))
+
+(def rust-clause-of
+  (fn (forms)
+    (if (starts-with-rust-clause? forms)
+      (list (first forms))
+      (list))))
+
+(def starts-with-rust-clause?
+  (fn (forms)
+    (if (empty? forms)
+      false
+      (rust-clause? (first forms)))))
+
+(def rust-clause?
+  (fn (form)
+    (if (headed-by? form "rust")
+      (if (value-eq (len form) 1)
+        false
+        (string? (nth form 1)))
+      false)))
+
+(def headed-by?
+  (fn (form word)
+    (if (named-list? form)
+      (value-eq (symbol-name (first form)) word)
+      false)))
+
+(def named-list?
+  (fn (form)
+    (if (list? form)
+      (if (empty? form)
+        false
+        (plain-symbol? (first form)))
+      false)))
+
+(def declare-variants
+  (fn (enum-name variants)
+    (if (empty? variants)
+      (quote declared)
+      (do
+        (declare-variant enum-name (first variants))
+        (declare-variants enum-name (rest variants))))))
+
+(def declare-variant
+  (fn (enum-name variant)
+    (if (plain-symbol? variant)
+      (declare-variant-name enum-name variant)
+      (if (named-list? variant)
+        (declare-variant-name enum-name (first variant))
+        (quote skipped)))))
+
+(def declare-variant-name
+  (fn (enum-name variant)
+    (declare-definition variant)
+    (declare-definition (symbol enum-name enum-name "/" variant))))
+
+(def check-no-late-rust
+  (fn (forms)
+    (if (empty? forms)
+      (quote checked)
+      (if (rust-clause? (first forms))
+        (fail "the `rust` clause comes right after the name"
+          (first forms)
+          "move it to the first place after the name, or after the docstring"
+          (template (:code misplaced-rust-clause)))
+        (check-no-late-rust (rest forms))))))
+
+(def variant-form
+  (fn (variant)
+    (if (plain-symbol? variant)
+      variant
+      (if (named-list? variant)
+        (variant-with-items variant)
+        (variant-error variant)))))
+
+(def variant-error
+  (fn (variant)
+    (fail "a variant is a name or a list that starts with a name"
+      variant
+      "write it as `name`, `(name type ...)` or `(name :field type ...)`"
+      (template (:code malformed-variant)))))
+
+(def variant-with-items
+  (fn (variant)
+    (local items (rest variant))
+    (if (if (empty? items)
+          false
+          (keyword? (first items)))
+      (list (first variant)
+            (prepend (quote struct) (variant-fields items)))
+      (positional-variant variant items))))
+
+(def positional-variant
+  (fn (variant items) (check-variant-types items) variant))
+
+(def check-variant-types
+  (fn (items)
+    (if (empty? items)
+      (quote checked)
+      (do
+        (check-variant-type (first items))
+        (check-variant-types (rest items))))))
+
+(def check-variant-type
+  (fn (item)
+    (if (keyword? item)
+      (fail "this variant's first item is a type, so it takes no fields"
+        item
+        "write only types, or give every item a `:field`"
+        (template (:code mixed-variant-items)))
+      (if (headed-by? item "struct")
+        (fail "a variant writes its fields flat"
+          item
+          "write them after its name, as in (labeled :text string :size f64)"
+          (template (:code variant-struct-payload)))
+        (quote checked)))))
+
+(def variant-fields
+  (fn (items)
+    (if (empty? items)
+      (list)
+      (prepend (variant-field (first items) (rest items))
+               (variant-fields (drop 2 items))))))
+
+(def variant-field
+  (fn (keyword more)
+    (if (keyword? keyword)
+      (list (declared-name keyword "field")
+            (variant-field-type keyword more))
+      (fail "a field must start with `:`"
+        keyword
+        "write each field as `:name type`, as in (labeled :text string)"
+        (template (:code mixed-variant-items))))))
+
+(def variant-field-type
+  (fn (keyword more)
+    (if (type-missing? more)
+      (fail "this field has no type"
+        keyword
+        (string "write a type after it, as in "
+                (symbol-name keyword)
+                " i64")
+        (template (:code variant-field-without-type)))
+      (first more))))
+
+(def trait-definition
+  (fn (head forms)
+    (local entries (after-rust-clause forms))
+    (if (starts-with-rust-clause? forms)
+      (rust-trait-definition head (first forms) entries)
+      (program-trait-definition head entries))))
+
+(def declare-rust-trait-names
+  (fn (entries)
+    (if (empty? entries)
+      (quote declared)
+      (do
+        (declare-rust-trait-name (first entries))
+        (declare-rust-trait-names (rest entries))))))
+
+(def declare-rust-trait-name
+  (fn (entry)
+    (if (headed-by? entry "method")
+      (declare-definition (declared-entry-name entry))
+      (if (headed-by? entry "associated")
+        (declare-type-definition (declared-entry-name entry))
+        (quote skipped)))))
+
+(def declared-entry-name
+  (fn (entry)
+    (if (value-eq (len entry) 1)
+      entry
+      (head-name (nth entry 1)))))
+
+(def declare-method-names
+  (fn (entries)
+    (if (empty? entries)
+      (quote declared)
+      (do
+        (declare-method-name (first entries))
+        (declare-method-names (rest entries))))))
+
+(def declare-method-name
+  (fn (entry)
+    (if (headed-by? entry "type")
+      (quote skipped)
+      (if (named-list? entry)
+        (declare-definition (first entry))
+        (quote skipped)))))
+
+(def rust-trait-definition
+  (fn (head clause entries)
+    (declare-rust-trait-names entries)
+    (check-no-late-rust entries)
+    (check-no-trait-methods entries)
+    (check-one-string "deftrait" clause)
+    (if (list? head)
+      (fail "a Rust trait takes no supertraits"
+        head "write the name alone"
+        (template (:code rust-trait-supertraits)))
+      (concat (list (quote rust-trait) head (nth clause 1))
+              entries))))
+
+(def check-no-trait-methods
+  (fn (entries)
+    (if (empty? entries)
+      (quote checked)
+      (if (method-shaped? (first entries))
+        (fail "a `deftrait` with a `rust` clause lists its implementors here"
+          (first entries)
+          "declare a method of a Rust trait as `(method name type)`"
+          (template (:code method-in-rust-trait)))
+        (check-no-trait-methods (rest entries))))))
+
+(def method-shaped?
+  (fn (form)
+    (if (list? form)
+      (if (value-eq (len form) 2)
+        (function-type? (nth form 1))
+        false)
+      false)))
+
+(def function-type?
+  (fn (form)
+    (if (headed-by? form "fn") true (headed-by? form "where"))))
+
+(def check-one-string
+  (fn (definer clause)
+    (if (value-eq (len clause) 2)
+      (quote checked)
+      (fail (string "a `rust` clause on `" definer "` holds one string")
+        clause "write it as `(rust \"Path\")`"
+        (template (:code malformed-rust-clause))))))
+
+(def program-trait-definition
+  (fn (head entries)
+    (declare-method-names entries)
+    (check-no-late-rust entries)
+    (check-methods entries)
+    (concat (list (quote trait) head) entries)))
+
+(def check-methods
+  (fn (entries)
+    (if (empty? entries)
+      (quote checked)
+      (do
+        (check-method (first entries))
+        (check-methods (rest entries))))))
+
+(def check-method
+  (fn (entry)
+    (if (method-entry? entry)
+      (quote checked)
+      (fail "a `deftrait` method is a name and a type, as `(area (fn ((ref self)) f64))`"
+        entry
+        "to name a Rust trait, write `(rust \"Path\")` after the name"
+        (template (:code malformed-trait-method))))))
+
+(def method-entry?
+  (fn (entry)
+    (if (named-list? entry)
+      (bool-not (value-eq (len entry) 1))
+      false)))
+
+(def type-definition
+  (fn (head forms)
+    (check-no-late-rust (after-rust-clause forms))
+    (if (starts-with-rust-clause? forms)
+      (rust-type-definition head (first forms) (rest forms))
+      (fail "`deftype` names a Rust type"
+        (if (empty? forms) head (first forms))
+        "write `(deftype name (rust \"Path\"))`"
+        (template (:code deftype-without-rust))))))
+
+(def rust-type-definition
+  (fn (head clause entries)
+    (check-one-string "deftype" clause)
+    (concat (list (quote rust-type) head (nth clause 1))
+            entries)))

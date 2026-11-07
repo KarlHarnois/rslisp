@@ -1,0 +1,21 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/definer_trait_claim.rslisp
+---
+warning[L0217]: `point-eq` binds a Rust path that `eq` already binds
+ --> check/definer_trait_claim.rslisp:5:11
+  |
+5 | (deftrait point-eq
+  |           ^^^^^^^^ this also binds `Eq`
+  |
+  = note: two traits that bind one Rust path can disagree about its implementors
+  = help: use `eq`, or give `point-eq` a different Rust path
+
+error[L0421]: `point` does not derive `point-eq`
+ --> check/definer_trait_claim.rslisp:7:3
+  |
+7 |   point)
+  |   ^^^^^ this struct does not derive `point-eq`
+  |
+  = help: remove `point` from this `deftrait`, or list a type that Rust implements `point-eq` for

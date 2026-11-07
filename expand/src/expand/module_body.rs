@@ -301,12 +301,8 @@ impl Expander<'_> {
         form: Form,
         context: &mut DefinitionContext,
     ) -> Result<Option<PendingItem>, Diagnostic> {
-        let binding = self.register_type_name(
-            &form,
-            KernelForm::Definition(DefinitionForm::Struct),
-            BindingKind::Struct(module),
-            context,
-        )?;
+        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Struct), &form);
+        let binding = self.register_type_name(&shape, BindingKind::Struct(module), context)?;
         Ok(Some(PendingItem::Struct(binding, form)))
     }
 
@@ -316,7 +312,7 @@ impl Expander<'_> {
         form: Form,
         context: &mut DefinitionContext,
     ) -> Result<Option<PendingItem>, Diagnostic> {
-        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Enum), &form);
+        let shape = self.definition_shape(DefinitionForm::Enum, &form);
         let items = shape.at_least(2)?;
         let name = self.head_name(&shape, &items[1])?;
         let binding =
@@ -421,13 +417,8 @@ impl Expander<'_> {
         form: Form,
         context: &mut DefinitionContext,
     ) -> Result<Option<PendingItem>, Diagnostic> {
-        let shape = Shape::new(KernelForm::Definition(DefinitionForm::RustTrait), &form);
-        let binding = self.register_type_name(
-            &form,
-            KernelForm::Definition(DefinitionForm::RustTrait),
-            BindingKind::Trait(module),
-            context,
-        )?;
+        let shape = self.definition_shape(DefinitionForm::RustTrait, &form);
+        let binding = self.register_type_name(&shape, BindingKind::Trait(module), context)?;
         for entry in shape.items().iter().skip(3) {
             let Some([_, name, ..]) = entry.as_list() else {
                 continue;
@@ -477,12 +468,8 @@ impl Expander<'_> {
         form: Form,
         context: &mut DefinitionContext,
     ) -> Result<Option<PendingItem>, Diagnostic> {
-        let binding = self.register_type_name(
-            &form,
-            KernelForm::Definition(DefinitionForm::RustType),
-            BindingKind::RustType(module),
-            context,
-        )?;
+        let shape = self.definition_shape(DefinitionForm::RustType, &form);
+        let binding = self.register_type_name(&shape, BindingKind::RustType(module), context)?;
         Ok(Some(PendingItem::RustType(binding, form)))
     }
 
@@ -492,7 +479,7 @@ impl Expander<'_> {
         form: Form,
         context: &mut DefinitionContext,
     ) -> Result<Option<PendingItem>, Diagnostic> {
-        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Trait), &form);
+        let shape = self.definition_shape(DefinitionForm::Trait, &form);
         let items = shape.at_least(2)?;
         let name = self.head_name(&shape, &items[1])?;
         let binding =
@@ -575,14 +562,12 @@ impl Expander<'_> {
 
     fn register_type_name(
         &mut self,
-        form: &Form,
-        kernel: KernelForm,
+        shape: &Shape<'_>,
         kind: BindingKind,
         context: &DefinitionContext,
     ) -> Result<BindingId, Diagnostic> {
-        let shape = Shape::new(kernel, form);
         let items = shape.at_least(2)?;
-        let name = self.head_name(&shape, &items[1])?;
+        let name = self.head_name(shape, &items[1])?;
         self.define_global(name, Namespace::Type, kind, context)
     }
 
@@ -726,15 +711,13 @@ impl Expander<'_> {
         form: &Form,
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
-        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Enum), form);
+        let shape = self.definition_shape(DefinitionForm::Enum, form);
         let items = shape.at_least(2)?;
         let first_variant = Self::first_enum_variant(items);
         let body = items[first_variant..].to_vec();
         if let Some(where_items) = self.old_parameters(&body) {
             let span = where_items[0].span();
-            let kind = self
-                .macro_origin_at(span)
-                .map_or("enum", |origin| origin.name.as_ref());
+            let kind = shape.written_name();
             let replacement = self.old_head_replacement(kind, &items[1], where_items);
             return Err(ExpandProblems::parameters_on_name(kind, &replacement, span));
         }
@@ -748,7 +731,13 @@ impl Expander<'_> {
         let rust =
             self.lower_enum_rust(&shape, items, &parameterized.binders, &variants, binding)?;
         core.items.push(Item {
-            kind: ItemKind::Enum(binding, parameterized.binders, variants, rust),
+            kind: ItemKind::Enum(
+                binding,
+                parameterized.binders,
+                variants,
+                rust,
+                shape.definer().cloned(),
+            ),
             span: form.span(),
             hidden: false,
         });
@@ -776,6 +765,7 @@ impl Expander<'_> {
                 .and_then(|items| items.get(1))
                 .expect("the rust clause holds a string");
             Self::check_type_placeholders(
+                shape,
                 &rust.template,
                 binders,
                 self.tables.bindings.get(binding).name(),
@@ -999,7 +989,7 @@ impl Expander<'_> {
         form: &Form,
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
-        let shape = Shape::new(KernelForm::Definition(DefinitionForm::Trait), form);
+        let shape = self.definition_shape(DefinitionForm::Trait, form);
         let items = shape.at_least(2)?;
         let name = self.head_name(&shape, &items[1])?;
         let supertraits = self.lower_supertraits(&shape, &items[1])?;
@@ -1663,7 +1653,7 @@ impl Expander<'_> {
         form: &Form,
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
-        let shape = Shape::new(KernelForm::Definition(DefinitionForm::RustTrait), form);
+        let shape = self.definition_shape(DefinitionForm::RustTrait, form);
         let items = shape.at_least(3)?;
         let path: Rc<str> = shape.string(&items[2])?.into();
         self.warn_second_trait_path(binding, &items[1], &path);
@@ -1678,6 +1668,7 @@ impl Expander<'_> {
                 clause,
                 &DeclaredTrait {
                     binding,
+                    definer: shape.written_name(),
                     name: &items[1],
                     path: &path,
                     self_variable,
@@ -1771,7 +1762,7 @@ impl Expander<'_> {
         if Self::is_rust_trait_help(entry) {
             lowered.help = Some(self.lower_rust_trait_help(shape, entry)?);
         } else if Self::is_rust_trait_structural(entry) {
-            lowered.structural = Some(Self::single_structural_clause(entry, lowered)?);
+            lowered.structural = Some(Self::single_structural_clause(shape, entry, lowered)?);
         } else {
             return Ok(false);
         }
@@ -1779,11 +1770,13 @@ impl Expander<'_> {
     }
 
     fn single_structural_clause(
+        shape: &Shape<'_>,
         entry: &Form,
         lowered: &RustTraitEntries,
     ) -> Result<Form, Diagnostic> {
         match &lowered.structural {
             Some(first) => Err(ExpandProblems::repeated_structural_clause(
+                shape.written_name(),
                 entry.span(),
                 first.span(),
             )),

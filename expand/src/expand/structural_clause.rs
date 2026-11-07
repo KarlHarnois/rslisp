@@ -9,6 +9,7 @@ use crate::reader::{Form, FormKind};
 
 pub(super) struct DeclaredTrait<'d> {
     pub binding: BindingId,
+    pub definer: &'d str,
     pub name: &'d Form,
     pub path: &'d str,
     pub self_variable: BindingId,
@@ -59,6 +60,7 @@ impl Expander<'_> {
         };
         let bindings = &self.tables.bindings;
         Err(vec![ExpandProblems::second_structural_path(
+            declared.definer,
             bindings.get(declared.binding).name(),
             declared.path,
             bindings.get(first).name(),
@@ -79,14 +81,20 @@ impl Expander<'_> {
             .name()
             .to_string();
         let problem = if !Self::has_one_self_method(declared) {
-            ExpandProblems::structural_clause_needs_one_method(clause.span())
+            ExpandProblems::structural_clause_needs_one_method(declared.definer, clause.span())
         } else if Self::derive_writes(declared.path) {
-            ExpandProblems::structural_clause_on_derived_trait(&name, declared.path, clause.span())
+            ExpandProblems::structural_clause_on_derived_trait(
+                declared.definer,
+                &name,
+                declared.path,
+                clause.span(),
+            )
         } else if let Some(existing) =
             self.trait_binding_with_path(declared.binding, declared.name, declared.path)
         {
             let existing = self.tables.bindings.get(existing).name().to_string();
             ExpandProblems::structural_clause_on_bound_path(
+                declared.definer,
                 &name,
                 declared.path,
                 &existing,

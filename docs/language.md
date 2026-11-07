@@ -336,7 +336,7 @@ The compiler checks every macro body and the functions it reaches, even a macro 
 
 A macro also answers for its name in value position. When a program uses a macro's name as a value, as in `(local build ->car)`, the expander calls the macro with the bare symbol as its form. If the macro returns a form, the expander uses that form in place of the name. If the macro fails, the program gets the error `is a macro, not a value`. A macro that handles value position tests its form with `symbol?`. A macro that takes its form apart with `first`, `rest` or `nth` fails on a symbol, so it keeps the error. The prelude cannot provide this, because a macro runs only at the head of a list, and only the expander sees a macro's name standing alone.
 
-**A definer that fails reports one error.** `defn`, `defmacro`, `defrule` and `defstruct` declare the names they define, with `declare-definition`, `declare-macro-definition` and `declare-type-definition` from the `code` module, before their own checks. When the definer's top-level call fails, the expander binds each declared name, so `(area 1)` after a failed `(defn area "doc" (w) w)` adds no `L0201`, and a use of the type or the constructor after a failed `defstruct point` adds none either. A definer that fails inside a body binds its declared value name as a local for the rest of the body, so `(defn outer () (defn inner "doc" (x) x) (inner 1))` reports the `L0328` alone, and a call of a failed macro there skips its arguments too. A later definition of a failed name replaces it with no `L0203`, so a fixed copy below a broken one reports only the broken one. Macro code that calls a failed name reports `L0308`, as it does for any definition with errors. A user definer declares its names the same way, so its failures report once. A call of a failed function still checks its arguments, so `(area (missing-width) 2)` reports the `L0201` for `missing-width`, while a call of a failed macro skips its arguments, which need not be code the program could run. A misspelled name, such as `aera`, still reports `L0201`, with the failed name as its suggestion. A name that no declaration reaches stays unbound: `(defn area)` does not match the shape of `defn`, so the call fails before `defn` declares `area`, and `(area 1)` reports `L0201`.
+**A definer that fails reports one error.** `defn`, `defmacro`, `defrule`, `defstruct`, `defenum`, `deftrait` and `deftype` declare the names they define, with `declare-definition`, `declare-macro-definition` and `declare-type-definition` from the `code` module, before their own checks. When the definer's top-level call fails, the expander binds each declared name, so `(area 1)` after a failed `(defn area "doc" (w) w)` adds no `L0201`, and a use of the type or the constructor after a failed `defstruct point` adds none either. A failed `defenum` declares each variant under its qualified and its short name, and a failed `deftrait` declares each method, so `(area s)` or a pattern `(circle r)` adds no `L0201` or `L0231`. A definer that fails inside a body binds its declared value name as a local for the rest of the body, so `(defn outer () (defn inner "doc" (x) x) (inner 1))` reports the `L0328` alone, and a call of a failed macro there skips its arguments too. A later definition of a failed name replaces it with no `L0203`, so a fixed copy below a broken one reports only the broken one. Macro code that calls a failed name reports `L0308`, as it does for any definition with errors. A user definer declares its names the same way, so its failures report once. A call of a failed function still checks its arguments, so `(area (missing-width) 2)` reports the `L0201` for `missing-width`, while a call of a failed macro skips its arguments, which need not be code the program could run. A misspelled name, such as `aera`, still reports `L0201`, with the failed name as its suggestion. A name that no declaration reaches stays unbound: `(defn area)` does not match the shape of `defn`, so the call fails before `defn` declares `area`, and `(area 1)` reports `L0201`.
 
 The prelude also provides `defn` for a function definition, `the` for a typed value, `->` and `->>` for threading a value through calls, `let-try` and `try->` for propagating errors, and `assoc` and `assoc-in` for changing a value. `defn` with a plain parameter list expands to `def` and `fn`. `->` passes the value as the first argument of each call, and `->>` as the last.
 
@@ -399,7 +399,7 @@ A docstring is a string literal that documents a definition. `defn` and `defmacr
 (defn pair-of () "a" "b")                       ; documented "a", returns "b"
 ```
 
-`defstruct` and `defrule` take the docstring as the first form after their header: `(defstruct point "A point on a grid." :x i64 :y i64)` and `(defrule swap "Swaps the two arguments of a call." rules...)`. A string in place of the parameter list of `defn` or `defmacro` is `L0328`. `def` takes the docstring between the name and the value, again only when another form follows it: `(def max-retries "How many times a check reruns." 1)` documents `max-retries`, and `(def greeting "hi")` binds the string. The `def` that programs see is a prelude macro over the kernel `def`, so the kernel form keeps the shape `(def name value)`. A user documents a definition through these five definers. `(document header text)`, whose `text` must be a string, documents a definition that no definer documents, such as a kernel form or a `def` in a prelude module, or one whose definer's header shows no call shape, such as a `defrule` operator. A program imports it with `(use prelude/macros document)`. The header is the term's call form, such as `(document (str part ...) "Builds a string from its parts.")`, or the bare name of a term that takes no arguments, and the page shows it as written. The header's head names the term, so the name is never written twice. The prelude documents `str`, `get`, `push!`, `defrule`, `defmacro`, `template`, the exports of `prelude/number` and `prelude/logic`, and the exports of `prelude/text`, `prelude/io`, `prelude/vec`, `prelude/iterator`, `prelude/sequence`, `prelude/option`, `prelude/result`, `prelude/types`, `prelude/pair`, `prelude/ownership` and `prelude/map` and `prelude/syntax` that no `defmacro` or `defn` defines this way.
+`defstruct`, `defenum`, `deftrait`, `deftype` and `defrule` take the docstring as the first form after their header: `(defstruct point "A point on a grid." :x i64 :y i64)` and `(defrule swap "Swaps the two arguments of a call." rules...)`. A string in place of the parameter list of `defn` or `defmacro` is `L0328`. `def` takes the docstring between the name and the value, again only when another form follows it: `(def max-retries "How many times a check reruns." 1)` documents `max-retries`, and `(def greeting "hi")` binds the string. The `def` that programs see is a prelude macro over the kernel `def`, so the kernel form keeps the shape `(def name value)`. A user documents a definition through these five definers. `(document header text)`, whose `text` must be a string, documents a definition that no definer documents, such as a kernel form or a `def` in a prelude module, or one whose definer's header shows no call shape, such as a `defrule` operator. A program imports it with `(use prelude/macros document)`. The header is the term's call form, such as `(document (str part ...) "Builds a string from its parts.")`, or the bare name of a term that takes no arguments, and the page shows it as written. The header's head names the term, so the name is never written twice. The prelude documents `str`, `get`, `push!`, `defrule`, `defmacro`, `template`, the exports of `prelude/number` and `prelude/logic`, and the exports of `prelude/text`, `prelude/io`, `prelude/vec`, `prelude/iterator`, `prelude/sequence`, `prelude/option`, `prelude/result`, `prelude/types`, `prelude/pair`, `prelude/ownership` and `prelude/map` and `prelude/syntax` that no `defmacro` or `defn` defines this way.
 
 The prelude's string lookups, `docstring`, `header`, `page-body` and `doc-page`, expand to string literals at expansion time, so `(def twice-doc (docstring twice))` emits `const TWICE_DOC: &str = "Doubles a number.";`, and a program's emitted Rust is the same with and without its docstrings:
 
@@ -463,7 +463,7 @@ A module's `export` lists expand after its `def` values, because exporting a tra
 
 A `:docstring` after the shape states that the form takes a docstring as the first form after its header, when another form follows it: `(header-shape (defn name parameters) :docstring)`. A shape adds itself, such as `(defn name parameters)`, to its module's notes under `header-shapes`, and a `:docstring` adds the form's name under `docstring-forms`, so macro code reads both with `module-notes`. A `:one-per-line` after the shape states that the formatter does not fill runs of atoms in a broken call, so each later form takes its own line apart from keyword pairs, as the prelude states for `enum`. An `:arms` after the shape states that each list after the header, other than a keyword's value, is an arm, which stays on one line when it is at most as long as the fill width, whatever the number of lists inside it (see Source formatting): `(header-shape (match value) :arms)`, `(header-shape (cond) :arms)` and `(header-shape (defrule name) :docstring :arms)`. A user macro with arms opts in the same way. The formatter does not expand, so it reads the `header-shape` forms themselves.
 
-The prelude states the shapes of its four definers, of `def` and of `document`, each with `:docstring`, of its macros whose calls have a header and a body, such as `(header-shape (loop bindings))` and `(header-shape (let-pair names value))`, and of the kernel forms whose header stays on the first line when the call breaks, such as `(header-shape (match value) :arms)` and `(header-shape (impl trait type))`. `prelude/prelude.rslisp` states the kernel's shapes, beside its re-export of the kernel. `prelude/test` states `(header-shape (deftest name) :docstring)`. The kernel's shapes include `(header-shape (if test))` and `(header-shape (do))`, so an `if` or a `do` that breaks indents its branches or forms 2 columns, and `prelude/macros.rslisp` states `(header-shape (fail message))` for the `code` module's `fail`.
+The prelude states the shapes of its seven definers, of `def` and of `document`, each with `:docstring`, of its macros whose calls have a header and a body, such as `(header-shape (loop bindings))` and `(header-shape (let-pair names value))`, and of the kernel forms whose header stays on the first line when the call breaks, such as `(header-shape (match value) :arms)` and `(header-shape (impl trait type))`. `prelude/prelude.rslisp` states the kernel's shapes, beside its re-export of the kernel. `prelude/test` states `(header-shape (deftest name) :docstring)`, and `prelude/definers` states `(header-shape (defenum name) :docstring :one-per-line)`, `(header-shape (deftrait name) :docstring)` and `(header-shape (deftype name) :docstring)`. The kernel's shapes include `(header-shape (if test))` and `(header-shape (do))`, so an `if` or a `do` that breaks indents its branches or forms 2 columns, and `prelude/macros.rslisp` states `(header-shape (fail message))` for the `code` module's `fail`.
 
 A user macro states its own shape with `(use prelude/macros header-shape)`, below the macro's definition. A shape that is not a list that starts with a name is `L0329`. The name must refer to a binding where the shape is written, so a misspelled name is `L0201` with the closest name, and so is a shape above the definition of the macro it names, as a call above that definition is. Any form after the shape other than `:docstring`, `:one-per-line` and `:arms`, each at most once, is `L0331`.
 
@@ -806,7 +806,7 @@ A non-empty untested list does not change the exit code. `prelude/tests/` holds 
 `rust` binds a name to a piece of Rust:
 
 ```lisp
-(rust-trait number "crate::rt::Number" i8 i16 i32 i64 u8 u16 u32 u64 f32 f64)
+(deftrait number (rust "crate::rt::Number") i8 i16 i32 i64 u8 u16 u32 u64 f32 f64)
 (def add (rust "{0} + {1}" (where ((n number)) (fn (n n) n))))
 (def not (rust "!{0}" (fn (bool) bool)))
 ```
@@ -826,14 +826,26 @@ A `rust` form may list clauses after its type, as a `rust-type` does. A clause i
 
 Clauses belong to the `rust` kernel form because a macro sees forms and not types, so only the compiler can choose a template by the type that a binder takes at a call. A runtime trait chooses by type too, but its call and its implementations stay in every program that calls it.
 
-`rust-type` binds a type name to a Rust type. `{0}` in the template is the first type parameter in the head, as `{0}` in a `rust` template is the first argument. A parameter that may be unsized is written `(name unsized)`, as `(rust-type (box (item unsized)) "Box<{0}>")` does. The mark says that the type accepts its argument behind a pointer, so a field's view in that position keeps its view instead of becoming a borrow. A program's own `Rc` or `Arc` type marks its parameter the same way that `box` does. A `rust-type` may also list clauses after its template. A clause is a type and a template, and it applies when the type's first argument equals the clause's type. Every other argument uses the template after the name. A `rust-type` with clauses takes exactly one type parameter.
+A program names a Rust type with the prelude's `deftype` and a Rust trait with the prelude's `deftrait`. Each takes a `(rust "Path")` clause right after the name or the docstring, and the forms after the clause are what `rust-type` or `rust-trait` takes after its string, so `method`, `structural`, `help`, `associated`, `where` and `with` keep their meaning. No type is a string, so a method named `rust` stays a method.
+
+| Mistake | Report |
+| --- | --- |
+| `(deftype meters f64)`, a `deftype` without the clause | `L0345` |
+| `(deftrait number i8 i16)`, or a method that is not a name and a type | `L0342` |
+| `(deftrait number (rust "Copy") (area (fn ((ref self)) f64)))`, a method that is not written `(method name type)` | `L0343` |
+| `(deftrait number i8 (rust "Copy"))`, a clause in a later place | `L0340` |
+| `(rust "Copy" "Clone")`, a clause of two strings | `L0341` |
+| `(deftrait (number (clone)) (rust "Copy") i8)`, supertraits on a Rust trait | `L0344` |
+| a name that is not a symbol | `L0339` |
+
+`rust-type` is what `deftype` expands to. It binds a type name to a Rust type. `{0}` in the template is the first type parameter in the head, as `{0}` in a `rust` template is the first argument. A parameter that may be unsized is written `(name unsized)`, as `(deftype (box (item unsized)) (rust "Box<{0}>"))` does. The mark says that the type accepts its argument behind a pointer, so a field's view in that position keeps its view instead of becoming a borrow. A program's own `Rc` or `Arc` type marks its parameter the same way that `box` does. A `rust-type` may also list clauses after its template. A clause is a type and a template, and it applies when the type's first argument equals the clause's type. Every other argument uses the template after the name. A `rust-type` with clauses takes exactly one type parameter.
 
 ```lisp
-(rust-type (boxed item) "Box<{0}>")
+(deftype (boxed item) (rust "Box<{0}>"))
 (def box-new (rust "Box::new({0})" (where (a) (fn (a) (boxed a)))))
 
-(rust-type (non-zero n)
-  "std::num::NonZero<{0}>"
+(deftype (non-zero n)
+  (rust "std::num::NonZero<{0}>")
   (u8 "std::num::NonZeroU8"))
 ```
 
@@ -858,12 +870,14 @@ A `rust-trait` may hold a `structural` clause: keyword and string pairs that sta
 A `rust-trait` declares an associated type with `(associated (name owner) "RustName")`, and may declare several. The clause names its one parameter, the implementor, on its name, as a type definition does. Each entry then ends with one `(name type)` clause per associated type, inside a `where` whose parameters the type may use:
 
 ```lisp
-(rust-type parse-int-error "std::num::ParseIntError")
-(rust-trait from-str "std::str::FromStr"
+(deftype parse-int-error (rust "std::num::ParseIntError"))
+(deftrait from-str
+  (rust "std::str::FromStr")
   (associated (parse-error target) "Err")
   (where () i64 (parse-error parse-int-error)))
 
-(rust-trait add "std::ops::Add"
+(deftrait add
+  (rust "std::ops::Add")
   (associated (output left) "Output")
   (where () (with i64 i64) (output i64)))
 ```
@@ -1043,17 +1057,20 @@ Rust has no guaranteed tail calls. Without this milestone, recursion is the only
 
 ### 9. Enums and `match`
 
-An `enum` declares a sum type. A variant is a bare name, `(name type ...)` with positional payloads, or `(name (struct (field type)...))` with named fields. Within one variant the payload is either types or one `struct` body. A generic enum puts its parameters on its name, as `(enum (pair-of a) (both a a) neither)`.
+Programs write enums with the prelude's `defenum`, which expands to the kernel's `enum`, as `defstruct` expands to `struct`. A variant is a bare name, `(name type ...)` with positional payloads, or `(name :field type ...)` with named fields. A variant whose second item is a keyword holds `:field type` pairs, and any other variant's items are types, so a mix is `L0348`. A generic enum puts its parameters on its name, as `(defenum (pair-of a) (both a a) neither)`. A docstring is the first form after the name.
 
-An optional `(rust "Path")` as the first form after the name makes the enum name a Rust type, such as `(enum (option value) (rust "Option" bare) (some value) none)`. The clause holds one string, a Rust path, or a type template when the string holds a placeholder such as `{0}`. An optional word `bare` after a path says the variants are in Rust's prelude. Only in that position does `(rust "...")` mean the clause. The compiler appends the enum's type parameters to a path, so `(option i64)` emits `Option<i64>`. Such an enum emits no Rust definition. A construction or pattern emits the path, then `::`, then the variant's Rust name, as `(option/some x)` emits `Option::Some(x)` and the pattern `none` emits `Option::None`. A `bare` enum emits the variant's Rust name alone, as `(option/some x)` emits `Some(x)` and the pattern `none` emits `None`. The compiler reads `bare` from the clause; it does not name Rust's prelude types or variants itself. The enum reads as a `rust-type` in its emitted Rust, its traits, its size, its display in diagnostics and `types`, and `try`. Its traits come from `rust-trait` entries only, with no inferred traits and no `derive`; a `derive` of it is an error, `L0435`.
+`enum` writes named fields as `(name (struct (field type)...))`, and within one variant the payload is either types or one `struct` body. `defenum` rejects that spelling, `L0347`. A variant that is not a name or a list headed by a name is `L0346`, and a field with no type is `L0349`.
+
+An optional `(rust "Path")` as the first form after the name makes the enum name a Rust type, such as `(defenum (option value) (rust "Option" bare) (some value) none)`. The clause holds one string, a Rust path, or a type template when the string holds a placeholder such as `{0}`. An optional word `bare` after a path says the variants are in Rust's prelude. Only in that position does `(rust "...")` mean the clause. The compiler appends the enum's type parameters to a path, so `(option i64)` emits `Option<i64>`. Such an enum emits no Rust definition. A construction or pattern emits the path, then `::`, then the variant's Rust name, as `(option/some x)` emits `Option::Some(x)` and the pattern `none` emits `Option::None`. A `bare` enum emits the variant's Rust name alone, as `(option/some x)` emits `Some(x)` and the pattern `none` emits `None`. The compiler reads `bare` from the clause; it does not name Rust's prelude types or variants itself. The enum reads as a `rust-type` in its emitted Rust, its traits, its size, its display in diagnostics and `types`, and `try`. Its traits come from `rust-trait` entries only, with no inferred traits and no `derive`; a `derive` of it is an error, `L0435`.
 
 A template clause fills its placeholders from the enum's type arguments and from the variant's payload. Such an enum has exactly one variant, with one positional payload part per placeholder; otherwise the compiler reports `L0438`. The type emits the template filled with the type arguments, so `(pair usize string)` emits `(usize, String)`. A construction and a pattern emit the template filled with the payload in order, so `(pair i x)` emits `(i, x)` and the pattern `(pair index line)` emits `(index, line)`.
 
 ```lisp
-(enum shape
+(defenum shape
+  "A shape."
   (circle f64)
   (rect f64 f64)
-  (labeled (struct (text string) (size f64)))
+  (labeled :text string :size f64)
   point)
 ```
 
@@ -1063,7 +1080,7 @@ An enum gets the traits of a struct under 8.2, with its payloads in place of fie
 
 A payload that holds its own enum by value, directly or through another type that stores it by value, is stored in a `Box`. The compiler boxes the payload position, writes `Box::new` at construction, and a pattern binds the payload as if it were unboxed. A payload whose cycle passes through a `rust-type`, such as `(vec type)`, is not boxed: the compiler does not look through a Rust type. A written `(box type)` is the exact form and stops inference for that position. A value cycle adds one box.
 
-`types` prints an `(enum ...)` line with the inferred boxes for each enum that has one.
+`types` prints a line with the inferred boxes for each enum that has one. The line starts with the macro that defined the enum and spells named fields flat, as in `(defenum tree leaf (node :left (box tree)))`. An `enum` that no macro wrote prints as `enum`. `expand` always prints the kernel form.
 
 A nested pattern at a boxed position emits a guard and a destructuring `let`. The arm pattern binds the boxed value to a fresh name, as a peeled binding does, and the guard tests the pattern with `matches!`. The tested pattern writes each binding as `_`, so it tests only the shape; a boxed position inside it binds another fresh name and nests its own `matches!`, and a string literal adds its comparison. The arm's prologue then destructures the pattern from the peeled value, with `let <pattern> = <value> else { unreachable!() };`, or a plain `let` when the pattern is sure. A pattern at a boxed position that is a binding or `_` keeps the peel instead.
 
@@ -1141,6 +1158,8 @@ Programs read functionally through two prelude forms over `try`, as `loop` is ov
 
 A program defines traits and implements them. An `impl` names a struct, an enum, a primitive such as `i64` or `bool`, `string`, or an applied type such as `(vec i64)`. An unknown name in the implementor is a type variable, so `(impl sized (vec a) ...)` implements `sized` for every vector and emits `impl<A> Sized2 for Vec<A>`. A bare type variable is an error, because an `impl` must name a type around it. The compiler infers the bounds on an impl's type variables from the method bodies and emits them on the impl head, as `impl<A: Clone> Sized2 for Vec<A>`. A written bound waits for a program that needs one. A trait declares an associated type with `(type item)`. A method's type names it as `item`, and the trait emits `Self::Item`. An impl states it with `(type item a)`, and every associated type the trait declares must appear exactly once in the impl. A bound `(c (container item))` means `C: Container<Item = item>`. Associated types need the compiler because only the compiler adds the trait item, infers the implementor's type and emits `type Item = ...`. An unsized implementor such as `str` must take every receiver by reference. `rust-trait` binds only traits that Rust defines.
 
+A program defines a trait with the prelude's `deftrait`, which expands to the kernel's `trait`. A docstring is the first form after the name.
+
 A `rust-trait` that declares a method can also be implemented, and the compiler emits the Rust `impl`. The method's name and signature come from the `rust-trait` entry, so the program writes only the method body. Its implementor must be a struct or enum of the program, because Rust's coherence rule rejects an implementation for a type outside the crate. A `rust-trait` entry may also state a `(help "text")` line, which the compiler shows when a type does not implement the trait. Two written impls of one trait whose implementors unify, such as `(display (tree i64) ...)` beside `(display (tree a) ...)`, or a written impl beside a `derive` that lists the trait, are `L0459`, so rustc's `E0119` never reaches the user.
 
 The prelude's `display` trait declares `fmt`, and the prelude's `display` macro writes the implementation from printing parts:
@@ -1153,7 +1172,7 @@ The prelude's `display` trait declares `fmt`, and the prelude's `display` macro 
 The parts follow `println`: a string is literal text, any other form prints with `display`, and `(str ...)` splices. A `(pr-str ...)` part prints its value's printed form. When the parts are exactly one `match` form, each arm body becomes a write of that body's parts, and a `(str ...)` arm writes those parts. Any other arm body is one part, and the rule applies again to a nested `match` or `if`. A single `if` form writes in both branches the same way. The type then works with `print`, `println`, `str`, and as the error type of a `main` that returns a `result`. An implementor that is not a struct or enum of the program is an error, `L0445`.
 
 ```lisp
-(trait shape
+(deftrait shape
   (area (fn ((ref self)) f64))
   (scale! (fn ((mut self) f64) unit)))
 

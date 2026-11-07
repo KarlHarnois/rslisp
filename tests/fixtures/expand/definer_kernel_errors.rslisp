@@ -1,0 +1,107 @@
+(deftype (doubled-item item) (rust "Pair<{item}>"))
+
+(deftype (binder-template item) (rust "Pair<{!item}>"))
+
+(deftype (two-parameter left right)
+  (rust "Pair<{0}, {1}>")
+  (u8 "Bytes"))
+
+(deftype no-parameter (rust "Holder<{0}, {1}>"))
+
+(deftype bad-clause
+  (rust "Holder")
+  3)
+
+(deftrait no-self-method
+  (rust "Clone")
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
+
+(deftrait cloned-trait
+  (rust "Clone")
+  (method mark (fn ((ref self)) string))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
+
+(deftrait repeated-clause
+  (rust "crate::rt::Repeated")
+  (method trace (fn ((ref self)) string))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare "")
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
+
+(deftrait number-again
+  (rust "crate::rt::Number")
+  (method mark-number
+          (fn ((ref self)) string))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
+
+(deftrait first-octal
+  (rust "std::fmt::Octal")
+  (method write-first
+          (fn ((ref self)) string))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
+
+(deftrait second-octal
+  (rust "std::fmt::Octal")
+  (method write-second
+          (fn ((ref self)) string))
+  (structural :struct ""
+              :field ""
+              :variant ""
+              :part ""
+              :bare ""))
+
+(defenum (holder a)
+  (rust "Holder<{1}>")
+  (hold a))
+
+(defenum missing-parameter
+  (rust "Holder<{0}>")
+  (hold i64))
+
+(deftype (malformed-clause a)
+  (rust "Holder<{0}>")
+  (u8))
+
+(deftrait malformed-help
+  (rust "Help")
+  (help 3))
+
+(deftrait malformed-method
+  (rust "Method")
+  (method))
+
+(deftrait malformed-associated
+  (rust "Output")
+  (associated output "Out"))
+
+(defenum malformed-rust
+  (rust "Holder" 3)
+  hold)
+
+(deftrait (malformed-supertrait 3)
+  (area (fn ((ref self)) f64)))
+
+(defenum (malformed-parameters 3) hold)

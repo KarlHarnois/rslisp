@@ -62,7 +62,7 @@ impl TypeChecker {
                 ItemKind::Struct(binding, params, _) => {
                     Some((*binding, params.len(), DefinitionKind::Struct))
                 }
-                ItemKind::Enum(binding, params, _, _) => {
+                ItemKind::Enum(binding, params, ..) => {
                     Some((*binding, params.len(), DefinitionKind::Enum))
                 }
                 _ => None,

@@ -67,6 +67,8 @@ help: a function with a similar name exists
 
 **Name the definer the user wrote.** A definition inside a body is `L0208`, and its title names the head of the outermost macro call that the user wrote around the `def` or `struct`: `(defn inner () 1)` in a body reports `` `defn` can only appear at module level ``, a `deftest` reports `deftest`, and a user macro over `defn` reports the user macro. A `def` or `struct` that the user wrote keeps its own name.
 
+**Name the prelude form that wrote a kernel definition.** An error of an `enum`, `trait`, `rust-type` or `rust-trait` that a macro expanded to names the macro, read from the macro origin, so `(deftype (pair a) (rust "{item}"))` reports ``a `deftype` template cannot name `item` ``, and a malformed form points to the macro's docstring for its shape. An error that has no such form to read, as a `with` outside a Rust trait, names no definer.
+
 **Name a repeated test at the second `deftest`.** A second test of one name in one module is `L0333`, ``test `pads` is defined more than once``, with its primary label on the second test's name and a secondary label on the first, and the help `rename one of the tests`.
 
 **Point a partly labeled call at the argument outside a pair.** `L0338` puts its primary label on the first argument that no `:field value` pair holds, with "this argument has no label" on a value and "this label has no value" on a keyword.

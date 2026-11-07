@@ -1,0 +1,20 @@
+(defenum unnamed-variant 3)
+
+(defenum keyword-variant :circle)
+
+(defenum struct-payload
+  (labeled (struct (text string))))
+
+(defenum field-after-type (labeled string :size f64))
+
+(defenum type-after-field (labeled :text string f64))
+
+(defenum field-without-type (labeled :text :size f64))
+
+(defenum last-field-without-type (labeled :text))
+
+(defenum late-rust
+  circle
+  (rust "Path"))
+
+(defenum 3 circle)

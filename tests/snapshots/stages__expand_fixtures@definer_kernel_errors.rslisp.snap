@@ -1,0 +1,180 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/definer_kernel_errors.rslisp
+---
+error[L0222]: a `deftype` template cannot name `item`
+ --> expand/definer_kernel_errors.rslisp:1:36
+  |
+1 | (deftype (doubled-item item) (rust "Pair<{item}>"))
+  |                                    ^^^^^^^^^^^^^^ `deftype` templates name their parameters by number
+  |
+  = help: write the placeholder as `{0}`
+
+error[L0222]: a `deftype` template cannot name `!item`
+ --> expand/definer_kernel_errors.rslisp:3:39
+  |
+3 | (deftype (binder-template item) (rust "Pair<{!item}>"))
+  |                                       ^^^^^^^^^^^^^^^ `deftype` templates name their parameters by number
+  |
+  = help: write the placeholder as `{0}`
+
+error[L0223]: a `deftype` with clauses takes one type parameter
+ --> expand/definer_kernel_errors.rslisp:5:10
+  |
+5 | (deftype (two-parameter left right)
+  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^ this type has 2 type parameters
+  |
+  = help: give the type one parameter, as in `(deftype (two-parameter item) ...)`
+
+error[L0225]: `{0}` names no type parameter
+ --> expand/definer_kernel_errors.rslisp:9:29
+  |
+9 | (deftype no-parameter (rust "Holder<{0}, {1}>"))
+  |                             ^^^^^^^^^^^^^^^^^^ this type has 0 type parameters
+  |
+  = help: declare the type parameters on the name, as in `(deftype (no-parameter a b) ...)`
+
+error[L0223]: a `deftype` with clauses takes one type parameter
+  --> expand/definer_kernel_errors.rslisp:11:10
+   |
+11 | (deftype bad-clause
+   |          ^^^^^^^^^^ this type has 0 type parameters
+   |
+   = help: give the type one parameter, as in `(deftype (bad-clause item) ...)`
+
+error[L0248]: a `structural` clause needs one method that takes `(ref self)`
+  --> expand/definer_kernel_errors.rslisp:17:3
+   |
+17 | /   (structural :struct ""
+18 | |               :field ""
+19 | |               :variant ""
+20 | |               :part ""
+21 | |               :bare ""))
+   | |_______________________^ this clause fills the body of one method
+   |
+   = help: declare one `(method name (fn ((ref self) ...) result))` in this `deftrait`
+
+error[L0248]: `cloned-trait` binds `Clone`, which `derive` already writes
+  --> expand/definer_kernel_errors.rslisp:26:3
+   |
+26 | /   (structural :struct ""
+27 | |               :field ""
+28 | |               :variant ""
+29 | |               :part ""
+30 | |               :bare ""))
+   | |_______________________^ every struct would get both the derive and this impl
+   |
+   = help: keep the clause off this `deftrait`, or bind a trait that `derive` does not write
+
+error[L0248]: this `deftrait` has a second `structural` clause
+  --> expand/definer_kernel_errors.rslisp:40:3
+   |
+35 | /   (structural :struct ""
+36 | |               :field ""
+37 | |               :variant ""
+38 | |               :part ""
+39 | |               :bare "")
+   | |_______________________- first clause
+40 | /   (structural :struct ""
+41 | |               :field ""
+42 | |               :variant ""
+43 | |               :part ""
+44 | |               :bare ""))
+   | |_______________________^ second clause
+   |
+   = help: merge the two clauses into one
+
+error[L0248]: `number-again` binds `crate::rt::Number`, which `number` already binds
+  --> expand/definer_kernel_errors.rslisp:50:3
+   |
+50 | /   (structural :struct ""
+51 | |               :field ""
+52 | |               :variant ""
+53 | |               :part ""
+54 | |               :bare ""))
+   | |_______________________^ the two traits would infer two impls of one Rust trait
+   |
+   = help: keep the clause off this `deftrait`, or give it a Rust path that no other trait binds
+
+error[L0248]: `second-octal` binds `std::fmt::Octal`, which `first-octal` already binds
+  --> expand/definer_kernel_errors.rslisp:70:3
+   |
+70 | /   (structural :struct ""
+71 | |               :field ""
+72 | |               :variant ""
+73 | |               :part ""
+74 | |               :bare ""))
+   | |_______________________^ the two traits would infer two impls of one Rust trait
+   |
+   = help: keep the clause off this `deftrait`, or give it a Rust path that no other trait binds
+
+error[L0225]: `{1}` names no type parameter
+  --> expand/definer_kernel_errors.rslisp:77:9
+   |
+77 |   (rust "Holder<{1}>")
+   |         ^^^^^^^^^^^^^ this type has 1 type parameter
+   |
+   = help: declare the type parameters on the name, as in `(defenum (holder a b) ...)`
+
+error[L0225]: `{0}` names no type parameter
+  --> expand/definer_kernel_errors.rslisp:81:9
+   |
+81 |   (rust "Holder<{0}>")
+   |         ^^^^^^^^^^^^^ this type has 0 type parameters
+   |
+   = help: declare the type parameters on the name, as in `(defenum (missing-parameter a) ...)`
+
+error[L0210]: malformed `deftype`
+  --> expand/definer_kernel_errors.rslisp:84:1
+   |
+84 | / (deftype (malformed-clause a)
+85 | |   (rust "Holder<{0}>")
+86 | |   (u8))
+   | |_______^ this does not fit the shape of `deftype`
+   |
+   = help: the docstring of `deftype` states its shape
+
+error[L0210]: malformed `deftrait`
+  --> expand/definer_kernel_errors.rslisp:90:9
+   |
+90 |   (help 3))
+   |         ^ this does not fit the shape of `deftrait`
+   |
+   = help: the docstring of `deftrait` states its shape
+
+error[L0210]: malformed `deftrait`
+  --> expand/definer_kernel_errors.rslisp:94:3
+   |
+94 |   (method))
+   |   ^^^^^^^^ this does not fit the shape of `deftrait`
+   |
+   = help: the docstring of `deftrait` states its shape
+
+error[L0210]: malformed `deftrait`
+  --> expand/definer_kernel_errors.rslisp:98:15
+   |
+98 |   (associated output "Out"))
+   |               ^^^^^^ this does not fit the shape of `deftrait`
+   |
+   = help: the docstring of `deftrait` states its shape
+
+error[L0210]: malformed `defenum`
+   --> expand/definer_kernel_errors.rslisp:101:3
+    |
+101 |   (rust "Holder" 3)
+    |   ^^^^^^^^^^^^^^^^^ this does not fit the shape of `defenum`
+    |
+    = help: write it as `(rust "Path")` or `(rust "Path" bare)`
+
+error[L0212]: expected a trait, found `3`
+   --> expand/definer_kernel_errors.rslisp:104:33
+    |
+104 | (deftrait (malformed-supertrait 3)
+    |                                 ^ not a trait
+
+error[L0212]: expected a name, found `3`
+   --> expand/definer_kernel_errors.rslisp:107:32
+    |
+107 | (defenum (malformed-parameters 3) hold)
+    |                                ^ not a name

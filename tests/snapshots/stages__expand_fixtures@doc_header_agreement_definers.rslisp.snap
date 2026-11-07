@@ -1,0 +1,17 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/doc_header_agreement_definers.rslisp
+---
+(enum (labeled-shape a) (circle a) (labeled (struct (text a))))
+(trait area-of (area (fn ((ref self)) f64)))
+(rust-trait copyable "std::marker::Sync" i64)
+(rust-type (holder item) "Box<{0}>")
+(def enum-header "(defenum (labeled-shape a))")
+(def trait-header "(deftrait area-of)")
+(def rust-trait-header "(deftrait copyable)")
+(def rust-type-header "(deftype (holder item))")
+(def enum-docstring "A shape with a label.")
+(def trait-docstring "Shapes with an area.")
+(def rust-trait-docstring "Types that Rust copies.")
+(def rust-type-docstring "Holds one item.")

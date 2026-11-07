@@ -3,10 +3,10 @@ source: tests/stages.rs
 expression: reports.report(path)
 input_file: tests/fixtures/check/misplaced_with.rslisp
 ---
-error[L0426]: `with` is only allowed in a `rust-trait`
+error[L0426]: `with` is only allowed in an implementor of a Rust trait
  --> check/misplaced_with.rslisp:4:19
   |
 4 |   (where (a) (fn ((with a i64)) unit)))
   |                   ^^^^^^^^^^^^ not allowed here
   |
-  = help: write `(with type type)` as an entry of `rust-trait`
+  = help: write `(with type type)` in the list of a Rust trait's implementors

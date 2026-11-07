@@ -1,0 +1,41 @@
+(defenum shape
+  (circle f64)
+  (labeled :text string :size)
+  dot)
+
+(defn describe (s)
+  (match s
+    ((circle r) (println r))
+    ((shape/circle r) (println r))
+    ((labeled t _) (println t))
+    ((shape/labeled t _) (println t))
+    (dot (println "dot"))
+    (shape/dot (println "dot"))
+    (_ (println "other"))))
+
+(defn build () (shape/circle 1.0))
+
+(defn build-dot () shape/dot)
+
+(deftrait area-of
+  (area (fn ((ref self)) f64))
+  3)
+
+(deftrait sized-thing
+  (rust "Copy" "Clone")
+  (method measure (fn ((ref self)) f64))
+  (associated (measured owner) "Output"))
+
+(deftrait with-output
+  (type output)
+  (produce (fn ((ref self)) (output self)))
+  3)
+
+(deftype meters f64)
+
+(type total (fn (i64) i64))
+
+(defn total (width)
+  (measure width)
+  (the meters (area width))
+  (the (measured i64) 1))

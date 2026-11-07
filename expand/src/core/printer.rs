@@ -66,7 +66,7 @@ impl<'a> CorePrinter<'a> {
         if let ItemKind::Struct(binding, params, fields) = &item.kind {
             return self.struct_item(*binding, params, fields);
         }
-        if let ItemKind::Enum(binding, params, variants, rust) = &item.kind {
+        if let ItemKind::Enum(binding, params, variants, rust, _) = &item.kind {
             return self.enum_item(*binding, params, variants, rust);
         }
         if let ItemKind::Derive(binding, _, traits) = &item.kind {
