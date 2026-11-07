@@ -41,7 +41,7 @@
 
 **NEVER reproduce a CI failure with a command that `AGENTS.md` bans locally.**
 
-**If the `source-format` flake check fails, lay out each file it names with `nix develop -c cargo run --quiet -- fmt <file>`.** The check names each file by its Nix store path. Run the command on the same path in the repository.
+**If the `source-format` flake check fails, lay out each file it names with `cargo run --quiet -- fmt <file>`.** The check names each file by its Nix store path. Run the command on the same path in the repository.
 
 **If the same failure survives three fixes, stop and show the failing output to the project owner.**
 

@@ -127,18 +127,17 @@ The exceptions are:
 - The standard error and the exit code follow the standard output in the snapshot.
 - Create or update snapshots with `INSTA_UPDATE=always`.
 - NEVER commit a snapshot that you have not read.
-- If a change adds or grows a corpus entry, build the compiler with `nix develop -c cargo build --release`.
-- Then time the entry's emission with `nix develop -c bash -c 'time cargo run --release --quiet -- emit <entry> > /dev/null'`.
+- If a change adds or grows a corpus entry, build the compiler with `cargo build --release`.
+- Then time the entry's emission with `bash -c 'time cargo run --release --quiet -- emit <entry> > /dev/null'`.
 - If that emission takes more than one second, shrink the entry.
 - NEVER lower `MINIMUM_LINE_COVERAGE` or raise `MAXIMUM_CRAP` in `xtask/src/gate.rs` without the project owner's approval.
 - NEVER hide code from `cargo xtask coverage`, such as by moving branches into a macro: the gate cannot see inside a macro.
 
 ### `nix develop`
 
-**Build, test and run every tool inside `nix develop`.** The host `PATH` can carry other versions of `cargo` and `rustc`.
+**Build, test and run every tool inside the dev shell.** The host `PATH` can carry other versions of `cargo` and `rustc`.
 
-- If `direnv allow` has run in this repository, `.envrc` loads the same dev shell through direnv.
-- Run the working commands as written. Their `nix develop -c` prefix makes them work without direnv.
+- If `direnv allow` has run in this repository, `.envrc` loads the dev shell through nix-direnv.
 - Stage each new file by path with `git add` before any `nix` command: flake commands ignore files outside the git index.
 
 ### Commits
@@ -152,10 +151,14 @@ The exceptions are:
 **Run the working commands while you work.**
 
 ```sh
-nix develop -c cargo fmt --all --check
-nix develop -c cargo clippy --workspace --all-targets -- -D warnings
-nix develop -c cargo test <narrowest test>
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test <narrowest test>
 ```
+
+**If `IN_NIX_SHELL` is set, run every command without the `nix develop -c` prefix.** In a dirty worktree, the prefix evaluates the flake again and copies the tracked files into `/nix/store`.
+
+**If `IN_NIX_SHELL` is not set, prefix every command that runs a dev shell tool, such as `cargo`, with `nix develop -c`.**
 
 **Replace `<narrowest test>` with the narrowest row of this table that covers the change:**
 
@@ -171,7 +174,7 @@ nix develop -c cargo test <narrowest test>
 
 - To run one fixture of a stage, prefix the stage's command with `INSTA_GLOB_FILTER='**/<fixture file name>'`.
 
-**CI posts the front end's instruction counts on each pull request. You MAY also measure them on Linux with `nix develop -c cargo xtask bench measure`.** To compare two checkouts, measure each with `--workspace <checkout> --save <file>`, then run `nix develop -c cargo xtask bench compare <before> <after>`.
+**CI posts the front end's instruction counts on each pull request. You MAY also measure them on Linux with `cargo xtask bench measure`.** To compare two checkouts, measure each with `--workspace <checkout> --save <file>`, then run `cargo xtask bench compare <before> <after>`.
 
 **NEVER run these commands locally:** each compiles the whole suite or rebuilds everything on all cores, and CI runs them.
 
