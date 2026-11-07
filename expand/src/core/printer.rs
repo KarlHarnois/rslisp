@@ -349,9 +349,10 @@ impl<'a> CorePrinter<'a> {
             .items
             .iter()
             .map(|item| match item {
-                BodyItem::Let(binder, value) => {
-                    Self::list("let", vec![self.binder(binder), self.expr(value)])
-                }
+                BodyItem::Let(binder, value) => Self::list(
+                    KernelForm::Local.name(),
+                    vec![self.binder(binder), self.expr(value)],
+                ),
                 BodyItem::Expr(expr) => self.expr(expr),
             })
             .collect()
