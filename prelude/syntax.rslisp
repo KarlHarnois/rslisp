@@ -634,8 +634,7 @@
     (local call
       (prepend positional
                (positional-arguments (bound-pairs pairs) signature)))
-    (prepend (quote do)
-             (concat (temporary-bindings pairs) (list call)))))
+    (list (quote let) (temporary-bindings pairs) call)))
 
 (def bound-pairs
   (fn (pairs)
@@ -659,10 +658,9 @@
     (if (empty? pairs)
       (list)
       (if (list? (nth pairs 1))
-        (prepend (list (quote local)
-                       (temporary (first pairs))
-                       (nth pairs 1))
-                 (temporary-bindings (drop 2 pairs)))
+        (prepend (temporary (first pairs))
+                 (prepend (nth pairs 1)
+                          (temporary-bindings (drop 2 pairs))))
         (temporary-bindings (drop 2 pairs))))))
 
 (def loop

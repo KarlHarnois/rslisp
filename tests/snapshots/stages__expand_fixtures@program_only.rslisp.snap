@@ -9,11 +9,11 @@ error[L0306]: `display-string` belongs to the program, so macro code cannot run 
   4 |     (macro (form) (str 1) (list)))
     |                   ^^^^^^^ macro code runs this
     |
-   ::: prelude/text.rslisp:128:3
+   ::: prelude/text.rslisp:129:3
     |
-128 | /   (rust "{0}.to_string()"
-129 | |     (where ((a display))
-130 | |       (fn ((ref a)) string))))
+129 | /   (rust "{0}.to_string()"
+130 | |     (where ((a display))
+131 | |       (fn ((ref a)) string))))
     | |_____________________________- `display-string` is Rust code that runs in the program
     |
     = help: to compute this in the program, return it as code from the macro, for example with `quote`
@@ -47,11 +47,11 @@ error[L0306]: `display-string` belongs to the program, so macro code cannot run 
  20 |       (if true (quote 1) (str 1))))
     |                          ^^^^^^^ macro code runs this
     |
-   ::: prelude/text.rslisp:128:3
+   ::: prelude/text.rslisp:129:3
     |
-128 | /   (rust "{0}.to_string()"
-129 | |     (where ((a display))
-130 | |       (fn ((ref a)) string))))
+129 | /   (rust "{0}.to_string()"
+130 | |     (where ((a display))
+131 | |       (fn ((ref a)) string))))
     | |_____________________________- `display-string` is Rust code that runs in the program
     |
     = help: to compute this in the program, return it as code from the macro, for example with `quote`
@@ -85,9 +85,9 @@ error[L0306]: `print` belongs to the program, so macro code cannot run it
  38 |   (macro (form) (print "unused")))
     |                 ^^^^^^^^^^^^^^^^ macro code runs this
     |
-   ::: prelude/text.rslisp:421:11
+   ::: prelude/text.rslisp:422:11
     |
-421 | (defmacro print (parts ...)
+422 | (defmacro print (parts ...)
     |           ----- `print` expands to Rust code that runs in the program
     |
     = help: to compute this in the program, return it as code from the macro, for example with `quote`
