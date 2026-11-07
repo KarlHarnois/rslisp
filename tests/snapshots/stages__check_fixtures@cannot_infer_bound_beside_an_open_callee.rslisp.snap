@@ -1,0 +1,12 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/cannot_infer_bound_beside_an_open_callee.rslisp
+---
+error[L0404]: `i64` does not implement `named`
+  --> check/cannot_infer_bound_beside_an_open_callee.rslisp:11:20
+   |
+11 |       (if true (g (named? (ref v)) w) (+ v 1))))
+   |                    ^^^^^^ this needs `named`
+   |
+   = note: `named` is implemented for:

@@ -458,3 +458,62 @@ impl Unifier {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::{BindingArena, BindingInfo, BindingKind};
+    use crate::source::SourceId;
+
+    struct SiteFixture {
+        unifier: Unifier,
+        bound: Bound,
+    }
+
+    impl SiteFixture {
+        fn new() -> Self {
+            let mut bindings = BindingArena::default();
+            let binding = bindings.add(BindingInfo::new(
+                "trait".into(),
+                BindingKind::TypeVariable,
+                None,
+            ));
+            Self {
+                unifier: Unifier::default(),
+                bound: Bound::plain(binding),
+            }
+        }
+
+        fn span(&self, start: usize) -> Span {
+            Span::new(SourceId::new(0), start..start + 1)
+        }
+
+        fn bounded_var(&mut self, site: Span) -> TypeVar {
+            let Type::Var(var) = self.unifier.fresh() else {
+                unreachable!("a fresh type is a variable");
+            };
+            self.unifier.set_bounds(var, vec![self.bound.clone()], site);
+            var
+        }
+    }
+
+    #[test]
+    fn variables_of_one_call_share_one_bound_site() {
+        let mut fixture = SiteFixture::new();
+        let call = fixture.span(0);
+        fixture.bounded_var(call);
+        let second = fixture.bounded_var(call);
+        assert_eq!(fixture.unifier.bound_sites, vec![call]);
+        assert_eq!(fixture.unifier.bound_site(second), Some(call));
+    }
+
+    #[test]
+    fn another_call_keeps_its_own_bound_site() {
+        let mut fixture = SiteFixture::new();
+        let (first_call, later_call) = (fixture.span(0), fixture.span(4));
+        let first = fixture.bounded_var(first_call);
+        let later = fixture.bounded_var(later_call);
+        assert_eq!(fixture.unifier.bound_site(first), Some(first_call));
+        assert_eq!(fixture.unifier.bound_site(later), Some(later_call));
+    }
+}
