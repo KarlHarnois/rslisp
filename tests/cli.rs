@@ -84,6 +84,7 @@ const MINUS_HEADER: &str = "(- number more ...)";
 const FLAG_NAMED_DEF: &str = "(def --verbose 1)\n\n(defn main () (println --verbose))\n";
 const FLAG_NAMED_DEF_PAGE: &str = "(def --verbose)\n\nNo documentation.\n";
 const DEFN_HEADER: &str = "(defmacro defn (name parameters body ...))";
+const SEPARATOR_TIP: &str = "write `rslisp doc -- <term>`";
 const UNKNOWN_FLAG_ERROR: &str = "error: unexpected argument '--typo' found";
 const ARITHMETIC: &str = include_str!("fixtures/emit/arithmetic.rslisp");
 const EMPTY_MAIN: &str = "(def main (fn () (do)))\n";
@@ -1383,6 +1384,7 @@ fn doc_reports_an_unknown_flag_before_the_term() {
     let doc = sandbox.compiler(&["doc", "--typo", "twice"]);
     let stderr = doc.assert_exit_code(2).stderr();
     assert_eq!(stderr.lines().next(), Some(UNKNOWN_FLAG_ERROR));
+    assert!(stderr.contains(SEPARATOR_TIP), "{stderr}");
 }
 
 #[test]
