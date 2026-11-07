@@ -1,0 +1,92 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/deftrait_errors.rslisp
+---
+error[L0342]: a `deftrait` method is a name and a type, as `(area (fn ((ref self)) f64))`
+ --> expand/deftrait_errors.rslisp:2:3
+  |
+2 |   i8 i16)
+  |   ^^ here
+  |
+  = help: to name a Rust trait, write `(rust "Path")` after the name
+
+error[L0343]: a `deftrait` with a `rust` clause lists its implementors here
+ --> expand/deftrait_errors.rslisp:6:3
+  |
+6 |   (area (fn ((ref self)) f64)))
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+  |
+  = help: declare a method of a Rust trait as `(method name type)`
+
+error[L0343]: a `deftrait` with a `rust` clause lists its implementors here
+  --> expand/deftrait_errors.rslisp:10:3
+   |
+10 |   (area (where (a) (fn ((ref self) a) f64))))
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: declare a method of a Rust trait as `(method name type)`
+
+error[L0340]: the `rust` clause comes right after the name
+  --> expand/deftrait_errors.rslisp:14:3
+   |
+14 |   (rust "Copy"))
+   |   ^^^^^^^^^^^^^ here
+   |
+   = help: move it to the first place after the name, or after the docstring
+
+error[L0340]: the `rust` clause comes right after the name
+  --> expand/deftrait_errors.rslisp:18:3
+   |
+18 |   (rust "Copy"))
+   |   ^^^^^^^^^^^^^ here
+   |
+   = help: move it to the first place after the name, or after the docstring
+
+error[L0340]: the `rust` clause comes right after the name
+  --> expand/deftrait_errors.rslisp:23:3
+   |
+23 |   (rust "Clone"))
+   |   ^^^^^^^^^^^^^^ here
+   |
+   = help: move it to the first place after the name, or after the docstring
+
+error[L0341]: a `rust` clause on `deftrait` holds one string
+  --> expand/deftrait_errors.rslisp:26:3
+   |
+26 |   (rust "Copy" "Clone")
+   |   ^^^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: write it as `(rust "Path")`
+
+error[L0344]: a Rust trait takes no supertraits
+  --> expand/deftrait_errors.rslisp:29:11
+   |
+29 | (deftrait (clause-with-supertraits (clone))
+   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+   |
+   = help: write the name alone
+
+error[L0342]: a `deftrait` method is a name and a type, as `(area (fn ((ref self)) f64))`
+  --> expand/deftrait_errors.rslisp:33:31
+   |
+33 | (deftrait method-without-type (area))
+   |                               ^^^^^^ here
+   |
+   = help: to name a Rust trait, write `(rust "Path")` after the name
+
+error[L0342]: a `deftrait` method is a name and a type, as `(area (fn ((ref self)) f64))`
+  --> expand/deftrait_errors.rslisp:35:31
+   |
+35 | (deftrait clause-without-path (rust))
+   |                               ^^^^^^ here
+   |
+   = help: to name a Rust trait, write `(rust "Path")` after the name
+
+error[L0339]: `deftrait` needs a name
+  --> expand/deftrait_errors.rslisp:37:11
+   |
+37 | (deftrait ())
+   |           ^^ here
+   |
+   = help: write a name, as in (deftrait shape ...)

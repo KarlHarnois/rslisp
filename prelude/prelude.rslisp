@@ -48,6 +48,7 @@
                   upper-case whitespace?)
 
 (use prelude/struct defstruct)
+(use prelude/definers defenum deftrait deftype)
 (use prelude/ownership clone copy)
 
 (use prelude/io command-line-args exit io-error line-seq
@@ -58,24 +59,24 @@
 (export * + - -> ->> / < <= = > >= _ add alphanumeric? and
         any? as-str assoc assoc-at assoc-in at bool box char
         char chars clone collect command-line-args comment
-        cond copied copy count debug dedup! def defmacro
-        defn defrule defstruct deref derive digit? display
-        div do doc doc-page docstring empty? enum enumerate
-        eprintln eq err err? every? exit expect expect-ok
-        export f32 f64 false field filter find first float
-        fn fn-mut fn-once for-each from-str ge get gt hash
-        hash-map header i128 i16 i32 i64 i8 if impl
-        infallible infer integer into-hash-map
-        into-sorted-map io-error isize iter iterator keys
-        last le len let let-fields let-pair let-try line-seq
-        lines local loop lower-case lt macro map map-at
-        map-err map-ok map-some match max max-by-key min
-        module mul mut ne neg new none none? not not= number
-        ok ok-or ok? option or ord page-body pair parse
-        parse-bool-error parse-char-error parse-error
-        parse-float-error parse-int-error partial-eq
-        partial-ord pi pop! pr-str print println prn push!
-        quote range read-line recur reduce ref rem
+        cond copied copy count debug dedup! def defenum
+        defmacro defn defrule defstruct deftrait deftype
+        deref derive digit? display div do doc doc-page
+        docstring empty? enum enumerate eprintln eq err err?
+        every? exit expect expect-ok export f32 f64 false
+        field filter find first float fn fn-mut fn-once
+        for-each from-str ge get gt hash hash-map header
+        i128 i16 i32 i64 i8 if impl infallible infer integer
+        into-hash-map into-sorted-map io-error isize iter
+        iterator keys last le len let let-fields let-pair
+        let-try line-seq lines local loop lower-case lt
+        macro map map-at map-err map-ok map-some match max
+        max-by-key min module mul mut ne neg new none none?
+        not not= number ok ok-or ok? option or ord page-body
+        pair parse parse-bool-error parse-char-error
+        parse-error parse-float-error parse-int-error
+        partial-eq partial-ord pi pop! pr-str print println
+        prn push! quote range read-line recur reduce ref rem
         remove-at! result reverse reverse! rust rust-trait
         rust-type sequence set! set-at show signed slice
         slurp some some? sort! sort-by! sorted-map source

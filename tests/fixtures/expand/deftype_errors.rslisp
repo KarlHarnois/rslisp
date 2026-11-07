@@ -1,0 +1,13 @@
+(deftype without-clause f64)
+
+(deftype empty-definition)
+
+(deftype documented "Holds meters.")
+
+(deftype clause-with-two-strings (rust "f64" "f32"))
+
+(deftype clause-after-type
+  f64
+  (rust "f32"))
+
+(deftype :name (rust "f64"))

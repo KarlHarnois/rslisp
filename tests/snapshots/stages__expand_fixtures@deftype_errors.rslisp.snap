@@ -1,0 +1,52 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/deftype_errors.rslisp
+---
+error[L0345]: `deftype` names a Rust type
+ --> expand/deftype_errors.rslisp:1:25
+  |
+1 | (deftype without-clause f64)
+  |                         ^^^ here
+  |
+  = help: write `(deftype name (rust "Path"))`
+
+error[L0345]: `deftype` names a Rust type
+ --> expand/deftype_errors.rslisp:3:10
+  |
+3 | (deftype empty-definition)
+  |          ^^^^^^^^^^^^^^^^ here
+  |
+  = help: write `(deftype name (rust "Path"))`
+
+error[L0345]: `deftype` names a Rust type
+ --> expand/deftype_errors.rslisp:5:10
+  |
+5 | (deftype documented "Holds meters.")
+  |          ^^^^^^^^^^ here
+  |
+  = help: write `(deftype name (rust "Path"))`
+
+error[L0341]: a `rust` clause on `deftype` holds one string
+ --> expand/deftype_errors.rslisp:7:34
+  |
+7 | (deftype clause-with-two-strings (rust "f64" "f32"))
+  |                                  ^^^^^^^^^^^^^^^^^^ here
+  |
+  = help: write it as `(rust "Path")`
+
+error[L0340]: the `rust` clause comes right after the name
+  --> expand/deftype_errors.rslisp:11:3
+   |
+11 |   (rust "f32"))
+   |   ^^^^^^^^^^^^ here
+   |
+   = help: move it to the first place after the name, or after the docstring
+
+error[L0339]: `deftype` needs a name
+  --> expand/deftype_errors.rslisp:13:10
+   |
+13 | (deftype :name (rust "f64"))
+   |          ^^^^^ here
+   |
+   = help: write a name, as in (deftype shape ...)

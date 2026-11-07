@@ -1,0 +1,11 @@
+(defstruct crab
+  :age i64)
+
+(deftrait spoken
+  (rust (fn ((ref self)) string)))
+
+(impl spoken crab
+  (rust (self) (str "crab")))
+
+(defn main ()
+  (println (rust (->crab 3))))

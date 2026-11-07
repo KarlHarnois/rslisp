@@ -1,7 +1,10 @@
 (use macro_library/macros assert-eq case defenum defrecord
                           dotimes if-some)
 
-(defenum color red green blue)
+(defenum color
+  red
+  green
+  blue)
 
 (defrecord point (x i64) (y i64))
 

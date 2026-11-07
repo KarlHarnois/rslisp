@@ -1,0 +1,80 @@
+(deftype (wrapped item)
+  "Holds one item on the heap."
+  (rust "Box<{0}>"))
+
+(deftype counter (rust "std::num::Wrapping<i64>"))
+
+(deftype (non-zero n)
+  "A number that is not zero."
+  (rust "std::num::NonZero<{0}>")
+  (u8 "std::num::NonZeroU8"))
+
+(defenum shape
+  "A shape on a page."
+  (circle f64)
+  (labeled :text string :size f64)
+  dot)
+
+(defenum (outcome value)
+  "Mirrors Rust's option."
+  (rust "Option" bare)
+  (some-value value)
+  no-value)
+
+(deftrait area-of
+  "Shapes with an area."
+  (area (fn ((ref self)) f64))
+  (doubled (fn ((ref self)) f64)
+           (* (area self) 2.0)))
+
+(deftrait (named-area (area-of))
+  (title (fn ((ref self)) string)))
+
+(deftrait quiet "A trait with no methods.")
+
+(deftrait hex-number
+  "The numbers this program prints in hexadecimal."
+  (rust "std::fmt::LowerHex")
+  (help "this program prints only integers in hexadecimal")
+  i8 i16
+  (where ((a hex-number)) (ref a)))
+
+(deftrait addable
+  (rust "std::ops::Add")
+  (associated (output left) "Output")
+  (where () (with i64 i64) (output i64)))
+
+(def add-values
+  (rust "{0} + {1}"
+    (where ((a (addable b)) b)
+      (fn (a b) (output a)))))
+
+(impl area-of shape
+  (area (self)
+        (match self
+          ((circle r) (* (* r r) 3.0))
+          ((labeled _ size) (* (deref size) (deref size)))
+          (dot 0.0))))
+
+(impl named-area shape
+  (title (self)
+         (match self
+           ((labeled text _) (clone text))
+           (_ (str "plain")))))
+
+(impl quiet shape)
+
+(type hush
+  (where ((a quiet)) (fn (a) a)))
+
+(defn hush (value) value)
+
+(defn main ()
+  (local shapes
+    (vec (shape/circle 1.0)
+         (shape/labeled (str "note") 2.0)))
+  (push! shapes (hush shape/dot))
+  (for-each (iter shapes)
+            (fn (item)
+              (println (title item) " " (doubled item))))
+  (println (add-values 40 2)))

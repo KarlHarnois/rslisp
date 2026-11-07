@@ -1,0 +1,76 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/defenum_errors.rslisp
+---
+error[L0346]: a variant is a name or a list that starts with a name
+ --> expand/defenum_errors.rslisp:1:26
+  |
+1 | (defenum unnamed-variant 3)
+  |                          ^ here
+  |
+  = help: write it as `name`, `(name type ...)` or `(name :field type ...)`
+
+error[L0346]: a variant is a name or a list that starts with a name
+ --> expand/defenum_errors.rslisp:3:26
+  |
+3 | (defenum keyword-variant :circle)
+  |                          ^^^^^^^ here
+  |
+  = help: write it as `name`, `(name type ...)` or `(name :field type ...)`
+
+error[L0347]: a variant writes its fields flat
+ --> expand/defenum_errors.rslisp:6:12
+  |
+6 |   (labeled (struct (text string))))
+  |            ^^^^^^^^^^^^^^^^^^^^^^ here
+  |
+  = help: write them after its name, as in (labeled :text string :size f64)
+
+error[L0348]: this variant's first item is a type, so it takes no fields
+ --> expand/defenum_errors.rslisp:8:43
+  |
+8 | (defenum field-after-type (labeled string :size f64))
+  |                                           ^^^^^ here
+  |
+  = help: write only types, or give every item a `:field`
+
+error[L0348]: a field must start with `:`
+  --> expand/defenum_errors.rslisp:10:49
+   |
+10 | (defenum type-after-field (labeled :text string f64))
+   |                                                 ^^^ here
+   |
+   = help: write each field as `:name type`, as in (labeled :text string)
+
+error[L0349]: this field has no type
+  --> expand/defenum_errors.rslisp:12:38
+   |
+12 | (defenum field-without-type (labeled :text :size f64))
+   |                                      ^^^^^ here
+   |
+   = help: write a type after it, as in :text i64
+
+error[L0349]: this field has no type
+  --> expand/defenum_errors.rslisp:14:43
+   |
+14 | (defenum last-field-without-type (labeled :text))
+   |                                           ^^^^^ here
+   |
+   = help: write a type after it, as in :text i64
+
+error[L0340]: the `rust` clause comes right after the name
+  --> expand/defenum_errors.rslisp:18:3
+   |
+18 |   (rust "Path"))
+   |   ^^^^^^^^^^^^^ here
+   |
+   = help: move it to the first place after the name, or after the docstring
+
+error[L0339]: `defenum` needs a name
+  --> expand/defenum_errors.rslisp:20:10
+   |
+20 | (defenum 3 circle)
+   |          ^ here
+   |
+   = help: write a name, as in (defenum shape ...)

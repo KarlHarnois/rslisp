@@ -1,0 +1,33 @@
+(defenum (labeled-shape a)
+  "A shape with a label."
+  (circle a)
+  (labeled :text a))
+
+(deftrait area-of
+  "Shapes with an area."
+  (area (fn ((ref self)) f64)))
+
+(deftrait copyable
+  "Types that Rust copies."
+  (rust "std::marker::Sync")
+  i64)
+
+(deftype (holder item)
+  "Holds one item."
+  (rust "Box<{0}>"))
+
+(def enum-header (header labeled-shape))
+
+(def trait-header (header area-of))
+
+(def rust-trait-header (header copyable))
+
+(def rust-type-header (header holder))
+
+(def enum-docstring (docstring labeled-shape))
+
+(def trait-docstring (docstring area-of))
+
+(def rust-trait-docstring (docstring copyable))
+
+(def rust-type-docstring (docstring holder))
