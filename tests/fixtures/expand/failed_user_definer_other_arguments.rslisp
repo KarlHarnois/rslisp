@@ -1,0 +1,10 @@
+(defmacro my-def "doc"
+  (name)
+  (list (quote def) name 1))
+
+(my-def when :tag 1 "text" bar)
+
+(defn main ()
+  (println bar)
+  (println :tag)
+  (when))

@@ -1,0 +1,24 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/expand/failed_user_definer_typo.rslisp
+---
+error[L0328]: a docstring goes after the parameter list
+ --> expand/failed_user_definer_typo.rslisp:1:18
+  |
+1 | (defmacro my-def "doc"
+  |                  ^^^^^ a docstring in place of the parameter list
+  |
+  = help: write it as the first body form, after the parameter list
+
+error[L0201]: cannot find `fooo` in this scope
+ --> expand/failed_user_definer_typo.rslisp:7:24
+  |
+7 | (defn main () (println fooo))
+  |                        ^^^^ not found in this scope
+  |
+help: a name with a similar spelling exists
+  |
+7 - (defn main () (println fooo))
+7 + (defn main () (println foo))
+  |
