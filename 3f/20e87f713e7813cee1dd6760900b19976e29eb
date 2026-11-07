@@ -1,9 +1,9 @@
-# method 06258bb4c5f45da70587b945f457665c13cd3d55-96789ee9eb0c28c394be2927242caee2e59668cb-7abdbbf17387b4fde503673fb3205c0133b069dd-4ab9e69ca885abb11df150e356b3774458477c3a
+# method 06258bb4c5f45da70587b945f457665c13cd3d55-139cfbcfdf47b9d3eb672f2398ac03f9ca367e02-7abdbbf17387b4fde503673fb3205c0133b069dd-4ab9e69ca885abb11df150e356b3774458477c3a
 # rustc rustc 1.95.0 (59807616e 2026-04-14) (built from a source tarball)
 # valgrind valgrind-3.26.0
-call_chain	build=24924970	check=531011962	emit=156952987	expand=476460692	modules=16477	source=23	total=1199790694	allocator.allocated_bytes=146159462	allocator.allocations=1765674	allocator.peak_live_bytes=9227028	build.scanned_tokens=26592	check.inferred_expressions=20391	emit.emitted_expressions=5595	expand.lowered_forms=8392
+call_chain	build=24925084	check=531011962	emit=156952987	expand=476460692	modules=16477	source=23	total=1199790798	allocator.allocated_bytes=146159462	allocator.allocations=1765674	allocator.peak_live_bytes=9227028	build.scanned_tokens=26592	check.inferred_expressions=20391	emit.emitted_expressions=5595	expand.lowered_forms=8392
 deep_nesting	build=26610626	check=272403770	emit=55511514	expand=591149067	modules=228295	source=23	total=953047462	allocator.allocated_bytes=158483210	allocator.allocations=1325402	allocator.peak_live_bytes=32377152	build.scanned_tokens=15060	check.inferred_expressions=7288	emit.emitted_expressions=2895	expand.lowered_forms=4462
-empty_program	build=25816	check=5776562	emit=96084	expand=10608672	modules=1148	source=23	total=19748723	allocator.allocated_bytes=3461718	allocator.allocations=32561	allocator.peak_live_bytes=1669787	build.scanned_tokens=12	check.inferred_expressions=4	emit.emitted_expressions=0	expand.lowered_forms=1
+empty_program	build=25827	check=5776562	emit=96084	expand=10608672	modules=1148	source=23	total=19748724	allocator.allocated_bytes=3461718	allocator.allocations=32561	allocator.peak_live_bytes=1669787	build.scanned_tokens=12	check.inferred_expressions=4	emit.emitted_expressions=0	expand.lowered_forms=1
 evaluator	allocator.allocated_bytes=16885324	allocator.allocations=190674	allocator.peak_live_bytes=2267533
 generic_types	allocator.allocated_bytes=43619344	allocator.allocations=494102	allocator.peak_live_bytes=4269833
 literal_inference	allocator.allocated_bytes=46602401	allocator.allocations=509036	allocator.peak_live_bytes=3503906
