@@ -3,10 +3,7 @@ use std::rc::Rc;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::deferred_definitions::DeferredDefinitions;
-use crate::core::{
-    BindingArena, BindingId, BindingKind, Control, Expr, ExprKind, ItemKind, Leaf, ModuleId,
-    Pattern,
-};
+use crate::core::{BindingArena, BindingId, BindingKind, Expr, ItemKind, ModuleId, References};
 use crate::expand::Program;
 use crate::modules::ModuleSources;
 use crate::source::Span;
@@ -170,11 +167,10 @@ impl<'a, 'p> ReferenceWalk<'a, 'p> {
     }
 
     fn walk(&mut self, binding: BindingId, value: &Expr) {
-        let mut references = References::default();
-        references.collect(value, self.bindings);
+        let references = References::of(value, self.bindings);
         self.reached.extend(
             references
-                .globals
+                .globals()
                 .iter()
                 .filter(|global| self.waiting.contains_key(global)),
         );
@@ -196,13 +192,13 @@ impl DependencyGraph {
         let mut edges = FxHashMap::with_capacity_and_hasher(walked.len(), Default::default());
         let mut direct_compile_time = FxHashSet::default();
         for (binding, references) in &walked {
-            if references.uses_compile_time_code {
+            if references.uses_compile_time_code() {
                 direct_compile_time.insert(*binding);
             }
             edges.insert(
                 *binding,
                 references
-                    .globals
+                    .globals()
                     .iter()
                     .filter(|global| walked.contains_key(global))
                     .copied()
@@ -286,53 +282,6 @@ impl DependencyGraph {
                     changed = true;
                 }
             }
-        }
-    }
-}
-
-#[derive(Default)]
-struct References {
-    globals: Vec<BindingId>,
-    uses_compile_time_code: bool,
-    arm_outers: FxHashMap<BindingId, BindingId>,
-}
-
-impl References {
-    fn collect(&mut self, expr: &Expr, bindings: &BindingArena) {
-        match expr.kind() {
-            ExprKind::Leaf(Leaf::Var(binding)) => self.note_read(*binding, bindings),
-            ExprKind::Leaf(Leaf::Quote(_)) => self.uses_compile_time_code = true,
-            ExprKind::Control(Control::Match(_, arms)) => {
-                for arm in arms {
-                    self.collect_arm_outers(&arm.pattern);
-                }
-            }
-            _ => {}
-        }
-        for child in expr.children() {
-            self.collect(child, bindings);
-        }
-    }
-
-    fn collect_arm_outers(&mut self, pattern: &Pattern) {
-        self.arm_outers.extend(pattern.arm_outer());
-        for nested in pattern.nested() {
-            self.collect_arm_outers(nested);
-        }
-    }
-
-    fn note_read(&mut self, binding: BindingId, bindings: &BindingArena) {
-        self.note_reference(binding, bindings);
-        if let Some(outer) = self.arm_outers.get(&binding).copied() {
-            self.note_reference(outer, bindings);
-        }
-    }
-
-    fn note_reference(&mut self, binding: BindingId, bindings: &BindingArena) {
-        match bindings.get(binding).kind() {
-            BindingKind::Global(_) => self.globals.push(binding),
-            BindingKind::CodeBuiltin(_) => self.uses_compile_time_code = true,
-            _ => {}
         }
     }
 }

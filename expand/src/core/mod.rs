@@ -5,6 +5,7 @@ mod kernel;
 mod keyword;
 mod module;
 mod printer;
+mod references;
 mod structural;
 mod template;
 mod template_operation;
@@ -33,6 +34,7 @@ pub use module::{
     VariantDeclaration, VariantPayload,
 };
 pub use printer::CorePrinter;
+pub use references::References;
 pub use structural::{
     StructuralClause, StructuralKey, StructuralPiece, StructuralTemplate, StructuralValues,
     UnfilledPlaceholder,
