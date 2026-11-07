@@ -673,19 +673,11 @@
   ((type-expression value)
    (do (local (result type-expression) value) result)))
 
-(defrule comment
-  "Keeps forms in the source that never expand, check or run.
-
-  Write (comment form ...). The call is unit, so a file can hold
-  scratch expressions to evaluate one at a time from an editor."
-  ((form ...) (do)))
+(defrule comment ((form ...) (do)))
 
 (header-shape (comment))
 
 (defrule ->
-  "Threads a value through each form as its first argument.
-
-  Write (-> value form ...)."
   ((value) value)
   ((value (head arguments ...) more ...)
    (-> (head value arguments ...) more ...))
@@ -719,28 +711,34 @@
 
   It binds the value with an annotated `local` and returns it, so a literal is
   checked against the type and a value that is not `copy` moves. A value of
-  another type is an error.")
+  another type is an error, except that a borrowed `string`, `(ref name)`,
+  passes as a `(ref str)`.")
 
 (document (loop ((name value) ...) body ...)
   "Binds names to values and runs a body that `recur` repeats.
 
   `(recur new-value ...)` in tail position runs the body again with each name
-  bound to its new value. The call returns the body's last value.")
+  bound to its new value. The call returns the body's last value.
+
+  The body is a function, so `try`, `let-try` and `try->` in it leave the loop
+  with the failure, not the enclosing function.")
 
 (document (let-try ((name value) ...) body ...)
   "Binds each name to the value inside a `result` or an `option`, in order.
 
   Each value goes through `try`, so the first `err` or `none` returns from the
-  enclosing function, which must return a `result` or an `option` of the same
-  kind.")
+  enclosing function, or leaves the enclosing `loop`. That function must
+  return a `result` or an `option` of the same kind.")
 
 (document (try-> value function ...)
   "Calls each function on the result of the one before, through `try`.
 
   `(try-> x f g)` is `(g (try (f x)))`, so the first `err` or `none` returns
-  from the enclosing function, and the last result is returned as it is. Each
-  step is a function, not a call form: `(try-> x (f))` is an error. With no
-  function, the call returns the value.")
+  from the enclosing function, or leaves the enclosing `loop`, and the last
+  result is returned as it is. With no function, the call returns the value.
+
+  Unlike `->`, a step takes no extra arguments: a call form is a call whose
+  result is the function, so `(try-> x (make-step))` is `((make-step) x)`.")
 
 (document (call-signature name names defaults types)
   "Builds the signature of a keyword function from its parts.
@@ -794,3 +792,15 @@
 
 (document (type-missing? more)
   "Returns whether the forms after a field keyword start with no type.")
+
+(document (comment form ...)
+  "Keeps forms in the source that never expand, check or run.
+
+  The call is unit, so a file can hold scratch expressions to evaluate one at
+  a time from an editor.")
+
+(document (-> value form ...)
+  "Threads a value through each form as its first argument.
+
+  `(-> 3 (- 10) (* 2))` is `(* (- 3 10) 2)`. A bare name in place of a form is
+  called with the value alone.")

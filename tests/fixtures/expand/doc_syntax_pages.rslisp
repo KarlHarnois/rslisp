@@ -7,3 +7,5 @@
 (def let-try-page (doc-page let-try))
 
 (def try-thread-page (doc-page try->))
+
+(def comment-page (doc-page comment))
