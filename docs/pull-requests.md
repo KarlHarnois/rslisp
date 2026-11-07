@@ -64,6 +64,22 @@
 git fetch origin refs/pull/<number>/merge
 merge=$(git rev-parse FETCH_HEAD)
 base=$(git rev-parse "$merge^1")
+merge_path=$(nix eval --raw "git+file://$PWD?rev=$merge#default")
+base_path=$(nix eval --raw "git+file://$PWD?rev=$base#default")
+nix-store --realise "$merge_path" "$base_path"
+```
+
+**Run each binary as `"$merge_path/bin/rslisp"` or `"$base_path/bin/rslisp"`.** Nix checks the signature of each download.
+
+**If `nix-store --realise` reports `no substituter that can build it`, run `gh pr checks <number> --watch`, then rerun the block.** If the second run reports the same error, stop and report the commit to the project owner. NEVER build a release binary to replace the download.
+
+**A downloaded binary has no `counters` feature.** Read counters from the `front-end instruction counts` job.
+
+### Without the substituter
+
+**If `nix config show substituters` does not list `https://rslisp.cachix.org`, run this block in place of `nix eval` and `nix-store --realise`:**
+
+```sh
 cache=https://rslisp.cachix.org
 for commit in "$merge" "$base"; do
   store_path=$(nix eval --raw "git+file://$PWD?rev=$commit#default")
@@ -78,13 +94,11 @@ for commit in "$merge" "$base"; do
 done
 ```
 
-**The block checks the NarHash and no signature.** If the block prints `NarHash mismatch`, stop and report the commit to the project owner.
+**This block checks the NarHash and no signature.** If the block prints `NarHash mismatch`, stop and report the commit to the project owner.
 
-**If `curl` reports a 404, run `gh pr checks <number> --watch`, then run the block once more.** If the second run reports a 404, stop and report the commit to the project owner. NEVER build a release binary to replace the download.
+**If `curl` reports a 404, run `gh pr checks <number> --watch`, then rerun the block.** If the second run reports a 404, stop and report the commit to the project owner. NEVER build a release binary to replace the download.
 
-**Run each binary as `target/scratch/probe-<commit>/bin/.rslisp-wrapped` inside the dev shell:** `bin/rslisp` points at a store path that the block does not download.
-
-**A downloaded binary has no `counters` feature.** Read counters from the `front-end instruction counts` job.
+**Run each binary as `target/scratch/probe-<commit>/bin/.rslisp-wrapped` inside the dev shell:** `bin/rslisp` points at a store path that this block does not download.
 
 ## Callgrind profiles
 
