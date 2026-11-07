@@ -23,10 +23,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pull: [340, 344, 346, 351]
-        tests: [full]
+        pull: [340, 342, 344, 346]
+        tests: [nextest, front]
         shards: [4]
         shard: [0, 1, 2, 3]
+        include:
+          - { pull: 351, tests: front, shards: 1, shard: 0 }
+          - { pull: 346, tests: front, shards: 1, shard: 0 }
+          - { pull: 346, tests: front, shards: 2, shard: 0 }
+          - { pull: 346, tests: front, shards: 2, shard: 1 }
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
@@ -63,3 +68,32 @@ jobs:
           path: |
             pull/mutants.out/outcomes.json
             pull/mutants.out/*.txt
+            pull/mutants.out/log/
+
+  moved:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+          skipPush: true
+      - run: nix develop .#mutation -c bash .github/mutation/moved.sh
+
+  survivor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+          skipPush: true
+      - run: nix develop .#mutation -c bash .github/mutation/survivor.sh
