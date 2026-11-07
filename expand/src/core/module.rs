@@ -93,6 +93,7 @@ pub enum ItemKind {
         Vec<TypeBinder>,
         Vec<VariantDeclaration>,
         Option<EnumRust>,
+        Option<Rc<str>>,
     ),
     Derive(BindingId, Span, Vec<(BindingId, Span)>),
     RustTrait(RustTraitDeclaration),

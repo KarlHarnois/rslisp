@@ -328,7 +328,7 @@
   trait, so `(where ((n number)) (fn (n) n))` emits `fn<N: Number>(N) -> N`.")
 
 (document (with type type)
-  "Gives a `rust-trait` implementor the trait's second type.
+  "Gives an implementor of a Rust trait the trait's second type.
 
   `(with string str)` means that `String` implements the trait with `str` as
   its second type.")

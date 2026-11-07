@@ -61,7 +61,7 @@ error[L0248]: `num2` binds `crate::rt::Number`, which `number` already binds
 47 | |               :bare ""))
    | |_______________________^ the two traits would infer two impls of one Rust trait
    |
-   = help: keep the clause off this `rust-trait`, or give it a Rust path that no other `rust-trait` binds
+   = help: keep the clause off this `rust-trait`, or give it a Rust path that no other trait binds
 
 error[L0248]: `:bare` is missing from this `structural` clause
   --> expand/structural_clause_errors.rslisp:52:3

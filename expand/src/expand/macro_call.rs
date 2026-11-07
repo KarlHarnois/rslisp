@@ -287,6 +287,19 @@ impl Expander<'_> {
             .min_by_key(|origin| origin.call_site.range().len())
     }
 
+    pub(super) fn definition_shape<'f>(
+        &self,
+        definition: DefinitionForm,
+        form: &'f Form,
+    ) -> Shape<'f> {
+        let definer = self
+            .tables
+            .macro_origins
+            .get(&form.span())
+            .map(|origin| Rc::clone(&origin.name));
+        Shape::expanded_from(KernelForm::Definition(definition), form, definer)
+    }
+
     pub(super) fn introduced_name(&self, call_site: Span, name: &str) -> Option<Span> {
         self.tables
             .introduced_names

@@ -51,26 +51,27 @@ impl ExpandProblems {
         .with_help(help)
     }
 
-    pub fn type_placeholder_in_type_template(name: &str, span: Span) -> Diagnostic {
+    pub fn type_placeholder_in_type_template(definer: &str, name: &str, span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::TYPE_PLACEHOLDER_IN_RUST_TYPE,
-            format!("a `rust-type` template cannot name `{name}`"),
+            format!("a `{definer}` template cannot name `{name}`"),
             Label::new(
                 span,
-                "`rust-type` templates name their parameters by number",
+                format!("`{definer}` templates name their parameters by number"),
             ),
         )
         .with_help("write the placeholder as `{0}`")
     }
 
     pub fn rust_type_clauses_need_one_parameter(
+        definer: &str,
         name: &str,
         parameters: usize,
         span: Span,
     ) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::RUST_TYPE_CLAUSES_NEED_ONE_PARAMETER,
-            "a `rust-type` with clauses takes one type parameter",
+            format!("a `{definer}` with clauses takes one type parameter"),
             Label::new(
                 span,
                 format!(
@@ -80,7 +81,7 @@ impl ExpandProblems {
             ),
         )
         .with_help(format!(
-            "give the type one parameter, as in `(rust-type ({name} item) ...)`"
+            "give the type one parameter, as in `({definer} ({name} item) ...)`"
         ))
     }
 
@@ -99,16 +100,23 @@ impl ExpandProblems {
         .with_help("bind one parameter, as in `(where ((s source)) (fn ((ref s)) string))`")
     }
 
-    pub fn structural_clause_needs_one_method(clause: Span) -> Diagnostic {
+    pub fn structural_clause_needs_one_method(definer: &str, clause: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
             "a `structural` clause needs one method that takes `(ref self)`",
             Label::new(clause, "this clause fills the body of one method"),
         )
-        .with_help("declare one `(method name (fn ((ref self) ...) result))` in this `rust-trait`")
+        .with_help(format!(
+            "declare one `(method name (fn ((ref self) ...) result))` in this `{definer}`"
+        ))
     }
 
-    pub fn structural_clause_on_derived_trait(name: &str, path: &str, clause: Span) -> Diagnostic {
+    pub fn structural_clause_on_derived_trait(
+        definer: &str,
+        name: &str,
+        path: &str,
+        clause: Span,
+    ) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
             format!("`{name}` binds `{path}`, which `derive` already writes"),
@@ -117,12 +125,13 @@ impl ExpandProblems {
                 "every struct would get both the derive and this impl",
             ),
         )
-        .with_help(
-            "keep the clause off this `rust-trait`, or bind a trait that `derive` does not write",
-        )
+        .with_help(format!(
+            "keep the clause off this `{definer}`, or bind a trait that `derive` does not write"
+        ))
     }
 
     pub fn structural_clause_on_bound_path(
+        definer: &str,
         name: &str,
         path: &str,
         existing: &str,
@@ -131,17 +140,20 @@ impl ExpandProblems {
         Diagnostic::error(
             DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
             format!("`{name}` binds `{path}`, which `{existing}` already binds"),
-            Label::new(clause, "the two traits would infer two impls of one Rust trait"),
+            Label::new(
+                clause,
+                "the two traits would infer two impls of one Rust trait",
+            ),
         )
-        .with_help(
-            "keep the clause off this `rust-trait`, or give it a Rust path that no other `rust-trait` binds",
-        )
+        .with_help(format!(
+            "keep the clause off this `{definer}`, or give it a Rust path that no other trait binds"
+        ))
     }
 
-    pub fn repeated_structural_clause(repeated: Span, first: Span) -> Diagnostic {
+    pub fn repeated_structural_clause(definer: &str, repeated: Span, first: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MALFORMED_STRUCTURAL_CLAUSE,
-            "this `rust-trait` has a second `structural` clause",
+            format!("this `{definer}` has a second `structural` clause"),
             Label::new(repeated, "second clause"),
         )
         .with_label(Label::new(first, "first clause"))
@@ -149,6 +161,7 @@ impl ExpandProblems {
     }
 
     pub fn second_structural_path(
+        definer: &str,
         name: &str,
         path: &str,
         first: &str,
@@ -167,7 +180,9 @@ impl ExpandProblems {
             first_clause,
             format!("`{first}` infers `{path}` here"),
         ))
-        .with_help("keep one of the two clauses, or give this `rust-trait` another Rust path")
+        .with_help(format!(
+            "keep one of the two clauses, or give this `{definer}` another Rust path"
+        ))
     }
 
     pub fn missing_structural_key(key: &str, clause: Span) -> Diagnostic {
@@ -303,8 +318,8 @@ impl ExpandProblems {
     pub fn placeholder_without_parameter(
         index: usize,
         parameters: usize,
+        definer: &str,
         name: &str,
-        template: &str,
         placeholders: usize,
         span: Span,
     ) -> Diagnostic {
@@ -323,7 +338,7 @@ impl ExpandProblems {
             ),
         )
         .with_help(format!(
-            "declare the type parameters on the name, as in `(rust-type ({name} {}) \"{template}\")`",
+            "declare the type parameters on the name, as in `({definer} ({name} {}) ...)`",
             names.join(" ")
         ))
     }

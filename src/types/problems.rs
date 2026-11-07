@@ -1173,14 +1173,19 @@ impl TypeProblems {
         .with_help(help)
     }
 
-    pub fn trait_claim_on_struct(struct_name: &str, trait_name: &str, span: Span) -> Diagnostic {
+    pub fn trait_claim_on_struct(
+        definer: &str,
+        struct_name: &str,
+        trait_name: &str,
+        span: Span,
+    ) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::TRAIT_CLAIM_ON_STRUCT,
             format!("`{struct_name}` does not derive `{trait_name}`"),
             Label::new(span, format!("this struct does not derive `{trait_name}`")),
         )
         .with_help(format!(
-            "remove `{struct_name}` from this `rust-trait`, or list a type that Rust implements `{trait_name}` for"
+            "remove `{struct_name}` from this `{definer}`, or list a type that Rust implements `{trait_name}` for"
         ))
     }
 
@@ -1279,7 +1284,7 @@ impl TypeProblems {
             format!("`{enum_name}` is a Rust type, so it has no `derive`"),
             Label::new(span, format!("`{enum_name}` names a Rust type")),
         )
-        .with_help("the traits of a Rust type come from its `rust-trait` entries")
+        .with_help("the traits of a Rust type come from the Rust traits that list it")
     }
 
     pub fn duplicate_derive(struct_name: &str, span: Span, first: Span) -> Diagnostic {
@@ -1320,10 +1325,10 @@ impl TypeProblems {
     pub fn misplaced_with(span: Span) -> Diagnostic {
         Diagnostic::error(
             DiagnosticCode::MISPLACED_WITH,
-            "`with` is only allowed in a `rust-trait`",
+            "`with` is only allowed in an implementor of a Rust trait",
             Label::new(span, "not allowed here"),
         )
-        .with_help("write `(with type type)` as an entry of `rust-trait`")
+        .with_help("write `(with type type)` in the list of a Rust trait's implementors")
     }
 
     pub fn not_boxable(trait_name: &str, blocker: String, help: &str, span: Span) -> Diagnostic {

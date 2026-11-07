@@ -1,0 +1,11 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/definer_types.rslisp
+---
+(derive tree clone partial-eq eq hash show)
+(derive kernel-tree clone partial-eq eq hash show)
+(defenum tree leaf (node :left (box tree) :right (box tree)) (twin (box tree) (box tree)))
+(enum kernel-tree kernel-leaf (kernel-node (struct (left (box kernel-tree)))))
+(type depth (fn (tree) i64))
+(type main (fn () unit))

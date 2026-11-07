@@ -4,7 +4,7 @@ use std::rc::Rc;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::display::TypeDisplay;
-use super::enums::{EnumTable, VariantDefinition, VariantPayload};
+use super::enums::{EnumDefinition, EnumTable, VariantDefinition, VariantPayload};
 use super::rust_types::RustTypeTable;
 use super::structs::StructTable;
 use super::structural::{StructuralTrait, StructuralUses};
@@ -14,8 +14,8 @@ use super::traits::TraitTable;
 use super::ty::{Bound, GenericId, GenericParam, Lifetime, Scheme, Type};
 use super::unifier::LiteralKind;
 use crate::core::{
-    BindingArena, BindingId, ClosureKind, FieldLabel, Literal, ModuleId, ModulePath, ReferenceKind,
-    RustTemplate,
+    BindingArena, BindingId, ClosureKind, DefinitionForm, FieldLabel, KernelForm, Literal,
+    ModuleId, ModulePath, ReferenceKind, RustTemplate,
 };
 use crate::diagnostic::Diagnostics;
 use crate::source::Span;
@@ -754,18 +754,33 @@ impl TypedProgram {
         let variants: Vec<String> = definition
             .variants
             .iter()
-            .map(|variant| Self::show_variant(&display, variant))
+            .map(|variant| Self::show_variant(&display, definition, variant))
             .collect();
-        Some(format!("(enum {head}{rust} {})\n", variants.join(" ")))
+        let form = definition
+            .definer
+            .as_deref()
+            .unwrap_or(KernelForm::Definition(DefinitionForm::Enum).name());
+        Some(format!("({form} {head}{rust} {})\n", variants.join(" ")))
     }
 
-    fn show_variant(display: &TypeDisplay<'_>, variant: &VariantDefinition) -> String {
+    fn show_variant(
+        display: &TypeDisplay<'_>,
+        definition: &EnumDefinition,
+        variant: &VariantDefinition,
+    ) -> String {
         let name = &variant.name;
         match &variant.payload {
             VariantPayload::None => name.to_string(),
             VariantPayload::Positional(types) => {
                 let types: Vec<String> = types.iter().map(|ty| display.show(ty)).collect();
                 format!("({name} {})", types.join(" "))
+            }
+            VariantPayload::Named(fields) if definition.definer.is_some() => {
+                let fields: Vec<String> = fields
+                    .iter()
+                    .map(|(label, ty)| format!(":{label} {}", display.show(ty)))
+                    .collect();
+                format!("({name} {})", fields.join(" "))
             }
             VariantPayload::Named(fields) => {
                 let fields: Vec<String> = fields

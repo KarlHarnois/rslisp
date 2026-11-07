@@ -1,0 +1,18 @@
+(defenum tree
+  "A tree of numbers."
+  leaf
+  (node :left tree :right tree)
+  (twin tree tree))
+
+(enum kernel-tree
+  kernel-leaf
+  (kernel-node (struct (left kernel-tree))))
+
+(defn depth ((value tree))
+  (match value
+    (leaf 0)
+    ((node left _) (+ 1 (depth left)))
+    ((twin left _) (+ 1 (depth left)))))
+
+(defn main ()
+  (println (depth (tree/twin tree/leaf tree/leaf))))

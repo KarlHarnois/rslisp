@@ -1080,7 +1080,7 @@ An enum gets the traits of a struct under 8.2, with its payloads in place of fie
 
 A payload that holds its own enum by value, directly or through another type that stores it by value, is stored in a `Box`. The compiler boxes the payload position, writes `Box::new` at construction, and a pattern binds the payload as if it were unboxed. A payload whose cycle passes through a `rust-type`, such as `(vec type)`, is not boxed: the compiler does not look through a Rust type. A written `(box type)` is the exact form and stops inference for that position. A value cycle adds one box.
 
-`types` prints an `(enum ...)` line with the inferred boxes for each enum that has one.
+`types` prints a line with the inferred boxes for each enum that has one. The line starts with the macro that defined the enum and spells named fields flat, as in `(defenum tree leaf (node :left (box tree)))`. An `enum` that no macro wrote prints as `enum`. `expand` always prints the kernel form.
 
 A nested pattern at a boxed position emits a guard and a destructuring `let`. The arm pattern binds the boxed value to a fresh name, as a peeled binding does, and the guard tests the pattern with `matches!`. The tested pattern writes each binding as `_`, so it tests only the shape; a boxed position inside it binds another fresh name and nests its own `matches!`, and a string literal adds its comparison. The arm's prologue then destructures the pattern from the peeled value, with `let <pattern> = <value> else { unreachable!() };`, or a plain `let` when the pattern is sure. A pattern at a boxed position that is a binding or `_` keeps the peel instead.
 

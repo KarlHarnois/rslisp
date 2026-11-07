@@ -4,8 +4,8 @@ use super::Expander;
 use super::problems::ExpandProblems;
 use super::shape::Shape;
 use crate::core::{
-    BindingId, CoreModule, DefinitionForm, EnumRust, Item, ItemKind, KernelForm, ParsedTemplate,
-    TypeBinder, TypeExpr,
+    BindingId, CoreModule, DefinitionForm, EnumRust, Item, ItemKind, ParsedTemplate, TypeBinder,
+    TypeExpr,
 };
 use crate::diagnostic::Diagnostic;
 use crate::reader::{Form, FormKind};
@@ -23,9 +23,9 @@ impl Expander<'_> {
         form: &Form,
         core: &mut CoreModule,
     ) -> Result<(), Diagnostic> {
-        let shape = Shape::new(KernelForm::Definition(DefinitionForm::RustType), form);
+        let shape = self.definition_shape(DefinitionForm::RustType, form);
         let items = shape.at_least(Self::RUST_TYPE_PARTS)?;
-        self.reject_old_rust_type_parameters(items)?;
+        self.reject_old_rust_type_parameters(&shape, items)?;
         let body = vec![items[2].clone()];
         let (head, unsized_parameters) = Self::mark_unsized_parameters(&items[1]);
         let parameterized = self.lower_head(&shape, &head, body)?;
@@ -39,6 +39,7 @@ impl Expander<'_> {
         let template_form = &parameterized.body[0];
         let template = Self::type_template(&shape, template_form)?;
         Self::check_type_placeholders(
+            &shape,
             &template,
             &parameterized.binders,
             self.tables.bindings.get(binding).name(),
@@ -86,15 +87,17 @@ impl Expander<'_> {
             .is_some_and(|symbol| symbol.name() == TypeBinder::UNSIZED)
     }
 
-    fn reject_old_rust_type_parameters(&self, items: &[Form]) -> Result<(), Diagnostic> {
+    fn reject_old_rust_type_parameters(
+        &self,
+        shape: &Shape<'_>,
+        items: &[Form],
+    ) -> Result<(), Diagnostic> {
         let body = vec![items[2].clone()];
         let Some(where_items) = self.old_parameters(&body) else {
             return Ok(());
         };
         let span = where_items[0].span();
-        let kind = self
-            .macro_origin_at(span)
-            .map_or("rust-type", |origin| origin.name.as_ref());
+        let kind = shape.written_name();
         let replacement = self.old_head_replacement(kind, &items[1], where_items);
         Err(ExpandProblems::parameters_on_name(kind, &replacement, span))
     }
@@ -112,6 +115,7 @@ impl Expander<'_> {
         if parameters != 1 {
             let name = shape.symbol(self.head_name(shape, &items[1])?)?;
             return Err(ExpandProblems::rust_type_clauses_need_one_parameter(
+                shape.written_name(),
                 name.name(),
                 parameters,
                 items[1].span(),
@@ -225,12 +229,14 @@ impl Expander<'_> {
         }
         if let Some(name) = template.binder_names().first().copied() {
             return Err(ExpandProblems::type_placeholder_in_type_template(
+                shape.written_name(),
                 &format!("!{name}"),
                 template_form.span(),
             ));
         }
         if let Some(name) = template.type_placeholders().next() {
             return Err(ExpandProblems::type_placeholder_in_type_template(
+                shape.written_name(),
                 name,
                 template_form.span(),
             ));
@@ -239,6 +245,7 @@ impl Expander<'_> {
     }
 
     pub(super) fn check_type_placeholders(
+        shape: &Shape<'_>,
         template: &ParsedTemplate,
         binders: &[TypeBinder],
         name: &str,
@@ -255,8 +262,8 @@ impl Expander<'_> {
             return Err(ExpandProblems::placeholder_without_parameter(
                 index,
                 binders.len(),
+                shape.written_name(),
                 name,
-                template.text(),
                 placeholders,
                 template_form.span(),
             ));

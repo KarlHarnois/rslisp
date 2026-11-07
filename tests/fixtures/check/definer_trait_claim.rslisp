@@ -1,0 +1,9 @@
+(defstruct point
+  :x f64
+  :y f64)
+
+(deftrait point-eq
+  (rust "Eq")
+  point)
+
+(defn main () (do))

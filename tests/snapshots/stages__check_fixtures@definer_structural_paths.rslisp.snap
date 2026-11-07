@@ -1,0 +1,25 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/check/definer_structural_paths.rslisp
+---
+error[L0248]: `octal3` binds `std::fmt::Octal`, which `octal` already infers
+  --> check/definer_structural_paths/d.rslisp:12:3
+   |
+12 | /   (structural :struct "write!({1}, \"{name}\")"
+13 | |               :field ""
+14 | |               :variant "write!({1}, \"{name}\")"
+15 | |               :part ""
+16 | |               :bare "write!({1}, \"{name}\")")
+   | |______________________________________________^ the two clauses would infer two impls of one Rust trait
+   |
+  ::: check/definer_structural_paths/a.rslisp:12:3
+   |
+12 | /   (structural :struct "write!({1}, \"{name}\")"
+13 | |               :field ""
+14 | |               :variant "write!({1}, \"{name}\")"
+15 | |               :part ""
+16 | |               :bare "write!({1}, \"{name}\")")
+   | |______________________________________________- `octal` infers `std::fmt::Octal` here
+   |
+   = help: keep one of the two clauses, or give this `deftrait` another Rust path
