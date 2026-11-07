@@ -11,14 +11,9 @@ env:
   CACHIX_CACHE: rslisp
 
 jobs:
-  coverage:
-    name: coverage (${{ matrix.variant }})
-    strategy:
-      fail-fast: false
-      matrix:
-        variant: [baseline, workspace-opt1, deps-opt2, both]
+  lint:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -35,29 +30,72 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-coverage-${{ hashFiles('flake.lock') }}-
+      - name: Format
+        run: nix develop .#ci -c cargo fmt --all --check
+      - name: Lint
+        run: nix develop .#ci -c cargo clippy --workspace --all-targets -- -D warnings
+
+  shard:
+    name: shard (${{ matrix.variant }}, ${{ matrix.shard.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [current, optimized]
+        shard:
+          - name: run
+            targets: --test stages -- --exact run_fixtures corpus_fixtures
+          - name: saved-run
+            targets: --test stages -- --exact saved_prelude_run_fixtures saved_prelude_corpus_fixtures
+          - name: check
+            targets: --test stages -- --exact check_fixtures saved_prelude_check_fixtures
+          - name: expand
+            targets: --test stages -- --exact expand_fixtures saved_prelude_expand_fixtures
+          - name: stages-rest
+            targets: --test stages -- --skip run_fixtures --skip corpus_fixtures --skip check_fixtures --skip expand_fixtures
+          - name: units
+            targets: --workspace --lib --bins --test cli --test diagnostic_codes --test diagnostic_snapshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-coverage-${{ hashFiles('flake.lock') }}-
+      - name: Optimize
+        if: matrix.variant == 'optimized'
+        run: |
+          echo "CARGO_PROFILE_DEV_OPT_LEVEL=1" >> "$GITHUB_ENV"
+          sed -i '/^\[profile.dev.package."\*"\]/a opt-level = 2' Cargo.toml
       - name: Load the dev shell
         run: nix develop .#ci -c true
-      - name: Optimize the workspace
-        if: matrix.variant == 'workspace-opt1' || matrix.variant == 'both'
-        run: echo "CARGO_PROFILE_DEV_OPT_LEVEL=1" >> "$GITHUB_ENV"
-      - name: Optimize the dependencies
-        if: matrix.variant == 'deps-opt2' || matrix.variant == 'both'
-        run: sed -i '/^\[profile.dev.package."\*"\]/a opt-level = 2' Cargo.toml
-      - name: First coverage run
-        run: nix develop .#ci -c cargo xtask coverage
-      - name: Touch the workspace sources
-        run: touch src/lib.rs expand/src/lib.rs
-      - name: Second coverage run
-        run: nix develop .#ci -c cargo xtask coverage
+      - name: Test with coverage
+        run: nix develop .#ci -c bash .github/trial/shard.sh "${{ matrix.shard.targets }}"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: lcov-${{ matrix.variant }}-${{ matrix.shard.name }}
+          path: target/shard.info
+          retention-days: 3
 
-  per-test:
-    name: per test (${{ matrix.mode }})
+  gate:
+    name: gate (${{ matrix.variant }})
+    needs: shard
     strategy:
       fail-fast: false
       matrix:
-        mode: [instrumented, plain]
+        variant: [current, optimized]
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -72,24 +110,15 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('flake.lock') }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-coverage-${{ hashFiles('flake.lock') }}-
-      - name: Time each test target
-        run: nix develop .#ci -c bash .github/trial/per-test.sh ${{ matrix.mode }}
-
-  fixture-rustc:
-    name: fixture rustc flags
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+          key: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-${{ hashFiles('xtask/src/bench/compiler.rs') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-bench-${{ hashFiles('flake.lock') }}-
+      - uses: actions/download-artifact@v4
         with:
-          persist-credentials: false
-      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
-      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
-        with:
-          name: ${{ env.CACHIX_CACHE }}
-      - name: Find mold
-        run: echo "MOLD_DIRECTORY=$(nix build --no-link --print-out-paths --inputs-from . nixpkgs#mold)/bin" >> "$GITHUB_ENV"
-      - name: Time run fixtures under each flag
-        run: nix develop .#ci -c bash .github/trial/fixture-rustc.sh
+          pattern: lcov-${{ matrix.variant }}-*
+          path: target/shards
+      - name: Merge the shards
+        run: cat target/shards/*/shard.info > target/merged.info
+      - name: Judge coverage, CRAP, the badge and the emitted lints
+        env:
+          TRIAL_MERGED_LCOV: target/merged.info
+        run: nix develop .#ci -c cargo xtask coverage

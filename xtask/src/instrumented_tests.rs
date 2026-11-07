@@ -21,13 +21,21 @@ impl<'a> InstrumentedTests<'a> {
     }
 
     pub fn run(&self) -> Result<LcovReport, TaskFailure> {
+        let report = match std::env::var_os("TRIAL_MERGED_LCOV") {
+            Some(merged) => std::path::PathBuf::from(merged),
+            None => self.measured_report()?,
+        };
+        let text =
+            fs::read_to_string(&report).map_err(|error| TaskFailure::unreadable(&report, error))?;
+        Ok(LcovReport::parse(&text, self.root))
+    }
+
+    fn measured_report(&self) -> Result<std::path::PathBuf, TaskFailure> {
         let report = self.root.join(Self::REPORT);
         Self::create_parent(&report)?;
         self.cargo(|command| command.args(Self::FORGET_PREVIOUS_RUNS))?;
         self.cargo(|command| Self::measure(command, &report))?;
-        let text =
-            fs::read_to_string(&report).map_err(|error| TaskFailure::unreadable(&report, error))?;
-        Ok(LcovReport::parse(&text, self.root))
+        Ok(report)
     }
 
     fn create_parent(report: &Path) -> Result<(), TaskFailure> {

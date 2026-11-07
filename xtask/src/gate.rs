@@ -44,7 +44,10 @@ impl QualityGate {
     fn measure(&self) -> Result<Measurement, TaskFailure> {
         let tests_started = Instant::now();
         let report = InstrumentedTests::new(&self.root).run()?;
-        println!("TIMING instrumented-tests seconds={:.1}", tests_started.elapsed().as_secs_f64());
+        println!(
+            "TIMING instrumented-tests seconds={:.1}",
+            tests_started.elapsed().as_secs_f64()
+        );
         let directories = CargoWorkspace::read(&self.root)?.source_directories();
         let functions = SourceTree::new(&self.root, directories).functions()?;
         let readme_path = self.root.join(Self::README);
@@ -52,7 +55,10 @@ impl QualityGate {
             .map_err(|error| TaskFailure::unreadable(&readme_path, error))?;
         let lints_started = Instant::now();
         let linted = EmittedLints::new(&self.root).run()?;
-        println!("TIMING emitted-lints seconds={:.1}", lints_started.elapsed().as_secs_f64());
+        println!(
+            "TIMING emitted-lints seconds={:.1}",
+            lints_started.elapsed().as_secs_f64()
+        );
         Ok(Measurement {
             report,
             functions,
