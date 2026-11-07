@@ -21,9 +21,12 @@ mod fmt;
 mod input_helper;
 mod interruption;
 mod json_replies;
+mod located_program;
+mod located_project;
 mod name_records;
 mod open_input;
 mod painted_program;
+mod program_file;
 mod program_stream;
 mod prompt_diagnostics;
 mod prompt_history;
@@ -79,6 +82,8 @@ use terminal::{BuildOptions, Terminal};
 use test::{TestCommand, TestSelection};
 use types::TypesCommand;
 
+const ENTRY_HELP: &str = "The program's entry file [default: the project's `:entry`]";
+
 #[derive(Parser)]
 #[command(
     name = Language::NAME,
@@ -113,9 +118,15 @@ enum Command {
 #[derive(Subcommand)]
 enum InspectionCommand {
     #[command(about = "Read, expand and check a program, then print its diagnostics")]
-    Check { file: PathBuf },
+    Check {
+        #[arg(help = ENTRY_HELP)]
+        file: Option<PathBuf>,
+    },
     #[command(about = "Print the inferred signature of each function in a program")]
-    Types { file: PathBuf },
+    Types {
+        #[arg(help = ENTRY_HELP)]
+        file: Option<PathBuf>,
+    },
     #[command(
         name = DocCommand::NAME,
         about = "Print the page of a prelude term, or of a program's term with --file"
@@ -137,9 +148,15 @@ enum InspectionCommand {
         types: TypesFlag,
     },
     #[command(about = "Print a program as kernel forms after macro expansion")]
-    Expand { file: PathBuf },
+    Expand {
+        #[arg(help = ENTRY_HELP)]
+        file: Option<PathBuf>,
+    },
     #[command(about = "Print the Rust code generated for a program")]
-    Emit { file: PathBuf },
+    Emit {
+        #[arg(help = ENTRY_HELP)]
+        file: Option<PathBuf>,
+    },
     #[command(about = "Lay out source files in place, or standard input given `-`")]
     Fmt {
         #[arg(required = true)]
@@ -159,7 +176,8 @@ enum InspectionCommand {
 enum ProgramCommand {
     #[command(about = "Compile a program to a native binary")]
     Build {
-        file: PathBuf,
+        #[arg(help = ENTRY_HELP)]
+        file: Option<PathBuf>,
         #[command(flatten)]
         release: ReleaseFlag,
         #[arg(short, long)]
@@ -174,7 +192,7 @@ enum ProgramCommand {
         stdin: StdinFlag,
         #[arg(
             long,
-            help = "Resolve `use` from this directory [default: the file's directory]"
+            help = "Resolve `use` from this directory [default: the project's source root, or the file's directory]"
         )]
         root: Option<PathBuf>,
         #[command(flatten)]
@@ -186,8 +204,11 @@ enum ProgramCommand {
     },
     #[command(about = "Read forms at a prompt, keep the definitions and run the rest")]
     Repl {
-        #[arg(long, default_value = ReplCommand::DEFAULT_ROOT, help = "Resolve `use` from this directory")]
-        root: PathBuf,
+        #[arg(
+            long,
+            help = "Resolve `use` from this directory [default: the project's source root, or the working directory]"
+        )]
+        root: Option<PathBuf>,
         #[command(flatten)]
         release: ReleaseFlag,
     },
@@ -214,7 +235,8 @@ enum ProgramCommand {
     },
     #[command(about = "Build a program and run it")]
     Run {
-        file: PathBuf,
+        #[arg(help = ENTRY_HELP)]
+        file: Option<PathBuf>,
         #[command(flatten)]
         release: ReleaseFlag,
         #[arg(last = true)]
@@ -316,7 +338,7 @@ impl Cli {
 impl Command {
     fn prompt() -> Self {
         Self::Program(ProgramCommand::Repl {
-            root: PathBuf::from(ReplCommand::DEFAULT_ROOT),
+            root: None,
             release: ReleaseFlag { release: false },
         })
     }

@@ -1,0 +1,6 @@
+---
+source: tests/cli.rs
+expression: check.assert_exit_code(2).stderr()
+---
+error: no file given, and no `project.rslisp` in this directory or a parent
+help: name a file, or run the command inside a project

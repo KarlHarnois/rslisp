@@ -531,9 +531,48 @@ A `rust` template's own binders are hygienic too. A name written as `{!name}` ta
 
 Field names are not hygienic. They are looked up through the struct type.
 
+## Projects
+
+A project is a directory with a `project.rslisp` file ([RFC 0061](../rfcs/0061-project-file.md)). The file holds one `project` form, which the compiler reads as data and never expands.
+
+```lisp
+(project browser
+  :version "0.1.0"
+  :entry "src/main.rslisp"
+  :edition 2026
+
+  (libraries
+    (hints :path "../hints")
+    (keymap
+      :git "https://github.com/KarlHarnois/keymap"
+      :rev "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678"))
+
+  (dependencies
+    (cef "144.0")
+    (serde "1.0" :features ("derive")))
+
+  (dev-dependencies
+    (proptest "1.5")))
+```
+
+- The name follows `project` and is the only required part.
+- `:entry` defaults to `src/main.rslisp`, `:lib` to `src/lib.rslisp`, `:version` to `"0.1.0"`, and `:edition` to the compiler's edition, 2026. An edition other than 2026 is an error.
+- A dependency is a list: the name, an optional version string, then `:key value` pairs. A feature is a string.
+- A crate dependency takes a version or a `:path`, and MAY take `:features`.
+- A library takes `:path`, or `:git` with `:rev`, and no version. `:rev` is a full 40-digit commit hash.
+- An unknown key or section is an error that suggests the closest name. A key, a section or a dependency given twice is an error.
+- The compiler reads and checks `libraries`, `dependencies` and `dev-dependencies`, and builds a program without them until the rest of RFC 0061 lands.
+
+**A command finds its project by walking up from its file, or from the working directory when it takes no file, to the nearest `project.rslisp`.** The project root is that file's directory. The source root is the directory of `:entry`.
+
+- In a project, `build`, `run`, `check`, `types`, `expand` and `emit` take their file as optional and default to `:entry`. Outside one, a missing file is a usage error.
+- A file inside the source root resolves `use` from the source root, and its module path is its path from there, so `src/text/pad.rslisp` is `text/pad`. A file outside the source root resolves `use` from its own directory.
+- `build` and `run` write a project's binary to `<root>/target/rslisp/<name>/<name>`, from any working directory.
+- An error in the project file stops the command.
+
 ## Modules
 
-- One file is one module. `(use text/format pad-left)` loads `text/format.rslisp` relative to the entry file's directory and binds `pad-left`.
+- One file is one module. `(use text/format pad-left)` loads `text/format.rslisp` relative to the source root and binds `pad-left`. The source root is the project's source root (see Projects), or else the entry file's directory.
 - A name is private to its file until an `(export ...)` lists it. `export` can list imported names, which re-exports them.
 - Exporting a struct makes all its fields public: every module that imports it can read, build and update it, and its emitted Rust fields are `pub`.
 - Every user module imports the prelude. An explicit `use` shadows a prelude name.
@@ -545,7 +584,7 @@ Field names are not hygienic. They are looked up through the struct type.
 `rslisp eval <file> <forms>` checks a module, then runs forms once in its scope ([RFC 0047](../rfcs/0047-first-repl.md)). `<forms>` is one argument that holds one or more forms.
 
 - `eval` reads the module's text from `<file>`. With `--stdin`, it reads the text from standard input, and `<file>` still names the module.
-- `eval` checks the text as `rslisp check` does, so a module with no `main` checks. It resolves `use` from `--root <directory>`, which defaults to the directory of `<file>`.
+- `eval` checks the text as `rslisp check` does, so a module with no `main` checks. It resolves `use` from `--root <directory>`, which defaults to the project's source root when `<file>` is inside it, and otherwise to the directory of `<file>`.
 - The forms are the body of a generated `main` in the module's scope. That `main` ends with `(do)`, so every form is a statement.
 - The generated `main` is the program's entry. No source name refers to it, and it takes the Rust name `main`. A module's own `main` is checked as `check` checks it, does not run, and becomes `main_2` in Rust if a form calls it.
 - A form sees every definition of the module and of the prelude. Every rule of a body holds, so `(local x 5) (* x 2)` prints `10` and a definition as a form is `L0208`.
@@ -606,7 +645,7 @@ Field names are not hygienic. They are looked up through the struct type.
 - The expander classifies each input. An input that a file accepts at its top level, `use` included, is a definition. Any other input is an expression.
 - A definition replaces every earlier input that defines or imports a name it defines or imports, and takes the place of the first one. The redefinition takes effect, even when it drops a name ([RFC 0051](../rfcs/0051-repl-redefinition.md)).
 - An expression runs as one form of `eval` against the buffer, and its result prints by the table above, so `(infer (vec 1 2))` prints the string `"(vec i64)"`, quoted. A program that panics or exits nonzero gets a `note` with its exit code, and the buffer keeps its definitions.
-- `--root <directory>`, which defaults to the current directory, resolves `use`.
+- `--root <directory>` resolves `use`. It defaults to the project's source root inside a project, and otherwise to the current directory.
 - While the reader reports an unclosed list, `L0101`, or an unclosed string, `L0103`, the prompt reads the next line into the same text. Any other reader error rejects the text at once.
 - On a terminal, the prompt is `> `. Piped input shows no prompt.
 - The end of input quits with exit code 0, also after failed inputs. An unclosed list or string at the end of piped input is reported first.
@@ -739,7 +778,7 @@ Each check takes the `assert`'s location, from `form-location`, and its written 
 
 **`rslisp test <path> [filter]` builds one program that runs the tests, and runs it.**
 
-- A file is an entry: its module and every module it reaches through `use` run their tests. A directory makes every `.rslisp` file under it an entry, with the directory as the root of `use`.
+- A file is an entry: its module and every module it reaches through `use` run their tests. A directory makes every `.rslisp` file under it an entry, except `project.rslisp`, with the directory as the root of `use`.
 - The program's `main` is `(run-tests :marker "<marker>")`, resolved in the scope of `prelude/test`, which `rslisp test` loads, and expanded after every module. An entry's own `main` is checked and does not run, and a test that calls it calls `main_2` in Rust.
 - `filter` runs the tests whose full name contains it, and `--exact <name>` runs the test of that full name. `rslisp test` passes either to the program as its arguments, and the runner applies it. When no test is selected, a filter adds ``note: no test name contains `<filter>` `` and `--exact` adds ``note: no test is named `<name>` `` on standard error.
 - `--untested <module>` adds `:untested <module>` to the call. A module that the program does not load is a usage error before the build, ``error: the program does not load module `<module>` ``.
@@ -911,6 +950,7 @@ Every prelude name follows five rules ([RFC 0046](../rfcs/0046-names.md)):
 These names break a rule:
 
 - `(str ...)` builds a `string`, an exception to rule 4.
+- A crate's name in `project.rslisp` stays as crates.io writes it, as `tokio_util` or `Inflector`, an exception to rule 1. The name is Cargo's: it binds nothing in a program.
 - `then-some` and `then-ok` break rule 5 until one `then` replaces them, which needs type-checker work that [issue #280](https://github.com/KarlHarnois/rslisp/issues/280) tracks.
 
 ## Names in Rust

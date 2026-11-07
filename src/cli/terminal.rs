@@ -12,14 +12,16 @@ use super::diagnostic_output::{DiagnosticOutput, RenderedDiagnostics};
 use super::error_location::ModuleLoader;
 use super::exit_status::ExitStatus;
 use super::interruption::Interruption;
+use super::located_program::LocatedProgram;
+use super::program_file::ProgramFile;
 use super::stage_work::StageWork;
 use super::standard_error::StandardError;
 use crate::build::{BuildError, BuildProfile, EmittedFormatting, FormattingError, RustCompiler};
-use crate::core::ModulePath;
 use crate::diagnostic::{Diagnostic, Diagnostics};
 use crate::emit::{EmittedCrate, RustEmitter};
 use crate::expand::{BoundName, ClassifiedForm, Expander, ExpansionSession, PreludeState, Program};
 use crate::modules::ModuleSources;
+use crate::project::{Project, ProjectReader};
 use crate::reader::{Form, Reader};
 use crate::source::Span;
 use crate::source::{SourceFile, SourceId, SourceMap, TextPosition};
@@ -36,8 +38,7 @@ pub struct EvaluationRequest {
 }
 
 pub struct ModuleOfSources {
-    pub path: PathBuf,
-    pub root: PathBuf,
+    pub file: ProgramFile,
     pub sources: Vec<SourceId>,
 }
 
@@ -67,8 +68,8 @@ pub struct Terminal {
 }
 
 impl Terminal {
-    const BUILD_DIRECTORY: &str = "target/rslisp";
-    const WORKING_DIRECTORY: &str = ".";
+    pub const BUILD_DIRECTORY: &str = "target/rslisp";
+    pub const WORKING_DIRECTORY: &str = ".";
     const SAVED_PRELUDE: &[u8] = include_bytes!(env!("PRELUDE_STATE"));
 
     pub fn new(standard_error: ColorChoice) -> Self {
@@ -159,14 +160,31 @@ impl Terminal {
         standard_output.flush()
     }
 
-    pub fn build(&mut self, path: &Path, options: &BuildOptions) -> Result<PathBuf, ExitStatus> {
-        let emitted = self.emit(path)?;
-        let crate_name = Self::crate_name(path);
-        let directory = Self::build_directory(path, &crate_name)?;
+    pub fn load_project(&mut self, path: &Path) -> Result<Project, ExitStatus> {
+        let source = self.load(path)?;
+        let forms = self.read_source(source)?;
+        let whole_file = Span::new(source, 0..self.sources.file(source).text().len());
+        ProjectReader::read(&forms, whole_file).map_err(|diagnostics| self.report(&diagnostics))
+    }
+
+    pub fn build(
+        &mut self,
+        program: &LocatedProgram,
+        options: &BuildOptions,
+    ) -> Result<PathBuf, ExitStatus> {
+        let emitted = self.emit(program.file())?;
+        let crate_name = Self::crate_name(program.file().path());
+        let (directory, output_name) = match program.project() {
+            Some(project) => (project.build_directory(), project.name().to_string()),
+            None => (
+                Self::build_directory(program.file().path(), &crate_name)?,
+                crate_name.clone(),
+            ),
+        };
         let output = options
             .output
             .clone()
-            .unwrap_or_else(|| directory.join(&crate_name));
+            .unwrap_or_else(|| directory.join(&output_name));
         let target = BuildTarget {
             directory,
             crate_name: &crate_name,
@@ -202,9 +220,9 @@ impl Terminal {
         error
     }
 
-    pub fn emit(&mut self, path: &Path) -> Result<EmittedCrate, ExitStatus> {
+    pub fn emit(&mut self, file: &ProgramFile) -> Result<EmittedCrate, ExitStatus> {
         let formatting = Self::formatting()?;
-        let program = self.check(path)?;
+        let program = self.check(file)?;
         self.emit_formatted(&program, &formatting)
     }
 
@@ -256,8 +274,8 @@ impl Terminal {
         }
     }
 
-    pub fn check(&mut self, path: &Path) -> Result<TypedProgram, ExitStatus> {
-        let program = self.expand(path)?;
+    pub fn check(&mut self, file: &ProgramFile) -> Result<TypedProgram, ExitStatus> {
+        let program = self.expand(file)?;
         self.check_expanded(&program)
     }
 
@@ -278,11 +296,11 @@ impl Terminal {
         Ok(typed)
     }
 
-    pub fn expand(&mut self, path: &Path) -> Result<Program, ExitStatus> {
-        let entry = self.load(path)?;
+    pub fn expand(&mut self, file: &ProgramFile) -> Result<Program, ExitStatus> {
+        let entry = self.load(file.path())?;
         let program = self
-            .expander(path)
-            .expand(Self::module_path(path), entry)
+            .expander_rooted(file.root())
+            .expand(file.module_path(), entry)
             .map_err(|diagnostics| self.report(&diagnostics))?;
         self.work.lowered_forms = Some(program.expansion.lowered_forms);
         Ok(program)
@@ -295,12 +313,12 @@ impl Terminal {
 
     pub fn within_session<T>(
         &mut self,
-        path: &Path,
+        file: &ProgramFile,
         entry: SourceId,
         work: impl FnOnce(ExpansionSession<'_>) -> Result<T, Diagnostics>,
     ) -> Result<T, ExitStatus> {
-        self.expander(path)
-            .open(Self::module_path(path), &[entry])
+        self.expander_rooted(file.root())
+            .open(file.module_path(), &[entry])
             .and_then(work)
             .map_err(|diagnostics| self.report(&diagnostics))
     }
@@ -311,24 +329,24 @@ impl Terminal {
         work: impl FnOnce(ExpansionSession<'_>) -> Result<T, Diagnostics>,
     ) -> Result<T, ExitStatus> {
         let module = &request.module;
-        self.expander_rooted(&module.root)
+        self.expander_rooted(module.file.root())
             .evaluating(request.evaluated.iter().copied())
-            .open(Self::module_path(&module.path), &module.sources)
+            .open(module.file.module_path(), &module.sources)
             .and_then(work)
             .map_err(|diagnostics| self.report(&diagnostics))
     }
 
     pub fn classify(&mut self, module: &ModuleOfSources, form: Span) -> ClassifiedForm {
-        self.expander_rooted(&module.root).classify(
-            Self::module_path(&module.path),
+        self.expander_rooted(module.file.root()).classify(
+            module.file.module_path(),
             &module.sources,
             form,
         )
     }
 
     pub fn survey_sources(&mut self, module: &ModuleOfSources, inputs: &[Span]) -> SourcesSurvey {
-        let survey = self.expander_rooted(&module.root).survey(
-            Self::module_path(&module.path),
+        let survey = self.expander_rooted(module.file.root()).survey(
+            module.file.module_path(),
             &module.sources,
             inputs,
         );
@@ -366,15 +384,11 @@ impl Terminal {
         shown_warning: impl FnMut(&Diagnostic) -> bool,
     ) -> Result<TypedProgram, ExitStatus> {
         let program = self
-            .expander_rooted(&module.root)
-            .open(Self::module_path(&module.path), &module.sources)
+            .expander_rooted(module.file.root())
+            .open(module.file.module_path(), &module.sources)
             .and_then(ExpansionSession::finish)
             .map_err(|diagnostics| self.report(&diagnostics))?;
         self.check_showing(&program, shown_warning)
-    }
-
-    fn expander(&mut self, path: &Path) -> Expander<'_> {
-        self.expander_rooted(&Self::directory_of(path))
     }
 
     fn expander_rooted(&mut self, root: &Path) -> Expander<'_> {
@@ -386,10 +400,6 @@ impl Terminal {
             ModuleSources::new(directory.clone(), directory),
             prelude,
         )
-    }
-
-    fn module_path(path: &Path) -> ModulePath {
-        ModulePath::new(Self::module_name(path))
     }
 
     pub fn print_diagnostics(&self, diagnostics: &Diagnostics) {
@@ -424,14 +434,14 @@ impl Terminal {
 
     fn build_directory(path: &Path, crate_name: &str) -> Result<PathBuf, ExitStatus> {
         let working_directory = Self::canonical(Path::new(Self::WORKING_DIRECTORY))?;
-        let entry_directory = Self::canonical(&Self::directory_of(path))?;
+        let entry_directory = Self::canonical(&ProgramFile::directory_of(path))?;
         Ok(
             BuildDirectory::new(PathBuf::from(Self::BUILD_DIRECTORY), working_directory)
                 .for_entry(&entry_directory, crate_name),
         )
     }
 
-    fn canonical(directory: &Path) -> Result<PathBuf, ExitStatus> {
+    pub fn canonical(directory: &Path) -> Result<PathBuf, ExitStatus> {
         Path::new(Self::WORKING_DIRECTORY)
             .join(directory)
             .canonicalize()
@@ -444,10 +454,6 @@ impl Terminal {
 
     pub fn crate_name(path: &Path) -> String {
         Self::module_name(path).replace(|character: char| !character.is_ascii_alphanumeric(), "_")
-    }
-
-    pub fn directory_of(path: &Path) -> std::path::PathBuf {
-        path.parent().map(Path::to_path_buf).unwrap_or_default()
     }
 
     fn module_name(path: &Path) -> String {

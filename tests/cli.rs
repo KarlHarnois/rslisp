@@ -4847,3 +4847,100 @@ fn test_lists_the_untested_names_of_a_program_with_no_tests() {
         "untested in shelf (1 of 1): restock\nrunning 0 tests\n0 passed, 0 failed\n"
     );
 }
+
+const PROJECT: &str = "(project greeter)\n";
+const PROJECT_WITH_UNKNOWN_KEY: &str = "(project greeter :entyr \"src/main.rslisp\")\n";
+const PROJECT_ENTRY: &str =
+    "(use text/shout shout)\n\n(defn main ()\n  (println (shout \"hi\")))\n";
+const PROJECT_SHOUT: &str =
+    "(use text/marks bang)\n\n(export shout)\n\n(defn shout (text) (str text bang))\n";
+const PROJECT_MARKS: &str = "(export bang)\n\n(def bang \"!\")\n";
+const PROJECT_SCRIPT: &str = "(use helper twice)\n\n(defn main ()\n  (println (twice 2)))\n";
+const PROJECT_HELPER: &str = "(export twice)\n\n(defn twice (n) (* 2 n))\n";
+const PROJECT_TESTS: &str =
+    "(use prelude/test assert deftest)\n\n(deftest adds (assert (= (+ 1 1) 2)))\n";
+
+impl Sandbox {
+    fn with_project(self, project: &str) -> Self {
+        self.with_file(&Language::project_file_name(), project)
+            .with_file("src/main.rslisp", PROJECT_ENTRY)
+            .with_file("src/text/shout.rslisp", PROJECT_SHOUT)
+            .with_file("src/text/marks.rslisp", PROJECT_MARKS)
+    }
+}
+
+#[test]
+fn check_defaults_to_the_project_entry() {
+    let sandbox = Sandbox::new("project_check").with_project(PROJECT);
+    sandbox.compiler(&["check"]).assert_silent_success();
+}
+
+#[test]
+fn run_finds_the_project_from_a_subdirectory() {
+    let sandbox = Sandbox::new("project_run").with_project(PROJECT);
+    let run = sandbox.compiler_in("src/text", &["run"]);
+    assert_eq!(run.assert_exit_code(0).stdout(), "hi!\n");
+}
+
+#[test]
+fn build_writes_a_project_under_its_root_with_the_project_name() {
+    let sandbox = Sandbox::new("project_build").with_project(PROJECT);
+    sandbox.compiler_in("src", &["build"]).assert_exit_code(0);
+    let greeter = sandbox.built_program("target/rslisp/greeter/greeter");
+    assert_eq!(greeter.assert_exit_code(0).stdout(), "hi!\n");
+}
+
+#[test]
+fn check_resolves_use_from_the_source_root_for_a_module_in_a_subdirectory() {
+    let sandbox = Sandbox::new("project_module").with_project(PROJECT);
+    sandbox
+        .compiler(&["check", "src/text/shout.rslisp"])
+        .assert_silent_success();
+}
+
+#[test]
+fn a_file_outside_the_source_root_resolves_use_from_its_directory() {
+    let sandbox = Sandbox::new("project_script")
+        .with_project(PROJECT)
+        .with_file("tools/script.rslisp", PROJECT_SCRIPT)
+        .with_file("tools/helper.rslisp", PROJECT_HELPER);
+    let run = sandbox.compiler(&["run", "tools/script.rslisp"]);
+    assert_eq!(run.assert_exit_code(0).stdout(), "4\n");
+}
+
+#[test]
+fn a_command_without_a_file_outside_a_project_is_a_usage_error() {
+    let sandbox = Sandbox::new("project_missing");
+    let check = sandbox.compiler(&["check"]);
+    insta::assert_snapshot!(check.assert_exit_code(2).stderr());
+}
+
+#[test]
+fn a_project_file_error_stops_the_command() {
+    let sandbox = Sandbox::new("project_error").with_project(PROJECT_WITH_UNKNOWN_KEY);
+    let check = sandbox.compiler(&["check", "src/main.rslisp"]);
+    insta::assert_snapshot!(check.assert_exit_code(1).stderr());
+}
+
+#[test]
+fn eval_resolves_use_from_the_project_source_root() {
+    let sandbox = Sandbox::new("project_eval").with_project(PROJECT);
+    let eval = sandbox.compiler_in("src/text", &["eval", "shout.rslisp", "(shout \"a\")"]);
+    assert_eq!(eval.assert_silent_success().stdout(), "\"a!\"\n");
+}
+
+#[test]
+fn repl_resolves_use_from_the_project_source_root() {
+    let sandbox = Sandbox::new("project_repl").with_project(PROJECT);
+    let repl = sandbox.compiler_reading("(use text/shout shout)\n(shout \"b\")\n", &["repl"]);
+    assert_eq!(repl.assert_exit_code(0).stdout(), "\"b!\"\n");
+}
+
+#[test]
+fn test_skips_the_project_file_in_a_directory() {
+    let sandbox = Sandbox::new("project_test")
+        .with_file(&Language::project_file_name(), PROJECT)
+        .with_file("src/checks.rslisp", PROJECT_TESTS);
+    let test = sandbox.compiler(&["test", "."]);
+    assert!(test.assert_exit_code(0).stdout().contains("1 passed"));
+}

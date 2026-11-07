@@ -1,0 +1,15 @@
+---
+source: tests/cli.rs
+expression: check.assert_exit_code(1).stderr()
+---
+error[L0704]: unknown key `:entyr`
+ --> project.rslisp:1:18
+  |
+1 | (project greeter :entyr "src/main.rslisp")
+  |                  ^^^^^^ not a key of this form
+  |
+help: a key with a similar name exists
+  |
+1 - (project greeter :entyr "src/main.rslisp")
+1 + (project greeter :entry "src/main.rslisp")
+  |

@@ -82,6 +82,8 @@ rslisp fmt src/
 rslisp test tests/
 ```
 
+A project is a directory with a `project.rslisp` file. Inside one, `build`, `run`, `check`, `types`, `expand` and `emit` take the project's entry file when given no file.
+
 ## Contribute
 
 Read [AGENTS.md](AGENTS.md) before you change the code. It holds the rules for this repository and lists the commands a change must pass. Follow [docs/diagnostics.md](docs/diagnostics.md) when you add or change a compiler error.
