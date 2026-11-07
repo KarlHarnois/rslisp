@@ -1,0 +1,3 @@
+(defn main ()
+  (let held (deref (ref (vec))))
+  (println "done"))
