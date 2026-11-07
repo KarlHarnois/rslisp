@@ -1,0 +1,30 @@
+(enum shape
+  (circle f64)
+  (square f64)
+  (ring f64)
+  dot
+  blank)
+
+(display shape (s)
+  (match s
+    ((circle r) "circle " r)
+    ((square side) (str "square " side) "!")
+    ((ring r)
+     (if (< r 1.0)
+       (match (< r 0.25)
+         (true "tiny " r)
+         (false "thin " r))
+       (match (< r 5.0)
+         (true "ring " r)
+         (false "wide " r))))
+    (dot (do (println "writing a dot") "dot"))
+    (blank)))
+
+(defn main ()
+  (println (shape/circle 1.5))
+  (println (shape/square 2.5))
+  (println (shape/ring 0.125))
+  (println (shape/ring 0.5))
+  (println (shape/ring 3.5))
+  (println shape/dot)
+  (println "[" shape/blank "]"))
