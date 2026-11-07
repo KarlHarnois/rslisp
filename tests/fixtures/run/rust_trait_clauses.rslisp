@@ -1,0 +1,53 @@
+(trait named
+  (name-of (fn ((ref self)) (ref str))))
+
+(defstruct ticket :number i64)
+(derive ticket clone partial-eq eq partial-ord ord)
+
+(defstruct badge :number i64)
+
+(impl named badge
+  (name-of (badge) "badge"))
+
+(def kind
+  (rust "{{ let _ = {0}; \"default\" }}"
+    (where (a) (fn (a) (ref str)))
+    (i8 "{{ let _ = {0}; \"i8\" }}")
+    (f64 "{{ let _ = {0}; \"f64\" }}")
+    (ord "{{ let _ = {0}; \"ord\" }}")
+    (named "{{ let _ = {0}; \"named\" }}")
+    (partial-eq "{{ let _ = {0}; \"partial-eq\" }}")))
+
+(type bounded (where ((a ord)) (fn (a) (ref str))))
+
+(defn bounded (value) (kind value))
+
+(type borrowed-bounded (where ((a ord)) (fn ((ref a)) (ref str))))
+
+(defn borrowed-bounded (value) (kind value))
+
+(type comparable (where ((a partial-eq)) (fn (a) (ref str))))
+
+(defn comparable (value) (kind value))
+
+(type unbounded (where (a) (fn (a) (ref str))))
+
+(defn unbounded (value) (kind value))
+
+(defn main ()
+  (local number 1)
+  (println (kind 1))
+  (println (kind (the i8 1)))
+  (println (kind 1.5))
+  (println (kind (the f32 1.5)))
+  (println (kind (ref number)))
+  (println (kind "text"))
+  (println (kind (str "text")))
+  (println (kind (pair 1 2)))
+  (println (kind (->ticket 1)))
+  (println (kind (->badge 1)))
+  (println (kind true))
+  (println (bounded 1))
+  (println (borrowed-bounded (ref number)))
+  (println (comparable 1))
+  (println (unbounded 1)))

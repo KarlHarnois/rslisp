@@ -1,0 +1,39 @@
+(def type-after-trait
+  (rust "measure({0})"
+    (where (a) (fn (a) a))
+    (ord "first({0})")
+    (i64 "second({0})")))
+
+(def repeated-type
+  (rust "measure({0})"
+    (where (a) (fn (a) a))
+    (i64 "first({0})")
+    (i64 "second({0})")))
+
+(def repeated-trait
+  (rust "measure({0})"
+    (where (a) (fn (a) a))
+    (ord "first({0})")
+    (ord "second({0})")))
+
+(defstruct ticket :number i64)
+(derive ticket partial-eq eq partial-ord ord)
+
+(def struct-after-trait
+  (rust "measure({0})"
+    (where (a) (fn (a) a))
+    (ord "first({0})")
+    (ticket "second({0})")))
+
+(rust-type (wrapped item)
+  "Vec<{0}>"
+  (ord "Vec<{0}>"))
+
+(def kept-order
+  (rust "measure({0})"
+    (where (a) (fn (a) a))
+    (i64 "first({0})")
+    (ord "second({0})")
+    (f64 "third({0})")))
+
+(defn main () (println "unreachable"))

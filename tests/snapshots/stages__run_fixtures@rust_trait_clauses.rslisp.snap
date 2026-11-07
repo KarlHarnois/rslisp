@@ -1,0 +1,20 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/rust_trait_clauses.rslisp
+---
+ord
+i8
+f64
+partial-eq
+ord
+ord
+ord
+ord
+ord
+named
+partial-eq
+ord
+ord
+partial-eq
+default

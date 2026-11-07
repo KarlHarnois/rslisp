@@ -246,11 +246,12 @@
   It is the value of a `def`, as in `(def name (macro (form) body ...))`,
   and its body runs at compile time.")
 
-(document (rust "template" type (type "template") ...)
+(document (rust "template" type (target "template") ...)
   "Inlines a Rust template that has the given type.
 
   `{0}`, `{1}` and so on stand for the arguments of a call. Each clause
-  pairs another type with its own template.")
+  pairs a type or a trait's name with its own template, and a call takes the
+  first clause that its type matches.")
 
 (document (rust-trait name "Path" type ...)
   "Names a Rust trait and the types that implement it.
