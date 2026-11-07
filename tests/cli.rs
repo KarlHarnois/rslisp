@@ -17,6 +17,8 @@ const GREETING: &str = "(defn main ()\n  (println \"hello from the sandbox\"))\n
 const PRINTS_A: &str = "(defn main () (println \"A\"))\n";
 const PRINTS_B: &str = "(defn main () (println \"B\"))\n";
 const MARKED_PROGRAM: &str = "\u{feff}(defn main () (println 1))\n";
+const FAILED_MAIN: &str = "(defn fails () (the (result i64 string) (err (str \"boom\"))))\n(defn main () (let value (try (fails))) (ok value))\n";
+const REPORTING_MAIN: &str = "(defn works () (the (result i64 string) (ok 1)))\n(defn main ()\n  (eprintln \"working\")\n  (let value (try (works)))\n  (ok value))\n";
 const UNWRAPPED_FAILURE: &str = "(defstruct failure :line i64)
 (defn main ()
   (println (unwrap-ok (the (result i64 failure) (err (->failure 3))))))
@@ -725,6 +727,9 @@ impl TerminalScreen {
 }
 
 impl Outcome {
+    const PANIC_EXIT_CODE: i32 = 101;
+    const PANIC_TEXT: &str = "panicked";
+
     const SIGPIPE: i32 = 13;
     const ESCAPE: &str = "\u{1b}[";
 
@@ -733,6 +738,11 @@ impl Outcome {
             .output()
             .unwrap_or_else(|error| panic!("cannot start {command:?}: {error}"));
         Self { output }
+    }
+
+    fn assert_no_panic(&self) {
+        assert_ne!(self.output.status.code(), Some(Self::PANIC_EXIT_CODE));
+        assert!(!self.stderr().contains(Self::PANIC_TEXT));
     }
 
     fn assert_exit_code(&self, expected: i32) -> &Self {
@@ -1654,6 +1664,22 @@ fn run_keeps_a_trait_method_vector_parameter_as_written() {
     let sandbox = Sandbox::new("trait_vector").with_file("mileage.rslisp", TRAIT_SHARED_VECTOR);
     let run = sandbox.compiler(&["run", "mileage.rslisp"]);
     assert_eq!(run.assert_exit_code(0).stdout(), "1210\n");
+}
+
+#[test]
+fn a_failed_main_stops_without_a_panic_when_standard_error_is_a_dead_pipe() {
+    let sandbox = Sandbox::new("dead_pipe_main_error").with_file("failure.rslisp", FAILED_MAIN);
+    sandbox
+        .compiler_with_a_closed_standard_error(&["run", "failure.rslisp"])
+        .assert_no_panic();
+}
+
+#[test]
+fn eprintln_in_a_result_main_stops_without_a_panic_when_standard_error_is_a_dead_pipe() {
+    let sandbox = Sandbox::new("dead_pipe_eprintln").with_file("report.rslisp", REPORTING_MAIN);
+    sandbox
+        .compiler_with_a_closed_standard_error(&["run", "report.rslisp"])
+        .assert_no_panic();
 }
 
 #[test]

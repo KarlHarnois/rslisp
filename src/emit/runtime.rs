@@ -210,11 +210,24 @@ impl RuntimeModule {
     const IMPLEMENTATION_INDENT: &'static str = "            ";
 
     pub fn of(code: &str) -> Option<RuntimeModule> {
-        let mut parts: BTreeSet<RuntimePart> = RuntimePart::ALL
+        Self::with_required_parts(Self::present_parts(code))
+    }
+
+    pub fn of_result_main(code: &str) -> Option<RuntimeModule> {
+        let mut parts = Self::present_parts(code);
+        parts.insert(RuntimePart::Signal);
+        Self::with_required_parts(parts)
+    }
+
+    fn present_parts(code: &str) -> BTreeSet<RuntimePart> {
+        RuntimePart::ALL
             .into_iter()
             .map(|(part, _)| part)
             .filter(|part| part.present(code))
-            .collect();
+            .collect()
+    }
+
+    fn with_required_parts(mut parts: BTreeSet<RuntimePart>) -> Option<RuntimeModule> {
         let mut unchecked: Vec<RuntimePart> = parts.iter().copied().collect();
         while let Some(part) = unchecked.pop() {
             for required in part.required() {
