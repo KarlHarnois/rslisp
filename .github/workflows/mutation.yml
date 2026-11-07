@@ -1,0 +1,59 @@
+name: Mutation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ci-mutation]
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CACHIX_CACHE: rslisp
+  DIFF: git.diff
+  INSTA_UPDATE: "no"
+
+jobs:
+  survey:
+    name: survey (#${{ matrix.pull }})
+    strategy:
+      fail-fast: false
+      matrix:
+        pull: [321, 340, 342, 344, 346, 350, 351]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: refs/pull/${{ matrix.pull }}/head
+          path: pull
+          fetch-depth: 0
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+          skipPush: true
+      - name: Write the pull request's diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PULL: ${{ matrix.pull }}
+        run: |
+          base=$(gh pr view "$PULL" --json baseRefOid --jq .baseRefOid)
+          git -C pull diff "$base...HEAD" > "pull/$DIFF"
+          wc -l "pull/$DIFF"
+      - name: List the mutants
+        run: |
+          nix develop .#mutation -c bash -c '
+            cd pull
+            cargo mutants --version
+            cargo mutants --list --in-diff "$DIFF" --json > mutants.json
+            cargo mutants --list --in-diff "$DIFF"
+            jq length mutants.json'

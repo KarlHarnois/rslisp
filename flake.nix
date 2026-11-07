@@ -403,6 +403,12 @@
           }
           // coverageTools pkgs
         );
+        mutation = pkgs.mkShell {
+          packages = ciPackages pkgs ++ [
+            pkgs.cargo-mutants
+            pkgs.cargo-nextest
+          ];
+        };
       });
 
       formatter = forEachSystem (pkgs: pkgs.nixfmt-tree);
