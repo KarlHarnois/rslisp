@@ -1,5 +1,5 @@
 {
-  description = "rslisp (placeholder name), a minimal Lisp that compiles to Rust";
+  description = "rslisp (placeholder name), a small Lisp for humans and agents that infers types and ownership and compiles to readable Rust";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";

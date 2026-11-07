@@ -2,7 +2,7 @@
 name = "rslisp"
 version = "0.8.22"
 edition = "2024"
-description = "A minimal Lisp that compiles to Rust (placeholder name)"
+description = "A small Lisp for humans and agents that infers types and ownership and compiles to readable Rust (placeholder name)"
 license = "MIT"
 publish = false
 
