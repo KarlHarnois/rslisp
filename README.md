@@ -20,8 +20,8 @@
   (vec "Few rules, no exceptions."
        "Small compiler, big prelude."
        "No clones or allocations you did not write."
-       "Errors worth reading."
-       "Interpret while you iterate, compile when you ship."))
+       "Interpret while you iterate, compile when you ship."
+       "Errors worth reading."))
 ```
 
 [docs/language.md](docs/language.md) describes the language.
