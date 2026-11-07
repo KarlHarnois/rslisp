@@ -148,6 +148,14 @@ mod tests {
     }
 
     #[test]
+    fn a_line_any_report_covers_counts_as_covered() {
+        let reports = "SF:/work/project/src/a.rs\nDA:1,0\nDA:2,1\nend_of_record\n\
+                       SF:/work/project/src/a.rs\nDA:1,3\nDA:2,0\nend_of_record\n";
+        let merged = LcovReport::parse(reports, Path::new("/work/project"));
+        assert_eq!(merged.total().percent(), 100.0);
+    }
+
+    #[test]
     fn total_counts_every_line_of_every_file() {
         assert_eq!(SampleReport::parse().total().percent(), 50.0);
     }
