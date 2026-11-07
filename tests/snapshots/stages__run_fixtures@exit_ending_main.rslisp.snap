@@ -1,0 +1,8 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/exit_ending_main.rslisp
+---
+a
+stderr:
+exit code: 5

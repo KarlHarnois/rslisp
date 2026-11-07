@@ -18,7 +18,7 @@ fn main() {
         Ok(text) => println!("{}", text.as_str().lines().count()),
         Err(error) => println!("{}", error),
     }
-    std::process::exit(0_i32)
+    crate::rt::exit(0_i32)
 }
 
 mod rt {
@@ -38,6 +38,10 @@ mod rt {
             }
             Err(error) => Err(error),
         }
+    }
+
+    pub fn exit(code: i32) {
+        std::process::exit(code)
     }
 
     #[cfg(unix)]

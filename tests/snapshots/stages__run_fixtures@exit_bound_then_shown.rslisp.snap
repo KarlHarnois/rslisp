@@ -1,0 +1,7 @@
+---
+source: tests/stages.rs
+expression: reports.report(path)
+input_file: tests/fixtures/run/exit_bound_then_shown.rslisp
+---
+stderr:
+exit code: 3

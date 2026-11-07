@@ -35,7 +35,7 @@
     (fn () (vec string))))
 
 (def exit
-  (rust "std::process::exit({0})" (fn (i32) unit)))
+  (rust "crate::rt::exit({0})" (fn (i32) unit)))
 
 (document io-error
   "Names the error of an input or output call, Rust's `std::io::Error`.

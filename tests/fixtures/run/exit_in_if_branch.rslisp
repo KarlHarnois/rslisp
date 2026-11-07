@@ -1,0 +1,4 @@
+(defn main ()
+  (if (empty? (the (vec i64) (vec)))
+    (exit 4)
+    (println "x")))
