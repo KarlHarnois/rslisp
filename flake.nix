@@ -89,10 +89,89 @@
           touch $out
         '';
 
+      cargoWithBuildSlots =
+        pkgs: realCargo:
+        pkgs.writeShellApplication {
+          name = "cargo";
+          text = ''
+            real_cargo=${pkgs.lib.getExe' realCargo "cargo"}
+            flock=${pkgs.lib.getExe pkgs.flock}
+            slot_directory=$HOME/.cache/rslisp/build-slots
+            slot_limit=''${RSLISP_BUILD_SLOTS:-2}
+            seconds_between_attempts=1
+
+            main() {
+              if [[ -n ''${CI:-} || -n ''${RSLISP_BUILD_SLOT_HELD:-} ]] || ! command_compiles "$@"; then
+                exec "$real_cargo" "$@"
+              fi
+              require_valid_slot_limit
+              mkdir -p "$slot_directory"
+              wait_for_slot
+              # Keep the lock from cargo: a daemon that a build starts, such as sccache, would inherit it and hold the slot.
+              RSLISP_BUILD_SLOT_HELD=1 "$real_cargo" "$@" {slot_lock}>&-
+            }
+
+            command_compiles() {
+              case $(subcommand "$@") in
+                "" | add | clean | config | fetch | fmt | generate-lockfile | help | info | init | locate-project | login | \
+                  logout | metadata | new | owner | pkgid | read-manifest | remove | report | search | tree | update | \
+                  vendor | verify-project | version | yank) return 1 ;;
+              esac
+            }
+
+            subcommand() {
+              while (($# > 0)); do
+                case $1 in
+                  --color | --config | --explain | -C | -Z) shift "$(($# > 1 ? 2 : 1))" ;;
+                  -*) shift ;;
+                  *)
+                    echo "$1"
+                    return
+                    ;;
+                esac
+              done
+            }
+
+            require_valid_slot_limit() {
+              if [[ ! $slot_limit =~ ^[1-9][0-9]*$ ]]; then
+                echo "RSLISP_BUILD_SLOTS must be a positive whole number, not '$slot_limit'" >&2
+                exit 2
+              fi
+            }
+
+            wait_for_slot() {
+              until take_free_slot; do
+                if [[ -z ''${told_user_about_wait:-} ]]; then
+                  echo "cargo: waiting for one of $slot_limit build slots" >&2
+                  told_user_about_wait=yes
+                fi
+                sleep "$seconds_between_attempts"
+              done
+            }
+
+            take_free_slot() {
+              local slot
+              for ((slot = 1; slot <= slot_limit; slot++)); do
+                exec {slot_lock}>"$slot_directory/$slot"
+                if "$flock" -n "$slot_lock"; then
+                  return
+                fi
+                exec {slot_lock}>&-
+              done
+              return 1
+            }
+
+            main "$@"
+          '';
+        };
+
+      slotLimitedCargo = pkgs: cargoWithBuildSlots pkgs pkgs.cargo;
+
       devShellTools =
         pkgs: defaultShell:
         let
           installedOutputs = map (input: input.out or input) defaultShell.nativeBuildInputs;
+          slotCargo = slotLimitedCargo pkgs;
           benchmarkToolsCheck = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
             check_benchmark_tools ${pkgs.lib.makeBinPath installedOutputs}
           '';
@@ -109,12 +188,110 @@
             [[ $(< "$analyzer") =~ $pattern ]] || fail "rust-analyzer sets no RUST_SRC_PATH"
             [[ -f ''${BASH_REMATCH[1]}/core/src/lib.rs ]] || fail "RUST_SRC_PATH holds no core sources"
             ! (PATH=$1 && command -v rustup) || fail "a dev shell provides rustup"
+            [[ $(PATH=$1 && command -v cargo) == ${slotCargo}/bin/cargo ]] ||
+              fail "a dev shell runs cargo outside its build slots"
           }
           check_benchmark_tools() {
             (PATH=$1 && command -v valgrind) >/dev/null || fail "a Linux dev shell has no valgrind"
           }
           check_shell ${pkgs.lib.makeBinPath defaultShell.nativeBuildInputs}
           ${benchmarkToolsCheck}
+          touch $out
+        '';
+
+      buildSlots =
+        pkgs:
+        let
+          recordingCargo = pkgs.writeShellScriptBin "cargo" ''
+            touch "$calls/$1-''${2:-}"
+            case $1 in
+              build)
+                until [[ -e $calls/finish-$2 ]]; do sleep 0.1; done
+                ;;
+              failing) exit 3 ;;
+              xtask) timeout 5 "$slot_limited_cargo" check inside-xtask ;;
+              daemon)
+                sleep 300 >/dev/null 2>&1 &
+                echo $! >"$calls/daemon-process"
+                ;;
+            esac
+          '';
+          cargo = pkgs.lib.getExe' (cargoWithBuildSlots pkgs recordingCargo) "cargo";
+        in
+        pkgs.runCommand "build-slots" { } ''
+          fail() {
+            echo "$1" >&2
+            exit 1
+          }
+          wait_for_call() {
+            for _ in {1..100}; do
+              [[ -e $calls/$1 ]] && return
+              sleep 0.1
+            done
+            fail "cargo $1 never ran"
+          }
+          expect_no_call() {
+            sleep 2
+            [[ ! -e $calls/$1 ]] || fail "cargo $1 ran with no free slot"
+          }
+          finish() {
+            touch "$calls/finish-$1"
+          }
+          export HOME=$PWD/home calls=$PWD/calls slot_limited_cargo=${cargo}
+          unset CI RSLISP_BUILD_SLOTS RSLISP_BUILD_SLOT_HELD
+          mkdir -p "$HOME" "$calls"
+
+          ${cargo} build first &
+          ${cargo} build second &
+          wait_for_call build-first
+          wait_for_call build-second
+
+          ${cargo} build third 2>waiting &
+          third=$!
+          expect_no_call build-third
+          grep --quiet 'waiting for one of 2 build slots' waiting || fail "a waiting command says nothing"
+
+          ${cargo} check --color always 2>/dev/null &
+          blocked_check=$!
+          expect_no_call check---color
+
+          timeout 5 ${cargo} fmt --all || fail "fmt waited for a slot"
+          timeout 5 ${cargo} --version || fail "--version waited for a slot"
+          timeout 5 ${cargo} --color always metadata || fail "metadata waited for a slot"
+          timeout 5 ${cargo} --color || fail "a flag with no value waited for a slot"
+          timeout 5 env RSLISP_BUILD_SLOT_HELD=1 ${cargo} check nested || fail "a nested cargo waited for a slot"
+          timeout 5 env CI=true ${cargo} check ci || fail "cargo waited for a slot under CI"
+          timeout 5 env RSLISP_BUILD_SLOTS=3 ${cargo} check third-slot || fail "RSLISP_BUILD_SLOTS did not raise the limit"
+
+          limit_status=0
+          RSLISP_BUILD_SLOTS=0 timeout 5 ${cargo} check 2>/dev/null || limit_status=$?
+          [[ $limit_status == 2 ]] || fail "a slot limit of 0 was not refused"
+          finish first
+          wait_for_call build-third
+          finish third
+          wait "$third"
+          wait "$blocked_check"
+
+          ${cargo} build killed &
+          killed=$!
+          wait_for_call build-killed
+          ${cargo} build after-kill 2>/dev/null &
+          kill -KILL "$killed"
+          wait_for_call build-after-kill
+          finish killed
+          finish second
+          finish after-kill
+          wait
+
+          status=0
+          ${cargo} failing || status=$?
+          [[ $status == 3 ]] || fail "cargo exit status $status was not passed on"
+
+          RSLISP_BUILD_SLOTS=1 ${cargo} xtask || fail "a cargo inside a slot waited for a second slot"
+
+          RSLISP_BUILD_SLOTS=1 ${cargo} daemon
+          timeout 5 env RSLISP_BUILD_SLOTS=1 ${cargo} check after-daemon || fail "a process that outlived cargo kept the slot"
+          kill "$(<"$calls/daemon-process")"
           touch $out
         '';
 
@@ -204,7 +381,7 @@
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell (
           {
-            packages = developmentPackages pkgs;
+            packages = [ (slotLimitedCargo pkgs) ] ++ developmentPackages pkgs;
             RUSTC_WRAPPER = pkgs.writeShellScript "sccache-with-stable-tmpdir" ''
               export TMPDIR="$HOME/.cache/sccache-tmp"
               mkdir -p "$TMPDIR"
@@ -233,6 +410,7 @@
       checks = nixpkgs.lib.genAttrs supportedSystems (system: {
         default = self.packages.${system}.default;
         agent-docs = agentDocs nixpkgs.legacyPackages.${system};
+        build-slots = buildSlots nixpkgs.legacyPackages.${system};
         dev-shell-tools = devShellTools nixpkgs.legacyPackages.${system} self.devShells.${system}.default;
         installed-profile =
           installedProfile nixpkgs.legacyPackages.${system}
