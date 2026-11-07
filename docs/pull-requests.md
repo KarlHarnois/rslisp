@@ -29,7 +29,7 @@
 
 ## CI failures
 
-**The `front-end instruction counts` job posts a comparison of instruction counts and counters, and NEVER fails on a rise in an instruction count.** The job fails when a corpus program's allocated bytes or peak live bytes rise more than 1% and no `Counters-Accepted:` trailer in a commit of the pull request names the program. If the job fails in any other step, its tooling broke: treat the failure as a CI failure.
+**The `front-end instruction counts` job posts a comparison of instruction counts and counters, and NEVER fails on a rise in an instruction count.** The job fails when a corpus program's allocated bytes or peak live bytes rise more than 1% and no `Counters-Accepted:` trailer in a commit of the pull request names the program. The job reads the base counts from the `front-end base counts` job, which runs beside it. If either job fails in any other step, its tooling broke: treat the failure as a CI failure.
 
 **If the job fails on allocation growth, stop and report the programs and counters it names to the project owner.** NEVER add a `Counters-Accepted:` trailer before the project owner approves the rise.
 
@@ -50,13 +50,13 @@
 ## The check on `main`
 
 1. Run `gh run list --branch main --workflow CI --status completed --limit 5`.
-2. Take the newest run whose conclusion is not `cancelled`. If all five are cancelled, treat `main` as passing.
+2. Take the newest run whose conclusion is not `cancelled` and whose title is not a release subject such as `Release v0.8.22`: CI skips every job of a release commit. If no run qualifies, treat `main` as passing.
 3. Run `gh run view <id> --json jobs --jq '.jobs[] | {name, conclusion}'` on that run.
 4. If the job that failed on the pull request shows `failure` there, `main` fails the same check.
 
 ## Probe binaries
 
-**The `flake` job pushes the compiler of each ready pull request and each `main` commit to the project's Cachix.** A pull request's binary holds the pull request merged into its base.
+**The `flake` job pushes the compiler of each ready pull request and each `main` commit except a release commit to the project's Cachix.** A pull request's binary holds the pull request merged into its base. A release commit changes only the version, so the block below takes a release's first parent as the base.
 
 **If you probe a pull request's unedited code, download the binaries of the pull request and its base with this block:**
 
@@ -64,6 +64,7 @@
 git fetch origin refs/pull/<number>/merge
 merge=$(git rev-parse FETCH_HEAD)
 base=$(git rev-parse "$merge^1")
+[[ $(git log -1 --format=%s "$base") =~ ^Release\ v[0-9]+\.[0-9]+\.[0-9]+$ ]] && base=$(git rev-parse "$base^1")
 merge_path=$(nix eval --raw "git+file://$PWD?rev=$merge#default")
 base_path=$(nix eval --raw "git+file://$PWD?rev=$base#default")
 nix-store --realise "$merge_path" "$base_path"

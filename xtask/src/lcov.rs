@@ -28,6 +28,15 @@ impl LcovReport {
         report
     }
 
+    pub fn with_relative_paths(text: &str, root: &Path) -> String {
+        text.lines()
+            .map(|record| match record.strip_prefix(Self::SOURCE_FILE) {
+                Some(path) => format!("{}{}\n", Self::SOURCE_FILE, Self::relative(path, root)),
+                None => format!("{record}\n"),
+            })
+            .collect()
+    }
+
     pub fn total(&self) -> LineCoverage {
         self.files
             .values()
@@ -153,6 +162,37 @@ mod tests {
                        SF:/work/project/src/a.rs\nDA:1,3\nDA:2,0\nend_of_record\n";
         let merged = LcovReport::parse(reports, Path::new("/work/project"));
         assert_eq!(merged.total().percent(), 100.0);
+    }
+
+    struct ShardReport;
+
+    impl ShardReport {
+        const ROOT: &str = "/work/shard";
+        const TEXT: &str = "SF:/work/shard/src/lib.rs\nDA:1,1\nend_of_record\n\
+                            SF:/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.219/src/lib.rs\n\
+                            DA:1,0\nend_of_record\n";
+
+        fn with_relative_paths() -> String {
+            LcovReport::with_relative_paths(Self::TEXT, Path::new(Self::ROOT))
+        }
+    }
+
+    #[test]
+    fn a_shard_names_its_workspace_files_relative_to_its_checkout() {
+        assert!(ShardReport::with_relative_paths().starts_with("SF:src/lib.rs\nDA:1,1\n"));
+    }
+
+    #[test]
+    fn a_registry_path_keeps_its_full_path() {
+        let merged =
+            LcovReport::parse(&ShardReport::with_relative_paths(), Path::new("/work/gate"));
+        assert_eq!(merged.total().percent(), 50.0);
+        assert_eq!(
+            merged
+                .within("src/lib.rs", LineSpan { first: 1, last: 1 })
+                .percent(),
+            100.0
+        );
     }
 
     #[test]

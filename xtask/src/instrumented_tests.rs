@@ -32,7 +32,9 @@ impl<'a> InstrumentedTests<'a> {
     }
 
     pub fn run_shard(&self, shard: TestShard) -> Result<(), TaskFailure> {
-        self.measure(&self.shard_report(shard), &shard.cargo_arguments())
+        let report = self.shard_report(shard);
+        self.measure(&report, &shard.cargo_arguments())?;
+        self.write_relative_paths(&report)
     }
 
     pub fn merge_shards(&self) -> Result<LcovReport, TaskFailure> {
@@ -47,6 +49,11 @@ impl<'a> InstrumentedTests<'a> {
         self.root
             .join(Self::SHARD_REPORTS)
             .join(shard.report_file())
+    }
+
+    fn write_relative_paths(&self, report: &Path) -> Result<(), TaskFailure> {
+        let text = LcovReport::with_relative_paths(&Self::read(report)?, self.root);
+        fs::write(report, text).map_err(|error| TaskFailure::unwritable(report, error))
     }
 
     fn read(report: &Path) -> Result<String, TaskFailure> {
